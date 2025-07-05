@@ -35,6 +35,8 @@ An MCP server is a lightweight process (Python, Node, Go …) that registers “
 | `get_code_connect_map` | Map node-IDs to components in your codebase |
 | `get_image` | Rasterize or placeholder-export selected frame |
 
+https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Dev-Mode-MCP-Server
+
 ### 2.2 Playwright MCP Server (`@playwright/mcp`)  
 | Tool | Purpose |
 |------|---------|
@@ -48,6 +50,8 @@ An MCP server is a lightweight process (Python, Node, Go …) that registers “
 | `browser_file_upload` | Attach a file |
 | `browser_wait_for` | Wait for selector/URL |
 | `browser_close` | End session |
+
+https://github.com/microsoft/playwright-mcp
 
 ---
 
