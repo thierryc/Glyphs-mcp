@@ -83,16 +83,29 @@ An MCP server is a lightweight process (Python, Node, Go …) that registers “
 7. **Docs** – Add `docs/USAGE.md` with sample prompts.  
 8. **Roadmap** – Async job queue and optional WebSocket mirror.
 
----
+## Links: 
 
-Links: 
+### MCP
+
+https://huggingface.co/learn/mcp-course/unit0/introduction
+
+
+
+## Other Related Projects
+
+### Machine Learning Assisted Kerning
 
 https://standardcomputation.com
 
 https://vimeo.com/1059769678
 
-https://huggingface.co/learn/mcp-course/unit0/introduction
+An ongoing experiment by Petr van Blokland (TYPETR), this project explores whether machine learning models can effectively kern typefaces. Kerning is well-suited for ML due to its high volume and low individual risk.
 
+Applications include providing baseline kerning values for unkerned fonts and detecting kern pairs with potentially incorrect values. Current experiments focus on either creating a generalized model for multiple fonts or training a model on a small number of examples. Both approaches aim to maximize the model’s usefulness for new fonts.
+
+Models were built using PyTorch and trained on 32×32 images of glyph pairs.
+
+---
 
 
 Happy hacking! ✌️
