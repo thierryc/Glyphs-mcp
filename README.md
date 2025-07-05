@@ -93,8 +93,6 @@ https://github.com/microsoft/playwright-mcp
 
 https://huggingface.co/learn/mcp-course/unit0/introduction
 
-
-
 ## Other Related Projects
 
 ### Machine Learning Assisted Kerning
