@@ -85,4 +85,14 @@ An MCP server is a lightweight process (Python, Node, Go …) that registers “
 
 ---
 
+Links: 
+
+https://standardcomputation.com
+
+https://vimeo.com/1059769678
+
+https://huggingface.co/learn/mcp-course/unit0/introduction
+
+
+
 Happy hacking! ✌️
