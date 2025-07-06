@@ -1,16 +1,5 @@
 # encoding: utf-8
 
-###########################################################################################################
-#
-#
-# General Plugin
-#
-# Read the docs:
-# https://github.com/schriftgestalt/GlyphsSDK/tree/master/Python%20Templates/General%20Plugin
-#
-#
-###########################################################################################################
-
 from __future__ import division, print_function, unicode_literals
 import objc
 from GlyphsApp import Glyphs, EDIT_MENU

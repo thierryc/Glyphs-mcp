@@ -212,3 +212,6 @@ src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/site-packages/
 
 # Glyphs build environment
 glyphs-build-env/
+
+# macOS
+.DS_Store
