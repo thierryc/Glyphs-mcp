@@ -111,3 +111,11 @@ Models were built using PyTorch and trained on 32×32 images of glyph pairs.
 
 
 Happy hacking! ✌️
+
+
+
+---
+
+command : 
+
+src/glyphs-mcp/scripts/vendor_deps.sh
