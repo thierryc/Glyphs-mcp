@@ -50,10 +50,10 @@ class MCPBridgePlugin(GeneralPlugin):
 
 	@objc.python_method
 	def start(self):
-		if Glyphs.versionNumber >= 3.3:
-			newMenuItem = NSMenuItem(self.name, callback=self.StartStopServer_, target=self)
-		else:
-			newMenuItem = NSMenuItem(self.name, self.StartStopServer_)
+		newMenuItem = NSMenuItem.new()
+		newMenuItem.setTitle_(self.name)
+		newMenuItem.setTarget_(self)
+		newMenuItem.setAction_(self.StartStopServer_)
 		Glyphs.menu[EDIT_MENU].append(newMenuItem)
 
 	def StartStopServer_(self, sender):
