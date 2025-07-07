@@ -26,14 +26,14 @@ mcp = FastMCP(name="Glyphs MCP Server", version="1.0.0")
 
 @mcp.tool()
 async def tool_name(param1: str, param2: bool = True) -> str:
-    """Tool description for Claude.
+	"""Tool description for Claude.
 
-    Args:
-        param1: Description of parameter.
-        param2: Optional parameter with default.
-    """
-    result = {"param1": param1, "param2": param2}
-    return json.dumps(result)
+	Args:
+		param1: Description of parameter.
+		param2: Optional parameter with default.
+	"""
+	result = {"param1": param1, "param2": param2}
+	return json.dumps(result)
 
 
 class MCPBridgePlugin(GeneralPlugin):
