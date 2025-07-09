@@ -711,6 +711,110 @@ async def update_glyph_metrics(
 
 
 @mcp.tool()
+async def get_glyph_components(
+    font_index: int = 0, glyph_name: str = None, master_id: str = None
+) -> str:
+    """Get detailed component information from a glyph's layers.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph to get components from. Required.
+        master_id (str): Master ID. If None, gets components from all masters. Optional.
+
+    Returns:
+        str: JSON-encoded list of components with their properties including:
+            - Component name
+            - Transform matrix (scale, rotation, position)
+            - Automatic alignment status
+            - Layer information
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                }
+            )
+
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+
+        if not glyph:
+            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+
+        # Determine which layers to check
+        if master_id:
+            layers = [(master_id, glyph.layers[master_id])]
+            if not layers[0][1]:
+                return json.dumps({"error": f"Master ID '{master_id}' not found"})
+        else:
+            layers = [(master.id, glyph.layers[master.id]) for master in font.masters]
+
+        components_info = []
+
+        for mid, layer in layers:
+            layer_components = []
+
+            for component in layer.components:
+                # Extract transform values
+                transform = component.transform
+                component_data = {
+                    "name": component.componentName,
+                    "transform": {
+                        "xScale": transform[0],
+                        "xyScale": transform[1],
+                        "yxScale": transform[2],
+                        "yScale": transform[3],
+                        "xOffset": transform[4],
+                        "yOffset": transform[5],
+                    },
+                    "automatic": component.automatic,
+                }
+
+                # Check if the component glyph exists
+                component_glyph = font.glyphs[component.componentName]
+                if component_glyph:
+                    component_data["componentGlyphExists"] = True
+                    component_data["componentUnicode"] = component_glyph.unicode
+                    component_data["componentCategory"] = component_glyph.category
+                else:
+                    component_data["componentGlyphExists"] = False
+
+                layer_components.append(component_data)
+
+            # Find master name for this layer
+            master_name = None
+            for master in font.masters:
+                if master.id == mid:
+                    master_name = master.name
+                    break
+
+            components_info.append(
+                {
+                    "masterId": mid,
+                    "masterName": master_name or layer.name,
+                    "layerName": layer.name,
+                    "componentCount": len(layer_components),
+                    "components": layer_components,
+                }
+            )
+
+        return json.dumps(
+            {
+                "glyphName": glyph_name,
+                "totalLayers": len(components_info),
+                "layers": components_info,
+            }
+        )
+
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
 async def add_component_to_glyph(
     font_index: int = 0,
     glyph_name: str = None,
@@ -962,6 +1066,75 @@ async def get_selected_glyphs() -> str:
 
 
 @mcp.tool()
+async def get_selected_font_and_master() -> str:
+    """Get information about the currently selected font and master from the active font view.
+    
+    Returns:
+        str: JSON-encoded object containing:
+            fontInfo (dict): Information about the selected font including name, path, and counts.
+            currentMaster (dict): Information about the currently selected master.
+            selectedGlyphs (list): List of currently selected glyphs.
+    """
+    try:
+        if not Glyphs.font:
+            return json.dumps({"error": "No font is currently active"})
+        
+        font = Glyphs.font
+        
+        # Get font information
+        font_info = {
+            "familyName": font.familyName or "",
+            "filePath": font.filepath,
+            "masterCount": len(font.masters),
+            "instanceCount": len(font.instances),
+            "glyphCount": len(font.glyphs),
+            "unitsPerEm": font.upm,
+            "versionMajor": getattr(font, "versionMajor", 0),
+            "versionMinor": getattr(font, "versionMinor", 0),
+        }
+        
+        # Get current master (the one being edited)
+        current_master = None
+        if font.selectedFontMaster:
+            master = font.selectedFontMaster
+            current_master = {
+                "name": master.name,
+                "id": master.id,
+                "customName": master.customName,
+                "ascender": master.ascender,
+                "capHeight": master.capHeight,
+                "descender": master.descender,
+                "xHeight": master.xHeight,
+                "weight": getattr(master, "weight", ""),
+                "width": getattr(master, "width", ""),
+            }
+        
+        # Get selected glyphs
+        selected_glyphs = []
+        for layer in font.selectedLayers:
+            glyph = layer.parent
+            selected_glyphs.append({
+                "name": glyph.name,
+                "unicode": glyph.unicode,
+                "category": glyph.category,
+                "subCategory": glyph.subCategory,
+                "layerName": layer.name,
+                "width": layer.width,
+                "leftSideBearing": layer.leftSideBearing,
+                "rightSideBearing": layer.rightSideBearing,
+            })
+        
+        return json.dumps({
+            "fontInfo": font_info,
+            "currentMaster": current_master,
+            "selectedGlyphs": selected_glyphs,
+            "selectedGlyphCount": len(selected_glyphs),
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
 async def save_font(font_index: int = 0, path: str = None) -> str:
     """Save the font to disk.
 
@@ -1136,6 +1309,7 @@ class MCPBridgePlugin(GeneralPlugin):
                         "add_anchor_to_glyph",
                         "set_kerning_pair",
                         "get_selected_glyphs",
+                        "get_selected_font_and_master",
                         "save_font",
                     ]
                     print(f"  • Available tools: {len(known_tools)} tools")
