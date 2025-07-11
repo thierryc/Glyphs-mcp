@@ -1,6 +1,26 @@
 # glyphs-mcp
 Glyphs app mcp server
 
+## Glyphs-MCP Manifesto
+
+The Glyphs App MCP server is built on a simple belief: AI should serve the designer—not replace them.
+
+We understand the skepticism. The type design community has every reason to be wary. For years, we’ve seen overhyped “magic” tools promise instant results—only to deliver shallow shortcuts that overlook the depth and rigor of the craft.
+
+MCP is not that.
+
+MCP is for those who write code, tweak paths, and obsess over detail. It integrates into existing workflows, respects your process, and enhances what you already do. It gives you more control, not less. You decide what the AI does, when, and how.
+
+The goal is to:
+	•	Explore ideas faster
+	•	Iterate with more clarity
+	•	Push quality further—without compromise
+
+This is not “make a font in five minutes.”
+This is make better fonts—faster, smarter, and with more intention.
+
+MCP is open, extensible, and built with the community in mind.
+
 > ⚠️ **WORK-IN-PROGRESS — QUICK DRAFT**  
 > This README is an early draft for discussion only.  
 > All architecture notes, command names, and examples **must be reviewed and verified** before any production use.
