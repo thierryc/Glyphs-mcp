@@ -3,7 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 import json
 import asyncio
-from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor
+from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor  # type: ignore[import-not-found]
 from fastmcp import FastMCP
 
 # Initialize FastMCP server
