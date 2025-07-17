@@ -61,6 +61,6 @@ Open the **Macro Panel** to access the console.
 ---
 
 ## Contributing
-PRs are welcome. Run `pytest` and `black .` before submitting.
+PRs are welcome.
 
 ---
