@@ -1,121 +1,68 @@
-# glyphs-mcp
-Glyphs app mcp server
+# Glyphs MCP
+A Machine‑Control‑Protocol server for [Glyphs](https://glyphsapp.com) that exposes font‑specific tools to AI/LLM agents.
 
-> ⚠️ **WORK-IN-PROGRESS — QUICK DRAFT**  
-> This README is an early draft for discussion only.  
-> All architecture notes, command names, and examples **must be reviewed and verified** before any production use.
+> **Status: Work in progress – the API may change at any time.**
 
 ---
 
-## TL;DR  
-An **MCP server** exposes domain-specific “tools” (JSON-RPC methods) to local AI assistants.  
-Two transport modes are common:
+## What is an MCP server?
 
-| Transport | Alias in client configs | Use cases | Pros | Cons |
-|-----------|-------------------------|-----------|------|------|
-| **Direct command (stdio)** | `"type": "command"` | CLIs, CI | Zero network latency | One tool per process |
-| **Server-Sent Events (SSE over HTTP)** | `"type": "sse"` | IDE plug-ins, multi-tool suites | Persistent stream; easy to secure/proxy | Uni-directional push only |
+A *Machine‑Control‑Protocol* server is a lightweight process that:
 
-Most modern IDE agents default to an SSE endpoint like `http://127.0.0.1:<port>/sse`.
+1. **Registers tools** (JSON‑RPC methods) written in the host language (Python here).  
+2. **Streams JSON output** back to the calling agent. 
 
 ---
 
-## 1 What’s an MCP server?  
-An MCP server is a lightweight process (Python, Node, Go …) that registers “tools” and streams their JSON results back to the calling LLM. Because the protocol is transport-agnostic, the exact same tool definitions can be exposed via either stdio or SSE.
+## Command set (v0.3)
+
+| Tool | Description |
+|------|-------------|
+| `list_open_fonts` | List all open fonts and basic metadata. |
+| `get_font_glyphs` | Return glyph list and key attributes for a font. |
+| `get_font_masters` | Detailed master information for a font. |
+| `get_font_instances` | List instances and their interpolation data. |
+| `get_glyph_details` | Full glyph data including layers, paths, components. |
+| `get_font_kerning` | All kerning pairs for a given master. |
+| `create_glyph` | Add a new glyph to the font. |
+| `delete_glyph` | Remove a glyph from the font. |
+| `update_glyph_properties` | Change unicode, category, export flags, etc. |
+| `copy_glyph` | Duplicate outlines / components from one glyph to another. |
+| `update_glyph_metrics` | Adjust width and side‑bearings. |
+| `get_glyph_components` | Inspect components used in a glyph. |
+| `add_component_to_glyph` | Append a component to a glyph layer. |
+| `add_anchor_to_glyph` | Add an anchor to a glyph layer. |
+| `set_kerning_pair` | Set or remove a kerning value. |
+| `get_selected_glyphs` | Info about glyphs currently selected in UI. |
+| `get_selected_font_and_master` | Current font + master and selection snapshot. |
+| `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing. |
+| `set_glyph_paths` | Replace glyph paths from JSON. |
+| `execute_code` | Execute arbitrary Python in the Glyphs context. |
+| `execute_code_with_context` | Execute Python with injected helper objects. |
+| `save_font` | Save the active font (optionally to a new path). |
 
 ---
 
-## 2 Reference command sets
+## Build the Glyphs plug‑in
 
-### 2.1 Figma Dev Mode MCP Server  
-| Tool | Purpose |
-|------|---------|
-| `get_code` | Return React/Vue/Svelte code for the current selection |
-| `get_variable_defs` | List design tokens used in the selection |
-| `get_code_connect_map` | Map node-IDs to components in your codebase |
-| `get_image` | Rasterize or placeholder-export selected frame |
+```bash
+# from the project root
+source glyphs-build-env/bin/activate
 
-https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Dev-Mode-MCP-Server
-
-### 2.2 Playwright MCP Server (`@playwright/mcp`)  
-| Tool | Purpose |
-|------|---------|
-| `browser_navigate` | Load a URL |
-| `browser_click` | Click an element |
-| `browser_type` | Type keys |
-| `browser_press_key` | Send special keys |
-| `browser_drag` | Drag-and-drop |
-| `browser_take_screenshot` | PNG snapshot |
-| `browser_select_option` | Choose from `<select>` |
-| `browser_file_upload` | Attach a file |
-| `browser_wait_for` | Wait for selector/URL |
-| `browser_close` | End session |
-
-https://github.com/microsoft/playwright-mcp
-
----
-
-## 3 GlyphsApp MCP Server – Proposed commands (v2)
-
-| Tool name | Arguments | Description |
-|-----------|-----------|-------------|
-| `list_open_fonts` | — | List all open fonts and basic metadata. |
-| `get_glyph_metrics` | `font_id`, `glyph_name` | Return width, LSB, RSB, anchors. |
-| `set_side_bearings` | `font_id`, `glyph_name`, `lsb`, `rsb` | Update bearings and redraw. |
-| `export_selection_svg` | `font_id`, `[glyph_names]` | Export glyphs as SVG. |
-| `auto_kern_pair` | `font_id`, `left_glyph`, `right_glyph`, `engine="ht" \| "ai"` | Suggest **or** apply kerning with either HT Letterspacer heuristics or an AI model trained on well-kerned fonts. |
-| `auto_space_font` | `font_id`, `engine="ht" \| "ai"` | Generate side bearings for the whole font using the selected engine. |
-| `generate_variable_font` | `font_id`, `out_path` | Export a Variable Font. |
-| `apply_filter` | `font_id`, `filter_name`, `params` | Run a Glyphs filter plug-in. |
-| `get_selected_layer_outline` | `font_id` | Return current layer outline data. |
-| `rename_glyph` | `font_id`, `old_name`, `new_name` | Batch-rename a glyph. |
-| `batch_generate_png` | `font_id`, `[glyph_names]`, `size` | Rasterize glyphs at a given ppem. |
-
-*Both `auto_*` tools return JSON like:*  
-`{ "suggested": <number>, "applied": true|false, "engine": "ht"|"ai" }`.
-
----
-
-## 4 Macro TODO list
-
-1. **Scaffold** – `pip install fastmcp glyphsLib` and stub each tool.  
-2. **Transport** – `fastmcp run --transport sse --port 8765 glyphs_server:app`; add `--stdio` wrapper.  
-3. **Sessions** – Maintain `{font_id: GSFont}` map; clean unused IDs.  
-4. **Security** – Optional bearer-token header.  
-5. **DX** – Ship pre-filled `.cursor/mcp.json` snippet.  
-6. **Tests** – Unit tests with a small test font; end-to-end via Playwright + AppleScript.  
-7. **Docs** – Add `docs/USAGE.md` with sample prompts.  
-8. **Roadmap** – Async job queue and optional WebSocket mirror.
-
-## Links: 
-
-### MCP
-
-https://huggingface.co/learn/mcp-course/unit0/introduction
-
-## Other Related Projects
-
-### Machine Learning Assisted Kerning
-
-https://standardcomputation.com
-
-https://vimeo.com/1059769678
-
-An ongoing experiment by Petr van Blokland (TYPETR), this project explores whether machine learning models can effectively kern typefaces. Kerning is well-suited for ML due to its high volume and low individual risk.
-
-Applications include providing baseline kerning values for unkerned fonts and detecting kern pairs with potentially incorrect values. Current experiments focus on either creating a generalized model for multiple fonts or training a model on a small number of examples. Both approaches aim to maximize the model’s usefulness for new fonts.
-
-Models were built using PyTorch and trained on 32×32 images of glyph pairs.
-
----
-
-
-Happy hacking! ✌️
-
-
-
----
-
-command : 
-
+# pull vendored libs & build the bundle
 src/glyphs-mcp/scripts/vendor_deps.sh
+```
+
+The script updates the plugin’s `site‑packages` inside `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`.
+Copy **or create a symlink (alias)** of this plugin into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
+
+To start the Glyphs MCP server, open the **Edit** menu and choose **Start MCP Server**.
+
+Open the **Macro Panel** to access the console.
+
+---
+
+## Contributing
+PRs are welcome. Run `pytest` and `black .` before submitting.
+
+---
