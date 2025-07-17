@@ -14,13 +14,23 @@ class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
     def settings(self):
-        self.name = Glyphs.localize(
+        # Localized menu titles
+        self.name_start = Glyphs.localize(
             {
-                "en": "Glyphs MCP Server",
-                "de": "Glyphs MCP Server",
-                "fr": "Glyphs MCP Server",
-                "es": "Glyphs MCP Server",
-                "pt": "Glyphs MCP Server",
+                "en": "Start Glyphs MCP Server",
+                "de": "Glyphs MCP-Server starten",
+                "fr": "Démarrer le serveur MCP",
+                "es": "Iniciar el servidor MCP",
+                "pt": "Iniciar o servidor Glyphs MCP",
+            }
+        )
+        self.name_running = Glyphs.localize(
+            {
+                "en": "Glyphs MCP Server is running",
+                "de": "Glyphs MCP-Server läuft",
+                "fr": "Le serveur MCP est en cours d'exécution",
+                "es": "El servidor MCP está en ejecución",
+                "pt": "O servidor MCP está em execução",
             }
         )
         # Configuration
@@ -30,7 +40,9 @@ class MCPBridgePlugin(GeneralPlugin):
     @objc.python_method
     def start(self):
         newMenuItem = NSMenuItem.new()
-        newMenuItem.setTitle_(self.name)
+        newMenuItem.setTitle_(self.name_start)
+        # Keep a reference so we can update the label later
+        self.menuItem = newMenuItem
         newMenuItem.setTarget_(self)
         newMenuItem.setAction_(self.StartStopServer_)
         Glyphs.menu[EDIT_MENU].append(newMenuItem)
@@ -70,6 +82,14 @@ class MCPBridgePlugin(GeneralPlugin):
             self._port = port
 
             self._show_startup_message(port)
+
+            # Update menu title to indicate the server is running
+            try:
+                sender.setTitle_(self.name_running)
+            except Exception:
+                # Fallback in case sender is not the menu item
+                if hasattr(self, "menuItem"):
+                    self.menuItem.setTitle_(self.name_running)
 
         except Exception as e:
             print("Failed to start server: {}".format(e))
