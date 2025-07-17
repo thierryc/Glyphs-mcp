@@ -83,11 +83,31 @@ class MCPBridgePlugin(GeneralPlugin):
         print(
             "  SSE endpoint: http://127.0.0.1:{}/sse".format(getattr(self, '_port', '?'))
         )
-        print("  Available tools: {} tools".format(len(mcp._tools)))
-        print("  Tools available:")
-        for tool_name in sorted(mcp._tools.keys()):
-            brief_desc = get_tool_info(mcp, tool_name)
-            print("    - {}: {}".format(tool_name, brief_desc))
+        
+        # Try to get tools information safely
+        try:
+            # Try multiple possible attribute names for tools
+            tools = None
+            for attr_name in ["_tools", "tools", "_tool_registry", "tool_registry", "_handlers"]:
+                tools = getattr(mcp, attr_name, None)
+                if tools:
+                    break
+            if tools:
+                print("  Available tools: {} tools".format(len(tools)))
+                print("  Tools available:")
+                for tool_name in sorted(tools.keys()):
+                    brief_desc = get_tool_info(mcp, tool_name)
+                    print("    - {}: {}".format(tool_name, brief_desc))
+            else:
+                # Fallback: list the tools we know we defined
+                known_tools = get_known_tools()
+                print("  Available tools: {} tools".format(len(known_tools)))
+                print("  Tools available:")
+                for tool_name in known_tools:
+                    print("    - {}".format(tool_name))
+        except Exception as e:
+            print("  Tools information unavailable: {}".format(e))
+        
         print(
             "  To stop: restart Glyphs or use Activity Monitor to kill the process."
         )
@@ -101,7 +121,12 @@ class MCPBridgePlugin(GeneralPlugin):
 
         # Try to get tools information safely
         try:
-            tools = getattr(mcp, "_tools", None) or getattr(mcp, "tools", None)
+            # Try multiple possible attribute names for tools
+            tools = None
+            for attr_name in ["_tools", "tools", "_tool_registry", "tool_registry", "_handlers"]:
+                tools = getattr(mcp, attr_name, None)
+                if tools:
+                    break
             if tools:
                 print("  Available tools: {} tools".format(len(tools)))
                 print("  Tools available:")

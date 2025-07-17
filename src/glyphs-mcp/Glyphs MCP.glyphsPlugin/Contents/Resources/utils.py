@@ -62,6 +62,8 @@ def get_known_tools():
         "set_kerning_pair",
         "get_selected_glyphs",
         "get_selected_font_and_master",
+        "get_glyph_paths",
+        "set_glyph_paths",
         "execute_code",
         "execute_code_with_context",
         "save_font",
@@ -79,7 +81,13 @@ def get_tool_info(mcp_instance, tool_name):
         str: Brief description of the tool
     """
     try:
-        tools = getattr(mcp_instance, "_tools", None) or getattr(mcp_instance, "tools", None)
+        # Try multiple possible attribute names for tools
+        tools = None
+        for attr_name in ["_tools", "tools", "_tool_registry", "tool_registry", "_handlers"]:
+            tools = getattr(mcp_instance, attr_name, None)
+            if tools:
+                break
+        
         if tools and tool_name in tools:
             tool = tools[tool_name]
             doc = getattr(tool, "__doc__", None) or "No description available"

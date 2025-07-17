@@ -59,7 +59,7 @@ async def get_font_glyphs(font_index: int = 0) -> str:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -97,7 +97,7 @@ async def get_font_masters(font_index: int = 0) -> str:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -136,7 +136,7 @@ async def get_font_instances(font_index: int = 0) -> str:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -175,7 +175,7 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -183,7 +183,7 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
-            return json.dumps({"error": f"Glyph '{glyph_name}' not found in font"})
+            return json.dumps({"error": "Glyph '{}' not found in font".format(glyph_name)})
 
         layers_info = []
         for layer in glyph.layers:
@@ -241,7 +241,7 @@ async def get_font_kerning(font_index: int = 0, master_id: str = None) -> str:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -294,7 +294,7 @@ async def create_glyph(
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -305,7 +305,7 @@ async def create_glyph(
 
         # Check if glyph already exists
         if font.glyphs[glyph_name]:
-            return json.dumps({"error": f"Glyph '{glyph_name}' already exists"})
+            return json.dumps({"error": "Glyph '{}' already exists".format(glyph_name)})
 
         # Create new glyph
         new_glyph = GSGlyph(glyph_name)
@@ -321,13 +321,13 @@ async def create_glyph(
 
         # Send notification
         Glyphs.showNotification(
-            "Glyph Created", f"Created glyph '{glyph_name}' in {font.familyName}"
+            "Glyph Created", "Created glyph '{}' in {}".format(glyph_name, font.familyName)
         )
 
         return json.dumps(
             {
                 "success": True,
-                "message": f"Created glyph '{glyph_name}'",
+                "message": "Created glyph '{}'".format(glyph_name),
                 "glyph": {
                     "name": new_glyph.name,
                     "unicode": new_glyph.unicode,
@@ -355,7 +355,7 @@ async def delete_glyph(font_index: int = 0, glyph_name: str = None) -> str:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -366,16 +366,16 @@ async def delete_glyph(font_index: int = 0, glyph_name: str = None) -> str:
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
-            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
 
         del font.glyphs[glyph_name]
 
         # Send notification
         Glyphs.showNotification(
-            "Glyph Deleted", f"Deleted glyph '{glyph_name}' from {font.familyName}"
+            "Glyph Deleted", "Deleted glyph '{}' from {}".format(glyph_name, font.familyName)
         )
 
-        return json.dumps({"success": True, "message": f"Deleted glyph '{glyph_name}'"})
+        return json.dumps({"success": True, "message": "Deleted glyph '{}'".format(glyph_name)})
     except Exception as e:
         return json.dumps({"error": str(e)})
 
@@ -410,7 +410,7 @@ async def update_glyph_properties(
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -421,7 +421,7 @@ async def update_glyph_properties(
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
-            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
 
         # Update properties
         if unicode is not None:
@@ -440,7 +440,7 @@ async def update_glyph_properties(
         return json.dumps(
             {
                 "success": True,
-                "message": f"Updated glyph '{glyph_name}'",
+                "message": "Updated glyph '{}'".format(glyph_name),
                 "glyph": {
                     "name": glyph.name,
                     "unicode": glyph.unicode,
@@ -480,7 +480,7 @@ async def copy_glyph(
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -493,7 +493,7 @@ async def copy_glyph(
         src_glyph = font.glyphs[source_glyph]
 
         if not src_glyph:
-            return json.dumps({"error": f"Source glyph '{source_glyph}' not found"})
+            return json.dumps({"error": "Source glyph '{}' not found".format(source_glyph)})
 
         # Create target glyph if it doesn't exist
         tgt_glyph = font.glyphs[target_glyph]
@@ -548,13 +548,13 @@ async def copy_glyph(
 
         # Send notification
         Glyphs.showNotification(
-            "Glyph Copied", f"Copied '{source_glyph}' to '{target_glyph}'"
+            "Glyph Copied", "Copied '{}' to '{}'".format(source_glyph, target_glyph)
         )
 
         return json.dumps(
             {
                 "success": True,
-                "message": f"Copied glyph '{source_glyph}' to '{target_glyph}'",
+                "message": "Copied glyph '{}' to '{}'".format(source_glyph, target_glyph),
             }
         )
     except Exception as e:
@@ -587,7 +587,7 @@ async def update_glyph_metrics(
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -598,13 +598,13 @@ async def update_glyph_metrics(
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
-            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
 
         # Determine which layers to update
         if master_id:
             layers = [glyph.layers[master_id]]
             if not layers[0]:
-                return json.dumps({"error": f"Master ID '{master_id}' not found"})
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
         else:
             layers = [glyph.layers[master.id] for master in font.masters]
 
@@ -630,7 +630,7 @@ async def update_glyph_metrics(
         return json.dumps(
             {
                 "success": True,
-                "message": f"Updated metrics for glyph '{glyph_name}'",
+                "message": "Updated metrics for glyph '{}'".format(glyph_name),
                 "metrics": updated_metrics,
             }
         )
@@ -660,7 +660,7 @@ async def get_glyph_components(
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -671,13 +671,13 @@ async def get_glyph_components(
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
-            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
 
         # Determine which layers to check
         if master_id:
             layers = [(master_id, glyph.layers[master_id])]
             if not layers[0][1]:
-                return json.dumps({"error": f"Master ID '{master_id}' not found"})
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
         else:
             layers = [(master.id, glyph.layers[master.id]) for master in font.masters]
 
@@ -772,7 +772,7 @@ async def add_component_to_glyph(
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -785,18 +785,18 @@ async def add_component_to_glyph(
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
-            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
 
         if not font.glyphs[component_name]:
             return json.dumps(
-                {"error": f"Component glyph '{component_name}' not found"}
+                {"error": "Component glyph '{}' not found".format(component_name)}
             )
 
         # Determine which layers to update
         if master_id:
             layers = [glyph.layers[master_id]]
             if not layers[0]:
-                return json.dumps({"error": f"Master ID '{master_id}' not found"})
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
         else:
             layers = [glyph.layers[master.id] for master in font.masters]
 
@@ -809,7 +809,7 @@ async def add_component_to_glyph(
         return json.dumps(
             {
                 "success": True,
-                "message": f"Added component '{component_name}' to glyph '{glyph_name}'",
+                "message": "Added component '{}' to glyph '{}'".format(component_name, glyph_name),
             }
         )
     except Exception as e:
@@ -842,7 +842,7 @@ async def add_anchor_to_glyph(
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -856,13 +856,13 @@ async def add_anchor_to_glyph(
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
-            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
 
         # Determine which layers to update
         if master_id:
             layers = [glyph.layers[master_id]]
             if not layers[0]:
-                return json.dumps({"error": f"Master ID '{master_id}' not found"})
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
         else:
             layers = [glyph.layers[master.id] for master in font.masters]
 
@@ -873,7 +873,7 @@ async def add_anchor_to_glyph(
         return json.dumps(
             {
                 "success": True,
-                "message": f"Added anchor '{anchor_name}' to glyph '{glyph_name}'",
+                "message": "Added anchor '{}' to glyph '{}'".format(anchor_name, glyph_name),
             }
         )
     except Exception as e:
@@ -904,7 +904,7 @@ async def set_kerning_pair(
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -932,11 +932,11 @@ async def set_kerning_pair(
             # Remove kerning if it exists
             if right in font.kerning[master_id][left]:
                 del font.kerning[master_id][left][right]
-            message = f"Removed kerning for '{left}' - '{right}'"
+            message = "Removed kerning for '{}' - '{}'".format(left, right)
         else:
             # Set kerning value
             font.kerning[master_id][left][right] = value
-            message = f"Set kerning for '{left}' - '{right}' to {value}"
+            message = "Set kerning for '{}' - '{}' to {}".format(left, right, value)
 
         # Send notification
         Glyphs.showNotification("Kerning Updated", message)
@@ -1077,7 +1077,7 @@ async def save_font(font_index: int = 0, path: str = None) -> str:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
                 {
-                    "error": f"Font index {font_index} out of range. Available fonts: {len(Glyphs.fonts)}"
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
                 }
             )
 
@@ -1095,15 +1095,210 @@ async def save_font(font_index: int = 0, path: str = None) -> str:
 
         # Send notification
         Glyphs.showNotification(
-            "Font Saved", f"Saved {font.familyName} to {font.filepath}"
+            "Font Saved", "Saved {} to {}".format(font.familyName, font.filepath)
         )
 
         return json.dumps(
             {
                 "success": True,
-                "message": f"Saved font to {font.filepath}",
+                "message": "Saved font to {}".format(font.filepath),
                 "path": font.filepath,
             }
         )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def get_glyph_paths(
+    font_index: int = 0,
+    glyph_name: str = None,
+    master_id: str = None
+) -> str:
+    """Get the path data for a glyph in a simple JSON format suitable for LLM editing.
+    
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph. Required.
+        master_id (str): Master ID. If None, uses the current selected master. Optional.
+    
+    Returns:
+        str: JSON-encoded path data containing:
+            paths (list): List of paths, each containing:
+                nodes (list): List of nodes with x, y, type, smooth properties
+                closed (bool): Whether the path is closed
+            width (int): Glyph width
+            leftSideBearing (int): Left side bearing
+            rightSideBearing (int): Right side bearing
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+        
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+        
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+        
+        if not glyph:
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
+        
+        # Determine which master to use
+        if master_id:
+            layer = glyph.layers[master_id]
+            if not layer:
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
+        else:
+            # Use the selected master or first master
+            if font.selectedFontMaster:
+                layer = glyph.layers[font.selectedFontMaster.id]
+            else:
+                layer = glyph.layers[font.masters[0].id]
+        
+        # Ensure we have a valid layer
+        if not layer:
+            return json.dumps({"error": "No valid layer found for glyph '{}'".format(glyph_name)})
+        
+        # Serialize paths
+        paths_data = []
+        for path in getattr(layer, 'paths', []):
+            nodes_data = []
+            for node in path.nodes:
+                nodes_data.append({
+                    "x": float(node.position.x),
+                    "y": float(node.position.y),
+                    "type": getattr(node, 'type', 'line'),
+                    "smooth": getattr(node, 'smooth', False)
+                })
+            
+            paths_data.append({
+                "nodes": nodes_data,
+                "closed": getattr(path, 'closed', True)
+            })
+        
+        result = {
+            "glyphName": glyph_name,
+            "masterId": getattr(layer, 'associatedMasterId', None),
+            "masterName": layer.name,
+            "paths": paths_data,
+            "width": getattr(layer, 'width', 0),
+            "leftSideBearing": getattr(layer, 'leftSideBearing', 0),
+            "rightSideBearing": getattr(layer, 'rightSideBearing', 0)
+        }
+        
+        return json.dumps(result)
+        
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def set_glyph_paths(
+    font_index: int = 0,
+    glyph_name: str = None,
+    master_id: str = None,
+    paths_data: str = None
+) -> str:
+    """Set the path data for a glyph from JSON, replacing existing paths.
+    
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph. Required.
+        master_id (str): Master ID. If None, uses the current selected master. Optional.
+        paths_data (str): JSON string containing path data in the format returned by get_glyph_paths. Required.
+    
+    Returns:
+        str: JSON-encoded result with success status.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+        
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+        
+        if not paths_data:
+            return json.dumps({"error": "Path data is required"})
+        
+        # Parse the JSON path data
+        try:
+            path_info = json.loads(paths_data)
+        except ValueError as e:
+            return json.dumps({"error": "Invalid JSON in paths_data: {}".format(str(e))})
+        
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+        
+        if not glyph:
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
+        
+        # Determine which master to use
+        if master_id:
+            layer = glyph.layers[master_id]
+            if not layer:
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
+        else:
+            # Use the selected master or first master
+            if font.selectedFontMaster:
+                layer = glyph.layers[font.selectedFontMaster.id]
+            else:
+                layer = glyph.layers[font.masters[0].id]
+        
+        # Clear existing paths (but keep components, anchors, etc.)
+        layer.paths = []
+        
+        # Build new paths from the JSON data
+        if "paths" in path_info:
+            for path_data in path_info["paths"]:
+                new_path = GSPath()
+                
+                # Add nodes
+                if "nodes" in path_data:
+                    for node_data in path_data["nodes"]:
+                        new_node = GSNode()
+                        new_node.position = (
+                            float(node_data.get("x", 0)),
+                            float(node_data.get("y", 0))
+                        )
+                        new_node.type = node_data.get("type", "line")
+                        new_node.smooth = node_data.get("smooth", False)
+                        new_path.nodes.append(new_node)
+                
+                # Set closed property
+                new_path.closed = path_data.get("closed", True)
+                
+                # Add the path to the layer
+                layer.paths.append(new_path)
+        
+        # Update metrics if provided
+        if "width" in path_info:
+            layer.width = float(path_info["width"])
+        if "leftSideBearing" in path_info:
+            layer.leftSideBearing = float(path_info["leftSideBearing"])
+        if "rightSideBearing" in path_info:
+            layer.rightSideBearing = float(path_info["rightSideBearing"])
+        
+        # Send notification
+        Glyphs.showNotification(
+            "Paths Updated", 
+            "Updated paths for glyph '{}' in {}".format(glyph_name, font.familyName)
+        )
+        
+        return json.dumps({
+            "success": True,
+            "message": "Updated paths for glyph '{}'".format(glyph_name),
+            "pathCount": len(layer.paths),
+            "nodeCount": sum(len(path.nodes) for path in layer.paths)
+        })
+        
     except Exception as e:
         return json.dumps({"error": str(e)})
