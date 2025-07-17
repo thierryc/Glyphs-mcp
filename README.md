@@ -1,8 +1,6 @@
 # Glyphs MCP
 A Machine‑Control‑Protocol server for [Glyphs](https://glyphsapp.com) that exposes font‑specific tools to AI/LLM agents.
 
-> **Status: Work in progress – the API may change at any time.**
-
 ---
 
 ## What is an MCP server?
