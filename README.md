@@ -56,6 +56,8 @@ Copy **or create a symlink (alias)** of this plugin into `~/Library/Application 
 
 To start the Glyphs MCP server, open the **Edit** menu and choose **Start MCP Server**.
 
+The server will be available at `http://127.0.0.1:9680/` using MCP Streamable HTTP transport.
+
 Open the **Macro Panel** to access the console.
 
 ---
