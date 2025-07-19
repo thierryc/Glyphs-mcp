@@ -10,27 +10,33 @@ This is a Model Context Protocol (MCP) server designed to expose GlyphsApp funct
 
 ### Transport Modes
 - **Direct command (stdio)**: For CLIs and CI environments
-- **Server-Sent Events (SSE over HTTP)**: For IDE plugins and multi-tool suites
+- **Streamable HTTP**: For IDE plugins and multi-tool suites with optional SSE streaming
 
 ### Core Dependencies
 - `fastmcp` - MCP server framework
 - `glyphsLib` - Python library for Glyphs font manipulation
 - PyTorch - For AI-powered kerning and spacing features
 
-### Development Commands
+### Running the Server
 
-Since this is a work-in-progress project, the following commands are planned:
+The MCP server runs as a Glyphs App plugin, not as a standalone command:
 
-```bash
-# Install dependencies
-pip install fastmcp glyphsLib
+1. **Install the plugin**: Copy or symlink the plugin bundle to `~/Library/Application Support/Glyphs 3/Plugins/`
+2. **Restart Glyphs App**
+3. **Start the server**: Go to **Edit** menu → **Start Glyphs MCP Server**
+4. **Server available at**: `http://127.0.0.1:9680/` (Streamable HTTP with SSE support)
 
-# Run server with SSE transport
-fastmcp run --transport sse --port 8765 glyphs_server:app
+The server runs in a background daemon thread within Glyphs App and automatically finds an available port starting from 9680.
 
-# Run server with stdio transport
-fastmcp run --transport stdio glyphs_server:app
-```
+### Security Considerations for Streamable HTTP
+
+When using Streamable HTTP transport, implement these security measures:
+
+- **Origin validation**: Validate `Origin` header to prevent DNS rebinding attacks
+- **Local binding**: Bind to localhost when possible to limit exposure
+- **Authentication**: Implement bearer token authentication for production use
+- **Session management**: Use `Mcp-Session-Id` header for session tracking
+- **Connection security**: Support TLS in production environments
 
 ## Planned MCP Tools
 
@@ -51,7 +57,7 @@ The server will expose these font manipulation tools:
 ## Development Phases
 
 1. **Scaffold** - Create basic MCP server structure
-2. **Transport** - Implement SSE and stdio transports
+2. **Transport** - Implement Streamable HTTP and stdio transports
 3. **Sessions** - Font session management with cleanup
 4. **Security** - Optional bearer token authentication
 5. **DX** - IDE configuration snippets
@@ -67,4 +73,19 @@ The server will expose these font manipulation tools:
 
 ## Project Status
 
-This repository is currently in the planning phase. The README.md contains the complete specification and roadmap. Implementation has not yet begun.
+This repository has a working MCP server implementation with:
+- MCP Streamable HTTP transport at `http://127.0.0.1:9680/`
+- Origin header validation for security
+- Session management with `Mcp-Session-Id` header
+- Proper SSE streaming support
+- 40+ font manipulation tools
+
+## IDE Configuration
+
+For Continue plugin, use:
+```yaml
+mcpServers:
+  - name: Glyphs MCP
+    type: sse
+    url: http://127.0.0.1:9680/
+```

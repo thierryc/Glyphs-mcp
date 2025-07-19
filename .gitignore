@@ -215,3 +215,6 @@ glyphs-build-env/
 
 # macOS
 .DS_Store
+
+# Claude AI local settings
+.claude/

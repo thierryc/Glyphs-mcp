@@ -1,0 +1,8 @@
+name: New MCP server
+version: 0.0.1
+schema: v1
+mcpServers:
+  - name: Glyphs MCP
+    # Local MCP server using Streamable HTTP transport
+    type: streamable-http
+    url: http://127.0.0.1:9680/mcp/

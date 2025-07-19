@@ -72,7 +72,7 @@ class MCPBridgePlugin(GeneralPlugin):
             self._server_thread = threading.Thread(
                 target=mcp.run,
                 kwargs=dict(
-                    transport="sse",
+                    transport="http",
                     host="127.0.0.1",
                     port=port,
                 ),
@@ -101,7 +101,7 @@ class MCPBridgePlugin(GeneralPlugin):
             "Glyphs MCP Server is running on port {}.".format(getattr(self, '_port', '?'))
         )
         print(
-            "  SSE endpoint: http://127.0.0.1:{}/sse".format(getattr(self, '_port', '?'))
+            "  HTTP endpoint: http://127.0.0.1:{}".format(getattr(self, '_port', '?'))
         )
         
         # Try to get tools information safely
@@ -137,7 +137,7 @@ class MCPBridgePlugin(GeneralPlugin):
         """Show startup success message."""
         print("Glyphs MCP Server started successfully!")
         print("  Port: {}".format(port))
-        print("  SSE endpoint: http://127.0.0.1:{}/sse".format(port))
+        print("  HTTP endpoint: http://127.0.0.1:{}".format(port))
 
         # Try to get tools information safely
         try:
