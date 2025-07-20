@@ -5,7 +5,7 @@ A Machine‑Control‑Protocol server for [Glyphs](https://glyphsapp.com) that e
 
 ## What is an MCP server?
 
-A *Machine‑Control‑Protocol* server is a lightweight process that:
+A *Model Context Protocol* server is a lightweight process that:
 
 1. **Registers tools** (JSON‑RPC methods) written in the host language (Python here).  
 2. **Streams JSON output** back to the calling agent. 
