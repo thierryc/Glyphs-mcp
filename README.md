@@ -66,3 +66,23 @@ Open the **Macro Panel** to access the console.
 PRs are welcome.
 
 ---
+
+## Claude Config
+
+```
+{
+  "globalShortcut": "Alt+Ctrl+Cmd+*",
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "http://127.0.0.1:9680/mcp/",
+        "--header"
+        ]
+    }
+  }
+}
+```
+
+
