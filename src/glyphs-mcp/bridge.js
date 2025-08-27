@@ -164,7 +164,7 @@ class MCPSSEBridge {
         try {
             // This method depends on how your SSE server accepts requests
             // Option 1: POST to a different endpoint
-            const response = await fetch(this.sseUrl.replace('/sse', '/request'), {
+            const response = await fetch(this.sseUrl.replace('/mcp', '/request'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -349,7 +349,7 @@ class MCPSSEBridge {
 
 // Main execution
 async function main() {
-    const sseUrl = process.env.MCP_SSE_URL || 'http://127.0.0.1:9680/sse';
+    const sseUrl = process.env.MCP_SSE_URL || 'http://127.0.0.1:9680/mcp';
     
     const bridge = new MCPSSEBridge(sseUrl);
     

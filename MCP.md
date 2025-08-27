@@ -17,7 +17,7 @@ code ~/Library/Application\ Support/Claude/claude_desktop_config.json
         "@modelcontextprotocol/server-everything"
       ],
       "env": {
-        "SSE_URL": "http://127.0.0.1:9680/sse/"
+        "SSE_URL": "http://127.0.0.1:9680/mcp/"
       }
     }
   }
@@ -36,7 +36,7 @@ code ~/Library/Application\ Support/Claude/claude_desktop_config.json
       "command": "sse-mcp-client",
       "args": [
         "--url",
-        "http://127.0.0.1:9680/sse/"
+        "http://127.0.0.1:9680/mcp/"
       ]
     }
   }

@@ -218,3 +218,5 @@ glyphs-build-env/
 
 # Claude AI local settings
 .claude/
+
+node_modules
