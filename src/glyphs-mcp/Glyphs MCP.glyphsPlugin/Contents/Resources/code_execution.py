@@ -5,6 +5,7 @@ import json
 import io
 import contextlib
 import asyncio
+import traceback
 from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor # type: ignore[import-not-found]
 
 from mcp_tools import mcp
@@ -22,7 +23,7 @@ async def execute_code(code: str, timeout: int = 30) -> str:
         str: JSON-encoded result containing:
             success (bool): Whether the code executed successfully.
             output (str): Standard output from the code execution.
-            error (str): Error message if execution failed.
+            error (str): Error message if execution failed, including traceback details.
             result (any): The result of the last expression (if any).
     """
     try:
@@ -75,7 +76,7 @@ async def execute_code(code: str, timeout: int = 30) -> str:
                                 pass  # Ignore errors when trying to evaluate the last line
         
         except Exception as e:
-            error = f"{type(e).__name__}: {str(e)}"
+            error = traceback.format_exc()
             error_output = stderr_capture.getvalue()
             if error_output:
                 error += f"\n{error_output}"
@@ -93,11 +94,11 @@ async def execute_code(code: str, timeout: int = 30) -> str:
         
         return json.dumps(response)
         
-    except Exception as e:
+    except Exception:
         return json.dumps({
             "success": False,
             "output": "",
-            "error": f"Code execution failed: {str(e)}",
+            "error": f"Code execution failed: {traceback.format_exc()}",
             "result": None
         })
 
@@ -116,7 +117,7 @@ async def execute_code_with_context(code: str, font_index: int = 0, glyph_name: 
         str: JSON-encoded result containing:
             success (bool): Whether the code executed successfully.
             output (str): Standard output from the code execution.
-            error (str): Error message if execution failed.
+            error (str): Error message if execution failed, including traceback details.
             result (any): The result of the last expression (if any).
             context (dict): Information about the font and glyph context.
     """
@@ -196,7 +197,7 @@ async def execute_code_with_context(code: str, font_index: int = 0, glyph_name: 
                                 pass  # Ignore errors when trying to evaluate the last line
         
         except Exception as e:
-            error = f"{type(e).__name__}: {str(e)}"
+            error = traceback.format_exc()
             error_output = stderr_capture.getvalue()
             if error_output:
                 error += f"\n{error_output}"
@@ -215,11 +216,11 @@ async def execute_code_with_context(code: str, font_index: int = 0, glyph_name: 
         
         return json.dumps(response)
         
-    except Exception as e:
+    except Exception:
         return json.dumps({
             "success": False,
             "output": "",
-            "error": f"Code execution failed: {str(e)}",
+            "error": f"Code execution failed: {traceback.format_exc()}",
             "result": None,
             "context": {}
         })
