@@ -52,6 +52,7 @@ src/glyphs-mcp/scripts/vendor_deps.sh
 ```
 
 The script updates the plugin’s `site‑packages` inside `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`.
+
 Copy **or create a symlink (alias)** of this plugin into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
 
 To start the Glyphs MCP server, open the **Edit** menu and choose **Start MCP Server**.

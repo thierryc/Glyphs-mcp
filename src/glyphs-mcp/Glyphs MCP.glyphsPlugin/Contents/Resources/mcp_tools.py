@@ -8,6 +8,10 @@ from fastmcp import FastMCP
 # Initialize FastMCP server
 mcp = FastMCP(name="Glyphs MCP Server", version="1.0.0")
 
+# Import documentation resources so that resource decorators run and
+# register with the MCP instance before the server starts.
+import docs_resources  # noqa: F401
+
 
 @mcp.tool()
 async def list_open_fonts() -> str:
