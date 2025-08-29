@@ -4,6 +4,14 @@ from __future__ import division, print_function, unicode_literals
 import sys
 import socket
 
+try:
+    from GlyphsApp import Message  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover - Glyphs not available outside app
+    Message = None
+
+MCP_SERVER_URL = "http://127.0.0.1:9680/mcp/"
+GITHUB_REPO_URL = "https://github.com/thierryc/glyphs-mcp"
+
 # Fix for Glyphs' console output compatibility
 # Glyphs' console replaces sys.stdout / sys.stderr with GlyphsOut objects
 # that miss the .isatty() method. Uvicorn's logging formatter expects it,
@@ -30,12 +38,44 @@ def find_available_port(start_port=9680, max_attempts=50):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
                 s.bind(("127.0.0.1", port))
+                _port_notification(port, start_port)
                 return port
             finally:
                 s.close()
         except OSError:
             continue
     return None
+
+
+def _port_notification(port, default_port):
+    """Display a dialog about the port selection."""
+    url_info = f"Server URL: {MCP_SERVER_URL}"
+    repo_info = f"More info: {GITHUB_REPO_URL}"
+    if Message:
+        if port == default_port:
+            Message(
+                "Glyphs MCP Server",
+                f"Your MCP server is ON AIR!\nHappy Vibe Design\n\nhttps://ap.cx/gmcp\v",
+                "Go",
+            )
+        else:
+            Message(
+                "Glyphs MCP Server Port Warning",
+                "Default port {0} is in use. Using port {1} instead.\n"
+                "Update your configuration or kill the process using this port. "
+                "You may need to restart Glyphs App or your Mac.\n{2}\n{3}".format(
+                    default_port, port, url_info, repo_info
+                ),
+            )
+    else:
+        if port == default_port:
+            print(f"Default port {default_port} is available. https://ap.cx")
+        else:
+            print(
+                f"Default port {default_port} unavailable, using {port}. "
+                "Update configuration or kill conflicting process."
+            )
+        print(repo_info)
 
 
 def get_known_tools():
