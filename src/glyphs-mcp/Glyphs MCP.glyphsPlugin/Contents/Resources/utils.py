@@ -55,7 +55,8 @@ def _port_notification(port, default_port):
         if port == default_port:
             Message(
                 "Glyphs MCP Server",
-                f"Default port {default_port} is available.\n{url_info}\n{repo_info}",
+                f"Your MCP server is ON AIR!\nHappy Vibe Design\n\nhttps://ap.cx/gmcp\v",
+                "Go",
             )
         else:
             Message(
@@ -68,7 +69,7 @@ def _port_notification(port, default_port):
             )
     else:
         if port == default_port:
-            print(f"Default port {default_port} is available. {url_info}")
+            print(f"Default port {default_port} is available. https://ap.cx")
         else:
             print(
                 f"Default port {default_port} unavailable, using {port}. "
