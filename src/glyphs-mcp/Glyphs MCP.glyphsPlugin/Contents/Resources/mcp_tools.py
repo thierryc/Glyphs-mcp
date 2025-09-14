@@ -2,11 +2,44 @@
 
 from __future__ import division, print_function, unicode_literals
 import json
+from pathlib import Path
 from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor  # type: ignore[import-not-found]
 from fastmcp import FastMCP
+from fastmcp.resources.types import DirectoryResource
 
 # Initialize FastMCP server
 mcp = FastMCP(name="Glyphs MCP Server", version="1.0.0")
+
+# Register Glyphs SDK Sphinx documentation as resources when available
+# Documentation lives inside the plug‑in bundle so it ships with the plug‑in
+# when symlinked into Glyphs' Plug‑ins folder.
+DOCS_ROOT = (
+    Path(__file__).resolve().parents[2]
+    / "docs"
+    / "GlyphsSDK"
+    / "ObjectWrapper"
+    / "Sphinx Documentation"
+)
+
+if DOCS_ROOT.exists():
+    mcp.add_resource(
+        DirectoryResource(
+            uri="resource://glyphs-sdk-docs",
+            name="Glyphs SDK Sphinx documentation",
+            path=DOCS_ROOT,
+            recursive=True,
+            pattern="*.rst",
+            mime_type="application/json",
+        )
+    )
+
+    @mcp.resource("resource://glyphs-sdk-docs/{doc_path}")
+    def read_glyphs_sdk_doc(doc_path: str) -> str:
+        """Return the content of a Glyphs SDK documentation file."""
+        file_path = (DOCS_ROOT / doc_path).resolve()
+        if DOCS_ROOT not in file_path.parents or not file_path.is_file():
+            raise FileNotFoundError(doc_path)
+        return file_path.read_text(encoding="utf-8")
 
 
 @mcp.tool()

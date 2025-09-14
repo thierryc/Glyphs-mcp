@@ -62,6 +62,28 @@ Open the **Macro Panel** to access the console.
 
 ---
 
+## Glyphs SDK documentation
+
+This repository can surface the [GlyphsSDK ObjectWrapper Sphinx documentation](https://github.com/schriftgestalt/GlyphsSDK/tree/Glyphs3/ObjectWrapper/Sphinx%20Documentation) as an MCP resource.
+
+To add the docs as a submodule:
+
+```bash
+# from the project root, install the docs inside the plug‑in bundle
+cd src/glyphs-mcp/"Glyphs MCP.glyphsPlugin"
+git submodule add -b Glyphs3 https://github.com/schriftgestalt/GlyphsSDK.git docs/GlyphsSDK
+git submodule update --init --recursive
+```
+
+Once the submodule is fetched, the server exposes:
+
+| URI | Description |
+|-----|-------------|
+| `resource://glyphs-sdk-docs` | List available `.rst` files |
+| `resource://glyphs-sdk-docs/{path}` | Read a specific documentation file |
+
+---
+
 ## Contributing
 PRs are welcome.
 
