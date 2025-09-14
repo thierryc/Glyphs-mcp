@@ -89,28 +89,6 @@ PRs are welcome.
 
 ---
 
-## ChatGPT Config
-
-The ChatGPT desktop app for macOS reads MCP server definitions from
-`~/Library/Application Support/ChatGPT/mcp_config.json`. Because this server
-uses Streamable HTTP, wrap the endpoint in a small launcher using
-`mcp-remote`:
-
-```json
-{
-  "servers": {
-    "glyphs-mcp": {
-      "command": "npx",
-      "args": ["mcp-remote", "http://127.0.0.1:9680/mcp/"]
-    }
-  }
-}
-```
-
-Restart the ChatGPT app and the server will appear under **Connected tools**.
-
----
-
 ## Claude Config
 
 ```
