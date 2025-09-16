@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Using the MCP ObjectWrapper Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 2rem; line-height: 1.6; }
+    h1, h2, h3 { color: #2b4b8b; }
+    ol { padding-left: 1.4rem; }
+    li { margin-bottom: 0.8rem; }
+    pre { background: #f5f7fb; padding: 1rem; border-radius: 6px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Using the MCP ObjectWrapper Tools</h1>
+  <p>This quickstart explains how to expose Glyphs SDK functionality via the MCP server plug-in.</p>
+
+  <h2>1. Install the plug-in bundle</h2>
+  <ol>
+    <li>Copy <strong>Glyphs MCP.glyphsPlugin</strong> into <code>~/Library/Application Support/Glyphs 3/Plugins/</code>.</li>
+    <li>Restart Glyphs to load the extension.</li>
+  </ol>
+
+  <h2>2. Start the MCP server</h2>
+  <ol>
+    <li>Open the <strong>Edit</strong> menu.</li>
+    <li>Choose <em>Start Glyphs MCP Server</em>.</li>
+    <li>Watch the Macro Panel for the startup log, including the port allocation and the list of registered tools.</li>
+  </ol>
+
+  <h2>3. Connect an LLM client</h2>
+  <ol>
+    <li>Point your MCP-compatible client (Claude Desktop, Continue, or other tooling) to <code>http://127.0.0.1:9680/mcp/</code>.</li>
+    <li>Request the tool list to confirm the connection.</li>
+    <li>Resources named <code>resource://glyphs-mcp/docs/&lt;page&gt;</code> expose this offline documentation.</li>
+  </ol>
+
+  <h2>4. Explore ObjectWrapper helpers</h2>
+  <p>The ObjectWrapper exposes convenience helpers around Glyphs font objects. Common tasks include:</p>
+  <ul>
+    <li>Iterating glyph masters and layers.</li>
+    <li>Reading and writing kerning groups.</li>
+    <li>Injecting anchors, components, and new outline paths.</li>
+  </ul>
+
+  <h2>5. Automate with Python snippets</h2>
+  <p>Use the <code>execute_code</code> and <code>execute_code_with_context</code> tools to prototype automation scripts. Each execution runs inside Glyphs with the ObjectWrapper classes loaded so that they mirror the behaviour documented here.</p>
+</body>
+</html>

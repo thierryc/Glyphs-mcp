@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ObjectWrapper API Reference</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 2rem; line-height: 1.6; }
+    h1, h2, h3 { color: #2b4b8b; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 2rem; }
+    th, td { border: 1px solid #d7dce8; padding: 0.75rem; text-align: left; }
+    th { background: #eef1f8; }
+    code { font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <h1>ObjectWrapper API Reference</h1>
+  <p>The ObjectWrapper defines Python classes mirroring the native Objective-C objects inside Glyphs. Below are the classes most relevant to the MCP server.</p>
+
+  <h2>Core classes</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Class</th>
+        <th>Description</th>
+        <th>Key attributes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>GSFont</code></td>
+        <td>Represents an open font file, exposing masters, glyphs, and metadata.</td>
+        <td><code>familyName</code>, <code>masters</code>, <code>glyphs</code>, <code>kerning</code></td>
+      </tr>
+      <tr>
+        <td><code>GSGlyph</code></td>
+        <td>Stores glyph-level information, including unicode, category, and per-layer geometry.</td>
+        <td><code>name</code>, <code>layers</code>, <code>leftKerningGroup</code>, <code>rightKerningGroup</code></td>
+      </tr>
+      <tr>
+        <td><code>GSLayer</code></td>
+        <td>Contains outlines, components, and anchors for a specific master or special layer.</td>
+        <td><code>paths</code>, <code>components</code>, <code>anchors</code>, <code>width</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Helper methods</h2>
+  <ul>
+    <li><code>font.glyphs["A"].layers[master_id]</code> &ndash; Access a glyph layer by master ID.</li>
+    <li><code>layer.paths[0].nodes</code> &ndash; Iterate through the nodes within an outline path.</li>
+    <li><code>font.kerning[master_id][left_key][right_key]</code> &ndash; Read a kerning pair value.</li>
+  </ul>
+
+  <h2>See also</h2>
+  <p>For dynamic scripting examples, cross-reference the <strong>Using the MCP ObjectWrapper Tools</strong> guide.</p>
+</body>
+</html>

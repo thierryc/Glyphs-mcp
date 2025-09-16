@@ -1,0 +1,22 @@
+{
+  "project": "Glyphs SDK ObjectWrapper",
+  "version": "1.0",
+  "generated": "2024-12-01",
+  "documents": [
+    {
+      "path": "index.html",
+      "title": "Glyphs SDK ObjectWrapper Overview",
+      "summary": "High-level introduction to the packaged MCP documentation and navigation tips."
+    },
+    {
+      "path": "usage.html",
+      "title": "Using the MCP ObjectWrapper Tools",
+      "summary": "Setup instructions, plugin activation workflow, and notes for LLM operators."
+    },
+    {
+      "path": "api-reference.html",
+      "title": "ObjectWrapper API Reference",
+      "summary": "Reference material for core classes, helpers, and glyph manipulation APIs."
+    }
+  ]
+}
