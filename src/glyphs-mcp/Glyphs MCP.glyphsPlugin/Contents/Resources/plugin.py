@@ -12,6 +12,9 @@ from mcp_tools import mcp
 # Import code execution tools (this registers the execution tools)
 import code_execution
 
+# Import bundled documentation resources so they are registered with FastMCP
+import documentation_resources  # noqa: F401
+
 # Import and initialize the plugin
 from glyphs_plugin import MCPBridgePlugin
 

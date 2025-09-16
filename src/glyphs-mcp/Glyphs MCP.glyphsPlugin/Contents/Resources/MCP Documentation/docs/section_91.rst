@@ -1,0 +1,3 @@
+.. attribute:: disablesAutomaticAlignment
+
+		:type: bool

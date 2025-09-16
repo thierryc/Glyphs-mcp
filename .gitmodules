@@ -1,0 +1,3 @@
+[submodule "GlyphsSDK"]
+	path = GlyphsSDK
+	url = https://github.com/thierryc/GlyphsSDK.git
