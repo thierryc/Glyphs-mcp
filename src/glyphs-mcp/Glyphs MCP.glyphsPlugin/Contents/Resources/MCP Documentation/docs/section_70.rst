@@ -1,0 +1,3 @@
+.. attribute:: designerURL
+
+		:type: str

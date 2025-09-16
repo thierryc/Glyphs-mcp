@@ -54,6 +54,12 @@ src/glyphs-mcp/scripts/vendor_deps.sh
 The script updates the plugin’s `site‑packages` inside `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`.
 Copy **or create a symlink (alias)** of this plugin into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
 
+After regenerating the ObjectWrapper documentation, refresh the bundled copy with:
+
+```bash
+python src/glyphs-mcp/scripts/copy_documentation.py
+```
+
 To start the Glyphs MCP server, open the **Edit** menu and choose **Start MCP Server**.
 
 The server will be available at `http://127.0.0.1:9680/` using MCP Streamable HTTP transport.

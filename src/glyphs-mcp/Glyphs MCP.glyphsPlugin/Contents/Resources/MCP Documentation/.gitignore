@@ -1,0 +1,6 @@
+# Virtual environments
+.venv/
+venv/
+
+# Generated documentation
+index.json
