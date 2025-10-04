@@ -14,6 +14,8 @@ import code_execution
 
 # Import bundled documentation resources so they are registered with FastMCP
 import documentation_resources  # noqa: F401
+# Import prompt examples so they are registered
+import prompt_examples  # noqa: F401
 
 # Import and initialize the plugin
 from glyphs_plugin import MCPBridgePlugin
