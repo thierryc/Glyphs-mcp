@@ -75,7 +75,11 @@ PRs are welcome.
 
 ## Claude Config
 
-```
+Edit the Claude Desktop config stored at  
+`/Users/<userName>/Library/Application Support/Claude/claude_desktop_config.json`.  
+Update the `<userName>` placeholder to match your macOS user account.
+
+```json
 {
   "globalShortcut": "Alt+Ctrl+Cmd+*",
   "mcpServers": {
@@ -83,13 +87,21 @@ PRs are welcome.
       "command": "npx",
       "args": [
         "mcp-remote",
-        "http://127.0.0.1:9680/mcp/",
-        "--header"
-        ]
+        "http://127.0.0.1:9680/mcp/"
+      ],
+      "env": {
+        "PATH": "/Users/<userName>/.nvm/versions/node/v22.19.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
     }
   }
 }
 ```
+
+Adjust the `PATH` value so that it points to the location of your Node.js installation (for example, your NVM-managed Node version).
+
+**Why Node 20+?**
+- Claude Desktop launches `npx` with a trimmed `PATH`, so without this entry it falls back to the system Node (usually v18) which cannot run `mcp-remote`.
+- The `mcp-remote` CLI and the bundled bridge (`src/glyphs-mcp/bridge.js`) rely on Node 20 runtime features such as the global `fetch`, web streams, and modern Abort controllers; older Node releases will fail with missing APIs or engine-version checks.
 
 ## Continue Config
 
