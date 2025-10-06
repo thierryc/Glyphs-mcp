@@ -55,7 +55,7 @@ def _port_notification(port, default_port):
         if port == default_port:
             Message(
                 "Glyphs MCP Server",
-                f"MCP server enabled on http://127.0.0.1:9680\n\nhttps://ap.cx/gmcp\v",
+                f"MCP server enabled on\nhttp://127.0.0.1:9680\n\nhttps://ap.cx/gmcp\v",
                 "Go",
             )
         else:
