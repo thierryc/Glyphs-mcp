@@ -90,7 +90,7 @@ Claude Desktop reads configuration from `/Users/<userName>/Library/Application S
         "http://127.0.0.1:9680/mcp/"
       ],
       "env": {
-        "PATH": "/Users/thierryc/.nvm/versions/node/v22.19.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        "PATH": "/Users/yourUserName/.nvm/versions/node/v22.19.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
       }
     }
   }
@@ -134,7 +134,7 @@ Cursor stores its MCP registry in `~/.cursor/mcp.json`. Drop in the JSON below t
         "http://127.0.0.1:9680/mcp/"
       ],
       "env": {
-        "PATH": "/Users/thierryc/.nvm/versions/node/v22.19.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+        "PATH": "/Users/yourUserName/.nvm/versions/node/v22.19.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
       }
     }
   }
@@ -209,7 +209,7 @@ If you prefer to let VS Code auto-discover MCP servers registered by Claude Desk
 ---
 
 ## Access & contributing
-PRs, test reports, and ideas are always welcome. The semi-private repository lives at [github.com/thierryc/Glyphs-mcp](https://github.com/thierryc/Glyphs-mcp). Send a direct message on the Glyphs Forum to unlock access: [Exploring the role of AI in typeface design](https://forum.glyphsapp.com/t/exploring-the-role-of-ai-in-typeface-design-with-glyphs/33343/63).
+PRs, test reports, and ideas are always welcome. The semi-private repository lives at [github.com/yourUserName/Glyphs-mcp](https://github.com/yourUserName/Glyphs-mcp). Send a direct message on the Glyphs Forum to unlock access: [Exploring the role of AI in typeface design](https://forum.glyphsapp.com/t/exploring-the-role-of-ai-in-typeface-design-with-glyphs/33343/63).
 
 Questions? Say hello at [thierry@anotherplanet.io](mailto:thierry@anotherplanet.io) or [@anotherplanet_io](https://www.instagram.com/anotherplanet_io/). When you are done, head back [home](/) for the full portfolio.
 
