@@ -1,9 +1,11 @@
-# Glyphs MCP
-A Machine‑Control‑Protocol server for [Glyphs](https://glyphsapp.com) that exposes font‑specific tools to AI/LLM agents.
+# Glyphs MCP
+Site: https://ap.cx/gmcp
+
+A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes font‑specific tools to AI/LLM agents.
 
 ---
 
-## What is an MCP server?
+## What Is an MCP Server?
 
 A *Model Context Protocol* server is a lightweight process that:
 
@@ -12,7 +14,7 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command set (v0.3)
+## Command Set (v0.3)
 
 | Tool | Description |
 |------|-------------|
@@ -41,7 +43,11 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Build the Glyphs plug‑in
+## Install & Setup
+
+- Coming soon: consolidated setup docs will live in this README.
+
+## Build the Glyphs Plug‑in
 
 ```bash
 # from the project root
@@ -68,52 +74,30 @@ Open the **Macro Panel** to access the console.
 
 ---
 
-## Contributing
-PRs are welcome.
+## Build Site Images (WebP)
+
+Docs use a splash image at `/images/glyphs-app-mcp/glyphs-mcp.webp`.
+
+- Requirements: Node 20+ and the `sharp` package (`npm i sharp`).
+- Convert PNG assets from `content/images/glyphs-app-mcp` to WebP in `public/images/glyphs-app-mcp`:
+
+```bash
+node scripts/convert-images.mjs
+```
+
+The script ensures `glyphs-mcp.webp` (the hero image for the doc) is generated, then converts the rest.
 
 ---
 
-## Claude Config
+## Contributing
+PRs and feedback are welcome.
 
-Edit the Claude Desktop config stored at  
-`/Users/<userName>/Library/Application Support/Claude/claude_desktop_config.json`.  
-Update the `<userName>` placeholder to match your macOS user account.
+### Contributors
+- Thierry Charbonnel (@thierryc) — Author
+- Florian Pircher (@florianpircher)
+- Georg Seifert (@schriftgestalt)
+- Jeremy Tribby (@jpt)
 
-```json
-{
-  "globalShortcut": "Alt+Ctrl+Cmd+*",
-  "mcpServers": {
-    "glyphs-mcp-server": {
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "http://127.0.0.1:9680/mcp/"
-      ],
-      "env": {
-        "PATH": "/Users/<userName>/.nvm/versions/node/v22.19.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-      }
-    }
-  }
-}
-```
+---
 
-Adjust the `PATH` value so that it points to the location of your Node.js installation (for example, your NVM-managed Node version).
-
-**Why Node 20+?**
-- Claude Desktop launches `npx` with a trimmed `PATH`, so without this entry it falls back to the system Node (usually v18) which cannot run `mcp-remote`.
-- The `mcp-remote` CLI and the bundled bridge (`src/glyphs-mcp/bridge.js`) rely on Node 20 runtime features such as the global `fetch`, web streams, and modern Abort controllers; older Node releases will fail with missing APIs or engine-version checks.
-
-## Continue Config
-
-```
-
-name: New MCP server
-version: 0.0.1
-schema: v1
-mcpServers:
-  - name: Glyphs MCP
-    # Local MCP server using Streamable HTTP transport
-    type: streamable-http
-    url: http://127.0.0.1:9680/mcp/
-
-```
+ 
