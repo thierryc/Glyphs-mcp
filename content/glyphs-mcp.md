@@ -209,7 +209,7 @@ If you prefer to let VS Code auto-discover MCP servers registered by Claude Desk
 ---
 
 ## Access & contributing
-PRs, test reports, and ideas are always welcome. The semi-private repository lives at [github.com/yourUserName/Glyphs-mcp](https://github.com/yourUserName/Glyphs-mcp). Send a direct message on the Glyphs Forum to unlock access: [Exploring the role of AI in typeface design](https://forum.glyphsapp.com/t/exploring-the-role-of-ai-in-typeface-design-with-glyphs/33343/63).
+PRs, test reports, and ideas are always welcome. The semi-private repository lives at [github.com/thierryc/Glyphs-mcp](https://github.com/thierryc/Glyphs-mcp). Send a direct message on the Glyphs Forum to unlock access: [Exploring the role of AI in typeface design](https://forum.glyphsapp.com/t/exploring-the-role-of-ai-in-typeface-design-with-glyphs/33343/63).
 
 Questions? Say hello at [thierry@anotherplanet.io](mailto:thierry@anotherplanet.io) or [@anotherplanet_io](https://www.instagram.com/anotherplanet_io/). When you are done, head back [home](/) for the full portfolio.
 
