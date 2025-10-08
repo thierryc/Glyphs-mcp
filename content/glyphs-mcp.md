@@ -99,6 +99,34 @@ Claude Desktop reads configuration from `/Users/<userName>/Library/Application S
 
 Claude Desktop spawns MCP servers without your interactive shell profile, and its bundled Node runtime is typically older than v20. Because `mcp-remote` itself targets Node 20+, the explicit `PATH` entry forces `npx` to resolve to your local Node 22 installation so the CLI boots successfully.
 
+Prefer Python tooling instead of Node? Install the proxy from PyPI and point Claude directly at the Python binary:
+
+```bash
+pip3 install --user mcp-proxy
+# upgrade later with: python3.12 -m pip install --user --upgrade mcp-proxy
+```
+
+```json
+{
+  "globalShortcut": "Alt+Ctrl+Cmd+*",
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "command": "/Library/Frameworks/Python.framework/Versions/3.12/bin/mcp-proxy",
+      "args": [
+        "--transport",
+        "streamablehttp",
+        "http://127.0.0.1:9680/mcp/"
+      ],
+      "env": {
+        "PATH": "/Library/Frameworks/Python.framework/Versions/3.12/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    }
+  }
+}
+```
+
+Claude Desktop still discards your login shell. The explicit `PATH` entry ensures the app finds the `mcp-proxy` shim that `pip3` drops into Python 3.12’s `bin` directory before falling back to the system defaults. If your Python lives elsewhere (for example a `pyenv` or Homebrew install), replace `/Library/Frameworks/Python.framework/Versions/3.12/bin` with the result of `python3 -m site --user-base` plus `/bin`.
+
 Prefer invoking the all-in-one helper? Swap in `@modelcontextprotocol/server-everything` or the dedicated SSE client:
 
 ```json

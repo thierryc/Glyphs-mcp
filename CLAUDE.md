@@ -59,3 +59,31 @@ Claude Desktop example:
 }
 ```
 
+Claude Desktop spawns MCP servers without your login shell, so it often falls back to an older embedded Node. Keeping `PATH` pointed at a Node 20+ install ensures `npx` resolves the recent `mcp-remote` CLI.
+
+Prefer Python instead of Node? Install the proxy CLI and reference it directly:
+
+```
+pip3 install --user mcp-proxy
+```
+
+```
+{
+  "globalShortcut": "Alt+Ctrl+Cmd+*",
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "command": "/Library/Frameworks/Python.framework/Versions/3.12/bin/mcp-proxy",
+      "args": [
+        "--transport",
+        "streamablehttp",
+        "http://127.0.0.1:9680/mcp/"
+      ],
+      "env": {
+        "PATH": "/Library/Frameworks/Python.framework/Versions/3.12/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    }
+  }
+}
+```
+
+The `PATH` override pins Claude Desktop to the `mcp-proxy` shim that `pip3` drops into Python 3.12’s `bin` directory. If your interpreter lives elsewhere (for example a `pyenv` or Homebrew install), replace that prefix with `$(python3 -m site --user-base)/bin`.
