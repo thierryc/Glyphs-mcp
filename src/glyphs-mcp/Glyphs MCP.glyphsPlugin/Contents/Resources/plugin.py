@@ -15,23 +15,17 @@ def _bootstrap_site_packages() -> None:
     if not os.path.isdir(site_packages):
         return
 
-    # Load vendored dependencies (and their .pth files), then ensure they win precedence.
+    original_sys_path = list(sys.path)
+
+    # Load vendored dependencies (and their .pth files).
     site.addsitedir(site_packages)
 
-    vendor_entries: list[str] = []
-    other_entries: list[str] = []
+    # Promote any new entries (including the bundle path itself) ahead of existing ones.
+    new_entries = [entry for entry in sys.path if entry not in original_sys_path]
+    merged_entries = new_entries + original_sys_path
+
     seen: set[str] = set()
-
-    for path_entry in sys.path:
-        if path_entry in seen:
-            continue
-        seen.add(path_entry)
-        if os.path.realpath(path_entry) == site_packages:
-            vendor_entries.append(path_entry)
-        else:
-            other_entries.append(path_entry)
-
-    sys.path[:] = vendor_entries + other_entries
+    sys.path[:] = [entry for entry in merged_entries if not (entry in seen or seen.add(entry))]
 
 
 _bootstrap_site_packages()
