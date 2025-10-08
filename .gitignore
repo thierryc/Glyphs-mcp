@@ -206,10 +206,6 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# Exclude site-packages in plugin resources
-src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/site-packages/
-
-
 # Glyphs build environment
 glyphs-build-env/
 

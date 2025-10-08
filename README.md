@@ -47,17 +47,31 @@ A *Model Context Protocol* server is a lightweight process that:
 
 - Coming soon: consolidated setup docs will live in this README.
 
+## Dependencies
+
+- Runtime (vendored inside the plug‑in): defined in `requirements.runtime.txt`
+  - `fastmcp` — registers tools/resources/prompts and runs the MCP server
+  - `uvicorn` — lightweight ASGI server used by the HTTP transport
+  - `starlette` — minimal ASGI toolkit (routing, responses)
+- Dev (local tooling only): `requirements.dev.txt` extends runtime with schema, CLI, and HTTP/SSE utilities. Not shipped to users.
+- Glyphs provides `GlyphsApp`, `objc`, and `AppKit` at runtime; these are not installed via pip.
+
+Vendoring: `src/glyphs-mcp/scripts/vendor_deps.sh` installs `requirements.runtime.txt` into `src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/site-packages`.
+
 ## Build the Glyphs Plug‑in
 
 ```bash
-# from the project root
+# from the project root
 source glyphs-build-env/bin/activate
 
-# pull vendored libs & build the bundle
+# (optional) install dev tooling locally
+python3 -m pip install -r requirements.dev.txt
+
+# pull vendored runtime deps into the plug‑in bundle
 src/glyphs-mcp/scripts/vendor_deps.sh
 ```
 
-The script updates the plugin’s `site‑packages` inside `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`.
+The script reads pinned runtime dependencies from `requirements.runtime.txt` and updates the plug‑in’s bundled `site‑packages` at `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`.
 Copy **or create a symlink (alias)** of this plugin into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
 
 After regenerating the ObjectWrapper documentation, refresh the bundled copy with:

@@ -248,11 +248,14 @@ Questions? Say hello at [thierry@anotherplanet.io](mailto:thierry@anotherplanet.
 # from the project root
 source glyphs-build-env/bin/activate
 
-# pull vendored libs & build the bundle
+# (optional) install dev tooling locally
+python3 -m pip install -r requirements.dev.txt
+
+# pull vendored runtime deps into the plug‑in bundle
 src/glyphs-mcp/scripts/vendor_deps.sh
 ```
 
-The script updates the plug-in `site-packages` located in `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`. Copy or symlink that bundle into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
+The script uses `requirements.runtime.txt` to vendor just the runtime dependencies into `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`. Copy or symlink that bundle into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
 
 If you regenerate the ObjectWrapper documentation, refresh the bundled copy with:
 
