@@ -1,5 +1,5 @@
 # Glyphs MCP
-![Glyphs MCP splash](/images/glyphs-app-mcp/glyphs-mcp.webp)
+![Glyphs MCP splash](/content/images/glyphs-app-mcp/glyphs-mcp.webp)
 
 A Machine-Control-Protocol server for [Glyphs](https://glyphsapp.com) that exposes font-specific tools to AI and LLM agents.
 
@@ -61,8 +61,8 @@ Bridging Glyphs with MCP makes it possible for assistants to read, inspect, and 
 Configure your preferred AI client to speak the Streamable HTTP endpoint. Below are quick-start snippets for common tools.
 
 ### OpenAI Codex CLI
-![OpenAI Codex MCP configuration screenshot](/images/glyphs-app-mcp/codex-in-vs-code.webp)
-![OpenAI Codex result screenshot](/images/glyphs-app-mcp/codex-result-in-vs-code.webp)
+![OpenAI Codex MCP configuration screenshot](/content/images/glyphs-app-mcp/codex-in-vs-code.webp)
+![OpenAI Codex result screenshot](/content/images/glyphs-app-mcp/codex-result-in-vs-code.webp)
 
 Codex understands MCP servers via `codex mcp` helpers. The `mcp-remote` transport is the preferred option, but it requires Node 20 or newer on your system. Add the configuration to `~/.codex/config.toml`, then restart any active Codex sessions.
 
@@ -75,7 +75,7 @@ args = ["mcp-remote", "http://127.0.0.1:9680/mcp/", "--header"]
 You can run `codex config path` to verify the location if you've customised the CLI setup.
 
 ### Claude Desktop
-![Claude Desktop MCP registry screenshot](/images/glyphs-app-mcp/claude-sonnet.webp)
+![Claude Desktop MCP registry screenshot](/content/images/glyphs-app-mcp/claude-sonnet.webp)
 
 Claude Desktop reads configuration from `/Users/<userName>/Library/Application Support/Claude/claude_desktop_config.json`. Append the server definition and restart the app:
 
@@ -148,7 +148,7 @@ Prefer invoking the all-in-one helper? Swap in `@modelcontextprotocol/server-eve
 ```
 
 ### Cursor IDE
-![Cursor MCP configuration screenshot](/images/glyphs-app-mcp/cursor-gemini.webp)
+![Cursor MCP configuration screenshot](/content/images/glyphs-app-mcp/cursor-gemini.webp)
 
 Cursor stores its MCP registry in `~/.cursor/mcp.json`. Drop in the JSON below to wire up the Glyphs server—the `PATH` override makes sure `npx` resolves to your Node 20+ install so `mcp-remote` can launch:
 
@@ -179,8 +179,8 @@ mcpServers:
 ```
 
 ### Windsurf
-![Windsurf MCP integration screenshot](/images/glyphs-app-mcp/windsurf.webp)
-![Windsurf MCP configuration screenshot](/images/glyphs-app-mcp/windsurf-config.webp)
+![Windsurf MCP integration screenshot](/content/images/glyphs-app-mcp/windsurf.webp)
+![Windsurf MCP configuration screenshot](/content/images/glyphs-app-mcp/windsurf-config.webp)
 
 Windsurf reads MCP configuration from `~/.codeium/windsurf/mcp_config.json`. Use the streamlined serverUrl format:
 
@@ -204,7 +204,7 @@ claude mcp add --transport http glyphs-mcp-server http://127.0.0.1:9680/mcp/
 After adding, reload VS Code (or the Claude extension) if it’s already running.
 
 ### Continue (VS Code / JetBrains)
-![Continue MCP configuration screenshot](/images/glyphs-app-mcp/continue-in-vs-code.webp)
+![Continue MCP configuration screenshot](/content/images/glyphs-app-mcp/continue-in-vs-code.webp)
 
 Continue supports MCP through YAML configuration. Drop the snippet below into `~/.continue/config.yaml` (or a workspace override):
 

@@ -5,6 +5,8 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
+Documentation: [content/glyphs-mcp.md](https://github.com/thierryc/Glyphs-mcp/blob/main/content/glyphs-mcp.md)
+
 ## What Is an MCP Server?
 
 A *Model Context Protocol* server is a lightweight process that:
