@@ -243,18 +243,9 @@ Questions? Say hello at [thierry@anotherplanet.io](mailto:thierry@anotherplanet.
 
 ---
 
-## Build the Glyphs plug-in
-```bash
-# from the project root
-source glyphs-build-env/bin/activate
-
-# pull vendored libs & build the bundle
-src/glyphs-mcp/scripts/vendor_deps.sh
-```
-
-The script updates the plug-in `site-packages` located in `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`. Copy or symlink that bundle into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
-
-> **Important:** Glyphs runs plug-ins with the Python interpreter you selected in **Glyphs → Settings → Addons**. That interpreter is not writable from inside a plug-in, so you cannot `pip install fastmcp` (or any of its transitive packages) directly into Glyphs’ environment. To keep everything self-contained, FastMCP and its dependencies are vendored into the plug-in bundle. Running `src/glyphs-mcp/scripts/vendor_deps.sh` refreshes the packaged `site-packages` folder so FastMCP remains importable without modifying Glyphs’ Python.
+## Install the plug‑in
+Copy or symlink `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into
+`~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
 
 If you regenerate the ObjectWrapper documentation, refresh the bundled copy with:
 
@@ -263,3 +254,43 @@ python src/glyphs-mcp/scripts/copy_documentation.py
 ```
 
 Once installed, open Glyphs and choose **Edit → Start MCP Server**. The service listens on `http://127.0.0.1:9680/` using the MCP Streamable HTTP transport. Open the **Macro Panel** to monitor console output.
+
+---
+
+## Install dependencies
+Dependencies are no longer bundled inside the plug‑in. Install them into your
+user Scripts site‑packages so Glyphs can import them.
+
+### Option A: Use Glyphs’ Python (default)
+If you use the Python that Glyphs installs via the Plugin Manager:
+
+```bash
+GLYPHS_BASE="$HOME/Library/Application Support/Glyphs 3"
+PYTHON_BASE="$GLYPHS_BASE/Repositories/GlyphsPythonPlugin/Python.framework"
+"$PYTHON_BASE/Versions/Current/bin/pip3" install \
+  --target="$GLYPHS_BASE/Scripts/site-packages" \
+  -r requirements.txt
+```
+
+Or run:
+
+```bash
+src/glyphs-mcp/scripts/install_deps_glyphs_python.sh
+```
+
+### Option B: Use another Python (e.g. python.org or Homebrew)
+We recommend Python 3.12 from python.org:
+
+```bash
+PYTHON="/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12"
+"$PYTHON" -m pip install --user -r requirements.txt
+```
+
+Or run the helper script (auto-detects Python 3.12 if available):
+
+```bash
+src/glyphs-mcp/scripts/install_deps_external_python.sh \
+  --python /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12
+```
+
+Restart Glyphs after installing dependencies.

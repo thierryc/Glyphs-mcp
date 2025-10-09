@@ -2,26 +2,118 @@
 
 from __future__ import division, print_function, unicode_literals
 
-# Ensure vendored dependencies are importable before anything else.
 import os
 import site
 import sys
+from pathlib import Path
+from typing import List, Optional, Tuple
 
 
-def _bootstrap_site_packages() -> None:
-    """Add this bundle's vendored site-packages to sys.path."""
-    bundle_dir = os.path.dirname(__file__)
-    site_packages = os.path.join(bundle_dir, "site-packages")
-    if os.path.isdir(site_packages) and site_packages not in sys.path:
-        site.addsitedir(site_packages)
+def _glyphs_user_site_packages() -> Path:
+    """Return the user-writable site-packages used by Glyphs scripts.
+
+    This is typically "~/Library/Application Support/Glyphs 3/Scripts/site-packages".
+    """
+    base = Path.home() / "Library" / "Application Support" / "Glyphs 3"
+    return base / "Scripts" / "site-packages"
 
 
-_bootstrap_site_packages()
+def _ensure_user_site_packages_on_path() -> None:
+    """Ensure the active Python can import MCP dependencies.
+
+    Glyphs may run either its embedded runtime or an external python.org/Homebrew
+    interpreter. Always add the Glyphs Scripts/site-packages directory, and when
+    Glyphs is using an external Python also add that interpreter's user site so
+    pip installs land where the plug-in can see them.
+    """
+
+    def _add(path: Optional[Path]) -> None:
+        if not path:
+            return
+        try:
+            real = path.resolve()
+        except Exception:
+            real = path
+        if not real.is_dir():
+            return
+
+        # Remove any existing entries that point to the same directory so we
+        # can control ordering (especially when mixing Glyphs' Python with
+        # an external interpreter).
+        try:
+            real_resolved = real.resolve()
+        except Exception:
+            real_resolved = real
+        real_str = str(real)
+        real_resolved_str = str(real_resolved)
+
+        for entry in list(sys.path):
+            try:
+                entry_path = Path(entry)
+            except Exception:
+                entry_path = None
+
+            if entry == real_str or entry == real_resolved_str:
+                sys.path.remove(entry)
+                continue
+
+            if entry_path is not None:
+                try:
+                    if entry_path.resolve() == real_resolved:
+                        sys.path.remove(entry)
+                except Exception:
+                    continue
+
+        try:
+            site.addsitedir(str(real))
+        except Exception:
+            # Never block plugin startup on sys.path tweaks
+            pass
+
+    glyphs_site = _glyphs_user_site_packages()
+
+    # Detect whether Glyphs is running with its embedded Python.
+    exe = Path(sys.executable).resolve()
+    is_embedded = any(parent.name.endswith(".app") and "Glyphs" in parent.name for parent in exe.parents)
+
+    additions: List[Path] = []
+
+    if not is_embedded:
+        try:
+            import site as _site  # shadowing module name is intentional
+
+            user_site = Path(_site.getusersitepackages())
+        except Exception:
+            user_site = None
+        else:
+            # Avoid re-adding the Glyphs Scripts folder when Glyphs delegates to it.
+            if user_site:
+                try:
+                    if glyphs_site and user_site.resolve() == glyphs_site.resolve():
+                        pass
+                    else:
+                        additions.append(user_site)
+                except Exception:
+                    additions.append(user_site)
+
+    # Always add Glyphs' Scripts/site-packages last so external site-packages
+    # take precedence when both are present.
+    additions.append(glyphs_site)
+
+    for entry in additions:
+        _add(entry)
+
+    # Allow manual overrides for debugging (colon-separated list).
+    extras = os.environ.get("GLYPHS_MCP_EXTRA_SITEPACKAGES", "")
+    for entry in (p.strip() for p in extras.split(os.pathsep) if p.strip()):
+        _add(Path(os.path.expanduser(entry)))
+
+
+_ensure_user_site_packages_on_path()
 
 # Import utility functions and apply fixes
 from utils import fix_glyphs_console
 import importlib
-from typing import List, Tuple
 fix_glyphs_console()
 
 # Import MCP tools (this registers all the tools)
@@ -43,9 +135,39 @@ from glyphs_plugin import MCPBridgePlugin
 # Diagnostics executed before launching the MCP server
 # ------------------------------------------------------------
 def _get_site_packages_dir() -> str:
-    """Return the vendored site-packages directory path for this plugin."""
-    bundle_dir = os.path.dirname(__file__)
-    return os.path.join(bundle_dir, "site-packages")
+    """Return the Scripts/site-packages directory used for dependencies."""
+    return str(_glyphs_user_site_packages())
+
+
+def _resolve_python_executable() -> str:
+    """Best-effort detection of the actual Python binary used by Glyphs."""
+
+    version_tag = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    module_candidates = ("objc", "site")
+
+    for module_name in module_candidates:
+        try:
+            module = importlib.import_module(module_name)
+        except Exception:
+            continue
+
+        module_file = getattr(module, "__file__", None)
+        if not module_file:
+            continue
+
+        module_path = Path(module_file).resolve()
+        for parent in module_path.parents:
+            if parent.name == version_tag and parent.parent.name == "lib":
+                python_root = parent.parent.parent
+                binary_name = f"python{sys.version_info.major}.{sys.version_info.minor}"
+                candidate = python_root / "bin" / binary_name
+                if not candidate.exists():
+                    candidate = python_root / "bin" / f"python{sys.version_info.major}"
+                if candidate.exists():
+                    return str(candidate)
+
+    # Fallback to whatever Glyphs reports (usually the app bundle path)
+    return sys.executable
 
 
 def _check_dependency(name: str) -> Tuple[str, bool, str]:
@@ -104,11 +226,11 @@ def run_diagnostics() -> None:
 
         # Header
         h("Glyphs MCP Plugin Diagnostics")
-        print_kv("Python exec", sys.executable)
+        print_kv("Python exec", _resolve_python_executable())
         print_kv("Python version", sys.version.splitlines()[0])
 
         site_dir = _get_site_packages_dir()
-        print_kv("Plugin site-packages", site_dir)
+        print_kv("User site-packages", site_dir)
         print_kv("On sys.path", str(site_dir in sys.path))
 
         # Minimal set required to run the local MCP HTTP server

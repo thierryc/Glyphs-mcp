@@ -9,6 +9,23 @@ from fastmcp import FastMCP
 mcp = FastMCP(name="Glyphs MCP Server", version="1.0.0")
 
 
+def _custom_parameter(obj, key, default=None):
+    """Safely read a value from Glyphs' CustomParametersProxy.
+
+    The proxy does not implement dict.get(). Iterate entries and match by name.
+    """
+    try:
+        cp = getattr(obj, "customParameters", None)
+        if cp is None:
+            return default
+        for item in cp:
+            if getattr(item, "name", None) == key:
+                return getattr(item, "value", default)
+    except Exception:
+        pass
+    return default
+
+
 @mcp.tool()
 async def list_open_fonts() -> str:
     """Return information about all fonts currently open in Glyphs.
@@ -102,14 +119,48 @@ async def get_font_masters(font_index: int = 0) -> str:
             )
 
         font = Glyphs.fonts[font_index]
+
+        # Prepare axis tag list once for this font
+        axes = []
+        try:
+            axes = list(getattr(font, "axes", []) or [])
+        except Exception:
+            axes = []
+
+        def axis_value_for(master, tags: set):
+            try:
+                if not axes:
+                    return None
+                # Build axis tag/name list
+                tag_list = []
+                for a in axes:
+                    tag = getattr(a, "axisTag", None) or getattr(a, "name", "")
+                    tag_list.append(str(tag).lower())
+                values = list(getattr(master, "axes", []) or [])
+                for i, t in enumerate(tag_list):
+                    if t in tags and i < len(values):
+                        return values[i]
+            except Exception:
+                pass
+            return None
+
         masters_info = []
         for master in font.masters:
+            weight_val = axis_value_for(master, {"wght", "weight"})
+            width_val = axis_value_for(master, {"wdth", "width"})
+            # Fallbacks if axes are unavailable
+            if weight_val is None:
+                weight_val = getattr(master, "weightValue", None)
+            if width_val is None:
+                width_val = getattr(master, "widthValue", None)
+
             masters_info.append(
                 {
                     "name": master.name,
                     "id": master.id,
-                    "weight": master.customParameters.get("postscriptSlantAngle", 0),
-                    "width": master.customParameters.get("postscriptSlantAngle", 0),
+                    "weight": weight_val,
+                    "width": width_val,
+                    "slantAngle": _custom_parameter(master, "postscriptSlantAngle", 0),
                     # GSFontMaster may not have `customName` in Glyphs 3; use safe access
                     "customName": getattr(master, "customName", None),
                     "ascender": master.ascender,
