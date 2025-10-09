@@ -36,6 +36,8 @@ req_file="$repo_root/requirements.txt"
 # Pick a Python interpreter
 if [[ -n "$PY_ARG" ]]; then
   PYTHON="$PY_ARG"
+elif [[ -x "/Library/Frameworks/Python.framework/Versions/Current/bin/python3.12" ]]; then
+  PYTHON="/Library/Frameworks/Python.framework/Versions/Current/bin/python3.12"
 elif [[ -x "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12" ]]; then
   PYTHON="/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12"
 elif command -v python3.12 >/dev/null 2>&1; then

@@ -94,11 +94,12 @@ user Scripts site‑packages so Glyphs can import them:
 
   ```bash
   src/glyphs-mcp/scripts/install_deps_external_python.sh \
-    --python /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12
+    --python /Library/Frameworks/Python.framework/Versions/Current/bin/python3.12
   ```
 
   Omit `--python` to auto-detect. This installs into that Python’s user
-  site-packages (no files are added to Glyphs).
+  site-packages (no files are added to Glyphs). The installer verifies imports
+  of `fastmcp`, `pydantic_core`, `starlette`, and `uvicorn` in the selected runtime.
 
 Restart Glyphs after installing dependencies.
 

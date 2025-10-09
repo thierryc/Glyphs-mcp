@@ -101,6 +101,12 @@ class PythonCandidate:
 def detect_python_candidates() -> List[PythonCandidate]:
     cands: List[PythonCandidate] = []
 
+    # Explicit python.org "Current" convenience path (user request)
+    current_py = Path("/Library/Frameworks/Python.framework/Versions/Current/bin/python3.12")
+    if current_py.exists():
+        ver = python_version(current_py)
+        cands.append(PythonCandidate(current_py, ver, "python.org"))
+
     # python.org framework installs
     framework = Path("/Library/Frameworks/Python.framework/Versions")
     if framework.exists():
@@ -142,6 +148,45 @@ def detect_python_candidates() -> List[PythonCandidate]:
     return cands
 
 
+def verify_runtime(python: Path) -> bool:
+    """Verify required packages import cleanly in the selected Python.
+
+    Returns True on success, False otherwise, and prints guidance.
+    """
+    console.print(Panel.fit(f"Verifying runtime imports in: {python}", title="Verify", border_style="white"))
+    code = (
+        "import sys;\n"
+        "mods=['fastmcp','pydantic_core','starlette','uvicorn'];\n"
+        "missing=[];\n"
+        "import importlib;\n"
+        "\n"
+        "for m in mods:\n"
+        "  try:\n"
+        "    importlib.import_module(m)\n"
+        "  except Exception as e:\n"
+        "    missing.append((m,str(e)))\n"
+        "\n"
+        "print('Python:', sys.executable);\n"
+        "print('Version:', sys.version.split()[0]);\n"
+        "print('OK' if not missing else 'MISSING:'+str(missing))\n"
+    )
+    try:
+        out = subprocess.check_output([str(python), "-c", code], text=True)
+        console.print(Text(out))
+        if "MISSING:" in out:
+            console.print(
+                "[red]Some packages failed to import.\n"
+                "Try reinstalling with --no-cache-dir and force-reinstall:[/red]\n"
+                f"  {python} -m pip install --user --no-cache-dir --force-reinstall -r {repo_root()/ 'requirements.txt'}\n"
+                "If using Apple Silicon, ensure you are using the native arm64 Python (not Rosetta) and matching wheels."
+            )
+            return False
+        return True
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Verification failed to run:[/red] {e}")
+        return False
+
+
 def run(cmd: List[str]) -> None:
     console.log(f"[dim]$ {' '.join(cmd)}[/dim]")
     subprocess.check_call(cmd)
@@ -160,6 +205,11 @@ def install_with_glyphs_python(requirements: Path) -> None:
     run([str(pip), "install", "--upgrade", "pip"])
     run([str(pip), "install", "--target", str(target), "-r", str(requirements)])
 
+    # Verify using the interpreter next to pip (../python3)
+    glyphs_python = Path(pip).parent / "python3"
+    if glyphs_python.exists():
+        verify_runtime(glyphs_python)
+
 
 def install_with_custom_python(python: Path, requirements: Path) -> None:
     console.print(Panel.fit(f"Installing requirements to user site for:\n{python}"
@@ -167,6 +217,7 @@ def install_with_custom_python(python: Path, requirements: Path) -> None:
                            title="Custom Python", border_style="cyan"))
     run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
     run([str(python), "-m", "pip", "install", "--user", "-r", str(requirements)])
+    verify_runtime(python)
 
 
 def install_plugin(mode: str = "copy") -> None:
