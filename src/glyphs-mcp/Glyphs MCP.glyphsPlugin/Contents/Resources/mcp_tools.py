@@ -110,7 +110,8 @@ async def get_font_masters(font_index: int = 0) -> str:
                     "id": master.id,
                     "weight": master.customParameters.get("postscriptSlantAngle", 0),
                     "width": master.customParameters.get("postscriptSlantAngle", 0),
-                    "customName": master.customName,
+                    # GSFontMaster may not have `customName` in Glyphs 3; use safe access
+                    "customName": getattr(master, "customName", None),
                     "ascender": master.ascender,
                     "capHeight": master.capHeight,
                     "descender": master.descender,
@@ -1028,7 +1029,8 @@ async def get_selected_font_and_master() -> str:
             current_master = {
                 "name": master.name,
                 "id": master.id,
-                "customName": master.customName,
+                # GSFontMaster may not have `customName` in Glyphs 3; use safe access
+                "customName": getattr(master, "customName", None),
                 "ascender": master.ascender,
                 "capHeight": master.capHeight,
                 "descender": master.descender,

@@ -254,6 +254,8 @@ src/glyphs-mcp/scripts/vendor_deps.sh
 
 The script updates the plug-in `site-packages` located in `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`. Copy or symlink that bundle into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
 
+> **Important:** Glyphs runs plug-ins with the Python interpreter you selected in **Glyphs → Settings → Addons**. That interpreter is not writable from inside a plug-in, so you cannot `pip install fastmcp` (or any of its transitive packages) directly into Glyphs’ environment. To keep everything self-contained, FastMCP and its dependencies are vendored into the plug-in bundle. Running `src/glyphs-mcp/scripts/vendor_deps.sh` refreshes the packaged `site-packages` folder so FastMCP remains importable without modifying Glyphs’ Python.
+
 If you regenerate the ObjectWrapper documentation, refresh the bundled copy with:
 
 ```bash
