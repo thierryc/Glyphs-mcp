@@ -5,17 +5,20 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 ## Mission Brief
 - Glyphs MCP is a Python-based MCP server packaged as a Glyphs 3 plugin.
 - The server exposes GlyphsApp functionality as JSON-RPC tools via Streamable HTTP at `http://127.0.0.1:9680/mcp/`.
-- Dependencies are vendored into the plugin bundle inside `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`.
+- Dependencies are installed into the user Scripts `site-packages` directory,
+  not vendored inside the plugin.
 
 ## Repository Map
 - `src/glyphs-mcp/` — Core plugin code, MCP tool implementations, and build scripts.
 - `Documentations/` — Generated docs copied into the plugin by `copy_documentation.py`.
-- `glyphs-build-env/` — Virtual environment used when bundling third-party packages.
+- `glyphs-build-env/` — Optional local virtual environment for development tooling.
 - `README.md` — Current tool catalog, build steps, and IDE connection examples.
 
 ## Everyday Commands
 - Activate tooling env: `source glyphs-build-env/bin/activate`.
-- Refresh vendored libraries: `src/glyphs-mcp/scripts/vendor_deps.sh`.
+- Install dependencies:
+  - `src/glyphs-mcp/scripts/install_deps_glyphs_python.sh` (Glyphs’ Python → installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`)
+  - `src/glyphs-mcp/scripts/install_deps_external_python.sh` (external Python → installs into that Python’s user site-packages)
 - Sync ObjectWrapper docs into the plugin: `python src/glyphs-mcp/scripts/copy_documentation.py`.
 - Start the server from Glyphs: restart the app, then **Edit → Start MCP Server**.
 
@@ -29,8 +32,8 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 Refer to `README.md` for the full command table and usage notes.
 
 ## Agent Guidelines
-- Prefer `rg`/`fd` style tools for repo searches; avoid altering vendored bundles unless necessary.
+- Prefer `rg`/`fd` style tools for repo searches; avoid altering the plugin
+  bundle directly unless necessary.
 - Keep documentation ASCII-only unless the file already uses other characters.
 - When adding tooling, update both the README table and relevant agent guides (Claude/Codex).
 - After changes that touch the plugin bundle, remind users to reinstall or resymlink it into the Glyphs plugins directory.
-

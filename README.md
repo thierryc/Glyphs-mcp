@@ -7,6 +7,14 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 Documentation: [content/glyphs-mcp.md](https://github.com/thierryc/Glyphs-mcp/blob/main/content/glyphs-mcp.md)
 
+---
+
+Quick install (interactive):
+
+```bash
+python3 install.py
+```
+
 ## What Is an MCP Server?
 
 A *Model Context Protocol* server is a lightweight process that:
@@ -49,18 +57,10 @@ A *Model Context Protocol* server is a lightweight process that:
 
 - Coming soon: consolidated setup docs will live in this README.
 
-## Build the Glyphs Plug‑in
+## Install the Plug‑in
 
-```bash
-# from the project root
-source glyphs-build-env/bin/activate
-
-# pull vendored libs & build the bundle
-src/glyphs-mcp/scripts/vendor_deps.sh
-```
-
-The script updates the plugin’s `site‑packages` inside `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`.
-Copy **or create a symlink (alias)** of this plugin into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
+Copy or create a symlink of `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into
+`~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
 
 After regenerating the ObjectWrapper documentation, refresh the bundled copy with:
 
@@ -75,6 +75,43 @@ The server will be available at `http://127.0.0.1:9680/` using MCP Streamable HT
 Open the **Macro Panel** to access the console.
 
 ---
+
+## Install Dependencies
+
+Dependencies are no longer bundled inside the plug‑in. Install them into your
+user Scripts site‑packages so Glyphs can import them:
+
+- Option A — Use Glyphs’ Python (installed from Plugin Manager):
+
+  ```bash
+  src/glyphs-mcp/scripts/install_deps_glyphs_python.sh
+  ```
+
+  This uses `~/Library/Application Support/Glyphs 3/Repositories/GlyphsPythonPlugin/Python.framework`
+  and installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`.
+
+- Option B — Use an external Python (recommended 3.12 from python.org):
+
+  ```bash
+  src/glyphs-mcp/scripts/install_deps_external_python.sh \
+    --python /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12
+  ```
+
+  Omit `--python` to auto-detect. This installs into that Python’s user
+  site-packages (no files are added to Glyphs).
+
+Restart Glyphs after installing dependencies.
+
+## One‑Command Installer (Interactive)
+
+Prefer a guided setup? Run the interactive installer to:
+- choose Glyphs’ Python or a custom Python,
+- install dependencies in the appropriate location, and
+- copy the plug‑in into the Glyphs Plugins folder.
+
+```bash
+python3 install.py
+```
 
 ## Build Site Images (WebP)
 

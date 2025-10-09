@@ -5,7 +5,8 @@ This guide briefs Claude Code on how to work with the Glyphs MCP repository.
 ## Project Overview
 - Glyphs MCP is a Model Context Protocol (MCP) server bundled as a Glyphs 3 plugin.
 - It exposes GlyphsApp APIs as JSON-RPC tools over the MCP Streamable HTTP transport.
-- Python sources live in `src/glyphs-mcp/`; the plugin vendored dependencies are stored inside `Glyphs MCP.glyphsPlugin`.
+- Python sources live in `src/glyphs-mcp/`; dependencies install into the user
+  Scripts `site-packages` directory (not vendored into the plugin).
 
 ## Capabilities Exposed to Agents
 The shipped tool set focuses on glyph inspection, editing, and project metadata:
@@ -20,14 +21,15 @@ Refer to `README.md` for the complete table of supported tools and descriptions.
 ## Repository Layout Highlights
 - `src/glyphs-mcp/` — MCP implementation, plugin bundle, and helper scripts.
 - `Documentations/` — Generated ObjectWrapper docs that get copied into the plugin.
-- `glyphs-build-env/` — Virtual environment used to vendor third-party libraries.
+- `glyphs-build-env/` — Optional local virtual environment for development tooling.
 - `README.md` — High-level overview, tool catalog, and IDE configuration snippets.
 
 ## Build & Run Workflow
-1. `source glyphs-build-env/bin/activate`
-2. `src/glyphs-mcp/scripts/vendor_deps.sh` to refresh vendored libraries.
-3. Copy or symlink `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`.
-4. Restart Glyphs, then choose **Edit → Start MCP Server**. The server listens on `http://127.0.0.1:9680/mcp/` using Streamable HTTP.
+1. Install dependencies using one option:
+   - `src/glyphs-mcp/scripts/install_deps_glyphs_python.sh` (uses Glyphs’ Python → installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`), or
+   - `src/glyphs-mcp/scripts/install_deps_external_python.sh` (uses external Python → installs into that Python’s user site-packages)
+2. Copy or symlink `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`.
+3. Restart Glyphs, then choose **Edit → Start MCP Server**. The server listens on `http://127.0.0.1:9680/mcp/` using Streamable HTTP.
 
 After regenerating ObjectWrapper documentation, update the bundled copy with:
 

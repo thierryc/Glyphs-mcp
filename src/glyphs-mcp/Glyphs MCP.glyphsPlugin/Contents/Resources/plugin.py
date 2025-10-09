@@ -2,21 +2,38 @@
 
 from __future__ import division, print_function, unicode_literals
 
-# Ensure vendored dependencies are importable before anything else.
 import os
 import site
 import sys
+from pathlib import Path
 
 
-def _bootstrap_site_packages() -> None:
-    """Add this bundle's vendored site-packages to sys.path."""
-    bundle_dir = os.path.dirname(__file__)
-    site_packages = os.path.join(bundle_dir, "site-packages")
-    if os.path.isdir(site_packages) and site_packages not in sys.path:
-        site.addsitedir(site_packages)
+def _glyphs_user_site_packages() -> str:
+    """Return the user-writable site-packages used by Glyphs scripts.
+
+    This is typically "~/Library/Application Support/Glyphs 3/Scripts/site-packages".
+    """
+    base = os.path.expanduser(os.path.join("~", "Library", "Application Support", "Glyphs 3"))
+    return os.path.join(base, "Scripts", "site-packages")
 
 
-_bootstrap_site_packages()
+def _ensure_user_site_packages_on_path() -> None:
+    """Add Glyphs Scripts/site-packages to sys.path if present.
+
+    This replaces the previous behavior of loading vendored dependencies from the
+    plug-in bundle. Dependencies are now installed outside the bundle into the
+    user-writable Scripts/site-packages directory.
+    """
+    user_site = _glyphs_user_site_packages()
+    try:
+        if os.path.isdir(user_site) and user_site not in sys.path:
+            site.addsitedir(user_site)
+    except Exception:
+        # Never block plugin startup on sys.path tweaks
+        pass
+
+
+_ensure_user_site_packages_on_path()
 
 # Import utility functions and apply fixes
 from utils import fix_glyphs_console
@@ -43,9 +60,39 @@ from glyphs_plugin import MCPBridgePlugin
 # Diagnostics executed before launching the MCP server
 # ------------------------------------------------------------
 def _get_site_packages_dir() -> str:
-    """Return the vendored site-packages directory path for this plugin."""
-    bundle_dir = os.path.dirname(__file__)
-    return os.path.join(bundle_dir, "site-packages")
+    """Return the Scripts/site-packages directory used for dependencies."""
+    return _glyphs_user_site_packages()
+
+
+def _resolve_python_executable() -> str:
+    """Best-effort detection of the actual Python binary used by Glyphs."""
+
+    version_tag = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    module_candidates = ("objc", "site")
+
+    for module_name in module_candidates:
+        try:
+            module = importlib.import_module(module_name)
+        except Exception:
+            continue
+
+        module_file = getattr(module, "__file__", None)
+        if not module_file:
+            continue
+
+        module_path = Path(module_file).resolve()
+        for parent in module_path.parents:
+            if parent.name == version_tag and parent.parent.name == "lib":
+                python_root = parent.parent.parent
+                binary_name = f"python{sys.version_info.major}.{sys.version_info.minor}"
+                candidate = python_root / "bin" / binary_name
+                if not candidate.exists():
+                    candidate = python_root / "bin" / f"python{sys.version_info.major}"
+                if candidate.exists():
+                    return str(candidate)
+
+    # Fallback to whatever Glyphs reports (usually the app bundle path)
+    return sys.executable
 
 
 def _check_dependency(name: str) -> Tuple[str, bool, str]:
@@ -104,11 +151,11 @@ def run_diagnostics() -> None:
 
         # Header
         h("Glyphs MCP Plugin Diagnostics")
-        print_kv("Python exec", sys.executable)
+        print_kv("Python exec", _resolve_python_executable())
         print_kv("Python version", sys.version.splitlines()[0])
 
         site_dir = _get_site_packages_dir()
-        print_kv("Plugin site-packages", site_dir)
+        print_kv("User site-packages", site_dir)
         print_kv("On sys.path", str(site_dir in sys.path))
 
         # Minimal set required to run the local MCP HTTP server
