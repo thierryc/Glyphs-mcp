@@ -6,31 +6,107 @@ import os
 import site
 import sys
 from pathlib import Path
+from typing import List, Optional, Tuple
 
 
-def _glyphs_user_site_packages() -> str:
+def _glyphs_user_site_packages() -> Path:
     """Return the user-writable site-packages used by Glyphs scripts.
 
     This is typically "~/Library/Application Support/Glyphs 3/Scripts/site-packages".
     """
-    base = os.path.expanduser(os.path.join("~", "Library", "Application Support", "Glyphs 3"))
-    return os.path.join(base, "Scripts", "site-packages")
+    base = Path.home() / "Library" / "Application Support" / "Glyphs 3"
+    return base / "Scripts" / "site-packages"
 
 
 def _ensure_user_site_packages_on_path() -> None:
-    """Add Glyphs Scripts/site-packages to sys.path if present.
+    """Ensure the active Python can import MCP dependencies.
 
-    This replaces the previous behavior of loading vendored dependencies from the
-    plug-in bundle. Dependencies are now installed outside the bundle into the
-    user-writable Scripts/site-packages directory.
+    Glyphs may run either its embedded runtime or an external python.org/Homebrew
+    interpreter. Always add the Glyphs Scripts/site-packages directory, and when
+    Glyphs is using an external Python also add that interpreter's user site so
+    pip installs land where the plug-in can see them.
     """
-    user_site = _glyphs_user_site_packages()
-    try:
-        if os.path.isdir(user_site) and user_site not in sys.path:
-            site.addsitedir(user_site)
-    except Exception:
-        # Never block plugin startup on sys.path tweaks
-        pass
+
+    def _add(path: Optional[Path]) -> None:
+        if not path:
+            return
+        try:
+            real = path.resolve()
+        except Exception:
+            real = path
+        if not real.is_dir():
+            return
+
+        # Remove any existing entries that point to the same directory so we
+        # can control ordering (especially when mixing Glyphs' Python with
+        # an external interpreter).
+        try:
+            real_resolved = real.resolve()
+        except Exception:
+            real_resolved = real
+        real_str = str(real)
+        real_resolved_str = str(real_resolved)
+
+        for entry in list(sys.path):
+            try:
+                entry_path = Path(entry)
+            except Exception:
+                entry_path = None
+
+            if entry == real_str or entry == real_resolved_str:
+                sys.path.remove(entry)
+                continue
+
+            if entry_path is not None:
+                try:
+                    if entry_path.resolve() == real_resolved:
+                        sys.path.remove(entry)
+                except Exception:
+                    continue
+
+        try:
+            site.addsitedir(str(real))
+        except Exception:
+            # Never block plugin startup on sys.path tweaks
+            pass
+
+    glyphs_site = _glyphs_user_site_packages()
+
+    # Detect whether Glyphs is running with its embedded Python.
+    exe = Path(sys.executable).resolve()
+    is_embedded = any(parent.name.endswith(".app") and "Glyphs" in parent.name for parent in exe.parents)
+
+    additions: List[Path] = []
+
+    if not is_embedded:
+        try:
+            import site as _site  # shadowing module name is intentional
+
+            user_site = Path(_site.getusersitepackages())
+        except Exception:
+            user_site = None
+        else:
+            # Avoid re-adding the Glyphs Scripts folder when Glyphs delegates to it.
+            if user_site:
+                try:
+                    if glyphs_site and user_site.resolve() == glyphs_site.resolve():
+                        pass
+                    else:
+                        additions.append(user_site)
+                except Exception:
+                    additions.append(user_site)
+
+    # Always add Glyphs' Scripts/site-packages last so external site-packages
+    # take precedence when both are present.
+    additions.append(glyphs_site)
+
+    for entry in additions:
+        _add(entry)
+
+    # Allow manual overrides for debugging (colon-separated list).
+    extras = os.environ.get("GLYPHS_MCP_EXTRA_SITEPACKAGES", "")
+    for entry in (p.strip() for p in extras.split(os.pathsep) if p.strip()):
+        _add(Path(os.path.expanduser(entry)))
 
 
 _ensure_user_site_packages_on_path()
@@ -38,7 +114,6 @@ _ensure_user_site_packages_on_path()
 # Import utility functions and apply fixes
 from utils import fix_glyphs_console
 import importlib
-from typing import List, Tuple
 fix_glyphs_console()
 
 # Import MCP tools (this registers all the tools)
@@ -61,7 +136,7 @@ from glyphs_plugin import MCPBridgePlugin
 # ------------------------------------------------------------
 def _get_site_packages_dir() -> str:
     """Return the Scripts/site-packages directory used for dependencies."""
-    return _glyphs_user_site_packages()
+    return str(_glyphs_user_site_packages())
 
 
 def _resolve_python_executable() -> str:

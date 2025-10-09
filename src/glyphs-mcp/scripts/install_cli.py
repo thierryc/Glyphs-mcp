@@ -13,6 +13,7 @@ Run:
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -42,6 +43,8 @@ except Exception:  # fallback if rich isn't available in the runner's Python
 
 
 console = Console()
+
+PYTHON_BINARY_PATTERN = re.compile(r"^python3(\.\d+)?$")
 
 
 def repo_root() -> Path:
@@ -100,50 +103,82 @@ class PythonCandidate:
 
 def detect_python_candidates() -> List[PythonCandidate]:
     cands: List[PythonCandidate] = []
+    seen: set[Path] = set()
 
-    # Explicit python.org "Current" convenience path (user request)
-    current_py = Path("/Library/Frameworks/Python.framework/Versions/Current/bin/python3.12")
-    if current_py.exists():
-        ver = python_version(current_py)
-        cands.append(PythonCandidate(current_py, ver, "python.org"))
+    def add_candidate(path: Path, source: str) -> None:
+        if not path.exists():
+            return
+        try:
+            resolved = path.resolve()
+        except Exception:
+            resolved = path
+        if resolved in seen:
+            return
+        ver = python_version(resolved)
+        if not ver:
+            return
+        if version_tuple(ver) < (3, 12, 0):
+            return
+        cands.append(PythonCandidate(path, ver, source))
+        seen.add(resolved)
 
-    # python.org framework installs
+    def iter_python_bins(bin_dir: Path) -> List[Path]:
+        paths: List[Path] = []
+        if not bin_dir.is_dir():
+            return paths
+        try:
+            entries = sorted(bin_dir.iterdir())
+        except Exception:
+            return paths
+        for candidate in entries:
+            try:
+                if not candidate.is_file():
+                    continue
+            except OSError:
+                # Ignore unreadable entries such as protected system binaries.
+                continue
+            try:
+                if not os.access(candidate, os.X_OK):
+                    continue
+            except OSError:
+                continue
+            if PYTHON_BINARY_PATTERN.match(candidate.name):
+                paths.append(candidate)
+        return paths
+
+    # Explicit python.org "Current" convenience path (user request) and python.org installs
+    current_bin = Path("/Library/Frameworks/Python.framework/Versions/Current/bin")
+    for python_bin in iter_python_bins(current_bin):
+        add_candidate(python_bin, "python.org")
+
     framework = Path("/Library/Frameworks/Python.framework/Versions")
     if framework.exists():
         for vdir in sorted(framework.iterdir()):
-            bin_dir = vdir / "bin"
-            for name in ("python3.13", "python3.12", "python3"):
-                py = bin_dir / name
-                if py.exists():
-                    ver = python_version(py)
-                    cands.append(PythonCandidate(py, ver, "python.org"))
-                    break
+            if not vdir.is_dir() or vdir.name == "Current":
+                continue
+            for python_bin in iter_python_bins(vdir / "bin"):
+                add_candidate(python_bin, "python.org")
 
-    # Homebrew common locations
-    for path_str in ("/opt/homebrew/bin/python3.13", "/opt/homebrew/bin/python3.12", "/opt/homebrew/bin/python3",
-                     "/usr/local/bin/python3.13", "/usr/local/bin/python3.12", "/usr/local/bin/python3"):
-        py = Path(path_str)
-        if py.exists():
-            ver = python_version(py)
-            cands.append(PythonCandidate(py, ver, "homebrew"))
+    # Homebrew installations (arm64 + Intel prefixes)
+    for brew_prefix in (Path("/opt/homebrew/bin"), Path("/usr/local/bin")):
+        for python_bin in iter_python_bins(brew_prefix):
+            add_candidate(python_bin, "homebrew")
+
+    # Common system directories
+    for sys_prefix in (Path("/usr/bin"), Path("/bin")):
+        for python_bin in iter_python_bins(sys_prefix):
+            add_candidate(python_bin, "system")
 
     # PATH discovery (last, to avoid duping brew/python.org entries)
-    for name in ("python3.13", "python3.12", "python3"):
-        path = shutil.which(name)
-        if path:
-            py = Path(path)
-            # Avoid duplicates by path
-            if not any(c.path == py for c in cands):
-                ver = python_version(py)
-                cands.append(PythonCandidate(py, ver, "system"))
+    for path_dir in (Path(p) for p in os.environ.get("PATH", "").split(os.pathsep) if p):
+        source = "homebrew" if "homebrew" in str(path_dir) else "system" if str(path_dir).startswith("/usr") else "path"
+        for python_bin in iter_python_bins(path_dir):
+            add_candidate(python_bin, source)
 
-    # System Python as fallback
-    sys_py = Path("/usr/bin/python3")
-    if sys_py.exists() and not any(c.path == sys_py for c in cands):
-        ver = python_version(sys_py)
-        cands.append(PythonCandidate(sys_py, ver, "system"))
+    # System Python fallback (in case PATH discovery skipped it)
+    add_candidate(Path("/usr/bin/python3"), "system")
 
-    # Sort best-first: highest version, prefer >= 3.12
+    # Sort best-first: highest version, prefer >= 3.12 and python.org builds
     cands.sort(key=lambda c: (c.version_key, c.source != "python.org"), reverse=True)
     return cands
 
