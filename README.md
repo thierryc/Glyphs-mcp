@@ -74,35 +74,6 @@ The server will be available at `http://127.0.0.1:9680/` using MCP Streamable HT
 
 Open the **Macro Panel** to access the console.
 
----
-
-## Install Dependencies
-
-Dependencies are no longer bundled inside the plug‑in. Install them into your
-user Scripts site‑packages so Glyphs can import them:
-
-- Option A — Use Glyphs’ Python (installed from Plugin Manager):
-
-  ```bash
-  src/glyphs-mcp/scripts/install_deps_glyphs_python.sh
-  ```
-
-  This uses `~/Library/Application Support/Glyphs 3/Repositories/GlyphsPythonPlugin/Python.framework`
-  and installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`.
-
-- Option B — Use an external Python (recommended 3.12 from python.org):
-
-  ```bash
-  src/glyphs-mcp/scripts/install_deps_external_python.sh \
-    --python /Library/Frameworks/Python.framework/Versions/Current/bin/python3.12
-  ```
-
-  Omit `--python` to auto-detect. This installs into that Python’s user
-  site-packages (no files are added to Glyphs). The installer verifies imports
-  of `fastmcp`, `pydantic_core`, `starlette`, and `uvicorn` in the selected runtime.
-
-Restart Glyphs after installing dependencies.
-
 ## One‑Command Installer (Interactive)
 
 Prefer a guided setup? Run the interactive installer to:
