@@ -67,6 +67,9 @@ class StreamableHTTPServer:
             'jsonrpc': '2.0',
             'id': request_data.get('id')
         }
+        call_id: Optional[str] = None
+        invocation_info: Optional[Dict[str, Any]] = None
+
         try:
             # Convert to MCP format and process
             method = request_data.get('method')
@@ -120,24 +123,41 @@ class StreamableHTTPServer:
                     response.update({
                         'callId': call_id,
                         'invocation': invocation_info,
-                        'result': {
-                            'type': 'error',
-                            'error': f'Tool not found: {tool_name}'
+                        'error': {
+                            'code': -32601,
+                            'message': f'Tool not found: {tool_name}',
+                            'data': {
+                                'type': 'error',
+                                'error': f'Tool not found: {tool_name}',
+                            }
                         }
                     })
                     return response
             else:
-                response['result'] = {
-                    'type': 'error',
-                    'error': f'Method not found: {method}'
+                response['error'] = {
+                    'code': -32601,
+                    'message': f'Method not found: {method}',
+                    'data': {
+                        'type': 'error',
+                        'error': f'Method not found: {method}',
+                    }
                 }
                 return response
         except Exception as e:
             logger.error(f"Error processing MCP request: {e}")
-            response['result'] = {
+            error_data: Dict[str, Any] = {
                 'type': 'error',
-                'error': f'Internal error: {str(e)}'
+                'error': f'Internal error: {str(e)}',
             }
+            if invocation_info is not None:
+                error_data['invocation'] = invocation_info
+            response['error'] = {
+                'code': -32603,
+                'message': 'Internal error',
+                'data': error_data,
+            }
+            if call_id is not None:
+                response['callId'] = call_id
             return response
     
     async def handle_request(self, request: Request) -> Response:
