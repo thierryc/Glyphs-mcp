@@ -11,6 +11,8 @@ from fastmcp import FastMCP
 import logging
 
 logger = logging.getLogger(__name__)
+if not logging.getLogger().hasHandlers():
+    logging.basicConfig(level=logging.INFO)
 
 class StreamableHTTPServer:
     """MCP Streamable HTTP server implementation following the specification."""
@@ -61,11 +63,15 @@ class StreamableHTTPServer:
         
     async def _handle_mcp_request(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """Handle MCP request using the FastMCP server."""
+        response: Dict[str, Any] = {
+            'jsonrpc': '2.0',
+            'id': request_data.get('id')
+        }
         try:
             # Convert to MCP format and process
             method = request_data.get('method')
             params = request_data.get('params', {})
-            
+
             if method == 'tools/list':
                 # List available tools
                 tools = []
@@ -79,59 +85,60 @@ class StreamableHTTPServer:
                             'required': []
                         }
                     })
-                return {
-                    'jsonrpc': '2.0',
-                    'id': request_data.get('id'),
-                    'result': {'tools': tools}
-                }
+                response['result'] = {'tools': tools}
+                return response
             elif method == 'tools/call':
                 # Call a specific tool
                 tool_name = params.get('name')
                 arguments = params.get('arguments', {})
-                
+                call_id = params.get('callId') or request_data.get('id') or str(uuid.uuid4())
+                invocation_info = {
+                    'server': getattr(self.mcp_server, 'name', 'glyphs-app-mcp'),
+                    'tool': tool_name,
+                    'arguments': arguments,
+                }
+
                 if tool_name in self.mcp_server._tools:
                     tool_func = self.mcp_server._tools[tool_name]
                     result = await tool_func(**arguments)
-                    return {
-                        'jsonrpc': '2.0',
-                        'id': request_data.get('id'),
+                    response.update({
+                        'callId': call_id,
+                        'invocation': invocation_info,
                         'result': {
+                            'type': 'success',
                             'content': [
                                 {
                                     'type': 'text',
                                     'text': result
                                 }
-                            ]
+                            ],
+                            'rawResult': result,
                         }
-                    }
+                    })
+                    return response
                 else:
-                    return {
-                        'jsonrpc': '2.0',
-                        'id': request_data.get('id'),
-                        'error': {
-                            'code': -32601,
-                            'message': f'Tool not found: {tool_name}'
+                    response.update({
+                        'callId': call_id,
+                        'invocation': invocation_info,
+                        'result': {
+                            'type': 'error',
+                            'error': f'Tool not found: {tool_name}'
                         }
-                    }
+                    })
+                    return response
             else:
-                return {
-                    'jsonrpc': '2.0',
-                    'id': request_data.get('id'),
-                    'error': {
-                        'code': -32601,
-                        'message': f'Method not found: {method}'
-                    }
+                response['result'] = {
+                    'type': 'error',
+                    'error': f'Method not found: {method}'
                 }
+                return response
         except Exception as e:
             logger.error(f"Error processing MCP request: {e}")
-            return {
-                'jsonrpc': '2.0',
-                'id': request_data.get('id'),
-                'error': {
-                    'code': -32603,
-                    'message': f'Internal error: {str(e)}'
-                }
+            response['result'] = {
+                'type': 'error',
+                'error': f'Internal error: {str(e)}'
             }
+            return response
     
     async def handle_request(self, request: Request) -> Response:
         """Handle incoming HTTP requests according to MCP Streamable HTTP spec."""
@@ -156,11 +163,15 @@ class StreamableHTTPServer:
             if wants_sse:
                 return await self._handle_sse_connection(request, session_id)
             else:
+                logger.warning(
+                    "400 Bad Request: GET request missing 'text/event-stream' Accept header. Headers=%s",
+                    dict(request.headers),
+                )
                 return web.Response(
                     status=400,
                     text="GET requests must accept text/event-stream"
                 )
-        
+
         elif request.method == 'POST':
             try:
                 # Parse JSON request body
@@ -188,6 +199,9 @@ class StreamableHTTPServer:
                         return web.json_response(response)
                         
             except json.JSONDecodeError:
+                logger.warning(
+                    "400 Bad Request: Invalid JSON received from %s", request.remote
+                )
                 return web.Response(
                     status=400,
                     text="Invalid JSON"
