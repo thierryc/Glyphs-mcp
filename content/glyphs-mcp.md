@@ -49,11 +49,22 @@ Bridging Glyphs with MCP makes it possible for assistants to read, inspect, and 
 | `set_kerning_pair` | Set or remove a kerning value. |
 | `get_selected_glyphs` | Info about glyphs currently selected in UI. |
 | `get_selected_font_and_master` | Current font + master and selection snapshot. |
+| `get_selected_nodes` | Detailed selected nodes with per-master mapping for edits. |
 | `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing. |
 | `set_glyph_paths` | Replace glyph paths from JSON. |
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |
 | `execute_code_with_context` | Execute Python with injected helper objects. |
 | `save_font` | Save the active font (optionally to a new path). |
+
+### Using `get_selected_nodes`
+
+`get_selected_nodes` returns actionable details about the current selection in Edit View, including per‑master mapping hints. The structure is designed so an agent can perform follow‑up edits (e.g., insert a point before the selected node) on all masters of the same glyph.
+
+- Node fields: `pathIndex`, `nodeIndex`, `nodeType`, `smooth`, `position {x,y}`, `closed`
+- Topology hints: `onCurveIndex`, `segment` (neighbor indices and off‑curve ordinal), `pathSignature`
+- Cross‑master mapping: `mapping[]` with `masterId`, `pathIndex`, `nodeIndex`, `onCurveIndex`
+
+Example follow‑up (conceptual): fetch selection, then insert a midpoint node before each mapped node across masters using `execute_code` or `execute_code_with_context`.
 
 ---
 

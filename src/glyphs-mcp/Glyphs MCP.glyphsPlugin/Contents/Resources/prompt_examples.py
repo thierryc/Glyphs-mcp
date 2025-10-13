@@ -108,3 +108,18 @@ async def prompt_copy_and_translate_ae_paths():
         ),
     ]
 
+
+@mcp.prompt(
+    name="selected_nodes_and_insert_point",
+    title="Selected Nodes + Insert Point",
+    description="Retrieve selected nodes and demonstrate inserting a point before them across masters.",
+    tags={"examples", "glyphs"},
+)
+async def prompt_selected_nodes_and_insert_point():
+    """Prompt showing how to use get_selected_nodes and follow up with code execution."""
+    return [
+        Message(
+            "Call glyphs-app-mcp__get_selected_nodes. Using its mapping, generate Python that inserts a point just before each selected node on all masters of the same glyph.",
+            role="user",
+        )
+    ]

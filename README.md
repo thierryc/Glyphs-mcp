@@ -45,6 +45,7 @@ A *Model Context Protocol* server is a lightweight process that:
 | `set_kerning_pair` | Set or remove a kerning value. |
 | `get_selected_glyphs` | Info about glyphs currently selected in UI. |
 | `get_selected_font_and_master` | Current font + master and selection snapshot. |
+| `get_selected_nodes` | Detailed selected nodes with per‑master mapping for edits. |
 | `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing. |
 | `set_glyph_paths` | Replace glyph paths from JSON. |
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |

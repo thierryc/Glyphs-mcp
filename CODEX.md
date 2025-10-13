@@ -24,7 +24,7 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 
 ## MCP Tool Surface (selected)
 - Metadata: `list_open_fonts`, `get_font_glyphs`, `get_font_masters`, `get_font_instances`.
-- Glyph inspection: `get_glyph_details`, `get_glyph_paths`, `get_glyph_components`, `get_selected_glyphs`.
+- Glyph inspection: `get_glyph_details`, `get_glyph_paths`, `get_glyph_components`, `get_selected_glyphs`, `get_selected_nodes`.
 - Editing: `create_glyph`, `delete_glyph`, `copy_glyph`, `add_component_to_glyph`, `add_anchor_to_glyph`, `set_glyph_paths`.
 - Metrics & persistence: `update_glyph_metrics`, `update_glyph_properties`, `set_kerning_pair`, `save_font`.
 - Automation: `execute_code`, `execute_code_with_context`, `get_selected_font_and_master`.
