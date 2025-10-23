@@ -29,17 +29,136 @@ try:
     from rich.panel import Panel
     from rich.text import Text
 except Exception:  # fallback if rich isn't available in the runner's Python
-    print("The installer prefers the 'rich' package for a nicer UI.\n"
-          "You can install it with: python3 -m pip install --user rich\n"
-          "Continuing with a plain console UI…")
+    print(
+        "The installer prefers the 'rich' package for a nicer UI.\n"
+        "You can install it with: python3 -m pip install --user rich\n"
+        "Continuing with a plain console UI…"
+    )
+
     class _Dummy:
+        def __init__(self, *a, **k):
+            pass
+
         def __getattr__(self, name):
             def f(*a, **k):
-                return None
+                return self
             return f
-    Console = Prompt = Confirm = Table = Panel = Text = _Dummy
-    box = _Dummy()
-    Console = Console()  # type: ignore
+
+        def __call__(self, *a, **k):
+            return self
+
+        def __str__(self):
+            return ""
+
+    class _PlainConsole:
+        def print(self, *a, **k):  # ignore styling kwargs
+            if a:
+                # Drop any rich Text/Panel-like objects
+                try:
+                    msg = " ".join(str(x) for x in a)
+                except Exception:
+                    msg = ""
+                print(msg)
+            else:
+                print()
+
+        def log(self, *a, **k):
+            self.print(*a, **k)
+
+        def rule(self, title="", *a, **k):
+            line = "-" * 10
+            if title:
+                print(f"{line} {title} {line}")
+            else:
+                print(line * 4)
+
+    class _Prompt:
+        @staticmethod
+        def ask(prompt, choices=None, default=None):
+            try:
+                val = input(f"{prompt} ").strip()
+            except EOFError:
+                val = ""
+            if not val:
+                return default if default is not None else (choices[0] if choices else "")
+            if choices and val not in choices:
+                return default if default is not None else choices[0]
+            return val
+
+    class _Confirm:
+        @staticmethod
+        def ask(prompt, default=False):
+            yn = "Y/n" if default else "y/N"
+            try:
+                val = input(f"{prompt} [{yn}] ").strip().lower()
+            except EOFError:
+                val = ""
+            if not val:
+                return default
+            return val in ("y", "yes", "true", "1")
+
+    class _Box:
+        SIMPLE_HEAVY = object()
+        SIMPLE = object()
+        MINIMAL_HEAVY_HEAD = object()
+
+    class _PlainTable:
+        def __init__(self, box=None):
+            self._columns = []
+            self._rows = []
+
+        def add_column(self, name):
+            self._columns.append(str(name))
+
+        def add_row(self, *cells):
+            self._rows.append([str(c) for c in cells])
+
+        def __str__(self):
+            widths = [len(h) for h in self._columns]
+            for row in self._rows:
+                for i, cell in enumerate(row):
+                    if i < len(widths):
+                        widths[i] = max(widths[i], len(cell))
+                    else:
+                        widths.append(len(cell))
+            def fmt_row(cells):
+                return " | ".join((cells[i] if i < len(cells) else "").ljust(widths[i]) for i in range(len(widths)))
+            lines = []
+            if self._columns:
+                lines.append(fmt_row(self._columns))
+                lines.append("-+-".join("-" * w for w in widths))
+            for r in self._rows:
+                lines.append(fmt_row(r))
+            return "\n".join(lines)
+
+    class _Panel:
+        def __init__(self, content, title=None, border_style=None):
+            self.content = content
+            self.title = title
+
+        @staticmethod
+        def fit(content, title=None, border_style=None):
+            return _Panel(content, title=title, border_style=border_style)
+
+        def __str__(self):
+            title = f"[{self.title}]\n" if self.title else ""
+            return f"{title}{self.content}"
+
+    class _Text:
+        def __init__(self, text):
+            self.text = str(text)
+
+        def __str__(self):
+            return self.text
+
+    # Map rich-like symbols to simple shims
+    Console = _PlainConsole
+    Prompt = _Prompt
+    Confirm = _Confirm
+    Table = _PlainTable
+    Panel = _Panel
+    Text = _Text
+    box = _Box()
 
 
 console = Console()
@@ -67,6 +186,14 @@ def glyphs_python_pip() -> Optional[Path]:
     base = glyphs_base_dir() / "Repositories" / "GlyphsPythonPlugin" / "Python.framework"
     pip = base / "Versions" / "Current" / "bin" / "pip3"
     return pip if pip.exists() else None
+
+
+def glyphs_python_bin() -> Optional[Path]:
+    pip = glyphs_python_pip()
+    if not pip:
+        return None
+    py = Path(pip).parent / "python3"
+    return py if py.exists() else None
 
 
 def version_tuple(version_str: str) -> Tuple[int, int, int]:
@@ -296,12 +423,28 @@ def install_plugin(mode: str = "copy") -> None:
 def choose_mode() -> str:
     console.rule("Glyphs MCP Installer")
     console.print("Select your Glyphs App Settings Python environment:")
+
+    # Gather versions and candidates summary for display
+    glyphs_py = glyphs_python_bin()
+    glyphs_ver = python_version(glyphs_py) if glyphs_py else None
+    cands = detect_python_candidates()
+    preferred = [c for c in cands if c.version_key >= (3, 12, 0)] or cands
+    summary = "none detected"
+    if preferred:
+        top = preferred[0]
+        summary = f"{len(preferred)} detected; highest {top.version or '?'} ({top.source})"
+
+    # Render table with details
     table = Table(box=box.SIMPLE_HEAVY)
     table.add_column("Option")
     table.add_column("Description")
-    table.add_row("1", "Glyphs' Python (Plugin Manager)")
-    table.add_row("2", "Custom Python (python.org/Homebrew)")
+    table.add_column("Details")
+    table.add_row("1", "Glyphs' Python (Plugin Manager)", glyphs_ver or "not installed")
+    table.add_row("2", "Custom Python (python.org/Homebrew)", summary)
     console.print(table)
+
+    console.print("Note: This must match your selection in Glyphs → Settings → Python.")
+
     while True:
         choice = Prompt.ask("Enter 1 or 2", choices=["1", "2"], default="1")
         if choice in ("1", "2"):
