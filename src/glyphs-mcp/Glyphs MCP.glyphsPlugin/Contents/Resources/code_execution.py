@@ -12,12 +12,12 @@ from mcp_tools import mcp
 
 
 @mcp.tool()
-async def execute_code(code: str, timeout: int = 30) -> str:
+async def execute_code(code: str, timeout: int = 60) -> str:
     """Execute Python code within the Glyphs environment with access to GlyphsApp API.
     
     Args:
         code (str): Python code to execute. Required.
-        timeout (int): Maximum execution time in seconds. Defaults to 30.
+        timeout (int): Maximum execution time in seconds. Defaults to 60. The bridge enforces the same limit per request.
     
     Returns:
         str: JSON-encoded result containing:
@@ -104,14 +104,14 @@ async def execute_code(code: str, timeout: int = 30) -> str:
 
 
 @mcp.tool()
-async def execute_code_with_context(code: str, font_index: int = 0, glyph_name: str = None, timeout: int = 30) -> str:
+async def execute_code_with_context(code: str, font_index: int = 0, glyph_name: str = None, timeout: int = 60) -> str:
     """Execute Python code with automatic context setup for a specific font and glyph.
     
     Args:
         code (str): Python code to execute. Required.
         font_index (int): Index of the font to work with. Defaults to 0.
         glyph_name (str): Name of the glyph to work with. Optional.
-        timeout (int): Maximum execution time in seconds. Defaults to 30.
+        timeout (int): Maximum execution time in seconds. Defaults to 60. The bridge honours the same per-call limit.
     
     Returns:
         str: JSON-encoded result containing:

@@ -137,6 +137,12 @@ class MCPSSEBridge {
             // Store the promise resolvers
             this.pendingRequests.set(id, { resolve, reject });
             
+            // Allow callers to extend the wait window per request
+            const timeoutSeconds = (params && typeof params.timeout === 'number' && params.timeout > 0)
+                ? params.timeout
+                : 60;
+            const timeoutMs = timeoutSeconds * 1000;
+
             // Create the JSON-RPC request
             const request = {
                 jsonrpc: '2.0',
@@ -156,7 +162,7 @@ class MCPSSEBridge {
                     this.pendingRequests.delete(id);
                     reject(new Error('Request timeout'));
                 }
-            }, 30000); // 30 second timeout
+            }, timeoutMs); // honour per-call timeout in seconds
         });
     }
 

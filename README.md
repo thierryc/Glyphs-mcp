@@ -52,6 +52,8 @@ A *Model Context Protocol* server is a lightweight process that:
 | `execute_code_with_context` | Execute Python with injected helper objects. |
 | `save_font` | Save the active font (optionally to a new path). |
 
+`execute_code` and `execute_code_with_context` accept an optional `timeout` in seconds. Calls default to 60 s, and the bridge honours any larger per-call value you provide.
+
 ---
 
 ## Install & Setup

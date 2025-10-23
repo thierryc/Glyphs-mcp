@@ -56,6 +56,8 @@ Bridging Glyphs with MCP makes it possible for assistants to read, inspect, and 
 | `execute_code_with_context` | Execute Python with injected helper objects. |
 | `save_font` | Save the active font (optionally to a new path). |
 
+`execute_code` and `execute_code_with_context` accept an optional `timeout` in seconds. Each call defaults to 60 s, and the bridge honours any larger per-call value that you include in the tool arguments.
+
 ### Using `get_selected_nodes`
 
 `get_selected_nodes` returns actionable details about the current selection in Edit View, including per‑master mapping hints. The structure is designed so an agent can perform follow‑up edits (e.g., insert a point before the selected node) on all masters of the same glyph.
