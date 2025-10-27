@@ -162,10 +162,59 @@ class StreamableHTTPServer:
                 )
         
         elif request.method == 'POST':
+            raw_body = await request.text()
+            safe_headers = {
+                key: value
+                for key, value in request.headers.items()
+                if key.lower() in {"accept", "content-type", "mcp-session-id", "last-event-id"}
+            }
+            payload_snippet_limit = 1024
+            payload_snippet = raw_body[:payload_snippet_limit]
+            if len(raw_body) > payload_snippet_limit:
+                payload_snippet += "... [truncated]"
+            
+            if not raw_body.strip():
+                detail = {
+                    "error": "Missing JSON payload",
+                    "details": {
+                        "contentType": request.content_type,
+                        "accept": request.headers.get("Accept"),
+                        "reason": "Request body is empty or whitespace."
+                    }
+                }
+                logger.warning("Empty POST body for %s; headers=%s", request.path_qs, safe_headers)
+                return web.json_response(detail, status=400)
+            
             try:
-                # Parse JSON request body
-                body = await request.json()
-                
+                body = json.loads(raw_body)
+            except json.JSONDecodeError as decode_error:
+                detail = {
+                    "error": "Invalid JSON payload",
+                    "details": {
+                        "message": str(decode_error),
+                        "line": decode_error.lineno,
+                        "column": decode_error.colno,
+                        "position": decode_error.pos,
+                        "contentType": request.content_type,
+                        "accept": request.headers.get("Accept"),
+                        "payloadSnippet": payload_snippet
+                    }
+                }
+                logger.warning(
+                    "Invalid JSON for POST %s: %s; headers=%s",
+                    request.path_qs,
+                    detail["details"],
+                    safe_headers,
+                )
+                return web.json_response(detail, status=400)
+            except Exception as e:
+                logger.error(f"Unexpected error decoding POST body: {e}")
+                return web.Response(
+                    status=500,
+                    text=f"Internal server error: {str(e)}"
+                )
+            
+            try:
                 # Handle single request or batch
                 if isinstance(body, list):
                     # Batch request
@@ -178,7 +227,7 @@ class StreamableHTTPServer:
                         return await self._send_sse_responses(responses, session_id)
                     else:
                         return web.json_response(responses)
-                else:
+                elif isinstance(body, dict):
                     # Single request
                     response = await self._handle_mcp_request(body)
                     
@@ -186,12 +235,19 @@ class StreamableHTTPServer:
                         return await self._send_sse_responses([response], session_id)
                     else:
                         return web.json_response(response)
+                else:
+                    detail = {
+                        "error": "Unsupported JSON payload type",
+                        "details": {
+                            "receivedType": type(body).__name__,
+                            "expected": "object or array",
+                            "accept": request.headers.get("Accept"),
+                            "payloadSnippet": payload_snippet
+                        }
+                    }
+                    logger.warning("Unsupported JSON type for POST %s: %s", request.path_qs, detail["details"])
+                    return web.json_response(detail, status=400)
                         
-            except json.JSONDecodeError:
-                return web.Response(
-                    status=400,
-                    text="Invalid JSON"
-                )
             except Exception as e:
                 logger.error(f"Error handling POST request: {e}")
                 return web.Response(

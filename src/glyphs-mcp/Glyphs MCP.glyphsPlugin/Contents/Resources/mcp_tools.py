@@ -4,6 +4,10 @@ from __future__ import division, print_function, unicode_literals
 import json
 from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor  # type: ignore[import-not-found]
 from fastmcp import FastMCP
+import os
+from pathlib import Path
+import glob
+import traceback
 
 # Initialize FastMCP server
 mcp = FastMCP(name="Glyphs MCP Server", version="1.0.0")
@@ -24,6 +28,128 @@ def _custom_parameter(obj, key, default=None):
     except Exception:
         pass
     return default
+
+
+# --- Snippet utilities -----------------------------------------------------
+
+def _snippets_dir() -> Path:
+    try:
+        here = Path(__file__).resolve().parent
+        return here / "snippets"
+    except Exception:
+        return Path.cwd() / "snippets"
+
+
+def _load_snippet_files():
+    items = []
+    try:
+        sdir = _snippets_dir()
+        for fp in sorted(glob.glob(str(sdir / "*.json"))):
+            try:
+                with open(fp, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, dict) and data.get("id") and data.get("code"):
+                        items.append(data)
+            except Exception:
+                # skip invalid files
+                pass
+    except Exception:
+        pass
+    return items
+
+
+@mcp.tool()
+async def list_snippets(tags: str = None) -> str:
+    """List available code snippets and metadata.
+
+    Args:
+        tags (str): Optional comma-separated tag filter (e.g. "components,metrics").
+
+    Returns:
+        str: JSON: { "snippets": [ {id,title,description,tags,license,source}... ] }
+    """
+    try:
+        tagset = None
+        if tags:
+            tagset = {t.strip().lower() for t in tags.split(",") if t.strip()}
+        entries = []
+        for sn in _load_snippet_files():
+            sn_tags = [str(t) for t in (sn.get("tags") or [])]
+            if tagset and not (tagset & {t.lower() for t in sn_tags}):
+                continue
+            entries.append({
+                "id": sn.get("id"),
+                "title": sn.get("title"),
+                "description": sn.get("description"),
+                "tags": sn_tags,
+                "license": sn.get("license"),
+                "source": sn.get("source"),
+            })
+        return json.dumps({"snippets": entries})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def get_snippet(snippet_id: str) -> str:
+    """Fetch a single snippet by id, including code.
+
+    Args:
+        snippet_id (str): The `id` of the snippet to retrieve.
+
+    Returns:
+        str: JSON object with full snippet including `code`, or an `error`.
+    """
+    try:
+        for sn in _load_snippet_files():
+            if sn.get("id") == snippet_id:
+                return json.dumps(sn)
+        return json.dumps({"error": f"Snippet not found: {snippet_id}"})
+    except Exception:
+        return json.dumps({"error": "Failed to load snippet", "detail": traceback.format_exc()})
+
+
+@mcp.tool()
+async def list_mcp_resources() -> str:
+    """Return the registered MCP resources and basic metadata."""
+    try:
+        resources = await mcp.get_resources()
+    except Exception as exc:
+        return json.dumps({"error": str(exc)})
+
+    entries = []
+    for key, resource in sorted(resources.items()):
+        # Collect serializable fields
+        item = {
+            "key": key,
+            "uri": str(getattr(resource, "uri", "")),
+            "name": getattr(resource, "name", None),
+            "title": getattr(resource, "title", None),
+            "description": getattr(resource, "description", None),
+            "mimeType": getattr(resource, "mime_type", None),
+            "kind": resource.__class__.__name__,
+        }
+
+        tags = getattr(resource, "tags", None)
+        if tags:
+            item["tags"] = sorted(tags)
+
+        path = getattr(resource, "path", None)
+        if path:
+            item["path"] = str(path)
+
+        directory = getattr(resource, "directory", None)
+        if directory:
+            item["directory"] = str(directory)
+
+        entries.append({k: v for k, v in item.items() if v not in (None, "", [])})
+
+    payload = {
+        "server": "glyphs-app-mcp",
+        "resources": entries,
+    }
+
+    return json.dumps(payload)
 
 
 @mcp.tool()

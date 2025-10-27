@@ -55,6 +55,8 @@ Bridging Glyphs with MCP makes it possible for assistants to read, inspect, and 
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |
 | `execute_code_with_context` | Execute Python with injected helper objects. |
 | `save_font` | Save the active font (optionally to a new path). |
+| `list_snippets` | List available code snippets and metadata. |
+| `get_snippet` | Retrieve a snippet by id, including `code`. |
 
 `execute_code` and `execute_code_with_context` accept an optional `timeout` in seconds. Each call defaults to 60 s, and the bridge honours any larger per-call value that you include in the tool arguments.
 
@@ -69,6 +71,17 @@ Bridging Glyphs with MCP makes it possible for assistants to read, inspect, and 
 Example follow‑up (conceptual): fetch selection, then insert a midpoint node before each mapped node across masters using `execute_code` or `execute_code_with_context`.
 
 ---
+
+## Snippets library
+
+- `list_snippets(tags?)` returns snippet metadata you can filter by tags (comma-separated). Metadata includes `id`, `title`, `description`, `tags`, `license`, and `source`.
+- `get_snippet(id)` returns the full snippet JSON, including the `code` field ready to pass into `execute_code` or `execute_code_with_context`.
+
+Snippet files live in `src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/snippets`. Each snippet is a JSON document with fields: `id`, `title`, `description`, `tags`, `license`, `source?`, and `code`.
+
+Example flow:
+- Call `list_snippets(tags="components,metrics")` to discover candidates.
+- Call `get_snippet("components-add-at-offset")` and pass its `code` to `execute_code_with_context`.
 
 ## Client setup
 Configure your preferred AI client to speak the Streamable HTTP endpoint. Below are quick-start snippets for common tools.
