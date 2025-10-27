@@ -1,0 +1,9 @@
+{
+  "id": "components-add-at-offset",
+  "title": "Add component to selected glyphs at offset",
+  "description": "Adds a named component (e.g. acute) to the current layer of each selected glyph at an x,y offset.",
+  "tags": ["components", "placement", "selection"],
+  "license": "MIT",
+  "source": "https://github.com/thierryc/Glyphs-mcp/blob/Snippets-library/snppets/components-add-at-offset.py",
+  "code": "component_name = 'acute'\nox, oy = 0, 120\nfor sl in font.selectedLayers:\n\tc = GSComponent(component_name)\n\tc.position = (ox, oy)\n\tsl.components.append(c)\n"
+}

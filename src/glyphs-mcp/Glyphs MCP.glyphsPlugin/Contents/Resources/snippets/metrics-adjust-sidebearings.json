@@ -1,0 +1,9 @@
+{
+  "id": "metrics-adjust-sidebearings",
+  "title": "Adjust LSB/RSB by delta for selection",
+  "description": "Increases or decreases left and right sidebearings for the current selection on the active master.",
+  "tags": ["metrics", "sidebearings", "selection"],
+  "license": "MIT",
+  "source": "https://github.com/thierryc/Glyphs-mcp/blob/Snippets-library/snppets/metrics-adjust-sidebearings.py",
+  "code": "delta = 10  # change to desired value, negative to tighten\nfor sl in font.selectedLayers:\n\tsl.LSB = sl.LSB + delta\n\tsl.RSB = sl.RSB + delta\n"
+}

@@ -1,0 +1,9 @@
+{
+  "id": "components-reverse-paths",
+  "title": "Reverse extra components on master/special layers",
+  "description": "For each selected glyph layer, iterate components on master and special layers only. Skip the first component; for remaining components, set reversePaths=true and mask=false.",
+  "tags": ["components", "layers", "selection"],
+  "license": "MIT",
+  "source": "https://github.com/thierryc/Glyphs-mcp/blob/Snippets-library/snppets/components-reverse-paths.py",
+  "code": "for s in font.selectedLayers:\n\tg = s.parent\n\tfor l in g.layers:\n\t\tif not l.isSpecialLayer and not l.isMasterLayer:\n\t\t\tcontinue\n\t\tfor i, c in enumerate(l.components):\n\t\t\tif i == 0:\n\t\t\t\tcontinue\n\t\t\tc.attributes['reversePaths'] = True\n\t\t\tc.attributes['mask'] = False\n"
+}

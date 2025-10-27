@@ -1,0 +1,9 @@
+{
+  "id": "anchors-add-on-all-masters",
+  "title": "Add anchor to selected glyphs on all masters",
+  "description": "Adds an anchor with a given name at the current layer position to all master layers of each selected glyph.",
+  "tags": ["anchors", "layers", "selection"],
+  "license": "MIT",
+  "source": "https://github.com/thierryc/Glyphs-mcp/blob/Snippets-library/snppets/anchors-add-on-all-masters.py",
+  "code": "anchor_name = 'top'\nfor sl in font.selectedLayers:\n\tglyph = sl.parent\n\t# Try to use current layer's anchor position as reference\n\tref_anchor = sl.anchors[anchor_name] if anchor_name in [a.name for a in sl.anchors] else None\n\tref = ref_anchor.position if ref_anchor else None\n\tfor m in font.masters:\n\t\tlayer = glyph.layers[m.id]\n\t\tif ref is not None:\n\t\t\tpos = (ref.x, ref.y) if hasattr(ref, 'x') else tuple(ref)\n\t\telse:\n\t\t\t# Fallback: center x, top of bounds y\n\t\t\ttry:\n\t\t\t\tb = layer.bounds\n\t\t\t\tx = layer.width/2\n\t\t\t\ty = b.origin.y + b.size.height\n\t\t\t\tpos = (x, y)\n\t\t\texcept Exception:\n\t\t\t\tpos = (layer.width/2, 600)\n\t\tanchor = GSAnchor(anchor_name, pos)\n\t\tlayer.anchors.append(anchor)\n"
+}
