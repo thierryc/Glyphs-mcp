@@ -13,18 +13,17 @@ from mcp_tools import mcp
 
 @mcp.tool()
 async def execute_code(code: str, timeout: int = 60) -> str:
-    """Execute Python code within the Glyphs environment with access to GlyphsApp API.
-    
+    """Run ad‑hoc Python with GlyphsApp API available (dangerous; sandboxed by timeout only).
+
     Args:
-        code (str): Python code to execute. Required.
-        timeout (int): Maximum execution time in seconds. Defaults to 60. The bridge enforces the same limit per request.
-    
+        code (str): Python source to execute.
+        timeout (int): Max seconds to run (default 60).
+
     Returns:
-        str: JSON-encoded result containing:
-            success (bool): Whether the code executed successfully.
-            output (str): Standard output from the code execution.
-            error (str): Error message if execution failed, including traceback details.
-            result (any): The result of the last expression (if any).
+        JSON string: { success, output, error, result }.
+
+    Notes:
+        Namespace includes: Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor, json, print.
     """
     try:
         # Create a custom namespace with access to Glyphs API
@@ -105,21 +104,19 @@ async def execute_code(code: str, timeout: int = 60) -> str:
 
 @mcp.tool()
 async def execute_code_with_context(code: str, font_index: int = 0, glyph_name: str = None, timeout: int = 60) -> str:
-    """Execute Python code with automatic context setup for a specific font and glyph.
-    
+    """Run Python with prebound Glyphs context: font, glyph, and current master layer.
+
     Args:
-        code (str): Python code to execute. Required.
-        font_index (int): Index of the font to work with. Defaults to 0.
-        glyph_name (str): Name of the glyph to work with. Optional.
-        timeout (int): Maximum execution time in seconds. Defaults to 60. The bridge honours the same per-call limit.
-    
+        code (str): Python source to execute.
+        font_index (int): 0‑based open font index (default 0).
+        glyph_name (str): Optional glyph name to bind as `glyph`; binds `layer` to selected/first master.
+        timeout (int): Max seconds to run (default 60).
+
     Returns:
-        str: JSON-encoded result containing:
-            success (bool): Whether the code executed successfully.
-            output (str): Standard output from the code execution.
-            error (str): Error message if execution failed, including traceback details.
-            result (any): The result of the last expression (if any).
-            context (dict): Information about the font and glyph context.
+        JSON string: { success, output, error, result, context: { font, glyph?, layer? } }.
+
+    Notes:
+        Namespace includes: Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor, json, print, font, glyph, layer.
     """
     try:
         # Get font context

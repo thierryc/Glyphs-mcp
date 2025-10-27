@@ -1,0 +1,10 @@
+{
+  "id": "paths-balance-smooth-handles",
+  "title": "Balance smooth handles on all masters",
+  "description": "Auto-balances handles for smooth nodes using tangent-based directions and proportional lengths across all masters for selected glyph layers.",
+  "tags": ["paths", "handles", "smooth", "masters"],
+  "license": "MIT",
+  "source": "local",
+  "code": "from path_utils import balance_smooth_handles\nalpha = 0.33\nclamp = 0.6\ncount = 0\nfor sl in font.selectedLayers:\n    g = sl.parent\n    for m in font.masters:\n        layer = g.layers[m.id]\n        count += balance_smooth_handles(layer, alpha=alpha, clamp=clamp)\nprint(f'Balanced {count} handles total across masters')\n"
+}
+

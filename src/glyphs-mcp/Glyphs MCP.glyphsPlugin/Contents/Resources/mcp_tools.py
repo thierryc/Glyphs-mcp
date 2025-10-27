@@ -8,6 +8,14 @@ import os
 from pathlib import Path
 import glob
 import traceback
+from path_utils import (
+    insert_oncurve_in_segment,
+    balance_smooth_handles,
+    remove_redundant_line_nodes,
+    outline_compatibility_report,
+    correct_path_direction_all_layers,
+    apply_across_masters,
+)
 
 # Initialize FastMCP server
 mcp = FastMCP(name="Glyphs MCP Server", version="1.0.0")
@@ -60,13 +68,13 @@ def _load_snippet_files():
 
 @mcp.tool()
 async def list_snippets(tags: str = None) -> str:
-    """List available code snippets and metadata.
+    """List snippet metadata for the plugin.
 
     Args:
-        tags (str): Optional comma-separated tag filter (e.g. "components,metrics").
+        tags (str): Optional comma‑separated filter (e.g. "components,metrics").
 
     Returns:
-        str: JSON: { "snippets": [ {id,title,description,tags,license,source}... ] }
+        JSON string with { "snippets": [ { id, title, description, tags, license, source } ] }.
     """
     try:
         tagset = None
@@ -92,13 +100,13 @@ async def list_snippets(tags: str = None) -> str:
 
 @mcp.tool()
 async def get_snippet(snippet_id: str) -> str:
-    """Fetch a single snippet by id, including code.
+    """Get a snippet by id, including its code.
 
     Args:
-        snippet_id (str): The `id` of the snippet to retrieve.
+        snippet_id (str): Snippet "id" field from list_snippets.
 
     Returns:
-        str: JSON object with full snippet including `code`, or an `error`.
+        JSON string: full snippet object (includes "code") or { "error": ... }.
     """
     try:
         for sn in _load_snippet_files():
@@ -111,7 +119,11 @@ async def get_snippet(snippet_id: str) -> str:
 
 @mcp.tool()
 async def list_mcp_resources() -> str:
-    """Return the registered MCP resources and basic metadata."""
+    """List registered MCP resources and basic metadata.
+
+    Returns:
+        JSON string: { "server": str, "resources": [ { key, uri, name, title, description, mimeType, kind, tags?, path?, directory? } ] }.
+    """
     try:
         resources = await mcp.get_resources()
     except Exception as exc:
@@ -154,18 +166,10 @@ async def list_mcp_resources() -> str:
 
 @mcp.tool()
 async def list_open_fonts() -> str:
-    """Return information about all fonts currently open in Glyphs.
+    """List all open fonts and summary info.
 
     Returns:
-        str: A JSON-encoded list where each item contains:
-            familyName (str): Font family name.
-            filePath (str|None): Absolute path to the .glyphs file, or None if unsaved.
-            masterCount (int): Number of masters in the font.
-            instanceCount (int): Number of instances in the font.
-            glyphCount (int): Number of glyphs in the font.
-            unitsPerEm (int): Units per em (UPM) size.
-            versionMajor (int): Font version major.
-            versionMinor (int): Font version minor.
+        JSON string: [ { familyName, filePath, masterCount, instanceCount, glyphCount, unitsPerEm, versionMajor, versionMinor } ].
     """
     try:
         fonts_info = []
@@ -190,13 +194,13 @@ async def list_open_fonts() -> str:
 
 @mcp.tool()
 async def get_font_glyphs(font_index: int = 0) -> str:
-    """Get all glyphs in a specific font.
+    """List glyphs in a font with basic properties.
 
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
+        font_index (int): 0‑based index of the open font.
 
     Returns:
-        str: JSON-encoded list of glyphs with their properties.
+        JSON string: [ { name, unicode, category, subCategory, layerCount, leftKerningGroup, rightKerningGroup, export } ].
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -228,13 +232,13 @@ async def get_font_glyphs(font_index: int = 0) -> str:
 
 @mcp.tool()
 async def get_font_masters(font_index: int = 0) -> str:
-    """Get master information for a specific font.
+    """List masters with key metrics and axis values.
 
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
+        font_index (int): 0‑based index of the open font.
 
     Returns:
-        str: JSON-encoded list of font masters with their properties.
+        JSON string: [ { name, id, weight, width, slantAngle, customName?, ascender, capHeight, descender, xHeight } ].
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -302,13 +306,13 @@ async def get_font_masters(font_index: int = 0) -> str:
 
 @mcp.tool()
 async def get_font_instances(font_index: int = 0) -> str:
-    """Get instance information for a specific font.
+    """List instances for a font.
 
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
+        font_index (int): 0‑based index of the open font.
 
     Returns:
-        str: JSON-encoded list of font instances with their properties.
+        JSON string: [ { name, weight, width, customName, axes?, parameters? } ].
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -406,14 +410,14 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
 
 @mcp.tool()
 async def get_font_kerning(font_index: int = 0, master_id: str = None) -> str:
-    """Get kerning information for a specific font and master.
+    """List kerning pairs for a master.
 
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
-        master_id (str): Master ID. If None, uses the first master.
+        font_index (int): 0‑based index of the open font.
+        master_id (str): Master ID; defaults to the first master if omitted.
 
     Returns:
-        str: JSON-encoded kerning pairs and values.
+        JSON string: { masterId, kerningPairs: [ { left, right, value } ], pairCount }.
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -456,17 +460,17 @@ async def create_glyph(
     category: str = None,
     sub_category: str = None,
 ) -> str:
-    """Create a new glyph in the specified font.
+    """Create a new glyph (if it does not exist).
 
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
-        glyph_name (str): Name of the new glyph. Required.
-        unicode (str): Unicode value for the glyph (e.g., "0041" for A). Optional.
-        category (str): Category for the glyph (e.g., "Letter", "Number"). Optional.
-        sub_category (str): Subcategory for the glyph (e.g., "Uppercase", "Lowercase"). Optional.
+        font_index (int): 0‑based index of the open font.
+        glyph_name (str): New glyph name. Required.
+        unicode (str): Hex codepoint (e.g. "0041"). Optional.
+        category (str): Glyph category (e.g. "Letter"). Optional.
+        sub_category (str): Subcategory (e.g. "Uppercase"). Optional.
 
     Returns:
-        str: JSON-encoded result with success status and glyph details.
+        JSON string: { success, message, glyph: { name, unicode, category, subCategory } } or { error }.
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -520,14 +524,14 @@ async def create_glyph(
 
 @mcp.tool()
 async def delete_glyph(font_index: int = 0, glyph_name: str = None) -> str:
-    """Delete a glyph from the specified font.
+    """Delete a glyph by name.
 
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
+        font_index (int): 0‑based index of the open font.
         glyph_name (str): Name of the glyph to delete. Required.
 
     Returns:
-        str: JSON-encoded result with success status.
+        JSON string: { success, message } or { error }.
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -569,20 +573,20 @@ async def update_glyph_properties(
     right_kerning_group: str = None,
     export: bool = None,
 ) -> str:
-    """Update properties of an existing glyph.
+    """Update glyph metadata (unicode/category/groups/export).
 
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
-        glyph_name (str): Name of the glyph to update. Required.
-        unicode (str): New Unicode value. Optional.
-        category (str): New category. Optional.
-        sub_category (str): New subcategory. Optional.
-        left_kerning_group (str): New left kerning group. Optional.
-        right_kerning_group (str): New right kerning group. Optional.
-        export (bool): Whether the glyph should be exported. Optional.
+        font_index (int): 0‑based index of the open font.
+        glyph_name (str): Target glyph name. Required.
+        unicode (str): Hex codepoint; set None to leave unchanged.
+        category (str): Category; optional.
+        sub_category (str): Subcategory; optional.
+        left_kerning_group (str): Left kerning group; optional.
+        right_kerning_group (str): Right kerning group; optional.
+        export (bool): Export flag; optional.
 
     Returns:
-        str: JSON-encoded result with updated glyph properties.
+        JSON string: { success, message, glyph: { ... } } or { error }.
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -931,20 +935,20 @@ async def add_component_to_glyph(
     x_scale: float = 1,
     y_scale: float = 1,
 ) -> str:
-    """Add a component to a glyph's layer.
+    """Add a component to one or all master layers.
 
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
-        glyph_name (str): Name of the glyph to add component to. Required.
-        component_name (str): Name of the glyph to use as component. Required.
-        master_id (str): Master ID. If None, adds to all masters. Optional.
-        x_offset (float): X offset for the component. Defaults to 0.
-        y_offset (float): Y offset for the component. Defaults to 0.
-        x_scale (float): X scale factor. Defaults to 1.
-        y_scale (float): Y scale factor. Defaults to 1.
+        font_index (int): 0‑based index of the open font.
+        glyph_name (str): Host glyph name. Required.
+        component_name (str): Component glyph name. Required.
+        master_id (str): Target master; if omitted, applies to all masters.
+        x_offset (float): X offset (units).
+        y_offset (float): Y offset (units).
+        x_scale (float): X scale factor.
+        y_scale (float): Y scale factor.
 
     Returns:
-        str: JSON-encoded result with success status.
+        JSON string: { success, message } or { error }.
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -1003,18 +1007,18 @@ async def add_anchor_to_glyph(
     x: float = None,
     y: float = None,
 ) -> str:
-    """Add an anchor to a glyph's layer.
+    """Add an anchor to one or all master layers.
 
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
-        glyph_name (str): Name of the glyph to add anchor to. Required.
-        anchor_name (str): Name of the anchor (e.g., "top", "bottom"). Required.
-        master_id (str): Master ID. If None, adds to all masters. Optional.
-        x (float): X position of the anchor. Required.
-        y (float): Y position of the anchor. Required.
+        font_index (int): 0‑based index of the open font.
+        glyph_name (str): Target glyph name. Required.
+        anchor_name (str): Anchor name (e.g. "top"). Required.
+        master_id (str): Target master; if omitted, applies to all masters.
+        x (float): X coordinate.
+        y (float): Y coordinate.
 
     Returns:
-        str: JSON-encoded result with success status.
+        JSON string: { success, message } or { error }.
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -1066,17 +1070,17 @@ async def set_kerning_pair(
     right: str = None,
     value: int = None,
 ) -> str:
-    """Set kerning value for a specific pair.
+    """Set kerning for a pair or group pair on a master.
 
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
-        master_id (str): Master ID. If None, uses the first master. Optional.
-        left (str): Left glyph name or kerning group (e.g., "@MMK_L_A"). Required.
-        right (str): Right glyph name or kerning group (e.g., "@MMK_R_V"). Required.
-        value (int): Kerning value. Use 0 to remove kerning. Required.
+        font_index (int): 0‑based index of the open font.
+        master_id (str): Target master; defaults to first master.
+        left (str): Left glyph or group (e.g. "A" or "@MMK_L_A").
+        right (str): Right glyph or group (e.g. "V" or "@MMK_R_V").
+        value (int): Kerning value in units; 0 removes the pair.
 
     Returns:
-        str: JSON-encoded result with success status.
+        JSON string: { success, message, kerning: { left, right, value, masterId } } or { error }.
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -1137,10 +1141,10 @@ async def set_kerning_pair(
 
 @mcp.tool()
 async def get_selected_glyphs() -> str:
-    """Get information about currently selected glyphs in the active font view.
+    """List selected glyph layers and basic info from the font view.
 
     Returns:
-        str: JSON-encoded list of selected glyph names and their properties.
+        JSON string: { fontName, selectedCount, selectedGlyphs: [ { name, unicode, category, subCategory, layerName, width } ] }.
     """
     try:
         if not Glyphs.font:
@@ -1173,10 +1177,10 @@ async def get_selected_glyphs() -> str:
 
 @mcp.tool()
 async def get_selected_font_and_master() -> str:
-    """Get information about the currently selected font and master from the active font view.
+    """Return current font info, selected master, and selection summary.
     
     Returns:
-        str: JSON-encoded object containing:
+        JSON string with:
             fontInfo (dict): Information about the selected font including name, path, and counts.
             currentMaster (dict): Information about the currently selected master.
             selectedGlyphs (list): List of currently selected glyphs.
@@ -1243,28 +1247,23 @@ async def get_selected_font_and_master() -> str:
 
 @mcp.tool()
 async def get_selected_nodes(include_master_mapping: bool = True) -> str:
-    """Return detailed information about the currently selected node(s) in the active edit view.
+    """Describe selected node(s) in the active Edit view for precise edits.
 
-    The payload is designed to be actionable for writing follow‑up code that edits paths
-    (e.g., insert a point before/after the selected node) and to help find the corresponding
-    node across masters in the same glyph without being overly complex.
+    Designed for follow‑up edits (insert/delete/toggle types) and cross‑master mapping.
+
+    Args:
+        include_master_mapping (bool): If True, include mapping hints for corresponding nodes in other masters.
 
     Returns:
-        str: JSON with fields:
-            font (dict): active font info
-            glyph (dict): active glyph info
-            layer (dict): active layer info
-            nodes (list): selected node entries, each with
-                - pathIndex (int): index in layer.paths
-                - nodeIndex (int): index in path.nodes
-                - nodeType (str): 'line' | 'curve' | 'qcurve' | 'offcurve'
-                - smooth (bool)
-                - position (dict): {x, y}
-                - closed (bool): whether the path is closed
-                - onCurveIndex (int|null): ordinal among on‑curve nodes in the path
-                - segment (dict): neighbor and segment information
-                - pathSignature (dict): simple structural fingerprint
-                - mapping (list|empty): per‑master mapping hints (present when include_master_mapping)
+        JSON string with:
+          - font: basic font info
+          - glyph: { name, unicode }
+          - layer: { id, name, associatedMasterId, width }
+          - nodeCount: int
+          - nodes: list of entries with:
+              pathIndex, nodeIndex, nodeType, smooth, position{ x,y }, closed,
+              onCurveIndex|null, segment{ prevNodeIndex,nextNodeIndex,offCurveIndexInSegment? },
+              pathSignature{ onCurveCount, closed }, mapping? (if requested)
     """
     try:
         font = Glyphs.font
@@ -1558,11 +1557,11 @@ async def save_font(font_index: int = 0, path: str = None) -> str:
     """Save the font to disk.
 
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
-        path (str): Path where to save the font. If None, saves to current location. Optional.
+        font_index (int): 0‑based index of the open font.
+        path (str): Absolute path to save; defaults to the current filepath.
 
     Returns:
-        str: JSON-encoded result with success status and save path.
+        JSON string: { success, message, path } or { error }.
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -1606,21 +1605,15 @@ async def get_glyph_paths(
     glyph_name: str = None,
     master_id: str = None
 ) -> str:
-    """Get the path data for a glyph in a simple JSON format suitable for LLM editing.
-    
+    """Read glyph paths in a compact JSON for LLM-safe editing.
+
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
-        glyph_name (str): Name of the glyph. Required.
-        master_id (str): Master ID. If None, uses the current selected master. Optional.
-    
+        font_index (int): 0‑based index of the open font.
+        glyph_name (str): Glyph name. Required.
+        master_id (str): Master ID; defaults to selected master if omitted.
+
     Returns:
-        str: JSON-encoded path data containing:
-            paths (list): List of paths, each containing:
-                nodes (list): List of nodes with x, y, type, smooth properties
-                closed (bool): Whether the path is closed
-            width (int): Glyph width
-            leftSideBearing (int): Left side bearing
-            rightSideBearing (int): Right side bearing
+        JSON string: { glyphName, masterId, masterName, paths: [ { nodes:[ { x,y,type,smooth } ], closed } ], width, leftSideBearing, rightSideBearing }.
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -1695,16 +1688,16 @@ async def set_glyph_paths(
     master_id: str = None,
     paths_data: str = None
 ) -> str:
-    """Set the path data for a glyph from JSON, replacing existing paths.
-    
+    """Replace glyph paths from JSON (format matches get_glyph_paths).
+
     Args:
-        font_index (int): Index of the font (0-based). Defaults to 0.
-        glyph_name (str): Name of the glyph. Required.
-        master_id (str): Master ID. If None, uses the current selected master. Optional.
-        paths_data (str): JSON string containing path data in the format returned by get_glyph_paths. Required.
-    
+        font_index (int): 0‑based index of the open font.
+        glyph_name (str): Target glyph name. Required.
+        master_id (str): Master ID; defaults to selected master.
+        paths_data (str): JSON string in the shape returned by get_glyph_paths.
+
     Returns:
-        str: JSON-encoded result with success status.
+        JSON string: { success, message, pathCount, nodeCount } or { error }.
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
@@ -1791,5 +1784,219 @@ async def set_glyph_paths(
             "nodeCount": sum(len(path.nodes) for path in layer.paths)
         })
         
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def check_outline_compatibility(font_index: int = 0, glyph_name: str = None) -> str:
+    """Report outline compatibility across masters for a glyph.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Glyph to check. Required.
+
+    Returns:
+        JSON string: { glyph, masters: [ { masterId, masterName, pathCount, pathSignatures: [ { onCurveCount, closed, typeSequence } ] } ], issues: [ str ] } or { error }.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps({"error": f"Font index {font_index} out of range."})
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+        if not glyph:
+            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+
+        report = outline_compatibility_report(glyph)
+        return json.dumps(report)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def normalize_smooth_handles(
+    font_index: int = 0,
+    glyph_name: str = None,
+    alpha: float = 0.33,
+    clamp: float = 0.6,
+    only_current_master: bool = False,
+    path_index: int = None,
+) -> str:
+    """Balance bezier handles for smooth nodes (tangent‑aligned, clamped).
+
+    - Direction: tangent from previous to next on‑curve.
+    - Lengths: alpha × chord length, clamped by `clamp`.
+
+    Args:
+        alpha (float): Proportion for handle length (default 0.33).
+        clamp (float): Max ratio of chord per handle (default 0.6).
+        only_current_master (bool): If True, adjust selected master only; else all masters.
+        path_index (int|None): If set, limit to a single path per layer.
+
+    Returns:
+        JSON string: { success, glyph, totalAdjusted, byLayer:[ { layer, adjusted } ], params } or { error }.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps({"error": f"Font index {font_index} out of range."})
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+        if not glyph:
+            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+
+        adjusted = []
+        if only_current_master and font.selectedFontMaster:
+            layer = glyph.layers[font.selectedFontMaster.id]
+            count = balance_smooth_handles(layer, alpha=alpha, clamp=clamp, path_index=path_index)
+            adjusted.append({"layer": layer.name, "adjusted": count})
+            total = count
+        else:
+            total = 0
+            for m in font.masters:
+                layer = glyph.layers[m.id]
+                count = balance_smooth_handles(layer, alpha=alpha, clamp=clamp, path_index=path_index)
+                total += count
+                adjusted.append({"layer": layer.name, "adjusted": count})
+
+        return json.dumps({
+            "success": True,
+            "glyph": glyph_name,
+            "totalAdjusted": total,
+            "byLayer": adjusted,
+            "params": {"alpha": alpha, "clamp": clamp, "pathIndex": path_index},
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def insert_node_across_masters(
+    font_index: int = 0,
+    glyph_name: str = None,
+    path_index: int = 0,
+    after_oncurve_ordinal: int = 0,
+    t: float = 0.5,
+    smooth: bool = False,
+) -> str:
+    """Insert an on‑curve at parameter t in a segment, across all masters.
+
+    Notes:
+      - Preserves compatibility by inserting in the same on‑curve ordinal segment on each master.
+      - Lines: inserts a new on‑curve.
+      - Curves: splits cubic via de Casteljau and rebuilds handles.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps({"error": f"Font index {font_index} out of range."})
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+        if not glyph:
+            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+
+        results = []
+        for m in font.masters:
+            layer = glyph.layers[m.id]
+            if path_index >= len(layer.paths) or path_index < 0:
+                results.append({"layer": layer.name, "error": "path_index out of range"})
+                continue
+            path = layer.paths[path_index]
+            # Map ordinal to on-curve index in this path
+            oc = [i for i, n in enumerate(path.nodes) if getattr(n, "type", "offcurve") != "offcurve"]
+            if after_oncurve_ordinal >= len(oc) or after_oncurve_ordinal < 0:
+                results.append({"layer": layer.name, "error": "after_oncurve_ordinal out of range"})
+                continue
+            oncurve_index = oc[after_oncurve_ordinal]
+            idx = insert_oncurve_in_segment(path, oncurve_index, max(0.0, min(1.0, t)), smooth=bool(smooth))
+            results.append({"layer": layer.name, "insertedAtNodeIndex": idx})
+
+        return json.dumps({
+            "success": True,
+            "glyph": glyph_name,
+            "pathIndex": path_index,
+            "afterOncurveOrdinal": after_oncurve_ordinal,
+            "t": t,
+            "results": results,
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def cleanup_redundant_nodes(
+    font_index: int = 0,
+    glyph_name: str = None,
+    angle_thresh_deg: float = 2.0,
+    dist_thresh: float = 2.0,
+    only_current_master: bool = False,
+) -> str:
+    """Remove near‑colinear on‑curve nodes in straight segments (safe cleanup).
+
+    Affects only line‑only segments; preserves interpolation topology.
+
+    Returns:
+        JSON string: { success, glyph, totalRemoved, byLayer:[ { layer, removed } ], params } or { error }.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps({"error": f"Font index {font_index} out of range."})
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+        if not glyph:
+            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+
+        results = []
+        total = 0
+        if only_current_master and font.selectedFontMaster:
+            layer = glyph.layers[font.selectedFontMaster.id]
+            cnt = remove_redundant_line_nodes(layer, None, angle_thresh_deg, dist_thresh)
+            results.append({"layer": layer.name, "removed": cnt})
+            total = cnt
+        else:
+            for m in font.masters:
+                layer = glyph.layers[m.id]
+                cnt = remove_redundant_line_nodes(layer, None, angle_thresh_deg, dist_thresh)
+                results.append({"layer": layer.name, "removed": cnt})
+                total += cnt
+
+        return json.dumps({
+            "success": True,
+            "glyph": glyph_name,
+            "totalRemoved": total,
+            "byLayer": results,
+            "params": {"angleThreshDeg": angle_thresh_deg, "distThresh": dist_thresh},
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def correct_path_directions(font_index: int = 0, glyph_name: str = None) -> str:
+    """Run correctPathDirection() on all masters for a glyph.
+
+    Returns:
+        JSON string: { success, glyph, layersUpdated } or { error }.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps({"error": f"Font index {font_index} out of range."})
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+        if not glyph:
+            return json.dumps({"error": f"Glyph '{glyph_name}' not found"})
+
+        count = correct_path_direction_all_layers(glyph)
+        return json.dumps({"success": True, "glyph": glyph_name, "layersUpdated": count})
     except Exception as e:
         return json.dumps({"error": str(e)})

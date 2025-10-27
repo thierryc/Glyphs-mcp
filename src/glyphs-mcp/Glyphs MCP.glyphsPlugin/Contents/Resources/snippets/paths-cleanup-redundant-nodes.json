@@ -1,0 +1,10 @@
+{
+  "id": "paths-cleanup-redundant-nodes",
+  "title": "Remove redundant straight-line nodes",
+  "description": "Removes near-colinear on-curve nodes that sit on straight line segments on all masters for selected glyphs (safe cleanup).",
+  "tags": ["paths", "cleanup", "nodes", "masters"],
+  "license": "MIT",
+  "source": "local",
+  "code": "from path_utils import remove_redundant_line_nodes\nangle_thresh_deg = 2.0\ndist_thresh = 2.0\nremoved = 0\nfor sl in font.selectedLayers:\n    g = sl.parent\n    for m in font.masters:\n        layer = g.layers[m.id]\n        removed += remove_redundant_line_nodes(layer, None, angle_thresh_deg, dist_thresh)\nprint(f'Removed {removed} redundant nodes in total')\n"
+}
+

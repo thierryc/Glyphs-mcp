@@ -1,0 +1,10 @@
+{
+  "id": "paths-check-compatibility",
+  "title": "Report outline compatibility across masters",
+  "description": "Outputs per-master path counts and signatures plus issues for selected glyphs.",
+  "tags": ["paths", "compatibility", "masters", "report"],
+  "license": "MIT",
+  "source": "local",
+  "code": "from path_utils import outline_compatibility_report\nfor sl in font.selectedLayers:\n    g = sl.parent\n    rep = outline_compatibility_report(g)\n    print(g.name)\n    print('masters:', [m['masterName'] for m in rep['masters']])\n    if rep['issues']:\n        print('issues:')\n        for iss in rep['issues']:\n            print(' -', iss)\n    else:\n        print('No issues found')\n"
+}
+
