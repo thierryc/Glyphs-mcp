@@ -4,7 +4,10 @@ from __future__ import division, print_function, unicode_literals
 import json
 from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor  # type: ignore[import-not-found]
 from fastmcp import FastMCP
-from export_designspace_ufo import ExportDesignspaceAndUFO, ExportOptions
+from export_designspace_ufo import (
+    ExportDesignspaceAndUFO as ExportDesignspaceAndUFOExporter,
+    ExportOptions,
+)
 
 # Initialize FastMCP server
 mcp = FastMCP(name="Glyphs MCP Server", version="1.0.0")
@@ -1512,7 +1515,7 @@ async def ExportDesignspaceAndUFO(
             open_destination=open_destination,
         )
 
-        exporter = ExportDesignspaceAndUFO(font, options=options)
+        exporter = ExportDesignspaceAndUFOExporter(font, options=options)
         result = exporter.run()
 
         return json.dumps(
