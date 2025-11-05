@@ -984,12 +984,20 @@ class ExportDesignspaceAndUFO:
 
         return ufo
 
-    def getGlyphFromGSLayer(self, ufo: RFont, layer: GSLayer) -> RGlyph:
+    def getGlyphFromGSLayer(
+        self,
+        ufo: RFont,
+        layer: GSLayer,
+        *,
+        glyph_name: Optional[str] = None,
+        include_guides: bool = True,
+    ) -> RGlyph:
         glyph = RGlyph()
         glyph.width = layer.width
         glyph.leftMargin = layer.LSB
         glyph.rightMargin = layer.RSB
-        glyph.name = layer.parent.name
+        resolved_name = glyph_name if glyph_name is not None else getattr(layer.parent, "name", None)
+        glyph.name = resolved_name if resolved_name else layer.parent.name
         if layer.anchors:
             for anchor in layer.anchors:
                 ufo_anchor = RAnchor()
@@ -1018,15 +1026,32 @@ class ExportDesignspaceAndUFO:
                     component.rotateBy(shape.rotation)
                     component.offset = (shape.x, shape.y)
                     glyph.appendComponent(component=component)
-        if layer.guides:
+        if include_guides and layer.guides:
             for guide in layer.guides:
                 guideline = RGuideline()
                 guideline.x = guide.position.x
                 guideline.y = guide.position.y
                 guideline.angle = guide.angle
                 guideline.name = guide.name
-                ufo[glyph.name].appendGuideline(guideline=guideline)
+                glyph.appendGuideline(guideline=guideline)
         return glyph
+
+    def _ensure_background_layer(self, ufo: RFont) -> RLayer:
+        layer_name = "public.background"
+        try:
+            return ufo.layers[layer_name]
+        except Exception:
+            return ufo.layers.newLayer(layer_name)
+
+    @staticmethod
+    def _layer_has_drawables(layer: GSLayer) -> bool:
+        shapes = list(getattr(layer, "shapes", None) or [])
+        anchors = getattr(layer, "anchors", None) or []
+        guides = getattr(layer, "guides", None) or []
+        paths = getattr(layer, "paths", None) or []
+        components = getattr(layer, "components", None) or []
+        has_shape_items = any(getattr(shape, "shapeType", None) in {2, 4} for shape in shapes)
+        return bool(has_shape_items or anchors or guides or paths or components)
 
     def buildUfoFromMaster(self, master: GSFontMaster) -> RFont:
         font = master.font
@@ -1055,11 +1080,21 @@ class ExportDesignspaceAndUFO:
         for idx, glyph in enumerate(glyphs, start=1):
             for layer in glyph.layers:
                 if layer.isMasterLayer and layer.master.id == font.masters[master_index].id:
-                    r_glyph = self.getGlyphFromGSLayer(ufo, layer)
+                    r_glyph = self.getGlyphFromGSLayer(ufo, layer, glyph_name=glyph.name)
                     ufo[glyph.name] = r_glyph
                     if glyph.unicodes is not None:
                         ufo[glyph.name].unicodes = glyph.unicodes
                     ufo[glyph.name].export = glyph.export
+                    background_layer = getattr(layer, "background", None)
+                    if background_layer is not None and self._layer_has_drawables(background_layer):
+                        background_ufo_layer = self._ensure_background_layer(ufo)
+                        background_rglyph = self.getGlyphFromGSLayer(
+                            ufo,
+                            background_layer,
+                            glyph_name=glyph.name,
+                            include_guides=False,
+                        )
+                        background_ufo_layer[glyph.name] = background_rglyph
             if idx % 50 == 0 or idx == glyph_count:
                 self._debug(
                     f"Master '{master.name}': populated outlines for {idx}/{glyph_count} glyphs."
