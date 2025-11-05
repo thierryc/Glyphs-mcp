@@ -1123,14 +1123,14 @@ class ExportDesignspaceAndUFO:
 
     def addFeatureIncludes(self, ufo: RFont, master: GSFontMaster) -> RFont:
         features = self.getFeatureDict(master.font)
-        feature_str = """include(../features/prefixes.fea);
-include(../features/classes.fea);
+        feature_str = """include(../../features/prefixes.fea);
+include(../../features/classes.fea);
 """
         font = master.font
         nl = "\n"
         for feature in features.keys():
             if not feature.startswith("size_"):
-                feature_str = feature_str + f"include(../features/{feature}.fea);{nl}"
+                feature_str = feature_str + f"include(../../features/{feature}.fea);{nl}"
             ufo.features.text = feature_str
 
         return ufo
