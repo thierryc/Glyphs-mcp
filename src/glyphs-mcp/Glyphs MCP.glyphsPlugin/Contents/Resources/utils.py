@@ -107,6 +107,7 @@ def get_known_tools():
         "execute_code",
         "execute_code_with_context",
         "save_font",
+        "ExportDesignspaceAndUFO",
     ]
 
 
