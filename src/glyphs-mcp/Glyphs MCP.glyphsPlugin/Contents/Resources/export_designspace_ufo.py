@@ -156,6 +156,17 @@ class ExportDesignspaceAndUFO:
     # ------------------------------------------------------------------
     # Public API
 
+    def _debug(self, message: str) -> None:
+        """Emit a temporary debug message to the console and export log."""
+        if not message:
+            return
+        prefixed = f"[ExportDesignspaceAndUFO DEBUG] {message}"
+        try:
+            print(prefixed)
+        except Exception:
+            pass
+        self._logger.log(prefixed)
+
     def run(self) -> ExportResult:
         """Execute the export and return metadata about the output."""
 
@@ -241,6 +252,7 @@ class ExportDesignspaceAndUFO:
         support_files: List[str] = []
 
         if os.path.exists(dest):
+            self._debug(f"Removing existing destination directory: {dest}")
             shutil.rmtree(dest)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -248,31 +260,50 @@ class ExportDesignspaceAndUFO:
             os.mkdir(temp_project_folder)
             master_dir = os.path.join(temp_project_folder, "masters")
             os.mkdir(master_dir)
+            self._debug(f"Created temporary project folder: {temp_project_folder}")
 
-            # Generate designspace documents.
-            if (self.to_build["static"] or self.to_build["variable"]) and not self.has_variable_font_name:
-                self._logger.log("Building designspace from font metadata (static).")
-                static_doc = self.getDesignSpaceDocument("static")
-                static_path = os.path.join(
-                    temp_project_folder,
-                    f"{self.getFamilyName('static').replace(' ', '')}.designspace",
-                )
-                static_doc.write(static_path)
-                designspace_files.append(os.path.relpath(static_path, temp_project_folder))
+            # Generate designspace documents when the font is multi-master with axes.
+            axes = list(getattr(self.font, "axes", []) or [])
+            masters = list(getattr(self.font, "masters", []) or [])
+            has_defined_axes = any(getattr(axis, "axisTag", None) for axis in axes)
+            is_multi_master = len(masters) > 1
+            should_export_designspace = is_multi_master and has_defined_axes
 
-            if self.to_build["variable"] and self.has_variable_font_name:
-                self._logger.log("Building variable designspace from font metadata.")
-                variable_doc = self.getDesignSpaceDocument("variable")
-                variable_path = os.path.join(
-                    temp_project_folder,
-                    f"{self.getFamilyName('variable').replace(' ', '')}.designspace",
+            if should_export_designspace:
+                self._logger.log("Detected multi-master font with axes; exporting designspace document(s).")
+
+                if self.to_build["static"]:
+                    self._logger.log("Building designspace from font metadata (static).")
+                    static_doc = self.getDesignSpaceDocument("static")
+                    static_path = os.path.join(
+                        temp_project_folder,
+                        f"{self.getFamilyName('static').replace(' ', '')}.designspace",
+                    )
+                    static_doc.write(static_path)
+                    designspace_files.append(os.path.relpath(static_path, temp_project_folder))
+
+                if self.to_build["variable"]:
+                    self._logger.log("Building variable designspace from font metadata.")
+                    variable_doc = self.getDesignSpaceDocument("variable")
+                    variable_path = os.path.join(
+                        temp_project_folder,
+                        f"{self.getFamilyName('variable').replace(' ', '')}.designspace",
+                    )
+                    variable_doc.write(variable_path)
+                    designspace_files.append(os.path.relpath(variable_path, temp_project_folder))
+            else:
+                self._logger.log(
+                    "Skipping designspace export: requires multiple masters and defined axes."
                 )
-                variable_doc.write(variable_path)
-                designspace_files.append(os.path.relpath(variable_path, temp_project_folder))
 
             self.removeSubsFromOT()
 
             self._logger.log("Building UFOs for masters.")
+            self._debug(
+                f"Export configuration - masters: {len(self.font.masters)}, "
+                f"glyphs: {len(getattr(self.font, 'glyphs', []))}, "
+                f"brace_layers_as_layers: {self.brace_layers_as_layers}"
+            )
             if self.to_build["variable"] and not self.to_build["static"]:
                 master_ufos.extend(self.exportUFOMasters(temp_project_folder, "variable"))
                 if not self.brace_layers_as_layers:
@@ -285,6 +316,7 @@ class ExportDesignspaceAndUFO:
                     brace_ufos.extend(self.generateMastersAtBraces(temp_project_folder, "static"))
 
             for file in glob.glob(os.path.join(temp_project_folder, "*.ufo")):
+                self._debug(f"Moving top-level UFO to masters folder: {file}")
                 shutil.move(file, master_dir)
 
             if self.to_add_build_script:
@@ -294,6 +326,7 @@ class ExportDesignspaceAndUFO:
 
             self.writeFeatureFiles(temp_project_folder)
 
+            self._debug(f"Copying export bundle to destination: {dest}")
             shutil.copytree(temp_project_folder, dest)
 
         if self.options.open_destination:
@@ -589,25 +622,53 @@ class ExportDesignspaceAndUFO:
     def addAxes(self, doc: DesignSpaceDocument) -> None:
         for i, axis in enumerate(self.font.axes):
             if self.font.customParameters["Axis Mappings"]:
-                axis_map = self.font.customParameters["Axis Mappings"][axis.axisTag]
+                axis_map = self.font.customParameters["Axis Mappings"].get(axis.axisTag)
+                self._debug(
+                    f"Axis '{axis.name}' uses custom Axis Mapping keys: "
+                    f"{sorted((axis_map or {}).keys()) if axis_map else '[]'}"
+                )
             else:
                 axis_map = self.axis_map_to_build
                 if axis_map is not None:
                     axis_map = axis_map.get(axis.axisTag)
+                self._debug(
+                    f"Axis '{axis.name}' uses computed Axis Mapping keys: "
+                    f"{sorted((axis_map or {}).keys()) if axis_map else '[]'}"
+                )
             if axis_map:
                 descriptor = AxisDescriptor()
 
                 axis_min, axis_max = self.getBoundsByTag(axis.axisTag)
+                self._debug(
+                    f"Axis '{axis.name}' min={axis_min}, max={axis_max}, origin={self.origin_coords[i] if i < len(self.origin_coords) else None}"
+                )
 
                 for k in sorted(axis_map.keys()):
                     descriptor.map.append((axis_map[k], k))
                 try:
                     descriptor.maximum = axis_map[axis_max]  # type: ignore[index]
                     descriptor.minimum = axis_map[axis_min]  # type: ignore[index]
-                except Exception:
+                except KeyError as missing_key:
+                    available = sorted(axis_map.keys())
+                    self._debug(
+                        f"Axis '{axis.name}' missing mapping for coordinate {missing_key!r}. Available keys: {available}"
+                    )
+                    raise
+                except Exception as exc:
                     self._logger.log("Error: the font's axis mappings don't match its real min/max coords")
+                    self._debug(
+                        f"Axis '{axis.name}' mismatch while resolving min/max ({exc!r}). "
+                        f"Axis map keys: {sorted(axis_map.keys())}"
+                    )
                 origin_coord = self.origin_coords[i]
-                user_origin = axis_map[origin_coord]
+                try:
+                    user_origin = axis_map[origin_coord]
+                except KeyError as missing_origin:
+                    available = sorted(axis_map.keys())
+                    self._debug(
+                        f"Axis '{axis.name}' missing mapping for origin coordinate {missing_origin!r}. Available keys: {available}"
+                    )
+                    raise
                 descriptor.default = user_origin
                 descriptor.name = axis.name
                 descriptor.tag = axis.axisTag
@@ -736,8 +797,10 @@ class ExportDesignspaceAndUFO:
                 feature.update()
 
     def getDesignSpaceDocument(self, format: str) -> DesignSpaceDocument:
+        self._debug(f"Constructing designspace document (format='{format}').")
         doc = DesignSpaceDocument()
         self.addAxes(doc)
+        self._debug(f"Designspace axes: {[axis.name for axis in doc.axes]}")
         sources = self.getSources(format)
         self.addSources(doc, sources)
         special_sources = self.getSpecialSources(format)
@@ -754,6 +817,9 @@ class ExportDesignspaceAndUFO:
     def generateMastersAtBraces(self, temp_project_folder: str, format: str) -> List[str]:
         generated: List[str] = []
         special_layer_axes = self.special_layer_axes
+        self._debug(
+            f"Generating brace masters ({len(special_layer_axes)} layers) in format '{format}'."
+        )
         for special_layer_axis in special_layer_axes:
             axes = list(special_layer_axis.values())
             self.font.instances.append(GSInstance())
@@ -788,9 +854,13 @@ class ExportDesignspaceAndUFO:
             brace_font.kerningRTL = {}
             brace_font.kerningVertical = {}
             ufo_file_path = os.path.join(temp_project_folder, ufo_file_name)
+            self._debug(
+                f"Brace master '{ins.name}' -> {ufo_file_path}"
+            )
             ufo = self.buildUfoFromMaster(brace_font.masters[0])
             ufo.save(ufo_file_path)
             generated.append(os.path.join("masters", ufo_file_name))
+        self._debug(f"Generated {len(generated)} brace master UFOs.")
         return generated
 
     def getIndexByMaster(self, font: GSFont, master: GSFontMaster) -> Optional[int]:
@@ -967,14 +1037,22 @@ class ExportDesignspaceAndUFO:
         self._logger.log("Building master: %s - %s" % (master.font.familyName, master.name))
 
         glyphs = font.glyphs
+        glyph_count = len(glyphs)
+        self._debug(
+            f"Master '{master.name}': preparing {glyph_count} glyph containers (index={master_index})."
+        )
         ufo = NewFont(familyName=font.familyName, styleName=master.name)
         ufo = self.addFontInfoToUfo(master, ufo)
-        for glyph in glyphs:
+        for idx, glyph in enumerate(glyphs, start=1):
             ufo.newGlyph(glyph.name)
             if glyph.unicodes is not None:
                 ufo[glyph.name].unicodes = glyph.unicodes
             ufo[glyph.name].export = glyph.export
-        for glyph in glyphs:
+            if idx % 100 == 0 or idx == glyph_count:
+                self._debug(
+                    f"Master '{master.name}': initialised {idx}/{glyph_count} glyph shells."
+                )
+        for idx, glyph in enumerate(glyphs, start=1):
             for layer in glyph.layers:
                 if layer.isMasterLayer and layer.master.id == font.masters[master_index].id:
                     r_glyph = self.getGlyphFromGSLayer(ufo, layer)
@@ -982,6 +1060,10 @@ class ExportDesignspaceAndUFO:
                     if glyph.unicodes is not None:
                         ufo[glyph.name].unicodes = glyph.unicodes
                     ufo[glyph.name].export = glyph.export
+            if idx % 50 == 0 or idx == glyph_count:
+                self._debug(
+                    f"Master '{master.name}': populated outlines for {idx}/{glyph_count} glyphs."
+                )
         return ufo
 
     def getKerning(self) -> Dict[str, Dict[str, List[List[Union[str, int]]]]]:
@@ -1096,10 +1178,13 @@ include(../features/classes.fea);
 
     def exportUFOMasters(self, dest: str, format: str) -> List[str]:
         exported: List[str] = []
-        for master in self.font.masters:
+        masters = list(self.font.masters)
+        self._debug(f"Exporting {len(masters)} masters to '{dest}' (format='{format}').")
+        for index, master in enumerate(masters, start=1):
             font_name = self.getFamilyNameWithMaster(master, format)
             ufo_file_name = "%s.ufo" % font_name
             ufo_file_path = os.path.join(dest, ufo_file_name)
+            self._debug(f"[Master {index}/{len(masters)}] Building UFO: {ufo_file_name}")
             ufo = self.buildUfoFromMaster(master)
             ufo = self.addGroups(ufo)
             ufo = self.addUfoKerning(ufo, master.id)
@@ -1112,6 +1197,7 @@ include(../features/classes.fea);
                 if master.id == self.origin_master:
                     ufo = self.addGlyphLayersToUfo(ufo)
             ufo.save(ufo_file_path)
+            self._debug(f"[Master {index}/{len(masters)}] Saved to {ufo_file_path}")
             exported.append(os.path.join("masters", ufo_file_name))
         return exported
 
@@ -1212,8 +1298,3 @@ include(../features/classes.fea);
             for layer in glyph.layers:
                 if layer.isMasterLayer or layer.isSpecialLayer:
                     layer.decomposeCorners()
-
-
-
-
-

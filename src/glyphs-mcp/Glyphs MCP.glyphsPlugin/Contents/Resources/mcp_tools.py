@@ -2,6 +2,8 @@
 
 from __future__ import division, print_function, unicode_literals
 import json
+import traceback
+from dataclasses import asdict
 from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor  # type: ignore[import-not-found]
 from fastmcp import FastMCP
 from export_designspace_ufo import (
@@ -1486,6 +1488,14 @@ async def ExportDesignspaceAndUFO(
         JSON encoded dictionary with output paths and log messages.
     """
 
+    log_messages = []
+    options = None
+    font = None
+
+    def _capture_log(message):
+        if message:
+            log_messages.append(message)
+
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
             return json.dumps(
@@ -1515,7 +1525,9 @@ async def ExportDesignspaceAndUFO(
             open_destination=open_destination,
         )
 
-        exporter = ExportDesignspaceAndUFOExporter(font, options=options)
+        exporter = ExportDesignspaceAndUFOExporter(
+            font, options=options, logger=_capture_log
+        )
         result = exporter.run()
 
         return json.dumps(
@@ -1530,7 +1542,27 @@ async def ExportDesignspaceAndUFO(
             }
         )
     except Exception as exc:
-        return json.dumps({"error": str(exc)})
+        error_payload = {
+            "error": str(exc) or repr(exc),
+            "errorType": type(exc).__name__,
+            "traceback": traceback.format_exception(type(exc), exc, exc.__traceback__),
+        }
+        if font is not None:
+            font_details = {"familyName": getattr(font, "familyName", None)}
+            font_parent = getattr(font, "parent", None)
+            if font_parent is not None:
+                try:
+                    file_url_obj = font_parent.fileURL()
+                    if file_url_obj is not None:
+                        font_details["filePath"] = getattr(file_url_obj, "path", lambda: None)()
+                except Exception:
+                    font_details["filePath"] = None
+            error_payload["font"] = font_details
+        if options is not None:
+            error_payload["options"] = asdict(options)
+        if log_messages:
+            error_payload["log"] = log_messages
+        return json.dumps(error_payload)
 
 
 @mcp.tool()
