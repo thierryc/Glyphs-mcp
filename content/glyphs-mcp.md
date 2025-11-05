@@ -52,6 +52,7 @@ Bridging Glyphs with MCP makes it possible for assistants to read, inspect, and 
 | `get_selected_nodes` | Detailed selected nodes with per-master mapping for edits. |
 | `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing. |
 | `set_glyph_paths` | Replace glyph paths from JSON. |
+| `ExportDesignspaceAndUFO` | Export designspace/UFO bundles with structured logs and errors. |
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |
 | `execute_code_with_context` | Execute Python with injected helper objects. |
 | `save_font` | Save the active font (optionally to a new path). |
@@ -66,7 +67,29 @@ Bridging Glyphs with MCP makes it possible for assistants to read, inspect, and 
 - Topology hints: `onCurveIndex`, `segment` (neighbor indices and off‑curve ordinal), `pathSignature`
 - Cross‑master mapping: `mapping[]` with `masterId`, `pathIndex`, `nodeIndex`, `onCurveIndex`
 
-Example follow‑up (conceptual): fetch selection, then insert a midpoint node before each mapped node across masters using `execute_code` or `execute_code_with_context`.
+Example follow-up (conceptual): fetch selection, then insert a midpoint node before each mapped node across masters using `execute_code` or `execute_code_with_context`.
+
+### ExportDesignspaceAndUFO
+
+Run a full designspace/UFO export cycle from the MCP client without touching the UI. The tool returns absolute paths for generated designspace files, master UFOs, brace UFOs, and support scripts together with the exporter log so agents can stream progress back to the user. Debug messages are prefixed with `[ExportDesignspaceAndUFO DEBUG]` and surface context such as detected axes, temporary directories, and file moves.
+
+When something goes wrong the response includes diagnostics beyond a plain string. The error payload adds `errorType`, a formatted `traceback`, and contextual metadata so you can report actionable feedback or retry with adjusted options. Example failure response:
+
+```json
+{
+  "error": "Axis 'Width' missing mapping for coordinate KeyError(10.0)",
+  "errorType": "KeyError",
+  "traceback": ["Traceback (most recent call last):", "  ..."],
+  "font": {"familyName": "Example Sans", "filePath": "/Users/example/fonts/example-sans.glyphs"},
+  "options": {"include_variable": true, "include_static": true, "brace_layers_mode": "layers", "include_build_script": true, "output_directory": "/tmp/build"},
+  "log": [
+    "Building designspace from font metadata (static).",
+    "[ExportDesignspaceAndUFO DEBUG] Axis 'Width' uses custom Axis Mapping keys: [75.0, 100.0, 125.0]"
+  ]
+}
+```
+
+Successful runs set `success: true` and mirror the same `log` array so clients always have insight into exporter activity.
 
 ---
 

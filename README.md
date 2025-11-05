@@ -48,11 +48,18 @@ A *Model Context Protocol* server is a lightweight process that:
 | `get_selected_nodes` | Detailed selected nodes with per‑master mapping for edits. |
 | `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing. |
 | `set_glyph_paths` | Replace glyph paths from JSON. |
+| `ExportDesignspaceAndUFO` | Export designspace/UFO bundles with structured logs and errors. |
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |
 | `execute_code_with_context` | Execute Python with injected helper objects. |
 | `save_font` | Save the active font (optionally to a new path). |
 
 `execute_code` and `execute_code_with_context` accept an optional `timeout` in seconds. Calls default to 60 s, and the bridge honours any larger per-call value you provide.
+
+### ExportDesignspaceAndUFO
+
+Kick off a headless export of UFO masters and designspace documents directly from the MCP server. The tool returns absolute paths to generated files along with the exporter log so clients can surface progress in real time. Debug lines are prefixed with `[ExportDesignspaceAndUFO DEBUG]` and include helpful context about axis mappings, temporary folders, and file moves.
+
+Failures now yield rich diagnostics instead of a bare string. In addition to `error`, the payload includes `errorType`, a formatted `traceback`, and contextual details about the font and options that triggered the exception. Use these fields to surface actionable feedback or drive automated retries without guessing what went wrong.
 
 ---
 
