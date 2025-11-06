@@ -981,18 +981,21 @@ class ExportDesignspaceAndUFO:
 
     @staticmethod
     def _normalize_created_date(value) -> Optional[datetime]:
+        dt: Optional[datetime] = None
         if isinstance(value, datetime):
-            if value.tzinfo is None:
-                return value.replace(tzinfo=timezone.utc)
-            return value.astimezone(timezone.utc)
-        if isinstance(value, str):
+            dt = value
+        elif isinstance(value, str):
             for fmt in ("%Y/%m/%d %H:%M:%S", "%Y-%m-%d %H:%M:%S"):
                 try:
-                    parsed = datetime.strptime(value.strip(), fmt)
-                    return parsed.replace(tzinfo=timezone.utc)
+                    dt = datetime.strptime(value.strip(), fmt)
+                    break
                 except ValueError:
                     continue
-        return None
+        if dt is None:
+            return None
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+        return dt
 
     def addFontInfoToUfo(self, master: GSFontMaster, ufo: RFont) -> RFont:
         font = master.font
@@ -1013,7 +1016,7 @@ class ExportDesignspaceAndUFO:
         ufo.info.note = font.note
 
         created = self._normalize_created_date(getattr(font, "date", None))
-        ufo.info.openTypeHeadCreated = created if created is not None else getattr(font, "date", None)
+        ufo.info.openTypeHeadCreated = created
 
         ufo.info.openTypeNameDesigner = font.designer
         ufo.info.openTypeNameDesignerURL = font.designerURL
