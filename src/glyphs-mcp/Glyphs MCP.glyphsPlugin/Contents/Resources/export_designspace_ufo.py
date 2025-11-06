@@ -29,6 +29,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from datetime import datetime, timezone
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
@@ -886,16 +887,112 @@ class ExportDesignspaceAndUFO:
             ufo.groups[group_name] = glyph_names
         return ufo
 
-    def formatValue(self, value, value_type: str):
-        if not value:
+    @staticmethod
+    def formatValue(value, value_type: str):
+        if value is None:
             return None
+        if isinstance(value, str):
+            if not value.strip():
+                return None
         if value_type == "int":
-            return int(value)
-        elif value_type == "float":
-            return float(value)
-        elif value_type == "bool":
-            return bool(value)
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return None
+        if value_type == "float":
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+        if value_type == "bool":
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, (int, float)):
+                return bool(value)
+            if isinstance(value, str):
+                lowered = value.strip().lower()
+                if lowered in {"true", "1", "yes", "on"}:
+                    return True
+                if lowered in {"false", "0", "no", "off"}:
+                    return False
+                return None
+            return None
         return value
+
+    @staticmethod
+    def _parse_panose(value: Optional[Union[str, Sequence[int]]]) -> Optional[List[int]]:
+        if value is None:
+            return None
+        numbers: List[int] = []
+        if isinstance(value, str):
+            tokens = [token for token in re.split(r"[\s,]+", value) if token]
+            try:
+                numbers = [int(token) for token in tokens]
+            except ValueError:
+                return None
+        elif isinstance(value, (list, tuple)):
+            try:
+                numbers = [int(item) for item in value]
+            except (TypeError, ValueError):
+                return None
+        else:
+            return None
+        if len(numbers) != 10:
+            return None
+        return numbers
+
+    @staticmethod
+    def _fs_type_to_bits(fs_type_param) -> Optional[List[int]]:
+        if fs_type_param is None:
+            return None
+        candidate = fs_type_param
+        if isinstance(fs_type_param, dict):
+            for key in ("value", "fsType", "mask"):
+                if key in fs_type_param:
+                    candidate = fs_type_param[key]
+                    break
+        if isinstance(candidate, str):
+            candidate = candidate.strip()
+            if not candidate:
+                return []
+            try:
+                mask = int(candidate, 0)
+            except ValueError:
+                return None
+        elif isinstance(candidate, (list, tuple)):
+            bits: List[int] = []
+            for item in candidate:
+                try:
+                    bit = int(item)
+                except (TypeError, ValueError):
+                    return None
+                if 0 <= bit <= 15:
+                    bits.append(bit)
+                else:
+                    return None
+            return sorted(set(bits))
+        elif isinstance(candidate, (int, float)):
+            mask = int(candidate)
+        else:
+            return None
+        if mask == 0:
+            return []
+        return [bit for bit in range(16) if mask & (1 << bit)]
+
+    @staticmethod
+    def _normalize_created_date(value) -> Optional[datetime]:
+        if isinstance(value, datetime):
+            if value.tzinfo is None:
+                return value.replace(tzinfo=timezone.utc)
+            return value.astimezone(timezone.utc)
+        if isinstance(value, str):
+            for fmt in ("%Y/%m/%d %H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+                try:
+                    parsed = datetime.strptime(value.strip(), fmt)
+                    return parsed.replace(tzinfo=timezone.utc)
+                except ValueError:
+                    continue
+        return None
 
     def addFontInfoToUfo(self, master: GSFontMaster, ufo: RFont) -> RFont:
         font = master.font
@@ -915,7 +1012,8 @@ class ExportDesignspaceAndUFO:
 
         ufo.info.note = font.note
 
-        ufo.info.openTypeHeadCreated = font.date.strftime("%Y/%m/%d %H:%M:%S")
+        created = self._normalize_created_date(getattr(font, "date", None))
+        ufo.info.openTypeHeadCreated = created if created is not None else getattr(font, "date", None)
 
         ufo.info.openTypeNameDesigner = font.designer
         ufo.info.openTypeNameDesignerURL = font.designerURL
@@ -936,7 +1034,7 @@ class ExportDesignspaceAndUFO:
             if info.key == "vendorID":
                 ufo.info.openTypeOS2VendorID = info.value if info.value else None
 
-        ufo.info.openTypeOS2Panose = [int(p) for p in font.customParameters["panose"]] if font.customParameters["panose"] else None
+        ufo.info.openTypeOS2Panose = self._parse_panose(font.customParameters["panose"])
 
         ufo.info.openTypeOS2TypoAscender = self.formatValue(master.customParameters["typoAscender"], "int")
         ufo.info.openTypeOS2TypoDescender = self.formatValue(master.customParameters["typoDescender"], "int")
@@ -945,16 +1043,14 @@ class ExportDesignspaceAndUFO:
         ufo.info.openTypeOS2WinAscent = self.formatValue(master.customParameters["winAscent"], "int")
         ufo.info.openTypeOS2WinDescent = self.formatValue(master.customParameters["winDescent"], "int")
 
-        try:
-            ufo.info.openTypeOS2Type = [int(font.customParameters["fsType"]["value"])]
-        except Exception:
-            ufo.info.openTypeOS2Type = [0]
+        fs_type_bits = self._fs_type_to_bits(font.customParameters["fsType"])
+        ufo.info.openTypeOS2Type = fs_type_bits
 
         ufo.info.openTypeOS2SubscriptXSize = self.formatValue(master.customParameters["subscriptXSize"], "int")
         ufo.info.openTypeOS2SubscriptYSize = self.formatValue(master.customParameters["subscriptYSize"], "int")
         ufo.info.openTypeOS2SubscriptXOffset = self.formatValue(master.customParameters["subscriptXOffset"], "int")
         ufo.info.openTypeOS2SubscriptYOffset = self.formatValue(master.customParameters["subscriptYOffset"], "int")
-        ufo.info.openTypeOS2SuperscriptXSize = self.formatValue(master.customParameters["subscriptYOffset"], "int")
+        ufo.info.openTypeOS2SuperscriptXSize = self.formatValue(master.customParameters["superscriptXSize"], "int")
 
         ufo.info.openTypeOS2SuperscriptYSize = self.formatValue(master.customParameters["superscriptYSize"], "int")
         ufo.info.openTypeOS2SuperscriptXOffset = self.formatValue(master.customParameters["superscriptXOffset"], "int")
