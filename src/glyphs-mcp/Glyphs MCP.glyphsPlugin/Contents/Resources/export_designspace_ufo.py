@@ -29,7 +29,7 @@ import re
 import shutil
 import subprocess
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
@@ -52,6 +52,8 @@ from fontParts.fontshell.guideline import RGuideline
 from fontParts.fontshell.layer import RLayer
 from fontParts.fontshell.lib import RLib
 from fontParts.world import NewFont
+
+OPENTYPE_EPOCH = datetime(1904, 1, 1, tzinfo=timezone.utc)
 
 __all__ = [
     "ExportDesignspaceAndUFO",
@@ -141,9 +143,6 @@ class ExportDesignspaceAndUFO:
         self.to_add_build_script: bool = True
         self.to_decompose: List[str] = []
         self.to_remove_overlap: List[str] = []
-        self.keep_glyphs_lib = False
-        self.production_names = False
-        self.decompose_smart = False
         self.variable_font_family = ""
         self.has_variable_font_name = False
         self.origin_master: str = ""
@@ -197,10 +196,6 @@ class ExportDesignspaceAndUFO:
         self.to_add_build_script = self.options.include_build_script
         self.to_decompose = list(self.options.decompose_glyphs)
         self.to_remove_overlap = list(self.options.remove_overlap_glyphs)
-        self.keep_glyphs_lib = self.options.keep_glyphs_lib
-        self.production_names = self.options.production_names
-        self.decompose_smart = self.options.decompose_smart_components
-
         self.origin_master = self.getOriginMaster()
         self.kerning = self.getKerning()
         self.variable_font_family = self.getVariableFontFamily()
@@ -980,22 +975,62 @@ class ExportDesignspaceAndUFO:
         return [bit for bit in range(16) if mask & (1 << bit)]
 
     @staticmethod
-    def _normalize_created_date(value) -> Optional[datetime]:
+    def _normalize_created_timestamp(value) -> Optional[datetime]:
+        if value is None:
+            return None
+
+        # Accept existing numeric timestamps without modification.
+        if isinstance(value, (int, float)):
+            timestamp = int(value)
+            if timestamp < 0:
+                return None
+            return OPENTYPE_EPOCH + timedelta(seconds=timestamp)
+
         dt: Optional[datetime] = None
+
         if isinstance(value, datetime):
             dt = value
         elif isinstance(value, str):
-            for fmt in ("%Y/%m/%d %H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+            raw = value.strip()
+            if not raw:
+                return None
+            # Numeric strings usually originate from existing head.created values.
+            if raw.isdigit():
                 try:
-                    dt = datetime.strptime(value.strip(), fmt)
-                    break
+                    timestamp = int(raw)
                 except ValueError:
-                    continue
+                    timestamp = None
+                if timestamp is not None and timestamp >= 0:
+                    return OPENTYPE_EPOCH + timedelta(seconds=timestamp)
+            if raw.endswith("Z"):
+                raw = raw[:-1] + "+00:00"
+            try:
+                dt = datetime.fromisoformat(raw)
+            except ValueError:
+                for fmt in (
+                    "%Y/%m/%d %H:%M:%S",
+                    "%Y-%m-%d %H:%M:%S",
+                    "%Y-%m-%d %H:%M:%S %z",
+                    "%Y/%m/%d %H:%M:%S %z",
+                ):
+                    try:
+                        dt = datetime.strptime(raw, fmt)
+                        break
+                    except ValueError:
+                        continue
+
         if dt is None:
             return None
-        if dt.tzinfo is not None:
-            dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
-        return dt
+
+        if dt.tzinfo is None:
+            aware = dt.replace(tzinfo=timezone.utc)
+        else:
+            aware = dt.astimezone(timezone.utc)
+
+        if aware < OPENTYPE_EPOCH:
+            return None
+
+        return aware
 
     def addFontInfoToUfo(self, master: GSFontMaster, ufo: RFont) -> RFont:
         font = master.font
@@ -1010,12 +1045,16 @@ class ExportDesignspaceAndUFO:
         ufo.info.descender = master.descender
         ufo.info.xHeight = master.xHeight
         ufo.info.capHeight = master.capHeight
-        ufo.info.ascender = master.ascender
         ufo.info.italicAngle = master.italicAngle
 
         ufo.info.note = font.note
 
-        created = self._normalize_created_date(getattr(font, "date", None))
+        raw_created = getattr(font, "date", None)
+        created = self._normalize_created_timestamp(raw_created)
+        if created is None and raw_created not in (None, ""):
+            self._debug(
+                f"Skipping openTypeHeadCreated; unsupported value on GSFont.date: {raw_created!r}"
+            )
         ufo.info.openTypeHeadCreated = created
 
         ufo.info.openTypeNameDesigner = font.designer
@@ -1215,22 +1254,26 @@ class ExportDesignspaceAndUFO:
         ufo_kerning: Dict[str, List[List[Union[str, int]]]] = dict()
         for glyph in self.font.glyphs:
             glyph_ids[glyph.id] = glyph.name
-        for master_id, value in self.font.kerning.items():
+        for master_id, left_groups in self.font.kerning.items():
             kerning_str = ""
-            for left_group, value in self.font.kerning[master_id].items():
-                if left_group[0:4] == "@MMK":
+            for left_group, right_groups in left_groups.items():
+                if left_group.startswith("@MMK"):
                     left_ufo_group = "public.kern1." + left_group[7:]
                 else:
                     left_ufo_group = glyph_ids[left_group]
-                for right_group, value in value.items():
-                    if right_group[0:4] == "@MMK":
+
+                for right_group, pair_value in right_groups.items():
+                    if right_group.startswith("@MMK"):
                         right_ufo_group = "public.kern2." + right_group[7:]
                     else:
                         right_ufo_group = glyph_ids[right_group]
-                    ufo_kerning.setdefault(master_id, []).append([left_ufo_group, right_ufo_group, int(value)])
-                    continue
-                kerning_str += f"        pos {left_group} {right_group} {value};\n"
-            kerning_str.strip()
+
+                    pair_value_int = int(pair_value)
+                    ufo_kerning.setdefault(master_id, []).append(
+                        [left_ufo_group, right_ufo_group, pair_value_int]
+                    )
+                    kerning_str += f"        pos {left_group} {right_group} {pair_value_int};\n"
+            kerning_str = kerning_str.strip()
 
             use_extension = " useExtension" if self.font.customParameters["Use Extension Kerning"] else None
             feature_kerning_str = f"""feature kern {{
@@ -1393,7 +1436,7 @@ include(../../features/classes.fea);
         prefixes = ""
         for prefix in self.font.featurePrefixes:
             prefixes = prefixes + prefix.code + "\n"
-        prefixes.strip()
+        prefixes = prefixes.strip()
         p_dest = os.path.join(dest, feature_dir, "prefixes.fea")
         with open(p_dest, "w") as fh:
             fh.write(prefixes)
@@ -1402,7 +1445,7 @@ include(../../features/classes.fea);
         nl = "\n"
         for font_class in self.font.classes:
             font_classes = font_classes + f"@{font_class.name} = [{font_class.code.strip()}];{nl}{nl}"
-        font_classes.strip()
+        font_classes = font_classes.strip()
         c_dest = os.path.join(dest, feature_dir, "classes.fea")
         with open(c_dest, "w") as fh:
             fh.write(font_classes)

@@ -135,9 +135,18 @@ class StreamableHTTPServer:
     
     async def handle_request(self, request: Request) -> Response:
         """Handle incoming HTTP requests according to MCP Streamable HTTP spec."""
+        logger.info(
+            "Incoming request %s %s headers=%s",
+            request.method,
+            request.rel_url,
+            {k: v for k, v in request.headers.items()},
+        )
         
         # 1. Validate Origin header for security
         if not self._validate_origin(request):
+            logger.warning(
+                "Rejecting request from invalid origin: %s", request.headers.get("Origin")
+            )
             return web.Response(
                 status=403,
                 text="Forbidden: Invalid origin"
@@ -156,6 +165,10 @@ class StreamableHTTPServer:
             if wants_sse:
                 return await self._handle_sse_connection(request, session_id)
             else:
+                logger.warning(
+                    "GET request missing text/event-stream Accept header; provided=%s",
+                    accept_header,
+                )
                 return web.Response(
                     status=400,
                     text="GET requests must accept text/event-stream"
@@ -164,7 +177,9 @@ class StreamableHTTPServer:
         elif request.method == 'POST':
             try:
                 # Parse JSON request body
-                body = await request.json()
+                raw_body = await request.text()
+                logger.debug("POST body raw: %s", raw_body)
+                body = json.loads(raw_body)
                 
                 # Handle single request or batch
                 if isinstance(body, list):
@@ -188,6 +203,7 @@ class StreamableHTTPServer:
                         return web.json_response(response)
                         
             except json.JSONDecodeError:
+                logger.exception("Failed to decode JSON body")
                 return web.Response(
                     status=400,
                     text="Invalid JSON"
