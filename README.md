@@ -5,10 +5,6 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-Documentation: [content/glyphs-mcp.md](https://github.com/thierryc/Glyphs-mcp/blob/main/content/glyphs-mcp.md)
-
----
-
 Quick install (interactive):
 
 ```bash
@@ -65,7 +61,13 @@ Failures now yield rich diagnostics instead of a bare string. In addition to `er
 
 ## Install & Setup
 
-- Coming soon: consolidated setup docs will live in this README.
+Recommended (simplest): run the one‑command interactive installer. It handles Python setup, dependencies, and placing the plug‑in where Glyphs expects it.
+
+```bash
+python3 install.py
+```
+
+Alternatively, you can install the plug‑in manually as described below.
 
 ## Install the Plug‑in
 
@@ -94,6 +96,48 @@ Prefer a guided setup? Run the interactive installer to:
 ```bash
 python3 install.py
 ```
+
+### What the installer does
+
+- Detects available Python 3 interpreters (prefers 3.12+, python.org builds).
+- Installs Python dependencies either into Glyphs’ own Python or your user site‑packages.
+- Installs the plug‑in into `~/Library/Application Support/Glyphs 3/Plugins/` by copy (recommended) or symlink (dev).
+- Verifies imports and offers tips if something fails (e.g., Apple Silicon wheels, cache issues).
+
+### Step‑by‑step flow and choices
+
+1) Choose Python environment
+   - Option 1: Glyphs’ Python (Plugin Manager)
+     - Recommended default if you installed “Python” in Glyphs → Settings → Addons.
+     - The installer uses Glyphs’ `pip` and installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`.
+     - If not found, it tells you to install “GlyphsPythonPlugin” in Glyphs and re‑run.
+   - Option 2: Custom Python (python.org / Homebrew)
+     - Recommended: python.org 3.12+ on macOS. On Apple Silicon, use native arm64 (avoid Rosetta).
+     - The installer lists detected interpreters (python.org, Homebrew, PATH). Pick one or enter a path.
+     - If version < 3.12, you’ll be warned and can abort to install a newer Python.
+
+2) Install dependencies
+   - Glyphs’ Python: installs with Glyphs’ `pip` into the Glyphs Scripts site‑packages.
+   - Custom Python: runs `<python> -m pip install --user -r requirements.txt` (no sudo).
+   - If imports fail, it suggests retrying with `--no-cache-dir --force-reinstall` and gives the exact command. On Apple Silicon, ensure wheels match the CPU architecture.
+
+3) Install the plug‑in
+   - Option 1: Copy (default, recommended)
+     - Copies `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`.
+   - Option 2: Link (symlink; for development)
+     - Useful if you plan to edit this repo and test changes live.
+   - If a plug‑in already exists, you’ll be prompted to replace it.
+
+4) Finish and start the server in Glyphs
+   - Open Glyphs → Edit → Start MCP Server.
+   - The server runs at `http://127.0.0.1:9680/` with MCP Streamable HTTP transport.
+   - The installer can optionally show client setup snippets for popular tools (Claude Desktop, Claude Code, Continue, Cursor, Windsurf, Codex). It uses either `npx mcp-remote` or the Python `mcp-proxy` if on PATH.
+
+Tips
+- If you’re unsure, accept the defaults: “Glyphs’ Python” and “Copy”.
+- Prefer python.org 3.12+ over Homebrew for fewer compatibility surprises on macOS.
+- On Apple Silicon, avoid Rosetta‑translated Pythons and ensure `pip` installs arm64 wheels.
+- No sudo is required; everything installs into your user directories.
 
 ## Build Site Images (WebP)
 
