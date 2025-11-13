@@ -975,7 +975,7 @@ class ExportDesignspaceAndUFO:
         return [bit for bit in range(16) if mask & (1 << bit)]
 
     @staticmethod
-    def _normalize_created_timestamp(value) -> Optional[datetime]:
+    def _normalize_created_timestamp(value) -> Optional[int]:
         if value is None:
             return None
 
@@ -984,7 +984,7 @@ class ExportDesignspaceAndUFO:
             timestamp = int(value)
             if timestamp < 0:
                 return None
-            return OPENTYPE_EPOCH + timedelta(seconds=timestamp)
+            return timestamp
 
         dt: Optional[datetime] = None
 
@@ -1001,7 +1001,7 @@ class ExportDesignspaceAndUFO:
                 except ValueError:
                     timestamp = None
                 if timestamp is not None and timestamp >= 0:
-                    return OPENTYPE_EPOCH + timedelta(seconds=timestamp)
+                    return timestamp
             if raw.endswith("Z"):
                 raw = raw[:-1] + "+00:00"
             try:
@@ -1030,7 +1030,11 @@ class ExportDesignspaceAndUFO:
         if aware < OPENTYPE_EPOCH:
             return None
 
-        return aware
+        delta = aware - OPENTYPE_EPOCH
+        seconds = int(delta.total_seconds())
+        if seconds < 0:
+            return None
+        return seconds
 
     def addFontInfoToUfo(self, master: GSFontMaster, ufo: RFont) -> RFont:
         font = master.font
@@ -1050,59 +1054,72 @@ class ExportDesignspaceAndUFO:
         ufo.info.note = font.note
 
         raw_created = getattr(font, "date", None)
-        created = self._normalize_created_timestamp(raw_created)
-        if created is None and raw_created not in (None, ""):
+        created_seconds = self._normalize_created_timestamp(raw_created)
+        if created_seconds is None and raw_created not in (None, ""):
             self._debug(
                 f"Skipping openTypeHeadCreated; unsupported value on GSFont.date: {raw_created!r}"
             )
-        ufo.info.openTypeHeadCreated = created
+        ufo.info.openTypeHeadCreated = created_seconds
 
         ufo.info.openTypeNameDesigner = font.designer
         ufo.info.openTypeNameDesignerURL = font.designerURL
         ufo.info.openTypeNameManufacturer = font.manufacturer
         ufo.info.openTypeNameManufacturerURL = font.manufacturerURL
         ufo.info.openTypeNameLicense = font.license
-        for info in font.properties:
-            if info.key == "licenseURL":
-                ufo.info.openTypeNameLicenseURL = info.value
+        properties = {info.key: info.value for info in getattr(font, "properties", [])}
+        ufo.info.openTypeNameLicenseURL = properties.get("licenseURL")
         ufo.info.openTypeNameDescription = font.description
         ufo.info.openTypeNameSampleText = font.sampleText
 
-        ufo.info.openTypeHheaAscender = self.formatValue(master.customParameters["hheaAscender"], "int")
-        ufo.info.openTypeHheaDescender = self.formatValue(master.customParameters["hheaDescender"], "int")
-        ufo.info.openTypeHheaLineGap = self.formatValue(master.customParameters["hheaLineGap"], "int")
-
-        for info in font.properties:
-            if info.key == "vendorID":
-                ufo.info.openTypeOS2VendorID = info.value if info.value else None
-
+        vendor_id = properties.get("vendorID")
+        ufo.info.openTypeOS2VendorID = vendor_id if vendor_id else None
         ufo.info.openTypeOS2Panose = self._parse_panose(font.customParameters["panose"])
-
-        ufo.info.openTypeOS2TypoAscender = self.formatValue(master.customParameters["typoAscender"], "int")
-        ufo.info.openTypeOS2TypoDescender = self.formatValue(master.customParameters["typoDescender"], "int")
-        ufo.info.openTypeOS2TypoLineGap = self.formatValue(master.customParameters["typoLineGap"], "int")
-
-        ufo.info.openTypeOS2WinAscent = self.formatValue(master.customParameters["winAscent"], "int")
-        ufo.info.openTypeOS2WinDescent = self.formatValue(master.customParameters["winDescent"], "int")
 
         fs_type_bits = self._fs_type_to_bits(font.customParameters["fsType"])
         ufo.info.openTypeOS2Type = fs_type_bits
 
-        ufo.info.openTypeOS2SubscriptXSize = self.formatValue(master.customParameters["subscriptXSize"], "int")
-        ufo.info.openTypeOS2SubscriptYSize = self.formatValue(master.customParameters["subscriptYSize"], "int")
-        ufo.info.openTypeOS2SubscriptXOffset = self.formatValue(master.customParameters["subscriptXOffset"], "int")
-        ufo.info.openTypeOS2SubscriptYOffset = self.formatValue(master.customParameters["subscriptYOffset"], "int")
-        ufo.info.openTypeOS2SuperscriptXSize = self.formatValue(master.customParameters["superscriptXSize"], "int")
+        master_int_params = {
+            "openTypeHheaAscender": "hheaAscender",
+            "openTypeHheaDescender": "hheaDescender",
+            "openTypeHheaLineGap": "hheaLineGap",
+            "openTypeOS2TypoAscender": "typoAscender",
+            "openTypeOS2TypoDescender": "typoDescender",
+            "openTypeOS2TypoLineGap": "typoLineGap",
+            "openTypeOS2WinAscent": "winAscent",
+            "openTypeOS2WinDescent": "winDescent",
+            "openTypeOS2SubscriptXSize": "subscriptXSize",
+            "openTypeOS2SubscriptYSize": "subscriptYSize",
+            "openTypeOS2SubscriptXOffset": "subscriptXOffset",
+            "openTypeOS2SubscriptYOffset": "subscriptYOffset",
+            "openTypeOS2SuperscriptXSize": "superscriptXSize",
+            "openTypeOS2SuperscriptYSize": "superscriptYSize",
+            "openTypeOS2SuperscriptXOffset": "superscriptXOffset",
+            "openTypeOS2SuperscriptYOffset": "superscriptYOffset",
+            "openTypeOS2StrikeoutSize": "strikeoutSize",
+            "openTypeOS2StrikeoutPosition": "strikeoutPosition",
+            "postscriptUnderlineThickness": "underlineThickness",
+            "postscriptUnderlinePosition": "underlinePosition",
+        }
 
-        ufo.info.openTypeOS2SuperscriptYSize = self.formatValue(master.customParameters["superscriptYSize"], "int")
-        ufo.info.openTypeOS2SuperscriptXOffset = self.formatValue(master.customParameters["superscriptXOffset"], "int")
-        ufo.info.openTypeOS2SuperscriptYOffset = self.formatValue(master.customParameters["superscriptYOffset"], "int")
-        ufo.info.openTypeOS2StrikeoutSize = self.formatValue(master.customParameters["strikeoutSize"], "int")
-        ufo.info.openTypeOS2StrikeoutPosition = self.formatValue(master.customParameters["strikeoutPosition"], "int")
+        def _apply_custom_params(mapping: Dict[str, str], value_type: str, source) -> None:
+            for attr, param_name in mapping.items():
+                setattr(
+                    ufo.info,
+                    attr,
+                    self.formatValue(source.customParameters[param_name], value_type),
+                )
 
-        ufo.info.postscriptUniqueID = font.customParameters["uniqueID"]
-        ufo.info.postscriptUnderlineThickness = self.formatValue(master.customParameters["underlineThickness"], "int")
-        ufo.info.postscriptUnderlinePosition = self.formatValue(master.customParameters["underlinePosition"], "int")
+        _apply_custom_params(master_int_params, "int", master)
+
+        font_float_params = {
+            "postscriptBlueFuzz": "blueFuzz",
+            "postscriptBlueShift": "blueShift",
+            "postscriptBlueScale": "blueScale",
+        }
+
+        _apply_custom_params(font_float_params, "float", font)
+
+        ufo.info.postscriptUniqueID = self.formatValue(font.customParameters["uniqueID"], "int")
         ufo.info.postscriptIsFixedPitch = self.formatValue(font.customParameters["isFixedPitch"], "bool")
 
         ufo.info.postscriptStemSnapH = [
@@ -1115,10 +1132,6 @@ class ExportDesignspaceAndUFO:
             for i, stem in enumerate(master.stems)
             if not font.stems[i].horizontal
         ]
-
-        ufo.info.postscriptBlueFuzz = self.formatValue(font.customParameters["blueFuzz"], "float")
-        ufo.info.postscriptBlueShift = self.formatValue(font.customParameters["blueShift"], "float")
-        ufo.info.postscriptBlueScale = self.formatValue(font.customParameters["blueScale"], "float")
 
         return ufo
 
@@ -1176,10 +1189,27 @@ class ExportDesignspaceAndUFO:
 
     def _ensure_background_layer(self, ufo: RFont) -> RLayer:
         layer_name = "public.background"
+        layer = None
         try:
-            return ufo.layers[layer_name]
-        except Exception:
-            return ufo.layers.newLayer(layer_name)
+            layer = ufo.getLayer(layer_name)
+        except AttributeError:
+            # Older fontParts builds exposed layers via a tuple/list accessor
+            # without helper methods; fall back to scanning manually.
+            for existing in getattr(ufo, "layers", []):
+                if getattr(existing, "name", None) == layer_name:
+                    layer = existing
+                    break
+        if layer is not None:
+            return layer
+        try:
+            return ufo.newLayer(layer_name)
+        except AttributeError:
+            # Some environments expose newLayer on the layer collection instead.
+            layers = getattr(ufo, "layers", None)
+            if layers is None:
+                raise
+            new_layer = layers.newLayer(layer_name)
+            return new_layer
 
     @staticmethod
     def _layer_has_drawables(layer: GSLayer) -> bool:
