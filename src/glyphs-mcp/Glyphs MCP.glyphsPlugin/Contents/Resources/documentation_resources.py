@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import quote
@@ -322,5 +323,5 @@ def register_documentation_resources() -> None:
 
 
 # Automatically register the resources when the plug-in imports this module
-register_documentation_resources()
-
+if os.environ.get("GLYPHS_MCP_SKIP_AUTO_REGISTER") != "1":
+    register_documentation_resources()

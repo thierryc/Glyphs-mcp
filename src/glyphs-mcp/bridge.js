@@ -23,6 +23,7 @@ class MCPSSEBridge {
         this.prompts = new Map();
         this.isInitialized = false;
         this.pendingRequests = new Map();
+        this.sessionId = null;
         this.eventSource = null;
         this.requestId = 0;
     }
@@ -50,7 +51,12 @@ class MCPSSEBridge {
 
     async connectSSE() {
         return new Promise((resolve, reject) => {
-            this.eventSource = new EventSource(this.sseUrl);
+            const headers = {};
+            if (this.sessionId) {
+                headers['Mcp-Session-Id'] = this.sessionId;
+            }
+
+            this.eventSource = new EventSource(this.sseUrl, { headers });
             
             this.eventSource.onopen = () => {
                 console.error('SSE connection established');
@@ -60,7 +66,7 @@ class MCPSSEBridge {
             this.eventSource.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    this.handleSSEMessage(data);
+                this.handleSSEMessage(data);
                 } catch (error) {
                     console.error('Error processing SSE message:', error);
                 }
@@ -168,25 +174,42 @@ class MCPSSEBridge {
 
     async sendRequestToSSEServer(request) {
         try {
-            // This method depends on how your SSE server accepts requests
-            // Option 1: POST to a different endpoint
-            const response = await fetch(this.sseUrl.replace('/mcp', '/request'), {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json, text/event-stream'
+            };
+
+            if (this.sessionId) {
+                headers['Mcp-Session-Id'] = this.sessionId;
+            }
+
+            const response = await fetch(this.sseUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers,
                 body: JSON.stringify(request)
             });
+
+            const incomingSession = response.headers.get('mcp-session-id');
+            if (incomingSession && incomingSession !== this.sessionId) {
+                this.sessionId = incomingSession;
+            }
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
+
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                const payload = await response.json();
+                if (Array.isArray(payload)) {
+                    payload.forEach(item => this.handleSSEMessage(item));
+                } else {
+                    this.handleSSEMessage(payload);
+                }
+            }
         } catch (error) {
-            // Option 2: Send through SSE connection itself (if supported)
-            // This would require server-side implementation to handle incoming messages
-            console.error('Error sending request to SSE server:', error);
-            
-            // Fallback: reject the pending request
+            console.error('Error sending request to MCP server:', error);
+
             if (this.pendingRequests.has(request.id)) {
                 const { reject } = this.pendingRequests.get(request.id);
                 this.pendingRequests.delete(request.id);
@@ -283,6 +306,11 @@ class MCPSSEBridge {
         this.server.setRequestHandler('tools/call', async (request) => {
             const { name, arguments: args } = request.params;
             return await this.sendSSERequest('tools/call', { name, arguments: args });
+        });
+
+        // MCP spec defines ping as returning an empty result to confirm liveness.
+        this.server.setRequestHandler('ping', async () => {
+            return {};
         });
 
         // Resources handlers

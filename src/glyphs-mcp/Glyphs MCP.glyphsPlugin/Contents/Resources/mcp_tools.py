@@ -4,6 +4,13 @@ from __future__ import division, print_function, unicode_literals
 import json
 import traceback
 from dataclasses import asdict
+
+try:
+    import objc  # type: ignore[import-not-found]
+    from Foundation import NSObject  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover - PyObjC should be available inside Glyphs
+    objc = None
+    NSObject = None
 from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor  # type: ignore[import-not-found]
 from fastmcp import FastMCP
 from export_designspace_ufo import (
@@ -30,6 +37,186 @@ def _custom_parameter(obj, key, default=None):
     except Exception:
         pass
     return default
+
+
+def _sanitize_for_json(value):
+    """Convert Glyphs/PyObjC objects to JSON-serializable primitives."""
+    if value is None:
+        return None
+
+    if isinstance(value, (bool, int, float, str)):
+        return value
+
+    if isinstance(value, (list, tuple, set)):
+        return [_sanitize_for_json(v) for v in value]
+
+    if isinstance(value, dict):
+        return {str(k): _sanitize_for_json(v) for k, v in value.items()}
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        pass
+
+    try:
+        return str(value)
+    except Exception:
+        return None
+
+
+def _safe_json(data):
+    return json.dumps(_sanitize_for_json(data))
+
+
+def _safe_attr(obj, attr_name, default=None):
+    """Fetch an attribute without crashing on proxies or selectors."""
+    try:
+        value = getattr(obj, attr_name)
+        if callable(value):
+            return value()
+        return value
+    except AttributeError:
+        return default
+    except Exception:
+        return default
+
+
+def _coerce_numeric(value):
+    """Convert Glyphs/AppKit objects or selectors to plain floats/ints."""
+    if value is None:
+        return None
+
+    try:
+        if callable(value):
+            value = value()
+    except Exception:
+        return None
+
+    if value is None:
+        return None
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        pass
+
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _clear_layer_paths(layer):
+    """Remove all paths from a layer without touching components/anchors."""
+    try:
+        existing = list(getattr(layer, "paths", []) or [])
+    except Exception:
+        existing = []
+
+    for path in existing:
+        removed = False
+        try:
+            if hasattr(layer, "removePath_"):
+                layer.removePath_(path)
+                removed = True
+        except Exception:
+            removed = False
+
+        if not removed:
+            try:
+                layer.paths.remove(path)
+                removed = True
+            except Exception:
+                pass
+
+        if not removed:
+            try:
+                idx = layer.paths.index(path)
+                del layer.paths[idx]
+            except Exception:
+                pass
+
+
+def _get_sidebearing(layer, attr_name, legacy_attr):
+    """Return a sidebearing value even for proxy layers lacking modern attrs."""
+    value = None
+    try:
+        value = getattr(layer, attr_name, None)
+    except Exception:
+        value = None
+
+    value = _coerce_numeric(value)
+
+    if value is None:
+        fallback = getattr(layer, legacy_attr, None)
+        value = _coerce_numeric(fallback)
+
+    return value
+
+
+def _get_left_sidebearing(layer):
+    return _get_sidebearing(layer, "leftSideBearing", "LSB")
+
+
+def _get_right_sidebearing(layer):
+    return _get_sidebearing(layer, "rightSideBearing", "RSB")
+
+
+def _set_sidebearing(layer, attr_name, legacy_attr, value):
+    """Attempt to set a sidebearing using both modern and legacy attributes."""
+    if value is None:
+        return False
+
+    try:
+        setattr(layer, attr_name, value)
+        return True
+    except Exception:
+        pass
+
+    try:
+        setattr(layer, legacy_attr, value)
+        return True
+    except Exception:
+        return False
+
+
+def _save_font_on_main_thread(font, requested_path=None):
+    """Invoke font.save(...) on the Glyphs main thread via NSObject helper."""
+    if objc is None or NSObject is None:
+        if requested_path:
+            font.save(requested_path)
+            return requested_path
+        font.save()
+        return getattr(font, "filepath", None)
+
+    class _FontSaveHelper(NSObject):  # type: ignore[misc,valid-type]
+        def init(self):
+            self = objc.super(_FontSaveHelper, self).init()
+            if self is None:
+                return None
+            self._font = font
+            self._path = requested_path
+            self.error = None
+            self.saved_path = None
+            return self
+
+        def saveFont_(self, _obj):
+            try:
+                if self._path:
+                    self._font.save(self._path)
+                else:
+                    self._font.save()
+                self.saved_path = getattr(self._font, "filepath", None) or self._path
+            except Exception as exc:  # pragma: no cover - bubbled to caller
+                self.error = exc
+
+    helper = _FontSaveHelper.alloc().init()
+    helper.performSelectorOnMainThread_withObject_waitUntilDone_("saveFont:", None, True)
+
+    if getattr(helper, "error", None) is not None:
+        raise helper.error
+
+    return getattr(helper, "saved_path", None) or getattr(font, "filepath", None) or requested_path
 
 
 @mcp.tool()
@@ -201,19 +388,27 @@ async def get_font_instances(font_index: int = 0) -> str:
         font = Glyphs.fonts[font_index]
         instances_info = []
         for instance in font.instances:
+            weight_val = _coerce_numeric(_safe_attr(instance, "weight"))
+            width_val = _coerce_numeric(_safe_attr(instance, "width"))
+            interpolation_weight = _coerce_numeric(
+                _safe_attr(instance, "interpolationWeight")
+            )
+            interpolation_width = _coerce_numeric(
+                _safe_attr(instance, "interpolationWidth")
+            )
             instances_info.append(
                 {
-                    "name": instance.name,
-                    "weight": instance.weight,
-                    "width": instance.width,
-                    "customName": instance.customName,
-                    "interpolationWeight": instance.interpolationWeight,
-                    "interpolationWidth": instance.interpolationWidth,
-                    "active": instance.active,
-                    "export": instance.export,
+                    "name": _safe_attr(instance, "name", ""),
+                    "weight": weight_val,
+                    "width": width_val,
+                    "customName": _safe_attr(instance, "customName"),
+                    "interpolationWeight": interpolation_weight,
+                    "interpolationWidth": interpolation_width,
+                    "active": bool(_safe_attr(instance, "active", False)),
+                    "export": bool(_safe_attr(instance, "export", False)),
                 }
             )
-        return json.dumps(instances_info)
+        return _safe_json(instances_info)
     except Exception as e:
         return json.dumps({"error": str(e)})
 
@@ -248,8 +443,8 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
             layer_info = {
                 "name": layer.name,
                 "width": layer.width,
-                "leftSideBearing": layer.leftSideBearing,
-                "rightSideBearing": layer.rightSideBearing,
+                "leftSideBearing": _get_left_sidebearing(layer),
+                "rightSideBearing": _get_right_sidebearing(layer),
                 "pathCount": len(layer.paths),
                 "componentCount": len(layer.components),
                 "anchorCount": len(layer.anchors),
@@ -553,56 +748,27 @@ async def copy_glyph(
         if not src_glyph:
             return json.dumps({"error": "Source glyph '{}' not found".format(source_glyph)})
 
-        # Create target glyph if it doesn't exist
+        # Remove existing target glyph so we can duplicate cleanly
         tgt_glyph = font.glyphs[target_glyph]
-        if not tgt_glyph:
-            tgt_glyph = GSGlyph(target_glyph)
-            font.glyphs.append(tgt_glyph)
+        if tgt_glyph is not None:
+            font.removeGlyph_(tgt_glyph)
 
-        # Copy properties
-        tgt_glyph.category = src_glyph.category
-        tgt_glyph.subCategory = src_glyph.subCategory
-        tgt_glyph.script = src_glyph.script
+        # Duplicate glyph using Glyphs' native copying so all layer data and
+        # metadata come across without hitting read-only attributes.
+        duplicated = src_glyph.copy()
+        duplicated.name = target_glyph
+        font.glyphs.append(duplicated)
 
-        # Copy layer data
-        for master in font.masters:
-            src_layer = src_glyph.layers[master.id]
-            tgt_layer = tgt_glyph.layers[master.id]
-
-            # Clear existing paths
-            tgt_layer.paths = []
-
-            # Copy paths
-            for path in src_layer.paths:
-                new_path = GSPath()
-                for node in path.nodes:
-                    new_node = GSNode()
-                    new_node.position = node.position
-                    new_node.type = node.type
-                    new_node.smooth = node.smooth
-                    new_path.nodes.append(new_node)
-                new_path.closed = path.closed
-                tgt_layer.paths.append(new_path)
-
-            # Copy components if requested
-            if copy_components:
-                tgt_layer.components = []
-                for component in src_layer.components:
-                    new_comp = GSComponent(component.componentName)
-                    new_comp.transform = component.transform
-                    tgt_layer.components.append(new_comp)
-
-            # Copy anchors if requested
-            if copy_anchors:
-                tgt_layer.anchors = []
-                for anchor in src_layer.anchors:
-                    new_anchor = GSAnchor(anchor.name, anchor.position)
-                    tgt_layer.anchors.append(new_anchor)
-
-            # Copy metrics
-            tgt_layer.width = src_layer.width
-            tgt_layer.leftMetricsKey = src_layer.leftMetricsKey
-            tgt_layer.rightMetricsKey = src_layer.rightMetricsKey
+        # Optionally strip components/anchors from the duplicate
+        if not copy_components or not copy_anchors:
+            for layer in duplicated.layers:
+                if not copy_components:
+                    try:
+                        layer.setComponents_(None)
+                    except Exception:
+                        layer.components = []
+                if not copy_anchors:
+                    layer.anchors = []
 
         # Send notification
         Glyphs.showNotification(
@@ -672,16 +838,16 @@ async def update_glyph_metrics(
             if width is not None:
                 layer.width = width
             if left_sidebearing is not None:
-                layer.leftSideBearing = left_sidebearing
+                _set_sidebearing(layer, "leftSideBearing", "LSB", left_sidebearing)
             if right_sidebearing is not None:
-                layer.rightSideBearing = right_sidebearing
+                _set_sidebearing(layer, "rightSideBearing", "RSB", right_sidebearing)
 
             updated_metrics.append(
                 {
                     "layerName": layer.name,
                     "width": layer.width,
-                    "leftSideBearing": layer.leftSideBearing,
-                    "rightSideBearing": layer.rightSideBearing,
+                    "leftSideBearing": _get_left_sidebearing(layer),
+                    "rightSideBearing": _get_right_sidebearing(layer),
                 }
             )
 
@@ -1100,6 +1266,8 @@ async def get_selected_font_and_master() -> str:
         selected_glyphs = []
         for layer in font.selectedLayers:
             glyph = layer.parent
+            left_bearing = _get_left_sidebearing(layer)
+            right_bearing = _get_right_sidebearing(layer)
             selected_glyphs.append({
                 "name": glyph.name,
                 "unicode": glyph.unicode,
@@ -1107,11 +1275,11 @@ async def get_selected_font_and_master() -> str:
                 "subCategory": glyph.subCategory,
                 "layerName": layer.name,
                 "width": layer.width,
-                "leftSideBearing": layer.leftSideBearing,
-                "rightSideBearing": layer.rightSideBearing,
+                "leftSideBearing": left_bearing,
+                "rightSideBearing": right_bearing,
             })
         
-        return json.dumps({
+        return _safe_json({
             "fontInfo": font_info,
             "currentMaster": current_master,
             "selectedGlyphs": selected_glyphs,
@@ -1586,26 +1754,27 @@ async def save_font(font_index: int = 0, path: str = None) -> str:
 
         font = Glyphs.fonts[font_index]
 
-        if path:
-            font.filepath = path
-
-        if not font.filepath:
+        existing_path = getattr(font, "filepath", None)
+        requested_path = path or existing_path
+        if not requested_path:
             return json.dumps(
                 {"error": "No file path specified and font has not been saved before"}
             )
 
-        font.save()
+        target_override = path if path else None
+        saved_path = _save_font_on_main_thread(font, target_override)
+        resolved_path = saved_path or getattr(font, "filepath", None) or requested_path
 
         # Send notification
         Glyphs.showNotification(
-            "Font Saved", "Saved {} to {}".format(font.familyName, font.filepath)
+            "Font Saved", "Saved {} to {}".format(font.familyName, resolved_path)
         )
 
         return json.dumps(
             {
                 "success": True,
-                "message": "Saved font to {}".format(font.filepath),
-                "path": font.filepath,
+                "message": "Saved font to {}".format(resolved_path),
+                "path": resolved_path,
             }
         )
     except Exception as e:
@@ -1757,30 +1926,35 @@ async def set_glyph_paths(
                 layer = glyph.layers[font.masters[0].id]
         
         # Clear existing paths (but keep components, anchors, etc.)
-        layer.paths = []
+        _clear_layer_paths(layer)
         
         # Build new paths from the JSON data
         if "paths" in path_info:
             for path_data in path_info["paths"]:
                 new_path = GSPath()
-                
+
                 # Add nodes
                 if "nodes" in path_data:
                     for node_data in path_data["nodes"]:
                         new_node = GSNode()
                         new_node.position = (
-                            float(node_data.get("x", 0)),
-                            float(node_data.get("y", 0))
+                            float(node_data.get("x", 0.0)),
+                            float(node_data.get("y", 0.0)),
                         )
                         new_node.type = node_data.get("type", "line")
-                        new_node.smooth = node_data.get("smooth", False)
+                        new_node.smooth = bool(node_data.get("smooth", False))
                         new_path.nodes.append(new_node)
-                
+
                 # Set closed property
-                new_path.closed = path_data.get("closed", True)
-                
-                # Add the path to the layer
-                layer.paths.append(new_path)
+                new_path.closed = bool(path_data.get("closed", True))
+
+                # Add the path to the layer via the mutable collection
+                try:
+                    layer.paths.append(new_path)
+                except Exception:
+                    # Fallback if append is unavailable
+                    if hasattr(layer, "addPath_"):
+                        layer.addPath_(new_path)
         
         # Update metrics if provided
         if "width" in path_info:
@@ -1796,11 +1970,11 @@ async def set_glyph_paths(
             "Updated paths for glyph '{}' in {}".format(glyph_name, font.familyName)
         )
         
-        return json.dumps({
+        return _safe_json({
             "success": True,
             "message": "Updated paths for glyph '{}'".format(glyph_name),
-            "pathCount": len(layer.paths),
-            "nodeCount": sum(len(path.nodes) for path in layer.paths)
+            "pathCount": len(getattr(layer, "paths", [])),
+            "nodeCount": sum(len(path.nodes) for path in getattr(layer, "paths", []))
         })
         
     except Exception as e:
