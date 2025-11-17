@@ -6,7 +6,10 @@ import threading
 from GlyphsApp import Glyphs, EDIT_MENU # type: ignore[import-not-found]
 from GlyphsApp.plugins import GeneralPlugin # type: ignore[import-not-found]
 from AppKit import NSMenuItem
+from starlette.middleware import Middleware
+
 from mcp_tools import mcp
+from security import OriginValidationMiddleware, StaticTokenAuthMiddleware
 from utils import find_available_port, get_known_tools, get_tool_info
 
 
@@ -36,6 +39,15 @@ class MCPBridgePlugin(GeneralPlugin):
         # Configuration
         self.default_port = 9680
         self.max_port_attempts = 50
+
+    @objc.python_method
+    def _http_middleware(self):
+        """Return security middleware for the embedded HTTP server."""
+        middleware = [Middleware(OriginValidationMiddleware)]
+
+        # Always include token middleware; it is a no-op unless the env token is set.
+        middleware.append(Middleware(StaticTokenAuthMiddleware))
+        return middleware
 
     @objc.python_method
     def start(self):
@@ -75,6 +87,7 @@ class MCPBridgePlugin(GeneralPlugin):
                     transport="http",
                     host="127.0.0.1",
                     port=port,
+                    middleware=self._http_middleware(),
                 ),
                 daemon=True,
             )

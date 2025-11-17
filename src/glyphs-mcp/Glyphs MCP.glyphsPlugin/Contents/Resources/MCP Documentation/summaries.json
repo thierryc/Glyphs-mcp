@@ -1,0 +1,2927 @@
+{
+  "section_1.rst": {
+    "checksum": "4ad62f4881fd222682825b7c0b6f1dc6f8e24893",
+    "summary": "These changes could possibly break your code, so you need to keep track of them. Please see GSApplication.versionNumber for how to check for the app version in your code.",
+    "version": 2
+  },
+  "section_2.rst": {
+    "checksum": "9cbfa846426b750da746440a2011bf03ff24ac7e",
+    "summary": "The mothership. Everything starts here.",
+    "version": 2
+  },
+  "section_3.rst": {
+    "checksum": "474e1e61b1337f5a717408380b6706560b067ef7",
+    "summary": "The active GSDocument object or None.",
+    "version": 2
+  },
+  "section_4.rst": {
+    "checksum": "0aba09fd133ffe481538f2c2316cc6a1584c368d",
+    "summary": "An array of open GSDocument objects.",
+    "version": 2
+  },
+  "section_5.rst": {
+    "checksum": "a283959830d610b197c33402c2481ffff2592504",
+    "summary": "The active GSFont object or None.",
+    "version": 2
+  },
+  "section_6.rst": {
+    "checksum": "0e83abdce220a2830f1203eebe2e26c7aa5e10a1",
+    "summary": "Be aware that the order is defined by last used font. Append and extend generally don't insert at the end of the list.",
+    "version": 2
+  },
+  "section_7.rst": {
+    "checksum": "b54af211646acad52bbdc8138ecd8a7285867c17",
+    "summary": "List of available reporter plug-ins (same as bottom section in the 'View' menu). These are the actual objects.",
+    "version": 2
+  },
+  "section_8.rst": {
+    "checksum": "4ac06da0930762cba48a6734c7afc4d9dea23078",
+    "summary": "List of activated reporter plug-ins.",
+    "version": 2
+  },
+  "section_9.rst": {
+    "checksum": "57840bda3d97f5e16c9d9a8458029505d26ad6ea",
+    "summary": "List of available filters (same as 'Filter' menu). These are the actual objects.",
+    "version": 2
+  },
+  "section_10.rst": {
+    "checksum": "e4847786e6c48c80e93078e4e0dc9fb5daf42488",
+    "summary": "A dict like object for storing preferences. You can get and set key-value pairs.",
+    "version": 2
+  },
+  "section_11.rst": {
+    "checksum": "a37a18cd2c09c20804937c79f9f2cd94395b0a6a",
+    "summary": "Access to default settings cast to a bool.",
+    "version": 2
+  },
+  "section_12.rst": {
+    "checksum": "0420928f89d263caa87a8f686ac2bb9f41bc1f5e",
+    "summary": "A dictionary with script name to tag mapping, e.g., 'arabic': 'arab' or 'devanagari': 'dev2'",
+    "version": 2
+  },
+  "section_13.rst": {
+    "checksum": "59beb0cebdd63cf8c4c86c6e721b9bb5a6f05408",
+    "summary": "A dictionary with glyphs name suffixes for scripts and their respective script names, e.g., 'cy': 'cyrillic'",
+    "version": 2
+  },
+  "section_14.rst": {
+    "checksum": "b1427d9f670ff7f8cbd6ee4266da773c78a3398f",
+    "summary": "A dictionary with language tag to script tag mapping, e.g., 'ENG': 'latn'",
+    "version": 2
+  },
+  "section_15.rst": {
+    "checksum": "b54b123d8cc1a62045b2f13e20649f0bcc42d7fd",
+    "summary": "A list of dictionaries with more detailed language informations.",
+    "version": 2
+  },
+  "section_16.rst": {
+    "checksum": "457c731229ca87dd0d06639d99ae5dfa72bea143",
+    "summary": "Names of unicode ranges.",
+    "version": 2
+  },
+  "section_17.rst": {
+    "checksum": "7ea3ffbaa651b21aa66cb9121798d71b84d67ee3",
+    "summary": "Width of glyph Edit view. Corresponds to the \"Width of editor\" setting from the Preferences.",
+    "version": 2
+  },
+  "section_18.rst": {
+    "checksum": "3186b61ed8cfe82d53204585698c9884f3e90fc1",
+    "summary": "Size of Bezier handles in Glyph Edit view. Possible value are 0–2.",
+    "version": 2
+  },
+  "section_19.rst": {
+    "checksum": "8c5e340c0d7a79220b0a79725a9a3b38c92f33be",
+    "summary": "String containing Glyph.app’s version number. May contain letters also, like ‘2.3b’.",
+    "version": 2
+  },
+  "section_20.rst": {
+    "checksum": "8a74529571fcf4599cc0a4f6890c309cf0b49e1d",
+    "summary": "Glyph.app’s version number. Use this to check for version in your code.",
+    "version": 2
+  },
+  "section_21.rst": {
+    "checksum": "ac53bb5e2861c0e34aa7eb8ed99b2de1ac0242b0",
+    "summary": "Glyph.app’s build number.",
+    "version": 2
+  },
+  "section_22.rst": {
+    "checksum": "9b0db0b926a097225416d55df11c558e4262a3aa",
+    "summary": "Add menu items to Glyphs’ main menus.",
+    "version": 2
+  },
+  "section_23.rst": {
+    "checksum": "e59e8e1342bdd9eef2c33d454b7a61640911210e",
+    "summary": "**Functions**",
+    "version": 2
+  },
+  "section_24.rst": {
+    "checksum": "a505a0b7c8a4630f1015fb047255e7a20a34b447",
+    "summary": "Opens a document",
+    "version": 2
+  },
+  "section_25.rst": {
+    "checksum": "7ee44e5d1ef04b365ff7821bfaaa875c8aaf3241",
+    "summary": "Opens the macro window",
+    "version": 2
+  },
+  "section_26.rst": {
+    "checksum": "49498a28d45f14b8c4e782c37e0ace62a94bb23e",
+    "summary": "Shows the Glyph Info window with a preset search string",
+    "version": 2
+  },
+  "section_27.rst": {
+    "checksum": "832a7c6dae2534c1927abfe3e7e5875078fe1a45",
+    "summary": "Generates GSGlyphInfo object for a given glyph name.",
+    "version": 2
+  },
+  "section_28.rst": {
+    "checksum": "c301b1fbb8eb8373b7d58fd5fa43ba1ef5877b94",
+    "summary": "Generates GSGlyphInfo object for a given hex unicode.",
+    "version": 2
+  },
+  "section_29.rst": {
+    "checksum": "025ae394b5d82fff95fe880f544e7ea9ec9a9ab7",
+    "summary": "Converts glyph name to nice, human-readable glyph name (e.g. afii10017 or uni0410 to A-cy)",
+    "version": 2
+  },
+  "section_30.rst": {
+    "checksum": "6fc770ecdc98efc5aaabe0c0e240ae3655f5f1cc",
+    "summary": "Converts glyph name to production glyph name (e.g. afii10017 or A-cy to uni0410)",
+    "version": 2
+  },
+  "section_31.rst": {
+    "checksum": "71dbc6e089fba2c841c0080a1a89e06a3dd98d58",
+    "summary": "If defined as a ligature in the glyph database, this function returns a list of glyph names that this ligature could be composed of.",
+    "version": 2
+  },
+  "section_32.rst": {
+    "checksum": "363e40e89053e00a3e98de00f93b58f97216a3da",
+    "summary": "Add a user-defined function to the glyph window’s drawing operations, in the foreground and background for the active glyph as well as in the inactive glyphs.",
+    "version": 2
+  },
+  "section_33.rst": {
+    "checksum": "db5f3920f381245808179bbb7709cdd35bcbdf52",
+    "summary": "Remove the function you’ve previously added.",
+    "version": 2
+  },
+  "section_34.rst": {
+    "checksum": "06da32ccf828cd26a58591228d8949688569f8a2",
+    "summary": "Redraws all Edit views and Preview views.",
+    "version": 2
+  },
+  "section_35.rst": {
+    "checksum": "34d48deef4abe33253c1b207db04f43c81d85dfc",
+    "summary": "Shows the user a notification in Mac’s Notification Center.",
+    "version": 2
+  },
+  "section_36.rst": {
+    "checksum": "4dd6f2f3562eaf93c65b8e13db2e27fafcd26833",
+    "summary": "Return a string in the language of Glyphs.app’s UI locale, which must be supplied as a dictionary using language codes as keys.",
+    "version": 2
+  },
+  "section_37.rst": {
+    "checksum": "27b8705ba7c3eade3f6080e6e87fdb9512920eda",
+    "summary": "Activate a reporter plug-in by its object (see Glyphs.reporters) or class name.",
+    "version": 2
+  },
+  "section_38.rst": {
+    "checksum": "e6b73a93561d3611883ffb75cc30b43ad202fafc",
+    "summary": "Deactivate a reporter plug-in by its object (see Glyphs.reporters) or class name.",
+    "version": 2
+  },
+  "section_39.rst": {
+    "checksum": "86958ee0e9b93ec398ca6da8e7f433ce721ac78e",
+    "summary": "The document class",
+    "version": 2
+  },
+  "section_40.rst": {
+    "checksum": "a793731f761e754ff3c22387cbd3b06ee7d2fd93",
+    "summary": "The active GSFont",
+    "version": 2
+  },
+  "section_41.rst": {
+    "checksum": "6f61d2240cc7f21c1a8a363e10b33614715f8e1b",
+    "summary": "The last save location",
+    "version": 2
+  },
+  "section_42.rst": {
+    "checksum": "1bea6ba12ae244bbe76884ac76fc1a557f1e0b55",
+    "summary": "Implementation of the font object. This object is host to the masters <GSFontMaster> used for interpolation.",
+    "version": 2
+  },
+  "section_43.rst": {
+    "checksum": "258af4e7c0c3a45a6080e1dba64e278e88d0e81a",
+    "summary": "Returns the internal NSDocument document. Read-only.",
+    "version": 2
+  },
+  "section_44.rst": {
+    "checksum": "e86c2d2c1bff175bd9b6703e2aabcad8a4eb2dc3",
+    "summary": "Collection of GSFontMaster objects.",
+    "version": 2
+  },
+  "section_45.rst": {
+    "checksum": "f563329789ee0ed4bb396c7c4269db936b49dc34",
+    "summary": "Collection of GSInstance objects.",
+    "version": 2
+  },
+  "section_46.rst": {
+    "checksum": "fe0617ba6badb6ebabb71fdfb2a76c35726d0b92",
+    "summary": "Collection of GSAxis:",
+    "version": 2
+  },
+  "section_47.rst": {
+    "checksum": "4e06e409b63f98e8aa77e448117d12d6c9bf7c23",
+    "summary": "Holds the fonts info properties. Can be instances of GSFontInfoValueSingle and GSFontInfoValueLocalized.",
+    "version": 2
+  },
+  "section_48.rst": {
+    "checksum": "1f771983067b5004e072bd494cb787cc78c56cef",
+    "summary": "a list of all GSMetric objects.",
+    "version": 2
+  },
+  "section_49.rst": {
+    "checksum": "e02a483ff5e92e7e7763564a25f6044b60b4808e",
+    "summary": "The stems. A list of GSMetric objects.",
+    "version": 2
+  },
+  "section_50.rst": {
+    "checksum": "8d9d34934db6c1dade4053c9e2ef6e94dfab3962",
+    "summary": "The numbers. A list of GSMetric objects.",
+    "version": 2
+  },
+  "section_51.rst": {
+    "checksum": "7c10a2680403d6d7aca1f73262dbbc419106534e",
+    "summary": "Collection of GSGlyph objects. Returns a list, but you may also call glyphs using index or glyph name or character as key.",
+    "version": 2
+  },
+  "section_52.rst": {
+    "checksum": "3c09d2656a8b7950f9acf2317c2657f7718791c0",
+    "summary": "The (internal) character that is used in the edit view. It the glyph has a unicode, that is used, otherwise a temporary code is assigned.",
+    "version": 2
+  },
+  "section_53.rst": {
+    "checksum": "b7ca1ef131aabde27b437f1241c339dcdb17b528",
+    "summary": "Collection of GSClass objects, representing OpenType glyph classes.",
+    "version": 2
+  },
+  "section_54.rst": {
+    "checksum": "2394d3ea1d15b80ad0798c1bbbd6f0e842b6048a",
+    "summary": "Collection of GSFeature objects, representing OpenType features.",
+    "version": 2
+  },
+  "section_55.rst": {
+    "checksum": "17393eac51df46bc31ab854dd78059916fa8d952",
+    "summary": "Collection of GSFeaturePrefix objects, containing stuff that needs to be outside of the OpenType features.",
+    "version": 2
+  },
+  "section_56.rst": {
+    "checksum": "3f9163f48c5ffd5cbbe2c1332f0fcfdc90605d14",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSFont.properties",
+    "version": 2
+  },
+  "section_57.rst": {
+    "checksum": "4a1d290d3f8019e97142e2ce08666efc68266dab",
+    "summary": "This accesses all localized copyright values. For details GSFont.properties",
+    "version": 2
+  },
+  "section_58.rst": {
+    "checksum": "3982307843add0288154e279b6af147c5f78b4d3",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSFont.properties",
+    "version": 2
+  },
+  "section_59.rst": {
+    "checksum": "538a0f1874adca2dc43dc813c1e8ec9b168fe2eb",
+    "summary": "This accesses all localized license values. For details GSFont.properties",
+    "version": 2
+  },
+  "section_60.rst": {
+    "checksum": "12f15218a5de2813833d382c657fcd731a94fc56",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSFont.properties",
+    "version": 2
+  },
+  "section_61.rst": {
+    "checksum": "5bce562bdb0db4cc7a917a1a4cfe2b0031da4f2b",
+    "summary": "This accesses all localized designer values. For details GSFont.properties",
+    "version": 2
+  },
+  "section_62.rst": {
+    "checksum": "0582479a9896ca7bfc0e23516e0201b35e410c57",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSFont.properties",
+    "version": 2
+  },
+  "section_63.rst": {
+    "checksum": "a2634c0dfaae1ca68564de711306da12930ce392",
+    "summary": "This accesses all localized designer values. For details GSFont.properties",
+    "version": 2
+  },
+  "section_64.rst": {
+    "checksum": "9324c005c1238b01fe7611f3f98380be027b5515",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSFont.properties",
+    "version": 2
+  },
+  "section_65.rst": {
+    "checksum": "aa448d3dee724b6e995b4f34110cace5210e120f",
+    "summary": "This accesses all localized designer values. For details GSFont.properties",
+    "version": 2
+  },
+  "section_66.rst": {
+    "checksum": "af6f4cddae794413ea778d19cf73467a893009df",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSFont.properties",
+    "version": 2
+  },
+  "section_67.rst": {
+    "checksum": "cc5230751f7c4262de59491cbceec361df8ae025",
+    "summary": "This accesses all localized designer values. For details GSFont.properties",
+    "version": 2
+  },
+  "section_68.rst": {
+    "checksum": "05067f632ff5aa84cb75b1fc76888aae8a445b4e",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSFont.properties",
+    "version": 2
+  },
+  "section_69.rst": {
+    "checksum": "d96077060645451cb76abe11c0ec1217eda6ffe7",
+    "summary": "This accesses all localized trademark values. For details GSFont.properties",
+    "version": 2
+  },
+  "section_70.rst": {
+    "checksum": "d7a82830dc73a363d017a5eefab2c2afe89e543a",
+    "summary": "designerURL (attribute)",
+    "version": 2
+  },
+  "section_71.rst": {
+    "checksum": "061901456f778b81443f809c45791efb18065f5e",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSFont.properties",
+    "version": 2
+  },
+  "section_72.rst": {
+    "checksum": "1bf9f25126ba80520a3c47b22922139581caac62",
+    "summary": "This accesses all localized manufacturer values. For details GSFont.properties",
+    "version": 2
+  },
+  "section_73.rst": {
+    "checksum": "f455497a60e44cb9b08bf6c9f672c5c8d4788ea1",
+    "summary": "manufacturerURL (attribute)",
+    "version": 2
+  },
+  "section_74.rst": {
+    "checksum": "d2b91213a51ebd40afa03d0bf5d60e01c4f1945e",
+    "summary": "versionMajor (attribute)",
+    "version": 2
+  },
+  "section_75.rst": {
+    "checksum": "48a9ef9cd9623d2924622046a82b0e5371e71976",
+    "summary": "versionMinor (attribute)",
+    "version": 2
+  },
+  "section_76.rst": {
+    "checksum": "5e6b75c963b1a591bcd4c7ae090de2189b1dad90",
+    "summary": "date (attribute)",
+    "version": 2
+  },
+  "section_77.rst": {
+    "checksum": "21439dd6fe3335ec98b3b48332e7068554b5e0e3",
+    "summary": "Family name of the typeface.",
+    "version": 2
+  },
+  "section_78.rst": {
+    "checksum": "55b381b1db7575fc489bfd75654dedd57dee49fb",
+    "summary": "This accesses all localized family name values. For details GSFont.properties",
+    "version": 2
+  },
+  "section_79.rst": {
+    "checksum": "cfc958f2edb50e2898f37d5073af6a466f812c3f",
+    "summary": "Units per Em",
+    "version": 2
+  },
+  "section_80.rst": {
+    "checksum": "3134a29a70d0114bad4d334e3c8c1ea278849f90",
+    "summary": "note (attribute)",
+    "version": 2
+  },
+  "section_81.rst": {
+    "checksum": "9862c51f6655e8d2fb16a356ec1889dae329d67c",
+    "summary": "Kerning for LTR writing A multi-level dictionary. The first level’s key is the GSFontMaster.id (each master has its own kerning), the second level’s key is the GSGlyph.id or class id (@MMK_L_XX) of the first glyph, the third level’s key is a glyph id or class id (@MMK_R_XX) for the second glyph.",
+    "version": 2
+  },
+  "section_82.rst": {
+    "checksum": "748cac244874fccfd4adbabcbad02af886ed3bd9",
+    "summary": "Kerning for RTL writing A multi-level dictionary. The first level’s key is the GSFontMaster.id (each master has its own kerning), the second level’s key is the GSGlyph.id or class id (@MMK_L_XX) of the first glyph, the third level’s key is a glyph id or class id (@MMK_R_XX) for the second glyph.",
+    "version": 2
+  },
+  "section_83.rst": {
+    "checksum": "5ecaf98d3367b73be104bf5a2a829dc455b52c02",
+    "summary": "Kerning for vertical writing A multi-level dictionary. The first level’s key is the GSFontMaster.id (each master has its own kerning), the second level’s key is the GSGlyph.id or class id (@MMK_L_XX) of the first glyph, the third level’s key is a glyph id or class id (@MMK_R_XX) for the second glyph.",
+    "version": 2
+  },
+  "section_84.rst": {
+    "checksum": "ade71c0ab04f9d038176cf9970c37f38ca72fd43",
+    "summary": "A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.",
+    "version": 2
+  },
+  "section_85.rst": {
+    "checksum": "206b358591d333d315c1437a45e6fb76c42b77dc",
+    "summary": "A dictionary to store data temporarily. Use a unique key.",
+    "version": 2
+  },
+  "section_86.rst": {
+    "checksum": "4af50c927f755be8233dca24e175b4b61e106373",
+    "summary": "Corresponds to the “Don't use nice names” setting from the Font Info dialog.",
+    "version": 2
+  },
+  "section_87.rst": {
+    "checksum": "796bcd756dd6e4c2e7b3a76148849ded9f524d12",
+    "summary": "The custom parameters. List of GSCustomParameter objects.",
+    "version": 2
+  },
+  "section_88.rst": {
+    "checksum": "2bea17cd9adc56c9063aaef84b8e3977154c8ba6",
+    "summary": "Corresponds to the “Grid spacing” setting from the Info dialog.",
+    "version": 2
+  },
+  "section_89.rst": {
+    "checksum": "5da160cb35779c965e6543542e275b7edd2db495",
+    "summary": "Corresponds to the “Grid sub divisions” setting from the Info dialog.",
+    "version": 2
+  },
+  "section_90.rst": {
+    "checksum": "626b9c0cf5136e7dae7b94ef25a2c255c3d98b2b",
+    "summary": "Ready calculated size of grid for rounding purposes. Result of division of grid with gridSubDivisions.",
+    "version": 2
+  },
+  "section_91.rst": {
+    "checksum": "1f16399443977bfd9bcbb35bd52b8fbadf2677aa",
+    "summary": "disablesAutomaticAlignment (attribute)",
+    "version": 2
+  },
+  "section_92.rst": {
+    "checksum": "ea76ebad232ff5f3877843fb2e035604e666f13b",
+    "summary": "Distance of movement by arrow keys. Default:1",
+    "version": 2
+  },
+  "section_93.rst": {
+    "checksum": "cf6e8a536b46a78a101e6d959d21ca4f5c065576",
+    "summary": "Distance of movement by arrow plus Shift key. Default:10",
+    "version": 2
+  },
+  "section_94.rst": {
+    "checksum": "e3335a00e42930ed9e6e9deb8a8ed7841ce36fb1",
+    "summary": "Distance of movement by arrow plus Command key. Default:100",
+    "version": 2
+  },
+  "section_95.rst": {
+    "checksum": "150ad2ad3137a52a8d071371e4c08b30623ffa73",
+    "summary": "disable snapping to nodes and background",
+    "version": 2
+  },
+  "section_96.rst": {
+    "checksum": "53add64e6b1920c7b7a9920b9e96fc140520d8ef",
+    "summary": "disable preview remove overlap",
+    "version": 2
+  },
+  "section_97.rst": {
+    "checksum": "efdeb6820f5e3894b2da43ac69f889e5cea65871",
+    "summary": "Returns a list of all selected glyphs in the Font View.",
+    "version": 2
+  },
+  "section_98.rst": {
+    "checksum": "9856729db809449a718dd9c85ba665d628b0b474",
+    "summary": "Returns a list of all selected layers in the active tab.",
+    "version": 2
+  },
+  "section_99.rst": {
+    "checksum": "0e86b2a5422399f7526354b3000e2910e22dbbc7",
+    "summary": "Returns the active master (selected in the toolbar).",
+    "version": 2
+  },
+  "section_100.rst": {
+    "checksum": "86c4f313232d8430a427e65f92fc90039238e91e",
+    "summary": "Returns the index of the active master (selected in the toolbar).",
+    "version": 2
+  },
+  "section_101.rst": {
+    "checksum": "19f4f3c6ab16b26a767770b31dc80025c73b0ebf",
+    "summary": "The text of the current Edit view.",
+    "version": 2
+  },
+  "section_102.rst": {
+    "checksum": "6521916681f3f3326e44f46d3e6a86bb6607641a",
+    "summary": "List of open Edit view tabs in UI, as list of GSEditViewController objects.",
+    "version": 2
+  },
+  "section_103.rst": {
+    "checksum": "63a06687948f3ceb08dd4ebd8980d2db0ec6991c",
+    "summary": "fontView (attribute)",
+    "version": 2
+  },
+  "section_104.rst": {
+    "checksum": "d971cb6c8c73280aeeed1c510ed6f2126b0ac5c2",
+    "summary": "Active Edit view tab.",
+    "version": 2
+  },
+  "section_105.rst": {
+    "checksum": "fbd5c5249826a29242f9185675415b5bae2ccc76",
+    "summary": "On-disk location of GSFont object.",
+    "version": 2
+  },
+  "section_106.rst": {
+    "checksum": "77b137e322127497df1529037756117fd6add484",
+    "summary": "Name of tool selected in toolbar.",
+    "version": 2
+  },
+  "section_107.rst": {
+    "checksum": "77c7f3afd02d545f74e7ae42cca290e725cc334f",
+    "summary": "Returns a list of available tool names, including third-party plug-ins.",
+    "version": 2
+  },
+  "section_108.rst": {
+    "checksum": "76a7ad536639c37729fc985a3e49ba513977f828",
+    "summary": "Returns the version that the file was last saved",
+    "version": 2
+  },
+  "section_109.rst": {
+    "checksum": "ec11d80e5321dc040632a48bfc6276dc3f4aaae9",
+    "summary": "The file-format the font should be written. possible values are '2' and '3'",
+    "version": 2
+  },
+  "section_110.rst": {
+    "checksum": "14895ba19dfcc25b4ca52dc1133fd3f001035984",
+    "summary": "**Functions**",
+    "version": 2
+  },
+  "section_111.rst": {
+    "checksum": "ae128b01323960647ff89bb1af4551df9dd07e9a",
+    "summary": "Saves the font.",
+    "version": 2
+  },
+  "section_112.rst": {
+    "checksum": "fe535b61b66fea3f8e51c067ff8fe1d67700b35a",
+    "summary": "Closes the font.",
+    "version": 2
+  },
+  "section_113.rst": {
+    "checksum": "2d1c9cfdcc3473f421bd0e7633ecb2566acbbb6f",
+    "summary": "Makes font visible in the application, either by bringing an already open font window to the front or by appending a formerly invisible font object (such as the result of a copy() operation) as a window to the application.",
+    "version": 2
+  },
+  "section_114.rst": {
+    "checksum": "0faba758794803b4485fa8cec5c0430575e8abce",
+    "summary": "This returns the kerning value for the two specified glyphs (leftKey or rightKey is the glyph name) or a kerning group key (@MMK_X_XX).",
+    "version": 2
+  },
+  "section_115.rst": {
+    "checksum": "6c2a1f78e8adac61ccf4d425b61494ee184b9713",
+    "summary": "This sets the kerning for the two specified glyphs (leftKey or rightKey is the glyph name) or a kerning group key (@MMK_X_XX).",
+    "version": 2
+  },
+  "section_116.rst": {
+    "checksum": "e869e16919ee6592c13438938b0e0ed47c5a69ad",
+    "summary": "Removes the kerning for the two specified glyphs (LeftKey or RightKey is the glyph name) or a kerning group key (@MMK_X_XX).",
+    "version": 2
+  },
+  "section_117.rst": {
+    "checksum": "f140ee9573364be5dde6e0fd7c8d3f1dfe3a8fe0",
+    "summary": "Opens a new tab in the current document window, optionally with text, and return that tab object",
+    "version": 2
+  },
+  "section_118.rst": {
+    "checksum": "73c22a23bf8ec6490cad56594fcf10d23b842ad0",
+    "summary": "Updates all OpenType features and classes at once, including generating necessary new features and classes. Equivalent to the \"Update\" button in the features panel.",
+    "version": 2
+  },
+  "section_119.rst": {
+    "checksum": "0f87e205d523a5f08c275a43e8ae652dcfdb48d5",
+    "summary": "Compiles the features, thus making the new feature code functionally available in the editor. Equivalent to the \"Compile\" button in the features panel.",
+    "version": 2
+  },
+  "section_120.rst": {
+    "checksum": "00f48d8ba726aeae8130a25d0c92d7a4493da55e",
+    "summary": "exports the font",
+    "version": 2
+  },
+  "section_121.rst": {
+    "checksum": "5347b5198ae89dac5c3ae0033f53c5d47e7c50e0",
+    "summary": "Implementation of the axis object.",
+    "version": 2
+  },
+  "section_122.rst": {
+    "checksum": "01371b63ba67f70f3d13d71d6bd9b563e8f7d4f4",
+    "summary": "Reference to the GSFont object that contains the axis. Normally that is set by the app.",
+    "version": 2
+  },
+  "section_123.rst": {
+    "checksum": "e5005a6581419c498dfa2da1645d82d02a8cfb76",
+    "summary": "The name of the axis",
+    "version": 2
+  },
+  "section_124.rst": {
+    "checksum": "85990cda7dcb981b7283cada7ad6069efd715d27",
+    "summary": "The axisTag. this is a four letter string.",
+    "version": 2
+  },
+  "section_125.rst": {
+    "checksum": "1d0b860c94013531a973a7507cd8642dc9b63ca1",
+    "summary": "The id to link the values in the masters",
+    "version": 2
+  },
+  "section_126.rst": {
+    "checksum": "85c68cf0b3f076ef9bcc7b096e1fd2e4bb1eac03",
+    "summary": "If the axis should be shown to the user",
+    "version": 2
+  },
+  "section_127.rst": {
+    "checksum": "2ce657bf5a5580682efeceb5605effa5c11f5b8d",
+    "summary": "Implementation of the metric object. It is used to link the metrics and stems in the masters.",
+    "version": 2
+  },
+  "section_128.rst": {
+    "checksum": "3fe50470cc2617df60f0e593c5ac25720173f9e0",
+    "summary": "Reference to the GSFont object that contains the metric. Normally that is set by the app.",
+    "version": 2
+  },
+  "section_129.rst": {
+    "checksum": "07e5e9d9cd6d18c9be2b1a59529abb342359ab74",
+    "summary": "The name of the metric or stem",
+    "version": 2
+  },
+  "section_130.rst": {
+    "checksum": "1d0b860c94013531a973a7507cd8642dc9b63ca1",
+    "summary": "The id to link the values in the masters",
+    "version": 2
+  },
+  "section_131.rst": {
+    "checksum": "33637b2378f1d4f094af1a30b014ad7e347161d3",
+    "summary": "The title as shown in the UI. It is readonly as it is computed by the name, type and filter.",
+    "version": 2
+  },
+  "section_132.rst": {
+    "checksum": "17326c48a3a3e121e602cb0dbf34929cb11b8b47",
+    "summary": "The metrics type",
+    "version": 2
+  },
+  "section_133.rst": {
+    "checksum": "545e1bdd39dfb0f1f6fc75505d3a116cff539a21",
+    "summary": "A filter to limit the scope of the metric.",
+    "version": 2
+  },
+  "section_134.rst": {
+    "checksum": "1d10cd65aa2279b773f0f6c6e13f163e52049975",
+    "summary": "This is used for stem metrics. so only use this for font.stems",
+    "version": 2
+  },
+  "section_135.rst": {
+    "checksum": "93ce9b8823dccf6f35e4dab2db450e4b2f3f90ab",
+    "summary": "Implementation of the master object. This corresponds with the \"Masters\" pane in the Font Info.",
+    "version": 2
+  },
+  "section_136.rst": {
+    "checksum": "2579f0f8f03cb7a5c433e1a16bff545b80a6b825",
+    "summary": ".. autosummary::",
+    "version": 2
+  },
+  "section_137.rst": {
+    "checksum": "ad156f5822ab36b31ae0917afa8f5ec0b2b1a41a",
+    "summary": "Used to identify Layers in the Glyph",
+    "version": 2
+  },
+  "section_138.rst": {
+    "checksum": "b4266096bfbec40b4390196b68acfe6657591688",
+    "summary": "Reference to the GSFont object that contains the master. Normally that is set by the app, only if the instance is not actually added to the font, then set this manually.",
+    "version": 2
+  },
+  "section_139.rst": {
+    "checksum": "369f45f63d5d41f1ae2899bd4c1b571a45412ed4",
+    "summary": "The human-readable identification of the master, e.g., \"Bold Condensed\".",
+    "version": 2
+  },
+  "section_140.rst": {
+    "checksum": "a783dd51b388730e438bd51f4ce7809eac86c633",
+    "summary": "The name of the icon",
+    "version": 2
+  },
+  "section_141.rst": {
+    "checksum": "dae0014965f85ee6b74a942e97a6bb7ddf11aa5c",
+    "summary": "List of floats specifying the positions for each axis",
+    "version": 2
+  },
+  "section_142.rst": {
+    "checksum": "ab9c78a4c87e4a16a1799c3cb4e7f9b6b0e79e93",
+    "summary": "List of floats specifying the positions for each axis",
+    "version": 2
+  },
+  "section_143.rst": {
+    "checksum": "70acf6bb77e5dc07fb56b63bff538da0e55280b3",
+    "summary": "List of floats specifying the positions for each axis for the user facing values",
+    "version": 2
+  },
+  "section_144.rst": {
+    "checksum": "8d06becf0b7a49a3a5824e714d8c08370c1c4eed",
+    "summary": "Holds the fonts info properties. Can be instances of GSFontInfoValueSingle and GSFontInfoValueLocalized",
+    "version": 2
+  },
+  "section_145.rst": {
+    "checksum": "87ea1a02cde42194c751a3dbb6facda0a9741f91",
+    "summary": "only there for compatibility. use GSFontMaster.metrics",
+    "version": 2
+  },
+  "section_146.rst": {
+    "checksum": "9f7140f575b281a14b3b89de49cc226fd8c66790",
+    "summary": "a dict of all GSMetricValue objects. Keys are font.metrics[].id",
+    "version": 2
+  },
+  "section_147.rst": {
+    "checksum": "8f5c1a5146f76a987bab2fd1772a4f6dfbf9feba",
+    "summary": "This is the default ascender of the master. There might be other values that are for specific glyphs.",
+    "version": 2
+  },
+  "section_148.rst": {
+    "checksum": "a18c0f00c35011c7397ba54dad465228315c3baa",
+    "summary": "This is the default capHeight of the master. There might be other values that are for specific glyphs.",
+    "version": 2
+  },
+  "section_149.rst": {
+    "checksum": "c879e838d2063c3c995c5d2fcc6a8c632bbbedfe",
+    "summary": "This is the default xHeight of the master. There might be other values that are for specific glyphs.",
+    "version": 2
+  },
+  "section_150.rst": {
+    "checksum": "4a8e4c27baef515e35911c4a1727ecef54bac8b4",
+    "summary": "This is the default descender of the master. There might be other values that are for specific glyphs.",
+    "version": 2
+  },
+  "section_151.rst": {
+    "checksum": "d5787d17460c7cb47e92073a8caae8d06b5d6320",
+    "summary": "italicAngle (attribute)",
+    "version": 2
+  },
+  "section_152.rst": {
+    "checksum": "5f7eb02b1ce0f3d103cb0e2345e1a3a2e4410046",
+    "summary": "The stems. This is a list of numbers.",
+    "version": 2
+  },
+  "section_153.rst": {
+    "checksum": "64464afd13f671cb477674a64ae163a5cef5b12b",
+    "summary": "The numbers. This is a list of numbers.",
+    "version": 2
+  },
+  "section_154.rst": {
+    "checksum": "ca8e0eaa757ee637b260749ec52bade37b6854b6",
+    "summary": "Collection of GSAlignmentZone objects. Read-only.",
+    "version": 2
+  },
+  "section_155.rst": {
+    "checksum": "cdd2f44fb56df9ecd373c5d54a62c33c82d565cd",
+    "summary": "PS hinting Blue Values calculated from the master’s alignment zones. Read-only.",
+    "version": 2
+  },
+  "section_156.rst": {
+    "checksum": "497100f9204f35f838a2e764c105c0cd17739af9",
+    "summary": "PS hinting Other Blues calculated from the master’s alignment zones. Read-only.",
+    "version": 2
+  },
+  "section_157.rst": {
+    "checksum": "b5ba06c4c63d0f98444cffd13c03f922aabdf702",
+    "summary": "Collection of GSGuide objects. These are the font-wide (actually master-wide) red guidelines.",
+    "version": 2
+  },
+  "section_158.rst": {
+    "checksum": "ba1694d96a2c76f3b97fd95380c675842ee2145f",
+    "summary": "A dictionary to store user data. Use a unique key, and only use objects that can be stored in a property list (bool, string, list, dict, numbers, NSData), otherwise the data will not be recoverable from the saved file.",
+    "version": 2
+  },
+  "section_159.rst": {
+    "checksum": "e3589b26b63ba725baa4e14b4a1d55fae5847e82",
+    "summary": "The custom parameters. List of GSCustomParameter objects.",
+    "version": 2
+  },
+  "section_160.rst": {
+    "checksum": "99b87e8fc5059ce22aae1c7e293929bb82a0a470",
+    "summary": "Implementation of the alignmentZone object.",
+    "version": 2
+  },
+  "section_161.rst": {
+    "checksum": "efdde2594c32a26f90509aa339280cedbf359a36",
+    "summary": "Properties",
+    "version": 2
+  },
+  "section_162.rst": {
+    "checksum": "268e636dce72aca50771393ae4dfc3d3b268ec9e",
+    "summary": "position (attribute)",
+    "version": 2
+  },
+  "section_163.rst": {
+    "checksum": "1564ae951bb158aa4f924076bca19c5d2608ef01",
+    "summary": "size (attribute)",
+    "version": 2
+  },
+  "section_164.rst": {
+    "checksum": "b4bb7d19cb903195b5090f3bb14864e6cdf41844",
+    "summary": "Implementation of the instance object. This corresponds with the \"Exports\" pane in Font Info.",
+    "version": 2
+  },
+  "section_165.rst": {
+    "checksum": "829a26777166a2bb33b34b146f89f8a55179e3c4",
+    "summary": "Properties",
+    "version": 2
+  },
+  "section_166.rst": {
+    "checksum": "17cbca8d47649627c84769aa9a31199a30c7f437",
+    "summary": "exports (attribute)",
+    "version": 2
+  },
+  "section_167.rst": {
+    "checksum": "5d9870bfc83aaee868cb7f816e34ca21fd62c877",
+    "summary": "if visible in the preview in edit view",
+    "version": 2
+  },
+  "section_168.rst": {
+    "checksum": "8de498b03826230caab83c22ca19a836ed866509",
+    "summary": "Name of instance. Corresponds to the \"Style Name\" field in the font info.",
+    "version": 2
+  },
+  "section_169.rst": {
+    "checksum": "c661a26c8ed2c4d0796121ba24f3b430a418d677",
+    "summary": "the type of the instance. Can be either INSTANCETYPESINGLE or INSTANCETYPEVARIABLE.",
+    "version": 2
+  },
+  "section_170.rst": {
+    "checksum": "4ea0c0fc51479d389c708b166ab14f7729e0d0d6",
+    "summary": "Weight class, as set in Font Info, as an integer. Values from 1 to 1000 are supported but 100–900 is recommended.",
+    "version": 2
+  },
+  "section_171.rst": {
+    "checksum": "45d29f9d393de3d94f64132161d033f567b86413",
+    "summary": "Human readable name corresponding to the value of GSInstance.weightClass. This attribute is read-only.",
+    "version": 2
+  },
+  "section_172.rst": {
+    "checksum": "09671122af0164ef1738929877ae8282d7229c3d",
+    "summary": "Width class, as set in Font Info, as an integer. Values from 1 to 9 are supported.",
+    "version": 2
+  },
+  "section_173.rst": {
+    "checksum": "0696845d06fdb56da5feb64e9fdf2da6eadf9d53",
+    "summary": "Human readable name corresponding to the value of GSInstance.widthClass. This attribute is read-only.",
+    "version": 2
+  },
+  "section_174.rst": {
+    "checksum": "d48749b21ef510cab7e400b5ecb0664e8d9b126b",
+    "summary": "List of floats specifying the positions for each axis",
+    "version": 2
+  },
+  "section_175.rst": {
+    "checksum": "b1cdff5044844927d6ea4339c77a6941b7e3a8e1",
+    "summary": "List of floats specifying the positions for each axis",
+    "version": 2
+  },
+  "section_176.rst": {
+    "checksum": "b60a17ece74a1c89e3d40b59d21e347a7317ac86",
+    "summary": "List of floats specifying the positions for each axis for the user facing values",
+    "version": 2
+  },
+  "section_177.rst": {
+    "checksum": "30e4aa3008c05bd67ed14db6996ca6a615b2b734",
+    "summary": "Holds the fonts info properties. Can be instances of GSFontInfoValueSingle and GSFontInfoValueLocalized",
+    "version": 2
+  },
+  "section_178.rst": {
+    "checksum": "431d8d5a63abc47f1fb58224eeb8435109cc3b47",
+    "summary": "Italic flag for style linking",
+    "version": 2
+  },
+  "section_179.rst": {
+    "checksum": "22f8b9d12ea2fb9106f931551a7c400b6f40b6e0",
+    "summary": "Bold flag for style linking",
+    "version": 2
+  },
+  "section_180.rst": {
+    "checksum": "fc4a9d326367f76ba7a6148ed680cc66c3dd2546",
+    "summary": "Linked style",
+    "version": 2
+  },
+  "section_181.rst": {
+    "checksum": "b67ea1b24c44fe20a9016035b50083253c129415",
+    "summary": "preferredFamily",
+    "version": 2
+  },
+  "section_182.rst": {
+    "checksum": "df0c50643e0a3512745a38284c373bf802b08e2e",
+    "summary": "windowsFamily",
+    "version": 2
+  },
+  "section_183.rst": {
+    "checksum": "3b5d83f65fccc216b540f65174007f572cbad9a9",
+    "summary": "This is computed from \"isBold\" and \"isItalic\". Read-only.",
+    "version": 2
+  },
+  "section_184.rst": {
+    "checksum": "c649b9bf8c3fa8ebb6f053b431b5bbb16742df68",
+    "summary": "windowsLinkedToStyle. Read-only.",
+    "version": 2
+  },
+  "section_185.rst": {
+    "checksum": "da1be01f560681bd9183373cdf0afff9db5be3f2",
+    "summary": "fontName (postscriptFontName)",
+    "version": 2
+  },
+  "section_186.rst": {
+    "checksum": "21010f5f3416405ac1216805646cb03fd742f343",
+    "summary": "fullName (postscriptFullName)",
+    "version": 2
+  },
+  "section_187.rst": {
+    "checksum": "3cddf1a2f3202cccc12f7e887e127fc2bd03b22a",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_188.rst": {
+    "checksum": "ad9b5284f62b25913a7bc2e43a0cb9b32d96783a",
+    "summary": "This accesses all localized compatibleFullNames values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_189.rst": {
+    "checksum": "8d43faf6122102cda331632c0f4ef75c5116fc5d",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_190.rst": {
+    "checksum": "71da4c1897143d537d864b256d11546dd209d5b5",
+    "summary": "This accesses all localized copyright values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_191.rst": {
+    "checksum": "26327e05c0446d38bf6e36ffc1765318d00aea02",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_192.rst": {
+    "checksum": "c922b6925686054d00e10940cf3e39e852487621",
+    "summary": "This accesses all localized description values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_193.rst": {
+    "checksum": "7bd38bf39a00d82b6601649e8524c765f6d81032",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_194.rst": {
+    "checksum": "2d3ac28be7cb281a8d80a64e1172152aec17022d",
+    "summary": "designerURL (attribute)",
+    "version": 2
+  },
+  "section_195.rst": {
+    "checksum": "7fa56e8211175f2fbc85fcf1272ee742f2e6a7aa",
+    "summary": "This accesses all localized designer values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_196.rst": {
+    "checksum": "6ef6875581977915e84f8326fa8ad39689a86c12",
+    "summary": "familyName",
+    "version": 2
+  },
+  "section_197.rst": {
+    "checksum": "d12480a5b5d560a222ad625b5cc063f1d2eb15aa",
+    "summary": "This accesses all localized family name values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_198.rst": {
+    "checksum": "66bd9df5adbd44666b7e20b41dfea0fca35fdbe4",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_199.rst": {
+    "checksum": "317e63dcce23b37b9aa32c6576fa89a2153c833b",
+    "summary": "This accesses all localized family name values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_200.rst": {
+    "checksum": "ad3fdcc792400e94799333eab01e61422028eea1",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_201.rst": {
+    "checksum": "500e315ac110f364fb2ff4ef769ce3e1a858a5fd",
+    "summary": "This accesses all localized family name values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_202.rst": {
+    "checksum": "7f4d43da80450cc5c64ec4e77faf3f1397e16867",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_203.rst": {
+    "checksum": "84de64f340e33b321bac317e4ceb60999486d06f",
+    "summary": "This accesses all localized designer values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_204.rst": {
+    "checksum": "4ebdb8ca68f077d14f66ba373a06716e6278f828",
+    "summary": "preferredSubfamilyName",
+    "version": 2
+  },
+  "section_205.rst": {
+    "checksum": "680440f2c0f73a37959a58986b0ea8cc92ad1e3a",
+    "summary": "This accesses all localized designer values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_206.rst": {
+    "checksum": "18ef00cc9d4964e0c03bef7a5055e400e33fbd91",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_207.rst": {
+    "checksum": "1e178f466a4ac4c58cdf376f41dfded7e6809691",
+    "summary": "This accesses all localized designer values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_208.rst": {
+    "checksum": "fe30b902f1e33df843e36fed485fa158f9f9dc9a",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_209.rst": {
+    "checksum": "ff95c19d36a14d3557704950849c880bad046852",
+    "summary": "This accesses all localized designer values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_210.rst": {
+    "checksum": "a5f52c4cd4feda2cfe97d043d3b3812d19b228bf",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_211.rst": {
+    "checksum": "43a3614fd6c7b5cf7afa0b8bdb0ddc19c6b2d48e",
+    "summary": "This accesses all localized designer values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_212.rst": {
+    "checksum": "6faca69f7628cb22924d69feea16a93ecc1ac642",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_213.rst": {
+    "checksum": "7f1013cb3472c85c47a797c9616f3a7996d34187",
+    "summary": "This accesses all localized styleName values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_214.rst": {
+    "checksum": "ae4bcf9d557c9592574e09056311322adbec8042",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_215.rst": {
+    "checksum": "a20ce71733a168379273d792c04a1e48bde142e8",
+    "summary": "This accesses all localized trademark values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_216.rst": {
+    "checksum": "c7753a6ebd516d458a5878709e5d9b6abad57f30",
+    "summary": "This accesses the default value only. The localizations can be accessed by GSInstance.properties",
+    "version": 2
+  },
+  "section_217.rst": {
+    "checksum": "cf498a3913d4014ca4fa8df2cb7b2cd3f4914efa",
+    "summary": "This accesses all localized variableStyleName values. For details GSInstance.properties",
+    "version": 2
+  },
+  "section_218.rst": {
+    "checksum": "7f993065531578b1137129ca58f1fbfe1a088c91",
+    "summary": "manufacturerURL (attribute)",
+    "version": 2
+  },
+  "section_219.rst": {
+    "checksum": "dc192762d3fcf92c7a9f161519f05fb0fca2537a",
+    "summary": "Reference to the GSFont object that contains the instance. Normally that is set by the app, only if the instance is not actually added to the font, then set this manually.",
+    "version": 2
+  },
+  "section_220.rst": {
+    "checksum": "eb272a8e32119567d39b262f41637645eb84661e",
+    "summary": "The custom parameters. List of GSCustomParameter objects.",
+    "version": 2
+  },
+  "section_221.rst": {
+    "checksum": "fd01e8d02e565dc57496d6382f0554c5245d59d4",
+    "summary": "A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.",
+    "version": 2
+  },
+  "section_222.rst": {
+    "checksum": "1e9e93ac6e164fabddc94dce3e4c3db31fc7c7f7",
+    "summary": "A dictionary to store data temporarily. Use a unique key.",
+    "version": 2
+  },
+  "section_223.rst": {
+    "checksum": "4283baa23a2c312e9d1bc716acd94236c721a5e6",
+    "summary": "A dict that contains the interpolation coefficients for each master. This is automatically updated if you change interpolationWeight, interpolationWidth, interpolationCustom.",
+    "version": 2
+  },
+  "section_224.rst": {
+    "checksum": "454a26184d2c825b917a162ec28ee5b6aa66d67c",
+    "summary": "Disables automatic calculation of instanceInterpolations This allows manual setting of instanceInterpolations.",
+    "version": 2
+  },
+  "section_225.rst": {
+    "checksum": "771ae38b0dda1c2fbb3260b81ece3dc278c6ab52",
+    "summary": "a proxy font that acts similar to a normal font object but only interpolates the glyphs you ask it for.",
+    "version": 2
+  },
+  "section_226.rst": {
+    "checksum": "279762b17c2894724cc3180edfbe21f5b99887a7",
+    "summary": "Returns a ready interpolated GSFont object representing this instance. Other than the source object, this interpolated font will contain only one master and one instance.",
+    "version": 2
+  },
+  "section_227.rst": {
+    "checksum": "d5bb9d0341f515d065c279dc3cc131eb16880adf",
+    "summary": "**Functions**",
+    "version": 2
+  },
+  "section_228.rst": {
+    "checksum": "db8bc2f8a2920a25bcfa6ebfe1799f8a5007523d",
+    "summary": "Returns a ready interpolated GSFont object representing this instance. Other than the source object, this interpolated font will contain only one master and one instance.",
+    "version": 2
+  },
+  "section_229.rst": {
+    "checksum": "fbc78ef836de8fb5e5f7651bb02a01a96b866e7c",
+    "summary": "Add this instance as a new master to the font. Identical to \"Instance as Master\" menu item in the Font Info’s Instances section.",
+    "version": 2
+  },
+  "section_230.rst": {
+    "checksum": "391b8bdfbf847e54b85ff3d0ae80bbd23052059c",
+    "summary": "Implementation of the Custom Parameter object. It stores a name/value pair.",
+    "version": 2
+  },
+  "section_231.rst": {
+    "checksum": "c16a8f2c8a2156be0b5d8f3e38d6a0cdfa7b632a",
+    "summary": "Properties",
+    "version": 2
+  },
+  "section_232.rst": {
+    "checksum": "a8beaca6b47fcd7249c1a45daa6fa26dd1ba395c",
+    "summary": "name (attribute)",
+    "version": 2
+  },
+  "section_233.rst": {
+    "checksum": "f0a5763d60f632bc7f43c0b21c1fb6f4c473617b",
+    "summary": "value (attribute)",
+    "version": 2
+  },
+  "section_234.rst": {
+    "checksum": "4e43510ad8ecec855ad8daf27ce97c84b41f8dc6",
+    "summary": "If the the parameter should be used or not",
+    "version": 2
+  },
+  "section_235.rst": {
+    "checksum": "b846ec2cfbcd47e6c5e02ed2d62a15563a759ca9",
+    "summary": "parent (attribute)",
+    "version": 2
+  },
+  "section_236.rst": {
+    "checksum": "a39b8bea932b5e9da125d84c963ddf6c21abd6c3",
+    "summary": "Implementation of the class object. It is used to store OpenType classes.",
+    "version": 2
+  },
+  "section_237.rst": {
+    "checksum": "cf50b6a0d214d766edf1a579f3a59c7f46fdbb39",
+    "summary": "The class name",
+    "version": 2
+  },
+  "section_238.rst": {
+    "checksum": "93eaeaae45f9684ceaaa68bc4501e9597ffb21ee",
+    "summary": "A string with space separated glyph names.",
+    "version": 2
+  },
+  "section_239.rst": {
+    "checksum": "cde2c0876914f0eb5f4a4a053a904a6459820d2d",
+    "summary": "Define whether this class should be auto-generated when pressing the 'Update' button in the Font Info.",
+    "version": 2
+  },
+  "section_240.rst": {
+    "checksum": "de763b5e2989df05895aa593760d3edeef57b543",
+    "summary": "active (attribute)",
+    "version": 2
+  },
+  "section_241.rst": {
+    "checksum": "1c8a90605db82a68ff043d17d3681feba3a8f0f1",
+    "summary": "A dictionary to store data temporarily. Use a unique key.",
+    "version": 2
+  },
+  "section_242.rst": {
+    "checksum": "529fd09703cadf71c3a528ba46f41565ddb18502",
+    "summary": "Implementation of the featurePrefix object. It is used to store things that need to be outside of a feature like standalone lookups.",
+    "version": 2
+  },
+  "section_243.rst": {
+    "checksum": "6025c95e24e0c99d8d509118207735c33efcb730",
+    "summary": "The FeaturePrefix name",
+    "version": 2
+  },
+  "section_244.rst": {
+    "checksum": "18c9112ca132cb0f1a5c593b60f45fd06871f0bd",
+    "summary": "A String containing feature code.",
+    "version": 2
+  },
+  "section_245.rst": {
+    "checksum": "4ab75e21a1eae1b6b5037a8d13c6e17f3e000f7e",
+    "summary": "Define whether this should be auto-generated when pressing the 'Update' button in the Font Info.",
+    "version": 2
+  },
+  "section_246.rst": {
+    "checksum": "de763b5e2989df05895aa593760d3edeef57b543",
+    "summary": "active (attribute)",
+    "version": 2
+  },
+  "section_247.rst": {
+    "checksum": "cc81b1b47fcb9517f2259f8f6fb9c9c45eac0a72",
+    "summary": "Implementation of the feature object. It is used to implement OpenType Features in the Font Info.",
+    "version": 2
+  },
+  "section_248.rst": {
+    "checksum": "254422b4968421b6aebfc9e9c44baeb787a83828",
+    "summary": "The feature name",
+    "version": 2
+  },
+  "section_249.rst": {
+    "checksum": "b4a20895cd5bef77c0b02ca5ef26185cd5261bef",
+    "summary": "The Feature code in Adobe FDK syntax.",
+    "version": 2
+  },
+  "section_250.rst": {
+    "checksum": "02fd107431c99e97c40009b032c2902d74a6848b",
+    "summary": "Define whether this feature should be auto-generated when pressing the 'Update' button in the Font Info.",
+    "version": 2
+  },
+  "section_251.rst": {
+    "checksum": "3340cd2cc9cbd62c2a50a82518ed67218fd9bc78",
+    "summary": "Some extra text. Is shown in the bottom of the feature window.",
+    "version": 2
+  },
+  "section_252.rst": {
+    "checksum": "66db2d55ffb11463fa01d75a8fa2e43e51bd44f4",
+    "summary": "**Functions**",
+    "version": 2
+  },
+  "section_253.rst": {
+    "checksum": "28eef59d249766b3ccc1d4ef2d97bfc416cf2613",
+    "summary": "List of Feature names for stylistic set features",
+    "version": 2
+  },
+  "section_254.rst": {
+    "checksum": "c9a7767a5b0223da54b4ea530f1ac7fa9452855a",
+    "summary": "A dictionary to store data temporarily. Use a unique key.",
+    "version": 2
+  },
+  "section_255.rst": {
+    "checksum": "6d7b88e451d318f99e8416520519e69c4fcda1a1",
+    "summary": "Implementation of the glyph object.",
+    "version": 2
+  },
+  "section_256.rst": {
+    "checksum": "ad7980bf7adb80d259864da348b43f8b62bb419d",
+    "summary": "Reference to the GSFont object.",
+    "version": 2
+  },
+  "section_257.rst": {
+    "checksum": "959185454bf9fbccf27f12299f1e945a152fc101",
+    "summary": "The layers of the glyph, collection of GSLayer objects. You can access them either by index or by layer ID, which can be a GSFontMaster.id.",
+    "version": 2
+  },
+  "section_258.rst": {
+    "checksum": "d4f69f1588689a5d57d28477248bebb081510fb2",
+    "summary": "The name of the glyph. It will be converted to a \"nice name\" (afii10017 to A-cy) (you can disable this behavior in font info or the app preference)",
+    "version": 2
+  },
+  "section_259.rst": {
+    "checksum": "2b18434b1a25ca1fe242b367760206b2335a7c95",
+    "summary": "String with the hex Unicode value of glyph, if encoded.",
+    "version": 2
+  },
+  "section_260.rst": {
+    "checksum": "0dfffc90b2cf6ee3c0100f7fdd939f0d7ece1a81",
+    "summary": "List of Strings‚ with the hex Unicode values of glyph, if encoded.",
+    "version": 2
+  },
+  "section_261.rst": {
+    "checksum": "406b9ef0d91cd9c079ee699a02425a5222c92fe8",
+    "summary": "String representation of glyph, if encoded. This is similar to the string representation that you get when copying glyphs into the clipboard.",
+    "version": 2
+  },
+  "section_262.rst": {
+    "checksum": "38d86fddd1e4e1f54bae9ec5157db56c64b7a681",
+    "summary": "An unique identifier for each glyph",
+    "version": 2
+  },
+  "section_263.rst": {
+    "checksum": "15e680b7d1b2316e900a1d893c6ffe4e8d7bfff6",
+    "summary": "If the glyph is locked TODO",
+    "version": 2
+  },
+  "section_264.rst": {
+    "checksum": "1cfd85b889c571b4ba425c8833f2e823618deef3",
+    "summary": "The category of the glyph. e.g.",
+    "version": 2
+  },
+  "section_265.rst": {
+    "checksum": "3c4b5b3c3e091e0b55bc37421a664587b4b3efe7",
+    "summary": "Set to True in order to manipulate the GSGlyph.category of the glyph (see above). Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file.",
+    "version": 2
+  },
+  "section_266.rst": {
+    "checksum": "6a411851bdd5fb95dab30959ce0a3e87e418da79",
+    "summary": "The subCategory of the glyph. e.g.",
+    "version": 2
+  },
+  "section_267.rst": {
+    "checksum": "0b85e64b3204b49ea9070c768d042071b3b77a7d",
+    "summary": "Set to True in order to manipulate the GSGlyph.subCategory of the glyph (see above). Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file.",
+    "version": 2
+  },
+  "section_268.rst": {
+    "checksum": "01265956f605195b9c44a5d46994921e925d6dc6",
+    "summary": "e.g: GSUppercase, GSLowercase, GSSmallcaps",
+    "version": 2
+  },
+  "section_269.rst": {
+    "checksum": "fed0057ad545328d20056b09bd170687725dca64",
+    "summary": "Set to True in order to manipulate the GSGlyph.case of the glyph (see above). Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file.",
+    "version": 2
+  },
+  "section_270.rst": {
+    "checksum": "929d76931c5b5d8d8717b1d04c4416cebda2c81b",
+    "summary": "Writing direction.",
+    "version": 2
+  },
+  "section_271.rst": {
+    "checksum": "2aa5e8455080b7f9d9a194c3c93d08745ce57a3e",
+    "summary": "Set to True in order to manipulate the GSGlyph.direction of the glyph (see above). Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file.",
+    "version": 2
+  },
+  "section_272.rst": {
+    "checksum": "225fa1289cacfd836a50c18b8c928f868e577778",
+    "summary": "The script of the glyph, e.g., 'latin', 'arabic'. Setting only works if GSGlyph.storeScript is set (see below).",
+    "version": 2
+  },
+  "section_273.rst": {
+    "checksum": "18f9fbcae5632ba5d0373a3db2273c81d004fc4f",
+    "summary": "Set to True in order to manipulate the GSGlyph.script of the glyph (see above). Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file.",
+    "version": 2
+  },
+  "section_274.rst": {
+    "checksum": "06e05dbd39aeee40f44b5ad368b757f87f8e4cc5",
+    "summary": "The productionName of the glyph. Setting only works if GSGlyph.storeProductionName is set (see below).",
+    "version": 2
+  },
+  "section_275.rst": {
+    "checksum": "33e2c34631b521679446a8b10db38f24a1648c14",
+    "summary": "Set to True in order to manipulate the GSGlyph.productionName of the glyph (see above). Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file.",
+    "version": 2
+  },
+  "section_276.rst": {
+    "checksum": "f9e5d430aa759228dc6f502fccf2b6641077e17c",
+    "summary": "store strings that can be used to filter glyphs or build OT-classes with token filters",
+    "version": 2
+  },
+  "section_277.rst": {
+    "checksum": "399bb27d7032b0fbc81e7d9bf9905581a90176a1",
+    "summary": "glyphInfo (attribute)",
+    "version": 2
+  },
+  "section_278.rst": {
+    "checksum": "66edd2c822a4e545e253c776e452e4341cee8343",
+    "summary": "Alternative name of glyph used for sorting in UI.",
+    "version": 2
+  },
+  "section_279.rst": {
+    "checksum": "bd4fdbbb5080140163459a3a280c5f3c9f687021",
+    "summary": "Alternative name of glyph used for sorting in UI, when using 'Keep Alternates Next to Base Glyph' from Font Info. see GSGlyph.storeSortName",
+    "version": 2
+  },
+  "section_280.rst": {
+    "checksum": "5cf5248789b7ae7b9ddc10d0988c515c8931b23f",
+    "summary": "Set to True in order to manipulate the GSGlyph.sortName and GSGlyph.sortNameKeep of the glyph (see above). Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file.",
+    "version": 2
+  },
+  "section_281.rst": {
+    "checksum": "2ce8705cf482e18d557e02a4e49c803a11cefe18",
+    "summary": "The leftKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.",
+    "version": 2
+  },
+  "section_282.rst": {
+    "checksum": "4b95cff3a3183cfd613f2c46e964a9ce2e06b95f",
+    "summary": "The rightKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.",
+    "version": 2
+  },
+  "section_283.rst": {
+    "checksum": "afffb27b6a5c3fe450f2e571250e30cb26bb75a1",
+    "summary": "The topKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.",
+    "version": 2
+  },
+  "section_284.rst": {
+    "checksum": "86c5979f5b66503b951a8533af1153a619822e9f",
+    "summary": "The bottomKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.",
+    "version": 2
+  },
+  "section_285.rst": {
+    "checksum": "b08aa9dded670d10ee9dda9bc26212522ef5e023",
+    "summary": "The key to be used with the kerning functions (GSFont.kerningForPair(), GSFont.setKerningForPair(), GSFont.removeKerningForPair()).",
+    "version": 2
+  },
+  "section_286.rst": {
+    "checksum": "ba80e71872513ab8c7684409f44dbbe42e38aaaf",
+    "summary": "The key to be used with the kerning functions (GSFont.kerningForPair(), GSFont.setKerningForPair()GSFont.removeKerningForPair()).",
+    "version": 2
+  },
+  "section_287.rst": {
+    "checksum": "9efc71132db8a533f177e3104664e28474290511",
+    "summary": "The key to be used with the kerning functions (GSFont.kerningForPair(), GSFont.setKerningForPair(), GSFont.removeKerningForPair()).",
+    "version": 2
+  },
+  "section_288.rst": {
+    "checksum": "0dddc76eb9d415637b0fd2d2f71fb61f6899d013",
+    "summary": "The key to be used with the kerning functions (GSFont.kerningForPair(), GSFont.setKerningForPair(), GSFont.removeKerningForPair()).",
+    "version": 2
+  },
+  "section_289.rst": {
+    "checksum": "298f8dac687d6dfa2d7e0cbba8635264ed2ebc10",
+    "summary": "The leftMetricsKey of the glyph. This is a reference to another glyph by name or formula.",
+    "version": 2
+  },
+  "section_290.rst": {
+    "checksum": "bcf66a6d60872d44f155b0ac38b84e1394bfa734",
+    "summary": "The rightMetricsKey of the glyph. This is a reference to another glyph by name or formula.",
+    "version": 2
+  },
+  "section_291.rst": {
+    "checksum": "e17eb41838418604328d6e351d3006a64452139e",
+    "summary": "The widthMetricsKey of the glyph. This is a reference to another glyph by name or formula.",
+    "version": 2
+  },
+  "section_292.rst": {
+    "checksum": "6bad38f642fbe371d1d369b777d750a67495f6f3",
+    "summary": "Defines whether glyph will export upon font generation",
+    "version": 2
+  },
+  "section_293.rst": {
+    "checksum": "1e7a17bd82f9f127a09633a50271d37de43df988",
+    "summary": "Color marking of glyph in UI",
+    "version": 2
+  },
+  "section_294.rst": {
+    "checksum": "bd0c05d0c32f1ae3d9856b27800d68b8aa342f28",
+    "summary": "NSColor object of glyph color, useful for drawing in plugins.",
+    "version": 2
+  },
+  "section_295.rst": {
+    "checksum": "3134a29a70d0114bad4d334e3c8c1ea278849f90",
+    "summary": "note (attribute)",
+    "version": 2
+  },
+  "section_296.rst": {
+    "checksum": "76dbbfb1c6f3dc338b9d1ed79c1ca3d3bbd8ef00",
+    "summary": "Return True if the Glyph is selected in the Font View. This is different to the property font.selectedLayers which returns the selection from the active tab.",
+    "version": 2
+  },
+  "section_297.rst": {
+    "checksum": "47e4141160adb1bf275c6ca92864579cb8dc4acb",
+    "summary": "Return True when all layers in this glyph are compatible (same components, anchors, paths etc.)",
+    "version": 2
+  },
+  "section_298.rst": {
+    "checksum": "4979752c72c0f732769e9e4b0c86bc52b0dd886c",
+    "summary": "A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.",
+    "version": 2
+  },
+  "section_299.rst": {
+    "checksum": "54cdc14424c7295b56229d7e4fd949fa255ac870",
+    "summary": "A list of GSSmartComponentAxis objects.",
+    "version": 2
+  },
+  "section_300.rst": {
+    "checksum": "d40ae8b8dd6148ed953eac5c2a6b6368da8d28fe",
+    "summary": "Change date when glyph was last changed as datetime.",
+    "version": 2
+  },
+  "section_301.rst": {
+    "checksum": "588462a16cc24c5b7545250baca152a332e20df7",
+    "summary": "**Functions**",
+    "version": 2
+  },
+  "section_302.rst": {
+    "checksum": "c462291659b1b3e0a0f15b7f346d931a29f6f6ad",
+    "summary": "Call this before you do a longer running change to the glyph. Be extra careful to call glyph.endUndo() <GSGlyph.endUndo()> when you are finished.",
+    "version": 2
+  },
+  "section_303.rst": {
+    "checksum": "9c0dce6e3078907bb530c5aa70d0d9950aa5e48d",
+    "summary": "This closes a undo group that was opened by a previous call of glyph.beginUndo() <GSGlyph.beginUndo()> Make sure that you call this for each beginUndo() call.",
+    "version": 2
+  },
+  "section_304.rst": {
+    "checksum": "21cf79bafeef5079f973847573359bf25d85923b",
+    "summary": "Updates all information like name, unicode etc. for this glyph.",
+    "version": 2
+  },
+  "section_305.rst": {
+    "checksum": "4f142da48b16dc3897f8e7cfdeea67bf0b9e173b",
+    "summary": "Duplicate the glyph under a new name and return it.",
+    "version": 2
+  },
+  "section_306.rst": {
+    "checksum": "e5b59531b6b2455aecc26ff8c6326629ae9881af",
+    "summary": "Implementation of the layer object.",
+    "version": 2
+  },
+  "section_307.rst": {
+    "checksum": "aed2b01a70cdb4bd925e8fbd57cd53af9fe156b3",
+    "summary": "Reference to the glyph <GSGlyph> object that this layer is attached to.",
+    "version": 2
+  },
+  "section_308.rst": {
+    "checksum": "16ea40c2db2ef18f32e6f0faba65a998b7d0cd18",
+    "summary": "Name of layer",
+    "version": 2
+  },
+  "section_309.rst": {
+    "checksum": "ad76ea0f5e59e6b67dc19f09c5a8d4c3d0dfd955",
+    "summary": "Master that this layer is connected to. Read only.",
+    "version": 2
+  },
+  "section_310.rst": {
+    "checksum": "95d7998112f06bfa3cdfdb179559a1ffe9e0a6d7",
+    "summary": "The ID of the fontMaster <GSFontMaster> this layer belongs to, in case this isn't a master layer. Every layer that isn't a master layer needs to be attached to one master layer.",
+    "version": 2
+  },
+  "section_311.rst": {
+    "checksum": "060ec93014221efb04ea419ff4379dc0574b30a3",
+    "summary": "The unique layer ID is used to access the layer in the glyphs <GSGlyph> layer dictionary.",
+    "version": 2
+  },
+  "section_312.rst": {
+    "checksum": "ff995d2d63ce09fc576070cea172fbf73cfca707",
+    "summary": "layer attributes like axisRules, coordinates, colorPalette, sbixSize, color, svg",
+    "version": 2
+  },
+  "section_313.rst": {
+    "checksum": "e45793f5daeb887f1e305daf59e6a90342de9aca",
+    "summary": "Color marking of glyph in UI",
+    "version": 2
+  },
+  "section_314.rst": {
+    "checksum": "baa91bc08264f7361cc060bb8bc25c5b7ebe32a6",
+    "summary": "NSColor object of layer color, useful for drawing in plugins.",
+    "version": 2
+  },
+  "section_315.rst": {
+    "checksum": "231ebe20ebf9160e4e4f3d6f866683df1bc1f96c",
+    "summary": "Collection of GSComponent objects. This is only a helper proxy to iterate all components (without paths).",
+    "version": 2
+  },
+  "section_316.rst": {
+    "checksum": "6c941b951c0e33c8124e53c2d53e509123ad8258",
+    "summary": "List of GSGuide objects.",
+    "version": 2
+  },
+  "section_317.rst": {
+    "checksum": "9036063f48f5c5ff9c2f11de2930162a504755be",
+    "summary": "List of GSAnnotation objects.",
+    "version": 2
+  },
+  "section_318.rst": {
+    "checksum": "3f91c7d28646b93ef1b2862c9c856177a7e5a74e",
+    "summary": "List of GSHint objects.",
+    "version": 2
+  },
+  "section_319.rst": {
+    "checksum": "2c48d6d73026d6d909145af6f003bfdf198c7642",
+    "summary": "List of GSAnchor objects.",
+    "version": 2
+  },
+  "section_320.rst": {
+    "checksum": "9d7c32419c5579fc487a0dc16176a779c993a82e",
+    "summary": "List of GSShape objects. That are most likely GSPath or GSComponent",
+    "version": 2
+  },
+  "section_321.rst": {
+    "checksum": "8e0637a88684a13504c2082da1a9edf82821868d",
+    "summary": "List of GSPath objects. This is only a helper proxy to iterate all paths (without components).",
+    "version": 2
+  },
+  "section_322.rst": {
+    "checksum": "c40f0098bfafe4e288782c3ddaba26f2950db378",
+    "summary": "List of all selected objects in the glyph.",
+    "version": 2
+  },
+  "section_323.rst": {
+    "checksum": "65712fa01db1840f3725ee51325242e60b99ab21",
+    "summary": "Left sidebearing",
+    "version": 2
+  },
+  "section_324.rst": {
+    "checksum": "af364e31dcff909d9178296ec75ce59a2135ba1c",
+    "summary": "Right sidebearing",
+    "version": 2
+  },
+  "section_325.rst": {
+    "checksum": "9090db67f3e6b127c26dcc86123d13d1cc386fb1",
+    "summary": "Top sidebearing",
+    "version": 2
+  },
+  "section_326.rst": {
+    "checksum": "e6de8489d91d9361e798884236d8dc6fe4ad076f",
+    "summary": "Bottom sidebearing",
+    "version": 2
+  },
+  "section_327.rst": {
+    "checksum": "7774d6915d2fe58ee0355105e4db0e74b3d9ed1c",
+    "summary": "Layer width",
+    "version": 2
+  },
+  "section_328.rst": {
+    "checksum": "81abc9dcbc568e5d753b9f893de6f2f6d98c44b5",
+    "summary": "Layer vertical width",
+    "version": 2
+  },
+  "section_329.rst": {
+    "checksum": "3b3ce3d78ad4837b9e7f47a155c79dbbccbb8bc0",
+    "summary": "Layer vertical origin",
+    "version": 2
+  },
+  "section_330.rst": {
+    "checksum": "47f7721e09786cf30fce280ebdaaba0fa556172c",
+    "summary": "The ascender for this layer.",
+    "version": 2
+  },
+  "section_331.rst": {
+    "checksum": "87c5aa3ebd25b0bdee4915d3325bc95f1c3825fc",
+    "summary": "The descender for this layer.",
+    "version": 2
+  },
+  "section_332.rst": {
+    "checksum": "66a6c0a95efcd6a384e33866e6533ebb9e2e3cc3",
+    "summary": "The leftMetricsKey of the layer. This is a reference to another glyph by name or formula.",
+    "version": 2
+  },
+  "section_333.rst": {
+    "checksum": "529a3b26420cdaec16af8eb9ba753a7a5d16ea75",
+    "summary": "The rightMetricsKey of the layer. This is a reference to another glyph by name or formula.",
+    "version": 2
+  },
+  "section_334.rst": {
+    "checksum": "9202efb6fc00029b9c11880a592430e8e47bb662",
+    "summary": "The widthMetricsKey of the layer. This is a reference to another glyph by name or formula.",
+    "version": 2
+  },
+  "section_335.rst": {
+    "checksum": "f45a1ce92a3828d3d8508f98d2af4332586626ad",
+    "summary": "Bounding box of whole glyph as NSRect. Read-only.",
+    "version": 2
+  },
+  "section_336.rst": {
+    "checksum": "581b49c13cf243d242a8e0ad319ba6a7e78c4139",
+    "summary": "Bounding box of the layer’s selection (nodes, anchors, components etc). Read-only.",
+    "version": 2
+  },
+  "section_337.rst": {
+    "checksum": "ec5fb145a3e10548f52364c62218cc601718ec23",
+    "summary": "The metrics layer are a list of horizontal metrics filtered specifically for this layer. Use this instead of master.alignmentZones <GSFontMaster.alignmentZones>.",
+    "version": 2
+  },
+  "section_338.rst": {
+    "checksum": "71c26252307a7583eddd160f1c04b175f59c5b49",
+    "summary": "The background layer",
+    "version": 2
+  },
+  "section_339.rst": {
+    "checksum": "af74b2221a4ae4cc2ccf3a4f610d68a756971f67",
+    "summary": "The background image. It will be scaled so that 1 em unit equals 1 of the image’s pixels.",
+    "version": 2
+  },
+  "section_340.rst": {
+    "checksum": "70cb2c33ec628a2416925528acebcd230f2d4637",
+    "summary": "The layer as an NSBezierPath object. Useful for drawing glyphs in plug-ins.",
+    "version": 2
+  },
+  "section_341.rst": {
+    "checksum": "2116e268d2048a95a599871149735504d2dcda53",
+    "summary": "All open paths of the layer as an NSBezierPath object. Useful for drawing glyphs as outlines in plug-ins.",
+    "version": 2
+  },
+  "section_342.rst": {
+    "checksum": "e92788d5605ae03001c087200a9cbd06051da7bd",
+    "summary": "The layer as an NSBezierPath object including paths from components. Useful for drawing glyphs in plug-ins.",
+    "version": 2
+  },
+  "section_343.rst": {
+    "checksum": "94e26a95f635e5aa76aa02779a9542da354bda32",
+    "summary": "All open paths of the layer as an NSBezierPath object including paths from components. Useful for drawing glyphs as outlines in plugins.",
+    "version": 2
+  },
+  "section_344.rst": {
+    "checksum": "fbb38c266e408a25a1e1b7720ecabee4adcbdb6f",
+    "summary": "Indicates if the components are auto aligned.",
+    "version": 2
+  },
+  "section_345.rst": {
+    "checksum": "1382a1c5bfec66e829505e003701ab66a83254da",
+    "summary": "If the layer is a brace, bracket or a smart component layer",
+    "version": 2
+  },
+  "section_346.rst": {
+    "checksum": "1264f4c67f0ea6210dea57f6181145e75d0a5682",
+    "summary": "If it is a master layer",
+    "version": 2
+  },
+  "section_347.rst": {
+    "checksum": "df1c357be8ab56054f5052eb4fc6a2067eccff2c",
+    "summary": "The italic angle that applies to this layer",
+    "version": 2
+  },
+  "section_348.rst": {
+    "checksum": "935f9e153f05550e310fa36ccb3cbcf8820d294c",
+    "summary": "if the layer is visible (the eye icon in the layer panel)",
+    "version": 2
+  },
+  "section_349.rst": {
+    "checksum": "1c961f18e81525fe4ac540f89de85e325a1e5285",
+    "summary": "A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.",
+    "version": 2
+  },
+  "section_350.rst": {
+    "checksum": "206b358591d333d315c1437a45e6fb76c42b77dc",
+    "summary": "A dictionary to store data temporarily. Use a unique key.",
+    "version": 2
+  },
+  "section_351.rst": {
+    "checksum": "6403dc3a1023eba2f370368f0a1c6b40005b7979",
+    "summary": "Maps this layer to the poles on the interpolation axes of the Smart Glyph. The dictionary keys are the names of the GSSmartComponentAxis objects.",
+    "version": 2
+  },
+  "section_352.rst": {
+    "checksum": "bc0877d89cf1be25c55b91d2e155a96504378c5d",
+    "summary": "Joins all contours.",
+    "version": 2
+  },
+  "section_353.rst": {
+    "checksum": "37d46b25fb344069825a0c539041777b6711a2b6",
+    "summary": "Add nodes at layer’s extrema, e.g., top, bottom etc.",
+    "version": 2
+  },
+  "section_354.rst": {
+    "checksum": "9d151828f863ef0f7af4a05af980686bce38f830",
+    "summary": "Apply a transformation matrix to the layer.",
+    "version": 2
+  },
+  "section_355.rst": {
+    "checksum": "086fa4a9cdffa5e99c7e14b4223ed02a3c21ef5f",
+    "summary": "Apply a NSAffineTransform to the layer.",
+    "version": 2
+  },
+  "section_356.rst": {
+    "checksum": "389e05358c99f686d787bf06c319b1123197c638",
+    "summary": "Call this before you do bigger changes to the Layer. This will increase performance and prevent undo problems.",
+    "version": 2
+  },
+  "section_357.rst": {
+    "checksum": "70ab091dee3b8bc48dea796b59932a36e71afb66",
+    "summary": "Call this if you have called layer.beginChanges before. Make sure to group bot calls properly.",
+    "version": 2
+  },
+  "section_358.rst": {
+    "checksum": "6453deb1ccb1e0292bff742d7e88b4134d81447f",
+    "summary": "Cuts all paths that intersect the line from Point1 to Point2",
+    "version": 2
+  },
+  "section_359.rst": {
+    "checksum": "5bda2a5fe1d1cf63e102ad63a7a34618cce62954",
+    "summary": "returns a list of all intersections between overlapping paths in the layer.",
+    "version": 2
+  },
+  "section_360.rst": {
+    "checksum": "2f676b1ec6cb11e187d034ad2b86cd812e649f17",
+    "summary": "Return all intersection points between a measurement line and the paths in the layer. This is basically identical to the measurement tool in the UI.",
+    "version": 2
+  },
+  "section_361.rst": {
+    "checksum": "c29dc0846b46abd08fd9800c092135d866e7dca9",
+    "summary": "Adds missing anchors defined in the glyph database.",
+    "version": 2
+  },
+  "section_362.rst": {
+    "checksum": "a7faa2182ea66c0310175c42407388fd07f1b633",
+    "summary": "Unselect all selected items in this layer.",
+    "version": 2
+  },
+  "section_363.rst": {
+    "checksum": "1cad2b55aabe05eb42fddef177b635bbbc960608",
+    "summary": "Remove all elements from layer.",
+    "version": 2
+  },
+  "section_364.rst": {
+    "checksum": "ced642e44756bde711c442b794fe41848cca02e0",
+    "summary": "Swap Foreground layer with Background layer.",
+    "version": 2
+  },
+  "section_365.rst": {
+    "checksum": "5cc2fb007520eb9b1d324b9d1e83810a1dad1c8c",
+    "summary": "Re-interpolate a layer according the other layers and its interpolation values.",
+    "version": 2
+  },
+  "section_366.rst": {
+    "checksum": "4f833cbdcb9bb5f6ed51d58a867e4526d35af44b",
+    "summary": "Implementation of the anchor object.",
+    "version": 2
+  },
+  "section_367.rst": {
+    "checksum": "80ef02eedfbfe30f1b8fe1f4a074e0599c857e22",
+    "summary": "The position of the anchor",
+    "version": 2
+  },
+  "section_368.rst": {
+    "checksum": "d36aa33556ad18343bdf67a7149f05f6afbad7d4",
+    "summary": "The name of the anchor",
+    "version": 2
+  },
+  "section_369.rst": {
+    "checksum": "6cec8a166285da1aca8a8f95598f9ad670f4288f",
+    "summary": "A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.",
+    "version": 2
+  },
+  "section_370.rst": {
+    "checksum": "16f75afd208cf291d3845eb784527eba9340b0ac",
+    "summary": "Implementation of the component object. For details on how to access them, please see GSLayer.components",
+    "version": 2
+  },
+  "section_371.rst": {
+    "checksum": "be905ae81a57b9a9f282dc284b5ff15fe10f16a4",
+    "summary": "The position of the component.",
+    "version": 2
+  },
+  "section_372.rst": {
+    "checksum": "1b68fdbf18f403e1716f3c366b194208a10f338b",
+    "summary": "Scale factor of the component.",
+    "version": 2
+  },
+  "section_373.rst": {
+    "checksum": "57aa2e24d8dc1634aebaf74d042833730c97a88a",
+    "summary": "Rotation angle of the component.",
+    "version": 2
+  },
+  "section_374.rst": {
+    "checksum": "6199f68a59f77a985d75672f210cbf5508eab1e1",
+    "summary": "The slant of the component.",
+    "version": 2
+  },
+  "section_375.rst": {
+    "checksum": "29a486d314d69e156a8079d251a371f8e8ac0e91",
+    "summary": "The glyph name the component is pointing to.",
+    "version": 2
+  },
+  "section_376.rst": {
+    "checksum": "d9eb1456ec0e6dfbb96b02db26adcf03bd5c2dd6",
+    "summary": "The glyph name the component is pointing to.",
+    "version": 2
+  },
+  "section_377.rst": {
+    "checksum": "e9a95c1e3f9af46a4575e8a98dd167b62f7b9b0a",
+    "summary": "The ID of the master to component is pointing to.",
+    "version": 2
+  },
+  "section_378.rst": {
+    "checksum": "4a44e3426700db81b711ac4c4a7388df3714210f",
+    "summary": "The GSGlyph the component is pointing to. This is read-only.",
+    "version": 2
+  },
+  "section_379.rst": {
+    "checksum": "e674162334d0a5a926f6836d9578bd2f82c04c5d",
+    "summary": "The GSLayer the component is pointing to. This is read-only.",
+    "version": 2
+  },
+  "section_380.rst": {
+    "checksum": "f2604e02e38fa6e539433b3a453e5091dbf7fe20",
+    "summary": "Transformation matrix of the component. If Glyphs 3, this is computed from the scale, rotation and position.",
+    "version": 2
+  },
+  "section_381.rst": {
+    "checksum": "a60aea0a1fadcfade373c493093638c95f84b4e3",
+    "summary": "Bounding box of the component, read-only",
+    "version": 2
+  },
+  "section_382.rst": {
+    "checksum": "6208119018645198fb1f02c73b77dd2bd35e96c7",
+    "summary": "Defines whether the component is automatically aligned.",
+    "version": 2
+  },
+  "section_383.rst": {
+    "checksum": "1b788a68a4a28f6d5f7b84dc5821ed220d0fba14",
+    "summary": "TODO",
+    "version": 2
+  },
+  "section_384.rst": {
+    "checksum": "f5b7373c69ceffc00e3cf70b42149e2fd92050ea",
+    "summary": "If the component is locked TODO",
+    "version": 2
+  },
+  "section_385.rst": {
+    "checksum": "60aca4d4aa1076ccb8cf49149b8c3ff0db9d2006",
+    "summary": "If more than one anchor/_anchor pair would match, this property can be used to set the anchor to use for automatic alignment",
+    "version": 2
+  },
+  "section_386.rst": {
+    "checksum": "40ad2281eb3e030f3690121411bb0b25cf5c9bc1",
+    "summary": "Selection state of component in UI.",
+    "version": 2
+  },
+  "section_387.rst": {
+    "checksum": "e59a6617ad5192de0454672431dcb87b5956ced8",
+    "summary": "attributes attributes like mask or reversePaths",
+    "version": 2
+  },
+  "section_388.rst": {
+    "checksum": "2f17f249e3d7bd6a306c1e44b9e185e9e31d57c2",
+    "summary": "Dictionary of interpolations values of the Smart Component. Key are the axis.id, values are between the top and the bottom value of the corresponding GSSmartComponentAxis objects.",
+    "version": 2
+  },
+  "section_389.rst": {
+    "checksum": "342fb80638b7ade2b35c24718bb54ca2a617f99b",
+    "summary": "The component as an NSBezierPath object. Useful for drawing glyphs in plugins.",
+    "version": 2
+  },
+  "section_390.rst": {
+    "checksum": "a71c5fd4f0749e4f94aa04f997d1b5bcf4966703",
+    "summary": "A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.",
+    "version": 2
+  },
+  "section_391.rst": {
+    "checksum": "887c9f20257a2374fb23f4bc509000ab2843771f",
+    "summary": "A dictionary to store data temporarily. Use a unique key.",
+    "version": 2
+  },
+  "section_392.rst": {
+    "checksum": "e59e8e1342bdd9eef2c33d454b7a61640911210e",
+    "summary": "**Functions**",
+    "version": 2
+  },
+  "section_393.rst": {
+    "checksum": "80fd92c121827556076782ea104235e02178078d",
+    "summary": "Apply a transformation matrix to the component.",
+    "version": 2
+  },
+  "section_394.rst": {
+    "checksum": "ee89fdd3cb3ea411f6643a8ac43f9b56a14cb2e9",
+    "summary": "Decomposes the component.",
+    "version": 2
+  },
+  "section_395.rst": {
+    "checksum": "b92d1d846ebad353f7df4b72f9033a81237e78f6",
+    "summary": "a small helper class to store a reference to a glyph in userData that will keep track of changes to the glyph name.",
+    "version": 2
+  },
+  "section_396.rst": {
+    "checksum": "c2b687fb095e2e6c6b15172320d4d0bd716a9f6e",
+    "summary": "the GSGlyph to keep track of",
+    "version": 2
+  },
+  "section_397.rst": {
+    "checksum": "85df4582fc498b1e582394668482b00d464ef7f4",
+    "summary": "Implementation of the Smart Component interpolation axis object. For details on how to access them, please see GSGlyph.smartComponentAxes",
+    "version": 2
+  },
+  "section_398.rst": {
+    "checksum": "b34457c0e825a8b0eebc9de791d4d38f389f9ab6",
+    "summary": "Name of the axis. The name is for display purpose only.",
+    "version": 2
+  },
+  "section_399.rst": {
+    "checksum": "4ad0989b69bb80c45b62f0e96c40bf2bf1d51946",
+    "summary": "Id of the axis. This Id will be used to map the Smart Glyph’s layers to the poles of the interpolation.",
+    "version": 2
+  },
+  "section_400.rst": {
+    "checksum": "d80db4caa416cf530140e5a098adef32c9383df1",
+    "summary": "Top end (pole) value on interpolation axis.",
+    "version": 2
+  },
+  "section_401.rst": {
+    "checksum": "57aefc906a23ca6f682355be8248e84966fc25c4",
+    "summary": "Bottom end (pole) value on interpolation axis.",
+    "version": 2
+  },
+  "section_402.rst": {
+    "checksum": "35659d9e1710f2e8319c6b51d8f0ab4ccc709509",
+    "summary": "Implementation of the shape object. This a superclass for GSPath and GSComponent.",
+    "version": 2
+  },
+  "section_403.rst": {
+    "checksum": "647e993bd8a80f1c88f9f95524b3bfd4a8d1c758",
+    "summary": "Locked",
+    "version": 2
+  },
+  "section_404.rst": {
+    "checksum": "a351d0ae3f569e23c91e7904cc71b2a9f78aa514",
+    "summary": "the type of the shapes. can be GSShapeTypePath or GSShapeTypeComponent",
+    "version": 2
+  },
+  "section_405.rst": {
+    "checksum": "5d3189b6166a73378128884604f7c7b851ce2ec6",
+    "summary": "Implementation of the path object.",
+    "version": 2
+  },
+  "section_406.rst": {
+    "checksum": "fbc2e2c4946e09d427ae2cfe827c0fada8b1210e",
+    "summary": "Reference to the layer <GSLayer> object.",
+    "version": 2
+  },
+  "section_407.rst": {
+    "checksum": "2ee76307a19829086833f24265bf8853f931e41f",
+    "summary": "A list of GSNode objects",
+    "version": 2
+  },
+  "section_408.rst": {
+    "checksum": "eb9b52daf3168d2e2828bceb7a45abe171948769",
+    "summary": "A list of segments as NSPoint objects. Two objects represent a line, four represent a curve.",
+    "version": 2
+  },
+  "section_409.rst": {
+    "checksum": "4747acf31ab7f26fbde8a2375c8aec2ec3e1e835",
+    "summary": "Returns True if the the path is closed",
+    "version": 2
+  },
+  "section_410.rst": {
+    "checksum": "860f1c650651f8671a0cd1b4fdffa1c8714c4f2f",
+    "summary": "Path direction. -1 for counter clockwise, 1 for clockwise.",
+    "version": 2
+  },
+  "section_411.rst": {
+    "checksum": "aebe1662525bb5022253445d8440af336bc58c32",
+    "summary": "Bounding box of the path, read-only",
+    "version": 2
+  },
+  "section_412.rst": {
+    "checksum": "f45cf08b3defed22eb59bb26b36a5f403715a8c0",
+    "summary": "Selection state of path in UI.",
+    "version": 2
+  },
+  "section_413.rst": {
+    "checksum": "be1fd08607fa0661d92179039685ec84dd8ed28b",
+    "summary": "The same path as an NSBezierPath object. Useful for drawing glyphs in plugins.",
+    "version": 2
+  },
+  "section_414.rst": {
+    "checksum": "d94ef3c22e987feb4e6782b9ab82c42d74135f44",
+    "summary": "path attributes like fill, mask, strokeWidth, strokeHeight, strokeColor', strokePos",
+    "version": 2
+  },
+  "section_415.rst": {
+    "checksum": "81a95b626d18f792755d70c7a3efeffb5a15cf80",
+    "summary": "A dictionary to store data temporarily. Use a unique key.",
+    "version": 2
+  },
+  "section_416.rst": {
+    "checksum": "250e5100f25e2199f85e78822c9326cd65591b4c",
+    "summary": "draw the object with a fontTools pen",
+    "version": 2
+  },
+  "section_417.rst": {
+    "checksum": "3c0dbb0e859371e81c9325e0ca663fa43e2beda5",
+    "summary": "Add nodes at path’s extrema, e.g., top, bottom etc.",
+    "version": 2
+  },
+  "section_418.rst": {
+    "checksum": "3144e638e12cf7695b2d8dc057e481375da7daac",
+    "summary": "Apply a transformation matrix to the path.",
+    "version": 2
+  },
+  "section_419.rst": {
+    "checksum": "d8f5d8f87c9352f36f4e1024772e14de7df7d06b",
+    "summary": "Implementation of the node object.",
+    "version": 2
+  },
+  "section_420.rst": {
+    "checksum": "38e44234db71944bbeca5f8de94e63e478cbe901",
+    "summary": "The position of the node.",
+    "version": 2
+  },
+  "section_421.rst": {
+    "checksum": "ca2a93c892f8cf36c096714fd7664ca5b67e6ccd",
+    "summary": "The type of the node, LINE, CURVE or OFFCURVE",
+    "version": 2
+  },
+  "section_422.rst": {
+    "checksum": "7186dfdabbbd43f200765aab59ddd6a562266969",
+    "summary": "If it is a smooth connection or not",
+    "version": 2
+  },
+  "section_423.rst": {
+    "checksum": "fea044c60316988cf6a75cfeb11e3e600f0e9972",
+    "summary": "The type of the connection, SHARP or SMOOTH",
+    "version": 2
+  },
+  "section_424.rst": {
+    "checksum": "4ed19ac6112a5d8fcf88954efa1221577d096f00",
+    "summary": "Selection state of node in UI.",
+    "version": 2
+  },
+  "section_425.rst": {
+    "checksum": "c0cbf2c6400bb6dc06f21061a87c94c19c38b426",
+    "summary": "Returns the index of the node in the containing path or maxint if it is not in a path.",
+    "version": 2
+  },
+  "section_426.rst": {
+    "checksum": "2e1e98fc5a3ade39f7506827d09269baada84ade",
+    "summary": "Returns the next node in the path.",
+    "version": 2
+  },
+  "section_427.rst": {
+    "checksum": "264dacb4eb552393af16af46d1fa22a8ea139501",
+    "summary": "Returns the previous node in the path.",
+    "version": 2
+  },
+  "section_428.rst": {
+    "checksum": "4369ad3def4c52baf4fac054ef524f33cb5303d7",
+    "summary": "Attaches a name to a node.",
+    "version": 2
+  },
+  "section_429.rst": {
+    "checksum": "0daf348830564f72fd09f2411cbd27be42e1d787",
+    "summary": "If the position of the node is relative to the LSB (0), center (2) or RSB (1).",
+    "version": 2
+  },
+  "section_430.rst": {
+    "checksum": "c6d9a610a9b2d2201a507e30e0e14e6c0b13baa1",
+    "summary": "A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.",
+    "version": 2
+  },
+  "section_431.rst": {
+    "checksum": "30591d99a1d14fab582f04c16db57a70add4dee9",
+    "summary": "Implementation of the segment object.",
+    "version": 2
+  },
+  "section_432.rst": {
+    "checksum": "4725640f97ebb8d258763d1896e6dcfc9798921a",
+    "summary": "Bounding box of the segment as NSRect. Read-only.",
+    "version": 2
+  },
+  "section_433.rst": {
+    "checksum": "3aa541e3429750a66f5da4477e97966a18d5c325",
+    "summary": "The type of the node, LINE, CURVE or QCURVE",
+    "version": 2
+  },
+  "section_434.rst": {
+    "checksum": "d1d9e8bb877b86439a083b94b6f5c91f298f9880",
+    "summary": "Returns a full copy of the segment",
+    "version": 2
+  },
+  "section_435.rst": {
+    "checksum": "f76b78076f26f16c83f259653841970223a8d553",
+    "summary": "Implementation of the guide object.",
+    "version": 2
+  },
+  "section_436.rst": {
+    "checksum": "ee1f29083c4957bbad152a9ca9bd2ef758126c36",
+    "summary": "locks the angle",
+    "version": 2
+  },
+  "section_437.rst": {
+    "checksum": "3096ca0249d5e617dcb3de89cdb722eab8c35fe8",
+    "summary": "Angle",
+    "version": 2
+  },
+  "section_438.rst": {
+    "checksum": "e83320f6c824cea60913c5368ac6772a9ece06b4",
+    "summary": "a optional name",
+    "version": 2
+  },
+  "section_439.rst": {
+    "checksum": "647e993bd8a80f1c88f9f95524b3bfd4a8d1c758",
+    "summary": "Locked",
+    "version": 2
+  },
+  "section_440.rst": {
+    "checksum": "9a94d3106494db45ae024dacd811b158f86c00c0",
+    "summary": "A filter to only show the guide in certain glyphs. Only relevant in global guides",
+    "version": 2
+  },
+  "section_441.rst": {
+    "checksum": "6d32d97cc6f16f3acb8d32a53459dc42cb40b713",
+    "summary": "If the guide is showing measurements",
+    "version": 2
+  },
+  "section_442.rst": {
+    "checksum": "0b687c1d5dc3fd47159a031357fcd0428d0b274b",
+    "summary": "A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.",
+    "version": 2
+  },
+  "section_443.rst": {
+    "checksum": "d5a9fe9e6fa03ddb2f9e3c2a35a4000d9cfdccd4",
+    "summary": "Implementation of the annotation object.",
+    "version": 2
+  },
+  "section_444.rst": {
+    "checksum": "7c6e0ba8a85e52ecf2daccba3f2be45992b03e02",
+    "summary": "The position of the annotation.",
+    "version": 2
+  },
+  "section_445.rst": {
+    "checksum": "897ce4632747594527668630b0a777b41d79524a",
+    "summary": "The type of the annotation.",
+    "version": 2
+  },
+  "section_446.rst": {
+    "checksum": "f8ce444c7b358c05f2b3f24b95192795df69359c",
+    "summary": "The content of the annotation. Only useful if type == TEXT",
+    "version": 2
+  },
+  "section_447.rst": {
+    "checksum": "bec9a409e9bf9143f75c68cdd3978ba973888d84",
+    "summary": "The angle of the annotation.",
+    "version": 2
+  },
+  "section_448.rst": {
+    "checksum": "2ceefefb81420634d4b173c5732cee31df3c76ed",
+    "summary": "The width of the annotation.",
+    "version": 2
+  },
+  "section_449.rst": {
+    "checksum": "ea500c7d8b6d241aa8833c067ae60ab9b210187d",
+    "summary": "Implementation of the hint object.",
+    "version": 2
+  },
+  "section_450.rst": {
+    "checksum": "92ef0104a3979842ebb55bf50f3d4445f7c6518d",
+    "summary": "Parent layer of hint.",
+    "version": 2
+  },
+  "section_451.rst": {
+    "checksum": "a83d4dadb542ab1211d56eb1359a9c47fe4fd42f",
+    "summary": "The first node the hint is attached to.",
+    "version": 2
+  },
+  "section_452.rst": {
+    "checksum": "2cc445b7d0a035f607ab8df733d3861ec2148116",
+    "summary": "The the second node this hint is attached to. In the case of a ghost hint, this value will be empty.",
+    "version": 2
+  },
+  "section_453.rst": {
+    "checksum": "53ea1d6773dafabfef33d19ad17c80f4e6d9b703",
+    "summary": "A third node this hint is attached to. Used for Interpolation or Diagonal hints.",
+    "version": 2
+  },
+  "section_454.rst": {
+    "checksum": "04675583da7473df527466adc9d4b17388f68ac8",
+    "summary": "A fourth node this hint is attached to. Used for Diagonal hints.",
+    "version": 2
+  },
+  "section_455.rst": {
+    "checksum": "0df69f4159f94f40b5ec19c49095a80a8f91d8b9",
+    "summary": "The indexPath to the first node the hint is attached to.",
+    "version": 2
+  },
+  "section_456.rst": {
+    "checksum": "38493e7b05de2e4974e3ffe10cb0e96c05bd5cde",
+    "summary": "The indexPath to the second node this hint is attached to. In the case of a ghost hint, this value will be empty.",
+    "version": 2
+  },
+  "section_457.rst": {
+    "checksum": "1af9109529e0d8a86a6432b97edf6420e99eeead",
+    "summary": "A indexPath to the third node this hint is attached to. Used for Interpolation or Diagonal hints.",
+    "version": 2
+  },
+  "section_458.rst": {
+    "checksum": "38a6ace8d83102e3904d02b4369f97acf5c84ae9",
+    "summary": "A indexPath to the fourth node this hint is attached to. Used for Diagonal hints.",
+    "version": 2
+  },
+  "section_459.rst": {
+    "checksum": "8b04f7022876f8fa4f666b3e0e426e18c51aa3da",
+    "summary": "See Hint Types_",
+    "version": 2
+  },
+  "section_460.rst": {
+    "checksum": "0a763a6461d472b5a4478d7070151bc14414524a",
+    "summary": "Stores extra options for the hint. For TT hints, that might be the rounding settings.",
+    "version": 2
+  },
+  "section_461.rst": {
+    "checksum": "182157ea6c721619ec8b653fe242dd65d838cc19",
+    "summary": "True if hint is horizontal, False if vertical.",
+    "version": 2
+  },
+  "section_462.rst": {
+    "checksum": "0a3d532c366ab5274e8f693f29e2fddb0e2ca084",
+    "summary": "Selection state of hint in UI.",
+    "version": 2
+  },
+  "section_463.rst": {
+    "checksum": "d69965643c349541d5f8ec4303b71e54568c3f66",
+    "summary": "Name of the hint. This is the referenced glyph for corner and cap components.",
+    "version": 2
+  },
+  "section_464.rst": {
+    "checksum": "124895de54adf30512da2470910c646823716dc0",
+    "summary": "Index of TrueType stem that this hint is attached to. The stems are defined in the custom parameter \"TTFStems\" per master.",
+    "version": 2
+  },
+  "section_465.rst": {
+    "checksum": "5d5933a7ea2c5a9ba7c1789cc6dcfac4060ffd38",
+    "summary": "if it is a TrueType instruction",
+    "version": 2
+  },
+  "section_466.rst": {
+    "checksum": "d58d2d5f8f2255ca73936595c8bd323cb786bfc3",
+    "summary": "if it is a PostScript hint",
+    "version": 2
+  },
+  "section_467.rst": {
+    "checksum": "982c635fc4f87e812600482a67fc42fbb26efeae",
+    "summary": "if it is a Corner (or Cap, Brush...) component",
+    "version": 2
+  },
+  "section_468.rst": {
+    "checksum": "6025444d4186aead180d64ce889cf5ef06da05f2",
+    "summary": "A dictionary to store data temporarily. Use a unique key.",
+    "version": 2
+  },
+  "section_469.rst": {
+    "checksum": "3d56b4de3a84db4e75a610733948df40832d9adf",
+    "summary": "Implementation of background image.",
+    "version": 2
+  },
+  "section_470.rst": {
+    "checksum": "f990e2e44bd5c0a77ee838b5e5f6206fa66b457d",
+    "summary": "Path to image file.",
+    "version": 2
+  },
+  "section_471.rst": {
+    "checksum": "600471c643d1c702c278888e9e84980191c43648",
+    "summary": "image (attribute)",
+    "version": 2
+  },
+  "section_472.rst": {
+    "checksum": "e8bcd30d24ad917b2c8b492a3f8134657e512b02",
+    "summary": "Crop rectangle. This is relative to the image size in pixels, not the font’s em units (just in case the image is scaled to something other than 100%).",
+    "version": 2
+  },
+  "section_473.rst": {
+    "checksum": "19e175d474bfabc0139d951e77f4379118cf0a2d",
+    "summary": "Defines whether image is locked for access in UI.",
+    "version": 2
+  },
+  "section_474.rst": {
+    "checksum": "ca150313d2563eca6e34461ef79a7013f500fd07",
+    "summary": "Defines the transparence of the image in the Edit view. Default is 50%, possible values are 10–100.",
+    "version": 2
+  },
+  "section_475.rst": {
+    "checksum": "bcf1540014ca3b0706538007005f23f743360c5d",
+    "summary": "Position of image in font units.",
+    "version": 2
+  },
+  "section_476.rst": {
+    "checksum": "2f895897990776d0c3a6d6ee241102d9fb6c5031",
+    "summary": "Scale factor of image.",
+    "version": 2
+  },
+  "section_477.rst": {
+    "checksum": "9ffa2593d9afe16b8ef82fd95dc2cb9c980a3e88",
+    "summary": "Rotation angle of image.",
+    "version": 2
+  },
+  "section_478.rst": {
+    "checksum": "8c99faddc17c0f67d454d1d6a392ee1e8a119a23",
+    "summary": "The slant of the image.",
+    "version": 2
+  },
+  "section_479.rst": {
+    "checksum": "7e932a4c3065615ae329f40fdbd8ab89e68bf0c2",
+    "summary": "Transformation matrix.",
+    "version": 2
+  },
+  "section_480.rst": {
+    "checksum": "b8dfdec7b6b9b5ce9aaae28578f5b9169979ffc8",
+    "summary": "Resets the cropping to the image’s original dimensions.",
+    "version": 2
+  },
+  "section_481.rst": {
+    "checksum": "76b73e1b0b68f68e6268e69d399384da062e5115",
+    "summary": "Scale the image’s cropped width to a certain em unit value, retaining its aspect ratio.",
+    "version": 2
+  },
+  "section_482.rst": {
+    "checksum": "e4ab1f33b5dcb851f8c7104abbe1acdefd37de55",
+    "summary": "Scale the image’s cropped height to a certain em unit value, retaining its aspect ratio.",
+    "version": 2
+  },
+  "section_483.rst": {
+    "checksum": "a6c3fc1d24580f3b949b030c97cf4ee619a3e4b3",
+    "summary": "Implementation of the gradient object.",
+    "version": 2
+  },
+  "section_484.rst": {
+    "checksum": "7d707fe7146da5626d7c318ad5988748146adf8c",
+    "summary": "A list of colors. Each is an list containing a NSColor and and position between 0.0 and 1.0.",
+    "version": 2
+  },
+  "section_485.rst": {
+    "checksum": "210b12407c607a915fb2a415ad50560527822510",
+    "summary": "The gradient type. Linear = 0, Circular = 1",
+    "version": 2
+  },
+  "section_486.rst": {
+    "checksum": "952bcb6b177632e87bf3398e8b8460bc9aa37848",
+    "summary": "A NSPoint that relatively to the shapes bounding box defines the starting point of the gradient",
+    "version": 2
+  },
+  "section_487.rst": {
+    "checksum": "c5963890317d82e8cfee230b136e9b5f580ba88d",
+    "summary": "A NSPoint that relatively to the shapes bounding box defines the ending point of the gradient",
+    "version": 2
+  },
+  "section_488.rst": {
+    "checksum": "102724d7042dc6ac10dfe21359ef8c3188dbf9fc",
+    "summary": "A NSPoint of the absolute starting point of the gradient",
+    "version": 2
+  },
+  "section_489.rst": {
+    "checksum": "a9091c2102080e43836d5a3a20d3bbff7988695d",
+    "summary": "A NSPoint of the absolute ending point of the gradient",
+    "version": 2
+  },
+  "section_490.rst": {
+    "checksum": "ec69072d25a287a038932cf4624630716fc2805b",
+    "summary": "Implementation of the GSEditViewController object, which represents Edit tabs in the UI.",
+    "version": 2
+  },
+  "section_491.rst": {
+    "checksum": "95e3c0fcee8e82f82b044483770b836018c1b22f",
+    "summary": "The GSFont object that this tab belongs to.",
+    "version": 2
+  },
+  "section_492.rst": {
+    "checksum": "5085a2b207f4e71546c12bc6150182d0b9a8533b",
+    "summary": "The text of the tab, either as text, or slash-escaped glyph names, or mixed. OpenType features will be applied after the text has been changed.",
+    "version": 2
+  },
+  "section_493.rst": {
+    "checksum": "f77ed5044b477470ac0f1b5186fa4413cd085cde",
+    "summary": "The plain underlying string of the tab",
+    "version": 2
+  },
+  "section_494.rst": {
+    "checksum": "72a14ba9abd0bc50c5778cf97ae8254a777db049",
+    "summary": "The index of the active master (selected in the toolbar).",
+    "version": 2
+  },
+  "section_495.rst": {
+    "checksum": "51e9991e45d4bf9a71454226b95603dffffeb67d",
+    "summary": "Alternatively, you can set (and read) a list of GSLayer objects. These can be any of the layers of a glyph.",
+    "version": 2
+  },
+  "section_496.rst": {
+    "checksum": "895690c83c9f4db0badf6eb840cb2d2841dc11b9",
+    "summary": "Similar to the above, but this list contains the GSLayer objects after the OpenType features have been applied (see GSEditViewController.features). Read-only.",
+    "version": 2
+  },
+  "section_497.rst": {
+    "checksum": "93f75fff0903aa308c36dd1c02a2182d2a3e1bdb",
+    "summary": "Scale (zoom factor) of the Edit view. Useful for drawing activity in plugins.",
+    "version": 2
+  },
+  "section_498.rst": {
+    "checksum": "b0dc0c4202d19ae3074ee79a5a00264fe5a4d345",
+    "summary": "The visible area of the Edit view in screen pixel coordinates (view coordinates).",
+    "version": 2
+  },
+  "section_499.rst": {
+    "checksum": "95c8e5058c3aea2292fe2a364bb09aa66734ff00",
+    "summary": "Bounding box of all glyphs in the Edit view in view coordinate values.",
+    "version": 2
+  },
+  "section_500.rst": {
+    "checksum": "349a320f8e0551a06b970b2221a1b7750652d1b3",
+    "summary": "Position of the active layer’s origin (0,0) relative to the origin of the view plane (see bounds <GSEditViewController.bounds>), in view coordinates.",
+    "version": 2
+  },
+  "section_501.rst": {
+    "checksum": "c3178e57d4b1d7aa998da1f5f111676637e56325",
+    "summary": "Position of text cursor in text, starting with 0.",
+    "version": 2
+  },
+  "section_502.rst": {
+    "checksum": "7c6292ae17ff98d0bc70d8a32fd1c624a9840ac6",
+    "summary": "Amount of selected glyphs in text, starting at cursor position (see above).",
+    "version": 2
+  },
+  "section_503.rst": {
+    "checksum": "f219489321dd7556f8300d70328551b8bd9368c2",
+    "summary": "Position of cursor in the layers list, starting with 0.",
+    "version": 2
+  },
+  "section_504.rst": {
+    "checksum": "0c2f6e8842744dc8f9da9a8b6efbbdf647f2858d",
+    "summary": "Writing direction.",
+    "version": 2
+  },
+  "section_505.rst": {
+    "checksum": "d4fde04260c59f227a44e7abe6fc1ed72867d741",
+    "summary": "List of OpenType features applied to text in Edit view.",
+    "version": 2
+  },
+  "section_506.rst": {
+    "checksum": "206b358591d333d315c1437a45e6fb76c42b77dc",
+    "summary": "A dictionary to store data temporarily. Use a unique key.",
+    "version": 2
+  },
+  "section_507.rst": {
+    "checksum": "9c6c8b23c705ed08ad323743cfcab01b176d93f6",
+    "summary": "Instances to show in the Preview area.",
+    "version": 2
+  },
+  "section_508.rst": {
+    "checksum": "742de32c672fbd0fa30a7891d4ece924bf1c6319",
+    "summary": "Height of the preview panel in the Edit view in pixels.",
+    "version": 2
+  },
+  "section_509.rst": {
+    "checksum": "a7c48cd558c745e92f123811d0fd7aa4d1b73869",
+    "summary": "Height of the little toolbar at the very bottom of the window. Read-only.",
+    "version": 2
+  },
+  "section_510.rst": {
+    "checksum": "e59e8e1342bdd9eef2c33d454b7a61640911210e",
+    "summary": "**Functions**",
+    "version": 2
+  },
+  "section_511.rst": {
+    "checksum": "0b72304d979f1bd5bd9700452f7c0c0f3e5c3b57",
+    "summary": "Close this tab.",
+    "version": 2
+  },
+  "section_512.rst": {
+    "checksum": "0f7ddf8b3a23f23ece1ccb3e5a48b4e5d87cf4bd",
+    "summary": "Save the view to a PDF file.",
+    "version": 2
+  },
+  "section_513.rst": {
+    "checksum": "04ab190a4d076f77521702b32c02c099c18c0748",
+    "summary": "forces a update of the edit view",
+    "version": 2
+  },
+  "section_514.rst": {
+    "checksum": "82918b5f2caea4f8f7d60e7c9e1ab3b0690f62b5",
+    "summary": "Implementation of the GSGlyphInfo object.",
+    "version": 2
+  },
+  "section_515.rst": {
+    "checksum": "3cf5a2914669643ee138cc1d028eacd3a076e203",
+    "summary": "Human-readable name of glyph (\"nice name\").",
+    "version": 2
+  },
+  "section_516.rst": {
+    "checksum": "0a7e334458ccb474706cf7ebaf899ead41ce48b8",
+    "summary": "Production name of glyph. Will return a value only if production name differs from nice name, otherwise None.",
+    "version": 2
+  },
+  "section_517.rst": {
+    "checksum": "cc274d7960eed471895fdd995cf97eb3f07f5166",
+    "summary": "This is mostly from the UnicodeData.txt file from unicode.org. Some corrections have been made (Accents, ...) e.g: \"Letter\", \"Number\", \"Punctuation\", \"Mark\", \"Separator\", \"Symbol\", \"Other\"",
+    "version": 2
+  },
+  "section_518.rst": {
+    "checksum": "0666792dec33bc1f0dd5536fd9c2075758f03407",
+    "summary": "This is mostly from the UnicodeData.txt file from unicode.org. Some corrections and additions have been made.",
+    "version": 2
+  },
+  "section_519.rst": {
+    "checksum": "9b8fb6bdb280d8bbaeb6e062b752fde71bd81889",
+    "summary": "e.g: GSUppercase, GSLowercase, GSSmallcaps",
+    "version": 2
+  },
+  "section_520.rst": {
+    "checksum": "28d18f0fb5e3e56783a2777b6cd1a9bf2a982d4a",
+    "summary": "This glyph may be composed of the glyphs returned as a list of GSGlyphInfo objects.",
+    "version": 2
+  },
+  "section_521.rst": {
+    "checksum": "4d33489bab432b8db981bee12602d8ee93b39816",
+    "summary": "This glyph may be combined with these accents, returned as a list of glyph names.",
+    "version": 2
+  },
+  "section_522.rst": {
+    "checksum": "0732fff5203e1d2bb7a235958ba762b3250d1021",
+    "summary": "Anchors defined for this glyph, as a list of anchor names.",
+    "version": 2
+  },
+  "section_523.rst": {
+    "checksum": "99906a64529877922ca729ddbc32c08c33291b58",
+    "summary": "the first Unicode value",
+    "version": 2
+  },
+  "section_524.rst": {
+    "checksum": "8dc30304407af1a815c59a6daa81a2b2cfd680df",
+    "summary": "a second unicode value it present",
+    "version": 2
+  },
+  "section_525.rst": {
+    "checksum": "ce6e2aa2277e09ec67e3c3da6d00bd9778cc4119",
+    "summary": "Script of glyph, e.g: \"latin\", \"cyrillic\", \"greek\".",
+    "version": 2
+  },
+  "section_526.rst": {
+    "checksum": "2cd8335c4511a13c40bd6356d48691b91894cd27",
+    "summary": "Index of glyph in database. Used for sorting in UI.",
+    "version": 2
+  },
+  "section_527.rst": {
+    "checksum": "66edd2c822a4e545e253c776e452e4341cee8343",
+    "summary": "Alternative name of glyph used for sorting in UI.",
+    "version": 2
+  },
+  "section_528.rst": {
+    "checksum": "dee47ae8b65285691d0ab4c2918733d1bd4f940e",
+    "summary": "Alternative name of glyph used for sorting in UI, when using 'Keep Alternates Next to Base Glyph' from Font Info.",
+    "version": 2
+  },
+  "section_529.rst": {
+    "checksum": "abb08238058903d273127e496556a80720d4d0a3",
+    "summary": "Unicode description of glyph.",
+    "version": 2
+  },
+  "section_530.rst": {
+    "checksum": "32ecbb9e5bb139f958a6c380748359b9f9a498f4",
+    "summary": "Alternative names for glyphs that are not used, but should be recognized (e.g., for conversion to nice names).",
+    "version": 2
+  },
+  "section_531.rst": {
+    "checksum": "929d76931c5b5d8d8717b1d04c4416cebda2c81b",
+    "summary": "Writing direction.",
+    "version": 2
+  },
+  "section_532.rst": {
+    "checksum": "a2847051f8c6159a805d629e160db25b460fb810",
+    "summary": "The GSFontInfoValueLocalized",
+    "version": 2
+  },
+  "section_533.rst": {
+    "checksum": "4d3d036a5ac672a52686d7d56b7f5496765986fd",
+    "summary": "the key",
+    "version": 2
+  },
+  "section_534.rst": {
+    "checksum": "fac3b83e1780255a716431050722b91e23aa7577",
+    "summary": "A list of GSFontInfoValue objects.",
+    "version": 2
+  },
+  "section_535.rst": {
+    "checksum": "9c6b8815e97820cb3e86b4f47d0917038274cc27",
+    "summary": "the value that is considered the default (either the dflt or English entry)",
+    "version": 2
+  },
+  "section_536.rst": {
+    "checksum": "3998c7a9e140ac54376046f1b844b2b06261699e",
+    "summary": "The GSFontInfoValueSingle",
+    "version": 2
+  },
+  "section_537.rst": {
+    "checksum": "ec0fb2da2d9a92664b1c2e3b7d766fcc886830a5",
+    "summary": "the key",
+    "version": 2
+  },
+  "section_538.rst": {
+    "checksum": "6df682da02fdc13fad37be8ab3d8ebaaf12b2cfb",
+    "summary": "The value",
+    "version": 2
+  },
+  "section_539.rst": {
+    "checksum": "fe6f377d64ebfb9f1540a9a63f1689e31a716286",
+    "summary": "The GSFontInfoValue",
+    "version": 2
+  },
+  "section_540.rst": {
+    "checksum": "b4c132fd45cec2b94a51bde0fce5606eb79a955b",
+    "summary": "the key",
+    "version": 2
+  },
+  "section_541.rst": {
+    "checksum": "2bafc85ebb46f96b4b5d29561a7decff469f99d8",
+    "summary": "The value",
+    "version": 2
+  },
+  "section_542.rst": {
+    "checksum": "9d5fb14f145a27dbc9aaa0c85c2fc32318b8ed1a",
+    "summary": "The languageTag",
+    "version": 2
+  },
+  "section_543.rst": {
+    "checksum": "3c636ceae738b27f1fb39da66d59b3087ab381e1",
+    "summary": "The GSMetricValue objects represent vertical metrics values and theirs overshoots.",
+    "version": 2
+  },
+  "section_544.rst": {
+    "checksum": "0b9bae2f0a10743793272724b5654e2a0c60d59e",
+    "summary": "The y position of the metric.",
+    "version": 2
+  },
+  "section_545.rst": {
+    "checksum": "0a9c3913c91bc1e237567eeacf5cac61d1039748",
+    "summary": "Value of overshoot’s width.",
+    "version": 2
+  },
+  "section_546.rst": {
+    "checksum": "bf6866e6ea25b7c80178f16f71769f650d25605e",
+    "summary": "The name of the metric value. Eg.",
+    "version": 2
+  },
+  "section_547.rst": {
+    "checksum": "545e1bdd39dfb0f1f6fc75505d3a116cff539a21",
+    "summary": "A filter to limit the scope of the metric.",
+    "version": 2
+  },
+  "section_548.rst": {
+    "checksum": "3a90b2961d0482456562ef609e125a8a992170ce",
+    "summary": "Corresponding GSMetric object. see GSFont.metrics.",
+    "version": 2
+  },
+  "section_549.rst": {
+    "checksum": "998bf6f15e3fdb5ea9786f5b84c0943d0c336c94",
+    "summary": "The Text Preview Window",
+    "version": 2
+  },
+  "section_550.rst": {
+    "checksum": "7d63feb72bef39442dfbee7318b5f0f5383dadd5",
+    "summary": "The font",
+    "version": 2
+  },
+  "section_551.rst": {
+    "checksum": "1a43d24b68e142dfccfc1ff07b71ae169128d815",
+    "summary": "The text",
+    "version": 2
+  },
+  "section_552.rst": {
+    "checksum": "947a6614e83122e326b698c44629db1f92f9dfc1",
+    "summary": "The index of the selected instance",
+    "version": 2
+  },
+  "section_553.rst": {
+    "checksum": "07381e0d140c041a1aa2efb8002d6b76d9921f5b",
+    "summary": "The font size",
+    "version": 2
+  },
+  "section_554.rst": {
+    "checksum": "e5aad5ce9e194f7dd30b1d955fcfb49bf9d9eb1f",
+    "summary": "opens the Preview Text Window",
+    "version": 2
+  },
+  "section_555.rst": {
+    "checksum": "90d5f8fbb7f6f99f906976700fd86d08958ef66f",
+    "summary": "refreshes the Preview Text Window",
+    "version": 2
+  },
+  "section_556.rst": {
+    "checksum": "33dc864398f43ba902dcf0e4b26f2eb0b718ea63",
+    "summary": "closes the Preview Text Window",
+    "version": 2
+  },
+  "section_557.rst": {
+    "checksum": "57fad1b5972838bcc65cdb6e4747e1e55f4d6ef4",
+    "summary": "The NSAffineTransform object.",
+    "version": 2
+  },
+  "section_558.rst": {
+    "checksum": "cb9ce2dc6c5c4700584808803ec130e212853bb8",
+    "summary": "shift by x, y",
+    "version": 2
+  },
+  "section_559.rst": {
+    "checksum": "e0167673d1f3fec0c7658bb82a51f77657622e0f",
+    "summary": "if a single number, scale uniformly, otherwise scale by x, y if center is given, that is used as the origin of the scale",
+    "version": 2
+  },
+  "section_560.rst": {
+    "checksum": "c2294c8a14100c67d35a35bb7ec945bc4cb32750",
+    "summary": "The angle of the rotation. In degree, positive angles are CCW if center is given, that is used as the origin of the rotation",
+    "version": 2
+  },
+  "section_561.rst": {
+    "checksum": "bd846a1f0694ab613f84e7aeee8aeb3c07562104",
+    "summary": "if a single number, skew in x-direction otherwise skew by x, y if center is given, that is used as the origin of the skew",
+    "version": 2
+  },
+  "section_562.rst": {
+    "checksum": "c1f9d133d33683793fc9ce52a62800308cdb9104",
+    "summary": "The transformation matrix.",
+    "version": 2
+  },
+  "section_563.rst": {
+    "checksum": "694baba197707f7dfeb95b9c22a146662e1a340e",
+    "summary": "The NSMenuItem object.",
+    "version": 2
+  },
+  "section_564.rst": {
+    "checksum": "cd30b4b3ff3cd13f0651946ebadd9b0d9c8001a4",
+    "summary": "adds the item to the menu",
+    "version": 2
+  },
+  "section_565.rst": {
+    "checksum": "236439dbe113788bb0a7efb9ca404ad200ee5d86",
+    "summary": "The NSMenuItem object.",
+    "version": 2
+  },
+  "section_566.rst": {
+    "checksum": "042d3ad4c09c52e121ca1e83b9fc0f2024a11531",
+    "summary": "adds another item to the items submenu",
+    "version": 2
+  },
+  "section_567.rst": {
+    "checksum": "67170a80044a202468288f5c2e31437bc1bf9bde",
+    "summary": "inserts the item into the items submenu at the specified index",
+    "version": 2
+  },
+  "section_568.rst": {
+    "checksum": "33d49baf16c1a554a1ca073d4153dc6f06d3e996",
+    "summary": "Methods",
+    "version": 2
+  },
+  "section_569.rst": {
+    "checksum": "204410ae09a6cb43c26af84901a74a21afaeb088",
+    "summary": "Divides the curve using the De Casteljau’s algorithm.",
+    "version": 2
+  },
+  "section_570.rst": {
+    "checksum": "cd89ee819195926f31dbca1298331e0148495b25",
+    "summary": "calculates the distance between two NSPoints",
+    "version": 2
+  },
+  "section_571.rst": {
+    "checksum": "44952cc2479bcfd5bd44940cecd80eb230619489",
+    "summary": "Add the points.",
+    "version": 2
+  },
+  "section_572.rst": {
+    "checksum": "84ec979ef02d9aeea59fdb198c6ad53f381fa627",
+    "summary": "Subtracts the points.",
+    "version": 2
+  },
+  "section_573.rst": {
+    "checksum": "7ae8724f3217297ff09ea3a32b8414d784d303b8",
+    "summary": "Scaled a point.",
+    "version": 2
+  },
+  "section_574.rst": {
+    "checksum": "40210871dbc4a6fc308582778f1664051ae2d52d",
+    "summary": "removes the overlaps from the list of paths",
+    "version": 2
+  },
+  "section_575.rst": {
+    "checksum": "de6a252e0bd217e4c968d80f6374c861842a1a13",
+    "summary": "removes the overlaps from the list of paths",
+    "version": 2
+  },
+  "section_576.rst": {
+    "checksum": "2f3e0243d3dfc72a84762a3060c346602ef184e5",
+    "summary": "removes the overlaps from the list of paths",
+    "version": 2
+  },
+  "section_577.rst": {
+    "checksum": "1e19bfef2ccc99c6150e721340a33e6d9c1f3bf3",
+    "summary": "Opens a file chooser dialog.",
+    "version": 2
+  },
+  "section_578.rst": {
+    "checksum": "239140710345092a5443a09a7b6a22477da95b04",
+    "summary": "Opens a file chooser dialog.",
+    "version": 2
+  },
+  "section_579.rst": {
+    "checksum": "5afdcf3b33f70b4c6e66e2ab47acdf0f510f5329",
+    "summary": "Opens a folder chooser dialog.",
+    "version": 2
+  },
+  "section_580.rst": {
+    "checksum": "831a702540ede5a06e9a7ba2b7a505daac6cc976",
+    "summary": "Shows an alert panel.",
+    "version": 2
+  },
+  "section_581.rst": {
+    "checksum": "05cdf51d7240cc41aa238cdb6024b3852753e946",
+    "summary": "AskString Dialog",
+    "version": 2
+  },
+  "section_582.rst": {
+    "checksum": "da5d546ff5ec2b30b2cdb6c83fd96d4ca353ea3c",
+    "summary": "AskString Dialog",
+    "version": 2
+  },
+  "section_583.rst": {
+    "checksum": "38dc37f50a08fc82b1b1bc485c67b1a2268d3cc9",
+    "summary": "Write a message to the Mac’s Console.app for debugging.",
+    "version": 2
+  },
+  "section_584.rst": {
+    "checksum": "279aac935ed683637fa7bf3f5394f9d1da3de747",
+    "summary": "Log an error message and write it to the Macro window’s output (in red).",
+    "version": 2
+  },
+  "section_585.rst": {
+    "checksum": "9796712250d764a3fc425a564cf3e31b8067b9a6",
+    "summary": "Node Types",
+    "version": 2
+  }
+}
