@@ -4,7 +4,6 @@ Claude desktop Install
 
 code ~/Library/Application\ Support/Claude/claude_desktop_config.json
 
-
 ```
 
 {
@@ -13,12 +12,10 @@ code ~/Library/Application\ Support/Claude/claude_desktop_config.json
     "glyphs-mcp-server": {
       "command": "npx",
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-everything"
-      ],
-      "env": {
-        "SSE_URL": "http://127.0.0.1:9680/mcp/"
-      }
+        "mcp-remote",
+        "http://127.0.0.1:9680/mcp/",
+        "--header"
+      ]
     }
   }
 }
@@ -33,9 +30,10 @@ code ~/Library/Application\ Support/Claude/claude_desktop_config.json
   "globalShortcut": "Alt+Ctrl+Cmd+*",
   "mcpServers": {
     "glyphs-mcp-server": {
-      "command": "sse-mcp-client",
+      "command": "mcp-proxy",
       "args": [
-        "--url",
+        "--transport",
+        "streamablehttp",
         "http://127.0.0.1:9680/mcp/"
       ]
     }

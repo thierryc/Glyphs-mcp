@@ -163,26 +163,6 @@ pip3 install --user mcp-proxy
 
 Claude Desktop still discards your login shell. The explicit `PATH` entry ensures the app finds the `mcp-proxy` shim that `pip3` drops into Python 3.12’s `bin` directory before falling back to the system defaults. If your Python lives elsewhere (for example a `pyenv` or Homebrew install), replace `/Library/Frameworks/Python.framework/Versions/3.12/bin` with the result of `python3 -m site --user-base` plus `/bin`.
 
-Prefer invoking the all-in-one helper? Swap in `@modelcontextprotocol/server-everything` or the dedicated SSE client:
-
-```json
-{
-  "globalShortcut": "Alt+Ctrl+Cmd+*",
-  "mcpServers": {
-    "glyphs-mcp-server": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-everything"
-      ],
-      "env": {
-        "SSE_URL": "http://127.0.0.1:9680/mcp/"
-      }
-    }
-  }
-}
-```
-
 ### Cursor IDE
 ![Cursor MCP configuration screenshot](/content/images/glyphs-app-mcp/cursor-gemini.webp)
 

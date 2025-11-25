@@ -318,7 +318,7 @@ def verify_runtime(python: Path) -> bool:
     console.print(Panel.fit(f"Verifying runtime imports in: {python}", title="Verify", border_style="white"))
     code = (
         "import sys;\n"
-        "mods=['fastmcp','pydantic_core','starlette','uvicorn'];\n"
+        "mods=['fastmcp','pydantic_core','starlette','uvicorn','fontParts','fontTools'];\n"
         "missing=[];\n"
         "import importlib;\n"
         "\n"

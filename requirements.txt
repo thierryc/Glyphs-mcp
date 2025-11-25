@@ -39,6 +39,8 @@ typer==0.16.0
 typing-inspection==0.4.1
 typing_extensions==4.14.1
 uvicorn==0.35.0
+fonttools==4.54.1
+fontParts==0.9.11
 
 # Glyphs runtime ships these modules; captured here for clarity only.
 # They are not installed via pip because Glyphs bundles PyObjC and the GlyphsApp API.
