@@ -11,6 +11,8 @@ Quick install (interactive):
 python3 install.py
 ```
 
+On macOS Finder you can also double‑click `RunInstall.command` in the repo root; it launches the same installer (`python3 install.py`). If Gatekeeper blocks it, right‑click → Open once to approve.
+
 ## What Is an MCP Server?
 
 A *Model Context Protocol* server is a lightweight process that:
