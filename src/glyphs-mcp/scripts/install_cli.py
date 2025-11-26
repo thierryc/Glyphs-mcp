@@ -164,6 +164,8 @@ except Exception:  # fallback if rich isn't available in the runner's Python
 console = Console()
 
 PYTHON_BINARY_PATTERN = re.compile(r"^python3(\.\d+)?$")
+MIN_PY_VERSION = (3, 11, 0)  # Allow 3.11+, prefer 3.12+
+MAX_PY_VERSION_EXCLUSIVE = (3, 14, 0)  # Disallow 3.14+ until tested
 
 
 def repo_root() -> Path:
@@ -244,7 +246,10 @@ def detect_python_candidates() -> List[PythonCandidate]:
         ver = python_version(resolved)
         if not ver:
             return
-        if version_tuple(ver) < (3, 12, 0):
+        vt = version_tuple(ver)
+        if vt < MIN_PY_VERSION:
+            return
+        if vt >= MAX_PY_VERSION_EXCLUSIVE:
             return
         cands.append(PythonCandidate(path, ver, source))
         seen.add(resolved)
@@ -452,8 +457,8 @@ def choose_mode() -> str:
 
 
 def choose_custom_python(cands: List[PythonCandidate]) -> Path:
-    # Filter preferred >= 3.12
-    preferred = [c for c in cands if c.version_key >= (3, 12, 0)] or cands
+    # Filter preferred >= MIN_PY_VERSION (favor newer first)
+    preferred = [c for c in cands if c.version_key >= MIN_PY_VERSION] or cands
 
     console.print("Detected Python interpreters:")
     # Use a compact table style; fall back if Rich version lacks the attribute
@@ -501,10 +506,14 @@ def main() -> None:
             console.print("[yellow]No Python interpreters detected. You can enter a custom path.[/yellow]")
         python_path = choose_custom_python(cands)
         ver = python_version(python_path) or "unknown"
-        if version_tuple(ver) < (3, 12, 0):
-            proceed = Confirm.ask(f"Selected Python {ver} is older than 3.12. Continue?", default=False)
+        vt = version_tuple(ver)
+        if vt >= MAX_PY_VERSION_EXCLUSIVE:
+            console.print(f"[red]Python {ver} is not yet supported. Please use 3.11–3.13.[/red]")
+            raise SystemExit(2)
+        if vt < MIN_PY_VERSION:
+            proceed = Confirm.ask(f"Selected Python {ver} is older than {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}. Continue?", default=False)
             if not proceed:
-                console.print("[red]Aborting. Please install Python 3.12+ and re-run.[/red]")
+                console.print(f"[red]Aborting. Please install Python {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}+ and re-run.[/red]")
                 raise SystemExit(2)
         install_with_custom_python(python_path, req)
 
