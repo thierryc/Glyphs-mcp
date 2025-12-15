@@ -8,6 +8,9 @@ import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+# Global to store detected venv path for diagnostics
+_detected_venv_site: Optional[Path] = None
+
 
 def _glyphs_user_site_packages() -> Path:
     """Return the user-writable site-packages used by Glyphs scripts.
@@ -16,6 +19,48 @@ def _glyphs_user_site_packages() -> Path:
     """
     base = Path.home() / "Library" / "Application Support" / "Glyphs 3"
     return base / "Scripts" / "site-packages"
+
+
+def _detect_venv() -> Optional[Path]:
+    """Auto-detect a virtual environment in the plugin's source directory.
+
+    When the plugin is symlinked from a development repository, this walks up the
+    directory tree looking for common venv directories (.venv, venv, etc.).
+    A directory is considered a venv if it contains a pyvenv.cfg file.
+
+    Returns the path to the venv's site-packages if found, None otherwise.
+    """
+    try:
+        # Resolve symlinks to find the real location (i.e., the source repo)
+        plugin_file = Path(__file__).resolve()
+    except Exception:
+        return None
+
+    venv_names = (".venv314", ".venv313", ".venv312", ".venv311", ".venv", "venv")
+
+    for parent in plugin_file.parents:
+        for venv_name in venv_names:
+            candidate = parent / venv_name
+            pyvenv_cfg = candidate / "pyvenv.cfg"
+            if pyvenv_cfg.is_file():
+                # Found a venv - locate its site-packages
+                site_packages = (
+                    candidate
+                    / "lib"
+                    / f"python{sys.version_info.major}.{sys.version_info.minor}"
+                    / "site-packages"
+                )
+                if site_packages.is_dir():
+                    return site_packages
+                # Also check for Windows-style layout (unlikely on macOS but be safe)
+                site_packages_win = candidate / "Lib" / "site-packages"
+                if site_packages_win.is_dir():
+                    return site_packages_win
+        # Stop at the user's home directory to avoid scanning too far
+        if parent == Path.home():
+            break
+
+    return None
 
 
 def _ensure_user_site_packages_on_path() -> None:
@@ -70,6 +115,19 @@ def _ensure_user_site_packages_on_path() -> None:
             # Never block plugin startup on sys.path tweaks
             pass
 
+    # Check for auto-detected venv (e.g., when plugin is symlinked from a repo)
+    venv_site = _detect_venv()
+
+    # Store detected venv for diagnostics
+    global _detected_venv_site
+    _detected_venv_site = venv_site
+
+    if venv_site:
+        # Isolated venv mode: use only the venv's site-packages
+        _add(venv_site)
+        return
+
+    # No venv detected - use the standard site-packages discovery
     glyphs_site = _glyphs_user_site_packages()
 
     # Detect whether Glyphs is running with its embedded Python.
@@ -229,9 +287,16 @@ def run_diagnostics() -> None:
         print_kv("Python exec", _resolve_python_executable())
         print_kv("Python version", sys.version.splitlines()[0])
 
-        site_dir = _get_site_packages_dir()
-        print_kv("User site-packages", site_dir)
-        print_kv("On sys.path", str(site_dir in sys.path))
+        # Show venv status if detected
+        if _detected_venv_site:
+            print_kv("Venv mode", f"{GREEN}{OK} active{RESET}")
+            print_kv("Venv site-packages", str(_detected_venv_site))
+            print_kv("On sys.path", str(str(_detected_venv_site) in sys.path))
+        else:
+            site_dir = _get_site_packages_dir()
+            print_kv("Venv mode", "not active (using shared site-packages)")
+            print_kv("User site-packages", site_dir)
+            print_kv("On sys.path", str(site_dir in sys.path))
 
         # Minimal set required to run the local MCP HTTP server
         required: List[str] = [
