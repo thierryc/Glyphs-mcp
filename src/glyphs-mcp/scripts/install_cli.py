@@ -595,11 +595,13 @@ def show_client_guidance() -> None:
 
     elif choice == "2":
         console.print(Panel.fit(
-            "Claude Code (VS Code) → Two common paths:\n\n"
-            "1) Enable MCP discovery so Claude Code picks up servers registered by Claude Desktop:\n"
+            "Claude Code → Two options:\n\n"
+            "1. Enable MCP discovery so Claude Code (running in VS Code) picks up servers registered by Claude Desktop:\n"
             "   - In VS Code, set: chat.mcp.discovery.enabled = true\n"
-            "   - Then register the server in Claude Desktop as shown above.\n\n"
-            "2) Or use the Continue extension method below (works with Claude Code too).",
+            "   - Then register the server in Claude Desktop as shown above.\n"
+            "2. Use the claude CLI command\n"
+            f"   claude mcp add -t http glyphs {url}\n\n"
+            "   Add -s user for user-wide config, or -s project for current project only.\n",
             title="Claude Code", border_style="cyan"))
 
     elif choice == "3":

@@ -133,13 +133,38 @@ python3 install.py
 4) Finish and start the server in Glyphs
    - Open Glyphs → Edit → Start MCP Server.
    - The server runs at `http://127.0.0.1:9680/` with MCP Streamable HTTP transport.
-   - The installer can optionally show client setup snippets for popular tools (Claude Desktop, Claude Code, Continue, Cursor, Windsurf, Codex). It uses either `npx mcp-remote` or the Python `mcp-proxy` if on PATH.
+   - The installer can optionally show client setup snippets for popular tools (Claude Desktop, Claude Code, Continue, Cursor, Windsurf, Codex). Many clients support streamable HTTP natively; others may require a proxy like `npx mcp-remote` or the Python `mcp-proxy`.
 
 Tips
 - If you’re unsure, accept the defaults: “Glyphs’ Python” and “Copy”.
 - Prefer python.org 3.12+ over Homebrew for fewer compatibility surprises on macOS.
 - On Apple Silicon, avoid Rosetta‑translated Pythons and ensure `pip` installs arm64 wheels.
 - No sudo is required; everything installs into your user directories.
+
+## Development Setup with Virtual Environment
+
+For development, you can use a local virtual environment instead of installing
+dependencies globally. The plugin auto-detects venvs (`.venv`, `venv`, `.venv314`, etc.)
+when symlinked from a repository.
+
+```bash
+uv sync
+```
+
+Or with pip (using `pyproject.toml` for latest compatible versions):
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate && pip install -e .
+```
+
+Then symlink the plugin and restart Glyphs:
+
+```bash
+ln -s "$PWD/src/glyphs-mcp/Glyphs MCP.glyphsPlugin" \
+      ~/Library/Application\ Support/Glyphs\ 3/Plugins/
+```
+
+Start the server via **Edit → Start MCP Server**.
 
 ## Build Site Images (WebP)
 
