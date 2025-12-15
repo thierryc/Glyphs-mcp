@@ -644,6 +644,17 @@ def show_client_guidance() -> None:
             'command = "npx"\n'
             f'args = ["mcp-remote", "{url}", "--header"]\n',
             title="Codex (OpenAI)", border_style="blue"))
+    elif choice == "7":
+        console.print(Panel.fit(
+            "Gemini CLI → Add to ~/.gemini/settings.json (user-wide) or .gemini/settings.json (project):\n\n"
+            "{\n"
+            '  "mcpServers": {\n'
+            '    "glyphs": {\n'
+            f'      "httpUrl": "{url}"\n'
+            "    }\n"
+            "  }\n"
+            "}",
+            title="Gemini CLI (Google)", border_style="blue"))
 
 
 if __name__ == "__main__":

@@ -133,7 +133,7 @@ python3 install.py
 4) Finish and start the server in Glyphs
    - Open Glyphs → Edit → Start MCP Server.
    - The server runs at `http://127.0.0.1:9680/` with MCP Streamable HTTP transport.
-   - The installer can optionally show client setup snippets for popular tools (Claude Desktop, Claude Code, Continue, Cursor, Windsurf, Codex). Many clients support streamable HTTP natively; others may require a proxy like `npx mcp-remote` or the Python `mcp-proxy`.
+   - The installer can optionally show client setup snippets for popular tools (Claude Desktop, Claude Code, Continue, Cursor, Windsurf, Codex, Gemini CLI). Many clients support streamable HTTP natively; others may require a proxy like `npx mcp-remote` or the Python `mcp-proxy`.
 
 Tips
 - If you’re unsure, accept the defaults: “Glyphs’ Python” and “Copy”.
