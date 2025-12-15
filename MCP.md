@@ -4,6 +4,8 @@ Claude desktop Install
 
 code ~/Library/Application\ Support/Claude/claude_desktop_config.json
 
+Note: `/mcp/` is an SSE MCP endpoint. Browsers will show a small JSON discovery response; MCP clients connect with `Accept: text/event-stream`.
+
 ```
 
 {
@@ -13,8 +15,7 @@ code ~/Library/Application\ Support/Claude/claude_desktop_config.json
       "command": "npx",
       "args": [
         "mcp-remote",
-        "http://127.0.0.1:9680/mcp/",
-        "--header"
+        "http://127.0.0.1:9680/mcp/"
       ]
     }
   }

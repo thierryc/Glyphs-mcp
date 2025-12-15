@@ -175,7 +175,7 @@ class StreamableHTTPServer:
                         responses.append(response)
                     
                     if wants_sse:
-                        return await self._send_sse_responses(responses, session_id)
+                        return await self._send_sse_responses(request, responses, session_id)
                     else:
                         return web.json_response(responses)
                 else:
@@ -183,7 +183,7 @@ class StreamableHTTPServer:
                     response = await self._handle_mcp_request(body)
                     
                     if wants_sse:
-                        return await self._send_sse_responses([response], session_id)
+                        return await self._send_sse_responses(request, [response], session_id)
                     else:
                         return web.json_response(response)
                         
@@ -238,7 +238,7 @@ class StreamableHTTPServer:
         
         return response
     
-    async def _send_sse_responses(self, responses: List[Dict[str, Any]], session_id: str) -> Response:
+    async def _send_sse_responses(self, request: Request, responses: List[Dict[str, Any]], session_id: str) -> Response:
         """Send responses as Server-Sent Events."""
         response = web.StreamResponse()
         response.headers['Content-Type'] = 'text/event-stream'

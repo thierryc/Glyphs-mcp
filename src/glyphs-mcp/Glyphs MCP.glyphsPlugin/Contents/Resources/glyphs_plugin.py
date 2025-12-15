@@ -5,12 +5,25 @@ import objc
 import threading
 from GlyphsApp import Glyphs, EDIT_MENU # type: ignore[import-not-found]
 from GlyphsApp.plugins import GeneralPlugin # type: ignore[import-not-found]
-from AppKit import NSMenuItem
+from AppKit import (
+    NSAlert,
+    NSAlertFirstButtonReturn,
+    NSAlertSecondButtonReturn,
+    NSMenuItem,
+    NSTextField,
+    NSView,
+)
+from Foundation import NSNumberFormatter
 from starlette.middleware import Middleware
 
 from mcp_tools import mcp
-from security import OriginValidationMiddleware, StaticTokenAuthMiddleware
-from utils import find_available_port, get_known_tools, get_tool_info
+from security import (
+    McpDiscoveryMiddleware,
+    McpSessionIdMiddleware,
+    OriginValidationMiddleware,
+    StaticTokenAuthMiddleware,
+)
+from utils import get_known_tools, get_tool_info, is_port_available, notify_server_started
 
 
 class MCPBridgePlugin(GeneralPlugin):
@@ -38,12 +51,15 @@ class MCPBridgePlugin(GeneralPlugin):
         )
         # Configuration
         self.default_port = 9680
-        self.max_port_attempts = 50
 
     @objc.python_method
     def _http_middleware(self):
         """Return security middleware for the embedded HTTP server."""
-        middleware = [Middleware(OriginValidationMiddleware)]
+        middleware = [
+            Middleware(McpDiscoveryMiddleware),
+            Middleware(McpSessionIdMiddleware),
+            Middleware(OriginValidationMiddleware),
+        ]
 
         # Always include token middleware; it is a no-op unless the env token is set.
         middleware.append(Middleware(StaticTokenAuthMiddleware))
@@ -59,6 +75,80 @@ class MCPBridgePlugin(GeneralPlugin):
         newMenuItem.setAction_(self.StartStopServer_)
         Glyphs.menu[EDIT_MENU].append(newMenuItem)
 
+    @objc.python_method
+    def _start_server_on_port(self, port, sender):
+        self._server_thread = threading.Thread(
+            target=mcp.run,
+            kwargs=dict(
+                transport="http",
+                host="127.0.0.1",
+                port=port,
+                middleware=self._http_middleware(),
+            ),
+            daemon=True,
+        )
+        self._server_thread.start()
+        self._port = port
+
+        notify_server_started(port)
+        self._show_startup_message(port)
+
+        # Update menu title to indicate the server is running
+        try:
+            sender.setTitle_(self.name_running)
+        except Exception:
+            if hasattr(self, "menuItem"):
+                self.menuItem.setTitle_(self.name_running)
+
+    @objc.python_method
+    def _prompt_when_default_port_busy(self):
+        message = (
+            'I can\'t start the MCP server on "9680". '
+            "Wait a moment and retry, restart Glyphs, or enter a custom port below."
+        )
+
+        alert = NSAlert.alloc().init()
+        alert.setMessageText_("Glyphs MCP Server")
+        alert.setInformativeText_(message)
+        alert.addButtonWithTitle_("Retry on 9680")
+        alert.addButtonWithTitle_("Start on Custom Port")
+
+        port_field = NSTextField.alloc().initWithFrame_(((0, 0), (220, 24)))
+        port_field.setPlaceholderString_("Custom port (1–65535)")
+        port_field.setStringValue_("9681")
+        try:
+            formatter = NSNumberFormatter.alloc().init()
+            formatter.setAllowsFloats_(False)
+            port_field.setFormatter_(formatter)
+        except Exception:
+            pass
+
+        accessory = NSView.alloc().initWithFrame_(((0, 0), (220, 24)))
+        accessory.addSubview_(port_field)
+        alert.setAccessoryView_(accessory)
+
+        response = alert.runModal()
+        if response == NSAlertFirstButtonReturn:
+            return ("retry", None)
+        if response == NSAlertSecondButtonReturn:
+            try:
+                value = int(port_field.stringValue().strip())
+            except Exception:
+                return ("custom", None)
+            return ("custom", value)
+        return (None, None)
+
+    @objc.python_method
+    def _show_error(self, text):
+        alert = NSAlert.alloc().init()
+        alert.setMessageText_("Glyphs MCP Server")
+        alert.setInformativeText_(text)
+        alert.addButtonWithTitle_("OK")
+        try:
+            alert.runModal()
+        except Exception:
+            print(text)
+
     def StartStopServer_(self, sender):
         """Toggle the local FastMCP server running on localhost.
 
@@ -69,41 +159,34 @@ class MCPBridgePlugin(GeneralPlugin):
             self._show_server_status()
             return
 
-        # Find available port
-        port = find_available_port(self.default_port, self.max_port_attempts)
-        if port is None:
-            print(
-                "No free port between {} and {}".format(
-                    self.default_port, self.default_port + self.max_port_attempts - 1
-                )
-            )
+        while True:
+            if is_port_available(self.default_port, host="127.0.0.1"):
+                port = self.default_port
+                break
+
+            action, custom_port = self._prompt_when_default_port_busy()
+            if action == "retry":
+                continue
+            if action == "custom":
+                if custom_port is None:
+                    self._show_error("Enter a valid port number (1–65535).")
+                    continue
+                if not (1 <= custom_port <= 65535):
+                    self._show_error("Port must be between 1 and 65535.")
+                    continue
+                if not is_port_available(custom_port, host="127.0.0.1"):
+                    self._show_error(
+                        "Port {} is already in use. Choose another port or retry on 9680.".format(
+                            custom_port
+                        )
+                    )
+                    continue
+                port = custom_port
+                break
             return
 
         try:
-            # Start server in daemon thread
-            self._server_thread = threading.Thread(
-                target=mcp.run,
-                kwargs=dict(
-                    transport="http",
-                    host="127.0.0.1",
-                    port=port,
-                    middleware=self._http_middleware(),
-                ),
-                daemon=True,
-            )
-            self._server_thread.start()
-            self._port = port
-
-            self._show_startup_message(port)
-
-            # Update menu title to indicate the server is running
-            try:
-                sender.setTitle_(self.name_running)
-            except Exception:
-                # Fallback in case sender is not the menu item
-                if hasattr(self, "menuItem"):
-                    self.menuItem.setTitle_(self.name_running)
-
+            self._start_server_on_port(port, sender)
         except Exception as e:
             print("Failed to start server: {}".format(e))
 

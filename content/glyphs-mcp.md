@@ -96,6 +96,8 @@ Successful runs set `success: true` and mirror the same `log` array so clients a
 ## Client setup
 Configure your preferred AI client to speak the Streamable HTTP endpoint. Below are quick-start snippets for common tools.
 
+Note: `http://127.0.0.1:9680/mcp/` is an SSE endpoint for MCP clients. If you open it in a browser, it returns a small JSON discovery response instead.
+
 ### OpenAI Codex CLI
 ![OpenAI Codex MCP configuration screenshot](/content/images/glyphs-app-mcp/codex-in-vs-code.webp)
 ![OpenAI Codex result screenshot](/content/images/glyphs-app-mcp/codex-result-in-vs-code.webp)
@@ -105,7 +107,7 @@ Codex understands MCP servers via `codex mcp` helpers. The `mcp-remote` transpor
 ```toml
 [mcp_servers.glyphs-app-mcp]
 command = "npx"
-args = ["mcp-remote", "http://127.0.0.1:9680/mcp/", "--header"]
+args = ["mcp-remote", "http://127.0.0.1:9680/mcp/"]
 ```
 
 You can run `codex config path` to verify the location if you've customised the CLI setup.

@@ -577,7 +577,7 @@ def show_client_guidance() -> None:
             '  "mcpServers": {\n'
             '    "glyphs-mcp-server": {\n'
             '      "command": "npx",\n'
-            f'      "args": ["mcp-remote", "{url}", "--header"],\n'
+            f'      "args": ["mcp-remote", "{url}"],\n'
             '      "env": {"PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}\n'
             '    }\n'
             '  }\n'
@@ -618,7 +618,7 @@ def show_client_guidance() -> None:
             '  "mcpServers": {\n'
             '    "glyphs-mcp-server": {\n'
             '      "command": "npx",\n'
-            f'      "args": ["mcp-remote", "{url}", "--header"],\n'
+            f'      "args": ["mcp-remote", "{url}"],\n'
             '      "env": {"PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}\n'
             '    }\n'
             '  }\n'
@@ -640,7 +640,7 @@ def show_client_guidance() -> None:
             "OpenAI Codex CLI → Add to ~/.codex/config.toml:\n\n" +
             "[mcp_servers.glyphs-app-mcp]\n"
             'command = "npx"\n'
-            f'args = ["mcp-remote", "{url}", "--header"]\n',
+            f'args = ["mcp-remote", "{url}"]\n',
             title="Codex (OpenAI)", border_style="blue"))
 
 

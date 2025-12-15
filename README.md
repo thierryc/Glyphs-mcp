@@ -84,7 +84,7 @@ python src/glyphs-mcp/scripts/copy_documentation.py
 
 To start the Glyphs MCP server, open the **Edit** menu and choose **Start MCP Server**.
 
-The server will be available at `http://127.0.0.1:9680/` using MCP Streamable HTTP transport.
+The MCP endpoint is `http://127.0.0.1:9680/mcp/` using MCP Streamable HTTP transport.
 
 Open the **Macro Panel** to access the console.
 
@@ -132,7 +132,7 @@ python3 install.py
 
 4) Finish and start the server in Glyphs
    - Open Glyphs → Edit → Start MCP Server.
-   - The server runs at `http://127.0.0.1:9680/` with MCP Streamable HTTP transport.
+   - The MCP endpoint is `http://127.0.0.1:9680/mcp/` with MCP Streamable HTTP transport.
    - The installer can optionally show client setup snippets for popular tools (Claude Desktop, Claude Code, Continue, Cursor, Windsurf, Codex). It uses either `npx mcp-remote` or the Python `mcp-proxy` if on PATH.
 
 Tips
@@ -140,6 +140,10 @@ Tips
 - Prefer python.org 3.12+ over Homebrew for fewer compatibility surprises on macOS.
 - On Apple Silicon, avoid Rosetta‑translated Pythons and ensure `pip` installs arm64 wheels.
 - No sudo is required; everything installs into your user directories.
+
+Endpoint check
+- Browser `GET` requests to `/mcp/` return a small JSON discovery payload.
+- Verify locally: `curl -H 'Accept: application/json' http://127.0.0.1:9680/mcp/`
 
 ## Build Site Images (WebP)
 

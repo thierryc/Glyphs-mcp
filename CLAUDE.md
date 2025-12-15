@@ -40,6 +40,7 @@ python src/glyphs-mcp/scripts/copy_documentation.py
 ## Security & Transport Notes
 - The server binds locally starting at port 9680; keep it on loopback during development.
 - Responses stream via MCP Streamable HTTP (SSE under the hood); preserve any `Mcp-Session-Id` header returned by the server.
+- If you open `http://127.0.0.1:9680/mcp/` in a browser, the server returns a JSON discovery payload; MCP clients should connect with `Accept: text/event-stream`.
 - Add authentication (for example bearer tokens) before exposing the transport beyond localhost.
 
 ## IDE Configuration

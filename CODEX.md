@@ -5,6 +5,7 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 ## Mission Brief
 - Glyphs MCP is a Python-based MCP server packaged as a Glyphs 3 plugin.
 - The server exposes GlyphsApp functionality as JSON-RPC tools via Streamable HTTP at `http://127.0.0.1:9680/mcp/`.
+- A plain browser `GET` to `/mcp/` returns JSON discovery; MCP clients connect using SSE (`Accept: text/event-stream`).
 - Dependencies are installed into the user Scripts `site-packages` directory,
   not vendored inside the plugin.
 

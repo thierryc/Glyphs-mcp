@@ -23,59 +23,33 @@ def fix_glyphs_console():
             setattr(_stream, "isatty", lambda: False)
 
 
-def find_available_port(start_port=9680, max_attempts=50):
-    """Find an available port in the given range.
-    
-    Args:
-        start_port (int): Starting port number to check. Defaults to 9680.
-        max_attempts (int): Maximum number of ports to try. Defaults to 50.
-    
-    Returns:
-        int or None: Available port number, or None if no port is available.
-    """
-    for port in range(start_port, start_port + max_attempts):
+def is_port_available(port, host="127.0.0.1"):
+    """Return True if we can bind to host:port."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            try:
-                s.bind(("127.0.0.1", port))
-                _port_notification(port, start_port)
-                return port
-            finally:
-                s.close()
-        except OSError:
-            continue
-    return None
+            s.bind((host, int(port)))
+            return True
+        finally:
+            s.close()
+    except Exception:
+        return False
 
 
-def _port_notification(port, default_port):
-    """Display a dialog about the port selection."""
-    url_info = f"Server URL: {MCP_SERVER_URL}"
-    repo_info = f"More info: {GITHUB_REPO_URL}"
-    if Message:
-        if port == default_port:
-            Message(
-                "Glyphs MCP Server",
-                f"MCP server enabled on\nhttp://127.0.0.1:9680\n\nhttps://ap.cx/gmcp\v",
-                "Go",
-            )
-        else:
-            Message(
-                "Glyphs MCP Server Port Warning",
-                "Default port {0} is in use. Using port {1} instead.\n"
-                "Update your configuration or kill the process using this port. "
-                "You may need to restart Glyphs App or your Mac.\n{2}\n{3}".format(
-                    default_port, port, url_info, repo_info
-                ),
-            )
-    else:
-        if port == default_port:
-            print(f"Default port {default_port} is available. https://ap.cx")
-        else:
-            print(
-                f"Default port {default_port} unavailable, using {port}. "
-                "Update configuration or kill conflicting process."
-            )
-        print(repo_info)
+def notify_server_started(port, host="127.0.0.1"):
+    """Display a lightweight dialog when the server starts (best effort)."""
+    if not Message:
+        return
+    try:
+        Message(
+            "Glyphs MCP Server",
+            "MCP server enabled on\nhttp://{0}:{1}/mcp/\n\nhttps://ap.cx/gmcp\v".format(
+                host, int(port)
+            ),
+            "Go",
+        )
+    except Exception:
+        return
 
 
 def get_known_tools():
