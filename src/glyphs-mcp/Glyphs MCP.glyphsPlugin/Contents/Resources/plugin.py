@@ -3,113 +3,32 @@
 from __future__ import division, print_function, unicode_literals
 
 import os
-import site
 import sys
 from pathlib import Path
 from typing import List, Optional, Tuple
 
+# Global to store vendor path for diagnostics
+_vendor_path: Optional[Path] = None
 
-def _glyphs_user_site_packages() -> Path:
-    """Return the user-writable site-packages used by Glyphs scripts.
 
-    This is typically "~/Library/Application Support/Glyphs 3/Scripts/site-packages".
+def _setup_vendor_path() -> Optional[Path]:
+    """Set up sys.path to use the bundled vendor/ directory.
+
+    Returns the vendor path if found, None otherwise.
     """
-    base = Path.home() / "Library" / "Application Support" / "Glyphs 3"
-    return base / "Scripts" / "site-packages"
+    plugin_dir = Path(__file__).parent
+    vendor_dir = plugin_dir / "vendor"
+
+    if vendor_dir.is_dir():
+        vendor_str = str(vendor_dir)
+        if vendor_str not in sys.path:
+            sys.path.insert(0, vendor_str)
+        return vendor_dir
+
+    return None
 
 
-def _ensure_user_site_packages_on_path() -> None:
-    """Ensure the active Python can import MCP dependencies.
-
-    Glyphs may run either its embedded runtime or an external python.org/Homebrew
-    interpreter. Always add the Glyphs Scripts/site-packages directory, and when
-    Glyphs is using an external Python also add that interpreter's user site so
-    pip installs land where the plug-in can see them.
-    """
-
-    def _add(path: Optional[Path]) -> None:
-        if not path:
-            return
-        try:
-            real = path.resolve()
-        except Exception:
-            real = path
-        if not real.is_dir():
-            return
-
-        # Remove any existing entries that point to the same directory so we
-        # can control ordering (especially when mixing Glyphs' Python with
-        # an external interpreter).
-        try:
-            real_resolved = real.resolve()
-        except Exception:
-            real_resolved = real
-        real_str = str(real)
-        real_resolved_str = str(real_resolved)
-
-        for entry in list(sys.path):
-            try:
-                entry_path = Path(entry)
-            except Exception:
-                entry_path = None
-
-            if entry == real_str or entry == real_resolved_str:
-                sys.path.remove(entry)
-                continue
-
-            if entry_path is not None:
-                try:
-                    if entry_path.resolve() == real_resolved:
-                        sys.path.remove(entry)
-                except Exception:
-                    continue
-
-        try:
-            site.addsitedir(str(real))
-        except Exception:
-            # Never block plugin startup on sys.path tweaks
-            pass
-
-    glyphs_site = _glyphs_user_site_packages()
-
-    # Detect whether Glyphs is running with its embedded Python.
-    exe = Path(sys.executable).resolve()
-    is_embedded = any(parent.name.endswith(".app") and "Glyphs" in parent.name for parent in exe.parents)
-
-    additions: List[Path] = []
-
-    if not is_embedded:
-        try:
-            import site as _site  # shadowing module name is intentional
-
-            user_site = Path(_site.getusersitepackages())
-        except Exception:
-            user_site = None
-        else:
-            # Avoid re-adding the Glyphs Scripts folder when Glyphs delegates to it.
-            if user_site:
-                try:
-                    if glyphs_site and user_site.resolve() == glyphs_site.resolve():
-                        pass
-                    else:
-                        additions.append(user_site)
-                except Exception:
-                    additions.append(user_site)
-
-    # Always add Glyphs' Scripts/site-packages last so external site-packages
-    # take precedence when both are present.
-    additions.append(glyphs_site)
-
-    for entry in additions:
-        _add(entry)
-
-    # Allow manual overrides for debugging (colon-separated list).
-    extras = os.environ.get("GLYPHS_MCP_EXTRA_SITEPACKAGES", "")
-    for entry in (p.strip() for p in extras.split(os.pathsep) if p.strip()):
-        _add(Path(os.path.expanduser(entry)))
-
-
-_ensure_user_site_packages_on_path()
+_vendor_path = _setup_vendor_path()
 
 # Import utility functions and apply fixes
 from utils import fix_glyphs_console
@@ -134,11 +53,6 @@ from glyphs_plugin import MCPBridgePlugin
 # ------------------------------------------------------------
 # Diagnostics executed before launching the MCP server
 # ------------------------------------------------------------
-def _get_site_packages_dir() -> str:
-    """Return the Scripts/site-packages directory used for dependencies."""
-    return str(_glyphs_user_site_packages())
-
-
 def _resolve_python_executable() -> str:
     """Best-effort detection of the actual Python binary used by Glyphs."""
 
@@ -229,57 +143,11 @@ def run_diagnostics() -> None:
         print_kv("Python exec", _resolve_python_executable())
         print_kv("Python version", sys.version.splitlines()[0])
 
-        site_dir = _get_site_packages_dir()
-        print_kv("User site-packages", site_dir)
-        print_kv("On sys.path", str(site_dir in sys.path))
-
-        # Minimal set required to run the local MCP HTTP server
-        required: List[str] = [
-            "fastmcp",
-            "starlette",
-            "uvicorn",
-            "httpx",
-            "sse_starlette",
-            "typing_extensions",
-        ]
-        # Also useful in the Glyphs environment
-        optional: List[str] = ["GlyphsApp", "objc", "AppKit", "httpx_sse"]
-
-        # Required deps table
-        h("Required Dependencies")
-        req_results = [_check_dependency(name) for name in required]
-        name_width = max(12, max(len(n) for n, _, _ in req_results))
-        ok_count = sum(1 for _, ok, _ in req_results if ok)
-        miss_count = len(req_results) - ok_count
-        for name, ok, details in req_results:
-            status = f"{GREEN}{OK} OK{RESET}" if ok else f"{RED}{BAD} MISSING{RESET}"
-            print("  {name:<{w}}  {status}  {dim}{details}{reset}".format(
-                name=name, w=name_width, status=status, dim=DIM if ok else "", details=details if ok else details, reset=RESET
-            ))
-        print("-- Summary: {}{} OK{}, {}{} missing{}".format(
-            GREEN if use_color else "", ok_count, RESET if use_color else "",
-            RED if use_color else "", miss_count, RESET if use_color else "",
-        ))
-
-        # Optional deps table
-        h("Optional Dependencies")
-        opt_results = [_check_dependency(name) for name in optional]
-        name_width_opt = max(12, max(len(n) for n, _, _ in opt_results))
-        for name, ok, details in opt_results:
-            status = f"{OK} available" if ok else "- not present"
-            color = GREEN if ok and use_color else DIM if use_color else ""
-            print("  {name:<{w}}  {color}{status}{reset}{det}".format(
-                name=name, w=name_width_opt, color=color, status=status, reset=RESET if use_color else "", det=("  " + DIM + details + RESET) if ok and use_color else ("  " + details if ok else "")
-            ))
-
-        # Where fastmcp is loaded from
-        try:
-            import fastmcp  # type: ignore
-
-            h("Package Locations")
-            print_kv("fastmcp", getattr(fastmcp, "__file__", "?"))
-        except Exception:
-            pass
+        # Show vendor status
+        if _vendor_path:
+            print_kv("Vendor path", f"{GREEN}{OK} {_vendor_path}{RESET}")
+        else:
+            print_kv("Vendor path", f"{RED}{BAD} not found (dependencies missing){RESET}")
 
         print("\n" + line)
         print("Diagnostics complete. Start the server from the menu to proceed.")
