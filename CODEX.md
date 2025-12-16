@@ -5,8 +5,7 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 ## Mission Brief
 - Glyphs MCP is a Python-based MCP server packaged as a Glyphs 3 plugin.
 - The server exposes GlyphsApp functionality as JSON-RPC tools via Streamable HTTP at `http://127.0.0.1:9680/mcp/`.
-- Dependencies are installed into the user Scripts `site-packages` directory,
-  not vendored inside the plugin.
+- Dependencies are vendored into the plugin bundle (`Contents/Resources/vendor/`) for zero-config installation.
 
 ## Repository Map
 - `src/glyphs-mcp/` — Core plugin code, MCP tool implementations, and build scripts.
@@ -15,12 +14,11 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 - `README.md` — Current tool catalog, build steps, and IDE connection examples.
 
 ## Everyday Commands
-- Activate tooling env: `source glyphs-build-env/bin/activate`.
-- Install dependencies:
-  - `src/glyphs-mcp/scripts/install_deps_glyphs_python.sh` (Glyphs’ Python → installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`)
-  - `src/glyphs-mcp/scripts/install_deps_external_python.sh` (external Python → installs into that Python’s user site-packages)
-- Sync ObjectWrapper docs into the plugin: `python src/glyphs-mcp/scripts/copy_documentation.py`.
-- Start the server from Glyphs: restart the app, then **Edit → Start MCP Server**.
+- **Install/update plugin:** `python3 install.py` (vendors deps and symlinks plugin)
+- **Rebuild vendored deps:** `python3.XX src/glyphs-mcp/scripts/vendor_deps.py` (use the Python version you want to target: 3.11, 3.12, 3.13, or 3.14)
+- **Update requirements:** `uv pip compile pyproject.toml --python-version 3.11 --upgrade -o requirements.txt`
+- **Sync ObjectWrapper docs:** `python src/glyphs-mcp/scripts/copy_documentation.py`
+- **Start the server:** Restart Glyphs, then **Edit → Start MCP Server**
 
 ## MCP Tool Surface (selected)
 - Metadata: `list_open_fonts`, `get_font_glyphs`, `get_font_masters`, `get_font_instances`.

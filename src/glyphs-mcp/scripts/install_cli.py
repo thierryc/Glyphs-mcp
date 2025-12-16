@@ -420,16 +420,12 @@ def show_client_guidance() -> None:
 
     elif choice == "3":
         console.print(Panel.fit(
-            "GitHub Copilot (VS Code) → Add to .vscode/mcp.json in your project:\n\n"
-            "{\n"
-            '  "servers": {\n'
-            '    "glyphs": {\n'
-            '      "type": "http",\n'
-            f'      "url": "{url}"\n'
-            "    }\n"
-            "  }\n"
-            "}\n\n"
-            "Requires VS Code 1.99+ with chat.mcp.enabled and chat.agent.enabled set to true.",
+            "GitHub Copilot (VS Code 1.99+) → Command Palette: MCP: Add Server\n\n"
+            f"1. Select type: http\n"
+            f"2. URL: {url}\n"
+            "3. Server ID: glyphs\n"
+            "4. Scope: Global (user-wide) or Workspace (project)\n\n"
+            "Or run MCP: Open User Configuration to edit manually.",
             title="GitHub Copilot", border_style="green"))
 
     elif choice == "4":
