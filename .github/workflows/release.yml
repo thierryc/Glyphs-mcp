@@ -1,0 +1,45 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12', '3.13', '3.14']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Bundle dependencies
+        run: python src/glyphs-mcp/scripts/vendor_deps.py
+
+      - name: Get version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create release archive
+        run: |
+          cd "src/glyphs-mcp"
+          # Remove __pycache__ directories before zipping
+          find "Glyphs MCP.glyphsPlugin" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+          zip -r "../../Glyphs-MCP-${{ steps.version.outputs.version }}-arm64-py${{ matrix.python-version }}.zip" \
+              "Glyphs MCP.glyphsPlugin"
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Glyphs-MCP-${{ steps.version.outputs.version }}-arm64-py${{ matrix.python-version }}.zip

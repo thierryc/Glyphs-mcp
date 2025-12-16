@@ -24,8 +24,9 @@ Bridging Glyphs with MCP makes it possible for assistants to read, inspect, and 
   - [Windsurf](#windsurf)
   - [Claude Code (VS Code)](#claude-code-vs-code)
   - [Continue (VS Code / JetBrains)](#continue-vs-code-jetbrains)
+  - [Gemini CLI](#gemini-cli)
 - [Access & contributing](#access-contributing)
-- [Build the Glyphs plug-in](#build-the-glyphs-plug-in)
+- [Install the plug-in](#install-the-plug-in)
 
 ---
 
@@ -250,6 +251,20 @@ If you start Continue before launching Glyphs, open the MCP submenu inside the C
 #### VS Code discovery shortcut
 If you prefer to let VS Code auto-discover MCP servers registered by Claude Desktop, Cursor, or other tools, flip on the built-in discovery toggle via `vscode://settings/chat.mcp.discovery.enabled`. Once the setting is enabled, restart the chat session and the `glyphs-mcp-server` entry should appear without manual YAML edits.
 
+### Gemini CLI
+
+Gemini CLI supports MCP servers natively via Streamable HTTP. Add to `~/.gemini/settings.json` (user-wide) or `.gemini/settings.json` (project):
+
+```json
+{
+  "mcpServers": {
+    "glyphs": {
+      "httpUrl": "http://127.0.0.1:9680/mcp/"
+    }
+  }
+}
+```
+
 ---
 
 ## Access & contributing
@@ -260,53 +275,20 @@ Questions? Say hello at [thierry@anotherplanet.io](mailto:thierry@anotherplanet.
 ---
 
 ## Install the plug‑in
-Copy or symlink `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into
-`~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
 
-If you regenerate the ObjectWrapper documentation, refresh the bundled copy with:
+### Option A: Pre-built release (recommended)
+Download a pre-built release from [GitHub Releases](https://github.com/thierryc/Glyphs-mcp/releases) matching your Python version (check **Glyphs → Preferences → Addons → Python Version**). Unzip and double-click the `.glyphsPlugin` bundle—Glyphs will offer to install it.
 
-```bash
-python src/glyphs-mcp/scripts/copy_documentation.py
-```
-
-Once installed, open Glyphs and choose **Edit → Start MCP Server**. The service listens on `http://127.0.0.1:9680/` using the MCP Streamable HTTP transport. Open the **Macro Panel** to monitor console output.
-
----
-
-## Install dependencies
-Dependencies are no longer bundled inside the plug‑in. Install them into your
-user Scripts site‑packages so Glyphs can import them.
-
-### Option A: Use Glyphs’ Python (default)
-If you use the Python that Glyphs installs via the Plugin Manager:
+### Option B: Build from source
+Clone the repository and run the installer:
 
 ```bash
-GLYPHS_BASE="$HOME/Library/Application Support/Glyphs 3"
-PYTHON_BASE="$GLYPHS_BASE/Repositories/GlyphsPythonPlugin/Python.framework"
-"$PYTHON_BASE/Versions/Current/bin/pip3" install \
-  --target="$GLYPHS_BASE/Scripts/site-packages" \
-  -r requirements.txt
+git clone https://github.com/thierryc/Glyphs-mcp
+cd Glyphs-mcp
+python3 install.py
 ```
 
-Or run:
+The installer downloads dependencies into the plugin's `vendor/` directory and copies (or symlinks) the bundle to Glyphs' Plugins folder.
 
-```bash
-src/glyphs-mcp/scripts/install_deps_glyphs_python.sh
-```
-
-### Option B: Use another Python (e.g. python.org or Homebrew)
-We recommend Python 3.12 from python.org:
-
-```bash
-PYTHON="/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12"
-"$PYTHON" -m pip install --user -r requirements.txt
-```
-
-Or run the helper script (auto-detects Python 3.12 if available):
-
-```bash
-src/glyphs-mcp/scripts/install_deps_external_python.sh \
-  --python /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12
-```
-
-Restart Glyphs after installing dependencies.
+### Start the server
+Restart Glyphs and choose **Edit → Start MCP Server**. The service listens on `http://127.0.0.1:9680/mcp/` using the MCP Streamable HTTP transport. Open the **Macro Panel** to monitor console output.

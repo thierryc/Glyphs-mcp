@@ -1,0 +1,13 @@
+[project]
+name = "glyphs-mcp"
+dynamic = ["version"]
+description = "MCP server for Glyphs.app"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "fastmcp>=2.0",
+    "starlette>=0.40",
+    "fonttools>=4.50",
+    "fontParts>=0.9",
+]
