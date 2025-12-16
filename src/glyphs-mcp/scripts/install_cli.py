@@ -2,9 +2,11 @@
 """
 Interactive installer for the Glyphs MCP plug‑in.
 
-- Lets the user choose between Glyphs' bundled Python or a custom Python.
-- Installs Python dependencies accordingly.
-- Copies the plug‑in bundle into the Glyphs Plugins folder.
+This installer:
+1. Detects Glyphs Python version from preferences
+2. Downloads and vendors dependencies for that Python version
+3. Copies or symlinks the plugin into the Glyphs Plugins folder
+4. Shows MCP client configuration instructions
 
 Run:
   python src/glyphs-mcp/scripts/install_cli.py
@@ -13,13 +15,11 @@ Run:
 from __future__ import annotations
 
 import os
-import re
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 try:
     from rich import box
@@ -163,233 +163,105 @@ except Exception:  # fallback if rich isn't available in the runner's Python
 
 console = Console()
 
-PYTHON_BINARY_PATTERN = re.compile(r"^python3(\.\d+)?$")
-MIN_PY_VERSION = (3, 11, 0)  # Allow 3.11+, prefer 3.12+
-MAX_PY_VERSION_EXCLUSIVE = (3, 14, 0)  # Disallow 3.14+ until tested
-
 
 def repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
-def glyphs_base_dir() -> Path:
-    return Path.home() / "Library" / "Application Support" / "Glyphs 3"
-
-
 def glyphs_plugins_dir() -> Path:
-    return glyphs_base_dir() / "Plugins"
+    return Path.home() / "Library" / "Application Support" / "Glyphs 3" / "Plugins"
 
 
-def glyphs_scripts_site_packages() -> Path:
-    return glyphs_base_dir() / "Scripts" / "site-packages"
+def plugin_source() -> Path:
+    return repo_root() / "src" / "glyphs-mcp" / "Glyphs MCP.glyphsPlugin"
 
 
-def glyphs_python_pip() -> Optional[Path]:
-    base = glyphs_base_dir() / "Repositories" / "GlyphsPythonPlugin" / "Python.framework"
-    pip = base / "Versions" / "Current" / "bin" / "pip3"
-    return pip if pip.exists() else None
+def vendor_dir() -> Path:
+    """Return path to the vendor directory."""
+    return plugin_source() / "Contents" / "Resources" / "vendor"
 
 
-def glyphs_python_bin() -> Optional[Path]:
-    pip = glyphs_python_pip()
-    if not pip:
-        return None
-    py = Path(pip).parent / "python3"
-    return py if py.exists() else None
+def vendor_deps_script() -> Path:
+    """Return path to the vendor_deps.py script."""
+    return repo_root() / "src" / "glyphs-mcp" / "scripts" / "vendor_deps.py"
 
 
-def version_tuple(version_str: str) -> Tuple[int, int, int]:
-    parts = version_str.strip().split(".")
-    out = []
-    for p in parts[:3]:
-        try:
-            out.append(int(p))
-        except ValueError:
-            out.append(0)
-    while len(out) < 3:
-        out.append(0)
-    return tuple(out)  # type: ignore[return-value]
+def check_vendor_dir() -> bool:
+    """Check if vendor directory exists and has packages."""
+    vd = vendor_dir()
+    if not vd.is_dir():
+        return False
+    return any(vd.iterdir())
 
 
-def python_version(py: Path) -> Optional[str]:
-    try:
-        out = subprocess.check_output([str(py), "-c", "import sys; print(sys.version.split()[0])"], text=True)
-        return out.strip()
-    except Exception:
-        return None
+def detect_glyphs_python() -> Tuple[Optional[Path], Optional[str]]:
+    """Detect Python configured in Glyphs preferences.
 
-
-@dataclass
-class PythonCandidate:
-    path: Path
-    version: Optional[str]
-    source: str  # python.org / homebrew / system / path
-
-    @property
-    def version_key(self) -> Tuple[int, int, int]:
-        return version_tuple(self.version or "0.0.0")
-
-
-def detect_python_candidates() -> List[PythonCandidate]:
-    cands: List[PythonCandidate] = []
-    seen: set[Path] = set()
-
-    def add_candidate(path: Path, source: str) -> None:
-        if not path.exists():
-            return
-        try:
-            resolved = path.resolve()
-        except Exception:
-            resolved = path
-        if resolved in seen:
-            return
-        ver = python_version(resolved)
-        if not ver:
-            return
-        vt = version_tuple(ver)
-        if vt < MIN_PY_VERSION:
-            return
-        if vt >= MAX_PY_VERSION_EXCLUSIVE:
-            return
-        cands.append(PythonCandidate(path, ver, source))
-        seen.add(resolved)
-
-    def iter_python_bins(bin_dir: Path) -> List[Path]:
-        paths: List[Path] = []
-        if not bin_dir.is_dir():
-            return paths
-        try:
-            entries = sorted(bin_dir.iterdir())
-        except Exception:
-            return paths
-        for candidate in entries:
-            try:
-                if not candidate.is_file():
-                    continue
-            except OSError:
-                # Ignore unreadable entries such as protected system binaries.
-                continue
-            try:
-                if not os.access(candidate, os.X_OK):
-                    continue
-            except OSError:
-                continue
-            if PYTHON_BINARY_PATTERN.match(candidate.name):
-                paths.append(candidate)
-        return paths
-
-    # Explicit python.org "Current" convenience path (user request) and python.org installs
-    current_bin = Path("/Library/Frameworks/Python.framework/Versions/Current/bin")
-    for python_bin in iter_python_bins(current_bin):
-        add_candidate(python_bin, "python.org")
-
-    framework = Path("/Library/Frameworks/Python.framework/Versions")
-    if framework.exists():
-        for vdir in sorted(framework.iterdir()):
-            if not vdir.is_dir() or vdir.name == "Current":
-                continue
-            for python_bin in iter_python_bins(vdir / "bin"):
-                add_candidate(python_bin, "python.org")
-
-    # Homebrew installations (arm64 + Intel prefixes)
-    for brew_prefix in (Path("/opt/homebrew/bin"), Path("/usr/local/bin")):
-        for python_bin in iter_python_bins(brew_prefix):
-            add_candidate(python_bin, "homebrew")
-
-    # Common system directories
-    for sys_prefix in (Path("/usr/bin"), Path("/bin")):
-        for python_bin in iter_python_bins(sys_prefix):
-            add_candidate(python_bin, "system")
-
-    # PATH discovery (last, to avoid duping brew/python.org entries)
-    for path_dir in (Path(p) for p in os.environ.get("PATH", "").split(os.pathsep) if p):
-        source = "homebrew" if "homebrew" in str(path_dir) else "system" if str(path_dir).startswith("/usr") else "path"
-        for python_bin in iter_python_bins(path_dir):
-            add_candidate(python_bin, source)
-
-    # System Python fallback (in case PATH discovery skipped it)
-    add_candidate(Path("/usr/bin/python3"), "system")
-
-    # Sort best-first: highest version, prefer >= 3.12 and python.org builds
-    cands.sort(key=lambda c: (c.version_key, c.source != "python.org"), reverse=True)
-    return cands
-
-
-def verify_runtime(python: Path) -> bool:
-    """Verify required packages import cleanly in the selected Python.
-
-    Returns True on success, False otherwise, and prints guidance.
+    Returns (python_executable, version_string) or (None, None) if not found.
     """
-    console.print(Panel.fit(f"Verifying runtime imports in: {python}", title="Verify", border_style="white"))
-    code = (
-        "import sys;\n"
-        "mods=['fastmcp','pydantic_core','starlette','uvicorn','fontParts','fontTools'];\n"
-        "missing=[];\n"
-        "import importlib;\n"
-        "\n"
-        "for m in mods:\n"
-        "  try:\n"
-        "    importlib.import_module(m)\n"
-        "  except Exception as e:\n"
-        "    missing.append((m,str(e)))\n"
-        "\n"
-        "print('Python:', sys.executable);\n"
-        "print('Version:', sys.version.split()[0]);\n"
-        "print('OK' if not missing else 'MISSING:'+str(missing))\n"
-    )
     try:
-        out = subprocess.check_output([str(python), "-c", code], text=True)
-        console.print(Text(out))
-        if "MISSING:" in out:
-            console.print(
-                "[red]Some packages failed to import.\n"
-                "Try reinstalling with --no-cache-dir and force-reinstall:[/red]\n"
-                f"  {python} -m pip install --user --no-cache-dir --force-reinstall -r {repo_root()/ 'requirements.txt'}\n"
-                "If using Apple Silicon, ensure you are using the native arm64 Python (not Rosetta) and matching wheels."
-            )
-            return False
-        return True
-    except subprocess.CalledProcessError as e:
-        console.print(f"[red]Verification failed to run:[/red] {e}")
+        result = subprocess.run(
+            ["defaults", "read", "com.GeorgSeifert.Glyphs3", "GSPythonFrameworkPath"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return None, None
+
+        framework_path = Path(result.stdout.strip())
+        if not framework_path.exists():
+            return None, None
+
+        # Extract version from path (e.g., /Library/Frameworks/Python.framework/Versions/3.14)
+        version = framework_path.name
+
+        # Find the Python executable
+        python_bin = framework_path / "bin" / f"python{version}"
+        if not python_bin.exists():
+            python_bin = framework_path / "bin" / "python3"
+        if not python_bin.exists():
+            return None, None
+
+        return python_bin, version
+    except Exception:
+        return None, None
+
+
+def get_python_for_vendoring() -> Path:
+    """Get Python executable for vendoring dependencies.
+
+    Auto-detect Glyphs Python from preferences, falling back to sys.executable.
+    """
+    glyphs_python, glyphs_version = detect_glyphs_python()
+    if glyphs_python:
+        console.print(f"[green]Detected Glyphs Python {glyphs_version}:[/green] {glyphs_python}\n")
+        return glyphs_python
+
+    current_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+    console.print("[yellow]Could not detect Glyphs Python from preferences.[/yellow]")
+    console.print(f"[cyan]Falling back to Python {current_version}:[/cyan] {sys.executable}\n")
+    return Path(sys.executable)
+
+
+def run_vendor_deps(python_exe: Path) -> bool:
+    """Run vendor_deps.py with the specified Python. Returns True on success."""
+    script = vendor_deps_script()
+    if not script.exists():
+        console.print(f"[red]vendor_deps.py not found at:[/red] {script}")
         return False
 
-
-def run(cmd: List[str]) -> None:
-    console.log(f"[dim]$ {' '.join(cmd)}[/dim]")
-    subprocess.check_call(cmd)
-
-
-def install_with_glyphs_python(requirements: Path) -> None:
-    pip = glyphs_python_pip()
-    if not pip:
-        console.print("[red]Glyphs Python not found.[/red]")
-        console.print("Open Glyphs → Settings → Addons and install Python (GlyphsPythonPlugin), then re-run.")
-        raise SystemExit(2)
-
-    target = glyphs_scripts_site_packages()
-    target.mkdir(parents=True, exist_ok=True)
-    console.print(Panel.fit(f"Installing requirements into:\n{target}", title="Glyphs Python", border_style="green"))
-    run([str(pip), "install", "--upgrade", "pip"])
-    run([str(pip), "install", "--target", str(target), "-r", str(requirements)])
-
-    # Verify using the interpreter next to pip (../python3)
-    glyphs_python = Path(pip).parent / "python3"
-    if glyphs_python.exists():
-        verify_runtime(glyphs_python)
-
-
-def install_with_custom_python(python: Path, requirements: Path) -> None:
-    console.print(Panel.fit(f"Installing requirements to user site for:\n{python}"
-                           f"\n(version: {python_version(python) or 'unknown'})",
-                           title="Custom Python", border_style="cyan"))
-    run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
-    run([str(python), "-m", "pip", "install", "--user", "-r", str(requirements)])
-    verify_runtime(python)
+    console.print(f"\n[cyan]Downloading dependencies using:[/cyan] {python_exe}\n")
+    try:
+        result = subprocess.run([str(python_exe), str(script)])
+        return result.returncode == 0
+    except KeyboardInterrupt:
+        console.print("\n[yellow]Download cancelled.[/yellow]")
+        raise
 
 
 def install_plugin(mode: str = "copy") -> None:
     """Install the plug-in by copying or linking (dev mode)."""
-    src = repo_root() / "src" / "glyphs-mcp" / "Glyphs MCP.glyphsPlugin"
+    src = plugin_source()
     if not src.exists():
         console.print(f"[red]Plugin bundle not found at:[/red] {src}")
         raise SystemExit(2)
@@ -425,97 +297,37 @@ def install_plugin(mode: str = "copy") -> None:
         shutil.copytree(src, dest)
 
 
-def choose_mode() -> str:
-    console.rule("Glyphs MCP Installer")
-    console.print("Select your Glyphs App Settings Python environment:")
-
-    # Gather versions and candidates summary for display
-    glyphs_py = glyphs_python_bin()
-    glyphs_ver = python_version(glyphs_py) if glyphs_py else None
-    cands = detect_python_candidates()
-    preferred = [c for c in cands if c.version_key >= (3, 12, 0)] or cands
-    summary = "none detected"
-    if preferred:
-        top = preferred[0]
-        summary = f"{len(preferred)} detected; highest {top.version or '?'} ({top.source})"
-
-    # Render table with details
-    table = Table(box=box.SIMPLE_HEAVY)
-    table.add_column("Option")
-    table.add_column("Description")
-    table.add_column("Details")
-    table.add_row("1", "Glyphs' Python (Plugin Manager)", glyphs_ver or "not installed")
-    table.add_row("2", "Custom Python (python.org/Homebrew)", summary)
-    console.print(table)
-
-    console.print("Note: This must match your selection in Glyphs → Settings → Python.")
-
-    while True:
-        choice = Prompt.ask("Enter 1 or 2", choices=["1", "2"], default="1")
-        if choice in ("1", "2"):
-            return choice
-
-
-def choose_custom_python(cands: List[PythonCandidate]) -> Path:
-    # Filter preferred >= MIN_PY_VERSION (favor newer first)
-    preferred = [c for c in cands if c.version_key >= MIN_PY_VERSION] or cands
-
-    console.print("Detected Python interpreters:")
-    # Use a compact table style; fall back if Rich version lacks the attribute
-    compact_box = getattr(box, "MINIMAL_HEAVY_HEAD", None) or getattr(box, "SIMPLE_HEAVY", None) or getattr(box, "SIMPLE", None)
-    table = Table(box=compact_box)
-    table.add_column("#")
-    table.add_column("Path")
-    table.add_column("Version")
-    table.add_column("Source")
-
-    for idx, c in enumerate(preferred, 1):
-        table.add_row(str(idx), str(c.path), c.version or "?", c.source)
-    console.print(table)
-
-    default_idx = 1
-    prompt = f"Select [1-{len(preferred)}] or enter a custom path"
-    resp = Prompt.ask(prompt, default=str(default_idx))
-
-    # If the response is a valid index
-    if resp.isdigit():
-        i = int(resp)
-        if 1 <= i <= len(preferred):
-            return preferred[i - 1].path
-
-    # Otherwise, treat as a filesystem path
-    p = Path(os.path.expanduser(resp)).resolve()
-    if not p.exists():
-        console.print(f"[red]Path not found:[/red] {p}")
-        raise SystemExit(2)
-    return p
-
-
 def main() -> None:
-    req = repo_root() / "requirements.txt"
-    if not req.exists():
-        console.print("[red]requirements.txt not found[/red]")
-        raise SystemExit(2)
+    console.rule("Glyphs MCP Installer")
 
-    choice = choose_mode()
-    if choice == "1":
-        install_with_glyphs_python(req)
+    # Get Python for dependency download
+    python_exe = get_python_for_vendoring()
+
+    # Check for vendor directory and offer to download/update
+    has_vendor = check_vendor_dir()
+
+    if has_vendor:
+        console.print("[green]Vendor directory found with bundled dependencies.[/green]\n")
+        if Confirm.ask("Re-download dependencies to get latest versions?", default=False):
+            if not run_vendor_deps(python_exe):
+                console.print("[red]Failed to download dependencies.[/red]")
+                raise SystemExit(1)
+            console.print("[green]Dependencies updated successfully![/green]\n")
     else:
-        cands = detect_python_candidates()
-        if not cands:
-            console.print("[yellow]No Python interpreters detected. You can enter a custom path.[/yellow]")
-        python_path = choose_custom_python(cands)
-        ver = python_version(python_path) or "unknown"
-        vt = version_tuple(ver)
-        if vt >= MAX_PY_VERSION_EXCLUSIVE:
-            console.print(f"[red]Python {ver} is not yet supported. Please use 3.11–3.13.[/red]")
-            raise SystemExit(2)
-        if vt < MIN_PY_VERSION:
-            proceed = Confirm.ask(f"Selected Python {ver} is older than {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}. Continue?", default=False)
-            if not proceed:
-                console.print(f"[red]Aborting. Please install Python {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}+ and re-run.[/red]")
-                raise SystemExit(2)
-        install_with_custom_python(python_path, req)
+        console.print("[yellow]Vendor directory is empty or missing.[/yellow]\n")
+        if Confirm.ask("Download dependencies now? (requires internet)", default=True):
+            if not run_vendor_deps(python_exe):
+                console.print("[red]Failed to download dependencies.[/red]")
+                raise SystemExit(1)
+            console.print("[green]Dependencies downloaded successfully![/green]\n")
+        else:
+            console.print(
+                "[yellow]Skipping dependency download.[/yellow]\n"
+                "The plugin will not work without dependencies.\n"
+                "You can run 'python scripts/vendor_deps.py' later.\n"
+            )
+            if not Confirm.ask("Continue anyway?", default=False):
+                raise SystemExit(1)
 
     # Ask how to install the plugin: copy (default) or symlink (dev)
     console.print()
@@ -553,11 +365,12 @@ def show_client_guidance() -> None:
     console.rule("MCP Client Setup")
     clients = [
         ("1", "Claude Desktop"),
-        ("2", "Claude Code (VS Code)"),
+        ("2", "Claude Code"),
         ("3", "Continue (VS Code / JetBrains)"),
         ("4", "Cursor IDE"),
         ("5", "Windsurf"),
-        ("6", "Codex (OpenAI)")
+        ("6", "Codex (OpenAI)"),
+        ("7", "Gemini CLI"),
     ]
 
     table = Table(box=box.SIMPLE_HEAVY)
@@ -595,11 +408,13 @@ def show_client_guidance() -> None:
 
     elif choice == "2":
         console.print(Panel.fit(
-            "Claude Code (VS Code) → Two common paths:\n\n"
-            "1) Enable MCP discovery so Claude Code picks up servers registered by Claude Desktop:\n"
+            "Claude Code → Two options:\n\n"
+            "1. Use the claude CLI command:\n"
+            f"   claude mcp add -t http glyphs {url}\n\n"
+            "   Add -s user for user-wide config, or -s project for current project only.\n\n"
+            "2. Enable MCP discovery so Claude Code (in VS Code) picks up servers from Claude Desktop:\n"
             "   - In VS Code, set: chat.mcp.discovery.enabled = true\n"
-            "   - Then register the server in Claude Desktop as shown above.\n\n"
-            "2) Or use the Continue extension method below (works with Claude Code too).",
+            "   - Then register the server in Claude Desktop as shown above.",
             title="Claude Code", border_style="cyan"))
 
     elif choice == "3":
@@ -642,6 +457,18 @@ def show_client_guidance() -> None:
             'command = "npx"\n'
             f'args = ["mcp-remote", "{url}", "--header"]\n',
             title="Codex (OpenAI)", border_style="blue"))
+
+    elif choice == "7":
+        console.print(Panel.fit(
+            "Gemini CLI → Add to ~/.gemini/settings.json (user-wide) or .gemini/settings.json (project):\n\n"
+            "{\n"
+            '  "mcpServers": {\n'
+            '    "glyphs": {\n'
+            f'      "httpUrl": "{url}"\n'
+            "    }\n"
+            "  }\n"
+            "}",
+            title="Gemini CLI", border_style="blue"))
 
 
 if __name__ == "__main__":
