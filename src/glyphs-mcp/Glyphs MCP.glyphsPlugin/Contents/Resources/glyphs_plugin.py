@@ -10,8 +10,16 @@ from AppKit import (
     NSAlertFirstButtonReturn,
     NSAlertSecondButtonReturn,
     NSMenuItem,
+    NSPanel,
+    NSButton,
+    NSPasteboard,
+    NSPasteboardTypeString,
     NSTextField,
     NSView,
+    NSWindowStyleMaskTitled,
+    NSWindowStyleMaskClosable,
+    NSWindowStyleMaskUtilityWindow,
+    NSBackingStoreBuffered,
 )
 from Foundation import NSNumberFormatter
 from starlette.middleware import Middleware
@@ -23,6 +31,7 @@ from security import (
     OriginValidationMiddleware,
     StaticTokenAuthMiddleware,
 )
+from status_panel_helpers import endpoint_for, is_thread_running, status_text
 from utils import get_known_tools, get_tool_info, is_port_available, notify_server_started
 
 
@@ -47,6 +56,15 @@ class MCPBridgePlugin(GeneralPlugin):
                 "fr": "Le serveur MCP est en cours d'exécution",
                 "es": "El servidor MCP está en ejecución",
                 "pt": "O servidor MCP está em execução",
+            }
+        )
+        self.name_status = Glyphs.localize(
+            {
+                "en": "Glyphs MCP Server Status…",
+                "de": "Glyphs MCP-Server-Status…",
+                "fr": "Statut du serveur MCP…",
+                "es": "Estado del servidor MCP…",
+                "pt": "Status do servidor MCP…",
             }
         )
         # Configuration
@@ -75,6 +93,13 @@ class MCPBridgePlugin(GeneralPlugin):
         newMenuItem.setAction_(self.StartStopServer_)
         Glyphs.menu[EDIT_MENU].append(newMenuItem)
 
+        status_item = NSMenuItem.new()
+        status_item.setTitle_(self.name_status)
+        status_item.setTarget_(self)
+        status_item.setAction_(self.ShowStatusWindow_)
+        Glyphs.menu[EDIT_MENU].append(status_item)
+        self.statusMenuItem = status_item
+
     @objc.python_method
     def _start_server_on_port(self, port, sender):
         self._server_thread = threading.Thread(
@@ -99,6 +124,8 @@ class MCPBridgePlugin(GeneralPlugin):
         except Exception:
             if hasattr(self, "menuItem"):
                 self.menuItem.setTitle_(self.name_running)
+
+        self._refresh_status_panel_if_visible()
 
     @objc.python_method
     def _prompt_when_default_port_busy(self):
@@ -189,6 +216,130 @@ class MCPBridgePlugin(GeneralPlugin):
             self._start_server_on_port(port, sender)
         except Exception as e:
             print("Failed to start server: {}".format(e))
+
+    def ShowStatusWindow_(self, sender):
+        """Open a small floating window with server status and endpoint."""
+        try:
+            self._ensure_status_panel()
+            self._refresh_status_panel()
+            self._status_panel.makeKeyAndOrderFront_(None)
+        except Exception as e:
+            self._show_error("Unable to open MCP status window: {}".format(e))
+
+    @objc.python_method
+    def _current_port(self):
+        try:
+            return int(getattr(self, "_port", self.default_port))
+        except Exception:
+            return int(self.default_port)
+
+    @objc.python_method
+    def _server_is_running(self):
+        return is_thread_running(getattr(self, "_server_thread", None))
+
+    @objc.python_method
+    def _ensure_status_panel(self):
+        if hasattr(self, "_status_panel") and self._status_panel is not None:
+            return
+
+        width = 420
+        height = 140
+        rect = ((0, 0), (width, height))
+        style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow
+        panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer_(
+            rect, style, NSBackingStoreBuffered, False
+        )
+        panel.setTitle_("Glyphs MCP Server")
+        panel.setFloatingPanel_(True)
+
+        content = panel.contentView()
+        margin = 16
+        row_h = 22
+        label_w = 80
+        value_w = width - margin * 2 - label_w
+        y = height - margin - row_h
+
+        status_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
+        status_label.setStringValue_("Status:")
+        status_label.setEditable_(False)
+        status_label.setSelectable_(False)
+        status_label.setBordered_(False)
+        status_label.setDrawsBackground_(False)
+        content.addSubview_(status_label)
+
+        status_value = NSTextField.alloc().initWithFrame_(((margin + label_w, y), (value_w, row_h)))
+        status_value.setEditable_(False)
+        status_value.setSelectable_(True)
+        status_value.setBordered_(False)
+        status_value.setDrawsBackground_(False)
+        content.addSubview_(status_value)
+
+        y -= (row_h + 10)
+
+        endpoint_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
+        endpoint_label.setStringValue_("Endpoint:")
+        endpoint_label.setEditable_(False)
+        endpoint_label.setSelectable_(False)
+        endpoint_label.setBordered_(False)
+        endpoint_label.setDrawsBackground_(False)
+        content.addSubview_(endpoint_label)
+
+        endpoint_value = NSTextField.alloc().initWithFrame_(((margin + label_w, y), (value_w, row_h)))
+        endpoint_value.setEditable_(False)
+        endpoint_value.setSelectable_(True)
+        endpoint_value.setBordered_(False)
+        endpoint_value.setDrawsBackground_(False)
+        content.addSubview_(endpoint_value)
+
+        button_w = 120
+        button_h = 28
+        button_y = margin
+        button_x = width - margin - button_w
+        copy_button = NSButton.alloc().initWithFrame_(((button_x, button_y), (button_w, button_h)))
+        copy_button.setTitle_("Copy Endpoint")
+        copy_button.setTarget_(self)
+        copy_button.setAction_(self.CopyEndpoint_)
+        content.addSubview_(copy_button)
+
+        self._status_panel = panel
+        self._status_field = status_value
+        self._endpoint_field = endpoint_value
+
+    @objc.python_method
+    def _refresh_status_panel_if_visible(self):
+        panel = getattr(self, "_status_panel", None)
+        if panel is None:
+            return
+        try:
+            if panel.isVisible():
+                self._refresh_status_panel()
+        except Exception:
+            return
+
+    @objc.python_method
+    def _refresh_status_panel(self):
+        running = self._server_is_running()
+        port = self._current_port()
+        endpoint = endpoint_for(port)
+
+        try:
+            self._status_field.setStringValue_(status_text(running))
+        except Exception:
+            pass
+        try:
+            self._endpoint_field.setStringValue_(endpoint)
+        except Exception:
+            pass
+
+    def CopyEndpoint_(self, sender):
+        """Copy the current endpoint URL to the macOS clipboard."""
+        endpoint = endpoint_for(self._current_port())
+        try:
+            pb = NSPasteboard.generalPasteboard()
+            pb.clearContents()
+            pb.setString_forType_(endpoint, NSPasteboardTypeString)
+        except Exception:
+            print("Endpoint:", endpoint)
 
     @objc.python_method
     def _show_server_status(self):
