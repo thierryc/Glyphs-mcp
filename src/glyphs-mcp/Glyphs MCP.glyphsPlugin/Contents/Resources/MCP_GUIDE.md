@@ -34,5 +34,7 @@ Recommended usage pattern:
 ## Docs and Resources
 
 If you need Glyphs SDK / ObjectWrapper reference:
-- Use the documentation index resource and fetch specific pages as needed.
+- Use `docs_search` to find relevant pages, then `docs_get` to fetch them on demand.
+- The docs index is also available as a resource: `glyphs://glyphs-mcp/docs/index.json`
 
+By default, individual doc pages are not registered as separate resources (to avoid flooding MCP clients). Enable per-page resources with `GLYPHS_MCP_REGISTER_DOC_PAGES=1`.

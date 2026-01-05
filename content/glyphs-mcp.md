@@ -56,6 +56,8 @@ Bridging Glyphs with MCP makes it possible for assistants to read, inspect, and 
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |
 | `execute_code_with_context` | Execute Python with injected helper objects. |
 | `save_font` | Save the active font (optionally to a new path). |
+| `docs_search` | Search bundled Glyphs SDK/ObjectWrapper docs by title/summary. |
+| `docs_get` | Fetch a bundled docs page by id/path (supports paging via offset/max_chars). |
 
 `execute_code` and `execute_code_with_context` accept an optional `timeout` in seconds. Each call defaults to 60 s, and the bridge honours any larger per-call value that you include in the tool arguments.
 
@@ -92,6 +94,16 @@ When something goes wrong the response includes diagnostics beyond a plain strin
 Successful runs set `success: true` and mirror the same `log` array so clients always have insight into exporter activity.
 
 ---
+
+## Resources (helpers)
+
+The server is tools-first. Resources exist to help the assistant write better GlyphsApp code with fewer mistakes.
+
+- Guide: `glyphs://glyphs-mcp/guide`
+- Docs directory listing: `glyphs://glyphs-mcp/docs`
+- Docs index: `glyphs://glyphs-mcp/docs/index.json`
+
+By default, individual doc pages are not registered as separate resources (to avoid flooding MCP clients). Enable per-page resources with `GLYPHS_MCP_REGISTER_DOC_PAGES=1`.
 
 ## Client setup
 Configure your preferred AI client to speak the Streamable HTTP endpoint. Below are quick-start snippets for common tools.
