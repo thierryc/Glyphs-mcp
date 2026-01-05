@@ -27,9 +27,9 @@ DOC_BUNDLE_DIR = Path(__file__).resolve().parent / "MCP Documentation"
 DOCS_DIRECTORY = DOC_BUNDLE_DIR / "docs"
 INDEX_PATH = DOC_BUNDLE_DIR / "index.json"
 
-_RESOURCE_PREFIX = "resource://glyphs-mcp/docs/"
-_DIRECTORY_RESOURCE_URI = "resource://glyphs-mcp/docs"
-_INDEX_RESOURCE_URI = "resource://glyphs-mcp/docs/index.json"
+_RESOURCE_PREFIX = "glyphs://glyphs-mcp/docs/"
+_DIRECTORY_RESOURCE_URI = "glyphs://glyphs-mcp/docs"
+_INDEX_RESOURCE_URI = "glyphs://glyphs-mcp/docs/index.json"
 
 # Extensions that the Sphinx build commonly produces
 _DOC_EXTENSIONS = (".html", ".htm", ".txt", ".md", ".json", ".fjson")
@@ -302,13 +302,22 @@ def register_documentation_resources() -> None:
     _register_directory_listing()
     _register_index_file()
 
+    # Registering every page as its own resource can flood some clients with
+    # hundreds of items. Default to a lightweight listing (directory + index)
+    # and only register per-page resources when explicitly requested.
+    if os.environ.get("GLYPHS_MCP_REGISTER_DOC_PAGES") != "1":
+        logger.info(
+            "Skipping per-page documentation resources (set GLYPHS_MCP_REGISTER_DOC_PAGES=1 to enable)."
+        )
+        return
+
     index_data = _load_index_data()
     entries: List[Dict[str, Optional[str]]] = []
     if index_data:
         entries = _extract_doc_entries(index_data)
 
     if not entries:
-        # Fallback: register all HTML-like files in the docs folder
+        # Fallback: register all files in the docs folder
         entries = [
             {
                 "path": path.relative_to(DOCS_DIRECTORY).as_posix(),

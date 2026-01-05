@@ -15,6 +15,7 @@ The shipped tool set focuses on glyph inspection, editing, and project metadata:
 - `create_glyph`, `delete_glyph`, `copy_glyph`, `add_component_to_glyph`, `add_anchor_to_glyph` for building glyphs.
 - `update_glyph_metrics`, `update_glyph_properties`, `set_kerning_pair`, `save_font` for metrics and persistence.
 - `execute_code`, `execute_code_with_context`, `get_selected_font_and_master` for scripted automation inside Glyphs.
+- `docs_search`, `docs_get` for on-demand access to bundled SDK/ObjectWrapper docs.
 
 Refer to `README.md` for the complete table of supported tools and descriptions.
 
@@ -42,6 +43,10 @@ python src/glyphs-mcp/scripts/copy_documentation.py
 - Responses stream via MCP Streamable HTTP (SSE under the hood); preserve any `Mcp-Session-Id` header returned by the server.
 - If you open `http://127.0.0.1:9680/mcp/` in a browser, the server returns a JSON discovery payload; MCP clients should connect with `Accept: text/event-stream`.
 - Add authentication (for example bearer tokens) before exposing the transport beyond localhost.
+
+## Helper Resources
+- Guide: `glyphs://glyphs-mcp/guide`
+- Docs index: `glyphs://glyphs-mcp/docs/index.json`
 
 ## IDE Configuration
 Claude Desktop example:

@@ -82,6 +82,8 @@ def get_known_tools():
         "execute_code_with_context",
         "save_font",
         "ExportDesignspaceAndUFO",
+        "docs_search",
+        "docs_get",
     ]
 
 

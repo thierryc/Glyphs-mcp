@@ -50,6 +50,8 @@ A *Model Context Protocol* server is a lightweight process that:
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |
 | `execute_code_with_context` | Execute Python with injected helper objects. |
 | `save_font` | Save the active font (optionally to a new path). |
+| `docs_search` | Search bundled Glyphs SDK/ObjectWrapper docs by title/summary. |
+| `docs_get` | Fetch a bundled docs page by id/path (supports paging via offset/max_chars). |
 
 `execute_code` and `execute_code_with_context` accept an optional `timeout` in seconds. Calls default to 60 s, and the bridge honours any larger per-call value you provide.
 
@@ -87,6 +89,16 @@ To start the Glyphs MCP server, open the **Edit** menu and choose **Start MCP Se
 The MCP endpoint is `http://127.0.0.1:9680/mcp/` using MCP Streamable HTTP transport.
 
 Open the **Macro Panel** to access the console.
+
+## Resources (Helpers)
+
+Resources are optional helpers to improve tool usage (especially code generation), not the primary feature.
+
+- Guide: `glyphs://glyphs-mcp/guide`
+- Docs directory listing: `glyphs://glyphs-mcp/docs`
+- Docs index: `glyphs://glyphs-mcp/docs/index.json`
+
+By default, per-page doc resources are not registered to avoid flooding clients; enable them with `GLYPHS_MCP_REGISTER_DOC_PAGES=1`.
 
 ## One‑Command Installer (Interactive)
 
