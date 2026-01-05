@@ -160,6 +160,22 @@ The script ensures `glyphs-mcp.webp` (the hero image for the doc) is generated, 
 
 ---
 
+## Build Release ZIP (Clean)
+
+To package the plug‑in for distribution without accidentally shipping local artifacts (`__pycache__`, `.pyc`, `.venv`, `__MACOSX`, etc.), use:
+
+```bash
+./scripts/build_release_zip.sh
+```
+
+Optionally override the version label used in the filename:
+
+```bash
+./scripts/build_release_zip.sh --version 1.0.0
+```
+
+The ZIP is written to `dist/` (ignored by git).
+
 ## Contributing
 PRs and feedback are welcome.
 
