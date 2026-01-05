@@ -18,7 +18,19 @@ def _ensure_fake_mcp_tools() -> None:
         return
 
     class _DummyMCP:
+        def __init__(self) -> None:
+            self.resources = []
+
+        def add_resource(self, resource, *args, **kwargs) -> None:  # pragma: no cover - trivial
+            self.resources.append(resource)
+
         def tool(self, *args, **kwargs):  # pragma: no cover - decorator stub
+            def _decorator(func):
+                return func
+
+            return _decorator
+
+        def prompt(self, *args, **kwargs):  # pragma: no cover - decorator stub
             def _decorator(func):
                 return func
 
@@ -93,4 +105,3 @@ class DocsToolsTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
