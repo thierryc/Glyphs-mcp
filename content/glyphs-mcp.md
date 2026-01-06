@@ -274,8 +274,22 @@ Questions? Say hello at [thierry@anotherplanet.io](mailto:thierry@anotherplanet.
 ---
 
 ## Install the plug‑in
-Copy or symlink `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into
-`~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
+
+### One-command installer (recommended)
+From the repo root, run the guided interactive installer:
+
+```bash
+python3 install.py
+```
+
+Supported Python versions: 3.11–3.13. The installer warns (and lets you abort) when selecting older Pythons, and blocks Python 3.14+ until tested.
+
+On macOS, you can also double‑click `RunInstall.command` in Finder to launch the same installer. If Gatekeeper blocks it, right‑click → Open once to approve.
+
+### Manual install (fallback)
+If you prefer to do it by hand (or you are troubleshooting / developing), follow the steps below.
+
+Copy or symlink `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
 
 If you regenerate the ObjectWrapper documentation, refresh the bundled copy with:
 
@@ -288,8 +302,9 @@ Once installed, open Glyphs and choose **Edit → Start MCP Server**. The servic
 ---
 
 ## Install dependencies
-Dependencies are no longer bundled inside the plug‑in. Install them into your
-user Scripts site‑packages so Glyphs can import them.
+If you used the installer above, it already handled dependencies. Manual steps below are a fallback.
+
+Dependencies are no longer bundled inside the plug‑in. Install them into your user Scripts site‑packages so Glyphs can import them.
 
 ### Option A: Use Glyphs’ Python (default)
 If you use the Python that Glyphs installs via the Plugin Manager:
