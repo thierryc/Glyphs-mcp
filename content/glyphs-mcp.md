@@ -16,7 +16,7 @@ Bridging Glyphs with MCP makes it possible for assistants to read, inspect, and 
 ---
 
 ## Table of contents
-- [Command set (v0.3)](#command-set-v0-3)
+- [Command set (server v1.0.0)](#command-set-server-v1-0-0)
 - [Client setup](#client-setup)
   - [OpenAI Codex CLI](#openai-codex-cli)
   - [Claude Desktop](#claude-desktop)
@@ -29,7 +29,9 @@ Bridging Glyphs with MCP makes it possible for assistants to read, inspect, and 
 
 ---
 
-## Command set (v0.3)
+## Command set (server v1.0.0)
+
+Command table for the MCP server version exposed in code (FastMCP `version="1.0.0"`).
 | Tool | Description |
 |------|-------------|
 | `list_open_fonts` | List all open fonts and basic metadata. |
