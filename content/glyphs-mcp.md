@@ -116,12 +116,22 @@ Note: `http://127.0.0.1:9680/mcp/` is an SSE endpoint for MCP clients. If you op
 ![OpenAI Codex MCP configuration screenshot](/content/images/glyphs-app-mcp/codex-in-vs-code.webp)
 ![OpenAI Codex result screenshot](/content/images/glyphs-app-mcp/codex-result-in-vs-code.webp)
 
-Codex understands MCP servers via `codex mcp` helpers. The `mcp-remote` transport is the preferred option, but it requires Node 20 or newer on your system. Add the configuration to `~/.codex/config.toml`, then restart any active Codex sessions.
+Codex understands MCP servers via `codex mcp` helpers. For a local Streamable HTTP server like Glyphs MCP, you can connect directly by URL (no Node required). Add the configuration to `~/.codex/config.toml`, then restart any active Codex sessions.
 
 ```toml
-[mcp_servers.glyphs-app-mcp]
+[mcp_servers.glyphs-mcp-server]
+url = "http://127.0.0.1:9680/mcp/"
+enabled = true
+startup_timeout_sec = 30
+tool_timeout_sec = 120
+```
+
+If you prefer to bridge the connection through `mcp-remote` (for example to share a single configuration across tools), you can keep the proxy-based setup. This requires Node 20+:
+
+```toml
+[mcp_servers.glyphs-mcp-server]
 command = "npx"
-args = ["mcp-remote", "http://127.0.0.1:9680/mcp/"]
+args = ["--yes", "mcp-remote", "http://127.0.0.1:9680/mcp/"]
 ```
 
 You can run `codex config path` to verify the location if you've customised the CLI setup.
