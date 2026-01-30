@@ -42,6 +42,21 @@ _MIME_BY_EXTENSION = {
     ".fjson": "application/json",
 }
 
+_REGISTERED_RESOURCE_URIS: set[str] = set()
+
+
+def _add_resource_once(resource: Any) -> bool:
+    """Add a resource to the MCP server only once (keyed by URI)."""
+
+    uri = getattr(resource, "uri", None)
+    if isinstance(uri, str) and uri in _REGISTERED_RESOURCE_URIS:
+        return False
+
+    mcp.add_resource(resource)
+    if isinstance(uri, str):
+        _REGISTERED_RESOURCE_URIS.add(uri)
+    return True
+
 
 def _load_index_data() -> Optional[Dict[str, Any]]:
     """Load the JSON index if it exists."""
@@ -200,7 +215,7 @@ def _register_directory_listing() -> None:
     """Register a directory resource that lists available documentation files."""
 
     try:
-        mcp.add_resource(
+        _add_resource_once(
             DirectoryResource(
                 uri=_DIRECTORY_RESOURCE_URI,
                 name="Glyphs SDK documentation",
@@ -223,7 +238,7 @@ def _register_index_file() -> None:
         return
 
     try:
-        mcp.add_resource(
+        _add_resource_once(
             FileResource(
                 uri=_INDEX_RESOURCE_URI,
                 name="Glyphs SDK documentation index",
@@ -237,7 +252,7 @@ def _register_index_file() -> None:
         logger.warning("Failed to register documentation index resource: %s", exc)
 
 
-def _register_document_pages(index_entries: List[Dict[str, Optional[str]]]) -> None:
+def _register_document_pages(index_entries: List[Dict[str, Optional[str]]]) -> int:
     """Register each documentation page as an individual resource."""
 
     seen_uris: set[str] = set()
@@ -260,7 +275,7 @@ def _register_document_pages(index_entries: List[Dict[str, Optional[str]]]) -> N
 
         uri_suffix = quote(relative.as_posix())
         resource_uri = f"{_RESOURCE_PREFIX}{uri_suffix}"
-        if resource_uri in seen_uris:
+        if resource_uri in seen_uris or resource_uri in _REGISTERED_RESOURCE_URIS:
             continue
 
         title = entry.get("title") or relative.stem.replace("_", " ").title()
@@ -268,7 +283,7 @@ def _register_document_pages(index_entries: List[Dict[str, Optional[str]]]) -> N
         description = summary or f"Documentation page {relative.as_posix()} from the Glyphs SDK ObjectWrapper."
 
         try:
-            mcp.add_resource(
+            added = _add_resource_once(
                 FileResource(
                     uri=resource_uri,
                     name=title,
@@ -282,7 +297,8 @@ def _register_document_pages(index_entries: List[Dict[str, Optional[str]]]) -> N
             logger.warning("Failed to register documentation page %s: %s", resolved, exc)
             continue
 
-        seen_uris.add(resource_uri)
+        if added:
+            seen_uris.add(resource_uri)
 
     if not seen_uris:
         logger.info(
@@ -291,13 +307,15 @@ def _register_document_pages(index_entries: List[Dict[str, Optional[str]]]) -> N
             DOCS_DIRECTORY,
         )
 
+    return len(seen_uris)
 
-def register_documentation_resources() -> None:
+
+def register_documentation_resources(register_pages: Optional[bool] = None) -> int:
     """Discover bundled documentation and register MCP resources."""
 
     if not DOCS_DIRECTORY.exists():
         logger.info("Documentation directory %s not found; skipping registration", DOCS_DIRECTORY)
-        return
+        return 0
 
     _register_directory_listing()
     _register_index_file()
@@ -305,11 +323,14 @@ def register_documentation_resources() -> None:
     # Registering every page as its own resource can flood some clients with
     # hundreds of items. Default to a lightweight listing (directory + index)
     # and only register per-page resources when explicitly requested.
-    if os.environ.get("GLYPHS_MCP_REGISTER_DOC_PAGES") != "1":
+    if register_pages is None:
+        register_pages = os.environ.get("GLYPHS_MCP_REGISTER_DOC_PAGES") == "1"
+
+    if not register_pages:
         logger.info(
             "Skipping per-page documentation resources (set GLYPHS_MCP_REGISTER_DOC_PAGES=1 to enable)."
         )
-        return
+        return 0
 
     index_data = _load_index_data()
     entries: List[Dict[str, Optional[str]]] = []
@@ -328,7 +349,7 @@ def register_documentation_resources() -> None:
             if path.is_file()
         ]
 
-    _register_document_pages(entries)
+    return _register_document_pages(entries)
 
 
 # Automatically register the resources when the plug-in imports this module

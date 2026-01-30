@@ -105,7 +105,7 @@ The server is tools-first. Resources exist to help the assistant write better Gl
 - Docs directory listing: `glyphs://glyphs-mcp/docs`
 - Docs index: `glyphs://glyphs-mcp/docs/index.json`
 
-By default, individual doc pages are not registered as separate resources (to avoid flooding MCP clients). Enable per-page resources with `GLYPHS_MCP_REGISTER_DOC_PAGES=1`.
+By default, individual doc pages are not registered as separate resources (to avoid flooding MCP clients). Prefer `docs_search` + `docs_get` (on-demand). If you really want per-page resources, call `docs_enable_page_resources` (or set `GLYPHS_MCP_REGISTER_DOC_PAGES=1`).
 
 ## Client setup
 Configure your preferred AI client to speak the Streamable HTTP endpoint. Below are quick-start snippets for common tools.

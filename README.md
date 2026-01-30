@@ -100,7 +100,8 @@ Resources are optional helpers to improve tool usage (especially code generation
 - Docs directory listing: `glyphs://glyphs-mcp/docs`
 - Docs index: `glyphs://glyphs-mcp/docs/index.json`
 
-By default, per-page doc resources are not registered to avoid flooding clients; enable them with `GLYPHS_MCP_REGISTER_DOC_PAGES=1`.
+By default, per-page doc resources are not registered to avoid flooding clients.
+Preferred: use `docs_search` + `docs_get` (on-demand). If you really want per-page resources, call `docs_enable_page_resources` (or set `GLYPHS_MCP_REGISTER_DOC_PAGES=1`).
 
 ## One‑Command Installer (Interactive)
 

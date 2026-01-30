@@ -37,4 +37,4 @@ If you need Glyphs SDK / ObjectWrapper reference:
 - Use `docs_search` to find relevant pages, then `docs_get` to fetch them on demand.
 - The docs index is also available as a resource: `glyphs://glyphs-mcp/docs/index.json`
 
-By default, individual doc pages are not registered as separate resources (to avoid flooding MCP clients). Enable per-page resources with `GLYPHS_MCP_REGISTER_DOC_PAGES=1`.
+By default, individual doc pages are not registered as separate resources (to avoid flooding MCP clients). If you really want per-page resources, call `docs_enable_page_resources` (or set `GLYPHS_MCP_REGISTER_DOC_PAGES=1`).

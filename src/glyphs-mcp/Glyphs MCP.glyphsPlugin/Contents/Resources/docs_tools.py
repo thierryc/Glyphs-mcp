@@ -247,3 +247,31 @@ async def docs_get(
         }
     )
 
+
+@mcp.tool()
+async def docs_enable_page_resources() -> str:
+    """Register each documentation page as its own MCP resource.
+
+    This is optional: the recommended LLM flow is `docs_search` + `docs_get`.
+    Enabling page resources can help clients that prefer `resources/read` URIs,
+    but may "flood" some clients with hundreds of items in `resources/list`.
+
+    Returns:
+        JSON string with the number of newly-registered page resources.
+    """
+    try:
+        import documentation_resources
+
+        registered = documentation_resources.register_documentation_resources(register_pages=True)
+        return json.dumps(
+            {
+                "ok": True,
+                "registeredPages": registered,
+                "note": (
+                    "Per-page resources are now registered. Some MCP clients cache `resources/list`; "
+                    "you may need to reconnect/refresh to see them."
+                ),
+            }
+        )
+    except Exception as exc:
+        return json.dumps({"ok": False, "error": str(exc)})
