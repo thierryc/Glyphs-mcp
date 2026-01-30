@@ -12,6 +12,7 @@ Resources are **helpers**: they provide reference material (e.g., API documentat
 - Transport: MCP Streamable HTTP (SSE)
 - Clients should connect with `Accept: text/event-stream`
 - The server may return an `Mcp-Session-Id` header; clients should reuse it.
+- If your coding agent doesn't connect, launch Glyphs fresh and start the MCP server first, then launch the coding agent afterwards.
 
 ## Security
 

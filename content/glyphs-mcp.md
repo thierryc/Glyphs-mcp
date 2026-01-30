@@ -112,6 +112,8 @@ Configure your preferred AI client to speak the Streamable HTTP endpoint. Below 
 
 Note: `http://127.0.0.1:9680/mcp/` is an SSE endpoint for MCP clients. If you open it in a browser, it returns a small JSON discovery response instead.
 
+Tip: If your coding agent doesn't connect to the running Glyphs app, launch Glyphs fresh and start the MCP server first (Edit → Start MCP Server). Then start the coding agent (Claude, Codex, etc.) after.
+
 ### OpenAI Codex CLI
 ![OpenAI Codex MCP configuration screenshot](/content/images/glyphs-app-mcp/codex-in-vs-code.webp)
 ![OpenAI Codex result screenshot](/content/images/glyphs-app-mcp/codex-result-in-vs-code.webp)

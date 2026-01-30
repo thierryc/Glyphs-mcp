@@ -90,6 +90,8 @@ To start the Glyphs MCP server, open the **Edit** menu and choose **Start MCP Se
 
 The MCP endpoint is `http://127.0.0.1:9680/mcp/` using MCP Streamable HTTP transport.
 
+Tip: If your coding agent doesn't connect to Glyphs, start the MCP server first on a fresh Glyphs launch, then launch the coding agent afterwards.
+
 Open the **Macro Panel** to access the console.
 
 ## Resources (Helpers)
