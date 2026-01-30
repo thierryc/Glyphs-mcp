@@ -26,6 +26,7 @@ from starlette.middleware import Middleware
 
 from mcp_tools import mcp
 from security import (
+    McpNoOAuthWellKnownMiddleware,
     McpDiscoveryMiddleware,
     McpSessionIdMiddleware,
     OriginValidationMiddleware,
@@ -74,6 +75,7 @@ class MCPBridgePlugin(GeneralPlugin):
     def _http_middleware(self):
         """Return security middleware for the embedded HTTP server."""
         middleware = [
+            Middleware(McpNoOAuthWellKnownMiddleware),
             Middleware(McpDiscoveryMiddleware),
             Middleware(McpSessionIdMiddleware),
             Middleware(OriginValidationMiddleware),

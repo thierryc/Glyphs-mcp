@@ -14,6 +14,37 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, PlainTextResponse, Response
 
 
+class McpNoOAuthWellKnownMiddleware(BaseHTTPMiddleware):
+    """Return 404 for OAuth discovery endpoints when OAuth is not supported.
+
+    Some MCP clients/proxies probe OAuth well-known endpoints even for local
+    servers that don't require authentication. When those probes are routed into
+    the Streamable HTTP transport, FastMCP can reply with 406/400 errors that
+    look like server failures. Intercept the probes early and respond with 404
+    so clients can fall back cleanly.
+    """
+
+    def __init__(self, app):
+        super().__init__(app)
+        self._paths = {
+            "/.well-known/oauth-authorization-server",
+            "/.well-known/oauth-authorization-server/mcp",
+            "/.well-known/oauth-protected-resource",
+            "/.well-known/oauth-protected-resource/mcp",
+        }
+
+    async def dispatch(self, request: Request, call_next):
+        path = request.url.path
+        if path in self._paths:
+            return PlainTextResponse("Not Found", status_code=404)
+
+        # Some clients mistakenly try discovery under the MCP base path.
+        if path.startswith("/mcp/.well-known/"):
+            return PlainTextResponse("Not Found", status_code=404)
+
+        return await call_next(request)
+
+
 class McpDiscoveryMiddleware(BaseHTTPMiddleware):
     """Return a JSON discovery payload for non-SSE browser requests.
 
