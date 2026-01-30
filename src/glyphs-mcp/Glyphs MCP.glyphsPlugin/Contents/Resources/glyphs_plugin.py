@@ -9,9 +9,11 @@ from AppKit import (
     NSAlert,
     NSAlertFirstButtonReturn,
     NSAlertSecondButtonReturn,
+    NSAlertThirdButtonReturn,
     NSMenuItem,
     NSPanel,
     NSButton,
+    NSProgressIndicator,
     NSPasteboard,
     NSPasteboardTypeString,
     NSTextField,
@@ -21,7 +23,7 @@ from AppKit import (
     NSWindowStyleMaskUtilityWindow,
     NSBackingStoreBuffered,
 )
-from Foundation import NSNumberFormatter
+from Foundation import NSNumberFormatter, NSTimer
 from starlette.middleware import Middleware
 
 from mcp_tools import mcp
@@ -132,15 +134,17 @@ class MCPBridgePlugin(GeneralPlugin):
     @objc.python_method
     def _prompt_when_default_port_busy(self):
         message = (
-            'I can\'t start the MCP server on "9680". '
-            "Wait a moment and retry, restart Glyphs, or enter a custom port below."
+            'I can\'t start the MCP server on "9680".\n\n'
+            "Wait (preferred) until the previous instance has finished shutting down, "
+            "or start on a custom port below."
         )
 
         alert = NSAlert.alloc().init()
         alert.setMessageText_("Glyphs MCP Server")
         alert.setInformativeText_(message)
-        alert.addButtonWithTitle_("Retry on 9680")
+        alert.addButtonWithTitle_("Wait (preferred)")
         alert.addButtonWithTitle_("Start on Custom Port")
+        alert.addButtonWithTitle_("Cancel")
 
         port_field = NSTextField.alloc().initWithFrame_(((0, 0), (220, 24)))
         port_field.setPlaceholderString_("Custom port (1–65535)")
@@ -158,14 +162,149 @@ class MCPBridgePlugin(GeneralPlugin):
 
         response = alert.runModal()
         if response == NSAlertFirstButtonReturn:
-            return ("retry", None)
+            return ("wait", None)
         if response == NSAlertSecondButtonReturn:
             try:
                 value = int(port_field.stringValue().strip())
             except Exception:
                 return ("custom", None)
             return ("custom", value)
+        if response == NSAlertThirdButtonReturn:
+            return (None, None)
         return (None, None)
+
+    @objc.python_method
+    def _cancel_wait_for_port(self):
+        timer = getattr(self, "_wait_timer", None)
+        if timer is not None:
+            try:
+                timer.invalidate()
+            except Exception:
+                pass
+        self._wait_timer = None
+        self._waiting_for_port = False
+        self._wait_target_port = None
+        self._wait_sender = None
+
+        panel = getattr(self, "_wait_panel", None)
+        self._wait_panel = None
+        try:
+            if panel is not None:
+                panel.orderOut_(None)
+        except Exception:
+            pass
+
+        self._refresh_status_panel_if_visible()
+
+    @objc.python_method
+    def _begin_wait_for_port_and_start(self, port, sender):
+        if is_port_available(port, host="127.0.0.1"):
+            self._start_server_on_port(port, sender)
+            return
+
+        # If already waiting, just bring the panel forward.
+        panel = getattr(self, "_wait_panel", None)
+        if panel is not None:
+            try:
+                panel.makeKeyAndOrderFront_(None)
+            except Exception:
+                pass
+            return
+
+        self._waiting_for_port = True
+        self._wait_target_port = int(port)
+        self._wait_sender = sender
+        self._refresh_status_panel_if_visible()
+
+        width = 420
+        height = 130
+        rect = ((0, 0), (width, height))
+        # Use an explicit Cancel button instead of a close widget to avoid
+        # background retry timers continuing after the UI is dismissed.
+        style = NSWindowStyleMaskTitled | NSWindowStyleMaskUtilityWindow
+        panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer_(
+            rect, style, NSBackingStoreBuffered, False
+        )
+        panel.setTitle_("Glyphs MCP Server")
+        panel.setFloatingPanel_(True)
+
+        content = panel.contentView()
+        margin = 16
+
+        info = NSTextField.alloc().initWithFrame_(((margin, height - margin - 44), (width - margin * 2, 44)))
+        info.setStringValue_(
+            "Waiting for port {0} to become available…\nThis usually takes a few seconds.".format(
+                int(port)
+            )
+        )
+        info.setEditable_(False)
+        info.setSelectable_(False)
+        info.setBordered_(False)
+        info.setDrawsBackground_(False)
+        content.addSubview_(info)
+
+        spinner = NSProgressIndicator.alloc().initWithFrame_(((margin, margin + 40), (18, 18)))
+        spinner.setIndeterminate_(True)
+        try:
+            spinner.setUsesThreadedAnimation_(True)
+        except Exception:
+            pass
+        style_spinning = globals().get("NSProgressIndicatorStyleSpinning") or globals().get(
+            "NSProgressIndicatorSpinningStyle"
+        )
+        if style_spinning is not None:
+            try:
+                spinner.setStyle_(style_spinning)
+            except Exception:
+                pass
+        try:
+            spinner.startAnimation_(None)
+        except Exception:
+            pass
+        content.addSubview_(spinner)
+
+        cancel_w = 90
+        cancel_h = 28
+        cancel_btn = NSButton.alloc().initWithFrame_(((width - margin - cancel_w, margin), (cancel_w, cancel_h)))
+        cancel_btn.setTitle_("Cancel")
+        cancel_btn.setTarget_(self)
+        cancel_btn.setAction_(self.CancelWaitForPort_)
+        content.addSubview_(cancel_btn)
+
+        self._wait_panel = panel
+        try:
+            panel.makeKeyAndOrderFront_(None)
+        except Exception:
+            pass
+
+        # Poll on the main runloop so AppKit remains responsive.
+        self._wait_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+            0.5, self, "WaitPoll:", None, True
+        )
+
+    def CancelWaitForPort_(self, sender):
+        self._cancel_wait_for_port()
+
+    def WaitPoll_(self, timer):
+        port = getattr(self, "_wait_target_port", None)
+        sender = getattr(self, "_wait_sender", None)
+        if port is None:
+            self._cancel_wait_for_port()
+            return
+
+        if not getattr(self, "_waiting_for_port", False):
+            self._cancel_wait_for_port()
+            return
+
+        if not is_port_available(port, host="127.0.0.1"):
+            return
+
+        # Port is free: stop waiting UI first, then start server.
+        self._cancel_wait_for_port()
+        try:
+            self._start_server_on_port(port, sender)
+        except Exception as e:
+            self._show_error("Failed to start server: {}".format(e))
 
     @objc.python_method
     def _show_error(self, text):
@@ -194,8 +333,9 @@ class MCPBridgePlugin(GeneralPlugin):
                 break
 
             action, custom_port = self._prompt_when_default_port_busy()
-            if action == "retry":
-                continue
+            if action == "wait":
+                self._begin_wait_for_port_and_start(self.default_port, sender)
+                return
             if action == "custom":
                 if custom_port is None:
                     self._show_error("Enter a valid port number (1–65535).")
@@ -205,7 +345,7 @@ class MCPBridgePlugin(GeneralPlugin):
                     continue
                 if not is_port_available(custom_port, host="127.0.0.1"):
                     self._show_error(
-                        "Port {} is already in use. Choose another port or retry on 9680.".format(
+                        "Port {} is already in use. Choose another port.".format(
                             custom_port
                         )
                     )
@@ -325,7 +465,12 @@ class MCPBridgePlugin(GeneralPlugin):
         endpoint = endpoint_for(port)
 
         try:
-            self._status_field.setStringValue_(status_text(running))
+            if getattr(self, "_waiting_for_port", False) and not running:
+                self._status_field.setStringValue_(
+                    "Waiting for port {}…".format(getattr(self, "_wait_target_port", self.default_port))
+                )
+            else:
+                self._status_field.setStringValue_(status_text(running))
         except Exception:
             pass
         try:
