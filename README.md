@@ -57,6 +57,13 @@ This table describes the tool surface exposed by the MCP server shipped in this 
 
 `execute_code` and `execute_code_with_context` accept an optional `timeout` in seconds. Calls default to 60 s, and the bridge honours any larger per-call value you provide.
 
+For performance-sensitive scripts, you can opt into lower-overhead execution:
+- `capture_output=false` to avoid capturing stdout/stderr (prints go to the Macro Panel).
+- `return_last_expression=false` to skip evaluating the final line as an expression.
+- `max_output_chars` / `max_error_chars` to cap returned output and avoid huge responses.
+
+Avoid calling `exit()` / `quit()` / `sys.exit()` in `execute_code*`; they won't exit Glyphs and can disrupt the call.
+
 ### ExportDesignspaceAndUFO
 
 Kick off a headless export of UFO masters and designspace documents directly from the MCP server. The tool returns absolute paths to generated files along with the exporter log so clients can surface progress in real time. Debug lines are prefixed with `[ExportDesignspaceAndUFO DEBUG]` and include helpful context about axis mappings, temporary folders, and file moves.

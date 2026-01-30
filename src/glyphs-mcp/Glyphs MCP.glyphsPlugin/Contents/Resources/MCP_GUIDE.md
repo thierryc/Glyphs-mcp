@@ -32,6 +32,13 @@ Recommended usage pattern:
 2. Use `execute_code*` only when needed, and keep scripts minimal.
 3. Print clear results and avoid destructive operations unless explicitly requested.
 
+Performance tips (especially for batch operations across many masters):
+- Prefer a single `execute_code*` call over many small ones.
+- Avoid chatty `print()` in tight loops. Use one summary line per large unit of work.
+- Use `capture_output=false` to avoid buffering stdout/stderr into the MCP response.
+- Use `max_output_chars` / `max_error_chars` to cap returned output and keep responses small.
+- Avoid calling `exit()` / `quit()` / `sys.exit()` in `execute_code*`.
+
 ## Docs and Resources
 
 If you need Glyphs SDK / ObjectWrapper reference:

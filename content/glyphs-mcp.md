@@ -63,6 +63,13 @@ Command table for the MCP server version exposed in code (FastMCP `version="1.0.
 
 `execute_code` and `execute_code_with_context` accept an optional `timeout` in seconds. Each call defaults to 60 s, and the bridge honours any larger per-call value that you include in the tool arguments.
 
+For performance-sensitive scripts, you can opt into lower-overhead execution:
+- `capture_output=false` to avoid capturing stdout/stderr (prints go to the Macro Panel).
+- `return_last_expression=false` to skip evaluating the final line as an expression.
+- `max_output_chars` / `max_error_chars` to cap returned output and avoid huge responses.
+
+Avoid calling `exit()` / `quit()` / `sys.exit()` in `execute_code*`; they won't exit Glyphs and can disrupt the call.
+
 ### Using `get_selected_nodes`
 
 `get_selected_nodes` returns actionable details about the current selection in Edit View, including per‑master mapping hints. The structure is designed so an agent can perform follow‑up edits (e.g., insert a point before the selected node) on all masters of the same glyph.
