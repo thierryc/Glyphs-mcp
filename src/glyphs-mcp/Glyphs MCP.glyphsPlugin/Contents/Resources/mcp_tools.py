@@ -11,7 +11,18 @@ try:
 except Exception:  # pragma: no cover - PyObjC should be available inside Glyphs
     objc = None
     NSObject = None
-from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor  # type: ignore[import-not-found]
+from GlyphsApp import (
+    Glyphs,
+    GSGlyph,
+    GSLayer,
+    GSPath,
+    GSNode,
+    GSHandle,
+    GSComponent,
+    GSAnchor,
+    GSHint,
+    CORNER,
+)  # type: ignore[import-not-found]
 from fastmcp import FastMCP
 from export_designspace_ufo import (
     ExportDesignspaceAndUFO as ExportDesignspaceAndUFOExporter,
@@ -1599,6 +1610,356 @@ async def get_selected_nodes(include_master_mapping: bool = True) -> str:
 
     except Exception as e:
         return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def add_croner_corner_to_all_masters(corner_name: str = "_corner.croner") -> str:
+    """Add a corner component hint at the selected node(s) across all masters.
+
+    This tool:
+    - Processes all selected *nodes* (including extra/intersection nodes) in the active layer.
+    - Processes selected intersection *handles* (``GSHandle``) by reusing their index path.
+    - Skips other non-node selections (reported in the result).
+    - Maps nodes across masters strictly by (pathIndex, nodeIndex) within layer.paths.
+    - Skips + reports masters where the corresponding path/node index is missing.
+
+    Args:
+        corner_name: Corner component name (e.g. ``_corner.croner``).
+
+    Returns:
+        JSON encoded result with per-master add/skip details.
+    """
+    try:
+        font = Glyphs.font
+        if not font:
+            return json.dumps({"error": "No font is currently active"})
+
+        if not font.selectedLayers or len(font.selectedLayers) == 0:
+            return json.dumps({"error": "No active layer/glyph open in Edit view"})
+
+        layer = font.selectedLayers[0]
+        glyph = layer.parent
+        if glyph is None:
+            return json.dumps({"error": "No active glyph found for current layer"})
+
+        def _index_path_to_list(index_path):
+            if index_path is None:
+                return None
+            try:
+                length = int(index_path.length())
+                return [int(index_path.indexAtPosition_(i)) for i in range(length)]
+            except Exception:
+                try:
+                    return [int(v) for v in index_path]
+                except Exception:
+                    return None
+
+        raw_selection = list(getattr(layer, "selection", []) or [])
+        skipped_selection = []
+        selected_handles = []
+
+        # Collect selected handles (used for intersections) and report other non-node selections.
+        for item in raw_selection:
+            if isinstance(item, GSHandle):
+                try:
+                    origin_index = item.object()  # NSIndexPath
+                except Exception:
+                    origin_index = None
+                if origin_index is None:
+                    skipped_selection.append(
+                        {"type": "GSHandle", "reason": "Could not read handle index path"}
+                    )
+                    continue
+                try:
+                    stem = int(item.flag())
+                except Exception:
+                    stem = None
+                selected_handles.append(
+                    {
+                        "originIndex": origin_index,
+                        "originIndexList": _index_path_to_list(origin_index),
+                        "stem": stem,
+                    }
+                )
+                continue
+
+            if not isinstance(item, GSNode):
+                item_type = type(item).__name__
+                reason = "Not a node or intersection handle"
+                skipped_selection.append({"type": item_type, "reason": reason})
+
+        # Gather selected nodes from the path graph to obtain stable indices.
+        selected_nodes = []
+        for p_index, path in enumerate(getattr(layer, "paths", []) or []):
+            for n_index, node in enumerate(getattr(path, "nodes", []) or []):
+                if not getattr(node, "selected", False):
+                    continue
+                node_type = getattr(node, "type", "offcurve")
+                if node_type == "offcurve":
+                    skipped_selection.append(
+                        {
+                            "type": "GSNode",
+                            "pathIndex": p_index,
+                            "nodeIndex": n_index,
+                            "nodeType": node_type,
+                            "reason": "Off-curve nodes are not supported for corner components",
+                        }
+                    )
+                    continue
+                selected_nodes.append(
+                    {
+                        "pathIndex": p_index,
+                        "nodeIndex": n_index,
+                        "nodeType": node_type,
+                        "position": {
+                            "x": float(getattr(node, "position", (0, 0))[0]),
+                            "y": float(getattr(node, "position", (0, 0))[1]),
+                        },
+                    }
+                )
+
+        if not selected_nodes and not selected_handles:
+            return json.dumps(
+                {
+                    "error": "No applicable nodes/handles selected (select on-curve nodes or intersection handles)",
+                    "cornerName": corner_name,
+                    "skippedSelection": skipped_selection,
+                }
+            )
+
+        masters = list(getattr(font, "masters", []) or [])
+        results = []
+        total_added = 0
+        total_skipped = 0
+
+        for master in masters:
+            master_result = {
+                "masterId": getattr(master, "id", None),
+                "masterName": getattr(master, "name", ""),
+                "addedCount": 0,
+                "skipped": [],
+            }
+
+            try:
+                t_layer = glyph.layers[master.id]
+            except Exception:
+                master_result["skipped"].append({"reason": "Master layer not found"})
+                total_skipped += len(selected_nodes)
+                results.append(master_result)
+                continue
+
+            t_paths = list(getattr(t_layer, "paths", []) or [])
+            t_hints = list(getattr(t_layer, "hints", []) or [])
+
+            for locator in selected_nodes:
+                p_index = int(locator["pathIndex"])
+                n_index = int(locator["nodeIndex"])
+
+                if p_index < 0 or p_index >= len(t_paths):
+                    master_result["skipped"].append(
+                        {
+                            "pathIndex": p_index,
+                            "nodeIndex": n_index,
+                            "reason": "Path index out of range in target master",
+                        }
+                    )
+                    total_skipped += 1
+                    continue
+
+                t_path = t_paths[p_index]
+                t_nodes = list(getattr(t_path, "nodes", []) or [])
+                if n_index < 0 or n_index >= len(t_nodes):
+                    master_result["skipped"].append(
+                        {
+                            "pathIndex": p_index,
+                            "nodeIndex": n_index,
+                            "reason": "Node index out of range in target master",
+                        }
+                    )
+                    total_skipped += 1
+                    continue
+
+                t_node = t_nodes[n_index]
+                t_node_type = getattr(t_node, "type", "offcurve")
+                if t_node_type == "offcurve":
+                    master_result["skipped"].append(
+                        {
+                            "pathIndex": p_index,
+                            "nodeIndex": n_index,
+                            "reason": "Target node is off-curve in this master",
+                        }
+                    )
+                    total_skipped += 1
+                    continue
+
+                already_exists = False
+                for hint in t_hints:
+                    try:
+                        if getattr(hint, "type", None) != CORNER:
+                            continue
+                        if getattr(hint, "name", None) != corner_name:
+                            continue
+                        if getattr(hint, "originNode", None) is t_node:
+                            already_exists = True
+                            break
+                    except Exception:
+                        continue
+
+                if already_exists:
+                    master_result["skipped"].append(
+                        {
+                            "pathIndex": p_index,
+                            "nodeIndex": n_index,
+                            "reason": "Corner hint already exists at this node",
+                        }
+                    )
+                    total_skipped += 1
+                    continue
+
+                new_hint = GSHint()
+                new_hint.type = CORNER
+                new_hint.name = corner_name
+                new_hint.originNode = t_node
+                t_layer.hints.append(new_hint)
+                t_hints.append(new_hint)
+
+                master_result["addedCount"] += 1
+                total_added += 1
+
+            for handle_locator in selected_handles:
+                origin_index = handle_locator.get("originIndex")
+                origin_index_list = handle_locator.get("originIndexList") or []
+                stem = handle_locator.get("stem")
+
+                # Best-effort validation: hint index paths generally start with (shapeIndex, nodeIndex).
+                if len(origin_index_list) >= 2:
+                    shape_index = int(origin_index_list[0])
+                    node_index = int(origin_index_list[1])
+                    shapes = list(getattr(t_layer, "shapes", []) or [])
+
+                    if shape_index < 0 or shape_index >= len(shapes):
+                        master_result["skipped"].append(
+                            {
+                                "type": "GSHandle",
+                                "originIndex": origin_index_list,
+                                "reason": "Shape index out of range in target master",
+                            }
+                        )
+                        total_skipped += 1
+                        continue
+
+                    shape = shapes[shape_index]
+                    if not isinstance(shape, GSPath):
+                        master_result["skipped"].append(
+                            {
+                                "type": "GSHandle",
+                                "originIndex": origin_index_list,
+                                "reason": "Target shape at index is not a path",
+                            }
+                        )
+                        total_skipped += 1
+                        continue
+
+                    t_nodes = list(getattr(shape, "nodes", []) or [])
+                    if node_index < 0 or node_index >= len(t_nodes):
+                        master_result["skipped"].append(
+                            {
+                                "type": "GSHandle",
+                                "originIndex": origin_index_list,
+                                "reason": "Node index out of range in target master shape",
+                            }
+                        )
+                        total_skipped += 1
+                        continue
+
+                already_exists = False
+                for hint in t_hints:
+                    try:
+                        if getattr(hint, "type", None) != CORNER:
+                            continue
+                        if getattr(hint, "name", None) != corner_name:
+                            continue
+                        if getattr(hint, "originIndex", None) != origin_index:
+                            continue
+                        if stem is not None and getattr(hint, "stem", None) != stem:
+                            continue
+                        already_exists = True
+                        break
+                    except Exception:
+                        continue
+
+                if already_exists:
+                    master_result["skipped"].append(
+                        {
+                            "type": "GSHandle",
+                            "originIndex": origin_index_list or None,
+                            "reason": "Corner hint already exists at this index path",
+                        }
+                    )
+                    total_skipped += 1
+                    continue
+
+                new_hint = GSHint()
+                new_hint.type = CORNER
+                new_hint.name = corner_name
+                new_hint.originIndex = origin_index
+                if stem is not None:
+                    try:
+                        new_hint.stem = stem
+                    except Exception:
+                        pass
+                t_layer.hints.append(new_hint)
+                t_hints.append(new_hint)
+
+                master_result["addedCount"] += 1
+                total_added += 1
+
+            results.append(master_result)
+
+        return json.dumps(
+            {
+                "success": True,
+                "cornerName": corner_name,
+                "font": {
+                    "familyName": getattr(font, "familyName", "") or "",
+                    "filePath": getattr(font, "filepath", None),
+                },
+                "glyph": {
+                    "name": getattr(glyph, "name", None),
+                    "unicode": getattr(glyph, "unicode", None),
+                },
+                "activeLayer": {
+                    "name": getattr(layer, "name", ""),
+                    "associatedMasterId": getattr(layer, "associatedMasterId", None),
+                },
+                "selection": {
+                    "nodeCount": len(selected_nodes),
+                    "nodes": selected_nodes,
+                    "handleCount": len(selected_handles),
+                    "handles": [
+                        {
+                            "originIndex": h.get("originIndexList"),
+                            "stem": h.get("stem"),
+                        }
+                        for h in selected_handles
+                    ],
+                    "skippedSelection": skipped_selection,
+                },
+                "mastersProcessed": len(masters),
+                "totalAdded": total_added,
+                "totalSkipped": total_skipped,
+                "results": results,
+            }
+        )
+
+    except Exception as exc:
+        return json.dumps(
+            {
+                "error": str(exc) or repr(exc),
+                "errorType": type(exc).__name__,
+                "traceback": traceback.format_exception(type(exc), exc, exc.__traceback__),
+            }
+        )
 
 
 def _normalise_name_sequence(value):

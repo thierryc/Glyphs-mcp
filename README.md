@@ -46,6 +46,7 @@ This table describes the tool surface exposed by the MCP server shipped in this 
 | `get_selected_glyphs` | Info about glyphs currently selected in UI. |
 | `get_selected_font_and_master` | Current font + master and selection snapshot. |
 | `get_selected_nodes` | Detailed selected nodes with per‑master mapping for edits. |
+| `add_croner_corner_to_all_masters` | Add `_corner.croner` corner hints at selected nodes (and intersection handles) across all masters. |
 | `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing. |
 | `set_glyph_paths` | Replace glyph paths from JSON. |
 | `ExportDesignspaceAndUFO` | Export designspace/UFO bundles with structured logs and errors. |
