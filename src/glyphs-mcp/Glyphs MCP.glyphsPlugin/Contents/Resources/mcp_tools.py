@@ -1613,7 +1613,7 @@ async def get_selected_nodes(include_master_mapping: bool = True) -> str:
 
 
 @mcp.tool()
-async def add_croner_corner_to_all_masters(corner_name: str = "_corner.croner") -> str:
+async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
     """Add a corner component hint at the selected node(s) across all masters.
 
     This tool:
@@ -1624,7 +1624,7 @@ async def add_croner_corner_to_all_masters(corner_name: str = "_corner.croner") 
     - Skips + reports masters where the corresponding path/node index is missing.
 
     Args:
-        corner_name: Corner component name (e.g. ``_corner.croner``).
+        _corner_name: Corner component name (e.g. ``_corner.inktrap``). Required.
 
     Returns:
         JSON encoded result with per-master add/skip details.
@@ -1633,6 +1633,51 @@ async def add_croner_corner_to_all_masters(corner_name: str = "_corner.croner") 
         font = Glyphs.font
         if not font:
             return json.dumps({"error": "No font is currently active"})
+
+        def _available_corner_names(current_font):
+            names = []
+            try:
+                glyphs = getattr(current_font, "glyphs", []) or []
+            except Exception:
+                glyphs = []
+            for g in glyphs:
+                try:
+                    name = getattr(g, "name", None)
+                except Exception:
+                    continue
+                if isinstance(name, str) and name.startswith("_corner."):
+                    names.append(name)
+            return sorted(set(names))
+
+        available_corners = _available_corner_names(font)
+        corner_name = (_corner_name or "").strip() if _corner_name is not None else ""
+        if not corner_name:
+            return json.dumps(
+                {
+                    "error": "Missing required parameter: _corner_name",
+                    "directive": "Re-run add_corner_to_all_masters and pass `_corner_name` set to one of `availableCorners` (full Glyphs corner component glyph name, e.g. `_corner.inktrap`).",
+                    "availableCorners": available_corners,
+                    "example": {"_corner_name": available_corners[0] if available_corners else "_corner.<name>"},
+                }
+            )
+        if not corner_name.startswith("_corner."):
+            return json.dumps(
+                {
+                    "error": "Invalid _corner_name (must start with '_corner.')",
+                    "cornerName": corner_name,
+                    "directive": "Pass the full corner glyph name, e.g. `_corner.inktrap`. Choose one from `availableCorners` and retry.",
+                    "availableCorners": available_corners,
+                }
+            )
+        if available_corners and corner_name not in available_corners:
+            return json.dumps(
+                {
+                    "error": "Corner component not found in current font",
+                    "cornerName": corner_name,
+                    "directive": "Choose a value from `availableCorners` and retry. If the corner glyph is missing, create it in the font first.",
+                    "availableCorners": available_corners,
+                }
+            )
 
         if not font.selectedLayers or len(font.selectedLayers) == 0:
             return json.dumps({"error": "No active layer/glyph open in Edit view"})
@@ -1723,6 +1768,7 @@ async def add_croner_corner_to_all_masters(corner_name: str = "_corner.croner") 
                 {
                     "error": "No applicable nodes/handles selected (select on-curve nodes or intersection handles)",
                     "cornerName": corner_name,
+                    "availableCorners": available_corners,
                     "skippedSelection": skipped_selection,
                 }
             )
@@ -1920,6 +1966,7 @@ async def add_croner_corner_to_all_masters(corner_name: str = "_corner.croner") 
             {
                 "success": True,
                 "cornerName": corner_name,
+                "availableCorners": available_corners,
                 "font": {
                     "familyName": getattr(font, "familyName", "") or "",
                     "filePath": getattr(font, "filepath", None),
