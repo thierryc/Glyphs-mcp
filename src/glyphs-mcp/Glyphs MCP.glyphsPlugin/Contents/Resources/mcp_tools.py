@@ -1613,7 +1613,7 @@ async def get_selected_nodes(include_master_mapping: bool = True) -> str:
 
 
 @mcp.tool()
-async def add_croner_corner_to_all_masters(_corner_name: str | None = None) -> str:
+async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
     """Add a corner component hint at the selected node(s) across all masters.
 
     This tool:
@@ -1655,7 +1655,7 @@ async def add_croner_corner_to_all_masters(_corner_name: str | None = None) -> s
             return json.dumps(
                 {
                     "error": "Missing required parameter: _corner_name",
-                    "directive": "Re-run add_croner_corner_to_all_masters and pass `_corner_name` set to one of `availableCorners` (full Glyphs corner component glyph name, e.g. `_corner.inktrap`).",
+                    "directive": "Re-run add_corner_to_all_masters and pass `_corner_name` set to one of `availableCorners` (full Glyphs corner component glyph name, e.g. `_corner.inktrap`).",
                     "availableCorners": available_corners,
                     "example": {"_corner_name": available_corners[0] if available_corners else "_corner.<name>"},
                 }
