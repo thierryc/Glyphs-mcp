@@ -38,6 +38,12 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 
 Refer to `README.md` for the full command table and usage notes.
 
+## Agent Execution Contract (Guide-Aligned)
+- Read current state before mutation (`get_selected_font_and_master`, `get_selected_glyphs`, `get_glyph_details`/`get_glyph_paths` as needed).
+- Prefer dedicated mutation tools first; use `execute_code_with_context` or `execute_code` for multi-step workflows where one script is more reliable.
+- For `execute_code*`, keep scripts minimal, validate targets first, and bound output with `max_output_chars` / `max_error_chars` when needed.
+- After each mutation, re-read affected entities and report changed/skipped counts.
+
 ## Agent Guidelines
 - Prefer `rg`/`fd` style tools for repo searches; avoid altering the plugin
   bundle directly unless necessary.

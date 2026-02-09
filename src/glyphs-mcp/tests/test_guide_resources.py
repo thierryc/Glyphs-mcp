@@ -69,6 +69,22 @@ class GuideResourcesTests(unittest.TestCase):
         self.assertTrue(guide_path.is_file(), f"Missing guide file at {guide_path}")
         self.assertGreater(len(guide_path.read_text(encoding="utf-8").strip()), 0)
 
+    def test_guide_contains_required_sections(self) -> None:
+        guide_path = _resources_dir() / "MCP_GUIDE.md"
+        content = guide_path.read_text(encoding="utf-8")
+        required_headers = [
+            "## Mission",
+            "## Execution Contract",
+            "## Tool Selection Policy",
+            "## Balanced execute_code Policy",
+            "## Mutation Safety Protocol",
+            "## Failure and Retry Playbook",
+            "## Docs Usage Policy",
+            "## Response Style",
+        ]
+        for header in required_headers:
+            self.assertIn(header, content)
+
     def test_register_guide_resource_registers_uri(self) -> None:
         os.environ["GLYPHS_MCP_SKIP_AUTO_REGISTER"] = "1"
         _ensure_fake_fastmcp()

@@ -48,6 +48,12 @@ python src/glyphs-mcp/scripts/copy_documentation.py
 - Guide: `glyphs://glyphs-mcp/guide`
 - Docs index: `glyphs://glyphs-mcp/docs/index.json`
 
+## Agent Execution Contract (Guide-Aligned)
+- Read context before any mutation (`get_selected_font_and_master`, `get_selected_glyphs`, plus glyph detail/path reads as required).
+- Prefer dedicated tools first; use `execute_code_with_context` or `execute_code` early for complex multi-step workflows when one scripted pass is more reliable.
+- In `execute_code*`, validate targets before edits, keep scripts focused, and cap output with `max_output_chars` / `max_error_chars` when needed.
+- Verify by reading back and report changed/skipped counts and unresolved risks.
+
 ## IDE Configuration
 Claude Desktop example:
 
