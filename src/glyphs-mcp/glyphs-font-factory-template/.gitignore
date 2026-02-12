@@ -1,0 +1,10 @@
+# Build/export outputs
+exports/**
+*.otf
+*.ttf
+*.woff
+*.woff2
+
+# macOS
+.DS_Store
+

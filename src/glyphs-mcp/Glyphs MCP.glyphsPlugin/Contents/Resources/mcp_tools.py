@@ -1613,7 +1613,10 @@ async def get_selected_nodes(include_master_mapping: bool = True) -> str:
 
 
 @mcp.tool()
-async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
+async def add_corner_to_all_masters(
+    _corner_name: str | None = None,
+    _alignment: str | int | None = None,
+) -> str:
     """Add a corner component hint at the selected node(s) across all masters.
 
     This tool:
@@ -1625,6 +1628,9 @@ async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
 
     Args:
         _corner_name: Corner component name (e.g. ``_corner.inktrap``). Required.
+        _alignment: Optional corner alignment. Accepted values are
+            ``left``/``right``/``center`` (case-insensitive) or ``0``/``1``/``2``.
+            Glyphs mapping: left=0, right=1, center=2.
 
     Returns:
         JSON encoded result with per-master add/skip details.
@@ -1678,6 +1684,62 @@ async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
                     "availableCorners": available_corners,
                 }
             )
+
+        alignment_requested = _alignment
+        alignment_value = None
+        alignment_label = None
+        if _alignment is not None:
+            alignment_map = {"left": 0, "right": 1, "center": 2}
+            label_map = {0: "left", 1: "right", 2: "center"}
+
+            if isinstance(_alignment, str):
+                normalized = _alignment.strip().lower()
+                if normalized == "":
+                    return json.dumps(
+                        {
+                            "error": "Invalid _alignment",
+                            "alignment": _alignment,
+                            "allowedAlignments": ["left", "right", "center", 0, 1, 2],
+                            "directive": "Pass `_alignment` as `left`, `right`, `center`, or numeric `0`, `1`, `2`.",
+                        }
+                    )
+                if normalized in alignment_map:
+                    alignment_value = alignment_map[normalized]
+                    alignment_label = normalized
+                elif normalized in ("0", "1", "2"):
+                    alignment_value = int(normalized)
+                    alignment_label = label_map[alignment_value]
+                else:
+                    return json.dumps(
+                        {
+                            "error": "Invalid _alignment",
+                            "alignment": _alignment,
+                            "allowedAlignments": ["left", "right", "center", 0, 1, 2],
+                            "directive": "Pass `_alignment` as `left`, `right`, `center`, or numeric `0`, `1`, `2`.",
+                        }
+                    )
+            elif isinstance(_alignment, int):
+                if _alignment in (0, 1, 2):
+                    alignment_value = int(_alignment)
+                    alignment_label = label_map[alignment_value]
+                else:
+                    return json.dumps(
+                        {
+                            "error": "Invalid _alignment",
+                            "alignment": _alignment,
+                            "allowedAlignments": ["left", "right", "center", 0, 1, 2],
+                            "directive": "Pass `_alignment` as `left`, `right`, `center`, or numeric `0`, `1`, `2`.",
+                        }
+                    )
+            else:
+                return json.dumps(
+                    {
+                        "error": "Invalid _alignment",
+                        "alignment": _alignment,
+                        "allowedAlignments": ["left", "right", "center", 0, 1, 2],
+                        "directive": "Pass `_alignment` as `left`, `right`, `center`, or numeric `0`, `1`, `2`.",
+                    }
+                )
 
         if not font.selectedLayers or len(font.selectedLayers) == 0:
             return json.dumps({"error": "No active layer/glyph open in Edit view"})
@@ -1776,6 +1838,7 @@ async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
         masters = list(getattr(font, "masters", []) or [])
         results = []
         total_added = 0
+        total_updated = 0
         total_skipped = 0
 
         for master in masters:
@@ -1783,6 +1846,7 @@ async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
                 "masterId": getattr(master, "id", None),
                 "masterName": getattr(master, "name", ""),
                 "addedCount": 0,
+                "updatedCount": 0,
                 "skipped": [],
             }
 
@@ -1838,7 +1902,7 @@ async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
                     total_skipped += 1
                     continue
 
-                already_exists = False
+                existing_hint = None
                 for hint in t_hints:
                     try:
                         if getattr(hint, "type", None) != CORNER:
@@ -1846,26 +1910,54 @@ async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
                         if getattr(hint, "name", None) != corner_name:
                             continue
                         if getattr(hint, "originNode", None) is t_node:
-                            already_exists = True
+                            existing_hint = hint
                             break
                     except Exception:
                         continue
 
-                if already_exists:
-                    master_result["skipped"].append(
-                        {
-                            "pathIndex": p_index,
-                            "nodeIndex": n_index,
-                            "reason": "Corner hint already exists at this node",
-                        }
-                    )
-                    total_skipped += 1
+                if existing_hint is not None:
+                    if alignment_value is not None:
+                        current_alignment = getattr(existing_hint, "options", None)
+                        if current_alignment != alignment_value:
+                            try:
+                                existing_hint.options = alignment_value
+                                master_result["updatedCount"] += 1
+                                total_updated += 1
+                            except Exception:
+                                master_result["skipped"].append(
+                                    {
+                                        "pathIndex": p_index,
+                                        "nodeIndex": n_index,
+                                        "reason": "Failed to update corner alignment on existing hint",
+                                    }
+                                )
+                                total_skipped += 1
+                        else:
+                            master_result["skipped"].append(
+                                {
+                                    "pathIndex": p_index,
+                                    "nodeIndex": n_index,
+                                    "reason": "Corner hint already exists with requested alignment",
+                                }
+                            )
+                            total_skipped += 1
+                    else:
+                        master_result["skipped"].append(
+                            {
+                                "pathIndex": p_index,
+                                "nodeIndex": n_index,
+                                "reason": "Corner hint already exists at this node",
+                            }
+                        )
+                        total_skipped += 1
                     continue
 
                 new_hint = GSHint()
                 new_hint.type = CORNER
                 new_hint.name = corner_name
                 new_hint.originNode = t_node
+                if alignment_value is not None:
+                    new_hint.options = alignment_value
                 t_layer.hints.append(new_hint)
                 t_hints.append(new_hint)
 
@@ -1918,7 +2010,7 @@ async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
                         total_skipped += 1
                         continue
 
-                already_exists = False
+                existing_hint = None
                 for hint in t_hints:
                     try:
                         if getattr(hint, "type", None) != CORNER:
@@ -1929,26 +2021,54 @@ async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
                             continue
                         if stem is not None and getattr(hint, "stem", None) != stem:
                             continue
-                        already_exists = True
+                        existing_hint = hint
                         break
                     except Exception:
                         continue
 
-                if already_exists:
-                    master_result["skipped"].append(
-                        {
-                            "type": "GSHandle",
-                            "originIndex": origin_index_list or None,
-                            "reason": "Corner hint already exists at this index path",
-                        }
-                    )
-                    total_skipped += 1
+                if existing_hint is not None:
+                    if alignment_value is not None:
+                        current_alignment = getattr(existing_hint, "options", None)
+                        if current_alignment != alignment_value:
+                            try:
+                                existing_hint.options = alignment_value
+                                master_result["updatedCount"] += 1
+                                total_updated += 1
+                            except Exception:
+                                master_result["skipped"].append(
+                                    {
+                                        "type": "GSHandle",
+                                        "originIndex": origin_index_list or None,
+                                        "reason": "Failed to update corner alignment on existing hint",
+                                    }
+                                )
+                                total_skipped += 1
+                        else:
+                            master_result["skipped"].append(
+                                {
+                                    "type": "GSHandle",
+                                    "originIndex": origin_index_list or None,
+                                    "reason": "Corner hint already exists with requested alignment",
+                                }
+                            )
+                            total_skipped += 1
+                    else:
+                        master_result["skipped"].append(
+                            {
+                                "type": "GSHandle",
+                                "originIndex": origin_index_list or None,
+                                "reason": "Corner hint already exists at this index path",
+                            }
+                        )
+                        total_skipped += 1
                     continue
 
                 new_hint = GSHint()
                 new_hint.type = CORNER
                 new_hint.name = corner_name
                 new_hint.originIndex = origin_index
+                if alignment_value is not None:
+                    new_hint.options = alignment_value
                 if stem is not None:
                     try:
                         new_hint.stem = stem
@@ -1967,6 +2087,9 @@ async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
                 "success": True,
                 "cornerName": corner_name,
                 "availableCorners": available_corners,
+                "alignmentRequested": alignment_requested,
+                "alignmentApplied": alignment_value,
+                "alignmentLabel": alignment_label,
                 "font": {
                     "familyName": getattr(font, "familyName", "") or "",
                     "filePath": getattr(font, "filepath", None),
@@ -1994,6 +2117,7 @@ async def add_corner_to_all_masters(_corner_name: str | None = None) -> str:
                 },
                 "mastersProcessed": len(masters),
                 "totalAdded": total_added,
+                "totalUpdated": total_updated,
                 "totalSkipped": total_skipped,
                 "results": results,
             }

@@ -1,0 +1,158 @@
+{
+  "metrics": {
+    "upm": 1000,
+    "ascender": 800,
+    "capHeight": 700,
+    "xHeight": 500,
+    "descender": -200
+  },
+  "spacing": {
+    "isMonospace": false,
+    "monoWidth": 600,
+    "defaultWidth": 600
+  },
+  "axis_presets": {
+    "one_axis_wght": {
+      "axes": [
+        { "tag": "wght", "name": "Weight" }
+      ],
+      "masters": [
+        { "name": "Light", "axes": { "wght": 300 }, "italicAngle": 0 },
+        { "name": "Heavy", "axes": { "wght": 900 }, "italicAngle": 0 }
+      ]
+    },
+    "two_axes_wght_ital": {
+      "axes": [
+        { "tag": "wght", "name": "Weight" },
+        { "tag": "ital", "name": "Italic" }
+      ],
+      "masters": [
+        { "name": "Light", "axes": { "wght": 300, "ital": 0 }, "italicAngle": 0 },
+        { "name": "Heavy", "axes": { "wght": 900, "ital": 0 }, "italicAngle": 0 },
+        { "name": "Light Italic", "axes": { "wght": 300, "ital": 1 }, "italicAngle": -10 },
+        { "name": "Heavy Italic", "axes": { "wght": 900, "ital": 1 }, "italicAngle": -10 }
+      ]
+    },
+    "two_axes_wght_slnt": {
+      "axes": [
+        { "tag": "wght", "name": "Weight" },
+        { "tag": "slnt", "name": "Slant" }
+      ],
+      "masters": [
+        { "name": "Light", "axes": { "wght": 300, "slnt": 0 }, "italicAngle": 0 },
+        { "name": "Heavy", "axes": { "wght": 900, "slnt": 0 }, "italicAngle": 0 },
+        { "name": "Light Slanted", "axes": { "wght": 300, "slnt": -10 }, "italicAngle": -10 },
+        { "name": "Heavy Slanted", "axes": { "wght": 900, "slnt": -10 }, "italicAngle": -10 }
+      ]
+    }
+  },
+  "glyphset_presets": {
+    "latinext_essentials": {
+      "unicodeRanges": [
+        "0020-007E",
+        "00A0-00FF",
+        "0100-017F",
+        "0180-024F",
+        "1E00-1EFF"
+      ],
+      "includeUnicode": [
+        "00AD",
+        "2010",
+        "2013",
+        "2014",
+        "2018-201F",
+        "2020",
+        "2021",
+        "2022",
+        "2026",
+        "2030",
+        "2039",
+        "203A",
+        "2044",
+        "20AC",
+        "20BF",
+        "20BD",
+        "20BA",
+        "00A2",
+        "00A3",
+        "00A5",
+        "20B9",
+        "20A9",
+        "20AA",
+        "20A8",
+        "20B1",
+        "20B4",
+        "20B8",
+        "20B2",
+        "20B5",
+        "20B0",
+        "20A1",
+        "20A6",
+        "20A7",
+        "20B3",
+        "20AE",
+        "20AB",
+        "20A4",
+        "2212",
+        "00D7",
+        "00F7",
+        "00B1",
+        "2264",
+        "2265",
+        "2260",
+        "2248"
+      ],
+      "combiningMarksUnicode": [
+        "0300",
+        "0301",
+        "0302",
+        "0303",
+        "0304",
+        "0306",
+        "0307",
+        "0308",
+        "030A",
+        "030B",
+        "030C",
+        "0323",
+        "0327",
+        "0328",
+        "0309",
+        "0311",
+        "031B"
+      ]
+    }
+  },
+  "feature_presets": {
+    "minimal": {
+      "automaticFeatures": ["mark", "mkmk", "kern"],
+      "stubs": []
+    },
+    "standard": {
+      "automaticFeatures": ["mark", "mkmk", "kern"],
+      "stubs": ["liga", "frac"]
+    }
+  },
+  "color_plan": {
+    "roots_color_1": [
+      "n",
+      "o",
+      "t",
+      "H",
+      "O",
+      "i",
+      "l",
+      "a",
+      "e",
+      "p",
+      "d",
+      "zero",
+      "one",
+      "acutecomb",
+      "gravecomb"
+    ],
+    "derived_color_2": [],
+    "fallback_color": 3
+  }
+}
+
