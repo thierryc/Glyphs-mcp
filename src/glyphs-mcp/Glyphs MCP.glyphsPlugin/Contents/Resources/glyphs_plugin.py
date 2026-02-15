@@ -1,7 +1,9 @@
 # encoding: utf-8
 
 from __future__ import division, print_function, unicode_literals
+import time
 import objc
+import AppKit
 import threading
 from GlyphsApp import Glyphs, EDIT_MENU # type: ignore[import-not-found]
 from GlyphsApp.plugins import GeneralPlugin # type: ignore[import-not-found]
@@ -38,6 +40,9 @@ from status_panel_helpers import endpoint_for, is_thread_running, status_text
 from utils import get_known_tools, get_tool_info, is_port_available, notify_server_started
 
 
+AUTOSTART_DEFAULTS_KEY = "io.anotherplanet.glyphs-mcp.autostart"
+
+
 class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
@@ -70,8 +75,39 @@ class MCPBridgePlugin(GeneralPlugin):
                 "pt": "Status do servidor MCP…",
             }
         )
+        self.name_autostart = Glyphs.localize(
+            {
+                "en": "Auto-start server on launch",
+                "de": "Server beim Start automatisch starten",
+                "fr": "Démarrer le serveur au lancement",
+                "es": "Iniciar el servidor al abrir",
+                "pt": "Iniciar o servidor ao abrir",
+            }
+        )
         # Configuration
         self.default_port = 9680
+
+    @objc.python_method
+    def _autostart_enabled(self):
+        try:
+            value = Glyphs.defaults[AUTOSTART_DEFAULTS_KEY]
+        except Exception:
+            return False
+        try:
+            return bool(value)
+        except Exception:
+            return False
+
+    @objc.python_method
+    def _set_autostart_enabled(self, enabled):
+        try:
+            Glyphs.defaults[AUTOSTART_DEFAULTS_KEY] = bool(enabled)
+        except Exception as e:
+            try:
+                print("[Glyphs MCP][Autostart] Failed to persist defaults: {}".format(e))
+            except Exception:
+                pass
+            return
 
     @objc.python_method
     def _http_middleware(self):
@@ -104,8 +140,13 @@ class MCPBridgePlugin(GeneralPlugin):
         Glyphs.menu[EDIT_MENU].append(status_item)
         self.statusMenuItem = status_item
 
+        try:
+            self._maybe_autostart_on_launch()
+        except Exception:
+            pass
+
     @objc.python_method
-    def _start_server_on_port(self, port, sender):
+    def _start_server_on_port(self, port, sender, notify=True):
         self._server_thread = threading.Thread(
             target=mcp.run,
             kwargs=dict(
@@ -119,7 +160,8 @@ class MCPBridgePlugin(GeneralPlugin):
         self._server_thread.start()
         self._port = port
 
-        notify_server_started(port)
+        if notify:
+            notify_server_started(port)
         self._show_startup_message(port)
 
         # Update menu title to indicate the server is running
@@ -130,6 +172,88 @@ class MCPBridgePlugin(GeneralPlugin):
                 self.menuItem.setTitle_(self.name_running)
 
         self._refresh_status_panel_if_visible()
+
+    @objc.python_method
+    def _maybe_autostart_on_launch(self):
+        if not self._autostart_enabled():
+            return
+        if self._server_is_running():
+            return
+        if getattr(self, "_waiting_for_port", False):
+            return
+
+        if is_port_available(self.default_port, host="127.0.0.1"):
+            self._start_server_on_port(
+                self.default_port,
+                getattr(self, "menuItem", None),
+                notify=False,
+            )
+            return
+
+        self._begin_autostart_wait_for_port(self.default_port)
+
+    @objc.python_method
+    def _cancel_autostart_wait(self):
+        timer = getattr(self, "_autostart_timer", None)
+        if timer is not None:
+            try:
+                timer.invalidate()
+            except Exception:
+                pass
+        self._autostart_timer = None
+        self._autostart_waiting = False
+        self._autostart_target_port = None
+        self._autostart_deadline = None
+        self._refresh_status_panel_if_visible()
+
+    @objc.python_method
+    def _begin_autostart_wait_for_port(self, port):
+        if getattr(self, "_autostart_timer", None) is not None:
+            return
+        if getattr(self, "_waiting_for_port", False):
+            return
+
+        self._autostart_waiting = True
+        self._autostart_target_port = int(port)
+        self._autostart_deadline = time.monotonic() + 10.0
+        self._autostart_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+            0.5, self, "AutostartPoll:", None, True
+        )
+        self._refresh_status_panel_if_visible()
+
+    def AutostartPoll_(self, timer):
+        if self._server_is_running():
+            self._cancel_autostart_wait()
+            return
+        if not self._autostart_enabled():
+            self._cancel_autostart_wait()
+            return
+
+        port = getattr(self, "_autostart_target_port", self.default_port)
+
+        if is_port_available(port, host="127.0.0.1"):
+            self._cancel_autostart_wait()
+            try:
+                self._start_server_on_port(
+                    port,
+                    getattr(self, "menuItem", None),
+                    notify=False,
+                )
+            except Exception as e:
+                self._show_error("Failed to start server: {}".format(e))
+            return
+
+        deadline = getattr(self, "_autostart_deadline", None)
+        try:
+            if deadline is not None and time.monotonic() > float(deadline):
+                self._cancel_autostart_wait()
+                print(
+                    "[Glyphs MCP] Auto-start skipped: port {} still busy.".format(
+                        int(port)
+                    )
+                )
+        except Exception:
+            return
 
     @objc.python_method
     def _prompt_when_default_port_busy(self):
@@ -437,6 +561,21 @@ class MCPBridgePlugin(GeneralPlugin):
         button_h = 28
         button_y = margin
         button_x = width - margin - button_w
+
+        autostart_w = max(10, button_x - margin - 10)
+        autostart_checkbox = NSButton.alloc().initWithFrame_(((margin, button_y), (autostart_w, button_h)))
+        autostart_checkbox.setTitle_(getattr(self, "name_autostart", "Auto-start server on launch"))
+        switch_type = getattr(AppKit, "NSSwitchButton", None) or getattr(AppKit, "NSButtonTypeSwitch", None)
+        if switch_type is None:
+            switch_type = 3
+        try:
+            autostart_checkbox.setButtonType_(switch_type)
+        except Exception:
+            pass
+        autostart_checkbox.setTarget_(self)
+        autostart_checkbox.setAction_(self.ToggleAutostart_)
+        content.addSubview_(autostart_checkbox)
+
         copy_button = NSButton.alloc().initWithFrame_(((button_x, button_y), (button_w, button_h)))
         copy_button.setTitle_("Copy Endpoint")
         copy_button.setTarget_(self)
@@ -446,6 +585,7 @@ class MCPBridgePlugin(GeneralPlugin):
         self._status_panel = panel
         self._status_field = status_value
         self._endpoint_field = endpoint_value
+        self._autostart_checkbox = autostart_checkbox
 
     @objc.python_method
     def _refresh_status_panel_if_visible(self):
@@ -469,6 +609,12 @@ class MCPBridgePlugin(GeneralPlugin):
                 self._status_field.setStringValue_(
                     "Waiting for port {}…".format(getattr(self, "_wait_target_port", self.default_port))
                 )
+            elif getattr(self, "_autostart_waiting", False) and not running:
+                self._status_field.setStringValue_(
+                    "Auto-start waiting for port {}…".format(
+                        int(getattr(self, "_autostart_target_port", self.default_port))
+                    )
+                )
             else:
                 self._status_field.setStringValue_(status_text(running))
         except Exception:
@@ -477,6 +623,69 @@ class MCPBridgePlugin(GeneralPlugin):
             self._endpoint_field.setStringValue_(endpoint)
         except Exception:
             pass
+        try:
+            checkbox = getattr(self, "_autostart_checkbox", None)
+            if checkbox is not None:
+                state_on = getattr(AppKit, "NSControlStateValueOn", getattr(AppKit, "NSOnState", 1))
+                state_off = getattr(AppKit, "NSControlStateValueOff", getattr(AppKit, "NSOffState", 0))
+                checkbox.setState_(state_on if self._autostart_enabled() else state_off)
+        except Exception:
+            pass
+
+    def ToggleAutostart_(self, sender):
+        """Toggle auto-start preference for the MCP server."""
+        enabled = False
+        try:
+            enabled = bool(int(sender.state()))
+        except Exception:
+            try:
+                enabled = bool(sender.state())
+            except Exception:
+                enabled = self._autostart_enabled()
+
+        try:
+            print(
+                "[Glyphs MCP][Autostart] Toggle clicked: sender.state={!r} enabled={!r}".format(
+                    sender.state() if sender is not None else None,
+                    enabled,
+                )
+            )
+        except Exception:
+            pass
+
+        self._set_autostart_enabled(enabled)
+
+        try:
+            try:
+                stored = Glyphs.defaults[AUTOSTART_DEFAULTS_KEY]
+            except Exception as e:
+                stored = "ERROR: {}".format(e)
+            try:
+                contains = AUTOSTART_DEFAULTS_KEY in Glyphs.defaults
+            except Exception as e:
+                contains = "ERROR: {}".format(e)
+            print(
+                "[Glyphs MCP][Autostart] defaults: contains={!r} stored={!r} readback_enabled={!r}".format(
+                    contains,
+                    stored,
+                    self._autostart_enabled(),
+                )
+            )
+        except Exception:
+            pass
+
+        if not enabled:
+            self._cancel_autostart_wait()
+            self._refresh_status_panel_if_visible()
+            return
+
+        if not self._server_is_running():
+            try:
+                self._maybe_autostart_on_launch()
+            except Exception:
+                pass
+
+        self._refresh_status_panel_if_visible()
 
     def CopyEndpoint_(self, sender):
         """Copy the current endpoint URL to the macOS clipboard."""

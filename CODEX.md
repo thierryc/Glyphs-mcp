@@ -22,7 +22,7 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
   - `src/glyphs-mcp/scripts/install_deps_glyphs_python.sh` (Glyphs’ Python → installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`)
   - `src/glyphs-mcp/scripts/install_deps_external_python.sh` (external Python → installs into that Python’s user site-packages)
 - Sync ObjectWrapper docs into the plugin: `python src/glyphs-mcp/scripts/copy_documentation.py`.
-- Start the server from Glyphs: restart the app, then **Edit → Start MCP Server**.
+- Start the server from Glyphs: restart the app, then **Edit → Start Glyphs MCP Server** (or enable auto-start in **Edit → Glyphs MCP Server Status…**).
 
 ## MCP Tool Surface (selected)
 - Metadata: `list_open_fonts`, `get_font_glyphs`, `get_font_masters`, `get_font_instances`.

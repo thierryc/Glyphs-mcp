@@ -94,7 +94,9 @@ After regenerating the ObjectWrapper documentation, refresh the bundled copy wit
 python src/glyphs-mcp/scripts/copy_documentation.py
 ```
 
-To start the Glyphs MCP server, open the **Edit** menu and choose **Start MCP Server**.
+Glyphs MCP adds two menu items:
+- **Edit → Start Glyphs MCP Server** (starts the server).
+- **Edit → Glyphs MCP Server Status…** (shows status + endpoint, and includes **Auto-start server on launch**).
 
 The MCP endpoint is `http://127.0.0.1:9680/mcp/` using MCP Streamable HTTP transport.
 
@@ -161,7 +163,8 @@ python3 install.py
    - If a plug‑in already exists, you’ll be prompted to replace it.
 
 4) Finish and start the server in Glyphs
-   - Open Glyphs → Edit → Start MCP Server.
+   - Open Glyphs → Edit → Start Glyphs MCP Server.
+   - Optional: enable auto-start in Edit → Glyphs MCP Server Status… → Auto-start server on launch.
    - The MCP endpoint is `http://127.0.0.1:9680/mcp/` with MCP Streamable HTTP transport.
    - The installer can optionally show client setup snippets for popular tools (Claude Desktop, Claude Code, Continue, Cursor, Windsurf, Codex). It uses either `npx mcp-remote` or the Python `mcp-proxy` if on PATH.
 
