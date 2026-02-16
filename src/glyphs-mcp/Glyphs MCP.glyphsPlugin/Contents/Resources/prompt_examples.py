@@ -138,6 +138,22 @@ async def prompt_set_spacing_params():
 
 
 @mcp.prompt(
+    name="set_spacing_guides",
+    title="Set Spacing Guides",
+    description="Shows how to add/clear spacing visualization guides via set_spacing_guides.",
+    tags={"examples", "glyphs", "spacing"},
+)
+async def prompt_set_spacing_guides():
+    """Prompt describing how to visualize spacing settings with glyph-level guides."""
+    return [
+        Message(
+            "Call glyphs-app-mcp__set_spacing_guides with glyph_names (or select glyphs in Glyphs) and master_scope='current' to add guides, then enable View → Show Guides to see them. Use mode='clear' to remove.",
+            role="user",
+        )
+    ]
+
+
+@mcp.prompt(
     name="copy_and_translate_ae_paths",
     title="Copy and Translate ae Paths",
     description="Walks through copying background paths for the ligature ae and translating the e component.",

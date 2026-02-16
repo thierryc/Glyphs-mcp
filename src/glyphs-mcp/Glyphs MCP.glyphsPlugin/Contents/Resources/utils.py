@@ -84,6 +84,7 @@ def get_known_tools():
         "review_spacing",
         "apply_spacing",
         "set_spacing_params",
+        "set_spacing_guides",
         "ExportDesignspaceAndUFO",
         "docs_search",
         "docs_get",

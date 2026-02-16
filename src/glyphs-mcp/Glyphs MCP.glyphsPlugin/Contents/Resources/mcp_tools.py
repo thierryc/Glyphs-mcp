@@ -20,6 +20,7 @@ from GlyphsApp import (
     GSHandle,
     GSComponent,
     GSAnchor,
+    GSGuide,
     GSHint,
     CORNER,
 )  # type: ignore[import-not-found]
@@ -29,6 +30,13 @@ from export_designspace_ufo import (
     ExportOptions,
 )
 import spacing_engine
+
+# AppKit is available inside Glyphs (PyObjC). Keep import optional so this file
+# is still importable in environments where Glyphs isn't present.
+try:
+    from AppKit import NSPoint  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover - only relevant outside Glyphs
+    NSPoint = None
 
 # Initialize FastMCP server
 mcp = FastMCP(name="Glyphs MCP Server", version="1.0.0")
@@ -955,6 +963,344 @@ def _spacing_selected_glyph_names_for_font(font):
         seen.add(n)
         out.append(n)
     return out
+
+
+def _layer_bounds_ymin_ymax(layer):
+    """Return (yMin, yMax) from layer.bounds, or (None, None) if unavailable."""
+    try:
+        b = getattr(layer, "bounds", None)
+        if not b:
+            return (None, None)
+        origin = getattr(b, "origin", None)
+        size = getattr(b, "size", None)
+        if not origin or not size:
+            return (None, None)
+        y = float(getattr(origin, "y", 0.0))
+        h = float(getattr(size, "height", 0.0))
+        return (y, y + h)
+    except Exception:
+        return (None, None)
+
+
+def _is_spacing_guide(guide):
+    """Return True if the guide looks like one created by set_spacing_guides."""
+    try:
+        name = getattr(guide, "name", "") or ""
+        if str(name).startswith("cx.ap.spacing.band:"):
+            return True
+    except Exception:
+        pass
+    try:
+        ud = getattr(guide, "userData", None)
+        if ud and ud.get("cx.ap.spacingGuides") is True:
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _clear_spacing_guides_from_layer(layer, *, dry_run: bool):
+    removed = []
+    try:
+        guides = list(getattr(layer, "guides", []) or [])
+    except Exception:
+        guides = []
+
+    # Remove from end to keep indices stable.
+    for idx in range(len(guides) - 1, -1, -1):
+        g = guides[idx]
+        if not _is_spacing_guide(g):
+            continue
+        pos = getattr(g, "position", None)
+        try:
+            x = float(getattr(pos, "x", 0.0)) if pos is not None else None
+        except Exception:
+            x = None
+        try:
+            y = float(getattr(pos, "y", 0.0)) if pos is not None else None
+        except Exception:
+            y = None
+        removed.append(
+            {
+                "index": idx,
+                "name": getattr(g, "name", None),
+                "position": {"x": x, "y": y},
+            }
+        )
+        if not dry_run:
+            try:
+                del layer.guides[idx]
+            except Exception:
+                try:
+                    layer.guides.remove(g)
+                except Exception:
+                    pass
+
+    return removed
+
+
+@mcp.tool()
+async def set_spacing_guides(
+    font_index: int = 0,
+    glyph_names: list = None,
+    master_scope: str = "current",
+    master_id: str = None,
+    mode: str = "add",
+    reference_glyph: str = "x",
+    dry_run: bool = False,
+) -> str:
+    """Add or clear glyph-level guides that visualize the spacing measurement band.
+
+    This tool is intended as a lightweight in-editor visualization aid:
+    it writes horizontal guides into the selected glyph layers (layer.guides).
+
+    Args:
+        font_index: Index of the font (0-based). Defaults to 0.
+        glyph_names: List of glyph names. If omitted, uses currently selected glyphs in Glyphs (active font).
+        master_scope: One of "current" (default), "all", or "master".
+        master_id: Required when master_scope="master".
+        mode: One of "add" (default) or "clear".
+        reference_glyph: Glyph name used to derive the vertical band (defaults to "x").
+                         Special value "*" means “use the glyph itself”.
+        dry_run: If true, report changes without mutating.
+
+    Returns:
+        JSON payload with counts and per-layer actions (no auto-save).
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        scope = (master_scope or "current").strip().lower()
+        if scope not in ("current", "all", "master"):
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Invalid master_scope '{}'".format(master_scope),
+                    "hint": "Use one of: current, all, master",
+                }
+            )
+
+        mode_norm = (mode or "add").strip().lower()
+        if mode_norm not in ("add", "clear"):
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Invalid mode '{}'".format(mode),
+                    "hint": "Use one of: add, clear",
+                }
+            )
+
+        # Determine masters
+        masters = []
+        if scope == "all":
+            masters = list(font.masters or [])
+        elif scope == "master":
+            if not master_id:
+                return _safe_json({"ok": False, "error": "master_id is required for master_scope=master"})
+            wanted = str(master_id)
+            found = None
+            for m in font.masters:
+                if getattr(m, "id", None) == wanted:
+                    found = m
+                    break
+            if not found:
+                return _safe_json({"ok": False, "error": "Master ID '{}' not found".format(master_id)})
+            masters = [found]
+        else:
+            if getattr(font, "selectedFontMaster", None):
+                masters = [font.selectedFontMaster]
+            else:
+                masters = [font.masters[0]] if font.masters else []
+
+        if not masters:
+            return _safe_json({"ok": False, "error": "No masters found"})
+
+        # Determine glyphs
+        names = glyph_names
+        if not names:
+            names = _spacing_selected_glyph_names_for_font(font)
+        if not names:
+            return _safe_json({"ok": False, "error": "No glyph_names provided and no selected glyphs"})
+
+        ref_name = (reference_glyph or "x").strip()
+        use_self_ref = ref_name == "*" or not ref_name
+
+        merged_defaults = _merge_spacing_defaults(user_defaults=None, debug=None)
+        explicit_defaults = {}  # do not treat per-call defaults as "stored settings" for guides
+
+        results = []
+        added_count = 0
+        removed_count = 0
+        skipped_count = 0
+
+        for glyph_name in names:
+            glyph = font.glyphs[glyph_name] if glyph_name else None
+            if not glyph:
+                skipped_count += 1
+                results.append({"glyphName": glyph_name, "status": "skipped", "reason": "glyph_not_found"})
+                continue
+
+            for master in masters:
+                mid = getattr(master, "id", None)
+                try:
+                    layer = glyph.layers[mid]
+                except Exception:
+                    layer = None
+
+                if not layer:
+                    skipped_count += 1
+                    results.append(
+                        {
+                            "glyphName": glyph_name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", None),
+                            "status": "skipped",
+                            "reason": "layer_not_found",
+                        }
+                    )
+                    continue
+
+                removed = _clear_spacing_guides_from_layer(layer, dry_run=bool(dry_run))
+                removed_count += len(removed)
+
+                if mode_norm == "clear":
+                    results.append(
+                        {
+                            "glyphName": glyph_name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", None),
+                            "status": "ok",
+                            "action": "cleared",
+                            "removed": removed,
+                        }
+                    )
+                    continue
+
+                # Compute effective over in units using stored parameters.
+                eff = _effective_master_params_for_spacing(font, master, merged_defaults, explicit_defaults)
+                x_height = eff.get("xHeight") or getattr(master, "xHeight", None) or 0.0
+                over_pct = eff.get("over", merged_defaults.get("over", 0.0)) or 0.0
+                try:
+                    over_units = (float(over_pct) / 100.0) * float(x_height)
+                except Exception:
+                    over_units = 0.0
+
+                if use_self_ref:
+                    ref_layer = layer
+                else:
+                    ref_glyph = font.glyphs[ref_name]
+                    ref_layer = None
+                    try:
+                        if ref_glyph:
+                            ref_layer = ref_glyph.layers[mid]
+                    except Exception:
+                        ref_layer = None
+
+                y_min, y_max = _layer_bounds_ymin_ymax(ref_layer) if ref_layer else (None, None)
+                if y_min is None or y_max is None:
+                    skipped_count += 1
+                    results.append(
+                        {
+                            "glyphName": glyph_name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", None),
+                            "status": "skipped",
+                            "reason": "reference_bounds_unavailable",
+                            "referenceGlyph": ref_name if not use_self_ref else "*",
+                        }
+                    )
+                    continue
+
+                y_min_over = float(y_min) - float(over_units)
+                y_max_over = float(y_max) + float(over_units)
+
+                to_add = [
+                    ("min", y_min_over),
+                    ("max", y_max_over),
+                ]
+
+                added = []
+                for kind, y in to_add:
+                    g = GSGuide()
+                    try:
+                        g.angle = 0.0
+                    except Exception:
+                        pass
+                    try:
+                        if NSPoint is not None:
+                            g.position = NSPoint(0, y)
+                        else:
+                            g.position = (0, y)
+                    except Exception:
+                        pass
+                    try:
+                        g.name = "cx.ap.spacing.band:{} ref={}".format(kind, ref_name if not use_self_ref else "*")
+                    except Exception:
+                        pass
+                    try:
+                        g.locked = True
+                    except Exception:
+                        pass
+                    try:
+                        ud = getattr(g, "userData", None)
+                        if ud is None:
+                            g.userData = {}
+                        g.userData["cx.ap.spacingGuides"] = True
+                        g.userData["kind"] = kind
+                        g.userData["referenceGlyph"] = ref_name if not use_self_ref else "*"
+                    except Exception:
+                        pass
+
+                    if not dry_run:
+                        try:
+                            layer.guides.append(g)
+                        except Exception:
+                            pass
+                    added.append({"kind": kind, "y": y, "name": getattr(g, "name", None)})
+                    added_count += 1
+
+                results.append(
+                    {
+                        "glyphName": glyph_name,
+                        "masterId": mid,
+                        "masterName": getattr(master, "name", None),
+                        "status": "ok",
+                        "action": "added",
+                        "referenceGlyph": ref_name if not use_self_ref else "*",
+                        "overPercent": over_pct,
+                        "xHeight": x_height,
+                        "band": {"yMin": y_min, "yMax": y_max, "yMinOver": y_min_over, "yMaxOver": y_max_over},
+                        "removed": removed,
+                        "added": added,
+                    }
+                )
+
+        return _safe_json(
+            {
+                "ok": True,
+                "dryRun": bool(dry_run),
+                "mode": mode_norm,
+                "masterScope": scope,
+                "referenceGlyph": ref_name if not use_self_ref else "*",
+                "summary": {
+                    "glyphCount": len(names),
+                    "masterCount": len(masters),
+                    "addedCount": added_count,
+                    "removedCount": removed_count,
+                    "skippedCount": skipped_count,
+                },
+                "results": results,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
 
 
 @mcp.tool()

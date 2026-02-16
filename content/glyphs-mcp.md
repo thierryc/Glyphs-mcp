@@ -48,6 +48,7 @@ Command table for the MCP server version exposed in code (FastMCP `version="1.0.
 | `review_spacing` | Review spacing and suggest sidebearings/width (area-based; no mutation). |
 | `apply_spacing` | Apply spacing suggestions (supports `dry_run`; requires `confirm=true` to mutate). |
 | `set_spacing_params` | Set spacing parameters as font/master custom parameters (no auto-save). |
+| `set_spacing_guides` | Add or clear glyph-level guides visualizing the spacing measurement band (no auto-save). |
 | `get_glyph_components` | Inspect components used in a glyph. |
 | `add_component_to_glyph` | Append a component to a glyph layer. |
 | `add_anchor_to_glyph` | Add an anchor to a glyph layer. |

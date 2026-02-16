@@ -337,6 +337,38 @@ Same as `review_spacing`, plus:
 - `results` (the same analysis results)
 - `applied` list (only when actually applied) with before/after metrics
 
+### `set_spacing_guides`
+
+Adds or clears **glyph-level guides** (`layer.guides`) that visualize the **vertical measurement band** used by the spacing model.
+
+This is purely a visualization aid. It:
+- writes guides into glyph layers (so they travel with the `.glyphs` file),
+- does **not** change metrics,
+- does **not** auto-save.
+
+**Inputs**
+- `font_index` (int, default `0`)
+- `glyph_names` (list of strings, optional)
+  - If omitted, uses selected glyphs in Glyphs (active font).
+- `master_scope` (string, default `"current"`)
+  - `"current"`: only the currently selected master
+  - `"all"`: all masters
+  - `"master"`: a specific master via `master_id`
+- `master_id` (string, required when `master_scope="master"`)
+- `mode` (`"add"` or `"clear"`, default `"add"`)
+- `reference_glyph` (string, default `"x"`)
+  - Special value `"*"` means “use the glyph itself”.
+- `dry_run` (bool, default `false`)
+
+**Output**
+- `ok` boolean
+- `summary` counts
+- `results` list with per-glyph/per-master actions and the computed band
+
+**Notes**
+- To see them in the editor, enable `View → Show Guides`.
+- By default, `mode="add"` clears previously created spacing guides for the target layers (so it’s idempotent).
+
 ---
 
 ## Recommended workflow
