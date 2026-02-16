@@ -130,6 +130,23 @@ Legacy aliases (still read, but not recommended for new work):
 
 Font-level parameters act as defaults; master-level parameters override them.
 
+### HT compatibility mode (legacy `param*` keys)
+
+If you previously used **HTLetterspacer**, your masters (or font) may already contain:
+- `paramArea`, `paramDepth`, `paramOver`, `paramFreq`
+
+`review_spacing` / `apply_spacing` will automatically read these **as legacy keys** when the canonical `cx.ap.spacing*` keys are not present.
+
+**Migration (recommended):** write canonical keys once (so future tools and collaborators see the branded keys in Font Info), then save:
+```json
+{
+  "font_index": 0,
+  "scope": "font",
+  "params": { "area": 400, "depth": 15, "over": 0, "frequency": 5 }
+}
+```
+Then call `save_font` to persist.
+
 ### Setting spacing params in Glyphs (Macro Panel script)
 
 If you want to write them into the font programmatically, paste this into Glyphs’ **Macro Panel**:
