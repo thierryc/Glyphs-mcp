@@ -349,7 +349,7 @@ This is purely a visualization aid. It:
 **Inputs**
 - `font_index` (int, default `0`)
 - `glyph_names` (list of strings, optional)
-  - If omitted, uses selected glyphs in Glyphs (active font).
+  - If omitted, uses selected glyphs in Glyphs (active font). If nothing is selected, it falls back to a small “diagnostic set”: `n`, `H`, `zero`, `o`, `O`, `period`, `comma`.
 - `master_scope` (string, default `"current"`)
   - `"current"`: only the currently selected master
   - `"all"`: all masters

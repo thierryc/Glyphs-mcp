@@ -965,6 +965,17 @@ def _spacing_selected_glyph_names_for_font(font):
     return out
 
 
+DEFAULT_SPACING_GUIDE_GLYPHS = [
+    "n",
+    "H",
+    "zero",
+    "o",
+    "O",
+    "period",
+    "comma",
+]
+
+
 def _layer_bounds_ymin_ymax(layer):
     """Return (yMin, yMax) from layer.bounds, or (None, None) if unavailable."""
     try:
@@ -1127,7 +1138,9 @@ async def set_spacing_guides(
         if not names:
             names = _spacing_selected_glyph_names_for_font(font)
         if not names:
-            return _safe_json({"ok": False, "error": "No glyph_names provided and no selected glyphs"})
+            names = list(DEFAULT_SPACING_GUIDE_GLYPHS)
+        if not names:
+            return _safe_json({"ok": False, "error": "No glyph_names available"})
 
         ref_name = (reference_glyph or "x").strip()
         use_self_ref = ref_name == "*" or not ref_name
