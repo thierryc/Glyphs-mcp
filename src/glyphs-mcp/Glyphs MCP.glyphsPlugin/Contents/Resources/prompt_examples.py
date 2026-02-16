@@ -147,7 +147,7 @@ async def prompt_set_spacing_guides():
     """Prompt describing how to visualize spacing settings with glyph-level guides."""
     return [
         Message(
-            "Call glyphs-app-mcp__set_spacing_guides with glyph_names (or select glyphs in Glyphs) and master_scope='current' to add guides. If nothing is selected and glyph_names is omitted, it uses a small diagnostic set (n, H, zero, o, O, period, comma). Enable View → Show Guides to see them. Use mode='clear' to remove.",
+            "Call glyphs-app-mcp__set_spacing_guides with style='model' (default) to add didactic guides (band + zone edges + depth clamp + measured/target average whitespace). If nothing is selected and glyph_names is omitted, it uses a small diagnostic set (n, H, zero, o, O, period, comma). Enable View → Show Guides to see them. Use mode='clear' to remove.",
             role="user",
         )
     ]

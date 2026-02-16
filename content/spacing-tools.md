@@ -339,7 +339,9 @@ Same as `review_spacing`, plus:
 
 ### `set_spacing_guides`
 
-Adds or clears **glyph-level guides** (`layer.guides`) that visualize the **vertical measurement band** used by the spacing model.
+Adds or clears **glyph-level guides** (`layer.guides`) that visualize the spacing model’s geometry:
+- the **vertical measurement band** (`yMin..yMax`), and (by default)
+- the key **x′ boundaries** used to compute negative space (zone edges, depth clamp, and average whitespace).
 
 This is purely a visualization aid. It:
 - writes guides into glyph layers (so they travel with the `.glyphs` file),
@@ -358,16 +360,48 @@ This is purely a visualization aid. It:
 - `mode` (`"add"` or `"clear"`, default `"add"`)
 - `reference_glyph` (string, default `"x"`)
   - Special value `"*"` means “use the glyph itself”.
+- `style` (`"band" | "model" | "full"`, default `"model"`)
+  - `"band"`: only the vertical measurement band (two horizontal guides).
+  - `"model"`: band + the most didactic x′ boundaries (zone, depth clamp, measured vs target averages).
+  - `"full"`: `"model"` plus extra reference bounds and full extremes (more clutter).
 - `dry_run` (bool, default `false`)
 
 **Output**
 - `ok` boolean
 - `summary` counts
-- `results` list with per-glyph/per-master actions and the computed band
+- `results` list with per-glyph/per-master actions, the computed band, and guide names
 
 **Notes**
 - To see them in the editor, enable `View → Show Guides`.
 - By default, `mode="add"` clears previously created spacing guides for the target layers (so it’s idempotent).
+- In italic masters with `italicMode="deslant"`, x′ boundary guides are drawn as **slanted lines** so they represent a *constant deslanted-x* across the band (i.e. they match the model’s coordinate space).
+
+#### What the guides mean (didactic)
+
+**Band (yMin/yMax)**
+- `cx.ap.spacing.band:min` / `cx.ap.spacing.band:max`
+  - The exact vertical region the model samples at `frequency` steps.
+
+**Zone edges (what counts as “the edge”)**
+- `cx.ap.spacing.zone:L` / `cx.ap.spacing.zone:R`
+  - The model’s left/right “reference edges” inside the band (`lExtreme` / `rExtreme`), expressed in x′ space (deslanted if italic).
+
+**Depth clamp (how far into openings we measure)**
+- `cx.ap.spacing.depth:L` / `cx.ap.spacing.depth:R`
+  - The clamp limits derived from `spacingDepth` (percent of x-height), starting from the zone edges.
+  - If the glyph has deep counters, the clamp prevents extreme “inward” measurements from dominating.
+
+**Average whitespace (measured vs target)**
+- `cx.ap.spacing.avg.measured:L` / `cx.ap.spacing.avg.measured:R`
+  - Where the **current** average whitespace sits on each side (area ÷ height).
+- `cx.ap.spacing.avg.target:L` / `cx.ap.spacing.avg.target:R`
+  - Where the model wants the average whitespace to sit, based on `spacingArea` (after scaling by UPM/x-height).
+
+**Only in `style="full"`**
+- `cx.ap.spacing.ref:min` / `cx.ap.spacing.ref:max`
+  - The raw reference bounds **without** `spacingOver` (useful to understand what `over` is doing).
+- `cx.ap.spacing.full:L` / `cx.ap.spacing.full:R`
+  - The full extremes across the glyph’s own bounds (used for overshoot compensation in the engine).
 
 ---
 
@@ -440,14 +474,14 @@ Apply:
 
 ---
 
-## Prompt example (expert): Visualize the spacing band with guides
+## Prompt example (expert): Visualize the spacing model with guides
 
 Paste this into your LLM/client as a single prompt. It is designed to be safe, practical, and typography-oriented.
 
 > **Role:** You are a meticulous spacing assistant for a type designer working in Glyphs.  
 > **Rules:** Never auto-save. Use `dry_run` before mutating tools. Prefer a small diagnostic glyph set unless the user provides specific glyphs.
 
-**Task:** Add measurement-band guides so I can visually confirm the vertical band used for spacing measurements in the current master, then tell me what to look for.
+**Task:** Add spacing-model guides so I can visually confirm what the spacing engine is measuring (band, zone edges, depth clamp, and measured-vs-target averages) in the current master, then tell me what to look for.
 
 1) Call `glyphs-app-mcp__set_spacing_guides` with:
 ```json
@@ -455,6 +489,7 @@ Paste this into your LLM/client as a single prompt. It is designed to be safe, p
   "font_index": 0,
   "master_scope": "current",
   "mode": "add",
+  "style": "model",
   "reference_glyph": "x"
 }
 ```
@@ -463,12 +498,17 @@ Paste this into your LLM/client as a single prompt. It is designed to be safe, p
 - Turn on `View → Show Guides`.
 - Open the diagnostic glyphs (e.g. `n`, `H`, `zero`, `o`, `O`, `period`, `comma`) and verify:
   - The two horizontal guides match the intended measurement band for the current master.
-  - The band extension corresponds to my stored `cx.ap.spacingOver` (percent of x-height).
-  - The band makes sense for the reference glyph (e.g. `x` for lowercase), and doesn’t drift into irrelevant extremes.
+  - The x′ guides are meaningful:
+    - `zone:L/R` roughly bracket the “main body” of the glyph inside the band.
+    - `depth:L/R` show how far into counters/openings the model is allowed to “look”.
+    - `avg.measured:*` vs `avg.target:*` shows whether the glyph is currently too tight/loose on each side.
+  - In italics (if any), confirm x′ guides are slanted (they should represent constant deslanted-x across the band).
 
 3) If the band looks wrong, help me correct it:
 - If it’s too tall/short: suggest adjusting `cx.ap.spacingOver`.
 - If it’s using an unhelpful reference: suggest a better `reference_glyph` (e.g. `n` for lowercase, `H` for uppercase, `zero` for figures) and re-run `set_spacing_guides`.
+ - If the depth clamp looks wrong: suggest adjusting `cx.ap.spacingDepth` (percent of x-height).
+ - If target averages look too tight/loose globally: suggest adjusting `cx.ap.spacingArea`.
 
 4) When I say “clear guides”, call:
 ```json

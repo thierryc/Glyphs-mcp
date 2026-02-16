@@ -2,6 +2,7 @@
 
 from __future__ import division, print_function, unicode_literals
 import json
+import math
 import traceback
 from dataclasses import asdict
 
@@ -997,7 +998,11 @@ def _is_spacing_guide(guide):
     """Return True if the guide looks like one created by set_spacing_guides."""
     try:
         name = getattr(guide, "name", "") or ""
-        if str(name).startswith("cx.ap.spacing.band:"):
+        name_s = str(name)
+        if name_s.startswith("cx.ap.spacing."):
+            return True
+        # Backwards compatibility with older names (pre model-style).
+        if name_s.startswith("cx.ap.spacing.band:"):
             return True
     except Exception:
         pass
@@ -1058,12 +1063,13 @@ async def set_spacing_guides(
     master_id: str = None,
     mode: str = "add",
     reference_glyph: str = "x",
+    style: str = "model",
     dry_run: bool = False,
 ) -> str:
-    """Add or clear glyph-level guides that visualize the spacing measurement band.
+    """Add or clear glyph-level guides that visualize the spacing measurement model.
 
-    This tool is intended as a lightweight in-editor visualization aid:
-    it writes horizontal guides into the selected glyph layers (layer.guides).
+    This tool is intended as a lightweight in-editor visualization aid. It writes guides
+    into glyph layers (layer.guides) so they can be inspected in the Edit view.
 
     Args:
         font_index: Index of the font (0-based). Defaults to 0.
@@ -1073,6 +1079,10 @@ async def set_spacing_guides(
         mode: One of "add" (default) or "clear".
         reference_glyph: Glyph name used to derive the vertical band (defaults to "x").
                          Special value "*" means “use the glyph itself”.
+        style: One of "band", "model" (default), or "full".
+               - "band": two horizontal guides for yMin/yMax
+               - "model": band + zone/depth/avg whitespace boundaries
+               - "full": model + raw reference bounds + full extremes
         dry_run: If true, report changes without mutating.
 
     Returns:
@@ -1105,6 +1115,16 @@ async def set_spacing_guides(
                     "ok": False,
                     "error": "Invalid mode '{}'".format(mode),
                     "hint": "Use one of: add, clear",
+                }
+            )
+
+        style_norm = (style or "model").strip().lower()
+        if style_norm not in ("band", "model", "full"):
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Invalid style '{}'".format(style),
+                    "hint": "Use one of: band, model, full",
                 }
             )
 
@@ -1147,6 +1167,144 @@ async def set_spacing_guides(
 
         merged_defaults = _merge_spacing_defaults(user_defaults=None, debug=None)
         explicit_defaults = {}  # do not treat per-call defaults as "stored settings" for guides
+
+        def _ensure_user_data(guide_obj):
+            try:
+                ud = getattr(guide_obj, "userData", None)
+                if ud is None:
+                    guide_obj.userData = {}
+                return guide_obj.userData
+            except Exception:
+                return None
+
+        def _add_horizontal_guide(layer_obj, *, name: str, y: float):
+            g = GSGuide()
+            try:
+                g.angle = 0.0
+            except Exception:
+                pass
+            try:
+                if NSPoint is not None:
+                    g.position = NSPoint(0, float(y))
+                else:
+                    g.position = (0, float(y))
+            except Exception:
+                pass
+            try:
+                g.name = str(name)
+            except Exception:
+                pass
+            try:
+                g.locked = True
+            except Exception:
+                pass
+            ud = _ensure_user_data(g)
+            if ud is not None:
+                ud["cx.ap.spacingGuides"] = True
+                ud["cx.ap.spacingGuideName"] = str(name)
+                ud["cx.ap.spacingGuideStyle"] = style_norm
+            if not dry_run:
+                try:
+                    layer_obj.guides.append(g)
+                except Exception:
+                    pass
+            return g
+
+        def _add_xprime_guide(
+            layer_obj,
+            *,
+            name: str,
+            x_prime: float,
+            y_min: float,
+            y_max: float,
+            x_height: float,
+            italic_angle: float,
+            italic_mode: str,
+        ):
+            g = GSGuide()
+
+            # In "deslant" mode, x-prime boundaries are constant in a deslanted space:
+            #   x' = x + tan(a) * (y - xHeight/2)
+            # So to draw a constant-x' boundary in the original coordinates, draw the line:
+            #   x(y) = x' - tan(a) * (y - xHeight/2)
+            try:
+                mode_s = str(italic_mode or "").strip().lower()
+            except Exception:
+                mode_s = "deslant"
+            angle = float(italic_angle or 0.0)
+
+            try:
+                y1 = float(y_min)
+                y2 = float(y_max)
+            except Exception:
+                y1, y2 = 0.0, 0.0
+
+            if mode_s == "deslant" and abs(angle) > 1e-6 and abs(y2 - y1) > 1e-6:
+                try:
+                    t = math.tan(math.radians(angle))
+                except Exception:
+                    t = 0.0
+                try:
+                    xh = float(x_height or 0.0)
+                except Exception:
+                    xh = 0.0
+                x1 = float(x_prime) - t * (y1 - xh / 2.0)
+                x2 = float(x_prime) - t * (y2 - xh / 2.0)
+
+                try:
+                    if NSPoint is not None:
+                        g.position = NSPoint(x1, y1)
+                    else:
+                        g.position = (x1, y1)
+                except Exception:
+                    pass
+
+                try:
+                    ang = math.degrees(math.atan2((y2 - y1), (x2 - x1)))
+                    if ang < 0:
+                        ang += 180.0
+                    g.angle = float(ang)
+                except Exception:
+                    try:
+                        g.angle = 90.0
+                    except Exception:
+                        pass
+            else:
+                # Upright (or "none" mode): constant x is a vertical guide.
+                try:
+                    if NSPoint is not None:
+                        g.position = NSPoint(float(x_prime), 0.0)
+                    else:
+                        g.position = (float(x_prime), 0.0)
+                except Exception:
+                    pass
+                try:
+                    g.angle = 90.0
+                except Exception:
+                    pass
+
+            try:
+                g.name = str(name)
+            except Exception:
+                pass
+            try:
+                g.locked = True
+            except Exception:
+                pass
+
+            ud = _ensure_user_data(g)
+            if ud is not None:
+                ud["cx.ap.spacingGuides"] = True
+                ud["cx.ap.spacingGuideName"] = str(name)
+                ud["cx.ap.spacingGuideStyle"] = style_norm
+                ud["xPrime"] = float(x_prime)
+
+            if not dry_run:
+                try:
+                    layer_obj.guides.append(g)
+                except Exception:
+                    pass
+            return g
 
         results = []
         added_count = 0
@@ -1196,27 +1354,65 @@ async def set_spacing_guides(
                     )
                     continue
 
-                # Compute effective over in units using stored parameters.
                 eff = _effective_master_params_for_spacing(font, master, merged_defaults, explicit_defaults)
                 x_height = eff.get("xHeight") or getattr(master, "xHeight", None) or 0.0
-                over_pct = eff.get("over", merged_defaults.get("over", 0.0)) or 0.0
+
+                # Guides are visualization: do not let metrics keys / auto-aligned components prevent us from
+                # computing the underlying model primitives when possible.
+                guide_defaults = dict(merged_defaults)
+                guide_defaults["referenceGlyph"] = ref_name if not use_self_ref else "*"
+                guide_defaults["includeComponents"] = True
+                guide_defaults["respectMetricsKeys"] = False
+                guide_defaults["skipAutoAligned"] = False
+
+                model = spacing_engine.compute_suggestion_for_layer(
+                    font=font,
+                    glyph=glyph,
+                    layer=layer,
+                    master=master,
+                    rules=[],
+                    defaults=guide_defaults,
+                    master_params=eff,
+                )
+
+                # Preferred band source: engine reference band (already includes "over").
+                y_min = None
+                y_max = None
+                ref_over_units = None
                 try:
-                    over_units = (float(over_pct) / 100.0) * float(x_height)
+                    ref = model.get("reference") or {}
+                    y_min = ref.get("yMin")
+                    y_max = ref.get("yMax")
+                    ref_over_units = ref.get("overUnits")
                 except Exception:
-                    over_units = 0.0
+                    y_min = None
+                    y_max = None
+                    ref_over_units = None
 
-                if use_self_ref:
-                    ref_layer = layer
-                else:
-                    ref_glyph = font.glyphs[ref_name]
-                    ref_layer = None
+                # Fallback: compute band from reference bounds + stored over if engine couldn't.
+                if y_min is None or y_max is None:
+                    over_pct = eff.get("over", merged_defaults.get("over", 0.0)) or 0.0
                     try:
-                        if ref_glyph:
-                            ref_layer = ref_glyph.layers[mid]
+                        over_units = (float(over_pct) / 100.0) * float(x_height or 0.0)
                     except Exception:
-                        ref_layer = None
+                        over_units = 0.0
 
-                y_min, y_max = _layer_bounds_ymin_ymax(ref_layer) if ref_layer else (None, None)
+                    if use_self_ref:
+                        ref_layer = layer
+                    else:
+                        ref_glyph = font.glyphs[ref_name]
+                        ref_layer = None
+                        try:
+                            if ref_glyph:
+                                ref_layer = ref_glyph.layers[mid]
+                        except Exception:
+                            ref_layer = None
+
+                    y0, y1 = _layer_bounds_ymin_ymax(ref_layer) if ref_layer else (None, None)
+                    if y0 is not None and y1 is not None:
+                        y_min = float(y0) - float(over_units)
+                        y_max = float(y1) + float(over_units)
+
                 if y_min is None or y_max is None:
                     skipped_count += 1
                     results.append(
@@ -1225,59 +1421,201 @@ async def set_spacing_guides(
                             "masterId": mid,
                             "masterName": getattr(master, "name", None),
                             "status": "skipped",
-                            "reason": "reference_bounds_unavailable",
+                            "reason": "reference_band_unavailable",
                             "referenceGlyph": ref_name if not use_self_ref else "*",
+                            "modelStatus": model.get("status"),
+                            "modelReason": model.get("reason"),
                         }
                     )
                     continue
 
-                y_min_over = float(y_min) - float(over_units)
-                y_max_over = float(y_max) + float(over_units)
-
-                to_add = [
-                    ("min", y_min_over),
-                    ("max", y_max_over),
-                ]
-
                 added = []
-                for kind, y in to_add:
-                    g = GSGuide()
-                    try:
-                        g.angle = 0.0
-                    except Exception:
-                        pass
-                    try:
-                        if NSPoint is not None:
-                            g.position = NSPoint(0, y)
-                        else:
-                            g.position = (0, y)
-                    except Exception:
-                        pass
-                    try:
-                        g.name = "cx.ap.spacing.band:{} ref={}".format(kind, ref_name if not use_self_ref else "*")
-                    except Exception:
-                        pass
-                    try:
-                        g.locked = True
-                    except Exception:
-                        pass
-                    try:
-                        ud = getattr(g, "userData", None)
-                        if ud is None:
-                            g.userData = {}
-                        g.userData["cx.ap.spacingGuides"] = True
-                        g.userData["kind"] = kind
-                        g.userData["referenceGlyph"] = ref_name if not use_self_ref else "*"
-                    except Exception:
-                        pass
 
-                    if not dry_run:
-                        try:
-                            layer.guides.append(g)
-                        except Exception:
-                            pass
-                    added.append({"kind": kind, "y": y, "name": getattr(g, "name", None)})
+                # Always show the band in add mode, regardless of style.
+                for kind, y in (("min", y_min), ("max", y_max)):
+                    guide_name = "cx.ap.spacing.band:{}".format(kind)
+                    g = _add_horizontal_guide(layer, name=guide_name, y=float(y))
+                    try:
+                        ud = _ensure_user_data(g)
+                        if ud is not None:
+                            ud["kind"] = kind
+                            ud["referenceGlyph"] = ref_name if not use_self_ref else "*"
+                            ud["y"] = float(y)
+                    except Exception:
+                        pass
+                    added.append({"name": guide_name, "kind": kind, "y": float(y), "angle": getattr(g, "angle", None)})
                     added_count += 1
+
+                # Band-only style stops here.
+                if style_norm == "band":
+                    results.append(
+                        {
+                            "glyphName": glyph_name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", None),
+                            "status": "ok",
+                            "action": "added",
+                            "style": style_norm,
+                            "referenceGlyph": ref_name if not use_self_ref else "*",
+                            "band": {"yMin": float(y_min), "yMax": float(y_max)},
+                            "modelStatus": model.get("status"),
+                            "modelReason": model.get("reason"),
+                            "removed": removed,
+                            "added": added,
+                        }
+                    )
+                    continue
+
+                # If the engine couldn't compute measured primitives, stop at the band.
+                if model.get("status") != "ok":
+                    skipped_count += 1
+                    results.append(
+                        {
+                            "glyphName": glyph_name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", None),
+                            "status": "skipped",
+                            "reason": "model_not_ok",
+                            "style": style_norm,
+                            "referenceGlyph": ref_name if not use_self_ref else "*",
+                            "band": {"yMin": float(y_min), "yMax": float(y_max)},
+                            "modelStatus": model.get("status"),
+                            "modelReason": model.get("reason"),
+                            "removed": removed,
+                            "added": added,
+                        }
+                    )
+                    continue
+
+                measured = model.get("measured") or {}
+                target = model.get("target") or {}
+                params = model.get("params") or {}
+
+                l_extreme = measured.get("lExtreme")
+                r_extreme = measured.get("rExtreme")
+                height = measured.get("height")
+                left_area = measured.get("leftArea")
+                right_area = measured.get("rightArea")
+                target_avg = target.get("targetAvg")
+                depth_pct = params.get("depth")
+                italic_mode = params.get("italicMode")
+                italic_angle = params.get("italicAngle")
+
+                # Compute derived values (average whitespace is "area / height").
+                try:
+                    h = float(height)
+                except Exception:
+                    h = 0.0
+
+                ok_for_model = (
+                    l_extreme is not None
+                    and r_extreme is not None
+                    and left_area is not None
+                    and right_area is not None
+                    and target_avg is not None
+                    and h > 1e-6
+                )
+
+                if ok_for_model:
+                    l_extreme_f = float(l_extreme)
+                    r_extreme_f = float(r_extreme)
+                    avg_measured_left = float(left_area) / h
+                    avg_measured_right = float(right_area) / h
+                    avg_target = float(target_avg)
+
+                    # Zone edges.
+                    for side, x_p in (("L", l_extreme_f), ("R", r_extreme_f)):
+                        guide_name = "cx.ap.spacing.zone:{}".format(side)
+                        g = _add_xprime_guide(
+                            layer,
+                            name=guide_name,
+                            x_prime=float(x_p),
+                            y_min=float(y_min),
+                            y_max=float(y_max),
+                            x_height=float(x_height or 0.0),
+                            italic_angle=float(italic_angle or 0.0),
+                            italic_mode=str(italic_mode or "deslant"),
+                        )
+                        added.append({"name": guide_name, "xPrime": float(x_p), "angle": getattr(g, "angle", None)})
+                        added_count += 1
+
+                    # Depth clamp.
+                    try:
+                        depth_units = float(x_height or 0.0) * (float(depth_pct or 0.0) / 100.0)
+                    except Exception:
+                        depth_units = 0.0
+                    for side, x_p in (("L", l_extreme_f + depth_units), ("R", r_extreme_f - depth_units)):
+                        guide_name = "cx.ap.spacing.depth:{}".format(side)
+                        g = _add_xprime_guide(
+                            layer,
+                            name=guide_name,
+                            x_prime=float(x_p),
+                            y_min=float(y_min),
+                            y_max=float(y_max),
+                            x_height=float(x_height or 0.0),
+                            italic_angle=float(italic_angle or 0.0),
+                            italic_mode=str(italic_mode or "deslant"),
+                        )
+                        added.append({"name": guide_name, "xPrime": float(x_p), "angle": getattr(g, "angle", None)})
+                        added_count += 1
+
+                    # Average whitespace: measured vs target.
+                    avg_lines = [
+                        ("avg.measured", "L", l_extreme_f + avg_measured_left),
+                        ("avg.measured", "R", r_extreme_f - avg_measured_right),
+                        ("avg.target", "L", l_extreme_f + avg_target),
+                        ("avg.target", "R", r_extreme_f - avg_target),
+                    ]
+                    for group, side, x_p in avg_lines:
+                        guide_name = "cx.ap.spacing.{}:{}".format(group, side)
+                        g = _add_xprime_guide(
+                            layer,
+                            name=guide_name,
+                            x_prime=float(x_p),
+                            y_min=float(y_min),
+                            y_max=float(y_max),
+                            x_height=float(x_height or 0.0),
+                            italic_angle=float(italic_angle or 0.0),
+                            italic_mode=str(italic_mode or "deslant"),
+                        )
+                        added.append({"name": guide_name, "xPrime": float(x_p), "angle": getattr(g, "angle", None)})
+                        added_count += 1
+
+                # Full mode: add raw ref bounds (without over) + full extremes if available.
+                if style_norm == "full":
+                    try:
+                        ou = float(ref_over_units or 0.0)
+                    except Exception:
+                        ou = 0.0
+                    if ou and abs(ou) > 1e-6:
+                        y_min_raw = float(y_min) + ou
+                        y_max_raw = float(y_max) - ou
+                        for kind, y in (("min", y_min_raw), ("max", y_max_raw)):
+                            guide_name = "cx.ap.spacing.ref:{}".format(kind)
+                            g = _add_horizontal_guide(layer, name=guide_name, y=float(y))
+                            added.append({"name": guide_name, "kind": kind, "y": float(y), "angle": getattr(g, "angle", None)})
+                            added_count += 1
+
+                    try:
+                        lf = measured.get("lFullExtreme")
+                        rf = measured.get("rFullExtreme")
+                        if lf is not None and rf is not None:
+                            for side, x_p in (("L", float(lf)), ("R", float(rf))):
+                                guide_name = "cx.ap.spacing.full:{}".format(side)
+                                g = _add_xprime_guide(
+                                    layer,
+                                    name=guide_name,
+                                    x_prime=float(x_p),
+                                    y_min=float(y_min),
+                                    y_max=float(y_max),
+                                    x_height=float(x_height or 0.0),
+                                    italic_angle=float(italic_angle or 0.0),
+                                    italic_mode=str(italic_mode or "deslant"),
+                                )
+                                added.append({"name": guide_name, "xPrime": float(x_p), "angle": getattr(g, "angle", None)})
+                                added_count += 1
+                    except Exception:
+                        pass
 
                 results.append(
                     {
@@ -1286,10 +1624,12 @@ async def set_spacing_guides(
                         "masterName": getattr(master, "name", None),
                         "status": "ok",
                         "action": "added",
+                        "style": style_norm,
                         "referenceGlyph": ref_name if not use_self_ref else "*",
-                        "overPercent": over_pct,
                         "xHeight": x_height,
-                        "band": {"yMin": y_min, "yMax": y_max, "yMinOver": y_min_over, "yMaxOver": y_max_over},
+                        "band": {"yMin": float(y_min), "yMax": float(y_max)},
+                        "modelStatus": model.get("status"),
+                        "modelReason": model.get("reason"),
                         "removed": removed,
                         "added": added,
                     }
@@ -1302,6 +1642,7 @@ async def set_spacing_guides(
                 "mode": mode_norm,
                 "masterScope": scope,
                 "referenceGlyph": ref_name if not use_self_ref else "*",
+                "style": style_norm,
                 "summary": {
                     "glyphCount": len(names),
                     "masterCount": len(masters),
