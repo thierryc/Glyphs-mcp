@@ -90,6 +90,54 @@ async def prompt_recalculate_sidebearings():
 
 
 @mcp.prompt(
+    name="review_spacing",
+    title="Review Spacing",
+    description="Suggests reviewing spacing for selected glyphs using review_spacing.",
+    tags={"examples", "glyphs", "spacing"},
+)
+async def prompt_review_spacing():
+    """Prompt describing how to run a spacing review on the selected glyphs."""
+    return [
+        Message(
+            "Call glyphs-app-mcp__review_spacing for the currently selected glyphs and summarize the biggest suggested LSB/RSB changes.",
+            role="user",
+        )
+    ]
+
+
+@mcp.prompt(
+    name="apply_spacing",
+    title="Apply Spacing",
+    description="Suggests applying spacing suggestions using apply_spacing (with a dry-run first).",
+    tags={"examples", "glyphs", "spacing"},
+)
+async def prompt_apply_spacing():
+    """Prompt describing how to apply spacing suggestions safely."""
+    return [
+        Message(
+            "Call glyphs-app-mcp__apply_spacing with dry_run=true for the selected glyphs, then call it again with confirm=true to apply.",
+            role="user",
+        )
+    ]
+
+
+@mcp.prompt(
+    name="set_spacing_params",
+    title="Set Spacing Params",
+    description="Shows how to set spacing params as custom parameters via set_spacing_params.",
+    tags={"examples", "glyphs", "spacing"},
+)
+async def prompt_set_spacing_params():
+    """Prompt describing how to set spacing parameters without using the UI."""
+    return [
+        Message(
+            "Call glyphs-app-mcp__set_spacing_params with scope='font' to set area/depth/over/frequency, then call glyphs-app-mcp__save_font to persist.",
+            role="user",
+        )
+    ]
+
+
+@mcp.prompt(
     name="copy_and_translate_ae_paths",
     title="Copy and Translate ae Paths",
     description="Walks through copying background paths for the ligature ae and translating the e component.",

@@ -28,6 +28,7 @@ from export_designspace_ufo import (
     ExportDesignspaceAndUFO as ExportDesignspaceAndUFOExporter,
     ExportOptions,
 )
+import spacing_engine
 
 # Initialize FastMCP server
 mcp = FastMCP(name="Glyphs MCP Server", version="1.0.0")
@@ -871,6 +872,664 @@ async def update_glyph_metrics(
         )
     except Exception as e:
         return json.dumps({"error": str(e)})
+
+
+def _merge_spacing_defaults(user_defaults=None, debug=None):
+    merged = dict(spacing_engine.DEFAULTS)
+    if isinstance(user_defaults, dict):
+        for k, v in user_defaults.items():
+            if v is None:
+                continue
+            merged[k] = v
+    if isinstance(debug, dict):
+        # Allow debug.includeSamples without forcing payload bloat by default.
+        if "includeSamples" in debug and debug["includeSamples"] is not None:
+            merged["includeSamples"] = bool(debug["includeSamples"])
+    return merged
+
+
+def _effective_master_params_for_spacing(font, master, merged_defaults, explicit_defaults):
+    explicit_defaults = explicit_defaults or {}
+
+    def custom_dict(obj):
+        out = {}
+        if obj is None:
+            return out
+        for field in spacing_engine.SPACING_PARAM_FIELDS:
+            ckey = spacing_engine.SPACING_PARAM_KEYS_CANONICAL.get(field)
+            lkey = spacing_engine.SPACING_PARAM_KEYS_LEGACY.get(field)
+            if ckey:
+                val = _custom_parameter(obj, ckey, None)
+                if val is not None:
+                    out[ckey] = val
+            if lkey:
+                val = _custom_parameter(obj, lkey, None)
+                if val is not None:
+                    out[lkey] = val
+        return out
+
+    master_custom = custom_dict(master)
+    font_custom = custom_dict(font)
+
+    def pick(field, fallback):
+        return spacing_engine.resolve_param_precedence(
+            field=field,
+            per_call_defaults=explicit_defaults,
+            master_custom=master_custom,
+            font_custom=font_custom,
+            fallback=fallback,
+        )
+
+    return {
+        "xHeight": getattr(master, "xHeight", None),
+        "italicAngle": getattr(master, "italicAngle", 0.0),
+        "area": pick("area", merged_defaults.get("area")),
+        "depth": pick("depth", merged_defaults.get("depth")),
+        "over": pick("over", merged_defaults.get("over")),
+        "frequency": pick("frequency", merged_defaults.get("frequency")),
+    }
+
+
+def _spacing_selected_glyph_names_for_font(font):
+    if not font:
+        return []
+    try:
+        layers = list(font.selectedLayers or [])
+    except Exception:
+        layers = []
+    names = []
+    for layer in layers:
+        try:
+            g = layer.parent
+            if g and g.name:
+                names.append(g.name)
+        except Exception:
+            continue
+    # stable unique
+    out = []
+    seen = set()
+    for n in names:
+        if n in seen:
+            continue
+        seen.add(n)
+        out.append(n)
+    return out
+
+
+@mcp.tool()
+async def review_spacing(
+    font_index: int = 0,
+    glyph_names: list = None,
+    master_id: str = None,
+    rules: list = None,
+    defaults: dict = None,
+    debug: dict = None,
+) -> str:
+    """Review spacing and suggest sidebearings/width using a clean-room area-based model.
+
+    This tool does not mutate the font.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                    "results": [],
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+
+        merged_defaults = _merge_spacing_defaults(defaults, debug)
+        explicit_defaults = defaults if isinstance(defaults, dict) else {}
+
+        if glyph_names:
+            names = list(glyph_names)
+        else:
+            # Prefer selection, but only when the referenced font is active.
+            if not Glyphs.font or Glyphs.font != font:
+                return _safe_json(
+                    {
+                        "ok": False,
+                        "error": "No glyph_names provided and font_index is not the active font.",
+                        "hint": "Provide glyph_names explicitly or activate the target font in Glyphs.",
+                        "results": [],
+                    }
+                )
+            names = _spacing_selected_glyph_names_for_font(font)
+
+        if not names:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "No glyphs to review.",
+                    "hint": "Select glyphs in Glyphs or pass glyph_names.",
+                    "results": [],
+                }
+            )
+
+        # Determine masters to evaluate.
+        masters = []
+        if master_id:
+            wanted = str(master_id)
+            masters = [m for m in font.masters if getattr(m, "id", None) == wanted]
+            if not masters:
+                return _safe_json(
+                    {
+                        "ok": False,
+                        "error": "Master ID '{}' not found".format(master_id),
+                        "results": [],
+                    }
+                )
+        else:
+            masters = list(font.masters or [])
+
+        results = []
+        ok_count = 0
+        skipped_count = 0
+        error_count = 0
+        layer_count = 0
+
+        for name in names:
+            glyph = font.glyphs[name]
+            if not glyph:
+                results.append(
+                    {
+                        "glyphName": name,
+                        "status": "error",
+                        "reason": "glyph_not_found",
+                    }
+                )
+                error_count += 1
+                continue
+
+            for master in masters:
+                layer_count += 1
+                mid = getattr(master, "id", None)
+                try:
+                    layer = glyph.layers[mid]
+                except Exception:
+                    layer = None
+
+                if not layer:
+                    results.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "status": "skipped",
+                            "reason": "layer_missing",
+                        }
+                    )
+                    skipped_count += 1
+                    continue
+
+                master_params = _effective_master_params_for_spacing(font, master, merged_defaults, explicit_defaults)
+                try:
+                    r = spacing_engine.compute_suggestion_for_layer(
+                        font=font,
+                        glyph=glyph,
+                        layer=layer,
+                        master=master,
+                        rules=rules,
+                        defaults=merged_defaults,
+                        master_params=master_params,
+                    )
+                except Exception as exc:
+                    results.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "status": "error",
+                            "reason": "exception",
+                            "error": str(exc),
+                        }
+                    )
+                    error_count += 1
+                    continue
+
+                results.append(r)
+                if r.get("status") == "ok":
+                    ok_count += 1
+                elif r.get("status") == "skipped":
+                    skipped_count += 1
+                else:
+                    error_count += 1
+
+        return _safe_json(
+            {
+                "ok": True,
+                "summary": {
+                    "glyphCount": len(names),
+                    "layerCount": layer_count,
+                    "okCount": ok_count,
+                    "skippedCount": skipped_count,
+                    "errorCount": error_count,
+                    "rulesCount": len(rules or []),
+                    "defaults": {
+                        "area": merged_defaults.get("area"),
+                        "depth": merged_defaults.get("depth"),
+                        "over": merged_defaults.get("over"),
+                        "frequency": merged_defaults.get("frequency"),
+                        "referenceGlyph": merged_defaults.get("referenceGlyph"),
+                        "italicMode": merged_defaults.get("italicMode"),
+                    },
+                },
+                "results": results,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e), "results": []})
+
+
+@mcp.tool()
+async def apply_spacing(
+    font_index: int = 0,
+    glyph_names: list = None,
+    master_id: str = None,
+    rules: list = None,
+    defaults: dict = None,
+    clamp: dict = None,
+    confirm: bool = False,
+    dry_run: bool = False,
+) -> str:
+    """Apply suggested spacing (sidebearings/width) computed by review_spacing.
+
+    Safety:
+    - Set confirm=true to mutate.
+    - Use dry_run=true to preview.
+    """
+    try:
+        if not confirm and not dry_run:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Refusing to apply spacing without confirm=true.",
+                    "hint": "Run apply_spacing(..., dry_run=true) to preview or set confirm=true to apply.",
+                }
+            )
+
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        merged_defaults = _merge_spacing_defaults(defaults, debug=None)
+        explicit_defaults = defaults if isinstance(defaults, dict) else {}
+
+        effective_clamp = clamp or {"maxDeltaLSB": 150, "maxDeltaRSB": 150, "minLSB": -200, "minRSB": -200}
+
+        if glyph_names:
+            names = list(glyph_names)
+        else:
+            if not Glyphs.font or Glyphs.font != font:
+                return _safe_json(
+                    {
+                        "ok": False,
+                        "error": "No glyph_names provided and font_index is not the active font.",
+                        "hint": "Provide glyph_names explicitly or activate the target font in Glyphs.",
+                    }
+                )
+            names = _spacing_selected_glyph_names_for_font(font)
+
+        if not names:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "No glyphs to apply.",
+                    "hint": "Select glyphs in Glyphs or pass glyph_names.",
+                }
+            )
+
+        masters = []
+        if master_id:
+            wanted = str(master_id)
+            masters = [m for m in font.masters if getattr(m, "id", None) == wanted]
+            if not masters:
+                return _safe_json({"ok": False, "error": "Master ID '{}' not found".format(master_id)})
+        else:
+            masters = list(font.masters or [])
+
+        results = []
+        applied = []
+        ok_count = 0
+        skipped_count = 0
+        error_count = 0
+        applied_count = 0
+
+        for name in names:
+            glyph = font.glyphs[name]
+            if not glyph:
+                results.append({"glyphName": name, "status": "error", "reason": "glyph_not_found"})
+                error_count += 1
+                continue
+
+            for master in masters:
+                mid = getattr(master, "id", None)
+                try:
+                    layer = glyph.layers[mid]
+                except Exception:
+                    layer = None
+
+                if not layer:
+                    results.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "status": "skipped",
+                            "reason": "layer_missing",
+                        }
+                    )
+                    skipped_count += 1
+                    continue
+
+                master_params = _effective_master_params_for_spacing(font, master, merged_defaults, explicit_defaults)
+                try:
+                    r = spacing_engine.compute_suggestion_for_layer(
+                        font=font,
+                        glyph=glyph,
+                        layer=layer,
+                        master=master,
+                        rules=rules,
+                        defaults=merged_defaults,
+                        master_params=master_params,
+                    )
+                except Exception as exc:
+                    results.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "status": "error",
+                            "reason": "exception",
+                            "error": str(exc),
+                        }
+                    )
+                    error_count += 1
+                    continue
+
+                if r.get("status") != "ok":
+                    results.append(r)
+                    if r.get("status") == "skipped":
+                        skipped_count += 1
+                    else:
+                        error_count += 1
+                    continue
+
+                # Clamp suggestion (relative to current).
+                cur = r.get("current") or {}
+                sug = r.get("suggested") or {}
+                clamped, clamp_warnings = spacing_engine.clamp_suggestion(current=cur, suggested=sug, clamp=effective_clamp)
+                if clamp_warnings:
+                    r.setdefault("warnings", []).extend(clamp_warnings)
+
+                # Recompute width from measured shape if possible.
+                try:
+                    m = r.get("measured") or {}
+                    width_shape = float(m.get("rFullExtreme") - m.get("lFullExtreme"))
+                    clamped_width = width_shape + float(clamped.get("lsb")) + float(clamped.get("rsb"))
+                    if sug.get("width") is not None and "tabular_width_preserved" in (r.get("warnings") or []):
+                        clamped_width = float(sug.get("width"))
+                    clamped["width"] = clamped_width
+                except Exception:
+                    pass
+
+                r["suggested"] = clamped
+                try:
+                    r["delta"] = {
+                        "width": (float(clamped.get("width")) - float(cur.get("width"))) if (clamped.get("width") is not None and cur.get("width") is not None) else None,
+                        "lsb": (float(clamped.get("lsb")) - float(cur.get("lsb"))) if (clamped.get("lsb") is not None and cur.get("lsb") is not None) else None,
+                        "rsb": (float(clamped.get("rsb")) - float(cur.get("rsb"))) if (clamped.get("rsb") is not None and cur.get("rsb") is not None) else None,
+                    }
+                except Exception:
+                    pass
+
+                results.append(r)
+                ok_count += 1
+
+                if dry_run or not confirm:
+                    continue
+
+                before_w = layer.width
+                before_l = _get_left_sidebearing(layer)
+                before_r = _get_right_sidebearing(layer)
+
+                try:
+                    new_lsb = clamped.get("lsb")
+                    new_rsb = clamped.get("rsb")
+                    if new_lsb is not None:
+                        _set_sidebearing(layer, "leftSideBearing", "LSB", new_lsb)
+                    if new_rsb is not None:
+                        _set_sidebearing(layer, "rightSideBearing", "RSB", new_rsb)
+
+                    # If tabular spacing is enabled, enforce the desired width explicitly.
+                    if "tabular_width_preserved" in (r.get("warnings") or []) and clamped.get("width") is not None:
+                        layer.width = int(round(float(clamped.get("width"))))
+
+                    after_w = layer.width
+                    after_l = _get_left_sidebearing(layer)
+                    after_r = _get_right_sidebearing(layer)
+
+                    applied.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "before": {"width": before_w, "lsb": before_l, "rsb": before_r},
+                            "after": {"width": after_w, "lsb": after_l, "rsb": after_r},
+                            "appliedSuggested": {"width": clamped.get("width"), "lsb": clamped.get("lsb"), "rsb": clamped.get("rsb")},
+                        }
+                    )
+                    applied_count += 1
+                except Exception as exc:
+                    error_count += 1
+                    results.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "status": "error",
+                            "reason": "apply_failed",
+                            "error": str(exc),
+                        }
+                    )
+
+        return _safe_json(
+            {
+                "ok": True,
+                "summary": {
+                    "glyphCount": len(names),
+                    "okCount": ok_count,
+                    "skippedCount": skipped_count,
+                    "errorCount": error_count,
+                    "appliedCount": applied_count,
+                    "dryRun": bool(dry_run),
+                },
+                "results": results,
+                "applied": applied,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
+
+
+@mcp.tool()
+@mcp.tool()
+async def set_spacing_params(
+    font_index: int = 0,
+    master_id: str = None,
+    scope: str = "auto",
+    params: dict = None,
+    use_legacy_keys: bool = False,
+    dry_run: bool = False,
+) -> str:
+    """Set spacing parameters as font/master Custom Parameters (no auto-save).
+
+    Args:
+        font_index: Index of the font (0-based). Defaults to 0.
+        master_id: Master ID when targeting a specific master.
+        scope: One of "auto" (default), "font", "master", or "all_masters".
+        params: Dict with any of: area, depth, over, frequency. Values:
+               - number -> set/update
+               - null -> delete/unset
+        use_legacy_keys: If true, use paramArea/paramDepth/paramOver/paramFreq.
+                         Otherwise use gmcpSpacingArea/Depth/Over/Freq.
+        dry_run: If true, report changes without mutating.
+
+    Returns:
+        JSON payload with change list and read-back values.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        params = params or {}
+        if not isinstance(params, dict):
+            return _safe_json({"ok": False, "error": "params must be an object/dict"})
+
+        scope_norm = (scope or "auto").strip().lower()
+        if scope_norm not in ("auto", "font", "master", "all_masters"):
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Invalid scope '{}'".format(scope),
+                    "hint": "Use one of: auto, font, master, all_masters",
+                }
+            )
+
+        # Resolve targets
+        targets = []
+        scope_applied = scope_norm
+        if scope_norm == "auto":
+            if master_id:
+                scope_applied = "master"
+            else:
+                scope_applied = "font"
+
+        if scope_applied == "font":
+            targets = [("font", None, font)]
+        elif scope_applied == "master":
+            if not master_id:
+                return _safe_json({"ok": False, "error": "master_id is required for scope=master"})
+            wanted = str(master_id)
+            found = None
+            for m in font.masters:
+                if getattr(m, "id", None) == wanted:
+                    found = m
+                    break
+            if not found:
+                return _safe_json({"ok": False, "error": "Master ID '{}' not found".format(master_id)})
+            targets = [("master", wanted, found)]
+        elif scope_applied == "all_masters":
+            for m in font.masters:
+                targets.append(("master", getattr(m, "id", None), m))
+
+        key_map = spacing_engine.SPACING_PARAM_KEYS_LEGACY if use_legacy_keys else spacing_engine.SPACING_PARAM_KEYS_CANONICAL
+
+        changed = []
+        effective_readback = []
+
+        def _as_number(v):
+            if v is None:
+                return None
+            if isinstance(v, (int, float)):
+                return float(v)
+            if isinstance(v, str) and v.strip():
+                try:
+                    return float(v.strip())
+                except Exception:
+                    return None
+            return None
+
+        for kind, tid, obj in targets:
+            target_label = {"type": kind}
+            if kind == "master":
+                target_label["masterId"] = tid
+                target_label["masterName"] = getattr(obj, "name", None)
+
+            # Apply changes field-by-field
+            for field in spacing_engine.SPACING_PARAM_FIELDS:
+                if field not in params:
+                    continue
+                key = key_map.get(field)
+                if not key:
+                    continue
+
+                before = _custom_parameter(obj, key, None)
+                requested = params.get(field)
+
+                if requested is None:
+                    action = "delete"
+                    after = None
+                    if not dry_run:
+                        try:
+                            del obj.customParameters[key]
+                        except Exception:
+                            pass
+                else:
+                    numeric = _as_number(requested)
+                    if numeric is None:
+                        return _safe_json(
+                            {
+                                "ok": False,
+                                "error": "Param '{}' must be a number or null".format(field),
+                                "value": requested,
+                            }
+                        )
+                    action = "set"
+                    after = numeric
+                    if not dry_run:
+                        obj.customParameters[key] = numeric
+
+                changed.append(
+                    {
+                        "target": target_label,
+                        "field": field,
+                        "key": key,
+                        "before": before,
+                        "after": after,
+                        "action": action,
+                    }
+                )
+
+            # Readback (canonical + legacy, so callers can see what's present)
+            rb = dict(target_label)
+            rb["values"] = {}
+            for field in spacing_engine.SPACING_PARAM_FIELDS:
+                rb["values"][field] = {
+                    "canonicalKey": spacing_engine.SPACING_PARAM_KEYS_CANONICAL.get(field),
+                    "canonicalValue": _custom_parameter(obj, spacing_engine.SPACING_PARAM_KEYS_CANONICAL.get(field), None),
+                    "legacyKey": spacing_engine.SPACING_PARAM_KEYS_LEGACY.get(field),
+                    "legacyValue": _custom_parameter(obj, spacing_engine.SPACING_PARAM_KEYS_LEGACY.get(field), None),
+                }
+            effective_readback.append(rb)
+
+        return _safe_json(
+            {
+                "ok": True,
+                "scopeApplied": scope_applied,
+                "dryRun": bool(dry_run),
+                "useLegacyKeys": bool(use_legacy_keys),
+                "targets": [{"type": k, "masterId": tid} for k, tid, _obj in targets],
+                "changed": changed,
+                "effectiveReadback": effective_readback,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
 
 
 @mcp.tool()

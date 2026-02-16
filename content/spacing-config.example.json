@@ -1,0 +1,46 @@
+{
+  "defaults": {
+    "area": 400,
+    "depth": 15,
+    "over": 0,
+    "frequency": 5,
+    "referenceGlyph": "x",
+    "italicMode": "deslant",
+    "includeComponents": true,
+    "respectMetricsKeys": true,
+    "skipAutoAligned": true,
+    "minCoverageRatio": 0.7,
+    "tabularMode": false,
+    "tabularWidth": null
+  },
+  "rules": [
+    {
+      "category": "Letter",
+      "subCategory": "Lowercase",
+      "referenceGlyph": "n",
+      "factor": 1.0
+    },
+    {
+      "category": "Letter",
+      "subCategory": "Uppercase",
+      "referenceGlyph": "H",
+      "factor": 1.05
+    },
+    {
+      "category": "Number",
+      "referenceGlyph": "zero",
+      "factor": 1.0
+    },
+    {
+      "nameRegex": "\\\\.(tf|tosf)$",
+      "referenceGlyph": "*",
+      "factor": 1.0
+    },
+    {
+      "category": "Punctuation",
+      "referenceGlyph": "n",
+      "factor": 0.9
+    }
+  ]
+}
+

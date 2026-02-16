@@ -39,6 +39,9 @@ This table describes the tool surface exposed by the MCP server shipped in this 
 | `update_glyph_properties` | Change unicode, category, export flags, etc. |
 | `copy_glyph` | Duplicate outlines / components from one glyph to another. |
 | `update_glyph_metrics` | Adjust width and side‑bearings. |
+| `review_spacing` | Review spacing and suggest sidebearings/width (area-based; no mutation). |
+| `apply_spacing` | Apply spacing suggestions (supports `dry_run`; requires `confirm=true` to mutate). |
+| `set_spacing_params` | Set spacing parameters as font/master custom parameters (no auto-save). |
 | `get_glyph_components` | Inspect components used in a glyph. |
 | `add_component_to_glyph` | Append a component to a glyph layer. |
 | `add_anchor_to_glyph` | Add an anchor to a glyph layer. |
