@@ -80,13 +80,15 @@ You’ll see the exact skip reason in each result entry.
 You can pass parameters as:
 - `defaults` (per-call), and/or
 - font-level or master-level custom parameters (read automatically when present):
-  - Canonical (recommended): `gmcpSpacingArea`, `gmcpSpacingDepth`, `gmcpSpacingOver`, `gmcpSpacingFreq`
-  - Legacy aliases (read-only compatibility): `paramArea`, `paramDepth`, `paramOver`, `paramFreq`
+  - Canonical (recommended): `cx.ap.spacingArea`, `cx.ap.spacingDepth`, `cx.ap.spacingOver`, `cx.ap.spacingFreq`
+  - Legacy aliases (read-only compatibility):
+    - `gmcpSpacingArea`, `gmcpSpacingDepth`, `gmcpSpacingOver`, `gmcpSpacingFreq`
+    - `paramArea`, `paramDepth`, `paramOver`, `paramFreq`
 
 ### Best way to set parameters (recommended)
 
 Use **custom parameters inside the `.glyphs` file** for values that should be consistent for everyone using the font:
-- good for: `gmcpSpacingArea`, `gmcpSpacingDepth`, `gmcpSpacingOver`, `gmcpSpacingFreq`
+- good for: `cx.ap.spacingArea`, `cx.ap.spacingDepth`, `cx.ap.spacingOver`, `cx.ap.spacingFreq`
 - benefits: travels with the font, persists across sessions, and can differ per master
 
 Use a **JSON config file** for values you want to version-control and share as “spacing presets”:
@@ -94,7 +96,7 @@ Use a **JSON config file** for values you want to version-control and share as �
 - benefits: diffable, reviewable, easy to keep multiple presets (e.g. “text”, “display”, “UI”)
 
 In practice, a good split is:
-- **In the font (custom parameters):** `gmcpSpacingArea/Depth/Over/Freq` (recommended)
+- **In the font (custom parameters):** `cx.ap.spacingArea/Depth/Over/Freq` (recommended)
 - **In a file:** `rules` + any per-project defaults like `referenceGlyph`, `italicMode`, `minCoverageRatio`, tabular settings
 
 ### Precedence (what wins)
@@ -102,30 +104,33 @@ In practice, a good split is:
 For each numeric parameter (`area`, `depth`, `over`, `frequency`) the tools resolve values in this exact order:
 
 1) Per-call `defaults` (if provided)
-2) Master custom parameter (canonical `gmcpSpacing*`)
-3) Master custom parameter (legacy `param*`)
-4) Font custom parameter (canonical `gmcpSpacing*`)
-5) Font custom parameter (legacy `param*`)
-6) Internal default
+2) Master custom parameter (canonical `cx.ap.spacing*`)
+3) Master custom parameter (legacy `gmcpSpacing*`)
+4) Master custom parameter (legacy `param*`)
+5) Font custom parameter (canonical `cx.ap.spacing*`)
+6) Font custom parameter (legacy `gmcpSpacing*`)
+7) Font custom parameter (legacy `param*`)
+8) Internal default
 
-### Setting `param*` in Glyphs (UI)
+### Setting spacing params in Glyphs (UI)
 
 You can set the parameters in Glyphs’ UI:
 - **Font-level:** `File → Font Info… → Font → Custom Parameters`
 - **Per-master:** `File → Font Info… → Masters → (select a master) → Custom Parameters`
 
 Add any of these keys (case-sensitive). Recommended canonical names:
-- `gmcpSpacingArea` (number)
-- `gmcpSpacingDepth` (number, percent of xHeight)
-- `gmcpSpacingOver` (number, percent of xHeight)
-- `gmcpSpacingFreq` (number, y sampling step in units)
+- `cx.ap.spacingArea` (number)
+- `cx.ap.spacingDepth` (number, percent of xHeight)
+- `cx.ap.spacingOver` (number, percent of xHeight)
+- `cx.ap.spacingFreq` (number, y sampling step in units)
 
 Legacy aliases (still read, but not recommended for new work):
+- `gmcpSpacingArea`, `gmcpSpacingDepth`, `gmcpSpacingOver`, `gmcpSpacingFreq`
 - `paramArea`, `paramDepth`, `paramOver`, `paramFreq`
 
 Font-level parameters act as defaults; master-level parameters override them.
 
-### Setting `param*` in Glyphs (Macro Panel script)
+### Setting spacing params in Glyphs (Macro Panel script)
 
 If you want to write them into the font programmatically, paste this into Glyphs’ **Macro Panel**:
 
@@ -137,15 +142,15 @@ if not font:
     raise RuntimeError("No active font")
 
 # Font-wide defaults
-font.customParameters["gmcpSpacingArea"] = 400
-font.customParameters["gmcpSpacingDepth"] = 15
-font.customParameters["gmcpSpacingOver"] = 0
-font.customParameters["gmcpSpacingFreq"] = 5
+font.customParameters["cx.ap.spacingArea"] = 400
+font.customParameters["cx.ap.spacingDepth"] = 15
+font.customParameters["cx.ap.spacingOver"] = 0
+font.customParameters["cx.ap.spacingFreq"] = 5
 
 # Optional: override per master
 for master in font.masters:
     if master.name == "Display":
-        master.customParameters["gmcpSpacingArea"] = 440
+        master.customParameters["cx.ap.spacingArea"] = 440
 ```
 
 ### Setting parameters via MCP (`set_spacing_params`)

@@ -131,7 +131,7 @@ async def prompt_set_spacing_params():
     """Prompt describing how to set spacing parameters without using the UI."""
     return [
         Message(
-            "Call glyphs-app-mcp__set_spacing_params with scope='font' to set area/depth/over/frequency, then call glyphs-app-mcp__save_font to persist.",
+            "Call glyphs-app-mcp__set_spacing_params with scope='font' to set area/depth/over/frequency (writes cx.ap.spacing* custom parameters by default), then call glyphs-app-mcp__save_font to persist.",
             role="user",
         )
     ]

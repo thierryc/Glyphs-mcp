@@ -896,16 +896,17 @@ def _effective_master_params_for_spacing(font, master, merged_defaults, explicit
         if obj is None:
             return out
         for field in spacing_engine.SPACING_PARAM_FIELDS:
-            ckey = spacing_engine.SPACING_PARAM_KEYS_CANONICAL.get(field)
-            lkey = spacing_engine.SPACING_PARAM_KEYS_LEGACY.get(field)
-            if ckey:
-                val = _custom_parameter(obj, ckey, None)
+            for key_set in (
+                spacing_engine.SPACING_PARAM_KEYS_CANONICAL,
+                spacing_engine.SPACING_PARAM_KEYS_GMCP_LEGACY,
+                spacing_engine.SPACING_PARAM_KEYS_PARAM_LEGACY,
+            ):
+                k = key_set.get(field)
+                if not k:
+                    continue
+                val = _custom_parameter(obj, k, None)
                 if val is not None:
-                    out[ckey] = val
-            if lkey:
-                val = _custom_parameter(obj, lkey, None)
-                if val is not None:
-                    out[lkey] = val
+                    out[k] = val
         return out
 
     master_custom = custom_dict(master)
@@ -1379,7 +1380,7 @@ async def set_spacing_params(
                - number -> set/update
                - null -> delete/unset
         use_legacy_keys: If true, use paramArea/paramDepth/paramOver/paramFreq.
-                         Otherwise use gmcpSpacingArea/Depth/Over/Freq.
+                         Otherwise use cx.ap.spacingArea/Depth/Over/Freq.
         dry_run: If true, report changes without mutating.
 
     Returns:
@@ -1436,7 +1437,7 @@ async def set_spacing_params(
             for m in font.masters:
                 targets.append(("master", getattr(m, "id", None), m))
 
-        key_map = spacing_engine.SPACING_PARAM_KEYS_LEGACY if use_legacy_keys else spacing_engine.SPACING_PARAM_KEYS_CANONICAL
+        key_map = spacing_engine.SPACING_PARAM_KEYS_PARAM_LEGACY if use_legacy_keys else spacing_engine.SPACING_PARAM_KEYS_CANONICAL
 
         changed = []
         effective_readback = []
@@ -1511,8 +1512,10 @@ async def set_spacing_params(
                 rb["values"][field] = {
                     "canonicalKey": spacing_engine.SPACING_PARAM_KEYS_CANONICAL.get(field),
                     "canonicalValue": _custom_parameter(obj, spacing_engine.SPACING_PARAM_KEYS_CANONICAL.get(field), None),
-                    "legacyKey": spacing_engine.SPACING_PARAM_KEYS_LEGACY.get(field),
-                    "legacyValue": _custom_parameter(obj, spacing_engine.SPACING_PARAM_KEYS_LEGACY.get(field), None),
+                    "gmcpLegacyKey": spacing_engine.SPACING_PARAM_KEYS_GMCP_LEGACY.get(field),
+                    "gmcpLegacyValue": _custom_parameter(obj, spacing_engine.SPACING_PARAM_KEYS_GMCP_LEGACY.get(field), None),
+                    "legacyKey": spacing_engine.SPACING_PARAM_KEYS_PARAM_LEGACY.get(field),
+                    "legacyValue": _custom_parameter(obj, spacing_engine.SPACING_PARAM_KEYS_PARAM_LEGACY.get(field), None),
                 }
             effective_readback.append(rb)
 

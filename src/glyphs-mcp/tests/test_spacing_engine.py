@@ -70,33 +70,53 @@ class SpacingEngineTests(unittest.TestCase):
         val = spacing_engine.resolve_param_precedence(
             field="area",
             per_call_defaults={"area": 111},
-            master_custom={"gmcpSpacingArea": 222, "paramArea": 333},
-            font_custom={"gmcpSpacingArea": 444, "paramArea": 555},
+            master_custom={"cx.ap.spacingArea": 200, "gmcpSpacingArea": 222, "paramArea": 333},
+            font_custom={"cx.ap.spacingArea": 400, "gmcpSpacingArea": 444, "paramArea": 555},
             fallback=999,
         )
         self.assertEqual(val, 111)
 
-        # 2) master canonical
+        # 2) master canonical (cx.ap.*)
+        val = spacing_engine.resolve_param_precedence(
+            field="area",
+            per_call_defaults={},
+            master_custom={"cx.ap.spacingArea": 200, "gmcpSpacingArea": 222, "paramArea": 333},
+            font_custom={"cx.ap.spacingArea": 400, "gmcpSpacingArea": 444, "paramArea": 555},
+            fallback=999,
+        )
+        self.assertEqual(val, 200)
+
+        # 3) master legacy (gmcpSpacing*)
         val = spacing_engine.resolve_param_precedence(
             field="area",
             per_call_defaults={},
             master_custom={"gmcpSpacingArea": 222, "paramArea": 333},
-            font_custom={"gmcpSpacingArea": 444, "paramArea": 555},
+            font_custom={"cx.ap.spacingArea": 400, "gmcpSpacingArea": 444, "paramArea": 555},
             fallback=999,
         )
         self.assertEqual(val, 222)
 
-        # 3) master legacy
+        # 4) master legacy (param*)
         val = spacing_engine.resolve_param_precedence(
             field="area",
             per_call_defaults={},
             master_custom={"paramArea": 333},
-            font_custom={"gmcpSpacingArea": 444, "paramArea": 555},
+            font_custom={"cx.ap.spacingArea": 400, "gmcpSpacingArea": 444, "paramArea": 555},
             fallback=999,
         )
         self.assertEqual(val, 333)
 
-        # 4) font canonical
+        # 5) font canonical (cx.ap.*)
+        val = spacing_engine.resolve_param_precedence(
+            field="area",
+            per_call_defaults={},
+            master_custom={},
+            font_custom={"cx.ap.spacingArea": 400, "gmcpSpacingArea": 444, "paramArea": 555},
+            fallback=999,
+        )
+        self.assertEqual(val, 400)
+
+        # 6) font legacy (gmcpSpacing*)
         val = spacing_engine.resolve_param_precedence(
             field="area",
             per_call_defaults={},
@@ -106,7 +126,7 @@ class SpacingEngineTests(unittest.TestCase):
         )
         self.assertEqual(val, 444)
 
-        # 5) font legacy
+        # 7) font legacy (param*)
         val = spacing_engine.resolve_param_precedence(
             field="area",
             per_call_defaults={},
@@ -116,7 +136,7 @@ class SpacingEngineTests(unittest.TestCase):
         )
         self.assertEqual(val, 555)
 
-        # 6) fallback
+        # 8) fallback
         val = spacing_engine.resolve_param_precedence(
             field="area",
             per_call_defaults={},

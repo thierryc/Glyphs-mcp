@@ -16,7 +16,7 @@ It intentionally focuses on **setup simplicity** and **user-facing productivity 
   - Copy endpoint + copy auth token (if used).
   - Clear status of “running / not running”.
 - **Embedded helper features** that reduce friction:
-  - Set font/master Custom Parameters for spacing tuning (`gmcpSpacing*` keys).
+  - Set font/master Custom Parameters for spacing tuning (`cx.ap.spacing*` keys).
   - Copy/paste prompt snippets for common MCP clients.
   - Simple “health check” and tool list viewer.
 
@@ -157,10 +157,10 @@ Cons:
     - `area`, `depth`, `over`, `frequency`
   - key scheme:
     - write canonical keys:
-      - `gmcpSpacingArea`
-      - `gmcpSpacingDepth`
-      - `gmcpSpacingOver`
-      - `gmcpSpacingFreq`
+      - `cx.ap.spacingArea`
+      - `cx.ap.spacingDepth`
+      - `cx.ap.spacingOver`
+      - `cx.ap.spacingFreq`
     - optional toggle: “Write legacy keys too” (default OFF)
   - actions:
     - `Apply to Font`
@@ -213,4 +213,3 @@ If/when added:
   - copy/paste works and is understandable without any external context
 - Distribution compliance:
   - `THIRD_PARTY_NOTICES.md` exists and includes all required license texts/attributions for bundled code
-

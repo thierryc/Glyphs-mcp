@@ -41,13 +41,20 @@ DEFAULTS: Dict[str, Any] = {
 SPACING_PARAM_FIELDS: Tuple[str, ...] = ("area", "depth", "over", "frequency")
 
 SPACING_PARAM_KEYS_CANONICAL: Dict[str, str] = {
+    "area": "cx.ap.spacingArea",
+    "depth": "cx.ap.spacingDepth",
+    "over": "cx.ap.spacingOver",
+    "frequency": "cx.ap.spacingFreq",
+}
+
+SPACING_PARAM_KEYS_GMCP_LEGACY: Dict[str, str] = {
     "area": "gmcpSpacingArea",
     "depth": "gmcpSpacingDepth",
     "over": "gmcpSpacingOver",
     "frequency": "gmcpSpacingFreq",
 }
 
-SPACING_PARAM_KEYS_LEGACY: Dict[str, str] = {
+SPACING_PARAM_KEYS_PARAM_LEGACY: Dict[str, str] = {
     "area": "paramArea",
     "depth": "paramDepth",
     "over": "paramOver",
@@ -63,16 +70,16 @@ def resolve_param_precedence(
     font_custom: Optional[Dict[str, Any]],
     fallback: Any,
     canonical_keys: Dict[str, str] = SPACING_PARAM_KEYS_CANONICAL,
-    legacy_keys: Dict[str, str] = SPACING_PARAM_KEYS_LEGACY,
+    legacy_key_sets: Sequence[Dict[str, str]] = (SPACING_PARAM_KEYS_GMCP_LEGACY, SPACING_PARAM_KEYS_PARAM_LEGACY),
 ) -> Any:
     """Resolve a spacing parameter with strict precedence.
 
     Precedence:
       1) per-call defaults
       2) master custom parameter (canonical)
-      3) master custom parameter (legacy)
+      3) master custom parameter (legacy sets, in order)
       4) font custom parameter (canonical)
-      5) font custom parameter (legacy)
+      5) font custom parameter (legacy sets, in order)
       6) fallback
     """
     if not field:
@@ -86,16 +93,22 @@ def resolve_param_precedence(
     font_custom = font_custom or {}
 
     ckey = canonical_keys.get(field)
-    lkey = legacy_keys.get(field)
 
     if ckey and ckey in master_custom and master_custom.get(ckey) is not None:
         return master_custom.get(ckey)
-    if lkey and lkey in master_custom and master_custom.get(lkey) is not None:
-        return master_custom.get(lkey)
+
+    for legacy_keys in legacy_key_sets:
+        lkey = legacy_keys.get(field)
+        if lkey and lkey in master_custom and master_custom.get(lkey) is not None:
+            return master_custom.get(lkey)
+
     if ckey and ckey in font_custom and font_custom.get(ckey) is not None:
         return font_custom.get(ckey)
-    if lkey and lkey in font_custom and font_custom.get(lkey) is not None:
-        return font_custom.get(lkey)
+
+    for legacy_keys in legacy_key_sets:
+        lkey = legacy_keys.get(field)
+        if lkey and lkey in font_custom and font_custom.get(lkey) is not None:
+            return font_custom.get(lkey)
 
     return fallback
 
