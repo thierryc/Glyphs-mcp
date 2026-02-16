@@ -1361,7 +1361,6 @@ async def apply_spacing(
 
 
 @mcp.tool()
-@mcp.tool()
 async def set_spacing_params(
     font_index: int = 0,
     master_id: str = None,
