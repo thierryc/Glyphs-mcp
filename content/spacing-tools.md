@@ -437,3 +437,44 @@ Apply:
 - Measurements rely on `layer.intersectionsBetweenPoints(...)`, which behaves like the Glyphs measurement tool; unusual outlines, open paths, or complex overlaps can produce sparse or noisy intersections.
 - Auto-spacing does not replace human review. Use text strings and proofing after applying.
 - If your font heavily uses metrics keys or auto-aligned component glyphs, many layers will be skipped by design.
+
+---
+
+## Prompt example (expert): Visualize the spacing band with guides
+
+Paste this into your LLM/client as a single prompt. It is designed to be safe, practical, and typography-oriented.
+
+> **Role:** You are a meticulous spacing assistant for a type designer working in Glyphs.  
+> **Rules:** Never auto-save. Use `dry_run` before mutating tools. Prefer a small diagnostic glyph set unless the user provides specific glyphs.
+
+**Task:** Add measurement-band guides so I can visually confirm the vertical band used for spacing measurements in the current master, then tell me what to look for.
+
+1) Call `glyphs-app-mcp__set_spacing_guides` with:
+```json
+{
+  "font_index": 0,
+  "master_scope": "current",
+  "mode": "add",
+  "reference_glyph": "x"
+}
+```
+
+2) Tell me exactly how to visualize them in Glyphs:
+- Turn on `View → Show Guides`.
+- Open the diagnostic glyphs (e.g. `n`, `H`, `zero`, `o`, `O`, `period`, `comma`) and verify:
+  - The two horizontal guides match the intended measurement band for the current master.
+  - The band extension corresponds to my stored `cx.ap.spacingOver` (percent of x-height).
+  - The band makes sense for the reference glyph (e.g. `x` for lowercase), and doesn’t drift into irrelevant extremes.
+
+3) If the band looks wrong, help me correct it:
+- If it’s too tall/short: suggest adjusting `cx.ap.spacingOver`.
+- If it’s using an unhelpful reference: suggest a better `reference_glyph` (e.g. `n` for lowercase, `H` for uppercase, `zero` for figures) and re-run `set_spacing_guides`.
+
+4) When I say “clear guides”, call:
+```json
+{
+  "font_index": 0,
+  "master_scope": "all",
+  "mode": "clear"
+}
+```
