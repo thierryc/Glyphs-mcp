@@ -33,6 +33,7 @@ from export_designspace_ufo import (
 )
 import spacing_engine
 import kerning_proof_engine
+import kerning_collision_engine
 
 # AppKit is available inside Glyphs (PyObjC). Keep import optional so this file
 # is still importable in environments where Glyphs isn't present.
@@ -285,6 +286,42 @@ def _open_tab_on_main_thread(font, tab_text):
         raise helper.error
 
     return getattr(helper, "tab", None)
+
+
+def _set_kerning_pairs_on_main_thread(font, master_id, pairs):
+    """Apply multiple glyph–glyph kerning exceptions safely on the Glyphs main thread.
+
+    pairs: iterable of (left_name, right_name, value_int)
+    """
+
+    if objc is None or NSObject is None:
+        for left_name, right_name, value in pairs:
+            font.setKerningForPair(master_id, left_name, right_name, int(value))
+        return
+
+    class _KerningApplyHelper(NSObject):  # type: ignore[misc,valid-type]
+        def init(self):
+            self = objc.super(_KerningApplyHelper, self).init()
+            if self is None:
+                return None
+            self._font = font
+            self._master_id = master_id
+            self._pairs = list(pairs or [])
+            self.error = None
+            return self
+
+        def applyKerning_(self, _obj):
+            try:
+                for left_name, right_name, value in self._pairs:
+                    self._font.setKerningForPair(self._master_id, left_name, right_name, int(value))
+            except Exception as exc:  # pragma: no cover - bubbled to caller
+                self.error = exc
+
+    helper = _KerningApplyHelper.alloc().init()
+    helper.performSelectorOnMainThread_withObject_waitUntilDone_("applyKerning:", None, True)
+
+    if getattr(helper, "error", None) is not None:
+        raise helper.error
 
 
 def _glyph_unicode_char(glyph):
@@ -3013,6 +3050,629 @@ async def generate_kerning_tab(
         )
     except Exception as e:
         return json.dumps({"error": str(e)})
+
+
+def _kerning_bumper_analyze(
+    *,
+    font,
+    master_id,
+    dataset_pairs,
+    relevant_limit,
+    include_existing,
+    pair_limit,
+    glyph_names,
+    min_gap,
+    scan_mode,
+    scan_heights,
+    dense_step,
+    bands,
+    target_gap,
+    max_delta,
+    explicit_pairs=None,
+):
+    """Compute kerning collision/gap measurements + deterministic bumper suggestions (no mutation)."""
+
+    warnings = []
+
+    scan_mode_norm, w = kerning_collision_engine.normalize_scan_mode(scan_mode)
+    warnings.extend(w)
+
+    scan_heights_norm, w = kerning_collision_engine.normalize_scan_heights(scan_heights)
+    warnings.extend(w)
+
+    try:
+        min_gap_f = float(min_gap)
+    except Exception:
+        min_gap_f = 5.0
+        warnings.append("Invalid min_gap; using 5.0.")
+
+    try:
+        target_gap_f = float(target_gap)
+    except Exception:
+        target_gap_f = min_gap_f
+
+    try:
+        dense_step_f = float(dense_step)
+    except Exception:
+        dense_step_f = 10.0
+        warnings.append("Invalid dense_step; using 10.0.")
+
+    if dense_step_f <= 0:
+        dense_step_f = 10.0
+        warnings.append("dense_step must be > 0; using 10.0.")
+
+    try:
+        bands_i = int(bands)
+    except Exception:
+        bands_i = 8
+        warnings.append("Invalid bands; using 8.")
+    if bands_i <= 0:
+        bands_i = 8
+
+    try:
+        max_delta_i = int(max_delta)
+    except Exception:
+        max_delta_i = 200
+        warnings.append("Invalid max_delta; using 200.")
+    if max_delta_i < 0:
+        max_delta_i = 0
+
+    focus = set(glyph_names or []) if glyph_names else None
+
+    glyph_maps = kerning_collision_engine.build_glyph_maps(getattr(font, "glyphs", []) or [])
+    unicode_to_glyphname = glyph_maps.get("unicodeToGlyphname") or {}
+    glyphname_to_unicode = glyph_maps.get("glyphnameToUnicode") or {}
+    name_set = glyph_maps.get("nameSet") or set()
+    id_to_name = glyph_maps.get("idToName") or {}
+    left_key_group_rep = glyph_maps.get("leftKeyGroupRep") or {}
+    right_key_group_rep = glyph_maps.get("rightKeyGroupRep") or {}
+
+    kerning_master = font.kerning.get(master_id, {}) or {}
+
+    candidate_counts = {
+        "pairsCandidate": 0,
+        "pairsMeasured": 0,
+        "pairsSkippedNoGlyph": 0,
+        "pairsSkippedNoOverlap": 0,
+        "pairsSkippedNoBounds": 0,
+    }
+
+    used_top_n = min(max(int(relevant_limit or 0), 0), len(dataset_pairs or []))
+
+    if explicit_pairs is not None:
+        pairs = []
+        seen = set()
+        for item in explicit_pairs or []:
+            if not isinstance(item, (list, tuple)) or len(item) != 2:
+                continue
+            left_name = str(item[0])
+            right_name = str(item[1])
+            if not left_name or not right_name:
+                continue
+            pair = (left_name, right_name)
+            if pair in seen:
+                continue
+            seen.add(pair)
+            pairs.append(pair)
+
+        candidate_counts["pairsCandidate"] = len(pairs)
+    else:
+        pairs, counts = kerning_collision_engine.build_candidate_pairs(
+            dataset_pairs=dataset_pairs or [],
+            unicode_to_glyphname=unicode_to_glyphname,
+            relevant_limit=int(relevant_limit or 0),
+            include_existing=bool(include_existing),
+            kerning_master=kerning_master,
+            name_set=name_set,
+            id_to_name=id_to_name,
+            left_key_group_rep=left_key_group_rep,
+            right_key_group_rep=right_key_group_rep,
+            focus=focus,
+            pair_limit=int(pair_limit or 0),
+        )
+        candidate_counts["pairsCandidate"] = len(pairs)
+        candidate_counts["pairsSkippedNoGlyph"] += int(counts.get("pairsSkippedNoGlyph") or 0)
+
+    collisions = []
+    safe_gaps = []
+
+    # Measure.
+    for left_name, right_name in pairs:
+        left_glyph = font.glyphs[left_name] if left_name else None
+        right_glyph = font.glyphs[right_name] if right_name else None
+        if not left_glyph or not right_glyph:
+            candidate_counts["pairsSkippedNoGlyph"] += 1
+            continue
+
+        try:
+            left_layer = left_glyph.layers[master_id]
+            right_layer = right_glyph.layers[master_id]
+        except Exception:
+            left_layer = None
+            right_layer = None
+
+        if not left_layer or not right_layer:
+            candidate_counts["pairsSkippedNoBounds"] += 1
+            continue
+
+        lb = kerning_collision_engine.bounds_tuple(left_layer)
+        rb = kerning_collision_engine.bounds_tuple(right_layer)
+        if not lb or not rb:
+            candidate_counts["pairsSkippedNoBounds"] += 1
+            continue
+
+        overlap = kerning_collision_engine.overlap_y_range(lb, rb)
+        if not overlap:
+            candidate_counts["pairsSkippedNoOverlap"] += 1
+            continue
+
+        left_id = getattr(left_glyph, "id", None)
+        right_id = getattr(right_glyph, "id", None)
+        left_group = getattr(left_glyph, "rightKerningGroup", None)
+        right_group = getattr(right_glyph, "leftKerningGroup", None)
+
+        left_class_key = "@MMK_L_" + str(left_group) if left_group else None
+        right_class_key = "@MMK_R_" + str(right_group) if right_group else None
+
+        kerning_value, source = kerning_collision_engine.resolve_explicit_kerning_value(
+            kerning_master=kerning_master,
+            left_glyph_id=str(left_id) if left_id else None,
+            left_glyph_name=left_name,
+            left_class_key=left_class_key,
+            right_glyph_id=str(right_id) if right_id else None,
+            right_glyph_name=right_name,
+            right_class_key=right_class_key,
+        )
+
+        # If available, prefer Glyphs' kerningForPair() as a sanity check / fallback.
+        try:
+            kv = font.kerningForPair(master_id, left_name, right_name)
+            kvf = _coerce_numeric(kv)
+            if kvf is not None:
+                kerning_value = float(kvf)
+        except Exception:
+            pass
+
+        measured = kerning_collision_engine.measure_pair_min_gap(
+            left_layer=left_layer,
+            right_layer=right_layer,
+            kerning_value=float(kerning_value),
+            scan_mode=scan_mode_norm,
+            scan_heights=scan_heights_norm,
+            dense_step=dense_step_f,
+            bands=bands_i,
+            include_components=True,
+            target_gap=target_gap_f,
+        )
+
+        if measured is None:
+            candidate_counts["pairsSkippedNoBounds"] += 1
+            continue
+
+        candidate_counts["pairsMeasured"] += 1
+
+        # Bumper suggestion (integer kerning exception).
+        suggestion = kerning_collision_engine.compute_bumper_suggestion(
+            kerning_value=float(kerning_value),
+            measured_min_gap=float(measured.min_gap),
+            target_gap=float(target_gap_f),
+            max_delta=int(max_delta_i),
+        )
+
+        record = {
+            "left": left_name,
+            "right": right_name,
+            "kerningValue": float(kerning_value),
+            "kerningSource": {"leftKey": source.left_key, "rightKey": source.right_key},
+            "minGap": float(measured.min_gap),
+            "worstY": float(measured.worst_y) if measured.worst_y is not None else None,
+            "bandMinGaps": list(measured.band_min_gaps or []),
+            "bumperDelta": float(suggestion.bumper_delta),
+            "recommendedException": int(suggestion.recommended_exception),
+            "refined": bool(measured.refined),
+            "sampleCount": int(measured.sample_count),
+        }
+
+        if float(measured.min_gap) < float(target_gap_f):
+            collisions.append(record)
+        else:
+            safe_gaps.append(
+                {
+                    "left": left_name,
+                    "right": right_name,
+                    "kerningValue": float(kerning_value),
+                    "minGap": float(measured.min_gap),
+                }
+            )
+
+    return {
+        "warnings": warnings,
+        "scanMode": scan_mode_norm,
+        "scanHeights": scan_heights_norm,
+        "denseStep": dense_step_f,
+        "bands": bands_i,
+        "minGap": min_gap_f,
+        "targetGap": target_gap_f,
+        "maxDelta": max_delta_i,
+        "usedTopN": used_top_n,
+        "counts": candidate_counts,
+        "collisions": collisions,
+        "safeGaps": safe_gaps,
+        "glyphnameToUnicode": glyphname_to_unicode,
+        "unicodeToGlyphname": unicode_to_glyphname,
+    }
+
+
+@mcp.tool()
+async def review_kerning_bumper(
+    font_index: int = 0,
+    master_id: str = None,
+    relevant_limit: int = 2000,
+    include_existing: bool = True,
+    pair_limit: int = 3000,
+    glyph_names: list = None,
+    min_gap: float = 5.0,
+    scan_mode: str = "two_pass",
+    scan_heights: list = None,
+    dense_step: float = 10.0,
+    bands: int = 8,
+    result_limit: int = 200,
+    open_tab: bool = False,
+    rendering: str = "hybrid",
+    per_line: int = 12,
+) -> str:
+    """Review kerning collisions / near-misses and propose deterministic bumper values.
+
+    This tool does not change kerning. It measures minimum outline gaps across
+    the vertical overlap range for prioritized pairs, then computes the minimal
+    kerning loosening required to satisfy a minimum gap constraint.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        if master_id is None:
+            master_id = font.masters[0].id
+
+        dataset_meta, dataset_pairs, warnings = _load_andre_fuchs_relevant_pairs()
+        pair_count = len(dataset_pairs or [])
+        if pair_count and pair_count < 250:
+            warnings.append(
+                "Andre-Fuchs dataset snapshot is small ({} pairs). Consider regenerating it with scripts/vendor_andre_fuchs_pairs.py.".format(
+                    pair_count
+                )
+            )
+
+        analysis = _kerning_bumper_analyze(
+            font=font,
+            master_id=master_id,
+            dataset_pairs=dataset_pairs,
+            relevant_limit=relevant_limit,
+            include_existing=include_existing,
+            pair_limit=pair_limit,
+            glyph_names=glyph_names,
+            min_gap=min_gap,
+            scan_mode=scan_mode,
+            scan_heights=scan_heights,
+            dense_step=dense_step,
+            bands=bands,
+            target_gap=min_gap,
+            max_delta=10**9,
+            explicit_pairs=None,
+        )
+
+        warnings.extend(analysis.get("warnings") or [])
+
+        # Sort + cap results.
+        collisions = sorted(analysis.get("collisions") or [], key=lambda r: float(r.get("minGap", 0.0)))
+        safe_gaps = sorted(analysis.get("safeGaps") or [], key=lambda r: float(r.get("minGap", 0.0)), reverse=True)
+
+        cap = max(int(result_limit or 0), 0) or 200
+        collisions_out = collisions[:cap]
+        gaps_out = safe_gaps[:cap]
+
+        text = None
+        opened_tab = False
+        if open_tab:
+            ProofGlyph = kerning_proof_engine.ProofGlyph
+            glyphname_to_unicode = analysis.get("glyphnameToUnicode") or {}
+            unicode_to_glyphname = analysis.get("unicodeToGlyphname") or {}
+
+            def _context_chars(lc, rc):
+                try:
+                    if lc and rc and str(lc).isupper() and str(rc).isupper():
+                        return ("H", "O")
+                    if lc and rc and str(lc).islower() and str(rc).islower():
+                        return ("n", "o")
+                except Exception:
+                    pass
+                return ("H", "O")
+
+            def _context_glyph_name(ch):
+                return unicode_to_glyphname.get(ch) or ch
+
+            def _unicode_for_name(name):
+                uni = glyphname_to_unicode.get(name)
+                if uni:
+                    return uni
+                if isinstance(name, str) and len(name) == 1:
+                    return name
+                return None
+
+            def _pair_tokens(left_name, right_name):
+                lc = _unicode_for_name(left_name)
+                rc = _unicode_for_name(right_name)
+                stem_ch, round_ch = _context_chars(lc or "", rc or "")
+                stem_name = _context_glyph_name(stem_ch)
+                round_name = _context_glyph_name(round_ch)
+                return [
+                    [
+                        ProofGlyph(stem_name, stem_ch),
+                        ProofGlyph(left_name, lc),
+                        ProofGlyph(right_name, rc),
+                        ProofGlyph(stem_name, stem_ch),
+                    ],
+                    [
+                        ProofGlyph(round_name, round_ch),
+                        ProofGlyph(left_name, lc),
+                        ProofGlyph(right_name, rc),
+                        ProofGlyph(round_name, round_ch),
+                    ],
+                ]
+
+            collision_tokens = []
+            for r in collisions_out:
+                collision_tokens.extend(_pair_tokens(r.get("left"), r.get("right")))
+
+            gap_tokens = []
+            for r in gaps_out:
+                gap_tokens.extend(_pair_tokens(r.get("left"), r.get("right")))
+
+            sections = [
+                ("KERNING COLLISION GUARD (min_gap={}) — COLLISIONS / NEAR MISSES".format(analysis.get("minGap")), collision_tokens),
+                ("LARGEST GAPS (by measured minGap)", gap_tokens),
+            ]
+
+            text, engine_warnings = kerning_proof_engine.assemble_tab_text(
+                sections=sections,
+                rendering=rendering,
+                per_line=per_line,
+            )
+            warnings.extend(engine_warnings)
+
+            try:
+                _open_tab_on_main_thread(font, text)
+                opened_tab = True
+            except Exception as exc:
+                warnings.append("Failed to open Glyphs tab: {}".format(exc))
+
+        # Deduplicate warnings, keep the payload small.
+        deduped = []
+        seen = set()
+        for w in warnings:
+            if not w:
+                continue
+            if w in seen:
+                continue
+            seen.add(w)
+            deduped.append(w)
+            if len(deduped) >= 12:
+                break
+
+        return _safe_json(
+            {
+                "ok": True,
+                "fontIndex": font_index,
+                "masterId": master_id,
+                "dataset": {"id": dataset_meta.get("id") or "andre_fuchs_relevant_pairs", "usedTopN": analysis.get("usedTopN")},
+                "counts": analysis.get("counts"),
+                "params": {
+                    "minGap": float(analysis.get("minGap")),
+                    "scanMode": analysis.get("scanMode"),
+                    "scanHeights": analysis.get("scanHeights"),
+                    "denseStep": float(analysis.get("denseStep")),
+                    "bands": int(analysis.get("bands")),
+                },
+                "results": {"collisions": collisions_out, "largestGaps": gaps_out},
+                "openedTab": bool(opened_tab),
+                **({"text": text} if open_tab else {}),
+                "warnings": deduped,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
+
+
+@mcp.tool()
+async def apply_kerning_bumper(
+    font_index: int = 0,
+    master_id: str = None,
+    relevant_limit: int = 2000,
+    include_existing: bool = True,
+    pair_limit: int = 3000,
+    glyph_names: list = None,
+    min_gap: float = 5.0,
+    scan_mode: str = "two_pass",
+    scan_heights: list = None,
+    dense_step: float = 10.0,
+    bands: int = 8,
+    result_limit: int = 200,
+    pairs: list = None,
+    extra_gap: float = 0.0,
+    max_delta: int = 200,
+    dry_run: bool = False,
+    confirm: bool = False,
+) -> str:
+    """Apply kerning bumper suggestions as glyph–glyph exceptions.
+
+    Safety:
+      - Refuses to mutate without confirm=true.
+      - Use dry_run=true to preview.
+      - Never auto-saves.
+    """
+    try:
+        if not confirm and not dry_run:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Refusing to apply kerning without confirm=true.",
+                    "hint": "Run apply_kerning_bumper(..., dry_run=true) to preview or set confirm=true to apply.",
+                }
+            )
+
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        if master_id is None:
+            master_id = font.masters[0].id
+
+        dataset_meta, dataset_pairs, warnings = _load_andre_fuchs_relevant_pairs()
+
+        try:
+            target_gap = float(min_gap) + float(extra_gap or 0.0)
+        except Exception:
+            target_gap = float(min_gap or 5.0)
+            warnings.append("Invalid extra_gap; ignored.")
+
+        explicit_pairs = None
+        if pairs is not None:
+            explicit_pairs = pairs
+
+        analysis = _kerning_bumper_analyze(
+            font=font,
+            master_id=master_id,
+            dataset_pairs=dataset_pairs,
+            relevant_limit=relevant_limit,
+            include_existing=include_existing,
+            pair_limit=pair_limit,
+            glyph_names=glyph_names,
+            min_gap=min_gap,
+            scan_mode=scan_mode,
+            scan_heights=scan_heights,
+            dense_step=dense_step,
+            bands=bands,
+            target_gap=target_gap,
+            max_delta=max_delta,
+            explicit_pairs=explicit_pairs,
+        )
+
+        warnings.extend(analysis.get("warnings") or [])
+
+        collisions = analysis.get("collisions") or []
+        by_pair = {(r.get("left"), r.get("right")): r for r in collisions if r.get("left") and r.get("right")}
+
+        requested = []
+        if pairs is not None:
+            for item in pairs or []:
+                if not isinstance(item, (list, tuple)) or len(item) != 2:
+                    continue
+                requested.append((str(item[0]), str(item[1])))
+        else:
+            requested = list(by_pair.keys())
+
+        to_apply = []
+        changes = []
+        skipped_missing = 0
+        skipped_safe = 0
+
+        for left_name, right_name in requested:
+            r = by_pair.get((left_name, right_name))
+            if not r:
+                skipped_missing += 1
+                continue
+
+            old_value = _coerce_numeric(r.get("kerningValue"))
+            new_value = _coerce_numeric(r.get("recommendedException"))
+            if old_value is None or new_value is None:
+                skipped_missing += 1
+                continue
+
+            old_value_f = float(old_value)
+            new_value_i = int(new_value)
+            delta = float(new_value_i) - float(old_value_f)
+
+            if delta <= 0:
+                skipped_safe += 1
+                continue
+
+            to_apply.append((left_name, right_name, new_value_i))
+            changes.append(
+                {
+                    "left": left_name,
+                    "right": right_name,
+                    "oldKerningValue": old_value_f,
+                    "newKerningValue": new_value_i,
+                    "delta": delta,
+                    "minGap": r.get("minGap"),
+                    "targetGap": target_gap,
+                }
+            )
+
+        applied_count = 0
+        if to_apply and confirm and not dry_run:
+            _set_kerning_pairs_on_main_thread(font, master_id, to_apply)
+            applied_count = len(to_apply)
+
+        cap = max(int(result_limit or 0), 0) or 200
+        changes_out = changes[:cap]
+
+        # Deduplicate warnings, keep the payload small.
+        deduped = []
+        seen = set()
+        for w in warnings:
+            if not w:
+                continue
+            if w in seen:
+                continue
+            seen.add(w)
+            deduped.append(w)
+            if len(deduped) >= 12:
+                break
+
+        return _safe_json(
+            {
+                "ok": True,
+                "dryRun": bool(dry_run),
+                "confirmed": bool(confirm),
+                "fontIndex": font_index,
+                "masterId": master_id,
+                "dataset": {"id": dataset_meta.get("id") or "andre_fuchs_relevant_pairs", "usedTopN": analysis.get("usedTopN")},
+                "params": {
+                    "minGap": float(analysis.get("minGap")),
+                    "extraGap": float(extra_gap or 0.0),
+                    "targetGap": float(target_gap),
+                    "maxDelta": int(analysis.get("maxDelta")),
+                    "scanMode": analysis.get("scanMode"),
+                    "scanHeights": analysis.get("scanHeights"),
+                    "denseStep": float(analysis.get("denseStep")),
+                    "bands": int(analysis.get("bands")),
+                },
+                "counts": {
+                    "pairsRequested": len(requested),
+                    "pairsColliding": len(by_pair),
+                    "pairsToApply": len(to_apply),
+                    "pairsApplied": applied_count,
+                    "pairsSkippedMissing": skipped_missing,
+                    "pairsSkippedAlreadySafe": skipped_safe,
+                },
+                "changes": changes_out,
+                "warnings": deduped,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
 
 
 @mcp.tool()

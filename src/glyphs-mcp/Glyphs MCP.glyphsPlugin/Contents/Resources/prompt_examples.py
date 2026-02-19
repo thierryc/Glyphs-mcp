@@ -74,6 +74,38 @@ async def prompt_report_tightest_kerning_pairs():
 
 
 @mcp.prompt(
+    name="review_kerning_bumper",
+    title="Review Kerning Bumper",
+    description="Review collisions/near-misses and propose deterministic bumper values (no mutation).",
+    tags={"examples", "glyphs", "kerning"},
+)
+async def prompt_review_kerning_bumper():
+    """Prompt describing how to review kerning collisions with the bumper tool."""
+    return [
+        Message(
+            "Call glyphs-app-mcp__review_kerning_bumper for the active font/master and summarize the worst collisions (lowest minGap) and their recommendedException values.",
+            role="user",
+        )
+    ]
+
+
+@mcp.prompt(
+    name="apply_kerning_bumper",
+    title="Apply Kerning Bumper",
+    description="Apply bumper suggestions as glyph–glyph exceptions (dry-run first).",
+    tags={"examples", "glyphs", "kerning"},
+)
+async def prompt_apply_kerning_bumper():
+    """Prompt describing how to apply kerning bumper suggestions safely."""
+    return [
+        Message(
+            "Call glyphs-app-mcp__apply_kerning_bumper with dry_run=true, then call it again with confirm=true using the same args to apply (never auto-save).",
+            role="user",
+        )
+    ]
+
+
+@mcp.prompt(
     name="recalculate_sidebearings",
     title="Recalculate Sidebearings",
     description="Suggests executing Python to recalculate sidebearings for selected glyphs.",

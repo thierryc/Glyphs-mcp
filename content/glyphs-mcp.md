@@ -41,6 +41,8 @@ Command table for the MCP server version exposed in code (FastMCP `version="1.0.
 | `get_glyph_details` | Full glyph data including layers, paths, components. |
 | `get_font_kerning` | All kerning pairs for a given master. |
 | `generate_kerning_tab` | Generate a kerning review proof tab (missing relevant pairs + outliers) and open it. |
+| `review_kerning_bumper` | Review kerning collisions / near-misses and compute deterministic “bumper” suggestions (no mutation). |
+| `apply_kerning_bumper` | Apply “bumper” suggestions as glyph–glyph kerning exceptions (supports `dry_run`; requires `confirm=true` to mutate). |
 | `create_glyph` | Add a new glyph to the font. |
 | `delete_glyph` | Remove a glyph from the font. |
 | `update_glyph_properties` | Change unicode, category, export flags, etc. |
@@ -85,6 +87,8 @@ Avoid calling `exit()` / `quit()` / `sys.exit()` in `execute_code*`; they won't 
 
 The tool does **not** change kerning values. It only reads kerning + glyph metadata, generates a proof string, and opens a tab.
 
+For an end‑to‑end kerning checklist + LLM prompt pack (aligned with Glyphs’ kerning workflow), see `content/kerning-workflow.md`.
+
 #### Prompt templates (copy/paste)
 
 > Note: tool name prefixes vary by client. If your tools aren’t named `glyphs-app-mcp__*`, replace that prefix with whatever your MCP client shows.
@@ -120,6 +124,63 @@ Call glyphs-app-mcp__generate_kerning_tab:
 {"font_index":0,"missing_limit":0,"audit_limit":250,"rendering":"hybrid"}
 
 Then summarize the most extreme values and what they likely indicate.
+```
+
+### Kerning collision guard: `review_kerning_bumper` / `apply_kerning_bumper`
+
+These tools add a **geometry-based guardrail** for kerning:
+- Measure a pair’s **minimum outline gap** across the glyphs’ **vertical overlap** (band-by-band).
+- Flag **collisions / near-misses** under a configurable `min_gap`.
+- Propose a deterministic **“bumper” loosening**: the minimum kerning increase needed to meet the gap constraint.
+
+This is not “optical kerning”. It’s a clean-room collision detector + safety suggestion engine.
+
+`review_kerning_bumper` does **not** mutate kerning.  
+`apply_kerning_bumper` writes **glyph–glyph exceptions only** (never class kerning) and is confirm-gated.
+
+For a full deep-dive, see `content/kerning-tools.md`.
+For an end‑to‑end kerning checklist + tutorial, see `content/kerning-workflow.md`.
+
+#### Prompt templates (copy/paste)
+
+> Note: tool name prefixes vary by client. If your tools aren’t named `glyphs-app-mcp__*`, replace that prefix with whatever your MCP client shows.
+
+**Review collisions (no mutation)**
+```text
+In Glyphs, review kerning collisions for my current font/master and propose safe bumper values.
+
+1) Call glyphs-app-mcp__review_kerning_bumper:
+{"font_index":0,"min_gap":5,"relevant_limit":2000,"include_existing":true,"scan_mode":"two_pass","dense_step":10,"bands":8}
+
+2) Summarize:
+- How many pairs were measured vs skipped (and why)
+- The 20 worst collisions (lowest minGap) and their recommendedException values
+- Any warnings about dataset size or scan settings
+```
+
+**Open a proof tab for the worst collisions**
+```text
+Open a kerning collision proof tab for the worst pairs, then tell me what to kern first.
+
+Call glyphs-app-mcp__review_kerning_bumper:
+{"font_index":0,"min_gap":5,"open_tab":true,"result_limit":120,"rendering":"hybrid","per_line":12}
+```
+
+**Apply bumpers safely (dry run → confirm)**
+```text
+I want you to fix collisions by adding glyph–glyph kerning exceptions only.
+Rules:
+- Never auto-save.
+- Never mutate without a dry run first.
+- Only loosen (never tighten).
+
+1) Call glyphs-app-mcp__apply_kerning_bumper (dry run):
+{"font_index":0,"dry_run":true,"min_gap":5,"extra_gap":0,"max_delta":200,"relevant_limit":2000,"include_existing":true}
+
+2) Show me the first 50 proposed changes (old → new) and the biggest deltas.
+3) If I say “apply”, call apply_kerning_bumper again with confirm=true using the same args.
+4) If I say “re-proof”, call glyphs-app-mcp__review_kerning_bumper with open_tab=true.
+5) If I say “save”, call glyphs-app-mcp__save_font.
 ```
 
 ### Spacing workflow: `review_spacing` / `apply_spacing` (HTspacer-style)
