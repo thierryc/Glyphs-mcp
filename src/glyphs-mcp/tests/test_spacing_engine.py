@@ -65,6 +65,23 @@ class SpacingEngineTests(unittest.TestCase):
         out = spacing_engine._scale_params(upm=1000, x_height=500, area=400, factor=1.0)  # type: ignore[attr-defined]
         self.assertEqual(out, 400.0 * 1.0 * 100.0)
 
+    def test_round_half_away_from_zero(self) -> None:
+        fn = spacing_engine._round_half_away_from_zero  # type: ignore[attr-defined]
+        self.assertEqual(fn(0.5), 1)
+        self.assertEqual(fn(1.4), 1)
+        self.assertEqual(fn(1.5), 2)
+        self.assertEqual(fn(-0.5), -1)
+        self.assertEqual(fn(-1.4), -1)
+        self.assertEqual(fn(-1.5), -2)
+
+    def test_split_int_delta_sums_exactly(self) -> None:
+        split = spacing_engine._split_int_delta  # type: ignore[attr-defined]
+        self.assertEqual(sum(split(0)), 0)
+        self.assertEqual(sum(split(1)), 1)
+        self.assertEqual(sum(split(2)), 2)
+        self.assertEqual(sum(split(-1)), -1)
+        self.assertEqual(sum(split(-3)), -3)
+
     def test_resolve_param_precedence(self) -> None:
         # 1) per-call defaults wins
         val = spacing_engine.resolve_param_precedence(
@@ -154,6 +171,8 @@ class SpacingEngineTests(unittest.TestCase):
         self.assertEqual(out["lsb"], 150)
         # Suggested rsb delta is -500; clamp to -150, then minRSB keeps it at -100.
         self.assertEqual(out["rsb"], -100)
+        self.assertIsInstance(out["lsb"], int)
+        self.assertIsInstance(out["rsb"], int)
         self.assertIn("clamped_lsb_delta", warnings)
         self.assertIn("clamped_rsb_delta", warnings)
         self.assertIn("clamped_rsb_min", warnings)

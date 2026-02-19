@@ -127,6 +127,36 @@ def _coerce_float(value: Any) -> Optional[float]:
         return None
 
 
+def _round_half_away_from_zero(x: float) -> int:
+    """Round to nearest int, with .5 values rounded away from zero.
+
+    Python's built-in round() uses bankers rounding; font-unit metrics are
+    typically expected to be integer units without .5 artifacts.
+    """
+    xf = float(x)
+    if xf >= 0.0:
+        return int(math.floor(xf + 0.5))
+    return -int(math.floor(abs(xf) + 0.5))
+
+
+def _units_int(value: Any) -> Optional[int]:
+    """Coerce a numeric value to an integer font unit using half-away-from-zero rounding."""
+    f = _coerce_float(value)
+    if f is None:
+        return None
+    return _round_half_away_from_zero(f)
+
+
+def _split_int_delta(diff_total: int) -> Tuple[int, int]:
+    """Split an integer delta into two integers that sum exactly to diff_total.
+
+    Used for tabular width preservation to avoid producing half-unit sidebearings.
+    """
+    left = diff_total // 2
+    right = diff_total - left
+    return left, right
+
+
 def _safe_attr(obj: Any, name: str, default: Any = None) -> Any:
     try:
         value = getattr(obj, name)
@@ -484,7 +514,7 @@ def compute_suggestion_for_layer(
     warnings: List[str] = []
 
     width, lsb, rsb = _get_layer_metrics(layer)
-    current = {"width": width, "lsb": lsb, "rsb": rsb}
+    current = {"width": _units_int(width), "lsb": _units_int(lsb), "rsb": _units_int(rsb)}
 
     bounds = _bounds_tuple(layer)
     if not bounds:
@@ -805,28 +835,52 @@ def compute_suggestion_for_layer(
     if tabular_width is None:
         tabular_width = width
     if tabular_mode and tabular_width is not None:
-        try:
-            target_w = float(tabular_width)
-            diff = (target_w - suggested_width) / 2.0
-            suggested_lsb += diff
-            suggested_rsb += diff
-            suggested_width = target_w
-            warnings.append("tabular_width_preserved")
-        except Exception:
+        # Preserve width using integer arithmetic to avoid half-unit sidebearings.
+        target_w_int = _units_int(tabular_width)
+        if target_w_int is not None:
+            sug_l_int = _units_int(suggested_lsb)
+            sug_r_int = _units_int(suggested_rsb)
+            shape_int = _units_int(width_shape)
+            if sug_l_int is not None and sug_r_int is not None and shape_int is not None:
+                sug_w_int = shape_int + sug_l_int + sug_r_int
+                diff_total = int(target_w_int - sug_w_int)
+                dl, dr = _split_int_delta(diff_total)
+                suggested_lsb = float(sug_l_int + dl)
+                suggested_rsb = float(sug_r_int + dr)
+                suggested_width = float(target_w_int)
+                warnings.append("tabular_width_preserved")
+            else:
+                warnings.append("tabular_width_preserve_failed")
+        else:
             warnings.append("tabular_width_preserve_failed")
 
     if defaults.get("respectMetricsKeys") and left_key:
         warnings.append("metrics_keys_left")
-        suggested_lsb = lsb if lsb is not None else suggested_lsb
+        suggested_lsb = float(current["lsb"]) if current.get("lsb") is not None else suggested_lsb
     if defaults.get("respectMetricsKeys") and right_key:
         warnings.append("metrics_keys_right")
-        suggested_rsb = rsb if rsb is not None else suggested_rsb
+        suggested_rsb = float(current["rsb"]) if current.get("rsb") is not None else suggested_rsb
 
-    suggested = {"width": suggested_width, "lsb": suggested_lsb, "rsb": suggested_rsb}
+    suggested_int = {
+        "lsb": _units_int(suggested_lsb),
+        "rsb": _units_int(suggested_rsb),
+    }
+    shape_int = _units_int(width_shape)
+    if shape_int is not None and suggested_int["lsb"] is not None and suggested_int["rsb"] is not None:
+        suggested_int["width"] = shape_int + int(suggested_int["lsb"]) + int(suggested_int["rsb"])
+    else:
+        suggested_int["width"] = _units_int(suggested_width)
+
+    # If tabular preservation was requested, width must match the target exactly.
+    if "tabular_width_preserved" in warnings and tabular_width is not None:
+        target_w_int = _units_int(tabular_width)
+        if target_w_int is not None:
+            suggested_int["width"] = int(target_w_int)
+
     delta = {
-        "width": (suggested_width - width) if (suggested_width is not None and width is not None) else None,
-        "lsb": (suggested_lsb - lsb) if (suggested_lsb is not None and lsb is not None) else None,
-        "rsb": (suggested_rsb - rsb) if (suggested_rsb is not None and rsb is not None) else None,
+        "width": (suggested_int["width"] - current["width"]) if (suggested_int.get("width") is not None and current.get("width") is not None) else None,
+        "lsb": (suggested_int["lsb"] - current["lsb"]) if (suggested_int.get("lsb") is not None and current.get("lsb") is not None) else None,
+        "rsb": (suggested_int["rsb"] - current["rsb"]) if (suggested_int.get("rsb") is not None and current.get("rsb") is not None) else None,
     }
 
     measured = {
@@ -874,7 +928,7 @@ def compute_suggestion_for_layer(
         "params": params,
         "measured": measured,
         "target": target,
-        "suggested": suggested,
+        "suggested": suggested_int,
         "delta": delta,
         "warnings": warnings,
     }
@@ -937,5 +991,10 @@ def clamp_suggestion(
                 warnings.append("clamped_rsb_min")
         except Exception:
             pass
+
+    # Font-unit metrics should be integers; normalize here so apply_spacing and
+    # review_spacing never return .5 sidebearings.
+    out["lsb"] = _units_int(out.get("lsb"))
+    out["rsb"] = _units_int(out.get("rsb"))
 
     return out, warnings

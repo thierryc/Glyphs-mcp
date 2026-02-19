@@ -129,6 +129,20 @@ def _coerce_numeric(value):
         return None
 
 
+def _round_half_away_from_zero(x: float) -> int:
+    xf = float(x)
+    if xf >= 0.0:
+        return int(math.floor(xf + 0.5))
+    return -int(math.floor(abs(xf) + 0.5))
+
+
+def _units_int(value):
+    f = _coerce_numeric(value)
+    if f is None:
+        return None
+    return _round_half_away_from_zero(float(f))
+
+
 def _clear_layer_paths(layer):
     """Remove all paths from a layer without touching components/anchors."""
     try:
@@ -2079,20 +2093,37 @@ async def apply_spacing(
                 # Recompute width from measured shape if possible.
                 try:
                     m = r.get("measured") or {}
-                    width_shape = float(m.get("rFullExtreme") - m.get("lFullExtreme"))
-                    clamped_width = width_shape + float(clamped.get("lsb")) + float(clamped.get("rsb"))
+                    width_shape = m.get("rFullExtreme") - m.get("lFullExtreme")
+
+                    cl_l = _units_int(clamped.get("lsb"))
+                    cl_r = _units_int(clamped.get("rsb"))
+                    shape_int = _units_int(width_shape)
+
+                    if shape_int is not None and cl_l is not None and cl_r is not None:
+                        clamped["width"] = int(shape_int + cl_l + cl_r)
+
                     if sug.get("width") is not None and "tabular_width_preserved" in (r.get("warnings") or []):
-                        clamped_width = float(sug.get("width"))
-                    clamped["width"] = clamped_width
+                        clamped["width"] = _units_int(sug.get("width"))
+
+                    clamped["lsb"] = cl_l
+                    clamped["rsb"] = cl_r
                 except Exception:
                     pass
 
                 r["suggested"] = clamped
                 try:
+                    cur_w = _units_int(cur.get("width"))
+                    cur_l = _units_int(cur.get("lsb"))
+                    cur_r = _units_int(cur.get("rsb"))
+
+                    cl_w = _units_int(clamped.get("width"))
+                    cl_l = _units_int(clamped.get("lsb"))
+                    cl_r = _units_int(clamped.get("rsb"))
+
                     r["delta"] = {
-                        "width": (float(clamped.get("width")) - float(cur.get("width"))) if (clamped.get("width") is not None and cur.get("width") is not None) else None,
-                        "lsb": (float(clamped.get("lsb")) - float(cur.get("lsb"))) if (clamped.get("lsb") is not None and cur.get("lsb") is not None) else None,
-                        "rsb": (float(clamped.get("rsb")) - float(cur.get("rsb"))) if (clamped.get("rsb") is not None and cur.get("rsb") is not None) else None,
+                        "width": (cl_w - cur_w) if (cl_w is not None and cur_w is not None) else None,
+                        "lsb": (cl_l - cur_l) if (cl_l is not None and cur_l is not None) else None,
+                        "rsb": (cl_r - cur_r) if (cl_r is not None and cur_r is not None) else None,
                     }
                 except Exception:
                     pass

@@ -313,6 +313,10 @@ Computes a per-glyph spacing report and suggestions.
   - `delta` vs current
   - `warnings` list
 
+**Metric types**
+- `current.width/lsb/rsb`, `suggested.width/lsb/rsb`, and `delta.width/lsb/rsb` are always **integers** (font units).
+- Other numeric fields (`measured.*`, `target.*`, `reference.*`, etc.) may be floats.
+
 ### `apply_spacing`
 
 Applies the suggestions computed by the same engine.
