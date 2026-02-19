@@ -130,6 +130,8 @@ import guide_resources  # noqa: F401
 import prompt_examples  # noqa: F401
 # Import docs helper tools (search/fetch) so they are registered
 import docs_tools  # noqa: F401
+# Import kerning dataset resources so they are registered
+import kerning_resources  # noqa: F401
 
 # Import and initialize the plugin
 from glyphs_plugin import MCPBridgePlugin

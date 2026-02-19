@@ -5,6 +5,7 @@ import json
 import math
 import traceback
 from dataclasses import asdict
+from pathlib import Path
 
 try:
     import objc  # type: ignore[import-not-found]
@@ -31,6 +32,7 @@ from export_designspace_ufo import (
     ExportOptions,
 )
 import spacing_engine
+import kerning_proof_engine
 
 # AppKit is available inside Glyphs (PyObjC). Keep import optional so this file
 # is still importable in environments where Glyphs isn't present.
@@ -238,6 +240,112 @@ def _save_font_on_main_thread(font, requested_path=None):
         raise helper.error
 
     return getattr(helper, "saved_path", None) or getattr(font, "filepath", None) or requested_path
+
+
+def _open_tab_on_main_thread(font, tab_text):
+    """Open a new edit tab safely on the Glyphs main thread."""
+    if objc is None or NSObject is None:
+        return font.newTab(tab_text)
+
+    class _FontTabHelper(NSObject):  # type: ignore[misc,valid-type]
+        def init(self):
+            self = objc.super(_FontTabHelper, self).init()
+            if self is None:
+                return None
+            self._font = font
+            self._text = tab_text
+            self.error = None
+            self.tab = None
+            return self
+
+        def openTab_(self, _obj):
+            try:
+                self.tab = self._font.newTab(self._text)
+            except Exception as exc:  # pragma: no cover - bubbled to caller
+                self.error = exc
+
+    helper = _FontTabHelper.alloc().init()
+    helper.performSelectorOnMainThread_withObject_waitUntilDone_("openTab:", None, True)
+
+    if getattr(helper, "error", None) is not None:
+        raise helper.error
+
+    return getattr(helper, "tab", None)
+
+
+def _glyph_unicode_char(glyph):
+    """Return the single-character Unicode string for a glyph, if available."""
+    uni = getattr(glyph, "unicode", None)
+    if not uni:
+        return None
+    try:
+        return chr(int(str(uni), 16))
+    except Exception:
+        return None
+
+
+def _load_andre_fuchs_relevant_pairs():
+    """Load the bundled Andre Fuchs relevant-pairs dataset.
+
+    Returns (dataset_meta, pairs, warnings) where pairs is a list of (left_char, right_char).
+    """
+    warnings = []
+    dataset_path = (
+        Path(__file__).resolve().parent
+        / "kerning_data"
+        / "andre_fuchs"
+        / "relevant_pairs.v1.json"
+    )
+
+    if not dataset_path.exists():
+        warnings.append("Andre-Fuchs dataset not found at {}".format(dataset_path))
+        return (
+            {"id": "andre_fuchs_relevant_pairs", "pairCount": 0},
+            [],
+            warnings,
+        )
+
+    try:
+        raw = json.loads(dataset_path.read_text(encoding="utf-8", errors="replace"))
+    except Exception as exc:
+        warnings.append("Failed to parse Andre-Fuchs dataset: {}".format(exc))
+        return (
+            {"id": "andre_fuchs_relevant_pairs", "pairCount": 0},
+            [],
+            warnings,
+        )
+
+    dataset_id = raw.get("id") if isinstance(raw, dict) else None
+    if not isinstance(dataset_id, str) or not dataset_id.strip():
+        dataset_id = "andre_fuchs_relevant_pairs"
+
+    pairs = []
+    raw_pairs = raw.get("pairs") if isinstance(raw, dict) else None
+    if not isinstance(raw_pairs, list):
+        warnings.append("Andre-Fuchs dataset has no 'pairs' list.")
+        raw_pairs = []
+
+    for item in raw_pairs:
+        if not isinstance(item, dict):
+            continue
+        left = item.get("left")
+        right = item.get("right")
+        if not isinstance(left, str) or not isinstance(right, str):
+            continue
+        left = left.strip()
+        right = right.strip()
+        if len(left) != 1 or len(right) != 1:
+            continue
+        pairs.append((left, right))
+
+    meta = {"id": dataset_id, "pairCount": len(pairs)}
+    if len(pairs) < 200:
+        warnings.append(
+            "Andre-Fuchs dataset snapshot is small ({} pairs). Run vendor_andre_fuchs_pairs.py to update.".format(
+                len(pairs)
+            )
+        )
+    return meta, pairs, warnings
 
 
 @mcp.tool()
@@ -997,18 +1105,15 @@ def _layer_bounds_ymin_ymax(layer):
 def _is_spacing_guide(guide):
     """Return True if the guide looks like one created by set_spacing_guides."""
     try:
-        name = getattr(guide, "name", "") or ""
-        name_s = str(name)
-        if name_s.startswith("cx.ap.spacing."):
-            return True
-        # Backwards compatibility with older names (pre model-style).
-        if name_s.startswith("cx.ap.spacing.band:"):
+        ud = getattr(guide, "userData", None)
+        if ud and ud.get("cx.ap.spacingGuides") is True:
             return True
     except Exception:
         pass
     try:
-        ud = getattr(guide, "userData", None)
-        if ud and ud.get("cx.ap.spacingGuides") is True:
+        name = getattr(guide, "name", "") or ""
+        name_s = str(name)
+        if name_s.startswith("cx.ap.spacing."):
             return True
     except Exception:
         pass
@@ -2548,6 +2653,332 @@ async def set_kerning_pair(
                     "masterId": master_id,
                 },
             }
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def generate_kerning_tab(
+    font_index: int = 0,
+    master_id: str = None,
+    relevant_limit: int = 2000,
+    missing_limit: int = 1000,
+    audit_limit: int = 200,
+    per_line: int = 12,
+    glyph_names: list = None,
+    rendering: str = "hybrid",
+) -> str:
+    """Generate a kerning review tab and open it in Glyphs.
+
+    The proof text includes:
+      1) A worklist of missing high-relevance pairs (Andre Fuchs dataset),
+         not covered by explicit kerning in the master (glyph or class).
+      2) An audit section of tightest + widest existing explicit kerning pairs.
+
+    Args:
+        font_index: Index of the font (0-based). Defaults to 0.
+        master_id: Master ID. If None, uses the first master.
+        relevant_limit: How many dataset pairs to consider (top-N).
+        missing_limit: Cap for the missing-pairs worklist (pairs, not tokens).
+        audit_limit: Cap for tightest and widest explicit kerning pairs (pairs, not tokens).
+        per_line: Number of tokens per line in the proof text.
+        glyph_names: Optional list of glyph names to focus on (keep only pairs where left or right is in this list).
+        rendering: One of "hybrid" (default), "unicode", or "glyph_names".
+
+    Returns:
+        JSON payload with the generated text and metadata.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        if not font.masters:
+            return json.dumps({"error": "Font has no masters"})
+
+        if master_id is None:
+            master_id = font.masters[0].id
+
+        dataset_meta, dataset_pairs, warnings = _load_andre_fuchs_relevant_pairs()
+        pair_count = int(dataset_meta.get("pairCount") or 0)
+        used_top_n = min(max(int(relevant_limit or 0), 0), pair_count)
+
+        focus = None
+        if glyph_names:
+            try:
+                focus = set([str(n) for n in glyph_names if n])
+            except Exception:
+                focus = None
+        if focus is not None and len(focus) == 0:
+            focus = None
+
+        # Build lookups from the font.
+        unicode_to_glyphname = {}
+        unicode_to_glyphname_fallback = {}
+        glyphname_to_unicode = {}
+        left_group_rep = {}
+        right_group_rep = {}
+        glyph_left_group = {}
+        glyph_right_group = {}
+
+        for glyph in font.glyphs:
+            name = getattr(glyph, "name", None)
+            if not name:
+                continue
+
+            ch = _glyph_unicode_char(glyph)
+            if ch:
+                if name not in glyphname_to_unicode:
+                    glyphname_to_unicode[name] = ch
+
+                if getattr(glyph, "export", True):
+                    if ch not in unicode_to_glyphname:
+                        unicode_to_glyphname[ch] = name
+                else:
+                    if ch not in unicode_to_glyphname_fallback:
+                        unicode_to_glyphname_fallback[ch] = name
+
+            lgrp = getattr(glyph, "leftKerningGroup", None)
+            rgrp = getattr(glyph, "rightKerningGroup", None)
+            glyph_left_group[name] = lgrp
+            glyph_right_group[name] = rgrp
+
+            if lgrp and lgrp not in left_group_rep:
+                left_group_rep[lgrp] = name
+            if rgrp and rgrp not in right_group_rep:
+                right_group_rep[rgrp] = name
+
+        for ch, name in unicode_to_glyphname_fallback.items():
+            if ch not in unicode_to_glyphname:
+                unicode_to_glyphname[ch] = name
+
+        # Build explicit kerning set + numeric list for sorting.
+        explicit = set()
+        existing_numeric = []
+        kerning = font.kerning.get(master_id, {}) or {}
+        for left_key, right_dict in kerning.items():
+            if not right_dict:
+                continue
+            for right_key, value in right_dict.items():
+                explicit.add((str(left_key), str(right_key)))
+                v = _coerce_numeric(value)
+                if v is not None:
+                    existing_numeric.append((str(left_key), str(right_key), float(v)))
+
+        ProofGlyph = kerning_proof_engine.ProofGlyph
+
+        def _context_chars(left_char, right_char):
+            try:
+                if left_char.isupper() and right_char.isupper():
+                    return ("H", "O")
+                if left_char.islower() and right_char.islower():
+                    return ("n", "o")
+            except Exception:
+                pass
+            return ("H", "O")
+
+        def _context_glyph_name(ch):
+            return unicode_to_glyphname.get(ch) or ch
+
+        def _pair_tokens(left_name, left_char, right_name, right_char):
+            stem_ch, round_ch = _context_chars(left_char or "", right_char or "")
+            stem_name = _context_glyph_name(stem_ch)
+            round_name = _context_glyph_name(round_ch)
+
+            return [
+                [
+                    ProofGlyph(stem_name, stem_ch),
+                    ProofGlyph(left_name, left_char),
+                    ProofGlyph(right_name, right_char),
+                    ProofGlyph(stem_name, stem_ch),
+                ],
+                [
+                    ProofGlyph(round_name, round_ch),
+                    ProofGlyph(left_name, left_char),
+                    ProofGlyph(right_name, right_char),
+                    ProofGlyph(round_name, round_ch),
+                ],
+            ]
+
+        # 1) Missing relevant pairs worklist.
+        missing_tokens = []
+        missing_included = 0
+        missing_skipped_no_glyph = 0
+
+        missing_cap = max(int(missing_limit or 0), 0)
+        if missing_cap > 0:
+            for left_char, right_char in dataset_pairs[:used_top_n]:
+                left_name = unicode_to_glyphname.get(left_char)
+                right_name = unicode_to_glyphname.get(right_char)
+                if not left_name or not right_name:
+                    missing_skipped_no_glyph += 1
+                    continue
+
+                if focus is not None and (left_name not in focus and right_name not in focus):
+                    continue
+
+                left_group = glyph_left_group.get(left_name)
+                right_group = glyph_right_group.get(right_name)
+
+                candidates = [(left_name, right_name)]
+                if right_group:
+                    candidates.append((left_name, "@MMK_R_" + str(right_group)))
+                if left_group:
+                    candidates.append(("@MMK_L_" + str(left_group), right_name))
+                if left_group and right_group:
+                    candidates.append(("@MMK_L_" + str(left_group), "@MMK_R_" + str(right_group)))
+
+                covered = False
+                for cand in candidates:
+                    if cand in explicit:
+                        covered = True
+                        break
+                if covered:
+                    continue
+
+                missing_tokens.extend(_pair_tokens(left_name, left_char, right_name, right_char))
+                missing_included += 1
+                if missing_included >= missing_cap:
+                    break
+
+        # 2) Existing extremes audit (tightest + widest).
+        def _rep_for_key(key, is_left):
+            if key.startswith("@MMK_L_"):
+                group = key[len("@MMK_L_") :]
+                rep = left_group_rep.get(group)
+                if rep:
+                    return rep
+                try:
+                    if font.glyphs[group]:
+                        return group
+                except Exception:
+                    return None
+                return None
+
+            if key.startswith("@MMK_R_"):
+                group = key[len("@MMK_R_") :]
+                rep = right_group_rep.get(group)
+                if rep:
+                    return rep
+                try:
+                    if font.glyphs[group]:
+                        return group
+                except Exception:
+                    return None
+                return None
+
+            try:
+                return key if font.glyphs[key] else None
+            except Exception:
+                return None
+
+        def _unicode_for_name(name):
+            uni = glyphname_to_unicode.get(name)
+            if uni:
+                return uni
+            if isinstance(name, str) and len(name) == 1:
+                return name
+            return None
+
+        tight_tokens = []
+        wide_tokens = []
+        tight_included = 0
+        wide_included = 0
+
+        audit_cap = max(int(audit_limit or 0), 0)
+        tightest = sorted(existing_numeric, key=lambda t: t[2])[:audit_cap]
+        widest = sorted(existing_numeric, key=lambda t: t[2], reverse=True)[:audit_cap]
+
+        for left_key, right_key, _value in tightest:
+            left_name = _rep_for_key(left_key, True)
+            right_name = _rep_for_key(right_key, False)
+            if not left_name or not right_name:
+                continue
+            tight_tokens.extend(
+                _pair_tokens(
+                    left_name,
+                    _unicode_for_name(left_name),
+                    right_name,
+                    _unicode_for_name(right_name),
+                )
+            )
+            tight_included += 1
+
+        for left_key, right_key, _value in widest:
+            left_name = _rep_for_key(left_key, True)
+            right_name = _rep_for_key(right_key, False)
+            if not left_name or not right_name:
+                continue
+            wide_tokens.extend(
+                _pair_tokens(
+                    left_name,
+                    _unicode_for_name(left_name),
+                    right_name,
+                    _unicode_for_name(right_name),
+                )
+            )
+            wide_included += 1
+
+        sections = [
+            ("MISSING RELEVANT PAIRS (Andre Fuchs)", missing_tokens),
+            ("EXISTING KERNING OUTLIERS (Tightest)", tight_tokens),
+            ("EXISTING KERNING OUTLIERS (Widest)", wide_tokens),
+        ]
+
+        text, engine_warnings = kerning_proof_engine.assemble_tab_text(
+            sections=sections,
+            rendering=rendering,
+            per_line=per_line,
+        )
+
+        warnings.extend(engine_warnings)
+
+        # Deduplicate warnings, keep the payload small.
+        deduped = []
+        seen = set()
+        for w in warnings:
+            if not w:
+                continue
+            if w in seen:
+                continue
+            seen.add(w)
+            deduped.append(w)
+            if len(deduped) >= 12:
+                break
+
+        opened_tab = False
+        try:
+            _open_tab_on_main_thread(font, text)
+            opened_tab = True
+        except Exception as exc:
+            deduped.append("Failed to open Glyphs tab: {}".format(exc))
+
+        return json.dumps(
+            {
+                "success": True,
+                "fontIndex": font_index,
+                "masterId": master_id,
+                "openedTab": opened_tab,
+                "dataset": {
+                    "id": dataset_meta.get("id") or "andre_fuchs_relevant_pairs",
+                    "pairCount": pair_count,
+                    "usedTopN": used_top_n,
+                },
+                "counts": {
+                    "missingRelevantIncluded": missing_included,
+                    "missingRelevantSkippedNoGlyph": missing_skipped_no_glyph,
+                    "existingTightIncluded": tight_included,
+                    "existingWideIncluded": wide_included,
+                },
+                "warnings": deduped,
+                "text": text,
+            },
+            ensure_ascii=False,
         )
     except Exception as e:
         return json.dumps({"error": str(e)})

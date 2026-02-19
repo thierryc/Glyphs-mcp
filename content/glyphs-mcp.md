@@ -40,6 +40,7 @@ Command table for the MCP server version exposed in code (FastMCP `version="1.0.
 | `get_font_instances` | List instances and their interpolation data. |
 | `get_glyph_details` | Full glyph data including layers, paths, components. |
 | `get_font_kerning` | All kerning pairs for a given master. |
+| `generate_kerning_tab` | Generate a kerning review proof tab (missing relevant pairs + outliers) and open it. |
 | `create_glyph` | Add a new glyph to the font. |
 | `delete_glyph` | Remove a glyph from the font. |
 | `update_glyph_properties` | Change unicode, category, export flags, etc. |
@@ -74,6 +75,102 @@ For performance-sensitive scripts, you can opt into lower-overhead execution:
 - `max_output_chars` / `max_error_chars` to cap returned output and avoid huge responses.
 
 Avoid calling `exit()` / `quit()` / `sys.exit()` in `execute_code*`; they won't exit Glyphs and can disrupt the call.
+
+### Kerning review: `generate_kerning_tab`
+
+`generate_kerning_tab` opens a new Edit tab in Glyphs containing kerning proof text. It is designed to help you:
+
+1) **Kern what matters next**: a worklist of missing high‑relevance pairs (based on a bundled snapshot of Andre Fuchs’ relevance-ranked kerning pairs dataset; MIT).
+2) **Audit outliers**: your master’s tightest and widest existing explicit kerning values (often where rhythm breaks).
+
+The tool does **not** change kerning values. It only reads kerning + glyph metadata, generates a proof string, and opens a tab.
+
+#### Prompt templates (copy/paste)
+
+> Note: tool name prefixes vary by client. If your tools aren’t named `glyphs-app-mcp__*`, replace that prefix with whatever your MCP client shows.
+
+**Default (worklist + outliers, opens a tab)**
+```text
+In Glyphs, generate a kerning review tab for my current font/master.
+
+1) Call glyphs-app-mcp__generate_kerning_tab with:
+{"font_index":0,"rendering":"hybrid"}
+
+2) After it returns:
+- Tell me the counts + any warnings.
+- Explain what each section in the tab is for.
+- Extract the first 25 missing pairs from the “MISSING RELEVANT PAIRS” section and tell me which 10 you’d kern first (class-first).
+```
+
+**Focus on specific glyphs**
+```text
+Generate a kerning review tab focusing only on these glyphs: A V W Y T o a e comma period quotedblleft quotedblright.
+
+Call glyphs-app-mcp__generate_kerning_tab:
+{"font_index":0,"glyph_names":["A","V","W","Y","T","o","a","e","comma","period","quotedblleft","quotedblright"],"rendering":"hybrid","missing_limit":300,"audit_limit":100}
+
+Then summarize counts and list the top missing pairs to kern first.
+```
+
+**Audit-only (no “missing” section)**
+```text
+Open a kerning audit tab showing only the tightest and widest existing explicit kerning pairs (no missing-pairs worklist).
+
+Call glyphs-app-mcp__generate_kerning_tab:
+{"font_index":0,"missing_limit":0,"audit_limit":250,"rendering":"hybrid"}
+
+Then summarize the most extreme values and what they likely indicate.
+```
+
+### Spacing workflow: `review_spacing` / `apply_spacing` (HTspacer-style)
+
+The spacing tools focus on **sidebearings first** (rhythm and consistency), before you sink time into kerning.
+
+- `review_spacing` suggests LSB/RSB/width changes (no mutation).
+- `apply_spacing` applies the same suggestions (requires `dry_run=true` or `confirm=true`).
+- Nothing auto-saves; call `save_font` when you’re happy.
+
+For a deeper reference (defaults, rules, clamping, and guides), see `content/spacing-tools.md`.
+
+#### Prompt templates (copy/paste)
+
+> Note: tool name prefixes vary by client. If your tools aren’t named `glyphs-app-mcp__*`, replace that prefix with whatever your MCP client shows.
+
+**Default spacing pass (review → dry-run → apply)**
+```text
+You are my spacing assistant for a Glyphs font.
+Rules:
+- Never auto-save.
+- Never mutate without a dry run first.
+- Keep changes conservative (use clamping).
+
+Task: Improve spacing consistency for my current selection in the active font.
+
+1) Call glyphs-app-mcp__review_spacing:
+{"font_index":0}
+
+2) Summarize the top spacing outliers and skip reasons.
+
+3) Call glyphs-app-mcp__apply_spacing (dry run):
+{"font_index":0,"dry_run":true,"clamp":{"maxDeltaLSB":80,"maxDeltaRSB":80,"minLSB":-50,"minRSB":-50}}
+
+4) If I say “apply”, call apply_spacing again with confirm=true using the same clamp.
+5) If I say “save”, call glyphs-app-mcp__save_font.
+```
+
+**Tabular figures pass (fixed width)**
+```text
+I want tabular figures to keep a fixed width by distributing width changes evenly across LSB/RSB.
+Select your figure glyphs in Glyphs first, then:
+
+1) Call glyphs-app-mcp__review_spacing:
+{"font_index":0,"defaults":{"tabularMode":true,"tabularWidth":600,"referenceGlyph":"zero"}}
+
+2) Call glyphs-app-mcp__apply_spacing (dry run):
+{"font_index":0,"dry_run":true,"defaults":{"tabularMode":true,"tabularWidth":600,"referenceGlyph":"zero"},"clamp":{"maxDeltaLSB":60,"maxDeltaRSB":60,"minLSB":-50,"minRSB":-50}}
+
+3) If I approve, call apply_spacing again with confirm=true using the same args.
+```
 
 ### Using `get_selected_nodes`
 
@@ -116,6 +213,8 @@ The server is tools-first. Resources exist to help the assistant write better Gl
 - Guide: `glyphs://glyphs-mcp/guide`
 - Docs directory listing: `glyphs://glyphs-mcp/docs`
 - Docs index: `glyphs://glyphs-mcp/docs/index.json`
+- Kerning datasets listing: `glyphs://glyphs-mcp/kerning`
+- Andre Fuchs relevant pairs (normalized snapshot): `glyphs://glyphs-mcp/kerning/andre-fuchs/relevant_pairs.v1.json`
 
 By default, individual doc pages are not registered as separate resources (to avoid flooding MCP clients). Prefer `docs_search` + `docs_get` (on-demand). If you really want per-page resources, call `docs_enable_page_resources` (or set `GLYPHS_MCP_REGISTER_DOC_PAGES=1`).
 

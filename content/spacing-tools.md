@@ -474,7 +474,54 @@ Apply:
 
 ---
 
-## Prompt example (expert): Visualize the spacing model with guides
+## Prompt templates (copy/paste)
+
+> Note: tool name prefixes vary by client. If your tools aren’t named `glyphs-app-mcp__*`, replace that prefix with whatever your MCP client shows.
+
+### HTspacer-style spacing pass (review → dry-run → apply)
+
+```text
+You are a meticulous spacing assistant for a type designer working in Glyphs.
+Rules:
+- Never auto-save.
+- Never mutate without a dry run first.
+- Keep changes conservative (prefer clamping).
+- If glyph_names isn't provided, use my current selection in the active font.
+
+Task: Review and (optionally) apply spacing suggestions to improve rhythm and consistency.
+
+1) Call glyphs-app-mcp__review_spacing:
+{"font_index":0}
+
+2) Summarize:
+- Top 15 layers by |delta.lsb| + |delta.rsb| (and why they’re outliers)
+- Skipped layers grouped by reason (metrics keys, low coverage, etc.)
+- Any warnings that suggest a bad measurement band / reference glyph
+
+3) Call glyphs-app-mcp__apply_spacing (dry run with a conservative clamp):
+{"font_index":0,"dry_run":true,"clamp":{"maxDeltaLSB":80,"maxDeltaRSB":80,"minLSB":-50,"minRSB":-50}}
+
+4) If I say “apply”, call apply_spacing again with confirm=true using the same clamp.
+5) If I say “save”, call glyphs-app-mcp__save_font.
+```
+
+### Tabular figures spacing (fixed width)
+
+```text
+I want tabular figures to keep a fixed width by distributing width changes evenly across LSB/RSB.
+
+First, select your figure glyphs in Glyphs (Font view), then:
+
+1) Call glyphs-app-mcp__review_spacing:
+{"font_index":0,"defaults":{"tabularMode":true,"tabularWidth":600,"referenceGlyph":"zero"}}
+
+2) Call glyphs-app-mcp__apply_spacing (dry run):
+{"font_index":0,"dry_run":true,"defaults":{"tabularMode":true,"tabularWidth":600,"referenceGlyph":"zero"},"clamp":{"maxDeltaLSB":60,"maxDeltaRSB":60,"minLSB":-50,"minRSB":-50}}
+
+3) If I approve, call apply_spacing again with confirm=true using the same args.
+```
+
+### Visualize the spacing model with guides (expert)
 
 Paste this into your LLM/client as a single prompt. It is designed to be safe, practical, and typography-oriented.
 
@@ -507,8 +554,8 @@ Paste this into your LLM/client as a single prompt. It is designed to be safe, p
 3) If the band looks wrong, help me correct it:
 - If it’s too tall/short: suggest adjusting `cx.ap.spacingOver`.
 - If it’s using an unhelpful reference: suggest a better `reference_glyph` (e.g. `n` for lowercase, `H` for uppercase, `zero` for figures) and re-run `set_spacing_guides`.
- - If the depth clamp looks wrong: suggest adjusting `cx.ap.spacingDepth` (percent of x-height).
- - If target averages look too tight/loose globally: suggest adjusting `cx.ap.spacingArea`.
+- If the depth clamp looks wrong: suggest adjusting `cx.ap.spacingDepth` (percent of x-height).
+- If target averages look too tight/loose globally: suggest adjusting `cx.ap.spacingArea`.
 
 4) When I say “clear guides”, call:
 ```json
