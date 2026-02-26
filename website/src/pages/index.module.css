@@ -1,0 +1,51 @@
+.heroBanner {
+  padding: 4rem 0 2.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(
+      800px circle at 50% -200px,
+      rgba(46, 98, 246, 0.35),
+      transparent 55%
+    ),
+    linear-gradient(180deg, rgba(46, 98, 246, 0.06), transparent 35%);
+}
+
+.heroInner {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.tagline {
+  font-size: 1.15rem;
+  opacity: 0.9;
+  max-width: 52rem;
+  margin: 1rem auto 0;
+}
+
+.buttons {
+  margin-top: 1.75rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.section {
+  padding: 2.5rem 0;
+}
+
+.screenshot {
+  width: 100%;
+  max-width: 1100px;
+  border-radius: 14px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.quickstart {
+  max-width: 960px;
+  margin: 0 auto;
+}
+

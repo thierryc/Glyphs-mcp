@@ -22,9 +22,9 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.0)
+## Command Set (MCP server v1.0.1)
 
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.0"`).
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.1"`).
 
 | Tool | Description |
 |------|-------------|
@@ -52,6 +52,8 @@ This table describes the tool surface exposed by the MCP server shipped in this 
 | `get_selected_nodes` | Detailed selected nodes with per‑master mapping for edits. |
 | `add_corner_to_all_masters` | Add a `_corner.*` corner hint at selected nodes (and intersection handles) across all masters (requires `_corner_name`; optional `_alignment`: `left`/`right`/`center` or `0`/`1`/`2`). |
 | `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing. |
+| `review_collinear_handles` | Review a single path for curve nodes that should be smooth based on handle collinearity (no mutation). |
+| `apply_collinear_handles_smooth` | Apply `smooth=True` for collinear-handle curve nodes in a single path (supports `dry_run`; requires `confirm=true` to mutate). |
 | `set_glyph_paths` | Replace glyph paths from JSON. |
 | `ExportDesignspaceAndUFO` | Export designspace/UFO bundles with structured logs and errors. |
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |
@@ -68,6 +70,76 @@ For performance-sensitive scripts, you can opt into lower-overhead execution:
 - `max_output_chars` / `max_error_chars` to cap returned output and avoid huge responses.
 
 Avoid calling `exit()` / `quit()` / `sys.exit()` in `execute_code*`; they won't exit Glyphs and can disrupt the call.
+
+### Macro (Glyphs): mark collinear-handle joins as smooth
+
+Paste into **Window → Macro Panel**. Set `APPLY = False` first to review, then flip to `True`.
+
+```python
+import math
+from GlyphsApp import Glyphs
+
+THRESHOLD_DEG = 3.0
+MIN_HANDLE_LEN = 5.0
+APPLY = False
+
+def vec(a, b):
+    return (b.x - a.x, b.y - a.y)
+
+def length(v):
+    return math.hypot(v[0], v[1])
+
+def angle_deg(v1, v2):
+    l1 = length(v1)
+    l2 = length(v2)
+    if l1 == 0 or l2 == 0:
+        return None
+    dot = v1[0]*v2[0] + v1[1]*v2[1]
+    c = max(-1.0, min(1.0, dot/(l1*l2)))
+    return math.degrees(math.acos(c))
+
+font = Glyphs.font
+tab = font.currentTab if font else None
+layers = list(getattr(tab, "layers", []) or []) if tab else list(getattr(font, "selectedLayers", []) or [])
+
+hits = 0
+for layer in layers:
+    gname = layer.parent.name if layer.parent else "?"
+    for p_i, path in enumerate(getattr(layer, "paths", []) or []):
+        nodes = list(path.nodes)
+        ncount = len(nodes)
+        closed = bool(getattr(path, "closed", True))
+        for i, n in enumerate(nodes):
+            if getattr(n, "type", None) != "curve":
+                continue
+            prev_i = (i - 1) % ncount if closed else (i - 1)
+            next_i = (i + 1) % ncount if closed else (i + 1)
+            if prev_i < 0 or next_i >= ncount:
+                continue
+            prev_n = nodes[prev_i]
+            next_n = nodes[next_i]
+            if getattr(prev_n, "type", None) != "offcurve":
+                continue
+            if getattr(next_n, "type", None) != "offcurve":
+                continue
+
+            v_in = vec(prev_n.position, n.position)
+            v_out = vec(n.position, next_n.position)
+            if min(length(v_in), length(v_out)) < MIN_HANDLE_LEN:
+                continue
+            ang = angle_deg(v_in, v_out)
+            if ang is None or ang > THRESHOLD_DEG:
+                continue
+            if bool(getattr(n, "smooth", False)):
+                continue
+
+            print(f"{gname} path={p_i} node={i} angle={ang:.3f} -> smooth")
+            hits += 1
+            if APPLY:
+                n.smooth = True
+
+print(f"Done. Candidates={hits}. APPLY={APPLY}")
+```
 
 ### ExportDesignspaceAndUFO
 

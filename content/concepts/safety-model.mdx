@@ -1,0 +1,64 @@
+---
+title: Safety model
+description: Read first, dry-run, confirm-gated writes, and optional auth controls.
+---
+
+Glyphs MCP is designed to keep you in control.
+
+## Golden rules
+
+- **Read before write**: inspect first, then propose changes.
+- **Dry run before apply**: preview what would change.
+- **Never auto-save**: save only when *you* decide (`save_font`).
+- **Kerning groups first**: prefer class/group kerning; add exceptions only when you have proof.
+
+Useful guides:
+- [Kerning workflow](../kerning-workflow.md)
+- [Kerning tools](../kerning-tools.md)
+- [Spacing tools](../spacing-tools.md)
+
+## Confirm-gated mutation pattern (copy/paste prompt)
+
+Use this template with your AI client to keep changes safe and explicit:
+
+```text
+You are my Glyphs MCP assistant.
+Rules:
+- Never auto-save.
+- Never mutate without a dry run first.
+- Show me a short summary of the proposed changes (counts + biggest deltas).
+- Wait for me to reply exactly “apply” before calling any tool with confirm=true.
+
+Task: <describe your goal>
+
+1) Inspect current state with read-only tools.
+2) Run the appropriate apply tool in dry_run=true mode.
+3) Stop and wait for approval.
+4) If I reply “apply”, run the same call again with confirm=true.
+5) If I reply “save”, call save_font.
+```
+
+## Optional: lock down access
+
+By default, Glyphs MCP is a local server (`127.0.0.1`) and does not require authentication. If you want extra protection (for example in a shared environment), the server supports:
+
+### Static auth token
+
+Set `GLYPHS_MCP_AUTH_TOKEN` to require a token on every request.
+
+The token can be provided either as:
+- `Authorization: Bearer <token>`, or
+- `mcp-auth-token: <token>`
+
+### Allowed origins (hostname allowlist)
+
+Some clients/proxies include an `Origin` header. The server can reject unexpected origins via:
+
+- `GLYPHS_MCP_ALLOWED_ORIGINS`
+
+This is a hostname allowlist (in addition to the defaults `127.0.0.1` and `localhost`).
+
+:::caution
+Keep the server bound to localhost. Don’t expose it on a public interface unless you fully understand the security implications.
+:::
+

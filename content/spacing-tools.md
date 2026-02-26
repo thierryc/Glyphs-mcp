@@ -1,4 +1,7 @@
-# Spacing Tools: `review_spacing` and `apply_spacing`
+---
+title: Spacing tools
+description: Review and apply consistent sidebearings with conservative defaults and clear reporting.
+---
 
 These tools help you **review** and optionally **apply** consistent sidebearings across a set of glyphs in a Glyphs font.
 
@@ -217,7 +220,7 @@ To persist after setting values, call `save_font`.
 ### Using a text file (JSON) for `defaults` + `rules`
 
 There’s an example config file at:
-- `content/spacing-config.example.json`
+- `./spacing-config.example.json`
 
 Recommended pattern:
 1) Keep your preferred `defaults` + `rules` in a JSON file in your repo.

@@ -1,0 +1,39 @@
+---
+title: Start the server
+description: Start Glyphs MCP inside Glyphs and confirm the local endpoint.
+---
+
+## Start the server in Glyphs
+
+1. Launch Glyphs.
+2. In the menu bar: **Edit → Start Glyphs MCP Server**
+3. Open **Edit → Glyphs MCP Server Status…** to confirm it’s running.
+
+## How to confirm it’s running
+
+In **Glyphs MCP Server Status…**, you should see:
+- A “running” state (or similar)
+- The endpoint URL you can connect to
+
+## Endpoint
+
+By default the MCP endpoint is:
+
+```text
+http://127.0.0.1:9680/mcp/
+```
+
+:::note Browser vs MCP client
+If you open the endpoint in a browser, it returns a small JSON discovery response.
+MCP clients connect using Streamable HTTP (SSE).
+:::
+
+## Optional: auto-start
+
+If you enabled auto-start in the status panel, Glyphs will start the MCP server automatically when the app launches.
+
+## Optional: security
+
+If you want extra protection (token auth or origin allowlist), see [Safety model](../concepts/safety-model.mdx).
+
+Next: [Connect a client](./connect-client.mdx).

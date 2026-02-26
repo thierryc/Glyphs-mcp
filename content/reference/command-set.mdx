@@ -1,0 +1,142 @@
+---
+title: Command set
+description: The MCP tools exposed by the Glyphs MCP server.
+---
+
+This is the tool surface exposed by the server shipped in this repo (FastMCP `version="1.0.1"`).
+
+## Most used tools (start here)
+
+- `list_open_fonts`: pick your `font_index` quickly.
+- `get_font_masters`: find `master_id` and basic master metadata.
+- `review_spacing` / `apply_spacing`: spacing workflow (review → dry run → confirm).
+- `generate_kerning_tab`: open a relevance-based worklist proof tab.
+- `review_kerning_bumper`: collision/near-miss audit (no mutation).
+
+## Tools by category
+
+### Discovery
+
+| Tool | Description |
+|------|-------------|
+| `list_open_fonts` | List all open fonts and basic metadata. |
+| `get_font_glyphs` | Return glyph list and key attributes for a font. |
+| `get_font_masters` | Detailed master information for a font. |
+| `get_font_instances` | List instances and their interpolation data. |
+| `get_glyph_details` | Full glyph data including layers, paths, components. |
+| `get_glyph_components` | Inspect components used in a glyph. |
+| `get_selected_glyphs` | Info about glyphs currently selected in UI. |
+| `get_selected_font_and_master` | Current font + master and selection snapshot. |
+| `get_selected_nodes` | Detailed selected nodes with per-master mapping for edits. |
+| `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing. |
+| `review_collinear_handles` | Review a single path for curve nodes that should be smooth based on handle collinearity (no mutation). |
+
+### Kerning
+
+| Tool | Description |
+|------|-------------|
+| `get_font_kerning` | All kerning pairs for a given master. |
+| `generate_kerning_tab` | Generate a kerning review proof tab (missing relevant pairs + outliers) and open it. |
+| `review_kerning_bumper` | Review kerning collisions / near-misses and compute deterministic “bumper” suggestions (no mutation). |
+| `apply_kerning_bumper` | Apply “bumper” suggestions as glyph–glyph kerning exceptions (supports `dry_run`; requires `confirm=true` to mutate). |
+| `set_kerning_pair` | Set or remove a kerning value. |
+| `add_corner_to_all_masters` | Add a `_corner.*` corner hint at selected nodes (and intersection handles) across all masters. |
+
+### Spacing
+
+| Tool | Description |
+|------|-------------|
+| `review_spacing` | Review spacing and suggest sidebearings/width (area-based; no mutation). |
+| `apply_spacing` | Apply spacing suggestions (supports `dry_run`; requires `confirm=true` to mutate). |
+| `set_spacing_params` | Set spacing parameters as font/master custom parameters (no auto-save). |
+| `set_spacing_guides` | Add or clear glyph-level guides visualizing the spacing measurement band (no auto-save). |
+
+### Editing
+
+| Tool | Description |
+|------|-------------|
+| `create_glyph` | Add a new glyph to the font. |
+| `delete_glyph` | Remove a glyph from the font. |
+| `update_glyph_properties` | Change unicode, category, export flags, etc. |
+| `copy_glyph` | Duplicate outlines or components from one glyph to another. |
+| `update_glyph_metrics` | Adjust width and side-bearings. |
+| `add_component_to_glyph` | Append a component to a glyph layer. |
+| `add_anchor_to_glyph` | Add an anchor to a glyph layer. |
+| `set_glyph_paths` | Replace glyph paths from JSON. |
+| `apply_collinear_handles_smooth` | Apply `smooth=True` for collinear-handle curve nodes in a single path (supports `dry_run`; requires `confirm=true` to mutate). |
+
+### Docs helpers
+
+| Tool | Description |
+|------|-------------|
+| `docs_search` | Search bundled Glyphs SDK/ObjectWrapper docs by title/summary. |
+| `docs_get` | Fetch a bundled docs page by id/path (supports paging via offset/max_chars). |
+
+### Export / execution
+
+| Tool | Description |
+|------|-------------|
+| `ExportDesignspaceAndUFO` | Export designspace/UFO bundles with structured logs and errors. |
+| `execute_code` | Execute arbitrary Python in the Glyphs context. |
+| `execute_code_with_context` | Execute Python with injected helper objects. |
+| `save_font` | Save the active font (optionally to a new path). |
+
+## Recipes (copy/paste prompts)
+
+### 1) List open fonts + pick `font_index`
+
+```text
+List my open fonts.
+Call list_open_fonts and tell me which font_index to use next.
+```
+
+### 2) Generate a kerning worklist proof tab
+
+```text
+Open a kerning worklist proof tab for my current font/master.
+Call generate_kerning_tab with {"font_index":0,"rendering":"hybrid","relevant_limit":2000,"missing_limit":800,"audit_limit":200,"per_line":12}
+Then summarize what the sections mean and what to kern first (class-first).
+```
+
+### 3) Review kerning collisions (no mutation)
+
+```text
+Review kerning collisions/near-misses in my current font/master.
+Rules: do not mutate anything.
+
+Call review_kerning_bumper with {"font_index":0,"min_gap":5,"relevant_limit":2000,"include_existing":true,"scan_mode":"two_pass","dense_step":10,"bands":8,"result_limit":200}
+Then list the 20 worst collisions and what to do next.
+```
+
+### 4) Review spacing + dry run apply
+
+```text
+Review spacing for my current selection, then propose conservative changes.
+Rules: never auto-save; never mutate without a dry run first.
+
+1) Call review_spacing with {"font_index":0}
+2) Call apply_spacing with {"font_index":0,"dry_run":true,"clamp":{"maxDeltaLSB":80,"maxDeltaRSB":80,"minLSB":-50,"minRSB":-50}}
+3) Wait for me to reply “apply” before calling apply_spacing again with confirm=true.
+```
+
+### 5) Review/apply smooth flags for a single path (dry run → confirm)
+
+```text
+I want to mark curve nodes as smooth when their adjacent handles are nearly collinear.
+Rules: only operate on the one path I specify; do not mutate without a dry run first.
+
+1) Call review_collinear_handles with {"font_index":0,"glyph_name":"A","master_id":"m01","path_index":0,"threshold_deg":3.0,"min_handle_len":5.0}
+2) Call apply_collinear_handles_smooth with {"font_index":0,"glyph_name":"A","master_id":"m01","path_index":0,"threshold_deg":3.0,"min_handle_len":5.0,"dry_run":true}
+3) Wait for me to reply “apply” before calling apply_collinear_handles_smooth again with confirm=true.
+```
+
+### 6) Search bundled docs (`docs_search` → `docs_get`)
+
+```text
+Search the bundled Glyphs docs for “GSLayer bounds”.
+1) Call docs_search with {"query":"GSLayer bounds"}
+2) Pick the best match and call docs_get for that page.
+3) Summarize the key parts I need.
+```
+
+<!-- (tables above replace the old flat list) -->

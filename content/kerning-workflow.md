@@ -1,4 +1,7 @@
-# Kerning Workflow (Glyphs Learn‑aligned) + LLM Prompt Pack
+---
+title: Kerning workflow
+description: A practical, typographer-first kerning checklist and “go-through” tutorial with copy/paste-ready prompts.
+---
 
 This page is a practical, typographer‑first kerning checklist and “go‑through” tutorial, aligned with Glyphs’ kerning workflow as described in the official **Kerning** tutorial on glyphsapp.com.
 
@@ -182,4 +185,3 @@ Set kerning increments to low=10, high=50 for the current Glyphs app session.
 Call glyphs-app-mcp__execute_code with:
 {"code":"from GlyphsApp import Glyphs\\nGlyphs.defaults['GSKerningIncrementLow']=10\\nGlyphs.defaults['GSKerningIncrementHigh']=50\\nprint('Kerning increments set: low=10, high=50')"}
 ```
-

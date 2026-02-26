@@ -20,12 +20,13 @@ from AppKit import (
     NSPasteboardTypeString,
     NSTextField,
     NSView,
+    NSWorkspace,
     NSWindowStyleMaskTitled,
     NSWindowStyleMaskClosable,
     NSWindowStyleMaskUtilityWindow,
     NSBackingStoreBuffered,
 )
-from Foundation import NSNumberFormatter, NSTimer
+from Foundation import NSNumberFormatter, NSTimer, NSURL
 from starlette.middleware import Middleware
 
 from mcp_tools import mcp
@@ -38,6 +39,7 @@ from security import (
 )
 from status_panel_helpers import endpoint_for, is_thread_running, status_text
 from utils import get_known_tools, get_tool_info, is_port_available, notify_server_started
+from versioning import get_docs_url_latest, get_plugin_version
 
 
 AUTOSTART_DEFAULTS_KEY = "io.anotherplanet.glyphs-mcp.autostart"
@@ -215,7 +217,7 @@ class MCPBridgePlugin(GeneralPlugin):
 
         self._autostart_waiting = True
         self._autostart_target_port = int(port)
-        self._autostart_deadline = time.monotonic() + 10.0
+        self._autostart_deadline = time.monotonic() + 30.0
         self._autostart_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
             0.5, self, "AutostartPoll:", None, True
         )
@@ -509,7 +511,7 @@ class MCPBridgePlugin(GeneralPlugin):
             return
 
         width = 420
-        height = 140
+        height = 200
         rect = ((0, 0), (width, height))
         style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow
         panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer_(
@@ -521,6 +523,7 @@ class MCPBridgePlugin(GeneralPlugin):
         content = panel.contentView()
         margin = 16
         row_h = 22
+        row_gap = 8
         label_w = 80
         value_w = width - margin * 2 - label_w
         y = height - margin - row_h
@@ -540,7 +543,24 @@ class MCPBridgePlugin(GeneralPlugin):
         status_value.setDrawsBackground_(False)
         content.addSubview_(status_value)
 
-        y -= (row_h + 10)
+        y -= (row_h + row_gap)
+
+        version_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
+        version_label.setStringValue_("Version:")
+        version_label.setEditable_(False)
+        version_label.setSelectable_(False)
+        version_label.setBordered_(False)
+        version_label.setDrawsBackground_(False)
+        content.addSubview_(version_label)
+
+        version_value = NSTextField.alloc().initWithFrame_(((margin + label_w, y), (value_w, row_h)))
+        version_value.setEditable_(False)
+        version_value.setSelectable_(True)
+        version_value.setBordered_(False)
+        version_value.setDrawsBackground_(False)
+        content.addSubview_(version_value)
+
+        y -= (row_h + row_gap)
 
         endpoint_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
         endpoint_label.setStringValue_("Endpoint:")
@@ -557,12 +577,31 @@ class MCPBridgePlugin(GeneralPlugin):
         endpoint_value.setDrawsBackground_(False)
         content.addSubview_(endpoint_value)
 
-        button_w = 120
+        y -= (row_h + row_gap)
+
+        docs_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
+        docs_label.setStringValue_("Docs:")
+        docs_label.setEditable_(False)
+        docs_label.setSelectable_(False)
+        docs_label.setBordered_(False)
+        docs_label.setDrawsBackground_(False)
+        content.addSubview_(docs_label)
+
+        docs_value = NSTextField.alloc().initWithFrame_(((margin + label_w, y), (value_w, row_h)))
+        docs_value.setEditable_(False)
+        docs_value.setSelectable_(True)
+        docs_value.setBordered_(False)
+        docs_value.setDrawsBackground_(False)
+        content.addSubview_(docs_value)
+
+        button_w = 110
         button_h = 28
         button_y = margin
-        button_x = width - margin - button_w
+        button_gap = 10
+        copy_button_x = width - margin - button_w
+        docs_button_x = copy_button_x - button_gap - button_w
 
-        autostart_w = max(10, button_x - margin - 10)
+        autostart_w = max(10, docs_button_x - margin - 10)
         autostart_checkbox = NSButton.alloc().initWithFrame_(((margin, button_y), (autostart_w, button_h)))
         autostart_checkbox.setTitle_(getattr(self, "name_autostart", "Auto-start server on launch"))
         switch_type = getattr(AppKit, "NSSwitchButton", None) or getattr(AppKit, "NSButtonTypeSwitch", None)
@@ -576,7 +615,13 @@ class MCPBridgePlugin(GeneralPlugin):
         autostart_checkbox.setAction_(self.ToggleAutostart_)
         content.addSubview_(autostart_checkbox)
 
-        copy_button = NSButton.alloc().initWithFrame_(((button_x, button_y), (button_w, button_h)))
+        open_docs_button = NSButton.alloc().initWithFrame_(((docs_button_x, button_y), (button_w, button_h)))
+        open_docs_button.setTitle_("Open Docs")
+        open_docs_button.setTarget_(self)
+        open_docs_button.setAction_(self.OpenDocs_)
+        content.addSubview_(open_docs_button)
+
+        copy_button = NSButton.alloc().initWithFrame_(((copy_button_x, button_y), (button_w, button_h)))
         copy_button.setTitle_("Copy Endpoint")
         copy_button.setTarget_(self)
         copy_button.setAction_(self.CopyEndpoint_)
@@ -584,7 +629,9 @@ class MCPBridgePlugin(GeneralPlugin):
 
         self._status_panel = panel
         self._status_field = status_value
+        self._version_field = version_value
         self._endpoint_field = endpoint_value
+        self._docs_field = docs_value
         self._autostart_checkbox = autostart_checkbox
 
     @objc.python_method
@@ -603,6 +650,8 @@ class MCPBridgePlugin(GeneralPlugin):
         running = self._server_is_running()
         port = self._current_port()
         endpoint = endpoint_for(port)
+        version = get_plugin_version()
+        docs_url = get_docs_url_latest()
 
         try:
             if getattr(self, "_waiting_for_port", False) and not running:
@@ -621,6 +670,18 @@ class MCPBridgePlugin(GeneralPlugin):
             pass
         try:
             self._endpoint_field.setStringValue_(endpoint)
+        except Exception:
+            pass
+        try:
+            field = getattr(self, "_version_field", None)
+            if field is not None:
+                field.setStringValue_(version)
+        except Exception:
+            pass
+        try:
+            field = getattr(self, "_docs_field", None)
+            if field is not None:
+                field.setStringValue_(docs_url)
         except Exception:
             pass
         try:
@@ -697,12 +758,27 @@ class MCPBridgePlugin(GeneralPlugin):
         except Exception:
             print("Endpoint:", endpoint)
 
+    def OpenDocs_(self, sender):
+        """Open the documentation in the default browser."""
+        docs_url = get_docs_url_latest()
+        try:
+            nsurl = NSURL.URLWithString_(docs_url)
+            if nsurl is None:
+                raise ValueError("Invalid URL")
+            NSWorkspace.sharedWorkspace().openURL_(nsurl)
+        except Exception as e:
+            self._show_error("Unable to open docs URL:\n{}\n\n{}".format(docs_url, e))
+
     @objc.python_method
     def _show_server_status(self):
         """Show the current server status."""
         print(
             "Glyphs MCP Server is running on port {}.".format(getattr(self, '_port', '?'))
         )
+        try:
+            print("  Version: {}".format(get_plugin_version()))
+        except Exception:
+            pass
         print(
             "  HTTP endpoint: http://127.0.0.1:{}".format(getattr(self, '_port', '?'))
         )
@@ -739,6 +815,10 @@ class MCPBridgePlugin(GeneralPlugin):
     def _show_startup_message(self, port):
         """Show startup success message."""
         print("Glyphs MCP Server started successfully!")
+        try:
+            print("  Version: {}".format(get_plugin_version()))
+        except Exception:
+            pass
         print("  Port: {}".format(port))
         print("  HTTP endpoint: http://127.0.0.1:{}".format(port))
 

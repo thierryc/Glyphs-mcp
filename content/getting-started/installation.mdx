@@ -1,0 +1,68 @@
+---
+title: Installation
+description: Install the Glyphs MCP plug-in in a few minutes.
+---
+
+Glyphs MCP ships as a **Glyphs 3 plug-in** plus a small Python server that exposes MCP tools.
+
+## Requirements
+
+- macOS + **Glyphs 3**
+- Python **3.11–3.13** (the installer will guide you)
+
+## Recommended: guided installer
+
+From the repo root:
+
+```bash
+python3 install.py
+```
+
+On macOS, you can also double-click `RunInstall.command` in Finder (it launches the same installer).
+
+:::tip What the installer does
+- Detects an appropriate Python
+- Installs dependencies in the correct location for Glyphs
+- Installs the plug-in into Glyphs’ plug-ins folder (copy or symlink)
+- Verifies imports and prints actionable errors if something fails
+:::
+
+## Supported Python versions
+
+The interactive installer supports Python **3.11–3.13** and blocks Python **3.14+** until tested.
+
+If you’re not sure what you have installed:
+
+```bash
+python3 --version
+```
+
+## Where things are installed
+
+Typical locations on macOS:
+
+- Plug-in: `~/Library/Application Support/Glyphs 3/Plugins/`
+- Dependencies (common case): `~/Library/Application Support/Glyphs 3/Scripts/site-packages`
+
+If you choose an external Python in the installer, dependencies may also live in that Python’s **user site-packages** (installed via `pip --user`). The plug-in is designed to add both locations to `sys.path` so imports work reliably.
+
+## Uninstall
+
+1. Quit Glyphs.
+2. Remove the plug-in from: `~/Library/Application Support/Glyphs 3/Plugins/`
+
+Optional (advanced): remove any Glyphs MCP dependencies installed into:
+- `~/Library/Application Support/Glyphs 3/Scripts/site-packages`
+
+:::caution
+Be careful when deleting packages from `Scripts/site-packages` — other Glyphs scripts you use might rely on them.
+:::
+
+## Verify installation
+
+Open Glyphs and confirm you have:
+
+- **Edit → Start Glyphs MCP Server**
+- **Edit → Glyphs MCP Server Status…**
+
+Next: [Start the server](./start-server.mdx).

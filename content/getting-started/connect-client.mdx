@@ -1,0 +1,190 @@
+---
+title: Connect a client
+description: Copy/paste configuration for Codex CLI, Claude Desktop, Cursor, Windsurf, and Continue.
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import CodeBlock from '@theme/CodeBlock';
+
+import codexInVsCodeImg from '../images/glyphs-app-mcp/codex-in-vs-code.png';
+import claudeSonnetImg from '../images/glyphs-app-mcp/claude-sonnet.png';
+import cursorGeminiImg from '../images/glyphs-app-mcp/cursor-gemini.png';
+import windsurfImg from '../images/glyphs-app-mcp/windsurf.png';
+import windsurfConfigImg from '../images/glyphs-app-mcp/windsurf-config.png';
+import continueInVsCodeImg from '../images/glyphs-app-mcp/continue-in-vs-code.png';
+
+All clients connect to the same local endpoint:
+
+```text
+http://127.0.0.1:9680/mcp/
+```
+
+## Preferred connection method
+
+- Prefer **direct URL** connections when the client supports it (simpler, fewer moving parts).
+- Use a **proxy** like `mcp-remote` when a client requires it (this typically requires Node 20+).
+
+:::tip Startup order
+If your client can’t connect, start Glyphs fresh, start the MCP server, then launch/reload your client.
+:::
+
+<Tabs>
+  <TabItem value="codex" label="Codex CLI" default>
+    <img
+      alt="OpenAI Codex MCP configuration screenshot"
+      src={codexInVsCodeImg}
+    />
+
+    <p>
+      Add the server using the Codex CLI:
+    </p>
+
+    <CodeBlock language="bash">{`codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
+codex mcp list`}</CodeBlock>
+
+    <p>
+      Codex can connect directly by URL (no Node required). Add this to{' '}
+      <code>~/.codex/config.toml</code>:
+    </p>
+
+    <CodeBlock language="toml">{`[mcp_servers.glyphs-mcp-server]
+url = "http://127.0.0.1:9680/mcp/"
+enabled = true
+startup_timeout_sec = 30
+tool_timeout_sec = 120`}</CodeBlock>
+
+    <p>
+      Verify:
+    </p>
+
+    <CodeBlock language="text">{`Call the tool list_open_fonts and tell me how many fonts are open.
+If you see an error, quote it verbatim.`}</CodeBlock>
+  </TabItem>
+
+  <TabItem value="claude" label="Claude Desktop">
+    <img
+      alt="Claude Desktop MCP registry screenshot"
+      src={claudeSonnetImg}
+    />
+
+    <p>Claude Desktop reads configuration from:</p>
+
+    <CodeBlock language="text">{`/Users/<userName>/Library/Application Support/Claude/claude_desktop_config.json`}</CodeBlock>
+
+    <p>Append an MCP server entry and restart the app:</p>
+
+    <CodeBlock language="json">{`{
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://127.0.0.1:9680/mcp/"],
+      "env": {
+        "PATH": "/Users/<userName>/.nvm/versions/node/v22.19.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    }
+  }
+}`}</CodeBlock>
+
+    <p>
+      Note: <code>mcp-remote</code> requires Node 20+. Claude Desktop does not inherit your login
+      shell PATH, so set <code>env.PATH</code> explicitly.
+    </p>
+
+    <p>
+      Verify:
+    </p>
+
+    <CodeBlock language="text">{`Call list_open_fonts and summarize the result.
+If you see an error, quote it verbatim.`}</CodeBlock>
+  </TabItem>
+
+  <TabItem value="cursor" label="Cursor">
+    <img
+      alt="Cursor MCP configuration screenshot"
+      src={cursorGeminiImg}
+    />
+
+    <p>Cursor stores its MCP registry in:</p>
+
+    <CodeBlock language="text">{`~/.cursor/mcp.json`}</CodeBlock>
+
+    <p>Example:</p>
+
+    <CodeBlock language="json">{`{
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "command": "npx",
+      "args": ["mcp-remote", "http://127.0.0.1:9680/mcp/"],
+      "env": {
+        "PATH": "/Users/<userName>/.nvm/versions/node/v22.19.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    }
+      }
+    }`}</CodeBlock>
+
+    <p>
+      Verify:
+    </p>
+
+    <CodeBlock language="text">{`Call list_open_fonts and summarize the result.
+If you see an error, quote it verbatim.`}</CodeBlock>
+  </TabItem>
+
+  <TabItem value="windsurf" label="Windsurf">
+    <img
+      alt="Windsurf MCP integration screenshot"
+      src={windsurfImg}
+    />
+    <img
+      alt="Windsurf MCP configuration screenshot"
+      src={windsurfConfigImg}
+    />
+
+    <p>Windsurf reads MCP config from:</p>
+
+    <CodeBlock language="text">{`~/.codeium/windsurf/mcp_config.json`}</CodeBlock>
+
+    <p>Example:</p>
+
+    <CodeBlock language="json">{`{
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "serverUrl": "http://127.0.0.1:9680/mcp/"
+    }
+  }
+}`}</CodeBlock>
+
+    <p>
+      Verify:
+    </p>
+
+    <CodeBlock language="text">{`Call list_open_fonts and summarize the result.
+If you see an error, quote it verbatim.`}</CodeBlock>
+  </TabItem>
+
+  <TabItem value="continue" label="Continue">
+    <img
+      alt="Continue MCP configuration screenshot"
+      src={continueInVsCodeImg}
+    />
+
+    <p>
+      Continue supports MCP via YAML. Add to <code>~/.continue/config.yaml</code>:
+    </p>
+
+    <CodeBlock language="yaml">{`mcpServers:
+  - name: Glyphs MCP
+    type: streamable-http
+    url: http://127.0.0.1:9680/mcp/`}</CodeBlock>
+
+    <p>
+      Verify:
+    </p>
+
+    <CodeBlock language="text">{`Call list_open_fonts and summarize the result.
+If you see an error, quote it verbatim.`}</CodeBlock>
+  </TabItem>
+</Tabs>
+
+Next: [Troubleshooting](./troubleshooting.mdx).

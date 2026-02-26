@@ -1,4 +1,7 @@
-# Kerning Tools: `review_kerning_bumper` and `apply_kerning_bumper`
+---
+title: Kerning tools
+description: Audit collisions and apply conservative “bumper” fixes as glyph–glyph exceptions.
+---
 
 These tools help you **audit** kerning with a geometry-based collision guard, and optionally **apply** conservative “bumper” fixes as **glyph–glyph exceptions**.
 
@@ -148,4 +151,3 @@ This implementation is designed as a clean-room, geometry-first tool, inspired b
 - mekkablue Glyphs scripts (audit mindset: GapFinder/KernCrasher/Auto Bumper concepts).
 - FontForge’s auto-kerning ideas (minimum separation / collision avoidance).
 - “Learning to Kern” (research literature; not used as code/data).
-

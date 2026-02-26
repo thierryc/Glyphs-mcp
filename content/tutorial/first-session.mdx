@@ -1,0 +1,78 @@
+---
+title: First session (10 minutes)
+description: Install, start the server, connect Codex, and run your first tool call.
+---
+
+This tutorial gets you to a **first successful tool call** quickly, so you can trust your setup before diving into kerning/spacing workflows.
+
+## You will accomplish
+
+- Install the Glyphs MCP plug-in
+- Connect Codex CLI to the local MCP server
+- Run one tool call (`list_open_fonts`) and interpret the result
+
+## Prerequisites
+
+- macOS + **Glyphs 3**
+- Python **3.11–3.13** (the installer blocks Python 3.14+ until tested)
+
+## Step 1 — Install
+
+From the repo root:
+
+```bash
+python3 install.py
+```
+
+What you should see:
+- The installer asks you to pick a Python environment (Glyphs’ Python or an external Python).
+- It installs dependencies and places the plug-in in the Glyphs plug-ins folder.
+
+If you hit issues, jump to [Troubleshooting](../getting-started/troubleshooting.mdx).
+
+## Step 2 — Start the server
+
+1. Launch Glyphs
+2. Menu: **Edit → Start Glyphs MCP Server**
+3. Open **Edit → Glyphs MCP Server Status…** and confirm it’s running
+
+Expected endpoint:
+
+```text
+http://127.0.0.1:9680/mcp/
+```
+
+## Step 3 — Connect Codex CLI
+
+Add the MCP server:
+
+```bash
+codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
+codex mcp list
+```
+
+## Step 4 — First successful tool call (copy/paste prompt)
+
+In Codex, paste this prompt:
+
+```text
+Connect to my Glyphs MCP server and run a quick health check.
+
+1) Call the tool that lists open fonts (list_open_fonts).
+2) Tell me:
+   - how many fonts are open
+   - the familyName/filePath for each
+   - which font_index I should use next
+
+If you get any error, quote it verbatim and tell me what to do next.
+```
+
+Note: tool name prefixes can vary by client, but in Codex the tool should be discoverable from the connected MCP server.
+
+## If it fails, jump here
+
+- [I don’t see the menu items](../getting-started/troubleshooting.mdx#no-menu-items)
+- [Can’t connect](../getting-started/troubleshooting.mdx#cant-connect)
+- [Python unsupported (3.14+)](../getting-started/troubleshooting.mdx#python-unsupported)
+- [Port 9680 already in use](../getting-started/troubleshooting.mdx#port-in-use)
+

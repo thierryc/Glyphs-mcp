@@ -1,0 +1,39 @@
+---
+title: How Glyphs MCP works
+description: "The mental model: Glyphs plug-in, local MCP server, and your AI client."
+---
+
+Glyphs MCP lets an AI client (Codex, Claude, Cursor, etc.) call **tools** that run *against the Glyphs app you already have open*.
+
+It’s designed to feel like: “My assistant can inspect and operate Glyphs safely, with explicit tools.”
+
+## The mental model (what runs where)
+
+- **Glyphs (the app)**: the UI where your fonts live (glyphs, masters, kerning, spacing, selection).
+- **Glyphs MCP plug-in**: runs inside Glyphs and bridges GlyphsApp APIs to MCP tools.
+- **Local MCP server**: an HTTP endpoint on your machine (localhost) that exposes those tools.
+- **Your AI client**: connects to the endpoint and calls tools like `list_open_fonts`, `review_spacing`, `generate_kerning_tab`, etc.
+
+## Endpoint basics
+
+By default the endpoint is:
+
+```text
+http://127.0.0.1:9680/mcp/
+```
+
+Two common “gotchas”:
+
+- If you open that URL in a **browser**, you’ll typically see a small **discovery JSON** response.
+- MCP clients connect using **Streamable HTTP (SSE)**, so “browser works” does not always mean “client is configured correctly”.
+
+If you’re stuck, see [Troubleshooting](../getting-started/troubleshooting.mdx).
+
+## What “tools-first” means
+
+You’ll usually get the best results by asking the assistant to use dedicated tools:
+
+- Good: “Call `review_spacing` and summarize outliers; then do a dry run with `apply_spacing`.”
+- Good: “Open a kerning proof tab with `generate_kerning_tab`.”
+
+Use `execute_code` / `execute_code_with_context` when you *really need* a multi-step workflow that doesn’t have a dedicated tool.

@@ -1,0 +1,43 @@
+.features {
+  padding: 2.5rem 0 1.5rem;
+}
+
+.header {
+  text-align: center;
+  max-width: 52rem;
+  margin: 0 auto 1.25rem;
+}
+
+.grid {
+  margin-top: 1.25rem;
+}
+
+.cardCol {
+  margin-bottom: 1rem;
+}
+
+.card {
+  height: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  padding: 1.25rem 1.25rem 1.15rem;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+html[data-theme='dark'] .card {
+  background: rgba(15, 17, 21, 0.55);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.card h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.5rem;
+}
+
+.card p {
+  margin: 0;
+  opacity: 0.92;
+}
+
