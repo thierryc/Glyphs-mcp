@@ -4,7 +4,6 @@ from __future__ import division, print_function, unicode_literals
 
 import os
 import plistlib
-from functools import lru_cache
 from pathlib import Path
 
 
@@ -28,9 +27,8 @@ def _find_info_plist_path():
     return candidates[0]
 
 
-@lru_cache(maxsize=1)
 def get_plugin_version():
-    """Return the plug-in version from Info.plist (cached).
+    """Return the plug-in version from Info.plist.
 
     Source of truth: CFBundleShortVersionString in the plug-in bundle.
     """
@@ -50,4 +48,3 @@ def get_docs_url_latest():
     """Return the "latest docs" URL (env override + default)."""
     url = os.environ.get("GLYPHS_MCP_DOCS_URL", "").strip()
     return url or DEFAULT_DOCS_URL
-

@@ -22,8 +22,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.3)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.3"`).
+## Command Set (MCP server v1.0.4)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.4"`).
 
 | Tool | Description |
 |------|-------------|
