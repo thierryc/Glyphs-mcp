@@ -13,9 +13,9 @@
 	<key>CFBundleName</key>
 	<string>Glyphs MCP</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.2</string>
+	<string>1.0.3</string>
 	<key>CFBundleVersion</key>
-	<string>1.0.2</string>
+	<string>1.0.3</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright, Thierry Charbonnel, 2025</string>
 	<key>NSPrincipalClass</key>

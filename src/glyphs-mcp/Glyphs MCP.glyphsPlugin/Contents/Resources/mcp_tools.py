@@ -7,6 +7,19 @@ import traceback
 from dataclasses import asdict
 from pathlib import Path
 
+# Compatibility shim:
+# Some installations may have an older `mcp` package where `mcp.types` does not
+# export `Icon`. Newer FastMCP versions import it at runtime.
+# Define a minimal fallback so the plug-in can load, and rely on runtime usage
+# to treat icons as plain strings.
+try:
+    import mcp.types as _mcp_types  # type: ignore
+
+    if not hasattr(_mcp_types, "Icon"):
+        _mcp_types.Icon = str  # type: ignore[attr-defined]
+except Exception:
+    pass
+
 try:
     import objc  # type: ignore[import-not-found]
     from Foundation import NSObject  # type: ignore[import-not-found]
