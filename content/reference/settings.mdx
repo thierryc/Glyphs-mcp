@@ -1,0 +1,53 @@
+---
+title: Settings
+description: Token-aware tool profiles and environment variables for configuring Glyphs MCP.
+---
+
+Glyphs MCP has two main configuration surfaces:
+
+1. **In Glyphs:** **Edit → Glyphs MCP Server Status…** (includes **Tool Profile** and **Auto-start**).
+2. **Environment variables:** for security, docs/resource behavior, and debugging.
+
+## Tool profiles (reduce tool/schema footprint)
+
+Some MCP clients include the server’s `tools/list` output (tool names + JSON Schemas) in the model’s prompt context.
+Selecting a narrower **Tool Profile** reduces what the client sees, which can reduce prompt footprint when tokens matter.
+
+See: [Settings & tool profiles](../getting-started/start-server.mdx#settings-tool-profiles).
+
+## Environment variables
+
+### `GLYPHS_MCP_AUTH_TOKEN`
+
+Require a static token on every request.
+
+- Header: `Authorization: Bearer <token>`
+- Or: `mcp-auth-token: <token>`
+
+### `GLYPHS_MCP_ALLOWED_ORIGINS`
+
+Restrict requests by hostname allowlist when an `Origin` header is present (in addition to the defaults `127.0.0.1` and `localhost`).
+
+### `GLYPHS_MCP_REGISTER_DOC_PAGES`
+
+Controls documentation resources:
+
+- Default: **off** (to avoid flooding clients).
+- Set to `1` to register each doc page as its own resource.
+
+Prefer using `docs_search` + `docs_get` (on-demand) instead of registering all pages.
+
+### `GLYPHS_MCP_DOCS_URL`
+
+Override the “Open Docs” URL shown in **Glyphs MCP Server Status…**.
+
+### `GLYPHS_MCP_EXTRA_SITEPACKAGES`
+
+Colon-separated list of additional `site-packages` directories to add to `sys.path` (debugging/import fixes).
+
+Example:
+
+```bash
+export GLYPHS_MCP_EXTRA_SITEPACKAGES="/path/to/site-packages:/another/site-packages"
+```
+

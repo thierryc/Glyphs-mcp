@@ -8,7 +8,7 @@ This tutorial gets you to a **first successful tool call** quickly, so you can t
 ## You will accomplish
 
 - Install the Glyphs MCP plug-in
-- Connect Codex CLI to the local MCP server
+- Connect a client (Codex CLI or Claude Code) to the local MCP server
 - Run one tool call (`list_open_fonts`) and interpret the result
 
 ## Prerequisites
@@ -42,7 +42,9 @@ Expected endpoint:
 http://127.0.0.1:9680/mcp/
 ```
 
-## Step 3 — Connect Codex CLI
+## Step 3 — Connect a client
+
+### Option A: Codex CLI
 
 Add the MCP server:
 
@@ -51,9 +53,24 @@ codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
 codex mcp list
 ```
 
+### Option B: Claude Code (VS Code)
+
+If you have Claude Code’s CLI (`claude`) installed, you can add this MCP server in one line:
+
+```bash
+claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
+```
+
+Then, in Claude Code:
+
+1. Reload VS Code.
+2. Run `/mcp` and confirm `glyphs-mcp` is listed.
+
+If you don’t have the `claude` CLI, use the Claude Desktop setup in [Connect a client → Claude Desktop](../getting-started/connect-client.mdx) and enable VS Code MCP discovery (`chat.mcp.discovery.enabled = true`) so Claude Code can pick it up.
+
 ## Step 4 — First successful tool call (copy/paste prompt)
 
-In Codex, paste this prompt:
+In your client (Codex or Claude Code), paste this prompt:
 
 ```text
 Connect to my Glyphs MCP server and run a quick health check.
@@ -75,4 +92,3 @@ Note: tool name prefixes can vary by client, but in Codex the tool should be dis
 - [Can’t connect](../getting-started/troubleshooting.mdx#cant-connect)
 - [Python unsupported (3.14+)](../getting-started/troubleshooting.mdx#python-unsupported)
 - [Port 9680 already in use](../getting-started/troubleshooting.mdx#port-in-use)
-

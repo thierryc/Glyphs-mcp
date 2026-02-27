@@ -31,7 +31,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Reference',
-      items: ['reference/command-set', 'reference/resources']
+      items: ['reference/command-set', 'reference/resources', 'reference/settings']
     }
   ]
 };

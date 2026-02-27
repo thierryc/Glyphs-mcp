@@ -1,6 +1,6 @@
 ---
 title: Connect a client
-description: Copy/paste configuration for Codex CLI, Claude Desktop, Cursor, Windsurf, and Continue.
+description: Copy/paste configuration for Codex CLI, Claude Code, Claude Desktop, Cursor, Windsurf, and Continue.
 ---
 
 import Tabs from '@theme/Tabs';
@@ -24,6 +24,7 @@ http://127.0.0.1:9680/mcp/
 
 - Prefer **direct URL** connections when the client supports it (simpler, fewer moving parts).
 - Use a **proxy** like `mcp-remote` when a client requires it (this typically requires Node 20+).
+- If tokens matter, pick a narrower **Tool Profile** first in **Edit → Glyphs MCP Server Status…** so your client sees fewer tools/schemas. (Guide: [Settings & tool profiles](./start-server.mdx#settings-tool-profiles).)
 
 :::tip Startup order
 If your client can’t connect, start Glyphs fresh, start the MCP server, then launch/reload your client.
@@ -44,6 +45,12 @@ If your client can’t connect, start Glyphs fresh, start the MCP server, then l
 codex mcp list`}</CodeBlock>
 
     <p>
+      One-line install (CLI):
+    </p>
+
+    <CodeBlock language="bash">{`codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/ && codex mcp list`}</CodeBlock>
+
+    <p>
       Codex can connect directly by URL (no Node required). Add this to{' '}
       <code>~/.codex/config.toml</code>:
     </p>
@@ -62,6 +69,25 @@ tool_timeout_sec = 120`}</CodeBlock>
 If you see an error, quote it verbatim.`}</CodeBlock>
   </TabItem>
 
+  <TabItem value="claude_code" label="Claude Code">
+    <p>
+      Add the MCP server using Claude Code’s CLI:
+    </p>
+
+    <CodeBlock language="bash">{`claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/`}</CodeBlock>
+
+    <p>
+      Verify inside Claude Code:
+    </p>
+
+    <CodeBlock language="text">{`Run /mcp and confirm glyphs-mcp is listed.
+Then: Call list_open_fonts and summarize the result. If you see an error, quote it verbatim.`}</CodeBlock>
+
+    <p>
+      If you don’t have the <code>claude</code> CLI, you can register the server via Claude Desktop instead (next tab).
+    </p>
+  </TabItem>
+
   <TabItem value="claude" label="Claude Desktop">
     <img
       alt="Claude Desktop MCP registry screenshot"
@@ -71,6 +97,12 @@ If you see an error, quote it verbatim.`}</CodeBlock>
     <p>Claude Desktop reads configuration from:</p>
 
     <CodeBlock language="text">{`/Users/<userName>/Library/Application Support/Claude/claude_desktop_config.json`}</CodeBlock>
+
+    <p>
+      One-line install (writes/updates the config file):
+    </p>
+
+    <CodeBlock language="bash">{`python3 -c 'import json,os,pathlib; p=pathlib.Path.home()/\"Library/Application Support/Claude/claude_desktop_config.json\"; p.parent.mkdir(parents=True, exist_ok=True); data=json.loads(p.read_text()) if p.exists() and p.read_text().strip() else {}; ms=data.setdefault(\"mcpServers\",{}); ms[\"glyphs-mcp-server\"]={\"command\":\"npx\",\"args\":[\"mcp-remote\",\"http://127.0.0.1:9680/mcp/\"],\"env\":{\"PATH\":os.environ.get(\"PATH\",\"\")}}; p.write_text(json.dumps(data,indent=2,ensure_ascii=False)+\"\\n\"); print(\"Wrote\",p)'`}</CodeBlock>
 
     <p>Append an MCP server entry and restart the app:</p>
 
@@ -120,8 +152,8 @@ If you see an error, quote it verbatim.`}</CodeBlock>
         "PATH": "/Users/<userName>/.nvm/versions/node/v22.19.0/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
       }
     }
-      }
-    }`}</CodeBlock>
+  }
+}`}</CodeBlock>
 
     <p>
       Verify:
@@ -186,5 +218,26 @@ If you see an error, quote it verbatim.`}</CodeBlock>
 If you see an error, quote it verbatim.`}</CodeBlock>
   </TabItem>
 </Tabs>
+
+## Verifying the connection
+
+If you’re unsure whether the integration is working end-to-end, do this:
+
+1. Ask your client to run `tools/list` (or equivalent) and confirm it can see the Glyphs MCP tools.
+2. Run a read-only call:
+
+```text
+Call list_open_fonts and tell me how many fonts are open.
+If you see an error, quote it verbatim.
+```
+
+Tip: if tokens matter, set a narrower Tool Profile in **Edit → Glyphs MCP Server Status…** before connecting so the client sees fewer tools/schemas. (Guide: [Settings & tool profiles](./start-server.mdx#settings-tool-profiles).)
+
+## Errors and troubleshooting
+
+- If the endpoint works in a browser but your client fails: browsers hit discovery JSON, MCP clients need Streamable HTTP (SSE).
+- If tool names/schemas look stale: reconnect/reload the client so it re-fetches `tools/list`.
+- If `npx` fails in Claude Desktop/Cursor: pin Node 20+ via an explicit `env.PATH` (see the Claude Desktop tab above).
+- For a full checklist: [Troubleshooting](./troubleshooting.mdx).
 
 Next: [Troubleshooting](./troubleshooting.mdx).

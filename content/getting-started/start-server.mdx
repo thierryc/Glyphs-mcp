@@ -32,6 +32,57 @@ MCP clients connect using Streamable HTTP (SSE).
 
 If you enabled auto-start in the status panel, Glyphs will start the MCP server automatically when the app launches.
 
+## Settings & tool profiles (token-aware) {#settings-tool-profiles}
+
+Glyphs MCP settings live in **Edit → Glyphs MCP Server Status…**.
+
+### Where to change settings
+
+Open **Edit → Glyphs MCP Server Status…**. You’ll typically see:
+- **Status** (running / not running)
+- **Version**
+- **Endpoint**
+- **Docs**
+- **Profile** (tool profile dropdown)
+- **Auto-start server on launch**
+- **Copy Endpoint**
+
+### What tool profiles do (and why tokens matter)
+
+Many MCP clients include the server’s tool list (and JSON Schemas) in the model’s prompt context.
+Tool profiles don’t change what the plug-in can do — they change what the client *sees* via `tools/list`.
+
+Smaller `tools/list` → fewer tools + smaller schemas → less prompt “footprint” when tokens are scarce.
+In long sessions, this can reduce context pressure and improve responsiveness.
+
+### Which profile should I pick?
+
+| Profile | Use when | Notes |
+|---|---|---|
+| `Full` | You want everything. | Largest tool/schema footprint. |
+| `Core (Read-only)` | You want the smallest footprint and inspection-only workflows. | Does **not** expose `execute_code*` or mutation tools. |
+| `Kerning` | You’re doing kerning workflows. | Enables kerning tools (plus core read-only + `execute_code*`). |
+| `Spacing` | You’re doing spacing workflows. | Enables spacing tools (plus core read-only + `execute_code*`). |
+| `Kerning + Spacing` | You’re switching between kerning and spacing. | Combined workflow profile. |
+| `Paths / Outlines` | You’re working with outlines/paths. | Includes path review/apply tools. |
+| `Editing` | You’re creating/updating glyphs, components, anchors, metrics. | Includes editing/mutation tools. |
+
+If you want to *prevent* exposing `execute_code` / `execute_code_with_context`, use **Core (Read-only)**.
+
+### How to apply a profile change
+
+1. Pick a profile in **Edit → Glyphs MCP Server Status… → Profile**.
+2. Restart the server so the next `tools/list` reflects the profile:
+   - Quit and relaunch Glyphs (simplest), then **Edit → Start Glyphs MCP Server**, or
+   - restart the server if your setup provides a stop/start workflow.
+3. Reconnect/reload your MCP client so it re-fetches the tool definitions.
+4. Verify: have your client run `tools/list`, then confirm a tool you expect is present/absent (for example `review_spacing` exists, or `apply_spacing` is absent under **Core (Read-only)**).
+
+### Extra footprint reduction tips
+
+- Prefer `docs_search` + `docs_get` over registering every doc page as its own resource (that’s the default).
+- Avoid `docs_enable_page_resources` unless you truly need per-page resources; it can increase what some clients enumerate.
+
 ## Optional: security
 
 If you want extra protection (token auth or origin allowlist), see [Safety model](../concepts/safety-model.mdx).
