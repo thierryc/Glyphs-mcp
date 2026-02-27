@@ -44,4 +44,4 @@ fontParts==0.9.11
 
 # Glyphs runtime ships these modules; captured here for clarity only.
 # They are not installed via pip because Glyphs bundles PyObjC and the GlyphsApp API.
-# Modules: GlyphsApp, objc, AppKit
+# Modules: GlyphsApp, objc, AppKit, Foundation

@@ -230,6 +230,14 @@ class PythonCandidate:
         return version_tuple(self.version or "0.0.0")
 
 
+def _sort_python_candidates(cands: List[PythonCandidate]) -> None:
+    # Sort best-first: highest version, prefer >= 3.12 and python.org builds.
+    #
+    # Note: reverse=True means `True` sorts before `False`, so use
+    # `c.source == "python.org"` as a tie-break.
+    cands.sort(key=lambda c: (c.version_key, c.source == "python.org"), reverse=True)
+
+
 def detect_python_candidates() -> List[PythonCandidate]:
     cands: List[PythonCandidate] = []
     seen: set[Path] = set()
@@ -310,8 +318,7 @@ def detect_python_candidates() -> List[PythonCandidate]:
     # System Python fallback (in case PATH discovery skipped it)
     add_candidate(Path("/usr/bin/python3"), "system")
 
-    # Sort best-first: highest version, prefer >= 3.12 and python.org builds
-    cands.sort(key=lambda c: (c.version_key, c.source != "python.org"), reverse=True)
+    _sort_python_candidates(cands)
     return cands
 
 
@@ -323,7 +330,7 @@ def verify_runtime(python: Path) -> bool:
     console.print(Panel.fit(f"Verifying runtime imports in: {python}", title="Verify", border_style="white"))
     code = (
         "import sys;\n"
-        "mods=['fastmcp','pydantic_core','starlette','uvicorn','fontParts','fontTools'];\n"
+        "mods=['fastmcp','pydantic_core','starlette','uvicorn','httpx','sse_starlette','typing_extensions','fontParts','fontTools'];\n"
         "missing=[];\n"
         "import importlib;\n"
         "\n"
