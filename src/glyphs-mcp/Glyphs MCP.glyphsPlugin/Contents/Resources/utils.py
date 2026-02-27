@@ -120,3 +120,27 @@ def get_tool_info(mcp_instance, tool_name):
         return "No description available"
     except:
         return "No description available"
+
+
+def get_mcp_tool_registry(mcp_instance):
+    """Return the internal FastMCP tool registry dict if discoverable."""
+    if not mcp_instance:
+        return None
+    for attr_name in ["_tools", "tools", "_tool_registry", "tool_registry", "_handlers"]:
+        try:
+            candidate = getattr(mcp_instance, attr_name, None)
+        except Exception:
+            candidate = None
+        if isinstance(candidate, dict):
+            return candidate
+    return None
+
+
+def replace_tool_registry_in_place(registry_dict, new_tools):
+    """Replace a tool registry dict in place, preserving references."""
+    if registry_dict is None or not isinstance(registry_dict, dict):
+        return
+    if new_tools is None or not isinstance(new_tools, dict):
+        new_tools = {}
+    registry_dict.clear()
+    registry_dict.update(new_tools)

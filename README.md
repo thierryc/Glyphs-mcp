@@ -176,6 +176,12 @@ Glyphs MCP adds two menu items:
 
 The MCP endpoint is `http://127.0.0.1:9680/mcp/` using MCP Streamable HTTP transport.
 
+### Tool profiles (reduce tool/schema prompt bloat)
+
+Many MCP clients include the tool list + schemas in their prompt context. As the tool surface grows, this can waste tokens.
+
+Use the **Profile** dropdown in **Glyphs MCP Server Status…** to expose only the tools you need for a task. The selection is saved in `Glyphs.defaults` and takes effect the next time the server starts (restart Glyphs if it’s already running).
+
 Tip: If your coding agent doesn't connect to Glyphs, start the MCP server first on a fresh Glyphs launch, then launch the coding agent afterwards.
 
 Open the **Macro Panel** to access the console.

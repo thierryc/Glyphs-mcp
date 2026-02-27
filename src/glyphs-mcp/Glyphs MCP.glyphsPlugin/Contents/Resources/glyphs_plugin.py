@@ -19,6 +19,7 @@ from AppKit import (
     NSPasteboard,
     NSPasteboardTypeString,
     NSTextField,
+    NSPopUpButton,
     NSView,
     NSWorkspace,
     NSWindowStyleMaskTitled,
@@ -38,17 +39,30 @@ from security import (
     StaticTokenAuthMiddleware,
 )
 from status_panel_helpers import endpoint_for, is_thread_running, status_text
-from utils import get_known_tools, get_tool_info, is_port_available, notify_server_started
+from tool_profiles import PROFILE_FULL, PROFILE_ORDER, enabled_tool_names, is_valid_profile_name
+from utils import (
+    get_known_tools,
+    get_mcp_tool_registry,
+    get_tool_info,
+    is_port_available,
+    notify_server_started,
+    replace_tool_registry_in_place,
+)
 from versioning import get_docs_url_latest, get_plugin_version
 
 
 AUTOSTART_DEFAULTS_KEY = "io.anotherplanet.glyphs-mcp.autostart"
+TOOL_PROFILE_DEFAULTS_KEY = "com.ap.cx.glyphs-mcp.toolProfile"
+DEFAULT_TOOL_PROFILE = PROFILE_FULL
 
 
 class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
     def settings(self):
+        self._tool_registry_ref = None
+        self._tool_registry_snapshot = None
+
         # Localized menu titles
         self.name_start = Glyphs.localize(
             {
@@ -90,6 +104,75 @@ class MCPBridgePlugin(GeneralPlugin):
         self.default_port = 9680
 
     @objc.python_method
+    def _selected_tool_profile_name(self):
+        try:
+            stored = Glyphs.defaults[TOOL_PROFILE_DEFAULTS_KEY]
+        except Exception:
+            stored = None
+
+        try:
+            name = str(stored) if stored else DEFAULT_TOOL_PROFILE
+        except Exception:
+            name = DEFAULT_TOOL_PROFILE
+
+        if not is_valid_profile_name(name):
+            return DEFAULT_TOOL_PROFILE
+        return name
+
+    @objc.python_method
+    def _set_selected_tool_profile_name(self, name):
+        try:
+            value = str(name) if name else DEFAULT_TOOL_PROFILE
+        except Exception:
+            value = DEFAULT_TOOL_PROFILE
+        if not is_valid_profile_name(value):
+            value = DEFAULT_TOOL_PROFILE
+        try:
+            Glyphs.defaults[TOOL_PROFILE_DEFAULTS_KEY] = value
+        except Exception:
+            pass
+
+    @objc.python_method
+    def _ensure_full_tool_snapshot(self):
+        if getattr(self, "_tool_registry_ref", None) is not None and getattr(self, "_tool_registry_snapshot", None) is not None:
+            return True
+
+        registry = get_mcp_tool_registry(mcp)
+        if not isinstance(registry, dict):
+            return False
+
+        try:
+            snapshot = dict(registry)
+        except Exception:
+            snapshot = None
+
+        if snapshot is None:
+            return False
+
+        self._tool_registry_ref = registry
+        self._tool_registry_snapshot = snapshot
+        return True
+
+    @objc.python_method
+    def _apply_tool_profile_to_mcp_for_next_start(self):
+        if not self._ensure_full_tool_snapshot():
+            return False
+
+        profile = self._selected_tool_profile_name()
+        snapshot = getattr(self, "_tool_registry_snapshot", None) or {}
+        registry = getattr(self, "_tool_registry_ref", None)
+
+        all_names = set(snapshot.keys())
+        enabled = enabled_tool_names(profile, all_names)
+        filtered = {name: snapshot[name] for name in enabled if name in snapshot}
+
+        try:
+            replace_tool_registry_in_place(registry, filtered)
+            return True
+        except Exception:
+            return False
+
+    @objc.python_method
     def _autostart_enabled(self):
         try:
             value = Glyphs.defaults[AUTOSTART_DEFAULTS_KEY]
@@ -127,6 +210,11 @@ class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
     def start(self):
+        try:
+            self._ensure_full_tool_snapshot()
+        except Exception:
+            pass
+
         newMenuItem = NSMenuItem.new()
         newMenuItem.setTitle_(self.name_start)
         # Keep a reference so we can update the label later
@@ -149,6 +237,11 @@ class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
     def _start_server_on_port(self, port, sender, notify=True):
+        try:
+            self._apply_tool_profile_to_mcp_for_next_start()
+        except Exception:
+            pass
+
         self._server_thread = threading.Thread(
             target=mcp.run,
             kwargs=dict(
@@ -511,7 +604,7 @@ class MCPBridgePlugin(GeneralPlugin):
             return
 
         width = 420
-        height = 200
+        height = 230
         rect = ((0, 0), (width, height))
         style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow
         panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer_(
@@ -594,6 +687,33 @@ class MCPBridgePlugin(GeneralPlugin):
         docs_value.setDrawsBackground_(False)
         content.addSubview_(docs_value)
 
+        y -= (row_h + row_gap)
+
+        profile_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
+        profile_label.setStringValue_("Profile:")
+        profile_label.setEditable_(False)
+        profile_label.setSelectable_(False)
+        profile_label.setBordered_(False)
+        profile_label.setDrawsBackground_(False)
+        content.addSubview_(profile_label)
+
+        profile_popup = NSPopUpButton.alloc().initWithFrame_(((margin + label_w, y - 2), (value_w, row_h + 6)))
+        try:
+            profile_popup.removeAllItems()
+        except Exception:
+            pass
+        try:
+            profile_popup.addItemsWithTitles_(PROFILE_ORDER)
+        except Exception:
+            for item in PROFILE_ORDER:
+                try:
+                    profile_popup.addItemWithTitle_(item)
+                except Exception:
+                    pass
+        profile_popup.setTarget_(self)
+        profile_popup.setAction_(self.ChangeToolProfile_)
+        content.addSubview_(profile_popup)
+
         button_w = 110
         button_h = 28
         button_y = margin
@@ -633,6 +753,7 @@ class MCPBridgePlugin(GeneralPlugin):
         self._endpoint_field = endpoint_value
         self._docs_field = docs_value
         self._autostart_checkbox = autostart_checkbox
+        self._tool_profile_popup = profile_popup
 
     @objc.python_method
     def _refresh_status_panel_if_visible(self):
@@ -652,6 +773,7 @@ class MCPBridgePlugin(GeneralPlugin):
         endpoint = endpoint_for(port)
         version = get_plugin_version()
         docs_url = get_docs_url_latest()
+        tool_profile = self._selected_tool_profile_name()
 
         try:
             if getattr(self, "_waiting_for_port", False) and not running:
@@ -685,6 +807,12 @@ class MCPBridgePlugin(GeneralPlugin):
         except Exception:
             pass
         try:
+            popup = getattr(self, "_tool_profile_popup", None)
+            if popup is not None:
+                popup.selectItemWithTitle_(tool_profile)
+        except Exception:
+            pass
+        try:
             checkbox = getattr(self, "_autostart_checkbox", None)
             if checkbox is not None:
                 state_on = getattr(AppKit, "NSControlStateValueOn", getattr(AppKit, "NSOnState", 1))
@@ -692,6 +820,25 @@ class MCPBridgePlugin(GeneralPlugin):
                 checkbox.setState_(state_on if self._autostart_enabled() else state_off)
         except Exception:
             pass
+
+    def ChangeToolProfile_(self, sender):
+        """Persist tool profile selection. Takes effect on next server start."""
+        name = None
+        try:
+            item = sender.selectedItem()
+            if item is not None:
+                name = item.title()
+        except Exception:
+            name = None
+
+        if not name:
+            try:
+                name = sender.titleOfSelectedItem()
+            except Exception:
+                name = None
+
+        self._set_selected_tool_profile_name(name)
+        self._refresh_status_panel_if_visible()
 
     def ToggleAutostart_(self, sender):
         """Toggle auto-start preference for the MCP server."""
