@@ -1,0 +1,3 @@
+.. attribute:: name
+
+		:type: str

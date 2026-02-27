@@ -22,9 +22,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.1)
-
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.1"`).
+## Command Set (MCP server v1.0.2)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.2"`).
 
 | Tool | Description |
 |------|-------------|
@@ -290,6 +289,73 @@ Optionally override the version label used in the filename:
 ```
 
 The ZIP is written to `dist/` (ignored by git).
+
+## Release
+
+This repo ships two plugin bundle locations:
+
+- Canonical source bundle: `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`
+- Glyphs Plugin Manager bundle (repo‑relative `path=` target): `plugin-manager/Glyphs MCP.glyphsPlugin`
+
+Release flow (copy/paste):
+
+```bash
+# Optional: do the release on a branch
+git switch -c lit/release-X.Y.Z
+
+# 1) Bump the plugin/server version everywhere it needs to be
+python3 scripts/bump_version.py X.Y.Z
+
+# 2) Build the Plugin Manager bundle from tracked files (no __pycache__, .pyc, etc.)
+./scripts/build_plugin_manager_bundle.sh
+
+# 3) Run tests
+python3 -m unittest discover -s src/glyphs-mcp/tests
+
+# 4) Commit release artifacts
+git add README.md
+git add "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist"
+git add "plugin-manager/Glyphs MCP.glyphsPlugin"
+git commit -m "Release X.Y.Z"
+
+# 5) Build a clean ZIP for distribution
+./scripts/build_release_zip.sh
+
+# 6) Tag + push
+git tag "vX.Y.Z"
+git push origin HEAD --tags
+```
+
+## Glyphs Plugin Manager / glyphs-packages
+
+In `glyphs-packages` (`glyphs3/packages.plist`), the plug‑in entry uses `path=` to point at a folder inside this repo.
+
+For this repo, use:
+
+```plist
+url = "https://github.com/thierryc/Glyphs-mcp";
+path = "plugin-manager/Glyphs MCP.glyphsPlugin";
+dependencies = ( FastMCP, MCP );
+```
+
+Important: `dependencies=(...)` refers to **module identifiers** that must exist under `modules=(...)` in the same `packages.plist` (these are not pip package names).
+
+Minimum module definitions to back those dependencies (add these under `modules = (...)` in your `glyphs-packages` fork):
+
+```plist
+{
+  identifier = MCP;
+  url = "https://github.com/modelcontextprotocol/python-sdk";
+  path = "src/mcp";
+}
+{
+  identifier = FastMCP;
+  url = "https://github.com/PrefectHQ/fastmcp";
+  path = "src/fastmcp";
+}
+```
+
+Note: FastMCP and MCP have their own Python dependencies; ensure those are satisfied in your `glyphs-packages` module set as well (either by adding more module entries or by vendoring a complete dependency tree in a module).
 
 ## Contributing
 PRs and feedback are welcome.

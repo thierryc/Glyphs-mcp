@@ -1,0 +1,5225 @@
+# encoding: utf-8
+
+from __future__ import division, print_function, unicode_literals
+import json
+import math
+import traceback
+from dataclasses import asdict
+from pathlib import Path
+
+try:
+    import objc  # type: ignore[import-not-found]
+    from Foundation import NSObject  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover - PyObjC should be available inside Glyphs
+    objc = None
+    NSObject = None
+from GlyphsApp import (
+    Glyphs,
+    GSGlyph,
+    GSLayer,
+    GSPath,
+    GSNode,
+    GSHandle,
+    GSComponent,
+    GSAnchor,
+    GSGuide,
+    GSHint,
+    CORNER,
+)  # type: ignore[import-not-found]
+from fastmcp import FastMCP
+from export_designspace_ufo import (
+    ExportDesignspaceAndUFO as ExportDesignspaceAndUFOExporter,
+    ExportOptions,
+)
+from versioning import get_plugin_version
+import spacing_engine
+import kerning_proof_engine
+import kerning_collision_engine
+import smoothness_engine
+
+# AppKit is available inside Glyphs (PyObjC). Keep import optional so this file
+# is still importable in environments where Glyphs isn't present.
+try:
+    from AppKit import NSPoint  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover - only relevant outside Glyphs
+    NSPoint = None
+
+# Initialize FastMCP server
+mcp = FastMCP(name="Glyphs MCP Server", version=get_plugin_version())
+
+
+def _custom_parameter(obj, key, default=None):
+    """Safely read a value from Glyphs' CustomParametersProxy.
+
+    The proxy does not implement dict.get(). Iterate entries and match by name.
+    """
+    try:
+        cp = getattr(obj, "customParameters", None)
+        if cp is None:
+            return default
+        for item in cp:
+            if getattr(item, "name", None) == key:
+                return getattr(item, "value", default)
+    except Exception:
+        pass
+    return default
+
+
+def _sanitize_for_json(value):
+    """Convert Glyphs/PyObjC objects to JSON-serializable primitives."""
+    if value is None:
+        return None
+
+    if isinstance(value, (bool, int, float, str)):
+        return value
+
+    if isinstance(value, (list, tuple, set)):
+        return [_sanitize_for_json(v) for v in value]
+
+    if isinstance(value, dict):
+        return {str(k): _sanitize_for_json(v) for k, v in value.items()}
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        pass
+
+    try:
+        return str(value)
+    except Exception:
+        return None
+
+
+def _safe_json(data):
+    return json.dumps(_sanitize_for_json(data))
+
+
+def _safe_attr(obj, attr_name, default=None):
+    """Fetch an attribute without crashing on proxies or selectors."""
+    try:
+        value = getattr(obj, attr_name)
+        if callable(value):
+            return value()
+        return value
+    except AttributeError:
+        return default
+    except Exception:
+        return default
+
+
+def _coerce_numeric(value):
+    """Convert Glyphs/AppKit objects or selectors to plain floats/ints."""
+    if value is None:
+        return None
+
+    try:
+        if callable(value):
+            value = value()
+    except Exception:
+        return None
+
+    if value is None:
+        return None
+
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        pass
+
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _round_half_away_from_zero(x: float) -> int:
+    xf = float(x)
+    if xf >= 0.0:
+        return int(math.floor(xf + 0.5))
+    return -int(math.floor(abs(xf) + 0.5))
+
+
+def _units_int(value):
+    f = _coerce_numeric(value)
+    if f is None:
+        return None
+    return _round_half_away_from_zero(float(f))
+
+
+def _clear_layer_paths(layer):
+    """Remove all paths from a layer without touching components/anchors."""
+    try:
+        existing = list(getattr(layer, "paths", []) or [])
+    except Exception:
+        existing = []
+
+    for path in existing:
+        removed = False
+        try:
+            if hasattr(layer, "removePath_"):
+                layer.removePath_(path)
+                removed = True
+        except Exception:
+            removed = False
+
+        if not removed:
+            try:
+                layer.paths.remove(path)
+                removed = True
+            except Exception:
+                pass
+
+        if not removed:
+            try:
+                idx = layer.paths.index(path)
+                del layer.paths[idx]
+            except Exception:
+                pass
+
+
+def _get_sidebearing(layer, attr_name, legacy_attr):
+    """Return a sidebearing value even for proxy layers lacking modern attrs."""
+    value = None
+    try:
+        value = getattr(layer, attr_name, None)
+    except Exception:
+        value = None
+
+    value = _coerce_numeric(value)
+
+    if value is None:
+        fallback = getattr(layer, legacy_attr, None)
+        value = _coerce_numeric(fallback)
+
+    return value
+
+
+def _get_left_sidebearing(layer):
+    return _get_sidebearing(layer, "leftSideBearing", "LSB")
+
+
+def _get_right_sidebearing(layer):
+    return _get_sidebearing(layer, "rightSideBearing", "RSB")
+
+
+def _set_sidebearing(layer, attr_name, legacy_attr, value):
+    """Attempt to set a sidebearing using both modern and legacy attributes."""
+    if value is None:
+        return False
+
+    try:
+        setattr(layer, attr_name, value)
+        return True
+    except Exception:
+        pass
+
+    try:
+        setattr(layer, legacy_attr, value)
+        return True
+    except Exception:
+        return False
+
+
+def _save_font_on_main_thread(font, requested_path=None):
+    """Invoke font.save(...) on the Glyphs main thread via NSObject helper."""
+    if objc is None or NSObject is None:
+        if requested_path:
+            font.save(requested_path)
+            return requested_path
+        font.save()
+        return getattr(font, "filepath", None)
+
+    class _FontSaveHelper(NSObject):  # type: ignore[misc,valid-type]
+        def init(self):
+            self = objc.super(_FontSaveHelper, self).init()
+            if self is None:
+                return None
+            self._font = font
+            self._path = requested_path
+            self.error = None
+            self.saved_path = None
+            return self
+
+        def saveFont_(self, _obj):
+            try:
+                if self._path:
+                    self._font.save(self._path)
+                else:
+                    self._font.save()
+                self.saved_path = getattr(self._font, "filepath", None) or self._path
+            except Exception as exc:  # pragma: no cover - bubbled to caller
+                self.error = exc
+
+    helper = _FontSaveHelper.alloc().init()
+    helper.performSelectorOnMainThread_withObject_waitUntilDone_("saveFont:", None, True)
+
+    if getattr(helper, "error", None) is not None:
+        raise helper.error
+
+    return getattr(helper, "saved_path", None) or getattr(font, "filepath", None) or requested_path
+
+
+def _open_tab_on_main_thread(font, tab_text):
+    """Open a new edit tab safely on the Glyphs main thread."""
+    if objc is None or NSObject is None:
+        return font.newTab(tab_text)
+
+    class _FontTabHelper(NSObject):  # type: ignore[misc,valid-type]
+        def init(self):
+            self = objc.super(_FontTabHelper, self).init()
+            if self is None:
+                return None
+            self._font = font
+            self._text = tab_text
+            self.error = None
+            self.tab = None
+            return self
+
+        def openTab_(self, _obj):
+            try:
+                self.tab = self._font.newTab(self._text)
+            except Exception as exc:  # pragma: no cover - bubbled to caller
+                self.error = exc
+
+    helper = _FontTabHelper.alloc().init()
+    helper.performSelectorOnMainThread_withObject_waitUntilDone_("openTab:", None, True)
+
+    if getattr(helper, "error", None) is not None:
+        raise helper.error
+
+    return getattr(helper, "tab", None)
+
+
+def _set_kerning_pairs_on_main_thread(font, master_id, pairs):
+    """Apply multiple glyph–glyph kerning exceptions safely on the Glyphs main thread.
+
+    pairs: iterable of (left_name, right_name, value_int)
+    """
+
+    if objc is None or NSObject is None:
+        for left_name, right_name, value in pairs:
+            font.setKerningForPair(master_id, left_name, right_name, int(value))
+        return
+
+    class _KerningApplyHelper(NSObject):  # type: ignore[misc,valid-type]
+        def init(self):
+            self = objc.super(_KerningApplyHelper, self).init()
+            if self is None:
+                return None
+            self._font = font
+            self._master_id = master_id
+            self._pairs = list(pairs or [])
+            self.error = None
+            return self
+
+        def applyKerning_(self, _obj):
+            try:
+                for left_name, right_name, value in self._pairs:
+                    self._font.setKerningForPair(self._master_id, left_name, right_name, int(value))
+            except Exception as exc:  # pragma: no cover - bubbled to caller
+                self.error = exc
+
+    helper = _KerningApplyHelper.alloc().init()
+    helper.performSelectorOnMainThread_withObject_waitUntilDone_("applyKerning:", None, True)
+
+    if getattr(helper, "error", None) is not None:
+        raise helper.error
+
+
+def _glyph_unicode_char(glyph):
+    """Return the single-character Unicode string for a glyph, if available."""
+    uni = getattr(glyph, "unicode", None)
+    if not uni:
+        return None
+    try:
+        return chr(int(str(uni), 16))
+    except Exception:
+        return None
+
+
+def _load_andre_fuchs_relevant_pairs():
+    """Load the bundled Andre Fuchs relevant-pairs dataset.
+
+    Returns (dataset_meta, pairs, warnings) where pairs is a list of (left_char, right_char).
+    """
+    warnings = []
+    dataset_path = (
+        Path(__file__).resolve().parent
+        / "kerning_data"
+        / "andre_fuchs"
+        / "relevant_pairs.v1.json"
+    )
+
+    if not dataset_path.exists():
+        warnings.append("Andre-Fuchs dataset not found at {}".format(dataset_path))
+        return (
+            {"id": "andre_fuchs_relevant_pairs", "pairCount": 0},
+            [],
+            warnings,
+        )
+
+    try:
+        raw = json.loads(dataset_path.read_text(encoding="utf-8", errors="replace"))
+    except Exception as exc:
+        warnings.append("Failed to parse Andre-Fuchs dataset: {}".format(exc))
+        return (
+            {"id": "andre_fuchs_relevant_pairs", "pairCount": 0},
+            [],
+            warnings,
+        )
+
+    dataset_id = raw.get("id") if isinstance(raw, dict) else None
+    if not isinstance(dataset_id, str) or not dataset_id.strip():
+        dataset_id = "andre_fuchs_relevant_pairs"
+
+    pairs = []
+    raw_pairs = raw.get("pairs") if isinstance(raw, dict) else None
+    if not isinstance(raw_pairs, list):
+        warnings.append("Andre-Fuchs dataset has no 'pairs' list.")
+        raw_pairs = []
+
+    for item in raw_pairs:
+        if not isinstance(item, dict):
+            continue
+        left = item.get("left")
+        right = item.get("right")
+        if not isinstance(left, str) or not isinstance(right, str):
+            continue
+        left = left.strip()
+        right = right.strip()
+        if len(left) != 1 or len(right) != 1:
+            continue
+        pairs.append((left, right))
+
+    meta = {"id": dataset_id, "pairCount": len(pairs)}
+    if len(pairs) < 200:
+        warnings.append(
+            "Andre-Fuchs dataset snapshot is small ({} pairs). Run vendor_andre_fuchs_pairs.py to update.".format(
+                len(pairs)
+            )
+        )
+    return meta, pairs, warnings
+
+
+@mcp.tool()
+async def list_open_fonts() -> str:
+    """Return information about all fonts currently open in Glyphs.
+
+    Returns:
+        str: A JSON-encoded list where each item contains:
+            familyName (str): Font family name.
+            filePath (str|None): Absolute path to the .glyphs file, or None if unsaved.
+            masterCount (int): Number of masters in the font.
+            instanceCount (int): Number of instances in the font.
+            glyphCount (int): Number of glyphs in the font.
+            unitsPerEm (int): Units per em (UPM) size.
+            versionMajor (int): Font version major.
+            versionMinor (int): Font version minor.
+    """
+    try:
+        fonts_info = []
+        for font in Glyphs.fonts:
+            fonts_info.append(
+                {
+                    "familyName": font.familyName or "",
+                    "filePath": font.filepath,
+                    "masterCount": len(font.masters),
+                    "instanceCount": len(font.instances),
+                    "glyphCount": len(font.glyphs),
+                    "unitsPerEm": font.upm,
+                    "versionMajor": getattr(font, "versionMajor", 0),
+                    "versionMinor": getattr(font, "versionMinor", 0),
+                }
+            )
+        print(json.dumps(fonts_info))
+        return json.dumps(fonts_info)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def get_font_glyphs(font_index: int = 0) -> str:
+    """Get all glyphs in a specific font.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+
+    Returns:
+        str: JSON-encoded list of glyphs with their properties.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        glyphs_info = []
+        for glyph in font.glyphs:
+            glyphs_info.append(
+                {
+                    "name": glyph.name,
+                    "unicode": glyph.unicode,
+                    "category": glyph.category,
+                    "subCategory": glyph.subCategory,
+                    "layerCount": len(glyph.layers),
+                    "leftKerningGroup": glyph.leftKerningGroup,
+                    "rightKerningGroup": glyph.rightKerningGroup,
+                    "export": glyph.export,
+                }
+            )
+        return json.dumps(glyphs_info)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def get_font_masters(font_index: int = 0) -> str:
+    """Get master information for a specific font.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+
+    Returns:
+        str: JSON-encoded list of font masters with their properties.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+
+        # Prepare axis tag list once for this font
+        axes = []
+        try:
+            axes = list(getattr(font, "axes", []) or [])
+        except Exception:
+            axes = []
+
+        def axis_value_for(master, tags: set):
+            try:
+                if not axes:
+                    return None
+                # Build axis tag/name list
+                tag_list = []
+                for a in axes:
+                    tag = getattr(a, "axisTag", None) or getattr(a, "name", "")
+                    tag_list.append(str(tag).lower())
+                values = list(getattr(master, "axes", []) or [])
+                for i, t in enumerate(tag_list):
+                    if t in tags and i < len(values):
+                        return values[i]
+            except Exception:
+                pass
+            return None
+
+        masters_info = []
+        for master in font.masters:
+            weight_val = axis_value_for(master, {"wght", "weight"})
+            width_val = axis_value_for(master, {"wdth", "width"})
+            # Fallbacks if axes are unavailable
+            if weight_val is None:
+                weight_val = getattr(master, "weightValue", None)
+            if width_val is None:
+                width_val = getattr(master, "widthValue", None)
+
+            masters_info.append(
+                {
+                    "name": master.name,
+                    "id": master.id,
+                    "weight": weight_val,
+                    "width": width_val,
+                    "slantAngle": _custom_parameter(master, "postscriptSlantAngle", 0),
+                    # GSFontMaster may not have `customName` in Glyphs 3; use safe access
+                    "customName": getattr(master, "customName", None),
+                    "ascender": master.ascender,
+                    "capHeight": master.capHeight,
+                    "descender": master.descender,
+                    "xHeight": master.xHeight,
+                }
+            )
+        return json.dumps(masters_info)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def get_font_instances(font_index: int = 0) -> str:
+    """Get instance information for a specific font.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+
+    Returns:
+        str: JSON-encoded list of font instances with their properties.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        instances_info = []
+        for instance in font.instances:
+            weight_val = _coerce_numeric(_safe_attr(instance, "weight"))
+            width_val = _coerce_numeric(_safe_attr(instance, "width"))
+            interpolation_weight = _coerce_numeric(
+                _safe_attr(instance, "interpolationWeight")
+            )
+            interpolation_width = _coerce_numeric(
+                _safe_attr(instance, "interpolationWidth")
+            )
+            instances_info.append(
+                {
+                    "name": _safe_attr(instance, "name", ""),
+                    "weight": weight_val,
+                    "width": width_val,
+                    "customName": _safe_attr(instance, "customName"),
+                    "interpolationWeight": interpolation_weight,
+                    "interpolationWidth": interpolation_width,
+                    "active": bool(_safe_attr(instance, "active", False)),
+                    "export": bool(_safe_attr(instance, "export", False)),
+                }
+            )
+        return _safe_json(instances_info)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
+    """Get detailed information about a specific glyph.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph. Defaults to "A".
+
+    Returns:
+        str: JSON-encoded glyph details including layers and components.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+
+        if not glyph:
+            return json.dumps({"error": "Glyph '{}' not found in font".format(glyph_name)})
+
+        layers_info = []
+        for layer in glyph.layers:
+            layer_info = {
+                "name": layer.name,
+                "width": layer.width,
+                "leftSideBearing": _get_left_sidebearing(layer),
+                "rightSideBearing": _get_right_sidebearing(layer),
+                "pathCount": len(layer.paths),
+                "componentCount": len(layer.components),
+                "anchorCount": len(layer.anchors),
+            }
+
+            # Add component details
+            components = []
+            for component in layer.components:
+                components.append(
+                    {
+                        "name": component.componentName,
+                        "transform": list(component.transform),
+                        "automatic": component.automatic,
+                    }
+                )
+            layer_info["components"] = components
+
+            layers_info.append(layer_info)
+
+        glyph_details = {
+            "name": glyph.name,
+            "unicode": glyph.unicode,
+            "category": glyph.category,
+            "subCategory": glyph.subCategory,
+            "script": glyph.script,
+            "productionName": glyph.productionName,
+            "layers": layers_info,
+        }
+
+        return json.dumps(glyph_details)
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def get_font_kerning(font_index: int = 0, master_id: str = None) -> str:
+    """Get kerning information for a specific font and master.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        master_id (str): Master ID. If None, uses the first master.
+
+    Returns:
+        str: JSON-encoded kerning pairs and values.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+
+        if master_id is None:
+            master_id = font.masters[0].id
+
+        kerning_info = []
+        kerning = font.kerning.get(master_id, {})
+
+        for left_group, right_dict in kerning.items():
+            for right_group, value in right_dict.items():
+                kerning_info.append(
+                    {"left": left_group, "right": right_group, "value": value}
+                )
+
+        return json.dumps(
+            {
+                "masterId": master_id,
+                "kerningPairs": kerning_info,
+                "pairCount": len(kerning_info),
+            }
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def create_glyph(
+    font_index: int = 0,
+    glyph_name: str = None,
+    unicode: str = None,
+    category: str = None,
+    sub_category: str = None,
+) -> str:
+    """Create a new glyph in the specified font.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the new glyph. Required.
+        unicode (str): Unicode value for the glyph (e.g., "0041" for A). Optional.
+        category (str): Category for the glyph (e.g., "Letter", "Number"). Optional.
+        sub_category (str): Subcategory for the glyph (e.g., "Uppercase", "Lowercase"). Optional.
+
+    Returns:
+        str: JSON-encoded result with success status and glyph details.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+
+        font = Glyphs.fonts[font_index]
+
+        # Check if glyph already exists
+        if font.glyphs[glyph_name]:
+            return json.dumps({"error": "Glyph '{}' already exists".format(glyph_name)})
+
+        # Create new glyph
+        new_glyph = GSGlyph(glyph_name)
+
+        if unicode:
+            new_glyph.unicode = unicode
+        if category:
+            new_glyph.category = category
+        if sub_category:
+            new_glyph.subCategory = sub_category
+
+        font.glyphs.append(new_glyph)
+
+        # Send notification
+        Glyphs.showNotification(
+            "Glyph Created", "Created glyph '{}' in {}".format(glyph_name, font.familyName)
+        )
+
+        return json.dumps(
+            {
+                "success": True,
+                "message": "Created glyph '{}'".format(glyph_name),
+                "glyph": {
+                    "name": new_glyph.name,
+                    "unicode": new_glyph.unicode,
+                    "category": new_glyph.category,
+                    "subCategory": new_glyph.subCategory,
+                },
+            }
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def delete_glyph(font_index: int = 0, glyph_name: str = None) -> str:
+    """Delete a glyph from the specified font.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph to delete. Required.
+
+    Returns:
+        str: JSON-encoded result with success status.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+
+        if not glyph:
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
+
+        del font.glyphs[glyph_name]
+
+        # Send notification
+        Glyphs.showNotification(
+            "Glyph Deleted", "Deleted glyph '{}' from {}".format(glyph_name, font.familyName)
+        )
+
+        return json.dumps({"success": True, "message": "Deleted glyph '{}'".format(glyph_name)})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def update_glyph_properties(
+    font_index: int = 0,
+    glyph_name: str = None,
+    unicode: str = None,
+    category: str = None,
+    sub_category: str = None,
+    left_kerning_group: str = None,
+    right_kerning_group: str = None,
+    export: bool = None,
+) -> str:
+    """Update properties of an existing glyph.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph to update. Required.
+        unicode (str): New Unicode value. Optional.
+        category (str): New category. Optional.
+        sub_category (str): New subcategory. Optional.
+        left_kerning_group (str): New left kerning group. Optional.
+        right_kerning_group (str): New right kerning group. Optional.
+        export (bool): Whether the glyph should be exported. Optional.
+
+    Returns:
+        str: JSON-encoded result with updated glyph properties.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+
+        if not glyph:
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
+
+        # Update properties
+        if unicode is not None:
+            glyph.unicode = unicode
+        if category is not None:
+            glyph.category = category
+        if sub_category is not None:
+            glyph.subCategory = sub_category
+        if left_kerning_group is not None:
+            glyph.leftKerningGroup = left_kerning_group
+        if right_kerning_group is not None:
+            glyph.rightKerningGroup = right_kerning_group
+        if export is not None:
+            glyph.export = export
+
+        return json.dumps(
+            {
+                "success": True,
+                "message": "Updated glyph '{}'".format(glyph_name),
+                "glyph": {
+                    "name": glyph.name,
+                    "unicode": glyph.unicode,
+                    "category": glyph.category,
+                    "subCategory": glyph.subCategory,
+                    "leftKerningGroup": glyph.leftKerningGroup,
+                    "rightKerningGroup": glyph.rightKerningGroup,
+                    "export": glyph.export,
+                },
+            }
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def copy_glyph(
+    font_index: int = 0,
+    source_glyph: str = None,
+    target_glyph: str = None,
+    copy_components: bool = True,
+    copy_anchors: bool = True,
+) -> str:
+    """Copy a glyph's outline data to another glyph or create a new glyph with the copied data.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        source_glyph (str): Name of the source glyph to copy from. Required.
+        target_glyph (str): Name of the target glyph. If it doesn't exist, it will be created. Required.
+        copy_components (bool): Whether to copy components. Defaults to True.
+        copy_anchors (bool): Whether to copy anchors. Defaults to True.
+
+    Returns:
+        str: JSON-encoded result with success status.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        if not source_glyph or not target_glyph:
+            return json.dumps(
+                {"error": "Both source and target glyph names are required"}
+            )
+
+        font = Glyphs.fonts[font_index]
+        src_glyph = font.glyphs[source_glyph]
+
+        if not src_glyph:
+            return json.dumps({"error": "Source glyph '{}' not found".format(source_glyph)})
+
+        # Remove existing target glyph so we can duplicate cleanly
+        tgt_glyph = font.glyphs[target_glyph]
+        if tgt_glyph is not None:
+            font.removeGlyph_(tgt_glyph)
+
+        # Duplicate glyph using Glyphs' native copying so all layer data and
+        # metadata come across without hitting read-only attributes.
+        duplicated = src_glyph.copy()
+        duplicated.name = target_glyph
+        font.glyphs.append(duplicated)
+
+        # Optionally strip components/anchors from the duplicate
+        if not copy_components or not copy_anchors:
+            for layer in duplicated.layers:
+                if not copy_components:
+                    try:
+                        layer.setComponents_(None)
+                    except Exception:
+                        layer.components = []
+                if not copy_anchors:
+                    layer.anchors = []
+
+        # Send notification
+        Glyphs.showNotification(
+            "Glyph Copied", "Copied '{}' to '{}'".format(source_glyph, target_glyph)
+        )
+
+        return json.dumps(
+            {
+                "success": True,
+                "message": "Copied glyph '{}' to '{}'".format(source_glyph, target_glyph),
+            }
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def update_glyph_metrics(
+    font_index: int = 0,
+    glyph_name: str = None,
+    master_id: str = None,
+    width: int = None,
+    left_sidebearing: int = None,
+    right_sidebearing: int = None,
+) -> str:
+    """Update the metrics (width and sidebearings) of a glyph for a specific master.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph to update. Required.
+        master_id (str): Master ID. If None, updates all masters. Optional.
+        width (int): New width value. Optional.
+        left_sidebearing (int): New left sidebearing value. Optional.
+        right_sidebearing (int): New right sidebearing value. Optional.
+
+    Returns:
+        str: JSON-encoded result with updated metrics.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+
+        if not glyph:
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
+
+        # Determine which layers to update
+        if master_id:
+            layers = [glyph.layers[master_id]]
+            if not layers[0]:
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
+        else:
+            layers = [glyph.layers[master.id] for master in font.masters]
+
+        updated_metrics = []
+
+        for layer in layers:
+            if width is not None:
+                layer.width = width
+            if left_sidebearing is not None:
+                _set_sidebearing(layer, "leftSideBearing", "LSB", left_sidebearing)
+            if right_sidebearing is not None:
+                _set_sidebearing(layer, "rightSideBearing", "RSB", right_sidebearing)
+
+            updated_metrics.append(
+                {
+                    "layerName": layer.name,
+                    "width": layer.width,
+                    "leftSideBearing": _get_left_sidebearing(layer),
+                    "rightSideBearing": _get_right_sidebearing(layer),
+                }
+            )
+
+        return json.dumps(
+            {
+                "success": True,
+                "message": "Updated metrics for glyph '{}'".format(glyph_name),
+                "metrics": updated_metrics,
+            }
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+def _merge_spacing_defaults(user_defaults=None, debug=None):
+    merged = dict(spacing_engine.DEFAULTS)
+    if isinstance(user_defaults, dict):
+        for k, v in user_defaults.items():
+            if v is None:
+                continue
+            merged[k] = v
+    if isinstance(debug, dict):
+        # Allow debug.includeSamples without forcing payload bloat by default.
+        if "includeSamples" in debug and debug["includeSamples"] is not None:
+            merged["includeSamples"] = bool(debug["includeSamples"])
+    return merged
+
+
+def _effective_master_params_for_spacing(font, master, merged_defaults, explicit_defaults):
+    explicit_defaults = explicit_defaults or {}
+
+    def custom_dict(obj):
+        out = {}
+        if obj is None:
+            return out
+        for field in spacing_engine.SPACING_PARAM_FIELDS:
+            for key_set in (
+                spacing_engine.SPACING_PARAM_KEYS_CANONICAL,
+                spacing_engine.SPACING_PARAM_KEYS_GMCP_LEGACY,
+                spacing_engine.SPACING_PARAM_KEYS_PARAM_LEGACY,
+            ):
+                k = key_set.get(field)
+                if not k:
+                    continue
+                val = _custom_parameter(obj, k, None)
+                if val is not None:
+                    out[k] = val
+        return out
+
+    master_custom = custom_dict(master)
+    font_custom = custom_dict(font)
+
+    def pick(field, fallback):
+        return spacing_engine.resolve_param_precedence(
+            field=field,
+            per_call_defaults=explicit_defaults,
+            master_custom=master_custom,
+            font_custom=font_custom,
+            fallback=fallback,
+        )
+
+    return {
+        "xHeight": getattr(master, "xHeight", None),
+        "italicAngle": getattr(master, "italicAngle", 0.0),
+        "area": pick("area", merged_defaults.get("area")),
+        "depth": pick("depth", merged_defaults.get("depth")),
+        "over": pick("over", merged_defaults.get("over")),
+        "frequency": pick("frequency", merged_defaults.get("frequency")),
+    }
+
+
+def _spacing_selected_glyph_names_for_font(font):
+    if not font:
+        return []
+    try:
+        layers = list(font.selectedLayers or [])
+    except Exception:
+        layers = []
+    names = []
+    for layer in layers:
+        try:
+            g = layer.parent
+            if g and g.name:
+                names.append(g.name)
+        except Exception:
+            continue
+    # stable unique
+    out = []
+    seen = set()
+    for n in names:
+        if n in seen:
+            continue
+        seen.add(n)
+        out.append(n)
+    return out
+
+
+DEFAULT_SPACING_GUIDE_GLYPHS = [
+    "n",
+    "H",
+    "zero",
+    "o",
+    "O",
+    "period",
+    "comma",
+]
+
+
+def _layer_bounds_ymin_ymax(layer):
+    """Return (yMin, yMax) from layer.bounds, or (None, None) if unavailable."""
+    try:
+        b = getattr(layer, "bounds", None)
+        if not b:
+            return (None, None)
+        origin = getattr(b, "origin", None)
+        size = getattr(b, "size", None)
+        if not origin or not size:
+            return (None, None)
+        y = float(getattr(origin, "y", 0.0))
+        h = float(getattr(size, "height", 0.0))
+        return (y, y + h)
+    except Exception:
+        return (None, None)
+
+
+def _is_spacing_guide(guide):
+    """Return True if the guide looks like one created by set_spacing_guides."""
+    try:
+        ud = getattr(guide, "userData", None)
+        if ud and ud.get("cx.ap.spacingGuides") is True:
+            return True
+    except Exception:
+        pass
+    try:
+        name = getattr(guide, "name", "") or ""
+        name_s = str(name)
+        if name_s.startswith("cx.ap.spacing."):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _clear_spacing_guides_from_layer(layer, *, dry_run: bool):
+    removed = []
+    try:
+        guides = list(getattr(layer, "guides", []) or [])
+    except Exception:
+        guides = []
+
+    # Remove from end to keep indices stable.
+    for idx in range(len(guides) - 1, -1, -1):
+        g = guides[idx]
+        if not _is_spacing_guide(g):
+            continue
+        pos = getattr(g, "position", None)
+        try:
+            x = float(getattr(pos, "x", 0.0)) if pos is not None else None
+        except Exception:
+            x = None
+        try:
+            y = float(getattr(pos, "y", 0.0)) if pos is not None else None
+        except Exception:
+            y = None
+        removed.append(
+            {
+                "index": idx,
+                "name": getattr(g, "name", None),
+                "position": {"x": x, "y": y},
+            }
+        )
+        if not dry_run:
+            try:
+                del layer.guides[idx]
+            except Exception:
+                try:
+                    layer.guides.remove(g)
+                except Exception:
+                    pass
+
+    return removed
+
+
+@mcp.tool()
+async def set_spacing_guides(
+    font_index: int = 0,
+    glyph_names: list = None,
+    master_scope: str = "current",
+    master_id: str = None,
+    mode: str = "add",
+    reference_glyph: str = "x",
+    style: str = "model",
+    dry_run: bool = False,
+) -> str:
+    """Add or clear glyph-level guides that visualize the spacing measurement model.
+
+    This tool is intended as a lightweight in-editor visualization aid. It writes guides
+    into glyph layers (layer.guides) so they can be inspected in the Edit view.
+
+    Args:
+        font_index: Index of the font (0-based). Defaults to 0.
+        glyph_names: List of glyph names. If omitted, uses currently selected glyphs in Glyphs (active font).
+        master_scope: One of "current" (default), "all", or "master".
+        master_id: Required when master_scope="master".
+        mode: One of "add" (default) or "clear".
+        reference_glyph: Glyph name used to derive the vertical band (defaults to "x").
+                         Special value "*" means “use the glyph itself”.
+        style: One of "band", "model" (default), or "full".
+               - "band": two horizontal guides for yMin/yMax
+               - "model": band + zone/depth/avg whitespace boundaries
+               - "full": model + raw reference bounds + full extremes
+        dry_run: If true, report changes without mutating.
+
+    Returns:
+        JSON payload with counts and per-layer actions (no auto-save).
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        scope = (master_scope or "current").strip().lower()
+        if scope not in ("current", "all", "master"):
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Invalid master_scope '{}'".format(master_scope),
+                    "hint": "Use one of: current, all, master",
+                }
+            )
+
+        mode_norm = (mode or "add").strip().lower()
+        if mode_norm not in ("add", "clear"):
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Invalid mode '{}'".format(mode),
+                    "hint": "Use one of: add, clear",
+                }
+            )
+
+        style_norm = (style or "model").strip().lower()
+        if style_norm not in ("band", "model", "full"):
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Invalid style '{}'".format(style),
+                    "hint": "Use one of: band, model, full",
+                }
+            )
+
+        # Determine masters
+        masters = []
+        if scope == "all":
+            masters = list(font.masters or [])
+        elif scope == "master":
+            if not master_id:
+                return _safe_json({"ok": False, "error": "master_id is required for master_scope=master"})
+            wanted = str(master_id)
+            found = None
+            for m in font.masters:
+                if getattr(m, "id", None) == wanted:
+                    found = m
+                    break
+            if not found:
+                return _safe_json({"ok": False, "error": "Master ID '{}' not found".format(master_id)})
+            masters = [found]
+        else:
+            if getattr(font, "selectedFontMaster", None):
+                masters = [font.selectedFontMaster]
+            else:
+                masters = [font.masters[0]] if font.masters else []
+
+        if not masters:
+            return _safe_json({"ok": False, "error": "No masters found"})
+
+        # Determine glyphs
+        names = glyph_names
+        if not names:
+            names = _spacing_selected_glyph_names_for_font(font)
+        if not names:
+            names = list(DEFAULT_SPACING_GUIDE_GLYPHS)
+        if not names:
+            return _safe_json({"ok": False, "error": "No glyph_names available"})
+
+        ref_name = (reference_glyph or "x").strip()
+        use_self_ref = ref_name == "*" or not ref_name
+
+        merged_defaults = _merge_spacing_defaults(user_defaults=None, debug=None)
+        explicit_defaults = {}  # do not treat per-call defaults as "stored settings" for guides
+
+        def _ensure_user_data(guide_obj):
+            try:
+                ud = getattr(guide_obj, "userData", None)
+                if ud is None:
+                    guide_obj.userData = {}
+                return guide_obj.userData
+            except Exception:
+                return None
+
+        def _add_horizontal_guide(layer_obj, *, name: str, y: float):
+            g = GSGuide()
+            try:
+                g.angle = 0.0
+            except Exception:
+                pass
+            try:
+                if NSPoint is not None:
+                    g.position = NSPoint(0, float(y))
+                else:
+                    g.position = (0, float(y))
+            except Exception:
+                pass
+            try:
+                g.name = str(name)
+            except Exception:
+                pass
+            try:
+                g.locked = True
+            except Exception:
+                pass
+            ud = _ensure_user_data(g)
+            if ud is not None:
+                ud["cx.ap.spacingGuides"] = True
+                ud["cx.ap.spacingGuideName"] = str(name)
+                ud["cx.ap.spacingGuideStyle"] = style_norm
+            if not dry_run:
+                try:
+                    layer_obj.guides.append(g)
+                except Exception:
+                    pass
+            return g
+
+        def _add_xprime_guide(
+            layer_obj,
+            *,
+            name: str,
+            x_prime: float,
+            y_min: float,
+            y_max: float,
+            x_height: float,
+            italic_angle: float,
+            italic_mode: str,
+        ):
+            g = GSGuide()
+
+            # In "deslant" mode, x-prime boundaries are constant in a deslanted space:
+            #   x' = x + tan(a) * (y - xHeight/2)
+            # So to draw a constant-x' boundary in the original coordinates, draw the line:
+            #   x(y) = x' - tan(a) * (y - xHeight/2)
+            try:
+                mode_s = str(italic_mode or "").strip().lower()
+            except Exception:
+                mode_s = "deslant"
+            angle = float(italic_angle or 0.0)
+
+            try:
+                y1 = float(y_min)
+                y2 = float(y_max)
+            except Exception:
+                y1, y2 = 0.0, 0.0
+
+            if mode_s == "deslant" and abs(angle) > 1e-6 and abs(y2 - y1) > 1e-6:
+                try:
+                    t = math.tan(math.radians(angle))
+                except Exception:
+                    t = 0.0
+                try:
+                    xh = float(x_height or 0.0)
+                except Exception:
+                    xh = 0.0
+                x1 = float(x_prime) - t * (y1 - xh / 2.0)
+                x2 = float(x_prime) - t * (y2 - xh / 2.0)
+
+                try:
+                    if NSPoint is not None:
+                        g.position = NSPoint(x1, y1)
+                    else:
+                        g.position = (x1, y1)
+                except Exception:
+                    pass
+
+                try:
+                    ang = math.degrees(math.atan2((y2 - y1), (x2 - x1)))
+                    if ang < 0:
+                        ang += 180.0
+                    g.angle = float(ang)
+                except Exception:
+                    try:
+                        g.angle = 90.0
+                    except Exception:
+                        pass
+            else:
+                # Upright (or "none" mode): constant x is a vertical guide.
+                try:
+                    if NSPoint is not None:
+                        g.position = NSPoint(float(x_prime), 0.0)
+                    else:
+                        g.position = (float(x_prime), 0.0)
+                except Exception:
+                    pass
+                try:
+                    g.angle = 90.0
+                except Exception:
+                    pass
+
+            try:
+                g.name = str(name)
+            except Exception:
+                pass
+            try:
+                g.locked = True
+            except Exception:
+                pass
+
+            ud = _ensure_user_data(g)
+            if ud is not None:
+                ud["cx.ap.spacingGuides"] = True
+                ud["cx.ap.spacingGuideName"] = str(name)
+                ud["cx.ap.spacingGuideStyle"] = style_norm
+                ud["xPrime"] = float(x_prime)
+
+            if not dry_run:
+                try:
+                    layer_obj.guides.append(g)
+                except Exception:
+                    pass
+            return g
+
+        results = []
+        added_count = 0
+        removed_count = 0
+        skipped_count = 0
+
+        for glyph_name in names:
+            glyph = font.glyphs[glyph_name] if glyph_name else None
+            if not glyph:
+                skipped_count += 1
+                results.append({"glyphName": glyph_name, "status": "skipped", "reason": "glyph_not_found"})
+                continue
+
+            for master in masters:
+                mid = getattr(master, "id", None)
+                try:
+                    layer = glyph.layers[mid]
+                except Exception:
+                    layer = None
+
+                if not layer:
+                    skipped_count += 1
+                    results.append(
+                        {
+                            "glyphName": glyph_name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", None),
+                            "status": "skipped",
+                            "reason": "layer_not_found",
+                        }
+                    )
+                    continue
+
+                removed = _clear_spacing_guides_from_layer(layer, dry_run=bool(dry_run))
+                removed_count += len(removed)
+
+                if mode_norm == "clear":
+                    results.append(
+                        {
+                            "glyphName": glyph_name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", None),
+                            "status": "ok",
+                            "action": "cleared",
+                            "removed": removed,
+                        }
+                    )
+                    continue
+
+                eff = _effective_master_params_for_spacing(font, master, merged_defaults, explicit_defaults)
+                x_height = eff.get("xHeight") or getattr(master, "xHeight", None) or 0.0
+
+                # Guides are visualization: do not let metrics keys / auto-aligned components prevent us from
+                # computing the underlying model primitives when possible.
+                guide_defaults = dict(merged_defaults)
+                guide_defaults["referenceGlyph"] = ref_name if not use_self_ref else "*"
+                guide_defaults["includeComponents"] = True
+                guide_defaults["respectMetricsKeys"] = False
+                guide_defaults["skipAutoAligned"] = False
+
+                model = spacing_engine.compute_suggestion_for_layer(
+                    font=font,
+                    glyph=glyph,
+                    layer=layer,
+                    master=master,
+                    rules=[],
+                    defaults=guide_defaults,
+                    master_params=eff,
+                )
+
+                # Preferred band source: engine reference band (already includes "over").
+                y_min = None
+                y_max = None
+                ref_over_units = None
+                try:
+                    ref = model.get("reference") or {}
+                    y_min = ref.get("yMin")
+                    y_max = ref.get("yMax")
+                    ref_over_units = ref.get("overUnits")
+                except Exception:
+                    y_min = None
+                    y_max = None
+                    ref_over_units = None
+
+                # Fallback: compute band from reference bounds + stored over if engine couldn't.
+                if y_min is None or y_max is None:
+                    over_pct = eff.get("over", merged_defaults.get("over", 0.0)) or 0.0
+                    try:
+                        over_units = (float(over_pct) / 100.0) * float(x_height or 0.0)
+                    except Exception:
+                        over_units = 0.0
+
+                    if use_self_ref:
+                        ref_layer = layer
+                    else:
+                        ref_glyph = font.glyphs[ref_name]
+                        ref_layer = None
+                        try:
+                            if ref_glyph:
+                                ref_layer = ref_glyph.layers[mid]
+                        except Exception:
+                            ref_layer = None
+
+                    y0, y1 = _layer_bounds_ymin_ymax(ref_layer) if ref_layer else (None, None)
+                    if y0 is not None and y1 is not None:
+                        y_min = float(y0) - float(over_units)
+                        y_max = float(y1) + float(over_units)
+
+                if y_min is None or y_max is None:
+                    skipped_count += 1
+                    results.append(
+                        {
+                            "glyphName": glyph_name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", None),
+                            "status": "skipped",
+                            "reason": "reference_band_unavailable",
+                            "referenceGlyph": ref_name if not use_self_ref else "*",
+                            "modelStatus": model.get("status"),
+                            "modelReason": model.get("reason"),
+                        }
+                    )
+                    continue
+
+                added = []
+
+                # Always show the band in add mode, regardless of style.
+                for kind, y in (("min", y_min), ("max", y_max)):
+                    guide_name = "cx.ap.spacing.band:{}".format(kind)
+                    g = _add_horizontal_guide(layer, name=guide_name, y=float(y))
+                    try:
+                        ud = _ensure_user_data(g)
+                        if ud is not None:
+                            ud["kind"] = kind
+                            ud["referenceGlyph"] = ref_name if not use_self_ref else "*"
+                            ud["y"] = float(y)
+                    except Exception:
+                        pass
+                    added.append({"name": guide_name, "kind": kind, "y": float(y), "angle": getattr(g, "angle", None)})
+                    added_count += 1
+
+                # Band-only style stops here.
+                if style_norm == "band":
+                    results.append(
+                        {
+                            "glyphName": glyph_name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", None),
+                            "status": "ok",
+                            "action": "added",
+                            "style": style_norm,
+                            "referenceGlyph": ref_name if not use_self_ref else "*",
+                            "band": {"yMin": float(y_min), "yMax": float(y_max)},
+                            "modelStatus": model.get("status"),
+                            "modelReason": model.get("reason"),
+                            "removed": removed,
+                            "added": added,
+                        }
+                    )
+                    continue
+
+                # If the engine couldn't compute measured primitives, stop at the band.
+                if model.get("status") != "ok":
+                    skipped_count += 1
+                    results.append(
+                        {
+                            "glyphName": glyph_name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", None),
+                            "status": "skipped",
+                            "reason": "model_not_ok",
+                            "style": style_norm,
+                            "referenceGlyph": ref_name if not use_self_ref else "*",
+                            "band": {"yMin": float(y_min), "yMax": float(y_max)},
+                            "modelStatus": model.get("status"),
+                            "modelReason": model.get("reason"),
+                            "removed": removed,
+                            "added": added,
+                        }
+                    )
+                    continue
+
+                measured = model.get("measured") or {}
+                target = model.get("target") or {}
+                params = model.get("params") or {}
+
+                l_extreme = measured.get("lExtreme")
+                r_extreme = measured.get("rExtreme")
+                height = measured.get("height")
+                left_area = measured.get("leftArea")
+                right_area = measured.get("rightArea")
+                target_avg = target.get("targetAvg")
+                depth_pct = params.get("depth")
+                italic_mode = params.get("italicMode")
+                italic_angle = params.get("italicAngle")
+
+                # Compute derived values (average whitespace is "area / height").
+                try:
+                    h = float(height)
+                except Exception:
+                    h = 0.0
+
+                ok_for_model = (
+                    l_extreme is not None
+                    and r_extreme is not None
+                    and left_area is not None
+                    and right_area is not None
+                    and target_avg is not None
+                    and h > 1e-6
+                )
+
+                if ok_for_model:
+                    l_extreme_f = float(l_extreme)
+                    r_extreme_f = float(r_extreme)
+                    avg_measured_left = float(left_area) / h
+                    avg_measured_right = float(right_area) / h
+                    avg_target = float(target_avg)
+
+                    # Zone edges.
+                    for side, x_p in (("L", l_extreme_f), ("R", r_extreme_f)):
+                        guide_name = "cx.ap.spacing.zone:{}".format(side)
+                        g = _add_xprime_guide(
+                            layer,
+                            name=guide_name,
+                            x_prime=float(x_p),
+                            y_min=float(y_min),
+                            y_max=float(y_max),
+                            x_height=float(x_height or 0.0),
+                            italic_angle=float(italic_angle or 0.0),
+                            italic_mode=str(italic_mode or "deslant"),
+                        )
+                        added.append({"name": guide_name, "xPrime": float(x_p), "angle": getattr(g, "angle", None)})
+                        added_count += 1
+
+                    # Depth clamp.
+                    try:
+                        depth_units = float(x_height or 0.0) * (float(depth_pct or 0.0) / 100.0)
+                    except Exception:
+                        depth_units = 0.0
+                    for side, x_p in (("L", l_extreme_f + depth_units), ("R", r_extreme_f - depth_units)):
+                        guide_name = "cx.ap.spacing.depth:{}".format(side)
+                        g = _add_xprime_guide(
+                            layer,
+                            name=guide_name,
+                            x_prime=float(x_p),
+                            y_min=float(y_min),
+                            y_max=float(y_max),
+                            x_height=float(x_height or 0.0),
+                            italic_angle=float(italic_angle or 0.0),
+                            italic_mode=str(italic_mode or "deslant"),
+                        )
+                        added.append({"name": guide_name, "xPrime": float(x_p), "angle": getattr(g, "angle", None)})
+                        added_count += 1
+
+                    # Average whitespace: measured vs target.
+                    avg_lines = [
+                        ("avg.measured", "L", l_extreme_f + avg_measured_left),
+                        ("avg.measured", "R", r_extreme_f - avg_measured_right),
+                        ("avg.target", "L", l_extreme_f + avg_target),
+                        ("avg.target", "R", r_extreme_f - avg_target),
+                    ]
+                    for group, side, x_p in avg_lines:
+                        guide_name = "cx.ap.spacing.{}:{}".format(group, side)
+                        g = _add_xprime_guide(
+                            layer,
+                            name=guide_name,
+                            x_prime=float(x_p),
+                            y_min=float(y_min),
+                            y_max=float(y_max),
+                            x_height=float(x_height or 0.0),
+                            italic_angle=float(italic_angle or 0.0),
+                            italic_mode=str(italic_mode or "deslant"),
+                        )
+                        added.append({"name": guide_name, "xPrime": float(x_p), "angle": getattr(g, "angle", None)})
+                        added_count += 1
+
+                # Full mode: add raw ref bounds (without over) + full extremes if available.
+                if style_norm == "full":
+                    try:
+                        ou = float(ref_over_units or 0.0)
+                    except Exception:
+                        ou = 0.0
+                    if ou and abs(ou) > 1e-6:
+                        y_min_raw = float(y_min) + ou
+                        y_max_raw = float(y_max) - ou
+                        for kind, y in (("min", y_min_raw), ("max", y_max_raw)):
+                            guide_name = "cx.ap.spacing.ref:{}".format(kind)
+                            g = _add_horizontal_guide(layer, name=guide_name, y=float(y))
+                            added.append({"name": guide_name, "kind": kind, "y": float(y), "angle": getattr(g, "angle", None)})
+                            added_count += 1
+
+                    try:
+                        lf = measured.get("lFullExtreme")
+                        rf = measured.get("rFullExtreme")
+                        if lf is not None and rf is not None:
+                            for side, x_p in (("L", float(lf)), ("R", float(rf))):
+                                guide_name = "cx.ap.spacing.full:{}".format(side)
+                                g = _add_xprime_guide(
+                                    layer,
+                                    name=guide_name,
+                                    x_prime=float(x_p),
+                                    y_min=float(y_min),
+                                    y_max=float(y_max),
+                                    x_height=float(x_height or 0.0),
+                                    italic_angle=float(italic_angle or 0.0),
+                                    italic_mode=str(italic_mode or "deslant"),
+                                )
+                                added.append({"name": guide_name, "xPrime": float(x_p), "angle": getattr(g, "angle", None)})
+                                added_count += 1
+                    except Exception:
+                        pass
+
+                results.append(
+                    {
+                        "glyphName": glyph_name,
+                        "masterId": mid,
+                        "masterName": getattr(master, "name", None),
+                        "status": "ok",
+                        "action": "added",
+                        "style": style_norm,
+                        "referenceGlyph": ref_name if not use_self_ref else "*",
+                        "xHeight": x_height,
+                        "band": {"yMin": float(y_min), "yMax": float(y_max)},
+                        "modelStatus": model.get("status"),
+                        "modelReason": model.get("reason"),
+                        "removed": removed,
+                        "added": added,
+                    }
+                )
+
+        return _safe_json(
+            {
+                "ok": True,
+                "dryRun": bool(dry_run),
+                "mode": mode_norm,
+                "masterScope": scope,
+                "referenceGlyph": ref_name if not use_self_ref else "*",
+                "style": style_norm,
+                "summary": {
+                    "glyphCount": len(names),
+                    "masterCount": len(masters),
+                    "addedCount": added_count,
+                    "removedCount": removed_count,
+                    "skippedCount": skipped_count,
+                },
+                "results": results,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
+
+
+@mcp.tool()
+async def review_spacing(
+    font_index: int = 0,
+    glyph_names: list = None,
+    master_id: str = None,
+    rules: list = None,
+    defaults: dict = None,
+    debug: dict = None,
+) -> str:
+    """Review spacing and suggest sidebearings/width using a clean-room area-based model.
+
+    This tool does not mutate the font.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                    "results": [],
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+
+        merged_defaults = _merge_spacing_defaults(defaults, debug)
+        explicit_defaults = defaults if isinstance(defaults, dict) else {}
+
+        if glyph_names:
+            names = list(glyph_names)
+        else:
+            # Prefer selection, but only when the referenced font is active.
+            if not Glyphs.font or Glyphs.font != font:
+                return _safe_json(
+                    {
+                        "ok": False,
+                        "error": "No glyph_names provided and font_index is not the active font.",
+                        "hint": "Provide glyph_names explicitly or activate the target font in Glyphs.",
+                        "results": [],
+                    }
+                )
+            names = _spacing_selected_glyph_names_for_font(font)
+
+        if not names:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "No glyphs to review.",
+                    "hint": "Select glyphs in Glyphs or pass glyph_names.",
+                    "results": [],
+                }
+            )
+
+        # Determine masters to evaluate.
+        masters = []
+        if master_id:
+            wanted = str(master_id)
+            masters = [m for m in font.masters if getattr(m, "id", None) == wanted]
+            if not masters:
+                return _safe_json(
+                    {
+                        "ok": False,
+                        "error": "Master ID '{}' not found".format(master_id),
+                        "results": [],
+                    }
+                )
+        else:
+            masters = list(font.masters or [])
+
+        results = []
+        ok_count = 0
+        skipped_count = 0
+        error_count = 0
+        layer_count = 0
+
+        for name in names:
+            glyph = font.glyphs[name]
+            if not glyph:
+                results.append(
+                    {
+                        "glyphName": name,
+                        "status": "error",
+                        "reason": "glyph_not_found",
+                    }
+                )
+                error_count += 1
+                continue
+
+            for master in masters:
+                layer_count += 1
+                mid = getattr(master, "id", None)
+                try:
+                    layer = glyph.layers[mid]
+                except Exception:
+                    layer = None
+
+                if not layer:
+                    results.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "status": "skipped",
+                            "reason": "layer_missing",
+                        }
+                    )
+                    skipped_count += 1
+                    continue
+
+                master_params = _effective_master_params_for_spacing(font, master, merged_defaults, explicit_defaults)
+                try:
+                    r = spacing_engine.compute_suggestion_for_layer(
+                        font=font,
+                        glyph=glyph,
+                        layer=layer,
+                        master=master,
+                        rules=rules,
+                        defaults=merged_defaults,
+                        master_params=master_params,
+                    )
+                except Exception as exc:
+                    results.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "status": "error",
+                            "reason": "exception",
+                            "error": str(exc),
+                        }
+                    )
+                    error_count += 1
+                    continue
+
+                results.append(r)
+                if r.get("status") == "ok":
+                    ok_count += 1
+                elif r.get("status") == "skipped":
+                    skipped_count += 1
+                else:
+                    error_count += 1
+
+        return _safe_json(
+            {
+                "ok": True,
+                "summary": {
+                    "glyphCount": len(names),
+                    "layerCount": layer_count,
+                    "okCount": ok_count,
+                    "skippedCount": skipped_count,
+                    "errorCount": error_count,
+                    "rulesCount": len(rules or []),
+                    "defaults": {
+                        "area": merged_defaults.get("area"),
+                        "depth": merged_defaults.get("depth"),
+                        "over": merged_defaults.get("over"),
+                        "frequency": merged_defaults.get("frequency"),
+                        "referenceGlyph": merged_defaults.get("referenceGlyph"),
+                        "italicMode": merged_defaults.get("italicMode"),
+                    },
+                },
+                "results": results,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e), "results": []})
+
+
+@mcp.tool()
+async def apply_spacing(
+    font_index: int = 0,
+    glyph_names: list = None,
+    master_id: str = None,
+    rules: list = None,
+    defaults: dict = None,
+    clamp: dict = None,
+    confirm: bool = False,
+    dry_run: bool = False,
+) -> str:
+    """Apply suggested spacing (sidebearings/width) computed by review_spacing.
+
+    Safety:
+    - Set confirm=true to mutate.
+    - Use dry_run=true to preview.
+    """
+    try:
+        if not confirm and not dry_run:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Refusing to apply spacing without confirm=true.",
+                    "hint": "Run apply_spacing(..., dry_run=true) to preview or set confirm=true to apply.",
+                }
+            )
+
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        merged_defaults = _merge_spacing_defaults(defaults, debug=None)
+        explicit_defaults = defaults if isinstance(defaults, dict) else {}
+
+        effective_clamp = clamp or {"maxDeltaLSB": 150, "maxDeltaRSB": 150, "minLSB": -200, "minRSB": -200}
+
+        if glyph_names:
+            names = list(glyph_names)
+        else:
+            if not Glyphs.font or Glyphs.font != font:
+                return _safe_json(
+                    {
+                        "ok": False,
+                        "error": "No glyph_names provided and font_index is not the active font.",
+                        "hint": "Provide glyph_names explicitly or activate the target font in Glyphs.",
+                    }
+                )
+            names = _spacing_selected_glyph_names_for_font(font)
+
+        if not names:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "No glyphs to apply.",
+                    "hint": "Select glyphs in Glyphs or pass glyph_names.",
+                }
+            )
+
+        masters = []
+        if master_id:
+            wanted = str(master_id)
+            masters = [m for m in font.masters if getattr(m, "id", None) == wanted]
+            if not masters:
+                return _safe_json({"ok": False, "error": "Master ID '{}' not found".format(master_id)})
+        else:
+            masters = list(font.masters or [])
+
+        results = []
+        applied = []
+        ok_count = 0
+        skipped_count = 0
+        error_count = 0
+        applied_count = 0
+
+        for name in names:
+            glyph = font.glyphs[name]
+            if not glyph:
+                results.append({"glyphName": name, "status": "error", "reason": "glyph_not_found"})
+                error_count += 1
+                continue
+
+            for master in masters:
+                mid = getattr(master, "id", None)
+                try:
+                    layer = glyph.layers[mid]
+                except Exception:
+                    layer = None
+
+                if not layer:
+                    results.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "status": "skipped",
+                            "reason": "layer_missing",
+                        }
+                    )
+                    skipped_count += 1
+                    continue
+
+                master_params = _effective_master_params_for_spacing(font, master, merged_defaults, explicit_defaults)
+                try:
+                    r = spacing_engine.compute_suggestion_for_layer(
+                        font=font,
+                        glyph=glyph,
+                        layer=layer,
+                        master=master,
+                        rules=rules,
+                        defaults=merged_defaults,
+                        master_params=master_params,
+                    )
+                except Exception as exc:
+                    results.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "status": "error",
+                            "reason": "exception",
+                            "error": str(exc),
+                        }
+                    )
+                    error_count += 1
+                    continue
+
+                if r.get("status") != "ok":
+                    results.append(r)
+                    if r.get("status") == "skipped":
+                        skipped_count += 1
+                    else:
+                        error_count += 1
+                    continue
+
+                # Clamp suggestion (relative to current).
+                cur = r.get("current") or {}
+                sug = r.get("suggested") or {}
+                clamped, clamp_warnings = spacing_engine.clamp_suggestion(current=cur, suggested=sug, clamp=effective_clamp)
+                if clamp_warnings:
+                    r.setdefault("warnings", []).extend(clamp_warnings)
+
+                # Recompute width from measured shape if possible.
+                try:
+                    m = r.get("measured") or {}
+                    width_shape = m.get("rFullExtreme") - m.get("lFullExtreme")
+
+                    cl_l = _units_int(clamped.get("lsb"))
+                    cl_r = _units_int(clamped.get("rsb"))
+                    shape_int = _units_int(width_shape)
+
+                    if shape_int is not None and cl_l is not None and cl_r is not None:
+                        clamped["width"] = int(shape_int + cl_l + cl_r)
+
+                    if sug.get("width") is not None and "tabular_width_preserved" in (r.get("warnings") or []):
+                        clamped["width"] = _units_int(sug.get("width"))
+
+                    clamped["lsb"] = cl_l
+                    clamped["rsb"] = cl_r
+                except Exception:
+                    pass
+
+                r["suggested"] = clamped
+                try:
+                    cur_w = _units_int(cur.get("width"))
+                    cur_l = _units_int(cur.get("lsb"))
+                    cur_r = _units_int(cur.get("rsb"))
+
+                    cl_w = _units_int(clamped.get("width"))
+                    cl_l = _units_int(clamped.get("lsb"))
+                    cl_r = _units_int(clamped.get("rsb"))
+
+                    r["delta"] = {
+                        "width": (cl_w - cur_w) if (cl_w is not None and cur_w is not None) else None,
+                        "lsb": (cl_l - cur_l) if (cl_l is not None and cur_l is not None) else None,
+                        "rsb": (cl_r - cur_r) if (cl_r is not None and cur_r is not None) else None,
+                    }
+                except Exception:
+                    pass
+
+                results.append(r)
+                ok_count += 1
+
+                if dry_run or not confirm:
+                    continue
+
+                before_w = layer.width
+                before_l = _get_left_sidebearing(layer)
+                before_r = _get_right_sidebearing(layer)
+
+                try:
+                    new_lsb = clamped.get("lsb")
+                    new_rsb = clamped.get("rsb")
+                    if new_lsb is not None:
+                        _set_sidebearing(layer, "leftSideBearing", "LSB", new_lsb)
+                    if new_rsb is not None:
+                        _set_sidebearing(layer, "rightSideBearing", "RSB", new_rsb)
+
+                    # If tabular spacing is enabled, enforce the desired width explicitly.
+                    if "tabular_width_preserved" in (r.get("warnings") or []) and clamped.get("width") is not None:
+                        layer.width = int(round(float(clamped.get("width"))))
+
+                    after_w = layer.width
+                    after_l = _get_left_sidebearing(layer)
+                    after_r = _get_right_sidebearing(layer)
+
+                    applied.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "before": {"width": before_w, "lsb": before_l, "rsb": before_r},
+                            "after": {"width": after_w, "lsb": after_l, "rsb": after_r},
+                            "appliedSuggested": {"width": clamped.get("width"), "lsb": clamped.get("lsb"), "rsb": clamped.get("rsb")},
+                        }
+                    )
+                    applied_count += 1
+                except Exception as exc:
+                    error_count += 1
+                    results.append(
+                        {
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                            "masterName": getattr(master, "name", ""),
+                            "status": "error",
+                            "reason": "apply_failed",
+                            "error": str(exc),
+                        }
+                    )
+
+        return _safe_json(
+            {
+                "ok": True,
+                "summary": {
+                    "glyphCount": len(names),
+                    "okCount": ok_count,
+                    "skippedCount": skipped_count,
+                    "errorCount": error_count,
+                    "appliedCount": applied_count,
+                    "dryRun": bool(dry_run),
+                },
+                "results": results,
+                "applied": applied,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
+
+
+@mcp.tool()
+async def set_spacing_params(
+    font_index: int = 0,
+    master_id: str = None,
+    scope: str = "auto",
+    params: dict = None,
+    use_legacy_keys: bool = False,
+    dry_run: bool = False,
+) -> str:
+    """Set spacing parameters as font/master Custom Parameters (no auto-save).
+
+    Args:
+        font_index: Index of the font (0-based). Defaults to 0.
+        master_id: Master ID when targeting a specific master.
+        scope: One of "auto" (default), "font", "master", or "all_masters".
+        params: Dict with any of: area, depth, over, frequency. Values:
+               - number -> set/update
+               - null -> delete/unset
+        use_legacy_keys: If true, use paramArea/paramDepth/paramOver/paramFreq.
+                         Otherwise use cx.ap.spacingArea/Depth/Over/Freq.
+        dry_run: If true, report changes without mutating.
+
+    Returns:
+        JSON payload with change list and read-back values.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        params = params or {}
+        if not isinstance(params, dict):
+            return _safe_json({"ok": False, "error": "params must be an object/dict"})
+
+        scope_norm = (scope or "auto").strip().lower()
+        if scope_norm not in ("auto", "font", "master", "all_masters"):
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Invalid scope '{}'".format(scope),
+                    "hint": "Use one of: auto, font, master, all_masters",
+                }
+            )
+
+        # Resolve targets
+        targets = []
+        scope_applied = scope_norm
+        if scope_norm == "auto":
+            if master_id:
+                scope_applied = "master"
+            else:
+                scope_applied = "font"
+
+        if scope_applied == "font":
+            targets = [("font", None, font)]
+        elif scope_applied == "master":
+            if not master_id:
+                return _safe_json({"ok": False, "error": "master_id is required for scope=master"})
+            wanted = str(master_id)
+            found = None
+            for m in font.masters:
+                if getattr(m, "id", None) == wanted:
+                    found = m
+                    break
+            if not found:
+                return _safe_json({"ok": False, "error": "Master ID '{}' not found".format(master_id)})
+            targets = [("master", wanted, found)]
+        elif scope_applied == "all_masters":
+            for m in font.masters:
+                targets.append(("master", getattr(m, "id", None), m))
+
+        key_map = spacing_engine.SPACING_PARAM_KEYS_PARAM_LEGACY if use_legacy_keys else spacing_engine.SPACING_PARAM_KEYS_CANONICAL
+
+        changed = []
+        effective_readback = []
+
+        def _as_number(v):
+            if v is None:
+                return None
+            if isinstance(v, (int, float)):
+                return float(v)
+            if isinstance(v, str) and v.strip():
+                try:
+                    return float(v.strip())
+                except Exception:
+                    return None
+            return None
+
+        for kind, tid, obj in targets:
+            target_label = {"type": kind}
+            if kind == "master":
+                target_label["masterId"] = tid
+                target_label["masterName"] = getattr(obj, "name", None)
+
+            # Apply changes field-by-field
+            for field in spacing_engine.SPACING_PARAM_FIELDS:
+                if field not in params:
+                    continue
+                key = key_map.get(field)
+                if not key:
+                    continue
+
+                before = _custom_parameter(obj, key, None)
+                requested = params.get(field)
+
+                if requested is None:
+                    action = "delete"
+                    after = None
+                    if not dry_run:
+                        try:
+                            del obj.customParameters[key]
+                        except Exception:
+                            pass
+                else:
+                    numeric = _as_number(requested)
+                    if numeric is None:
+                        return _safe_json(
+                            {
+                                "ok": False,
+                                "error": "Param '{}' must be a number or null".format(field),
+                                "value": requested,
+                            }
+                        )
+                    action = "set"
+                    after = numeric
+                    if not dry_run:
+                        obj.customParameters[key] = numeric
+
+                changed.append(
+                    {
+                        "target": target_label,
+                        "field": field,
+                        "key": key,
+                        "before": before,
+                        "after": after,
+                        "action": action,
+                    }
+                )
+
+            # Readback (canonical + legacy, so callers can see what's present)
+            rb = dict(target_label)
+            rb["values"] = {}
+            for field in spacing_engine.SPACING_PARAM_FIELDS:
+                rb["values"][field] = {
+                    "canonicalKey": spacing_engine.SPACING_PARAM_KEYS_CANONICAL.get(field),
+                    "canonicalValue": _custom_parameter(obj, spacing_engine.SPACING_PARAM_KEYS_CANONICAL.get(field), None),
+                    "gmcpLegacyKey": spacing_engine.SPACING_PARAM_KEYS_GMCP_LEGACY.get(field),
+                    "gmcpLegacyValue": _custom_parameter(obj, spacing_engine.SPACING_PARAM_KEYS_GMCP_LEGACY.get(field), None),
+                    "legacyKey": spacing_engine.SPACING_PARAM_KEYS_PARAM_LEGACY.get(field),
+                    "legacyValue": _custom_parameter(obj, spacing_engine.SPACING_PARAM_KEYS_PARAM_LEGACY.get(field), None),
+                }
+            effective_readback.append(rb)
+
+        return _safe_json(
+            {
+                "ok": True,
+                "scopeApplied": scope_applied,
+                "dryRun": bool(dry_run),
+                "useLegacyKeys": bool(use_legacy_keys),
+                "targets": [{"type": k, "masterId": tid} for k, tid, _obj in targets],
+                "changed": changed,
+                "effectiveReadback": effective_readback,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
+
+
+@mcp.tool()
+async def get_glyph_components(
+    font_index: int = 0, glyph_name: str = None, master_id: str = None
+) -> str:
+    """Get detailed component information from a glyph's layers.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph to get components from. Required.
+        master_id (str): Master ID. If None, gets components from all masters. Optional.
+
+    Returns:
+        str: JSON-encoded list of components with their properties including:
+            - Component name
+            - Transform matrix (scale, rotation, position)
+            - Automatic alignment status
+            - Layer information
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+
+        if not glyph:
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
+
+        # Determine which layers to check
+        if master_id:
+            layers = [(master_id, glyph.layers[master_id])]
+            if not layers[0][1]:
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
+        else:
+            layers = [(master.id, glyph.layers[master.id]) for master in font.masters]
+
+        components_info = []
+
+        for mid, layer in layers:
+            layer_components = []
+
+            for component in layer.components:
+                # Extract transform values
+                transform = component.transform
+                component_data = {
+                    "name": component.componentName,
+                    "transform": {
+                        "xScale": transform[0],
+                        "xyScale": transform[1],
+                        "yxScale": transform[2],
+                        "yScale": transform[3],
+                        "xOffset": transform[4],
+                        "yOffset": transform[5],
+                    },
+                    "automatic": component.automatic,
+                }
+
+                # Check if the component glyph exists
+                component_glyph = font.glyphs[component.componentName]
+                if component_glyph:
+                    component_data["componentGlyphExists"] = True
+                    component_data["componentUnicode"] = component_glyph.unicode
+                    component_data["componentCategory"] = component_glyph.category
+                else:
+                    component_data["componentGlyphExists"] = False
+
+                layer_components.append(component_data)
+
+            # Find master name for this layer
+            master_name = None
+            for master in font.masters:
+                if master.id == mid:
+                    master_name = master.name
+                    break
+
+            components_info.append(
+                {
+                    "masterId": mid,
+                    "masterName": master_name or layer.name,
+                    "layerName": layer.name,
+                    "componentCount": len(layer_components),
+                    "components": layer_components,
+                }
+            )
+
+        return json.dumps(
+            {
+                "glyphName": glyph_name,
+                "totalLayers": len(components_info),
+                "layers": components_info,
+            }
+        )
+
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def add_component_to_glyph(
+    font_index: int = 0,
+    glyph_name: str = None,
+    component_name: str = None,
+    master_id: str = None,
+    x_offset: float = 0,
+    y_offset: float = 0,
+    x_scale: float = 1,
+    y_scale: float = 1,
+) -> str:
+    """Add a component to a glyph's layer.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph to add component to. Required.
+        component_name (str): Name of the glyph to use as component. Required.
+        master_id (str): Master ID. If None, adds to all masters. Optional.
+        x_offset (float): X offset for the component. Defaults to 0.
+        y_offset (float): Y offset for the component. Defaults to 0.
+        x_scale (float): X scale factor. Defaults to 1.
+        y_scale (float): Y scale factor. Defaults to 1.
+
+    Returns:
+        str: JSON-encoded result with success status.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        if not glyph_name or not component_name:
+            return json.dumps(
+                {"error": "Both glyph_name and component_name are required"}
+            )
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+
+        if not glyph:
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
+
+        if not font.glyphs[component_name]:
+            return json.dumps(
+                {"error": "Component glyph '{}' not found".format(component_name)}
+            )
+
+        # Determine which layers to update
+        if master_id:
+            layers = [glyph.layers[master_id]]
+            if not layers[0]:
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
+        else:
+            layers = [glyph.layers[master.id] for master in font.masters]
+
+        for layer in layers:
+            component = GSComponent(component_name)
+            # Set transform: [xScale, 0, 0, yScale, xOffset, yOffset]
+            component.transform = (x_scale, 0, 0, y_scale, x_offset, y_offset)
+            layer.components.append(component)
+
+        return json.dumps(
+            {
+                "success": True,
+                "message": "Added component '{}' to glyph '{}'".format(component_name, glyph_name),
+            }
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def add_anchor_to_glyph(
+    font_index: int = 0,
+    glyph_name: str = None,
+    anchor_name: str = None,
+    master_id: str = None,
+    x: float = None,
+    y: float = None,
+) -> str:
+    """Add an anchor to a glyph's layer.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph to add anchor to. Required.
+        anchor_name (str): Name of the anchor (e.g., "top", "bottom"). Required.
+        master_id (str): Master ID. If None, adds to all masters. Optional.
+        x (float): X position of the anchor. Required.
+        y (float): Y position of the anchor. Required.
+
+    Returns:
+        str: JSON-encoded result with success status.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        if not glyph_name or not anchor_name:
+            return json.dumps({"error": "Both glyph_name and anchor_name are required"})
+
+        if x is None or y is None:
+            return json.dumps({"error": "Both x and y coordinates are required"})
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+
+        if not glyph:
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
+
+        # Determine which layers to update
+        if master_id:
+            layers = [glyph.layers[master_id]]
+            if not layers[0]:
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
+        else:
+            layers = [glyph.layers[master.id] for master in font.masters]
+
+        for layer in layers:
+            anchor = GSAnchor(anchor_name, (x, y))
+            layer.anchors.append(anchor)
+
+        return json.dumps(
+            {
+                "success": True,
+                "message": "Added anchor '{}' to glyph '{}'".format(anchor_name, glyph_name),
+            }
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def set_kerning_pair(
+    font_index: int = 0,
+    master_id: str = None,
+    left: str = None,
+    right: str = None,
+    value: int = None,
+) -> str:
+    """Set kerning value for a specific pair.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        master_id (str): Master ID. If None, uses the first master. Optional.
+        left (str): Left glyph name or kerning group (e.g., "@MMK_L_A"). Required.
+        right (str): Right glyph name or kerning group (e.g., "@MMK_R_V"). Required.
+        value (int): Kerning value. Use 0 to remove kerning. Required.
+
+    Returns:
+        str: JSON-encoded result with success status.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        if not left or not right:
+            return json.dumps(
+                {"error": "Both left and right glyph/group names are required"}
+            )
+
+        if value is None:
+            return json.dumps({"error": "Kerning value is required"})
+
+        font = Glyphs.fonts[font_index]
+
+        if master_id is None:
+            master_id = font.masters[0].id
+
+        # Initialize kerning dictionary if needed
+        if master_id not in font.kerning:
+            font.kerning[master_id] = {}
+
+        if left not in font.kerning[master_id]:
+            font.kerning[master_id][left] = {}
+
+        if value == 0:
+            # Remove kerning if it exists
+            if right in font.kerning[master_id][left]:
+                del font.kerning[master_id][left][right]
+            message = "Removed kerning for '{}' - '{}'".format(left, right)
+        else:
+            # Set kerning value
+            font.kerning[master_id][left][right] = value
+            message = "Set kerning for '{}' - '{}' to {}".format(left, right, value)
+
+        # Send notification
+        Glyphs.showNotification("Kerning Updated", message)
+
+        return json.dumps(
+            {
+                "success": True,
+                "message": message,
+                "kerning": {
+                    "left": left,
+                    "right": right,
+                    "value": value,
+                    "masterId": master_id,
+                },
+            }
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def generate_kerning_tab(
+    font_index: int = 0,
+    master_id: str = None,
+    relevant_limit: int = 2000,
+    missing_limit: int = 1000,
+    audit_limit: int = 200,
+    per_line: int = 12,
+    glyph_names: list = None,
+    rendering: str = "hybrid",
+) -> str:
+    """Generate a kerning review tab and open it in Glyphs.
+
+    The proof text includes:
+      1) A worklist of missing high-relevance pairs (Andre Fuchs dataset),
+         not covered by explicit kerning in the master (glyph or class).
+      2) An audit section of tightest + widest existing explicit kerning pairs.
+
+    Args:
+        font_index: Index of the font (0-based). Defaults to 0.
+        master_id: Master ID. If None, uses the first master.
+        relevant_limit: How many dataset pairs to consider (top-N).
+        missing_limit: Cap for the missing-pairs worklist (pairs, not tokens).
+        audit_limit: Cap for tightest and widest explicit kerning pairs (pairs, not tokens).
+        per_line: Number of tokens per line in the proof text.
+        glyph_names: Optional list of glyph names to focus on (keep only pairs where left or right is in this list).
+        rendering: One of "hybrid" (default), "unicode", or "glyph_names".
+
+    Returns:
+        JSON payload with the generated text and metadata.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        if not font.masters:
+            return json.dumps({"error": "Font has no masters"})
+
+        if master_id is None:
+            master_id = font.masters[0].id
+
+        dataset_meta, dataset_pairs, warnings = _load_andre_fuchs_relevant_pairs()
+        pair_count = int(dataset_meta.get("pairCount") or 0)
+        used_top_n = min(max(int(relevant_limit or 0), 0), pair_count)
+
+        focus = None
+        if glyph_names:
+            try:
+                focus = set([str(n) for n in glyph_names if n])
+            except Exception:
+                focus = None
+        if focus is not None and len(focus) == 0:
+            focus = None
+
+        # Build lookups from the font.
+        unicode_to_glyphname = {}
+        unicode_to_glyphname_fallback = {}
+        glyphname_to_unicode = {}
+        left_group_rep = {}
+        right_group_rep = {}
+        glyph_left_group = {}
+        glyph_right_group = {}
+
+        for glyph in font.glyphs:
+            name = getattr(glyph, "name", None)
+            if not name:
+                continue
+
+            ch = _glyph_unicode_char(glyph)
+            if ch:
+                if name not in glyphname_to_unicode:
+                    glyphname_to_unicode[name] = ch
+
+                if getattr(glyph, "export", True):
+                    if ch not in unicode_to_glyphname:
+                        unicode_to_glyphname[ch] = name
+                else:
+                    if ch not in unicode_to_glyphname_fallback:
+                        unicode_to_glyphname_fallback[ch] = name
+
+            lgrp = getattr(glyph, "leftKerningGroup", None)
+            rgrp = getattr(glyph, "rightKerningGroup", None)
+            glyph_left_group[name] = lgrp
+            glyph_right_group[name] = rgrp
+
+            if lgrp and lgrp not in left_group_rep:
+                left_group_rep[lgrp] = name
+            if rgrp and rgrp not in right_group_rep:
+                right_group_rep[rgrp] = name
+
+        for ch, name in unicode_to_glyphname_fallback.items():
+            if ch not in unicode_to_glyphname:
+                unicode_to_glyphname[ch] = name
+
+        # Build explicit kerning set + numeric list for sorting.
+        explicit = set()
+        existing_numeric = []
+        kerning = font.kerning.get(master_id, {}) or {}
+        for left_key, right_dict in kerning.items():
+            if not right_dict:
+                continue
+            for right_key, value in right_dict.items():
+                explicit.add((str(left_key), str(right_key)))
+                v = _coerce_numeric(value)
+                if v is not None:
+                    existing_numeric.append((str(left_key), str(right_key), float(v)))
+
+        ProofGlyph = kerning_proof_engine.ProofGlyph
+
+        def _context_chars(left_char, right_char):
+            try:
+                if left_char.isupper() and right_char.isupper():
+                    return ("H", "O")
+                if left_char.islower() and right_char.islower():
+                    return ("n", "o")
+            except Exception:
+                pass
+            return ("H", "O")
+
+        def _context_glyph_name(ch):
+            return unicode_to_glyphname.get(ch) or ch
+
+        def _pair_tokens(left_name, left_char, right_name, right_char):
+            stem_ch, round_ch = _context_chars(left_char or "", right_char or "")
+            stem_name = _context_glyph_name(stem_ch)
+            round_name = _context_glyph_name(round_ch)
+
+            return [
+                [
+                    ProofGlyph(stem_name, stem_ch),
+                    ProofGlyph(left_name, left_char),
+                    ProofGlyph(right_name, right_char),
+                    ProofGlyph(stem_name, stem_ch),
+                ],
+                [
+                    ProofGlyph(round_name, round_ch),
+                    ProofGlyph(left_name, left_char),
+                    ProofGlyph(right_name, right_char),
+                    ProofGlyph(round_name, round_ch),
+                ],
+            ]
+
+        # 1) Missing relevant pairs worklist.
+        missing_tokens = []
+        missing_included = 0
+        missing_skipped_no_glyph = 0
+
+        missing_cap = max(int(missing_limit or 0), 0)
+        if missing_cap > 0:
+            for left_char, right_char in dataset_pairs[:used_top_n]:
+                left_name = unicode_to_glyphname.get(left_char)
+                right_name = unicode_to_glyphname.get(right_char)
+                if not left_name or not right_name:
+                    missing_skipped_no_glyph += 1
+                    continue
+
+                if focus is not None and (left_name not in focus and right_name not in focus):
+                    continue
+
+                left_group = glyph_left_group.get(left_name)
+                right_group = glyph_right_group.get(right_name)
+
+                candidates = [(left_name, right_name)]
+                if right_group:
+                    candidates.append((left_name, "@MMK_R_" + str(right_group)))
+                if left_group:
+                    candidates.append(("@MMK_L_" + str(left_group), right_name))
+                if left_group and right_group:
+                    candidates.append(("@MMK_L_" + str(left_group), "@MMK_R_" + str(right_group)))
+
+                covered = False
+                for cand in candidates:
+                    if cand in explicit:
+                        covered = True
+                        break
+                if covered:
+                    continue
+
+                missing_tokens.extend(_pair_tokens(left_name, left_char, right_name, right_char))
+                missing_included += 1
+                if missing_included >= missing_cap:
+                    break
+
+        # 2) Existing extremes audit (tightest + widest).
+        def _rep_for_key(key, is_left):
+            if key.startswith("@MMK_L_"):
+                group = key[len("@MMK_L_") :]
+                rep = left_group_rep.get(group)
+                if rep:
+                    return rep
+                try:
+                    if font.glyphs[group]:
+                        return group
+                except Exception:
+                    return None
+                return None
+
+            if key.startswith("@MMK_R_"):
+                group = key[len("@MMK_R_") :]
+                rep = right_group_rep.get(group)
+                if rep:
+                    return rep
+                try:
+                    if font.glyphs[group]:
+                        return group
+                except Exception:
+                    return None
+                return None
+
+            try:
+                return key if font.glyphs[key] else None
+            except Exception:
+                return None
+
+        def _unicode_for_name(name):
+            uni = glyphname_to_unicode.get(name)
+            if uni:
+                return uni
+            if isinstance(name, str) and len(name) == 1:
+                return name
+            return None
+
+        tight_tokens = []
+        wide_tokens = []
+        tight_included = 0
+        wide_included = 0
+
+        audit_cap = max(int(audit_limit or 0), 0)
+        tightest = sorted(existing_numeric, key=lambda t: t[2])[:audit_cap]
+        widest = sorted(existing_numeric, key=lambda t: t[2], reverse=True)[:audit_cap]
+
+        for left_key, right_key, _value in tightest:
+            left_name = _rep_for_key(left_key, True)
+            right_name = _rep_for_key(right_key, False)
+            if not left_name or not right_name:
+                continue
+            tight_tokens.extend(
+                _pair_tokens(
+                    left_name,
+                    _unicode_for_name(left_name),
+                    right_name,
+                    _unicode_for_name(right_name),
+                )
+            )
+            tight_included += 1
+
+        for left_key, right_key, _value in widest:
+            left_name = _rep_for_key(left_key, True)
+            right_name = _rep_for_key(right_key, False)
+            if not left_name or not right_name:
+                continue
+            wide_tokens.extend(
+                _pair_tokens(
+                    left_name,
+                    _unicode_for_name(left_name),
+                    right_name,
+                    _unicode_for_name(right_name),
+                )
+            )
+            wide_included += 1
+
+        sections = [
+            ("MISSING RELEVANT PAIRS (Andre Fuchs)", missing_tokens),
+            ("EXISTING KERNING OUTLIERS (Tightest)", tight_tokens),
+            ("EXISTING KERNING OUTLIERS (Widest)", wide_tokens),
+        ]
+
+        text, engine_warnings = kerning_proof_engine.assemble_tab_text(
+            sections=sections,
+            rendering=rendering,
+            per_line=per_line,
+        )
+
+        warnings.extend(engine_warnings)
+
+        # Deduplicate warnings, keep the payload small.
+        deduped = []
+        seen = set()
+        for w in warnings:
+            if not w:
+                continue
+            if w in seen:
+                continue
+            seen.add(w)
+            deduped.append(w)
+            if len(deduped) >= 12:
+                break
+
+        opened_tab = False
+        try:
+            _open_tab_on_main_thread(font, text)
+            opened_tab = True
+        except Exception as exc:
+            deduped.append("Failed to open Glyphs tab: {}".format(exc))
+
+        return json.dumps(
+            {
+                "success": True,
+                "fontIndex": font_index,
+                "masterId": master_id,
+                "openedTab": opened_tab,
+                "dataset": {
+                    "id": dataset_meta.get("id") or "andre_fuchs_relevant_pairs",
+                    "pairCount": pair_count,
+                    "usedTopN": used_top_n,
+                },
+                "counts": {
+                    "missingRelevantIncluded": missing_included,
+                    "missingRelevantSkippedNoGlyph": missing_skipped_no_glyph,
+                    "existingTightIncluded": tight_included,
+                    "existingWideIncluded": wide_included,
+                },
+                "warnings": deduped,
+                "text": text,
+            },
+            ensure_ascii=False,
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+def _kerning_bumper_analyze(
+    *,
+    font,
+    master_id,
+    dataset_pairs,
+    relevant_limit,
+    include_existing,
+    pair_limit,
+    glyph_names,
+    min_gap,
+    scan_mode,
+    scan_heights,
+    dense_step,
+    bands,
+    target_gap,
+    max_delta,
+    explicit_pairs=None,
+):
+    """Compute kerning collision/gap measurements + deterministic bumper suggestions (no mutation)."""
+
+    warnings = []
+
+    scan_mode_norm, w = kerning_collision_engine.normalize_scan_mode(scan_mode)
+    warnings.extend(w)
+
+    scan_heights_norm, w = kerning_collision_engine.normalize_scan_heights(scan_heights)
+    warnings.extend(w)
+
+    try:
+        min_gap_f = float(min_gap)
+    except Exception:
+        min_gap_f = 5.0
+        warnings.append("Invalid min_gap; using 5.0.")
+
+    try:
+        target_gap_f = float(target_gap)
+    except Exception:
+        target_gap_f = min_gap_f
+
+    try:
+        dense_step_f = float(dense_step)
+    except Exception:
+        dense_step_f = 10.0
+        warnings.append("Invalid dense_step; using 10.0.")
+
+    if dense_step_f <= 0:
+        dense_step_f = 10.0
+        warnings.append("dense_step must be > 0; using 10.0.")
+
+    try:
+        bands_i = int(bands)
+    except Exception:
+        bands_i = 8
+        warnings.append("Invalid bands; using 8.")
+    if bands_i <= 0:
+        bands_i = 8
+
+    try:
+        max_delta_i = int(max_delta)
+    except Exception:
+        max_delta_i = 200
+        warnings.append("Invalid max_delta; using 200.")
+    if max_delta_i < 0:
+        max_delta_i = 0
+
+    focus = set(glyph_names or []) if glyph_names else None
+
+    glyph_maps = kerning_collision_engine.build_glyph_maps(getattr(font, "glyphs", []) or [])
+    unicode_to_glyphname = glyph_maps.get("unicodeToGlyphname") or {}
+    glyphname_to_unicode = glyph_maps.get("glyphnameToUnicode") or {}
+    name_set = glyph_maps.get("nameSet") or set()
+    id_to_name = glyph_maps.get("idToName") or {}
+    left_key_group_rep = glyph_maps.get("leftKeyGroupRep") or {}
+    right_key_group_rep = glyph_maps.get("rightKeyGroupRep") or {}
+
+    kerning_master = font.kerning.get(master_id, {}) or {}
+
+    candidate_counts = {
+        "pairsCandidate": 0,
+        "pairsMeasured": 0,
+        "pairsSkippedNoGlyph": 0,
+        "pairsSkippedNoOverlap": 0,
+        "pairsSkippedNoBounds": 0,
+    }
+
+    used_top_n = min(max(int(relevant_limit or 0), 0), len(dataset_pairs or []))
+
+    if explicit_pairs is not None:
+        pairs = []
+        seen = set()
+        for item in explicit_pairs or []:
+            if not isinstance(item, (list, tuple)) or len(item) != 2:
+                continue
+            left_name = str(item[0])
+            right_name = str(item[1])
+            if not left_name or not right_name:
+                continue
+            pair = (left_name, right_name)
+            if pair in seen:
+                continue
+            seen.add(pair)
+            pairs.append(pair)
+
+        candidate_counts["pairsCandidate"] = len(pairs)
+    else:
+        pairs, counts = kerning_collision_engine.build_candidate_pairs(
+            dataset_pairs=dataset_pairs or [],
+            unicode_to_glyphname=unicode_to_glyphname,
+            relevant_limit=int(relevant_limit or 0),
+            include_existing=bool(include_existing),
+            kerning_master=kerning_master,
+            name_set=name_set,
+            id_to_name=id_to_name,
+            left_key_group_rep=left_key_group_rep,
+            right_key_group_rep=right_key_group_rep,
+            focus=focus,
+            pair_limit=int(pair_limit or 0),
+        )
+        candidate_counts["pairsCandidate"] = len(pairs)
+        candidate_counts["pairsSkippedNoGlyph"] += int(counts.get("pairsSkippedNoGlyph") or 0)
+
+    collisions = []
+    safe_gaps = []
+
+    # Measure.
+    for left_name, right_name in pairs:
+        left_glyph = font.glyphs[left_name] if left_name else None
+        right_glyph = font.glyphs[right_name] if right_name else None
+        if not left_glyph or not right_glyph:
+            candidate_counts["pairsSkippedNoGlyph"] += 1
+            continue
+
+        try:
+            left_layer = left_glyph.layers[master_id]
+            right_layer = right_glyph.layers[master_id]
+        except Exception:
+            left_layer = None
+            right_layer = None
+
+        if not left_layer or not right_layer:
+            candidate_counts["pairsSkippedNoBounds"] += 1
+            continue
+
+        lb = kerning_collision_engine.bounds_tuple(left_layer)
+        rb = kerning_collision_engine.bounds_tuple(right_layer)
+        if not lb or not rb:
+            candidate_counts["pairsSkippedNoBounds"] += 1
+            continue
+
+        overlap = kerning_collision_engine.overlap_y_range(lb, rb)
+        if not overlap:
+            candidate_counts["pairsSkippedNoOverlap"] += 1
+            continue
+
+        left_id = getattr(left_glyph, "id", None)
+        right_id = getattr(right_glyph, "id", None)
+        left_group = getattr(left_glyph, "rightKerningGroup", None)
+        right_group = getattr(right_glyph, "leftKerningGroup", None)
+
+        left_class_key = "@MMK_L_" + str(left_group) if left_group else None
+        right_class_key = "@MMK_R_" + str(right_group) if right_group else None
+
+        kerning_value, source = kerning_collision_engine.resolve_explicit_kerning_value(
+            kerning_master=kerning_master,
+            left_glyph_id=str(left_id) if left_id else None,
+            left_glyph_name=left_name,
+            left_class_key=left_class_key,
+            right_glyph_id=str(right_id) if right_id else None,
+            right_glyph_name=right_name,
+            right_class_key=right_class_key,
+        )
+
+        # If available, prefer Glyphs' kerningForPair() as a sanity check / fallback.
+        try:
+            kv = font.kerningForPair(master_id, left_name, right_name)
+            kvf = _coerce_numeric(kv)
+            if kvf is not None:
+                kerning_value = float(kvf)
+        except Exception:
+            pass
+
+        measured = kerning_collision_engine.measure_pair_min_gap(
+            left_layer=left_layer,
+            right_layer=right_layer,
+            kerning_value=float(kerning_value),
+            scan_mode=scan_mode_norm,
+            scan_heights=scan_heights_norm,
+            dense_step=dense_step_f,
+            bands=bands_i,
+            include_components=True,
+            target_gap=target_gap_f,
+        )
+
+        if measured is None:
+            candidate_counts["pairsSkippedNoBounds"] += 1
+            continue
+
+        candidate_counts["pairsMeasured"] += 1
+
+        # Bumper suggestion (integer kerning exception).
+        suggestion = kerning_collision_engine.compute_bumper_suggestion(
+            kerning_value=float(kerning_value),
+            measured_min_gap=float(measured.min_gap),
+            target_gap=float(target_gap_f),
+            max_delta=int(max_delta_i),
+        )
+
+        record = {
+            "left": left_name,
+            "right": right_name,
+            "kerningValue": float(kerning_value),
+            "kerningSource": {"leftKey": source.left_key, "rightKey": source.right_key},
+            "minGap": float(measured.min_gap),
+            "worstY": float(measured.worst_y) if measured.worst_y is not None else None,
+            "bandMinGaps": list(measured.band_min_gaps or []),
+            "bumperDelta": float(suggestion.bumper_delta),
+            "recommendedException": int(suggestion.recommended_exception),
+            "refined": bool(measured.refined),
+            "sampleCount": int(measured.sample_count),
+        }
+
+        if float(measured.min_gap) < float(target_gap_f):
+            collisions.append(record)
+        else:
+            safe_gaps.append(
+                {
+                    "left": left_name,
+                    "right": right_name,
+                    "kerningValue": float(kerning_value),
+                    "minGap": float(measured.min_gap),
+                }
+            )
+
+    return {
+        "warnings": warnings,
+        "scanMode": scan_mode_norm,
+        "scanHeights": scan_heights_norm,
+        "denseStep": dense_step_f,
+        "bands": bands_i,
+        "minGap": min_gap_f,
+        "targetGap": target_gap_f,
+        "maxDelta": max_delta_i,
+        "usedTopN": used_top_n,
+        "counts": candidate_counts,
+        "collisions": collisions,
+        "safeGaps": safe_gaps,
+        "glyphnameToUnicode": glyphname_to_unicode,
+        "unicodeToGlyphname": unicode_to_glyphname,
+    }
+
+
+@mcp.tool()
+async def review_kerning_bumper(
+    font_index: int = 0,
+    master_id: str = None,
+    relevant_limit: int = 2000,
+    include_existing: bool = True,
+    pair_limit: int = 3000,
+    glyph_names: list = None,
+    min_gap: float = 5.0,
+    scan_mode: str = "two_pass",
+    scan_heights: list = None,
+    dense_step: float = 10.0,
+    bands: int = 8,
+    result_limit: int = 200,
+    open_tab: bool = False,
+    rendering: str = "hybrid",
+    per_line: int = 12,
+) -> str:
+    """Review kerning collisions / near-misses and propose deterministic bumper values.
+
+    This tool does not change kerning. It measures minimum outline gaps across
+    the vertical overlap range for prioritized pairs, then computes the minimal
+    kerning loosening required to satisfy a minimum gap constraint.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        if master_id is None:
+            master_id = font.masters[0].id
+
+        dataset_meta, dataset_pairs, warnings = _load_andre_fuchs_relevant_pairs()
+        pair_count = len(dataset_pairs or [])
+        if pair_count and pair_count < 250:
+            warnings.append(
+                "Andre-Fuchs dataset snapshot is small ({} pairs). Consider regenerating it with scripts/vendor_andre_fuchs_pairs.py.".format(
+                    pair_count
+                )
+            )
+
+        analysis = _kerning_bumper_analyze(
+            font=font,
+            master_id=master_id,
+            dataset_pairs=dataset_pairs,
+            relevant_limit=relevant_limit,
+            include_existing=include_existing,
+            pair_limit=pair_limit,
+            glyph_names=glyph_names,
+            min_gap=min_gap,
+            scan_mode=scan_mode,
+            scan_heights=scan_heights,
+            dense_step=dense_step,
+            bands=bands,
+            target_gap=min_gap,
+            max_delta=10**9,
+            explicit_pairs=None,
+        )
+
+        warnings.extend(analysis.get("warnings") or [])
+
+        # Sort + cap results.
+        collisions = sorted(analysis.get("collisions") or [], key=lambda r: float(r.get("minGap", 0.0)))
+        safe_gaps = sorted(analysis.get("safeGaps") or [], key=lambda r: float(r.get("minGap", 0.0)), reverse=True)
+
+        cap = max(int(result_limit or 0), 0) or 200
+        collisions_out = collisions[:cap]
+        gaps_out = safe_gaps[:cap]
+
+        text = None
+        opened_tab = False
+        if open_tab:
+            ProofGlyph = kerning_proof_engine.ProofGlyph
+            glyphname_to_unicode = analysis.get("glyphnameToUnicode") or {}
+            unicode_to_glyphname = analysis.get("unicodeToGlyphname") or {}
+
+            def _context_chars(lc, rc):
+                try:
+                    if lc and rc and str(lc).isupper() and str(rc).isupper():
+                        return ("H", "O")
+                    if lc and rc and str(lc).islower() and str(rc).islower():
+                        return ("n", "o")
+                except Exception:
+                    pass
+                return ("H", "O")
+
+            def _context_glyph_name(ch):
+                return unicode_to_glyphname.get(ch) or ch
+
+            def _unicode_for_name(name):
+                uni = glyphname_to_unicode.get(name)
+                if uni:
+                    return uni
+                if isinstance(name, str) and len(name) == 1:
+                    return name
+                return None
+
+            def _pair_tokens(left_name, right_name):
+                lc = _unicode_for_name(left_name)
+                rc = _unicode_for_name(right_name)
+                stem_ch, round_ch = _context_chars(lc or "", rc or "")
+                stem_name = _context_glyph_name(stem_ch)
+                round_name = _context_glyph_name(round_ch)
+                return [
+                    [
+                        ProofGlyph(stem_name, stem_ch),
+                        ProofGlyph(left_name, lc),
+                        ProofGlyph(right_name, rc),
+                        ProofGlyph(stem_name, stem_ch),
+                    ],
+                    [
+                        ProofGlyph(round_name, round_ch),
+                        ProofGlyph(left_name, lc),
+                        ProofGlyph(right_name, rc),
+                        ProofGlyph(round_name, round_ch),
+                    ],
+                ]
+
+            collision_tokens = []
+            for r in collisions_out:
+                collision_tokens.extend(_pair_tokens(r.get("left"), r.get("right")))
+
+            gap_tokens = []
+            for r in gaps_out:
+                gap_tokens.extend(_pair_tokens(r.get("left"), r.get("right")))
+
+            sections = [
+                ("KERNING COLLISION GUARD (min_gap={}) — COLLISIONS / NEAR MISSES".format(analysis.get("minGap")), collision_tokens),
+                ("LARGEST GAPS (by measured minGap)", gap_tokens),
+            ]
+
+            text, engine_warnings = kerning_proof_engine.assemble_tab_text(
+                sections=sections,
+                rendering=rendering,
+                per_line=per_line,
+            )
+            warnings.extend(engine_warnings)
+
+            try:
+                _open_tab_on_main_thread(font, text)
+                opened_tab = True
+            except Exception as exc:
+                warnings.append("Failed to open Glyphs tab: {}".format(exc))
+
+        # Deduplicate warnings, keep the payload small.
+        deduped = []
+        seen = set()
+        for w in warnings:
+            if not w:
+                continue
+            if w in seen:
+                continue
+            seen.add(w)
+            deduped.append(w)
+            if len(deduped) >= 12:
+                break
+
+        return _safe_json(
+            {
+                "ok": True,
+                "fontIndex": font_index,
+                "masterId": master_id,
+                "dataset": {"id": dataset_meta.get("id") or "andre_fuchs_relevant_pairs", "usedTopN": analysis.get("usedTopN")},
+                "counts": analysis.get("counts"),
+                "params": {
+                    "minGap": float(analysis.get("minGap")),
+                    "scanMode": analysis.get("scanMode"),
+                    "scanHeights": analysis.get("scanHeights"),
+                    "denseStep": float(analysis.get("denseStep")),
+                    "bands": int(analysis.get("bands")),
+                },
+                "results": {"collisions": collisions_out, "largestGaps": gaps_out},
+                "openedTab": bool(opened_tab),
+                **({"text": text} if open_tab else {}),
+                "warnings": deduped,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
+
+
+@mcp.tool()
+async def apply_kerning_bumper(
+    font_index: int = 0,
+    master_id: str = None,
+    relevant_limit: int = 2000,
+    include_existing: bool = True,
+    pair_limit: int = 3000,
+    glyph_names: list = None,
+    min_gap: float = 5.0,
+    scan_mode: str = "two_pass",
+    scan_heights: list = None,
+    dense_step: float = 10.0,
+    bands: int = 8,
+    result_limit: int = 200,
+    pairs: list = None,
+    extra_gap: float = 0.0,
+    max_delta: int = 200,
+    dry_run: bool = False,
+    confirm: bool = False,
+) -> str:
+    """Apply kerning bumper suggestions as glyph–glyph exceptions.
+
+    Safety:
+      - Refuses to mutate without confirm=true.
+      - Use dry_run=true to preview.
+      - Never auto-saves.
+    """
+    try:
+        if not confirm and not dry_run:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Refusing to apply kerning without confirm=true.",
+                    "hint": "Run apply_kerning_bumper(..., dry_run=true) to preview or set confirm=true to apply.",
+                }
+            )
+
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+        if master_id is None:
+            master_id = font.masters[0].id
+
+        dataset_meta, dataset_pairs, warnings = _load_andre_fuchs_relevant_pairs()
+
+        try:
+            target_gap = float(min_gap) + float(extra_gap or 0.0)
+        except Exception:
+            target_gap = float(min_gap or 5.0)
+            warnings.append("Invalid extra_gap; ignored.")
+
+        explicit_pairs = None
+        if pairs is not None:
+            explicit_pairs = pairs
+
+        analysis = _kerning_bumper_analyze(
+            font=font,
+            master_id=master_id,
+            dataset_pairs=dataset_pairs,
+            relevant_limit=relevant_limit,
+            include_existing=include_existing,
+            pair_limit=pair_limit,
+            glyph_names=glyph_names,
+            min_gap=min_gap,
+            scan_mode=scan_mode,
+            scan_heights=scan_heights,
+            dense_step=dense_step,
+            bands=bands,
+            target_gap=target_gap,
+            max_delta=max_delta,
+            explicit_pairs=explicit_pairs,
+        )
+
+        warnings.extend(analysis.get("warnings") or [])
+
+        collisions = analysis.get("collisions") or []
+        by_pair = {(r.get("left"), r.get("right")): r for r in collisions if r.get("left") and r.get("right")}
+
+        requested = []
+        if pairs is not None:
+            for item in pairs or []:
+                if not isinstance(item, (list, tuple)) or len(item) != 2:
+                    continue
+                requested.append((str(item[0]), str(item[1])))
+        else:
+            requested = list(by_pair.keys())
+
+        to_apply = []
+        changes = []
+        skipped_missing = 0
+        skipped_safe = 0
+
+        for left_name, right_name in requested:
+            r = by_pair.get((left_name, right_name))
+            if not r:
+                skipped_missing += 1
+                continue
+
+            old_value = _coerce_numeric(r.get("kerningValue"))
+            new_value = _coerce_numeric(r.get("recommendedException"))
+            if old_value is None or new_value is None:
+                skipped_missing += 1
+                continue
+
+            old_value_f = float(old_value)
+            new_value_i = int(new_value)
+            delta = float(new_value_i) - float(old_value_f)
+
+            if delta <= 0:
+                skipped_safe += 1
+                continue
+
+            to_apply.append((left_name, right_name, new_value_i))
+            changes.append(
+                {
+                    "left": left_name,
+                    "right": right_name,
+                    "oldKerningValue": old_value_f,
+                    "newKerningValue": new_value_i,
+                    "delta": delta,
+                    "minGap": r.get("minGap"),
+                    "targetGap": target_gap,
+                }
+            )
+
+        applied_count = 0
+        if to_apply and confirm and not dry_run:
+            _set_kerning_pairs_on_main_thread(font, master_id, to_apply)
+            applied_count = len(to_apply)
+
+        cap = max(int(result_limit or 0), 0) or 200
+        changes_out = changes[:cap]
+
+        # Deduplicate warnings, keep the payload small.
+        deduped = []
+        seen = set()
+        for w in warnings:
+            if not w:
+                continue
+            if w in seen:
+                continue
+            seen.add(w)
+            deduped.append(w)
+            if len(deduped) >= 12:
+                break
+
+        return _safe_json(
+            {
+                "ok": True,
+                "dryRun": bool(dry_run),
+                "confirmed": bool(confirm),
+                "fontIndex": font_index,
+                "masterId": master_id,
+                "dataset": {"id": dataset_meta.get("id") or "andre_fuchs_relevant_pairs", "usedTopN": analysis.get("usedTopN")},
+                "params": {
+                    "minGap": float(analysis.get("minGap")),
+                    "extraGap": float(extra_gap or 0.0),
+                    "targetGap": float(target_gap),
+                    "maxDelta": int(analysis.get("maxDelta")),
+                    "scanMode": analysis.get("scanMode"),
+                    "scanHeights": analysis.get("scanHeights"),
+                    "denseStep": float(analysis.get("denseStep")),
+                    "bands": int(analysis.get("bands")),
+                },
+                "counts": {
+                    "pairsRequested": len(requested),
+                    "pairsColliding": len(by_pair),
+                    "pairsToApply": len(to_apply),
+                    "pairsApplied": applied_count,
+                    "pairsSkippedMissing": skipped_missing,
+                    "pairsSkippedAlreadySafe": skipped_safe,
+                },
+                "changes": changes_out,
+                "warnings": deduped,
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
+
+
+@mcp.tool()
+async def get_selected_glyphs() -> str:
+    """Get information about currently selected glyphs in the active font view.
+
+    Returns:
+        str: JSON-encoded list of selected glyph names and their properties.
+    """
+    try:
+        if not Glyphs.font:
+            return json.dumps({"error": "No font is currently active"})
+
+        selected = []
+        for layer in Glyphs.font.selectedLayers:
+            glyph = layer.parent
+            selected.append(
+                {
+                    "name": glyph.name,
+                    "unicode": glyph.unicode,
+                    "category": glyph.category,
+                    "subCategory": glyph.subCategory,
+                    "layerName": layer.name,
+                    "width": layer.width,
+                }
+            )
+
+        return json.dumps(
+            {
+                "fontName": Glyphs.font.familyName,
+                "selectedCount": len(selected),
+                "selectedGlyphs": selected,
+            }
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def get_selected_font_and_master() -> str:
+    """Get information about the currently selected font and master from the active font view.
+    
+    Returns:
+        str: JSON-encoded object containing:
+            fontInfo (dict): Information about the selected font including name, path, and counts.
+            currentMaster (dict): Information about the currently selected master.
+            selectedGlyphs (list): List of currently selected glyphs.
+    """
+    try:
+        if not Glyphs.font:
+            return json.dumps({"error": "No font is currently active"})
+        
+        font = Glyphs.font
+        
+        # Get font information
+        font_info = {
+            "familyName": font.familyName or "",
+            "filePath": font.filepath,
+            "masterCount": len(font.masters),
+            "instanceCount": len(font.instances),
+            "glyphCount": len(font.glyphs),
+            "unitsPerEm": font.upm,
+            "versionMajor": getattr(font, "versionMajor", 0),
+            "versionMinor": getattr(font, "versionMinor", 0),
+        }
+        
+        # Get current master (the one being edited)
+        current_master = None
+        if font.selectedFontMaster:
+            master = font.selectedFontMaster
+            current_master = {
+                "name": master.name,
+                "id": master.id,
+                # GSFontMaster may not have `customName` in Glyphs 3; use safe access
+                "customName": getattr(master, "customName", None),
+                "ascender": master.ascender,
+                "capHeight": master.capHeight,
+                "descender": master.descender,
+                "xHeight": master.xHeight,
+                "weight": getattr(master, "weight", ""),
+                "width": getattr(master, "width", ""),
+            }
+        
+        # Get selected glyphs
+        selected_glyphs = []
+        for layer in font.selectedLayers:
+            glyph = layer.parent
+            left_bearing = _get_left_sidebearing(layer)
+            right_bearing = _get_right_sidebearing(layer)
+            selected_glyphs.append({
+                "name": glyph.name,
+                "unicode": glyph.unicode,
+                "category": glyph.category,
+                "subCategory": glyph.subCategory,
+                "layerName": layer.name,
+                "width": layer.width,
+                "leftSideBearing": left_bearing,
+                "rightSideBearing": right_bearing,
+            })
+        
+        return _safe_json({
+            "fontInfo": font_info,
+            "currentMaster": current_master,
+            "selectedGlyphs": selected_glyphs,
+            "selectedGlyphCount": len(selected_glyphs),
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def get_selected_nodes(include_master_mapping: bool = True) -> str:
+    """Return detailed information about the currently selected node(s) in the active edit view.
+
+    The payload is designed to be actionable for writing follow‑up code that edits paths
+    (e.g., insert a point before/after the selected node) and to help find the corresponding
+    node across masters in the same glyph without being overly complex.
+
+    Returns:
+        str: JSON with fields:
+            font (dict): active font info
+            glyph (dict): active glyph info
+            layer (dict): active layer info
+            nodes (list): selected node entries, each with
+                - pathIndex (int): index in layer.paths
+                - nodeIndex (int): index in path.nodes
+                - nodeType (str): 'line' | 'curve' | 'qcurve' | 'offcurve'
+                - smooth (bool)
+                - position (dict): {x, y}
+                - closed (bool): whether the path is closed
+                - onCurveIndex (int|null): ordinal among on‑curve nodes in the path
+                - segment (dict): neighbor and segment information
+                - pathSignature (dict): simple structural fingerprint
+                - mapping (list|empty): per‑master mapping hints (present when include_master_mapping)
+    """
+    try:
+        font = Glyphs.font
+        if not font:
+            return json.dumps({"error": "No font is currently active"})
+
+        # Active glyph/layer come from the edit view
+        if not font.selectedLayers or len(font.selectedLayers) == 0:
+            return json.dumps({"error": "No active layer/glyph open in Edit view"})
+
+        layer = font.selectedLayers[0]
+        glyph = layer.parent
+
+        # Helper: basic info blocks
+        def font_info(f):
+            return {
+                "familyName": f.familyName or "",
+                "filePath": f.filepath,
+                "upm": f.upm,
+                "masterCount": len(f.masters),
+            }
+
+        def layer_info(l):
+            info = {
+                "name": getattr(l, "name", ""),
+                "associatedMasterId": getattr(l, "associatedMasterId", None),
+                "width": getattr(l, "width", 0),
+            }
+            # layerId is not always present in older API; guard safely
+            lid = getattr(l, "layerId", None)
+            if lid is None:
+                lid = getattr(l, "id", None)
+            info["id"] = lid
+            return info
+
+        def oncurve_indices_for(path):
+            idx = []
+            # node.type is a string in Glyphs 3 Python API (e.g. 'offcurve', 'line', 'curve')
+            for i, n in enumerate(path.nodes):
+                if getattr(n, "type", "offcurve") != "offcurve":
+                    idx.append(i)
+            return idx
+
+        # Compute selected nodes by scanning selection or nodes' .selected flag
+        selected_nodes = []
+        for p_index, path in enumerate(layer.paths):
+            # Fast path: walk nodes and check .selected
+            oc_indices = oncurve_indices_for(path)
+            oc_positions = {i: k for k, i in enumerate(oc_indices)}  # nodeIndex -> onCurve ordinal
+
+            node_count = len(path.nodes)
+            for n_index, node in enumerate(path.nodes):
+                if not getattr(node, "selected", False):
+                    continue
+
+                # Determine on-curve ordinal (None for offcurve)
+                oncurve_ordinal = oc_positions.get(n_index, None)
+
+                # Neighbor indices (wrap for closed paths)
+                closed = bool(getattr(path, "closed", True))
+                prev_index = (n_index - 1) % node_count if closed and node_count else max(0, n_index - 1)
+                next_index = (n_index + 1) % node_count if closed and node_count else min(node_count - 1, n_index + 1)
+
+                # Segment context: determine surrounding on-curves
+                # Find previous on-curve index moving backward
+                prev_oncurve_node_index = None
+                k = n_index
+                for _ in range(node_count):
+                    k = (k - 1) % node_count if closed else (k - 1)
+                    if k < 0:
+                        break
+                    if getattr(path.nodes[k], "type", "offcurve") != "offcurve":
+                        prev_oncurve_node_index = k
+                        break
+
+                # Find next on-curve index moving forward
+                next_oncurve_node_index = None
+                k = n_index
+                for _ in range(node_count):
+                    k = (k + 1) % node_count if closed else (k + 1)
+                    if k >= node_count:
+                        break
+                    if getattr(path.nodes[k], "type", "offcurve") != "offcurve":
+                        next_oncurve_node_index = k
+                        break
+
+                # Compute off-curve ordinal inside the segment (prev_oncurve -> next_oncurve)
+                offcurve_index_in_segment = None
+                offcurve_count_in_segment = None
+                if getattr(node, "type", "offcurve") == "offcurve" and prev_oncurve_node_index is not None and next_oncurve_node_index is not None:
+                    # Collect segment nodes (exclusive of prev_oncurve, inclusive of node, exclusive of next_oncurve)
+                    seg_nodes = []
+                    i = prev_oncurve_node_index
+                    while True:
+                        i = (i + 1) % node_count if closed else (i + 1)
+                        if i == next_oncurve_node_index or i >= node_count:
+                            break
+                        seg_nodes.append(i)
+                        if closed and i == (node_count - 1) and next_oncurve_node_index == 0:
+                            # wrap condition handled by while logic
+                            pass
+
+                    offcurve_seq = [idx for idx in seg_nodes if getattr(path.nodes[idx], "type", "offcurve") == "offcurve"]
+                    offcurve_count_in_segment = len(offcurve_seq)
+                    try:
+                        offcurve_index_in_segment = offcurve_seq.index(n_index)
+                    except ValueError:
+                        offcurve_index_in_segment = None
+
+                # Simple structural fingerprint for this path
+                path_signature = {
+                    "closed": closed,
+                    "nodeCount": node_count,
+                    "onCurveCount": len(oc_indices),
+                }
+
+                entry = {
+                    "pathIndex": p_index,
+                    "nodeIndex": n_index,
+                    "nodeType": getattr(node, "type", "offcurve"),
+                    "smooth": bool(getattr(node, "smooth", False)),
+                    "position": {
+                        "x": float(getattr(node, "position", (0, 0))[0]),
+                        "y": float(getattr(node, "position", (0, 0))[1]),
+                    },
+                    "closed": closed,
+                    "onCurveIndex": oncurve_ordinal,
+                    "segment": {
+                        "prevNodeIndex": prev_index,
+                        "nextNodeIndex": next_index,
+                        "prevOnCurveNodeIndex": prev_oncurve_node_index,
+                        "nextOnCurveNodeIndex": next_oncurve_node_index,
+                        "offCurveIndexInSegment": offcurve_index_in_segment,
+                        "offCurveCountInSegment": offcurve_count_in_segment,
+                    },
+                    "pathSignature": path_signature,
+                }
+
+                selected_nodes.append(entry)
+
+        # If requested, compute a per‑master mapping for each selected node
+        if include_master_mapping and selected_nodes and glyph is not None:
+            masters = list(font.masters)
+            for node_entry in selected_nodes:
+                mapping = []
+
+                src_path_index = node_entry["pathIndex"]
+                src_oncurve_index = node_entry.get("onCurveIndex")
+                src_closed = bool(node_entry.get("closed", True))
+                src_node_type = node_entry.get("nodeType")
+
+                # Get source path on-curve count for fallback mapping
+                try:
+                    src_path = layer.paths[src_path_index]
+                except Exception:
+                    continue
+                src_oc_indices = oncurve_indices_for(src_path)
+                src_oc_count = len(src_oc_indices)
+
+                for master in masters:
+                    t_layer = glyph.layers[master.id]
+
+                    # Choose target path: prefer same index; fallback to path with closest on‑curve count
+                    t_paths = list(t_layer.paths)
+                    if not t_paths:
+                        mapping.append({
+                            "masterId": master.id,
+                            "masterName": master.name,
+                            "layerName": getattr(t_layer, "name", ""),
+                            "pathIndex": None,
+                            "nodeIndex": None,
+                            "onCurveIndex": None,
+                            "note": "No paths in target layer",
+                        })
+                        continue
+
+                    if 0 <= src_path_index < len(t_paths):
+                        t_path_index = src_path_index
+                    else:
+                        # find closest by on-curve count
+                        best_idx = 0
+                        best_score = None
+                        for pi, p in enumerate(t_paths):
+                            oc_cnt = len(oncurve_indices_for(p))
+                            score = abs(oc_cnt - src_oc_count)
+                            if best_score is None or score < best_score:
+                                best_idx, best_score = pi, score
+                        t_path_index = best_idx
+
+                    t_path = t_paths[t_path_index]
+                    t_oc_indices = oncurve_indices_for(t_path)
+                    t_oc_count = len(t_oc_indices)
+
+                    t_node_index = None
+                    t_oncurve_index = None
+                    note = None
+
+                    if src_oncurve_index is None:
+                        # Selected node is off‑curve: map within the segment around the analogous on‑curve
+                        # Use next on‑curve as anchor if present, otherwise previous.
+                        seg = node_entry.get("segment", {})
+                        # Prefer mapping to the next on-curve segment if available
+                        anchor_oncurve_ordinal = None
+                        if seg.get("nextOnCurveNodeIndex") is not None:
+                            # derive ordinal of next on‑curve in source path
+                            try:
+                                anchor_oncurve_ordinal = src_oc_indices.index(seg["nextOnCurveNodeIndex"])
+                            except Exception:
+                                anchor_oncurve_ordinal = None
+                        if anchor_oncurve_ordinal is None and seg.get("prevOnCurveNodeIndex") is not None:
+                            try:
+                                anchor_oncurve_ordinal = src_oc_indices.index(seg["prevOnCurveNodeIndex"])
+                            except Exception:
+                                anchor_oncurve_ordinal = None
+
+                        if anchor_oncurve_ordinal is not None and anchor_oncurve_ordinal < t_oc_count:
+                            # find corresponding on‑curve node index in target path
+                            anchor_oncurve_node_index = t_oc_indices[anchor_oncurve_ordinal]
+                            # Build the segment before that on‑curve in the target path
+                            # Find previous on‑curve node index in target path
+                            node_count = len(t_path.nodes)
+                            j = anchor_oncurve_node_index
+                            prev_oncurve_node_index = None
+                            for _ in range(node_count):
+                                j = (j - 1) % node_count if bool(getattr(t_path, "closed", True)) else (j - 1)
+                                if j < 0:
+                                    break
+                                if getattr(t_path.nodes[j], "type", "offcurve") != "offcurve":
+                                    prev_oncurve_node_index = j
+                                    break
+
+                            # Enumerate off‑curves in that segment and map by ordinal
+                            off_seq = []
+                            if prev_oncurve_node_index is not None:
+                                i = prev_oncurve_node_index
+                                closed_t = bool(getattr(t_path, "closed", True))
+                                while True:
+                                    i = (i + 1) % node_count if closed_t else (i + 1)
+                                    if i == anchor_oncurve_node_index or i >= node_count:
+                                        break
+                                    if getattr(t_path.nodes[i], "type", "offcurve") == "offcurve":
+                                        off_seq.append(i)
+                            src_off_idx = seg.get("offCurveIndexInSegment")
+                            if off_seq and src_off_idx is not None:
+                                clamped = max(0, min(int(src_off_idx), len(off_seq) - 1))
+                                t_node_index = off_seq[clamped]
+                                t_oncurve_index = anchor_oncurve_ordinal
+                            else:
+                                note = "No matching off‑curve in segment; skipping"
+                        else:
+                            note = "Could not determine anchor on‑curve ordinal"
+                    else:
+                        # Selected node is on‑curve: map by on‑curve ordinal
+                        if src_oncurve_index < t_oc_count:
+                            t_oncurve_index = int(src_oncurve_index)
+                            t_node_index = t_oc_indices[t_oncurve_index]
+                        else:
+                            note = "On‑curve ordinal out of range in target; skipping"
+
+                    mapping.append({
+                        "masterId": master.id,
+                        "masterName": master.name,
+                        "layerName": getattr(t_layer, "name", ""),
+                        "pathIndex": t_path_index,
+                        "nodeIndex": t_node_index,
+                        "onCurveIndex": t_oncurve_index,
+                        "note": note,
+                    })
+
+                node_entry["mapping"] = mapping
+
+        result = {
+            "font": font_info(font),
+            "glyph": {
+                "name": getattr(glyph, "name", None),
+                "unicode": getattr(glyph, "unicode", None),
+            },
+            "layer": layer_info(layer),
+            "nodeCount": len(selected_nodes),
+            "nodes": selected_nodes,
+        }
+
+        return json.dumps(result)
+
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def add_corner_to_all_masters(
+    _corner_name: str | None = None,
+    _alignment: str | int | None = None,
+) -> str:
+    """Add a corner component hint at the selected node(s) across all masters.
+
+    This tool:
+    - Processes all selected *nodes* (including extra/intersection nodes) in the active layer.
+    - Processes selected intersection *handles* (``GSHandle``) by reusing their index path.
+    - Skips other non-node selections (reported in the result).
+    - Maps nodes across masters strictly by (pathIndex, nodeIndex) within layer.paths.
+    - Skips + reports masters where the corresponding path/node index is missing.
+
+    Args:
+        _corner_name: Corner component name (e.g. ``_corner.inktrap``). Required.
+        _alignment: Optional corner alignment. Accepted values are
+            ``left``/``right``/``center`` (case-insensitive) or ``0``/``1``/``2``.
+            Glyphs mapping: left=0, right=1, center=2.
+
+    Returns:
+        JSON encoded result with per-master add/skip details.
+    """
+    try:
+        font = Glyphs.font
+        if not font:
+            return json.dumps({"error": "No font is currently active"})
+
+        def _available_corner_names(current_font):
+            names = []
+            try:
+                glyphs = getattr(current_font, "glyphs", []) or []
+            except Exception:
+                glyphs = []
+            for g in glyphs:
+                try:
+                    name = getattr(g, "name", None)
+                except Exception:
+                    continue
+                if isinstance(name, str) and name.startswith("_corner."):
+                    names.append(name)
+            return sorted(set(names))
+
+        available_corners = _available_corner_names(font)
+        corner_name = (_corner_name or "").strip() if _corner_name is not None else ""
+        if not corner_name:
+            return json.dumps(
+                {
+                    "error": "Missing required parameter: _corner_name",
+                    "directive": "Re-run add_corner_to_all_masters and pass `_corner_name` set to one of `availableCorners` (full Glyphs corner component glyph name, e.g. `_corner.inktrap`).",
+                    "availableCorners": available_corners,
+                    "example": {"_corner_name": available_corners[0] if available_corners else "_corner.<name>"},
+                }
+            )
+        if not corner_name.startswith("_corner."):
+            return json.dumps(
+                {
+                    "error": "Invalid _corner_name (must start with '_corner.')",
+                    "cornerName": corner_name,
+                    "directive": "Pass the full corner glyph name, e.g. `_corner.inktrap`. Choose one from `availableCorners` and retry.",
+                    "availableCorners": available_corners,
+                }
+            )
+        if available_corners and corner_name not in available_corners:
+            return json.dumps(
+                {
+                    "error": "Corner component not found in current font",
+                    "cornerName": corner_name,
+                    "directive": "Choose a value from `availableCorners` and retry. If the corner glyph is missing, create it in the font first.",
+                    "availableCorners": available_corners,
+                }
+            )
+
+        alignment_requested = _alignment
+        alignment_value = None
+        alignment_label = None
+        if _alignment is not None:
+            alignment_map = {"left": 0, "right": 1, "center": 2}
+            label_map = {0: "left", 1: "right", 2: "center"}
+
+            if isinstance(_alignment, str):
+                normalized = _alignment.strip().lower()
+                if normalized == "":
+                    return json.dumps(
+                        {
+                            "error": "Invalid _alignment",
+                            "alignment": _alignment,
+                            "allowedAlignments": ["left", "right", "center", 0, 1, 2],
+                            "directive": "Pass `_alignment` as `left`, `right`, `center`, or numeric `0`, `1`, `2`.",
+                        }
+                    )
+                if normalized in alignment_map:
+                    alignment_value = alignment_map[normalized]
+                    alignment_label = normalized
+                elif normalized in ("0", "1", "2"):
+                    alignment_value = int(normalized)
+                    alignment_label = label_map[alignment_value]
+                else:
+                    return json.dumps(
+                        {
+                            "error": "Invalid _alignment",
+                            "alignment": _alignment,
+                            "allowedAlignments": ["left", "right", "center", 0, 1, 2],
+                            "directive": "Pass `_alignment` as `left`, `right`, `center`, or numeric `0`, `1`, `2`.",
+                        }
+                    )
+            elif isinstance(_alignment, int):
+                if _alignment in (0, 1, 2):
+                    alignment_value = int(_alignment)
+                    alignment_label = label_map[alignment_value]
+                else:
+                    return json.dumps(
+                        {
+                            "error": "Invalid _alignment",
+                            "alignment": _alignment,
+                            "allowedAlignments": ["left", "right", "center", 0, 1, 2],
+                            "directive": "Pass `_alignment` as `left`, `right`, `center`, or numeric `0`, `1`, `2`.",
+                        }
+                    )
+            else:
+                return json.dumps(
+                    {
+                        "error": "Invalid _alignment",
+                        "alignment": _alignment,
+                        "allowedAlignments": ["left", "right", "center", 0, 1, 2],
+                        "directive": "Pass `_alignment` as `left`, `right`, `center`, or numeric `0`, `1`, `2`.",
+                    }
+                )
+
+        if not font.selectedLayers or len(font.selectedLayers) == 0:
+            return json.dumps({"error": "No active layer/glyph open in Edit view"})
+
+        layer = font.selectedLayers[0]
+        glyph = layer.parent
+        if glyph is None:
+            return json.dumps({"error": "No active glyph found for current layer"})
+
+        def _index_path_to_list(index_path):
+            if index_path is None:
+                return None
+            try:
+                length = int(index_path.length())
+                return [int(index_path.indexAtPosition_(i)) for i in range(length)]
+            except Exception:
+                try:
+                    return [int(v) for v in index_path]
+                except Exception:
+                    return None
+
+        raw_selection = list(getattr(layer, "selection", []) or [])
+        skipped_selection = []
+        selected_handles = []
+
+        # Collect selected handles (used for intersections) and report other non-node selections.
+        for item in raw_selection:
+            if isinstance(item, GSHandle):
+                try:
+                    origin_index = item.object()  # NSIndexPath
+                except Exception:
+                    origin_index = None
+                if origin_index is None:
+                    skipped_selection.append(
+                        {"type": "GSHandle", "reason": "Could not read handle index path"}
+                    )
+                    continue
+                try:
+                    stem = int(item.flag())
+                except Exception:
+                    stem = None
+                selected_handles.append(
+                    {
+                        "originIndex": origin_index,
+                        "originIndexList": _index_path_to_list(origin_index),
+                        "stem": stem,
+                    }
+                )
+                continue
+
+            if not isinstance(item, GSNode):
+                item_type = type(item).__name__
+                reason = "Not a node or intersection handle"
+                skipped_selection.append({"type": item_type, "reason": reason})
+
+        # Gather selected nodes from the path graph to obtain stable indices.
+        selected_nodes = []
+        for p_index, path in enumerate(getattr(layer, "paths", []) or []):
+            for n_index, node in enumerate(getattr(path, "nodes", []) or []):
+                if not getattr(node, "selected", False):
+                    continue
+                node_type = getattr(node, "type", "offcurve")
+                if node_type == "offcurve":
+                    skipped_selection.append(
+                        {
+                            "type": "GSNode",
+                            "pathIndex": p_index,
+                            "nodeIndex": n_index,
+                            "nodeType": node_type,
+                            "reason": "Off-curve nodes are not supported for corner components",
+                        }
+                    )
+                    continue
+                selected_nodes.append(
+                    {
+                        "pathIndex": p_index,
+                        "nodeIndex": n_index,
+                        "nodeType": node_type,
+                        "position": {
+                            "x": float(getattr(node, "position", (0, 0))[0]),
+                            "y": float(getattr(node, "position", (0, 0))[1]),
+                        },
+                    }
+                )
+
+        if not selected_nodes and not selected_handles:
+            return json.dumps(
+                {
+                    "error": "No applicable nodes/handles selected (select on-curve nodes or intersection handles)",
+                    "cornerName": corner_name,
+                    "availableCorners": available_corners,
+                    "skippedSelection": skipped_selection,
+                }
+            )
+
+        masters = list(getattr(font, "masters", []) or [])
+        results = []
+        total_added = 0
+        total_updated = 0
+        total_skipped = 0
+
+        for master in masters:
+            master_result = {
+                "masterId": getattr(master, "id", None),
+                "masterName": getattr(master, "name", ""),
+                "addedCount": 0,
+                "updatedCount": 0,
+                "skipped": [],
+            }
+
+            try:
+                t_layer = glyph.layers[master.id]
+            except Exception:
+                master_result["skipped"].append({"reason": "Master layer not found"})
+                total_skipped += len(selected_nodes)
+                results.append(master_result)
+                continue
+
+            t_paths = list(getattr(t_layer, "paths", []) or [])
+            t_hints = list(getattr(t_layer, "hints", []) or [])
+
+            for locator in selected_nodes:
+                p_index = int(locator["pathIndex"])
+                n_index = int(locator["nodeIndex"])
+
+                if p_index < 0 or p_index >= len(t_paths):
+                    master_result["skipped"].append(
+                        {
+                            "pathIndex": p_index,
+                            "nodeIndex": n_index,
+                            "reason": "Path index out of range in target master",
+                        }
+                    )
+                    total_skipped += 1
+                    continue
+
+                t_path = t_paths[p_index]
+                t_nodes = list(getattr(t_path, "nodes", []) or [])
+                if n_index < 0 or n_index >= len(t_nodes):
+                    master_result["skipped"].append(
+                        {
+                            "pathIndex": p_index,
+                            "nodeIndex": n_index,
+                            "reason": "Node index out of range in target master",
+                        }
+                    )
+                    total_skipped += 1
+                    continue
+
+                t_node = t_nodes[n_index]
+                t_node_type = getattr(t_node, "type", "offcurve")
+                if t_node_type == "offcurve":
+                    master_result["skipped"].append(
+                        {
+                            "pathIndex": p_index,
+                            "nodeIndex": n_index,
+                            "reason": "Target node is off-curve in this master",
+                        }
+                    )
+                    total_skipped += 1
+                    continue
+
+                existing_hint = None
+                for hint in t_hints:
+                    try:
+                        if getattr(hint, "type", None) != CORNER:
+                            continue
+                        if getattr(hint, "name", None) != corner_name:
+                            continue
+                        if getattr(hint, "originNode", None) is t_node:
+                            existing_hint = hint
+                            break
+                    except Exception:
+                        continue
+
+                if existing_hint is not None:
+                    if alignment_value is not None:
+                        current_alignment = getattr(existing_hint, "options", None)
+                        if current_alignment != alignment_value:
+                            try:
+                                existing_hint.options = alignment_value
+                                master_result["updatedCount"] += 1
+                                total_updated += 1
+                            except Exception:
+                                master_result["skipped"].append(
+                                    {
+                                        "pathIndex": p_index,
+                                        "nodeIndex": n_index,
+                                        "reason": "Failed to update corner alignment on existing hint",
+                                    }
+                                )
+                                total_skipped += 1
+                        else:
+                            master_result["skipped"].append(
+                                {
+                                    "pathIndex": p_index,
+                                    "nodeIndex": n_index,
+                                    "reason": "Corner hint already exists with requested alignment",
+                                }
+                            )
+                            total_skipped += 1
+                    else:
+                        master_result["skipped"].append(
+                            {
+                                "pathIndex": p_index,
+                                "nodeIndex": n_index,
+                                "reason": "Corner hint already exists at this node",
+                            }
+                        )
+                        total_skipped += 1
+                    continue
+
+                new_hint = GSHint()
+                new_hint.type = CORNER
+                new_hint.name = corner_name
+                new_hint.originNode = t_node
+                if alignment_value is not None:
+                    new_hint.options = alignment_value
+                t_layer.hints.append(new_hint)
+                t_hints.append(new_hint)
+
+                master_result["addedCount"] += 1
+                total_added += 1
+
+            for handle_locator in selected_handles:
+                origin_index = handle_locator.get("originIndex")
+                origin_index_list = handle_locator.get("originIndexList") or []
+                stem = handle_locator.get("stem")
+
+                # Best-effort validation: hint index paths generally start with (shapeIndex, nodeIndex).
+                if len(origin_index_list) >= 2:
+                    shape_index = int(origin_index_list[0])
+                    node_index = int(origin_index_list[1])
+                    shapes = list(getattr(t_layer, "shapes", []) or [])
+
+                    if shape_index < 0 or shape_index >= len(shapes):
+                        master_result["skipped"].append(
+                            {
+                                "type": "GSHandle",
+                                "originIndex": origin_index_list,
+                                "reason": "Shape index out of range in target master",
+                            }
+                        )
+                        total_skipped += 1
+                        continue
+
+                    shape = shapes[shape_index]
+                    if not isinstance(shape, GSPath):
+                        master_result["skipped"].append(
+                            {
+                                "type": "GSHandle",
+                                "originIndex": origin_index_list,
+                                "reason": "Target shape at index is not a path",
+                            }
+                        )
+                        total_skipped += 1
+                        continue
+
+                    t_nodes = list(getattr(shape, "nodes", []) or [])
+                    if node_index < 0 or node_index >= len(t_nodes):
+                        master_result["skipped"].append(
+                            {
+                                "type": "GSHandle",
+                                "originIndex": origin_index_list,
+                                "reason": "Node index out of range in target master shape",
+                            }
+                        )
+                        total_skipped += 1
+                        continue
+
+                existing_hint = None
+                for hint in t_hints:
+                    try:
+                        if getattr(hint, "type", None) != CORNER:
+                            continue
+                        if getattr(hint, "name", None) != corner_name:
+                            continue
+                        if getattr(hint, "originIndex", None) != origin_index:
+                            continue
+                        if stem is not None and getattr(hint, "stem", None) != stem:
+                            continue
+                        existing_hint = hint
+                        break
+                    except Exception:
+                        continue
+
+                if existing_hint is not None:
+                    if alignment_value is not None:
+                        current_alignment = getattr(existing_hint, "options", None)
+                        if current_alignment != alignment_value:
+                            try:
+                                existing_hint.options = alignment_value
+                                master_result["updatedCount"] += 1
+                                total_updated += 1
+                            except Exception:
+                                master_result["skipped"].append(
+                                    {
+                                        "type": "GSHandle",
+                                        "originIndex": origin_index_list or None,
+                                        "reason": "Failed to update corner alignment on existing hint",
+                                    }
+                                )
+                                total_skipped += 1
+                        else:
+                            master_result["skipped"].append(
+                                {
+                                    "type": "GSHandle",
+                                    "originIndex": origin_index_list or None,
+                                    "reason": "Corner hint already exists with requested alignment",
+                                }
+                            )
+                            total_skipped += 1
+                    else:
+                        master_result["skipped"].append(
+                            {
+                                "type": "GSHandle",
+                                "originIndex": origin_index_list or None,
+                                "reason": "Corner hint already exists at this index path",
+                            }
+                        )
+                        total_skipped += 1
+                    continue
+
+                new_hint = GSHint()
+                new_hint.type = CORNER
+                new_hint.name = corner_name
+                new_hint.originIndex = origin_index
+                if alignment_value is not None:
+                    new_hint.options = alignment_value
+                if stem is not None:
+                    try:
+                        new_hint.stem = stem
+                    except Exception:
+                        pass
+                t_layer.hints.append(new_hint)
+                t_hints.append(new_hint)
+
+                master_result["addedCount"] += 1
+                total_added += 1
+
+            results.append(master_result)
+
+        return json.dumps(
+            {
+                "success": True,
+                "cornerName": corner_name,
+                "availableCorners": available_corners,
+                "alignmentRequested": alignment_requested,
+                "alignmentApplied": alignment_value,
+                "alignmentLabel": alignment_label,
+                "font": {
+                    "familyName": getattr(font, "familyName", "") or "",
+                    "filePath": getattr(font, "filepath", None),
+                },
+                "glyph": {
+                    "name": getattr(glyph, "name", None),
+                    "unicode": getattr(glyph, "unicode", None),
+                },
+                "activeLayer": {
+                    "name": getattr(layer, "name", ""),
+                    "associatedMasterId": getattr(layer, "associatedMasterId", None),
+                },
+                "selection": {
+                    "nodeCount": len(selected_nodes),
+                    "nodes": selected_nodes,
+                    "handleCount": len(selected_handles),
+                    "handles": [
+                        {
+                            "originIndex": h.get("originIndexList"),
+                            "stem": h.get("stem"),
+                        }
+                        for h in selected_handles
+                    ],
+                    "skippedSelection": skipped_selection,
+                },
+                "mastersProcessed": len(masters),
+                "totalAdded": total_added,
+                "totalUpdated": total_updated,
+                "totalSkipped": total_skipped,
+                "results": results,
+            }
+        )
+
+    except Exception as exc:
+        return json.dumps(
+            {
+                "error": str(exc) or repr(exc),
+                "errorType": type(exc).__name__,
+                "traceback": traceback.format_exception(type(exc), exc, exc.__traceback__),
+            }
+        )
+
+
+def _normalise_name_sequence(value):
+    if not value:
+        return []
+    if isinstance(value, str):
+        cleaned = value.replace(",", " ").split()
+        return [name.strip() for name in cleaned if name.strip()]
+    try:
+        return [str(name).strip() for name in value if str(name).strip()]
+    except TypeError:
+        return []
+
+
+@mcp.tool()
+async def ExportDesignspaceAndUFO(
+    font_index: int = 0,
+    include_variable: bool = True,
+    include_static: bool = True,
+    brace_layers_mode: str = "layers",
+    include_build_script: bool = True,
+    decompose_glyphs: list | tuple | str | None = None,
+    remove_overlap_glyphs: list | tuple | str | None = None,
+    keep_glyphs_lib: bool = False,
+    production_names: bool = False,
+    decompose_smart_components: bool = True,
+    decompose_smart_corners: bool = True,
+    output_directory: str | None = None,
+    open_destination: bool = False,
+) -> str:
+    """Export designspace and UFO packages for the selected font.
+
+    Args:
+        font_index: Index of the font in ``Glyphs.fonts`` to export.
+        include_variable: Whether to generate variable designspace/UFO sources.
+        include_static: Whether to generate static designspace/UFO sources.
+        brace_layers_mode: ``"layers"`` keeps brace layers as glyph layers,
+            ``"separate_ufos"`` exports them as standalone masters.
+        include_build_script: Include a ``build.sh`` helper script.
+        decompose_glyphs: Optional sequence of glyph names to decompose before
+            export.
+        remove_overlap_glyphs: Optional sequence of glyph names where overlaps
+            should be removed before export.
+        keep_glyphs_lib: Reserved for parity with the original script. When
+            ``True`` the Glyphs lib is preserved (currently a no-op).
+        production_names: Reserved for parity with the original script.
+        decompose_smart_components: Decompose smart components before export.
+        decompose_smart_corners: Decompose corner components before export.
+        output_directory: Optional explicit destination directory. Required for
+            unsaved fonts.
+        open_destination: If ``True`` and the environment supports it, open the
+            destination folder in Finder after export.
+
+    Returns:
+        JSON encoded dictionary with output paths and log messages.
+    """
+
+    log_messages = []
+    options = None
+    font = None
+
+    def _capture_log(message):
+        if message:
+            log_messages.append(message)
+
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(
+                        font_index, len(Glyphs.fonts)
+                    )
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+
+        brace_mode = (brace_layers_mode or "layers").strip().lower()
+
+        options = ExportOptions(
+            include_variable=include_variable,
+            include_static=include_static,
+            brace_layers_mode=brace_mode,
+            include_build_script=include_build_script,
+            decompose_glyphs=_normalise_name_sequence(decompose_glyphs),
+            remove_overlap_glyphs=_normalise_name_sequence(remove_overlap_glyphs),
+            keep_glyphs_lib=keep_glyphs_lib,
+            production_names=production_names,
+            decompose_smart_components=decompose_smart_components,
+            decompose_smart_corners=decompose_smart_corners,
+            output_directory=output_directory,
+            open_destination=open_destination,
+        )
+
+        exporter = ExportDesignspaceAndUFOExporter(
+            font, options=options, logger=_capture_log
+        )
+        result = exporter.run()
+
+        return json.dumps(
+            {
+                "success": True,
+                "outputDirectory": result.output_directory,
+                "designspaceFiles": result.designspace_files,
+                "masterUFOs": result.master_ufos,
+                "braceUFOs": result.brace_ufos,
+                "supportFiles": result.support_files,
+                "log": result.log,
+            }
+        )
+    except Exception as exc:
+        error_payload = {
+            "error": str(exc) or repr(exc),
+            "errorType": type(exc).__name__,
+            "traceback": traceback.format_exception(type(exc), exc, exc.__traceback__),
+        }
+        if font is not None:
+            font_details = {"familyName": getattr(font, "familyName", None)}
+            font_parent = getattr(font, "parent", None)
+            if font_parent is not None:
+                try:
+                    file_url_obj = font_parent.fileURL()
+                    if file_url_obj is not None:
+                        font_details["filePath"] = getattr(file_url_obj, "path", lambda: None)()
+                except Exception:
+                    font_details["filePath"] = None
+            error_payload["font"] = font_details
+        if options is not None:
+            error_payload["options"] = asdict(options)
+        if log_messages:
+            error_payload["log"] = log_messages
+        return json.dumps(error_payload)
+
+
+@mcp.tool()
+async def save_font(font_index: int = 0, path: str = None) -> str:
+    """Save the font to disk.
+
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        path (str): Path where to save the font. If None, saves to current location. Optional.
+
+    Returns:
+        str: JSON-encoded result with success status and save path.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+
+        font = Glyphs.fonts[font_index]
+
+        existing_path = getattr(font, "filepath", None)
+        requested_path = path or existing_path
+        if not requested_path:
+            return json.dumps(
+                {"error": "No file path specified and font has not been saved before"}
+            )
+
+        target_override = path if path else None
+        saved_path = _save_font_on_main_thread(font, target_override)
+        resolved_path = saved_path or getattr(font, "filepath", None) or requested_path
+
+        # Send notification
+        Glyphs.showNotification(
+            "Font Saved", "Saved {} to {}".format(font.familyName, resolved_path)
+        )
+
+        return json.dumps(
+            {
+                "success": True,
+                "message": "Saved font to {}".format(resolved_path),
+                "path": resolved_path,
+            }
+        )
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def get_glyph_paths(
+    font_index: int = 0,
+    glyph_name: str = None,
+    master_id: str = None
+) -> str:
+    """Get the path data for a glyph in a simple JSON format suitable for LLM editing.
+    
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph. Required.
+        master_id (str): Master ID. If None, uses the current selected master. Optional.
+    
+    Returns:
+        str: JSON-encoded path data containing:
+            paths (list): List of paths, each containing:
+                nodes (list): List of nodes with x, y, type, smooth properties
+                closed (bool): Whether the path is closed
+            width (int): Glyph width
+            leftSideBearing (int): Left side bearing
+            rightSideBearing (int): Right side bearing
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+        
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+        
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+        
+        if not glyph:
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
+        
+        # Determine which master to use
+        if master_id:
+            layer = glyph.layers[master_id]
+            if not layer:
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
+        else:
+            # Use the selected master or first master
+            if font.selectedFontMaster:
+                layer = glyph.layers[font.selectedFontMaster.id]
+            else:
+                layer = glyph.layers[font.masters[0].id]
+        
+        # Ensure we have a valid layer
+        if not layer:
+            return json.dumps({"error": "No valid layer found for glyph '{}'".format(glyph_name)})
+        
+        # Serialize paths
+        paths_data = []
+        for path in getattr(layer, 'paths', []):
+            nodes_data = []
+            for node in path.nodes:
+                nodes_data.append({
+                    "x": float(node.position.x),
+                    "y": float(node.position.y),
+                    "type": getattr(node, 'type', 'line'),
+                    "smooth": getattr(node, 'smooth', False)
+                })
+            
+            paths_data.append({
+                "nodes": nodes_data,
+                "closed": getattr(path, 'closed', True)
+            })
+        
+        result = {
+            "glyphName": glyph_name,
+            "masterId": getattr(layer, 'associatedMasterId', None),
+            "masterName": layer.name,
+            "paths": paths_data,
+            "width": getattr(layer, 'width', 0),
+            "leftSideBearing": getattr(layer, 'leftSideBearing', 0),
+            "rightSideBearing": getattr(layer, 'rightSideBearing', 0)
+        }
+        
+        return json.dumps(result)
+        
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def review_collinear_handles(
+    font_index: int = 0,
+    glyph_name: str = None,
+    master_id: str = None,
+    path_index: int = None,
+    node_indices: list = None,
+    threshold_deg: float = 3.0,
+    min_handle_len: float = 5.0,
+    include_already_smooth: bool = False,
+) -> str:
+    """Review a single path for curve nodes that should be smooth based on handle collinearity.
+
+    This is a targeted helper: you must specify glyph + master + path_index.
+    It does not mutate anything.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        if not glyph_name:
+            return _safe_json({"ok": False, "error": "glyph_name is required"})
+        if not master_id:
+            return _safe_json({"ok": False, "error": "master_id is required"})
+        if path_index is None:
+            return _safe_json({"ok": False, "error": "path_index is required"})
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+        if not glyph:
+            return _safe_json({"ok": False, "error": "Glyph '{}' not found".format(glyph_name)})
+
+        layer = glyph.layers[str(master_id)]
+        if not layer:
+            return _safe_json({"ok": False, "error": "Master ID '{}' not found".format(master_id)})
+
+        paths = list(getattr(layer, "paths", []) or [])
+        if int(path_index) < 0 or int(path_index) >= len(paths):
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "path_index {} out of range. Available paths: {}".format(path_index, len(paths)),
+                }
+            )
+
+        path = paths[int(path_index)]
+        nodes = list(getattr(path, "nodes", []) or [])
+        closed = bool(getattr(path, "closed", True))
+
+        indices = None
+        if node_indices is not None:
+            if not isinstance(node_indices, list):
+                return _safe_json({"ok": False, "error": "node_indices must be a list of integers"})
+            indices = node_indices
+
+        candidates = smoothness_engine.find_collinear_handle_nodes(
+            nodes,
+            closed=closed,
+            threshold_deg=float(threshold_deg),
+            min_handle_len=float(min_handle_len),
+            node_indices=indices,
+            include_already_smooth=bool(include_already_smooth),
+            allowed_node_types=("curve",),
+        )
+
+        analyzed_nodes = len(indices) if indices is not None else len(nodes)
+        return _safe_json(
+            {
+                "ok": True,
+                "target": {
+                    "fontIndex": int(font_index),
+                    "glyphName": glyph_name,
+                    "masterId": str(master_id),
+                    "pathIndex": int(path_index),
+                },
+                "params": {"thresholdDeg": float(threshold_deg), "minHandleLen": float(min_handle_len)},
+                "candidates": candidates,
+                "summary": {"analyzedNodes": int(analyzed_nodes), "candidatesCount": int(len(candidates))},
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
+
+
+@mcp.tool()
+async def apply_collinear_handles_smooth(
+    font_index: int = 0,
+    glyph_name: str = None,
+    master_id: str = None,
+    path_index: int = None,
+    node_indices: list = None,
+    threshold_deg: float = 3.0,
+    min_handle_len: float = 5.0,
+    confirm: bool = False,
+    dry_run: bool = False,
+) -> str:
+    """Set smooth=True for curve nodes in a single path when handles are nearly collinear.
+
+    Safety:
+    - Refuses to mutate unless confirm=true.
+    - Use dry_run=true to preview.
+    """
+    try:
+        if not confirm and not dry_run:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Refusing to apply smooth flags without confirm=true.",
+                    "hint": "Run apply_collinear_handles_smooth(..., dry_run=true) to preview or set confirm=true to apply.",
+                }
+            )
+
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                }
+            )
+
+        if not glyph_name:
+            return _safe_json({"ok": False, "error": "glyph_name is required"})
+        if not master_id:
+            return _safe_json({"ok": False, "error": "master_id is required"})
+        if path_index is None:
+            return _safe_json({"ok": False, "error": "path_index is required"})
+
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+        if not glyph:
+            return _safe_json({"ok": False, "error": "Glyph '{}' not found".format(glyph_name)})
+
+        layer = glyph.layers[str(master_id)]
+        if not layer:
+            return _safe_json({"ok": False, "error": "Master ID '{}' not found".format(master_id)})
+
+        paths = list(getattr(layer, "paths", []) or [])
+        if int(path_index) < 0 or int(path_index) >= len(paths):
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "path_index {} out of range. Available paths: {}".format(path_index, len(paths)),
+                }
+            )
+
+        path = paths[int(path_index)]
+        nodes = list(getattr(path, "nodes", []) or [])
+        closed = bool(getattr(path, "closed", True))
+
+        indices = list(range(len(nodes)))
+        if node_indices is not None:
+            if not isinstance(node_indices, list):
+                return _safe_json({"ok": False, "error": "node_indices must be a list of integers"})
+            indices = [int(i) for i in node_indices]
+
+        applied: list = []
+        skipped: list = []
+        skipped_summary: dict = {}
+
+        for i in indices:
+            r = smoothness_engine.evaluate_collinear_handles_at_node(
+                nodes,
+                int(i),
+                closed=closed,
+                threshold_deg=float(threshold_deg),
+                min_handle_len=float(min_handle_len),
+                allowed_node_types=("curve",),
+            )
+
+            if not r.get("ok"):
+                reason = str(r.get("reason", "skipped"))
+                skipped_summary[reason] = int(skipped_summary.get(reason, 0)) + 1
+                skipped.append({"nodeIndex": int(i), "reason": reason})
+                continue
+
+            node = nodes[int(i)]
+            if bool(getattr(node, "smooth", False)):
+                skipped_summary["already_smooth"] = int(skipped_summary.get("already_smooth", 0)) + 1
+                skipped.append({"nodeIndex": int(i), "reason": "already_smooth"})
+                continue
+
+            applied.append(int(i))
+            if confirm:
+                try:
+                    node.smooth = True
+                except Exception:
+                    skipped_summary["mutation_failed"] = int(skipped_summary.get("mutation_failed", 0)) + 1
+                    skipped.append({"nodeIndex": int(i), "reason": "mutation_failed"})
+                    applied.pop()
+
+        skipped_truncated = False
+        max_skipped = 400
+        if len(skipped) > max_skipped:
+            skipped_truncated = True
+            skipped = skipped[:max_skipped]
+
+        return _safe_json(
+            {
+                "ok": True,
+                "target": {
+                    "fontIndex": int(font_index),
+                    "glyphName": glyph_name,
+                    "masterId": str(master_id),
+                    "pathIndex": int(path_index),
+                },
+                "params": {"thresholdDeg": float(threshold_deg), "minHandleLen": float(min_handle_len)},
+                "dryRun": bool(dry_run) and (not bool(confirm)),
+                "applied": applied,
+                "skipped": skipped,
+                "skippedTruncated": bool(skipped_truncated),
+                "summary": {
+                    "analyzedNodes": int(len(indices)),
+                    "appliedCount": int(len(applied)),
+                    "skippedCount": int(sum(int(v) for v in skipped_summary.values())),
+                    "skippedSummary": skipped_summary,
+                },
+            }
+        )
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
+
+
+@mcp.tool()
+async def set_glyph_paths(
+    font_index: int = 0,
+    glyph_name: str = None,
+    master_id: str = None,
+    paths_data: str = None
+) -> str:
+    """Set the path data for a glyph from JSON, replacing existing paths.
+    
+    Args:
+        font_index (int): Index of the font (0-based). Defaults to 0.
+        glyph_name (str): Name of the glyph. Required.
+        master_id (str): Master ID. If None, uses the current selected master. Optional.
+        paths_data (str): JSON string containing path data in the format returned by get_glyph_paths. Required.
+    
+    Returns:
+        str: JSON-encoded result with success status.
+    """
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return json.dumps(
+                {
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
+                }
+            )
+        
+        if not glyph_name:
+            return json.dumps({"error": "Glyph name is required"})
+        
+        if not paths_data:
+            return json.dumps({"error": "Path data is required"})
+        
+        # Parse the JSON path data
+        try:
+            path_info = json.loads(paths_data)
+        except ValueError as e:
+            return json.dumps({"error": "Invalid JSON in paths_data: {}".format(str(e))})
+        
+        font = Glyphs.fonts[font_index]
+        glyph = font.glyphs[glyph_name]
+        
+        if not glyph:
+            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
+        
+        # Determine which master to use
+        if master_id:
+            layer = glyph.layers[master_id]
+            if not layer:
+                return json.dumps({"error": "Master ID '{}' not found".format(master_id)})
+        else:
+            # Use the selected master or first master
+            if font.selectedFontMaster:
+                layer = glyph.layers[font.selectedFontMaster.id]
+            else:
+                layer = glyph.layers[font.masters[0].id]
+        
+        # Clear existing paths (but keep components, anchors, etc.)
+        _clear_layer_paths(layer)
+        
+        # Build new paths from the JSON data
+        if "paths" in path_info:
+            for path_data in path_info["paths"]:
+                new_path = GSPath()
+
+                # Add nodes
+                if "nodes" in path_data:
+                    for node_data in path_data["nodes"]:
+                        new_node = GSNode()
+                        new_node.position = (
+                            float(node_data.get("x", 0.0)),
+                            float(node_data.get("y", 0.0)),
+                        )
+                        new_node.type = node_data.get("type", "line")
+                        new_node.smooth = bool(node_data.get("smooth", False))
+                        new_path.nodes.append(new_node)
+
+                # Set closed property
+                new_path.closed = bool(path_data.get("closed", True))
+
+                # Add the path to the layer via the mutable collection
+                try:
+                    layer.paths.append(new_path)
+                except Exception:
+                    # Fallback if append is unavailable
+                    if hasattr(layer, "addPath_"):
+                        layer.addPath_(new_path)
+        
+        # Update metrics if provided
+        if "width" in path_info:
+            layer.width = float(path_info["width"])
+        if "leftSideBearing" in path_info:
+            layer.leftSideBearing = float(path_info["leftSideBearing"])
+        if "rightSideBearing" in path_info:
+            layer.rightSideBearing = float(path_info["rightSideBearing"])
+        
+        # Send notification
+        Glyphs.showNotification(
+            "Paths Updated", 
+            "Updated paths for glyph '{}' in {}".format(glyph_name, font.familyName)
+        )
+        
+        return _safe_json({
+            "success": True,
+            "message": "Updated paths for glyph '{}'".format(glyph_name),
+            "pathCount": len(getattr(layer, "paths", [])),
+            "nodeCount": sum(len(path.nodes) for path in getattr(layer, "paths", []))
+        })
+        
+    except Exception as e:
+        return json.dumps({"error": str(e)})
