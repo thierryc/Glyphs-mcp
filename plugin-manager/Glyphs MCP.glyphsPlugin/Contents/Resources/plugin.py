@@ -109,6 +109,28 @@ def _ensure_user_site_packages_on_path() -> None:
         _add(Path(os.path.expanduser(entry)))
 
 
+# --- Glyphs MCP Vendor Deps (Plugin Manager build) ---
+def _maybe_prefer_vendored_site_packages() -> None:
+    try:
+        import platform
+
+        py_tag = f"py{sys.version_info.major}{sys.version_info.minor}"
+        machine = (platform.machine() or "").lower()
+        if machine == "aarch64":
+            machine = "arm64"
+        vendor_root = Path(__file__).resolve().parent / "vendor"
+        candidate = vendor_root / f"{py_tag}-{machine}" / "site-packages"
+        if not candidate.is_dir():
+            return
+        cand = str(candidate)
+        # De-dupe and prefer vendored deps.
+        sys.path[:] = [p for p in sys.path if p != cand]
+        sys.path.insert(0, cand)
+    except Exception:
+        pass
+
+_maybe_prefer_vendored_site_packages()
+# --- End Glyphs MCP Vendor Deps ---
 _ensure_user_site_packages_on_path()
 
 # Import utility functions and apply fixes
