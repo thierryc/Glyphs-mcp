@@ -377,15 +377,15 @@ if [[ "$vendor_mode" == "1" ]]; then
       case "$target" in
         py311-arm64)
           if [[ "$pyd_core" == *"cpython-311"* ]]; then
-            if file "$pyd_core" | rg -q "\\barm64\\b"; then
+            if file "$pyd_core" | grep -q "arm64"; then
               abi_ok="1"
-            elif file "$pyd_core" | rg -q "universal binary"; then
+            elif file "$pyd_core" | grep -q "universal binary"; then
               abi_ok="1"
             fi
           fi
           ;;
         py311-x86_64)
-          if [[ "$pyd_core" == *"cpython-311"* ]] && file "$pyd_core" | rg -q "\\bx86_64\\b"; then
+          if [[ "$pyd_core" == *"cpython-311"* ]] && file "$pyd_core" | grep -q "x86_64"; then
             abi_ok="1"
           fi
           ;;
