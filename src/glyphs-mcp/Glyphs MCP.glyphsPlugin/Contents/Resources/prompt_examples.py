@@ -19,7 +19,7 @@ async def prompt_print_master_names():
     """Prompt describing how to print master names for the active font."""
     return [
         Message(
-            "Use glyphs-app-mcp__get_font_masters to print master names for the active font.",
+            "Call get_font_masters and print the master names for the active font.",
             role="user",
         )
     ]
@@ -35,7 +35,7 @@ async def prompt_list_current_glyph_nodes():
     """Prompt describing how to inspect node positions via execute_code_with_context."""
     return [
         Message(
-            "Call glyphs-app-mcp__execute_code_with_context to list the current glyph's node coordinates.",
+            "Call execute_code_with_context to list the current glyph's node coordinates.",
             role="user",
         )
     ]
@@ -51,7 +51,7 @@ async def prompt_add_acute_component():
     """Prompt describing how to add a component to glyph A."""
     return [
         Message(
-            "Run glyphs-app-mcp__add_component_to_glyph to place component acute on glyph A at offset (0, 120).",
+            "Call add_component_to_glyph to place component acute on glyph A at offset (0, 120).",
             role="user",
         )
     ]
@@ -67,7 +67,7 @@ async def prompt_report_tightest_kerning_pairs():
     """Prompt describing how to inspect kerning for tight pairs."""
     return [
         Message(
-            "Fetch kerning via glyphs-app-mcp__get_font_kerning and report the tightest pairs.",
+            "Call get_font_kerning and report the tightest pairs.",
             role="user",
         )
     ]
@@ -83,7 +83,7 @@ async def prompt_review_kerning_bumper():
     """Prompt describing how to review kerning collisions with the bumper tool."""
     return [
         Message(
-            "Call glyphs-app-mcp__review_kerning_bumper for the active font/master and summarize the worst collisions (lowest minGap) and their recommendedException values.",
+            "Call review_kerning_bumper for the active font/master and summarize the worst collisions (lowest minGap) and their recommendedException values.",
             role="user",
         )
     ]
@@ -99,7 +99,7 @@ async def prompt_apply_kerning_bumper():
     """Prompt describing how to apply kerning bumper suggestions safely."""
     return [
         Message(
-            "Call glyphs-app-mcp__apply_kerning_bumper with dry_run=true, then call it again with confirm=true using the same args to apply (never auto-save).",
+            "Call apply_kerning_bumper with dry_run=true, then call it again with confirm=true using the same args to apply (never auto-save).",
             role="user",
         )
     ]
@@ -131,7 +131,7 @@ async def prompt_review_spacing():
     """Prompt describing how to run a spacing review on the selected glyphs."""
     return [
         Message(
-            "Call glyphs-app-mcp__review_spacing for the currently selected glyphs and summarize the biggest suggested LSB/RSB changes.",
+            "Call review_spacing for the currently selected glyphs and summarize the biggest suggested LSB/RSB changes.",
             role="user",
         )
     ]
@@ -147,7 +147,7 @@ async def prompt_apply_spacing():
     """Prompt describing how to apply spacing suggestions safely."""
     return [
         Message(
-            "Call glyphs-app-mcp__apply_spacing with dry_run=true for the selected glyphs, then call it again with confirm=true to apply.",
+            "Call apply_spacing with dry_run=true for the selected glyphs, then call it again with confirm=true to apply.",
             role="user",
         )
     ]
@@ -163,7 +163,7 @@ async def prompt_set_spacing_params():
     """Prompt describing how to set spacing parameters without using the UI."""
     return [
         Message(
-            "Call glyphs-app-mcp__set_spacing_params with scope='font' to set area/depth/over/frequency (writes cx.ap.spacing* custom parameters by default), then call glyphs-app-mcp__save_font to persist.",
+            "Call set_spacing_params with scope='font' to set area/depth/over/frequency (writes cx.ap.spacing* custom parameters by default), then call save_font to persist.",
             role="user",
         )
     ]
@@ -179,7 +179,7 @@ async def prompt_set_spacing_guides():
     """Prompt describing how to visualize spacing settings with glyph-level guides."""
     return [
         Message(
-            "Call glyphs-app-mcp__set_spacing_guides with style='model' (default) to add didactic guides (band + zone edges + depth clamp + measured/target average whitespace). If nothing is selected and glyph_names is omitted, it uses a small diagnostic set (n, H, zero, o, O, period, comma). Enable View → Show Guides to see them. Use mode='clear' to remove.",
+            "Call set_spacing_guides with style='model' (default) to add didactic guides (band + zone edges + depth clamp + measured/target average whitespace). If nothing is selected and glyph_names is omitted, it uses a small diagnostic set (n, H, zero, o, O, period, comma). Enable View → Show Guides to see them. Use mode='clear' to remove.",
             role="user",
         )
     ]
@@ -215,7 +215,66 @@ async def prompt_selected_nodes_and_insert_point():
     """Prompt showing how to use get_selected_nodes and follow up with code execution."""
     return [
         Message(
-            "Call glyphs-app-mcp__get_selected_nodes. Using its mapping, generate Python that inserts a point just before each selected node on all masters of the same glyph.",
+            "Call get_selected_nodes. Using its mapping, generate Python that inserts a point just before each selected node on all masters of the same glyph.",
+            role="user",
+        )
+    ]
+
+
+@mcp.prompt(
+    name="macro_panel_snippet_instead_of_execute",
+    title="Macro Panel Snippet (No Execute)",
+    description="Show how to request a Macro Panel snippet instead of executing immediately (more control).",
+    tags={"examples", "glyphs", "execute-code"},
+)
+async def prompt_macro_panel_snippet_instead_of_execute():
+    """Prompt describing how to get a ready-to-paste Macro Panel snippet via execute_code(snippet_only=true)."""
+    return [
+        Message(
+            "Generate a Macro Panel snippet for Glyphs instead of executing immediately.\n\n"
+            "Rules:\n"
+            "- Do not mutate the font.\n"
+            "- Return a snippet I can paste into Glyphs → Window → Macro Panel.\n\n"
+            "Call execute_code with snippet_only=true and include the Python you generated in the code argument.",
+            role="user",
+        )
+    ]
+
+
+@mcp.prompt(
+    name="macro_panel_snippet_with_context",
+    title="Macro Panel Snippet (With Context)",
+    description="Request a context-aware Macro Panel snippet (font/glyph/layer variables) for safer manual execution.",
+    tags={"examples", "glyphs", "execute-code"},
+)
+async def prompt_macro_panel_snippet_with_context():
+    """Prompt describing how to get a context-aware snippet via execute_code_with_context(snippet_only=true)."""
+    return [
+        Message(
+            "Generate a Macro Panel snippet that sets up font/glyph/layer context, then runs a small script.\n\n"
+            "Rules:\n"
+            "- Do not execute anything automatically.\n"
+            "- Return a snippet I can paste into Glyphs → Window → Macro Panel.\n\n"
+            "Call execute_code_with_context with snippet_only=true (and set glyph_name if needed).",
+            role="user",
+        )
+    ]
+
+
+@mcp.prompt(
+    name="docs_search_then_get",
+    title="Docs Search → Get",
+    description="Example: search bundled docs then fetch the best page.",
+    tags={"examples", "glyphs", "docs"},
+)
+async def prompt_docs_search_then_get():
+    """Prompt describing the docs_search + docs_get workflow."""
+    return [
+        Message(
+            "Search the bundled docs for GSLayer bounds.\n"
+            "1) Call docs_search(query='GSLayer bounds').\n"
+            "2) Pick the best match and call docs_get(path=...).\n"
+            "3) Summarize the key parts I need.",
             role="user",
         )
     ]

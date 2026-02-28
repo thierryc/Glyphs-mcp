@@ -1,0 +1,711 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA1111111111111111111111 /* GlyphsMCPInstallerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000001 /* GlyphsMCPInstallerApp.swift */; };
+		AA1111111111111111111112 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000002 /* ContentView.swift */; };
+		AA1111111111111111111113 /* InstallerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000003 /* InstallerViewModel.swift */; };
+		AA1111111111111111111114 /* ProcessRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000004 /* ProcessRunner.swift */; };
+		AA1111111111111111111115 /* Preflight.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000005 /* Preflight.swift */; };
+		AA1111111111111111111116 /* Installers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000006 /* Installers.swift */; };
+		AA1111111111111111111117 /* ConfigPatchers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000007 /* ConfigPatchers.swift */; };
+		AA1111111111111111111118 /* StarterProjectCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000008 /* StarterProjectCreator.swift */; };
+		AA1111111111111111111119 /* FileIO.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000009 /* FileIO.swift */; };
+		AA111111111111111111111A /* ModernStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000017 /* ModernStyle.swift */; };
+		AA111111111111111111111B /* GlyphsRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000020 /* GlyphsRuntime.swift */; };
+		AA1111111111111111111120 /* AGENTS.md in Resources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000010 /* AGENTS.md */; };
+		AA1111111111111111111121 /* GlyphsMCPInstallerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000011 /* GlyphsMCPInstallerTests.swift */; };
+		AA1111111111111111111122 /* GlyphsMCPInstallerCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000014 /* GlyphsMCPInstallerCore.framework */; };
+		AA1111111111111111111123 /* GlyphsMCPInstallerCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000014 /* GlyphsMCPInstallerCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		AA1111111111111111111124 /* GlyphsMCPInstallerCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000014 /* GlyphsMCPInstallerCore.framework */; };
+		AA1111111111111111111125 /* Check.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000015 /* Check.swift */; };
+		AA1111111111111111111126 /* GlyphsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000016 /* GlyphsPreferences.swift */; };
+		AA1111111111111111111127 /* PluginUpdate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000018 /* PluginUpdate.swift */; };
+		AA1111111111111111111128 /* GitHubPluginDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000019 /* GitHubPluginDownloader.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AA2000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA0000000000000000000010;
+			remoteInfo = GlyphsMCPInstaller;
+		};
+		AA2000000000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA00000000000000000000C0;
+			remoteInfo = GlyphsMCPInstallerCore;
+		};
+		AA2000000000000000000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA0000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA00000000000000000000C0;
+			remoteInfo = GlyphsMCPInstallerCore;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AA00000000000000000000D0 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				AA1111111111111111111123 /* GlyphsMCPInstallerCore.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		AA3000000000000000000001 /* GlyphsMCPInstallerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphsMCPInstallerApp.swift; sourceTree = "<group>"; };
+		AA3000000000000000000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AA3000000000000000000003 /* InstallerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallerViewModel.swift; sourceTree = "<group>"; };
+		AA3000000000000000000004 /* ProcessRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessRunner.swift; sourceTree = "<group>"; };
+		AA3000000000000000000005 /* Preflight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Preflight.swift; sourceTree = "<group>"; };
+		AA3000000000000000000006 /* Installers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Installers.swift; sourceTree = "<group>"; };
+		AA3000000000000000000007 /* ConfigPatchers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigPatchers.swift; sourceTree = "<group>"; };
+		AA3000000000000000000008 /* StarterProjectCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarterProjectCreator.swift; sourceTree = "<group>"; };
+		AA3000000000000000000009 /* FileIO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileIO.swift; sourceTree = "<group>"; };
+		AA3000000000000000000010 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = text; path = AGENTS.md; sourceTree = "<group>"; };
+		AA3000000000000000000011 /* GlyphsMCPInstallerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphsMCPInstallerTests.swift; sourceTree = "<group>"; };
+		AA3000000000000000000012 /* GlyphsMCPInstaller.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GlyphsMCPInstaller.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA3000000000000000000013 /* GlyphsMCPInstallerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GlyphsMCPInstallerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA3000000000000000000014 /* GlyphsMCPInstallerCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = GlyphsMCPInstallerCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA3000000000000000000015 /* Check.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Check.swift; sourceTree = "<group>"; };
+		AA3000000000000000000016 /* GlyphsPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphsPreferences.swift; sourceTree = "<group>"; };
+		AA3000000000000000000017 /* ModernStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernStyle.swift; sourceTree = "<group>"; };
+		AA3000000000000000000018 /* PluginUpdate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginUpdate.swift; sourceTree = "<group>"; };
+		AA3000000000000000000019 /* GitHubPluginDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubPluginDownloader.swift; sourceTree = "<group>"; };
+		AA3000000000000000000020 /* GlyphsRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphsRuntime.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA0000000000000000000013 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA1111111111111111111122 /* GlyphsMCPInstallerCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000000000000000000014 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA1111111111111111111124 /* GlyphsMCPInstallerCore.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000000C6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA0000000000000000000002 = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000003 /* Sources */,
+				AA00000000000000000000C7 /* Core */,
+				AA0000000000000000000004 /* Resources */,
+				AA0000000000000000000005 /* Tests */,
+				AA0000000000000000000006 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000003 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				AA3000000000000000000001 /* GlyphsMCPInstallerApp.swift */,
+				AA3000000000000000000002 /* ContentView.swift */,
+				AA3000000000000000000003 /* InstallerViewModel.swift */,
+				AA3000000000000000000017 /* ModernStyle.swift */,
+				AA3000000000000000000020 /* GlyphsRuntime.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000004 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000007 /* Starter */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000005 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000008 /* GlyphsMCPInstallerTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000006 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA3000000000000000000012 /* GlyphsMCPInstaller.app */,
+				AA3000000000000000000014 /* GlyphsMCPInstallerCore.framework */,
+				AA3000000000000000000013 /* GlyphsMCPInstallerTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000007 /* Starter */ = {
+			isa = PBXGroup;
+			children = (
+				AA3000000000000000000010 /* AGENTS.md */,
+			);
+			path = Starter;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000008 /* GlyphsMCPInstallerTests */ = {
+			isa = PBXGroup;
+			children = (
+				AA3000000000000000000011 /* GlyphsMCPInstallerTests.swift */,
+			);
+			path = GlyphsMCPInstallerTests;
+			sourceTree = "<group>";
+		};
+		AA00000000000000000000C7 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				AA3000000000000000000009 /* FileIO.swift */,
+				AA3000000000000000000004 /* ProcessRunner.swift */,
+				AA3000000000000000000005 /* Preflight.swift */,
+				AA3000000000000000000016 /* GlyphsPreferences.swift */,
+				AA3000000000000000000018 /* PluginUpdate.swift */,
+				AA3000000000000000000019 /* GitHubPluginDownloader.swift */,
+				AA3000000000000000000006 /* Installers.swift */,
+				AA3000000000000000000007 /* ConfigPatchers.swift */,
+				AA3000000000000000000008 /* StarterProjectCreator.swift */,
+				AA3000000000000000000015 /* Check.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA0000000000000000000010 /* GlyphsMCPInstaller */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000000000000000000020 /* Build configuration list for PBXNativeTarget "GlyphsMCPInstaller" */;
+			buildPhases = (
+				AA0000000000000000000011 /* Sources */,
+				AA0000000000000000000012 /* Resources */,
+				AA0000000000000000000015 /* Copy Payload */,
+				AA00000000000000000000E1 /* Generate App Icon */,
+				AA00000000000000000000D0 /* Embed Frameworks */,
+				AA0000000000000000000013 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA00000000000000000000D3 /* PBXTargetDependency */,
+			);
+			name = GlyphsMCPInstaller;
+			productName = GlyphsMCPInstaller;
+			productReference = AA3000000000000000000012 /* GlyphsMCPInstaller.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AA0000000000000000000016 /* GlyphsMCPInstallerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA0000000000000000000023 /* Build configuration list for PBXNativeTarget "GlyphsMCPInstallerTests" */;
+			buildPhases = (
+				AA0000000000000000000017 /* Sources */,
+				AA0000000000000000000014 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA0000000000000000000019 /* PBXTargetDependency */,
+				AA00000000000000000000D5 /* PBXTargetDependency */,
+			);
+			name = GlyphsMCPInstallerTests;
+			productName = GlyphsMCPInstallerTests;
+			productReference = AA3000000000000000000013 /* GlyphsMCPInstallerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		AA00000000000000000000C0 /* GlyphsMCPInstallerCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA00000000000000000000C2 /* Build configuration list for PBXNativeTarget "GlyphsMCPInstallerCore" */;
+			buildPhases = (
+				AA00000000000000000000C5 /* Sources */,
+				AA00000000000000000000C6 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GlyphsMCPInstallerCore;
+			productName = GlyphsMCPInstallerCore;
+			productReference = AA3000000000000000000014 /* GlyphsMCPInstallerCore.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA0000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 2630;
+				ORGANIZATIONNAME = ap.cx;
+				TargetAttributes = {
+					AA0000000000000000000010 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					AA0000000000000000000016 = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = AA0000000000000000000010;
+					};
+					AA00000000000000000000C0 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = AA000000000000000000001E /* Build configuration list for PBXProject "GlyphsMCPInstaller" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AA0000000000000000000002;
+			productRefGroup = AA0000000000000000000006 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA0000000000000000000010 /* GlyphsMCPInstaller */,
+				AA00000000000000000000C0 /* GlyphsMCPInstallerCore */,
+				AA0000000000000000000016 /* GlyphsMCPInstallerTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA0000000000000000000012 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA1111111111111111111120 /* AGENTS.md in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		AA0000000000000000000015 /* Copy Payload */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Copy Payload";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Payload/.payload-stamp",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\n\nPAYLOAD_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Payload\"\nmkdir -p \"$PAYLOAD_DIR\"\n\nREPO_ROOT=\"$PROJECT_DIR/../..\"\n\nPLUGIN_SRC=\"$REPO_ROOT/src/glyphs-mcp/Glyphs MCP.glyphsPlugin\"\nPLUGIN_DST=\"$PAYLOAD_DIR/Glyphs MCP.glyphsPlugin\"\nREQ_SRC=\"$REPO_ROOT/requirements.txt\"\n\nif [ ! -d \"$PLUGIN_SRC\" ]; then\n  echo \"error: plugin bundle not found: $PLUGIN_SRC\" >&2\n  exit 1\nfi\nif [ ! -f \"$REQ_SRC\" ]; then\n  echo \"error: requirements.txt not found: $REQ_SRC\" >&2\n  exit 1\nfi\n\n# Copy plugin bundle (exclude dev-only artifacts; keep payload deterministic)\nmkdir -p \"$PLUGIN_DST\"\nrsync -a --delete \\\n  --exclude '.DS_Store' \\\n  --exclude '__pycache__' \\\n  --exclude '*.pyc' \\\n  --exclude '.venv' \\\n  \"$PLUGIN_SRC/\" \"$PLUGIN_DST/\"\n\n# Copy requirements\ncp -f \"$REQ_SRC\" \"$PAYLOAD_DIR/requirements.txt\"\n\n# Output marker for dependency analysis\n: > \"$PAYLOAD_DIR/.payload-stamp\"\n\necho \"Payload staged at: $PAYLOAD_DIR\"\n";
+		};
+		AA00000000000000000000E1 /* Generate App Icon */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(PROJECT_DIR)/macos-installer.icon/Assets/main 2.svg",
+			);
+			name = "Generate App Icon";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AppIcon.icns",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -euo pipefail\n\nSVG_SRC=\"$PROJECT_DIR/macos-installer.icon/Assets/main 2.svg\"\nOUT_RES=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nOUT_ICNS=\"$OUT_RES/AppIcon.icns\"\nICONSET_DIR=\"$DERIVED_FILE_DIR/AppIcon.iconset\"\nTMP_DIR=\"$DERIVED_FILE_DIR/appicon-tmp\"\n\nif [ ! -f \"$SVG_SRC\" ]; then\n  echo \"error: icon SVG not found: $SVG_SRC\" >&2\n  exit 1\nfi\n\nrm -rf \"$ICONSET_DIR\" \"$TMP_DIR\"\nmkdir -p \"$ICONSET_DIR\" \"$TMP_DIR\" \"$OUT_RES\"\n\n# Render a 1024px PNG from the SVG using Quick Look.\n/usr/bin/qlmanage -t -s 1024 -o \"$TMP_DIR\" \"$SVG_SRC\" >/dev/null 2>&1\n\n# qlmanage produces a PNG named like: \"main 2.svg.png\".\nBASE_PNG=\"$TMP_DIR/$(basename \"$SVG_SRC\").png\"\nif [ ! -f \"$BASE_PNG\" ]; then\n  # Fallback: pick the first png if the naming differs.\n  BASE_PNG=\"$(ls -1 \"$TMP_DIR\"/*.png 2>/dev/null | head -n 1 || true)\"\nfi\nif [ ! -f \"$BASE_PNG\" ]; then\n  echo \"error: failed to render PNG from SVG (qlmanage produced no PNG)\" >&2\n  exit 1\nfi\n\ncp -f \"$BASE_PNG\" \"$ICONSET_DIR/icon_512x512@2x.png\"\n\nmake_png() {\n  local size=\"$1\"\n  local out=\"$2\"\n  /usr/bin/sips -z \"$size\" \"$size\" \"$BASE_PNG\" --out \"$out\" >/dev/null\n}\n\nmake_png 512 \"$ICONSET_DIR/icon_512x512.png\"\nmake_png 256 \"$ICONSET_DIR/icon_256x256.png\"\nmake_png 128 \"$ICONSET_DIR/icon_128x128.png\"\nmake_png  32 \"$ICONSET_DIR/icon_32x32.png\"\nmake_png  16 \"$ICONSET_DIR/icon_16x16.png\"\n\nmake_png 512 \"$ICONSET_DIR/icon_256x256@2x.png\"\nmake_png 256 \"$ICONSET_DIR/icon_128x128@2x.png\"\nmake_png  64 \"$ICONSET_DIR/icon_32x32@2x.png\"\nmake_png  32 \"$ICONSET_DIR/icon_16x16@2x.png\"\n\n/usr/bin/iconutil -c icns \"$ICONSET_DIR\" -o \"$OUT_ICNS\"\n\n# Output marker for dependency analysis\n/usr/bin/touch \"$OUT_ICNS\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA0000000000000000000011 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA1111111111111111111111 /* GlyphsMCPInstallerApp.swift in Sources */,
+				AA1111111111111111111112 /* ContentView.swift in Sources */,
+				AA1111111111111111111113 /* InstallerViewModel.swift in Sources */,
+				AA111111111111111111111A /* ModernStyle.swift in Sources */,
+				AA111111111111111111111B /* GlyphsRuntime.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA0000000000000000000017 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA1111111111111111111121 /* GlyphsMCPInstallerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000000000000000000C5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA1111111111111111111114 /* ProcessRunner.swift in Sources */,
+				AA1111111111111111111115 /* Preflight.swift in Sources */,
+				AA1111111111111111111126 /* GlyphsPreferences.swift in Sources */,
+				AA1111111111111111111127 /* PluginUpdate.swift in Sources */,
+				AA1111111111111111111128 /* GitHubPluginDownloader.swift in Sources */,
+				AA1111111111111111111116 /* Installers.swift in Sources */,
+				AA1111111111111111111117 /* ConfigPatchers.swift in Sources */,
+				AA1111111111111111111118 /* StarterProjectCreator.swift in Sources */,
+				AA1111111111111111111119 /* FileIO.swift in Sources */,
+				AA1111111111111111111125 /* Check.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AA0000000000000000000019 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA0000000000000000000010 /* GlyphsMCPInstaller */;
+			targetProxy = AA2000000000000000000001 /* PBXContainerItemProxy */;
+		};
+		AA00000000000000000000D3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA00000000000000000000C0 /* GlyphsMCPInstallerCore */;
+			targetProxy = AA2000000000000000000002 /* PBXContainerItemProxy */;
+		};
+		AA00000000000000000000D5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA00000000000000000000C0 /* GlyphsMCPInstallerCore */;
+			targetProxy = AA2000000000000000000003 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AA0000000000000000000030 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = N9U29A4T8J;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Glyphs MCP Installer";
+				INFOPLIST_KEY_CFBundleName = "Glyphs MCP Installer";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		AA0000000000000000000031 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)";
+				CODE_SIGN_STYLE = Manual;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = N9U29A4T8J;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Glyphs MCP Installer";
+				INFOPLIST_KEY_CFBundleName = "Glyphs MCP Installer";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		AA0000000000000000000032 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+					CURRENT_PROJECT_VERSION = 2;
+				DEAD_CODE_STRIPPING = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = N9U29A4T8J;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_MODULE_VERIFIER = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "$(PROJECT_DIR)/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+					MARKETING_VERSION = 1.0.6;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		AA0000000000000000000033 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+					CURRENT_PROJECT_VERSION = 2;
+				DEAD_CODE_STRIPPING = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = N9U29A4T8J;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_MODULE_VERIFIER = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "$(PROJECT_DIR)/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+					MARKETING_VERSION = 1.0.6;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		AA0000000000000000000034 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = N9U29A4T8J;
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		AA0000000000000000000035 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)";
+				CODE_SIGN_STYLE = Manual;
+				DEAD_CODE_STRIPPING = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = N9U29A4T8J;
+				ENABLE_MODULE_VERIFIER = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		AA00000000000000000000C3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = N9U29A4T8J;
+				ENABLE_MODULE_VERIFIER = YES;
+				LD_DYLIB_INSTALL_NAME = "@rpath/$(EXECUTABLE_PATH)";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller.core;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		AA00000000000000000000C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = N9U29A4T8J;
+				ENABLE_MODULE_VERIFIER = YES;
+				LD_DYLIB_INSTALL_NAME = "@rpath/$(EXECUTABLE_PATH)";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
+				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller.core;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA000000000000000000001E /* Build configuration list for PBXProject "GlyphsMCPInstaller" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000000000030 /* Debug */,
+				AA0000000000000000000031 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA0000000000000000000020 /* Build configuration list for PBXNativeTarget "GlyphsMCPInstaller" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000000000032 /* Debug */,
+				AA0000000000000000000033 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA0000000000000000000023 /* Build configuration list for PBXNativeTarget "GlyphsMCPInstallerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000000000000000000034 /* Debug */,
+				AA0000000000000000000035 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA00000000000000000000C2 /* Build configuration list for PBXNativeTarget "GlyphsMCPInstallerCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA00000000000000000000C3 /* Debug */,
+				AA00000000000000000000C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = AA0000000000000000000001 /* Project object */;
+}

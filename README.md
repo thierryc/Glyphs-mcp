@@ -13,6 +13,23 @@ python3 install.py
 
 On macOS Finder you can also double‑click `RunInstall.command` in the repo root; it launches the same installer (`python3 install.py`). If Gatekeeper blocks it, right‑click → Open once to approve.
 
+## macOS Installer app (recommended)
+
+Prefer a signed, notarized macOS app with a guided UI?
+
+- Download: https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.6/GlyphsMCPInstaller-1.0.6.dmg
+- Latest release: https://github.com/thierryc/Glyphs-mcp/releases/latest
+
+The installer:
+- installs/updates `Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`,
+- installs Python dependencies (Glyphs Python or a custom Python), and
+- can configure MCP clients (Codex, Claude Desktop, Claude Code, Antigravity).
+
+Minimum requirements:
+- macOS 13.0+
+- Glyphs 3
+- Python 3.11–3.13 (recommended: python.org 3.12)
+
 ## What Is an MCP Server?
 
 A *Model Context Protocol* server is a lightweight process that:
@@ -22,8 +39,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.5)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.5"`).
+## Command Set (MCP server v1.0.6)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.6"`).
 
 | Tool | Description |
 |------|-------------|
@@ -67,6 +84,7 @@ For performance-sensitive scripts, you can opt into lower-overhead execution:
 - `capture_output=false` to avoid capturing stdout/stderr (prints go to the Macro Panel).
 - `return_last_expression=false` to skip evaluating the final line as an expression.
 - `max_output_chars` / `max_error_chars` to cap returned output and avoid huge responses.
+- `snippet_only=true` to return a ready-to-paste **Macro Panel** snippet instead of executing (useful when you want manual control).
 
 Avoid calling `exit()` / `quit()` / `sys.exit()` in `execute_code*`; they won't exit Glyphs and can disrupt the call.
 

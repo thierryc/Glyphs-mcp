@@ -241,6 +241,7 @@ def run_diagnostics() -> None:
 
         # Minimal set required to run the local MCP HTTP server
         required: List[str] = [
+            "mcp",
             "fastmcp",
             "starlette",
             "uvicorn",

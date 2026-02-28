@@ -3,7 +3,7 @@ title: Command set
 description: The MCP tools exposed by the Glyphs MCP server.
 ---
 
-This is the tool surface exposed by the server shipped in this repo (FastMCP `version="1.0.1"`).
+This is the tool surface exposed by the server shipped in this repo (FastMCP `version="1.0.6"`).
 
 Note: the server can be configured with a **tool profile** (in **Edit → Glyphs MCP Server Status…**) that hides tools you don't need for a given workflow. When a profile is active, `tools/list` will return a subset of the full tool surface. For a token-aware explanation and a “which profile should I pick?” guide, see [Settings & tool profiles](../getting-started/start-server.mdx#settings-tool-profiles).
 
@@ -83,6 +83,11 @@ Note: the server can be configured with a **tool profile** (in **Edit → Glyphs
 | `execute_code_with_context` | Execute Python with injected helper objects. |
 | `save_font` | Save the active font (optionally to a new path). |
 
+Notes for `execute_code*`:
+- Use `capture_output=false` for large loops.
+- Use `max_output_chars` / `max_error_chars` to cap returned output.
+- Use `snippet_only=true` to return a ready-to-paste **Macro Panel** snippet (no execution) when you want manual control.
+
 ## Recipes (copy/paste prompts)
 
 ### 1) List open fonts + pick `font_index`
@@ -139,6 +144,15 @@ Search the bundled Glyphs docs for “GSLayer bounds”.
 1) Call docs_search with {"query":"GSLayer bounds"}
 2) Pick the best match and call docs_get for that page.
 3) Summarize the key parts I need.
+```
+
+### 7) Get a Macro Panel snippet instead of executing
+
+```text
+Write a Python Macro Panel snippet to do X, but do not run it automatically.
+Return a snippet I can paste into Glyphs → Window → Macro Panel.
+
+Call execute_code with {"snippet_only":true,"code":"...your python here..."}.
 ```
 
 <!-- (tables above replace the old flat list) -->

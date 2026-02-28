@@ -9,7 +9,7 @@ from pathlib import Path
 
 # Compatibility shim:
 # Some installations may have an older `mcp` package where `mcp.types` does not
-# export `Icon`. Newer FastMCP versions import it at runtime.
+# export `Icon` or `AnyFunction`. Newer FastMCP versions import them at runtime.
 # Define a minimal fallback so the plug-in can load, and rely on runtime usage
 # to treat icons as plain strings.
 try:
@@ -17,6 +17,10 @@ try:
 
     if not hasattr(_mcp_types, "Icon"):
         _mcp_types.Icon = str  # type: ignore[attr-defined]
+    if not hasattr(_mcp_types, "AnyFunction"):
+        from typing import Any, Callable
+
+        _mcp_types.AnyFunction = Callable[..., Any]  # type: ignore[attr-defined]
 except Exception:
     pass
 
@@ -213,6 +217,30 @@ def _get_left_sidebearing(layer):
 
 def _get_right_sidebearing(layer):
     return _get_sidebearing(layer, "rightSideBearing", "RSB")
+
+
+def _get_component_automatic(component):
+    """Return component "automatic alignment" flag if exposed by this Glyphs build.
+
+    Glyphs API compatibility notes:
+    - Some versions expose `GSComponent.automaticAlignment`.
+    - Some environments (or older wrappers) may expose `GSComponent.automatic`.
+    - Some versions expose neither; return None in that case.
+    """
+
+    for attr in ("automatic", "automaticAlignment"):
+        try:
+            value = getattr(component, attr, None)
+        except Exception:
+            value = None
+        if value is None:
+            continue
+        try:
+            return bool(value)
+        except Exception:
+            return None
+
+    return None
 
 
 def _set_sidebearing(layer, attr_name, legacy_attr, value):
@@ -652,7 +680,7 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
                     {
                         "name": component.componentName,
                         "transform": list(component.transform),
-                        "automatic": component.automatic,
+                        "automatic": _get_component_automatic(component),
                     }
                 )
             layer_info["components"] = components
@@ -2483,7 +2511,7 @@ async def get_glyph_components(
                         "xOffset": transform[4],
                         "yOffset": transform[5],
                     },
-                    "automatic": component.automatic,
+                    "automatic": _get_component_automatic(component),
                 }
 
                 # Check if the component glyph exists

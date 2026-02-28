@@ -330,7 +330,7 @@ def verify_runtime(python: Path) -> bool:
     console.print(Panel.fit(f"Verifying runtime imports in: {python}", title="Verify", border_style="white"))
     code = (
         "import sys;\n"
-        "mods=['fastmcp','pydantic_core','starlette','uvicorn','httpx','sse_starlette','typing_extensions','fontParts','fontTools'];\n"
+        "mods=['mcp','fastmcp','pydantic_core','starlette','uvicorn','httpx','sse_starlette','typing_extensions','fontParts','fontTools'];\n"
         "missing=[];\n"
         "import importlib;\n"
         "\n"
@@ -339,6 +339,14 @@ def verify_runtime(python: Path) -> bool:
         "    importlib.import_module(m)\n"
         "  except Exception as e:\n"
         "    missing.append((m,str(e)))\n"
+        "\n"
+        "# Sanity checks for common version-mismatch issues.\n"
+        "try:\n"
+        "  import mcp.types as _t\n"
+        "  if not hasattr(_t, 'AnyFunction'):\n"
+        "    missing.append(('mcp.types.AnyFunction', 'missing (upgrade mcp)'))\n"
+        "except Exception as e:\n"
+        "  missing.append(('mcp.types', str(e)))\n"
         "\n"
         "print('Python:', sys.executable);\n"
         "print('Version:', sys.version.split()[0]);\n"

@@ -12,6 +12,20 @@ from pathlib import Path
 
 
 class McpToolRegistrationTextTests(unittest.TestCase):
+    def test_gscomponent_automatic_is_compat_safe(self) -> None:
+        mcp_tools = (
+            Path(__file__).resolve().parent.parent
+            / "Glyphs MCP.glyphsPlugin"
+            / "Contents"
+            / "Resources"
+            / "mcp_tools.py"
+        )
+        text = mcp_tools.read_text(encoding="utf-8", errors="replace")
+        self.assertIsNone(
+            re.search(r"\"automatic\"\\s*:\\s*component\\.automatic\\b", text),
+            "mcp_tools.py must not access GSComponent.automatic directly; use a compatibility helper.",
+        )
+
     def test_set_spacing_params_is_decorated(self) -> None:
         mcp_tools = (
             Path(__file__).resolve().parent.parent

@@ -53,6 +53,7 @@ Execution rules:
 - Prefer one robust call over many chatty calls.
 - Use `capture_output=false` for large loops.
 - Use `max_output_chars` and `max_error_chars` to bound output.
+- If you want manual control, request a Macro Panel snippet via `snippet_only=true` (returns code to paste; does not execute).
 - Never call `exit()`, `quit()`, or `sys.exit()`.
 
 ## Mutation Safety Protocol
