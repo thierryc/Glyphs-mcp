@@ -10,8 +10,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>CFBundleIconFile</key>
-	<string>AppIcon.icns</string>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.developer-tools</string>
 	<key>NSPrincipalClass</key>

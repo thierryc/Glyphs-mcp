@@ -8,7 +8,14 @@
       "layers" : [
         {
           "image-name" : "main.svg",
-          "name" : "main"
+          "name" : "main",
+          "position" : {
+            "scale" : 1.15,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
         }
       ],
       "shadow" : {

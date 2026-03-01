@@ -220,6 +220,12 @@ glyphs-build-env/
 # macOS
 .DS_Store
 
+# Xcode user-specific files
+*.xcuserstate
+**/xcuserdata/
+
+# Generated macOS app icon PNGs (built from SVG at build time)
+
 # Claude AI local settings
 .claude/
 

@@ -42,6 +42,7 @@ Notes for Xcode builds:
 Or use scripts from repo root:
 
 ```bash
+./scripts/generate_installer_appicon_assets.sh
 ./scripts/build_installer_app.sh
 ./scripts/notarize_installer_app.sh
 ./scripts/make_installer_dmg.sh

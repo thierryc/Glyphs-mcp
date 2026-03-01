@@ -27,6 +27,8 @@
 		AA1111111111111111111126 /* GlyphsPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000016 /* GlyphsPreferences.swift */; };
 		AA1111111111111111111127 /* PluginUpdate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000018 /* PluginUpdate.swift */; };
 		AA1111111111111111111128 /* GitHubPluginDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000019 /* GitHubPluginDownloader.swift */; };
+		AA1111111111111111111129 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000021 /* Assets.xcassets */; };
+		F4C332F82F538E3E00BF5B52 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = F4C332F72F538E3E00BF5B52 /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -88,6 +90,8 @@
 		AA3000000000000000000018 /* PluginUpdate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginUpdate.swift; sourceTree = "<group>"; };
 		AA3000000000000000000019 /* GitHubPluginDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubPluginDownloader.swift; sourceTree = "<group>"; };
 		AA3000000000000000000020 /* GlyphsRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphsRuntime.swift; sourceTree = "<group>"; };
+		AA3000000000000000000021 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Resources/Assets.xcassets; sourceTree = SOURCE_ROOT; };
+		F4C332F72F538E3E00BF5B52 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; name = AppIcon.icon; path = Resources/AppIcon.icon; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -143,6 +147,8 @@
 		AA0000000000000000000004 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				F4C332F72F538E3E00BF5B52 /* AppIcon.icon */,
+				AA3000000000000000000021 /* Assets.xcassets */,
 				AA0000000000000000000007 /* Starter */,
 			);
 			path = Resources;
@@ -209,7 +215,6 @@
 				AA0000000000000000000011 /* Sources */,
 				AA0000000000000000000012 /* Resources */,
 				AA0000000000000000000015 /* Copy Payload */,
-				AA00000000000000000000E1 /* Generate App Icon */,
 				AA00000000000000000000D0 /* Embed Frameworks */,
 				AA0000000000000000000013 /* Frameworks */,
 			);
@@ -306,6 +311,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA1111111111111111111120 /* AGENTS.md in Resources */,
+				AA1111111111111111111129 /* Assets.xcassets in Resources */,
+				F4C332F82F538E3E00BF5B52 /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -329,27 +336,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\n\nPAYLOAD_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Payload\"\nmkdir -p \"$PAYLOAD_DIR\"\n\nREPO_ROOT=\"$PROJECT_DIR/../..\"\n\nPLUGIN_SRC=\"$REPO_ROOT/src/glyphs-mcp/Glyphs MCP.glyphsPlugin\"\nPLUGIN_DST=\"$PAYLOAD_DIR/Glyphs MCP.glyphsPlugin\"\nREQ_SRC=\"$REPO_ROOT/requirements.txt\"\n\nif [ ! -d \"$PLUGIN_SRC\" ]; then\n  echo \"error: plugin bundle not found: $PLUGIN_SRC\" >&2\n  exit 1\nfi\nif [ ! -f \"$REQ_SRC\" ]; then\n  echo \"error: requirements.txt not found: $REQ_SRC\" >&2\n  exit 1\nfi\n\n# Copy plugin bundle (exclude dev-only artifacts; keep payload deterministic)\nmkdir -p \"$PLUGIN_DST\"\nrsync -a --delete \\\n  --exclude '.DS_Store' \\\n  --exclude '__pycache__' \\\n  --exclude '*.pyc' \\\n  --exclude '.venv' \\\n  \"$PLUGIN_SRC/\" \"$PLUGIN_DST/\"\n\n# Copy requirements\ncp -f \"$REQ_SRC\" \"$PAYLOAD_DIR/requirements.txt\"\n\n# Output marker for dependency analysis\n: > \"$PAYLOAD_DIR/.payload-stamp\"\n\necho \"Payload staged at: $PAYLOAD_DIR\"\n";
-		};
-		AA00000000000000000000E1 /* Generate App Icon */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(PROJECT_DIR)/macos-installer.icon/Assets/main 2.svg",
-			);
-			name = "Generate App Icon";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/AppIcon.icns",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\n\nSVG_SRC=\"$PROJECT_DIR/macos-installer.icon/Assets/main 2.svg\"\nOUT_RES=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nOUT_ICNS=\"$OUT_RES/AppIcon.icns\"\nICONSET_DIR=\"$DERIVED_FILE_DIR/AppIcon.iconset\"\nTMP_DIR=\"$DERIVED_FILE_DIR/appicon-tmp\"\n\nif [ ! -f \"$SVG_SRC\" ]; then\n  echo \"error: icon SVG not found: $SVG_SRC\" >&2\n  exit 1\nfi\n\nrm -rf \"$ICONSET_DIR\" \"$TMP_DIR\"\nmkdir -p \"$ICONSET_DIR\" \"$TMP_DIR\" \"$OUT_RES\"\n\n# Render a 1024px PNG from the SVG using Quick Look.\n/usr/bin/qlmanage -t -s 1024 -o \"$TMP_DIR\" \"$SVG_SRC\" >/dev/null 2>&1\n\n# qlmanage produces a PNG named like: \"main 2.svg.png\".\nBASE_PNG=\"$TMP_DIR/$(basename \"$SVG_SRC\").png\"\nif [ ! -f \"$BASE_PNG\" ]; then\n  # Fallback: pick the first png if the naming differs.\n  BASE_PNG=\"$(ls -1 \"$TMP_DIR\"/*.png 2>/dev/null | head -n 1 || true)\"\nfi\nif [ ! -f \"$BASE_PNG\" ]; then\n  echo \"error: failed to render PNG from SVG (qlmanage produced no PNG)\" >&2\n  exit 1\nfi\n\ncp -f \"$BASE_PNG\" \"$ICONSET_DIR/icon_512x512@2x.png\"\n\nmake_png() {\n  local size=\"$1\"\n  local out=\"$2\"\n  /usr/bin/sips -z \"$size\" \"$size\" \"$BASE_PNG\" --out \"$out\" >/dev/null\n}\n\nmake_png 512 \"$ICONSET_DIR/icon_512x512.png\"\nmake_png 256 \"$ICONSET_DIR/icon_256x256.png\"\nmake_png 128 \"$ICONSET_DIR/icon_128x128.png\"\nmake_png  32 \"$ICONSET_DIR/icon_32x32.png\"\nmake_png  16 \"$ICONSET_DIR/icon_16x16.png\"\n\nmake_png 512 \"$ICONSET_DIR/icon_256x256@2x.png\"\nmake_png 256 \"$ICONSET_DIR/icon_128x128@2x.png\"\nmake_png  64 \"$ICONSET_DIR/icon_32x32@2x.png\"\nmake_png  32 \"$ICONSET_DIR/icon_16x16@2x.png\"\n\n/usr/bin/iconutil -c icns \"$ICONSET_DIR\" -o \"$OUT_ICNS\"\n\n# Output marker for dependency analysis\n/usr/bin/touch \"$OUT_ICNS\"\n";
+			shellScript = "set -euo pipefail\n\nPAYLOAD_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Payload\"\nmkdir -p \"$PAYLOAD_DIR\"\n\nREPO_ROOT=\"$PROJECT_DIR/../..\"\n\nPLUGIN_SRC=\"$REPO_ROOT/src/glyphs-mcp/Glyphs MCP.glyphsPlugin\"\nPLUGIN_DST=\"$PAYLOAD_DIR/Glyphs MCP.glyphsPlugin\"\nREQ_SRC=\"$REPO_ROOT/requirements.txt\"\n\nif [ ! -d \"$PLUGIN_SRC\" ]; then\n  echo \"error: plugin bundle not found: $PLUGIN_SRC\" >&2\n  exit 1\nfi\nif [ ! -f \"$REQ_SRC\" ]; then\n  echo \"error: requirements.txt not found: $REQ_SRC\" >&2\n  exit 1\nfi\n\n# Copy plugin bundle (exclude dev-only artifacts; keep payload deterministic)\nmkdir -p \"$PLUGIN_DST\"\nrsync -a --delete \\\n  --exclude '.DS_Store' \\\n  --exclude '__pycache__' \\\n  --exclude '*.pyc' \\\n  --exclude '.venv' \\\n  \"$PLUGIN_SRC/\" \"$PLUGIN_DST/\"\n\n# Sign the embedded plug-in binary so the installer app can be notarized.\n# Notarytool validates *all* nested executables inside the app bundle, even payloads.\nPLUGIN_BIN=\"$PLUGIN_DST/Contents/MacOS/plugin\"\nif [ -f \"$PLUGIN_BIN\" ]; then\n  SIGN_ID=\"${EXPANDED_CODE_SIGN_IDENTITY:-${CODE_SIGN_IDENTITY:-}}\"\n  if [ -n \"${SIGN_ID:-}\" ]; then\n    echo \"Signing payload plug-in with: $SIGN_ID\"\n    /usr/bin/codesign --force --sign \"$SIGN_ID\" --timestamp --options runtime \"$PLUGIN_BIN\"\n    /usr/bin/codesign --force --sign \"$SIGN_ID\" --timestamp --options runtime \"$PLUGIN_DST\"\n    /usr/bin/codesign --verify --strict --verbose=2 \"$PLUGIN_DST\"\n  else\n    echo \"WARN: CODE_SIGN_IDENTITY is empty; skipping payload plug-in signing. Notarization will fail.\" >&2\n  fi\nelse\n  echo \"WARN: payload plug-in binary not found at $PLUGIN_BIN\" >&2\nfi\n\n# Copy requirements\ncp -f \"$REQ_SRC\" \"$PAYLOAD_DIR/requirements.txt\"\n\n# Output marker for dependency analysis\n: > \"$PAYLOAD_DIR/.payload-stamp\"\n\necho \"Payload staged at: $PAYLOAD_DIR\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -515,11 +502,13 @@
 		AA0000000000000000000032 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -533,7 +522,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-					MARKETING_VERSION = 1.0.6;
+				MARKETING_VERSION = 1.0.6;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -547,11 +536,13 @@
 		AA0000000000000000000033 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -565,7 +556,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-					MARKETING_VERSION = 1.0.6;
+				MARKETING_VERSION = 1.0.6;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
 				PRODUCT_NAME = "$(TARGET_NAME)";

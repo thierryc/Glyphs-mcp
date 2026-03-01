@@ -176,6 +176,8 @@ url = "http://example.com"
 		XCTAssertTrue(content.contains("My Fonts"), content)
 		XCTAssertTrue(content.contains(InstallerConstants.codexServerName), content)
 		XCTAssertTrue(content.contains(InstallerConstants.endpointURL.absoluteString), content)
+		XCTAssertTrue(content.contains("tools/list"), content)
+		XCTAssertTrue(content.contains("Mcp-Session-Id"), content)
 	}
 
 	func testFileIOWriteUTF8AtomicallyAddsTrailingNewline() throws {

@@ -159,18 +159,18 @@ private struct WelcomeView: View {
 					} else if isInstallerOutdated {
 						Label("A newer plug‑in exists on GitHub than in this installer.", systemImage: "info.circle")
 							.foregroundStyle(.secondary)
-						}
+					}
 
-						HStack(spacing: 10) {
-							Button("Refresh") {
-								Task { @MainActor in
-									await model.refreshGitHubPluginVersionIfNeeded(force: true)
-								}
+					HStack(spacing: 10) {
+						Button("Refresh") {
+							Task { @MainActor in
+								await model.refreshGitHubPluginVersionIfNeeded(force: true)
 							}
-							if didCopy {
-								Text("Copied")
-									.foregroundStyle(.secondary)
-							}
+						}
+						if didCopy {
+							Text("Copied")
+								.foregroundStyle(.secondary)
+						}
 						Spacer()
 						Button("Copy endpoint") {
 							Pasteboard.copy(InstallerConstants.endpointURL.absoluteString)
