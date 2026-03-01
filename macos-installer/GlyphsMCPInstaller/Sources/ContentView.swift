@@ -732,7 +732,12 @@ private struct InstallerLogGroupBox: View {
 				HStack {
 					Spacer()
 					Button("Back") { model.back() }
-					Button("Continue") { model.go(.install) }
+					Button("Install") {
+						model.go(.install)
+						DispatchQueue.main.async {
+							model.startInstall()
+						}
+					}
 						.keyboardShortcut(.defaultAction)
 				}
 				.padding(20)
