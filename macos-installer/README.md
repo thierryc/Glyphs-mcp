@@ -48,6 +48,10 @@ Or use scripts from repo root:
 ./scripts/make_installer_dmg.sh
 ```
 
+## Releasing
+
+See `macos-installer/RELEASING.md`.
+
 Environment variables:
 - `CODESIGN_IDENTITY` (defaults to `Developer ID Application: Thierry Charbonnel (N9U29A4T8J)`)
 - `NOTARY_PROFILE` (defaults to `gmcp-notary`)
