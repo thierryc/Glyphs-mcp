@@ -17,7 +17,7 @@ On macOS Finder you can also double‑click `RunInstall.command` in the repo roo
 
 Prefer a signed, notarized macOS app with a guided UI?
 
-- Download: https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.6/GlyphsMCPInstaller-1.0.6.dmg
+- Download: https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.7/GlyphsMCPInstaller-1.0.7.dmg
 - Latest release: https://github.com/thierryc/Glyphs-mcp/releases/latest
 
 The installer:
