@@ -943,6 +943,7 @@ private struct InstallerLogGroupBox: View {
 						model.startClientConfig()
 					}
 						.disabled(model.isBusy)
+						.buttonStyle(.borderedProminent)
 					if model.isBusy {
 						Button("Cancel") { model.cancelClientConfig() }
 							.keyboardShortcut(.cancelAction)
