@@ -836,8 +836,7 @@ private struct InstallerLogGroupBox: View {
 						model.startInstall()
 					}
 						.disabled(model.isBusy)
-						.buttonStyle(.borderedProminent)
-						.keyboardShortcut(.defaultAction)
+						.buttonStyle(.bordered)
 					if model.isBusy {
 						Button("Cancel") { model.cancelInstall() }
 							.keyboardShortcut(.cancelAction)
@@ -847,8 +846,15 @@ private struct InstallerLogGroupBox: View {
 					.disabled(model.isBusy)
 				Button("Continue") { model.go(.clients) }
 					.disabled(!model.installSucceeded)
+					.keyboardShortcut(.defaultAction)
 			}
 			.padding(20)
+		}
+		.onAppear {
+			guard !model.didRunInstall else { return }
+			DispatchQueue.main.async {
+				model.startInstall()
+			}
 		}
 	}
 }
