@@ -18,6 +18,7 @@ async def execute_code(
     timeout: int = 60,
     capture_output: bool = True,
     return_last_expression: bool = True,
+    snippet_only: bool = False,
     max_output_chars: Optional[int] = None,
     max_error_chars: Optional[int] = None,
 ) -> str:
@@ -29,12 +30,15 @@ async def execute_code(
         capture_output (bool): When true (default), capture stdout/stderr and return it in the response.
             When false, output is not captured (prints go to the Glyphs macro console) which can be faster for large jobs.
         return_last_expression (bool): When true (default), attempt to evaluate the last line as an expression and return it.
+        snippet_only (bool): When true, do not execute. Return a ready-to-paste Macro Panel snippet containing the code.
         max_output_chars (int|None): Optional cap for returned stdout characters. When set, the output is truncated and a flag is returned.
         max_error_chars (int|None): Optional cap for returned error characters. When set, the error is truncated and a flag is returned.
     
     Returns:
         str: JSON-encoded result containing:
             success (bool): Whether the code executed successfully.
+            executed (bool): Whether the snippet was actually executed (false when snippet_only=true).
+            snippet (str|None): Macro Panel snippet when snippet_only=true.
             output (str): Standard output from the code execution.
             error (str): Error message if execution failed, including traceback details.
             result (any): The result of the last expression (if any).
@@ -56,7 +60,35 @@ async def execute_code(
         # Keep the tail (usually more useful for tracebacks) and mark as truncated.
         return value[-limit_int:], True
 
+    def _macro_panel_snippet(user_code: str) -> str:
+        user_code = (user_code or "").rstrip()
+        header = [
+            "# Glyphs MCP — Macro Panel snippet (execute_code)",
+            "# Paste into: Glyphs → Window → Macro Panel",
+            "# Note: This snippet is NOT executed by the MCP tool when snippet_only=true.",
+            "",
+            "import json",
+            "from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor  # type: ignore",
+            "",
+            "# --- your code starts here ---",
+        ]
+        return "\n".join(header + [user_code, ""])
+
     try:
+        if snippet_only:
+            return json.dumps(
+                {
+                    "success": True,
+                    "executed": False,
+                    "snippet": _macro_panel_snippet(code),
+                    "output": "",
+                    "error": None,
+                    "result": None,
+                    "output_truncated": False,
+                    "error_truncated": False,
+                }
+            )
+
         # Create a custom namespace with access to Glyphs API
         namespace = {
             '__builtins__': __builtins__,
@@ -136,6 +168,8 @@ async def execute_code(
         # Prepare result
         response = {
             "success": error is None,
+            "executed": True,
+            "snippet": None,
             "output": output,
             "error": error,
             "result": str(result) if result is not None else None,
@@ -150,6 +184,8 @@ async def execute_code(
     except BaseException:
         return json.dumps({
             "success": False,
+            "executed": False,
+            "snippet": None,
             "output": "",
             "error": f"Code execution failed: {traceback.format_exc()}",
             "result": None
@@ -164,6 +200,7 @@ async def execute_code_with_context(
     timeout: int = 60,
     capture_output: bool = True,
     return_last_expression: bool = True,
+    snippet_only: bool = False,
     max_output_chars: Optional[int] = None,
     max_error_chars: Optional[int] = None,
 ) -> str:
@@ -177,12 +214,15 @@ async def execute_code_with_context(
         capture_output (bool): When true (default), capture stdout/stderr and return it in the response.
             When false, output is not captured (prints go to the Glyphs macro console) which can be faster for large jobs.
         return_last_expression (bool): When true (default), attempt to evaluate the last line as an expression and return it.
+        snippet_only (bool): When true, do not execute. Return a ready-to-paste Macro Panel snippet with context setup.
         max_output_chars (int|None): Optional cap for returned stdout characters. When set, the output is truncated and a flag is returned.
         max_error_chars (int|None): Optional cap for returned error characters. When set, the error is truncated and a flag is returned.
     
     Returns:
         str: JSON-encoded result containing:
             success (bool): Whether the code executed successfully.
+            executed (bool): Whether the snippet was actually executed (false when snippet_only=true).
+            snippet (str|None): Macro Panel snippet when snippet_only=true.
             output (str): Standard output from the code execution.
             error (str): Error message if execution failed, including traceback details.
             result (any): The result of the last expression (if any).
@@ -205,6 +245,51 @@ async def execute_code_with_context(
         return value[-limit_int:], True
 
     try:
+        if snippet_only:
+            glyph_literal = repr(glyph_name) if glyph_name is not None else "None"
+            header = [
+                "# Glyphs MCP — Macro Panel snippet (execute_code_with_context)",
+                "# Paste into: Glyphs → Window → Macro Panel",
+                "# Note: This snippet is NOT executed by the MCP tool when snippet_only=true.",
+                "",
+                "import json",
+                "from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor  # type: ignore",
+                "",
+                f"font_index = {int(font_index)}",
+                f"glyph_name = {glyph_literal}",
+                "master_id = None  # set to a specific master id string for more control",
+                "",
+                "font = Glyphs.fonts[font_index] if 0 <= font_index < len(Glyphs.fonts) else None",
+                "glyph = font.glyphs[glyph_name] if (font is not None and glyph_name and font.glyphs[glyph_name]) else None",
+                "layer = None",
+                "if glyph is not None and font is not None:",
+                "    if master_id:",
+                "        layer = glyph.layers[master_id] if glyph.layers[master_id] else None",
+                "    elif font.selectedFontMaster:",
+                "        layer = glyph.layers[font.selectedFontMaster.id]",
+                "    elif font.masters:",
+                "        layer = glyph.layers[font.masters[0].id]",
+                "",
+                "print('Context:', {'font': getattr(font, 'familyName', None), 'glyph': getattr(glyph, 'name', None), 'layer': getattr(layer, 'name', None)})",
+                "",
+                "# --- your code starts here ---",
+                (code or "").rstrip(),
+                "",
+            ]
+            return json.dumps(
+                {
+                    "success": True,
+                    "executed": False,
+                    "snippet": "\n".join(header),
+                    "output": "",
+                    "error": None,
+                    "result": None,
+                    "context": {"font_index": font_index, "glyph_name": glyph_name},
+                    "output_truncated": False,
+                    "error_truncated": False,
+                }
+            )
+
         # Get font context
         font = None
         glyph = None
@@ -310,6 +395,8 @@ async def execute_code_with_context(
         # Prepare result
         response = {
             "success": error is None,
+            "executed": True,
+            "snippet": None,
             "output": output,
             "error": error,
             "result": str(result) if result is not None else None,
@@ -325,6 +412,8 @@ async def execute_code_with_context(
     except BaseException:
         return json.dumps({
             "success": False,
+            "executed": False,
+            "snippet": None,
             "output": "",
             "error": f"Code execution failed: {traceback.format_exc()}",
             "result": None,
