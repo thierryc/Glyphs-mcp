@@ -214,7 +214,19 @@ async def _extract_body_text(response: Response, limit: int = 4096) -> str:
             if len(collected) < limit:
                 remaining = limit - len(collected)
                 collected += bytes(chunk[:remaining])
-            # Keep draining the iterator to completion for cleanup.
+
+            if len(collected) >= limit:
+                # Avoid fully draining large/slow streaming bodies. Best-effort
+                # close the iterator early to release resources.
+                closer = getattr(iterator, "aclose", None) or getattr(iterator, "close", None)
+                if closer is not None:
+                    try:
+                        result = closer()
+                        if hasattr(result, "__await__"):
+                            await result
+                    except Exception:
+                        pass
+                break
     except Exception:
         return collected.decode("utf-8", errors="replace")
 
@@ -469,6 +481,13 @@ class McpErrorEnvelopeMiddleware(BaseHTTPMiddleware):
                 or normalized_detail.strip() == "not found"
             ) and "missing session id" not in normalized_detail:
                 effective_status_code = 404
+                # Keep payload detail consistent with the normalized 404 status.
+                try:
+                    stripped = (detail or "").lstrip()
+                    if stripped.lower().startswith("bad request:"):
+                        detail = "Not Found:" + stripped[len("Bad Request:") :]
+                except Exception:
+                    pass
 
         message, how_to_fix = _classify_error(request, response, detail)
         req_id = await _request_jsonrpc_id(request)
