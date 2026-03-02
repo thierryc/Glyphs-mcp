@@ -32,9 +32,10 @@ from starlette.middleware import Middleware
 
 from mcp_tools import mcp
 from security import (
+    McpErrorEnvelopeMiddleware,
+    McpNormalizeMcpPathMiddleware,
     McpNoOAuthWellKnownMiddleware,
     McpDiscoveryMiddleware,
-    McpSessionIdMiddleware,
     OriginValidationMiddleware,
     StaticTokenAuthMiddleware,
 )
@@ -198,9 +199,10 @@ class MCPBridgePlugin(GeneralPlugin):
     def _http_middleware(self):
         """Return security middleware for the embedded HTTP server."""
         middleware = [
+            Middleware(McpNormalizeMcpPathMiddleware),
+            Middleware(McpErrorEnvelopeMiddleware),
             Middleware(McpNoOAuthWellKnownMiddleware),
             Middleware(McpDiscoveryMiddleware),
-            Middleware(McpSessionIdMiddleware),
             Middleware(OriginValidationMiddleware),
         ]
 
