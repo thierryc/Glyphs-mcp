@@ -17,7 +17,7 @@ On macOS Finder you can also double‑click `RunInstall.command` in the repo roo
 
 Prefer a signed, notarized macOS app with a guided UI?
 
-- Download: https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.8/GlyphsMCPInstaller-1.0.8.dmg
+- Download: https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.9/GlyphsMCPInstaller-1.0.9.dmg
 - Latest release: https://github.com/thierryc/Glyphs-mcp/releases/latest
 
 The installer:
@@ -39,8 +39,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.8)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.8"`).
+## Command Set (MCP server v1.0.9)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.9"`).
 
 | Tool | Description |
 |------|-------------|
@@ -50,6 +50,9 @@ This table describes the tool surface exposed by the MCP server shipped in this 
 | `get_font_instances` | List instances and their interpolation data. |
 | `get_glyph_details` | Full glyph data including layers, paths, components. |
 | `get_font_kerning` | All kerning pairs for a given master. |
+| `generate_kerning_tab` | Generate a kerning review proof tab (missing relevant pairs + outliers) and open it. |
+| `review_kerning_bumper` | Review kerning collisions / near-misses and compute deterministic “bumper” suggestions (no mutation). |
+| `apply_kerning_bumper` | Apply “bumper” suggestions as glyph–glyph kerning exceptions (supports `dry_run`; requires `confirm=true` to mutate). |
 | `create_glyph` | Add a new glyph to the font. |
 | `delete_glyph` | Remove a glyph from the font. |
 | `update_glyph_properties` | Change unicode, category, export flags, etc. |
@@ -80,6 +83,7 @@ This table describes the tool surface exposed by the MCP server shipped in this 
 | `save_font` | Save the active font (optionally to a new path). |
 | `docs_search` | Search bundled Glyphs SDK/ObjectWrapper docs by title/summary. |
 | `docs_get` | Fetch a bundled docs page by id/path (supports paging via offset/max_chars). |
+| `docs_enable_page_resources` | Register each documentation page as its own MCP resource (optional; can flood clients). |
 
 `execute_code` and `execute_code_with_context` accept an optional `timeout` in seconds. Calls default to 60 s, and the bridge honours any larger per-call value you provide.
 

@@ -69,6 +69,9 @@ PATHS_EXTRAS = {
     "set_glyph_paths",
     "review_collinear_handles",
     "apply_collinear_handles_smooth",
+    "measure_stem_ratio",
+    "review_compensated_tuning",
+    "apply_compensated_tuning",
 }
 
 
@@ -80,6 +83,9 @@ EDITING_EXTRAS = {
     "add_component_to_glyph",
     "add_anchor_to_glyph",
     "set_glyph_paths",
+    "measure_stem_ratio",
+    "review_compensated_tuning",
+    "apply_compensated_tuning",
 }
 
 
@@ -120,4 +126,3 @@ def enabled_tool_names(profile_name, all_tool_names):
 
     allowlist = set(profile.get("tools") or set())
     return allowlist.intersection(set(all_tool_names or set()))
-

@@ -5,7 +5,7 @@ usage() {
   cat <<'EOF'
 Build a clean release ZIP for the Glyphs MCP plugin bundle.
 
-This uses `git archive` so the ZIP only contains tracked files and never
+This uses `git ls-files` so the ZIP only contains tracked files and never
 accidentally ships local artifacts like __pycache__, .venv, __MACOSX, etc.
 
 Usage:
@@ -70,11 +70,62 @@ echo "Building release ZIP from tracked files:"
 echo "  plugin:  $plugin_dir"
 echo "  output:  $output"
 
-git archive \
-  --format=zip \
-  --prefix="Glyphs MCP.glyphsPlugin/" \
-  --output="$output" \
-  HEAD:"$plugin_dir"
+python3 - "$plugin_dir" "$output" <<'PY'
+import os
+import stat
+import subprocess
+import sys
+import zipfile
+from pathlib import Path
+
+plugin_dir = Path(sys.argv[1]).resolve()
+output = Path(sys.argv[2]).resolve()
+
+prefix = "Glyphs MCP.glyphsPlugin/"
+
+if not plugin_dir.is_dir():
+    raise SystemExit(f"error: plugin directory not found: {plugin_dir}")
+
+try:
+    result = subprocess.run(
+        ["git", "ls-files", "-z", str(plugin_dir)],
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+except subprocess.CalledProcessError as exc:
+    raise SystemExit(f"error: git ls-files failed: {exc.stderr.decode('utf-8', errors='replace')}")
+
+tracked = [p for p in result.stdout.split(b"\x00") if p]
+if not tracked:
+    raise SystemExit(f"error: no tracked files found under: {plugin_dir}")
+
+output.parent.mkdir(parents=True, exist_ok=True)
+if output.exists():
+    output.unlink()
+
+with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+    for raw in tracked:
+        rel = Path(raw.decode("utf-8", errors="strict"))
+        abs_path = (Path.cwd() / rel).resolve()
+        if not abs_path.is_file():
+            continue
+
+        arcname = prefix + abs_path.relative_to(plugin_dir).as_posix()
+
+        info = zipfile.ZipInfo(arcname)
+        st = abs_path.stat()
+        info.date_time = tuple(__import__("time").localtime(st.st_mtime)[:6])
+        # Preserve executable bits (important for Contents/MacOS/plugin).
+        mode = stat.S_IMODE(st.st_mode)
+        info.external_attr = (mode & 0xFFFF) << 16
+
+        with abs_path.open("rb") as f:
+            data = f.read()
+        zf.writestr(info, data)
+
+print(f"Wrote: {output}")
+PY
 
 if [[ "$do_check" == "1" ]]; then
   python3 - "$output" <<'PY'

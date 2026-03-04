@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bump the plugin version in Info.plist and README.
+Bump the project version across the plug-in bundle, installer, and docs.
 
 Usage:
   python3 scripts/bump_version.py X.Y.Z
@@ -42,47 +42,77 @@ def set_plist_key(plist_path: Path, key: str, value: str) -> None:
         plistlib.dump(data, f, fmt=plistlib.FMT_XML, sort_keys=False)
 
 
+_README_COMMAND_SET_HEADER_RE = re.compile(r"^(##\s+Command Set\s+\(MCP server v)([^)]+)(\))\s*$", re.M)
+_FAST_MCP_VERSION_RE = re.compile(r"(FastMCP\s+`version=\")([^\"]+)(\"`)")
+_README_INSTALLER_URL_RE = re.compile(
+    r"(https://github\.com/thierryc/Glyphs-mcp/releases/download/v)(\d+\.\d+\.\d+)(/GlyphsMCPInstaller-)(\d+\.\d+\.\d+)(\.dmg)"
+)
+_PBXPROJ_MARKETING_VERSION_RE = re.compile(r"(\bMARKETING_VERSION\s*=\s*)(\d+\.\d+\.\d+)(\s*;)")
+
+
 def update_readme(readme_path: Path, version: str) -> None:
     text = readme_path.read_text(encoding="utf-8")
     original = text
 
-    header_re = re.compile(r"^(##\s+Command Set\s+\(MCP server v)([^)]+)(\))\s*$", re.M)
-    fastmcp_re = re.compile(r"(FastMCP\s+`version=\")([^\"]+)(\"`)")
-
-    header_m = header_re.search(text)
+    header_m = _README_COMMAND_SET_HEADER_RE.search(text)
     if not header_m:
         raise SystemExit(
             f"error: could not find Command Set header in {readme_path} (expected: '## Command Set (MCP server vX.Y.Z)')"
         )
-    current_header_version = header_m.group(2)
 
-    fastmcp_m = fastmcp_re.search(text)
+    fastmcp_m = _FAST_MCP_VERSION_RE.search(text)
     if not fastmcp_m:
         raise SystemExit(
             f"error: could not find FastMCP version mention in {readme_path} (expected: FastMCP `version=\"X.Y.Z\"`)"
         )
-    current_fastmcp_version = fastmcp_m.group(2)
-
-    if current_header_version == version and current_fastmcp_version == version:
-        return
 
     # 1) Command Set header: "## Command Set (MCP server vX.Y.Z)"
-    text, n1 = header_re.subn(rf"\g<1>{version}\g<3>", text)
+    text, n1 = _README_COMMAND_SET_HEADER_RE.subn(rf"\g<1>{version}\g<3>", text)
     if n1 != 1:
-        raise SystemExit(
-            f"error: expected to update 1 Command Set header in {readme_path}, updated {n1}"
-        )
+        raise SystemExit(f"error: expected to update 1 Command Set header in {readme_path}, updated {n1}")
 
-    # 2) FastMCP version mention in that section:
-    #    ... (FastMCP `version="X.Y.Z"`).
-    text, n2 = fastmcp_re.subn(rf"\g<1>{version}\g<3>", text)
+    # 2) FastMCP version mention:
+    text, n2 = _FAST_MCP_VERSION_RE.subn(rf"\g<1>{version}\g<3>", text)
     if n2 < 1:
+        raise SystemExit(f"error: expected to update FastMCP version mention in {readme_path}, found none")
+
+    # 3) Installer download URL (versioned):
+    text, n3 = _README_INSTALLER_URL_RE.subn(rf"\g<1>{version}\g<3>{version}\g<5>", text)
+    if n3 < 1:
         raise SystemExit(
-            f"error: expected to update FastMCP version mention in {readme_path}, found none"
+            f"error: could not find versioned installer DMG URL in {readme_path} (expected releases/download/vX.Y.Z/GlyphsMCPInstaller-X.Y.Z.dmg)"
         )
 
     if text != original:
         readme_path.write_text(text, encoding="utf-8")
+
+
+def update_command_set_mdx(path: Path, version: str) -> None:
+    text = path.read_text(encoding="utf-8")
+    original = text
+
+    if not _FAST_MCP_VERSION_RE.search(text):
+        raise SystemExit(
+            f"error: could not find FastMCP version mention in {path} (expected: FastMCP `version=\"X.Y.Z\"`)"
+        )
+    text, n = _FAST_MCP_VERSION_RE.subn(rf"\g<1>{version}\g<3>", text)
+    if n < 1:
+        raise SystemExit(f"error: expected to update FastMCP version mention in {path}, found none")
+
+    if text != original:
+        path.write_text(text, encoding="utf-8")
+
+
+def update_marketing_version(pbxproj_path: Path, version: str) -> None:
+    text = pbxproj_path.read_text(encoding="utf-8")
+    original = text
+
+    text, n = _PBXPROJ_MARKETING_VERSION_RE.subn(rf"\g<1>{version}\g<3>", text)
+    if n < 1:
+        raise SystemExit(f"error: could not find MARKETING_VERSION assignments in {pbxproj_path}")
+
+    if text != original:
+        pbxproj_path.write_text(text, encoding="utf-8")
 
 
 def main(argv: list[str]) -> int:
@@ -99,7 +129,7 @@ def main(argv: list[str]) -> int:
         return 2
 
     repo_root = Path(__file__).resolve().parent.parent
-    plist_path = (
+    src_plist_path = (
         repo_root
         / "src"
         / "glyphs-mcp"
@@ -107,22 +137,52 @@ def main(argv: list[str]) -> int:
         / "Contents"
         / "Info.plist"
     )
+    plugin_manager_plist_path = (
+        repo_root
+        / "plugin-manager"
+        / "Glyphs MCP.glyphsPlugin"
+        / "Contents"
+        / "Info.plist"
+    )
     readme_path = repo_root / "README.md"
+    command_set_path = repo_root / "content" / "reference" / "command-set.mdx"
+    pbxproj_path = (
+        repo_root
+        / "macos-installer"
+        / "GlyphsMCPInstaller"
+        / "GlyphsMCPInstaller.xcodeproj"
+        / "project.pbxproj"
+    )
 
-    if not plist_path.exists():
-        print(f"error: Info.plist not found at: {plist_path}", file=sys.stderr)
+    if not src_plist_path.exists():
+        print(f"error: Info.plist not found at: {src_plist_path}", file=sys.stderr)
         return 1
     if not readme_path.exists():
         print(f"error: README not found at: {readme_path}", file=sys.stderr)
         return 1
+    if not command_set_path.exists():
+        print(f"error: command set doc not found at: {command_set_path}", file=sys.stderr)
+        return 1
+    if not pbxproj_path.exists():
+        print(f"error: installer pbxproj not found at: {pbxproj_path}", file=sys.stderr)
+        return 1
 
-    set_plist_key(plist_path, "CFBundleShortVersionString", version)
-    set_plist_key(plist_path, "CFBundleVersion", version)
+    set_plist_key(src_plist_path, "CFBundleShortVersionString", version)
+    set_plist_key(src_plist_path, "CFBundleVersion", version)
+    if plugin_manager_plist_path.exists():
+        set_plist_key(plugin_manager_plist_path, "CFBundleShortVersionString", version)
+        set_plist_key(plugin_manager_plist_path, "CFBundleVersion", version)
     update_readme(readme_path, version)
+    update_command_set_mdx(command_set_path, version)
+    update_marketing_version(pbxproj_path, version)
 
     print("Updated:")
-    print(f"  - {plist_path} (CFBundleShortVersionString, CFBundleVersion) -> {version}")
-    print(f"  - {readme_path} (Command Set + FastMCP version mention) -> {version}")
+    print(f"  - {src_plist_path} (CFBundleShortVersionString, CFBundleVersion) -> {version}")
+    if plugin_manager_plist_path.exists():
+        print(f"  - {plugin_manager_plist_path} (CFBundleShortVersionString, CFBundleVersion) -> {version}")
+    print(f"  - {readme_path} (download URL + Command Set + FastMCP version mention) -> {version}")
+    print(f"  - {command_set_path} (FastMCP version mention) -> {version}")
+    print(f"  - {pbxproj_path} (MARKETING_VERSION) -> {version}")
     return 0
 
 

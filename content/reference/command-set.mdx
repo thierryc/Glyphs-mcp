@@ -3,7 +3,7 @@ title: Command set
 description: The MCP tools exposed by the Glyphs MCP server.
 ---
 
-This is the tool surface exposed by the server shipped in this repo (FastMCP `version="1.0.6"`).
+This is the tool surface exposed by the server shipped in this repo (FastMCP `version="1.0.9"`).
 
 Note: the server can be configured with a **tool profile** (in **Edit → Glyphs MCP Server Status…**) that hides tools you don't need for a given workflow. When a profile is active, `tools/list` will return a subset of the full tool surface. For a token-aware explanation and a “which profile should I pick?” guide, see [Settings & tool profiles](../getting-started/start-server.mdx#settings-tool-profiles).
 
@@ -14,6 +14,7 @@ Note: the server can be configured with a **tool profile** (in **Edit → Glyphs
 - `review_spacing` / `apply_spacing`: spacing workflow (review → dry run → confirm).
 - `generate_kerning_tab`: open a relevance-based worklist proof tab.
 - `review_kerning_bumper`: collision/near-miss audit (no mutation).
+- `review_compensated_tuning`: preview compensated tuning for one glyph (no mutation).
 
 ## Tools by category
 
@@ -53,6 +54,17 @@ Note: the server can be configured with a **tool profile** (in **Edit → Glyphs
 | `set_spacing_params` | Set spacing parameters as font/master custom parameters (no auto-save). |
 | `set_spacing_guides` | Add or clear glyph-level guides visualizing the spacing measurement band (no auto-save). |
 
+### Compensated tuning
+
+These tools help you generate and apply compensated tuning transforms across masters.
+See also: [Compensated tuning tools](../compensated-tuning-tools.md).
+
+| Tool | Description |
+|------|-------------|
+| `measure_stem_ratio` | Measure the stem ratio `b` between two masters (ref/base) for compensated tuning (no mutation). |
+| `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph and return `set_glyph_paths`-compatible JSON (no mutation). |
+| `apply_compensated_tuning` | Apply compensated tuning across glyphs (supports `dry_run`; requires `confirm=true` to mutate; can back up layers). |
+
 ### Editing
 
 | Tool | Description |
@@ -73,6 +85,7 @@ Note: the server can be configured with a **tool profile** (in **Edit → Glyphs
 |------|-------------|
 | `docs_search` | Search bundled Glyphs SDK/ObjectWrapper docs by title/summary. |
 | `docs_get` | Fetch a bundled docs page by id/path (supports paging via offset/max_chars). |
+| `docs_enable_page_resources` | Register each documentation page as its own MCP resource (optional; can flood `resources/list`). |
 
 ### Export / execution
 

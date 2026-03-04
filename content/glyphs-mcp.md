@@ -46,6 +46,7 @@ Guides:
 - [Kerning workflow](./kerning-workflow.md)
 - [Kerning tools](./kerning-tools.md)
 - [Spacing tools](./spacing-tools.md)
+- [Compensated tuning tools](./compensated-tuning-tools.md)
 
 ## Reference
 
