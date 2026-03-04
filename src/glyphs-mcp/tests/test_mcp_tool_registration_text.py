@@ -11,160 +11,98 @@ import unittest
 from pathlib import Path
 
 
+def _resources_dir() -> Path:
+    return (
+        Path(__file__).resolve().parent.parent
+        / "Glyphs MCP.glyphsPlugin"
+        / "Contents"
+        / "Resources"
+    )
+
+
+def _tool_module_paths() -> list[Path]:
+    resources = _resources_dir()
+    return sorted(resources.glob("mcp_tools_*.py"))
+
+
 class McpToolRegistrationTextTests(unittest.TestCase):
     def test_gscomponent_automatic_is_compat_safe(self) -> None:
-        mcp_tools = (
-            Path(__file__).resolve().parent.parent
-            / "Glyphs MCP.glyphsPlugin"
-            / "Contents"
-            / "Resources"
-            / "mcp_tools.py"
-        )
-        text = mcp_tools.read_text(encoding="utf-8", errors="replace")
+        resources = _resources_dir()
+        paths = [resources / "mcp_tool_helpers.py"] + _tool_module_paths()
+        text = "\n".join(p.read_text(encoding="utf-8", errors="replace") for p in paths if p.is_file())
         self.assertIsNone(
             re.search(r"\"automatic\"\\s*:\\s*component\\.automatic\\b", text),
-            "mcp_tools.py must not access GSComponent.automatic directly; use a compatibility helper.",
+            "Tool modules must not access GSComponent.automatic directly; use a compatibility helper.",
+        )
+
+    def _assert_async_tool_decorated(self, function_name: str) -> None:
+        tool_files = _tool_module_paths()
+        self.assertGreater(len(tool_files), 0, "Expected at least one mcp_tools_*.py tool module")
+
+        found_path: Path | None = None
+        found_lines: list[str] | None = None
+        found_index: int | None = None
+
+        for path in tool_files:
+            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+            for i, line in enumerate(lines):
+                if re.match(rf"^\s*async def {re.escape(function_name)}\s*\(", line):
+                    found_path = path
+                    found_lines = lines
+                    found_index = i
+                    break
+            if found_path is not None:
+                break
+
+        def strip_comment(line: str) -> str:
+            return line.split("#", 1)[0].strip()
+
+        def prev_significant_line(start_index: int) -> tuple[int, str] | tuple[None, None]:
+            assert found_lines is not None
+            for i in range(start_index - 1, -1, -1):
+                s = strip_comment(found_lines[i])
+                if not s:
+                    continue
+                return i, s
+            return None, None
+
+        self.assertIsNotNone(
+            found_index,
+            f"Expected to find async def {function_name}(...) in one of: {[p.name for p in tool_files]}",
+        )
+        assert found_index is not None
+        assert found_path is not None
+
+        i1, prev1 = prev_significant_line(found_index)
+        self.assertEqual(
+            prev1,
+            "@mcp.tool()",
+            f"{function_name} must be decorated with @mcp.tool() (found in {found_path.name})",
+        )
+
+        i2, prev2 = prev_significant_line(i1)  # type: ignore[arg-type]
+        self.assertNotEqual(
+            prev2,
+            "@mcp.tool()",
+            f"{function_name} must not be double-decorated with @mcp.tool() (found in {found_path.name})",
         )
 
     def test_set_spacing_params_is_decorated(self) -> None:
-        mcp_tools = (
-            Path(__file__).resolve().parent.parent
-            / "Glyphs MCP.glyphsPlugin"
-            / "Contents"
-            / "Resources"
-            / "mcp_tools.py"
-        )
-        lines = mcp_tools.read_text(encoding="utf-8", errors="replace").splitlines()
-
-        def strip_comment(line: str) -> str:
-            return line.split("#", 1)[0].strip()
-
-        def prev_significant_line(start_index: int) -> tuple[int, str] | tuple[None, None]:
-            for i in range(start_index - 1, -1, -1):
-                s = strip_comment(lines[i])
-                if not s:
-                    continue
-                return i, s
-            return None, None
-
-        target_idx = None
-        for i, line in enumerate(lines):
-            if re.match(r"^\s*async def set_spacing_params\s*\(", line):
-                target_idx = i
-                break
-
-        self.assertIsNotNone(target_idx, "Expected to find async def set_spacing_params(...) in mcp_tools.py")
-
-        i1, prev1 = prev_significant_line(target_idx)  # type: ignore[arg-type]
-        self.assertEqual(prev1, "@mcp.tool()", "set_spacing_params must be decorated with @mcp.tool()")
-
-        i2, prev2 = prev_significant_line(i1)  # type: ignore[arg-type]
-        self.assertNotEqual(prev2, "@mcp.tool()", "set_spacing_params must not be double-decorated with @mcp.tool()")
+        self._assert_async_tool_decorated("set_spacing_params")
 
     def test_generate_kerning_tab_is_decorated(self) -> None:
-        mcp_tools = (
-            Path(__file__).resolve().parent.parent
-            / "Glyphs MCP.glyphsPlugin"
-            / "Contents"
-            / "Resources"
-            / "mcp_tools.py"
-        )
-        lines = mcp_tools.read_text(encoding="utf-8", errors="replace").splitlines()
-
-        def strip_comment(line: str) -> str:
-            return line.split("#", 1)[0].strip()
-
-        def prev_significant_line(start_index: int) -> tuple[int, str] | tuple[None, None]:
-            for i in range(start_index - 1, -1, -1):
-                s = strip_comment(lines[i])
-                if not s:
-                    continue
-                return i, s
-            return None, None
-
-        target_idx = None
-        for i, line in enumerate(lines):
-            if re.match(r"^\s*async def generate_kerning_tab\s*\(", line):
-                target_idx = i
-                break
-
-        self.assertIsNotNone(target_idx, "Expected to find async def generate_kerning_tab(...) in mcp_tools.py")
-
-        i1, prev1 = prev_significant_line(target_idx)  # type: ignore[arg-type]
-        self.assertEqual(prev1, "@mcp.tool()", "generate_kerning_tab must be decorated with @mcp.tool()")
-
-        i2, prev2 = prev_significant_line(i1)  # type: ignore[arg-type]
-        self.assertNotEqual(prev2, "@mcp.tool()", "generate_kerning_tab must not be double-decorated with @mcp.tool()")
+        self._assert_async_tool_decorated("generate_kerning_tab")
 
     def test_review_kerning_bumper_is_decorated(self) -> None:
-        mcp_tools = (
-            Path(__file__).resolve().parent.parent
-            / "Glyphs MCP.glyphsPlugin"
-            / "Contents"
-            / "Resources"
-            / "mcp_tools.py"
-        )
-        lines = mcp_tools.read_text(encoding="utf-8", errors="replace").splitlines()
-
-        def strip_comment(line: str) -> str:
-            return line.split("#", 1)[0].strip()
-
-        def prev_significant_line(start_index: int) -> tuple[int, str] | tuple[None, None]:
-            for i in range(start_index - 1, -1, -1):
-                s = strip_comment(lines[i])
-                if not s:
-                    continue
-                return i, s
-            return None, None
-
-        target_idx = None
-        for i, line in enumerate(lines):
-            if re.match(r"^\s*async def review_kerning_bumper\s*\(", line):
-                target_idx = i
-                break
-
-        self.assertIsNotNone(target_idx, "Expected to find async def review_kerning_bumper(...) in mcp_tools.py")
-
-        i1, prev1 = prev_significant_line(target_idx)  # type: ignore[arg-type]
-        self.assertEqual(prev1, "@mcp.tool()", "review_kerning_bumper must be decorated with @mcp.tool()")
-
-        i2, prev2 = prev_significant_line(i1)  # type: ignore[arg-type]
-        self.assertNotEqual(prev2, "@mcp.tool()", "review_kerning_bumper must not be double-decorated with @mcp.tool()")
+        self._assert_async_tool_decorated("review_kerning_bumper")
 
     def test_apply_kerning_bumper_is_decorated(self) -> None:
-        mcp_tools = (
-            Path(__file__).resolve().parent.parent
-            / "Glyphs MCP.glyphsPlugin"
-            / "Contents"
-            / "Resources"
-            / "mcp_tools.py"
-        )
-        lines = mcp_tools.read_text(encoding="utf-8", errors="replace").splitlines()
+        self._assert_async_tool_decorated("apply_kerning_bumper")
 
-        def strip_comment(line: str) -> str:
-            return line.split("#", 1)[0].strip()
-
-        def prev_significant_line(start_index: int) -> tuple[int, str] | tuple[None, None]:
-            for i in range(start_index - 1, -1, -1):
-                s = strip_comment(lines[i])
-                if not s:
-                    continue
-                return i, s
-            return None, None
-
-        target_idx = None
-        for i, line in enumerate(lines):
-            if re.match(r"^\s*async def apply_kerning_bumper\s*\(", line):
-                target_idx = i
-                break
-
-        self.assertIsNotNone(target_idx, "Expected to find async def apply_kerning_bumper(...) in mcp_tools.py")
-
-        i1, prev1 = prev_significant_line(target_idx)  # type: ignore[arg-type]
-        self.assertEqual(prev1, "@mcp.tool()", "apply_kerning_bumper must be decorated with @mcp.tool()")
-
-        i2, prev2 = prev_significant_line(i1)  # type: ignore[arg-type]
-        self.assertNotEqual(prev2, "@mcp.tool()", "apply_kerning_bumper must not be double-decorated with @mcp.tool()")
+    def test_compensated_tuning_tools_are_decorated(self) -> None:
+        self._assert_async_tool_decorated("measure_stem_ratio")
+        self._assert_async_tool_decorated("review_compensated_tuning")
+        self._assert_async_tool_decorated("apply_compensated_tuning")
 
 
 if __name__ == "__main__":

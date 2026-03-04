@@ -39,6 +39,10 @@ from security import (
     OriginValidationMiddleware,
     StaticTokenAuthMiddleware,
 )
+from debug_event_logging import (
+    McpDebugEventLoggingMiddleware,
+    set_enabled as set_debug_event_logging_enabled,
+)
 from status_panel_helpers import endpoint_for, is_thread_running, status_text
 from tool_profiles import PROFILE_FULL, PROFILE_ORDER, enabled_tool_names, is_valid_profile_name
 from utils import (
@@ -54,6 +58,7 @@ from versioning import get_docs_url_latest, get_plugin_version
 
 AUTOSTART_DEFAULTS_KEY = "io.anotherplanet.glyphs-mcp.autostart"
 TOOL_PROFILE_DEFAULTS_KEY = "com.ap.cx.glyphs-mcp.toolProfile"
+DEBUG_LOG_DEFAULTS_KEY = "com.ap.cx.glyphs-mcp.debugLogAllEvents"
 DEFAULT_TOOL_PROFILE = PROFILE_FULL
 
 
@@ -103,6 +108,10 @@ class MCPBridgePlugin(GeneralPlugin):
         )
         # Configuration
         self.default_port = 9680
+        try:
+            set_debug_event_logging_enabled(self._debug_logging_enabled())
+        except Exception:
+            pass
 
     @objc.python_method
     def _selected_tool_profile_name(self):
@@ -196,9 +205,32 @@ class MCPBridgePlugin(GeneralPlugin):
             return
 
     @objc.python_method
+    def _debug_logging_enabled(self):
+        try:
+            value = Glyphs.defaults[DEBUG_LOG_DEFAULTS_KEY]
+        except Exception:
+            return False
+        try:
+            return bool(value)
+        except Exception:
+            return False
+
+    @objc.python_method
+    def _set_debug_logging_enabled(self, enabled):
+        try:
+            Glyphs.defaults[DEBUG_LOG_DEFAULTS_KEY] = bool(enabled)
+        except Exception as e:
+            try:
+                print("[Glyphs MCP][DebugLog] Failed to persist defaults: {}".format(e))
+            except Exception:
+                pass
+            return
+
+    @objc.python_method
     def _http_middleware(self):
         """Return security middleware for the embedded HTTP server."""
         middleware = [
+            Middleware(McpDebugEventLoggingMiddleware),
             Middleware(McpNormalizeMcpPathMiddleware),
             Middleware(McpErrorEnvelopeMiddleware),
             Middleware(McpNoOAuthWellKnownMiddleware),
@@ -606,7 +638,7 @@ class MCPBridgePlugin(GeneralPlugin):
             return
 
         width = 420
-        height = 230
+        height = 280
         rect = ((0, 0), (width, height))
         style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow
         panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer_(
@@ -723,6 +755,20 @@ class MCPBridgePlugin(GeneralPlugin):
         copy_button_x = width - margin - button_w
         docs_button_x = copy_button_x - button_gap - button_w
 
+        debug_checkbox_y = button_y + button_h + row_gap
+        debug_checkbox = NSButton.alloc().initWithFrame_(((margin, debug_checkbox_y), (width - margin * 2, button_h)))
+        debug_checkbox.setTitle_("Log all events (debug, includes SSE)")
+        switch_type = getattr(AppKit, "NSSwitchButton", None) or getattr(AppKit, "NSButtonTypeSwitch", None)
+        if switch_type is None:
+            switch_type = 3
+        try:
+            debug_checkbox.setButtonType_(switch_type)
+        except Exception:
+            pass
+        debug_checkbox.setTarget_(self)
+        debug_checkbox.setAction_(self.ToggleDebugLogging_)
+        content.addSubview_(debug_checkbox)
+
         autostart_w = max(10, docs_button_x - margin - 10)
         autostart_checkbox = NSButton.alloc().initWithFrame_(((margin, button_y), (autostart_w, button_h)))
         autostart_checkbox.setTitle_(getattr(self, "name_autostart", "Auto-start server on launch"))
@@ -756,6 +802,7 @@ class MCPBridgePlugin(GeneralPlugin):
         self._docs_field = docs_value
         self._autostart_checkbox = autostart_checkbox
         self._tool_profile_popup = profile_popup
+        self._debug_logging_checkbox = debug_checkbox
 
     @objc.python_method
     def _refresh_status_panel_if_visible(self):
@@ -820,6 +867,14 @@ class MCPBridgePlugin(GeneralPlugin):
                 state_on = getattr(AppKit, "NSControlStateValueOn", getattr(AppKit, "NSOnState", 1))
                 state_off = getattr(AppKit, "NSControlStateValueOff", getattr(AppKit, "NSOffState", 0))
                 checkbox.setState_(state_on if self._autostart_enabled() else state_off)
+        except Exception:
+            pass
+        try:
+            checkbox = getattr(self, "_debug_logging_checkbox", None)
+            if checkbox is not None:
+                state_on = getattr(AppKit, "NSControlStateValueOn", getattr(AppKit, "NSOnState", 1))
+                state_off = getattr(AppKit, "NSControlStateValueOff", getattr(AppKit, "NSOffState", 0))
+                checkbox.setState_(state_on if self._debug_logging_enabled() else state_off)
         except Exception:
             pass
 
@@ -894,6 +949,30 @@ class MCPBridgePlugin(GeneralPlugin):
                 self._maybe_autostart_on_launch()
             except Exception:
                 pass
+
+        self._refresh_status_panel_if_visible()
+
+    def ToggleDebugLogging_(self, sender):
+        """Toggle verbose event logging (HTTP + SSE) for debugging."""
+        enabled = False
+        try:
+            enabled = bool(int(sender.state()))
+        except Exception:
+            try:
+                enabled = bool(sender.state())
+            except Exception:
+                enabled = self._debug_logging_enabled()
+
+        self._set_debug_logging_enabled(enabled)
+        try:
+            set_debug_event_logging_enabled(enabled)
+        except Exception:
+            pass
+
+        try:
+            print("[Glyphs MCP][DebugLog] enabled={!r}".format(enabled))
+        except Exception:
+            pass
 
         self._refresh_status_panel_if_visible()
 

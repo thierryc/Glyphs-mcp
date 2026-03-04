@@ -59,6 +59,9 @@ This table describes the tool surface exposed by the MCP server shipped in this 
 | `apply_spacing` | Apply spacing suggestions (supports `dry_run`; requires `confirm=true` to mutate). |
 | `set_spacing_params` | Set spacing parameters as font/master custom parameters (no auto-save). |
 | `set_spacing_guides` | Add or clear glyph-level guides visualizing the spacing measurement band (no auto-save). |
+| `measure_stem_ratio` | Measure a stem ratio `b` between two masters (ref/base) for compensated tuning (no mutation). |
+| `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph (returns `set_glyph_paths`-compatible JSON; no mutation). |
+| `apply_compensated_tuning` | Apply compensated tuning across glyphs (backs up layers; supports `dry_run`; requires `confirm=true` to mutate). |
 | `get_glyph_components` | Inspect components used in a glyph. |
 | `add_component_to_glyph` | Append a component to a glyph layer. |
 | `add_anchor_to_glyph` | Add an anchor to a glyph layer. |
