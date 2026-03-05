@@ -45,7 +45,7 @@ def set_plist_key(plist_path: Path, key: str, value: str) -> None:
 _README_COMMAND_SET_HEADER_RE = re.compile(r"^(##\s+Command Set\s+\(MCP server v)([^)]+)(\))\s*$", re.M)
 _FAST_MCP_VERSION_RE = re.compile(r"(FastMCP\s+`version=\")([^\"]+)(\"`)")
 _README_INSTALLER_URL_RE = re.compile(
-    r"(https://github\.com/thierryc/Glyphs-mcp/releases/download/v)(\d+\.\d+\.\d+)(/GlyphsMCPInstaller-)(\d+\.\d+\.\d+)(\.dmg)"
+    r"(https://github\.com/thierryc/Glyphs-mcp/releases/download/v)(\d+\.\d+\.\d+)(/GlyphsMCPInstaller)(?:-(\d+\.\d+\.\d+))?(\.(?:dmg|zip))"
 )
 _PBXPROJ_MARKETING_VERSION_RE = re.compile(r"(\bMARKETING_VERSION\s*=\s*)(\d+\.\d+\.\d+)(\s*;)")
 
@@ -77,10 +77,22 @@ def update_readme(readme_path: Path, version: str) -> None:
         raise SystemExit(f"error: expected to update FastMCP version mention in {readme_path}, found none")
 
     # 3) Installer download URL (versioned):
-    text, n3 = _README_INSTALLER_URL_RE.subn(rf"\g<1>{version}\g<3>{version}\g<5>", text)
+    def _installer_url_repl(match: re.Match[str]) -> str:
+        prefix = match.group(1)
+        suffix_path = match.group(3)
+        maybe_inner_version = match.group(4)
+        ext = match.group(5)
+        # Keep the same filename style:
+        # - If the README uses GlyphsMCPInstaller-X.Y.Z.dmg, update both versions.
+        # - If it uses GlyphsMCPInstaller.zip, only update the download path version.
+        if maybe_inner_version:
+            return f"{prefix}{version}{suffix_path}-{version}{ext}"
+        return f"{prefix}{version}{suffix_path}{ext}"
+
+    text, n3 = _README_INSTALLER_URL_RE.subn(_installer_url_repl, text)
     if n3 < 1:
         raise SystemExit(
-            f"error: could not find versioned installer DMG URL in {readme_path} (expected releases/download/vX.Y.Z/GlyphsMCPInstaller-X.Y.Z.dmg)"
+            f"error: could not find versioned installer URL in {readme_path} (expected releases/download/vX.Y.Z/GlyphsMCPInstaller[-X.Y.Z].(dmg|zip))"
         )
 
     if text != original:

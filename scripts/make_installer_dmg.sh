@@ -35,7 +35,52 @@ ln -s /Applications "$stage/Applications"
 rm -f "$dmg_versioned" "$dmg_latest"
 
 echo "Creating DMG: $dmg_versioned"
-hdiutil create -volname "$scheme" -srcfolder "$stage" -ov -format UDZO "$dmg_versioned"
+# Using `hdiutil create -srcfolder` mounts the staging image under /Volumes/<volname>
+# during population. On newer macOS setups, Privacy/TCC restrictions can block
+# access to /Volumes for Terminal shells, causing:
+#   could not access /Volumes/<volname>/<app> - Operation not permitted
+#
+# To avoid that, create a temporary writable image, attach it to a mountpoint
+# under /tmp (not /Volumes), copy the staged contents, then convert to UDZO.
+tmp_root="$(mktemp -d "/tmp/gmcp-installer-dmg.XXXXXX")"
+mnt="$tmp_root/mnt"
+mkdir -p "$mnt"
+
+rw_image="$tmp_root/$scheme-rw.dmg"
+
+# Estimate required size (+ slack) in KiB.
+kb="$(du -sk "$stage" | awk '{print $1}')"
+kb="${kb:-0}"
+kb=$((kb + 30000)) # + ~30MB slack
+if [[ "$kb" -lt 50000 ]]; then
+  kb=50000
+fi
+
+echo "Creating writable image (size: ${kb}k)…"
+hdiutil create -size "${kb}k" -fs HFS+ -volname "$scheme" -type UDIF -ov "$rw_image" >/dev/null
+
+device="$(hdiutil attach -nobrowse -noverify -noautoopen -mountpoint "$mnt" "$rw_image" | head -n 1 | awk '{print $1}')"
+if [[ -z "${device:-}" ]]; then
+  echo "error: failed to attach writable image" >&2
+  exit 1
+fi
+
+echo "Populating image at: $mnt"
+/usr/bin/ditto "$stage" "$mnt"
+
+echo "Detaching: $device"
+hdiutil detach "$device" >/dev/null
+
+echo "Converting to UDZO: $dmg_versioned"
+converted_base="$tmp_root/$scheme-udzo"
+hdiutil convert "$rw_image" -format UDZO -ov -o "$converted_base" >/dev/null
+if [[ ! -f "${converted_base}.dmg" ]]; then
+  echo "error: expected converted DMG at ${converted_base}.dmg" >&2
+  exit 1
+fi
+mv -f "${converted_base}.dmg" "$dmg_versioned"
+
+rm -rf "$tmp_root"
 
 if [[ "$skip" == "1" ]]; then
   cp -f "$dmg_versioned" "$dmg_latest"
