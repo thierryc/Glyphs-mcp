@@ -1,0 +1,157 @@
+/* French (fr) */
+
+"Help" = "Aide";
+"Close" = "Fermer";
+"Glyphs MCP Installer" = "Installateur Glyphs MCP";
+"A guided setup to install the Glyphs MCP plug‑in, Python dependencies, and optional MCP client configuration. You can review choices before anything changes." = "Une configuration guidée pour installer le plug‑in Glyphs MCP, les dépendances Python et, en option, la configuration des clients MCP. Vous pouvez vérifier les choix avant toute modification.";
+"Status" = "Statut";
+"Plug‑in installed" = "Plug‑in installé";
+"Not installed" = "Non installé";
+"This installer" = "Cet installateur";
+"Unknown" = "Inconnu";
+"GitHub" = "GitHub";
+"Update available" = "Mise à jour disponible";
+"Download & update…" = "Télécharger et mettre à jour…";
+"A newer plug‑in exists on GitHub than in this installer." = "Une version plus récente du plug‑in existe sur GitHub que dans cet installateur.";
+"Refresh" = "Actualiser";
+"Copied" = "Copié";
+"Copy endpoint" = "Copier l’endpoint";
+"Before you start" = "Avant de commencer";
+"If Glyphs is open, you may need to restart it after installing." = "Si Glyphs est ouvert, vous devrez peut‑être le redémarrer après l’installation.";
+"Installing Python dependencies requires internet access." = "L’installation des dépendances Python nécessite un accès Internet.";
+"Client configuration edits create backups." = "Les modifications de configuration des clients créent des sauvegardes.";
+"What will be done" = "Ce qui sera effectué";
+"Install plug‑in into Glyphs Plugins folder" = "Installer le plug‑in dans le dossier Plug-ins de Glyphs";
+"Install Python dependencies via pip (network required)" = "Installer les dépendances Python via pip (réseau requis)";
+"Configure MCP clients (optional)" = "Configurer les clients MCP (optionnel)";
+"Create a starter project folder with AGENTS.md (optional)" = "Créer un dossier de projet de démarrage avec AGENTS.md (optionnel)";
+"Create project folder…" = "Créer un dossier de projet…";
+"Check status…" = "Vérifier l’état…";
+"Guided setup…" = "Configuration guidée…";
+"Check (no changes)" = "Vérification (aucun changement)";
+"A quick health check. Nothing will be installed or modified." = "Un contrôle rapide. Rien ne sera installé ni modifié.";
+"A quick guide to get you set up. If anything feels unclear, you can always run “Check status…” first — it makes no changes." = "Un guide rapide pour vous aider à démarrer. Si quelque chose n’est pas clair, vous pouvez toujours lancer « Vérifier l’état… » d’abord — cela ne change rien.";
+"Plug‑in update" = "Mise à jour du plug‑in";
+"Checking…" = "Vérification…";
+"Open plug‑ins folder" = "Ouvrir le dossier des plug-ins";
+"Open Codex config" = "Ouvrir la config Codex";
+"Open Claude Desktop config" = "Ouvrir la config Claude Desktop";
+"Re-scan" = "Réanalyser";
+"Back" = "Retour";
+"Continue to setup…" = "Continuer la configuration…";
+"Preflight" = "Pré-vérification";
+"Not checked" = "Non vérifié";
+"Needs attention" = "Nécessite une attention";
+"Mostly OK" = "Plutôt OK";
+"Everything looks good" = "Tout semble bon";
+"Some required components are missing or misconfigured. Review the sections below." = "Des composants requis manquent ou sont mal configurés. Consultez les sections ci-dessous.";
+"A few items may need attention. You can still continue to guided setup." = "Quelques éléments peuvent nécessiter une attention. Vous pouvez tout de même continuer la configuration guidée.";
+"Your environment looks ready." = "Votre environnement semble prêt.";
+"A newer plug‑in exists on GitHub than inside this installer. You can enable “Download latest plug‑in from GitHub” above, or download the latest installer." = "Une version plus récente du plug‑in existe sur GitHub que dans cet installateur. Vous pouvez activer « Télécharger le dernier plug‑in depuis GitHub » ci-dessus, ou télécharger le dernier installateur.";
+"Recommended" = "Recommandé";
+"Install the plug‑in and dependencies, then (optionally) configure MCP clients. You can change these choices in the next step." = "Installez le plug‑in et les dépendances, puis (optionnellement) configurez les clients MCP. Vous pourrez modifier ces choix à l’étape suivante.";
+"GitHub version not checked yet. Continue without downloading, or refresh on the Home screen." = "La version GitHub n’a pas encore été vérifiée. Continuez sans télécharger, ou actualisez depuis l’écran d’accueil.";
+"Continue" = "Continuer";
+"Update" = "Mise à jour";
+"Glyphs + plug‑in" = "Glyphs + plug‑in";
+"Python" = "Python";
+"Clients" = "Clients";
+"Finish" = "Fin";
+"Tools" = "Outils";
+"MCP Clients" = "Clients MCP";
+"No items." = "Aucun élément.";
+"Copy" = "Copier";
+"Log" = "Journal";
+"Copy logs" = "Copier les logs";
+"Running…" = "En cours…";
+"Logs will appear here." = "Les logs apparaîtront ici.";
+"Python Target" = "Cible Python";
+"Choose…" = "Choisir…";
+"Selected:" = "Sélectionné :";
+"Install" = "Installer";
+"Start setup" = "Démarrer la configuration";
+"Cancel" = "Annuler";
+"Configure clients" = "Configurer les clients";
+"Configure" = "Configurer";
+"Copy command" = "Copier la commande";
+"You’re ready" = "Tout est prêt";
+"Next steps" = "Étapes suivantes";
+"2) In Glyphs: Edit → Start MCP Server" = "2) Dans Glyphs : Édition → Démarrer le serveur MCP";
+"Try it now" = "Essayez maintenant";
+"Example prompt: List open fonts" = "Exemple de prompt : Lister les polices ouvertes";
+
+/* AppKit strings */
+"Choose Python interpreter" = "Choisir l’interpréteur Python";
+"Choose where to create the starter project folder" = "Choisir où créer le dossier du projet de démarrage";
+"Choose" = "Choisir";
+"Replace existing plug‑in?" = "Remplacer le plug‑in existant ?";
+"An existing Glyphs MCP plug‑in is installed (%@).\n\nThe installer will install %@.\n\nYou can keep the current version if you prefer." = "Un plug‑in Glyphs MCP est déjà installé (%@).\n\nL’installateur va installer %@.\n\nVous pouvez conserver la version actuelle si vous préférez.";
+"Replace" = "Remplacer";
+"Keep current" = "Conserver l’actuel";
+"Quit Glyphs?" = "Quitter Glyphs ?";
+"Glyphs appears to be running. Quitting Glyphs may be required to load the updated plug‑in.\n\nQuit Glyphs now?" = "Glyphs semble être en cours d’exécution. Quitter Glyphs peut être nécessaire pour charger le plug‑in mis à jour.\n\nQuitter Glyphs maintenant ?";
+"Quit Glyphs" = "Quitter Glyphs";
+
+/* Format strings */
+"Error: %@" = "Erreur : %@";
+"%@ (update available)" = "%@ (mise à jour disponible)";
+"Installed: %@" = "Installé : %@";
+
+/* Install step titles */
+"Resolve payload" = "Résoudre la charge utile";
+"Download update" = "Télécharger la mise à jour";
+"Install dependencies" = "Installer les dépendances";
+"Install plugin bundle" = "Installer le bundle du plug‑in";
+"Done" = "Terminé";
+
+/* Preflight / Check item titles */
+"Glyphs base folder" = "Dossier de base de Glyphs";
+"Glyphs plugins folder" = "Dossier des plug-ins de Glyphs";
+"Payload plugin version" = "Version du plug‑in (payload)";
+"Installed plugin version" = "Version du plug‑in installé";
+"Glyphs Python pip3" = "pip3 de Python (Glyphs)";
+"Glyphs Python setting" = "Réglage Python de Glyphs";
+"Custom Python" = "Python personnalisé";
+"Codex CLI" = "CLI Codex";
+"Claude CLI" = "CLI Claude";
+"Glyphs MCP plug‑in" = "Plug‑in Glyphs MCP";
+"Glyphs plugins detected" = "Plug-ins Glyphs détectés";
+"Codex app" = "App Codex";
+"Claude app" = "App Claude";
+"Codex MCP settings" = "Paramètres MCP Codex";
+"Claude Desktop MCP settings" = "Paramètres MCP Claude Desktop";
+"Antigravity MCP settings" = "Paramètres MCP Antigravity";
+"Claude Code MCP settings" = "Paramètres MCP Claude Code";
+
+/* Preflight / Check item details */
+"Unavailable (payload not found yet)." = "Indisponible (payload introuvable pour le moment).";
+"Not installed (yet)." = "Non installé (pour le moment).";
+"Not found (install GlyphsPythonPlugin in Glyphs → Settings → Addons)" = "Introuvable (installez GlyphsPythonPlugin dans Glyphs → Réglages → Modules complémentaires)";
+"Unknown (could not read Glyphs preferences)." = "Inconnu (impossible de lire les préférences de Glyphs).";
+"Not found (will patch ~/.codex/config.toml instead)." = "Introuvable (modification de ~/.codex/config.toml à la place).";
+"Not found (Claude Code will not be auto-configured)." = "Introuvable (Claude Code ne sera pas configuré automatiquement).";
+"Not found (Claude Desktop proxy via npx may fail)." = "Introuvable (le proxy Claude Desktop via npx peut échouer).";
+"Not installed." = "Non installé.";
+"Not found." = "Introuvable.";
+"Not found" = "Introuvable";
+"Glyphs pip: %@" = "pip de Glyphs : %@";
+"Not found (searched /Applications and ~/Applications)." = "Introuvable (recherche dans /Applications et ~/Applications).";
+"Config not found: %@" = "Configuration introuvable : %@";
+"Failed to read/parse JSON: %@" = "Impossible de lire/analyser le JSON : %@";
+"Claude CLI not installed; cannot verify." = "Le CLI Claude n’est pas installé ; impossible de vérifier.";
+"CLI output contains the server; verification is heuristic." = "La sortie CLI contient le serveur ; la vérification est heuristique.";
+"CLI list succeeded but server not found." = "La liste CLI a réussi mais le serveur est introuvable.";
+"Claude CLI present, but cannot verify MCP configuration (no supported list command)." = "Le CLI Claude est présent, mais impossible de vérifier la configuration MCP (commande de liste non prise en charge).";
+
+/* Help sheet markdown */
+"For the smoothest custom setup, install Python **3.12** from python.org." = "Pour une configuration personnalisée optimale, installez Python **3.12** depuis python.org.";
+"Then, in **Glyphs → Settings → Addons → Python version**, select the same **3.12** version and restart Glyphs." = "Ensuite, dans **Glyphs → Réglages → Modules complémentaires → Version Python**, sélectionnez la même version **3.12** et redémarrez Glyphs.";
+"2) In Glyphs: **Edit → Start MCP Server**" = "2) Dans Glyphs : **Édition → Démarrer le serveur MCP**";
+"Download latest plug‑in from GitHub (optional)" = "Télécharger le dernier plug‑in depuis GitHub (optionnel)";
+"If enabled, the installer will download the latest plug‑in from GitHub over HTTPS before installing." = "Si activé, l’installateur téléchargera le dernier plug‑in depuis GitHub via HTTPS avant l’installation.";
+"Use the same Python version shown in Glyphs → Settings → Addons → Python version. Changing it in Glyphs requires restarting Glyphs." = "Utilisez la même version de Python que celle indiquée dans Glyphs → Réglages → Modules complémentaires → Version Python. Modifier ce réglage dans Glyphs nécessite de redémarrer Glyphs.";
+"Dependencies will be skipped. You can still update the plug‑in bundle." = "Les dépendances seront ignorées. Vous pouvez quand même mettre à jour le bundle du plug‑in.";
+"You can leave this window open while it runs. If something fails, you can copy the logs and try again." = "Vous pouvez laisser cette fenêtre ouverte pendant l’exécution. En cas d’échec, copiez les logs et réessayez.";
+"Optional. This edits local config files (with backups) or uses CLIs when available." = "Optionnel. Modifie des fichiers de configuration locaux (avec sauvegardes) ou utilise des CLI si disponibles.";
+"3) Try an example prompt (below)" = "3) Essayez un exemple de prompt (ci-dessous)";
+"If your agent can’t connect, restart Glyphs and start the MCP server first, then try again." = "Si votre agent ne peut pas se connecter, redémarrez Glyphs et démarrez d’abord le serveur MCP, puis réessayez.";

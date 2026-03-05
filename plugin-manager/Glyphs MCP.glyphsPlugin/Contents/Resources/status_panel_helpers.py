@@ -32,5 +32,4 @@ def is_thread_running(thread_obj):
 
 def status_text(is_running):
     """Return a short human-readable status string."""
-    return "Running" if is_running else "Stopped"
-
+    return "running" if is_running else "stopped"

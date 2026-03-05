@@ -1,0 +1,4 @@
+/* English (source) localization.
+   Most SwiftUI strings use their literal English value as the key; missing
+   entries fall back to the key itself. */
+

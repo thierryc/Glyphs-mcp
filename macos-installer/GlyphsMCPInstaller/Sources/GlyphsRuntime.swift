@@ -1,4 +1,5 @@
 import AppKit
+import Foundation
 
 enum GlyphsRuntime {
 	static let bundleID = "com.GeorgSeifert.Glyphs3"
@@ -16,10 +17,13 @@ enum GlyphsRuntime {
 		guard !targets.isEmpty else { return }
 
 		let alert = NSAlert()
-		alert.messageText = "Quit Glyphs?"
-		alert.informativeText = "Glyphs appears to be running. Quitting Glyphs may be required to load the updated plug‑in.\n\nQuit Glyphs now?"
-		alert.addButton(withTitle: "Quit Glyphs")
-		alert.addButton(withTitle: "Cancel")
+		alert.messageText = NSLocalizedString("Quit Glyphs?", comment: "Quit Glyphs confirmation title")
+		alert.informativeText = NSLocalizedString(
+			"Glyphs appears to be running. Quitting Glyphs may be required to load the updated plug‑in.\n\nQuit Glyphs now?",
+			comment: "Quit Glyphs confirmation body"
+		)
+		alert.addButton(withTitle: NSLocalizedString("Quit Glyphs", comment: "Quit Glyphs button"))
+		alert.addButton(withTitle: NSLocalizedString("Cancel", comment: "Cancel button"))
 		guard alert.runModal() == .alertFirstButtonReturn else { return }
 
 		for app in targets {

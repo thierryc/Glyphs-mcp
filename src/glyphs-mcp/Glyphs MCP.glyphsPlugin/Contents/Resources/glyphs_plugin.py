@@ -44,6 +44,7 @@ from debug_event_logging import (
     set_enabled as set_debug_event_logging_enabled,
 )
 from status_panel_helpers import endpoint_for, is_thread_running, status_text
+from i18n import tr
 from tool_profiles import PROFILE_FULL, PROFILE_ORDER, enabled_tool_names, is_valid_profile_name
 from utils import (
     get_known_tools,
@@ -69,43 +70,11 @@ class MCPBridgePlugin(GeneralPlugin):
         self._tool_registry_ref = None
         self._tool_registry_snapshot = None
 
-        # Localized menu titles
-        self.name_start = Glyphs.localize(
-            {
-                "en": "Start Glyphs MCP Server",
-                "de": "Glyphs MCP-Server starten",
-                "fr": "Démarrer le serveur MCP",
-                "es": "Iniciar el servidor MCP",
-                "pt": "Iniciar o servidor Glyphs MCP",
-            }
-        )
-        self.name_running = Glyphs.localize(
-            {
-                "en": "Glyphs MCP Server is running",
-                "de": "Glyphs MCP-Server läuft",
-                "fr": "Le serveur MCP est en cours d'exécution",
-                "es": "El servidor MCP está en ejecución",
-                "pt": "O servidor MCP está em execução",
-            }
-        )
-        self.name_status = Glyphs.localize(
-            {
-                "en": "Glyphs MCP Server Status…",
-                "de": "Glyphs MCP-Server-Status…",
-                "fr": "Statut du serveur MCP…",
-                "es": "Estado del servidor MCP…",
-                "pt": "Status do servidor MCP…",
-            }
-        )
-        self.name_autostart = Glyphs.localize(
-            {
-                "en": "Auto-start server on launch",
-                "de": "Server beim Start automatisch starten",
-                "fr": "Démarrer le serveur au lancement",
-                "es": "Iniciar el servidor al abrir",
-                "pt": "Iniciar o servidor ao abrir",
-            }
-        )
+        # Localized menu titles (via Glyphs.localize in i18n.tr)
+        self.name_start = tr("menu.start")
+        self.name_running = tr("menu.running")
+        self.name_status = tr("menu.status")
+        self.name_autostart = tr("menu.autostart")
         # Configuration
         self.default_port = 9680
         try:
@@ -369,7 +338,7 @@ class MCPBridgePlugin(GeneralPlugin):
                     notify=False,
                 )
             except Exception as e:
-                self._show_error("Failed to start server: {}".format(e))
+                self._show_error(tr("error.start_server", error=e))
             return
 
         deadline = getattr(self, "_autostart_deadline", None)
@@ -386,21 +355,17 @@ class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
     def _prompt_when_default_port_busy(self):
-        message = (
-            'I can\'t start the MCP server on "9680".\n\n'
-            "Wait (preferred) until the previous instance has finished shutting down, "
-            "or start on a custom port below."
-        )
+        message = tr("portbusy.message", port="9680")
 
         alert = NSAlert.alloc().init()
-        alert.setMessageText_("Glyphs MCP Server")
+        alert.setMessageText_(tr("app.title"))
         alert.setInformativeText_(message)
-        alert.addButtonWithTitle_("Wait (preferred)")
-        alert.addButtonWithTitle_("Start on Custom Port")
-        alert.addButtonWithTitle_("Cancel")
+        alert.addButtonWithTitle_(tr("portbusy.wait"))
+        alert.addButtonWithTitle_(tr("portbusy.custom"))
+        alert.addButtonWithTitle_(tr("common.cancel"))
 
         port_field = NSTextField.alloc().initWithFrame_(((0, 0), (220, 24)))
-        port_field.setPlaceholderString_("Custom port (1–65535)")
+        port_field.setPlaceholderString_(tr("portbusy.placeholder"))
         port_field.setStringValue_("9681")
         try:
             formatter = NSNumberFormatter.alloc().init()
@@ -478,7 +443,7 @@ class MCPBridgePlugin(GeneralPlugin):
         panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer_(
             rect, style, NSBackingStoreBuffered, False
         )
-        panel.setTitle_("Glyphs MCP Server")
+        panel.setTitle_(tr("app.title"))
         panel.setFloatingPanel_(True)
 
         content = panel.contentView()
@@ -486,9 +451,7 @@ class MCPBridgePlugin(GeneralPlugin):
 
         info = NSTextField.alloc().initWithFrame_(((margin, height - margin - 44), (width - margin * 2, 44)))
         info.setStringValue_(
-            "Waiting for port {0} to become available…\nThis usually takes a few seconds.".format(
-                int(port)
-            )
+            tr("wait.info", port=int(port))
         )
         info.setEditable_(False)
         info.setSelectable_(False)
@@ -519,7 +482,7 @@ class MCPBridgePlugin(GeneralPlugin):
         cancel_w = 90
         cancel_h = 28
         cancel_btn = NSButton.alloc().initWithFrame_(((width - margin - cancel_w, margin), (cancel_w, cancel_h)))
-        cancel_btn.setTitle_("Cancel")
+        cancel_btn.setTitle_(tr("common.cancel"))
         cancel_btn.setTarget_(self)
         cancel_btn.setAction_(self.CancelWaitForPort_)
         content.addSubview_(cancel_btn)
@@ -557,14 +520,14 @@ class MCPBridgePlugin(GeneralPlugin):
         try:
             self._start_server_on_port(port, sender)
         except Exception as e:
-            self._show_error("Failed to start server: {}".format(e))
+            self._show_error(tr("error.start_server", error=e))
 
     @objc.python_method
     def _show_error(self, text):
         alert = NSAlert.alloc().init()
-        alert.setMessageText_("Glyphs MCP Server")
+        alert.setMessageText_(tr("app.title"))
         alert.setInformativeText_(text)
-        alert.addButtonWithTitle_("OK")
+        alert.addButtonWithTitle_(tr("common.ok"))
         try:
             alert.runModal()
         except Exception:
@@ -591,16 +554,14 @@ class MCPBridgePlugin(GeneralPlugin):
                 return
             if action == "custom":
                 if custom_port is None:
-                    self._show_error("Enter a valid port number (1–65535).")
+                    self._show_error(tr("portbusy.invalid"))
                     continue
                 if not (1 <= custom_port <= 65535):
-                    self._show_error("Port must be between 1 and 65535.")
+                    self._show_error(tr("portbusy.range"))
                     continue
                 if not is_port_available(custom_port, host="127.0.0.1"):
                     self._show_error(
-                        "Port {} is already in use. Choose another port.".format(
-                            custom_port
-                        )
+                        tr("portbusy.inuse", port=custom_port)
                     )
                     continue
                 port = custom_port
@@ -619,7 +580,7 @@ class MCPBridgePlugin(GeneralPlugin):
             self._refresh_status_panel()
             self._status_panel.makeKeyAndOrderFront_(None)
         except Exception as e:
-            self._show_error("Unable to open MCP status window: {}".format(e))
+            self._show_error(tr("error.open_status_window", error=e))
 
     @objc.python_method
     def _current_port(self):
@@ -644,7 +605,7 @@ class MCPBridgePlugin(GeneralPlugin):
         panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer_(
             rect, style, NSBackingStoreBuffered, False
         )
-        panel.setTitle_("Glyphs MCP Server")
+        panel.setTitle_(tr("app.title"))
         panel.setFloatingPanel_(True)
 
         content = panel.contentView()
@@ -656,7 +617,7 @@ class MCPBridgePlugin(GeneralPlugin):
         y = height - margin - row_h
 
         status_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
-        status_label.setStringValue_("Status:")
+        status_label.setStringValue_(tr("status.label"))
         status_label.setEditable_(False)
         status_label.setSelectable_(False)
         status_label.setBordered_(False)
@@ -673,7 +634,7 @@ class MCPBridgePlugin(GeneralPlugin):
         y -= (row_h + row_gap)
 
         version_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
-        version_label.setStringValue_("Version:")
+        version_label.setStringValue_(tr("version.label"))
         version_label.setEditable_(False)
         version_label.setSelectable_(False)
         version_label.setBordered_(False)
@@ -690,7 +651,7 @@ class MCPBridgePlugin(GeneralPlugin):
         y -= (row_h + row_gap)
 
         endpoint_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
-        endpoint_label.setStringValue_("Endpoint:")
+        endpoint_label.setStringValue_(tr("endpoint.label"))
         endpoint_label.setEditable_(False)
         endpoint_label.setSelectable_(False)
         endpoint_label.setBordered_(False)
@@ -707,7 +668,7 @@ class MCPBridgePlugin(GeneralPlugin):
         y -= (row_h + row_gap)
 
         docs_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
-        docs_label.setStringValue_("Docs:")
+        docs_label.setStringValue_(tr("docs.label"))
         docs_label.setEditable_(False)
         docs_label.setSelectable_(False)
         docs_label.setBordered_(False)
@@ -724,7 +685,7 @@ class MCPBridgePlugin(GeneralPlugin):
         y -= (row_h + row_gap)
 
         profile_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
-        profile_label.setStringValue_("Profile:")
+        profile_label.setStringValue_(tr("profile.label"))
         profile_label.setEditable_(False)
         profile_label.setSelectable_(False)
         profile_label.setBordered_(False)
@@ -757,7 +718,7 @@ class MCPBridgePlugin(GeneralPlugin):
 
         debug_checkbox_y = button_y + button_h + row_gap
         debug_checkbox = NSButton.alloc().initWithFrame_(((margin, debug_checkbox_y), (width - margin * 2, button_h)))
-        debug_checkbox.setTitle_("Log all events (debug, includes SSE)")
+        debug_checkbox.setTitle_(tr("debug.checkbox"))
         switch_type = getattr(AppKit, "NSSwitchButton", None) or getattr(AppKit, "NSButtonTypeSwitch", None)
         if switch_type is None:
             switch_type = 3
@@ -784,13 +745,13 @@ class MCPBridgePlugin(GeneralPlugin):
         content.addSubview_(autostart_checkbox)
 
         open_docs_button = NSButton.alloc().initWithFrame_(((docs_button_x, button_y), (button_w, button_h)))
-        open_docs_button.setTitle_("Open Docs")
+        open_docs_button.setTitle_(tr("docs.open"))
         open_docs_button.setTarget_(self)
         open_docs_button.setAction_(self.OpenDocs_)
         content.addSubview_(open_docs_button)
 
         copy_button = NSButton.alloc().initWithFrame_(((copy_button_x, button_y), (button_w, button_h)))
-        copy_button.setTitle_("Copy Endpoint")
+        copy_button.setTitle_(tr("endpoint.copy"))
         copy_button.setTarget_(self)
         copy_button.setAction_(self.CopyEndpoint_)
         content.addSubview_(copy_button)
@@ -827,16 +788,24 @@ class MCPBridgePlugin(GeneralPlugin):
         try:
             if getattr(self, "_waiting_for_port", False) and not running:
                 self._status_field.setStringValue_(
-                    "Waiting for port {}…".format(getattr(self, "_wait_target_port", self.default_port))
+                    tr(
+                        "status.waiting",
+                        port=getattr(self, "_wait_target_port", self.default_port),
+                    )
                 )
             elif getattr(self, "_autostart_waiting", False) and not running:
                 self._status_field.setStringValue_(
-                    "Auto-start waiting for port {}…".format(
-                        int(getattr(self, "_autostart_target_port", self.default_port))
+                    tr(
+                        "status.autostart_waiting",
+                        port=int(
+                            getattr(self, "_autostart_target_port", self.default_port)
+                        ),
                     )
                 )
             else:
-                self._status_field.setStringValue_(status_text(running))
+                self._status_field.setStringValue_(
+                    tr("status." + status_text(running))
+                )
         except Exception:
             pass
         try:
@@ -995,7 +964,7 @@ class MCPBridgePlugin(GeneralPlugin):
                 raise ValueError("Invalid URL")
             NSWorkspace.sharedWorkspace().openURL_(nsurl)
         except Exception as e:
-            self._show_error("Unable to open docs URL:\n{}\n\n{}".format(docs_url, e))
+            self._show_error(tr("error.open_docs", url=docs_url, error=e))
 
     @objc.python_method
     def _show_server_status(self):

@@ -123,8 +123,8 @@ final class InstallerViewModel: ObservableObject {
 		panel.allowsMultipleSelection = false
 		panel.canChooseDirectories = false
 		panel.canChooseFiles = true
-		panel.title = "Choose Python interpreter"
-		panel.prompt = "Choose"
+		panel.title = NSLocalizedString("Choose Python interpreter", comment: "Open panel title")
+		panel.prompt = NSLocalizedString("Choose", comment: "Open panel prompt")
 		panel.begin { [weak self] resp in
 			guard let self, resp == .OK, let url = panel.url else { return }
 			Task { @MainActor in
@@ -139,8 +139,8 @@ final class InstallerViewModel: ObservableObject {
 		panel.canChooseFiles = false
 		panel.canChooseDirectories = true
 		panel.canCreateDirectories = true
-		panel.title = "Choose where to create the starter project folder"
-		panel.prompt = "Choose"
+		panel.title = NSLocalizedString("Choose where to create the starter project folder", comment: "Open panel title")
+		panel.prompt = NSLocalizedString("Choose", comment: "Open panel prompt")
 		panel.begin { [weak self] resp in
 			guard let self, resp == .OK, let url = panel.url else { return }
 			Task { @MainActor in
@@ -303,10 +303,14 @@ final class InstallerViewModel: ObservableObject {
 		let next = payloadPluginVersion?.displayString ?? (githubPluginVersion?.displayString ?? "Unknown")
 
 		let alert = NSAlert()
-		alert.messageText = "Replace existing plug‑in?"
-		alert.informativeText = "An existing Glyphs MCP plug‑in is installed (\(prev)).\n\nThe installer will install \(next).\n\nYou can keep the current version if you prefer."
-		alert.addButton(withTitle: "Replace")
-		alert.addButton(withTitle: "Keep current")
+		alert.messageText = NSLocalizedString("Replace existing plug‑in?", comment: "Confirm replace plugin title")
+		alert.informativeText = String(
+			format: NSLocalizedString("An existing Glyphs MCP plug‑in is installed (%@).\n\nThe installer will install %@.\n\nYou can keep the current version if you prefer.", comment: "Confirm replace plugin body"),
+			prev,
+			next
+		)
+		alert.addButton(withTitle: NSLocalizedString("Replace", comment: "Confirm replace plugin button"))
+		alert.addButton(withTitle: NSLocalizedString("Keep current", comment: "Confirm keep plugin button"))
 		let resp = alert.runModal()
 		return resp == .alertFirstButtonReturn
 	}
@@ -514,17 +518,17 @@ struct InstallStep: Identifiable {
 
 	static func makeSteps(includeDownload: Bool, includeDeps: Bool, includePlugin: Bool) -> [InstallStep] {
 		var steps: [InstallStep] = []
-		steps.append(.init(id: .payload, title: "Resolve payload", state: .pending))
+		steps.append(.init(id: .payload, title: NSLocalizedString("Resolve payload", comment: "Install step title"), state: .pending))
 		if includeDownload {
-			steps.append(.init(id: .download, title: "Download update", state: .pending))
+			steps.append(.init(id: .download, title: NSLocalizedString("Download update", comment: "Install step title"), state: .pending))
 		}
 		if includeDeps {
-			steps.append(.init(id: .deps, title: "Install dependencies", state: .pending))
+			steps.append(.init(id: .deps, title: NSLocalizedString("Install dependencies", comment: "Install step title"), state: .pending))
 		}
 		if includePlugin {
-			steps.append(.init(id: .plugin, title: "Install plugin bundle", state: .pending))
+			steps.append(.init(id: .plugin, title: NSLocalizedString("Install plugin bundle", comment: "Install step title"), state: .pending))
 		}
-		steps.append(.init(id: .done, title: "Done", state: .pending))
+		steps.append(.init(id: .done, title: NSLocalizedString("Done", comment: "Install step title"), state: .pending))
 		return steps
 	}
 

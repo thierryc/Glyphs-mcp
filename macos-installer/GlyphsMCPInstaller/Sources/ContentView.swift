@@ -1,4 +1,5 @@
 import AppKit
+import Foundation
 import SwiftUI
 import GlyphsMCPInstallerCore
 
@@ -61,9 +62,9 @@ private struct HelpSheetView: View {
 
 					GroupBox("Python (custom setup)") {
 						VStack(alignment: .leading, spacing: 8) {
-							Text(.init("For the smoothest custom setup, install Python **3.12** from python.org."))
-							Text(.init("Then, in **Glyphs → Settings → Addons → Python version**, select the same **3.12** version and restart Glyphs."))
-								.foregroundStyle(.secondary)
+							Text(.init(NSLocalizedString("For the smoothest custom setup, install Python **3.12** from python.org.", comment: "Help sheet markdown text")))
+							Text(.init(NSLocalizedString("Then, in **Glyphs → Settings → Addons → Python version**, select the same **3.12** version and restart Glyphs.", comment: "Help sheet markdown text")))
+							.foregroundStyle(.secondary)
 							Link("Download Python for macOS (python.org)", destination: URL(string: "https://www.python.org/downloads/macos/")!)
 						}
 						.frame(maxWidth: .infinity, alignment: .leading)
@@ -81,7 +82,7 @@ private struct HelpSheetView: View {
 					GroupBox("After install") {
 						VStack(alignment: .leading, spacing: 8) {
 							Text("1) Restart Glyphs if you updated the plug‑in.")
-							Text(.init("2) In Glyphs: **Edit → Start MCP Server**"))
+							Text(.init(NSLocalizedString("2) In Glyphs: **Edit → Start MCP Server**", comment: "Help sheet markdown text")))
 							(
 								Text("3) In your agent (Codex / Claude), select the MCP server named ")
 								+ Text("glyphs-mcp-server").font(.system(.body, design: .monospaced))
@@ -121,20 +122,20 @@ private struct WelcomeView: View {
 
 			GroupBox("Status") {
 				VStack(alignment: .leading, spacing: 10) {
-					HStack {
-						Label("Plug‑in installed", systemImage: "puzzlepiece.extension")
-						Spacer()
-						Text(model.installedPluginVersion?.displayString ?? "Not installed")
-							.foregroundStyle(.secondary)
-							.textSelection(.enabled)
-					}
-					HStack {
-						Label("This installer", systemImage: "shippingbox")
-						Spacer()
-						Text(model.payloadPluginVersion?.displayString ?? "Unknown")
-							.foregroundStyle(.secondary)
-							.textSelection(.enabled)
-					}
+						HStack {
+							Label("Plug‑in installed", systemImage: "puzzlepiece.extension")
+							Spacer()
+							Text(model.installedPluginVersion?.displayString ?? NSLocalizedString("Not installed", comment: "Fallback version text"))
+								.foregroundStyle(.secondary)
+								.textSelection(.enabled)
+						}
+						HStack {
+							Label("This installer", systemImage: "shippingbox")
+							Spacer()
+							Text(model.payloadPluginVersion?.displayString ?? NSLocalizedString("Unknown", comment: "Fallback version text"))
+								.foregroundStyle(.secondary)
+								.textSelection(.enabled)
+						}
 					HStack {
 						Label("GitHub", systemImage: "arrow.down.circle")
 						Spacer()
@@ -234,11 +235,19 @@ private struct WelcomeView: View {
 
 	private var githubLine: String {
 		switch model.githubStatus {
-		case .idle: return "Not checked"
-		case .checking: return "Checking…"
+		case .idle: return NSLocalizedString("Not checked", comment: "GitHub version status")
+		case .checking: return NSLocalizedString("Checking…", comment: "GitHub version status")
 		case .upToDate(let latest): return latest.displayString
-		case .updateAvailable(_, let latest): return "\(latest.displayString) (update available)"
-		case .error(let message): return "Error: \(message)"
+		case .updateAvailable(_, let latest):
+			return String(
+				format: NSLocalizedString("%@ (update available)", comment: "GitHub version status with update available"),
+				latest.displayString
+			)
+		case .error(let message):
+			return String(
+				format: NSLocalizedString("Error: %@", comment: "GitHub version status error"),
+				message
+			)
 		}
 	}
 
@@ -267,11 +276,11 @@ private enum SetupStep: Int, CaseIterable, Identifiable {
 
 	var title: String {
 		switch self {
-		case .preflight: return "Preflight"
-		case .python: return "Python"
-		case .install: return "Install"
-		case .clients: return "Clients"
-		case .finish: return "Finish"
+		case .preflight: return NSLocalizedString("Preflight", comment: "Setup step title")
+		case .python: return NSLocalizedString("Python", comment: "Setup step title")
+		case .install: return NSLocalizedString("Install", comment: "Setup step title")
+		case .clients: return NSLocalizedString("Clients", comment: "Setup step title")
+		case .finish: return NSLocalizedString("Finish", comment: "Setup step title")
 		}
 	}
 }
@@ -345,11 +354,16 @@ private struct CheckView: View {
 									Text(github.displayString)
 										.foregroundStyle(.secondary)
 								}
-									HStack {
-										Text("Installed: \(model.installedPluginVersion?.displayString ?? "Not installed")")
-											.foregroundStyle(.secondary)
-										Spacer()
-										Button("Refresh") {
+										HStack {
+											Text(
+												String(
+													format: NSLocalizedString("Installed: %@", comment: "Installed version line"),
+													model.installedPluginVersion?.displayString ?? NSLocalizedString("Not installed", comment: "Missing version fallback")
+												)
+											)
+												.foregroundStyle(.secondary)
+											Spacer()
+											Button("Refresh") {
 											Task { @MainActor in
 												await model.refreshGitHubPluginVersionIfNeeded(force: true)
 											}
@@ -401,15 +415,25 @@ private struct CheckView: View {
 	private var hasWarn: Bool { model.check.items.contains(where: { $0.level == .warn }) }
 
 	private var summaryTitle: String {
-		if hasBad { return "Needs attention" }
-		if hasWarn { return "Mostly OK" }
-		return "Everything looks good"
+		if hasBad { return NSLocalizedString("Needs attention", comment: "Check summary title") }
+		if hasWarn { return NSLocalizedString("Mostly OK", comment: "Check summary title") }
+		return NSLocalizedString("Everything looks good", comment: "Check summary title")
 	}
 
 	private var summaryDetails: String {
-		if hasBad { return "Some required components are missing or misconfigured. Review the sections below." }
-		if hasWarn { return "A few items may need attention. You can still continue to guided setup." }
-		return "Your environment looks ready."
+		if hasBad {
+			return NSLocalizedString(
+				"Some required components are missing or misconfigured. Review the sections below.",
+				comment: "Check summary details"
+			)
+		}
+		if hasWarn {
+			return NSLocalizedString(
+				"A few items may need attention. You can still continue to guided setup.",
+				comment: "Check summary details"
+			)
+		}
+		return NSLocalizedString("Your environment looks ready.", comment: "Check summary details")
 	}
 
 	private var summarySymbol: String { hasBad ? "xmark.octagon.fill" : (hasWarn ? "exclamationmark.triangle.fill" : "checkmark.circle.fill") }
@@ -472,7 +496,10 @@ private struct PreflightView: View {
 	private var updateLine: String? {
 		guard let github = model.githubPluginVersion else { return nil }
 		if let payload = model.payloadPluginVersion, github > payload {
-			return "A newer plug‑in exists on GitHub than inside this installer. You can enable “Download latest plug‑in from GitHub” above, or download the latest installer."
+			return NSLocalizedString(
+				"A newer plug‑in exists on GitHub than inside this installer. You can enable “Download latest plug‑in from GitHub” above, or download the latest installer.",
+				comment: "Preflight update explanation"
+			)
 		}
 		return nil
 	}
@@ -710,11 +737,16 @@ private struct InstallerLogGroupBox: View {
 												.foregroundStyle(.secondary)
 												.textSelection(.enabled)
 										}
-									} else {
-										Text("Glyphs pip: \(model.preflight.glyphsPipPath ?? "not found")")
-											.foregroundStyle(.secondary)
-											.textSelection(.enabled)
-									}
+										} else {
+											Text(
+												String(
+													format: NSLocalizedString("Glyphs pip: %@", comment: "Python target details"),
+													model.preflight.glyphsPipPath ?? NSLocalizedString("Not found", comment: "Missing value")
+												)
+											)
+												.foregroundStyle(.secondary)
+												.textSelection(.enabled)
+										}
 								} else {
 									Text("Dependencies will be skipped. You can still update the plug‑in bundle.")
 										.foregroundStyle(.secondary)

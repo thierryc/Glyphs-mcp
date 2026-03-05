@@ -74,30 +74,42 @@ public enum Preflight {
 
 		let glyphsBase = InstallerPaths.glyphsBaseDir
 		let pluginsDir = InstallerPaths.glyphsPluginsDir
-		items.append(.init(level: .ok, title: "Glyphs base folder", details: glyphsBase.path))
-		items.append(.init(level: .ok, title: "Glyphs plugins folder", details: pluginsDir.path))
+		items.append(.init(level: .ok, title: NSLocalizedString("Glyphs base folder", comment: "Preflight item title"), details: glyphsBase.path))
+		items.append(.init(level: .ok, title: NSLocalizedString("Glyphs plugins folder", comment: "Preflight item title"), details: pluginsDir.path))
 
 		// Payload + installed plugin versions (best-effort; payload exists only in the built app).
 		let payloadInfo = Preflight.readPluginVersion(bundle: .main, pluginBundleURL: nil)
 		switch payloadInfo {
 		case .some(let v):
-			items.append(.init(level: .ok, title: "Payload plugin version", details: v))
+			items.append(.init(level: .ok, title: NSLocalizedString("Payload plugin version", comment: "Preflight item title"), details: v))
 		case .none:
-			items.append(.init(level: .warn, title: "Payload plugin version", details: "Unavailable (payload not found yet)."))
+			items.append(.init(
+				level: .warn,
+				title: NSLocalizedString("Payload plugin version", comment: "Preflight item title"),
+				details: NSLocalizedString("Unavailable (payload not found yet).", comment: "Preflight item details")
+			))
 		}
 
 		let installedPlugin = pluginsDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
 		if let installedVer = Preflight.readPluginVersionFromBundle(pluginBundle: installedPlugin) {
-			items.append(.init(level: .ok, title: "Installed plugin version", details: installedVer))
+			items.append(.init(level: .ok, title: NSLocalizedString("Installed plugin version", comment: "Preflight item title"), details: installedVer))
 		} else {
-			items.append(.init(level: .warn, title: "Installed plugin version", details: "Not installed (yet)."))
+			items.append(.init(
+				level: .warn,
+				title: NSLocalizedString("Installed plugin version", comment: "Preflight item title"),
+				details: NSLocalizedString("Not installed (yet).", comment: "Preflight item details")
+			))
 		}
 
 		let glyphsPip = InstallerPaths.glyphsPythonPip3()
 		if let pip = glyphsPip {
-			items.append(.init(level: .ok, title: "Glyphs Python pip3", details: pip.path))
+			items.append(.init(level: .ok, title: NSLocalizedString("Glyphs Python pip3", comment: "Preflight item title"), details: pip.path))
 		} else {
-			items.append(.init(level: .warn, title: "Glyphs Python pip3", details: "Not found (install GlyphsPythonPlugin in Glyphs → Settings → Addons)"))
+			items.append(.init(
+				level: .warn,
+				title: NSLocalizedString("Glyphs Python pip3", comment: "Preflight item title"),
+				details: NSLocalizedString("Not found (install GlyphsPythonPlugin in Glyphs → Settings → Addons)", comment: "Preflight item details")
+			))
 		}
 
 		let glyphsSelectedFramework = GlyphsPreferences.pythonFrameworkPath()
@@ -114,24 +126,40 @@ public enum Preflight {
 			let detail = glyphsSelectedVersion != nil
 				? "Selected: \(glyphsSelectedVersion!) (\(glyphsSelectedFramework))"
 				: "Selected framework: \(glyphsSelectedFramework)"
-			items.append(.init(level: .ok, title: "Glyphs Python setting", details: detail))
+			items.append(.init(level: .ok, title: NSLocalizedString("Glyphs Python setting", comment: "Preflight item title"), details: detail))
 		} else {
-			items.append(.init(level: .warn, title: "Glyphs Python setting", details: "Unknown (could not read Glyphs preferences)."))
+			items.append(.init(
+				level: .warn,
+				title: NSLocalizedString("Glyphs Python setting", comment: "Preflight item title"),
+				details: NSLocalizedString("Unknown (could not read Glyphs preferences).", comment: "Preflight item details")
+			))
 		}
 
 		let scan = PythonDetector.scanCustomPythons()
 		let customPythons = scan.good
 		let summary = PythonDetector.formatSummary(scan: scan)
-		items.append(.init(level: customPythons.isEmpty ? .warn : .ok, title: "Custom Python", details: summary))
+		items.append(.init(level: customPythons.isEmpty ? .warn : .ok, title: NSLocalizedString("Custom Python", comment: "Preflight item title"), details: summary))
 
 		let codex = ToolLocator.findTool(named: "codex", extraCandidates: ["/opt/homebrew/bin/codex", "/usr/local/bin/codex"])
-		items.append(.init(level: codex == nil ? .warn : .ok, title: "Codex CLI", details: codex ?? "Not found (will patch ~/.codex/config.toml instead)."))
+		items.append(.init(
+			level: codex == nil ? .warn : .ok,
+			title: NSLocalizedString("Codex CLI", comment: "Preflight item title"),
+			details: codex ?? NSLocalizedString("Not found (will patch ~/.codex/config.toml instead).", comment: "Preflight item details")
+		))
 
 		let claude = ToolLocator.findTool(named: "claude", extraCandidates: ["/opt/homebrew/bin/claude", "/usr/local/bin/claude"])
-		items.append(.init(level: claude == nil ? .warn : .ok, title: "Claude CLI", details: claude ?? "Not found (Claude Code will not be auto-configured)."))
+		items.append(.init(
+			level: claude == nil ? .warn : .ok,
+			title: NSLocalizedString("Claude CLI", comment: "Preflight item title"),
+			details: claude ?? NSLocalizedString("Not found (Claude Code will not be auto-configured).", comment: "Preflight item details")
+		))
 
 		let node = ToolLocator.findTool(named: "node", extraCandidates: ["/opt/homebrew/bin/node", "/usr/local/bin/node"])
-		items.append(.init(level: node == nil ? .warn : .ok, title: "Node", details: node ?? "Not found (Claude Desktop proxy via npx may fail)."))
+		items.append(.init(
+			level: node == nil ? .warn : .ok,
+			title: NSLocalizedString("Node", comment: "Preflight item title"),
+			details: node ?? NSLocalizedString("Not found (Claude Desktop proxy via npx may fail).", comment: "Preflight item details")
+		))
 
 		return PreflightResult(
 			items: items,

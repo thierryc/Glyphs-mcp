@@ -28,6 +28,7 @@
 		AA1111111111111111111127 /* PluginUpdate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000018 /* PluginUpdate.swift */; };
 		AA1111111111111111111128 /* GitHubPluginDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000019 /* GitHubPluginDownloader.swift */; };
 		AA1111111111111111111129 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000021 /* Assets.xcassets */; };
+		AA1111111111111111111130 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000025 /* Localizable.strings */; };
 		F4C332F82F538E3E00BF5B52 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = F4C332F72F538E3E00BF5B52 /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
@@ -91,8 +92,24 @@
 		AA3000000000000000000019 /* GitHubPluginDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubPluginDownloader.swift; sourceTree = "<group>"; };
 		AA3000000000000000000020 /* GlyphsRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphsRuntime.swift; sourceTree = "<group>"; };
 		AA3000000000000000000021 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Resources/Assets.xcassets; sourceTree = SOURCE_ROOT; };
+		AA3000000000000000000022 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Resources/en.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		AA3000000000000000000023 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = Resources/fr.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
+		AA3000000000000000000024 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "Resources/zh-Hans.lproj/Localizable.strings"; sourceTree = SOURCE_ROOT; };
 		F4C332F72F538E3E00BF5B52 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; name = AppIcon.icon; path = Resources/AppIcon.icon; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
+
+/* Begin PBXVariantGroup section */
+		AA3000000000000000000025 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				AA3000000000000000000022 /* en */,
+				AA3000000000000000000023 /* fr */,
+				AA3000000000000000000024 /* zh-Hans */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		AA0000000000000000000013 /* Frameworks */ = {
@@ -149,6 +166,7 @@
 			children = (
 				F4C332F72F538E3E00BF5B52 /* AppIcon.icon */,
 				AA3000000000000000000021 /* Assets.xcassets */,
+				AA3000000000000000000025 /* Localizable.strings */,
 				AA0000000000000000000007 /* Starter */,
 			);
 			path = Resources;
@@ -291,6 +309,8 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				fr,
+				"zh-Hans",
 				Base,
 			);
 			mainGroup = AA0000000000000000000002;
@@ -312,6 +332,7 @@
 			files = (
 				AA1111111111111111111120 /* AGENTS.md in Resources */,
 				AA1111111111111111111129 /* Assets.xcassets in Resources */,
+				AA1111111111111111111130 /* Localizable.strings in Resources */,
 				F4C332F82F538E3E00BF5B52 /* AppIcon.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

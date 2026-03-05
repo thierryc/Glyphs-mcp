@@ -1,0 +1,157 @@
+/* Simplified Chinese (zh-Hans) */
+
+"Help" = "帮助";
+"Close" = "关闭";
+"Glyphs MCP Installer" = "Glyphs MCP 安装器";
+"A guided setup to install the Glyphs MCP plug‑in, Python dependencies, and optional MCP client configuration. You can review choices before anything changes." = "引导式安装，用于安装 Glyphs MCP 插件、Python 依赖以及（可选）MCP 客户端配置。执行任何更改前你都可以先检查选项。";
+"Status" = "状态";
+"Plug‑in installed" = "已安装插件";
+"Not installed" = "未安装";
+"This installer" = "当前安装器";
+"Unknown" = "未知";
+"GitHub" = "GitHub";
+"Update available" = "有可用更新";
+"Download & update…" = "下载并更新…";
+"A newer plug‑in exists on GitHub than in this installer." = "GitHub 上的插件版本比此安装器内置版本更新。";
+"Refresh" = "刷新";
+"Copied" = "已复制";
+"Copy endpoint" = "复制端点";
+"Before you start" = "开始之前";
+"If Glyphs is open, you may need to restart it after installing." = "如果 Glyphs 正在运行，安装后可能需要重启。";
+"Installing Python dependencies requires internet access." = "安装 Python 依赖需要联网。";
+"Client configuration edits create backups." = "修改客户端配置会创建备份。";
+"What will be done" = "将执行的操作";
+"Install plug‑in into Glyphs Plugins folder" = "将插件安装到 Glyphs 的 Plugins 文件夹";
+"Install Python dependencies via pip (network required)" = "通过 pip 安装 Python 依赖（需要网络）";
+"Configure MCP clients (optional)" = "配置 MCP 客户端（可选）";
+"Create a starter project folder with AGENTS.md (optional)" = "创建带有 AGENTS.md 的示例项目文件夹（可选）";
+"Create project folder…" = "创建项目文件夹…";
+"Check status…" = "检查状态…";
+"Guided setup…" = "引导式安装…";
+"Check (no changes)" = "检查（不做更改）";
+"A quick health check. Nothing will be installed or modified." = "快速健康检查。不会安装或修改任何内容。";
+"A quick guide to get you set up. If anything feels unclear, you can always run “Check status…” first — it makes no changes." = "快速指南帮助你完成设置。如有疑问，可以先运行“检查状态…”，它不会做任何更改。";
+"Plug‑in update" = "插件更新";
+"Checking…" = "检查中…";
+"Open plug‑ins folder" = "打开插件文件夹";
+"Open Codex config" = "打开 Codex 配置";
+"Open Claude Desktop config" = "打开 Claude Desktop 配置";
+"Re-scan" = "重新扫描";
+"Back" = "返回";
+"Continue to setup…" = "继续安装…";
+"Preflight" = "预检查";
+"Not checked" = "未检查";
+"Needs attention" = "需要处理";
+"Mostly OK" = "基本正常";
+"Everything looks good" = "一切正常";
+"Some required components are missing or misconfigured. Review the sections below." = "一些必需组件缺失或配置不正确。请查看下方各部分。";
+"A few items may need attention. You can still continue to guided setup." = "部分项目可能需要注意。仍可继续引导式安装。";
+"Your environment looks ready." = "你的环境已准备就绪。";
+"A newer plug‑in exists on GitHub than inside this installer. You can enable “Download latest plug‑in from GitHub” above, or download the latest installer." = "GitHub 上的插件版本比此安装器内置版本更新。你可以在上方启用“从 GitHub 下载最新插件”，或下载最新安装器。";
+"Recommended" = "推荐";
+"Install the plug‑in and dependencies, then (optionally) configure MCP clients. You can change these choices in the next step." = "安装插件和依赖，然后（可选）配置 MCP 客户端。下一步可以更改这些选项。";
+"GitHub version not checked yet. Continue without downloading, or refresh on the Home screen." = "尚未检查 GitHub 版本。可继续而不下载，或在首页刷新。";
+"Continue" = "继续";
+"Update" = "更新";
+"Glyphs + plug‑in" = "Glyphs + 插件";
+"Python" = "Python";
+"Clients" = "客户端";
+"Finish" = "完成";
+"Tools" = "工具";
+"MCP Clients" = "MCP 客户端";
+"No items." = "没有项目。";
+"Copy" = "复制";
+"Log" = "日志";
+"Copy logs" = "复制日志";
+"Running…" = "运行中…";
+"Logs will appear here." = "日志将显示在这里。";
+"Python Target" = "Python 目标";
+"Choose…" = "选择…";
+"Selected:" = "已选择：";
+"Install" = "安装";
+"Start setup" = "开始安装";
+"Cancel" = "取消";
+"Configure clients" = "配置客户端";
+"Configure" = "配置";
+"Copy command" = "复制命令";
+"You’re ready" = "准备就绪";
+"Next steps" = "下一步";
+"2) In Glyphs: Edit → Start MCP Server" = "2）在 Glyphs 中：编辑 → 启动 MCP 服务器";
+"Try it now" = "现在试试";
+"Example prompt: List open fonts" = "示例提示：列出已打开的字体";
+
+/* AppKit strings */
+"Choose Python interpreter" = "选择 Python 解释器";
+"Choose where to create the starter project folder" = "选择创建示例项目文件夹的位置";
+"Choose" = "选择";
+"Replace existing plug‑in?" = "替换已安装的插件吗？";
+"An existing Glyphs MCP plug‑in is installed (%@).\n\nThe installer will install %@.\n\nYou can keep the current version if you prefer." = "已安装 Glyphs MCP 插件（%@）。\n\n安装器将安装 %@。\n\n如需保留当前版本，也可以选择不替换。";
+"Replace" = "替换";
+"Keep current" = "保留当前版本";
+"Quit Glyphs?" = "退出 Glyphs？";
+"Glyphs appears to be running. Quitting Glyphs may be required to load the updated plug‑in.\n\nQuit Glyphs now?" = "Glyphs 似乎正在运行。要加载更新后的插件可能需要退出 Glyphs。\n\n现在退出 Glyphs 吗？";
+"Quit Glyphs" = "退出 Glyphs";
+
+/* Format strings */
+"Error: %@" = "错误：%@";
+"%@ (update available)" = "%@（有可用更新）";
+"Installed: %@" = "已安装：%@";
+
+/* Install step titles */
+"Resolve payload" = "解析安装包";
+"Download update" = "下载更新";
+"Install dependencies" = "安装依赖";
+"Install plugin bundle" = "安装插件包";
+"Done" = "完成";
+
+/* Preflight / Check item titles */
+"Glyphs base folder" = "Glyphs 基础目录";
+"Glyphs plugins folder" = "Glyphs 插件目录";
+"Payload plugin version" = "安装器内置插件版本";
+"Installed plugin version" = "已安装插件版本";
+"Glyphs Python pip3" = "Glyphs Python pip3";
+"Glyphs Python setting" = "Glyphs Python 设置";
+"Custom Python" = "自定义 Python";
+"Codex CLI" = "Codex CLI";
+"Claude CLI" = "Claude CLI";
+"Glyphs MCP plug‑in" = "Glyphs MCP 插件";
+"Glyphs plugins detected" = "检测到的 Glyphs 插件数量";
+"Codex app" = "Codex 应用";
+"Claude app" = "Claude 应用";
+"Codex MCP settings" = "Codex MCP 设置";
+"Claude Desktop MCP settings" = "Claude Desktop MCP 设置";
+"Antigravity MCP settings" = "Antigravity MCP 设置";
+"Claude Code MCP settings" = "Claude Code MCP 设置";
+
+/* Preflight / Check item details */
+"Unavailable (payload not found yet)." = "不可用（尚未找到安装器内置内容）。";
+"Not installed (yet)." = "尚未安装。";
+"Not found (install GlyphsPythonPlugin in Glyphs → Settings → Addons)" = "未找到（请在 Glyphs → 设置 → 插件/扩展 中安装 GlyphsPythonPlugin）";
+"Unknown (could not read Glyphs preferences)." = "未知（无法读取 Glyphs 偏好设置）。";
+"Not found (will patch ~/.codex/config.toml instead)." = "未找到（将改为修改 ~/.codex/config.toml）。";
+"Not found (Claude Code will not be auto-configured)." = "未找到（不会自动配置 Claude Code）。";
+"Not found (Claude Desktop proxy via npx may fail)." = "未找到（Claude Desktop 通过 npx 的代理可能失败）。";
+"Not installed." = "未安装。";
+"Not found." = "未找到。";
+"Not found" = "未找到";
+"Glyphs pip: %@" = "Glyphs pip：%@";
+"Not found (searched /Applications and ~/Applications)." = "未找到（已搜索 /Applications 和 ~/Applications）。";
+"Config not found: %@" = "未找到配置：%@";
+"Failed to read/parse JSON: %@" = "读取/解析 JSON 失败：%@";
+"Claude CLI not installed; cannot verify." = "未安装 Claude CLI，无法验证。";
+"CLI output contains the server; verification is heuristic." = "CLI 输出包含该服务器；此验证为启发式判断。";
+"CLI list succeeded but server not found." = "CLI 列表成功，但未找到服务器。";
+"Claude CLI present, but cannot verify MCP configuration (no supported list command)." = "已安装 Claude CLI，但无法验证 MCP 配置（不支持的列表命令）。";
+
+/* Help sheet markdown */
+"For the smoothest custom setup, install Python **3.12** from python.org." = "为获得最佳自定义安装体验，请从 python.org 安装 Python **3.12**。";
+"Then, in **Glyphs → Settings → Addons → Python version**, select the same **3.12** version and restart Glyphs." = "然后在 **Glyphs → 设置 → 插件/扩展 → Python 版本** 中选择同一个 **3.12** 版本，并重启 Glyphs。";
+"2) In Glyphs: **Edit → Start MCP Server**" = "2）在 Glyphs 中：**编辑 → 启动 MCP 服务器**";
+"Download latest plug‑in from GitHub (optional)" = "从 GitHub 下载最新插件（可选）";
+"If enabled, the installer will download the latest plug‑in from GitHub over HTTPS before installing." = "启用后，安装器会在安装前通过 HTTPS 从 GitHub 下载最新插件。";
+"Use the same Python version shown in Glyphs → Settings → Addons → Python version. Changing it in Glyphs requires restarting Glyphs." = "请使用与 Glyphs → 设置 → 插件/扩展 → Python 版本 中显示的相同 Python 版本。在 Glyphs 中更改该设置需要重启 Glyphs。";
+"Dependencies will be skipped. You can still update the plug‑in bundle." = "将跳过依赖安装。你仍然可以更新插件包。";
+"You can leave this window open while it runs. If something fails, you can copy the logs and try again." = "运行期间可以保持此窗口打开。如果失败，可以复制日志后重试。";
+"Optional. This edits local config files (with backups) or uses CLIs when available." = "可选。会修改本地配置文件（带备份），或在可用时使用 CLI。";
+"3) Try an example prompt (below)" = "3）尝试一个示例提示（如下）";
+"If your agent can’t connect, restart Glyphs and start the MCP server first, then try again." = "如果你的代理无法连接，请先重启 Glyphs 并启动 MCP 服务器，然后再试。";
