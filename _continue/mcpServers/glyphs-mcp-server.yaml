@@ -1,5 +1,5 @@
 name: New MCP server
-version: 1.0.0
+version: 1.0.11
 schema: v1
 mcpServers:
   - name: Glyphs MCP

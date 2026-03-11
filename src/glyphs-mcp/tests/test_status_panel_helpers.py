@@ -32,8 +32,8 @@ class StatusPanelHelpersTests(unittest.TestCase):
     def test_status_text(self) -> None:
         from status_panel_helpers import status_text
 
-        self.assertEqual(status_text(True), "Running")
-        self.assertEqual(status_text(False), "Stopped")
+        self.assertEqual(status_text(True), "running")
+        self.assertEqual(status_text(False), "stopped")
 
     def test_is_thread_running(self) -> None:
         from status_panel_helpers import is_thread_running

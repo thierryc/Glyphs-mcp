@@ -2,8 +2,6 @@
 
 from __future__ import division, print_function, unicode_literals
 
-import json
-
 from GlyphsApp import Glyphs, GSNode, GSPath  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
@@ -346,8 +344,7 @@ def _stem_ratio_payload(
     }
 
 
-@mcp.tool()
-async def measure_stem_ratio(
+def _measure_stem_ratio_impl(
     font_index: int = 0,
     base_master_id: str = None,
     ref_master_id: str = None,
@@ -417,9 +414,40 @@ async def measure_stem_ratio(
             stem_source=stem_source,
             mismatch_tolerance=mismatch_tolerance,
         )
-        return _safe_json(payload)
+        return payload
     except Exception as e:
-        return _safe_json({"ok": False, "error": str(e)})
+        return {"ok": False, "error": str(e)}
+
+
+@mcp.tool()
+async def measure_stem_ratio(
+    font_index: int = 0,
+    base_master_id: str = None,
+    ref_master_id: str = None,
+    reference_glyphs: list = None,
+    samples: int = 9,
+    band: float = 0.2,
+    min_width: float = 5.0,
+    max_width: float = None,
+    include_components: bool = True,
+    stem_source: str = "auto",
+    mismatch_tolerance: float = 0.2,
+) -> str:
+    return _safe_json(
+        _measure_stem_ratio_impl(
+            font_index=font_index,
+            base_master_id=base_master_id,
+            ref_master_id=ref_master_id,
+            reference_glyphs=reference_glyphs,
+            samples=samples,
+            band=band,
+            min_width=min_width,
+            max_width=max_width,
+            include_components=include_components,
+            stem_source=stem_source,
+            mismatch_tolerance=mismatch_tolerance,
+        )
+    )
 
 
 def _layer_has_components(layer) -> bool:
@@ -448,8 +476,7 @@ def _layers_compatible_for_tuning(layer_r, layer_b):
     return True, None
 
 
-@mcp.tool()
-async def review_compensated_tuning(
+def _review_compensated_tuning_impl(
     font_index: int = 0,
     glyph_name: str = None,
     base_master_id: str = None,
@@ -497,50 +524,48 @@ async def review_compensated_tuning(
     """
     try:
         if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return _safe_json({"ok": False, "error": "Font index out of range"})
+            return {"ok": False, "error": "Font index out of range"}
         if not glyph_name:
-            return _safe_json({"ok": False, "error": "glyph_name is required"})
+            return {"ok": False, "error": "glyph_name is required"}
         if not base_master_id:
-            return _safe_json({"ok": False, "error": "base_master_id is required"})
+            return {"ok": False, "error": "base_master_id is required"}
         if not ref_master_id:
-            return _safe_json({"ok": False, "error": "ref_master_id is required"})
+            return {"ok": False, "error": "ref_master_id is required"}
 
         font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
         if not glyph:
-            return _safe_json({"ok": False, "error": "Glyph not found", "glyph_name": glyph_name})
+            return {"ok": False, "error": "Glyph not found", "glyph_name": glyph_name}
 
         base_master = next((m for m in (font.masters or []) if str(getattr(m, "id", "")) == str(base_master_id)), None)
         ref_master = next((m for m in (font.masters or []) if str(getattr(m, "id", "")) == str(ref_master_id)), None)
         if not base_master:
-            return _safe_json({"ok": False, "error": "Base master not found", "base_master_id": base_master_id})
+            return {"ok": False, "error": "Base master not found", "base_master_id": base_master_id}
         if not ref_master:
-            return _safe_json({"ok": False, "error": "Ref master not found", "ref_master_id": ref_master_id})
+            return {"ok": False, "error": "Ref master not found", "ref_master_id": ref_master_id}
 
         same_master = str(base_master_id) == str(ref_master_id)
 
         layer_r = glyph.layers[str(base_master_id)]
         layer_b = glyph.layers[str(ref_master_id)]
         if not layer_r or not layer_b:
-            return _safe_json({"ok": False, "error": "Missing master layer(s) for glyph"})
+            return {"ok": False, "error": "Missing master layer(s) for glyph"}
 
         if _layer_has_components(layer_r) or _layer_has_components(layer_b):
-            return _safe_json(
-                {
-                    "ok": False,
-                    "error": "Glyph layers contain components; compensated tuning currently requires decomposed outlines.",
-                    "hint": "Decompose components before tuning, or tune base glyphs and rebuild components after.",
-                }
-            )
+            return {
+                "ok": False,
+                "error": "Glyph layers contain components; compensated tuning currently requires decomposed outlines.",
+                "hint": "Decompose components before tuning, or tune base glyphs and rebuild components after.",
+            }
 
         compat_ok, compat_info = _layers_compatible_for_tuning(layer_r, layer_b)
         if not compat_ok:
-            return _safe_json({"ok": False, "error": "Incompatible outlines between masters", "details": compat_info})
+            return {"ok": False, "error": "Incompatible outlines between masters", "details": compat_info}
 
         sx_f = float(sx)
         sy_f = float(sy)
         if sx_f <= 0.0 or sy_f <= 0.0:
-            return _safe_json({"ok": False, "error": "sx and sy must be > 0"})
+            return {"ok": False, "error": "sx and sy must be > 0"}
 
         warnings = []
 
@@ -570,7 +595,7 @@ async def review_compensated_tuning(
                 mismatch_tolerance=sm.get("mismatch_tolerance", 0.2),
             )
             if not stem_info.get("ok"):
-                return _safe_json({"ok": False, "error": "Unable to measure stem ratio b", "stem": stem_info})
+                return {"ok": False, "error": "Unable to measure stem ratio b", "stem": stem_info}
             b = float(stem_info.get("b"))
 
         if q_x is None:
@@ -603,9 +628,9 @@ async def review_compensated_tuning(
                 warnings.append("clamped_qy")
         elif mode == "error":
             if not (0.0 <= qx <= 1.0):
-                return _safe_json({"ok": False, "error": "qx out of range and extrapolation=error", "qx": qx})
+                return {"ok": False, "error": "qx out of range and extrapolation=error", "qx": qx}
             if not (0.0 <= qy <= 1.0):
-                return _safe_json({"ok": False, "error": "qy out of range and extrapolation=error", "qy": qy})
+                return {"ok": False, "error": "qy out of range and extrapolation=error", "qy": qy}
 
         if italic_angle is None:
             italic_angle = _coerce_numeric(getattr(base_master, "italicAngle", 0.0)) or 0.0
@@ -680,9 +705,52 @@ async def review_compensated_tuning(
                 "stem": stem_info,
             },
         }
-        return _safe_json(out)
+        return out
     except Exception as e:
-        return _safe_json({"ok": False, "error": str(e)})
+        return {"ok": False, "error": str(e)}
+
+
+@mcp.tool()
+async def review_compensated_tuning(
+    font_index: int = 0,
+    glyph_name: str = None,
+    base_master_id: str = None,
+    ref_master_id: str = None,
+    sx: float = 1.0,
+    sy: float = 1.0,
+    keep_stroke: float = 0.9,
+    stroke_exponent_a: float = None,
+    q_x: float = None,
+    q_y: float = None,
+    italic_angle: float = None,
+    translate_x: float = 0.0,
+    translate_y: float = 0.0,
+    extrapolation: str = "clamp",
+    round_units: bool = True,
+    stem_ratio_b: float = None,
+    stem_measure: dict = None,
+) -> str:
+    return _safe_json(
+        _review_compensated_tuning_impl(
+            font_index=font_index,
+            glyph_name=glyph_name,
+            base_master_id=base_master_id,
+            ref_master_id=ref_master_id,
+            sx=sx,
+            sy=sy,
+            keep_stroke=keep_stroke,
+            stroke_exponent_a=stroke_exponent_a,
+            q_x=q_x,
+            q_y=q_y,
+            italic_angle=italic_angle,
+            translate_x=translate_x,
+            translate_y=translate_y,
+            extrapolation=extrapolation,
+            round_units=round_units,
+            stem_ratio_b=stem_ratio_b,
+            stem_measure=stem_measure,
+        )
+    )
 
 
 def _master_weight_coord(font, master):
@@ -729,8 +797,7 @@ def _next_heavier_master(font, base_master):
     return candidates[0][1]
 
 
-@mcp.tool()
-async def apply_compensated_tuning(
+def _apply_compensated_tuning_impl(
     font_index: int = 0,
     glyph_names: list = None,
     base_master_id: str = None,
@@ -778,16 +845,14 @@ async def apply_compensated_tuning(
     """
     try:
         if not confirm and not dry_run:
-            return _safe_json(
-                {
-                    "ok": False,
-                    "error": "Refusing to apply without confirm=true.",
-                    "hint": "Run with dry_run=true to preview or confirm=true to apply.",
-                }
-            )
+            return {
+                "ok": False,
+                "error": "Refusing to apply without confirm=true.",
+                "hint": "Run with dry_run=true to preview or confirm=true to apply.",
+            }
 
         if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return _safe_json({"ok": False, "error": "Font index out of range"})
+            return {"ok": False, "error": "Font index out of range"}
 
         font = Glyphs.fonts[font_index]
 
@@ -795,20 +860,20 @@ async def apply_compensated_tuning(
             names = list(glyph_names)
         else:
             if not Glyphs.font or Glyphs.font != font:
-                return _safe_json({"ok": False, "error": "No glyph_names provided and font_index is not the active font."})
+                return {"ok": False, "error": "No glyph_names provided and font_index is not the active font."}
             names = _spacing_selected_glyph_names_for_font(font)
 
         if not names:
-            return _safe_json({"ok": False, "error": "No glyphs to apply."})
+            return {"ok": False, "error": "No glyphs to apply."}
 
         if base_master_id is None:
             base_master_id = getattr(getattr(font, "selectedFontMaster", None), "id", None) or getattr(font.masters[0], "id", None)
         if not base_master_id:
-            return _safe_json({"ok": False, "error": "Unable to determine base_master_id."})
+            return {"ok": False, "error": "Unable to determine base_master_id."}
 
         base_master = next((m for m in (font.masters or []) if str(getattr(m, "id", "")) == str(base_master_id)), None)
         if not base_master:
-            return _safe_json({"ok": False, "error": "Base master not found", "base_master_id": base_master_id})
+            return {"ok": False, "error": "Base master not found", "base_master_id": base_master_id}
 
         if ref_master_id is None:
             ref = _next_heavier_master(font, base_master)
@@ -816,13 +881,11 @@ async def apply_compensated_tuning(
                 if str(ref_fallback or "error").strip().lower() == "geometric":
                     ref_master_id = str(base_master_id)
                 else:
-                    return _safe_json(
-                        {
-                            "ok": False,
-                            "error": "No heavier master found. Provide ref_master_id explicitly or set ref_fallback='geometric'.",
-                            "base_master_id": base_master_id,
-                        }
-                    )
+                    return {
+                        "ok": False,
+                        "error": "No heavier master found. Provide ref_master_id explicitly or set ref_fallback='geometric'.",
+                        "base_master_id": base_master_id,
+                    }
             else:
                 ref_master_id = str(getattr(ref, "id", ""))
 
@@ -831,7 +894,7 @@ async def apply_compensated_tuning(
 
         ref_master = next((m for m in (font.masters or []) if str(getattr(m, "id", "")) == str(ref_master_id)), None)
         if not ref_master:
-            return _safe_json({"ok": False, "error": "Ref master not found", "ref_master_id": ref_master_id})
+            return {"ok": False, "error": "Ref master not found", "ref_master_id": ref_master_id}
 
         # Pre-measure b once if needed.
         stem_info = None
@@ -857,7 +920,7 @@ async def apply_compensated_tuning(
                     mismatch_tolerance=sm.get("mismatch_tolerance", 0.2),
                 )
                 if not stem_info.get("ok"):
-                    return _safe_json({"ok": False, "error": "Unable to measure stem ratio b", "stem": stem_info})
+                    return {"ok": False, "error": "Unable to measure stem ratio b", "stem": stem_info}
                 b = float(stem_info.get("b"))
 
         results = []
@@ -887,7 +950,7 @@ async def apply_compensated_tuning(
                 skipped_count += 1
                 continue
 
-            review_json = await review_compensated_tuning(
+            review_data = _review_compensated_tuning_impl(
                 font_index=font_index,
                 glyph_name=name,
                 base_master_id=str(base_master_id),
@@ -906,11 +969,6 @@ async def apply_compensated_tuning(
                 stem_ratio_b=b,
                 stem_measure=stem_measure,
             )
-
-            try:
-                review_data = json.loads(review_json)
-            except Exception:
-                review_data = None
 
             if not isinstance(review_data, dict) or not review_data.get("gmcp", {}).get("ok"):
                 results.append({"glyphName": name, "status": "error", "reason": "review_failed", "details": review_data})
@@ -972,23 +1030,76 @@ async def apply_compensated_tuning(
             results.append({"glyphName": name, "status": "ok", "action": "applied"})
             ok_count += 1
 
-        return _safe_json(
-            {
-                "ok": True,
-                "dryRun": bool(dry_run),
-                "summary": {
-                    "glyphCount": len(names),
-                    "okCount": ok_count,
-                    "skippedCount": skipped_count,
-                    "errorCount": error_count,
-                    "backupCount": backup_count,
-                    "baseMasterId": str(base_master_id),
-                    "refMasterId": str(ref_master_id),
-                    "outputMasterId": str(output_master_id),
-                },
-                "stem": stem_info,
-                "results": results,
-            }
-        )
+        return {
+            "ok": True,
+            "dryRun": bool(dry_run),
+            "summary": {
+                "glyphCount": len(names),
+                "okCount": ok_count,
+                "skippedCount": skipped_count,
+                "errorCount": error_count,
+                "backupCount": backup_count,
+                "baseMasterId": str(base_master_id),
+                "refMasterId": str(ref_master_id),
+                "outputMasterId": str(output_master_id),
+            },
+            "stem": stem_info,
+            "results": results,
+        }
     except Exception as e:
-        return _safe_json({"ok": False, "error": str(e)})
+        return {"ok": False, "error": str(e)}
+
+
+@mcp.tool()
+async def apply_compensated_tuning(
+    font_index: int = 0,
+    glyph_names: list = None,
+    base_master_id: str = None,
+    ref_master_id: str = None,
+    output_master_id: str = None,
+    sx: float = 1.0,
+    sy: float = 1.0,
+    keep_stroke: float = 0.9,
+    stroke_exponent_a: float = None,
+    q_x: float = None,
+    q_y: float = None,
+    italic_angle: float = None,
+    translate_x: float = 0.0,
+    translate_y: float = 0.0,
+    extrapolation: str = "clamp",
+    round_units: bool = True,
+    stem_ratio_b: float = None,
+    stem_measure: dict = None,
+    confirm: bool = False,
+    dry_run: bool = False,
+    backup: bool = True,
+    backup_layer_name: str = "GMCP Backup: CompTune",
+    ref_fallback: str = "error",
+) -> str:
+    return _safe_json(
+        _apply_compensated_tuning_impl(
+            font_index=font_index,
+            glyph_names=glyph_names,
+            base_master_id=base_master_id,
+            ref_master_id=ref_master_id,
+            output_master_id=output_master_id,
+            sx=sx,
+            sy=sy,
+            keep_stroke=keep_stroke,
+            stroke_exponent_a=stroke_exponent_a,
+            q_x=q_x,
+            q_y=q_y,
+            italic_angle=italic_angle,
+            translate_x=translate_x,
+            translate_y=translate_y,
+            extrapolation=extrapolation,
+            round_units=round_units,
+            stem_ratio_b=stem_ratio_b,
+            stem_measure=stem_measure,
+            confirm=confirm,
+            dry_run=dry_run,
+            backup=backup,
+            backup_layer_name=backup_layer_name,
+            ref_fallback=ref_fallback,
+        )
+    )

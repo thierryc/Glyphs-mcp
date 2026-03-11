@@ -3,7 +3,7 @@ title: Command set
 description: The MCP tools exposed by the Glyphs MCP server.
 ---
 
-This is the tool surface exposed by the server shipped in this repo (FastMCP `version="1.0.10"`).
+This is the tool surface exposed by the server shipped in this repo (FastMCP `version="1.0.11"`).
 
 Note: the server can be configured with a **tool profile** (in **Edit → Glyphs MCP Server Status…**) that hides tools you don't need for a given workflow. When a profile is active, `tools/list` will return a subset of the full tool surface. For a token-aware explanation and a “which profile should I pick?” guide, see [Settings & tool profiles](../getting-started/start-server.mdx#settings-tool-profiles).
 
@@ -56,14 +56,15 @@ Note: the server can be configured with a **tool profile** (in **Edit → Glyphs
 
 ### Compensated tuning
 
-These tools help you generate and apply compensated tuning transforms across masters.
+These tools help you generate and apply compensated tuning transforms across two compatible masters.
+They are for compensated scaling, not for single-master lighten/darken edits.
 See also: [Compensated tuning tools](../compensated-tuning-tools.md).
 
 | Tool | Description |
 |------|-------------|
 | `measure_stem_ratio` | Measure the stem ratio `b` between two masters (ref/base) for compensated tuning (no mutation). |
-| `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph and return `set_glyph_paths`-compatible JSON (no mutation). |
-| `apply_compensated_tuning` | Apply compensated tuning across glyphs (supports `dry_run`; requires `confirm=true` to mutate; can back up layers). |
+| `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph from a base master plus a different compatible reference master, and return `set_glyph_paths`-compatible JSON (no mutation). |
+| `apply_compensated_tuning` | Apply the same two-master compensated scaling transform across glyphs (supports `dry_run`; requires `confirm=true` to mutate; can back up layers). |
 
 ### Editing
 

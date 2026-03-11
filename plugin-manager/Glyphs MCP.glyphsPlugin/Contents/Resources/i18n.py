@@ -172,4 +172,3 @@ def tr(key, **fmt):
         except Exception:
             pass
     return s
-

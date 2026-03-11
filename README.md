@@ -17,8 +17,8 @@ On macOS Finder you can also double‑click `RunInstall.command` in the repo roo
 
 Prefer a signed, notarized macOS app with a guided UI?
 
-- Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.10/GlyphsMCPInstaller-1.0.10.dmg
-- Download (ZIP): https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.10/GlyphsMCPInstaller.zip
+- Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.11/GlyphsMCPInstaller-1.0.11.dmg
+- Download (ZIP): https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.11/GlyphsMCPInstaller.zip
 - Latest release: https://github.com/thierryc/Glyphs-mcp/releases/latest
 
 The installer:
@@ -40,8 +40,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.10)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.10"`).
+## Command Set (MCP server v1.0.11)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.11"`).
 
 | Tool | Description |
 |------|-------------|
@@ -64,8 +64,8 @@ This table describes the tool surface exposed by the MCP server shipped in this 
 | `set_spacing_params` | Set spacing parameters as font/master custom parameters (no auto-save). |
 | `set_spacing_guides` | Add or clear glyph-level guides visualizing the spacing measurement band (no auto-save). |
 | `measure_stem_ratio` | Measure a stem ratio `b` between two masters (ref/base) for compensated tuning (no mutation). |
-| `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph (returns `set_glyph_paths`-compatible JSON; no mutation). |
-| `apply_compensated_tuning` | Apply compensated tuning across glyphs (backs up layers; supports `dry_run`; requires `confirm=true` to mutate). |
+| `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph from a base master plus a different compatible reference master (returns `set_glyph_paths`-compatible JSON; no mutation). |
+| `apply_compensated_tuning` | Apply the same two-master compensated scaling transform across glyphs (backs up layers; supports `dry_run`; requires `confirm=true` to mutate). |
 | `get_glyph_components` | Inspect components used in a glyph. |
 | `add_component_to_glyph` | Append a component to a glyph layer. |
 | `add_anchor_to_glyph` | Add an anchor to a glyph layer. |
@@ -85,8 +85,6 @@ This table describes the tool surface exposed by the MCP server shipped in this 
 | `docs_search` | Search bundled Glyphs SDK/ObjectWrapper docs by title/summary. |
 | `docs_get` | Fetch a bundled docs page by id/path (supports paging via offset/max_chars). |
 | `docs_enable_page_resources` | Register each documentation page as its own MCP resource (optional; can flood clients). |
-
-`execute_code` and `execute_code_with_context` accept an optional `timeout` in seconds. Calls default to 60 s, and the bridge honours any larger per-call value you provide.
 
 For performance-sensitive scripts, you can opt into lower-overhead execution:
 - `capture_output=false` to avoid capturing stdout/stderr (prints go to the Macro Panel).
