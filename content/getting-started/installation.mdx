@@ -5,6 +5,32 @@ description: Install the Glyphs MCP plug-in in a few minutes.
 
 Glyphs MCP ships as a **Glyphs 3 plug-in** plus a small Python server that exposes MCP tools.
 
+## 5-minute install path (recommended)
+
+If you want the fastest reliable setup, do only this:
+
+1. Run the installer:
+
+   ```bash
+   python3 install.py
+   ```
+
+2. In Glyphs, start the server: **Edit → Start Glyphs MCP Server**.
+3. In your MCP client, connect to:
+
+   ```text
+   http://127.0.0.1:9680/mcp/
+   ```
+
+4. Run a read-only check:
+
+   ```text
+   Call list_open_fonts and tell me how many fonts are open.
+   If you see an error, quote it verbatim.
+   ```
+
+For client-specific copy/paste config snippets, see [Connect a client](./connect-client.mdx).
+
 ## Requirements
 
 - macOS + **Glyphs 3**
@@ -19,6 +45,8 @@ python3 install.py
 ```
 
 On macOS, you can also double-click `RunInstall.command` in Finder (it launches the same installer).
+
+If macOS Gatekeeper blocks it, right-click `RunInstall.command` → **Open** once to approve it.
 
 :::tip What the installer does
 - Detects an appropriate Python
@@ -36,6 +64,8 @@ If you’re not sure what you have installed:
 ```bash
 python3 --version
 ```
+
+If `python3` is missing or too old, install Python 3.12 from python.org, then rerun the installer.
 
 ## Where things are installed
 
@@ -64,5 +94,28 @@ Open Glyphs and confirm you have:
 
 - **Edit → Start Glyphs MCP Server**
 - **Edit → Glyphs MCP Server Status…**
+
+Then run this endpoint check in Terminal:
+
+```bash
+curl -i http://127.0.0.1:9680/mcp/
+```
+
+Expected: an HTTP response (status code may vary by client handshake), which confirms the local MCP endpoint is reachable.
+
+Finally, verify tool calls from your AI client using the prompt in [Connect a client](./connect-client.mdx#verifying-the-connection).
+
+## Common install failures (quick fixes)
+
+- **`python3: command not found`**
+  - Install Python 3.12 from python.org and retry.
+- **Installer cannot find Glyphs Python**
+  - In Glyphs, install the Python add-on, restart Glyphs, rerun installer.
+- **Client cannot connect but Glyphs menu items exist**
+  - Start/restart the MCP server from Glyphs, then reload your client.
+- **Client tools look outdated**
+  - Disconnect/reconnect the MCP server in your client so it refreshes `tools/list`.
+
+For deeper diagnosis, continue to [Troubleshooting](./troubleshooting.mdx).
 
 Next: [Start the server](./start-server.mdx).
