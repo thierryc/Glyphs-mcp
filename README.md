@@ -17,8 +17,8 @@ On macOS Finder you can also double‑click `RunInstall.command` in the repo roo
 
 Prefer a signed, notarized macOS app with a guided UI?
 
-- Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.11/GlyphsMCPInstaller-1.0.11.dmg
-- Download (ZIP): https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.11/GlyphsMCPInstaller.zip
+- Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.12/GlyphsMCPInstaller-1.0.12.dmg
+- Download (ZIP): https://github.com/thierryc/Glyphs-mcp/releases/download/v1.0.12/GlyphsMCPInstaller.zip
 - Latest release: https://github.com/thierryc/Glyphs-mcp/releases/latest
 
 The installer:
@@ -40,8 +40,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.11)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.11"`).
+## Command Set (MCP server v1.0.12)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.12"`).
 
 | Tool | Description |
 |------|-------------|
