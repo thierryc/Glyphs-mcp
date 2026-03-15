@@ -91,6 +91,9 @@ For performance-sensitive scripts, you can opt into lower-overhead execution:
 - `return_last_expression=false` to skip evaluating the final line as an expression.
 - `max_output_chars` / `max_error_chars` to cap returned output and avoid huge responses.
 - `snippet_only=true` to return a ready-to-paste **Macro Panel** snippet instead of executing (useful when you want manual control).
+- Prefer `execute_code_with_context` for glyph-scoped mutations so the script runs with explicit `font` / `glyph` / `layer` helpers.
+- Large glyph edits should still use `glyph.beginUndo()/endUndo()` or `layer.beginChanges()/endChanges()` inside the script.
+- Glyphs undo is glyph-scoped, so master/global edits are not guaranteed undoable.
 
 Avoid calling `exit()` / `quit()` / `sys.exit()` in `execute_code*`; they won't exit Glyphs and can disrupt the call.
 

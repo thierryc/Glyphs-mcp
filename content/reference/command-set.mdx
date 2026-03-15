@@ -101,6 +101,9 @@ Notes for `execute_code*`:
 - Use `capture_output=false` for large loops.
 - Use `max_output_chars` / `max_error_chars` to cap returned output.
 - Use `snippet_only=true` to return a ready-to-paste **Macro Panel** snippet (no execution) when you want manual control.
+- Prefer `execute_code_with_context` for glyph-scoped mutations so the script gets `font`, `glyph`, and `layer`.
+- Large glyph edits should still call `glyph.beginUndo()/endUndo()` or `layer.beginChanges()/endChanges()` inside the script.
+- Glyphs undo is glyph-scoped, so master/global edits are not guaranteed undoable.
 
 ## Recipes (copy/paste prompts)
 

@@ -51,9 +51,12 @@ Execution rules:
 - Validate object existence before mutating.
 - Summarize outcomes with counts (changed, skipped, failed).
 - Prefer one robust call over many chatty calls.
+- Prefer `execute_code_with_context` for glyph-scoped mutations so the script gets `font`, `glyph`, and `layer`.
 - Use `capture_output=false` for large loops.
 - Use `max_output_chars` and `max_error_chars` to bound output.
 - If you want manual control, request a Macro Panel snippet via `snippet_only=true` (returns code to paste; does not execute).
+- Large glyph edits should still call `glyph.beginUndo()/endUndo()` or `layer.beginChanges()/endChanges()`.
+- Glyphs undo is glyph-scoped, so master/global edits are not guaranteed undoable.
 - Never call `exit()`, `quit()`, or `sys.exit()`.
 
 ## Mutation Safety Protocol

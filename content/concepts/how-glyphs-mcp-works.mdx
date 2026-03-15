@@ -37,3 +37,4 @@ You’ll usually get the best results by asking the assistant to use dedicated t
 - Good: “Open a kerning proof tab with `generate_kerning_tab`.”
 
 Use `execute_code` / `execute_code_with_context` when you *really need* a multi-step workflow that doesn’t have a dedicated tool.
+For mutating scripts, prefer `execute_code_with_context` so the work stays anchored to an explicit glyph/layer context. Glyphs undo is glyph-scoped: large glyph edits should still use `glyph.beginUndo()/endUndo()` or `layer.beginChanges()/endChanges()`, and master/global changes are not guaranteed undoable.

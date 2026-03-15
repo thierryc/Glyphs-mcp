@@ -10,9 +10,20 @@ import json
 import traceback
 from typing import Optional
 
+try:
+    import objc  # type: ignore[import-not-found]
+    from Foundation import NSObject  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover - depends on Glyphs runtime
+    objc = None
+    NSObject = None
+
 from GlyphsApp import Glyphs, GSAnchor, GSComponent, GSGlyph, GSLayer, GSNode, GSPath  # type: ignore[import-not-found]
 
 from mcp_tools import mcp
+
+
+_SCRIPT_PAYLOAD_PREFIX = "__glyphs_mcp_payload__:"
+_USER_CODE_FILENAME = "<glyphs-mcp-user-code>"
 
 
 def _truncate(value: str, limit: Optional[int]) -> tuple[str, bool]:
@@ -186,6 +197,316 @@ def _execute_code_payload(
     return json.dumps(response)
 
 
+def _source_offset(code: str, lineno: int, col_offset: int) -> int:
+    if lineno <= 0:
+        return 0
+
+    lines = code.splitlines(True)
+    if lineno > len(lines):
+        return len(code)
+    return sum(len(line) for line in lines[: lineno - 1]) + col_offset
+
+
+def _split_user_code(code: str, return_last_expression: bool) -> tuple[str, Optional[str]]:
+    user_code = code or ""
+    if not return_last_expression:
+        return user_code, None
+
+    try:
+        module_ast = ast.parse(user_code, filename=_USER_CODE_FILENAME, mode="exec")
+    except SyntaxError:
+        return user_code, None
+
+    if not module_ast.body:
+        return user_code, None
+
+    last_stmt = module_ast.body[-1]
+    if not isinstance(last_stmt, ast.Expr):
+        return user_code, None
+
+    expr_source = ast.get_source_segment(user_code, last_stmt.value)
+    if not expr_source:
+        return user_code, None
+
+    start_offset = _source_offset(user_code, last_stmt.lineno, last_stmt.col_offset)
+    exec_source = user_code[:start_offset]
+    return exec_source, expr_source
+
+
+def _context_setup_source(font_index: Optional[int], glyph_name: Optional[str]) -> str:
+    if font_index is None:
+        return ""
+
+    return "\n".join(
+        [
+            "font_index = {}".format(int(font_index)),
+            "glyph_name = {!r}".format(glyph_name),
+            "font = Glyphs.fonts[font_index] if 0 <= font_index < len(Glyphs.fonts) else None",
+            "glyph = font.glyphs[glyph_name] if (font is not None and glyph_name and font.glyphs[glyph_name]) else None",
+            "layer = None",
+            "if glyph is not None and font is not None:",
+            "    if font.selectedFontMaster:",
+            "        layer = glyph.layers[font.selectedFontMaster.id]",
+            "    elif font.masters:",
+            "        layer = glyph.layers[font.masters[0].id]",
+        ]
+    )
+
+
+def _build_script_wrapper(
+    code: str,
+    *,
+    return_last_expression: bool,
+    font_index: Optional[int],
+    glyph_name: Optional[str],
+    system_exit_message: str,
+    keyboard_interrupt_message: str,
+) -> str:
+    exec_source, expr_source = _split_user_code(code, return_last_expression)
+    context_source = _context_setup_source(font_index, glyph_name)
+
+    script_lines = [
+        "import json",
+        "import traceback",
+        "from GlyphsApp import Glyphs, GSGlyph, GSLayer, GSPath, GSNode, GSComponent, GSAnchor  # type: ignore",
+        "__glyphs_mcp_payload_prefix = {!r}".format(_SCRIPT_PAYLOAD_PREFIX),
+        "__glyphs_mcp_exec_source = {!r}".format(exec_source),
+        "__glyphs_mcp_expr_source = {!r}".format(expr_source),
+        "__glyphs_mcp_result = None",
+        "__glyphs_mcp_error = None",
+    ]
+
+    if context_source:
+        script_lines.extend(["", context_source])
+
+    script_lines.extend(
+        [
+            "",
+            "try:",
+            "    if __glyphs_mcp_exec_source:",
+            "        exec(compile(__glyphs_mcp_exec_source, {!r}, 'exec'), globals(), globals())".format(
+                _USER_CODE_FILENAME
+            ),
+            "    if __glyphs_mcp_expr_source is not None:",
+            "        __glyphs_mcp_result = eval(compile(__glyphs_mcp_expr_source, {!r}, 'eval'), globals(), globals())".format(
+                _USER_CODE_FILENAME
+            ),
+            "except BaseException as exc:",
+            "    if isinstance(exc, SystemExit):",
+            "        __glyphs_mcp_error = {}".format(repr(system_exit_message)).replace(
+                "{code}", "{}"
+            )
+            + ".format(getattr(exc, 'code', None))",
+            "    elif isinstance(exc, KeyboardInterrupt):",
+            "        __glyphs_mcp_error = {!r}".format(keyboard_interrupt_message),
+            "    else:",
+            "        __glyphs_mcp_error = traceback.format_exc()",
+            "",
+            "print(",
+            "    __glyphs_mcp_payload_prefix",
+            "    + json.dumps(",
+            "        {",
+            "            'result': str(__glyphs_mcp_result) if __glyphs_mcp_result is not None else None,",
+            "            'error': __glyphs_mcp_error,",
+            "        }",
+            "    )",
+            ")",
+            "",
+        ]
+    )
+    return "\n".join(script_lines)
+
+
+def _make_output_collector():
+    if objc is not None and NSObject is not None:
+
+        class _Collector(NSObject):  # type: ignore[misc,valid-type]
+            def init(self):
+                self = objc.super(_Collector, self).init()
+                if self is None:
+                    return None
+                self.stdout_chunks = []
+                self.stderr_chunks = []
+                return self
+
+            def setWrite_(self, text):
+                self.stdout_chunks.append(str(text))
+
+            def setWriteError_(self, text):
+                self.stderr_chunks.append(str(text))
+
+        return _Collector.alloc().init()
+
+    class _Collector(object):
+        def __init__(self):
+            self.stdout_chunks = []
+            self.stderr_chunks = []
+
+        def setWrite_(self, text):
+            self.stdout_chunks.append(str(text))
+
+        def setWriteError_(self, text):
+            self.stderr_chunks.append(str(text))
+
+    return _Collector()
+
+
+def _script_runner_available() -> bool:
+    try:
+        handler_getter = getattr(Glyphs, "scriptingHandler", None)
+        if not callable(handler_getter):
+            return False
+        handler = handler_getter()
+    except Exception:
+        return False
+    return handler is not None and hasattr(handler, "runMacroString_stdOut_")
+
+
+def _run_script_via_glyphs(script: str) -> tuple[str, str]:
+    collector = _make_output_collector()
+
+    if objc is not None and NSObject is not None:
+
+        class _ScriptRunner(NSObject):  # type: ignore[misc,valid-type]
+            def init(self):
+                self = objc.super(_ScriptRunner, self).init()
+                if self is None:
+                    return None
+                self._script = script
+                self._collector = collector
+                self.error = None
+                return self
+
+            def runScript_(self, _obj):
+                try:
+                    handler = Glyphs.scriptingHandler()
+                    if handler is None or not hasattr(handler, "runMacroString_stdOut_"):
+                        raise RuntimeError("Glyphs scripting handler is unavailable.")
+                    handler.runMacroString_stdOut_(self._script, self._collector)
+                except Exception as exc:  # pragma: no cover - depends on Glyphs runtime
+                    self.error = exc
+
+        helper = _ScriptRunner.alloc().init()
+        helper.performSelectorOnMainThread_withObject_waitUntilDone_("runScript:", None, True)
+        if getattr(helper, "error", None) is not None:
+            raise helper.error
+    else:
+        handler = Glyphs.scriptingHandler()
+        if handler is None or not hasattr(handler, "runMacroString_stdOut_"):
+            raise RuntimeError("Glyphs scripting handler is unavailable.")
+        handler.runMacroString_stdOut_(script, collector)
+
+    stdout_text = "".join(getattr(collector, "stdout_chunks", []))
+    stderr_text = "".join(getattr(collector, "stderr_chunks", []))
+    return stdout_text, stderr_text
+
+
+def _extract_script_payload(stdout_text: str) -> tuple[str, Optional[dict]]:
+    marker_index = stdout_text.rfind(_SCRIPT_PAYLOAD_PREFIX)
+    if marker_index < 0:
+        return stdout_text, None
+
+    payload_text = stdout_text[marker_index + len(_SCRIPT_PAYLOAD_PREFIX) :]
+    payload_line, _, trailing = payload_text.partition("\n")
+    try:
+        payload = json.loads(payload_line)
+    except Exception:
+        return stdout_text, None
+
+    return stdout_text[:marker_index] + trailing, payload
+
+
+def _execute_code_via_script_runner(
+    code: str,
+    *,
+    capture_output: bool,
+    return_last_expression: bool,
+    max_output_chars: Optional[int],
+    max_error_chars: Optional[int],
+    system_exit_message: str,
+    keyboard_interrupt_message: str,
+    context_info: Optional[dict] = None,
+    font_index: Optional[int] = None,
+    glyph_name: Optional[str] = None,
+) -> str:
+    wrapper = _build_script_wrapper(
+        code,
+        return_last_expression=return_last_expression,
+        font_index=font_index,
+        glyph_name=glyph_name,
+        system_exit_message=system_exit_message,
+        keyboard_interrupt_message=keyboard_interrupt_message,
+    )
+    stdout_text, stderr_text = _run_script_via_glyphs(wrapper)
+    user_output, payload = _extract_script_payload(stdout_text)
+
+    error = None
+    result = None
+    if payload is None:
+        error = "Glyphs script runner did not return a structured result."
+    else:
+        error = payload.get("error")
+        result = payload.get("result")
+
+    if stderr_text:
+        if error:
+            if stderr_text not in error:
+                error = "{}\n{}".format(error, stderr_text)
+        else:
+            error = stderr_text
+
+    if not capture_output:
+        if user_output:
+            print(user_output, end="")
+        if stderr_text:
+            print(stderr_text, end="")
+        output = ""
+    else:
+        output = user_output
+
+    output, output_truncated = _truncate(output, max_output_chars)
+    if error is not None:
+        error, error_truncated = _truncate(error, max_error_chars)
+    else:
+        error_truncated = False
+
+    response = {
+        "success": error is None,
+        "executed": True,
+        "snippet": None,
+        "output": output,
+        "error": error,
+        "result": result,
+        "output_truncated": output_truncated,
+        "error_truncated": error_truncated,
+    }
+    if context_info is not None:
+        response["context"] = context_info
+    return json.dumps(response)
+
+
+def _resolve_context_info(font_index: int, glyph_name: Optional[str]) -> dict:
+    context_info = {}
+    if len(Glyphs.fonts) <= font_index or font_index < 0:
+        return context_info
+
+    font = Glyphs.fonts[font_index]
+    context_info["font"] = font.familyName
+
+    if glyph_name and font.glyphs[glyph_name]:
+        glyph = font.glyphs[glyph_name]
+        context_info["glyph"] = glyph_name
+
+        if font.selectedFontMaster:
+            layer = glyph.layers[font.selectedFontMaster.id]
+            context_info["layer"] = layer.name
+        elif font.masters:
+            layer = glyph.layers[font.masters[0].id]
+            context_info["layer"] = layer.name
+
+    return context_info
+
+
 @mcp.tool()
 async def execute_code(
     code: str,
@@ -230,6 +551,17 @@ async def execute_code(
                     "output_truncated": False,
                     "error_truncated": False,
                 }
+            )
+
+        if _script_runner_available():
+            return _execute_code_via_script_runner(
+                code,
+                capture_output=bool(capture_output),
+                return_last_expression=bool(return_last_expression),
+                max_output_chars=max_output_chars,
+                max_error_chars=max_error_chars,
+                system_exit_message="SystemExit is not allowed in execute_code (code={code}).",
+                keyboard_interrupt_message="KeyboardInterrupt in execute_code.",
             )
 
         return _execute_code_payload(
@@ -309,25 +641,33 @@ async def execute_code_with_context(
                 }
             )
 
+        context_info = _resolve_context_info(font_index, glyph_name)
+
+        if _script_runner_available():
+            return _execute_code_via_script_runner(
+                code,
+                capture_output=bool(capture_output),
+                return_last_expression=bool(return_last_expression),
+                max_output_chars=max_output_chars,
+                max_error_chars=max_error_chars,
+                system_exit_message="SystemExit is not allowed in execute_code_with_context (code={code}).",
+                keyboard_interrupt_message="KeyboardInterrupt in execute_code_with_context.",
+                context_info=context_info,
+                font_index=font_index,
+                glyph_name=glyph_name,
+            )
+
         font = None
         glyph = None
         layer = None
-        context_info = {}
-
         if len(Glyphs.fonts) > font_index >= 0:
             font = Glyphs.fonts[font_index]
-            context_info["font"] = font.familyName
-
             if glyph_name and font.glyphs[glyph_name]:
                 glyph = font.glyphs[glyph_name]
-                context_info["glyph"] = glyph_name
-
                 if font.selectedFontMaster:
                     layer = glyph.layers[font.selectedFontMaster.id]
-                    context_info["layer"] = layer.name
                 elif font.masters:
                     layer = glyph.layers[font.masters[0].id]
-                    context_info["layer"] = layer.name
 
         namespace = _namespace_base()
         namespace.update({"font": font, "glyph": glyph, "layer": layer})
