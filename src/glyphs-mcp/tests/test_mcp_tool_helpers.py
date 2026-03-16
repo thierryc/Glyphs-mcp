@@ -90,7 +90,39 @@ class McpToolHelpersTests(unittest.TestCase):
 
         self.assertIsNone(helpers._coerce_numeric(NotNumeric()))
 
+    def test_clear_layer_paths_preserves_non_path_shapes(self) -> None:
+        class FakePath:
+            def __init__(self) -> None:
+                self.nodes = [object()]
+
+        class FakeComponent:
+            pass
+
+        path = FakePath()
+        component = FakeComponent()
+        layer = type("Layer", (), {"shapes": [path, component]})()
+
+        helpers._clear_layer_paths(layer)
+
+        self.assertEqual(layer.shapes, [component])
+
+    def test_sidebearing_helpers_fall_back_to_lsb_rsb(self) -> None:
+        class LegacyLayer:
+            __slots__ = ("LSB", "RSB")
+
+            def __init__(self) -> None:
+                self.LSB = 40
+                self.RSB = 55
+
+        layer = LegacyLayer()
+
+        self.assertEqual(helpers._get_left_sidebearing(layer), 40)
+        self.assertEqual(helpers._get_right_sidebearing(layer), 55)
+        self.assertTrue(helpers._set_sidebearing(layer, "leftSideBearing", "LSB", 25))
+        self.assertTrue(helpers._set_sidebearing(layer, "rightSideBearing", "RSB", 35))
+        self.assertEqual(layer.LSB, 25)
+        self.assertEqual(layer.RSB, 35)
+
 
 if __name__ == "__main__":
     unittest.main()
-

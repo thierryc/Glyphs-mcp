@@ -121,6 +121,18 @@ def _units_int(value):
 def _clear_layer_paths(layer):
     """Remove all paths from a layer without touching components/anchors."""
     try:
+        shapes = list(getattr(layer, "shapes", []) or [])
+    except Exception:
+        shapes = None
+
+    if shapes is not None:
+        try:
+            layer.shapes = [shape for shape in shapes if not hasattr(shape, "nodes")]
+            return
+        except Exception:
+            pass
+
+    try:
         existing = list(getattr(layer, "paths", []) or [])
     except Exception:
         existing = []

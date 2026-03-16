@@ -210,10 +210,12 @@ def _string_keys_kerning(kerning_master: Any) -> Dict[str, Dict[str, Any]]:
     """Normalize kerning dict for stable string-key lookups."""
 
     out: Dict[str, Dict[str, Any]] = {}
-    if not isinstance(kerning_master, dict):
+    try:
+        left_items = kerning_master.items()
+    except Exception:
         return out
 
-    for lk, rv in kerning_master.items():
+    for lk, rv in left_items:
         if rv is None:
             continue
         try:
@@ -222,9 +224,11 @@ def _string_keys_kerning(kerning_master: Any) -> Dict[str, Dict[str, Any]]:
             continue
         if lk_s not in out:
             out[lk_s] = {}
-        if not isinstance(rv, dict):
+        try:
+            right_items = rv.items()
+        except Exception:
             continue
-        for rk, v in rv.items():
+        for rk, v in right_items:
             try:
                 rk_s = str(rk)
             except Exception:

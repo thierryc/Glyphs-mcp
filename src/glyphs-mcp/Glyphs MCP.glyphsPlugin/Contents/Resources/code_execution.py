@@ -24,6 +24,11 @@ from mcp_tools import mcp
 
 _SCRIPT_PAYLOAD_PREFIX = "__glyphs_mcp_payload__:"
 _USER_CODE_FILENAME = "<glyphs-mcp-user-code>"
+_OBJC_BRIDGE_ABI = 2
+_OBJC_OUTPUT_COLLECTOR_CLASS_NAME = "GlyphsMCPOutputCollectorV{}".format(_OBJC_BRIDGE_ABI)
+_OBJC_SCRIPT_RUNNER_CLASS_NAME = "GlyphsMCPScriptRunnerV{}".format(_OBJC_BRIDGE_ABI)
+_OBJC_OUTPUT_COLLECTOR_CLASS = None
+_OBJC_SCRIPT_RUNNER_CLASS = None
 
 
 def _truncate(value: str, limit: Optional[int]) -> tuple[str, bool]:
@@ -317,25 +322,129 @@ def _build_script_wrapper(
     return "\n".join(script_lines)
 
 
+def _lookup_objc_class(name: str):
+    if objc is None:
+        return None
+    try:
+        return objc.lookUpClass(name)
+    except Exception:
+        return None
+
+
+def _validate_objc_helper_class(helper_class, class_name: str, required_methods: tuple[str, ...]):
+    missing = [method_name for method_name in required_methods if not hasattr(helper_class, method_name)]
+    if missing:
+        raise RuntimeError(
+            "Objective-C helper class '{}' is incompatible with this Glyphs MCP build "
+            "(missing: {}). Restart Glyphs or bump _OBJC_BRIDGE_ABI when changing helper interfaces.".format(
+                class_name, ", ".join(missing)
+            )
+        )
+    return helper_class
+
+
+def _get_or_create_objc_helper_class(
+    *,
+    cache_attr: str,
+    class_name: str,
+    required_methods: tuple[str, ...],
+    builder,
+):
+    helper_class = globals().get(cache_attr)
+    if helper_class is not None:
+        return _validate_objc_helper_class(helper_class, class_name, required_methods)
+
+    existing = _lookup_objc_class(class_name)
+    if existing is not None:
+        helper_class = _validate_objc_helper_class(existing, class_name, required_methods)
+        globals()[cache_attr] = helper_class
+        return helper_class
+
+    helper_class = _validate_objc_helper_class(builder(class_name), class_name, required_methods)
+    globals()[cache_attr] = helper_class
+    return helper_class
+
+
+def _build_output_collector_class(class_name: str):
+    def init(self):
+        self = objc.super(type(self), self).init()
+        if self is None:
+            return None
+        self.stdout_chunks = []
+        self.stderr_chunks = []
+        return self
+
+    def setWrite_(self, text):
+        self.stdout_chunks.append(str(text))
+
+    def setWriteError_(self, text):
+        self.stderr_chunks.append(str(text))
+
+    return type(
+        class_name,
+        (NSObject,),
+        {
+            "__module__": __name__,
+            "init": init,
+            "setWrite_": setWrite_,
+            "setWriteError_": setWriteError_,
+        },
+    )
+
+
+def _build_script_runner_class(class_name: str):
+    def initWithScript_collector_glyphs_(self, script, collector, glyphs):
+        self = objc.super(type(self), self).init()
+        if self is None:
+            return None
+        self._script = script
+        self._collector = collector
+        self._glyphs = glyphs
+        self.error = None
+        return self
+
+    def runScript_(self, _obj):
+        try:
+            handler = self._glyphs.scriptingHandler()
+            if handler is None or not hasattr(handler, "runMacroString_stdOut_"):
+                raise RuntimeError("Glyphs scripting handler is unavailable.")
+            handler.runMacroString_stdOut_(self._script, self._collector)
+        except Exception as exc:  # pragma: no cover - depends on Glyphs runtime
+            self.error = exc
+
+    return type(
+        class_name,
+        (NSObject,),
+        {
+            "__module__": __name__,
+            "initWithScript_collector_glyphs_": initWithScript_collector_glyphs_,
+            "runScript_": runScript_,
+        },
+    )
+
+
+def _get_output_collector_class():
+    return _get_or_create_objc_helper_class(
+        cache_attr="_OBJC_OUTPUT_COLLECTOR_CLASS",
+        class_name=_OBJC_OUTPUT_COLLECTOR_CLASS_NAME,
+        required_methods=("setWrite_", "setWriteError_"),
+        builder=_build_output_collector_class,
+    )
+
+
+def _get_script_runner_class():
+    return _get_or_create_objc_helper_class(
+        cache_attr="_OBJC_SCRIPT_RUNNER_CLASS",
+        class_name=_OBJC_SCRIPT_RUNNER_CLASS_NAME,
+        required_methods=("initWithScript_collector_glyphs_", "runScript_"),
+        builder=_build_script_runner_class,
+    )
+
+
 def _make_output_collector():
     if objc is not None and NSObject is not None:
-
-        class _Collector(NSObject):  # type: ignore[misc,valid-type]
-            def init(self):
-                self = objc.super(_Collector, self).init()
-                if self is None:
-                    return None
-                self.stdout_chunks = []
-                self.stderr_chunks = []
-                return self
-
-            def setWrite_(self, text):
-                self.stdout_chunks.append(str(text))
-
-            def setWriteError_(self, text):
-                self.stderr_chunks.append(str(text))
-
-        return _Collector.alloc().init()
+        collector_class = _get_output_collector_class()
+        return collector_class.alloc().init()
 
     class _Collector(object):
         def __init__(self):
@@ -366,27 +475,8 @@ def _run_script_via_glyphs(script: str) -> tuple[str, str]:
     collector = _make_output_collector()
 
     if objc is not None and NSObject is not None:
-
-        class _ScriptRunner(NSObject):  # type: ignore[misc,valid-type]
-            def init(self):
-                self = objc.super(_ScriptRunner, self).init()
-                if self is None:
-                    return None
-                self._script = script
-                self._collector = collector
-                self.error = None
-                return self
-
-            def runScript_(self, _obj):
-                try:
-                    handler = Glyphs.scriptingHandler()
-                    if handler is None or not hasattr(handler, "runMacroString_stdOut_"):
-                        raise RuntimeError("Glyphs scripting handler is unavailable.")
-                    handler.runMacroString_stdOut_(self._script, self._collector)
-                except Exception as exc:  # pragma: no cover - depends on Glyphs runtime
-                    self.error = exc
-
-        helper = _ScriptRunner.alloc().init()
+        runner_class = _get_script_runner_class()
+        helper = runner_class.alloc().initWithScript_collector_glyphs_(script, collector, Glyphs)
         helper.performSelectorOnMainThread_withObject_waitUntilDone_("runScript:", None, True)
         if getattr(helper, "error", None) is not None:
             raise helper.error

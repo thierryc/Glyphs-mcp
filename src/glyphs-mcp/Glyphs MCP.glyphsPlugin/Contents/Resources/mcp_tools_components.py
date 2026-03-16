@@ -186,6 +186,13 @@ async def add_component_to_glyph(
             component = GSComponent(component_name)
             # Set transform: [xScale, 0, 0, yScale, xOffset, yOffset]
             component.transform = (x_scale, 0, 0, y_scale, x_offset, y_offset)
+            if x_offset or y_offset or x_scale != 1 or y_scale != 1:
+                for attr_name in ("automaticAlignment", "automatic"):
+                    try:
+                        setattr(component, attr_name, False)
+                        break
+                    except Exception:
+                        continue
             layer.components.append(component)
 
         return json.dumps(

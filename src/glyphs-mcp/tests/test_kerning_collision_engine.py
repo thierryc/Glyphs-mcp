@@ -56,6 +56,14 @@ class _FakeLayer:
         return [_Pt(float(p1[0])), _Pt(float(left)), _Pt(float(right)), _Pt(float(p2[0]))]
 
 
+class _Mapping:
+    def __init__(self, data) -> None:
+        self._data = data
+
+    def items(self):
+        return self._data.items()
+
+
 class KerningCollisionEngineTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -80,6 +88,28 @@ class KerningCollisionEngineTests(unittest.TestCase):
         self.assertEqual(val, -80.0)
         self.assertEqual(src.left_key, "idA")
         self.assertEqual(src.right_key, "idV")
+
+    def test_resolve_explicit_kerning_accepts_mapping_like_objc_dicts(self) -> None:
+        kerning_master = _Mapping(
+            {
+                "@MMK_L_A": _Mapping({"@MMK_R_V": -100}),
+                "A": _Mapping({"V": -80}),
+            }
+        )
+
+        val, src = kerning_collision_engine.resolve_explicit_kerning_value(
+            kerning_master=kerning_master,
+            left_glyph_id=None,
+            left_glyph_name="A",
+            left_class_key="@MMK_L_A",
+            right_glyph_id=None,
+            right_glyph_name="V",
+            right_class_key="@MMK_R_V",
+        )
+
+        self.assertEqual(val, -80.0)
+        self.assertEqual(src.left_key, "A")
+        self.assertEqual(src.right_key, "V")
 
     def test_compute_bumper_suggestion_uses_ceil_for_safety(self) -> None:
         sug = kerning_collision_engine.compute_bumper_suggestion(
@@ -135,4 +165,3 @@ class KerningCollisionEngineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

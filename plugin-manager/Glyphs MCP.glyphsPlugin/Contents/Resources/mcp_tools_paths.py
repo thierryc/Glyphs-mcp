@@ -7,7 +7,13 @@ import json
 from GlyphsApp import Glyphs, GSNode, GSPath  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
-from mcp_tool_helpers import _clear_layer_paths, _safe_json
+from mcp_tool_helpers import (
+    _clear_layer_paths,
+    _get_left_sidebearing,
+    _get_right_sidebearing,
+    _safe_json,
+    _set_sidebearing,
+)
 
 
 @mcp.tool()
@@ -88,8 +94,8 @@ async def get_glyph_paths(
             "masterName": layer.name,
             "paths": paths_data,
             "width": getattr(layer, 'width', 0),
-            "leftSideBearing": getattr(layer, 'leftSideBearing', 0),
-            "rightSideBearing": getattr(layer, 'rightSideBearing', 0)
+            "leftSideBearing": _get_left_sidebearing(layer) or 0,
+            "rightSideBearing": _get_right_sidebearing(layer) or 0
         }
         
         return json.dumps(result)
@@ -188,9 +194,9 @@ async def set_glyph_paths(
         if "width" in path_info:
             layer.width = float(path_info["width"])
         if "leftSideBearing" in path_info:
-            layer.leftSideBearing = float(path_info["leftSideBearing"])
+            _set_sidebearing(layer, "leftSideBearing", "LSB", float(path_info["leftSideBearing"]))
         if "rightSideBearing" in path_info:
-            layer.rightSideBearing = float(path_info["rightSideBearing"])
+            _set_sidebearing(layer, "rightSideBearing", "RSB", float(path_info["rightSideBearing"]))
         
         # Send notification
         Glyphs.showNotification(

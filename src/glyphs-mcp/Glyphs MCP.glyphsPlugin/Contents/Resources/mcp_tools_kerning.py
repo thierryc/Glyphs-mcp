@@ -8,6 +8,7 @@ from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
+    _coerce_numeric,
     _glyph_unicode_char,
     _load_andre_fuchs_relevant_pairs,
     _open_tab_on_main_thread,
