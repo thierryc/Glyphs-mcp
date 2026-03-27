@@ -304,9 +304,23 @@ def _set_kerning_pairs_on_main_thread(font, master_id, pairs):
     pairs: iterable of (left_name, right_name, value_int)
     """
 
+    def _apply_pairs(target_font, target_pairs):
+        if master_id not in target_font.kerning:
+            target_font.kerning[master_id] = {}
+
+        master_kerning = target_font.kerning[master_id]
+        for left_name, right_name, value in target_pairs:
+            if left_name not in master_kerning:
+                master_kerning[left_name] = {}
+
+            if int(value) == 0:
+                if right_name in master_kerning[left_name]:
+                    del master_kerning[left_name][right_name]
+            else:
+                master_kerning[left_name][right_name] = int(value)
+
     if objc is None or NSObject is None:
-        for left_name, right_name, value in pairs:
-            font.setKerningForPair(master_id, left_name, right_name, int(value))
+        _apply_pairs(font, pairs)
         return
 
     class _KerningApplyHelper(NSObject):  # type: ignore[misc,valid-type]
@@ -322,8 +336,7 @@ def _set_kerning_pairs_on_main_thread(font, master_id, pairs):
 
         def applyKerning_(self, _obj):
             try:
-                for left_name, right_name, value in self._pairs:
-                    self._font.setKerningForPair(self._master_id, left_name, right_name, int(value))
+                _apply_pairs(self._font, self._pairs)
             except Exception as exc:  # pragma: no cover - bubbled to caller
                 self.error = exc
 

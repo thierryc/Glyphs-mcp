@@ -2,7 +2,7 @@
 
 from __future__ import division, print_function, unicode_literals
 
-from GlyphsApp import Glyphs  # type: ignore[import-not-found]
+from GlyphsApp import GSSMOOTH, Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
 from mcp_tool_helpers import _safe_json
@@ -199,7 +199,18 @@ async def apply_collinear_handles_smooth(
             applied.append(int(i))
             if confirm:
                 try:
+                    try:
+                        node.setConnection_(GSSMOOTH)
+                    except Exception:
+                        try:
+                            node.connection = GSSMOOTH
+                        except Exception:
+                            pass
                     node.smooth = True
+                    if not bool(getattr(node, "smooth", False)) and int(getattr(node, "connection", 0) or 0) != int(
+                        GSSMOOTH
+                    ):
+                        raise RuntimeError("smooth flag was not applied")
                 except Exception:
                     skipped_summary["mutation_failed"] = int(skipped_summary.get("mutation_failed", 0)) + 1
                     skipped.append({"nodeIndex": int(i), "reason": "mutation_failed"})
@@ -235,4 +246,3 @@ async def apply_collinear_handles_smooth(
         )
     except Exception as e:
         return _safe_json({"ok": False, "error": str(e)})
-

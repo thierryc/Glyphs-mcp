@@ -190,13 +190,14 @@ async def set_glyph_paths(
                     if hasattr(layer, "addPath_"):
                         layer.addPath_(new_path)
         
-        # Update metrics if provided
-        if "width" in path_info:
-            layer.width = float(path_info["width"])
+        # Apply sidebearings before width so an explicit width wins over
+        # any width recomputation triggered by LSB/RSB setters.
         if "leftSideBearing" in path_info:
             _set_sidebearing(layer, "leftSideBearing", "LSB", float(path_info["leftSideBearing"]))
         if "rightSideBearing" in path_info:
             _set_sidebearing(layer, "rightSideBearing", "RSB", float(path_info["rightSideBearing"]))
+        if "width" in path_info:
+            layer.width = float(path_info["width"])
         
         # Send notification
         Glyphs.showNotification(

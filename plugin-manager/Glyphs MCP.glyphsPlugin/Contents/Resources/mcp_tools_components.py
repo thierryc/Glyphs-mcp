@@ -271,8 +271,8 @@ async def add_anchor_to_glyph(
 
 @mcp.tool()
 async def add_corner_to_all_masters(
-    _corner_name: str | None = None,
-    _alignment: str | int | None = None,
+    _corner_name=None,
+    _alignment=None,
 ) -> str:
     """Add a corner component hint at the selected node(s) across all masters.
 

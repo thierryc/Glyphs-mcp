@@ -88,6 +88,7 @@ class McpToolsPathsTests(unittest.TestCase):
         def fake_set_sidebearing(layer_obj, attr_name, legacy_attr, value):
             helper_calls["set_sidebearing"].append((attr_name, legacy_attr, value))
             setattr(layer_obj, legacy_attr, value)
+            layer_obj.width = -1
             return True
 
         helpers_module = types.SimpleNamespace(

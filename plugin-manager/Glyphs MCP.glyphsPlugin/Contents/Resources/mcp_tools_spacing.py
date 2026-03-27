@@ -8,7 +8,14 @@ import math
 from GlyphsApp import Glyphs, GSGuide  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
-from mcp_tool_helpers import _custom_parameter, _safe_json, _spacing_selected_glyph_names_for_font
+from mcp_tool_helpers import (
+    _custom_parameter,
+    _get_left_sidebearing,
+    _get_right_sidebearing,
+    _safe_json,
+    _set_sidebearing,
+    _spacing_selected_glyph_names_for_font,
+)
 
 import spacing_engine
 

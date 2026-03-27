@@ -123,6 +123,23 @@ class McpToolHelpersTests(unittest.TestCase):
         self.assertEqual(layer.LSB, 25)
         self.assertEqual(layer.RSB, 35)
 
+    def test_set_kerning_pairs_on_main_thread_updates_kerning_dict(self) -> None:
+        font = type("Font", (), {"kerning": {}})()
+
+        helpers._set_kerning_pairs_on_main_thread(
+            font,
+            "m1",
+            [
+                ("A", "V", -80),
+                ("A", "Y", -60),
+                ("A", "V", 0),
+            ],
+        )
+
+        self.assertIn("m1", font.kerning)
+        self.assertEqual(font.kerning["m1"]["A"]["Y"], -60)
+        self.assertNotIn("V", font.kerning["m1"]["A"])
+
 
 if __name__ == "__main__":
     unittest.main()
