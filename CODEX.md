@@ -14,6 +14,8 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 - `src/glyphs-mcp/` — Core plugin code, MCP tool implementations, and build scripts.
 - `Documentations/` — Generated docs copied into the plugin by `copy_documentation.py`.
 - `glyphs-build-env/` — Optional local virtual environment for development tooling.
+- `skills/` — Repo-owned Codex skills for repeatable Glyphs MCP workflows.
+- `.agents/skills` — Discovery bridge that exposes the repo-owned skills to Codex.
 - `README.md` — Current tool catalog, build steps, and IDE connection examples.
 
 ## Everyday Commands
@@ -49,4 +51,5 @@ Refer to `README.md` for the full command table and usage notes.
   bundle directly unless necessary.
 - Keep documentation ASCII-only unless the file already uses other characters.
 - When adding tooling, update both the README table and relevant agent guides (Claude/Codex).
+- When tool workflows, tool profiles, or safety rules change, update the matching skill in `skills/` and keep `.agents/skills` pointing at the same source of truth.
 - After changes that touch the plugin bundle, remind users to reinstall or resymlink it into the Glyphs plugins directory.

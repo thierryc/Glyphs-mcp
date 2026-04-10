@@ -6,7 +6,7 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Concepts',
-      items: ['concepts/how-glyphs-mcp-works', 'concepts/safety-model']
+      items: ['concepts/how-glyphs-mcp-works', 'concepts/agent-skills', 'concepts/safety-model']
     },
     {
       type: 'category',
@@ -20,6 +20,7 @@ const sidebars: SidebarsConfig = {
         'getting-started/installation',
         'getting-started/start-server',
         'getting-started/connect-client',
+        'getting-started/use-agent-skills',
         'getting-started/troubleshooting'
       ]
     },

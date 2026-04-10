@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs MCP Spacing"
+  short_description: "Review and apply spacing changes safely."
+  default_prompt: "Use $glyphs-mcp-spacing to review spacing suggestions, do a dry run first, and only apply approved changes."
+
+policy:
+  allow_implicit_invocation: true

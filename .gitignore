@@ -227,6 +227,7 @@ glyphs-build-env/
 # Generated macOS app icon PNGs (built from SVG at build time)
 
 # Claude AI local settings
-.claude/
+.claude/*
+!.claude/skills
 
 node_modules

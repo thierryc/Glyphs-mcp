@@ -21,6 +21,7 @@ It’s built to be **tools-first** (deterministic, scriptable capabilities) and 
 
 - [First session (10 minutes)](./tutorial/first-session.mdx)
 - [How Glyphs MCP works](./concepts/how-glyphs-mcp-works.mdx)
+- [Agent skills for Glyphs App](./concepts/agent-skills.mdx)
 - [Safety model](./concepts/safety-model.mdx)
 
 ## Quickstart
@@ -33,6 +34,7 @@ Next steps:
 - [Installation](./getting-started/installation.mdx)
 - [Start the server](./getting-started/start-server.mdx)
 - [Connect a client](./getting-started/connect-client.mdx)
+- [Use skills in Codex and Claude Code](./getting-started/use-agent-skills.mdx)
 - [Troubleshooting](./getting-started/troubleshooting.mdx)
 
 ## What you can do
