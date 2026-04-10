@@ -101,7 +101,59 @@ class InstallerSmokeTests(unittest.TestCase):
             expected = _repo_root() / "src" / "glyphs-mcp" / "Glyphs MCP.glyphsPlugin"
             self.assertEqual(dest.resolve(), expected.resolve())
 
+    def test_install_skill_bundle_copies_managed_skills_only(self) -> None:
+        install_cli = _load_install_cli()
+
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-installer-home.") as tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            try:
+                unrelated = Path(tmp) / ".codex" / "skills" / "third-party-skill"
+                unrelated.mkdir(parents=True, exist_ok=True)
+                (unrelated / "SKILL.md").write_text("# third-party\n", encoding="utf-8")
+
+                installed, skipped = install_cli.install_skill_bundle(install_cli.codex_skills_dir())
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            self.assertFalse(skipped)
+            self.assertGreaterEqual(len(installed), 1)
+            for skill_name in installed:
+                self.assertTrue(skill_name.startswith("glyphs-mcp-"))
+                self.assertTrue((Path(tmp) / ".codex" / "skills" / skill_name / "SKILL.md").is_file())
+            self.assertTrue((Path(tmp) / ".codex" / "skills" / "third-party-skill" / "SKILL.md").is_file())
+
+    def test_install_skill_bundle_overwrites_managed_skills_only_when_requested(self) -> None:
+        install_cli = _load_install_cli()
+
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-installer-home.") as tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            try:
+                dest_root = install_cli.claude_code_skills_dir()
+                managed_dest = dest_root / "glyphs-mcp-connect"
+                managed_dest.mkdir(parents=True, exist_ok=True)
+                (managed_dest / "SKILL.md").write_text("old managed skill\n", encoding="utf-8")
+
+                unrelated = dest_root / "another-skill"
+                unrelated.mkdir(parents=True, exist_ok=True)
+                (unrelated / "SKILL.md").write_text("keep me\n", encoding="utf-8")
+
+                installed, skipped = install_cli.install_skill_bundle(dest_root, overwrite_existing=True)
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            self.assertIn("glyphs-mcp-connect", installed)
+            self.assertFalse(skipped)
+            self.assertIn("name: glyphs-mcp-connect", (managed_dest / "SKILL.md").read_text(encoding="utf-8"))
+            self.assertEqual((unrelated / "SKILL.md").read_text(encoding="utf-8"), "keep me\n")
+
 
 if __name__ == "__main__":
     unittest.main()
-

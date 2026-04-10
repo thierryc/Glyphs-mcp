@@ -166,6 +166,7 @@ console = Console()
 PYTHON_BINARY_PATTERN = re.compile(r"^python3(\.\d+)?$")
 MIN_PY_VERSION = (3, 11, 0)  # Allow 3.11+, prefer 3.12+
 MAX_PY_VERSION_EXCLUSIVE = (3, 14, 0)  # Disallow 3.14+ until tested
+SKILL_PREFIX = "glyphs-mcp-"
 
 
 def repo_root() -> Path:
@@ -182,6 +183,14 @@ def glyphs_plugins_dir() -> Path:
 
 def glyphs_scripts_site_packages() -> Path:
     return glyphs_base_dir() / "Scripts" / "site-packages"
+
+
+def codex_skills_dir() -> Path:
+    return Path.home() / ".codex" / "skills"
+
+
+def claude_code_skills_dir() -> Path:
+    return Path.home() / ".claude" / "skills"
 
 
 def glyphs_python_pip() -> Optional[Path]:
@@ -440,6 +449,102 @@ def install_plugin(mode: str = "copy") -> None:
         shutil.copytree(src, dest)
 
 
+def managed_skill_directories(skills_root: Optional[Path] = None) -> List[Path]:
+    root = skills_root or (repo_root() / "skills")
+    if not root.is_dir():
+        return []
+
+    managed: List[Path] = []
+    for entry in sorted(root.iterdir()):
+        if entry.is_dir() and entry.name.startswith(SKILL_PREFIX):
+            managed.append(entry)
+    return managed
+
+
+def existing_managed_skill_destinations(dest_root: Path, skills_root: Optional[Path] = None) -> List[Path]:
+    return [dest_root / src.name for src in managed_skill_directories(skills_root) if (dest_root / src.name).exists() or (dest_root / src.name).is_symlink()]
+
+
+def _remove_existing_path(path: Path) -> None:
+    if path.is_symlink() or path.is_file():
+        path.unlink()
+    else:
+        shutil.rmtree(path)
+
+
+def _skill_copy_ignore(_src: str, names: List[str]) -> List[str]:
+    return [name for name in names if name == ".DS_Store" or name == "__pycache__" or name.endswith(".pyc")]
+
+
+def install_skill_bundle(
+    dest_root: Path,
+    skills_root: Optional[Path] = None,
+    overwrite_existing: bool = False,
+) -> Tuple[List[str], List[str]]:
+    skill_dirs = managed_skill_directories(skills_root)
+    if not skill_dirs:
+        console.print("[red]No managed Glyphs MCP skills were found to install.[/red]")
+        raise SystemExit(2)
+
+    dest_root.mkdir(parents=True, exist_ok=True)
+    installed: List[str] = []
+    skipped: List[str] = []
+
+    for src in skill_dirs:
+        dest = dest_root / src.name
+        if dest.exists() or dest.is_symlink():
+            if not overwrite_existing:
+                skipped.append(src.name)
+                continue
+            _remove_existing_path(dest)
+        shutil.copytree(src, dest, ignore=_skill_copy_ignore)
+        installed.append(src.name)
+
+    return installed, skipped
+
+
+def prompt_install_skill_bundle() -> None:
+    if not Confirm.ask("Install the Glyphs MCP skill bundle globally for Codex and Claude Code?", default=True):
+        return
+
+    selections = [
+        ("Codex", codex_skills_dir(), Confirm.ask("Install Glyphs MCP skills into ~/.codex/skills for Codex?", default=True)),
+        ("Claude Code", claude_code_skills_dir(), Confirm.ask("Install Glyphs MCP skills into ~/.claude/skills for Claude Code?", default=True)),
+    ]
+
+    installed_any = False
+    source_root = repo_root() / "skills"
+
+    for client_name, dest_root, selected in selections:
+        if not selected:
+            continue
+
+        overwrite_existing = False
+        existing = existing_managed_skill_destinations(dest_root, source_root)
+        if existing:
+            overwrite_existing = Confirm.ask(
+                f"Glyphs MCP skills already exist in {dest_root}.\nReplace or update the existing managed skills for {client_name}?",
+                default=True,
+            )
+
+        console.print(
+            Panel.fit(
+                f"Installing Glyphs MCP skills for {client_name} →\n{dest_root}",
+                title="Install Agent Skills",
+                border_style="blue",
+            )
+        )
+        installed, skipped = install_skill_bundle(dest_root, source_root, overwrite_existing=overwrite_existing)
+        if installed:
+            installed_any = True
+            console.print(f"[green]{client_name}:[/green] installed {', '.join(installed)}")
+        if skipped:
+            console.print(f"[yellow]{client_name}:[/yellow] kept existing {', '.join(skipped)}")
+
+    if installed_any:
+        console.print("[cyan]Reload or restart Codex / Claude Code to pick up the newly installed Glyphs MCP skills.[/cyan]")
+
+
 def choose_mode() -> str:
     console.rule("Glyphs MCP Installer")
     console.print("Select your Glyphs App Settings Python environment:")
@@ -547,6 +652,7 @@ def main() -> None:
     mode = "link" if install_choice == "2" else "copy"
 
     install_plugin(mode)
+    prompt_install_skill_bundle()
 
     console.rule("[green]Install complete[/green]")
     console.print("Open Glyphs and use [bold]Edit → Start MCP Server[/bold].")

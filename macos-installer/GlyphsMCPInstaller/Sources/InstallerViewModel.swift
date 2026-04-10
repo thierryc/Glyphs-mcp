@@ -37,6 +37,7 @@ final class InstallerViewModel: ObservableObject {
 	@Published var installSucceeded: Bool = false
 	@Published var didRunInstall: Bool = false
 	@Published var restartRecommended: Bool = false
+	@Published var clientReloadRecommended: Bool = false
 
 	@Published var githubStatus: PluginUpdateStatus = .idle
 	@Published var installedPluginVersion: PluginBundleVersion? = nil
@@ -48,6 +49,8 @@ final class InstallerViewModel: ObservableObject {
 	@Published var configureClaudeDesktop: Bool = true
 	@Published var configureClaudeCode: Bool = true
 	@Published var configureAntigravity: Bool = true
+	@Published var installCodexSkills: Bool = true
+	@Published var installClaudeCodeSkills: Bool = true
 
 	@Published var createStarterFolder: Bool = false
 	@Published var starterParentFolder: URL? = nil
@@ -231,13 +234,22 @@ final class InstallerViewModel: ObservableObject {
 	func startClientConfig() {
 		guard !isBusy else { return }
 		isBusy = true
+		clientReloadRecommended = false
 		appendLog("== Configure clients ==")
+
+		let payload = try? InstallerPayload.resolve()
+		let codexOverwriteSkills = installCodexSkills ? confirmOverwriteManagedSkillsIfNeeded(payload: payload, destRoot: InstallerPaths.codexSkillsDir, clientName: "Codex") : false
+		let claudeOverwriteSkills = installClaudeCodeSkills ? confirmOverwriteManagedSkillsIfNeeded(payload: payload, destRoot: InstallerPaths.claudeCodeSkillsDir, clientName: "Claude Code") : false
 
 		let options = ClientsOptions(
 			configureCodex: configureCodex,
 			configureClaudeDesktop: configureClaudeDesktop,
 			configureClaudeCode: configureClaudeCode,
-			configureAntigravity: configureAntigravity
+			configureAntigravity: configureAntigravity,
+			installCodexSkills: installCodexSkills,
+			overwriteCodexSkills: codexOverwriteSkills,
+			installClaudeCodeSkills: installClaudeCodeSkills,
+			overwriteClaudeCodeSkills: claudeOverwriteSkills
 		)
 		clientsTask?.cancel()
 		let log: @Sendable (String) -> Void = { [weak self] line in
@@ -245,8 +257,9 @@ final class InstallerViewModel: ObservableObject {
 				self?.appendLog(line)
 			}
 		}
-		let finish: @Sendable () -> Void = { [weak self] in
+		let finish: @Sendable (_ restartRecommended: Bool) -> Void = { [weak self] restartRecommended in
 			Task { @MainActor in
+				self?.clientReloadRecommended = restartRecommended
 				self?.isBusy = false
 			}
 		}
@@ -313,6 +326,20 @@ final class InstallerViewModel: ObservableObject {
 		alert.addButton(withTitle: NSLocalizedString("Keep current", comment: "Confirm keep plugin button"))
 		let resp = alert.runModal()
 		return resp == .alertFirstButtonReturn
+	}
+
+	private func confirmOverwriteManagedSkillsIfNeeded(payload: InstallerPayload?, destRoot: URL, clientName: String) -> Bool {
+		guard let payload else { return false }
+		let installer = AgentSkillBundleInstaller(log: { _ in })
+		let existing = installer.existingManagedSkillDestinations(from: payload, under: destRoot)
+		guard !existing.isEmpty else { return false }
+
+		let alert = NSAlert()
+		alert.messageText = "Replace existing Glyphs MCP skills for \(clientName)?"
+		alert.informativeText = "Existing managed Glyphs MCP skills were found in \(destRoot.path).\n\nChoose Replace to update those skills in place. Choose Keep current to leave existing skills untouched; any missing Glyphs MCP skills will still be installed."
+		alert.addButton(withTitle: "Replace")
+		alert.addButton(withTitle: "Keep current")
+		return alert.runModal() == .alertFirstButtonReturn
 	}
 
 	private func beginHeartbeat() {
@@ -430,9 +457,10 @@ final class InstallerViewModel: ObservableObject {
 		options: ClientsOptions,
 		runner: ProcessRunner,
 		log: @escaping @Sendable (String) -> Void,
-		finish: @escaping @Sendable () -> Void
+		finish: @escaping @Sendable (Bool) -> Void
 	) async {
 		do {
+			var shouldRecommendReload = false
 			if options.configureCodex {
 				try await CodexConfigurator(runner: runner, log: log).configure()
 			}
@@ -445,12 +473,25 @@ final class InstallerViewModel: ObservableObject {
 			if options.configureAntigravity {
 				try AntigravityConfigurator(log: log).configure()
 			}
+			if options.installCodexSkills || options.installClaudeCodeSkills {
+				let payload = try InstallerPayload.resolve()
+				let skillInstaller = AgentSkillBundleInstaller(log: log)
+				if options.installCodexSkills {
+					shouldRecommendReload = (try skillInstaller.installCodexSkills(payload: payload, overwriteExisting: options.overwriteCodexSkills)) || shouldRecommendReload
+				}
+				if options.installClaudeCodeSkills {
+					shouldRecommendReload = (try skillInstaller.installClaudeCodeSkills(payload: payload, overwriteExisting: options.overwriteClaudeCodeSkills)) || shouldRecommendReload
+				}
+				if shouldRecommendReload {
+					log("Reload or restart Codex / Claude Code to pick up the newly installed Glyphs MCP skills.")
+				}
+			}
 			log("Client configuration complete.")
+			finish(shouldRecommendReload)
 		} catch {
 			log("ERROR: \(error.localizedDescription)")
+			finish(false)
 		}
-
-		finish()
 	}
 }
 
@@ -470,6 +511,10 @@ private struct ClientsOptions: Sendable {
 	let configureClaudeDesktop: Bool
 	let configureClaudeCode: Bool
 	let configureAntigravity: Bool
+	let installCodexSkills: Bool
+	let overwriteCodexSkills: Bool
+	let installClaudeCodeSkills: Bool
+	let overwriteClaudeCodeSkills: Bool
 }
 
 struct InstallStep: Identifiable {

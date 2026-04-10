@@ -240,6 +240,56 @@ url = "http://example.com"
 		XCTAssertTrue(FileManager.default.fileExists(atPath: resolved.requirementsTxt.path))
 	}
 
+	func testPayloadManagedSkillDirectoriesFiltersGlyphsSkills() throws {
+		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+		let payloadDir = tmp.appendingPathComponent("Payload", isDirectory: true)
+		let plugin = payloadDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+		let req = payloadDir.appendingPathComponent("requirements.txt")
+		let skillsDir = payloadDir.appendingPathComponent("skills", isDirectory: true)
+
+		try FileManager.default.createDirectory(at: plugin, withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-connect", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("other-skill", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
+
+		let payload = InstallerPayload(payloadDir: payloadDir, pluginBundle: plugin, requirementsTxt: req, skillsDir: skillsDir)
+		let managed = payload.managedSkillDirectories().map(\.lastPathComponent)
+		XCTAssertEqual(managed, ["glyphs-mcp-connect", "glyphs-mcp-spacing"])
+	}
+
+	func testAgentSkillBundleInstallerOverwritesManagedSkillsOnlyWhenRequested() throws {
+		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+		let payloadDir = tmp.appendingPathComponent("Payload", isDirectory: true)
+		let plugin = payloadDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+		let req = payloadDir.appendingPathComponent("requirements.txt")
+		let skillsDir = payloadDir.appendingPathComponent("skills", isDirectory: true)
+		let connect = skillsDir.appendingPathComponent("glyphs-mcp-connect", isDirectory: true)
+		let spacing = skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true)
+		let destRoot = tmp.appendingPathComponent("dest", isDirectory: true)
+		let existingManaged = destRoot.appendingPathComponent("glyphs-mcp-connect", isDirectory: true)
+		let unrelated = destRoot.appendingPathComponent("third-party-skill", isDirectory: true)
+
+		try FileManager.default.createDirectory(at: plugin, withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: connect, withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: spacing, withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: existingManaged, withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: unrelated, withIntermediateDirectories: true, attributes: nil)
+		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
+		try "new managed\n".write(to: connect.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+		try "new spacing\n".write(to: spacing.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+		try "old managed\n".write(to: existingManaged.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+		try "keep me\n".write(to: unrelated.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+
+		let payload = InstallerPayload(payloadDir: payloadDir, pluginBundle: plugin, requirementsTxt: req, skillsDir: skillsDir)
+		let installer = AgentSkillBundleInstaller(log: { _ in })
+		_ = try installer.installManagedSkills(from: payload, to: destRoot, clientName: "Codex", overwriteExisting: true)
+
+		XCTAssertEqual(try String(contentsOf: existingManaged.appendingPathComponent("SKILL.md"), encoding: .utf8), "new managed\n")
+		XCTAssertEqual(try String(contentsOf: destRoot.appendingPathComponent("glyphs-mcp-spacing/SKILL.md"), encoding: .utf8), "new spacing\n")
+		XCTAssertEqual(try String(contentsOf: unrelated.appendingPathComponent("SKILL.md"), encoding: .utf8), "keep me\n")
+	}
+
 	func testProcessRunnerRunStreamingCapturesStdoutAndStderr() async throws {
 		let runner = ProcessRunner()
 		let exe = URL(fileURLWithPath: "/bin/sh")
