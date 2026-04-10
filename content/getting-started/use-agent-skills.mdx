@@ -1,0 +1,125 @@
+---
+title: Use skills in Codex and Claude Code
+description: Use the bundled Glyphs MCP skills in Codex or Claude Code, either from the repo or via a global install.
+---
+
+Glyphs MCP ships a small bundle of workflow skills in `skills/`. They help agents use Glyphs MCP tools with better defaults for connection checks, kerning, spacing, and outline editing.
+
+## Prerequisites
+
+Before using the skills:
+
+- Glyphs MCP must be running in Glyphs
+- your client must be connected to `http://127.0.0.1:9680/mcp/`
+- you must either open this repository in the client or install the bundled skills globally
+
+If you still need to connect your client, start with [Connect a client](./connect-client.mdx).
+
+## Two install paths
+
+You can use the same bundled `glyphs-mcp-*` skills in two ways:
+
+- `Repo-local`: open this repository and let the client discover the repo-owned skills directly.
+- `Global install`: use the Glyphs MCP installer to copy the bundled skills into the client’s global skills directory.
+
+## Repo-local discovery
+
+The authored source of truth lives in `skills/`.
+
+The repo exposes the same skills to each client through a client-specific bridge:
+
+- Codex reads `.agents/skills`
+- Claude Code reads `.claude/skills`
+
+If you update the repo and do not see the latest skills immediately, reload the workspace or restart the client.
+
+## Repo-local in Codex
+
+1. Open this repository in Codex and trust the workspace.
+2. Add the local Glyphs MCP server if you have not already:
+
+```bash
+codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
+codex mcp list
+```
+
+3. Start Glyphs and confirm the server is running in **Edit -> Glyphs MCP Server Status...**.
+4. Pick the narrowest useful tool profile before you begin.
+5. Explicitly invoke a skill when you want a guided workflow:
+
+```text
+Use $glyphs-mcp-connect to verify my Glyphs MCP setup, call list_open_fonts, and tell me which font_index to use next.
+```
+
+## Repo-local in Claude Code
+
+1. Open this repository in Claude Code.
+2. Add the local Glyphs MCP server if you have not already:
+
+```bash
+claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
+claude mcp list
+```
+
+3. Restart or reload Claude Code if the server or repo skills do not appear immediately.
+4. Run `/mcp` if you want to confirm the server is available.
+5. Ask for the skill by name:
+
+```text
+Use the glyphs-mcp-connect skill to verify my Glyphs MCP setup, call list_open_fonts, and tell me which font_index to use next.
+```
+
+## Global install
+
+Use this when you want the bundled Glyphs MCP skills available without opening the repo.
+
+1. Run the installer from the repo root:
+
+```bash
+python3 install.py
+```
+
+For scripted dev installs, use the explicit CLI mode instead of prompts. Example:
+
+```bash
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
+```
+
+2. In the terminal installer or macOS installer app, enable **Install Glyphs MCP agent skills** for Codex and/or Claude Code.
+3. The installer copies the bundled `glyphs-mcp-*` skills into:
+   - `~/.codex/skills/`
+   - `~/.claude/skills/`
+4. Reload or restart Codex / Claude Code after installation.
+5. Ask for the skill by name:
+
+```text
+Use the glyphs-mcp-connect skill to verify my Glyphs MCP setup, call list_open_fonts, and tell me which font_index to use next.
+```
+
+:::note Advanced Codex-only option
+Codex can also install individual skills with its built-in `$skill-installer`, but the primary Glyphs MCP workflow is either repo-local discovery or the Glyphs MCP installer’s global skill bundle.
+:::
+
+## Available skills
+
+| Skill | Use it for | Example prompt |
+| --- | --- | --- |
+| `glyphs-mcp-connect` | Start-up checks, endpoint verification, and first health checks | `Use the glyphs-mcp-connect skill to verify my setup and call list_open_fonts.` |
+| `glyphs-mcp-kerning` | Review kerning bumper suggestions and apply approved changes | `Use the glyphs-mcp-kerning skill to review kerning collisions and do a dry run first.` |
+| `glyphs-mcp-spacing` | Review spacing suggestions and apply approved changes | `Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.` |
+| `glyphs-mcp-outlines-docs` | Outline edits, components, anchors, selected nodes, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes, prefer dedicated tools, and fetch only the docs pages I need.` |
+
+## Best practices
+
+- Choose the narrowest useful Glyphs MCP tool profile first.
+- Read current state before changing anything.
+- Prefer dedicated tools over free-form code.
+- Use dry runs before apply steps.
+- Never auto-save the font unless a human explicitly asks for it.
+- Prefer `docs_search` plus `docs_get` instead of loading broad documentation into context.
+
+## Related docs
+
+- [Agent skills for Glyphs App](../concepts/agent-skills.mdx)
+- [Connect a client](./connect-client.mdx)
+- [First session (10 minutes)](../tutorial/first-session.mdx)

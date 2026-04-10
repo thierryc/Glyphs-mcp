@@ -1,0 +1,74 @@
+---
+title: Agent skills for Glyphs App
+description: Reusable agent workflows for safe, practical Glyphs MCP tasks.
+---
+
+Glyphs MCP gives an AI client safe, structured access to the Glyphs canvas. Agent skills add the missing layer on top: reusable workflows for real font-editing tasks.
+
+Think of it this way:
+
+- **MCP tools** expose what the plug-in can do
+- **skills** teach an agent how to use those tools well for a specific job
+
+That matters in Glyphs because font editing is stateful. A good workflow should inspect the current font and master first, prefer dedicated tools over free-form code, use dry runs before mutations, and avoid auto-saving unless a human explicitly asks for it.
+
+## Why skills help in Glyphs
+
+Glyphs workflows often have a few sharp edges:
+
+- the same prompt can target the wrong font or master if the agent does not read context first
+- spacing and kerning changes should usually be reviewed before they are applied
+- outline edits should prefer dedicated tools and bounded docs lookups over broad code execution
+- large tool lists can waste tokens in MCP clients unless you pick the right profile first
+
+The bundled Glyphs MCP skills encode those habits so agents reach for safer defaults without repeating the whole procedure every session.
+
+## Available skills
+
+This repo currently ships a small curated set of skills for real Glyphs MCP tasks:
+
+| Skill | Use it for | Example prompt |
+| --- | --- | --- |
+| `glyphs-mcp-connect` | Start-up checks, MCP connection, and first health checks | `Use the glyphs-mcp-connect skill to verify my setup and call list_open_fonts.` |
+| `glyphs-mcp-kerning` | Kerning bumper review and approved applies | `Use the glyphs-mcp-kerning skill to review bumper suggestions and do a dry run first.` |
+| `glyphs-mcp-spacing` | Spacing review, sidebearing suggestions, and approved applies | `Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.` |
+| `glyphs-mcp-outlines-docs` | Outline edits, components, anchors, selected nodes, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes, prefer dedicated tools, and fetch only the docs I need.` |
+
+These are intentionally narrow. The goal is not to create a single mega-skill for all of Glyphs. The goal is to make the common workflows predictable and safe.
+
+## How the bundle is exposed
+
+The authored source of truth lives in `skills/`.
+
+For contributors and advanced users, the repo exposes that same skill bundle to both clients through lightweight bridges:
+
+- Codex: `.agents/skills -> ../skills`
+- Claude Code: `.claude/skills -> ../skills`
+
+That keeps the skill content in one place while letting each client discover it through the path it expects.
+
+For end users, the Glyphs MCP installers can also copy the bundled `glyphs-mcp-*` skills into the clients’ global skill directories:
+
+- Codex: `~/.codex/skills/`
+- Claude Code: `~/.claude/skills/`
+
+That means you do not need to open the repo just to use the bundled Glyphs MCP skills.
+
+## Safety-first workflow
+
+The current skill set follows the same high-level operating model:
+
+1. Pick the narrowest useful Glyphs MCP tool profile first.
+2. Read current state before changing anything.
+3. Prefer dedicated tools over free-form code.
+4. Use review or dry-run steps before apply steps.
+5. Never auto-save the font.
+6. Prefer `docs_search` plus `docs_get` instead of broad docs loading.
+
+This keeps the workflows aligned with the Glyphs MCP safety model and with the tool contracts documented elsewhere in the repo.
+
+## Next step
+
+For setup and client-specific usage instructions, go to [Use skills in Codex and Claude Code](../getting-started/use-agent-skills.mdx).
+
+For the repo source, see the [skills directory on GitHub](https://github.com/thierryc/Glyphs-mcp/tree/main/skills).

@@ -962,6 +962,35 @@ private struct InstallerLogGroupBox: View {
 						.frame(maxWidth: .infinity, alignment: .leading)
 					}
 
+					GroupBox {
+						VStack(alignment: .leading, spacing: 10) {
+							Text("Install Glyphs MCP skills")
+								.font(.headline)
+							Text("Optional. This copies the bundled Glyphs MCP skill set into each client’s global skills directory. Existing Glyphs MCP skills can be updated in place after confirmation.")
+								.foregroundStyle(.secondary)
+
+							ClientRow(
+								name: "Codex skills",
+								status: "Global path: \(InstallerPaths.codexSkillsDir.path)",
+								details: "Copies the bundled glyphs-mcp-* skills into Codex’s global skills directory.",
+								isOn: $model.installCodexSkills,
+								disabled: false
+							)
+							ClientRow(
+								name: "Claude Code skills",
+								status: "Global path: \(InstallerPaths.claudeCodeSkillsDir.path)",
+								details: "Copies the bundled glyphs-mcp-* skills into Claude Code’s global skills directory.",
+								isOn: $model.installClaudeCodeSkills,
+								disabled: false
+							)
+
+							Text("Reload or restart Codex / Claude Code after installing the global skill bundle.")
+								.foregroundStyle(.secondary)
+								.font(.callout)
+						}
+						.frame(maxWidth: .infinity, alignment: .leading)
+					}
+
 						InstallerLogGroupBox(logText: model.logText, isBusy: model.isBusy)
 					}
 					.padding(20)
@@ -1047,6 +1076,10 @@ private struct InstallerLogGroupBox: View {
 
 								Text("If your agent can’t connect, restart Glyphs and start the MCP server first, then try again.")
 									.foregroundStyle(.secondary)
+								if model.clientReloadRecommended {
+									Text("If you installed the global Glyphs MCP skill bundle, reload or restart Codex / Claude Code before trying the skill prompts.")
+										.foregroundStyle(.secondary)
+								}
 							}
 							.frame(maxWidth: .infinity, alignment: .leading)
 						}

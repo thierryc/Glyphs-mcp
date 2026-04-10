@@ -13,6 +13,12 @@ python3 install.py
 
 On macOS Finder you can also double‑click `RunInstall.command` in the repo root; it launches the same installer (`python3 install.py`). If Gatekeeper blocks it, right‑click → Open once to approve.
 
+Scripted installs are also supported for automation. Example:
+
+```bash
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
+```
+
 ## macOS Installer app (recommended)
 
 Prefer a signed, notarized macOS app with a guided UI?
@@ -24,12 +30,77 @@ Prefer a signed, notarized macOS app with a guided UI?
 The installer:
 - installs/updates `Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`,
 - installs Python dependencies (Glyphs Python or a custom Python), and
-- can configure MCP clients (Codex, Claude Desktop, Claude Code, Antigravity).
+- can configure MCP clients (Codex, Claude Desktop, Claude Code, Antigravity), and
+- can optionally install the bundled Glyphs MCP skills into Codex and Claude Code.
 
 Minimum requirements:
 - macOS 13.0+
 - Glyphs 3
 - Python 3.11–3.13 (recommended: python.org 3.12)
+
+## Repo skills for Codex and Claude Code
+
+This repo ships a small bundle of workflow skills in `skills/` for common Glyphs MCP tasks. The same source of truth is exposed to both clients:
+
+- Codex reads them through `.agents/skills`
+- Claude Code reads them through `.claude/skills`
+
+The supported usage patterns are:
+
+### Use repo-local skills
+
+Use this when you are developing in this repository or want the clients to discover the skills directly from the repo checkout.
+
+1. Open this repository in Codex or Claude Code so the repo-local bridges are visible.
+2. Connect Glyphs MCP:
+
+```bash
+codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
+codex mcp list
+
+claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
+claude mcp list
+```
+
+3. In Codex, trust the workspace so `.agents/skills` loads.
+4. In Claude Code, reload or restart if `.claude/skills` does not appear immediately.
+5. Start Glyphs, confirm the server is running in **Edit -> Glyphs MCP Server Status...**, and pick the narrowest useful tool profile first.
+6. Invoke a specific skill when you want a guided workflow:
+
+```text
+Use $glyphs-mcp-connect to verify my Glyphs MCP setup, call list_open_fonts, and tell me which font_index to use next.
+```
+
+### Install skills globally
+
+Use this when you want the bundled `glyphs-mcp-*` skills available without opening the repo.
+
+1. Run the installer from the repo root, or use the signed macOS installer app:
+
+```bash
+python3 install.py
+```
+
+2. In the installer, enable **Install Glyphs MCP agent skills** for Codex and/or Claude Code.
+3. The installer copies the bundled skills into:
+   - `~/.codex/skills/`
+   - `~/.claude/skills/`
+4. Reload or restart Codex / Claude Code after the installer finishes.
+5. Ask for the skill by name:
+
+```text
+Use the glyphs-mcp-connect skill to verify my Glyphs MCP setup, call list_open_fonts, and tell me which font_index to use next.
+```
+
+Advanced Codex-only alternative: you can install individual skills with Codex’s built-in `$skill-installer`, but that is not the primary Glyphs MCP workflow.
+
+Current repo skills focus on:
+- connection and health checks for the local Glyphs MCP server
+- guarded kerning bumper reviews and applies
+- guarded spacing reviews and applies
+- outlines, components, anchors, and docs lookup workflows
+
+For the website docs version, see the agent skills pages in the docs site.
 
 ## What Is an MCP Server?
 
@@ -183,6 +254,12 @@ Recommended (simplest): run the one‑command interactive installer. It handles 
 python3 install.py
 ```
 
+For automation or reproducible dev setup, you can also run the installer non-interactively. Example:
+
+```bash
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
+```
+
 Alternatively, you can install the plug‑in manually as described below.
 
 ## Install the Plug‑in
@@ -237,6 +314,12 @@ Prefer a guided setup? Run the interactive installer to:
 
 ```bash
 python3 install.py
+```
+
+Need a scripted install instead? Use the explicit CLI mode and supply every required choice up front:
+
+```bash
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --skip-skills --skip-client-guidance
 ```
 
 ### What the installer does

@@ -179,6 +179,80 @@ public struct ClaudeCodeConfigurator {
 	}
 }
 
+// MARK: - Agent skills
+
+public struct AgentSkillBundleInstaller {
+	let log: (String) -> Void
+
+	public init(log: @escaping (String) -> Void) {
+		self.log = log
+	}
+
+	@discardableResult
+	public func installCodexSkills(payload: InstallerPayload, overwriteExisting: Bool) throws -> Bool {
+		try installManagedSkills(from: payload, to: InstallerPaths.codexSkillsDir, clientName: "Codex", overwriteExisting: overwriteExisting)
+	}
+
+	@discardableResult
+	public func installClaudeCodeSkills(payload: InstallerPayload, overwriteExisting: Bool) throws -> Bool {
+		try installManagedSkills(from: payload, to: InstallerPaths.claudeCodeSkillsDir, clientName: "Claude Code", overwriteExisting: overwriteExisting)
+	}
+
+	@discardableResult
+	func installManagedSkills(
+		from payload: InstallerPayload,
+		to destRoot: URL,
+		clientName: String,
+		overwriteExisting: Bool
+	) throws -> Bool {
+		let managedSkills = payload.managedSkillDirectories()
+		guard !managedSkills.isEmpty else {
+			throw InstallerError.userFacing("Installer payload does not contain Glyphs MCP skills.")
+		}
+
+		let fm = FileManager.default
+		try fm.createDirectory(at: destRoot, withIntermediateDirectories: true)
+
+		var installedNames: [String] = []
+		var skippedNames: [String] = []
+
+		for skillDir in managedSkills {
+			let dest = destRoot.appendingPathComponent(skillDir.lastPathComponent, isDirectory: true)
+			if itemExists(at: dest) {
+				if overwriteExisting {
+					try fm.removeItem(at: dest)
+				} else {
+					skippedNames.append(skillDir.lastPathComponent)
+					continue
+				}
+			}
+
+			try fm.copyItem(at: skillDir, to: dest)
+			installedNames.append(skillDir.lastPathComponent)
+		}
+
+		if !installedNames.isEmpty {
+			log("Installed Glyphs MCP skills for \(clientName): \(installedNames.joined(separator: ", "))")
+			log("Destination: \(destRoot.path)")
+		}
+		if !skippedNames.isEmpty {
+			log("Kept existing Glyphs MCP skills for \(clientName): \(skippedNames.joined(separator: ", "))")
+		}
+		return !installedNames.isEmpty
+	}
+
+	public func existingManagedSkillDestinations(from payload: InstallerPayload, under destRoot: URL) -> [URL] {
+		payload.managedSkillDirectories().compactMap { skillDir in
+			let dest = destRoot.appendingPathComponent(skillDir.lastPathComponent, isDirectory: true)
+			return itemExists(at: dest) ? dest : nil
+		}
+	}
+
+	private func itemExists(at url: URL) -> Bool {
+		FileManager.default.fileExists(atPath: url.path) || ((try? url.checkResourceIsReachable()) ?? false)
+	}
+}
+
 // MARK: - Antigravity
 
 public struct AntigravityConfigurator {

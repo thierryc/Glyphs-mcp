@@ -44,6 +44,12 @@ From the repo root:
 python3 install.py
 ```
 
+For automation or reproducible dev setup, the Python installer also supports an explicit non-interactive mode. Example:
+
+```bash
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --skip-skills --skip-client-guidance
+```
+
 On macOS, you can also double-click `RunInstall.command` in Finder (it launches the same installer).
 
 If macOS Gatekeeper blocks it, right-click `RunInstall.command` → **Open** once to approve it.
@@ -52,6 +58,7 @@ If macOS Gatekeeper blocks it, right-click `RunInstall.command` → **Open** onc
 - Detects an appropriate Python
 - Installs dependencies in the correct location for Glyphs
 - Installs the plug-in into Glyphs’ plug-ins folder (copy or symlink)
+- Can optionally install the bundled Glyphs MCP skills into Codex and Claude Code
 - Verifies imports and prints actionable errors if something fails
 :::
 

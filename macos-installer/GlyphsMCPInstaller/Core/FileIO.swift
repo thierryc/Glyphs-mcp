@@ -79,12 +79,31 @@ public enum InstallerPaths {
 	public static var codexConfig: URL {
 		home.appendingPathComponent(".codex/config.toml")
 	}
+	public static var codexSkillsDir: URL {
+		home.appendingPathComponent(".codex/skills", isDirectory: true)
+	}
+	public static var claudeCodeSkillsDir: URL {
+		home.appendingPathComponent(".claude/skills", isDirectory: true)
+	}
 }
 
 public struct InstallerPayload {
 	public let payloadDir: URL
 	public let pluginBundle: URL
 	public let requirementsTxt: URL
+	public let skillsDir: URL?
+
+	public func managedSkillDirectories() -> [URL] {
+		guard let skillsDir else { return [] }
+		let prefix = "glyphs-mcp-"
+		guard let entries = try? FileManager.default.contentsOfDirectory(at: skillsDir, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]) else {
+			return []
+		}
+		return entries
+			.filter { $0.lastPathComponent.hasPrefix(prefix) }
+			.filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false }
+			.sorted { $0.lastPathComponent < $1.lastPathComponent }
+	}
 
 	public static func resolve(bundle: Bundle = .main) throws -> InstallerPayload {
 		let fm = FileManager.default
@@ -101,12 +120,14 @@ public struct InstallerPayload {
 		}
 		let plugin = payloadDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
 		let req = payloadDir.appendingPathComponent("requirements.txt")
+		let skillsDir = payloadDir.appendingPathComponent("skills", isDirectory: true)
 		guard FileManager.default.fileExists(atPath: plugin.path) else {
 			throw InstallerError.userFacing("Missing payload plugin bundle: \(plugin.path)")
 		}
 		guard FileManager.default.fileExists(atPath: req.path) else {
 			throw InstallerError.userFacing("Missing payload requirements.txt: \(req.path)")
 		}
-		return InstallerPayload(payloadDir: payloadDir, pluginBundle: plugin, requirementsTxt: req)
+		let resolvedSkillsDir = FileManager.default.fileExists(atPath: skillsDir.path) ? skillsDir : nil
+		return InstallerPayload(payloadDir: payloadDir, pluginBundle: plugin, requirementsTxt: req, skillsDir: resolvedSkillsDir)
 	}
 }

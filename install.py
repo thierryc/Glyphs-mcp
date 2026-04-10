@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-Wrapper entrypoint for the interactive Glyphs MCP installer.
+Wrapper entrypoint for the Glyphs MCP installer.
 
 Usage:
   python3 install.py
+  python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --skip-skills --skip-client-guidance
 """
 import runpy
 from pathlib import Path
@@ -16,4 +17,3 @@ if not SCRIPT.exists():
 
 # Execute the real installer as __main__ so it behaves like a direct run
 runpy.run_path(str(SCRIPT), run_name="__main__")
-

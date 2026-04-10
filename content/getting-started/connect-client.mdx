@@ -27,6 +27,8 @@ http://127.0.0.1:9680/mcp/
 - Use a **proxy** like `mcp-remote` when a client requires it (this typically requires Node 20+).
 - If tokens matter, pick a narrower **Tool Profile** first in **Edit → Glyphs MCP Server Status…** so your client sees fewer tools/schemas. (Guide: [Settings & tool profiles](./start-server.mdx#settings-tool-profiles).)
 
+Once your client is connected, either open this repository to use the repo-local skills, or install the bundled Glyphs MCP skills globally with the installer. Codex discovers repo-local skills through `.agents/skills`, and Claude Code discovers them through `.claude/skills`. See [Use skills in Codex and Claude Code](./use-agent-skills.mdx).
+
 :::tip Startup order
 If your client can’t connect, start Glyphs fresh, start the MCP server, then launch/reload your client.
 :::
