@@ -13,6 +13,12 @@ python3 install.py
 
 On macOS Finder you can also double‑click `RunInstall.command` in the repo root; it launches the same installer (`python3 install.py`). If Gatekeeper blocks it, right‑click → Open once to approve.
 
+Scripted installs are also supported for automation. Example:
+
+```bash
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
+```
+
 ## macOS Installer app (recommended)
 
 Prefer a signed, notarized macOS app with a guided UI?
@@ -248,6 +254,12 @@ Recommended (simplest): run the one‑command interactive installer. It handles 
 python3 install.py
 ```
 
+For automation or reproducible dev setup, you can also run the installer non-interactively. Example:
+
+```bash
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
+```
+
 Alternatively, you can install the plug‑in manually as described below.
 
 ## Install the Plug‑in
@@ -302,6 +314,12 @@ Prefer a guided setup? Run the interactive installer to:
 
 ```bash
 python3 install.py
+```
+
+Need a scripted install instead? Use the explicit CLI mode and supply every required choice up front:
+
+```bash
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --skip-skills --skip-client-guidance
 ```
 
 ### What the installer does

@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 """
-Interactive installer for the Glyphs MCP plug‑in.
+Installer for the Glyphs MCP plug-in.
 
+- Interactive by default when run without installer flags.
+- Supports an explicit non-interactive mode for scripted installs.
 - Lets the user choose between Glyphs' bundled Python or a custom Python.
 - Installs Python dependencies accordingly.
-- Copies the plug‑in bundle into the Glyphs Plugins folder.
+- Copies or links the plug-in bundle into the Glyphs Plugins folder.
 
 Run:
-  python src/glyphs-mcp/scripts/install_cli.py
+  python3 install.py
+  python src/glyphs-mcp/scripts/install_cli.py --non-interactive ...
 """
 
 from __future__ import annotations
 
+import argparse
 import os
 import re
 import shutil
@@ -19,7 +23,7 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List, Literal, Optional, Tuple
 
 try:
     from rich import box
@@ -169,6 +173,19 @@ MAX_PY_VERSION_EXCLUSIVE = (3, 14, 0)  # Disallow 3.14+ until tested
 SKILL_PREFIX = "glyphs-mcp-"
 
 
+@dataclass
+class InstallerOptions:
+    non_interactive: bool
+    python_mode: Optional[Literal["glyphs", "custom"]] = None
+    python_path: Optional[Path] = None
+    plugin_mode: Optional[Literal["copy", "link"]] = None
+    install_skills: Optional[bool] = None
+    skills_target: Optional[Literal["codex", "claude", "both"]] = None
+    overwrite_plugin: Optional[bool] = None
+    overwrite_skills: Optional[bool] = None
+    show_client_guidance: Optional[bool] = None
+
+
 def repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
@@ -218,6 +235,101 @@ def version_tuple(version_str: str) -> Tuple[int, int, int]:
     while len(out) < 3:
         out.append(0)
     return tuple(out)  # type: ignore[return-value]
+
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Install Glyphs MCP interactively or via an explicit non-interactive CLI.",
+        add_help=True,
+    )
+    parser.add_argument("--non-interactive", action="store_true", help="Run without prompts. Required choices must be provided explicitly.")
+    parser.add_argument("--python-mode", choices=["glyphs", "custom"], help="Python environment to use for dependency installation.")
+    parser.add_argument("--python-path", help="Absolute path to python3 when using --python-mode custom.")
+    parser.add_argument("--plugin-mode", choices=["copy", "link"], help="How to install the Glyphs plug-in bundle.")
+
+    skills_group = parser.add_mutually_exclusive_group()
+    skills_group.add_argument("--install-skills", action="store_true", help="Install the managed Glyphs MCP skill bundle.")
+    skills_group.add_argument("--skip-skills", action="store_true", help="Skip skill bundle installation.")
+    parser.add_argument("--skills-target", choices=["codex", "claude", "both"], help="Where to install the managed skills when --install-skills is set.")
+
+    plugin_overwrite = parser.add_mutually_exclusive_group()
+    plugin_overwrite.add_argument("--overwrite-plugin", action="store_true", help="Replace an existing installed plug-in.")
+    plugin_overwrite.add_argument("--keep-plugin", action="store_true", help="Keep an existing installed plug-in unchanged.")
+
+    skills_overwrite = parser.add_mutually_exclusive_group()
+    skills_overwrite.add_argument("--overwrite-skills", action="store_true", help="Replace existing managed Glyphs MCP skills.")
+    skills_overwrite.add_argument("--keep-skills", action="store_true", help="Keep existing managed Glyphs MCP skills unchanged.")
+
+    guidance_group = parser.add_mutually_exclusive_group()
+    guidance_group.add_argument("--show-client-guidance", action="store_true", help="Print MCP client setup guidance after installation.")
+    guidance_group.add_argument("--skip-client-guidance", action="store_true", help="Do not print MCP client setup guidance.")
+
+    return parser
+
+
+def parse_cli_options(argv: Optional[List[str]] = None) -> InstallerOptions:
+    parser = build_arg_parser()
+    ns = parser.parse_args(argv)
+
+    python_path = Path(ns.python_path).expanduser().resolve() if ns.python_path else None
+    install_skills: Optional[bool]
+    if ns.install_skills:
+        install_skills = True
+    elif ns.skip_skills:
+        install_skills = False
+    else:
+        install_skills = None
+
+    overwrite_plugin = True if ns.overwrite_plugin else False if ns.keep_plugin else None
+    overwrite_skills = True if ns.overwrite_skills else False if ns.keep_skills else None
+    show_client_guidance = True if ns.show_client_guidance else False if ns.skip_client_guidance else None
+
+    options = InstallerOptions(
+        non_interactive=ns.non_interactive,
+        python_mode=ns.python_mode,
+        python_path=python_path,
+        plugin_mode=ns.plugin_mode,
+        install_skills=install_skills,
+        skills_target=ns.skills_target,
+        overwrite_plugin=overwrite_plugin,
+        overwrite_skills=overwrite_skills,
+        show_client_guidance=show_client_guidance,
+    )
+    validate_options(options, parser)
+    return options
+
+
+def validate_options(options: InstallerOptions, parser: argparse.ArgumentParser) -> None:
+    if options.python_mode == "custom" and options.python_path is None:
+        parser.error("--python-path is required when --python-mode custom is used.")
+
+    if options.python_path is not None and not options.python_path.exists():
+        parser.error(f"--python-path does not exist: {options.python_path}")
+
+    if options.install_skills is False:
+        if options.skills_target is not None:
+            parser.error("--skills-target cannot be used with --skip-skills.")
+        if options.overwrite_skills is not None:
+            parser.error("--overwrite-skills/--keep-skills cannot be used with --skip-skills.")
+
+    if options.non_interactive:
+        missing: List[str] = []
+        if options.python_mode is None:
+            missing.append("--python-mode")
+        if options.plugin_mode is None:
+            missing.append("--plugin-mode")
+        if missing:
+            parser.error(f"--non-interactive requires {' and '.join(missing)}.")
+
+        if options.install_skills is None:
+            parser.error("--non-interactive requires one of --install-skills or --skip-skills.")
+
+        if options.install_skills and options.skills_target is None:
+            parser.error("--install-skills requires --skills-target in non-interactive mode.")
+
+
+def format_missing_policy_error(subject: str, positive_flag: str, negative_flag: str) -> str:
+    return f"Existing {subject} found. Re-run with {positive_flag} or {negative_flag}."
 
 
 def python_version(py: Path) -> Optional[str]:
@@ -411,7 +523,7 @@ def install_with_custom_python(python: Path, requirements: Path) -> None:
     verify_runtime(python)
 
 
-def install_plugin(mode: str = "copy") -> None:
+def install_plugin(mode: str = "copy", overwrite_existing: Optional[bool] = None) -> bool:
     """Install the plug-in by copying or linking (dev mode)."""
     src = repo_root() / "src" / "glyphs-mcp" / "Glyphs MCP.glyphsPlugin"
     if not src.exists():
@@ -424,10 +536,13 @@ def install_plugin(mode: str = "copy") -> None:
 
     if dest.exists() or dest.is_symlink():
         current = "symlink" if dest.is_symlink() else "folder"
-        overwrite = Confirm.ask(
-            f"Plugin already installed as a {current}:\n{dest}\nReplace it?",
-            default=True,
-        )
+        if overwrite_existing is None:
+            overwrite = Confirm.ask(
+                f"Plugin already installed as a {current}:\n{dest}\nReplace it?",
+                default=True,
+            )
+        else:
+            overwrite = overwrite_existing
         if overwrite:
             try:
                 if dest.is_symlink():
@@ -439,7 +554,7 @@ def install_plugin(mode: str = "copy") -> None:
                 raise SystemExit(2)
         else:
             console.print("[yellow]Keeping existing installation.[/yellow]")
-            return
+            return False
 
     if mode == "link":
         console.print(Panel.fit(f"Creating symlink (dev mode) →\n{dest}\n→ {src}", title="Install Plugin", border_style="magenta"))
@@ -447,6 +562,7 @@ def install_plugin(mode: str = "copy") -> None:
     else:
         console.print(Panel.fit(f"Copying plugin →\n{dest}", title="Install Plugin", border_style="magenta"))
         shutil.copytree(src, dest)
+    return True
 
 
 def managed_skill_directories(skills_root: Optional[Path] = None) -> List[Path]:
@@ -503,26 +619,25 @@ def install_skill_bundle(
     return installed, skipped
 
 
-def prompt_install_skill_bundle() -> None:
-    if not Confirm.ask("Install the Glyphs MCP skill bundle globally for Codex and Claude Code?", default=True):
-        return
-
-    selections = [
-        ("Codex", codex_skills_dir(), Confirm.ask("Install Glyphs MCP skills into ~/.codex/skills for Codex?", default=True)),
-        ("Claude Code", claude_code_skills_dir(), Confirm.ask("Install Glyphs MCP skills into ~/.claude/skills for Claude Code?", default=True)),
-    ]
-
+def install_skill_bundle_for_targets(
+    targets: List[Tuple[str, Path]],
+    overwrite_existing: Optional[bool],
+    non_interactive: bool,
+) -> bool:
     installed_any = False
     source_root = repo_root() / "skills"
 
-    for client_name, dest_root, selected in selections:
-        if not selected:
-            continue
-
-        overwrite_existing = False
+    for client_name, dest_root in targets:
+        overwrite_for_target = overwrite_existing
         existing = existing_managed_skill_destinations(dest_root, source_root)
-        if existing:
-            overwrite_existing = Confirm.ask(
+        if existing and overwrite_for_target is None:
+            if non_interactive:
+                raise SystemExit(format_missing_policy_error(
+                    f"Glyphs MCP skills in {dest_root}",
+                    "--overwrite-skills",
+                    "--keep-skills",
+                ))
+            overwrite_for_target = Confirm.ask(
                 f"Glyphs MCP skills already exist in {dest_root}.\nReplace or update the existing managed skills for {client_name}?",
                 default=True,
             )
@@ -534,7 +649,7 @@ def prompt_install_skill_bundle() -> None:
                 border_style="blue",
             )
         )
-        installed, skipped = install_skill_bundle(dest_root, source_root, overwrite_existing=overwrite_existing)
+        installed, skipped = install_skill_bundle(dest_root, source_root, overwrite_existing=bool(overwrite_for_target))
         if installed:
             installed_any = True
             console.print(f"[green]{client_name}:[/green] installed {', '.join(installed)}")
@@ -543,6 +658,19 @@ def prompt_install_skill_bundle() -> None:
 
     if installed_any:
         console.print("[cyan]Reload or restart Codex / Claude Code to pick up the newly installed Glyphs MCP skills.[/cyan]")
+    return installed_any
+
+
+def prompt_install_skill_bundle() -> None:
+    if not Confirm.ask("Install the Glyphs MCP skill bundle globally for Codex and Claude Code?", default=True):
+        return
+
+    selections = [
+        ("Codex", codex_skills_dir(), Confirm.ask("Install Glyphs MCP skills into ~/.codex/skills for Codex?", default=True)),
+        ("Claude Code", claude_code_skills_dir(), Confirm.ask("Install Glyphs MCP skills into ~/.claude/skills for Claude Code?", default=True)),
+    ]
+    targets = [(client_name, dest_root) for client_name, dest_root, selected in selections if selected]
+    install_skill_bundle_for_targets(targets, overwrite_existing=None, non_interactive=False)
 
 
 def choose_mode() -> str:
@@ -611,33 +739,46 @@ def choose_custom_python(cands: List[PythonCandidate]) -> Path:
     return p
 
 
-def main() -> None:
-    req = repo_root() / "requirements.txt"
-    if not req.exists():
-        console.print("[red]requirements.txt not found[/red]")
-        raise SystemExit(2)
-
+def resolve_python_selection_interactive(requirements: Path) -> None:
     choice = choose_mode()
     if choice == "1":
-        install_with_glyphs_python(req)
-    else:
-        cands = detect_python_candidates()
-        if not cands:
-            console.print("[yellow]No Python interpreters detected. You can enter a custom path.[/yellow]")
-        python_path = choose_custom_python(cands)
-        ver = python_version(python_path) or "unknown"
-        vt = version_tuple(ver)
-        if vt >= MAX_PY_VERSION_EXCLUSIVE:
-            console.print(f"[red]Python {ver} is not yet supported. Please use 3.11–3.13.[/red]")
-            raise SystemExit(2)
-        if vt < MIN_PY_VERSION:
-            proceed = Confirm.ask(f"Selected Python {ver} is older than {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}. Continue?", default=False)
-            if not proceed:
-                console.print(f"[red]Aborting. Please install Python {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}+ and re-run.[/red]")
-                raise SystemExit(2)
-        install_with_custom_python(python_path, req)
+        install_with_glyphs_python(requirements)
+        return
 
-    # Ask how to install the plugin: copy (default) or symlink (dev)
+    cands = detect_python_candidates()
+    if not cands:
+        console.print("[yellow]No Python interpreters detected. You can enter a custom path.[/yellow]")
+    python_path = choose_custom_python(cands)
+    ver = python_version(python_path) or "unknown"
+    vt = version_tuple(ver)
+    if vt >= MAX_PY_VERSION_EXCLUSIVE:
+        console.print(f"[red]Python {ver} is not yet supported. Please use 3.11–3.13.[/red]")
+        raise SystemExit(2)
+    if vt < MIN_PY_VERSION:
+        proceed = Confirm.ask(f"Selected Python {ver} is older than {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}. Continue?", default=False)
+        if not proceed:
+            console.print(f"[red]Aborting. Please install Python {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}+ and re-run.[/red]")
+            raise SystemExit(2)
+    install_with_custom_python(python_path, requirements)
+
+
+def resolve_python_selection_non_interactive(options: InstallerOptions, requirements: Path) -> None:
+    if options.python_mode == "glyphs":
+        install_with_glyphs_python(requirements)
+        return
+
+    assert options.python_mode == "custom"
+    assert options.python_path is not None
+    ver = python_version(options.python_path) or "unknown"
+    vt = version_tuple(ver)
+    if vt >= MAX_PY_VERSION_EXCLUSIVE:
+        raise SystemExit(f"Python {ver} is not yet supported. Please use 3.11–3.13.")
+    if vt < MIN_PY_VERSION:
+        raise SystemExit(f"Selected Python {ver} is older than {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}.")
+    install_with_custom_python(options.python_path, requirements)
+
+
+def choose_plugin_mode_interactive() -> str:
     console.print()
     console.rule("Plugin Installation Mode")
     console.print("Choose how to install the plug‑in into the Glyphs Plugins folder:")
@@ -649,8 +790,40 @@ def main() -> None:
     table.add_row("2", "Link", "Creates a symlink to the repo (dev mode)")
     console.print(table)
     install_choice = Prompt.ask("Enter 1 or 2", choices=["1", "2"], default="1")
-    mode = "link" if install_choice == "2" else "copy"
+    return "link" if install_choice == "2" else "copy"
 
+
+def skill_targets_from_option(skills_target: Literal["codex", "claude", "both"]) -> List[Tuple[str, Path]]:
+    if skills_target == "codex":
+        return [("Codex", codex_skills_dir())]
+    if skills_target == "claude":
+        return [("Claude Code", claude_code_skills_dir())]
+    return [("Codex", codex_skills_dir()), ("Claude Code", claude_code_skills_dir())]
+
+
+def run_non_interactive(options: InstallerOptions, requirements: Path) -> None:
+    resolve_python_selection_non_interactive(options, requirements)
+
+    assert options.plugin_mode is not None
+    dest = glyphs_plugins_dir() / "Glyphs MCP.glyphsPlugin"
+    if (dest.exists() or dest.is_symlink()) and options.overwrite_plugin is None:
+        raise SystemExit(format_missing_policy_error("plug-in installation", "--overwrite-plugin", "--keep-plugin"))
+    install_plugin(options.plugin_mode, overwrite_existing=options.overwrite_plugin)
+
+    if options.install_skills:
+        assert options.skills_target is not None
+        targets = skill_targets_from_option(options.skills_target)
+        install_skill_bundle_for_targets(targets, overwrite_existing=options.overwrite_skills, non_interactive=True)
+
+    console.rule("[green]Install complete[/green]")
+    console.print("Open Glyphs and use [bold]Edit → Start MCP Server[/bold].")
+    if options.show_client_guidance:
+        show_client_guidance()
+
+
+def run_interactive(requirements: Path) -> None:
+    resolve_python_selection_interactive(requirements)
+    mode = choose_plugin_mode_interactive()
     install_plugin(mode)
     prompt_install_skill_bundle()
 
@@ -659,6 +832,19 @@ def main() -> None:
 
     if Confirm.ask("Show MCP client configuration instructions?", default=True):
         show_client_guidance()
+
+
+def main(argv: Optional[List[str]] = None) -> None:
+    req = repo_root() / "requirements.txt"
+    if not req.exists():
+        console.print("[red]requirements.txt not found[/red]")
+        raise SystemExit(2)
+
+    parsed = parse_cli_options(argv)
+    if parsed.non_interactive:
+        run_non_interactive(parsed, req)
+    else:
+        run_interactive(req)
 
     console.print()
     console.rule("Thanks ✨")
@@ -767,7 +953,7 @@ def show_client_guidance() -> None:
 
 if __name__ == "__main__":
     try:
-        main()
+        main(sys.argv[1:])
     except subprocess.CalledProcessError as e:
         console.print(f"[red]Command failed with exit code {e.returncode}[/red]")
         raise SystemExit(e.returncode)

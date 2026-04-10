@@ -79,6 +79,12 @@ Use this when you want the bundled Glyphs MCP skills available without opening t
 python3 install.py
 ```
 
+For scripted dev installs, use the explicit CLI mode instead of prompts. Example:
+
+```bash
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
+```
+
 2. In the terminal installer or macOS installer app, enable **Install Glyphs MCP agent skills** for Codex and/or Claude Code.
 3. The installer copies the bundled `glyphs-mcp-*` skills into:
    - `~/.codex/skills/`
