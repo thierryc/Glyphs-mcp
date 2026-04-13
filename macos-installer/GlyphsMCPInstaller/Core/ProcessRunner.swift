@@ -76,11 +76,7 @@ public final class ProcessRunner {
 			}
 		}
 
-		let status: Int32 = try await withTaskCancellationHandler {
-			if proc.isRunning {
-				proc.terminate()
-			}
-		} operation: {
+		let status: Int32 = try await withTaskCancellationHandler(operation: {
 			try await withCheckedThrowingContinuation { cont in
 				proc.terminationHandler = { p in
 					cont.resume(returning: p.terminationStatus)
@@ -91,7 +87,11 @@ public final class ProcessRunner {
 					cont.resume(throwing: error)
 				}
 			}
-		}
+		}, onCancel: {
+			if proc.isRunning {
+				proc.terminate()
+			}
+		})
 
 		_ = await outTask.value
 		_ = await errTask.value

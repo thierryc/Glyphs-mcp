@@ -1,597 +1,882 @@
 import AppKit
-import Foundation
 import SwiftUI
 import GlyphsMCPInstallerCore
 
 struct ContentView: View {
 	@EnvironmentObject private var model: InstallerViewModel
-	@State private var showHelp: Bool = false
 
 	var body: some View {
-		NavigationStack(path: $model.navPath) {
-				WelcomeView()
-				.navigationDestination(for: InstallerRoute.self) { route in
-					switch route {
-					case .preflight: PreflightView()
-					case .check: CheckView()
-					case .pythonTarget: PythonTargetView()
-					case .install: InstallView()
-					case .clients: ClientsView()
-					case .finish: FinishView()
-					}
+		let snapshot = model.snapshot
+		let action = model.actionState
+
+		VStack(spacing: 18) {
+			InstallerTopTabBar(selection: $model.selectedTab, isAdvancedModeEnabled: model.isAdvancedModeEnabled)
+				.padding(.top, 18)
+				.padding(.horizontal, 24)
+
+			Group {
+				switch model.selectedTab {
+				case .wizard:
+					WizardTabView(
+						snapshot: snapshot,
+						action: action,
+						configureCodex: $model.configureCodex,
+						configureClaudeCode: $model.configureClaudeCode,
+						installCodexSkills: $model.installCodexSkills,
+						installClaudeCodeSkills: $model.installClaudeCodeSkills,
+						replaceDevPluginWithLatestOnlineVersion: $model.replaceDevPluginWithLatestOnlineVersion,
+						onRunWizard: model.startWizard,
+						onCancel: model.cancelWizard,
+						onQuitGlyphs: GlyphsRuntime.quitGlyphsWithConfirmation
+					)
+				case .install:
+					InstallTabView(
+						snapshot: snapshot,
+						action: action,
+						replaceDevPluginWithLatestOnlineVersion: $model.replaceDevPluginWithLatestOnlineVersion,
+						onInstall: model.startInstall,
+						onCancel: model.cancelInstall,
+						onQuitGlyphs: GlyphsRuntime.quitGlyphsWithConfirmation
+					)
+				case .link:
+					LinkTabView(
+						clients: snapshot.clients,
+						detectedClientsSummary: snapshot.detectedClientsSummary,
+						manualClaudeCommand: model.manualClaudeCommand,
+						action: action,
+						bindingForClient: model.binding(for:),
+						onLink: model.startClientConfig,
+						onCancel: model.cancelClientConfig
+					)
+				case .skill:
+					SkillTabView(
+						skills: snapshot.skills,
+						codexSkillsEnabled: $model.installCodexSkills,
+						claudeSkillsEnabled: $model.installClaudeCodeSkills,
+						action: action,
+						onInstallSkills: model.startSkillInstall,
+						onCancel: model.cancelSkillInstall
+					)
+				case .status:
+					StatusTabView(
+						snapshot: snapshot,
+						isAdvancedModeEnabled: model.isAdvancedModeEnabled,
+						pluginsFolder: model.glyphsPluginsDir,
+						onRefresh: model.refreshSnapshot,
+						onReveal: model.revealInFinder(url:)
+					)
+				case .help:
+					HelpTabView(
+						projectName: $model.starterProjectName,
+						selectedFolder: model.starterParentFolder,
+						createdFolder: model.createdStarterProjectFolder,
+						isBusy: action.isBusy,
+						logText: action.logText,
+						onChooseFolder: model.chooseStarterParentFolder,
+						onCreateProject: { Task { await model.createStarterProject() } },
+						onReveal: model.revealInFinder(url:)
+					)
 				}
-		}
-		.toolbar {
-			ToolbarItem(placement: .primaryAction) {
-				Button {
-					showHelp = true
-				} label: {
-					Image(systemName: "questionmark.circle")
-				}
-				.help("Help")
 			}
+			.frame(maxWidth: .infinity, maxHeight: .infinity)
 		}
-		.sheet(isPresented: $showHelp) {
-			HelpSheetView()
-		}
-		.frame(minWidth: 860, minHeight: 640)
+		.frame(minWidth: 920, minHeight: 700)
 		.background(VisualEffectBackground().ignoresSafeArea())
 		.groupBoxStyle(GlassGroupBoxStyle())
-		.background(
-			WindowConfigurator { window in
-				window.titleVisibility = .hidden
-				window.titlebarAppearsTransparent = true
-				window.isMovableByWindowBackground = true
-				window.title = ""
-			}
-		)
 	}
 }
 
-private struct HelpSheetView: View {
-	@Environment(\.dismiss) private var dismiss
+private struct WizardTabView: View {
+	let snapshot: InstallerStatusSnapshot
+	let action: InstallerActionState
+	@Binding var configureCodex: Bool
+	@Binding var configureClaudeCode: Bool
+	@Binding var installCodexSkills: Bool
+	@Binding var installClaudeCodeSkills: Bool
+	@Binding var replaceDevPluginWithLatestOnlineVersion: Bool
+	let onRunWizard: () -> Void
+	let onCancel: () -> Void
+	let onQuitGlyphs: () -> Void
+
+	private var selectedSummary: String {
+		var items: [String] = ["plug-in", "dependencies"]
+		if configureCodex { items.append("Codex") }
+		if configureClaudeCode { items.append("Claude Code") }
+		if installCodexSkills { items.append("Codex skills") }
+		if installClaudeCodeSkills { items.append("Claude Code skills") }
+		return items.joined(separator: ", ")
+	}
 
 	var body: some View {
-		VStack(spacing: 0) {
-			ScrollView {
-				VStack(alignment: .leading, spacing: 14) {
-					Text("Help")
-						.font(.title2.bold())
-					Text("A quick guide to get you set up. If anything feels unclear, you can always run “Check status…” first — it makes no changes.")
-						.foregroundStyle(.secondary)
+		CenteredTabScroll {
+				Text("Run the local setup in one click. Details stay in Status.")
+					.foregroundStyle(.secondary)
+					.font(.title3)
 
-					GroupBox("Python (custom setup)") {
-						VStack(alignment: .leading, spacing: 8) {
-							Text(.init(NSLocalizedString("For the smoothest custom setup, install Python **3.12** from python.org.", comment: "Help sheet markdown text")))
-							Text(.init(NSLocalizedString("Then, in **Glyphs → Settings → Addons → Python version**, select the same **3.12** version and restart Glyphs.", comment: "Help sheet markdown text")))
-							.foregroundStyle(.secondary)
-							Link("Download Python for macOS (python.org)", destination: URL(string: "https://www.python.org/downloads/macos/")!)
-						}
-						.frame(maxWidth: .infinity, alignment: .leading)
-					}
-
-					GroupBox("Guides & links") {
-						VStack(alignment: .leading, spacing: 8) {
-							Link("Manual: ap.cx/gmcp", destination: URL(string: "https://www.ap.cx/gmcp")!)
-							Link("GitHub repository", destination: URL(string: "https://github.com/thierryc/Glyphs-mcp")!)
-							Link("Report an issue", destination: URL(string: "https://github.com/thierryc/Glyphs-mcp/issues")!)
-						}
-						.frame(maxWidth: .infinity, alignment: .leading)
-					}
-
-					GroupBox("After install") {
-						VStack(alignment: .leading, spacing: 8) {
-							Text("1) Restart Glyphs if you updated the plug‑in.")
-							Text(.init(NSLocalizedString("2) In Glyphs: **Edit → Start MCP Server**", comment: "Help sheet markdown text")))
-							(
-								Text("3) In your agent (Codex / Claude), select the MCP server named ")
-								+ Text("glyphs-mcp-server").font(.system(.body, design: .monospaced))
-								+ Text(".")
-							)
-							.foregroundStyle(.secondary)
-						}
-						.frame(maxWidth: .infinity, alignment: .leading)
-					}
+				if snapshot.glyphsRunning {
+					WarningBanner(
+						title: "Glyphs is running",
+						message: "Quit Glyphs before running the wizard so the plug-in can update cleanly.",
+						buttonTitle: "Quit Glyphs…",
+						action: onQuitGlyphs
+					)
+					.frame(maxWidth: 760)
+				} else if let message = snapshot.installMessage {
+					WarningBanner(title: "Setup blocked", message: message)
+						.frame(maxWidth: 760)
 				}
-				.padding(20)
-			}
 
-			Divider()
-
-			HStack {
-				Spacer()
-				Button("Close") { dismiss() }
-					.keyboardShortcut(.cancelAction)
-			}
-			.padding(20)
-		}
-		.frame(width: 520, height: 520)
-	}
-}
-
-private struct WelcomeView: View {
-	@EnvironmentObject private var model: InstallerViewModel
-	@State private var didCopy: Bool = false
-
-	var body: some View {
-		VStack(alignment: .leading, spacing: 12) {
-			Text("Glyphs MCP Installer")
-				.font(.largeTitle.bold())
-			Text("A guided setup to install the Glyphs MCP plug‑in, Python dependencies, and optional MCP client configuration. You can review choices before anything changes.")
-				.foregroundStyle(.secondary)
-
-			GroupBox("Status") {
-				VStack(alignment: .leading, spacing: 10) {
-						HStack {
-							Label("Plug‑in installed", systemImage: "puzzlepiece.extension")
-							Spacer()
-							Text(model.installedPluginVersion?.displayString ?? NSLocalizedString("Not installed", comment: "Fallback version text"))
-								.foregroundStyle(.secondary)
-								.textSelection(.enabled)
-						}
-						HStack {
-							Label("This installer", systemImage: "shippingbox")
-							Spacer()
-							Text(model.payloadPluginVersion?.displayString ?? NSLocalizedString("Unknown", comment: "Fallback version text"))
-								.foregroundStyle(.secondary)
-								.textSelection(.enabled)
-						}
-					HStack {
-						Label("GitHub", systemImage: "arrow.down.circle")
-						Spacer()
-						Text(githubLine)
-							.foregroundStyle(.secondary)
-							.textSelection(.enabled)
-					}
-
-					if isUpdateAvailable {
-						HStack(spacing: 10) {
-							Label("Update available", systemImage: "sparkles")
-								.foregroundStyle(.blue)
-							Spacer()
-							Button("Download & update…") {
-								model.doInstallDependencies = false
-								model.doInstallPluginBundle = true
-								model.useGitHubPluginForInstall = true
-								model.go(.preflight)
-							}
-							.buttonStyle(.borderedProminent)
-						}
-					} else if isInstallerOutdated {
-						Label("A newer plug‑in exists on GitHub than in this installer.", systemImage: "info.circle")
-							.foregroundStyle(.secondary)
-					}
-
-					HStack(spacing: 10) {
-						Button("Refresh") {
-							Task { @MainActor in
-								await model.refreshGitHubPluginVersionIfNeeded(force: true)
-							}
-						}
-						if didCopy {
-							Text("Copied")
-								.foregroundStyle(.secondary)
-						}
-						Spacer()
-						Button("Copy endpoint") {
-							Pasteboard.copy(InstallerConstants.endpointURL.absoluteString)
-							didCopy = true
-							DispatchQueue.main.asyncAfter(deadline: .now() + 2) { didCopy = false }
-						}
-					}
-				}
-				.frame(maxWidth: .infinity, alignment: .leading)
-			}
-
-			GroupBox("Before you start") {
-				VStack(alignment: .leading, spacing: 8) {
-					Label("If Glyphs is open, you may need to restart it after installing.", systemImage: "arrow.clockwise")
-					Label("Installing Python dependencies requires internet access.", systemImage: "network")
-					Label("Client configuration edits create backups.", systemImage: "doc.on.doc")
-				}
-				.frame(maxWidth: .infinity, alignment: .leading)
-			}
-
-			GroupBox("What will be done") {
-				VStack(alignment: .leading, spacing: 6) {
-					Label("Install plug‑in into Glyphs Plugins folder", systemImage: "puzzlepiece.extension")
-					Label("Install Python dependencies via pip (network required)", systemImage: "shippingbox")
-					Label("Configure MCP clients (optional)", systemImage: "gear")
-					Label("Create a starter project folder with AGENTS.md (optional)", systemImage: "folder")
-				}
-				.frame(maxWidth: .infinity, alignment: .leading)
-			}
-
-			Spacer()
-
-			HStack {
-				Button("Create project folder…") {
-					model.isGuidedSetupFlow = false
-					model.go(.finish)
-				}
-				Button("Check status…") {
-					model.isGuidedSetupFlow = false
-					model.go(.check)
-				}
-				Spacer()
-				Button("Guided setup…") {
-					model.isGuidedSetupFlow = true
-					model.doInstallDependencies = true
-					model.doInstallPluginBundle = true
-					model.useGitHubPluginForInstall = false
-					model.go(.preflight)
-				}
-				.keyboardShortcut(.defaultAction)
-			}
-		}
-			.padding(20)
-			.onAppear {
-				model.refreshLocalPluginVersions()
-				Task { @MainActor in
-					await model.refreshGitHubPluginVersionIfNeeded(force: false)
-				}
-			}
-		}
-
-	private var githubLine: String {
-		switch model.githubStatus {
-		case .idle: return NSLocalizedString("Not checked", comment: "GitHub version status")
-		case .checking: return NSLocalizedString("Checking…", comment: "GitHub version status")
-		case .upToDate(let latest): return latest.displayString
-		case .updateAvailable(_, let latest):
-			return String(
-				format: NSLocalizedString("%@ (update available)", comment: "GitHub version status with update available"),
-				latest.displayString
-			)
-		case .error(let message):
-			return String(
-				format: NSLocalizedString("Error: %@", comment: "GitHub version status error"),
-				message
-			)
-		}
-	}
-
-	private var isUpdateAvailable: Bool {
-		guard let latest = model.githubPluginVersion else { return false }
-		if let installed = model.installedPluginVersion {
-			return latest > installed
-		}
-		return true
-	}
-
-	private var isInstallerOutdated: Bool {
-		guard let latest = model.githubPluginVersion, let payload = model.payloadPluginVersion else { return false }
-		return latest > payload
-	}
-}
-
-private enum SetupStep: Int, CaseIterable, Identifiable {
-	case preflight
-	case python
-	case install
-	case clients
-	case finish
-
-	var id: Int { rawValue }
-
-	var title: String {
-		switch self {
-		case .preflight: return NSLocalizedString("Preflight", comment: "Setup step title")
-		case .python: return NSLocalizedString("Python", comment: "Setup step title")
-		case .install: return NSLocalizedString("Install", comment: "Setup step title")
-		case .clients: return NSLocalizedString("Clients", comment: "Setup step title")
-		case .finish: return NSLocalizedString("Finish", comment: "Setup step title")
-		}
-	}
-}
-
-private struct SetupProgressHeader: View {
-	let current: SetupStep
-
-	var body: some View {
-		HStack(spacing: 14) {
-			ForEach(SetupStep.allCases) { step in
-				HStack(spacing: 8) {
-					ZStack {
-						Circle()
-							.fill(color(for: step))
-							.frame(width: 22, height: 22)
-						Text("\(step.rawValue + 1)")
-							.font(.caption.bold())
-							.foregroundStyle(.white)
-					}
-					Text(step.title)
-						.font(.callout)
-						.foregroundStyle(foreground(for: step))
-				}
-				if step != SetupStep.allCases.last {
-					Rectangle()
-						.fill(.quaternary)
-						.frame(width: 28, height: 1)
-				}
-			}
-			Spacer()
-		}
-		.padding(.horizontal, 20)
-		.padding(.vertical, 8)
-	}
-
-	private func color(for step: SetupStep) -> Color {
-		if step.rawValue < current.rawValue { return .green }
-		if step == current { return .blue }
-		return .gray.opacity(0.5)
-	}
-
-	private func foreground(for step: SetupStep) -> Color {
-		if step.rawValue <= current.rawValue { return .primary }
-		return .secondary
-	}
-}
-
-private struct CheckView: View {
-	@EnvironmentObject private var model: InstallerViewModel
-
-	var body: some View {
-		VStack(alignment: .leading, spacing: 12) {
-			ScrollView {
-				VStack(alignment: .leading, spacing: 12) {
-					Text("Check (no changes)")
-						.font(.title.bold())
-					Text("A quick health check. Nothing will be installed or modified.")
-						.foregroundStyle(.secondary)
-
+				if snapshot.showsDevPluginReplacementOption, let devPluginWarning = snapshot.devPluginWarning {
 					GroupBox {
-						VStack(alignment: .leading, spacing: 10) {
-							Label(summaryTitle, systemImage: summarySymbol)
-								.foregroundStyle(summaryColor)
-							Text(summaryDetails)
-								.foregroundStyle(.secondary)
+						VStack(alignment: .leading, spacing: 12) {
+							WarningBanner(
+								title: "Development plug-in detected",
+								message: devPluginWarning
+							)
+							Toggle("Replace dev plug-in with latest online version", isOn: $replaceDevPluginWithLatestOnlineVersion)
+						}
+					}
+					.frame(maxWidth: 760)
+				}
 
-							if let github = model.githubPluginVersion {
-								HStack {
-									Label("Plug‑in update", systemImage: "arrow.down.circle")
+				GroupBox("Setup") {
+					VStack(alignment: .leading, spacing: 14) {
+						Text("Update the plug-in and dependencies.")
+						Text("Link the selected agents.")
+						Text("Update skills for the selected clients.")
+							.padding(.bottom, 4)
+
+						Divider()
+
+						Toggle("Link Codex", isOn: $configureCodex)
+						Toggle("Link Claude Code", isOn: $configureClaudeCode)
+						Divider()
+						Toggle("Install Codex skills", isOn: $installCodexSkills)
+						Toggle("Install Claude Code skills", isOn: $installClaudeCodeSkills)
+
+						Text("Selected: \(selectedSummary)")
+							.font(.callout)
+							.foregroundStyle(.secondary)
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+				}
+
+				HeroActionSection(
+					title: snapshot.wizardButtonTitle,
+					isDisabled: !snapshot.canInstall || action.isBusy,
+					action: onRunWizard,
+					showsProgress: action.activeKind == .wizard
+				) {
+					if action.activeKind == .wizard {
+						Button("Cancel", action: onCancel)
+							.buttonStyle(SecondaryPillButtonStyle())
+							.keyboardShortcut(.cancelAction)
+					}
+				}
+
+				if action.activeKind == .wizard {
+					GroupBox("Wizard progress") {
+						VStack(alignment: .leading, spacing: 10) {
+							ForEach(action.installSteps) { step in
+								HStack(spacing: 10) {
+									Image(systemName: step.state.symbolName)
+										.foregroundStyle(step.state.color)
+										.frame(width: 18)
+									Text(step.title)
 									Spacer()
-									Text(github.displayString)
-										.foregroundStyle(.secondary)
-								}
-										HStack {
-											Text(
-												String(
-													format: NSLocalizedString("Installed: %@", comment: "Installed version line"),
-													model.installedPluginVersion?.displayString ?? NSLocalizedString("Not installed", comment: "Missing version fallback")
-												)
-											)
-												.foregroundStyle(.secondary)
-											Spacer()
-											Button("Refresh") {
-											Task { @MainActor in
-												await model.refreshGitHubPluginVersionIfNeeded(force: true)
-											}
-										}
-									}
-								} else {
-									HStack {
-										Label("Plug‑in update", systemImage: "arrow.down.circle")
-									Spacer()
-									Text("Checking…")
-										.foregroundStyle(.secondary)
 								}
 							}
+							if action.clientReloadRecommended {
+								Text("Reload Codex / Claude Code after the wizard finishes.")
+									.foregroundStyle(.secondary)
+									.font(.callout)
+							}
+						}
+						.frame(maxWidth: .infinity, alignment: .leading)
+					}
+					.frame(maxWidth: 760)
+				}
+		}
+	}
+}
 
-							HStack {
-								Button("Open plug‑ins folder") { model.revealInFinder(url: model.glyphsPluginsDir) }
-								Button("Open Codex config") { model.revealInFinder(url: InstallerPaths.codexConfig) }
-								Button("Open Claude Desktop config") { model.revealInFinder(url: InstallerPaths.claudeDesktopConfig) }
+private struct InstallTabView: View {
+	let snapshot: InstallerStatusSnapshot
+	let action: InstallerActionState
+	@Binding var replaceDevPluginWithLatestOnlineVersion: Bool
+	let onInstall: () -> Void
+	let onCancel: () -> Void
+	let onQuitGlyphs: () -> Void
+
+	var body: some View {
+		CenteredTabScroll {
+				PageIntroText("Update the Glyphs MCP plug-in and its Python dependencies.")
+
+				if snapshot.glyphsRunning {
+					WarningBanner(
+						title: "Glyphs is running",
+						message: "Quit Glyphs before updating the plug-in.",
+						buttonTitle: "Quit Glyphs…",
+						action: onQuitGlyphs
+					)
+				} else if let message = snapshot.installMessage {
+					WarningBanner(title: "Install blocked", message: message)
+				}
+
+				if snapshot.showsDevPluginReplacementOption, let devPluginWarning = snapshot.devPluginWarning {
+					GroupBox {
+						VStack(alignment: .leading, spacing: 12) {
+							WarningBanner(
+								title: "Development plug-in",
+								message: devPluginWarning
+							)
+							Toggle("Replace with latest online plug-in", isOn: $replaceDevPluginWithLatestOnlineVersion)
+						}
+					}
+				}
+
+				GroupBox("Plugin") {
+					VStack(alignment: .leading, spacing: 14) {
+						SimpleInfoRow(title: "Versions", value: snapshot.versionLine)
+						SimpleInfoRow(title: "Glyphs Python", value: snapshot.pythonStatus.summary)
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+				}
+
+				HeroActionSection(
+					title: snapshot.installButtonTitle,
+					isDisabled: !snapshot.canInstall || action.isBusy,
+					action: onInstall,
+					showsProgress: action.activeKind == .install
+				) {
+					if action.activeKind == .install {
+						Button("Cancel", action: onCancel)
+							.buttonStyle(SecondaryPillButtonStyle())
+							.keyboardShortcut(.cancelAction)
+					}
+				}
+
+				GroupBox("Install progress") {
+					VStack(alignment: .leading, spacing: 10) {
+						ForEach(action.installSteps) { step in
+							HStack(spacing: 10) {
+								Image(systemName: step.state.symbolName)
+									.foregroundStyle(step.state.color)
+									.frame(width: 18)
+								Text(step.title)
 								Spacer()
 							}
 						}
-						.frame(maxWidth: .infinity, alignment: .leading)
+						if action.restartRecommended {
+							Text("Restart Glyphs if you had it open before updating.")
+								.foregroundStyle(.secondary)
+								.font(.callout)
+						}
 					}
-
-					GroupedCheckItemsView(items: model.check.items)
+					.frame(maxWidth: .infinity, alignment: .leading)
 				}
-				.padding(20)
-			}
-			.frame(maxWidth: .infinity, maxHeight: .infinity)
 
-			Divider()
-
-			HStack {
-				Button("Re-scan") { model.scanCheck() }
-				Spacer()
-				Button("Back") { model.back() }
-				Button("Continue to setup…") {
-					model.isGuidedSetupFlow = true
-					model.go(.preflight)
-				}
-					.keyboardShortcut(.defaultAction)
-			}
-			.padding(20)
+				InstallerLogGroupBox(logText: action.logText, isBusy: action.activeKind == .install)
 		}
-		.onAppear { model.scanCheck() }
 	}
-
-	private var hasBad: Bool { model.check.items.contains(where: { $0.level == .bad }) }
-	private var hasWarn: Bool { model.check.items.contains(where: { $0.level == .warn }) }
-
-	private var summaryTitle: String {
-		if hasBad { return NSLocalizedString("Needs attention", comment: "Check summary title") }
-		if hasWarn { return NSLocalizedString("Mostly OK", comment: "Check summary title") }
-		return NSLocalizedString("Everything looks good", comment: "Check summary title")
-	}
-
-	private var summaryDetails: String {
-		if hasBad {
-			return NSLocalizedString(
-				"Some required components are missing or misconfigured. Review the sections below.",
-				comment: "Check summary details"
-			)
-		}
-		if hasWarn {
-			return NSLocalizedString(
-				"A few items may need attention. You can still continue to guided setup.",
-				comment: "Check summary details"
-			)
-		}
-		return NSLocalizedString("Your environment looks ready.", comment: "Check summary details")
-	}
-
-	private var summarySymbol: String { hasBad ? "xmark.octagon.fill" : (hasWarn ? "exclamationmark.triangle.fill" : "checkmark.circle.fill") }
-	private var summaryColor: Color { hasBad ? .red : (hasWarn ? .orange : .green) }
 }
 
-private struct PreflightView: View {
-	@EnvironmentObject private var model: InstallerViewModel
+private struct LinkTabView: View {
+	let clients: [InstallerClientStatusSnapshot]
+	let detectedClientsSummary: String
+	let manualClaudeCommand: String
+	let action: InstallerActionState
+	let bindingForClient: (InstallerClientKind) -> Binding<Bool>
+	let onLink: () -> Void
+	let onCancel: () -> Void
+	@State private var copiedClaudeCommand: Bool = false
 
 	var body: some View {
-		VStack(alignment: .leading, spacing: 12) {
-			SetupProgressHeader(current: .preflight)
+		CenteredTabScroll {
+				PageIntroText("Link Glyphs MCP to the coding agents on this Mac.")
 
-			ScrollView {
-				VStack(alignment: .leading, spacing: 12) {
-					Text("Preflight")
-						.font(.title.bold())
+				GroupBox("Agents") {
+					VStack(alignment: .leading, spacing: 14) {
+						Text(detectedClientsSummary)
+							.foregroundStyle(.secondary)
 
-					GroupBox {
-						VStack(alignment: .leading, spacing: 10) {
-							Label("Recommended", systemImage: "wand.and.stars")
-								.foregroundStyle(.blue)
-							Text("Install the plug‑in and dependencies, then (optionally) configure MCP clients. You can change these choices in the next step.")
-								.foregroundStyle(.secondary)
+						ForEach(clients) { row in
+							ClientToggleRow(
+								row: row,
+								isOn: bindingForClient(row.kind),
+								disabled: !row.detected
+							)
+						}
 
-							if model.githubPluginVersion != nil {
-								Toggle("Download latest plug‑in from GitHub (optional)", isOn: $model.useGitHubPluginForInstall)
-								Text("If enabled, the installer will download the latest plug‑in from GitHub over HTTPS before installing.")
-									.foregroundStyle(.secondary)
-									.font(.callout)
-							} else {
-								Text("GitHub version not checked yet. Continue without downloading, or refresh on the Home screen.")
-									.foregroundStyle(.secondary)
-									.font(.callout)
+						if !clients.contains(where: { $0.kind == .claudeCode && $0.detected }) {
+							Divider()
+							Text("Manual Claude Code command")
+								.font(.headline)
+							Text(manualClaudeCommand)
+								.font(.system(.callout, design: .monospaced))
+								.textSelection(.enabled)
+							HStack {
+								Button("Copy command") {
+									Pasteboard.copy(manualClaudeCommand)
+									copiedClaudeCommand = true
+									DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedClaudeCommand = false }
+								}
+								.buttonStyle(SecondaryPillButtonStyle())
+								if copiedClaudeCommand {
+									Text("Copied")
+										.foregroundStyle(.secondary)
+								}
 							}
 						}
-						.frame(maxWidth: .infinity, alignment: .leading)
 					}
-
-					GroupedPreflightItemsView(items: model.preflight.items, updateLine: updateLine)
+					.frame(maxWidth: .infinity, alignment: .leading)
 				}
-				.padding(20)
-			}
-			.frame(maxWidth: .infinity, maxHeight: .infinity)
 
-			Divider()
+				HeroActionSection(
+					title: "Link to agents",
+					isDisabled: action.isBusy,
+					action: onLink,
+					showsProgress: action.activeKind == .link
+				) {
+					if action.activeKind == .link {
+						Button("Cancel", action: onCancel)
+							.buttonStyle(SecondaryPillButtonStyle())
+							.keyboardShortcut(.cancelAction)
+					}
+				}
 
-			HStack {
-				Button("Re-scan") { model.scanPreflight() }
-				Spacer()
-				Button("Back") { model.back() }
-				Button("Continue") { model.go(.pythonTarget) }
-					.keyboardShortcut(.defaultAction)
-			}
-			.padding(20)
-		}
-		.onAppear { model.scanPreflight() }
-	}
-
-	private var updateLine: String? {
-		guard let github = model.githubPluginVersion else { return nil }
-		if let payload = model.payloadPluginVersion, github > payload {
-			return NSLocalizedString(
-				"A newer plug‑in exists on GitHub than inside this installer. You can enable “Download latest plug‑in from GitHub” above, or download the latest installer.",
-				comment: "Preflight update explanation"
-			)
-		}
-		return nil
-	}
-}
-
-private struct GroupedPreflightItemsView: View {
-	let items: [PreflightItem]
-	let updateLine: String?
-
-	var body: some View {
-		VStack(spacing: 12) {
-			if let updateLine {
-				GroupBox("Update") {
-					Label(updateLine, systemImage: "info.circle")
+				if action.clientReloadRecommended {
+					Text("Restart the client if the new connection does not appear.")
 						.foregroundStyle(.secondary)
 				}
-			}
 
-			GroupBox("Glyphs + plug‑in") {
-				ItemList(items: items.filter { isGlyphsSection($0) })
-			}
-			GroupBox("Python") {
-				ItemList(items: items.filter { isPythonSection($0) })
-			}
-			GroupBox("Tools") {
-				ItemList(items: items.filter { isToolsSection($0) })
-			}
+				InstallerLogGroupBox(logText: action.logText, isBusy: action.activeKind == .link)
 		}
-	}
-
-	private func isGlyphsSection(_ item: PreflightItem) -> Bool {
-		item.title.lowercased().contains("glyphs") || item.title.lowercased().contains("plugin")
-	}
-	private func isPythonSection(_ item: PreflightItem) -> Bool {
-		item.title.lowercased().contains("python")
-	}
-	private func isToolsSection(_ item: PreflightItem) -> Bool {
-		!(isGlyphsSection(item) || isPythonSection(item))
 	}
 }
 
-private struct GroupedCheckItemsView: View {
-	let items: [PreflightItem]
+private struct SkillTabView: View {
+	let skills: [InstallerSkillTargetSnapshot]
+	@Binding var codexSkillsEnabled: Bool
+	@Binding var claudeSkillsEnabled: Bool
+	let action: InstallerActionState
+	let onInstallSkills: () -> Void
+	let onCancel: () -> Void
+
+	private var canInstall: Bool {
+		(codexSkillsEnabled || claudeSkillsEnabled) && !action.isBusy
+	}
+
+	private var selectedTargetsHaveExistingSkills: Bool {
+		selectedSkillTargets.contains(where: \.hasInstalledSkills)
+	}
+
+	private var selectedSkillTargets: [InstallerSkillTargetSnapshot] {
+		skills.filter { target in
+			switch target.kind {
+			case .codex: return codexSkillsEnabled
+			case .claudeCode: return claudeSkillsEnabled
+			}
+		}
+	}
 
 	var body: some View {
-		VStack(spacing: 12) {
-			GroupBox("Glyphs + plug‑in") { ItemList(items: items.filter { isGlyphsSection($0) }) }
-			GroupBox("Tools") { ItemList(items: items.filter { isToolsSection($0) }) }
-			GroupBox("MCP Clients") { ItemList(items: items.filter { isMcpSection($0) }) }
+		CenteredTabScroll {
+				PageIntroText("Install Glyphs MCP skills for the selected clients.")
+
+				GroupBox("Skills") {
+					VStack(alignment: .leading, spacing: 12) {
+						Toggle("Codex", isOn: $codexSkillsEnabled)
+						Text(skillStatus(for: .codex))
+							.font(.callout)
+							.foregroundStyle(.secondary)
+						Text(InstallerPaths.codexSkillsDir.path)
+							.font(.callout)
+							.foregroundStyle(.secondary)
+
+						Divider()
+
+						Toggle("Claude Code", isOn: $claudeSkillsEnabled)
+						Text(skillStatus(for: .claudeCode))
+							.font(.callout)
+							.foregroundStyle(.secondary)
+						Text(InstallerPaths.claudeCodeSkillsDir.path)
+							.font(.callout)
+							.foregroundStyle(.secondary)
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+				}
+
+				HeroActionSection(
+					title: InstallerSimpleUI.skillButtonTitle(hasExistingManagedSkills: selectedTargetsHaveExistingSkills),
+					isDisabled: !canInstall,
+					action: onInstallSkills,
+					showsProgress: action.activeKind == .skill
+				) {
+					if action.activeKind == .skill {
+						Button("Cancel", action: onCancel)
+							.buttonStyle(SecondaryPillButtonStyle())
+							.keyboardShortcut(.cancelAction)
+					}
+				}
+
+				Text("Restart Codex or Claude Code if the skills do not appear.")
+					.foregroundStyle(.secondary)
+
+				if action.clientReloadRecommended {
+					Text("Skills were updated.")
+						.foregroundStyle(.secondary)
+				}
+
+				InstallerLogGroupBox(logText: action.logText, isBusy: action.activeKind == .skill)
 		}
 	}
 
-	private func isGlyphsSection(_ item: PreflightItem) -> Bool {
-		let t = item.title.lowercased()
-		return t.contains("glyphs") || t.contains("plug‑in") || t.contains("plugin")
-	}
-	private func isMcpSection(_ item: PreflightItem) -> Bool {
-		item.title.lowercased().contains("mcp")
-	}
-	private func isToolsSection(_ item: PreflightItem) -> Bool {
-		!(isGlyphsSection(item) || isMcpSection(item))
+	private func skillStatus(for kind: InstallerSkillTargetSnapshot.Kind) -> String {
+		skills.first(where: { $0.kind == kind })?.statusText ?? "Not installed"
 	}
 }
 
-private struct ItemList: View {
-	let items: [PreflightItem]
+private struct StatusTabView: View {
+	let snapshot: InstallerStatusSnapshot
+	let isAdvancedModeEnabled: Bool
+	let pluginsFolder: URL
+	let onRefresh: () -> Void
+	let onReveal: (URL) -> Void
+
+	var body: some View {
+		CenteredTabScroll {
+				PageIntroText("Check the plug-in, agents, and local server details.")
+
+				GroupBox("Plugin") {
+					VStack(alignment: .leading, spacing: 10) {
+						SimpleInfoRow(title: "Plug-in", value: snapshot.pluginStatusSummary)
+						if let symlinkTarget = snapshot.installedPluginSymlinkTarget {
+							PathInfoRow(title: "Dev target", value: symlinkTarget) {
+								onReveal(URL(fileURLWithPath: symlinkTarget))
+							}
+						}
+						SimpleInfoRow(title: "Python", value: snapshot.pythonStatus.summary)
+						SimpleInfoRow(title: "Glyphs", value: snapshot.glyphsRunning ? "Running" : "Not running")
+						PathInfoRow(title: "Plug-ins folder", value: pluginsFolder.path) {
+							onReveal(pluginsFolder)
+						}
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+				}
+
+				GroupBox("Agents") {
+					VStack(alignment: .leading, spacing: 12) {
+						ForEach(snapshot.clients) { row in
+							ClientStatusCard(
+								title: row.kind == .claudeCode ? "Claude" : row.name,
+								row: row,
+								isAdvancedModeEnabled: isAdvancedModeEnabled
+							)
+						}
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+				}
+
+				GroupBox("Server") {
+					VStack(alignment: .leading, spacing: 10) {
+						Text(InstallerConstants.endpointURL.absoluteString)
+							.font(.system(.body, design: .monospaced))
+							.textSelection(.enabled)
+						Text("If the server is not running, start it in Glyphs with Edit → Start MCP Server.")
+							.foregroundStyle(.secondary)
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+				}
+
+				HeroActionSection(title: "Re-scan", action: onRefresh)
+		}
+	}
+}
+
+private struct HelpTabView: View {
+	@Binding var projectName: String
+	let selectedFolder: URL?
+	let createdFolder: URL?
+	let isBusy: Bool
+	let logText: String
+	let onChooseFolder: () -> Void
+	let onCreateProject: () -> Void
+	let onReveal: (URL) -> Void
+	@State private var copiedPrompt: Bool = false
+
+	private let examplePrompt = "Use the Glyphs MCP server and call `list_open_fonts`. Return a table with `familyName`, `filePath`, `masterCount`, and `glyphCount` for each open font."
+
+	var body: some View {
+		CenteredTabScroll {
+				PageIntroText("Create a starter folder, copy a prompt, and open the docs.")
+
+				GroupBox("Project") {
+					VStack(alignment: .leading, spacing: 12) {
+						TextField("Project name", text: $projectName)
+						HStack {
+							Button("Choose location…", action: onChooseFolder)
+								.buttonStyle(SecondaryPillButtonStyle())
+							if let selectedFolder {
+								Text(selectedFolder.path)
+									.foregroundStyle(.secondary)
+									.textSelection(.enabled)
+							} else {
+								Text("No folder selected")
+									.foregroundStyle(.secondary)
+							}
+						}
+
+						HeroActionSection(
+							title: "Create project folder",
+							isDisabled: selectedFolder == nil || isBusy,
+							action: onCreateProject
+						)
+
+						if let createdFolder {
+							HStack {
+								Text(createdFolder.path)
+									.foregroundStyle(.secondary)
+									.textSelection(.enabled)
+								Button("Open in Finder") { onReveal(createdFolder) }
+									.buttonStyle(SecondaryPillButtonStyle())
+							}
+						}
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+				}
+
+				GroupBox("Prompt") {
+					VStack(alignment: .leading, spacing: 10) {
+						Text(examplePrompt)
+							.font(.system(.callout, design: .monospaced))
+							.textSelection(.enabled)
+						HStack {
+							Button("Copy prompt") {
+								Pasteboard.copy(examplePrompt)
+								copiedPrompt = true
+								DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedPrompt = false }
+							}
+							.buttonStyle(SecondaryPillButtonStyle())
+							if copiedPrompt {
+								Text("Copied")
+									.foregroundStyle(.secondary)
+							}
+						}
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+				}
+
+				GroupBox("Links") {
+					VStack(alignment: .leading, spacing: 8) {
+						Link("GitHub", destination: URL(string: "https://github.com/thierryc/Glyphs-mcp")!)
+						Link("Website", destination: URL(string: "https://www.ap.cx/gmcp")!)
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+				}
+
+				InstallerLogGroupBox(logText: logText, isBusy: isBusy)
+		}
+	}
+}
+
+private struct InstallerTopTabBar: View {
+	@Binding var selection: InstallerTab
+	let isAdvancedModeEnabled: Bool
+
+	var body: some View {
+		HStack(spacing: 8) {
+			ForEach(InstallerTab.visibleTabs(isAdvancedModeEnabled: isAdvancedModeEnabled), id: \.self) { tab in
+				Button(tabLabel(for: tab)) {
+					selection = tab
+				}
+				.buttonStyle(TopTabButtonStyle(isSelected: selection == tab))
+			}
+		}
+		.padding(8)
+		.background(
+			Capsule(style: .continuous)
+				.fill(.thinMaterial)
+		)
+		.overlay(
+			Capsule(style: .continuous)
+				.strokeBorder(.white.opacity(0.14))
+		)
+		.frame(maxWidth: .infinity, alignment: .center)
+	}
+
+	private func tabLabel(for tab: InstallerTab) -> String {
+		switch tab {
+		case .wizard: return "Wizard"
+		case .install: return "Plugin"
+		case .link: return "Agents"
+		case .skill: return "Skill"
+		case .status: return "Status"
+		case .help: return "Help"
+		}
+	}
+}
+
+private struct TopTabButtonStyle: ButtonStyle {
+	let isSelected: Bool
+
+	func makeBody(configuration: Configuration) -> some View {
+		configuration.label
+			.font(.title3.weight(isSelected ? .semibold : .regular))
+			.foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.78))
+			.padding(.horizontal, 18)
+			.padding(.vertical, 12)
+			.frame(minHeight: 44, alignment: .center)
+			.background(
+				Capsule(style: .continuous)
+					.fill(isSelected ? Color.white.opacity(0.78) : Color.clear)
+			)
+			.overlay(
+				Capsule(style: .continuous)
+					.strokeBorder(isSelected ? .white.opacity(0.18) : .clear)
+			)
+			.scaleEffect(configuration.isPressed ? 0.985 : 1)
+			.animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+	}
+}
+
+private struct HeroActionSection<SecondaryContent: View>: View {
+	let title: String
+	let isDisabled: Bool
+	let action: () -> Void
+	let showsProgress: Bool
+	@ViewBuilder let secondaryContent: () -> SecondaryContent
+
+	init(
+		title: String,
+		isDisabled: Bool = false,
+		action: @escaping () -> Void,
+		showsProgress: Bool = false,
+		@ViewBuilder secondaryContent: @escaping () -> SecondaryContent = { EmptyView() }
+	) {
+		self.title = title
+		self.isDisabled = isDisabled
+		self.action = action
+		self.showsProgress = showsProgress
+		self.secondaryContent = secondaryContent
+	}
+
+	var body: some View {
+		VStack(spacing: 14) {
+			Button(title, action: action)
+				.buttonStyle(PrimaryHeroButtonStyle())
+				.disabled(isDisabled)
+
+			if showsProgress {
+				ProgressView()
+			}
+
+			secondaryContent()
+		}
+		.frame(maxWidth: .infinity, alignment: .center)
+	}
+}
+
+private struct AdaptivePillActions<Content: View>: View {
+	@ViewBuilder let content: () -> Content
+
+	var body: some View {
+		ViewThatFits(in: .horizontal) {
+			HStack(spacing: 12) {
+				content()
+			}
+			VStack(spacing: 10) {
+				content()
+			}
+		}
+		.frame(maxWidth: .infinity, alignment: .center)
+	}
+}
+
+private struct CenteredTabScroll<Content: View>: View {
+	@ViewBuilder let content: () -> Content
+
+	var body: some View {
+		ScrollView {
+			VStack(spacing: 24) {
+				content()
+			}
+			.frame(maxWidth: 760)
+			.padding(.horizontal, 24)
+			.padding(.bottom, 24)
+			.frame(maxWidth: .infinity)
+		}
+	}
+}
+
+private struct PageIntroText: View {
+	let text: String
+
+	init(_ text: String) {
+		self.text = text
+	}
+
+	var body: some View {
+		Text(text)
+			.foregroundStyle(.secondary)
+			.font(.title3)
+			.multilineTextAlignment(.center)
+			.frame(maxWidth: 760)
+	}
+}
+
+private struct ClientToggleRow: View {
+	let row: InstallerClientStatusSnapshot
+	@Binding var isOn: Bool
+	let disabled: Bool
+
+	var body: some View {
+		VStack(alignment: .leading, spacing: 6) {
+			HStack {
+				Toggle(row.name, isOn: $isOn)
+					.disabled(disabled)
+				Spacer()
+				Text(row.statusText)
+					.font(.caption)
+					.foregroundStyle(row.cardState == .configured ? .green : .secondary)
+			}
+			if let detailText = row.detailText, !detailText.isEmpty {
+				Text(detailText)
+					.foregroundStyle(.secondary)
+					.font(.callout)
+			}
+			Text("\(row.appStatus.label): \(row.appStatus.summary) • \(row.cliStatus.label): \(row.cliStatus.summary) • \(row.configStatus.label): \(row.configStatus.summary)")
+				.foregroundStyle(.secondary)
+				.font(.callout)
+		}
+		.padding(.vertical, 4)
+	}
+}
+
+private struct ClientStatusCard: View {
+	let title: String
+	let row: InstallerClientStatusSnapshot
+	let isAdvancedModeEnabled: Bool
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 10) {
-			if items.isEmpty {
-				Text("No items.")
+			HStack(alignment: .firstTextBaseline) {
+				Text(title)
+					.font(.headline)
+				Spacer()
+				Text(row.statusText)
+					.font(.callout.weight(.medium))
+					.foregroundStyle(statusColor)
+			}
+
+			ClientProbeRow(probe: row.appStatus, isAdvancedModeEnabled: isAdvancedModeEnabled)
+			ClientProbeRow(probe: row.cliStatus, isAdvancedModeEnabled: isAdvancedModeEnabled)
+			ClientProbeRow(probe: row.configStatus, isAdvancedModeEnabled: isAdvancedModeEnabled)
+
+			if let detailText = row.detailText, !detailText.isEmpty {
+				Text(detailText)
 					.foregroundStyle(.secondary)
-			} else {
-				ForEach(items) { item in
-					HStack(alignment: .top, spacing: 8) {
-						Image(systemName: item.level.symbolName)
-							.foregroundStyle(item.level.color)
-							.frame(width: 18)
-						VStack(alignment: .leading, spacing: 2) {
-							Text(item.title).bold()
-							Text(item.details)
-								.foregroundStyle(.secondary)
-								.fixedSize(horizontal: false, vertical: true)
-								.contextMenu {
-									Button("Copy") { Pasteboard.copy(item.details) }
-								}
-						}
-					}
-				}
+					.font(.callout)
 			}
 		}
-		.frame(maxWidth: .infinity, alignment: .leading)
+		.padding(.vertical, 4)
+	}
+
+	private var statusColor: Color {
+		switch row.cardState {
+		case .configured: return .green
+		case .partial: return .orange
+		case .notDetected: return .secondary
+		}
+	}
+}
+
+private struct ClientProbeRow: View {
+	let probe: InstallerClientStatusSnapshot.Probe
+	let isAdvancedModeEnabled: Bool
+
+	var body: some View {
+		VStack(alignment: .leading, spacing: 2) {
+			HStack(alignment: .firstTextBaseline, spacing: 12) {
+				Text(probe.label)
+					.font(.callout.weight(.semibold))
+					.frame(width: 54, alignment: .leading)
+				Text(probe.summary)
+					.foregroundStyle(.secondary)
+					.font(.callout)
+			}
+			if isAdvancedModeEnabled, let detail = probe.detail, !detail.isEmpty {
+				Text(detail)
+					.foregroundStyle(.secondary)
+					.font(.caption)
+					.padding(.leading, 66)
+					.textSelection(.enabled)
+			}
+		}
+	}
+}
+
+private struct SimpleInfoRow: View {
+	let title: String
+	let value: String
+
+	var body: some View {
+		HStack(alignment: .top, spacing: 10) {
+			Text(title)
+				.fontWeight(.semibold)
+			Spacer()
+			Text(value)
+				.foregroundStyle(.secondary)
+				.multilineTextAlignment(.trailing)
+				.textSelection(.enabled)
+		}
+	}
+}
+
+private struct PathInfoRow: View {
+	let title: String
+	let value: String
+	let action: () -> Void
+
+	var body: some View {
+		HStack(alignment: .top, spacing: 10) {
+			Text(title)
+				.fontWeight(.semibold)
+			Spacer()
+			Button(action: action) {
+				Text(value)
+					.foregroundStyle(.blue)
+					.multilineTextAlignment(.trailing)
+					.textSelection(.enabled)
+			}
+			.buttonStyle(.plain)
+		}
+	}
+}
+
+private struct WarningBanner: View {
+	let title: String
+	let message: String
+	var buttonTitle: String? = nil
+	var action: (() -> Void)? = nil
+
+	var body: some View {
+		HStack(alignment: .top, spacing: 10) {
+			Image(systemName: "exclamationmark.triangle.fill")
+				.foregroundStyle(.orange)
+			VStack(alignment: .leading, spacing: 6) {
+				Text(title)
+					.bold()
+				Text(message)
+					.foregroundStyle(.secondary)
+				if let buttonTitle, let action {
+					Button(buttonTitle, action: action)
+				}
+			}
+			Spacer()
+		}
+		.padding(14)
+		.background(.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 	}
 }
 
@@ -612,7 +897,7 @@ private struct InstallerLogGroupBox: View {
 	private let bottomID = "log-bottom"
 
 	var body: some View {
-		GroupBox("Log") {
+		GroupBox("Details") {
 			VStack(alignment: .leading, spacing: 10) {
 				HStack(spacing: 10) {
 					Button("Copy logs") {
@@ -640,7 +925,6 @@ private struct InstallerLogGroupBox: View {
 											.foregroundStyle(.secondary)
 									}
 								}
-
 								if logText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
 									Text("Logs will appear here.")
 										.foregroundStyle(.secondary)
@@ -651,14 +935,13 @@ private struct InstallerLogGroupBox: View {
 										.frame(maxWidth: .infinity, alignment: .leading)
 										.textSelection(.enabled)
 								}
-
 								Color.clear
 									.frame(height: 1)
 									.id(bottomID)
 							}
 							.frame(maxWidth: .infinity, alignment: .leading)
 						}
-						.frame(minHeight: 220, maxHeight: 320)
+						.frame(minHeight: 160, maxHeight: 280)
 						.onChange(of: logText) { _ in
 							guard showLogDetails else { return }
 							DispatchQueue.main.async {
@@ -674,538 +957,5 @@ private struct InstallerLogGroupBox: View {
 				}
 			}
 		}
-	}
-}
-
-	private struct PythonTargetView: View {
-		@EnvironmentObject private var model: InstallerViewModel
-
-		var body: some View {
-			VStack(alignment: .leading, spacing: 12) {
-				SetupProgressHeader(current: .python)
-				ScrollView {
-					VStack(alignment: .leading, spacing: 12) {
-						Text("Python Target")
-							.font(.title.bold())
-						Text("Use the same Python version shown in Glyphs → Settings → Addons → Python version. Changing it in Glyphs requires restarting Glyphs.")
-							.foregroundStyle(.secondary)
-
-						GroupBox {
-							VStack(alignment: .leading, spacing: 10) {
-								Toggle("Install Python dependencies (pip)", isOn: $model.doInstallDependencies)
-								Toggle("Install / update plug‑in bundle", isOn: $model.doInstallPluginBundle)
-
-								if model.doInstallDependencies {
-									if let selected = model.preflight.glyphsSelectedPythonVersion ?? model.preflight.glyphsSelectedPythonFrameworkPath {
-										Label("Glyphs is currently set to: \(selected)", systemImage: "info.circle")
-											.foregroundStyle(.secondary)
-											.textSelection(.enabled)
-									} else {
-										Label("Glyphs Python setting could not be detected (pick the version shown in Glyphs).", systemImage: "exclamationmark.triangle")
-											.foregroundStyle(.secondary)
-									}
-
-									if model.pythonMode == .custom,
-									   let glyphsFramework = model.preflight.glyphsSelectedPythonFrameworkPath,
-									   let picked = model.selectedCustomPythonPath,
-									   !picked.hasPrefix(glyphsFramework) {
-										Label("This interpreter does not match Glyphs’ current Python setting. Your install may not work until you switch Glyphs’ Python version and restart Glyphs.", systemImage: "exclamationmark.triangle.fill")
-											.foregroundStyle(.orange)
-											.textSelection(.enabled)
-									}
-
-									Picker("Mode", selection: $model.pythonMode) {
-										Text("Glyphs’ Python (Plugin Manager)").tag(PythonMode.glyphs)
-										Text("Custom Python").tag(PythonMode.custom)
-									}
-									.pickerStyle(.radioGroup)
-
-									if model.pythonMode == .custom {
-										HStack {
-											Picker("Interpreter", selection: $model.selectedCustomPythonPath) {
-												ForEach(model.preflight.customPythons, id: \.path) { cand in
-													Text("\(cand.path) (\(cand.version) – \(cand.source))").tag(Optional(cand.path))
-												}
-											}
-											.frame(maxWidth: 520)
-
-											Button("Choose…") { model.chooseCustomPythonViaPicker() }
-										}
-
-										if let p = model.selectedCustomPythonPath {
-											Text("Selected: \(p)")
-												.foregroundStyle(.secondary)
-												.textSelection(.enabled)
-										}
-										} else {
-											Text(
-												String(
-													format: NSLocalizedString("Glyphs pip: %@", comment: "Python target details"),
-													model.preflight.glyphsPipPath ?? NSLocalizedString("Not found", comment: "Missing value")
-												)
-											)
-												.foregroundStyle(.secondary)
-												.textSelection(.enabled)
-										}
-								} else {
-									Text("Dependencies will be skipped. You can still update the plug‑in bundle.")
-										.foregroundStyle(.secondary)
-								}
-							}
-							.frame(maxWidth: .infinity, alignment: .leading)
-						}
-					}
-					.padding(20)
-				}
-				.frame(maxWidth: .infinity, maxHeight: .infinity)
-
-				Divider()
-
-				HStack {
-					Spacer()
-					Button("Back") { model.back() }
-					Button("Install") {
-						model.go(.install)
-						DispatchQueue.main.async {
-							model.startInstall()
-						}
-					}
-						.keyboardShortcut(.defaultAction)
-				}
-				.padding(20)
-			}
-		}
-	}
-
-	private struct InstallView: View {
-		@EnvironmentObject private var model: InstallerViewModel
-
-		var body: some View {
-			let actionableSteps = model.installSteps.filter { $0.id != .done }
-			let completed = actionableSteps.filter { $0.state == .success }.count
-			let total = max(actionableSteps.count, 1)
-			let progress = Double(completed) / Double(total)
-			let currentStep = model.installSteps.first(where: { $0.state == .running })?.title
-
-			VStack(alignment: .leading, spacing: 12) {
-				SetupProgressHeader(current: .install)
-				ScrollView {
-					VStack(alignment: .leading, spacing: 12) {
-						Text("Install")
-							.font(.title.bold())
-					Text("You can leave this window open while it runs. If something fails, you can copy the logs and try again.")
-						.foregroundStyle(.secondary)
-
-					if model.doInstallPluginBundle && GlyphsRuntime.isGlyphsRunning() {
-						GroupBox {
-							HStack(alignment: .top, spacing: 10) {
-								Image(systemName: "exclamationmark.triangle.fill")
-									.foregroundStyle(.orange)
-								VStack(alignment: .leading, spacing: 6) {
-									Text("Glyphs appears to be running.")
-										.bold()
-									Text("Installing or updating the plug‑in may require restarting Glyphs to take effect.")
-										.foregroundStyle(.secondary)
-									HStack {
-										Button("Quit Glyphs…") { GlyphsRuntime.quitGlyphsWithConfirmation() }
-										Spacer()
-									}
-								}
-							}
-						}
-					}
-
-					GroupBox("Progress") {
-						VStack(alignment: .leading, spacing: 6) {
-							if let currentStep {
-								Text("Current: \(currentStep)")
-									.foregroundStyle(.secondary)
-									.font(.callout)
-							} else if model.installSucceeded {
-								Text("Completed")
-									.foregroundStyle(.secondary)
-									.font(.callout)
-							} else if model.isBusy {
-								Text("Starting…")
-									.foregroundStyle(.secondary)
-									.font(.callout)
-							}
-
-							HStack {
-								ProgressView(value: progress)
-									.progressViewStyle(.linear)
-									.frame(maxWidth: .infinity)
-									.padding(.leading, 2)
-								Text("\(completed)/\(total)")
-									.foregroundStyle(.secondary)
-									.font(.callout)
-							}
-							.padding(.bottom, 6)
-
-							ForEach(model.installSteps) { step in
-								HStack {
-									Image(systemName: step.state.symbolName)
-										.foregroundStyle(step.state.color)
-										.frame(width: 18)
-									Text(step.title)
-									Spacer()
-								}
-							}
-						}
-						.frame(maxWidth: .infinity, alignment: .leading)
-					}
-
-						InstallerLogGroupBox(logText: model.logText, isBusy: model.isBusy)
-					}
-					.padding(20)
-				}
-				.frame(maxWidth: .infinity, maxHeight: .infinity)
-
-			Divider()
-
-				HStack {
-					Button("Start setup") {
-						model.startInstall()
-					}
-						.disabled(model.isBusy)
-						.buttonStyle(.bordered)
-					if model.isBusy {
-						Button("Cancel") { model.cancelInstall() }
-							.keyboardShortcut(.cancelAction)
-					}
-					Spacer()
-				Button("Back") { model.back() }
-					.disabled(model.isBusy)
-				Button("Continue") { model.go(.clients) }
-					.disabled(!model.installSucceeded)
-					.keyboardShortcut(.defaultAction)
-			}
-			.padding(20)
-		}
-		.onAppear {
-			guard !model.didRunInstall else { return }
-			DispatchQueue.main.async {
-				model.startInstall()
-			}
-		}
-	}
-}
-
-	private struct ClientsView: View {
-		@EnvironmentObject private var model: InstallerViewModel
-		@State private var copiedClaudeCommand: Bool = false
-
-		var body: some View {
-			VStack(alignment: .leading, spacing: 12) {
-				SetupProgressHeader(current: .clients)
-				ScrollView {
-					VStack(alignment: .leading, spacing: 12) {
-						Text("Configure clients")
-							.font(.title.bold())
-					Text("Optional. This edits local config files (with backups) or uses CLIs when available.")
-						.foregroundStyle(.secondary)
-
-					GroupBox {
-						VStack(alignment: .leading, spacing: 10) {
-							ClientRow(
-								name: "Codex",
-								status: clientStatus(title: "Codex MCP settings"),
-								details: "Will update: \(InstallerPaths.codexConfig.path)",
-								isOn: $model.configureCodex,
-								disabled: false
-							)
-							ClientRow(
-								name: "Claude Desktop",
-								status: clientStatus(title: "Claude Desktop MCP settings"),
-								details: "Will update: \(InstallerPaths.claudeDesktopConfig.path)",
-								isOn: $model.configureClaudeDesktop,
-								disabled: false
-							)
-							ClientRow(
-								name: "Claude Code",
-								status: clientStatus(title: "Claude Code MCP settings"),
-								details: "Uses the `claude` CLI when available.",
-								isOn: $model.configureClaudeCode,
-								disabled: model.preflight.claudePath == nil
-							)
-							ClientRow(
-								name: "Antigravity",
-								status: clientStatus(title: "Antigravity MCP settings"),
-								details: "Will update: \(InstallerPaths.antigravityConfig.path)",
-								isOn: $model.configureAntigravity,
-								disabled: false
-							)
-
-							if let cmd = suggestedClaudeAddCommand {
-								HStack {
-									Text("Claude Code is not configured. You can also run:")
-										.foregroundStyle(.secondary)
-									Spacer()
-								}
-								Text(cmd)
-									.font(.system(.callout, design: .monospaced))
-									.textSelection(.enabled)
-								HStack {
-									Button("Copy command") {
-										Pasteboard.copy(cmd)
-										copiedClaudeCommand = true
-										DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedClaudeCommand = false }
-									}
-									if copiedClaudeCommand {
-										Text("Copied")
-											.foregroundStyle(.secondary)
-									}
-									Spacer()
-								}
-							}
-						}
-						.frame(maxWidth: .infinity, alignment: .leading)
-					}
-
-					GroupBox {
-						VStack(alignment: .leading, spacing: 10) {
-							Text("Install Glyphs MCP skills")
-								.font(.headline)
-							Text("Optional. This copies the bundled Glyphs MCP skill set into each client’s global skills directory. Existing Glyphs MCP skills can be updated in place after confirmation.")
-								.foregroundStyle(.secondary)
-
-							ClientRow(
-								name: "Codex skills",
-								status: "Global path: \(InstallerPaths.codexSkillsDir.path)",
-								details: "Copies the bundled glyphs-mcp-* skills into Codex’s global skills directory.",
-								isOn: $model.installCodexSkills,
-								disabled: false
-							)
-							ClientRow(
-								name: "Claude Code skills",
-								status: "Global path: \(InstallerPaths.claudeCodeSkillsDir.path)",
-								details: "Copies the bundled glyphs-mcp-* skills into Claude Code’s global skills directory.",
-								isOn: $model.installClaudeCodeSkills,
-								disabled: false
-							)
-
-							Text("Reload or restart Codex / Claude Code after installing the global skill bundle.")
-								.foregroundStyle(.secondary)
-								.font(.callout)
-						}
-						.frame(maxWidth: .infinity, alignment: .leading)
-					}
-
-						InstallerLogGroupBox(logText: model.logText, isBusy: model.isBusy)
-					}
-					.padding(20)
-				}
-				.frame(maxWidth: .infinity, maxHeight: .infinity)
-
-			Divider()
-
-				HStack {
-					Button("Configure") {
-						model.startClientConfig()
-					}
-						.disabled(model.isBusy)
-						.buttonStyle(.borderedProminent)
-					if model.isBusy {
-						Button("Cancel") { model.cancelClientConfig() }
-							.keyboardShortcut(.cancelAction)
-					}
-					Spacer()
-					Button("Back") { model.back() }
-					.disabled(model.isBusy)
-				Button("Continue") { model.go(.finish) }
-					.keyboardShortcut(.defaultAction)
-			}
-			.padding(20)
-		}
-		.onAppear { model.scanCheck() }
-	}
-
-	private func clientStatus(title: String) -> String {
-		model.check.items.first(where: { $0.title == title })?.details ?? "Not checked"
-	}
-
-	private var suggestedClaudeAddCommand: String? {
-		guard let item = model.check.items.first(where: { $0.title == "Claude Code MCP settings" }) else { return nil }
-		guard let r = item.details.range(of: "Run: ") else { return nil }
-		return String(item.details[r.upperBound...]).trimmingCharacters(in: .whitespacesAndNewlines)
-	}
-}
-
-	private struct FinishView: View {
-		@EnvironmentObject private var model: InstallerViewModel
-		@State private var copiedPrompt: Bool = false
-		@State private var copiedEndpoint: Bool = false
-
-		var body: some View {
-			VStack(alignment: .leading, spacing: 12) {
-				if model.isGuidedSetupFlow {
-					SetupProgressHeader(current: .finish)
-				}
-
-				ScrollView {
-					VStack(alignment: .leading, spacing: 12) {
-						Text("You’re ready")
-							.font(.title.bold())
-
-						GroupBox("Next steps") {
-							VStack(alignment: .leading, spacing: 6) {
-								if model.restartRecommended {
-									Text("1) Restart Glyphs to load the updated plug‑in.")
-										.bold()
-								} else {
-									Text("1) Open (or restart) Glyphs if needed.")
-										.bold()
-								}
-								Text("2) In Glyphs: Edit → Start MCP Server")
-									.bold()
-								Text("3) Try an example prompt (below)")
-									.bold()
-
-								HStack {
-									Text("Endpoint: \(InstallerConstants.endpointURL.absoluteString)")
-										.foregroundStyle(.secondary)
-										.textSelection(.enabled)
-									Spacer()
-									Button("Copy endpoint") {
-										Pasteboard.copy(InstallerConstants.endpointURL.absoluteString)
-										copiedEndpoint = true
-										DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedEndpoint = false }
-									}
-									if copiedEndpoint { Text("Copied").foregroundStyle(.secondary) }
-								}
-
-								Text("If your agent can’t connect, restart Glyphs and start the MCP server first, then try again.")
-									.foregroundStyle(.secondary)
-								if model.clientReloadRecommended {
-									Text("If you installed the global Glyphs MCP skill bundle, reload or restart Codex / Claude Code before trying the skill prompts.")
-										.foregroundStyle(.secondary)
-								}
-							}
-							.frame(maxWidth: .infinity, alignment: .leading)
-						}
-
-						GroupBox("Try it now") {
-							VStack(alignment: .leading, spacing: 10) {
-								Text("Example prompt: List open fonts")
-									.font(.headline)
-								Text("Use the Glyphs MCP server and call `list_open_fonts`. Return a table with `familyName`, `filePath`, `masterCount`, and `glyphCount` for each open font.")
-									.foregroundStyle(.secondary)
-
-								Text(examplePrompt)
-									.font(.system(.callout, design: .monospaced))
-									.textSelection(.enabled)
-
-								HStack {
-									Button("Copy prompt") {
-										Pasteboard.copy(examplePrompt)
-										copiedPrompt = true
-										DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedPrompt = false }
-									}
-									if copiedPrompt { Text("Copied").foregroundStyle(.secondary) }
-									Spacer()
-								}
-
-								Text("Tip: In Codex / Claude, select the MCP server named `glyphs-mcp-server`.")
-									.foregroundStyle(.secondary)
-							}
-							.frame(maxWidth: .infinity, alignment: .leading)
-						}
-
-						GroupBox("Starter project folder") {
-							VStack(alignment: .leading, spacing: 10) {
-								Toggle("Create a starter project folder with AGENTS.md", isOn: $model.createStarterFolder)
-								TextField("Project name", text: $model.starterProjectName)
-									.disabled(!model.createStarterFolder)
-								Text("This becomes the folder name and is written into `AGENTS.md` so your agent knows to use the Glyphs MCP server.")
-									.foregroundStyle(.secondary)
-									.font(.callout)
-								HStack {
-									Button("Choose location…") { model.chooseStarterParentFolder() }
-										.disabled(!model.createStarterFolder)
-									if let folder = model.starterParentFolder {
-										Text(folder.path)
-											.foregroundStyle(.secondary)
-											.textSelection(.enabled)
-									} else {
-										Text("No folder selected").foregroundStyle(.secondary)
-									}
-								}
-
-								Button("Create starter project") {
-									Task { await model.createStarterProject() }
-								}
-								.disabled(!model.createStarterFolder || model.starterParentFolder == nil || model.isBusy)
-
-								if let created = model.createdStarterProjectFolder {
-									HStack {
-										Text("Created: \(created.path)")
-											.foregroundStyle(.secondary)
-											.textSelection(.enabled)
-										Spacer()
-										Button("Open in Finder") { model.revealInFinder(url: created) }
-									}
-								}
-							}
-							.frame(maxWidth: .infinity, alignment: .leading)
-						}
-
-						GroupBox("Open config files") {
-							HStack {
-								Button("Codex") { model.revealInFinder(url: InstallerPaths.codexConfig) }
-								Button("Claude Desktop") { model.revealInFinder(url: InstallerPaths.claudeDesktopConfig) }
-								Button("Antigravity") { model.revealInFinder(url: InstallerPaths.antigravityConfig) }
-								Spacer()
-							}
-							.frame(maxWidth: .infinity, alignment: .leading)
-						}
-
-						InstallerLogGroupBox(logText: model.logText, isBusy: model.isBusy)
-					}
-					.padding(20)
-					.frame(maxWidth: .infinity, alignment: .leading)
-				}
-				.frame(maxWidth: .infinity, maxHeight: .infinity)
-
-				Divider()
-
-				HStack {
-					Button("Open Glyphs Plugins folder") { model.revealInFinder(url: model.glyphsPluginsDir) }
-					Spacer()
-					Button("Back") { model.back() }
-					Button(model.isGuidedSetupFlow ? "Done" : "Home") { model.goHome() }
-						.buttonStyle(.borderedProminent)
-						.keyboardShortcut(.defaultAction)
-				}
-				.padding(20)
-			}
-		}
-
-		private var examplePrompt: String {
-			"Use the Glyphs MCP server and call `list_open_fonts`. Return a table with `familyName`, `filePath`, `masterCount`, and `glyphCount` for each open font."
-		}
-	}
-
-private struct ClientRow: View {
-	let name: String
-	let status: String
-	let details: String
-	@Binding var isOn: Bool
-	let disabled: Bool
-
-	var body: some View {
-		VStack(alignment: .leading, spacing: 6) {
-			HStack {
-				Toggle(name, isOn: $isOn)
-					.disabled(disabled)
-				Spacer()
-			}
-			Text(status)
-				.foregroundStyle(.secondary)
-				.font(.callout)
-			Text(details)
-				.foregroundStyle(.secondary)
-				.font(.callout)
-		}
-		.padding(.vertical, 4)
 	}
 }

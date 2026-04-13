@@ -11,5 +11,16 @@ struct GlyphsMCPInstallerApp: App {
 		}
 		.windowStyle(.automatic)
 		.windowToolbarStyle(.unifiedCompact)
+		.commands {
+			CommandGroup(after: .toolbar) {
+				Toggle(
+					"Advanced Mode",
+					isOn: Binding(
+						get: { model.isAdvancedModeEnabled },
+						set: { model.setAdvancedModeEnabled($0) }
+					)
+				)
+			}
+		}
 	}
 }

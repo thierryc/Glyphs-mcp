@@ -43,4 +43,22 @@ fi
 
 rm -rf "$out_dir/$scheme.app"
 /usr/bin/ditto "$app_path" "$out_dir/$scheme.app"
+
+# Xcode/archive can leave the embedded payload executable with a stale signature
+# after export. Re-sign the payload executable in the exported app, then re-sign
+# the outer app bundle so the final distributable verifies cleanly.
+payload_bin="$out_dir/$scheme.app/Contents/Resources/Payload/Glyphs MCP.glyphsPlugin/Contents/MacOS/plugin"
+if [[ -f "$payload_bin" ]]; then
+  echo "Re-signing exported payload executable…"
+  /usr/bin/codesign --force --sign "$identity" --timestamp --options runtime "$payload_bin"
+else
+  echo "warn: payload executable not found at $payload_bin" >&2
+fi
+
+echo "Re-signing exported app…"
+/usr/bin/codesign --force --sign "$identity" --timestamp --options runtime "$out_dir/$scheme.app"
+
+echo "Verifying exported app signature…"
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$out_dir/$scheme.app"
+
 echo "Wrote: $out_dir/$scheme.app"

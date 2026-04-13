@@ -33,8 +33,8 @@ Minimum requirements:
 - Python 3.11–3.13 (recommended: python.org 3.12)
 
 Notes for Xcode builds:
-- Debug builds use **Apple Development** signing (Team `D8YF5BKVYN`) so the app can run locally from Xcode.
-- Release builds use **Developer ID Application** signing (Team `N9U29A4T8J`) for distribution outside the Mac App Store.
+- Debug builds use **Apple Development** signing with Team `N9U29A4T8J` so the app can run locally from Xcode.
+- Release builds use **Developer ID Application** signing with Team `N9U29A4T8J` for distribution outside the Mac App Store.
 - If you change signing teams/certs, run `Product > Clean Build Folder…` and delete this project’s DerivedData to avoid mixed-signature crashes (the app and embedded framework must be signed by the same Team ID).
 - If you see `Sandbox: rsync(...) deny file-write-create ...` during the `Copy Payload` build phase, ensure the build setting **Enable User Script Sandboxing** is set to `No` (we set `ENABLE_USER_SCRIPT_SANDBOXING = NO` in the project).
 - If you want a per-project DerivedData location (instead of the global default): `File > Project Settings…` → **Derived Data** → `Custom` (or `Relative to Project`).

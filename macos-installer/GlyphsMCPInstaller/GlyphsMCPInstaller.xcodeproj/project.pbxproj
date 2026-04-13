@@ -98,19 +98,6 @@
 		F4C332F72F538E3E00BF5B52 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; name = AppIcon.icon; path = Resources/AppIcon.icon; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
-/* Begin PBXVariantGroup section */
-		AA3000000000000000000025 /* Localizable.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				AA3000000000000000000022 /* en */,
-				AA3000000000000000000023 /* fr */,
-				AA3000000000000000000024 /* zh-Hans */,
-			);
-			name = Localizable.strings;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
-
 /* Begin PBXFrameworksBuildPhase section */
 		AA0000000000000000000013 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
@@ -357,7 +344,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\n\nPAYLOAD_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Payload\"\nmkdir -p \"$PAYLOAD_DIR\"\n\nREPO_ROOT=\"$PROJECT_DIR/../..\"\n\nPLUGIN_SRC=\"$REPO_ROOT/src/glyphs-mcp/Glyphs MCP.glyphsPlugin\"\nPLUGIN_DST=\"$PAYLOAD_DIR/Glyphs MCP.glyphsPlugin\"\nREQ_SRC=\"$REPO_ROOT/requirements.txt\"\nSKILLS_SRC=\"$REPO_ROOT/skills\"\nSKILLS_DST=\"$PAYLOAD_DIR/skills\"\n\nif [ ! -d \"$PLUGIN_SRC\" ]; then\n  echo \"error: plugin bundle not found: $PLUGIN_SRC\" >&2\n  exit 1\nfi\nif [ ! -f \"$REQ_SRC\" ]; then\n  echo \"error: requirements.txt not found: $REQ_SRC\" >&2\n  exit 1\nfi\nif [ ! -d \"$SKILLS_SRC\" ]; then\n  echo \"error: skills directory not found: $SKILLS_SRC\" >&2\n  exit 1\nfi\n\n# Copy plugin bundle (exclude dev-only artifacts; keep payload deterministic)\nmkdir -p \"$PLUGIN_DST\"\nrsync -a --delete \\\n  --exclude '.DS_Store' \\\n  --exclude '__pycache__' \\\n  --exclude '*.pyc' \\\n  --exclude '.venv' \\\n  \"$PLUGIN_SRC/\" \"$PLUGIN_DST/\"\n\n# Sign the embedded plug-in binary so the installer app can be notarized.\n# Notarytool validates *all* nested executables inside the app bundle, even payloads.\nPLUGIN_BIN=\"$PLUGIN_DST/Contents/MacOS/plugin\"\nif [ -f \"$PLUGIN_BIN\" ]; then\n  SIGN_ID=\"${EXPANDED_CODE_SIGN_IDENTITY:-${CODE_SIGN_IDENTITY:-}}\"\n  if [ -n \"${SIGN_ID:-}\" ]; then\n    echo \"Signing payload plug-in with: $SIGN_ID\"\n    /usr/bin/codesign --force --sign \"$SIGN_ID\" --timestamp --options runtime \"$PLUGIN_BIN\"\n    /usr/bin/codesign --force --sign \"$SIGN_ID\" --timestamp --options runtime \"$PLUGIN_DST\"\n    /usr/bin/codesign --verify --strict --verbose=2 \"$PLUGIN_DST\"\n  else\n    echo \"WARN: CODE_SIGN_IDENTITY is empty; skipping payload plug-in signing. Notarization will fail.\" >&2\n  fi\nelse\n  echo \"WARN: payload plug-in binary not found at $PLUGIN_BIN\" >&2\nfi\n\n# Copy requirements\ncp -f \"$REQ_SRC\" \"$PAYLOAD_DIR/requirements.txt\"\n\n# Copy the managed Glyphs MCP skill bundle for Codex / Claude Code global install.\nmkdir -p \"$SKILLS_DST\"\nfind \"$SKILLS_DST\" -mindepth 1 -maxdepth 1 -type d -name 'glyphs-mcp-*' -exec rm -rf {} +\nfor skill_dir in \"$SKILLS_SRC\"/glyphs-mcp-*; do\n  [ -d \"$skill_dir\" ] || continue\n  skill_name=\"$(basename \"$skill_dir\")\"\n  rsync -a --delete \\\n    --exclude '.DS_Store' \\\n    --exclude '__pycache__' \\\n    --exclude '*.pyc' \\\n    \"$skill_dir/\" \"$SKILLS_DST/$skill_name/\"\ndone\n\n# Output marker for dependency analysis\n: > \"$PAYLOAD_DIR/.payload-stamp\"\n\necho \"Payload staged at: $PAYLOAD_DIR\"\n";
+			shellScript = "set -euo pipefail\n\nPAYLOAD_DIR=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Payload\"\nmkdir -p \"$PAYLOAD_DIR\"\n\nREPO_ROOT=\"$PROJECT_DIR/../..\"\n\nPLUGIN_SRC=\"$REPO_ROOT/src/glyphs-mcp/Glyphs MCP.glyphsPlugin\"\nPLUGIN_DST=\"$PAYLOAD_DIR/Glyphs MCP.glyphsPlugin\"\nREQ_SRC=\"$REPO_ROOT/requirements.txt\"\nSKILLS_SRC=\"$REPO_ROOT/skills\"\nSKILLS_DST=\"$PAYLOAD_DIR/skills\"\n\nif [ ! -d \"$PLUGIN_SRC\" ]; then\n  echo \"error: plugin bundle not found: $PLUGIN_SRC\" >&2\n  exit 1\nfi\nif [ ! -f \"$REQ_SRC\" ]; then\n  echo \"error: requirements.txt not found: $REQ_SRC\" >&2\n  exit 1\nfi\nif [ ! -d \"$SKILLS_SRC\" ]; then\n  echo \"error: skills directory not found: $SKILLS_SRC\" >&2\n  exit 1\nfi\n\n# Copy plugin bundle (exclude dev-only artifacts; keep payload deterministic)\nmkdir -p \"$PLUGIN_DST\"\nrsync -a --delete \\\n  --exclude '.DS_Store' \\\n  --exclude '__pycache__' \\\n  --exclude '*.pyc' \\\n  --exclude '.venv' \\\n  \"$PLUGIN_SRC/\" \"$PLUGIN_DST/\"\n\n# Sign the embedded executable so notarization accepts the payload.\n# Do not sign the .glyphsPlugin wrapper bundle here: archive/export may update the\n# nested executable signature later, which would stale the wrapper CodeResources.\nPLUGIN_BIN=\"$PLUGIN_DST/Contents/MacOS/plugin\"\nif [ -f \"$PLUGIN_BIN\" ]; then\n  SIGN_ID=\"${EXPANDED_CODE_SIGN_IDENTITY:-${CODE_SIGN_IDENTITY:-}}\"\n  if [ -n \"${SIGN_ID:-}\" ]; then\n    echo \"Signing payload plug-in executable with: $SIGN_ID\"\n    /usr/bin/codesign --force --sign \"$SIGN_ID\" --timestamp --options runtime \"$PLUGIN_BIN\"\n    /usr/bin/codesign --verify --verbose=2 \"$PLUGIN_BIN\"\n  else\n    echo \"WARN: CODE_SIGN_IDENTITY is empty; skipping payload plug-in signing. Notarization will fail.\" >&2\n  fi\nelse\n  echo \"WARN: payload plug-in binary not found at $PLUGIN_BIN\" >&2\nfi\n\n# Copy requirements\ncp -f \"$REQ_SRC\" \"$PAYLOAD_DIR/requirements.txt\"\n\n# Copy the managed Glyphs MCP skill bundle for Codex / Claude Code global install.\nmkdir -p \"$SKILLS_DST\"\nfind \"$SKILLS_DST\" -mindepth 1 -maxdepth 1 -type d -name 'glyphs-mcp-*' -exec rm -rf {} +\nfor skill_dir in \"$SKILLS_SRC\"/glyphs-mcp-*; do\n  [ -d \"$skill_dir\" ] || continue\n  skill_name=\"$(basename \"$skill_dir\")\"\n  rsync -a --delete \\\n    --exclude '.DS_Store' \\\n    --exclude '__pycache__' \\\n    --exclude '*.pyc' \\\n    \"$skill_dir/\" \"$SKILLS_DST/$skill_name/\"\ndone\n\n# Output marker for dependency analysis\n: > \"$PAYLOAD_DIR/.payload-stamp\"\n\necho \"Payload staged at: $PAYLOAD_DIR\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -418,6 +405,19 @@
 			targetProxy = AA2000000000000000000003 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		AA3000000000000000000025 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				AA3000000000000000000022 /* en */,
+				AA3000000000000000000023 /* fr */,
+				AA3000000000000000000024 /* zh-Hans */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		AA0000000000000000000030 /* Debug */ = {
@@ -529,7 +529,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -543,7 +543,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.14;
+				MARKETING_VERSION = 1.0.15;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -563,7 +563,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -577,7 +577,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.0.14;
+				MARKETING_VERSION = 1.0.15;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -87,13 +87,6 @@ To see what’s listening:
 lsof -iTCP:9680 -sTCP:LISTEN
 ```
 
-## Problem: Claude/Cursor can’t start `npx`
-
-Some tools spawn MCP servers without inheriting your shell environment. If you use `npx mcp-remote`, ensure:
-
-- Node **20+** is installed
-- the client config includes an explicit `env.PATH` pointing to that Node install
-
 ## Problem: Browser works but client doesn’t
 
 If you open `http://127.0.0.1:9680/mcp/` in a browser, you’ll usually see a small discovery JSON response.

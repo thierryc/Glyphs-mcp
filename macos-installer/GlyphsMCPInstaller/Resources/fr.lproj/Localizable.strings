@@ -35,7 +35,6 @@
 "Checking…" = "Vérification…";
 "Open plug‑ins folder" = "Ouvrir le dossier des plug-ins";
 "Open Codex config" = "Ouvrir la config Codex";
-"Open Claude Desktop config" = "Ouvrir la config Claude Desktop";
 "Re-scan" = "Réanalyser";
 "Back" = "Retour";
 "Continue to setup…" = "Continuer la configuration…";
@@ -117,10 +116,7 @@
 "Glyphs MCP plug‑in" = "Plug‑in Glyphs MCP";
 "Glyphs plugins detected" = "Plug-ins Glyphs détectés";
 "Codex app" = "App Codex";
-"Claude app" = "App Claude";
 "Codex MCP settings" = "Paramètres MCP Codex";
-"Claude Desktop MCP settings" = "Paramètres MCP Claude Desktop";
-"Antigravity MCP settings" = "Paramètres MCP Antigravity";
 "Claude Code MCP settings" = "Paramètres MCP Claude Code";
 
 /* Preflight / Check item details */
@@ -130,7 +126,6 @@
 "Unknown (could not read Glyphs preferences)." = "Inconnu (impossible de lire les préférences de Glyphs).";
 "Not found (will patch ~/.codex/config.toml instead)." = "Introuvable (modification de ~/.codex/config.toml à la place).";
 "Not found (Claude Code will not be auto-configured)." = "Introuvable (Claude Code ne sera pas configuré automatiquement).";
-"Not found (Claude Desktop proxy via npx may fail)." = "Introuvable (le proxy Claude Desktop via npx peut échouer).";
 "Not installed." = "Non installé.";
 "Not found." = "Introuvable.";
 "Not found" = "Introuvable";

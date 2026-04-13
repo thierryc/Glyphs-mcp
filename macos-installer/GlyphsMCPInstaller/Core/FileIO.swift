@@ -70,17 +70,14 @@ public enum InstallerPaths {
 		let base = glyphsBaseDir.appendingPathComponent("Repositories/GlyphsPythonPlugin/Python.framework/Versions/Current/bin/pip3")
 		return FileManager.default.isExecutableFile(atPath: base.path) ? base : nil
 	}
-	public static var claudeDesktopConfig: URL {
-		home.appendingPathComponent("Library/Application Support/Claude/claude_desktop_config.json")
-	}
-	public static var antigravityConfig: URL {
-		home.appendingPathComponent(".gemini/antigravity/mcp_config.json")
-	}
 	public static var codexConfig: URL {
 		home.appendingPathComponent(".codex/config.toml")
 	}
 	public static var codexSkillsDir: URL {
 		home.appendingPathComponent(".codex/skills", isDirectory: true)
+	}
+	public static var claudeCodeConfig: URL {
+		home.appendingPathComponent(".claude.json")
 	}
 	public static var claudeCodeSkillsDir: URL {
 		home.appendingPathComponent(".claude/skills", isDirectory: true)

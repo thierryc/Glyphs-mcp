@@ -30,7 +30,7 @@ Prefer a signed, notarized macOS app with a guided UI?
 The installer:
 - installs/updates `Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`,
 - installs Python dependencies (Glyphs Python or a custom Python), and
-- can configure MCP clients (Codex, Claude Desktop, Claude Code, Antigravity), and
+- can configure MCP clients (Codex and Claude Code), and
 - can optionally install the bundled Glyphs MCP skills into Codex and Claude Code.
 
 Minimum requirements:
@@ -111,8 +111,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.14)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.14"`).
+## Command Set (MCP server v1.0.15)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.15"`).
 
 | Tool | Description |
 |------|-------------|
@@ -357,7 +357,7 @@ python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --s
    - Open Glyphs → Edit → Start Glyphs MCP Server.
    - Optional: enable auto-start in Edit → Glyphs MCP Server Status… → Auto-start server on launch.
    - The MCP endpoint is `http://127.0.0.1:9680/mcp/` with MCP Streamable HTTP transport.
-   - The installer can optionally show client setup snippets for popular tools (Claude Desktop, Claude Code, Continue, Cursor, Windsurf, Codex). It uses either `npx mcp-remote` or the Python `mcp-proxy` if on PATH.
+   - The installer can optionally show direct HTTP setup commands for Codex and Claude Code.
 
 Tips
 - If you’re unsure, accept the defaults: “Glyphs’ Python” and “Copy”.

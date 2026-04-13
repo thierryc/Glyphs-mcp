@@ -54,50 +54,15 @@ python src/glyphs-mcp/scripts/copy_documentation.py
 - In `execute_code*`, validate targets before edits, keep scripts focused, and cap output with `max_output_chars` / `max_error_chars` when needed.
 - Verify by reading back and report changed/skipped counts and unresolved risks.
 
-## IDE Configuration
-Claude Desktop example:
+## Client Configuration
+Use direct HTTP clients for local setup. The recommended commands are:
 
-```
-{
-  "globalShortcut": "Alt+Ctrl+Cmd+*",
-  "mcpServers": {
-    "glyphs-mcp-server": {
-      "command": "npx",
-      "args": [
-        "mcp-remote",
-        "http://127.0.0.1:9680/mcp/",
-        "--header"
-      ]
-    }
-  }
-}
+```bash
+codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
 ```
 
-Claude Desktop spawns MCP servers without your login shell, so it often falls back to an older embedded Node. Keeping `PATH` pointed at a Node 20+ install ensures `npx` resolves the recent `mcp-remote` CLI.
-
-Prefer Python instead of Node? Install the proxy CLI and reference it directly:
-
-```
-pip3 install --user mcp-proxy
+```bash
+claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
 ```
 
-```
-{
-  "globalShortcut": "Alt+Ctrl+Cmd+*",
-  "mcpServers": {
-    "glyphs-mcp-server": {
-      "command": "/Library/Frameworks/Python.framework/Versions/3.12/bin/mcp-proxy",
-      "args": [
-        "--transport",
-        "streamablehttp",
-        "http://127.0.0.1:9680/mcp/"
-      ],
-      "env": {
-        "PATH": "/Library/Frameworks/Python.framework/Versions/3.12/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-      }
-    }
-  }
-}
-```
-
-The `PATH` override pins Claude Desktop to the `mcp-proxy` shim that `pip3` drops into Python 3.12’s `bin` directory. If your interpreter lives elsewhere (for example a `pyenv` or Homebrew install), replace that prefix with `$(python3 -m site --user-base)/bin`.
+Then start the server in Glyphs with **Edit → Start MCP Server**.

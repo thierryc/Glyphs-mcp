@@ -40,6 +40,7 @@ public struct PythonCandidate: Hashable {
 public struct PreflightResult {
 	public var items: [PreflightItem]
 	public var glyphsPipPath: String?
+	public var glyphsPipVersion: String?
 	public var glyphsSelectedPythonFrameworkPath: String?
 	public var glyphsSelectedPythonVersion: String?
 	public var customPythons: [PythonCandidate]
@@ -50,9 +51,10 @@ public struct PreflightResult {
 	public var claudePath: String?
 	public var nodePath: String?
 
-	public init(items: [PreflightItem], glyphsPipPath: String?, glyphsSelectedPythonFrameworkPath: String?, glyphsSelectedPythonVersion: String?, customPythons: [PythonCandidate], customPythonTooOldCount: Int, customPythonTooNewCount: Int, customPythonUnknownCount: Int, codexPath: String?, claudePath: String?, nodePath: String?) {
+	public init(items: [PreflightItem], glyphsPipPath: String?, glyphsPipVersion: String?, glyphsSelectedPythonFrameworkPath: String?, glyphsSelectedPythonVersion: String?, customPythons: [PythonCandidate], customPythonTooOldCount: Int, customPythonTooNewCount: Int, customPythonUnknownCount: Int, codexPath: String?, claudePath: String?, nodePath: String?) {
 		self.items = items
 		self.glyphsPipPath = glyphsPipPath
+		self.glyphsPipVersion = glyphsPipVersion
 		self.glyphsSelectedPythonFrameworkPath = glyphsSelectedPythonFrameworkPath
 		self.glyphsSelectedPythonVersion = glyphsSelectedPythonVersion
 		self.customPythons = customPythons
@@ -64,7 +66,7 @@ public struct PreflightResult {
 		self.nodePath = nodePath
 	}
 
-	public static let empty = PreflightResult(items: [], glyphsPipPath: nil, glyphsSelectedPythonFrameworkPath: nil, glyphsSelectedPythonVersion: nil, customPythons: [], customPythonTooOldCount: 0, customPythonTooNewCount: 0, customPythonUnknownCount: 0, codexPath: nil, claudePath: nil, nodePath: nil)
+	public static let empty = PreflightResult(items: [], glyphsPipPath: nil, glyphsPipVersion: nil, glyphsSelectedPythonFrameworkPath: nil, glyphsSelectedPythonVersion: nil, customPythons: [], customPythonTooOldCount: 0, customPythonTooNewCount: 0, customPythonUnknownCount: 0, codexPath: nil, claudePath: nil, nodePath: nil)
 }
 
 public enum Preflight {
@@ -102,8 +104,17 @@ public enum Preflight {
 		}
 
 		let glyphsPip = InstallerPaths.glyphsPythonPip3()
+		let glyphsPipVersion: String? = {
+			guard let glyphsPip else { return nil }
+			let python3 = glyphsPip.deletingLastPathComponent().appendingPathComponent("python3")
+			let res = runner.runSyncWithStderr(executable: python3, args: ["-c", "import sys; print(sys.version.split()[0])"])
+			guard res.exitCode == 0 else { return nil }
+			let v = res.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+			return v.isEmpty ? nil : v
+		}()
 		if let pip = glyphsPip {
-			items.append(.init(level: .ok, title: NSLocalizedString("Glyphs Python pip3", comment: "Preflight item title"), details: pip.path))
+			let details = glyphsPipVersion.map { "\(pip.path) (\($0))" } ?? pip.path
+			items.append(.init(level: .ok, title: NSLocalizedString("Glyphs Python pip3", comment: "Preflight item title"), details: details))
 		} else {
 			items.append(.init(
 				level: .warn,
@@ -154,16 +165,10 @@ public enum Preflight {
 			details: claude ?? NSLocalizedString("Not found (Claude Code will not be auto-configured).", comment: "Preflight item details")
 		))
 
-		let node = ToolLocator.findTool(named: "node", extraCandidates: ["/opt/homebrew/bin/node", "/usr/local/bin/node"])
-		items.append(.init(
-			level: node == nil ? .warn : .ok,
-			title: NSLocalizedString("Node", comment: "Preflight item title"),
-			details: node ?? NSLocalizedString("Not found (Claude Desktop proxy via npx may fail).", comment: "Preflight item details")
-		))
-
 		return PreflightResult(
 			items: items,
 			glyphsPipPath: glyphsPip?.path,
+			glyphsPipVersion: glyphsPipVersion,
 			glyphsSelectedPythonFrameworkPath: glyphsSelectedFramework,
 			glyphsSelectedPythonVersion: glyphsSelectedVersion,
 			customPythons: customPythons,
@@ -172,7 +177,7 @@ public enum Preflight {
 			customPythonUnknownCount: scan.unknownCount,
 			codexPath: codex,
 			claudePath: claude,
-			nodePath: node
+			nodePath: nil
 		)
 	}
 
@@ -197,6 +202,478 @@ public enum Preflight {
 			return "\(short) (\(build))"
 		}
 		return short ?? build
+	}
+}
+
+public struct GlyphsPythonStatus: Equatable {
+	public enum Source: String, Equatable {
+		case glyphsSetting
+		case glyphsBundled
+	}
+
+	public let source: Source?
+	public let version: String?
+	public let pythonPath: String?
+	public let pipPath: String?
+	public let summary: String
+	public let installFailureReason: String?
+
+	public var canInstall: Bool {
+		installFailureReason == nil && makeSelection() != nil
+	}
+
+	public func makeSelection() -> PythonSelection? {
+		guard installFailureReason == nil else { return nil }
+		switch source {
+		case .glyphsSetting:
+			guard let pythonPath else { return nil }
+			return .custom(python3: URL(fileURLWithPath: pythonPath))
+		case .glyphsBundled:
+			guard let pipPath, let pythonPath else { return nil }
+			return .glyphs(pip3: URL(fileURLWithPath: pipPath), python3: URL(fileURLWithPath: pythonPath))
+		case .none:
+			return nil
+		}
+	}
+}
+
+public enum GlyphsPythonResolver {
+	public static func resolve(preflight: PreflightResult) -> GlyphsPythonStatus {
+		if let frameworkPath = preflight.glyphsSelectedPythonFrameworkPath, !frameworkPath.isEmpty {
+			let pythonPath = URL(fileURLWithPath: frameworkPath, isDirectory: true)
+				.appendingPathComponent("bin/python3")
+				.path
+			let version = normalizedVersion(preflight.glyphsSelectedPythonVersion, fallbackPath: frameworkPath)
+			if !FileManager.default.fileExists(atPath: pythonPath) {
+				return GlyphsPythonStatus(
+					source: .glyphsSetting,
+					version: version,
+					pythonPath: pythonPath,
+					pipPath: nil,
+					summary: "Glyphs is set to Python \(version ?? "unknown") at \(frameworkPath)",
+					installFailureReason: "Glyphs is set to a Python framework, but \(pythonPath) was not found. Re-select the Python version in Glyphs and restart Glyphs."
+				)
+			}
+			guard let version else {
+				return GlyphsPythonStatus(
+					source: .glyphsSetting,
+					version: nil,
+					pythonPath: pythonPath,
+					pipPath: nil,
+					summary: "Glyphs is set to Python at \(frameworkPath)",
+					installFailureReason: "Glyphs is set to a Python framework, but its version could not be determined. Re-select the Python version in Glyphs and restart Glyphs."
+				)
+			}
+			guard VersionGate.isSupported(version: version) else {
+				return GlyphsPythonStatus(
+					source: .glyphsSetting,
+					version: version,
+					pythonPath: pythonPath,
+					pipPath: nil,
+					summary: "Glyphs is set to Python \(version) at \(frameworkPath)",
+					installFailureReason: "Glyphs is set to Python \(version), but Glyphs MCP supports Python 3.11–3.13. Change the Python version in Glyphs and restart Glyphs."
+				)
+			}
+			return GlyphsPythonStatus(
+				source: .glyphsSetting,
+				version: version,
+				pythonPath: pythonPath,
+				pipPath: nil,
+				summary: "Using Glyphs-selected Python \(version)",
+				installFailureReason: nil
+			)
+		}
+
+		if let pipPath = preflight.glyphsPipPath, !pipPath.isEmpty {
+			let pythonPath = URL(fileURLWithPath: pipPath).deletingLastPathComponent().appendingPathComponent("python3").path
+			if !FileManager.default.fileExists(atPath: pythonPath) {
+				return GlyphsPythonStatus(
+					source: .glyphsBundled,
+					version: preflight.glyphsPipVersion,
+					pythonPath: pythonPath,
+					pipPath: pipPath,
+					summary: "Using Glyphs bundled Python",
+					installFailureReason: "Glyphs bundled Python was found, but \(pythonPath) is missing. Reinstall Glyphs Python from Glyphs → Settings → Addons."
+				)
+			}
+			if let version = preflight.glyphsPipVersion, !VersionGate.isSupported(version: version) {
+				return GlyphsPythonStatus(
+					source: .glyphsBundled,
+					version: version,
+					pythonPath: pythonPath,
+					pipPath: pipPath,
+					summary: "Using Glyphs bundled Python \(version)",
+					installFailureReason: "Glyphs bundled Python is \(version), but Glyphs MCP supports Python 3.11–3.13. Update Glyphs Python and restart Glyphs."
+				)
+			}
+			let summaryVersion = preflight.glyphsPipVersion.map { " \($0)" } ?? ""
+			return GlyphsPythonStatus(
+				source: .glyphsBundled,
+				version: preflight.glyphsPipVersion,
+				pythonPath: pythonPath,
+				pipPath: pipPath,
+				summary: "Using Glyphs bundled Python\(summaryVersion)",
+				installFailureReason: nil
+			)
+		}
+
+		return GlyphsPythonStatus(
+			source: nil,
+			version: nil,
+			pythonPath: nil,
+			pipPath: nil,
+			summary: "No usable Glyphs Python detected",
+			installFailureReason: "Set a Python version in Glyphs → Settings → Addons, restart Glyphs, and try again."
+		)
+	}
+
+	private static func normalizedVersion(_ version: String?, fallbackPath: String) -> String? {
+		let trimmed = version?.trimmingCharacters(in: .whitespacesAndNewlines)
+		if let trimmed, !trimmed.isEmpty {
+			return trimmed
+		}
+		return GlyphsPreferences.pythonFrameworkMajorMinor(from: fallbackPath)
+	}
+}
+
+public enum InstallerSimpleUI {
+	public static func installButtonTitle(installedPluginVersion: PluginBundleVersion?) -> String {
+		installedPluginVersion == nil ? "Install Glyphs MCP Server" : "Update Glyphs MCP Server"
+	}
+
+	public static func skillButtonTitle(hasExistingManagedSkills: Bool) -> String {
+		hasExistingManagedSkills ? "Update Skill" : "Install Skill"
+	}
+
+	public static func wizardButtonTitle(installedPluginVersion: PluginBundleVersion?, skills: [InstallerSkillTargetSnapshot]) -> String {
+		let hasExistingSkills = skills.contains(where: \.hasInstalledSkills)
+		return (installedPluginVersion != nil || hasExistingSkills) ? "Update Setup" : "Complete Setup"
+	}
+
+	public static func versionLine(installed: PluginBundleVersion?, payload: PluginBundleVersion?) -> String {
+		"Installed: \(installed?.displayString ?? "Not installed") • This app: \(payload?.displayString ?? "Unknown")"
+	}
+}
+
+public enum InstallerAdvancedModePolicy {
+	public static let preferenceKey = "cx.ap.glyphsMcpInstaller.advancedModeEnabled"
+	public static let allTabIDs = ["wizard", "install", "link", "skill", "status", "help"]
+	public static let advancedTabIDs: Set<String> = ["install", "link", "skill"]
+
+	public static func visibleTabIDs(isAdvancedModeEnabled: Bool) -> [String] {
+		isAdvancedModeEnabled ? allTabIDs : allTabIDs.filter { !advancedTabIDs.contains($0) }
+	}
+
+	public static func fallbackTabID(currentTabID: String, isAdvancedModeEnabled: Bool) -> String {
+		guard !isAdvancedModeEnabled, advancedTabIDs.contains(currentTabID) else {
+			return currentTabID
+		}
+		return "wizard"
+	}
+}
+
+public enum InstallerAdvancedModePreferences {
+	public static func load(from defaults: UserDefaults = .standard) -> Bool {
+		defaults.bool(forKey: InstallerAdvancedModePolicy.preferenceKey)
+	}
+
+	public static func save(_ isEnabled: Bool, to defaults: UserDefaults = .standard) {
+		defaults.set(isEnabled, forKey: InstallerAdvancedModePolicy.preferenceKey)
+	}
+}
+
+public enum InstallerClientKind: Int, CaseIterable, Identifiable {
+	case codex
+	case claudeCode
+
+	public var id: Int { rawValue }
+
+	public var displayName: String {
+		switch self {
+		case .codex: return "Codex"
+		case .claudeCode: return "Claude Code"
+		}
+	}
+}
+
+public struct InstallerClientDescriptor: Equatable {
+	public let kind: InstallerClientKind
+	public let isDetected: Bool
+
+	public init(kind: InstallerClientKind, isDetected: Bool) {
+		self.kind = kind
+		self.isDetected = isDetected
+	}
+}
+
+public enum InstallerClientOrdering {
+	public static func ordered(_ descriptors: [InstallerClientDescriptor]) -> [InstallerClientDescriptor] {
+		descriptors.sorted {
+			if $0.isDetected != $1.isDetected {
+				return $0.isDetected && !$1.isDetected
+			}
+			return $0.kind.rawValue < $1.kind.rawValue
+		}
+	}
+}
+
+public struct InstallerClientStatusSnapshot: Identifiable, Equatable {
+	public enum CardState: Equatable {
+		case configured
+		case partial
+		case notDetected
+
+		public var summaryText: String {
+			switch self {
+			case .configured: return "Configured"
+			case .partial: return "Partially available"
+			case .notDetected: return "Not detected"
+			}
+		}
+	}
+
+	public struct Probe: Equatable {
+		public let label: String
+		public let summary: String
+		public let detail: String?
+	}
+
+	public let kind: InstallerClientKind
+	public let detected: Bool
+	public let cardState: CardState
+	public let statusText: String
+	public let detailText: String?
+	public let appStatus: Probe
+	public let cliStatus: Probe
+	public let configStatus: Probe
+
+	public var id: InstallerClientKind { kind }
+	public var name: String { kind.displayName }
+}
+
+public struct InstallerSkillTargetSnapshot: Identifiable, Equatable {
+	public enum Kind: Int, CaseIterable, Identifiable {
+		case codex
+		case claudeCode
+
+		public var id: Int { rawValue }
+
+		public var displayName: String {
+			switch self {
+			case .codex: return "Codex"
+			case .claudeCode: return "Claude Code"
+			}
+		}
+
+		public var destinationPath: String {
+			switch self {
+			case .codex: return InstallerPaths.codexSkillsDir.path
+			case .claudeCode: return InstallerPaths.claudeCodeSkillsDir.path
+			}
+		}
+	}
+
+	public let kind: Kind
+	public let installedSkillNames: [String]
+
+	public var id: Kind { kind }
+	public var name: String { kind.displayName }
+	public var hasInstalledSkills: Bool { !installedSkillNames.isEmpty }
+	public var statusText: String {
+		hasInstalledSkills ? "Installed: \(installedSkillNames.joined(separator: ", "))" : "Not installed"
+	}
+	public var destinationPath: String { kind.destinationPath }
+}
+
+public enum InstallerSkillTargetDetector {
+	public static func detect(
+		payload: InstallerPayload?,
+		codexRoot: URL = InstallerPaths.codexSkillsDir,
+		claudeCodeRoot: URL = InstallerPaths.claudeCodeSkillsDir
+	) -> [InstallerSkillTargetSnapshot] {
+		let installer = AgentSkillBundleInstaller(log: { _ in })
+		let codexInstalled = payload.map { installer.existingManagedSkillDestinations(from: $0, under: codexRoot) } ?? []
+		let claudeInstalled = payload.map { installer.existingManagedSkillDestinations(from: $0, under: claudeCodeRoot) } ?? []
+
+		return [
+			InstallerSkillTargetSnapshot(kind: .codex, installedSkillNames: codexInstalled.map(\.lastPathComponent).sorted()),
+			InstallerSkillTargetSnapshot(kind: .claudeCode, installedSkillNames: claudeInstalled.map(\.lastPathComponent).sorted()),
+		]
+	}
+}
+
+public struct InstallerStatusSnapshot: Equatable {
+	public let pluginInspection: PluginInstaller.InstalledPluginInspection
+	public let installedPluginVersion: PluginBundleVersion?
+	public let payloadPluginVersion: PluginBundleVersion?
+	public let pluginStatusSummary: String
+	public let installedPluginIsSymlink: Bool
+	public let installedPluginSymlinkTarget: String?
+	public let devPluginWarning: String?
+	public let showsDevPluginReplacementOption: Bool
+	public let versionLine: String
+	public let glyphsRunning: Bool
+	public let pythonStatus: GlyphsPythonStatus
+	public let wizardButtonTitle: String
+	public let installButtonTitle: String
+	public let installMessage: String?
+	public let canInstall: Bool
+	public let clients: [InstallerClientStatusSnapshot]
+	public let detectedClientsSummary: String
+	public let skills: [InstallerSkillTargetSnapshot]
+}
+
+public enum InstallerStatusSnapshotBuilder {
+	public static func build(
+		preflight: PreflightResult,
+		check: CheckResult,
+		installedPluginVersion: PluginBundleVersion?,
+		payloadPluginVersion: PluginBundleVersion?,
+		glyphsRunning: Bool,
+		pluginInspection: PluginInstaller.InstalledPluginInspection = .notInstalled()
+	) -> InstallerStatusSnapshot {
+		let effectiveInstalledPluginVersion = installedPluginVersion ?? pluginInspection.version
+		let pythonStatus = GlyphsPythonResolver.resolve(preflight: preflight)
+		let installMessage: String? = glyphsRunning
+			? "Quit Glyphs before installing or updating the plug-in."
+			: pythonStatus.installFailureReason
+		let orderedClients = buildClientStatuses(preflight: preflight, check: check)
+		let detectedNames = orderedClients.filter { $0.detected }.map(\.name)
+		let skillTargets = InstallerSkillTargetDetector.detect(payload: try? InstallerPayload.resolve())
+		let devPluginWarning = pluginInspection.isSymlink
+			? buildDevPluginWarning(inspection: pluginInspection)
+			: nil
+
+		return InstallerStatusSnapshot(
+			pluginInspection: pluginInspection,
+			installedPluginVersion: effectiveInstalledPluginVersion,
+			payloadPluginVersion: payloadPluginVersion,
+			pluginStatusSummary: pluginInspection.statusSummary,
+			installedPluginIsSymlink: pluginInspection.isSymlink,
+			installedPluginSymlinkTarget: pluginInspection.symlinkTargetPath,
+			devPluginWarning: devPluginWarning,
+			showsDevPluginReplacementOption: pluginInspection.isSymlink,
+			versionLine: InstallerSimpleUI.versionLine(installed: effectiveInstalledPluginVersion, payload: payloadPluginVersion),
+			glyphsRunning: glyphsRunning,
+			pythonStatus: pythonStatus,
+			wizardButtonTitle: InstallerSimpleUI.wizardButtonTitle(installedPluginVersion: effectiveInstalledPluginVersion, skills: skillTargets),
+			installButtonTitle: InstallerSimpleUI.installButtonTitle(installedPluginVersion: effectiveInstalledPluginVersion),
+			installMessage: installMessage,
+			canInstall: installMessage == nil,
+			clients: orderedClients,
+			detectedClientsSummary: detectedNames.isEmpty ? "No compatible clients detected on this Mac yet." : "Detected: " + detectedNames.joined(separator: ", "),
+			skills: skillTargets
+		)
+	}
+
+	private static func buildClientStatuses(preflight: PreflightResult, check: CheckResult) -> [InstallerClientStatusSnapshot] {
+		let descriptors = InstallerClientOrdering.ordered([
+			.init(kind: .codex, isDetected: isCodexDetected(check: check)),
+			.init(kind: .claudeCode, isDetected: isClaudeCodeDetected(preflight: preflight, check: check)),
+		])
+
+		return descriptors.map { descriptor in
+			let appStatus = appStatus(for: descriptor.kind, check: check)
+			let cliStatus = cliStatus(for: descriptor.kind, check: check, preflight: preflight)
+			let configStatus = configStatus(for: descriptor.kind, check: check)
+			let cardState = cardState(appStatus: appStatus, cliStatus: cliStatus, configStatus: configStatus)
+			return InstallerClientStatusSnapshot(
+				kind: descriptor.kind,
+				detected: descriptor.isDetected,
+				cardState: cardState,
+				statusText: cardState.summaryText,
+				detailText: detailText(for: descriptor.kind),
+				appStatus: appStatus,
+				cliStatus: cliStatus,
+				configStatus: configStatus
+			)
+		}
+	}
+
+	private static func isCodexDetected(check: CheckResult) -> Bool {
+		itemLevel(title: "Codex MCP settings", check: check) == .ok
+			|| itemLevel(title: "Codex app", check: check) == .ok
+			|| itemLevel(title: "Codex CLI", check: check) == .ok
+	}
+
+	private static func buildDevPluginWarning(inspection: PluginInstaller.InstalledPluginInspection) -> String {
+		var parts = ["The installed plug-in is a development symlink."]
+		if let symlinkTargetPath = inspection.symlinkTargetPath {
+			parts.append("Target: \(symlinkTargetPath)")
+		}
+		parts.append("Leave replacement off to keep it, or turn replacement on to install the latest GitHub plug-in.")
+		return parts.joined(separator: " ")
+	}
+
+	private static func isClaudeCodeDetected(preflight: PreflightResult, check: CheckResult) -> Bool {
+		itemLevel(title: "Claude Code MCP settings", check: check) == .ok
+			|| itemLevel(title: "Claude app", check: check) == .ok
+			|| preflight.claudePath != nil
+			|| itemLevel(title: "Claude Code CLI", check: check) == .ok
+	}
+
+	private static func appStatus(for kind: InstallerClientKind, check: CheckResult) -> InstallerClientStatusSnapshot.Probe {
+		switch kind {
+		case .codex:
+			let path = itemDetails(title: "Codex app", check: check)
+			return .init(label: "App", summary: itemLevel(title: "Codex app", check: check) == .ok ? "Installed" : "Not found", detail: path)
+		case .claudeCode:
+			let path = itemDetails(title: "Claude app", check: check)
+			return .init(label: "App", summary: itemLevel(title: "Claude app", check: check) == .ok ? "Installed" : "Not found", detail: path)
+		}
+	}
+
+	private static func cliStatus(for kind: InstallerClientKind, check: CheckResult, preflight: PreflightResult) -> InstallerClientStatusSnapshot.Probe {
+		switch kind {
+		case .codex:
+			let path = itemDetails(title: "Codex CLI", check: check)
+			return .init(label: "CLI", summary: itemLevel(title: "Codex CLI", check: check) == .ok ? "Installed" : "Not found", detail: path)
+		case .claudeCode:
+			let path = preflight.claudePath ?? itemDetails(title: "Claude Code CLI", check: check)
+			return .init(label: "CLI", summary: (preflight.claudePath != nil || itemLevel(title: "Claude Code CLI", check: check) == .ok) ? "Installed" : "Not found", detail: path)
+		}
+	}
+
+	private static func configStatus(for kind: InstallerClientKind, check: CheckResult) -> InstallerClientStatusSnapshot.Probe {
+		switch kind {
+		case .codex:
+			let summary = itemDetails(title: "Codex MCP settings", check: check) ?? "Missing"
+			return .init(label: "Config", summary: summary, detail: InstallerPaths.codexConfig.path)
+		case .claudeCode:
+			let summary = itemDetails(title: "Claude Code MCP settings", check: check) ?? "Missing"
+			return .init(label: "Config", summary: summary, detail: InstallerPaths.claudeCodeConfig.path)
+		}
+	}
+
+	private static func cardState(
+		appStatus: InstallerClientStatusSnapshot.Probe,
+		cliStatus: InstallerClientStatusSnapshot.Probe,
+		configStatus: InstallerClientStatusSnapshot.Probe
+	) -> InstallerClientStatusSnapshot.CardState {
+		if configStatus.summary == "Configured" {
+			return .configured
+		}
+		if appStatus.summary == "Installed" || cliStatus.summary == "Installed" || configStatus.summary != "Missing" {
+			return .partial
+		}
+		return .notDetected
+	}
+
+	private static func detailText(for kind: InstallerClientKind) -> String? {
+		switch kind {
+		case .codex:
+			return "Codex app and CLI share ~/.codex/config.toml."
+		case .claudeCode:
+			return "Claude app and Claude Code CLI share ~/.claude.json."
+		}
+	}
+
+	private static func itemLevel(title: String, check: CheckResult) -> PreflightItem.Level? {
+		check.items.first(where: { $0.title == title })?.level
+	}
+
+	private static func itemDetails(title: String, check: CheckResult) -> String? {
+		check.items.first(where: { $0.title == title })?.details
 	}
 }
 
@@ -411,9 +888,13 @@ enum VersionGate {
 }
 
 enum ToolLocator {
-	static func findTool(named: String, extraCandidates: [String] = []) -> String? {
+	static func findTool(
+		named: String,
+		extraCandidates: [String] = [],
+		home: URL = InstallerPaths.home,
+		pathEnv: String? = ProcessInfo.processInfo.environment["PATH"]
+	) -> String? {
 		let fm = FileManager.default
-		let home = InstallerPaths.home
 
 		var candidates: [String] = []
 
@@ -446,7 +927,7 @@ enum ToolLocator {
 		candidates.append(contentsOf: systemDirs.map { "\($0)/\(named)" })
 
 		// Current process PATH (may include nvm/asdf, etc when launched from a shell).
-		if let pathEnv = ProcessInfo.processInfo.environment["PATH"] {
+		if let pathEnv {
 			let envDirs = pathEnv.split(separator: ":").map(String.init)
 			candidates.append(contentsOf: envDirs.map { "\($0)/\(named)" })
 		}
@@ -454,7 +935,7 @@ enum ToolLocator {
 		// nvm installs (best-effort).
 		let nvm = home.appendingPathComponent(".nvm/versions/node", isDirectory: true)
 		if let nodeVers = try? fm.contentsOfDirectory(at: nvm, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) {
-			for v in nodeVers {
+			for v in nodeVers.sorted(by: { compareNodeVersionDirectories($0.lastPathComponent, $1.lastPathComponent) > 0 }) {
 				candidates.append(v.appendingPathComponent("bin/\(named)").path)
 			}
 		}
@@ -470,5 +951,22 @@ enum ToolLocator {
 		}
 
 		return nil
+	}
+
+	private static func compareNodeVersionDirectories(_ lhs: String, _ rhs: String) -> Int {
+		let a = parseVersionComponents(lhs)
+		let b = parseVersionComponents(rhs)
+		if a == b { return 0 }
+		return a.lexicographicallyPrecedes(b) ? -1 : 1
+	}
+
+	private static func parseVersionComponents(_ raw: String) -> [Int] {
+		raw
+			.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
+			.split(separator: ".")
+			.map { component in
+				let digits = component.prefix { $0.isNumber }
+				return Int(digits) ?? 0
+			}
 	}
 }

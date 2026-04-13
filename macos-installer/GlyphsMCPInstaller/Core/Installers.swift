@@ -81,12 +81,81 @@ public struct PluginInstaller {
 		self.log = log
 	}
 
+	public struct InstalledPluginInspection: Equatable {
+		public enum Mode: Equatable {
+			case notInstalled
+			case bundle
+			case symlink
+		}
+
+		public let bundleURL: URL
+		public let mode: Mode
+		public let version: PluginBundleVersion?
+		public let symlinkTargetPath: String?
+
+		public static func notInstalled(
+			at bundleURL: URL = InstallerPaths.glyphsPluginsDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+		) -> InstalledPluginInspection {
+			InstalledPluginInspection(bundleURL: bundleURL, mode: .notInstalled, version: nil, symlinkTargetPath: nil)
+		}
+
+		public var isSymlink: Bool { mode == .symlink }
+
+		public var statusSummary: String {
+			switch mode {
+			case .notInstalled:
+				return "Not installed"
+			case .bundle:
+				return version?.displayString ?? "Installed"
+			case .symlink:
+				if let version {
+					return "Development symlink • \(version.displayString)"
+				}
+				return "Development symlink"
+			}
+		}
+	}
+
 	public struct Outcome: Equatable {
 		public let didWrite: Bool
 		public let didReplace: Bool
 		public let previousVersion: PluginBundleVersion?
 		public let installedVersion: PluginBundleVersion?
 		public let destBundle: URL
+	}
+
+	public static func inspectInstalledPlugin(
+		at bundleURL: URL = InstallerPaths.glyphsPluginsDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+	) -> InstalledPluginInspection {
+		let fm = FileManager.default
+
+		if let symlinkTarget = try? fm.destinationOfSymbolicLink(atPath: bundleURL.path) {
+			let targetURL: URL
+			if symlinkTarget.hasPrefix("/") {
+				targetURL = URL(fileURLWithPath: symlinkTarget)
+			} else {
+				targetURL = bundleURL.deletingLastPathComponent().appendingPathComponent(symlinkTarget).standardizedFileURL
+			}
+			let version = PluginVersionReader.readPluginVersion(pluginBundle: targetURL)
+				?? PluginVersionReader.readPluginVersion(pluginBundle: bundleURL)
+			return InstalledPluginInspection(
+				bundleURL: bundleURL,
+				mode: .symlink,
+				version: version,
+				symlinkTargetPath: targetURL.path
+			)
+		}
+
+		guard fm.fileExists(atPath: bundleURL.path) else {
+			return .notInstalled(at: bundleURL)
+		}
+
+		return InstalledPluginInspection(
+			bundleURL: bundleURL,
+			mode: .bundle,
+			version: PluginVersionReader.readPluginVersion(pluginBundle: bundleURL),
+			symlinkTargetPath: nil
+		)
 	}
 
 	public func installPluginBundle(from srcBundle: URL, toPluginsDir pluginsDir: URL, allowReplace: Bool) throws -> Outcome {

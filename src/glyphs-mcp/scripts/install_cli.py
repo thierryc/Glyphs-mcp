@@ -858,97 +858,19 @@ def main(argv: Optional[List[str]] = None) -> None:
 
 def show_client_guidance() -> None:
     console.rule("MCP Client Setup")
-    clients = [
-        ("1", "Claude Desktop"),
-        ("2", "Claude Code (VS Code)"),
-        ("3", "Continue (VS Code / JetBrains)"),
-        ("4", "Cursor IDE"),
-        ("5", "Windsurf"),
-        ("6", "Codex (OpenAI)")
-    ]
-
-    table = Table(box=box.SIMPLE_HEAVY)
-    table.add_column("#")
-    table.add_column("Client")
-    for key, name in clients:
-        table.add_row(key, name)
-    console.print(table)
-
-    choice = Prompt.ask("Select a client", choices=[c[0] for c in clients], default="1")
     url = "http://127.0.0.1:9680/mcp/"
-
-    if choice == "1":
-        console.print(Panel.fit(
-            "Claude Desktop → Add this to your claude_desktop_config.json:\n\n" +
-            '{\n'
-            '  "mcpServers": {\n'
-            '    "glyphs-mcp-server": {\n'
-            '      "command": "npx",\n'
-            f'      "args": ["mcp-remote", "{url}"],\n'
-            '      "env": {"PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}\n'
-            '    }\n'
-            '  }\n'
-            '}\n\n'
-            "Alternatively, using the Python proxy (ensure it's on PATH):\n\n" +
-            '{\n'
-            '  "mcpServers": {\n'
-            '    "glyphs-mcp-server": {\n'
-            '      "command": "/Library/Frameworks/Python.framework/Versions/3.12/bin/mcp-proxy",\n'
-            '      "args": ["--transport", "streamablehttp", "' + url + '"],\n'
-            '      "env": {"PATH": "/Library/Frameworks/Python.framework/Versions/3.12/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}\n'
-            '    }\n'
-            '  }\n'
-            '}', title="Claude Desktop", border_style="cyan"))
-
-    elif choice == "2":
-        console.print(Panel.fit(
-            "Claude Code (VS Code) → Two common paths:\n\n"
-            "1) Enable MCP discovery so Claude Code picks up servers registered by Claude Desktop:\n"
-            "   - In VS Code, set: chat.mcp.discovery.enabled = true\n"
-            "   - Then register the server in Claude Desktop as shown above.\n\n"
-            "2) Or use the Continue extension method below (works with Claude Code too).",
-            title="Claude Code", border_style="cyan"))
-
-    elif choice == "3":
-        console.print(Panel.fit(
-            "Continue (VS Code / JetBrains) → Add to ~/.continue/config.yaml or workspace .continue/config.yaml:\n\n" +
-            "mcpServers:\n"
-            "  - name: Glyphs MCP\n"
-            "    type: streamable-http\n"
-            f"    url: {url}\n",
-            title="Continue", border_style="green"))
-
-    elif choice == "4":
-        console.print(Panel.fit(
-            "Cursor IDE → Add to ~/.cursor/mcp.json (ensure Node 20+ in PATH so npx works):\n\n" +
-            '{\n'
-            '  "mcpServers": {\n'
-            '    "glyphs-mcp-server": {\n'
-            '      "command": "npx",\n'
-            f'      "args": ["mcp-remote", "{url}"],\n'
-            '      "env": {"PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"}\n'
-            '    }\n'
-            '  }\n'
-            '}', title="Cursor", border_style="yellow"))
-
-    elif choice == "5":
-        console.print(Panel.fit(
-            "Windsurf → Add to ~/.codeium/windsurf/mcp_config.json:\n\n" +
-            '{\n'
-            '  "mcpServers": {\n'
-            '    "glyphs-mcp-server": {\n'
-            '      "serverUrl": "' + url + '"\n'
-            '    }\n'
-            '  }\n'
-            '}', title="Windsurf", border_style="magenta"))
-
-    elif choice == "6":
-        console.print(Panel.fit(
-            "OpenAI Codex CLI → Add to ~/.codex/config.toml:\n\n" +
-            "[mcp_servers.glyphs-app-mcp]\n"
-            'command = "npx"\n'
-            f'args = ["mcp-remote", "{url}"]\n',
-            title="Codex (OpenAI)", border_style="blue"))
+    console.print(Panel.fit(
+        "Link the local Glyphs MCP server with these direct HTTP commands:\n\n"
+        "Codex:\n"
+        f"  codex mcp add glyphs-mcp-server --url {url}\n"
+        "  codex mcp list\n\n"
+        "Claude Code:\n"
+        f"  claude mcp add --scope user --transport http glyphs-mcp {url}\n"
+        "  claude mcp list\n\n"
+        "Then open Glyphs and run Edit → Start MCP Server.",
+        title="Codex + Claude Code",
+        border_style="cyan",
+    ))
 
 
 if __name__ == "__main__":

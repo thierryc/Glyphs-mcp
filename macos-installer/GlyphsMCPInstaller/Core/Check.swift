@@ -57,13 +57,6 @@ public enum Check {
 			details: codexApp ?? NSLocalizedString("Not found (searched /Applications and ~/Applications).", comment: "Check item details")
 		))
 
-		let claudeApp = AppLocator.findApp(namedAnyOf: ["Claude", "Claude Desktop"], home: InstallerPaths.home)
-		items.append(.init(
-			level: claudeApp == nil ? .warn : .ok,
-			title: NSLocalizedString("Claude app", comment: "Check item title"),
-			details: claudeApp ?? NSLocalizedString("Not found (searched /Applications and ~/Applications).", comment: "Check item details")
-		))
-
 		let codexCli = ToolLocator.findTool(named: "codex", extraCandidates: ["/opt/homebrew/bin/codex", "/usr/local/bin/codex"])
 		items.append(.init(
 			level: codexCli == nil ? .warn : .ok,
@@ -72,191 +65,141 @@ public enum Check {
 		))
 
 		let claudeCli = ToolLocator.findTool(named: "claude", extraCandidates: ["/opt/homebrew/bin/claude", "/usr/local/bin/claude"])
+		let claudeApp = AppLocator.findApp(namedAnyOf: ["Claude"], home: InstallerPaths.home)
+		items.append(.init(
+			level: claudeApp == nil ? .warn : .ok,
+			title: NSLocalizedString("Claude app", comment: "Check item title"),
+			details: claudeApp ?? NSLocalizedString("Not found (searched /Applications and ~/Applications).", comment: "Check item details")
+		))
 		items.append(.init(
 			level: claudeCli == nil ? .warn : .ok,
-			title: NSLocalizedString("Claude CLI (Claude Code)", comment: "Check item title"),
+			title: NSLocalizedString("Claude Code CLI", comment: "Check item title"),
 			details: claudeCli ?? NSLocalizedString("Not found.", comment: "Check item details")
 		))
 
-		let node = ToolLocator.findTool(named: "node", extraCandidates: ["/opt/homebrew/bin/node", "/usr/local/bin/node"])
-		items.append(.init(
-			level: node == nil ? .warn : .ok,
-			title: NSLocalizedString("Node", comment: "Check item title"),
-			details: node ?? NSLocalizedString("Not found.", comment: "Check item details")
-		))
-
-		let npx = ToolLocator.findTool(named: "npx", extraCandidates: ["/opt/homebrew/bin/npx", "/usr/local/bin/npx"])
-		items.append(.init(
-			level: npx == nil ? .warn : .ok,
-			title: NSLocalizedString("npx", comment: "Check item title"),
-			details: npx ?? NSLocalizedString("Not found.", comment: "Check item details")
-		))
-
-		items.append(codexMcpStatus(codexCliPath: codexCli, runner: runner))
-		items.append(claudeDesktopMcpStatus())
-		items.append(antigravityMcpStatus())
-		items.append(claudeCodeMcpStatus(claudeCliPath: claudeCli, runner: runner))
+		items.append(codexMcpStatus(codexAppPath: codexApp, codexCliPath: codexCli, runner: runner))
+		items.append(claudeCodeMcpStatus(claudeAppPath: claudeApp, claudeCliPath: claudeCli, runner: runner))
 
 		return CheckResult(items: items)
 	}
 
-	private static func codexMcpStatus(codexCliPath: String?, runner: ProcessRunner) -> PreflightItem {
+	private static func codexMcpStatus(codexAppPath: String?, codexCliPath: String?, runner: ProcessRunner) -> PreflightItem {
 		let endpoint = InstallerConstants.endpointURL.absoluteString
-		var sources: [String] = []
-		var ok = false
-		var warnOnly = false
+		let hasCodexInstall = codexAppPath != nil || codexCliPath != nil
+		var cliConfigured = false
 
 		if let codexCliPath {
-			let res = runner.runSyncWithStderr(executable: URL(fileURLWithPath: codexCliPath), args: ["mcp", "list", "--json"])
-			let combined = (res.stdout + "\n" + res.stderr).trimmingCharacters(in: .whitespacesAndNewlines)
-			if res.exitCode == 0, let parsed = McpCliInspector.containsServer(jsonLikeText: combined, serverName: InstallerConstants.codexServerName, endpointURL: endpoint) {
-				ok = parsed.isConfigured
-				sources.append(parsed.details)
-			} else if res.exitCode == 0 {
-				sources.append("CLI: list succeeded but could not parse output.")
-				warnOnly = true
-			} else {
-				sources.append("CLI: list failed (\(res.exitCode)).")
-				warnOnly = true
+			let exe = URL(fileURLWithPath: codexCliPath)
+			let tryArgs: [[String]] = [
+				["mcp", "list", "--json"],
+				["mcp", "list"],
+			]
+
+			for args in tryArgs {
+				let res = runner.runSyncWithStderr(executable: exe, args: args)
+				guard res.exitCode == 0 else { continue }
+
+				let combined = (res.stdout + "\n" + res.stderr).trimmingCharacters(in: .whitespacesAndNewlines)
+				if let parsed = McpCliInspector.containsServer(jsonLikeText: combined, serverName: InstallerConstants.codexServerName, endpointURL: endpoint) {
+					cliConfigured = parsed.isConfigured
+					break
+				}
 			}
-		} else {
-			sources.append("CLI: not installed.")
 		}
 
 		let tomlURL = InstallerPaths.codexConfig
+		var configMatches = false
+		var configExists = false
 		if FileManager.default.fileExists(atPath: tomlURL.path),
 		   let toml = try? String(contentsOf: tomlURL, encoding: .utf8) {
+			configExists = true
 			if let server = CodexTomlInspector.readServerConfig(toml: toml, serverName: InstallerConstants.codexServerName) {
 				if server.url == endpoint {
-					ok = true
-					sources.append("config.toml: url matches.")
-				} else {
-					sources.append("config.toml: url mismatch (\(server.url ?? "missing")).")
-					warnOnly = true
+					configMatches = true
 				}
-			} else {
-				sources.append("config.toml: server block missing.")
-				warnOnly = true
 			}
+		}
+
+		let summary: String
+		let level: PreflightItem.Level
+		if configMatches {
+			summary = "Configured"
+			level = .ok
+		} else if configExists || cliConfigured {
+			summary = "Not configured"
+			level = .warn
+		} else if hasCodexInstall {
+			summary = "Missing"
+			level = .warn
 		} else {
-			sources.append("config.toml: missing.")
+			summary = "Missing"
+			level = .warn
 		}
 
-			let level: PreflightItem.Level = ok ? .ok : (warnOnly ? .warn : .bad)
-			return .init(
-				level: level,
-				title: NSLocalizedString("Codex MCP settings", comment: "Check item title"),
-				details: sources.joined(separator: " ")
-			)
-		}
+		return .init(
+			level: level,
+			title: NSLocalizedString("Codex MCP settings", comment: "Check item title"),
+			details: summary
+		)
+	}
 
-	private static func claudeDesktopMcpStatus() -> PreflightItem {
+	private static func claudeCodeMcpStatus(claudeAppPath: String?, claudeCliPath: String?, runner: ProcessRunner) -> PreflightItem {
 		let endpoint = InstallerConstants.endpointURL.absoluteString
-		let url = InstallerPaths.claudeDesktopConfig
-		do {
-				let (root, raw) = try JsonConfig.loadJSON(at: url)
-				guard raw != nil else {
-					return .init(
-						level: .warn,
-						title: NSLocalizedString("Claude Desktop MCP settings", comment: "Check item title"),
-						details: String(format: NSLocalizedString("Config not found: %@", comment: "Check item details"), url.path)
-					)
-				}
-				let status = ClaudeDesktopInspector.inspect(root: root, serverName: InstallerConstants.codexServerName, endpointURL: endpoint)
-				return .init(
-					level: status.level,
-					title: NSLocalizedString("Claude Desktop MCP settings", comment: "Check item title"),
-					details: status.details + " (\(url.path))"
-				)
-			} catch {
-				return .init(
-					level: .bad,
-					title: NSLocalizedString("Claude Desktop MCP settings", comment: "Check item title"),
-					details: String(format: NSLocalizedString("Failed to read/parse JSON: %@", comment: "Check item details"), url.path)
-				)
-			}
-		}
+		let hasClaudeInstall = claudeAppPath != nil || claudeCliPath != nil
+		var cliConfigured = false
 
-	private static func antigravityMcpStatus() -> PreflightItem {
-		let endpoint = InstallerConstants.endpointURL.absoluteString
-		let url = InstallerPaths.antigravityConfig
-		do {
-				let (root, raw) = try JsonConfig.loadJSON(at: url)
-				guard raw != nil else {
-					return .init(
-						level: .warn,
-						title: NSLocalizedString("Antigravity MCP settings", comment: "Check item title"),
-						details: String(format: NSLocalizedString("Config not found: %@", comment: "Check item details"), url.path)
-					)
-				}
-				let status = AntigravityInspector.inspect(root: root, serverName: InstallerConstants.codexServerName, endpointURL: endpoint)
-				return .init(
-					level: status.level,
-					title: NSLocalizedString("Antigravity MCP settings", comment: "Check item title"),
-					details: status.details + " (\(url.path))"
-				)
-			} catch {
-				return .init(
-					level: .bad,
-					title: NSLocalizedString("Antigravity MCP settings", comment: "Check item title"),
-					details: String(format: NSLocalizedString("Failed to read/parse JSON: %@", comment: "Check item details"), url.path)
-				)
-			}
-		}
-
-	private static func claudeCodeMcpStatus(claudeCliPath: String?, runner: ProcessRunner) -> PreflightItem {
-			let endpoint = InstallerConstants.endpointURL.absoluteString
-			guard let claudeCliPath else {
-				return .init(
-					level: .warn,
-					title: NSLocalizedString("Claude Code MCP settings", comment: "Check item title"),
-					details: NSLocalizedString("Claude CLI not installed; cannot verify.", comment: "Check item details")
-				)
-			}
-
-		let exe = URL(fileURLWithPath: claudeCliPath)
-		let tryArgs: [[String]] = [
-			["mcp", "list", "--json"],
-			["mcp", "list"],
-		]
-		for args in tryArgs {
-			let res = runner.runSyncWithStderr(executable: exe, args: args)
-			if res.exitCode != 0 { continue }
+		if let claudeCliPath {
+			let exe = URL(fileURLWithPath: claudeCliPath)
+			let tryArgs: [[String]] = [
+				["mcp", "list", "--json"],
+				["mcp", "list"],
+			]
+			for args in tryArgs {
+				let res = runner.runSyncWithStderr(executable: exe, args: args)
+				if res.exitCode != 0 { continue }
 				let combined = (res.stdout + "\n" + res.stderr).trimmingCharacters(in: .whitespacesAndNewlines)
 				if let parsed = McpCliInspector.containsServer(jsonLikeText: combined, serverName: InstallerConstants.claudeCodeServerName, endpointURL: endpoint) {
-					return .init(
-						level: parsed.isConfigured ? .ok : .warn,
-						title: NSLocalizedString("Claude Code MCP settings", comment: "Check item title"),
-						details: parsed.details
-					)
+					cliConfigured = parsed.isConfigured
+					break
 				}
-				if let noServers = ClaudeCliListInspector.detectNoServersConfigured(output: combined) {
-					return .init(
-						level: .warn,
-						title: NSLocalizedString("Claude Code MCP settings", comment: "Check item title"),
-						details: "\(noServers) Run: claude mcp add --scope user --transport http \(InstallerConstants.claudeCodeServerName) \(endpoint)"
-					)
-				}
-				if combined.contains(InstallerConstants.claudeCodeServerName) || combined.contains(endpoint) {
-					return .init(
-						level: .ok,
-						title: NSLocalizedString("Claude Code MCP settings", comment: "Check item title"),
-						details: NSLocalizedString("CLI output contains the server; verification is heuristic.", comment: "Check item details")
-					)
-				}
-				return .init(
-					level: .warn,
-					title: NSLocalizedString("Claude Code MCP settings", comment: "Check item title"),
-					details: NSLocalizedString("CLI list succeeded but server not found.", comment: "Check item details")
-				)
 			}
-
-			return .init(
-				level: .warn,
-				title: NSLocalizedString("Claude Code MCP settings", comment: "Check item title"),
-				details: NSLocalizedString("Claude CLI present, but cannot verify MCP configuration (no supported list command).", comment: "Check item details")
-			)
 		}
+
+		let configURL = InstallerPaths.claudeCodeConfig
+		var configMatches = false
+		var configExists = false
+		if FileManager.default.fileExists(atPath: configURL.path),
+		   let json = try? String(contentsOf: configURL, encoding: .utf8) {
+			configExists = true
+			if let server = ClaudeConfigInspector.readServerConfig(json: json, serverName: InstallerConstants.claudeCodeServerName) {
+				if server.url == endpoint {
+					configMatches = true
+				}
+			}
+		}
+
+		let summary: String
+		let level: PreflightItem.Level
+		if configMatches {
+			summary = "Configured"
+			level = .ok
+		} else if configExists || cliConfigured {
+			summary = configExists ? "Not configured" : "Missing"
+			level = .warn
+		} else if hasClaudeInstall {
+			summary = "Missing"
+			level = .warn
+		} else {
+			summary = "Missing"
+			level = .warn
+		}
+
+		return .init(
+			level: level,
+			title: NSLocalizedString("Claude Code MCP settings", comment: "Check item title"),
+			details: summary
+		)
+	}
 	}
 
 public enum ClaudeCliListInspector {
@@ -269,6 +212,13 @@ public enum ClaudeCliListInspector {
 			return "No MCP servers configured."
 		}
 		return nil
+	}
+}
+
+public enum ClaudeCliAddInspector {
+	public static func wasAlreadyConfigured(output: String) -> Bool {
+		let lowered = output.lowercased()
+		return lowered.contains("already exists") || lowered.contains("exists in user config")
 	}
 }
 
@@ -335,6 +285,29 @@ public enum CodexTomlInspector {
 	}
 }
 
+public enum ClaudeConfigInspector {
+	public struct ServerConfig: Equatable {
+		public let url: String?
+	}
+
+	public static func readServerConfig(json: String, serverName: String) -> ServerConfig? {
+		guard let data = json.data(using: .utf8),
+		      let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+		      let mcpServers = object["mcpServers"] as? [String: Any],
+		      let server = mcpServers[serverName] as? [String: Any] else {
+			return nil
+		}
+
+		if let url = server["url"] as? String {
+			return ServerConfig(url: url)
+		}
+		if let transport = server["transport"] as? [String: Any], let url = transport["url"] as? String {
+			return ServerConfig(url: url)
+		}
+		return ServerConfig(url: nil)
+	}
+}
+
 enum McpCliInspector {
 	struct Result {
 		let isConfigured: Bool
@@ -353,7 +326,7 @@ enum McpCliInspector {
 				return Result(isConfigured: false, details: "CLI: server not found.")
 			}
 		}
-		return nil
+		return containsServerInPlainTextList(output: trimmed, serverName: serverName, endpointURL: endpointURL)
 	}
 
 	private static func findServer(in obj: Any, serverName: String) -> String? {
@@ -375,66 +348,28 @@ enum McpCliInspector {
 		}
 		return nil
 	}
-}
 
-public enum ClaudeDesktopInspector {
-	public struct Status: Equatable {
-		public let level: PreflightItem.Level
-		public let details: String
+	private static func containsServerInPlainTextList(output: String, serverName: String, endpointURL: String) -> Result? {
+		let lines = output
+			.split(separator: "\n", omittingEmptySubsequences: false)
+			.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+			.filter { !$0.isEmpty }
 
-		public init(level: PreflightItem.Level, details: String) {
-			self.level = level
-			self.details = details
-		}
-	}
+		let looksLikeListOutput = lines.contains(where: { $0.hasPrefix("Name") && ($0.contains("Url") || $0.contains("Command")) })
+		guard looksLikeListOutput else { return nil }
 
-	public static func inspect(root: [String: Any], serverName: String, endpointURL: String) -> Status {
-		guard let mcpServers = root["mcpServers"] as? [String: Any] else {
-			return Status(level: .warn, details: "mcpServers missing.")
-		}
-		guard let entry = mcpServers[serverName] as? [String: Any] else {
-			return Status(level: .warn, details: "Server entry missing.")
-		}
-		let command = entry["command"] as? String
-		let args = entry["args"] as? [Any]
-		let env = entry["env"] as? [String: Any]
-		let pathEnv = (env?["PATH"] as? String) ?? ""
-
-		let argsStrings = (args as? [String]) ?? args?.map { String(describing: $0) } ?? []
-		let argsOk = argsStrings.contains("mcp-remote") && argsStrings.contains(endpointURL)
-		let commandOk = (command == "npx")
-
-		if commandOk && argsOk {
-			let extra = pathEnv.isEmpty ? "PATH not set." : "PATH set."
-			return Status(level: .ok, details: "Configured (npx mcp-remote). \(extra)")
+		if let matchingLine = lines.first(where: { $0.contains(serverName) }) {
+			let matches = matchingLine.contains(endpointURL)
+			return Result(
+				isConfigured: matches,
+				details: "CLI: server found in list (\(matches ? "url matches" : "url mismatch"))."
+			)
 		}
 
-		return Status(level: .warn, details: "Present but does not match expected command/args.")
-	}
-}
+		if lines.contains(where: { $0.contains(endpointURL) }) {
+			return Result(isConfigured: true, details: "CLI: endpoint found in list (name omitted by parser).")
+		}
 
-public enum AntigravityInspector {
-	public struct Status: Equatable {
-		public let level: PreflightItem.Level
-		public let details: String
-
-		public init(level: PreflightItem.Level, details: String) {
-			self.level = level
-			self.details = details
-		}
-	}
-
-	public static func inspect(root: [String: Any], serverName: String, endpointURL: String) -> Status {
-		guard let mcpServers = root["mcpServers"] as? [String: Any] else {
-			return Status(level: .warn, details: "mcpServers missing.")
-		}
-		guard let entry = mcpServers[serverName] as? [String: Any] else {
-			return Status(level: .warn, details: "Server entry missing.")
-		}
-		let url = entry["serverUrl"] as? String
-		if url == endpointURL {
-			return Status(level: .ok, details: "Configured (serverUrl matches).")
-		}
-		return Status(level: .warn, details: "serverUrl mismatch (\(url ?? "missing")).")
+		return Result(isConfigured: false, details: "CLI: server not found.")
 	}
 }

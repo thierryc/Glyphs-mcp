@@ -35,7 +35,6 @@
 "Checking…" = "检查中…";
 "Open plug‑ins folder" = "打开插件文件夹";
 "Open Codex config" = "打开 Codex 配置";
-"Open Claude Desktop config" = "打开 Claude Desktop 配置";
 "Re-scan" = "重新扫描";
 "Back" = "返回";
 "Continue to setup…" = "继续安装…";
@@ -117,10 +116,7 @@
 "Glyphs MCP plug‑in" = "Glyphs MCP 插件";
 "Glyphs plugins detected" = "检测到的 Glyphs 插件数量";
 "Codex app" = "Codex 应用";
-"Claude app" = "Claude 应用";
 "Codex MCP settings" = "Codex MCP 设置";
-"Claude Desktop MCP settings" = "Claude Desktop MCP 设置";
-"Antigravity MCP settings" = "Antigravity MCP 设置";
 "Claude Code MCP settings" = "Claude Code MCP 设置";
 
 /* Preflight / Check item details */
@@ -130,7 +126,6 @@
 "Unknown (could not read Glyphs preferences)." = "未知（无法读取 Glyphs 偏好设置）。";
 "Not found (will patch ~/.codex/config.toml instead)." = "未找到（将改为修改 ~/.codex/config.toml）。";
 "Not found (Claude Code will not be auto-configured)." = "未找到（不会自动配置 Claude Code）。";
-"Not found (Claude Desktop proxy via npx may fail)." = "未找到（Claude Desktop 通过 npx 的代理可能失败）。";
 "Not installed." = "未安装。";
 "Not found." = "未找到。";
 "Not found" = "未找到";

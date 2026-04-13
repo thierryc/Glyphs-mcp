@@ -22,20 +22,32 @@ public struct CodexConfigurator {
 				try await runner.runStreaming(executable: exe, args: ["mcp", "add", InstallerConstants.codexServerName, "--url", InstallerConstants.endpointURL.absoluteString], onLine: log)
 			} catch {
 				// Attempt 2 (per codex help in current CLI)
-				try await runner.runStreaming(executable: exe, args: ["mcp", "add", "--url", InstallerConstants.endpointURL.absoluteString, InstallerConstants.codexServerName], onLine: log)
-			}
-			do {
-				try await runner.runStreaming(executable: exe, args: ["mcp", "list", "--json"], onLine: log)
-				log("Codex configured via CLI.")
-				return
-			} catch {
-				log("Codex CLI verify failed; falling back to config.toml patch.")
+				do {
+					try await runner.runStreaming(executable: exe, args: ["mcp", "add", "--url", InstallerConstants.endpointURL.absoluteString, InstallerConstants.codexServerName], onLine: log)
+				} catch {
+					log("Codex CLI add failed; falling back to ~/.codex/config.toml.")
+				}
 			}
 		} else {
 			log("Codex CLI not found; patching ~/.codex/config.toml.")
 		}
 
+		if hasDesiredCodexConfig(at: InstallerPaths.codexConfig) {
+			log("Codex configured.")
+			return
+		}
+
 		try patchCodexToml(at: InstallerPaths.codexConfig)
+		log("Codex configured.")
+	}
+
+	private func hasDesiredCodexConfig(at url: URL) -> Bool {
+		guard FileManager.default.fileExists(atPath: url.path),
+		      let toml = try? String(contentsOf: url, encoding: .utf8),
+		      let server = CodexTomlInspector.readServerConfig(toml: toml, serverName: InstallerConstants.codexServerName) else {
+			return false
+		}
+		return server.url == InstallerConstants.endpointURL.absoluteString
 	}
 
 	private func patchCodexToml(at url: URL) throws {
@@ -110,47 +122,6 @@ public enum CodexTomlPatcher {
 	}
 }
 
-// MARK: - Claude Desktop
-
-public struct ClaudeDesktopConfigurator {
-	let log: (String) -> Void
-
-	public init(log: @escaping (String) -> Void) {
-		self.log = log
-	}
-
-	public func configure() throws {
-		let url = InstallerPaths.claudeDesktopConfig
-		log("Configuring Claude Desktop: \(url.path)")
-		let (root, _) = try JsonConfig.loadJSON(at: url)
-
-		var mutated = root
-		var mcpServers = (mutated["mcpServers"] as? [String: Any]) ?? [:]
-
-		let pathEnv = ClaudeDesktopConfigurator.computePathEnv()
-		mcpServers[InstallerConstants.codexServerName] = [
-			"command": "npx",
-			"args": ["mcp-remote", InstallerConstants.endpointURL.absoluteString],
-			"env": ["PATH": pathEnv],
-		]
-		mutated["mcpServers"] = mcpServers
-
-		_ = try FileIO.backupIfExists(url)
-		try JsonConfig.writeJSON(mutated, to: url)
-		log("Wrote: \(url.path)")
-	}
-
-	public static func computePathEnv() -> String {
-		let base = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-		if let node = ToolLocator.findTool(named: "node", extraCandidates: ["/opt/homebrew/bin/node", "/usr/local/bin/node"]) {
-			let dir = URL(fileURLWithPath: node).deletingLastPathComponent().path
-			if base.contains(dir) { return base }
-			return "\(dir):\(base)"
-		}
-		return base
-	}
-}
-
 // MARK: - Claude Code
 
 public struct ClaudeCodeConfigurator {
@@ -164,18 +135,65 @@ public struct ClaudeCodeConfigurator {
 
 	public func configureIfAvailable() async throws {
 		let claude = ToolLocator.findTool(named: "claude", extraCandidates: ["/opt/homebrew/bin/claude", "/usr/local/bin/claude"])
-		guard let claude else {
-			log("Claude CLI not found; skipping Claude Code auto-config. Command to run manually:")
-			log("  claude mcp add --scope user --transport http \(InstallerConstants.claudeCodeServerName) \(InstallerConstants.endpointURL.absoluteString)")
+		if let claude {
+			log("Configuring Claude Code via CLI…")
+			let result = runner.runSyncWithStderr(
+				executable: URL(fileURLWithPath: claude),
+				args: ["mcp", "add", "--scope", "user", "--transport", "http", InstallerConstants.claudeCodeServerName, InstallerConstants.endpointURL.absoluteString]
+			)
+			let output = (result.stdout + "\n" + result.stderr).trimmingCharacters(in: .whitespacesAndNewlines)
+			if !output.isEmpty {
+				for line in output.split(separator: "\n", omittingEmptySubsequences: true) {
+					log(String(line))
+				}
+			}
+			if result.exitCode == 0 || ClaudeCliAddInspector.wasAlreadyConfigured(output: output) {
+				if ClaudeCliAddInspector.wasAlreadyConfigured(output: output) {
+					log("Claude Code was already linked. Keeping the existing configuration.")
+				}
+			} else {
+				log("Claude CLI add failed; falling back to ~/.claude.json.")
+			}
+		} else {
+			log("Claude CLI not found; patching ~/.claude.json.")
+		}
+
+		if hasDesiredClaudeConfig(at: InstallerPaths.claudeCodeConfig) {
+			log("Claude Code configured.")
 			return
 		}
-		log("Configuring Claude Code via CLI…")
-		try await runner.runStreaming(
-			executable: URL(fileURLWithPath: claude),
-			args: ["mcp", "add", "--scope", "user", "--transport", "http", InstallerConstants.claudeCodeServerName, InstallerConstants.endpointURL.absoluteString],
-			onLine: log
-		)
-		log("Claude Code configured via CLI.")
+
+		try patchClaudeCodeConfig(at: InstallerPaths.claudeCodeConfig)
+		log("Claude Code configured.")
+	}
+
+	private func hasDesiredClaudeConfig(at url: URL) -> Bool {
+		guard FileManager.default.fileExists(atPath: url.path),
+		      let json = try? String(contentsOf: url, encoding: .utf8),
+		      let server = ClaudeConfigInspector.readServerConfig(json: json, serverName: InstallerConstants.claudeCodeServerName) else {
+			return false
+		}
+		return server.url == InstallerConstants.endpointURL.absoluteString
+	}
+
+	private func patchClaudeCodeConfig(at url: URL) throws {
+		var root: [String: Any] = [:]
+		if FileManager.default.fileExists(atPath: url.path),
+		   let data = try? Data(contentsOf: url),
+		   let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+			root = object
+		}
+
+		var mcpServers = root["mcpServers"] as? [String: Any] ?? [:]
+		var server = mcpServers[InstallerConstants.claudeCodeServerName] as? [String: Any] ?? [:]
+		server["type"] = "http"
+		server["url"] = InstallerConstants.endpointURL.absoluteString
+		mcpServers[InstallerConstants.claudeCodeServerName] = server
+		root["mcpServers"] = mcpServers
+
+		let data = try JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys])
+		try FileIO.writeAtomically(data, to: url)
+		log("Wrote: \(url.path)")
 	}
 }
 
@@ -250,33 +268,6 @@ public struct AgentSkillBundleInstaller {
 
 	private func itemExists(at url: URL) -> Bool {
 		FileManager.default.fileExists(atPath: url.path) || ((try? url.checkResourceIsReachable()) ?? false)
-	}
-}
-
-// MARK: - Antigravity
-
-public struct AntigravityConfigurator {
-	let log: (String) -> Void
-
-	public init(log: @escaping (String) -> Void) {
-		self.log = log
-	}
-
-	public func configure() throws {
-		let url = InstallerPaths.antigravityConfig
-		log("Configuring Antigravity: \(url.path)")
-		let (root, _) = try JsonConfig.loadJSON(at: url)
-		var mutated = root
-		var mcpServers = (mutated["mcpServers"] as? [String: Any]) ?? [:]
-
-		var entry = (mcpServers[InstallerConstants.codexServerName] as? [String: Any]) ?? [:]
-		entry["serverUrl"] = InstallerConstants.endpointURL.absoluteString
-		mcpServers[InstallerConstants.codexServerName] = entry
-		mutated["mcpServers"] = mcpServers
-
-		_ = try FileIO.backupIfExists(url)
-		try JsonConfig.writeJSON(mutated, to: url)
-		log("Wrote: \(url.path)")
 	}
 }
 

@@ -73,8 +73,8 @@ export default function Home(): React.JSX.Element {
 # Connect: http://127.0.0.1:9680/mcp/`}</CodeBlock>
 
               <p>
-                Supported clients include Codex CLI, Claude Desktop, Cursor, Windsurf, and Continue.
-                See <Link to="/docs/getting-started/connect-client">Connect a client</Link>.
+                The recommended local clients are Codex and Claude Code. See{' '}
+                <Link to="/docs/getting-started/connect-client">Connect a client</Link>.
               </p>
             </div>
           </div>
@@ -83,4 +83,3 @@ export default function Home(): React.JSX.Element {
     </Layout>
   );
 }
-

@@ -9,11 +9,10 @@ type FeatureItem = {
 
 const FEATURES: FeatureItem[] = [
   {
-    title: 'Connect from Codex / Claude / Cursor / Continue',
+    title: 'Connect from Codex or Claude Code',
     description: (
       <>
-        Works with popular AI tools via MCP Streamable HTTP, with copy/paste-ready configuration
-        snippets.
+        Direct HTTP setup for the two recommended local clients, with copy/paste-ready commands.
       </>
     )
   },
@@ -86,4 +85,3 @@ export default function HomepageFeatures(): React.ReactElement {
     </section>
   );
 }
-
