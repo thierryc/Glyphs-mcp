@@ -5,6 +5,7 @@ from __future__ import division, print_function, unicode_literals
 import os
 import site
 import sys
+import traceback
 from pathlib import Path
 from typing import List, Optional, Tuple
 
@@ -111,30 +112,99 @@ def _ensure_user_site_packages_on_path() -> None:
 
 _ensure_user_site_packages_on_path()
 
+
+def _maybe_prefer_vendored_site_packages() -> None:
+    """Prefer bundled ABI-matched deps when the plug-in ships with a vendor tree."""
+    try:
+        import platform
+
+        py_tag = "py{}{}".format(sys.version_info.major, sys.version_info.minor)
+        machine = (platform.machine() or "").lower()
+        if machine == "aarch64":
+            machine = "arm64"
+        vendor_root = Path(__file__).resolve().parent / "vendor"
+        candidate = vendor_root / "{}-{}".format(py_tag, machine) / "site-packages"
+        if not candidate.is_dir():
+            return
+        cand = str(candidate)
+        sys.path[:] = [p for p in sys.path if p != cand]
+        sys.path.insert(0, cand)
+    except Exception:
+        pass
+
+
+_maybe_prefer_vendored_site_packages()
+
 # Import utility functions and apply fixes
 from utils import fix_glyphs_console
 import importlib
 fix_glyphs_console()
 
-# Import MCP tools (this registers all the tools)
-from mcp_tools import mcp
+STARTUP_IMPORT_ERROR = None
 
-# Import code execution tools (this registers the execution tools)
-import code_execution
+try:
+    # Import MCP tools (this registers all the tools)
+    from mcp_tools import mcp
 
-# Import bundled documentation resources so they are registered with FastMCP
-import documentation_resources  # noqa: F401
-# Import the guide resource so it is registered
-import guide_resources  # noqa: F401
-# Import prompt examples so they are registered
-import prompt_examples  # noqa: F401
-# Import docs helper tools (search/fetch) so they are registered
-import docs_tools  # noqa: F401
-# Import kerning dataset resources so they are registered
-import kerning_resources  # noqa: F401
+    # Import code execution tools (this registers the execution tools)
+    import code_execution
 
-# Import and initialize the plugin
-from glyphs_plugin import MCPBridgePlugin
+    # Import bundled documentation resources so they are registered with FastMCP
+    import documentation_resources  # noqa: F401
+    # Import the guide resource so it is registered
+    import guide_resources  # noqa: F401
+    # Import prompt examples so they are registered
+    import prompt_examples  # noqa: F401
+    # Import docs helper tools (search/fetch) so they are registered
+    import docs_tools  # noqa: F401
+    # Import kerning dataset resources so they are registered
+    import kerning_resources  # noqa: F401
+
+    # Import and initialize the plugin
+    from glyphs_plugin import MCPBridgePlugin
+except Exception as exc:  # pragma: no cover - requires broken local environment
+    STARTUP_IMPORT_ERROR = exc
+    try:
+        traceback.print_exc()
+    except Exception:
+        pass
+
+    try:
+        from GlyphsApp import Message  # type: ignore[import-not-found]
+        from GlyphsApp.plugins import GeneralPlugin  # type: ignore[import-not-found]
+    except Exception:
+        Message = None
+        GeneralPlugin = object
+
+    def _startup_error_message() -> str:
+        err = repr(STARTUP_IMPORT_ERROR)
+        return (
+            "Glyphs MCP could not load its Python dependencies.\n\n"
+            "{}\n\n"
+            "Re-run the installer to refresh the runtime packages. "
+            "If you recently changed Glyphs Python versions, remove the old "
+            "packages from ~/Library/Application Support/Glyphs 3/Scripts/site-packages "
+            "before reinstalling."
+        ).format(err)
+
+    class MCPBridgePlugin(GeneralPlugin):  # type: ignore[misc]
+        def settings(self):
+            try:
+                self.name = "Glyphs MCP"
+            except Exception:
+                pass
+
+        def start(self):
+            try:
+                print("[Glyphs MCP] Startup failed: {}".format(STARTUP_IMPORT_ERROR))
+            except Exception:
+                pass
+
+            if Message:
+                try:
+                    Message("Glyphs MCP failed to load", _startup_error_message(), "OK")
+                except Exception:
+                    pass
 
 
 # ------------------------------------------------------------

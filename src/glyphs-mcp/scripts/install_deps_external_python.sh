@@ -52,6 +52,6 @@ echo "Using Python: $PYTHON"
 
 echo "Installing dependencies into user site for: $PYTHON"
 "$PYTHON" -m pip install --upgrade pip
-"$PYTHON" -m pip install --user -r "$req_file"
+"$PYTHON" -m pip install --upgrade --force-reinstall --no-compile --only-binary=:all: --user -r "$req_file"
 
 echo "Done. Restart Glyphs if it is running."

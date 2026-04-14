@@ -474,6 +474,88 @@ class InstallerSmokeTests(unittest.TestCase):
             self.assertFalse(changed)
             self.assertEqual(marker.read_text(encoding="utf-8"), "old plugin\n")
 
+    def test_install_with_glyphs_python_forces_binary_reinstall(self) -> None:
+        install_cli = _load_install_cli()
+        calls: list[list[str]] = []
+        old_home = os.environ.get("HOME")
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-installer-home.") as tmp:
+            os.environ["HOME"] = tmp
+            original_run = install_cli.run
+            original_pip = install_cli.glyphs_python_pip
+            original_verify = install_cli.verify_runtime
+            try:
+                install_cli.run = lambda cmd: calls.append(cmd)
+                install_cli.glyphs_python_pip = lambda: Path("/tmp/glyphs-pip3")
+                install_cli.verify_runtime = lambda python: True
+                install_cli.install_with_glyphs_python(_repo_root() / "requirements.txt")
+            finally:
+                install_cli.run = original_run
+                install_cli.glyphs_python_pip = original_pip
+                install_cli.verify_runtime = original_verify
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+        target = (
+            Path(tmp)
+            / "Library"
+            / "Application Support"
+            / "Glyphs 3"
+            / "Scripts"
+            / "site-packages"
+        )
+        self.assertEqual(calls[0], ["/tmp/glyphs-pip3", "install", "--upgrade", "pip"])
+        self.assertEqual(
+            calls[1],
+            [
+                "/tmp/glyphs-pip3",
+                "install",
+                "--upgrade",
+                "--force-reinstall",
+                "--no-compile",
+                "--only-binary=:all:",
+                "--target",
+                str(target),
+                "-r",
+                str(_repo_root() / "requirements.txt"),
+            ],
+        )
+
+    def test_install_with_custom_python_forces_binary_reinstall(self) -> None:
+        install_cli = _load_install_cli()
+        calls: list[list[str]] = []
+        original_run = install_cli.run
+        original_verify = install_cli.verify_runtime
+        original_python_version = install_cli.python_version
+        try:
+            install_cli.run = lambda cmd: calls.append(cmd)
+            install_cli.verify_runtime = lambda python: True
+            install_cli.python_version = lambda python: "3.12.9"
+            install_cli.install_with_custom_python(Path("/tmp/python3.12"), _repo_root() / "requirements.txt")
+        finally:
+            install_cli.run = original_run
+            install_cli.verify_runtime = original_verify
+            install_cli.python_version = original_python_version
+
+        self.assertEqual(calls[0], ["/tmp/python3.12", "-m", "pip", "install", "--upgrade", "pip"])
+        self.assertEqual(
+            calls[1],
+            [
+                "/tmp/python3.12",
+                "-m",
+                "pip",
+                "install",
+                "--upgrade",
+                "--force-reinstall",
+                "--no-compile",
+                "--only-binary=:all:",
+                "--user",
+                "-r",
+                str(_repo_root() / "requirements.txt"),
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

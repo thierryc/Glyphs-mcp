@@ -476,7 +476,7 @@ final class InstallerViewModel: ObservableObject {
 
 	private func pluginInstallStrategy() -> PluginInstallStrategy {
 		guard snapshot.installedPluginIsSymlink else { return .bundledPayload }
-		return replaceDevPluginWithLatestOnlineVersion ? .latestFromGitHub : .keepDevSymlink
+		return replaceDevPluginWithLatestOnlineVersion ? .latestFromGitHub : .bundledPayload
 	}
 
 	private func beginHeartbeat() {

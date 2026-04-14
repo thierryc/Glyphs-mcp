@@ -29,7 +29,6 @@ mkdir -p "$TARGET_DIR"
 
 echo "Installing dependencies into: $TARGET_DIR"
 "$PIP_BIN" install --upgrade pip
-"$PIP_BIN" install --target="$TARGET_DIR" -r "$req_file"
+"$PIP_BIN" install --upgrade --force-reinstall --no-compile --only-binary=:all: --target="$TARGET_DIR" -r "$req_file"
 
 echo "Done. Restart Glyphs if it is running."
-

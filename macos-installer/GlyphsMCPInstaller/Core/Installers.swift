@@ -31,7 +31,11 @@ public struct DepsInstaller {
 			try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true, attributes: nil)
 			log("Installing into: \(target.path)")
 			try await runner.runStreaming(executable: pip3, args: ["install", "--upgrade", "pip"], onLine: log)
-			try await runner.runStreaming(executable: pip3, args: ["install", "--target", target.path, "-r", requirementsTxt.path], onLine: log)
+			try await runner.runStreaming(
+				executable: pip3,
+				args: pipInstallArgs(requirementsTxt: requirementsTxt, target: target),
+				onLine: log
+			)
 			try await verify(python: python3)
 		case .custom(let python3):
 			let ver = runner.runSync(executable: python3, args: ["-c", "import sys; print(sys.version.split()[0])"]).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -39,9 +43,24 @@ public struct DepsInstaller {
 				throw InstallerError.userFacing("Selected Python \(ver) is not supported. Please use 3.11–3.13.")
 			}
 			try await runner.runStreaming(executable: python3, args: ["-m", "pip", "install", "--upgrade", "pip"], onLine: log)
-			try await runner.runStreaming(executable: python3, args: ["-m", "pip", "install", "--user", "-r", requirementsTxt.path], onLine: log)
+			try await runner.runStreaming(
+				executable: python3,
+				args: ["-m", "pip"] + pipInstallArgs(requirementsTxt: requirementsTxt),
+				onLine: log
+			)
 			try await verify(python: python3)
 		}
+	}
+
+	private func pipInstallArgs(requirementsTxt: URL, target: URL? = nil) -> [String] {
+		var args = ["install", "--upgrade", "--force-reinstall", "--no-compile", "--only-binary=:all:"]
+		if let target {
+			args += ["--target", target.path]
+		} else {
+			args.append("--user")
+		}
+		args += ["-r", requirementsTxt.path]
+		return args
 	}
 
 	private func verify(python: URL) async throws {

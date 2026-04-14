@@ -506,7 +506,18 @@ def install_with_glyphs_python(requirements: Path) -> None:
     target.mkdir(parents=True, exist_ok=True)
     console.print(Panel.fit(f"Installing requirements into:\n{target}", title="Glyphs Python", border_style="green"))
     run([str(pip), "install", "--upgrade", "pip"])
-    run([str(pip), "install", "--target", str(target), "-r", str(requirements)])
+    run([
+        str(pip),
+        "install",
+        "--upgrade",
+        "--force-reinstall",
+        "--no-compile",
+        "--only-binary=:all:",
+        "--target",
+        str(target),
+        "-r",
+        str(requirements),
+    ])
 
     # Verify using the interpreter next to pip (../python3)
     glyphs_python = Path(pip).parent / "python3"
@@ -519,7 +530,19 @@ def install_with_custom_python(python: Path, requirements: Path) -> None:
                            f"\n(version: {python_version(python) or 'unknown'})",
                            title="Custom Python", border_style="cyan"))
     run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
-    run([str(python), "-m", "pip", "install", "--user", "-r", str(requirements)])
+    run([
+        str(python),
+        "-m",
+        "pip",
+        "install",
+        "--upgrade",
+        "--force-reinstall",
+        "--no-compile",
+        "--only-binary=:all:",
+        "--user",
+        "-r",
+        str(requirements),
+    ])
     verify_runtime(python)
 
 
