@@ -51,6 +51,10 @@ Update:
 - `CURRENT_PROJECT_VERSION` → increment build number (integer)
 
 3) **Docs/links** (if needed for the new tag):
+- Root `README.md` and installer docs should reflect the current client matrix:
+  - Codex
+  - Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`)
+  - Claude Code (`~/.claude.json`)
 - Root `README.md` download link should match the future release asset name:
   - `GlyphsMCPInstaller-X.Y.Z.dmg`
 
@@ -149,4 +153,3 @@ xcrun notarytool log <SUBMISSION_ID> --keychain-profile gmcp-notary
 Common causes:
 - A nested binary in the payload isn’t signed or lacks a secure timestamp.
 - Rebuild the app and ensure the payload signing step ran.
-

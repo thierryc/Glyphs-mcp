@@ -21,6 +21,7 @@ struct ContentView: View {
 						snapshot: snapshot,
 						action: action,
 						configureCodex: $model.configureCodex,
+						configureClaudeDesktop: $model.configureClaudeDesktop,
 						configureClaudeCode: $model.configureClaudeCode,
 						installCodexSkills: $model.installCodexSkills,
 						installClaudeCodeSkills: $model.installClaudeCodeSkills,
@@ -90,6 +91,7 @@ private struct WizardTabView: View {
 	let snapshot: InstallerStatusSnapshot
 	let action: InstallerActionState
 	@Binding var configureCodex: Bool
+	@Binding var configureClaudeDesktop: Bool
 	@Binding var configureClaudeCode: Bool
 	@Binding var installCodexSkills: Bool
 	@Binding var installClaudeCodeSkills: Bool
@@ -101,6 +103,7 @@ private struct WizardTabView: View {
 	private var selectedSummary: String {
 		var items: [String] = ["plug-in", "dependencies"]
 		if configureCodex { items.append("Codex") }
+		if configureClaudeDesktop { items.append("Claude Desktop") }
 		if configureClaudeCode { items.append("Claude Code") }
 		if installCodexSkills { items.append("Codex skills") }
 		if installClaudeCodeSkills { items.append("Claude Code skills") }
@@ -149,6 +152,7 @@ private struct WizardTabView: View {
 						Divider()
 
 						Toggle("Link Codex", isOn: $configureCodex)
+						Toggle("Link Claude Desktop", isOn: $configureClaudeDesktop)
 						Toggle("Link Claude Code", isOn: $configureClaudeCode)
 						Divider()
 						Toggle("Install Codex skills", isOn: $installCodexSkills)
@@ -469,7 +473,7 @@ private struct StatusTabView: View {
 					VStack(alignment: .leading, spacing: 12) {
 						ForEach(snapshot.clients) { row in
 							ClientStatusCard(
-								title: row.kind == .claudeCode ? "Claude" : row.name,
+								title: row.name,
 								row: row,
 								isAdvancedModeEnabled: isAdvancedModeEnabled
 							)
@@ -745,7 +749,7 @@ private struct ClientToggleRow: View {
 					.foregroundStyle(.secondary)
 					.font(.callout)
 			}
-			Text("\(row.appStatus.label): \(row.appStatus.summary) • \(row.cliStatus.label): \(row.cliStatus.summary) • \(row.configStatus.label): \(row.configStatus.summary)")
+			Text(row.visibleProbes.map { "\($0.label): \($0.summary)" }.joined(separator: " • "))
 				.foregroundStyle(.secondary)
 				.font(.callout)
 		}
@@ -769,9 +773,9 @@ private struct ClientStatusCard: View {
 					.foregroundStyle(statusColor)
 			}
 
-			ClientProbeRow(probe: row.appStatus, isAdvancedModeEnabled: isAdvancedModeEnabled)
-			ClientProbeRow(probe: row.cliStatus, isAdvancedModeEnabled: isAdvancedModeEnabled)
-			ClientProbeRow(probe: row.configStatus, isAdvancedModeEnabled: isAdvancedModeEnabled)
+			ForEach(Array(row.visibleProbes.enumerated()), id: \.offset) { entry in
+				ClientProbeRow(probe: entry.element, isAdvancedModeEnabled: isAdvancedModeEnabled)
+			}
 
 			if let detailText = row.detailText, !detailText.isEmpty {
 				Text(detailText)

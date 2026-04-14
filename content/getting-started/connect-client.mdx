@@ -1,6 +1,6 @@
 ---
 title: Connect a client
-description: Copy/paste setup for Codex and Claude Code.
+description: Copy/paste setup for Codex, Claude Desktop, and Claude Code.
 ---
 
 import Tabs from '@theme/Tabs';
@@ -16,7 +16,7 @@ http://127.0.0.1:9680/mcp/
 Use this local setup flow:
 
 1. Install the plug-in and dependencies with `python3 install.py`
-2. Link `Codex` or `Claude Code`
+2. Link `Codex`, `Claude Desktop`, or `Claude Code`
 3. Start the server in Glyphs with **Edit → Start MCP Server**
 4. Verify with `list_open_fonts`
 
@@ -59,6 +59,35 @@ claude mcp list`}</CodeBlock>
 
     <CodeBlock language="text">{`Run /mcp and confirm glyphs-mcp is listed.
 Then call list_open_fonts and summarize the result.
+If you see an error, quote it verbatim.`}</CodeBlock>
+  </TabItem>
+
+  <TabItem value="claude_desktop" label="Claude Desktop">
+    <p>
+      Claude Desktop uses a local config file instead of the Claude CLI. Add this MCP server to
+      <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>:
+    </p>
+
+    <CodeBlock language="json">{`{
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "http://127.0.0.1:9680/mcp/"
+      ]
+    }
+  }
+}`}</CodeBlock>
+
+    <p>
+      The macOS installer app can patch this file for you. If you edit it manually, preserve any
+      unrelated top-level settings and other MCP servers that are already present.
+    </p>
+
+    <p>Then restart Claude Desktop and verify with a read-only prompt:</p>
+
+    <CodeBlock language="text">{`Call list_open_fonts and tell me how many fonts are open.
 If you see an error, quote it verbatim.`}</CodeBlock>
   </TabItem>
 </Tabs>

@@ -78,7 +78,8 @@ public enum Check {
 		))
 
 		items.append(codexMcpStatus(codexAppPath: codexApp, codexCliPath: codexCli, runner: runner))
-		items.append(claudeCodeMcpStatus(claudeAppPath: claudeApp, claudeCliPath: claudeCli, runner: runner))
+		items.append(claudeDesktopMcpStatus(claudeAppPath: claudeApp))
+		items.append(claudeCodeMcpStatus(claudeCliPath: claudeCli, runner: runner))
 
 		return CheckResult(items: items)
 	}
@@ -90,13 +91,14 @@ public enum Check {
 
 		if let codexCliPath {
 			let exe = URL(fileURLWithPath: codexCliPath)
+			let environment = ToolRuntimeEnvironment.mergedEnvironment(forExecutablePath: codexCliPath)
 			let tryArgs: [[String]] = [
 				["mcp", "list", "--json"],
 				["mcp", "list"],
 			]
 
 			for args in tryArgs {
-				let res = runner.runSyncWithStderr(executable: exe, args: args)
+				let res = runner.runSyncWithStderr(executable: exe, args: args, environment: environment)
 				guard res.exitCode == 0 else { continue }
 
 				let combined = (res.stdout + "\n" + res.stderr).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -143,19 +145,59 @@ public enum Check {
 		)
 	}
 
-	private static func claudeCodeMcpStatus(claudeAppPath: String?, claudeCliPath: String?, runner: ProcessRunner) -> PreflightItem {
+	private static func claudeDesktopMcpStatus(claudeAppPath: String?) -> PreflightItem {
 		let endpoint = InstallerConstants.endpointURL.absoluteString
-		let hasClaudeInstall = claudeAppPath != nil || claudeCliPath != nil
+		let hasClaudeDesktopInstall = claudeAppPath != nil
+		let configURL = InstallerPaths.claudeDesktopConfig
+		var configMatches = false
+		var configExists = false
+		if FileManager.default.fileExists(atPath: configURL.path),
+		   let json = try? String(contentsOf: configURL, encoding: .utf8) {
+			configExists = true
+			if let server = ClaudeConfigInspector.readServerConfig(json: json, serverName: InstallerConstants.claudeDesktopServerName) {
+				if server.url == endpoint {
+					configMatches = true
+				}
+			}
+		}
+
+		let summary: String
+		let level: PreflightItem.Level
+		if configMatches {
+			summary = "Configured"
+			level = .ok
+		} else if configExists {
+			summary = "Not configured"
+			level = .warn
+		} else if hasClaudeDesktopInstall {
+			summary = "Missing"
+			level = .warn
+		} else {
+			summary = "Missing"
+			level = .warn
+		}
+
+		return .init(
+			level: level,
+			title: NSLocalizedString("Claude Desktop MCP settings", comment: "Check item title"),
+			details: summary
+		)
+	}
+
+	private static func claudeCodeMcpStatus(claudeCliPath: String?, runner: ProcessRunner) -> PreflightItem {
+		let endpoint = InstallerConstants.endpointURL.absoluteString
+		let hasClaudeCodeInstall = claudeCliPath != nil
 		var cliConfigured = false
 
 		if let claudeCliPath {
 			let exe = URL(fileURLWithPath: claudeCliPath)
+			let environment = ToolRuntimeEnvironment.mergedEnvironment(forExecutablePath: claudeCliPath)
 			let tryArgs: [[String]] = [
 				["mcp", "list", "--json"],
 				["mcp", "list"],
 			]
 			for args in tryArgs {
-				let res = runner.runSyncWithStderr(executable: exe, args: args)
+				let res = runner.runSyncWithStderr(executable: exe, args: args, environment: environment)
 				if res.exitCode != 0 { continue }
 				let combined = (res.stdout + "\n" + res.stderr).trimmingCharacters(in: .whitespacesAndNewlines)
 				if let parsed = McpCliInspector.containsServer(jsonLikeText: combined, serverName: InstallerConstants.claudeCodeServerName, endpointURL: endpoint) {
@@ -180,13 +222,13 @@ public enum Check {
 
 		let summary: String
 		let level: PreflightItem.Level
-		if configMatches {
+		if configMatches || cliConfigured {
 			summary = "Configured"
 			level = .ok
-		} else if configExists || cliConfigured {
-			summary = configExists ? "Not configured" : "Missing"
+		} else if configExists {
+			summary = "Not configured"
 			level = .warn
-		} else if hasClaudeInstall {
+		} else if hasClaudeCodeInstall {
 			summary = "Missing"
 			level = .warn
 		} else {
@@ -303,6 +345,14 @@ public enum ClaudeConfigInspector {
 		}
 		if let transport = server["transport"] as? [String: Any], let url = transport["url"] as? String {
 			return ServerConfig(url: url)
+		}
+		if let args = (server["args"] as? [Any])?.compactMap({ $0 as? String }) {
+			if let remoteIndex = args.firstIndex(of: "mcp-remote"), args.indices.contains(remoteIndex + 1) {
+				return ServerConfig(url: args[remoteIndex + 1])
+			}
+			if let explicitURL = args.first(where: { $0.hasPrefix("http://") || $0.hasPrefix("https://") }) {
+				return ServerConfig(url: explicitURL)
+			}
 		}
 		return ServerConfig(url: nil)
 	}

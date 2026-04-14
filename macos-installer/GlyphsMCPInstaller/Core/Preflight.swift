@@ -384,6 +384,7 @@ public enum InstallerAdvancedModePreferences {
 
 public enum InstallerClientKind: Int, CaseIterable, Identifiable {
 	case codex
+	case claudeDesktop
 	case claudeCode
 
 	public var id: Int { rawValue }
@@ -391,6 +392,7 @@ public enum InstallerClientKind: Int, CaseIterable, Identifiable {
 	public var displayName: String {
 		switch self {
 		case .codex: return "Codex"
+		case .claudeDesktop: return "Claude Desktop"
 		case .claudeCode: return "Claude Code"
 		}
 	}
@@ -436,6 +438,14 @@ public struct InstallerClientStatusSnapshot: Identifiable, Equatable {
 		public let label: String
 		public let summary: String
 		public let detail: String?
+		public let isVisible: Bool
+
+		public init(label: String, summary: String, detail: String?, isVisible: Bool = true) {
+			self.label = label
+			self.summary = summary
+			self.detail = detail
+			self.isVisible = isVisible
+		}
 	}
 
 	public let kind: InstallerClientKind
@@ -449,6 +459,7 @@ public struct InstallerClientStatusSnapshot: Identifiable, Equatable {
 
 	public var id: InstallerClientKind { kind }
 	public var name: String { kind.displayName }
+	public var visibleProbes: [Probe] { [appStatus, cliStatus, configStatus].filter(\.isVisible) }
 }
 
 public struct InstallerSkillTargetSnapshot: Identifiable, Equatable {
@@ -569,6 +580,7 @@ public enum InstallerStatusSnapshotBuilder {
 	private static func buildClientStatuses(preflight: PreflightResult, check: CheckResult) -> [InstallerClientStatusSnapshot] {
 		let descriptors = InstallerClientOrdering.ordered([
 			.init(kind: .codex, isDetected: isCodexDetected(check: check)),
+			.init(kind: .claudeDesktop, isDetected: isClaudeDesktopDetected(check: check)),
 			.init(kind: .claudeCode, isDetected: isClaudeCodeDetected(preflight: preflight, check: check)),
 		])
 
@@ -576,7 +588,7 @@ public enum InstallerStatusSnapshotBuilder {
 			let appStatus = appStatus(for: descriptor.kind, check: check)
 			let cliStatus = cliStatus(for: descriptor.kind, check: check, preflight: preflight)
 			let configStatus = configStatus(for: descriptor.kind, check: check)
-			let cardState = cardState(appStatus: appStatus, cliStatus: cliStatus, configStatus: configStatus)
+			let cardState = cardState(probes: [appStatus, cliStatus, configStatus])
 			return InstallerClientStatusSnapshot(
 				kind: descriptor.kind,
 				detected: descriptor.isDetected,
@@ -596,6 +608,11 @@ public enum InstallerStatusSnapshotBuilder {
 			|| itemLevel(title: "Codex CLI", check: check) == .ok
 	}
 
+	private static func isClaudeDesktopDetected(check: CheckResult) -> Bool {
+		itemLevel(title: "Claude Desktop MCP settings", check: check) == .ok
+			|| itemLevel(title: "Claude app", check: check) == .ok
+	}
+
 	private static func buildDevPluginWarning(inspection: PluginInstaller.InstalledPluginInspection) -> String {
 		var parts = ["The installed plug-in is a development symlink."]
 		if let symlinkTargetPath = inspection.symlinkTargetPath {
@@ -607,7 +624,6 @@ public enum InstallerStatusSnapshotBuilder {
 
 	private static func isClaudeCodeDetected(preflight: PreflightResult, check: CheckResult) -> Bool {
 		itemLevel(title: "Claude Code MCP settings", check: check) == .ok
-			|| itemLevel(title: "Claude app", check: check) == .ok
 			|| preflight.claudePath != nil
 			|| itemLevel(title: "Claude Code CLI", check: check) == .ok
 	}
@@ -617,9 +633,11 @@ public enum InstallerStatusSnapshotBuilder {
 		case .codex:
 			let path = itemDetails(title: "Codex app", check: check)
 			return .init(label: "App", summary: itemLevel(title: "Codex app", check: check) == .ok ? "Installed" : "Not found", detail: path)
-		case .claudeCode:
+		case .claudeDesktop:
 			let path = itemDetails(title: "Claude app", check: check)
 			return .init(label: "App", summary: itemLevel(title: "Claude app", check: check) == .ok ? "Installed" : "Not found", detail: path)
+		case .claudeCode:
+			return .init(label: "App", summary: "", detail: nil, isVisible: false)
 		}
 	}
 
@@ -628,6 +646,8 @@ public enum InstallerStatusSnapshotBuilder {
 		case .codex:
 			let path = itemDetails(title: "Codex CLI", check: check)
 			return .init(label: "CLI", summary: itemLevel(title: "Codex CLI", check: check) == .ok ? "Installed" : "Not found", detail: path)
+		case .claudeDesktop:
+			return .init(label: "CLI", summary: "", detail: nil, isVisible: false)
 		case .claudeCode:
 			let path = preflight.claudePath ?? itemDetails(title: "Claude Code CLI", check: check)
 			return .init(label: "CLI", summary: (preflight.claudePath != nil || itemLevel(title: "Claude Code CLI", check: check) == .ok) ? "Installed" : "Not found", detail: path)
@@ -639,21 +659,21 @@ public enum InstallerStatusSnapshotBuilder {
 		case .codex:
 			let summary = itemDetails(title: "Codex MCP settings", check: check) ?? "Missing"
 			return .init(label: "Config", summary: summary, detail: InstallerPaths.codexConfig.path)
+		case .claudeDesktop:
+			let summary = itemDetails(title: "Claude Desktop MCP settings", check: check) ?? "Missing"
+			return .init(label: "Config", summary: summary, detail: InstallerPaths.claudeDesktopConfig.path)
 		case .claudeCode:
 			let summary = itemDetails(title: "Claude Code MCP settings", check: check) ?? "Missing"
 			return .init(label: "Config", summary: summary, detail: InstallerPaths.claudeCodeConfig.path)
 		}
 	}
 
-	private static func cardState(
-		appStatus: InstallerClientStatusSnapshot.Probe,
-		cliStatus: InstallerClientStatusSnapshot.Probe,
-		configStatus: InstallerClientStatusSnapshot.Probe
-	) -> InstallerClientStatusSnapshot.CardState {
-		if configStatus.summary == "Configured" {
+	private static func cardState(probes: [InstallerClientStatusSnapshot.Probe]) -> InstallerClientStatusSnapshot.CardState {
+		let visibleProbes = probes.filter(\.isVisible)
+		if visibleProbes.contains(where: { $0.label == "Config" && $0.summary == "Configured" }) {
 			return .configured
 		}
-		if appStatus.summary == "Installed" || cliStatus.summary == "Installed" || configStatus.summary != "Missing" {
+		if visibleProbes.contains(where: { $0.summary == "Installed" || $0.summary == "Configured" || $0.summary == "Not configured" }) {
 			return .partial
 		}
 		return .notDetected
@@ -663,8 +683,10 @@ public enum InstallerStatusSnapshotBuilder {
 		switch kind {
 		case .codex:
 			return "Codex app and CLI share ~/.codex/config.toml."
+		case .claudeDesktop:
+			return "Claude Desktop uses ~/Library/Application Support/Claude/claude_desktop_config.json."
 		case .claudeCode:
-			return "Claude app and Claude Code CLI share ~/.claude.json."
+			return "Claude Code uses ~/.claude.json."
 		}
 	}
 
@@ -968,5 +990,49 @@ enum ToolLocator {
 				let digits = component.prefix { $0.isNumber }
 				return Int(digits) ?? 0
 			}
+	}
+}
+
+enum ToolRuntimeEnvironment {
+	static func mergedPath(
+		home: URL = InstallerPaths.home,
+		base: [String: String] = ProcessInfo.processInfo.environment,
+		executablePath: String? = nil
+	) -> String {
+		var pathEntries: [String] = []
+
+		if let executablePath {
+			let executableDir = URL(fileURLWithPath: executablePath).deletingLastPathComponent().path
+			pathEntries.append(executableDir)
+		}
+		pathEntries.append(home.appendingPathComponent(".local/bin").path)
+		pathEntries.append(home.appendingPathComponent("bin").path)
+		pathEntries.append("/opt/homebrew/bin")
+		pathEntries.append("/usr/local/bin")
+		pathEntries.append("/usr/bin")
+		pathEntries.append("/bin")
+		pathEntries.append("/usr/sbin")
+		pathEntries.append("/sbin")
+
+		if let existingPath = base["PATH"] {
+			pathEntries.append(contentsOf: existingPath.split(separator: ":").map(String.init))
+		}
+
+		var seen = Set<String>()
+		return pathEntries.filter { entry in
+			guard !entry.isEmpty, !seen.contains(entry) else { return false }
+			seen.insert(entry)
+			return true
+		}.joined(separator: ":")
+	}
+
+	static func mergedEnvironment(
+		forExecutablePath executablePath: String,
+		home: URL = InstallerPaths.home,
+		base: [String: String] = ProcessInfo.processInfo.environment
+	) -> [String: String] {
+		var environment = base
+		environment["PATH"] = mergedPath(home: home, base: base, executablePath: executablePath)
+		return environment
 	}
 }

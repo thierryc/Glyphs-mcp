@@ -79,6 +79,60 @@ url = "http://example.com"
 		XCTAssertEqual(ClaudeCliListInspector.detectNoServersConfigured(output: output), "No MCP servers configured.")
 	}
 
+	func testClaudeConfigInspectorReadsDesktopMcpRemoteEntry() {
+		let json = """
+{
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "command": "npx",
+      "args": [
+        "mcp-remote",
+        "http://127.0.0.1:9680/mcp/"
+      ]
+    }
+  }
+}
+"""
+
+		let cfg = ClaudeConfigInspector.readServerConfig(json: json, serverName: "glyphs-mcp-server")
+		XCTAssertEqual(cfg?.url, "http://127.0.0.1:9680/mcp/")
+	}
+
+	func testClaudeDesktopConfiguratorPatchesConfigWithoutRemovingPreferences() throws {
+		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+		try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true, attributes: nil)
+		let configURL = tmp.appendingPathComponent("claude_desktop_config.json")
+		let initial = """
+{
+  "globalShortcut": "Alt+Ctrl+Cmd+*",
+  "mcpServers": {
+    "other": {
+      "command": "npx",
+      "args": ["other"]
+    }
+  },
+  "preferences": {
+    "menuBarEnabled": true
+  }
+}
+"""
+		try initial.write(to: configURL, atomically: true, encoding: .utf8)
+
+		try ClaudeDesktopConfigurator(log: { _ in }).patchClaudeDesktopConfig(at: configURL)
+
+		let output = try String(contentsOf: configURL, encoding: .utf8)
+		XCTAssertTrue(output.contains("\"globalShortcut\""))
+		XCTAssertTrue(output.contains("\"preferences\""))
+		XCTAssertTrue(output.contains("\"other\""))
+		XCTAssertTrue(output.contains("\"glyphs-mcp-server\""))
+		XCTAssertTrue(output.contains("\"mcp-remote\""))
+		XCTAssertTrue(output.contains("\"PATH\""))
+		XCTAssertEqual(
+			ClaudeConfigInspector.readServerConfig(json: output, serverName: "glyphs-mcp-server")?.url,
+			"http://127.0.0.1:9680/mcp/"
+		)
+	}
+
 	func testMcpCliInspectorDetectsCodexServerInPlainTextUrlTable() {
 		let output = """
 Name                 Url                                Bearer Token Env Var  Status   Auth
@@ -333,6 +387,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 			.init(level: .ok, title: "Codex CLI", details: "/opt/homebrew/bin/codex"),
 			.init(level: .ok, title: "Codex MCP settings", details: "Configured"),
 			.init(level: .ok, title: "Claude app", details: "/Applications/Claude.app"),
+			.init(level: .ok, title: "Claude Desktop MCP settings", details: "Configured"),
 			.init(level: .ok, title: "Claude Code CLI", details: "/opt/homebrew/bin/claude"),
 			.init(level: .ok, title: "Claude Code MCP settings", details: "Configured"),
 		])
@@ -362,25 +417,57 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 
 		let detectedKinds = snapshot.clients.filter(\.detected).map(\.kind)
 		XCTAssertTrue(detectedKinds.contains(.codex))
+		XCTAssertTrue(detectedKinds.contains(.claudeDesktop))
 		XCTAssertTrue(detectedKinds.contains(.claudeCode))
 		XCTAssertTrue(snapshot.detectedClientsSummary.contains("Codex"))
+		XCTAssertTrue(snapshot.detectedClientsSummary.contains("Claude Desktop"))
 		XCTAssertTrue(snapshot.detectedClientsSummary.contains("Claude Code"))
 		let codex = snapshot.clients.first(where: { $0.kind == .codex })
-		let claude = snapshot.clients.first(where: { $0.kind == .claudeCode })
+		let claudeDesktop = snapshot.clients.first(where: { $0.kind == .claudeDesktop })
+		let claudeCode = snapshot.clients.first(where: { $0.kind == .claudeCode })
 		XCTAssertEqual(codex?.statusText, "Configured")
 		XCTAssertEqual(codex?.appStatus.summary, "Installed")
 		XCTAssertEqual(codex?.cliStatus.summary, "Installed")
 		XCTAssertEqual(codex?.configStatus.summary, "Configured")
 		XCTAssertEqual(codex?.detailText, "Codex app and CLI share ~/.codex/config.toml.")
-		XCTAssertEqual(claude?.statusText, "Configured")
-		XCTAssertEqual(claude?.appStatus.summary, "Installed")
-		XCTAssertEqual(claude?.cliStatus.summary, "Installed")
-		XCTAssertEqual(claude?.configStatus.summary, "Configured")
-		XCTAssertEqual(claude?.detailText, "Claude app and Claude Code CLI share ~/.claude.json.")
+		XCTAssertEqual(claudeDesktop?.statusText, "Configured")
+		XCTAssertEqual(claudeDesktop?.appStatus.summary, "Installed")
+		XCTAssertEqual(claudeDesktop?.cliStatus.isVisible, false)
+		XCTAssertEqual(claudeDesktop?.configStatus.summary, "Configured")
+		XCTAssertEqual(claudeDesktop?.detailText, "Claude Desktop uses ~/Library/Application Support/Claude/claude_desktop_config.json.")
+		XCTAssertEqual(claudeCode?.statusText, "Configured")
+		XCTAssertEqual(claudeCode?.appStatus.isVisible, false)
+		XCTAssertEqual(claudeCode?.cliStatus.summary, "Installed")
+		XCTAssertEqual(claudeCode?.configStatus.summary, "Configured")
+		XCTAssertEqual(claudeCode?.detailText, "Claude Code uses ~/.claude.json.")
 
 		let firstUndetectedIndex = snapshot.clients.firstIndex(where: { !$0.detected }) ?? snapshot.clients.endIndex
 		let detectedPrefix = snapshot.clients[..<firstUndetectedIndex]
 		XCTAssertTrue(detectedPrefix.allSatisfy(\.detected))
+	}
+
+	func testInstallerStatusSnapshotSeparatesClaudeDesktopFromClaudeCode() {
+		let check = CheckResult(items: [
+			.init(level: .ok, title: "Claude app", details: "/Applications/Claude.app"),
+			.init(level: .ok, title: "Claude Desktop MCP settings", details: "Configured"),
+			.init(level: .warn, title: "Claude Code CLI", details: "Not found."),
+			.init(level: .warn, title: "Claude Code MCP settings", details: "Missing"),
+		])
+
+		let snapshot = InstallerStatusSnapshotBuilder.build(
+			preflight: .empty,
+			check: check,
+			installedPluginVersion: nil,
+			payloadPluginVersion: nil,
+			glyphsRunning: false,
+			pluginInspection: .notInstalled()
+		)
+
+		let desktop = snapshot.clients.first(where: { $0.kind == .claudeDesktop })
+		let code = snapshot.clients.first(where: { $0.kind == .claudeCode })
+
+		XCTAssertEqual(desktop?.statusText, "Configured")
+		XCTAssertEqual(code?.statusText, "Not detected")
 	}
 
 	func testInstallerStatusSnapshotTreatsValidCodexConfigAsConfiguredWhenCliIsMissing() {
@@ -463,7 +550,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 
 		let claude = snapshot.clients.first(where: { $0.kind == .claudeCode })
 		XCTAssertEqual(claude?.statusText, "Not detected")
-		XCTAssertEqual(claude?.appStatus.summary, "Not found")
+		XCTAssertEqual(claude?.appStatus.isVisible, false)
 		XCTAssertEqual(claude?.cliStatus.summary, "Not found")
 		XCTAssertEqual(claude?.configStatus.summary, "Missing")
 	}
@@ -498,12 +585,13 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 	func testInstallerClientOrderingPutsDetectedClientsFirst() {
 		let ordered = InstallerClientOrdering.ordered([
 			.init(kind: .claudeCode, isDetected: true),
+			.init(kind: .claudeDesktop, isDetected: true),
 			.init(kind: .codex, isDetected: true),
 		])
 
 		XCTAssertEqual(
 			ordered.map(\.kind),
-			[InstallerClientKind.codex, .claudeCode]
+			[InstallerClientKind.codex, .claudeDesktop, .claudeCode]
 		)
 	}
 
@@ -577,6 +665,21 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 
 		let found = ToolLocator.findTool(named: "codex", extraCandidates: [], home: tmpHome, pathEnv: nil)
 		XCTAssertEqual(found.map { URL(fileURLWithPath: $0).standardizedFileURL.path }, newCodex.standardizedFileURL.path)
+	}
+
+	func testToolRuntimeEnvironmentPrependsExecutableDirectoryToPATH() {
+		let home = URL(fileURLWithPath: "/Users/tester", isDirectory: true)
+		let environment = ToolRuntimeEnvironment.mergedEnvironment(
+			forExecutablePath: "/Users/tester/.nvm/versions/node/v24.14.0/bin/codex",
+			home: home,
+			base: ["PATH": "/usr/bin:/bin"]
+		)
+
+		let path = environment["PATH"] ?? ""
+		let parts = path.split(separator: ":").map(String.init)
+		XCTAssertEqual(parts.first, "/Users/tester/.nvm/versions/node/v24.14.0/bin")
+		XCTAssertTrue(parts.contains("/usr/bin"))
+		XCTAssertTrue(parts.contains("/bin"))
 	}
 
 	func testPluginInstallerInspectionDetectsMissingPlugin() {

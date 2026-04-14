@@ -73,7 +73,7 @@ export default function Home(): React.JSX.Element {
 # Connect: http://127.0.0.1:9680/mcp/`}</CodeBlock>
 
               <p>
-                The recommended local clients are Codex and Claude Code. See{' '}
+                The recommended local clients are Codex, Claude Desktop, and Claude Code. See{' '}
                 <Link to="/docs/getting-started/connect-client">Connect a client</Link>.
               </p>
             </div>

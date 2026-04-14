@@ -29,8 +29,8 @@ Prefer a signed, notarized macOS app with a guided UI?
 
 The installer:
 - installs/updates `Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`,
-- installs Python dependencies (Glyphs Python or a custom Python), and
-- can configure MCP clients (Codex and Claude Code), and
+- installs Python dependencies (Glyphs Python or a custom Python),
+- can configure MCP clients (Codex, Claude Desktop, and Claude Code), and
 - can optionally install the bundled Glyphs MCP skills into Codex and Claude Code.
 
 Minimum requirements:
@@ -111,8 +111,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.15)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.15"`).
+## Command Set (MCP server v1.0.16)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.16"`).
 
 | Tool | Description |
 |------|-------------|
@@ -327,6 +327,8 @@ python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --s
 - Detects available Python 3 interpreters (prefers 3.12+, python.org builds).
 - Installs Python dependencies either into Glyphs’ own Python or your user site‑packages.
 - Installs the plug‑in into `~/Library/Application Support/Glyphs 3/Plugins/` by copy (recommended) or symlink (dev).
+- Can link supported local MCP clients separately: Codex, Claude Desktop, and Claude Code.
+- Can install the managed `glyphs-mcp-*` skill bundle into Codex and Claude Code.
 - Verifies imports and offers tips if something fails (e.g., Apple Silicon wheels, cache issues).
 
 ### Step‑by‑step flow and choices
@@ -357,7 +359,7 @@ python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --s
    - Open Glyphs → Edit → Start Glyphs MCP Server.
    - Optional: enable auto-start in Edit → Glyphs MCP Server Status… → Auto-start server on launch.
    - The MCP endpoint is `http://127.0.0.1:9680/mcp/` with MCP Streamable HTTP transport.
-   - The installer can optionally show direct HTTP setup commands for Codex and Claude Code.
+   - The installer can link Codex, patch `~/Library/Application Support/Claude/claude_desktop_config.json` for Claude Desktop, and configure Claude Code through its CLI or `~/.claude.json`.
 
 Tips
 - If you’re unsure, accept the defaults: “Glyphs’ Python” and “Copy”.

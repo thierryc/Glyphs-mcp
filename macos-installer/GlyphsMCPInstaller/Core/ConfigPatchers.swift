@@ -17,13 +17,24 @@ public struct CodexConfigurator {
 
 		if let codexPath = codex {
 			let exe = URL(fileURLWithPath: codexPath)
+			let environment = ToolRuntimeEnvironment.mergedEnvironment(forExecutablePath: codexPath)
 			do {
 				// Attempt 1 (older docs)
-				try await runner.runStreaming(executable: exe, args: ["mcp", "add", InstallerConstants.codexServerName, "--url", InstallerConstants.endpointURL.absoluteString], onLine: log)
+				try await runner.runStreaming(
+					executable: exe,
+					args: ["mcp", "add", InstallerConstants.codexServerName, "--url", InstallerConstants.endpointURL.absoluteString],
+					environment: environment,
+					onLine: log
+				)
 			} catch {
 				// Attempt 2 (per codex help in current CLI)
 				do {
-					try await runner.runStreaming(executable: exe, args: ["mcp", "add", "--url", InstallerConstants.endpointURL.absoluteString, InstallerConstants.codexServerName], onLine: log)
+					try await runner.runStreaming(
+						executable: exe,
+						args: ["mcp", "add", "--url", InstallerConstants.endpointURL.absoluteString, InstallerConstants.codexServerName],
+						environment: environment,
+						onLine: log
+					)
 				} catch {
 					log("Codex CLI add failed; falling back to ~/.codex/config.toml.")
 				}
@@ -137,9 +148,11 @@ public struct ClaudeCodeConfigurator {
 		let claude = ToolLocator.findTool(named: "claude", extraCandidates: ["/opt/homebrew/bin/claude", "/usr/local/bin/claude"])
 		if let claude {
 			log("Configuring Claude Code via CLI…")
+			let environment = ToolRuntimeEnvironment.mergedEnvironment(forExecutablePath: claude)
 			let result = runner.runSyncWithStderr(
 				executable: URL(fileURLWithPath: claude),
-				args: ["mcp", "add", "--scope", "user", "--transport", "http", InstallerConstants.claudeCodeServerName, InstallerConstants.endpointURL.absoluteString]
+				args: ["mcp", "add", "--scope", "user", "--transport", "http", InstallerConstants.claudeCodeServerName, InstallerConstants.endpointURL.absoluteString],
+				environment: environment
 			)
 			let output = (result.stdout + "\n" + result.stderr).trimmingCharacters(in: .whitespacesAndNewlines)
 			if !output.isEmpty {
@@ -193,6 +206,56 @@ public struct ClaudeCodeConfigurator {
 
 		let data = try JSONSerialization.data(withJSONObject: root, options: [.prettyPrinted, .sortedKeys])
 		try FileIO.writeAtomically(data, to: url)
+		log("Wrote: \(url.path)")
+	}
+}
+
+public struct ClaudeDesktopConfigurator {
+	let log: (String) -> Void
+
+	public init(log: @escaping (String) -> Void) {
+		self.log = log
+	}
+
+	public func configure() throws {
+		log("Configuring Claude Desktop…")
+
+		if hasDesiredClaudeDesktopConfig(at: InstallerPaths.claudeDesktopConfig) {
+			log("Claude Desktop configured.")
+			return
+		}
+
+		try patchClaudeDesktopConfig(at: InstallerPaths.claudeDesktopConfig)
+		log("Claude Desktop configured.")
+	}
+
+	private func hasDesiredClaudeDesktopConfig(at url: URL) -> Bool {
+		guard FileManager.default.fileExists(atPath: url.path),
+		      let json = try? String(contentsOf: url, encoding: .utf8),
+		      let server = ClaudeConfigInspector.readServerConfig(json: json, serverName: InstallerConstants.claudeDesktopServerName) else {
+			return false
+		}
+		return server.url == InstallerConstants.endpointURL.absoluteString
+	}
+
+	func patchClaudeDesktopConfig(at url: URL) throws {
+		let (existingRoot, _) = try JsonConfig.loadJSON(at: url)
+		var root = existingRoot
+		if FileManager.default.fileExists(atPath: url.path) {
+			_ = try FileIO.backupIfExists(url)
+		}
+
+		var mcpServers = root["mcpServers"] as? [String: Any] ?? [:]
+		var server = mcpServers[InstallerConstants.claudeDesktopServerName] as? [String: Any] ?? [:]
+		var env = server["env"] as? [String: Any] ?? [:]
+		env["PATH"] = ToolRuntimeEnvironment.mergedPath()
+		server["command"] = "npx"
+		server["args"] = ["mcp-remote", InstallerConstants.endpointURL.absoluteString]
+		server["env"] = env
+		mcpServers[InstallerConstants.claudeDesktopServerName] = server
+		root["mcpServers"] = mcpServers
+
+		try JsonConfig.writeJSON(root, to: url)
 		log("Wrote: \(url.path)")
 	}
 }

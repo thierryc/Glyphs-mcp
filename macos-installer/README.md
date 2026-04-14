@@ -1,6 +1,6 @@
 # Glyphs MCP Installer (macOS)
 
-This folder contains a small SwiftUI macOS app that installs the Glyphs MCP plug‑in and configures common MCP clients.
+This folder contains a small SwiftUI macOS app that installs the Glyphs MCP plug‑in and configures common local MCP clients.
 
 ## Bundle ID
 
@@ -47,6 +47,21 @@ Or use scripts from repo root:
 ./scripts/notarize_installer_app.sh
 ./scripts/make_installer_dmg.sh
 ```
+
+## Client configuration
+
+The installer currently supports three local client targets:
+
+- `Codex`
+- `Claude Desktop`
+- `Claude Code`
+
+The Claude integrations are intentionally separate:
+
+- Claude Desktop is patched through `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Claude Code is configured through the `claude` CLI when available, with `~/.claude.json` as fallback
+
+Only Codex and Claude Code receive the managed `glyphs-mcp-*` skill bundle.
 
 ## Releasing
 

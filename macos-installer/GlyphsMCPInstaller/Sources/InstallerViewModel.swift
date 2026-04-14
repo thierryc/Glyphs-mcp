@@ -83,6 +83,7 @@ final class InstallerViewModel: ObservableObject {
 	@Published var actionState = InstallerActionState()
 
 	@Published var configureCodex: Bool = true
+	@Published var configureClaudeDesktop: Bool = true
 	@Published var configureClaudeCode: Bool = true
 
 	@Published var installCodexSkills: Bool = true
@@ -154,6 +155,8 @@ final class InstallerViewModel: ObservableObject {
 		switch kind {
 		case .codex:
 			return Binding(get: { self.configureCodex }, set: { self.configureCodex = $0 })
+		case .claudeDesktop:
+			return Binding(get: { self.configureClaudeDesktop }, set: { self.configureClaudeDesktop = $0 })
 		case .claudeCode:
 			return Binding(get: { self.configureClaudeCode }, set: { self.configureClaudeCode = $0 })
 		}
@@ -254,6 +257,7 @@ final class InstallerViewModel: ObservableObject {
 
 		let clientOptions = ClientsOptions(
 			configureCodex: configureCodex,
+			configureClaudeDesktop: configureClaudeDesktop,
 			configureClaudeCode: configureClaudeCode,
 			installCodexSkills: installCodexSkills,
 			overwriteCodexSkills: codexOverwriteSkills,
@@ -313,7 +317,7 @@ final class InstallerViewModel: ObservableObject {
 
 	func startClientConfig() {
 		guard !actionState.isBusy else { return }
-		guard configureCodex || configureClaudeCode else {
+		guard configureCodex || configureClaudeDesktop || configureClaudeCode else {
 			setActionMessage("== Link to agents ==", message: "Nothing selected.")
 			return
 		}
@@ -323,6 +327,7 @@ final class InstallerViewModel: ObservableObject {
 
 		let options = ClientsOptions(
 			configureCodex: configureCodex,
+			configureClaudeDesktop: configureClaudeDesktop,
 			configureClaudeCode: configureClaudeCode,
 			installCodexSkills: false,
 			overwriteCodexSkills: false,
@@ -371,6 +376,7 @@ final class InstallerViewModel: ObservableObject {
 
 		let options = ClientsOptions(
 			configureCodex: false,
+			configureClaudeDesktop: false,
 			configureClaudeCode: false,
 			installCodexSkills: installCodexSkills,
 			overwriteCodexSkills: codexOverwriteSkills,
@@ -564,6 +570,9 @@ final class InstallerViewModel: ObservableObject {
 			if options.configureCodex {
 				try await CodexConfigurator(runner: runner, log: log).configure()
 			}
+			if options.configureClaudeDesktop {
+				try ClaudeDesktopConfigurator(log: log).configure()
+			}
 			if options.configureClaudeCode {
 				try await ClaudeCodeConfigurator(runner: runner, log: log).configureIfAvailable()
 			}
@@ -642,9 +651,15 @@ final class InstallerViewModel: ObservableObject {
 			var reloadRecommended = false
 			if clientOptions.configureCodex {
 				try await CodexConfigurator(runner: runner, log: log).configure()
+				reloadRecommended = true
+			}
+			if clientOptions.configureClaudeDesktop {
+				try ClaudeDesktopConfigurator(log: log).configure()
+				reloadRecommended = true
 			}
 			if clientOptions.configureClaudeCode {
 				try await ClaudeCodeConfigurator(runner: runner, log: log).configureIfAvailable()
+				reloadRecommended = true
 			}
 			if clientOptions.installCodexSkills || clientOptions.installClaudeCodeSkills {
 				let payload = try InstallerPayload.resolve()
@@ -691,6 +706,7 @@ private enum PluginInstallStrategy: Sendable {
 
 private struct ClientsOptions: Sendable {
 	let configureCodex: Bool
+	let configureClaudeDesktop: Bool
 	let configureClaudeCode: Bool
 	let installCodexSkills: Bool
 	let overwriteCodexSkills: Bool

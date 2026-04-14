@@ -55,6 +55,7 @@ public enum FileIO {
 public enum InstallerConstants {
 	public static let endpointURL = URL(string: "http://127.0.0.1:9680/mcp/")!
 	public static let codexServerName = "glyphs-mcp-server"
+	public static let claudeDesktopServerName = "glyphs-mcp-server"
 	public static let claudeCodeServerName = "glyphs-mcp"
 }
 
@@ -75,6 +76,9 @@ public enum InstallerPaths {
 	}
 	public static var codexSkillsDir: URL {
 		home.appendingPathComponent(".codex/skills", isDirectory: true)
+	}
+	public static var claudeDesktopConfig: URL {
+		home.appendingPathComponent("Library/Application Support/Claude/claude_desktop_config.json")
 	}
 	public static var claudeCodeConfig: URL {
 		home.appendingPathComponent(".claude.json")

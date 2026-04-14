@@ -9,10 +9,10 @@ type FeatureItem = {
 
 const FEATURES: FeatureItem[] = [
   {
-    title: 'Connect from Codex or Claude Code',
+    title: 'Connect from Codex or Claude',
     description: (
       <>
-        Direct HTTP setup for the two recommended local clients, with copy/paste-ready commands.
+        Direct local setup for Codex, Claude Desktop, and Claude Code, with copy/paste-ready instructions.
       </>
     )
   },
