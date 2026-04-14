@@ -5,33 +5,42 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-Quick install (interactive):
-
-```bash
-python3 install.py
-```
-
-On macOS Finder you can also double‑click `RunInstall.command` in the repo root; it launches the same installer (`python3 install.py`). If Gatekeeper blocks it, right‑click → Open once to approve.
-
-Scripted installs are also supported for automation. Example:
-
-```bash
-python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
-```
-
 ## macOS Installer app (recommended)
 
-Prefer a signed, notarized macOS app with a guided UI?
+The Installer app is the simplest way to install `Glyphs MCP.glyphsPlugin`, install Python dependencies, and link Glyphs MCP into:
+
+- Codex App
+- Codex CLI (terminal tools or in VS Code)
+- Claude App
+- Claude CLI (terminal tools or in VS Code)
+
+![Glyphs MCP Installer](./website/static/img/glyphs-mcp-installer.png)
 
 - Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg
 - Download (ZIP): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip
 - Latest release: https://github.com/thierryc/Glyphs-mcp/releases/latest
 
-The installer:
-- installs/updates `Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`,
-- installs Python dependencies (Glyphs Python or a custom Python),
-- can configure MCP clients (Codex, Claude Desktop, and Claude Code), and
-- can optionally install the bundled Glyphs MCP skills into Codex and Claude Code.
+The installer can also install the bundled Glyphs MCP skills for Codex and Claude CLI.
+
+Any MCP client compatible with the MCP protocol can use this server. For now, the automatic installer covers only the apps listed above. Because Glyphs MCP is a localhost MCP server, manual setup in other clients is usually just the endpoint URL:
+
+```text
+http://127.0.0.1:9680/mcp/
+```
+
+Terminal installer:
+
+```bash
+python3 install.py
+```
+
+Finder alternative on macOS: double-click `RunInstall.command` in the repo root. It launches the same installer. If Gatekeeper blocks it, right-click → Open once.
+
+Scripted install example:
+
+```bash
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
+```
 
 Minimum requirements:
 - macOS 13.0+
@@ -248,36 +257,39 @@ Failures now yield rich diagnostics instead of a bare string. In addition to `er
 
 ## Install & Setup
 
-Recommended (simplest): run the one‑command interactive installer. It handles Python setup, dependencies, and placing the plug‑in where Glyphs expects it.
+The simplest setup is the macOS Installer app or the terminal installer:
 
 ```bash
 python3 install.py
 ```
 
-For automation or reproducible dev setup, you can also run the installer non-interactively. Example:
+The installer installs the plug-in, installs Python dependencies, and links Glyphs MCP into:
+
+- Codex App
+- Codex CLI (terminal tools or in VS Code)
+- Claude App
+- Claude CLI (terminal tools or in VS Code)
+
+Any MCP-compatible client can use this server. For now, the automatic installer covers only the apps above. Because this is a localhost MCP server, manual configuration in other clients is usually just the endpoint URL:
+
+```text
+http://127.0.0.1:9680/mcp/
+```
+
+For automation or reproducible dev setup, use non-interactive mode:
 
 ```bash
 python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
 ```
 
-Alternatively, you can install the plug‑in manually as described below.
+If you need a manual install instead, copy or symlink `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
 
-## Install the Plug‑in
+After installation, Glyphs MCP adds two menu items:
 
-Copy or create a symlink of `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into
-`~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
+- **Edit → Start Glyphs MCP Server**
+- **Edit → Glyphs MCP Server Status…**
 
-After regenerating the ObjectWrapper documentation, refresh the bundled copy with:
-
-```bash
-python src/glyphs-mcp/scripts/copy_documentation.py
-```
-
-Glyphs MCP adds two menu items:
-- **Edit → Start Glyphs MCP Server** (starts the server).
-- **Edit → Glyphs MCP Server Status…** (shows status + endpoint, and includes **Auto-start server on launch**).
-
-The MCP endpoint is `http://127.0.0.1:9680/mcp/` using MCP Streamable HTTP transport.
+The server endpoint is `http://127.0.0.1:9680/mcp/`.
 
 ### Tool profiles (reduce tool/schema prompt bloat)
 
@@ -305,71 +317,19 @@ The guide defines the runtime execution contract for LLM agents:
 By default, per-page doc resources are not registered to avoid flooding clients.
 Preferred: use `docs_search` + `docs_get` (on-demand). If you really want per-page resources, call `docs_enable_page_resources` (or set `GLYPHS_MCP_REGISTER_DOC_PAGES=1`).
 
-## One‑Command Installer (Interactive)
+## Installer Notes
 
-Prefer a guided setup? Run the interactive installer to:
-- choose Glyphs’ Python or a custom Python,
-- install dependencies in the appropriate location, and
-- copy the plug‑in into the Glyphs Plugins folder.
+- If you are unsure, accept the defaults: Glyphs Python and Copy.
+- Prefer python.org Python 3.12+ over Homebrew for fewer macOS compatibility issues.
+- On Apple Silicon, avoid Rosetta-translated Python builds.
+- No `sudo` is required.
+- Verify the local endpoint with `curl -H 'Accept: application/json' http://127.0.0.1:9680/mcp/`.
 
-```bash
-python3 install.py
-```
-
-Need a scripted install instead? Use the explicit CLI mode and supply every required choice up front:
+After regenerating the ObjectWrapper documentation, refresh the bundled copy with:
 
 ```bash
-python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --skip-skills --skip-client-guidance
+python src/glyphs-mcp/scripts/copy_documentation.py
 ```
-
-### What the installer does
-
-- Detects available Python 3 interpreters (prefers 3.12+, python.org builds).
-- Installs Python dependencies either into Glyphs’ own Python or your user site‑packages.
-- Installs the plug‑in into `~/Library/Application Support/Glyphs 3/Plugins/` by copy (recommended) or symlink (dev).
-- Can link supported local MCP clients separately: Codex, Claude Desktop, and Claude Code.
-- Can install the managed `glyphs-mcp-*` skill bundle into Codex and Claude Code.
-- Verifies imports and offers tips if something fails (e.g., Apple Silicon wheels, cache issues).
-
-### Step‑by‑step flow and choices
-
-1) Choose Python environment
-   - Option 1: Glyphs’ Python (Plugin Manager)
-     - Recommended default if you installed “Python” in Glyphs → Settings → Addons.
-     - The installer uses Glyphs’ `pip` and installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`.
-     - If not found, it tells you to install “GlyphsPythonPlugin” in Glyphs and re‑run.
-   - Option 2: Custom Python (python.org / Homebrew)
-     - Recommended: python.org 3.12+ on macOS. On Apple Silicon, use native arm64 (avoid Rosetta).
-     - The installer lists detected interpreters (python.org, Homebrew, PATH). Pick one or enter a path.
-     - If version < 3.12, you’ll be warned and can abort to install a newer Python.
-
-2) Install dependencies
-   - Glyphs’ Python: installs with Glyphs’ `pip` into the Glyphs Scripts site‑packages.
-   - Custom Python: runs `<python> -m pip install --user -r requirements.txt` (no sudo).
-   - If imports fail, it suggests retrying with `--no-cache-dir --force-reinstall` and gives the exact command. On Apple Silicon, ensure wheels match the CPU architecture.
-
-3) Install the plug‑in
-   - Option 1: Copy (default, recommended)
-     - Copies `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`.
-   - Option 2: Link (symlink; for development)
-     - Useful if you plan to edit this repo and test changes live.
-   - If a plug‑in already exists, you’ll be prompted to replace it.
-
-4) Finish and start the server in Glyphs
-   - Open Glyphs → Edit → Start Glyphs MCP Server.
-   - Optional: enable auto-start in Edit → Glyphs MCP Server Status… → Auto-start server on launch.
-   - The MCP endpoint is `http://127.0.0.1:9680/mcp/` with MCP Streamable HTTP transport.
-   - The installer can link Codex, patch `~/Library/Application Support/Claude/claude_desktop_config.json` for Claude Desktop, and configure Claude Code through its CLI or `~/.claude.json`.
-
-Tips
-- If you’re unsure, accept the defaults: “Glyphs’ Python” and “Copy”.
-- Prefer python.org 3.12+ over Homebrew for fewer compatibility surprises on macOS.
-- On Apple Silicon, avoid Rosetta‑translated Pythons and ensure `pip` installs arm64 wheels.
-- No sudo is required; everything installs into your user directories.
-
-Endpoint check
-- Browser `GET` requests to `/mcp/` return a small JSON discovery payload.
-- Verify locally: `curl -H 'Accept: application/json' http://127.0.0.1:9680/mcp/`
 
 ## Build Site Images (WebP)
 

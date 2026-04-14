@@ -144,7 +144,7 @@ Call glyphs-app-mcp__review_kerning_bumper:
 
 ---
 
-## Clean-room note + inspirations (non-code references)
+## inspirations
 
 This implementation is designed as a clean-room, geometry-first tool, inspired by:
 - BubbleKern scan-height ideas (conceptual scan strategy).

@@ -12,7 +12,8 @@ const FEATURES: FeatureItem[] = [
     title: 'Connect from Codex or Claude',
     description: (
       <>
-        Direct local setup for Codex, Claude Desktop, and Claude Code, with copy/paste-ready instructions.
+        Direct local setup for Codex App, Codex CLI, Claude App, and Claude CLI, with minimal
+        client configuration.
       </>
     )
   },

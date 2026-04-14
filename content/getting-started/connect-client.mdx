@@ -1,74 +1,78 @@
 ---
 title: Connect a client
-description: Copy/paste setup for Codex, Claude Desktop, and Claude Code.
+description: Connect Glyphs MCP to Codex App, Codex CLI, Claude App, or Claude CLI.
 ---
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
 import CodeBlock from '@theme/CodeBlock';
 
-All local clients connect to the same endpoint:
+All supported clients connect to the same local endpoint:
 
 ```text
 http://127.0.0.1:9680/mcp/
 ```
 
-Use this local setup flow:
+## Supported automatic links
+
+The Installer app can link Glyphs MCP into:
+
+- Codex App
+- Codex CLI (terminal tools or in VS Code)
+- Claude App
+- Claude CLI (terminal tools or in VS Code)
+
+Any MCP-compatible client can use this server. For now, the automatic installer covers only the apps above. Because this is a localhost MCP server, manual setup in other clients is usually just the endpoint URL.
+
+## Local setup flow
 
 1. Install the plug-in and dependencies with `python3 install.py`
-2. Link `Codex`, `Claude Desktop`, or `Claude Code`
-3. Start the server in Glyphs with **Edit → Start MCP Server**
+2. Link your client
+3. Start the server in Glyphs with **Edit → Start Glyphs MCP Server**
 4. Verify with `list_open_fonts`
 
-No proxy is needed for the supported local clients.
-
 :::tip Startup order
-If your client cannot connect, quit it, start Glyphs fresh, run **Edit → Start MCP Server**, then relaunch or reload the client.
+If your client cannot connect, quit it, start Glyphs fresh, run **Edit → Start Glyphs MCP Server**, then relaunch or reload the client.
 :::
 
-<Tabs>
-  <TabItem value="codex" label="Codex" default>
-    <p>Add the local MCP server with the Codex CLI:</p>
+## Codex App
 
-    <CodeBlock language="bash">{`codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
+The simplest path is the Installer app. Manual setup uses the same Codex configuration as Codex CLI:
+
+<CodeBlock language="bash">{`codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
 codex mcp list`}</CodeBlock>
 
-    <p>
-      Codex can also read the same configuration directly from <code>~/.codex/config.toml</code>:
-    </p>
+If Codex App is already open, reload it after adding the server.
 
-    <CodeBlock language="toml">{`[mcp_servers.glyphs-mcp-server]
+## Codex CLI (terminal tools or in VS Code)
+
+Use the same Codex command:
+
+<CodeBlock language="bash">{`codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
+codex mcp list`}</CodeBlock>
+
+Codex can also read the server directly from `~/.codex/config.toml`:
+
+<CodeBlock language="toml">{`[mcp_servers.glyphs-mcp-server]
 url = "http://127.0.0.1:9680/mcp/"
 enabled = true
 startup_timeout_sec = 30
 tool_timeout_sec = 120`}</CodeBlock>
 
-    <p>Verify with a read-only prompt:</p>
+Verify with a read-only prompt:
 
-    <CodeBlock language="text">{`Call list_open_fonts and tell me how many fonts are open.
+<CodeBlock language="text">{`Call list_open_fonts and tell me how many fonts are open.
 If you see an error, quote it verbatim.`}</CodeBlock>
-  </TabItem>
 
-  <TabItem value="claude_code" label="Claude Code">
-    <p>Add the local MCP server with the Claude CLI:</p>
+## Claude App
 
-    <CodeBlock language="bash">{`claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
-claude mcp list`}</CodeBlock>
+The simplest path is the Installer app. Manual setup is a config file edit in `~/Library/Application Support/Claude/claude_desktop_config.json`.
 
-    <p>Then reload Claude Code and verify:</p>
+Claude App does not connect directly to a localhost HTTP MCP endpoint in this config format, so it needs a local bridge command. `npx mcp-remote` is one option.
 
-    <CodeBlock language="text">{`Run /mcp and confirm glyphs-mcp is listed.
-Then call list_open_fonts and summarize the result.
-If you see an error, quote it verbatim.`}</CodeBlock>
-  </TabItem>
+<CodeBlock language="bash">{`open ~/Library/Application\\ Support/Claude`}</CodeBlock>
 
-  <TabItem value="claude_desktop" label="Claude Desktop">
-    <p>
-      Claude Desktop uses a local config file instead of the Claude CLI. Add this MCP server to
-      <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>:
-    </p>
+Default bridge with Node.js:
 
-    <CodeBlock language="json">{`{
+<CodeBlock language="json">{`{
   "mcpServers": {
     "glyphs-mcp-server": {
       "command": "npx",
@@ -80,17 +84,66 @@ If you see an error, quote it verbatim.`}</CodeBlock>
   }
 }`}</CodeBlock>
 
-    <p>
-      The macOS installer app can patch this file for you. If you edit it manually, preserve any
-      unrelated top-level settings and other MCP servers that are already present.
-    </p>
+If you edit it manually, preserve any unrelated top-level settings and other MCP servers that are already present.
 
-    <p>Then restart Claude Desktop and verify with a read-only prompt:</p>
+Python alternative:
 
-    <CodeBlock language="text">{`Call list_open_fonts and tell me how many fonts are open.
+Some third-party Python bridges also exist. One option is `mcp-proxy` from PyPI:
+
+<CodeBlock language="bash">{`pip install mcp-proxy`}</CodeBlock>
+
+<CodeBlock language="json">{`{
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "command": "mcp-proxy",
+      "args": [
+        "http://127.0.0.1:9680/mcp/",
+        "--transport=streamablehttp"
+      ],
+      "env": {
+        "PATH": "/Users/thierryc/.local/bin:/Users/thierryc/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      }
+    }
+  }
+}`}</CodeBlock>
+
+The Python option is not the official Anthropic path. It is a third-party bridge that may be useful if you do not want to depend on `npx`.
+
+Why add `env.PATH`:
+
+- Claude App may not inherit the same shell `PATH` as your Terminal.
+- If `mcp-proxy` is installed in `~/.local/bin`, Claude App may not find it unless you set `PATH` explicitly.
+- The same applies to tools installed through Homebrew in `/opt/homebrew/bin`.
+
+Use a `PATH` that includes the directories where your command lives:
+
+- `~/.local/bin` for `pip install --user`
+- `~/bin` for custom local scripts
+- `/opt/homebrew/bin` for Apple Silicon Homebrew
+- `/usr/local/bin` for Intel Homebrew or other local installs
+
+You can verify where the command is installed with:
+
+<CodeBlock language="bash">{`which mcp-proxy
+python3 -m site --user-base`}</CodeBlock>
+
+Then restart Claude App and verify with a read-only prompt:
+
+<CodeBlock language="text">{`Call list_open_fonts and tell me how many fonts are open.
 If you see an error, quote it verbatim.`}</CodeBlock>
-  </TabItem>
-</Tabs>
+
+## Claude CLI (terminal tools or in VS Code)
+
+Use the Claude CLI:
+
+<CodeBlock language="bash">{`claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
+claude mcp list`}</CodeBlock>
+
+Then reload Claude CLI and verify:
+
+<CodeBlock language="text">{`Run /mcp and confirm glyphs-mcp is listed.
+Then call list_open_fonts and summarize the result.
+If you see an error, quote it verbatim.`}</CodeBlock>
 
 ## If it still fails
 
