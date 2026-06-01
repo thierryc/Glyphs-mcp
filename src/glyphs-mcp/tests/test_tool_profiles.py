@@ -26,11 +26,12 @@ class ToolProfilesTests(unittest.TestCase):
     def test_readonly_excludes_exec_tools(self) -> None:
         enabled = tool_profiles.enabled_tool_names(
             tool_profiles.PROFILE_CORE_READONLY,
-            {"execute_code", "execute_code_with_context", "list_open_fonts"},
+            {"execute_code", "execute_code_with_context", "list_open_fonts", "list_style_sets"},
         )
         self.assertNotIn("execute_code", enabled)
         self.assertNotIn("execute_code_with_context", enabled)
         self.assertIn("list_open_fonts", enabled)
+        self.assertIn("list_style_sets", enabled)
 
     def test_all_non_readonly_profiles_include_exec_tools(self) -> None:
         all_tools = {
@@ -59,4 +60,3 @@ class ToolProfilesTests(unittest.TestCase):
         all_names = {"a", "b", "delete_glyph", "ExportDesignspaceAndUFO"}
         enabled = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_FULL, all_names)
         self.assertEqual(enabled, all_names)
-

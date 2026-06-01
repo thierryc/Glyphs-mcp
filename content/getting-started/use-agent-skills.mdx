@@ -3,7 +3,7 @@ title: Use skills in Codex and Claude Code
 description: Use the bundled Glyphs MCP skills in Codex or Claude Code, either from the repo or via a global install.
 ---
 
-Glyphs MCP ships a small bundle of workflow skills in `skills/`. They help agents use Glyphs MCP tools with better defaults for connection checks, kerning, spacing, and outline editing.
+Glyphs MCP ships a small bundle of workflow skills in `skills/`. They help agents use Glyphs MCP tools with better defaults for connection checks, feature inspection, kerning, spacing, and outline editing.
 
 ## Prerequisites
 
@@ -105,6 +105,7 @@ Codex can also install individual skills with its built-in `$skill-installer`, b
 | Skill | Use it for | Example prompt |
 | --- | --- | --- |
 | `glyphs-mcp-connect` | Start-up checks, endpoint verification, and first health checks | `Use the glyphs-mcp-connect skill to verify my setup and call list_open_fonts.` |
+| `glyphs-mcp-features` | Inspect OpenType features and stylistic-set glyph groups with Glyphs links | `Use the glyphs-mcp-features skill to list glyphs by style set with group links.` |
 | `glyphs-mcp-kerning` | Review kerning bumper suggestions and apply approved changes | `Use the glyphs-mcp-kerning skill to review kerning collisions and do a dry run first.` |
 | `glyphs-mcp-spacing` | Review spacing suggestions and apply approved changes | `Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.` |
 | `glyphs-mcp-outlines-docs` | Outline edits, components, anchors, selected nodes, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes, prefer dedicated tools, and fetch only the docs pages I need.` |

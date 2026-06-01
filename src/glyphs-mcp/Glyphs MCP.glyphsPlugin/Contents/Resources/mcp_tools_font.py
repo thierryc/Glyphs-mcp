@@ -11,8 +11,11 @@ from mcp_tool_helpers import (
     _coerce_numeric,
     _custom_parameter,
     _get_component_automatic,
+    _get_layer_id,
     _get_left_sidebearing,
     _get_right_sidebearing,
+    _glyphs_show_layer_link_fields,
+    _glyphs_show_link_fields,
     _safe_attr,
     _safe_json,
 )
@@ -73,20 +76,27 @@ async def get_font_glyphs(font_index: int = 0) -> str:
             )
 
         font = Glyphs.fonts[font_index]
+        file_path = getattr(font, "filepath", None)
         glyphs_info = []
         for glyph in font.glyphs:
-            glyphs_info.append(
-                {
-                    "name": glyph.name,
-                    "unicode": glyph.unicode,
-                    "category": glyph.category,
-                    "subCategory": glyph.subCategory,
-                    "layerCount": len(glyph.layers),
-                    "leftKerningGroup": glyph.leftKerningGroup,
-                    "rightKerningGroup": glyph.rightKerningGroup,
-                    "export": glyph.export,
-                }
+            glyph_info = {
+                "name": glyph.name,
+                "unicode": glyph.unicode,
+                "category": glyph.category,
+                "subCategory": glyph.subCategory,
+                "layerCount": len(glyph.layers),
+                "leftKerningGroup": glyph.leftKerningGroup,
+                "rightKerningGroup": glyph.rightKerningGroup,
+                "export": glyph.export,
+            }
+            glyph_info.update(
+                _glyphs_show_link_fields(
+                    file_path,
+                    glyph_name=glyph.name,
+                    label="Open {} in Glyphs".format(glyph.name),
+                )
             )
+            glyphs_info.append(glyph_info)
         return json.dumps(glyphs_info)
     except Exception as e:
         return json.dumps({"error": str(e)})
@@ -232,6 +242,7 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
             )
 
         font = Glyphs.fonts[font_index]
+        file_path = getattr(font, "filepath", None)
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
@@ -239,8 +250,11 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
 
         layers_info = []
         for layer in glyph.layers:
+            layer_id = _get_layer_id(layer)
             layer_info = {
                 "name": layer.name,
+                "layerId": layer_id,
+                "associatedMasterId": getattr(layer, "associatedMasterId", None),
                 "width": layer.width,
                 "leftSideBearing": _get_left_sidebearing(layer),
                 "rightSideBearing": _get_right_sidebearing(layer),
@@ -248,6 +262,14 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
                 "componentCount": len(layer.components),
                 "anchorCount": len(layer.anchors),
             }
+            layer_info.update(
+                _glyphs_show_layer_link_fields(
+                    file_path,
+                    glyph_name=glyph.name,
+                    layer_id=layer_id,
+                    label="Open {} {} in Glyphs".format(glyph.name, layer.name),
+                )
+            )
 
             # Add component details
             components = []
@@ -272,6 +294,13 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
             "productionName": glyph.productionName,
             "layers": layers_info,
         }
+        glyph_details.update(
+            _glyphs_show_link_fields(
+                file_path,
+                glyph_name=glyph.name,
+                label="Open {} in Glyphs".format(glyph.name),
+            )
+        )
 
         return json.dumps(glyph_details)
     except Exception as e:
@@ -320,4 +349,3 @@ async def get_font_kerning(font_index: int = 0, master_id: str = None) -> str:
         )
     except Exception as e:
         return json.dumps({"error": str(e)})
-

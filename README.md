@@ -105,6 +105,7 @@ Advanced Codex-only alternative: you can install individual skills with Codex’
 
 Current repo skills focus on:
 - connection and health checks for the local Glyphs MCP server
+- OpenType feature and stylistic-set inspection with Glyphs links
 - guarded kerning bumper reviews and applies
 - guarded spacing reviews and applies
 - outlines, components, anchors, and docs lookup workflows
@@ -120,16 +121,24 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.17)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.17"`).
+## Command Set (MCP server v1.0.22)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.22"`).
+
+Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
+`showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
+`showMarkdown` uses a local `http://127.0.0.1:9680/glyphs-show/` bridge URL so
+LLM clients that block custom URL schemes can still render a clickable link; the
+bridge redirects to Glyphs. Unsaved fonts return `showUrlUnavailableReason`
+instead because Glyphs requires an absolute file path.
 
 | Tool | Description |
 |------|-------------|
 | `list_open_fonts` | List all open fonts and basic metadata. |
-| `get_font_glyphs` | Return glyph list and key attributes for a font. |
+| `get_font_glyphs` | Return glyph list and key attributes for a font, including clickable Glyphs show links when available. |
 | `get_font_masters` | Detailed master information for a font. |
 | `get_font_instances` | List instances and their interpolation data. |
-| `get_glyph_details` | Full glyph data including layers, paths, components. |
+| `get_glyph_details` | Full glyph data including layers, paths, components, and Glyphs show links. |
+| `list_style_sets` | List stylistic-set features (`ss01`-`ss20`) with source/replacement glyphs and a group-level Glyphs show link for alternates. |
 | `get_font_kerning` | All kerning pairs for a given master. |
 | `generate_kerning_tab` | Generate a kerning review proof tab (missing relevant pairs + outliers) and open it. |
 | `review_kerning_bumper` | Review kerning collisions / near-misses and compute deterministic “bumper” suggestions (no mutation). |
@@ -150,11 +159,11 @@ This table describes the tool surface exposed by the MCP server shipped in this 
 | `add_component_to_glyph` | Append a component to a glyph layer. |
 | `add_anchor_to_glyph` | Add an anchor to a glyph layer. |
 | `set_kerning_pair` | Set or remove a kerning value. |
-| `get_selected_glyphs` | Info about glyphs currently selected in UI. |
-| `get_selected_font_and_master` | Current font + master and selection snapshot. |
-| `get_selected_nodes` | Detailed selected nodes with per‑master mapping for edits. |
+| `get_selected_glyphs` | Info about glyphs currently selected in UI, including Glyphs show links. |
+| `get_selected_font_and_master` | Current font + master and selection snapshot, including Glyphs show links for selected glyph layers. |
+| `get_selected_nodes` | Detailed selected nodes with per‑master mapping for edits, plus links for the containing glyph/layer. |
 | `add_corner_to_all_masters` | Add a `_corner.*` corner hint at selected nodes (and intersection handles) across all masters (requires `_corner_name`; optional `_alignment`: `left`/`right`/`center` or `0`/`1`/`2`). |
-| `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing. |
+| `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing, including a Glyphs show link for the layer. |
 | `review_collinear_handles` | Review a single path for curve nodes that should be smooth based on handle collinearity (no mutation). |
 | `apply_collinear_handles_smooth` | Apply `smooth=True` for collinear-handle curve nodes in a single path (supports `dry_run`; requires `confirm=true` to mutate). |
 | `set_glyph_paths` | Replace glyph paths from JSON. |

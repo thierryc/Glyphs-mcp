@@ -94,8 +94,10 @@ class McpToolsPathsTests(unittest.TestCase):
         helpers_module = types.SimpleNamespace(
             _clear_layer_paths=lambda layer_obj: setattr(layer_obj, "paths", []),
             _safe_json=lambda payload: json.dumps(payload),
+            _get_layer_id=lambda layer_obj: getattr(layer_obj, "associatedMasterId", None),
             _get_left_sidebearing=lambda layer_obj: getattr(layer_obj, "LSB", 0),
             _get_right_sidebearing=lambda layer_obj: getattr(layer_obj, "RSB", 0),
+            _glyphs_show_layer_link_fields=lambda *args, **kwargs: {},
             _set_sidebearing=fake_set_sidebearing,
         )
         module_name = "glyphs_mcp_test_mcp_tools_paths"

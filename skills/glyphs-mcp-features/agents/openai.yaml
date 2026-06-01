@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs MCP Features"
+  short_description: "Inspect OpenType features and stylistic-set glyph groups."
+  default_prompt: "Use $glyphs-mcp-features to list stylistic sets with group-level Glyphs links."
+
+policy:
+  allow_implicit_invocation: true

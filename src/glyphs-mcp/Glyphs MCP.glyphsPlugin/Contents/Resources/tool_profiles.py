@@ -36,6 +36,7 @@ CORE_READONLY_TOOLS = {
     "get_font_instances",
     "get_glyph_details",
     "get_font_kerning",
+    "list_style_sets",
     "get_glyph_components",
     "get_selected_glyphs",
     "get_selected_font_and_master",

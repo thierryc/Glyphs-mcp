@@ -28,11 +28,18 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 
 ## MCP Tool Surface (selected)
 - Metadata: `list_open_fonts`, `get_font_glyphs`, `get_font_masters`, `get_font_instances`.
-- Glyph inspection: `get_glyph_details`, `get_glyph_paths`, `get_glyph_components`, `get_selected_glyphs`, `get_selected_nodes`.
+- Glyph inspection: `get_glyph_details`, `get_glyph_paths`, `get_glyph_components`, `get_selected_glyphs`, `get_selected_nodes`, `list_style_sets`.
 - Editing: `create_glyph`, `delete_glyph`, `copy_glyph`, `add_component_to_glyph`, `add_anchor_to_glyph`, `set_glyph_paths`.
 - Metrics & persistence: `update_glyph_metrics`, `update_glyph_properties`, `set_kerning_pair`, `save_font`.
 - Automation: `execute_code`, `execute_code_with_context`, `get_selected_font_and_master`.
 - Docs helpers: `docs_search`, `docs_get`.
+
+## Clickable Glyphs Links
+- Glyph/layer read responses can include `showUrl`, `showHttpUrl`, and `showMarkdown`.
+- Use `showMarkdown` in user-facing answers when a direct jump into Glyphs would help. It points at the local HTTP bridge (`http://127.0.0.1:9680/glyphs-show/`) so clients that block `glyphsapp://` can still render a clickable link.
+- Unsaved fonts return `showUrlUnavailableReason` because `glyphsapp://show/` requires an absolute file path.
+- The URL scheme opens containing glyphs/layers only; it does not select nodes, anchors, components, or paths.
+- For "style set", "stylistic set", or `ssXX` listing questions, call `list_style_sets` first and use each style set's group-level `showMarkdown` link. Do not render linked glyph names as inline code.
 
 ## Helper Resources
 - Guide: `glyphs://glyphs-mcp/guide`

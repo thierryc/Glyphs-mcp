@@ -10,7 +10,9 @@ normal Python environments.
 
 import json
 import math
+import re
 from pathlib import Path
+from urllib.parse import parse_qsl, urlencode, urlsplit
 
 try:
     import objc  # type: ignore[import-not-found]
@@ -64,6 +66,295 @@ def _sanitize_for_json(value):
 
 def _safe_json(data):
     return json.dumps(_sanitize_for_json(data))
+
+
+def _markdown_link_label(text):
+    """Escape Markdown link label characters without changing readable text."""
+    try:
+        value = str(text)
+    except Exception:
+        value = "Open in Glyphs"
+    return value.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+
+
+GLYPHS_SHOW_BRIDGE_BASE_URL = "http://127.0.0.1:9680/glyphs-show/"
+
+
+def _glyphs_show_bridge_url(native_url, bridge_base_url=GLYPHS_SHOW_BRIDGE_BASE_URL):
+    """Build an HTTP bridge URL for renderers that block glyphsapp:// links."""
+    if not native_url:
+        return None
+
+    try:
+        parts = urlsplit(str(native_url))
+    except Exception:
+        return None
+
+    if parts.scheme not in ("glyphsapp", "glyphsapp3") or parts.netloc != "show":
+        return None
+
+    params = parse_qsl(parts.query, keep_blank_values=False)
+    if not params:
+        return None
+
+    base = str(bridge_base_url or GLYPHS_SHOW_BRIDGE_BASE_URL).rstrip("/") + "/"
+    return "{}?{}".format(base, urlencode(params))
+
+
+def _glyphs_show_url(file_path, glyph_name=None, production_name=None, layer_ids=None, scheme="glyphsapp"):
+    """Build a Glyphs URL-scheme link for showing glyphs/layers.
+
+    Glyphs' public URL scheme supports file, glyph/production, and layer
+    selection. It does not deep-link to nodes, anchors, components, or paths.
+    """
+    if not file_path:
+        return None, "Font has not been saved; Glyphs show URLs require an absolute file path."
+
+    path = str(file_path).strip()
+    if not path:
+        return None, "Font has not been saved; Glyphs show URLs require an absolute file path."
+
+    try:
+        if not Path(path).is_absolute():
+            return None, "Font path is not absolute; Glyphs show URLs require an absolute file path."
+    except Exception:
+        return None, "Font path is not usable; Glyphs show URLs require an absolute file path."
+
+    production = str(production_name).strip() if production_name else None
+    glyph = str(glyph_name).strip() if glyph_name else None
+    if not production and not glyph:
+        return None, "Glyphs show URLs require a glyph or production name."
+
+    params = [("path", path)]
+    if production:
+        params.append(("production", production))
+    else:
+        params.append(("glyph", glyph))
+
+    if isinstance(layer_ids, (str, bytes)):
+        layer_values = [layer_ids]
+    else:
+        layer_values = list(layer_ids or [])
+
+    for layer_id in layer_values:
+        if layer_id is None:
+            continue
+        layer = str(layer_id).strip()
+        if layer:
+            params.append(("layer", layer))
+
+    return "{}://show/?{}".format(scheme or "glyphsapp", urlencode(params)), None
+
+
+def _glyphs_show_glyphs_url(file_path, glyph_names, scheme="glyphsapp"):
+    """Build a Glyphs show URL for multiple glyph names in one tab."""
+    names = []
+    seen = set()
+    for glyph_name in list(glyph_names or []):
+        if glyph_name is None:
+            continue
+        name = str(glyph_name).strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        names.append(name)
+
+    if not names:
+        return None, "Glyphs show URLs require at least one glyph name."
+
+    url, reason = _glyphs_show_url(file_path, glyph_name=names[0], scheme=scheme)
+    if not url:
+        return None, reason
+
+    params = [("path", str(file_path).strip())]
+    for name in names:
+        params.append(("glyph", name))
+    return "{}://show/?{}".format(scheme or "glyphsapp", urlencode(params)), None
+
+
+def _glyphs_show_glyphs_link_fields(file_path, glyph_names, label=None):
+    """Return show link fields for multiple glyphs, or an unavailable reason."""
+    url, reason = _glyphs_show_glyphs_url(file_path, glyph_names)
+    if not url:
+        return {"showUrlUnavailableReason": reason}
+    link_label = label or "Open glyphs in Glyphs"
+    bridge_url = _glyphs_show_bridge_url(url) or url
+    return {
+        "showUrl": url,
+        "showHttpUrl": bridge_url,
+        "showMarkdown": "[{}]({})".format(_markdown_link_label(link_label), bridge_url),
+    }
+
+
+def _glyphs_show_link_fields(file_path, glyph_name=None, production_name=None, layer_ids=None, label=None):
+    """Return showUrl/showMarkdown fields, or showUrlUnavailableReason."""
+    url, reason = _glyphs_show_url(
+        file_path,
+        glyph_name=glyph_name,
+        production_name=production_name,
+        layer_ids=layer_ids,
+    )
+    if not url:
+        return {"showUrlUnavailableReason": reason}
+
+    link_label = label
+    if not link_label:
+        if glyph_name:
+            link_label = "Open {} in Glyphs".format(glyph_name)
+        elif production_name:
+            link_label = "Open {} in Glyphs".format(production_name)
+        else:
+            link_label = "Open in Glyphs"
+
+    bridge_url = _glyphs_show_bridge_url(url) or url
+    return {
+        "showUrl": url,
+        "showHttpUrl": bridge_url,
+        "showMarkdown": "[{}]({})".format(_markdown_link_label(link_label), bridge_url),
+    }
+
+
+def _glyphs_show_layer_link_fields(file_path, glyph_name=None, production_name=None, layer_id=None, label=None):
+    """Return show link fields for a specific glyph layer."""
+    if not layer_id:
+        return {"showUrlUnavailableReason": "Layer ID unavailable; Glyphs show layer URLs require a layer ID."}
+    return _glyphs_show_link_fields(
+        file_path,
+        glyph_name=glyph_name,
+        production_name=production_name,
+        layer_ids=[layer_id],
+        label=label,
+    )
+
+
+_STYLE_SET_TAG_RE = re.compile(r"^ss(?:0[1-9]|1[0-9]|20)$")
+_SIMPLE_SUB_RE = re.compile(r"^sub\s+(.+?)\s+by\s+(.+?)$", re.S)
+
+
+def _is_style_set_tag(tag):
+    try:
+        return bool(_STYLE_SET_TAG_RE.match(str(tag or "")))
+    except Exception:
+        return False
+
+
+def _strip_feature_comments(code):
+    lines = []
+    for line in str(code or "").splitlines():
+        lines.append(line.split("#", 1)[0])
+    return "\n".join(lines)
+
+
+def _parse_feature_glyph_list(text):
+    value = str(text or "").strip()
+    if not value:
+        return None
+
+    if value.startswith("[") and value.endswith("]"):
+        value = value[1:-1].strip()
+    elif any(ch.isspace() for ch in value):
+        return None
+
+    glyphs = [part.strip() for part in value.split() if part.strip()]
+    if not glyphs:
+        return None
+
+    for glyph in glyphs:
+        if any(marker in glyph for marker in ("'", "\\", "@")):
+            return None
+
+    return glyphs
+
+
+def _parse_style_set_substitutions(code):
+    """Parse simple AFDKO substitutions from stylistic-set feature code."""
+    substitutions = []
+    unsupported_rule_count = 0
+    warnings = []
+    clean_code = _strip_feature_comments(code)
+
+    for statement in clean_code.split(";"):
+        rule = " ".join(statement.strip().split())
+        if not rule:
+            continue
+
+        if not rule.startswith("sub "):
+            unsupported_rule_count += 1
+            continue
+
+        replacement_is_bracketed = " by [" in rule
+        source_is_bracketed = "[" in rule.split(" by ", 1)[0]
+        if (
+            "'" in rule
+            or " lookup " in rule
+            or " from " in rule
+            or (replacement_is_bracketed and not source_is_bracketed)
+        ):
+            unsupported_rule_count += 1
+            continue
+
+        match = _SIMPLE_SUB_RE.match(rule)
+        if not match:
+            unsupported_rule_count += 1
+            continue
+
+        source_glyphs = _parse_feature_glyph_list(match.group(1))
+        replacement_glyphs = _parse_feature_glyph_list(match.group(2))
+        if not source_glyphs or not replacement_glyphs or len(source_glyphs) != len(replacement_glyphs):
+            unsupported_rule_count += 1
+            continue
+
+        for source, replacement in zip(source_glyphs, replacement_glyphs):
+            substitutions.append(
+                {
+                    "source": source,
+                    "replacement": replacement,
+                }
+            )
+
+    if unsupported_rule_count:
+        warnings.append(
+            "{} unsupported or contextual feature rule(s) were skipped.".format(
+                unsupported_rule_count
+            )
+        )
+
+    return {
+        "substitutions": substitutions,
+        "unsupportedRuleCount": unsupported_rule_count,
+        "warnings": warnings,
+    }
+
+
+def _style_set_name_from_metadata(tag, notes=None, labels=None):
+    """Return a human-readable stylistic-set name from Glyphs metadata."""
+    label_index = None
+    try:
+        label_index = int(str(tag)[2:]) - 1
+    except Exception:
+        label_index = None
+
+    if labels is not None and label_index is not None:
+        try:
+            label = labels[label_index]
+        except Exception:
+            label = None
+        if label:
+            return str(label).strip()
+
+    for line in str(notes or "").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        for prefix in ("Name:", "UI Name:", "Stylistic Set Name:", "Feature Name:"):
+            if line.lower().startswith(prefix.lower()):
+                candidate = line[len(prefix):].strip()
+                if candidate:
+                    return candidate
+        if len(line) <= 80 and ";" not in line and "sub " not in line:
+            return line
+
+    return None
 
 
 def _safe_attr(obj, attr_name, default=None):
@@ -207,6 +498,21 @@ def _get_component_automatic(component):
         except Exception:
             return None
 
+    return None
+
+
+def _get_layer_id(layer):
+    """Return the Glyphs layer ID used by the show URL scheme, if available."""
+    for attr in ("layerId", "id", "associatedMasterId"):
+        try:
+            value = getattr(layer, attr, None)
+        except Exception:
+            value = None
+        if value is None:
+            continue
+        value = str(value).strip()
+        if value:
+            return value
     return None
 
 
@@ -457,10 +763,19 @@ __all__ = [
     "_coerce_numeric",
     "_custom_parameter",
     "_get_component_automatic",
+    "_get_layer_id",
     "_get_left_sidebearing",
     "_get_right_sidebearing",
+    "_glyphs_show_glyphs_link_fields",
+    "_glyphs_show_glyphs_url",
+    "_glyphs_show_bridge_url",
+    "_glyphs_show_layer_link_fields",
+    "_glyphs_show_link_fields",
+    "_glyphs_show_url",
     "_glyph_unicode_char",
+    "_is_style_set_tag",
     "_load_andre_fuchs_relevant_pairs",
+    "_parse_style_set_substitutions",
     "_selected_glyph_names_for_font",
     "_spacing_selected_glyph_names_for_font",
     "_open_tab_on_main_thread",
@@ -471,5 +786,6 @@ __all__ = [
     "_save_font_on_main_thread",
     "_set_kerning_pairs_on_main_thread",
     "_set_sidebearing",
+    "_style_set_name_from_metadata",
     "_units_int",
 ]

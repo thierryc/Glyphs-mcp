@@ -93,6 +93,17 @@ class McpToolRegistrationTextTests(unittest.TestCase):
     def test_generate_kerning_tab_is_decorated(self) -> None:
         self._assert_async_tool_decorated("generate_kerning_tab")
 
+    def test_list_style_sets_is_decorated(self) -> None:
+        self._assert_async_tool_decorated("list_style_sets")
+
+    def test_glyphs_show_bridge_route_is_registered(self) -> None:
+        resources = _resources_dir()
+        route_path = resources / "mcp_show_routes.py"
+        text = route_path.read_text(encoding="utf-8", errors="replace")
+
+        self.assertIn('@mcp.custom_route("/glyphs-show/", methods=["GET"]', text)
+        self.assertIn("glyphs_show_bridge", text)
+
     def test_review_kerning_bumper_is_decorated(self) -> None:
         self._assert_async_tool_decorated("review_kerning_bumper")
 

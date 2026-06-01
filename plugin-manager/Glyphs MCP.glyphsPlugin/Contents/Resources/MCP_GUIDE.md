@@ -35,6 +35,24 @@ Choose tools in this order:
 
 Use `docs_search` and `docs_get` when API details are uncertain.
 
+## Glyphs Show Links
+
+Glyph/layer read tools may return `showUrl`, `showHttpUrl`, and `showMarkdown`
+fields. Use `showMarkdown` in final answers when it helps the user jump directly
+to the reported glyph or layer in Glyphs.
+
+- `showUrl` uses `glyphsapp://show/`; `showMarkdown` uses the local
+  `http://127.0.0.1:9680/glyphs-show/` bridge so LLM clients that block custom
+  URL schemes can still render a clickable link.
+- Links require a saved font path.
+- If a font is unsaved, tools return `showUrlUnavailableReason` instead.
+- These links open the containing glyph/layer only; they do not select nodes,
+  anchors, components, or paths.
+- For "style set", "stylistic set", or `ssXX` listing questions, call
+  `list_style_sets` first. Use each style set's group-level `showMarkdown` in
+  the final answer and list glyph names as plain text unless the user asks for
+  per-glyph links.
+
 ## Balanced execute_code Policy
 
 `execute_code` and `execute_code_with_context` can run arbitrary Python in Glyphs.

@@ -9,8 +9,10 @@ from GlyphsApp import Glyphs, GSNode, GSPath  # type: ignore[import-not-found]
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
     _clear_layer_paths,
+    _get_layer_id,
     _get_left_sidebearing,
     _get_right_sidebearing,
+    _glyphs_show_layer_link_fields,
     _safe_json,
     _set_sidebearing,
 )
@@ -88,15 +90,25 @@ async def get_glyph_paths(
                 "closed": getattr(path, 'closed', True)
             })
         
+        layer_id = _get_layer_id(layer)
         result = {
             "glyphName": glyph_name,
             "masterId": getattr(layer, 'associatedMasterId', None),
             "masterName": layer.name,
+            "layerId": layer_id,
             "paths": paths_data,
             "width": getattr(layer, 'width', 0),
             "leftSideBearing": _get_left_sidebearing(layer) or 0,
             "rightSideBearing": _get_right_sidebearing(layer) or 0
         }
+        result.update(
+            _glyphs_show_layer_link_fields(
+                getattr(font, "filepath", None),
+                glyph_name=glyph_name,
+                layer_id=layer_id,
+                label="Open {} {} in Glyphs".format(glyph_name, layer.name),
+            )
+        )
         
         return json.dumps(result)
         

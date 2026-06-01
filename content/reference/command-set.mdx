@@ -3,7 +3,7 @@ title: Command set
 description: The MCP tools exposed by the Glyphs MCP server.
 ---
 
-This is the tool surface exposed by the server shipped in this repo (FastMCP `version="1.0.17"`).
+This is the tool surface exposed by the server shipped in this repo (FastMCP `version="1.0.22"`).
 
 Note: the server can be configured with a **tool profile** (in **Edit → Glyphs MCP Server Status…**) that hides tools you don't need for a given workflow. When a profile is active, `tools/list` will return a subset of the full tool surface. For a token-aware explanation and a “which profile should I pick?” guide, see [Settings & tool profiles](../getting-started/start-server.mdx#settings-tool-profiles).
 
@@ -20,18 +20,26 @@ Note: the server can be configured with a **tool profile** (in **Edit → Glyphs
 
 ### Discovery
 
+Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
+`showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
+`showMarkdown` uses a local `http://127.0.0.1:9680/glyphs-show/` bridge URL so
+LLM clients that block custom URL schemes can still render a clickable link; the
+bridge redirects to Glyphs. Unsaved fonts return `showUrlUnavailableReason`
+instead.
+
 | Tool | Description |
 |------|-------------|
 | `list_open_fonts` | List all open fonts and basic metadata. |
-| `get_font_glyphs` | Return glyph list and key attributes for a font. |
+| `get_font_glyphs` | Return glyph list and key attributes for a font, including clickable Glyphs show links when available. |
 | `get_font_masters` | Detailed master information for a font. |
 | `get_font_instances` | List instances and their interpolation data. |
-| `get_glyph_details` | Full glyph data including layers, paths, components. |
+| `get_glyph_details` | Full glyph data including layers, paths, components, and Glyphs show links. |
+| `list_style_sets` | List stylistic-set features (`ss01`-`ss20`) with source/replacement glyphs and a group-level Glyphs show link for alternates. |
 | `get_glyph_components` | Inspect components used in a glyph. |
-| `get_selected_glyphs` | Info about glyphs currently selected in UI. |
-| `get_selected_font_and_master` | Current font + master and selection snapshot. |
-| `get_selected_nodes` | Detailed selected nodes with per-master mapping for edits. |
-| `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing. |
+| `get_selected_glyphs` | Info about glyphs currently selected in UI, including Glyphs show links. |
+| `get_selected_font_and_master` | Current font + master and selection snapshot, including Glyphs show links for selected glyph layers. |
+| `get_selected_nodes` | Detailed selected nodes with per-master mapping for edits, plus links for the containing glyph/layer. |
+| `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing, including a Glyphs show link for the layer. |
 | `review_collinear_handles` | Review a single path for curve nodes that should be smooth based on handle collinearity (no mutation). |
 
 ### Kerning

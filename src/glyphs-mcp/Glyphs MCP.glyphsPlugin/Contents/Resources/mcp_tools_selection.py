@@ -7,7 +7,14 @@ import json
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
-from mcp_tool_helpers import _get_left_sidebearing, _get_right_sidebearing, _safe_json
+from mcp_tool_helpers import (
+    _get_layer_id,
+    _get_left_sidebearing,
+    _get_right_sidebearing,
+    _glyphs_show_layer_link_fields,
+    _glyphs_show_link_fields,
+    _safe_json,
+)
 
 
 @mcp.tool()
@@ -21,19 +28,29 @@ async def get_selected_glyphs() -> str:
         if not Glyphs.font:
             return json.dumps({"error": "No font is currently active"})
 
+        file_path = getattr(Glyphs.font, "filepath", None)
         selected = []
         for layer in Glyphs.font.selectedLayers:
             glyph = layer.parent
-            selected.append(
-                {
-                    "name": glyph.name,
-                    "unicode": glyph.unicode,
-                    "category": glyph.category,
-                    "subCategory": glyph.subCategory,
-                    "layerName": layer.name,
-                    "width": layer.width,
-                }
+            layer_id = _get_layer_id(layer)
+            selected_entry = {
+                "name": glyph.name,
+                "unicode": glyph.unicode,
+                "category": glyph.category,
+                "subCategory": glyph.subCategory,
+                "layerName": layer.name,
+                "layerId": layer_id,
+                "width": layer.width,
+            }
+            selected_entry.update(
+                _glyphs_show_layer_link_fields(
+                    file_path,
+                    glyph_name=glyph.name,
+                    layer_id=layer_id,
+                    label="Open {} {} in Glyphs".format(glyph.name, layer.name),
+                )
             )
+            selected.append(selected_entry)
 
         return json.dumps(
             {
@@ -95,18 +112,29 @@ async def get_selected_font_and_master() -> str:
         selected_glyphs = []
         for layer in font.selectedLayers:
             glyph = layer.parent
+            layer_id = _get_layer_id(layer)
             left_bearing = _get_left_sidebearing(layer)
             right_bearing = _get_right_sidebearing(layer)
-            selected_glyphs.append({
+            selected_entry = {
                 "name": glyph.name,
                 "unicode": glyph.unicode,
                 "category": glyph.category,
                 "subCategory": glyph.subCategory,
                 "layerName": layer.name,
+                "layerId": layer_id,
                 "width": layer.width,
                 "leftSideBearing": left_bearing,
                 "rightSideBearing": right_bearing,
-            })
+            }
+            selected_entry.update(
+                _glyphs_show_layer_link_fields(
+                    font_info["filePath"],
+                    glyph_name=glyph.name,
+                    layer_id=layer_id,
+                    label="Open {} {} in Glyphs".format(glyph.name, layer.name),
+                )
+            )
+            selected_glyphs.append(selected_entry)
         
         return _safe_json({
             "fontInfo": font_info,
@@ -165,16 +193,14 @@ async def get_selected_nodes(include_master_mapping: bool = True) -> str:
             }
 
         def layer_info(l):
+            layer_id = _get_layer_id(l)
             info = {
                 "name": getattr(l, "name", ""),
                 "associatedMasterId": getattr(l, "associatedMasterId", None),
                 "width": getattr(l, "width", 0),
             }
-            # layerId is not always present in older API; guard safely
-            lid = getattr(l, "layerId", None)
-            if lid is None:
-                lid = getattr(l, "id", None)
-            info["id"] = lid
+            info["id"] = layer_id
+            info["layerId"] = layer_id
             return info
 
         def oncurve_indices_for(path):
@@ -423,9 +449,23 @@ async def get_selected_nodes(include_master_mapping: bool = True) -> str:
             "nodeCount": len(selected_nodes),
             "nodes": selected_nodes,
         }
+        result["glyph"].update(
+            _glyphs_show_link_fields(
+                result["font"].get("filePath"),
+                glyph_name=result["glyph"].get("name"),
+                label="Open {} in Glyphs".format(result["glyph"].get("name")),
+            )
+        )
+        result["layer"].update(
+            _glyphs_show_layer_link_fields(
+                result["font"].get("filePath"),
+                glyph_name=result["glyph"].get("name"),
+                layer_id=result["layer"].get("layerId"),
+                label="Open {} {} in Glyphs".format(result["glyph"].get("name"), result["layer"].get("name")),
+            )
+        )
 
         return json.dumps(result)
 
     except Exception as e:
         return json.dumps({"error": str(e)})
-
