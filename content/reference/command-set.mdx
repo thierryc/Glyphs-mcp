@@ -31,7 +31,7 @@ Glyph and layer inspection responses may include Glyphs show links:
 | --- | --- |
 | `list_open_fonts` | List open fonts and basic metadata. |
 | `get_font_glyphs` | Return glyph list and key attributes for a font, including show links when available. |
-| `get_font_masters` | Return detailed master information. |
+| `get_font_masters` | Return detailed master information, including `italicAngle` from Glyphs Font Info Metrics and legacy `slantAngle` from the separate `postscriptSlantAngle` custom parameter. |
 | `get_font_instances` | List instances and interpolation data. |
 | `get_glyph_details` | Return glyph details, layers, paths, components, and show links. |
 | `list_style_sets` | List `ss01`-`ss20` features, source/replacement glyphs, and group links. |
@@ -73,10 +73,13 @@ Glyph and layer inspection responses may include Glyphs show links:
 
 ## Editing and outlines
 
+Italic first-pass tools use the Glyphs source/Transformations angle convention: positive `angle` values lean Latin outlines to the right. The default is `12.0`, chosen as a modern common working default. Exported OpenType/UFO metadata uses the opposite sign convention, so a Glyphs `+12` degree source angle corresponds to about `-12` in `post.italicAngle` or an OpenType `slnt` axis value.
+
 | Tool | Description |
 | --- | --- |
 | `review_italic_first_pass` | Preview a roman-to-italic layer copy and slant workflow without mutation. |
 | `apply_italic_first_pass` | Apply a guarded first-pass italic/oblique workflow; supports `dry_run`, requires `confirm=true`, and can create backup layers. |
+| `set_master_italic_angle` | Set a master's Glyphs Font Info Metrics `italicAngle`; supports `dry_run` and requires `confirm=true` to mutate. |
 | `create_glyph` | Add a new glyph. |
 | `delete_glyph` | Remove a glyph. |
 | `update_glyph_properties` | Change unicode, category, export flags, metrics keys, groups, or similar glyph properties. |

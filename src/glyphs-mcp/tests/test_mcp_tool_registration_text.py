@@ -119,6 +119,9 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         self._assert_async_tool_decorated("review_master_stem_metrics")
         self._assert_async_tool_decorated("set_master_stem_metrics")
 
+    def test_master_italic_angle_tool_is_decorated(self) -> None:
+        self._assert_async_tool_decorated("set_master_italic_angle")
+
     def test_italic_first_pass_tools_are_decorated(self) -> None:
         self._assert_async_tool_decorated("review_italic_first_pass")
         self._assert_async_tool_decorated("apply_italic_first_pass")

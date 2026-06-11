@@ -65,6 +65,7 @@ class ToolProfilesTests(unittest.TestCase):
         italic_tools = {
             "review_master_stem_metrics",
             "set_master_stem_metrics",
+            "set_master_italic_angle",
             "review_italic_first_pass",
             "apply_italic_first_pass",
         }

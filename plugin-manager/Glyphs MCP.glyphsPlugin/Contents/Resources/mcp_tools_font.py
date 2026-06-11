@@ -3,6 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 
 import json
+import math
 
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
@@ -19,6 +20,45 @@ from mcp_tool_helpers import (
     _safe_attr,
     _safe_json,
 )
+
+
+def _font_by_index(font_index):
+    try:
+        if font_index >= len(Glyphs.fonts) or font_index < 0:
+            return None
+        return Glyphs.fonts[font_index]
+    except Exception:
+        return None
+
+
+def _master_by_id(font, master_id):
+    if not font:
+        return None
+    master_id = str(master_id or "")
+    try:
+        for master in font.masters:
+            if str(getattr(master, "id", "")) == master_id:
+                return master
+    except Exception:
+        pass
+    return None
+
+
+def _actual_italic_angle(master):
+    value = _coerce_numeric(getattr(master, "italicAngle", 0.0))
+    return 0.0 if value is None else float(value)
+
+
+def _validate_italic_angle(value):
+    angle = _coerce_numeric(value)
+    if angle is None:
+        return None, "italic_angle must be a finite number"
+    angle = float(angle)
+    if not math.isfinite(angle):
+        return None, "italic_angle must be finite"
+    if not (-89.0 < angle < 89.0):
+        return None, "italic_angle must be greater than -89 and less than 89"
+    return angle, None
 
 
 @mcp.tool()
@@ -162,6 +202,7 @@ async def get_font_masters(font_index: int = 0) -> str:
                     "id": master.id,
                     "weight": weight_val,
                     "width": width_val,
+                    "italicAngle": _actual_italic_angle(master),
                     "slantAngle": _custom_parameter(master, "postscriptSlantAngle", 0),
                     # GSFontMaster may not have `customName` in Glyphs 3; use safe access
                     "customName": getattr(master, "customName", None),
@@ -174,6 +215,80 @@ async def get_font_masters(font_index: int = 0) -> str:
         return json.dumps(masters_info)
     except Exception as e:
         return json.dumps({"error": str(e)})
+
+
+@mcp.tool()
+async def set_master_italic_angle(
+    font_index: int = 0,
+    master_id: str = "",
+    italic_angle: float = 12.0,
+    dry_run: bool = False,
+    confirm: bool = False,
+) -> str:
+    """Set a master's Glyphs Font Info Metrics italicAngle.
+
+    Uses the Glyphs source convention: positive values lean Latin outlines to
+    the right. This is not the postscriptSlantAngle custom parameter.
+    """
+    try:
+        font = _font_by_index(font_index)
+        if not font:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
+                    "fontIndex": font_index,
+                }
+            )
+
+        master = _master_by_id(font, master_id)
+        if not master:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "Master not found",
+                    "fontIndex": font_index,
+                    "masterId": str(master_id or ""),
+                }
+            )
+
+        angle, error = _validate_italic_angle(italic_angle)
+        if error:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": error,
+                    "fontIndex": font_index,
+                    "masterId": str(master_id or ""),
+                    "requestedItalicAngle": italic_angle,
+                }
+            )
+
+        before = _actual_italic_angle(master)
+        payload = {
+            "ok": True,
+            "dryRun": bool(dry_run),
+            "fontIndex": font_index,
+            "masterId": str(getattr(master, "id", master_id)),
+            "masterName": getattr(master, "name", None),
+            "before": {"italicAngle": before},
+            "after": {"italicAngle": angle},
+            "changed": abs(before - angle) > 0.01,
+            "note": "Glyphs source convention: positive italicAngle values lean Latin outlines to the right.",
+        }
+
+        if dry_run:
+            return _safe_json(payload)
+        if not confirm:
+            payload["ok"] = False
+            payload["error"] = "Use dry_run=true first or confirm=true to mutate"
+            return _safe_json(payload)
+
+        master.italicAngle = angle
+        payload["applied"] = True
+        return _safe_json(payload)
+    except Exception as e:
+        return _safe_json({"ok": False, "error": str(e)})
 
 
 @mcp.tool()

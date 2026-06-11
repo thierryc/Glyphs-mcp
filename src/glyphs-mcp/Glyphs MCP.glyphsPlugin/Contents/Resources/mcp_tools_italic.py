@@ -328,7 +328,7 @@ def _review_italic_first_pass_impl(
     target_master_id=None,
     scope="selected_glyphs",
     glyph_names=None,
-    angle=9.4,
+    angle=12.0,
     slant_mode="cursivy",
     stem_policy="require_existing",
     compatibility_mode="preserve_if_possible",
@@ -518,7 +518,7 @@ def _apply_italic_first_pass_impl(
     target_master_id=None,
     scope="selected_glyphs",
     glyph_names=None,
-    angle=9.4,
+    angle=12.0,
     slant_mode="cursivy",
     stem_policy="require_existing",
     compatibility_mode="preserve_if_possible",
@@ -645,7 +645,7 @@ async def review_italic_first_pass(
     target_master_id: str = None,
     scope: str = "selected_glyphs",
     glyph_names: list = None,
-    angle: float = 9.4,
+    angle: float = 12.0,
     slant_mode: str = "cursivy",
     stem_policy: str = "require_existing",
     compatibility_mode: str = "preserve_if_possible",
@@ -654,7 +654,12 @@ async def review_italic_first_pass(
     skip_glyphs: list = None,
     origin: int = 3,
 ) -> str:
-    """Preview a roman-to-italic first-pass copy and slant workflow."""
+    """Preview a roman-to-italic first-pass copy and slant workflow.
+
+    The angle uses Glyphs' source/Transformations convention: positive values
+    lean Latin outlines to the right. Default +12 maps to about -12 in exported
+    OpenType/UFO post.italicAngle or slnt metadata.
+    """
     return _safe_json(
         _review_italic_first_pass_impl(
             font_index=font_index,
@@ -685,7 +690,7 @@ async def apply_italic_first_pass(
     target_master_id: str = None,
     scope: str = "selected_glyphs",
     glyph_names: list = None,
-    angle: float = 9.4,
+    angle: float = 12.0,
     slant_mode: str = "cursivy",
     stem_policy: str = "require_existing",
     compatibility_mode: str = "preserve_if_possible",
@@ -698,7 +703,12 @@ async def apply_italic_first_pass(
     backup: bool = True,
     backup_layer_name: str = "GMCP Backup: Italic First Pass",
 ) -> str:
-    """Apply a guarded roman-to-italic first pass after dry-run/confirmation."""
+    """Apply a guarded roman-to-italic first pass after dry-run/confirmation.
+
+    The angle uses Glyphs' source/Transformations convention: positive values
+    lean Latin outlines to the right. Default +12 maps to about -12 in exported
+    OpenType/UFO post.italicAngle or slnt metadata.
+    """
     return _safe_json(
         _apply_italic_first_pass_impl(
             font_index=font_index,

@@ -11,7 +11,10 @@ Use this skill for a guarded roman-to-italic first pass. It accelerates the work
 
 - Prefer the `Paths / Outlines` profile for review-only work, or `Editing` when applying.
 - Read current font, master, and selection before mutation.
-- Default angle is `9.4` degrees unless the user specifies another value.
+- Default angle is `12.0` degrees unless the user specifies another value.
+- Interpret `angle` as a Glyphs source/Transformations angle: positive values lean Latin outlines to the right. In exported OpenType/UFO metadata, the corresponding `post.italicAngle` / `slnt` value is negative (`+12` in Glyphs source convention maps to about `-12` in exported font convention).
+- Before outline work, verify the target italic master's `italicAngle` from `get_font_masters` equals `+angle` within `0.01`; do not use `slantAngle`, which reports the separate `postscriptSlantAngle` custom parameter.
+- If the target master `italicAngle` differs, run `set_master_italic_angle` with `dry_run=true`, show the before/after, and only set it with `confirm=true` after explicit approval.
 - Default `compatibility_mode` is `preserve_if_possible`; path compatibility is useful but not required.
 - Before `slant_mode="cursivy"`, run `review_master_stem_metrics` for the target italic master.
 - If Cursivy stems are missing, ask whether to set stems, measure suggestions, use raw slant, or stop.
@@ -32,19 +35,25 @@ Use this skill for a guarded roman-to-italic first pass. It accelerates the work
    - `glyph_names`
    - `all_glyphs`
 3. Resolve source roman and target italic masters.
-4. If using Cursivy:
+4. Verify target master italic angle:
+   - call `get_font_masters`
+   - find the target master by `target_master_id`
+   - compare its `italicAngle` to `+angle` within `0.01`
+   - if different, call `set_master_italic_angle` with `dry_run=true`
+   - summarize the before/after and wait for approval before calling `set_master_italic_angle` with `confirm=true`
+5. If using Cursivy:
    - call `review_master_stem_metrics`
    - if missing, call `set_master_stem_metrics` only after approval and with `dry_run=true` first
-5. Call `review_italic_first_pass`.
-6. Summarize:
+6. Call `review_italic_first_pass`.
+7. Summarize:
    - glyph count and blocked glyphs
    - missing stems
    - protected glyph warnings
    - compatibility mode and compatibility issues
    - target glyphs that would be created
-7. If the user approves, call `apply_italic_first_pass` with `dry_run=true`.
-8. After approval of the dry run, call `apply_italic_first_pass` with `confirm=true`.
-9. Re-read or summarize returned results and list glyphs that still need manual optical work.
+8. If the user approves, call `apply_italic_first_pass` with `dry_run=true`.
+9. After approval of the dry run, call `apply_italic_first_pass` with `confirm=true`.
+10. Re-read or summarize returned results and list glyphs that still need manual optical work.
 
 ## Defaults
 
@@ -53,7 +62,7 @@ Use these defaults unless the user says otherwise:
 ```json
 {
   "scope": "selected_glyphs",
-  "angle": 9.4,
+  "angle": 12.0,
   "slant_mode": "cursivy",
   "stem_policy": "require_existing",
   "compatibility_mode": "preserve_if_possible",

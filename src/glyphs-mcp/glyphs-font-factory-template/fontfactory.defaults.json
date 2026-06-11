@@ -29,8 +29,8 @@
       "masters": [
         { "name": "Light", "axes": { "wght": 300, "ital": 0 }, "italicAngle": 0 },
         { "name": "Heavy", "axes": { "wght": 900, "ital": 0 }, "italicAngle": 0 },
-        { "name": "Light Italic", "axes": { "wght": 300, "ital": 1 }, "italicAngle": -10 },
-        { "name": "Heavy Italic", "axes": { "wght": 900, "ital": 1 }, "italicAngle": -10 }
+        { "name": "Light Italic", "axes": { "wght": 300, "ital": 1 }, "italicAngle": 12 },
+        { "name": "Heavy Italic", "axes": { "wght": 900, "ital": 1 }, "italicAngle": 12 }
       ]
     },
     "two_axes_wght_slnt": {
@@ -41,8 +41,8 @@
       "masters": [
         { "name": "Light", "axes": { "wght": 300, "slnt": 0 }, "italicAngle": 0 },
         { "name": "Heavy", "axes": { "wght": 900, "slnt": 0 }, "italicAngle": 0 },
-        { "name": "Light Slanted", "axes": { "wght": 300, "slnt": -10 }, "italicAngle": -10 },
-        { "name": "Heavy Slanted", "axes": { "wght": 900, "slnt": -10 }, "italicAngle": -10 }
+        { "name": "Light Slanted", "axes": { "wght": 300, "slnt": -12 }, "italicAngle": 12 },
+        { "name": "Heavy Slanted", "axes": { "wght": 900, "slnt": -12 }, "italicAngle": 12 }
       ]
     }
   },
@@ -155,4 +155,3 @@
     "fallback_color": 3
   }
 }
-

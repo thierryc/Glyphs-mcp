@@ -102,8 +102,8 @@ CONFIG = {
     "masters": [
         {"name": "Light", "italicAngle": 0, "axes": {"wght": 300, "ital": 0}},
         {"name": "Heavy", "italicAngle": 0, "axes": {"wght": 900, "ital": 0}},
-        {"name": "Light Italic", "italicAngle": -10, "axes": {"wght": 300, "ital": 1}},
-        {"name": "Heavy Italic", "italicAngle": -10, "axes": {"wght": 900, "ital": 1}},
+        {"name": "Light Italic", "italicAngle": 12, "axes": {"wght": 300, "ital": 1}},
+        {"name": "Heavy Italic", "italicAngle": 12, "axes": {"wght": 900, "ital": 1}},
     ],
     "glyphset": {
         "unicodeRanges": ["0020-007E", "00A0-00FF", "0100-017F", "0180-024F", "1E00-1EFF"],
@@ -543,6 +543,10 @@ def main():
 
     def apply_master_def(master, d):
         master.name = d["name"]
+        # Glyphs source convention: positive italicAngle values lean Latin outlines
+        # to the right. Exported OpenType/UFO post.italicAngle/slnt values use the
+        # opposite sign convention, so a Glyphs +12 degree source angle exports as
+        # about -12 degrees in font metadata.
         master.italicAngle = float(d.get("italicAngle", 0))
         master.ascender = float(m["ascender"])
         master.descender = float(m["descender"])

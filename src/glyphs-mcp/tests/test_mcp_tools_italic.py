@@ -277,7 +277,7 @@ class McpToolsItalicTests(unittest.TestCase):
         self.assertEqual(len(target_layer.paths), 1)
         self.assertEqual(len(font.glyphs["b"].layers.backups), 1)
         self.assertEqual(len(filter_obj.calls), 1)
-        self.assertEqual(filter_obj.calls[0]["args"]["Slant"], 9.4)
+        self.assertEqual(filter_obj.calls[0]["args"]["Slant"], 12.0)
         self.assertEqual(filter_obj.calls[0]["args"]["SlantCorrection"], 1)
         self.assertEqual(filter_obj.calls[0]["args"]["Origin"], 3)
 
