@@ -15,6 +15,19 @@ The intent is typographer-first:
 
 ---
 
+## When to use it
+
+Use these tools after spacing and kerning groups have had a first pass. They are best for:
+
+- detecting outline collisions or near-misses,
+- generating a conservative list of pairs that need more space,
+- applying approved glyph-glyph exception fixes,
+- opening proof tabs for the worst offenders.
+
+Do not treat the bumper tools as an optical kerning engine. They are a safety guardrail.
+
+---
+
 ## What the tools change (and what they don’t)
 
 ### Changes (only when applied)
@@ -106,9 +119,15 @@ The tools only propose/apply **loosening** (increasing kerning values). They nev
 
 ---
 
-## Prompt templates (copy/paste)
+## Related reference
 
-> Note: tool name prefixes vary by client. If your tools aren’t named `glyphs-app-mcp__*`, replace that prefix with whatever your MCP client shows.
+- [Kerning workflow](./kerning-workflow.md)
+- [Command set](./reference/command-set.mdx)
+- [Safety model](./concepts/safety-model.mdx)
+
+---
+
+## Prompt templates (copy/paste)
 
 ### Review only
 ```text
@@ -117,7 +136,7 @@ Rules:
 - Do not mutate anything.
 - Summarize the worst problems first.
 
-Call glyphs-app-mcp__review_kerning_bumper:
+Call review_kerning_bumper:
 {"font_index":0,"min_gap":5,"relevant_limit":2000,"include_existing":true,"scan_mode":"two_pass","dense_step":10,"bands":8,"result_limit":200}
 
 Then:
@@ -133,18 +152,18 @@ Rules:
 - Never mutate without a dry run first.
 - Only loosen (never tighten).
 
-1) Call glyphs-app-mcp__apply_kerning_bumper (dry run):
+1) Call apply_kerning_bumper (dry run):
 {"font_index":0,"dry_run":true,"min_gap":5,"extra_gap":0,"max_delta":200,"relevant_limit":2000,"include_existing":true}
 
 2) If I approve, call apply_kerning_bumper again with confirm=true using the same args.
 3) After applying, open a proof tab:
-Call glyphs-app-mcp__review_kerning_bumper:
+Call review_kerning_bumper:
 {"font_index":0,"min_gap":5,"open_tab":true,"result_limit":120,"rendering":"hybrid"}
 ```
 
 ---
 
-## inspirations
+## Inspirations
 
 This implementation is designed as a clean-room, geometry-first tool, inspired by:
 - BubbleKern scan-height ideas (conceptual scan strategy).

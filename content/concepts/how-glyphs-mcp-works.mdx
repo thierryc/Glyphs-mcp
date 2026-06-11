@@ -1,40 +1,50 @@
 ---
 title: How Glyphs MCP works
-description: "The mental model: Glyphs plug-in, local MCP server, and your AI client."
+description: "The mental model: Glyphs app, plug-in, local server, and AI client."
 ---
 
-Glyphs MCP lets an AI client such as Codex or Claude Code call **tools** that run *against the Glyphs app you already have open*.
+Glyphs MCP lets an AI client call structured tools against the Glyphs app running on your Mac.
 
-It’s designed to feel like: “My assistant can inspect and operate Glyphs safely, with explicit tools.”
+The important idea is simple: Glyphs remains the place where the font lives. The agent does not operate a remote copy or scrape the UI. It asks the local MCP server to run explicit tools inside Glyphs.
 
-## The mental model (what runs where)
+## What runs where
 
-- **Glyphs (the app)**: the UI where your fonts live (glyphs, masters, kerning, spacing, selection).
-- **Glyphs MCP plug-in**: runs inside Glyphs and bridges GlyphsApp APIs to MCP tools.
-- **Local MCP server**: an HTTP endpoint on your machine (localhost) that exposes those tools.
-- **Your AI client**: connects to the endpoint and calls tools like `list_open_fonts`, `review_spacing`, `generate_kerning_tab`, etc.
+- **Glyphs app**: holds the open fonts, masters, glyphs, layers, kerning, spacing, and current selection.
+- **Glyphs MCP plug-in**: runs inside Glyphs 3 and bridges GlyphsApp APIs to MCP tools.
+- **Local MCP server**: exposes a Streamable HTTP endpoint on your machine.
+- **AI client**: Codex, Claude, or another MCP client connected to the local endpoint.
 
-## Endpoint basics
-
-By default the endpoint is:
+Default endpoint:
 
 ```text
 http://127.0.0.1:9680/mcp/
 ```
 
-Two common “gotchas”:
+## Tools-first behavior
 
-- If you open that URL in a **browser**, you’ll typically see a small **discovery JSON** response.
-- MCP clients connect using **Streamable HTTP (SSE)**, so “browser works” does not always mean “client is configured correctly”.
+Ask the agent to use dedicated tools first:
 
-If you’re stuck, see [Troubleshooting](../getting-started/troubleshooting.mdx).
+- `list_open_fonts` to find the active font context.
+- `get_font_masters` to identify masters.
+- `review_spacing` before any spacing apply step.
+- `generate_kerning_tab` or `review_kerning_bumper` before kerning changes.
+- `docs_search` and `docs_get` for focused Glyphs API lookup.
 
-## What “tools-first” means
+Use `execute_code` or `execute_code_with_context` only when a workflow does not have a dedicated tool or when one focused script is safer than many dependent calls.
 
-You’ll usually get the best results by asking the assistant to use dedicated tools:
+## State and verification
 
-- Good: “Call `review_spacing` and summarize outliers; then do a dry run with `apply_spacing`.”
-- Good: “Open a kerning proof tab with `generate_kerning_tab`.”
+Font editing is stateful. A safe agent workflow should:
 
-Use `execute_code` / `execute_code_with_context` when you *really need* a multi-step workflow that doesn’t have a dedicated tool.
-For mutating scripts, prefer `execute_code_with_context` so the work stays anchored to an explicit glyph/layer context. Glyphs undo is glyph-scoped: large glyph edits should still use `glyph.beginUndo()/endUndo()` or `layer.beginChanges()/endChanges()`, and master/global changes are not guaranteed undoable.
+1. Read current context.
+2. Confirm exact targets: font, master, glyph, layer, path, node, or selection.
+3. Use the smallest valid tool call.
+4. Dry-run or request confirmation before mutation.
+5. Read back affected state.
+6. Report what changed, what was skipped, and any remaining risk.
+
+## Browser vs MCP client
+
+Opening `http://127.0.0.1:9680/mcp/` in a browser can show a small discovery response. That only proves the local server is reachable. MCP clients still need correct Streamable HTTP configuration.
+
+If the browser works but the client does not, see [Troubleshooting](../getting-started/troubleshooting.mdx).

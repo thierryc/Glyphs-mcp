@@ -8,49 +8,77 @@ sidebar_position: 1
 
 ![Glyphs MCP splash](./images/glyphs-app-mcp/glyphs-mcp.png)
 
-Glyphs MCP is a **Model Context Protocol (MCP)** server for [Glyphs](https://glyphsapp.com) that exposes font-specific tools to AI and LLM agents.
+Glyphs MCP is a **Model Context Protocol** server for [Glyphs 3](https://glyphsapp.com). It runs as a Glyphs plug-in, exposes a local Streamable HTTP endpoint, and lets AI clients call font-specific tools against the fonts you already have open.
 
-It’s built to be **tools-first** (deterministic, scriptable capabilities) and **safe by default** (confirm-gated mutations and no auto-save).
+Current public docs URL:
 
-## Who this is for
+```text
+https://thierryc.github.io/Glyphs-mcp/
+```
 
-- **Type designers** who want a practical assistant for spacing/kerning workflows in Glyphs.
-- **Font engineers / tool builders** who want an inspectable tool surface for automation and experimentation.
+## What Glyphs MCP is
 
-## Start here
+Glyphs MCP gives an agent a structured way to inspect and operate Glyphs:
 
-- [First session (10 minutes)](./tutorial/first-session.mdx)
-- [How Glyphs MCP works](./concepts/how-glyphs-mcp-works.mdx)
-- [Agent skills for Glyphs App](./concepts/agent-skills.mdx)
+- The **Glyphs app** stays the source of truth for your fonts, masters, glyphs, layers, kerning, spacing, and selection.
+- The **Glyphs MCP plug-in** runs inside Glyphs and bridges GlyphsApp APIs to MCP tools.
+- The **local MCP server** exposes those tools at `http://127.0.0.1:9680/mcp/`.
+- Your **AI client** calls tools such as `list_open_fonts`, `review_spacing`, `generate_kerning_tab`, or `docs_search`.
+
+The design is tools-first: use deterministic, named tools before falling back to free-form code. Mutating workflows are built around read-before-write, dry-run or confirm-gated mutations, and no auto-save.
+
+## Who it is for
+
+- **Type designers** who want practical assistance for spacing, kerning, proofing, and review workflows in Glyphs.
+- **Font engineers** who want inspectable automation around Glyphs files, UFO/designspace export, OpenType feature checks, and repeatable diagnostics.
+- **Tool builders** who want a local, scriptable bridge between Glyphs and modern AI clients without brittle UI automation.
+
+## Quick links
+
+- [Installation](./getting-started/installation.mdx)
+- [First session](./tutorial/first-session.mdx)
+- [Start the server](./getting-started/start-server.mdx)
+- [Connect a client](./getting-started/connect-client.mdx)
+- [Use skills](./getting-started/use-agent-skills.mdx)
 - [Safety model](./concepts/safety-model.mdx)
+- [Command set](./reference/command-set.mdx)
 
 ## Quickstart
 
-1. Install: `python3 install.py`  
-2. In Glyphs: **Edit → Start Glyphs MCP Server**  
-3. Connect: `http://127.0.0.1:9680/mcp/`
+1. Install the plug-in and dependencies:
 
-Next steps:
-- [Installation](./getting-started/installation.mdx)
-- [Start the server](./getting-started/start-server.mdx)
-- [Connect a client](./getting-started/connect-client.mdx)
-- [Use skills in Codex and Claude Code](./getting-started/use-agent-skills.mdx)
-- [Troubleshooting](./getting-started/troubleshooting.mdx)
+   ```bash
+   python3 install.py
+   ```
+
+2. In Glyphs, start the local server:
+
+   ```text
+   Edit -> Start Glyphs MCP Server
+   ```
+
+3. Connect your MCP client to:
+
+   ```text
+   http://127.0.0.1:9680/mcp/
+   ```
+
+4. Verify with a read-only tool call:
+
+   ```text
+   Call list_open_fonts and tell me how many fonts are open.
+   If you see an error, quote it verbatim.
+   ```
 
 ## What you can do
 
-- Inspect open fonts, glyphs, masters, components, kerning, and selection state.
-- Generate kerning worklists and proof tabs, then audit outliers.
-- Review spacing suggestions, dry-run, and apply changes conservatively.
-- Search bundled Glyphs docs on demand via `docs_search` / `docs_get`.
+- Inspect open fonts, masters, glyphs, components, paths, kerning, selection state, and selected nodes.
+- Generate kerning worklists, audit collisions or near-misses, and apply approved bumper fixes safely.
+- Review spacing suggestions, run dry runs, apply conservative sidebearing changes, and visualize the spacing model.
+- Inspect OpenType stylistic sets and feature-linked glyph groups.
+- Review stem prerequisites and apply guarded first-pass italic or oblique transforms.
+- Preview and apply compensated tuning transforms across compatible masters.
+- Export UFO masters and designspace documents with structured logs.
+- Search bundled Glyphs docs on demand with `docs_search` and `docs_get`.
 
-Guides:
-- [Kerning workflow](./kerning-workflow.md)
-- [Kerning tools](./kerning-tools.md)
-- [Spacing tools](./spacing-tools.md)
-- [Compensated tuning tools](./compensated-tuning-tools.md)
-
-## Reference
-
-- [Command set](./reference/command-set.mdx)
-- [Resources](./reference/resources.mdx)
+For deeper workflow guidance, start with [How Glyphs MCP works](./concepts/how-glyphs-mcp-works.mdx) and [Safety model](./concepts/safety-model.mdx).

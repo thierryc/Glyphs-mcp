@@ -1,0 +1,49 @@
+---
+title: OpenType and style-set inspection
+description: Inspect OpenType features and stylistic-set glyph groups with Glyphs links.
+---
+
+Use this workflow when you want an agent to inspect OpenType feature code, list stylistic sets, or produce reviewable glyph groups from the font currently open in Glyphs.
+
+The safest starting point is the `glyphs-mcp-features` skill. It teaches the agent to prefer read-only inspection first, use `list_style_sets` for `ss01` through `ss20`, and include Glyphs links only where they help you review the result.
+
+## When to use it
+
+- You want a quick inventory of `ss01`-`ss20` alternates.
+- You want to confirm which source glyphs map to which replacement glyphs.
+- You want group-level Glyphs links for reviewing alternates in the app.
+- You want an agent to summarize feature coverage before editing feature code.
+
+## What changes
+
+Nothing changes when you only use `list_style_sets`, `get_font_glyphs`, or `get_glyph_details`. This is primarily a read-only workflow.
+
+If you later ask an agent to edit feature code through `execute_code` or `execute_code_with_context`, require a specific proposed diff first and keep the mutation confirm-gated.
+
+## What does not change
+
+- Glyph outlines
+- Kerning
+- Spacing
+- Export settings
+- Files on disk
+
+## Safe prompt template
+
+```text
+Use the glyphs-mcp-features skill.
+
+Task: Inspect the OpenType stylistic sets in my active Glyphs font.
+
+Rules:
+- Read current font context first.
+- Do not mutate anything.
+- Call list_style_sets before using lower-level tools.
+- Summarize each style set with its feature tag, label if available, source glyphs, replacement glyphs, and group link when available.
+- If feature code looks incomplete, report it as a review note only.
+```
+
+## Related reference
+
+- [Command set](../reference/command-set.mdx)
+- [Agent skills](../concepts/agent-skills.mdx)

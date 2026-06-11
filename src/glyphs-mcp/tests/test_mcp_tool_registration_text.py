@@ -115,6 +115,14 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         self._assert_async_tool_decorated("review_compensated_tuning")
         self._assert_async_tool_decorated("apply_compensated_tuning")
 
+    def test_stem_metric_tools_are_decorated(self) -> None:
+        self._assert_async_tool_decorated("review_master_stem_metrics")
+        self._assert_async_tool_decorated("set_master_stem_metrics")
+
+    def test_italic_first_pass_tools_are_decorated(self) -> None:
+        self._assert_async_tool_decorated("review_italic_first_pass")
+        self._assert_async_tool_decorated("apply_italic_first_pass")
+
 
 if __name__ == "__main__":
     unittest.main()

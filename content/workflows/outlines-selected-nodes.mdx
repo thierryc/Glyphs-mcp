@@ -1,0 +1,55 @@
+---
+title: Outlines, selected nodes, components, and anchors
+description: Inspect and edit outline-related data with explicit targets, dry runs, and read-back verification.
+---
+
+Use this workflow when an agent needs to inspect selected nodes, review paths, add components or anchors, or make bounded outline edits in the Glyphs file you already have open.
+
+For recurring outline work, start with the `glyphs-mcp-outlines-docs` skill. It keeps the agent focused on the current font, master, glyph, layer, and selection, and it uses bundled docs lookup only when API details are uncertain.
+
+## When to use it
+
+- You want to inspect selected nodes or current selected glyphs.
+- You want to add a component or anchor to a known glyph/layer.
+- You want to export path JSON for review or controlled editing.
+- You want to review collinear curve handles before setting nodes to smooth.
+- You need a targeted GlyphsApp API lookup through `docs_search` and `docs_get`.
+
+## What changes
+
+Only explicit mutating tools change font state:
+
+- `add_component_to_glyph` can add a component.
+- `add_anchor_to_glyph` can add an anchor.
+- `set_glyph_paths` can replace paths.
+- `apply_collinear_handles_smooth` can set smooth flags after review.
+- `add_corner_to_all_masters` can add corner hints at selected nodes.
+
+Mutating calls should be scoped to named glyphs, masters, layers, paths, or selected nodes, then verified with a read-back call.
+
+## What does not change
+
+- The font is not auto-saved.
+- Kerning and spacing do not change unless you call separate kerning or spacing tools.
+- Bundled docs lookup does not mutate anything.
+- `get_selected_nodes`, `get_glyph_paths`, and `review_collinear_handles` are read-only.
+
+## Safe prompt template
+
+```text
+Use the glyphs-mcp-outlines-docs skill.
+
+Task: Inspect my current selected nodes and propose the safest next step.
+
+Rules:
+- Read current font, master, glyph, layer, and selection first.
+- Prefer dedicated outline tools before execute_code.
+- Use docs_search and docs_get only for the specific Glyphs API detail you need.
+- Do not mutate until you show exact targets and I approve.
+- After any mutation, re-read the affected glyph/layer and report changed, skipped, and unresolved items.
+```
+
+## Related reference
+
+- [Command set](../reference/command-set.mdx)
+- [Safety model](../concepts/safety-model.mdx)

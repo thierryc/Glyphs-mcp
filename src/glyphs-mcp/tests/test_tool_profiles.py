@@ -60,3 +60,24 @@ class ToolProfilesTests(unittest.TestCase):
         all_names = {"a", "b", "delete_glyph", "ExportDesignspaceAndUFO"}
         enabled = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_FULL, all_names)
         self.assertEqual(enabled, all_names)
+
+    def test_italic_tools_are_paths_and_editing_only(self) -> None:
+        italic_tools = {
+            "review_master_stem_metrics",
+            "set_master_stem_metrics",
+            "review_italic_first_pass",
+            "apply_italic_first_pass",
+        }
+        universe = set(tool_profiles.CORE_READONLY_TOOLS) | set(tool_profiles.EXEC_TOOLS) | italic_tools
+
+        readonly = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_CORE_READONLY, universe)
+        kerning = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_KERNING, universe)
+        spacing = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_SPACING, universe)
+        paths = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_PATHS, universe)
+        editing = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDITING, universe)
+
+        self.assertTrue(italic_tools.isdisjoint(readonly))
+        self.assertTrue(italic_tools.isdisjoint(kerning))
+        self.assertTrue(italic_tools.isdisjoint(spacing))
+        self.assertTrue(italic_tools.issubset(paths))
+        self.assertTrue(italic_tools.issubset(editing))

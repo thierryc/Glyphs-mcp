@@ -3,181 +3,153 @@ title: Command set
 description: The MCP tools exposed by the Glyphs MCP server.
 ---
 
-This is the tool surface exposed by the server shipped in this repo (FastMCP `version="1.0.22"`).
+This is the canonical tool reference for the server shipped in this repo. The site navbar links to the current release/version; avoid copying the full command table into README or promotional pages.
 
-Note: the server can be configured with a **tool profile** (in **Edit → Glyphs MCP Server Status…**) that hides tools you don't need for a given workflow. When a profile is active, `tools/list` will return a subset of the full tool surface. For a token-aware explanation and a “which profile should I pick?” guide, see [Settings & tool profiles](../getting-started/start-server.mdx#settings-tool-profiles).
+The active tool list can be smaller than this page when a **Tool Profile** is selected in **Edit -> Glyphs MCP Server Status...**. Reconnect your MCP client after changing profiles so it fetches the current `tools/list`.
 
-## Most used tools (start here)
+## Most used tools
 
-- `list_open_fonts`: pick your `font_index` quickly.
-- `get_font_masters`: find `master_id` and basic master metadata.
-- `review_spacing` / `apply_spacing`: spacing workflow (review → dry run → confirm).
-- `generate_kerning_tab`: open a relevance-based worklist proof tab.
-- `review_kerning_bumper`: collision/near-miss audit (no mutation).
-- `review_compensated_tuning`: preview compensated tuning for one glyph (no mutation).
+- `list_open_fonts`: list open fonts and pick a `font_index`.
+- `get_font_masters`: find master IDs.
+- `get_selected_font_and_master`: confirm current font, master, and selection.
+- `review_spacing` / `apply_spacing`: review, dry-run, and apply spacing changes.
+- `generate_kerning_tab`: open a kerning proof/worklist tab.
+- `review_kerning_bumper` / `apply_kerning_bumper`: audit and apply conservative collision fixes.
+- `review_italic_first_pass` / `apply_italic_first_pass`: preview and apply a guarded roman-to-italic first pass.
+- `docs_search` / `docs_get`: fetch focused Glyphs docs on demand.
 
-## Tools by category
+## Discovery and inspection
 
-### Discovery
+Glyph and layer inspection responses may include Glyphs show links:
 
-Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
-`showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
-`showMarkdown` uses a local `http://127.0.0.1:9680/glyphs-show/` bridge URL so
-LLM clients that block custom URL schemes can still render a clickable link; the
-bridge redirects to Glyphs. Unsaved fonts return `showUrlUnavailableReason`
-instead.
+- `showUrl`: native `glyphsapp://show/` URL.
+- `showHttpUrl`: local bridge URL.
+- `showMarkdown`: Markdown link form suitable for agent responses.
+- `showUrlUnavailableReason`: returned when an unsaved font cannot produce a stable link.
 
 | Tool | Description |
-|------|-------------|
-| `list_open_fonts` | List all open fonts and basic metadata. |
-| `get_font_glyphs` | Return glyph list and key attributes for a font, including clickable Glyphs show links when available. |
-| `get_font_masters` | Detailed master information for a font. |
-| `get_font_instances` | List instances and their interpolation data. |
-| `get_glyph_details` | Full glyph data including layers, paths, components, and Glyphs show links. |
-| `list_style_sets` | List stylistic-set features (`ss01`-`ss20`) with source/replacement glyphs and a group-level Glyphs show link for alternates. |
+| --- | --- |
+| `list_open_fonts` | List open fonts and basic metadata. |
+| `get_font_glyphs` | Return glyph list and key attributes for a font, including show links when available. |
+| `get_font_masters` | Return detailed master information. |
+| `get_font_instances` | List instances and interpolation data. |
+| `get_glyph_details` | Return glyph details, layers, paths, components, and show links. |
+| `list_style_sets` | List `ss01`-`ss20` features, source/replacement glyphs, and group links. |
 | `get_glyph_components` | Inspect components used in a glyph. |
-| `get_selected_glyphs` | Info about glyphs currently selected in UI, including Glyphs show links. |
-| `get_selected_font_and_master` | Current font + master and selection snapshot, including Glyphs show links for selected glyph layers. |
-| `get_selected_nodes` | Detailed selected nodes with per-master mapping for edits, plus links for the containing glyph/layer. |
-| `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing, including a Glyphs show link for the layer. |
-| `review_collinear_handles` | Review a single path for curve nodes that should be smooth based on handle collinearity (no mutation). |
+| `get_selected_glyphs` | Inspect glyphs currently selected in the UI. |
+| `get_selected_font_and_master` | Inspect current font, master, and selection snapshot. |
+| `get_selected_nodes` | Inspect selected nodes with per-master mapping for edits. |
+| `get_glyph_paths` | Export paths as JSON suitable for review or controlled editing. |
+| `review_collinear_handles` | Review curve nodes that should be smooth based on handle collinearity. |
 
-### Kerning
-
-| Tool | Description |
-|------|-------------|
-| `get_font_kerning` | All kerning pairs for a given master. |
-| `generate_kerning_tab` | Generate a kerning review proof tab (missing relevant pairs + outliers) and open it. |
-| `review_kerning_bumper` | Review kerning collisions / near-misses and compute deterministic “bumper” suggestions (no mutation). |
-| `apply_kerning_bumper` | Apply “bumper” suggestions as glyph–glyph kerning exceptions (supports `dry_run`; requires `confirm=true` to mutate). |
-| `set_kerning_pair` | Set or remove a kerning value. |
-| `add_corner_to_all_masters` | Add a `_corner.*` corner hint at selected nodes (and intersection handles) across all masters. |
-
-### Spacing
+## Kerning
 
 | Tool | Description |
-|------|-------------|
-| `review_spacing` | Review spacing and suggest sidebearings/width (area-based; no mutation). |
-| `apply_spacing` | Apply spacing suggestions (supports `dry_run`; requires `confirm=true` to mutate). |
-| `set_spacing_params` | Set spacing parameters as font/master custom parameters (no auto-save). |
-| `set_spacing_guides` | Add or clear glyph-level guides visualizing the spacing measurement band (no auto-save). |
+| --- | --- |
+| `get_font_kerning` | Return kerning pairs for a master. |
+| `generate_kerning_tab` | Generate and open a kerning review proof tab. |
+| `review_kerning_bumper` | Measure collisions or near-misses and compute deterministic bumper suggestions. |
+| `apply_kerning_bumper` | Apply bumper suggestions as glyph-glyph exceptions; supports `dry_run` and requires `confirm=true` to mutate. |
+| `set_kerning_pair` | Set or remove a specific kerning pair. |
 
-### Compensated tuning
-
-These tools help you generate and apply compensated tuning transforms across two compatible masters.
-They are for compensated scaling, not for single-master lighten/darken edits.
-See also: [Compensated tuning tools](../compensated-tuning-tools.md).
+## Spacing
 
 | Tool | Description |
-|------|-------------|
-| `measure_stem_ratio` | Measure the stem ratio `b` between two masters (ref/base) for compensated tuning (no mutation). |
-| `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph from a base master plus a different compatible reference master, and return `set_glyph_paths`-compatible JSON (no mutation). |
-| `apply_compensated_tuning` | Apply the same two-master compensated scaling transform across glyphs (supports `dry_run`; requires `confirm=true` to mutate; can back up layers). |
+| --- | --- |
+| `review_spacing` | Review spacing and suggest sidebearing/width changes without mutation. |
+| `apply_spacing` | Apply spacing suggestions; supports `dry_run` and requires `confirm=true` to mutate. |
+| `set_spacing_params` | Set spacing parameters as font/master custom parameters; no auto-save. |
+| `set_spacing_guides` | Add or clear glyph-level guides visualizing the spacing measurement model; no auto-save. |
 
-### Editing
+## Compensated tuning
 
 | Tool | Description |
-|------|-------------|
-| `create_glyph` | Add a new glyph to the font. |
-| `delete_glyph` | Remove a glyph from the font. |
-| `update_glyph_properties` | Change unicode, category, export flags, etc. |
+| --- | --- |
+| `review_master_stem_metrics` | Review master stem metrics required by Cursivy and related filters. |
+| `set_master_stem_metrics` | Create or update master stem metrics; supports `dry_run` and requires `confirm=true` to mutate. |
+| `measure_stem_ratio` | Measure the stem ratio between two masters for compensated tuning. |
+| `review_compensated_tuning` | Preview compensated-tuned outlines for one glyph without mutation. |
+| `apply_compensated_tuning` | Apply a two-master compensated scaling transform; supports `dry_run`, requires `confirm=true`, and can create backup layers. |
+
+## Editing and outlines
+
+| Tool | Description |
+| --- | --- |
+| `review_italic_first_pass` | Preview a roman-to-italic layer copy and slant workflow without mutation. |
+| `apply_italic_first_pass` | Apply a guarded first-pass italic/oblique workflow; supports `dry_run`, requires `confirm=true`, and can create backup layers. |
+| `create_glyph` | Add a new glyph. |
+| `delete_glyph` | Remove a glyph. |
+| `update_glyph_properties` | Change unicode, category, export flags, metrics keys, groups, or similar glyph properties. |
 | `copy_glyph` | Duplicate outlines or components from one glyph to another. |
-| `update_glyph_metrics` | Adjust width and side-bearings. |
+| `update_glyph_metrics` | Adjust width and sidebearings. |
 | `add_component_to_glyph` | Append a component to a glyph layer. |
 | `add_anchor_to_glyph` | Add an anchor to a glyph layer. |
+| `add_corner_to_all_masters` | Add a `_corner.*` corner hint at selected nodes across all masters. |
 | `set_glyph_paths` | Replace glyph paths from JSON. |
-| `apply_collinear_handles_smooth` | Apply `smooth=True` for collinear-handle curve nodes in a single path (supports `dry_run`; requires `confirm=true` to mutate). |
+| `apply_collinear_handles_smooth` | Set smooth flags for reviewed collinear-handle curve nodes; supports `dry_run` and requires `confirm=true` to mutate. |
 
-### Docs helpers
-
-| Tool | Description |
-|------|-------------|
-| `docs_search` | Search bundled Glyphs SDK/ObjectWrapper docs by title/summary. |
-| `docs_get` | Fetch a bundled docs page by id/path (supports paging via offset/max_chars). |
-| `docs_enable_page_resources` | Register each documentation page as its own MCP resource (optional; can flood `resources/list`). |
-
-### Export / execution
+## Docs helpers
 
 | Tool | Description |
-|------|-------------|
-| `ExportDesignspaceAndUFO` | Export designspace/UFO bundles with structured logs and errors. |
+| --- | --- |
+| `docs_search` | Search bundled Glyphs SDK/ObjectWrapper docs by title and summary. |
+| `docs_get` | Fetch a bundled docs page by id/path, with paging support. |
+| `docs_enable_page_resources` | Register each documentation page as a separate MCP resource; optional and noisy. |
+
+Prefer `docs_search` plus `docs_get` over registering every page as a resource.
+
+## Export and execution
+
+| Tool | Description |
+| --- | --- |
+| `ExportDesignspaceAndUFO` | Export UFO masters and designspace documents with structured logs and errors. |
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |
-| `execute_code_with_context` | Execute Python with injected helper objects. |
-| `save_font` | Save the active font (optionally to a new path). |
+| `execute_code_with_context` | Execute Python with injected helper objects such as font, glyph, and layer. |
+| `save_font` | Save the active font, optionally to a new path. |
 
-Notes for `execute_code*`:
-- Use `capture_output=false` for large loops.
-- Use `max_output_chars` / `max_error_chars` to cap returned output.
-- Use `snippet_only=true` to return a ready-to-paste **Macro Panel** snippet (no execution) when you want manual control.
-- Prefer `execute_code_with_context` for glyph-scoped mutations so the script gets `font`, `glyph`, and `layer`.
-- Large glyph edits should still call `glyph.beginUndo()/endUndo()` or `layer.beginChanges()/endChanges()` inside the script.
-- Glyphs undo is glyph-scoped, so master/global edits are not guaranteed undoable.
+Execution notes:
 
-## Recipes (copy/paste prompts)
+- Prefer dedicated tools when they fit.
+- Prefer `execute_code_with_context` for glyph-scoped scripts.
+- Use `snippet_only=true` when you want a Macro Panel snippet instead of automatic execution.
+- Bound large outputs with `max_output_chars` and `max_error_chars`.
+- Avoid `exit()`, `quit()`, and `sys.exit()`.
+- Large glyph edits should use Glyphs undo/change wrappers inside the script.
 
-### 1) List open fonts + pick `font_index`
+## Safe starter prompts
+
+### Health check
 
 ```text
-List my open fonts.
-Call list_open_fonts and tell me which font_index to use next.
+Call list_open_fonts and tell me how many fonts are open.
+If you see an error, quote it verbatim.
 ```
 
-### 2) Generate a kerning worklist proof tab
+### Spacing review
 
 ```text
-Open a kerning worklist proof tab for my current font/master.
-Call generate_kerning_tab with {"font_index":0,"rendering":"hybrid","relevant_limit":2000,"missing_limit":800,"audit_limit":200,"per_line":12}
-Then summarize what the sections mean and what to kern first (class-first).
+Review spacing for my current selection.
+Rules: read first, do not auto-save, and do not mutate without a dry run.
+
+1. Call review_spacing with {"font_index":0}
+2. Call apply_spacing with {"font_index":0,"dry_run":true,"clamp":{"maxDeltaLSB":80,"maxDeltaRSB":80,"minLSB":-50,"minRSB":-50}}
+3. Stop and wait for approval before using confirm=true.
 ```
 
-### 3) Review kerning collisions (no mutation)
+### Kerning collision review
 
 ```text
-Review kerning collisions/near-misses in my current font/master.
+Review kerning collisions or near-misses in my current font/master.
 Rules: do not mutate anything.
 
 Call review_kerning_bumper with {"font_index":0,"min_gap":5,"relevant_limit":2000,"include_existing":true,"scan_mode":"two_pass","dense_step":10,"bands":8,"result_limit":200}
-Then list the 20 worst collisions and what to do next.
+Summarize the 20 worst findings and likely next steps.
 ```
 
-### 4) Review spacing + dry run apply
+### Focused docs lookup
 
 ```text
-Review spacing for my current selection, then propose conservative changes.
-Rules: never auto-save; never mutate without a dry run first.
-
-1) Call review_spacing with {"font_index":0}
-2) Call apply_spacing with {"font_index":0,"dry_run":true,"clamp":{"maxDeltaLSB":80,"maxDeltaRSB":80,"minLSB":-50,"minRSB":-50}}
-3) Wait for me to reply “apply” before calling apply_spacing again with confirm=true.
+Search the bundled Glyphs docs for "GSLayer bounds".
+Call docs_search first, then docs_get for the best match.
+Summarize only the details needed for this task.
 ```
-
-### 5) Review/apply smooth flags for a single path (dry run → confirm)
-
-```text
-I want to mark curve nodes as smooth when their adjacent handles are nearly collinear.
-Rules: only operate on the one path I specify; do not mutate without a dry run first.
-
-1) Call review_collinear_handles with {"font_index":0,"glyph_name":"A","master_id":"m01","path_index":0,"threshold_deg":3.0,"min_handle_len":5.0}
-2) Call apply_collinear_handles_smooth with {"font_index":0,"glyph_name":"A","master_id":"m01","path_index":0,"threshold_deg":3.0,"min_handle_len":5.0,"dry_run":true}
-3) Wait for me to reply “apply” before calling apply_collinear_handles_smooth again with confirm=true.
-```
-
-### 6) Search bundled docs (`docs_search` → `docs_get`)
-
-```text
-Search the bundled Glyphs docs for “GSLayer bounds”.
-1) Call docs_search with {"query":"GSLayer bounds"}
-2) Pick the best match and call docs_get for that page.
-3) Summarize the key parts I need.
-```
-
-### 7) Get a Macro Panel snippet instead of executing
-
-```text
-Write a Python Macro Panel snippet to do X, but do not run it automatically.
-Return a snippet I can paste into Glyphs → Window → Macro Panel.
-
-Call execute_code with {"snippet_only":true,"code":"...your python here..."}.
-```
-
-<!-- (tables above replace the old flat list) -->

@@ -1,0 +1,45 @@
+---
+title: Export designspace and UFO
+description: Export UFO masters and designspace documents from the local Glyphs MCP server.
+---
+
+Use this workflow when you want a coding agent to export UFO masters and a designspace document from the font open in Glyphs, without switching to manual scripting.
+
+The export tool is useful for font engineering handoff, interpolation checks, regression tests, or downstream build systems that expect UFO/designspace input.
+
+## When to use it
+
+- You need UFO masters and a designspace from the current Glyphs font.
+- You want structured export logs and actionable errors.
+- You want an agent to run the export and report paths back to you.
+- You need a repeatable bridge from Glyphs to external font build tools.
+
+## What changes
+
+`ExportDesignspaceAndUFO` writes exported files to disk at the requested or generated output location. It returns absolute paths and a structured log so the agent can report what was produced.
+
+The tool can surface contextual diagnostics when export fails, including error type, traceback, options, and font context.
+
+## What does not change
+
+- Glyphs outlines, metrics, kerning, components, and anchors are not edited by the export.
+- The open `.glyphs` source is not auto-saved.
+- Agent skills are not installed or modified by export.
+
+## Safe prompt template
+
+```text
+Task: Export UFO masters and a designspace from my active Glyphs font.
+
+Rules:
+- Start by calling list_open_fonts and get_font_masters.
+- Confirm the font_index and intended output location before exporting.
+- Call ExportDesignspaceAndUFO.
+- Report the generated file paths, warnings, and any structured error fields.
+- Do not call save_font unless I explicitly ask.
+```
+
+## Related reference
+
+- [Command set](../reference/command-set.mdx)
+- [Troubleshooting](../getting-started/troubleshooting.mdx)

@@ -14,6 +14,20 @@ The intent is to make spacing more systematic and repeatable, while keeping you 
 
 ---
 
+## When to use it
+
+Use the spacing tools when you want to:
+
+- review spacing across selected glyphs or named glyph sets,
+- compare sidebearing suggestions across masters,
+- keep spacing changes conservative with clamps,
+- configure repeatable spacing parameters,
+- visualize the measurement model with guides.
+
+Spacing tools are review aids and controlled apply tools. They do not replace visual proofing in words and text strings.
+
+---
+
 ## What the tools change (and what they don’t)
 
 ### Changes
@@ -481,9 +495,15 @@ Apply:
 
 ---
 
-## Prompt templates (copy/paste)
+## Related reference
 
-> Note: tool name prefixes vary by client. If your tools aren’t named `glyphs-app-mcp__*`, replace that prefix with whatever your MCP client shows.
+- [Command set](./reference/command-set.mdx)
+- [Safety model](./concepts/safety-model.mdx)
+- [Settings](./reference/settings.mdx)
+
+---
+
+## Prompt templates (copy/paste)
 
 ### HTspacer-style spacing pass (review → dry-run → apply)
 
@@ -497,7 +517,7 @@ Rules:
 
 Task: Review and (optionally) apply spacing suggestions to improve rhythm and consistency.
 
-1) Call glyphs-app-mcp__review_spacing:
+1) Call review_spacing:
 {"font_index":0}
 
 2) Summarize:
@@ -505,11 +525,11 @@ Task: Review and (optionally) apply spacing suggestions to improve rhythm and co
 - Skipped layers grouped by reason (metrics keys, low coverage, etc.)
 - Any warnings that suggest a bad measurement band / reference glyph
 
-3) Call glyphs-app-mcp__apply_spacing (dry run with a conservative clamp):
+3) Call apply_spacing (dry run with a conservative clamp):
 {"font_index":0,"dry_run":true,"clamp":{"maxDeltaLSB":80,"maxDeltaRSB":80,"minLSB":-50,"minRSB":-50}}
 
 4) If I say “apply”, call apply_spacing again with confirm=true using the same clamp.
-5) If I say “save”, call glyphs-app-mcp__save_font.
+5) If I say “save”, call save_font.
 ```
 
 ### Tabular figures spacing (fixed width)
@@ -519,10 +539,10 @@ I want tabular figures to keep a fixed width by distributing width changes evenl
 
 First, select your figure glyphs in Glyphs (Font view), then:
 
-1) Call glyphs-app-mcp__review_spacing:
+1) Call review_spacing:
 {"font_index":0,"defaults":{"tabularMode":true,"tabularWidth":600,"referenceGlyph":"zero"}}
 
-2) Call glyphs-app-mcp__apply_spacing (dry run):
+2) Call apply_spacing (dry run):
 {"font_index":0,"dry_run":true,"defaults":{"tabularMode":true,"tabularWidth":600,"referenceGlyph":"zero"},"clamp":{"maxDeltaLSB":60,"maxDeltaRSB":60,"minLSB":-50,"minRSB":-50}}
 
 3) If I approve, call apply_spacing again with confirm=true using the same args.
@@ -537,7 +557,7 @@ Paste this into your LLM/client as a single prompt. It is designed to be safe, p
 
 **Task:** Add spacing-model guides so I can visually confirm what the spacing engine is measuring (band, zone edges, depth clamp, and measured-vs-target averages) in the current master, then tell me what to look for.
 
-1) Call `glyphs-app-mcp__set_spacing_guides` with:
+1) Call `set_spacing_guides` with:
 ```json
 {
   "font_index": 0,

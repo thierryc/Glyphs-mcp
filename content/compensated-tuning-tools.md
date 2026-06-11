@@ -205,6 +205,23 @@ After applying, consider doing a visual proof pass in Glyphs and optionally call
 
 ---
 
+## Safe prompt template
+
+```text
+Task: Preview a compensated tuning transform before applying it.
+
+Rules:
+- Read open fonts and masters first.
+- Confirm base_master_id, ref_master_id, output_master_id, glyph_names, sx, sy, and keep_stroke before applying anything.
+- Do not use the same master as both base and reference unless I explicitly ask for a neutral baseline.
+- Run review_compensated_tuning on one glyph first.
+- Run apply_compensated_tuning with dry_run=true before mutation.
+- Wait for me to reply exactly "apply" before using confirm=true.
+- Never auto-save.
+```
+
+---
+
 ## Common mistakes
 
 - **Using the same master for both `base_master_id` and `ref_master_id`**

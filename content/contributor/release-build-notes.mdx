@@ -1,0 +1,31 @@
+---
+title: Release and build notes
+description: Contributor notes for future release/build documentation cleanup.
+---
+
+This page is a placeholder for Phase 2 README cleanup. Keep operational release details here or in a focused contributor page instead of expanding the public README.
+
+## Current rule
+
+Do not duplicate release flow, command reference, or long installer notes across public pages. The canonical docs site should own user-facing documentation; the README should remain a gateway to docs, releases, and source.
+
+## Future cleanup targets
+
+- Move long release-package instructions out of README when Phase 2 starts.
+- Keep version-sensitive release steps close to the scripts they describe.
+- Link public users to the latest GitHub release instead of copying release asset URLs in multiple places.
+
+## Verification
+
+Before publishing documentation updates:
+
+```bash
+cd website
+npm run build
+```
+
+Then check that public docs links still point to:
+
+```text
+https://thierryc.github.io/Glyphs-mcp/
+```

@@ -11,6 +11,7 @@ import styles from './index.module.css';
 
 export default function Home(): React.JSX.Element {
   const {siteConfig} = useDocusaurusContext();
+  const version = siteConfig.customFields?.gmcpVersion as string | undefined;
 
   return (
     <Layout title={siteConfig.title} description={siteConfig.tagline}>
@@ -18,8 +19,11 @@ export default function Home(): React.JSX.Element {
         <div className={styles.heroInner}>
           <h1 className="hero__title">Glyphs MCP</h1>
           <p className={styles.tagline}>
-            A Model Context Protocol server for Glyphs that exposes font-specific tools to AI and
-            LLM agents.
+            Canonical documentation for the Glyphs 3 plug-in that exposes safe, font-specific
+            Model Context Protocol tools to AI clients.
+          </p>
+          <p className={styles.endpoint}>
+            Local endpoint: <code>http://127.0.0.1:9680/mcp/</code>
           </p>
           <div className={styles.buttons}>
             <Link
@@ -27,6 +31,12 @@ export default function Home(): React.JSX.Element {
               to="/docs/getting-started/installation"
             >
               Get started
+            </Link>
+            <Link
+              className="button button--secondary button--lg"
+              href="https://github.com/thierryc/Glyphs-mcp/releases/latest"
+            >
+              Latest release{version && version !== 'dev' ? ` v${version}` : ''}
             </Link>
             <Link
               className="button button--secondary button--lg"
@@ -55,27 +65,29 @@ export default function Home(): React.JSX.Element {
         <section className={styles.section}>
           <div className="container">
             <div className={styles.quickstart}>
-              <h2>Quickstart</h2>
+              <h2>First successful tool call</h2>
               <ol>
                 <li>
-                  Install the plug-in with the guided installer: <code>python3 install.py</code>
+                  Install the plug-in and dependencies: <code>python3 install.py</code>
                 </li>
                 <li>
-                  In Glyphs, start the server: <strong>Edit → Start Glyphs MCP Server</strong>
+                  In Glyphs, start the server: <strong>Edit -&gt; Start Glyphs MCP Server</strong>
                 </li>
                 <li>
                   Connect your client to <code>http://127.0.0.1:9680/mcp/</code>
                 </li>
+                <li>
+                  Ask the client to call <code>list_open_fonts</code>.
+                </li>
               </ol>
 
               <CodeBlock language="bash">{`python3 install.py
-# In Glyphs: Edit → Start Glyphs MCP Server
+# In Glyphs: Edit -> Start Glyphs MCP Server
 # Connect: http://127.0.0.1:9680/mcp/`}</CodeBlock>
 
               <p>
-                The automatic installer covers Codex App, Codex CLI, Claude App, and Claude CLI.
-                See{' '}
-                <Link to="/docs/getting-started/connect-client">Connect a client</Link>.
+                Continue with <Link to="/docs/tutorial/first-session">First session</Link> or
+                jump to <Link to="/docs/reference/command-set">Command set</Link>.
               </p>
             </div>
           </div>

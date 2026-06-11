@@ -231,3 +231,6 @@ glyphs-build-env/
 !.claude/skills
 
 node_modules
+
+# Local scratch workspace
+_crea/

@@ -139,6 +139,24 @@ Core rules:
 - re-read affected glyph state after mutations
 - never auto-save the font
 
+### 5. `glyphs-mcp-italic-first-pass`
+
+Use when the task is about:
+
+- creating a first-pass italic or oblique from roman glyphs
+- copying all glyphs, selected glyphs, named glyphs, or the current glyph to an italic master
+- checking Cursivy stem prerequisites before slanting
+
+Core rules:
+
+- prefer the Paths / Outlines profile for reviews and Editing for applies
+- read current font/master/selection first
+- run `review_master_stem_metrics` before Cursivy
+- run `review_italic_first_pass` before any apply step
+- always run `apply_italic_first_pass` with `dry_run=true` first
+- only mutate with explicit approval and `confirm=true`
+- never auto-save the font
+
 ## Phase 2 candidates
 
 These should only be added after repeated demand:
@@ -178,6 +196,7 @@ Use these prompts as smoke tests:
 - "Review kerning collisions and only apply approved bumper fixes."
 - "Review spacing for the selected glyphs and do a dry run first."
 - "Inspect selected nodes, edit outlines safely, and look up the relevant Glyphs docs."
+- "Create a first-pass italic for selected glyphs, checking Cursivy stems and doing a dry run first."
 
 ### Negative checks
 

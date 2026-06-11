@@ -1,108 +1,129 @@
 ---
 title: Troubleshooting
-description: Common setup problems and quick checks when a client can’t connect.
+description: Common setup problems and quick checks when a client cannot connect.
 ---
+
+Start with the shortest path that proves where the failure is: Glyphs, local endpoint, or MCP client configuration.
 
 ## Quick checks
 
-1. Restart Glyphs (fresh launch).
-2. Start the server: **Edit → Start Glyphs MCP Server**
-3. Confirm the endpoint: `http://127.0.0.1:9680/mcp/`
-4. Open **Edit → Glyphs MCP Server Status…** and confirm it shows a running state.
-5. Check that the port is listening (macOS):
+1. Relaunch Glyphs.
+2. Choose **Edit -> Start Glyphs MCP Server**.
+3. Open **Edit -> Glyphs MCP Server Status...** and confirm it is running.
+4. Confirm the endpoint is exactly:
 
-```bash
-lsof -iTCP:9680 -sTCP:LISTEN
-```
+   ```text
+   http://127.0.0.1:9680/mcp/
+   ```
 
-Verify the endpoint responds locally:
+5. Check that port 9680 is listening:
 
-```bash
-curl -H 'Accept: application/json' http://127.0.0.1:9680/mcp/
-```
+   ```bash
+   lsof -iTCP:9680 -sTCP:LISTEN
+   ```
 
-## No menu items
+6. Check the local endpoint:
 
-Expected menu items:
-- **Edit → Start Glyphs MCP Server**
-- **Edit → Glyphs MCP Server Status…**
+   ```bash
+   curl -H 'Accept: application/json' http://127.0.0.1:9680/mcp/
+   ```
+
+## No Glyphs menu items
+
+Expected menu items under **Edit**:
+
+- **Start Glyphs MCP Server**
+- **Glyphs MCP Server Status...**
 
 Common causes:
-- The plug-in wasn’t installed into the Glyphs Plugins folder.
-- Glyphs hasn’t been restarted since installing.
+
+- The plug-in was not installed in the Glyphs plug-ins folder.
+- Glyphs has not been restarted since installation.
 
 Fix:
+
 1. Quit Glyphs.
-2. Confirm the plug-in exists in: `~/Library/Application Support/Glyphs 3/Plugins/`
-3. Re-run: `python3 install.py`
-4. Re-open Glyphs.
+2. Confirm `Glyphs MCP.glyphsPlugin` exists in:
 
-## Can't connect
+   ```text
+   ~/Library/Application Support/Glyphs 3/Plugins/
+   ```
 
-Start order often matters:
+3. Rerun `python3 install.py`.
+4. Reopen Glyphs.
 
-1) launch Glyphs  
-2) start the MCP server  
-3) then launch/reload your client  
+## Client cannot connect
 
-Also confirm you’re connecting to the correct endpoint:
+Startup order often matters:
+
+1. Launch Glyphs.
+2. Start the MCP server.
+3. Launch or reload the client.
+
+Then reconnect to:
 
 ```text
 http://127.0.0.1:9680/mcp/
 ```
 
+If you changed the tool profile, restart the server and reload the client so it fetches the current `tools/list`.
+
+## Browser works but client does not
+
+A browser request can return discovery JSON, but MCP clients need a correct Streamable HTTP configuration. Confirm the client is using the endpoint above and not a shortened, redirected, or browser-only URL.
+
+For client-specific setup, see [Connect a client](./connect-client.mdx).
+
 ## Python unsupported
 
-The interactive installer supports Python **3.11–3.13** and blocks **3.14+** until tested.
+The installer supports Python **3.11-3.13**.
 
-Check your current Python:
+Check your Python:
 
 ```bash
 python3 --version
 ```
 
-If you’re on 3.14+, install a supported Python (3.12 is a good default on macOS) and re-run the installer.
+If you are on an unsupported version, install Python 3.12 from python.org and rerun the installer.
 
-## Missing dependencies (ImportError / ModuleNotFoundError)
+## Missing dependencies
 
-If the plug-in starts but tools fail to import, dependencies may not be installed where Glyphs can load them.
+If the plug-in starts but tool calls fail with `ImportError` or `ModuleNotFoundError`, dependencies may not be installed where Glyphs can load them.
 
 Common location:
-- `~/Library/Application Support/Glyphs 3/Scripts/site-packages`
 
-Advanced helpers (run from the repo root):
-- `src/glyphs-mcp/scripts/install_deps_glyphs_python.sh` (uses Glyphs’ Python)
-- `src/glyphs-mcp/scripts/install_deps_external_python.sh` (uses an external Python)
+```text
+~/Library/Application Support/Glyphs 3/Scripts/site-packages
+```
 
-After installing dependencies, restart Glyphs.
+Advanced helper scripts from the repo root:
+
+```bash
+src/glyphs-mcp/scripts/install_deps_glyphs_python.sh
+src/glyphs-mcp/scripts/install_deps_external_python.sh
+```
+
+Restart Glyphs after installing dependencies.
 
 ## Port in use
 
 If another process is already bound to `127.0.0.1:9680`, the server may fail to start.
-Quit the other process or restart Glyphs.
-
-To see what’s listening:
 
 ```bash
 lsof -iTCP:9680 -sTCP:LISTEN
 ```
 
-## Problem: Browser works but client doesn’t
+Quit the other process or restart Glyphs.
 
-If you open `http://127.0.0.1:9680/mcp/` in a browser, you’ll usually see a small discovery JSON response.
-MCP clients connect using Streamable HTTP (SSE), so they still need correct MCP configuration.
+## Diagnostic prompt
 
-See: [How Glyphs MCP works](../concepts/how-glyphs-mcp-works.mdx).
-
-## Copy/paste diagnostic prompt
-
-Use this prompt in your AI client when you need help debugging:
+Paste this into your AI client:
 
 ```text
 Help me debug my Glyphs MCP connection.
 
-1) Try to call list_open_fonts.
-2) Tell me which endpoint you used.
-3) If you see any error, quote it verbatim.
-4) Based on the error, tell me the next 2-3 steps to try.
+1. Try to call list_open_fonts.
+2. Tell me which endpoint you used.
+3. If you see an error, quote it verbatim.
+4. Based on the error, tell me the next 2-3 steps to try.
 ```

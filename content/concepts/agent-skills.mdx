@@ -1,75 +1,53 @@
 ---
-title: Agent skills for Glyphs App
-description: Reusable agent workflows for safe, practical Glyphs MCP tasks.
+title: Agent skills
+description: Reusable workflow guidance for safer Glyphs MCP sessions.
 ---
 
-Glyphs MCP gives an AI client safe, structured access to the Glyphs canvas. Agent skills add the missing layer on top: reusable workflows for real font-editing tasks.
+MCP tools expose what Glyphs MCP can do. Agent skills describe how an agent should use those tools for a specific job.
 
-Think of it this way:
+This matters because type-design work is contextual. The correct action often depends on the current font, master, selection, metrics keys, kerning groups, or selected nodes. Skills encode the repeatable habits that keep those sessions predictable.
 
-- **MCP tools** expose what the plug-in can do
-- **skills** teach an agent how to use those tools well for a specific job
+## Why skills help
 
-That matters in Glyphs because font editing is stateful. A good workflow should inspect the current font and master first, prefer dedicated tools over free-form code, use dry runs before mutations, and avoid auto-saving unless a human explicitly asks for it.
+Skills help agents:
 
-## Why skills help in Glyphs
+- choose the narrowest useful tool profile
+- read context before acting
+- prefer dedicated tools over free-form code
+- use dry runs before mutation
+- avoid auto-saving
+- fetch only relevant bundled docs through `docs_search` and `docs_get`
 
-Glyphs workflows often have a few sharp edges:
+## Current skill bundle
 
-- the same prompt can target the wrong font or master if the agent does not read context first
-- spacing and kerning changes should usually be reviewed before they are applied
-- outline edits should prefer dedicated tools and bounded docs lookups over broad code execution
-- large tool lists can waste tokens in MCP clients unless you pick the right profile first
+| Skill | Use it for |
+| --- | --- |
+| `glyphs-mcp-connect` | Startup checks, endpoint verification, and `list_open_fonts`. |
+| `glyphs-mcp-features` | OpenType features and stylistic-set glyph groups. |
+| `glyphs-mcp-kerning` | Kerning bumper review and approved apply steps. |
+| `glyphs-mcp-spacing` | Spacing review, dry-run, and approved apply steps. |
+| `glyphs-mcp-outlines-docs` | Outline edits, selected nodes, components, anchors, and focused docs lookup. |
+| `glyphs-mcp-italic-first-pass` | Guarded roman-to-italic first-pass copy and slant workflows. |
 
-The bundled Glyphs MCP skills encode those habits so agents reach for safer defaults without repeating the whole procedure every session.
+The skills are intentionally narrow. They are not a second documentation system; they are operating instructions for common agent workflows.
 
-## Available skills
+## Source of truth
 
-This repo currently ships a small curated set of skills for real Glyphs MCP tasks:
+Authored skills live in `skills/`.
 
-| Skill | Use it for | Example prompt |
-| --- | --- | --- |
-| `glyphs-mcp-connect` | Start-up checks, MCP connection, and first health checks | `Use the glyphs-mcp-connect skill to verify my setup and call list_open_fonts.` |
-| `glyphs-mcp-features` | OpenType features and stylistic-set glyph groups with Glyphs links | `Use the glyphs-mcp-features skill to list glyphs by style set with group links.` |
-| `glyphs-mcp-kerning` | Kerning bumper review and approved applies | `Use the glyphs-mcp-kerning skill to review bumper suggestions and do a dry run first.` |
-| `glyphs-mcp-spacing` | Spacing review, sidebearing suggestions, and approved applies | `Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.` |
-| `glyphs-mcp-outlines-docs` | Outline edits, components, anchors, selected nodes, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes, prefer dedicated tools, and fetch only the docs I need.` |
+The repo exposes them to clients through:
 
-These are intentionally narrow. The goal is not to create a single mega-skill for all of Glyphs. The goal is to make the common workflows predictable and safe.
+- `.agents/skills` for Codex
+- `.claude/skills` for Claude Code
 
-## How the bundle is exposed
+The installer can also copy the same skill bundle into global skill directories for Codex and Claude Code.
 
-The authored source of truth lives in `skills/`.
+## When to invoke a skill
 
-For contributors and advanced users, the repo exposes that same skill bundle to both clients through lightweight bridges:
+Name the skill when you want the agent to follow the workflow:
 
-- Codex: `.agents/skills -> ../skills`
-- Claude Code: `.claude/skills -> ../skills`
+```text
+Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.
+```
 
-That keeps the skill content in one place while letting each client discover it through the path it expects.
-
-For end users, the Glyphs MCP installers can also copy the bundled `glyphs-mcp-*` skills into the clients’ global skill directories:
-
-- Codex: `~/.codex/skills/`
-- Claude Code: `~/.claude/skills/`
-
-That means you do not need to open the repo just to use the bundled Glyphs MCP skills.
-
-## Safety-first workflow
-
-The current skill set follows the same high-level operating model:
-
-1. Pick the narrowest useful Glyphs MCP tool profile first.
-2. Read current state before changing anything.
-3. Prefer dedicated tools over free-form code.
-4. Use review or dry-run steps before apply steps.
-5. Never auto-save the font.
-6. Prefer `docs_search` plus `docs_get` instead of broad docs loading.
-
-This keeps the workflows aligned with the Glyphs MCP safety model and with the tool contracts documented elsewhere in the repo.
-
-## Next step
-
-For setup and client-specific usage instructions, go to [Use skills in Codex and Claude Code](../getting-started/use-agent-skills.mdx).
-
-For the repo source, see the [skills directory on GitHub](https://github.com/thierryc/Glyphs-mcp/tree/main/skills).
+Continue with [Use skills](../getting-started/use-agent-skills.mdx) for setup details.

@@ -1,0 +1,39 @@
+---
+title: Local docs development
+description: Run and verify the Glyphs MCP Docusaurus documentation site locally.
+---
+
+The documentation site lives in `website/` and reads authored docs from `content/`.
+
+Current public docs URL:
+
+```text
+https://thierryc.github.io/Glyphs-mcp/
+```
+
+Use that URL in public copy until a shorter custom domain is configured.
+
+## Local server
+
+```bash
+cd website
+npm install
+npm run start
+```
+
+## Production build
+
+```bash
+cd website
+npm run build
+```
+
+The build must pass before publishing docs changes.
+
+## Documentation rules
+
+- Keep full installation, workflow, command reference, settings, resources, and troubleshooting content in this docs site.
+- Keep README and promotional pages short; link here for details.
+- Use `Glyphs MCP`, `Model Context Protocol`, `Glyphs 3 plug-in`, `local MCP server`, and `Streamable HTTP endpoint`.
+- Do not use the future short docs URL in public copy until it is configured.
+- Keep the endpoint exactly: `http://127.0.0.1:9680/mcp/`.

@@ -9,56 +9,56 @@ type FeatureItem = {
 
 const FEATURES: FeatureItem[] = [
   {
-    title: 'Connect from Codex or Claude',
+    title: 'Start from a health check',
     description: (
       <>
-        Direct local setup for Codex App, Codex CLI, Claude App, and Claude CLI, with minimal
-        client configuration.
+        Install the plug-in, start the local server, connect a client, then verify with
+        list_open_fonts before doing font work.
       </>
     )
   },
   {
-    title: 'Tools-first MCP server',
+    title: 'Use tools before code',
     description: (
       <>
-        Purpose-built tools for inspecting fonts, glyphs, masters, kerning, spacing, and more—no
-        brittle UI automation required.
+        Work through named tools for fonts, masters, glyphs, kerning, spacing, outlines, exports,
+        and bundled docs lookup.
       </>
     )
   },
   {
-    title: 'Safe edits (confirm-gated; no auto-save)',
+    title: 'Keep edits controlled',
     description: (
       <>
-        Mutating actions are explicit and confirm-gated, and the plug-in never auto-saves fonts to
-        disk.
+        Read current state first, dry-run where possible, use confirm-gated mutations, and save only
+        when you ask.
       </>
     )
   },
   {
-    title: 'Kerning worklists + collision guard',
+    title: 'Run typographic workflows',
     description: (
       <>
-        Generate relevance-based kerning worklists and detect collisions/near-misses with
-        geometry-based measurements.
+        Follow focused docs for kerning, spacing, compensated tuning, style sets, outlines, and
+        UFO/designspace export.
       </>
     )
   },
   {
-    title: 'Spacing review/apply workflow',
+    title: 'Pick smaller tool profiles',
     description: (
       <>
-        Review spacing suggestions, preview changes with a dry-run, then apply conservatively when
-        you approve.
+        Reduce client context by exposing only the tools needed for read-only, kerning, spacing,
+        outline, or editing work.
       </>
     )
   },
   {
-    title: 'Bundled docs search (docs_search / docs_get)',
+    title: 'Search bundled Glyphs docs',
     description: (
       <>
-        Query the bundled Glyphs ObjectWrapper docs from your agent, on-demand, without flooding the
-        client with thousands of resources.
+        Use docs_search and docs_get for targeted Glyphs API lookup without flooding the MCP client
+        with page resources.
       </>
     )
   }
@@ -69,8 +69,8 @@ export default function HomepageFeatures(): React.ReactElement {
     <section className={styles.features}>
       <div className="container">
         <div className={styles.header}>
-          <h2>Designed for real font work</h2>
-          <p>Fast setup, clean docs, and workflows that keep you in control.</p>
+          <h2>Documentation paths</h2>
+          <p>Start with setup, then move into the workflow or reference page for the task.</p>
         </div>
         <div className={clsx('row', styles.grid)}>
           {FEATURES.map((feature, index) => (

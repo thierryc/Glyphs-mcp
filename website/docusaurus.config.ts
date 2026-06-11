@@ -96,7 +96,8 @@ const config: Config = {
           title: 'Docs',
           items: [
             {label: 'Getting Started', to: '/docs/getting-started/installation'},
-            {label: 'Guides', to: '/docs/kerning-workflow'}
+            {label: 'First Session', to: '/docs/tutorial/first-session'},
+            {label: 'Workflows', to: '/docs/kerning-workflow'}
           ]
         },
         {

@@ -15,6 +15,5 @@ html[data-theme='dark'] {
 }
 
 .markdown img {
-  border-radius: 12px;
+  border-radius: 8px;
 }
-

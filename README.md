@@ -109,6 +109,7 @@ Current repo skills focus on:
 - guarded kerning bumper reviews and applies
 - guarded spacing reviews and applies
 - outlines, components, anchors, and docs lookup workflows
+- guarded roman-to-italic first-pass copy and slant workflows
 
 For the website docs version, see the agent skills pages in the docs site.
 
@@ -121,8 +122,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.22)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.22"`).
+## Command Set (MCP server v1.0.23)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.23"`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
@@ -152,6 +153,10 @@ instead because Glyphs requires an absolute file path.
 | `apply_spacing` | Apply spacing suggestions (supports `dry_run`; requires `confirm=true` to mutate). |
 | `set_spacing_params` | Set spacing parameters as font/master custom parameters (no auto-save). |
 | `set_spacing_guides` | Add or clear glyph-level guides visualizing the spacing measurement band (no auto-save). |
+| `review_master_stem_metrics` | Review master stem metrics required by Cursivy and related filters (no mutation). |
+| `set_master_stem_metrics` | Create or update master stem metrics (supports `dry_run`; requires `confirm=true` to mutate). |
+| `review_italic_first_pass` | Preview a guarded roman-to-italic layer copy and slant workflow (no mutation). |
+| `apply_italic_first_pass` | Apply a first-pass italic/oblique copy and slant workflow (supports `dry_run`; requires `confirm=true` to mutate). |
 | `measure_stem_ratio` | Measure a stem ratio `b` between two masters (ref/base) for compensated tuning (no mutation). |
 | `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph from a base master plus a different compatible reference master (returns `set_glyph_paths`-compatible JSON; no mutation). |
 | `apply_compensated_tuning` | Apply the same two-master compensated scaling transform across glyphs (backs up layers; supports `dry_run`; requires `confirm=true` to mutate). |

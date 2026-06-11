@@ -1,90 +1,58 @@
 ---
 title: Start the server
-description: Start Glyphs MCP inside Glyphs and confirm the local endpoint.
+description: Start Glyphs MCP inside Glyphs and confirm the local Streamable HTTP endpoint.
 ---
 
-## Start the server in Glyphs
+Glyphs MCP runs inside Glyphs. Start it from the app before connecting your AI client.
 
-1. Launch Glyphs.
-2. In the menu bar: **Edit → Start Glyphs MCP Server**
-3. Open **Edit → Glyphs MCP Server Status…** to confirm it’s running.
+## Start in Glyphs
 
-## How to confirm it’s running
-
-In **Glyphs MCP Server Status…**, you should see:
-- A “running” state (or similar)
-- The endpoint URL you can connect to
+1. Launch Glyphs 3.
+2. Choose **Edit -> Start Glyphs MCP Server**.
+3. Open **Edit -> Glyphs MCP Server Status...**.
+4. Confirm the status is running.
 
 ## Endpoint
 
-By default the MCP endpoint is:
+The default local MCP endpoint is:
 
 ```text
 http://127.0.0.1:9680/mcp/
 ```
 
-:::note Browser vs MCP client
-If you open the endpoint in a browser, it returns a small JSON discovery response.
-MCP clients connect using Streamable HTTP (SSE).
-:::
+MCP clients connect with Streamable HTTP. If you open the endpoint in a browser, you may only see a small discovery response; that does not replace client setup.
 
-## Optional: auto-start
+## Startup order
 
-If you enabled auto-start in the status panel, Glyphs will start the MCP server automatically when the app launches.
+If a client cannot connect, use this order:
 
-## Settings & tool profiles (token-aware) {#settings-tool-profiles}
+1. Quit or reload the client.
+2. Relaunch Glyphs.
+3. Start Glyphs MCP from the Edit menu.
+4. Reopen or reconnect the client.
 
-Glyphs MCP settings live in **Edit → Glyphs MCP Server Status…**.
+## Tool profiles
 
-### Where to change settings
+Many MCP clients include tool names and JSON Schemas in model context. Glyphs MCP can expose a smaller `tools/list` through **Tool Profile** in the status panel.
 
-Open **Edit → Glyphs MCP Server Status…**. You’ll typically see:
-- **Status** (running / not running)
-- **Version**
-- **Endpoint**
-- **Docs**
-- **Profile** (tool profile dropdown)
-- **Auto-start server on launch**
-- **Copy Endpoint**
+Use the narrowest profile that fits the task:
 
-### What tool profiles do (and why tokens matter)
+| Profile | Use when |
+| --- | --- |
+| `Core (Read-only)` | You only need inspection and want the smallest tool surface. |
+| `Kerning` | You are doing kerning review or bumper work. |
+| `Spacing` | You are reviewing or applying spacing. |
+| `Kerning + Spacing` | You are switching between those two workflows. |
+| `Paths / Outlines` | You are inspecting paths, selected nodes, smooth flags, stems, or italic first-pass previews. |
+| `Editing` | You need glyph, component, anchor, metric, stem, or italic first-pass edits. |
+| `Full` | You deliberately want the complete surface. |
 
-Many MCP clients include the server’s tool list (and JSON Schemas) in the model’s prompt context.
-Tool profiles don’t change what the plug-in can do — they change what the client *sees* via `tools/list`.
+After changing a profile, restart the server and reconnect the client so it fetches the new tool list.
 
-Smaller `tools/list` → fewer tools + smaller schemas → less prompt “footprint” when tokens are scarce.
-In long sessions, this can reduce context pressure and improve responsiveness.
+## Auto-start
 
-### Which profile should I pick?
+The status panel can enable auto-start on Glyphs launch. Auto-start is useful after your setup is stable. During troubleshooting, start manually so you can see errors clearly.
 
-| Profile | Use when | Notes |
-|---|---|---|
-| `Full` | You want everything. | Largest tool/schema footprint. |
-| `Core (Read-only)` | You want the smallest footprint and inspection-only workflows. | Does **not** expose `execute_code*` or mutation tools. |
-| `Kerning` | You’re doing kerning workflows. | Enables kerning tools (plus core read-only + `execute_code*`). |
-| `Spacing` | You’re doing spacing workflows. | Enables spacing tools (plus core read-only + `execute_code*`). |
-| `Kerning + Spacing` | You’re switching between kerning and spacing. | Combined workflow profile. |
-| `Paths / Outlines` | You’re working with outlines/paths. | Includes path review/apply tools. |
-| `Editing` | You’re creating/updating glyphs, components, anchors, metrics. | Includes editing/mutation tools. |
+## Next step
 
-If you want to *prevent* exposing `execute_code` / `execute_code_with_context`, use **Core (Read-only)**.
-
-### How to apply a profile change
-
-1. Pick a profile in **Edit → Glyphs MCP Server Status… → Profile**.
-2. Restart the server so the next `tools/list` reflects the profile:
-   - Quit and relaunch Glyphs (simplest), then **Edit → Start Glyphs MCP Server**, or
-   - restart the server if your setup provides a stop/start workflow.
-3. Reconnect/reload your MCP client so it re-fetches the tool definitions.
-4. Verify: have your client run `tools/list`, then confirm a tool you expect is present/absent (for example `review_spacing` exists, or `apply_spacing` is absent under **Core (Read-only)**).
-
-### Extra footprint reduction tips
-
-- Prefer `docs_search` + `docs_get` over registering every doc page as its own resource (that’s the default).
-- Avoid `docs_enable_page_resources` unless you truly need per-page resources; it can increase what some clients enumerate.
-
-## Optional: security
-
-If you want extra protection (token auth or origin allowlist), see [Safety model](../concepts/safety-model.mdx).
-
-Next: [Connect a client](./connect-client.mdx).
+Continue to [Connect a client](./connect-client.mdx).

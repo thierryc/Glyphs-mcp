@@ -1,145 +1,90 @@
 ---
 title: Installation
-description: Install the Glyphs MCP plug-in in a few minutes.
+description: Install the Glyphs MCP plug-in and dependencies.
 ---
 
-Glyphs MCP ships as a **Glyphs 3 plug-in** plus a small Python server that exposes MCP tools.
+Glyphs MCP ships as a **Glyphs 3 plug-in** plus a small Python dependency set. Install it first, then start the local MCP server from inside Glyphs.
 
-## Recommended: Installer app
+## Recommended path
 
-The Installer app is the simplest way to install the plug-in and link Glyphs MCP into:
+Use the installer. It can install the plug-in, install dependencies where Glyphs can load them, link supported clients, and optionally install bundled agent skills.
+
+Supported automatic links:
 
 - Codex App
-- Codex CLI (terminal tools or in VS Code)
+- Codex CLI
 - Claude App
-- Claude CLI (terminal tools or in VS Code)
+- Claude CLI
 
-![Glyphs MCP Installer](/img/glyphs-mcp-installer.png)
-
-- Download (DMG): [GlyphsMCPInstaller.dmg](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg)
-- Download (ZIP): [GlyphsMCPInstaller.zip](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip)
-- Latest release: [GitHub releases](https://github.com/thierryc/Glyphs-mcp/releases/latest)
-
-Any MCP client compatible with the MCP protocol can use this server. For now, the automatic installer covers only the apps listed above.
-
-Because Glyphs MCP is a localhost MCP server, manual setup in other clients is usually just the endpoint URL:
-
-```text
-http://127.0.0.1:9680/mcp/
-```
-
-For client-specific config, see [Connect a client](./connect-client.mdx).
-
-## 5-minute install path
-
-1. Run the installer:
-
-   ```bash
-   python3 install.py
-   ```
-
-2. In Glyphs, start the server: **Edit → Start Glyphs MCP Server**.
-3. In your MCP client, connect to `http://127.0.0.1:9680/mcp/`.
-4. Run a read-only check:
-
-   ```text
-   Call list_open_fonts and tell me how many fonts are open.
-   If you see an error, quote it verbatim.
-   ```
-
-## Requirements
-
-- macOS + **Glyphs 3**
-- Python **3.11–3.13** (the installer will guide you)
-
-## Terminal installer
-
-From the repo root:
+Run from the repo root:
 
 ```bash
 python3 install.py
 ```
 
-For automation or reproducible dev setup, the Python installer also supports an explicit non-interactive mode. Example:
+On macOS, you can also double-click `RunInstall.command` in Finder. If Gatekeeper blocks it, right-click it and choose **Open** once.
+
+![Glyphs MCP Installer](/img/glyphs-mcp-installer.png)
+
+## Requirements
+
+- macOS with **Glyphs 3**
+- Python **3.11-3.13**
+- Local access to the repo checkout or a downloaded release package
+
+If `python3` is missing or too old, install Python 3.12 from python.org and rerun the installer.
+
+## What the installer does
+
+- Detects a supported Python environment.
+- Installs Python dependencies for Glyphs.
+- Installs or links `Glyphs MCP.glyphsPlugin` into Glyphs' plug-ins folder.
+- Can link supported local MCP clients.
+- Can copy bundled `glyphs-mcp-*` skills into Codex or Claude Code skill directories.
+- Verifies imports and prints actionable errors when setup fails.
+
+## Downloads
+
+- [Latest release](https://github.com/thierryc/Glyphs-mcp/releases/latest)
+- [Installer DMG](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg)
+- [Installer ZIP](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip)
+
+## Scripted install
+
+For automation or reproducible development setup, use non-interactive mode:
 
 ```bash
 python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --skip-skills --skip-client-guidance
 ```
 
-On macOS, you can also double-click `RunInstall.command` in Finder. It launches the same installer.
-
-If macOS Gatekeeper blocks it, right-click `RunInstall.command` → **Open** once to approve it.
-
-:::tip What the installer does
-- Detects an appropriate Python
-- Installs dependencies in the correct location for Glyphs
-- Installs the plug-in into Glyphs’ plug-ins folder (copy or symlink)
-- Links the supported local apps listed above
-- Can optionally install the bundled Glyphs MCP skills into Codex and Claude CLI
-- Verifies imports and prints actionable errors if something fails
-:::
-
-## Supported Python versions
-
-The interactive installer supports Python **3.11–3.13** and blocks Python **3.14+** until tested.
-
-If you’re not sure what you have installed:
+Add skill installation when needed:
 
 ```bash
-python3 --version
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
 ```
 
-If `python3` is missing or too old, install Python 3.12 from python.org, then rerun the installer.
+## Verify installation
 
-## Where things are installed
+After installation, restart Glyphs. The Edit menu should include:
 
-Typical locations on macOS:
+- **Start Glyphs MCP Server**
+- **Glyphs MCP Server Status...**
 
-- Plug-in: `~/Library/Application Support/Glyphs 3/Plugins/`
-- Dependencies (common case): `~/Library/Application Support/Glyphs 3/Scripts/site-packages`
-
-If you choose an external Python in the installer, dependencies may also live in that Python’s **user site-packages** (installed via `pip --user`). The plug-in is designed to add both locations to `sys.path` so imports work reliably.
+Then continue to [Start the server](./start-server.mdx).
 
 ## Uninstall
 
 1. Quit Glyphs.
-2. Remove the plug-in from: `~/Library/Application Support/Glyphs 3/Plugins/`
+2. Remove `Glyphs MCP.glyphsPlugin` from:
 
-Optional (advanced): remove any Glyphs MCP dependencies installed into:
-- `~/Library/Application Support/Glyphs 3/Scripts/site-packages`
+   ```text
+   ~/Library/Application Support/Glyphs 3/Plugins/
+   ```
 
-:::caution
-Be careful when deleting packages from `Scripts/site-packages` — other Glyphs scripts you use might rely on them.
-:::
+Optional advanced cleanup: remove Glyphs MCP packages from:
 
-## Verify installation
-
-Open Glyphs and confirm you have:
-
-- **Edit → Start Glyphs MCP Server**
-- **Edit → Glyphs MCP Server Status…**
-
-Then run this endpoint check in Terminal:
-
-```bash
-curl -i http://127.0.0.1:9680/mcp/
+```text
+~/Library/Application Support/Glyphs 3/Scripts/site-packages
 ```
 
-Expected: an HTTP response (status code may vary by client handshake), which confirms the local MCP endpoint is reachable.
-
-Finally, verify tool calls from your AI client with the prompts in [Connect a client](./connect-client.mdx).
-
-## Common install failures (quick fixes)
-
-- **`python3: command not found`**
-  - Install Python 3.12 from python.org and retry.
-- **Installer cannot find Glyphs Python**
-  - In Glyphs, install the Python add-on, restart Glyphs, rerun installer.
-- **Client cannot connect but Glyphs menu items exist**
-  - Start/restart the MCP server from Glyphs, then reload your client.
-- **Client tools look outdated**
-  - Disconnect/reconnect the MCP server in your client so it refreshes `tools/list`.
-
-For deeper diagnosis, continue to [Troubleshooting](./troubleshooting.mdx).
-
-Next: [Start the server](./start-server.mdx).
+Be careful in `Scripts/site-packages`; other Glyphs scripts may depend on packages stored there.

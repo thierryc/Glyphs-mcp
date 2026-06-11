@@ -1,6 +1,6 @@
 ---
 name: glyphs-mcp-connect
-description: Use this skill when the task is to connect Codex to the local Glyphs MCP server, verify the endpoint, choose the right tool profile, or run a first health check with `list_open_fonts`.
+description: Use this skill when the task is to connect an MCP client to the local Glyphs MCP server, verify the endpoint, choose the right tool profile, or run a first health check with `list_open_fonts`.
 ---
 
 # Glyphs MCP connect
@@ -9,10 +9,11 @@ Use this skill for local Glyphs MCP startup and connection checks.
 
 ## Core rules
 
-- Use the local Streamable HTTP endpoint: `http://127.0.0.1:9680/mcp/`
-- Prefer a narrower tool profile before connecting so Codex sees fewer tools and schemas.
-- If connection fails, restart Glyphs, start the MCP server, then reload or relaunch Codex.
+- Use the client MCP server settings' Direct connection mode with the local Streamable HTTP endpoint: `http://127.0.0.1:9680/mcp/`
+- Prefer a narrower tool profile before connecting so the client sees fewer tools and schemas.
+- If connection fails, restart Glyphs, start the MCP server, then reload or relaunch the client.
 - Treat `list_open_fonts` as the first health check.
+- Do not use `curl` for normal verification; use it only as a fallback to isolate endpoint reachability when MCP tools are unavailable.
 
 ## Workflow
 
@@ -20,19 +21,15 @@ Use this skill for local Glyphs MCP startup and connection checks.
 2. Recommend the narrowest useful profile first:
    - `Core (Read-only)` for inspection
    - `Kerning`, `Spacing`, `Kerning + Spacing`, `Paths / Outlines`, or `Editing` for focused tasks
-3. Add the server in Codex:
+3. Add the server in the MCP client's server settings using Direct connection mode and URL `http://127.0.0.1:9680/mcp/`.
 
-```bash
-codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
-codex mcp list
-```
-
-4. Verify the connection by calling `list_open_fonts`.
-5. Report:
+4. After adding or changing the MCP server, suggest starting a new conversation so the client loads the Glyphs MCP tool list properly.
+5. Verify the connection by calling `list_open_fonts`.
+6. Report:
    - how many fonts are open
    - `familyName` and `filePath` for each
    - which `font_index` to use next
-6. If the call fails, quote the error verbatim and fall back to startup-order troubleshooting.
+7. If the call fails, quote the error verbatim and fall back to startup-order troubleshooting.
 
 ## Deeper references
 

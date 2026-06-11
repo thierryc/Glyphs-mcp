@@ -3,14 +3,29 @@ title: Resources
 description: Optional MCP resources exposed by the plug-in.
 ---
 
-Resources are optional helpers to improve tool usage (especially code generation), not the primary feature.
+Resources are helper material for agents. They are not the main workflow surface; tools are.
+
+## Registered resources
 
 - Guide: `glyphs://glyphs-mcp/guide`
 - Docs directory listing: `glyphs://glyphs-mcp/docs`
 - Docs index: `glyphs://glyphs-mcp/docs/index.json`
 - Kerning datasets listing: `glyphs://glyphs-mcp/kerning`
-- Andre Fuchs relevant pairs (normalized snapshot): `glyphs://glyphs-mcp/kerning/andre-fuchs/relevant_pairs.v1.json`
+- Andre Fuchs relevant pairs snapshot: `glyphs://glyphs-mcp/kerning/andre-fuchs/relevant_pairs.v1.json`
 
-By default, individual doc pages are not registered as separate resources (to avoid flooding MCP clients). Prefer `docs_search` + `docs_get` (on-demand). If you really want per-page resources, call `docs_enable_page_resources` (or set `GLYPHS_MCP_REGISTER_DOC_PAGES=1`).
+## Bundled docs access
 
-See also: [Settings](./settings.mdx).
+Use:
+
+- `docs_search` to find relevant bundled Glyphs docs.
+- `docs_get` to fetch only the page you need.
+
+By default, individual docs pages are not registered as separate resources because that can flood `resources/list` in some clients.
+
+Only call `docs_enable_page_resources` when you explicitly need per-page resource registration.
+
+## Related docs
+
+- [Command set](./command-set.mdx)
+- [Settings and tool profiles](./settings.mdx)
+- [How Glyphs MCP works](../concepts/how-glyphs-mcp-works.mdx)

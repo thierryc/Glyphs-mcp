@@ -1,19 +1,30 @@
 ---
-title: Settings
-description: Token-aware tool profiles and environment variables for configuring Glyphs MCP.
+title: Settings and tool profiles
+description: Tool profiles and environment variables for configuring Glyphs MCP.
 ---
 
-Glyphs MCP has two main configuration surfaces:
+Glyphs MCP has two configuration surfaces:
 
-1. **In Glyphs:** **Edit → Glyphs MCP Server Status…** (includes **Tool Profile** and **Auto-start**).
-2. **Environment variables:** for security, docs/resource behavior, and debugging.
+- **Glyphs UI**: **Edit -> Glyphs MCP Server Status...**
+- **Environment variables**: optional security, docs, and debugging behavior
 
-## Tool profiles (reduce tool/schema footprint)
+## Tool profiles
 
-Some MCP clients include the server’s `tools/list` output (tool names + JSON Schemas) in the model’s prompt context.
-Selecting a narrower **Tool Profile** reduces what the client sees, which can reduce prompt footprint when tokens matter.
+Tool profiles reduce the tools exposed through `tools/list`. This matters because many MCP clients include tool names and JSON Schemas in model context.
 
-See: [Settings & tool profiles](../getting-started/start-server.mdx#settings-tool-profiles).
+Choose the narrowest profile that fits the task:
+
+| Profile | Use when |
+| --- | --- |
+| `Core (Read-only)` | Inspection only; smallest surface. |
+| `Kerning` | Kerning worklists, bumper review, and kerning apply steps. |
+| `Spacing` | Spacing review/apply and spacing guides. |
+| `Kerning + Spacing` | You need both kerning and spacing workflows. |
+| `Paths / Outlines` | You are inspecting paths, selected nodes, outline smoothness, stems, or italic first-pass previews. |
+| `Editing` | You need glyph, component, anchor, metrics, stem, or italic first-pass mutation tools. |
+| `Full` | You deliberately want the complete server surface. |
+
+After changing profiles, restart the server and reconnect the MCP client.
 
 ## Environment variables
 
@@ -21,29 +32,37 @@ See: [Settings & tool profiles](../getting-started/start-server.mdx#settings-too
 
 Require a static token on every request.
 
-- Header: `Authorization: Bearer <token>`
-- Or: `mcp-auth-token: <token>`
+Accepted headers:
+
+- `Authorization: Bearer <token>`
+- `mcp-auth-token: <token>`
 
 ### `GLYPHS_MCP_ALLOWED_ORIGINS`
 
-Restrict requests by hostname allowlist when an `Origin` header is present (in addition to the defaults `127.0.0.1` and `localhost`).
+Restrict requests by hostname allowlist when an `Origin` header is present, in addition to default local hosts.
 
 ### `GLYPHS_MCP_REGISTER_DOC_PAGES`
 
-Controls documentation resources:
+Controls whether every bundled docs page is registered as its own resource.
 
-- Default: **off** (to avoid flooding clients).
-- Set to `1` to register each doc page as its own resource.
+- Default: off.
+- Set to `1` only when you need per-page resources.
 
-Prefer using `docs_search` + `docs_get` (on-demand) instead of registering all pages.
+Prefer `docs_search` and `docs_get` for normal work.
 
 ### `GLYPHS_MCP_DOCS_URL`
 
-Override the “Open Docs” URL shown in **Glyphs MCP Server Status…**.
+Override the docs URL shown in the Glyphs MCP status panel.
+
+Current public docs URL:
+
+```text
+https://thierryc.github.io/Glyphs-mcp/
+```
 
 ### `GLYPHS_MCP_EXTRA_SITEPACKAGES`
 
-Colon-separated list of additional `site-packages` directories to add to `sys.path` (debugging/import fixes).
+Colon-separated list of additional `site-packages` directories to add to `sys.path`.
 
 Example:
 
@@ -51,3 +70,10 @@ Example:
 export GLYPHS_MCP_EXTRA_SITEPACKAGES="/path/to/site-packages:/another/site-packages"
 ```
 
+Use this only for debugging/import fixes.
+
+## Related docs
+
+- [Start the server](../getting-started/start-server.mdx)
+- [Safety model](../concepts/safety-model.mdx)
+- [Resources](./resources.mdx)

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs MCP Italic First Pass"
+  short_description: "Create guarded first-pass italic or oblique glyphs."
+  default_prompt: "Use $glyphs-mcp-italic-first-pass to review a roman-to-italic first pass, check stems before Cursivy, dry-run first, and only apply approved changes."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,92 +1,85 @@
 ---
-title: First session (10 minutes)
-description: Install, start the server, connect Codex, and run your first tool call.
+title: First session
+description: Install, start the server, connect a client, and run list_open_fonts.
 ---
 
-This tutorial gets you to a **first successful tool call** quickly, so you can trust your setup before diving into kerning/spacing workflows.
+This path gets you to a first successful, read-only tool call. Once `list_open_fonts` works, the rest of the docs build on the same connection.
 
 ## You will accomplish
 
-- Install the Glyphs MCP plug-in
-- Connect a client (Codex CLI or Claude Code) to the local MCP server
-- Run one tool call (`list_open_fonts`) and interpret the result
+- Install Glyphs MCP.
+- Start the local MCP server in Glyphs.
+- Connect an MCP client.
+- Run `list_open_fonts` and choose a `font_index`.
 
-## Prerequisites
+## Before you start
 
-- macOS + **Glyphs 3**
-- Python **3.11–3.13** (the installer blocks Python 3.14+ until tested)
+- Install Glyphs MCP with [Installation](../getting-started/installation.mdx).
+- Open Glyphs 3.
+- Open at least one font if you want `list_open_fonts` to return font metadata.
 
-## Step 1 — Install
+## Step 1: Start the server
 
-From the repo root:
+In Glyphs:
 
-```bash
-python3 install.py
+```text
+Edit -> Start Glyphs MCP Server
 ```
 
-What you should see:
-- The installer asks you to pick a Python environment (Glyphs’ Python or an external Python).
-- It installs dependencies and places the plug-in in the Glyphs plug-ins folder.
+Then open:
 
-If you hit issues, jump to [Troubleshooting](../getting-started/troubleshooting.mdx).
+```text
+Edit -> Glyphs MCP Server Status...
+```
 
-## Step 2 — Start the server
-
-1. Launch Glyphs
-2. Menu: **Edit → Start Glyphs MCP Server**
-3. Open **Edit → Glyphs MCP Server Status…** and confirm it’s running
-
-Expected endpoint:
+Confirm that the server is running and that the endpoint is:
 
 ```text
 http://127.0.0.1:9680/mcp/
 ```
 
-## Step 3 — Connect a client
+## Step 2: Connect a client
 
-### Option A: Codex CLI
-
-Add the MCP server:
+For Codex:
 
 ```bash
 codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
 codex mcp list
 ```
 
-### Option B: Claude Code (VS Code)
-
-If you have Claude Code’s CLI (`claude`) installed, you can add this MCP server in one line:
+For Claude CLI or Claude Code:
 
 ```bash
 claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
+claude mcp list
 ```
 
-Then, in Claude Code:
+For Claude App and other client-specific notes, see [Connect a client](../getting-started/connect-client.mdx).
 
-1. Reload VS Code.
-2. Run `/mcp` and confirm `glyphs-mcp` is listed.
+## Step 3: Run the first tool call
 
-## Step 4 — First successful tool call (copy/paste prompt)
-
-In your client (Codex or Claude Code), paste this prompt:
+Paste this into your client:
 
 ```text
 Connect to my Glyphs MCP server and run a quick health check.
 
-1) Call the tool that lists open fonts (list_open_fonts).
-2) Tell me:
-   - how many fonts are open
-   - the familyName/filePath for each
-   - which font_index I should use next
+1. Call list_open_fonts.
+2. Tell me how many fonts are open.
+3. For each font, report familyName and filePath when available.
+4. Tell me which font_index I should use next.
 
-If you get any error, quote it verbatim and tell me what to do next.
+If you get an error, quote it verbatim and tell me the next step.
 ```
 
-Note: tool name prefixes can vary by client, but in Codex the tool should be discoverable from the connected MCP server.
+## Expected result
 
-## If it fails, jump here
+The agent should report the open fonts and a `font_index` value, usually `0` for the first open font. If no fonts are open, Glyphs MCP can still be connected successfully, but font-specific workflows need an open font.
 
-- [I don’t see the menu items](../getting-started/troubleshooting.mdx#no-menu-items)
-- [Can’t connect](../getting-started/troubleshooting.mdx#cant-connect)
-- [Python unsupported (3.14+)](../getting-started/troubleshooting.mdx#python-unsupported)
-- [Port 9680 already in use](../getting-started/troubleshooting.mdx#port-in-use)
+## If it fails
+
+Start with [Troubleshooting](../getting-started/troubleshooting.mdx), especially:
+
+- no Glyphs menu items
+- client cannot connect
+- port 9680 in use
+- browser endpoint works but the MCP client does not

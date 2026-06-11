@@ -91,20 +91,19 @@ def update_readme(readme_path: Path, version: str) -> None:
         readme_path.write_text(text, encoding="utf-8")
 
 
-def update_command_set_mdx(path: Path, version: str) -> None:
+def update_command_set_mdx(path: Path, version: str) -> bool:
     text = path.read_text(encoding="utf-8")
     original = text
 
     if not _FAST_MCP_VERSION_RE.search(text):
-        raise SystemExit(
-            f"error: could not find FastMCP version mention in {path} (expected: FastMCP `version=\"X.Y.Z\"`)"
-        )
+        return False
     text, n = _FAST_MCP_VERSION_RE.subn(rf"\g<1>{version}\g<3>", text)
     if n < 1:
         raise SystemExit(f"error: expected to update FastMCP version mention in {path}, found none")
 
     if text != original:
         path.write_text(text, encoding="utf-8")
+    return True
 
 
 def update_marketing_version(pbxproj_path: Path, version: str) -> None:
@@ -177,7 +176,7 @@ def main(argv: list[str]) -> int:
         set_plist_key(plugin_manager_plist_path, "CFBundleShortVersionString", version)
         set_plist_key(plugin_manager_plist_path, "CFBundleVersion", version)
     update_readme(readme_path, version)
-    update_command_set_mdx(command_set_path, version)
+    updated_command_set = update_command_set_mdx(command_set_path, version)
     update_marketing_version(pbxproj_path, version)
 
     print("Updated:")
@@ -185,7 +184,10 @@ def main(argv: list[str]) -> int:
     if plugin_manager_plist_path.exists():
         print(f"  - {plugin_manager_plist_path} (CFBundleShortVersionString, CFBundleVersion) -> {version}")
     print(f"  - {readme_path} (installer URLs + Command Set + FastMCP version mention) -> {version}")
-    print(f"  - {command_set_path} (FastMCP version mention) -> {version}")
+    if updated_command_set:
+        print(f"  - {command_set_path} (FastMCP version mention) -> {version}")
+    else:
+        print(f"  - {command_set_path} (no FastMCP version mention; skipped)")
     print(f"  - {pbxproj_path} (MARKETING_VERSION) -> {version}")
     return 0
 
