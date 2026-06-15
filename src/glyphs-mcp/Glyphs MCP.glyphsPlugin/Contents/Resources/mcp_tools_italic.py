@@ -3,6 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 
 import copy
+import math
 
 from GlyphsApp import Glyphs, GSGlyph  # type: ignore[import-not-found]
 
@@ -193,6 +194,130 @@ def _copy_item(item):
         return item
 
 
+def _signature_value(value):
+    if value is None:
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    try:
+        return tuple(_signature_value(item) for item in list(value))
+    except Exception:
+        pass
+    point = []
+    for attr in ("x", "y"):
+        if hasattr(value, attr):
+            point.append(_signature_value(getattr(value, attr)))
+    if point:
+        return tuple(point)
+    return str(value)
+
+
+def _component_signature_from_items(components):
+    signature = []
+    for component in list(components or []):
+        signature.append(
+            {
+                "componentName": str(getattr(component, "componentName", getattr(component, "name", ""))),
+                "componentMasterId": _signature_value(getattr(component, "componentMasterId", None)),
+                "transform": _signature_value(getattr(component, "transform", None)),
+                "position": _signature_value(getattr(component, "position", None)),
+                "scale": _signature_value(getattr(component, "scale", None)),
+                "rotation": _signature_value(getattr(component, "rotation", None)),
+                "slant": _signature_value(getattr(component, "slant", None)),
+            }
+        )
+    return signature
+
+
+def _anchor_signature_from_items(anchors):
+    signature = []
+    for anchor in list(anchors or []):
+        signature.append(
+            {
+                "name": str(getattr(anchor, "name", "")),
+                "position": _signature_value(getattr(anchor, "position", None)),
+            }
+        )
+    return signature
+
+
+def _copied_collection(layer, attr_name):
+    return [_copy_item(item) for item in list(getattr(layer, attr_name, []) or [])]
+
+
+def _component_translation(component):
+    position = getattr(component, "position", None)
+    x_value = _coerce_numeric(getattr(position, "x", None) if position is not None else None)
+    y_value = _coerce_numeric(getattr(position, "y", None) if position is not None else None)
+    if x_value is not None and y_value is not None:
+        return x_value, y_value
+    try:
+        transform = list(getattr(component, "transform", []) or [])
+    except Exception:
+        transform = []
+    if len(transform) >= 6:
+        return _coerce_numeric(transform[4]), _coerce_numeric(transform[5])
+    return None, None
+
+
+def _set_component_x_translation(component, x_value):
+    changed = False
+    position = getattr(component, "position", None)
+    if position is not None and hasattr(position, "x"):
+        try:
+            position.x = float(x_value)
+            try:
+                component.position = position
+            except Exception:
+                pass
+            changed = True
+        except Exception:
+            pass
+
+    try:
+        transform = list(getattr(component, "transform", []) or [])
+    except Exception:
+        transform = []
+    if len(transform) >= 6:
+        transform[4] = float(x_value)
+        try:
+            component.transform = tuple(transform)
+            changed = True
+        except Exception:
+            try:
+                component.transform = transform
+                changed = True
+            except Exception:
+                pass
+    return changed
+
+
+def _adjust_component_positions_for_slant(layer, angle):
+    tangent = math.tan(math.radians(float(angle)))
+    adjusted = 0
+    skipped_baseline = 0
+    unreadable = 0
+    for component in list(getattr(layer, "components", []) or []):
+        old_x, old_y = _component_translation(component)
+        if old_x is None or old_y is None:
+            unreadable += 1
+            continue
+        if old_y == 0:
+            skipped_baseline += 1
+            continue
+        new_x = old_x + tangent * old_y
+        if _set_component_x_translation(component, new_x):
+            adjusted += 1
+        else:
+            unreadable += 1
+    return {
+        "angle": float(angle),
+        "adjustedCount": adjusted,
+        "baselineCount": skipped_baseline,
+        "unreadableCount": unreadable,
+    }
+
+
 def _replace_paths(source_layer, target_layer):
     _clear_layer_paths(target_layer)
     for path in list(getattr(source_layer, "paths", []) or []):
@@ -290,16 +415,114 @@ def _apply_transformations_filter(layer, angle, slant_mode, origin):
     filter_obj = _find_transformations_filter()
     if not filter_obj:
         return {"ok": False, "error": "Glyphs Transformations filter not found"}
+    filter_method = getattr(filter_obj, "filter", None)
+    if not callable(filter_method):
+        return {
+            "ok": False,
+            "error": "Glyphs Transformations filter has no callable filter method",
+            "filterClass": filter_obj.__class__.__name__,
+        }
     args = {
         "Slant": float(angle),
         "SlantCorrection": 1 if str(slant_mode) == "cursivy" else 0,
         "Origin": int(origin),
     }
     try:
-        filter_obj.filter(layer, False, args)
+        filter_method(layer, False, args)
         return {"ok": True, "args": args}
     except Exception as exc:
         return {"ok": False, "error": str(exc), "args": args}
+
+
+def _prepare_path_only_candidate(source_layer, target_layer, options, angle, slant_mode, origin):
+    candidate = _copy_item(target_layer) if target_layer is not None else _copy_item(source_layer)
+    if candidate is None:
+        return {"ok": False, "reason": "candidate_layer_create_failed"}
+
+    if target_layer is None:
+        if not options.get("paths"):
+            _clear_layer_paths(candidate)
+        if not options.get("components"):
+            _set_collection(candidate, "components", [], "setComponents_")
+        if not options.get("anchors"):
+            _set_collection(candidate, "anchors", [])
+
+    _copy_layer_data(source_layer, candidate, options)
+    component_positioning = (
+        _adjust_component_positions_for_slant(candidate, angle)
+        if options.get("components")
+        else {"angle": float(angle), "adjustedCount": 0, "baselineCount": 0, "unreadableCount": 0}
+    )
+
+    preserved_components = _copied_collection(candidate, "components")
+    preserved_component_signature = _component_signature_from_items(preserved_components)
+    preserved_anchors = _copied_collection(candidate, "anchors")
+    preserved_anchor_signature = _anchor_signature_from_items(preserved_anchors)
+
+    if not options.get("paths"):
+        return {
+            "ok": True,
+            "candidateLayer": candidate,
+            "transform": {"ok": True, "skipped": True, "reason": "copy_options_paths_false"},
+            "componentsPreserved": True,
+            "anchorsPreserved": True,
+            "componentPositioning": component_positioning,
+            "componentTransformPolicy": "copy_components_preserve_unskewed",
+        }
+
+    if not _set_collection(candidate, "components", [], "setComponents_"):
+        return {"ok": False, "reason": "component_detach_failed"}
+    if not _set_collection(candidate, "anchors", []):
+        return {"ok": False, "reason": "anchor_detach_failed"}
+
+    transform = _apply_transformations_filter(
+        candidate,
+        angle=angle,
+        slant_mode=slant_mode,
+        origin=origin,
+    )
+    if not transform.get("ok"):
+        return {
+            "ok": False,
+            "reason": "transform_failed",
+            "transform": transform,
+            "componentTransformPolicy": "copy_components_preserve_unskewed",
+        }
+
+    if not _set_collection(candidate, "components", [_copy_item(component) for component in preserved_components], "setComponents_"):
+        return {"ok": False, "reason": "component_restore_failed", "transform": transform}
+    if not _set_collection(candidate, "anchors", [_copy_item(anchor) for anchor in preserved_anchors]):
+        return {"ok": False, "reason": "anchor_restore_failed", "transform": transform}
+
+    restored_component_signature = _component_signature_from_items(list(getattr(candidate, "components", []) or []))
+    if restored_component_signature != preserved_component_signature:
+        return {
+            "ok": False,
+            "reason": "component_preservation_failed",
+            "transform": transform,
+            "before": preserved_component_signature,
+            "after": restored_component_signature,
+        }
+
+    restored_anchor_signature = _anchor_signature_from_items(list(getattr(candidate, "anchors", []) or []))
+    if restored_anchor_signature != preserved_anchor_signature:
+        return {
+            "ok": False,
+            "reason": "anchor_preservation_failed",
+            "transform": transform,
+            "before": preserved_anchor_signature,
+            "after": restored_anchor_signature,
+        }
+
+    return {
+        "ok": True,
+        "candidateLayer": candidate,
+        "transform": transform,
+        "componentsPreserved": True,
+        "anchorsPreserved": True,
+        "componentPositioning": component_positioning,
+        "componentTransformPolicy": "copy_components_preserve_unskewed",
+    }
 
 
 def _effective_slant_mode(slant_mode, stem_policy, stem_review):
@@ -577,17 +800,49 @@ def _apply_italic_first_pass_impl(
                 continue
 
             source_glyph = _glyph_lookup(source_font, name)
-            target_glyph, created = _ensure_target_glyph(source_glyph, target_font, name)
-            if not target_glyph:
-                applied.append({"glyphName": name, "status": "error", "reason": "target_glyph_create_failed"})
+            target_glyph = _glyph_lookup(target_font, name)
+            source_layer = _layer_for_glyph(source_glyph, source_master_id)
+            target_layer = _layer_for_glyph(target_glyph, target_master_id) if target_glyph else None
+            if not source_layer:
+                applied.append({"glyphName": name, "status": "error", "reason": "source_or_target_layer_missing"})
                 error_count += 1
                 continue
-            if created:
-                created_count += 1
 
-            source_layer = _layer_for_glyph(source_glyph, source_master_id)
-            target_layer = _layer_for_glyph(target_glyph, target_master_id)
-            if not source_layer or not target_layer:
+            candidate = _prepare_path_only_candidate(
+                source_layer,
+                target_layer,
+                options,
+                angle=angle,
+                slant_mode=review["effectiveSlantMode"],
+                origin=origin,
+            )
+            if not candidate.get("ok"):
+                applied.append(
+                    {
+                        "glyphName": name,
+                        "status": "error",
+                        "reason": candidate.get("reason", "candidate_prepare_failed"),
+                        "transform": candidate.get("transform"),
+                        "componentTransformPolicy": candidate.get(
+                            "componentTransformPolicy",
+                            "copy_components_preserve_unskewed",
+                        ),
+                    }
+                )
+                error_count += 1
+                continue
+
+            if not target_glyph:
+                target_glyph, created = _ensure_target_glyph(source_glyph, target_font, name)
+                if not target_glyph:
+                    applied.append({"glyphName": name, "status": "error", "reason": "target_glyph_create_failed"})
+                    error_count += 1
+                    continue
+                if created:
+                    created_count += 1
+                target_layer = _layer_for_glyph(target_glyph, target_master_id)
+
+            if not target_layer:
                 applied.append({"glyphName": name, "status": "error", "reason": "source_or_target_layer_missing"})
                 error_count += 1
                 continue
@@ -600,18 +855,18 @@ def _apply_italic_first_pass_impl(
                 if backup:
                     _append_backup_layer(target_glyph, target_layer, target_master_id, backup_layer_name, angle)
                     backup_count += 1
-                _copy_layer_data(source_layer, target_layer, options)
-                transform = _apply_transformations_filter(
-                    target_layer,
-                    angle=angle,
-                    slant_mode=review["effectiveSlantMode"],
-                    origin=origin,
+                _copy_layer_data(candidate["candidateLayer"], target_layer, options)
+                applied.append(
+                    {
+                        "glyphName": name,
+                        "status": "ok",
+                        "action": "applied",
+                        "transform": candidate["transform"],
+                        "componentsPreserved": candidate["componentsPreserved"],
+                        "componentPositioning": candidate["componentPositioning"],
+                        "componentTransformPolicy": candidate["componentTransformPolicy"],
+                    }
                 )
-                if not transform.get("ok"):
-                    applied.append({"glyphName": name, "status": "error", "reason": "transform_failed", "transform": transform})
-                    error_count += 1
-                    continue
-                applied.append({"glyphName": name, "status": "ok", "action": "applied", "transform": transform})
             except Exception as exc:
                 applied.append({"glyphName": name, "status": "error", "reason": str(exc)})
                 error_count += 1

@@ -122,8 +122,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.24)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.24"`).
+## Command Set (MCP server v1.0.25)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.25"`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.

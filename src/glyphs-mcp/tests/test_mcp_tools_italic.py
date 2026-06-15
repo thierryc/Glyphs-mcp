@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import math
 import sys
 import types
 import unittest
@@ -46,11 +47,36 @@ class _FakeNode:
 
 
 class _FakePath:
-    def __init__(self, node_types):
+    def __init__(self, node_types, transformed=False):
         self.nodes = [_FakeNode(t) for t in node_types]
+        self.transformed = transformed
 
     def copy(self):
-        return _FakePath([node.type for node in self.nodes])
+        return _FakePath([node.type for node in self.nodes], transformed=self.transformed)
+
+
+class _FakeComponent:
+    def __init__(self, component_name, transform=None, component_master_id="italic"):
+        self.componentName = component_name
+        self.name = component_name
+        self.componentMasterId = component_master_id
+        self.transform = list(transform or [1, 0, 0, 1, 10, 20])
+        self.position = types.SimpleNamespace(x=self.transform[4], y=self.transform[5])
+        self.scale = types.SimpleNamespace(x=1.0, y=1.0)
+        self.rotation = 0.0
+        self.slant = 0.0
+
+    def copy(self):
+        return _FakeComponent(self.componentName, transform=list(self.transform), component_master_id=self.componentMasterId)
+
+
+class _FakeAnchor:
+    def __init__(self, name, x=100, y=200):
+        self.name = name
+        self.position = types.SimpleNamespace(x=x, y=y)
+
+    def copy(self):
+        return _FakeAnchor(self.name, self.position.x, self.position.y)
 
 
 class _FakeLayer:
@@ -70,8 +96,8 @@ class _FakeLayer:
     def copy(self):
         layer = _FakeLayer(self.width)
         layer.paths = [path.copy() for path in self.paths]
-        layer.components = list(self.components)
-        layer.anchors = list(self.anchors)
+        layer.components = [component.copy() for component in self.components]
+        layer.anchors = [anchor.copy() for anchor in self.anchors]
         layer.leftSideBearing = self.leftSideBearing
         layer.rightSideBearing = self.rightSideBearing
         return layer
@@ -116,11 +142,33 @@ class _FakeGlyphs(dict):
 
 
 class GlyphsFilterTransformations:
-    def __init__(self):
+    def __init__(self, fail=False):
         self.calls = []
+        self.fail = fail
 
     def filter(self, layer, include, args):
-        self.calls.append({"layer": layer, "include": include, "args": dict(args)})
+        self.calls.append(
+            {
+                "layer": layer,
+                "include": include,
+                "args": dict(args),
+                "pathCount": len(layer.paths),
+                "componentCount": len(layer.components),
+                "anchorCount": len(layer.anchors),
+            }
+        )
+        if self.fail:
+            raise RuntimeError("transform failed")
+        for path in layer.paths:
+            path.transformed = True
+        for component in layer.components:
+            component.transform = [2, 0, 1, 2, 999, 999]
+        for anchor in layer.anchors:
+            anchor.position.x = 999
+
+
+class GlyphsFilterTransformationsNoFilter:
+    pass
 
 
 def _make_font(complete_stems=True):
@@ -150,8 +198,9 @@ class McpToolsItalicTests(unittest.TestCase):
                 super().__init__(name, _FakeLayer(), _FakeLayer())
 
         filter_obj = filter_obj or GlyphsFilterTransformations()
+        fonts = font if isinstance(font, list) else [font]
         glyphs_module = types.SimpleNamespace(
-            Glyphs=types.SimpleNamespace(fonts=[font], font=font, filters=[filter_obj]),
+            Glyphs=types.SimpleNamespace(fonts=fonts, font=fonts[0], filters=[filter_obj]),
             GSGlyph=FakeGSGlyph,
             GSMetric=lambda: _FakeStem("", False),
         )
@@ -280,6 +329,128 @@ class McpToolsItalicTests(unittest.TestCase):
         self.assertEqual(filter_obj.calls[0]["args"]["Slant"], 12.0)
         self.assertEqual(filter_obj.calls[0]["args"]["SlantCorrection"], 1)
         self.assertEqual(filter_obj.calls[0]["args"]["Origin"], 3)
+        self.assertTrue(target_layer.paths[0].transformed)
+
+    def test_confirm_copies_live_components_but_skews_only_paths(self) -> None:
+        font = _make_font()
+        source_layer = font.glyphs["b"].layers["roman"]
+        target_layer = font.glyphs["b"].layers["italic"]
+        source_component = _FakeComponent("acute", transform=[1, 0, 0, 1, 35, 40], component_master_id="italic")
+        baseline_component = _FakeComponent("dotaccent", transform=[1, 0, 0, 1, 12, 0], component_master_id="italic")
+        source_anchor = _FakeAnchor("top", 120, 700)
+        source_layer.components = [source_component, baseline_component]
+        source_layer.anchors = [source_anchor]
+        target_layer.components = [_FakeComponent("old", transform=[1, 0, 0, 1, 1, 2])]
+        target_layer.anchors = [_FakeAnchor("old", 1, 2)]
+        module, filter_obj = self._load_module(font)
+
+        payload = module._apply_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="raw",
+            confirm=True,
+        )
+
+        self.assertTrue(payload["ok"])
+        self.assertEqual(filter_obj.calls[0]["pathCount"], 1)
+        self.assertEqual(filter_obj.calls[0]["componentCount"], 0)
+        self.assertEqual(filter_obj.calls[0]["anchorCount"], 0)
+        self.assertTrue(target_layer.paths[0].transformed)
+        self.assertEqual(len(target_layer.components), 2)
+        self.assertIsNot(target_layer.components[0], source_component)
+        expected_x = 35 + math.tan(math.radians(12.0)) * 40
+        self.assertEqual(target_layer.components[0].componentName, "acute")
+        self.assertEqual(target_layer.components[0].componentMasterId, "italic")
+        self.assertAlmostEqual(target_layer.components[0].transform[4], expected_x)
+        self.assertEqual(target_layer.components[0].transform[5], 40)
+        self.assertAlmostEqual(target_layer.components[0].position.x, expected_x)
+        self.assertEqual(target_layer.components[1].componentName, "dotaccent")
+        self.assertEqual(target_layer.components[1].transform, [1, 0, 0, 1, 12, 0])
+        self.assertEqual(len(target_layer.anchors), 1)
+        self.assertIsNot(target_layer.anchors[0], source_anchor)
+        self.assertEqual(target_layer.anchors[0].name, "top")
+        self.assertEqual(target_layer.anchors[0].position.x, 120)
+        self.assertEqual(payload["results"][0]["componentsPreserved"], True)
+        self.assertEqual(payload["results"][0]["componentPositioning"]["adjustedCount"], 1)
+        self.assertEqual(payload["results"][0]["componentPositioning"]["baselineCount"], 1)
+        self.assertEqual(payload["results"][0]["componentTransformPolicy"], "copy_components_preserve_unskewed")
+
+    def test_transform_failure_leaves_existing_target_unchanged(self) -> None:
+        font = _make_font()
+        source_layer = font.glyphs["b"].layers["roman"]
+        target_layer = font.glyphs["b"].layers["italic"]
+        source_layer.components = [_FakeComponent("acute")]
+        target_component = _FakeComponent("existing", transform=[1, 0, 0, 1, 5, 6])
+        target_layer.components = [target_component]
+        original_paths = list(target_layer.paths)
+        original_components = list(target_layer.components)
+        original_width = target_layer.width
+        module, filter_obj = self._load_module(font, filter_obj=GlyphsFilterTransformations(fail=True))
+
+        payload = module._apply_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="raw",
+            confirm=True,
+        )
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["results"][0]["reason"], "transform_failed")
+        self.assertEqual(len(filter_obj.calls), 1)
+        self.assertEqual(target_layer.paths, original_paths)
+        self.assertEqual(target_layer.components, original_components)
+        self.assertEqual(target_layer.width, original_width)
+        self.assertEqual(len(font.glyphs["b"].layers.backups), 0)
+        self.assertEqual(font.glyphs["b"].undo_depth, 0)
+
+    def test_transform_failure_does_not_create_missing_target_glyph(self) -> None:
+        source_font = _make_font()
+        target_font = _make_font()
+        target_font.glyphs = _FakeGlyphs({})
+        target_font.selectedLayers = []
+        module, _filter = self._load_module([source_font, target_font], filter_obj=GlyphsFilterTransformations(fail=True))
+
+        payload = module._apply_italic_first_pass_impl(
+            source_font_index=0,
+            target_font_index=1,
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="raw",
+            confirm=True,
+        )
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["results"][0]["reason"], "transform_failed")
+        self.assertNotIn("b", target_font.glyphs)
+
+    def test_missing_transform_filter_method_fails_without_mutation(self) -> None:
+        font = _make_font()
+        target_layer = font.glyphs["b"].layers["italic"]
+        original_paths = list(target_layer.paths)
+        original_width = target_layer.width
+        module, _filter = self._load_module(font, filter_obj=GlyphsFilterTransformationsNoFilter())
+
+        payload = module._apply_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="raw",
+            confirm=True,
+        )
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["results"][0]["reason"], "transform_failed")
+        self.assertIn("no callable filter method", payload["results"][0]["transform"]["error"])
+        self.assertEqual(target_layer.paths, original_paths)
+        self.assertEqual(target_layer.width, original_width)
+        self.assertEqual(len(font.glyphs["b"].layers.backups), 0)
 
     def test_strict_compatibility_blocks_incompatible_target_layer(self) -> None:
         font = _make_font()

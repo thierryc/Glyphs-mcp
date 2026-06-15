@@ -15,6 +15,8 @@ Use this skill for a guarded roman-to-italic first pass. It accelerates the work
 - Interpret `angle` as a Glyphs source/Transformations angle: positive values lean Latin outlines to the right. In exported OpenType/UFO metadata, the corresponding `post.italicAngle` / `slnt` value is negative (`+12` in Glyphs source convention maps to about `-12` in exported font convention).
 - Before outline work, verify the target italic master's `italicAngle` from `get_font_masters` equals `+angle` within `0.01`; do not use `slantAngle`, which reports the separate `postscriptSlantAngle` custom parameter.
 - If the target master `italicAngle` differs, run `set_master_italic_angle` with `dry_run=true`, show the before/after, and only set it with `confirm=true` after explicit approval.
+- Copy roman paths into the italic master and skew only those copied paths.
+- Copy components as live components, but do not skew component transforms or component outlines; component shapes should resolve from their own italic master layers.
 - Default `compatibility_mode` is `preserve_if_possible`; path compatibility is useful but not required.
 - Before `slant_mode="cursivy"`, run `review_master_stem_metrics` for the target italic master.
 - If Cursivy stems are missing, ask whether to set stems, measure suggestions, use raw slant, or stop.
@@ -50,6 +52,7 @@ Use this skill for a guarded roman-to-italic first pass. It accelerates the work
    - missing stems
    - protected glyph warnings
    - compatibility mode and compatibility issues
+   - live component preservation and any component warnings
    - target glyphs that would be created
 8. If the user approves, call `apply_italic_first_pass` with `dry_run=true`.
 9. After approval of the dry run, call `apply_italic_first_pass` with `confirm=true`.
@@ -76,6 +79,18 @@ Use these defaults unless the user says otherwise:
   "backup": true
 }
 ```
+
+## Component Position Handling
+
+When `copy_options.components=true`, preserve components as live components. Do not decompose them and do not skew their outlines, scale, rotation, or internal transform, because component glyphs are expected to have their own italic master drawings.
+
+However, component placement must follow the same slant geometry as paths. After copying a component, adjust only its x translation according to its y translation:
+
+`new_x = old_x + tan(angle) * old_y`
+
+Use the Glyphs source angle convention from this skill. If `old_y == 0`, leave the x position unchanged.
+
+This keeps baseline components unmoved while shifting components placed above or below the baseline so they align with the slanted path geometry.
 
 ## Manual review reminders
 
