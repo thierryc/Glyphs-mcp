@@ -24,7 +24,9 @@ link_attrs = frozenset([
     # Not standard:
     'dynsrc', 'lowsrc',
     # HTML5 formaction
-    'formaction'
+    'formaction',
+    # XLink as used by HTML5 (including embedded SVG/MathML)
+    'xlink:href',
     ])
 
 # Not in the HTML 4 spec:
@@ -47,7 +49,23 @@ safe_attrs = frozenset([
     'multiple', 'name', 'nohref', 'noshade', 'nowrap', 'prompt', 'readonly',
     'rel', 'rev', 'rows', 'rowspan', 'rules', 'scope', 'selected', 'shape',
     'size', 'span', 'src', 'start', 'summary', 'tabindex', 'target', 'title',
-    'type', 'usemap', 'valign', 'value', 'vspace', 'width'])
+    'type', 'usemap', 'valign', 'value', 'vspace', 'width',
+    # ARIA attributes from https://www.w3.org/TR/wai-aria-1.3/
+    'aria-activedescendant', 'aria-atomic', 'aria-autocomplete',
+    'aria-braillelabel', 'aria-brailleroledescription', 'aria-busy',
+    'aria-checked', 'aria-colcount', 'aria-colindex', 'aria-colindextext',
+    'aria-colspan', 'aria-controls', 'aria-current', 'aria-describedby',
+    'aria-description', 'aria-details', 'aria-disabled', 'aria-dropeffect',
+    'aria-errormessage', 'aria-expanded', 'aria-flowto', 'aria-grabbed',
+    'aria-haspopup', 'aria-hidden', 'aria-invalid', 'aria-keyshortcuts',
+    'aria-label', 'aria-labelledby', 'aria-level', 'aria-live', 'aria-modal',
+    'aria-multiline', 'aria-multiselectable', 'aria-orientation', 'aria-owns',
+    'aria-placeholder', 'aria-posinset', 'aria-pressed', 'aria-readonly',
+    'aria-relevant', 'aria-required', 'aria-roledescription', 'aria-rowcount',
+    'aria-rowindex', 'aria-rowindextext', 'aria-rowspan', 'aria-selected',
+    'aria-setsize', 'aria-sort', 'aria-valuemax', 'aria-valuemin',
+    'aria-valuenow', 'aria-valuetext', 'role',
+    ])
 
 # From http://htmlhelp.com/reference/html40/olist.html
 top_level_tags = frozenset([
@@ -117,7 +135,7 @@ font_style_tags = frozenset([
 frame_tags = frozenset([
     'frameset', 'frame', 'noframes',
     ])
-    
+
 html5_tags = frozenset([
     'article', 'aside', 'audio', 'canvas', 'command', 'datalist',
     'details', 'embed', 'figcaption', 'figure', 'footer', 'header',

@@ -1,9 +1,18 @@
 from __future__ import annotations
 
 import inspect
+import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    Generic,
+    Literal,
+    TypeVar,
+    get_type_hints,
+)
 
 import mcp.types
 import pydantic_core
@@ -11,6 +20,7 @@ from mcp.types import ContentBlock, TextContent, ToolAnnotations
 from mcp.types import Tool as MCPTool
 from pydantic import Field, PydanticSchemaGenerationError
 
+import fastmcp
 from fastmcp.server.dependencies import get_context
 from fastmcp.utilities.components import FastMCPComponent
 from fastmcp.utilities.json_schema import compress_schema
@@ -46,7 +56,7 @@ class _UnserializableType:
 
 
 def default_serializer(data: Any) -> str:
-    return pydantic_core.to_json(data, fallback=str, indent=2).decode()
+    return pydantic_core.to_json(data, fallback=str).decode()
 
 
 class ToolResult:
@@ -122,7 +132,12 @@ class Tool(FastMCPComponent):
         except RuntimeError:
             pass  # No context available
 
-    def to_mcp_tool(self, **overrides: Any) -> MCPTool:
+    def to_mcp_tool(
+        self,
+        *,
+        include_fastmcp_meta: bool | None = None,
+        **overrides: Any,
+    ) -> MCPTool:
         if self.title:
             title = self.title
         elif self.annotations and self.annotations.title:
@@ -137,6 +152,7 @@ class Tool(FastMCPComponent):
             "outputSchema": self.output_schema,
             "annotations": self.annotations,
             "title": title,
+            "_meta": self.get_meta(include_fastmcp_meta=include_fastmcp_meta),
         }
         return MCPTool(**kwargs | overrides)
 
@@ -151,6 +167,7 @@ class Tool(FastMCPComponent):
         exclude_args: list[str] | None = None,
         output_schema: dict[str, Any] | None | NotSetT | Literal[False] = NotSet,
         serializer: Callable[[Any], str] | None = None,
+        meta: dict[str, Any] | None = None,
         enabled: bool | None = None,
     ) -> FunctionTool:
         """Create a Tool from a function."""
@@ -164,6 +181,7 @@ class Tool(FastMCPComponent):
             exclude_args=exclude_args,
             output_schema=output_schema,
             serializer=serializer,
+            meta=meta,
             enabled=enabled,
         )
 
@@ -183,15 +201,18 @@ class Tool(FastMCPComponent):
     def from_tool(
         cls,
         tool: Tool,
-        transform_fn: Callable[..., Any] | None = None,
+        *,
         name: str | None = None,
-        transform_args: dict[str, ArgTransform] | None = None,
-        description: str | None = None,
+        title: str | None | NotSetT = NotSet,
+        description: str | None | NotSetT = NotSet,
         tags: set[str] | None = None,
-        annotations: ToolAnnotations | None = None,
-        output_schema: dict[str, Any] | None | Literal[False] = None,
+        annotations: ToolAnnotations | None | NotSetT = NotSet,
+        output_schema: dict[str, Any] | None | NotSetT | Literal[False] = NotSet,
         serializer: Callable[[Any], str] | None = None,
+        meta: dict[str, Any] | None | NotSetT = NotSet,
+        transform_args: dict[str, ArgTransform] | None = None,
         enabled: bool | None = None,
+        transform_fn: Callable[..., Any] | None = None,
     ) -> TransformedTool:
         from fastmcp.tools.tool_transform import TransformedTool
 
@@ -199,12 +220,14 @@ class Tool(FastMCPComponent):
             tool=tool,
             transform_fn=transform_fn,
             name=name,
+            title=title,
             transform_args=transform_args,
             description=description,
             tags=tags,
             annotations=annotations,
             output_schema=output_schema,
             serializer=serializer,
+            meta=meta,
             enabled=enabled,
         )
 
@@ -224,6 +247,7 @@ class FunctionTool(Tool):
         exclude_args: list[str] | None = None,
         output_schema: dict[str, Any] | None | NotSetT | Literal[False] = NotSet,
         serializer: Callable[[Any], str] | None = None,
+        meta: dict[str, Any] | None = None,
         enabled: bool | None = None,
     ) -> FunctionTool:
         """Create a Tool from a function."""
@@ -234,16 +258,26 @@ class FunctionTool(Tool):
             raise ValueError("You must provide a name for lambda functions")
 
         if isinstance(output_schema, NotSetT):
-            output_schema = parsed_fn.output_schema
+            final_output_schema = parsed_fn.output_schema
         elif output_schema is False:
-            output_schema = None
+            # Handle False as deprecated synonym for None (deprecated in 2.11.4)
+            if fastmcp.settings.deprecation_warnings:
+                warnings.warn(
+                    "Passing output_schema=False is deprecated. Use output_schema=None instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+            final_output_schema = None
+        else:
+            # At this point output_schema is not NotSetT and not False, so it must be dict | None
+            final_output_schema = output_schema
         # Note: explicit schemas (dict) are used as-is without auto-wrapping
 
         # Validate that explicit schemas are object type for structured content
-        if output_schema is not None and isinstance(output_schema, dict):
-            if output_schema.get("type") != "object":
+        if final_output_schema is not None and isinstance(final_output_schema, dict):
+            if final_output_schema.get("type") != "object":
                 raise ValueError(
-                    f'Output schemas must have "type" set to "object" due to MCP spec limitations. Received: {output_schema!r}'
+                    f'Output schemas must have "type" set to "object" due to MCP spec limitations. Received: {final_output_schema!r}'
                 )
 
         return cls(
@@ -252,10 +286,11 @@ class FunctionTool(Tool):
             title=title,
             description=description or parsed_fn.description,
             parameters=parsed_fn.input_schema,
-            output_schema=output_schema,
+            output_schema=final_output_schema,
             annotations=annotations,
             tags=tags or set(),
             serializer=serializer,
+            meta=meta,
             enabled=enabled if enabled is not None else True,
         )
 
@@ -369,7 +404,20 @@ class ParsedFunction:
         input_schema = compress_schema(input_schema, prune_params=prune_params)
 
         output_schema = None
-        output_type = inspect.signature(fn).return_annotation
+        # Get the return annotation from the signature
+        sig = inspect.signature(fn)
+        output_type = sig.return_annotation
+
+        # If the annotation is a string (from __future__ annotations), resolve it
+        if isinstance(output_type, str):
+            try:
+                # Use get_type_hints to resolve the return type
+                # include_extras=True preserves Annotated metadata
+                type_hints = get_type_hints(fn, include_extras=True)
+                output_type = type_hints.get("return", output_type)
+            except Exception:
+                # If resolution fails, keep the string annotation
+                pass
 
         if output_type not in (inspect._empty, None, Any, ...):
             # there are a variety of types that we don't want to attempt to
@@ -397,7 +445,7 @@ class ParsedFunction:
 
             try:
                 type_adapter = get_cached_typeadapter(clean_output_type)
-                base_schema = type_adapter.json_schema()
+                base_schema = type_adapter.json_schema(mode="serialization")
 
                 # Generate schema for wrapped type if it's non-object
                 # because MCP requires that output schemas are objects
@@ -408,7 +456,7 @@ class ParsedFunction:
                     # Use the wrapped result schema directly
                     wrapped_type = _WrappedResult[clean_output_type]
                     wrapped_adapter = get_cached_typeadapter(wrapped_type)
-                    output_schema = wrapped_adapter.json_schema()
+                    output_schema = wrapped_adapter.json_schema(mode="serialization")
                     output_schema["x-fastmcp-wrap-result"] = True
                 else:
                     output_schema = base_schema
@@ -434,6 +482,7 @@ def _convert_to_content(
     _process_as_single_item: bool = False,
 ) -> list[ContentBlock]:
     """Convert a result to a sequence of content objects."""
+
     if result is None:
         return []
 
@@ -467,7 +516,7 @@ def _convert_to_content(
 
         if other_content:
             other_content = _convert_to_content(
-                other_content[0] if len(other_content) == 1 else other_content,
+                other_content,
                 serializer=serializer,
                 _process_as_single_item=True,
             )

@@ -1,17 +1,17 @@
 # encoding: utf-8
 
 from __future__ import division, print_function, unicode_literals
+import json
 import time
 import objc
 import AppKit
 import threading
+import uvicorn
 from GlyphsApp import Glyphs, EDIT_MENU # type: ignore[import-not-found]
 from GlyphsApp.plugins import GeneralPlugin # type: ignore[import-not-found]
 from AppKit import (
     NSAlert,
     NSAlertFirstButtonReturn,
-    NSAlertSecondButtonReturn,
-    NSAlertThirdButtonReturn,
     NSMenuItem,
     NSPanel,
     NSButton,
@@ -27,7 +27,7 @@ from AppKit import (
     NSWindowStyleMaskUtilityWindow,
     NSBackingStoreBuffered,
 )
-from Foundation import NSNumberFormatter, NSTimer, NSURL
+from Foundation import NSNumberFormatter, NSOperationQueue, NSTimer, NSURL
 from starlette.middleware import Middleware
 
 from mcp_tools import mcp
@@ -45,7 +45,13 @@ from debug_event_logging import (
 )
 from status_panel_helpers import endpoint_for, is_thread_running, status_text
 from i18n import tr
-from tool_profiles import PROFILE_FULL, PROFILE_ORDER, enabled_tool_names, is_valid_profile_name
+from tool_profiles import (
+    PROFILE_EDIT,
+    PROFILE_ORDER,
+    enabled_tool_names,
+    is_valid_profile_name,
+    normalize_profile_name,
+)
 from utils import (
     get_known_tools,
     get_mcp_tool_registry,
@@ -60,7 +66,103 @@ from versioning import get_docs_url_latest, get_plugin_version
 AUTOSTART_DEFAULTS_KEY = "io.anotherplanet.glyphs-mcp.autostart"
 TOOL_PROFILE_DEFAULTS_KEY = "com.ap.cx.glyphs-mcp.toolProfile"
 DEBUG_LOG_DEFAULTS_KEY = "com.ap.cx.glyphs-mcp.debugLogAllEvents"
-DEFAULT_TOOL_PROFILE = PROFILE_FULL
+DEFAULT_PORT_DEFAULTS_KEY = "com.ap.cx.glyphs-mcp.port"
+PORT_DEFAULTS_INITIALIZED_KEY = "com.ap.cx.glyphs-mcp.portInitialized"
+DEFAULT_TOOL_PROFILE = PROFILE_EDIT
+DEFAULT_PORT = 9680
+PROJECT_URL = "https://ap.cx/tools/glyphs-mcp"
+
+
+class McpActivityStatusMiddleware:
+    """Track the latest MCP HTTP/JSON-RPC activity for the status window."""
+
+    def __init__(self, app, recorder=None):
+        self.app = app
+        self.recorder = recorder
+
+    def _record(self, message, state="ok"):
+        if self.recorder is None:
+            return
+        try:
+            self.recorder(message, state)
+        except Exception:
+            pass
+
+    def _request_label(self, scope, body):
+        method = scope.get("method") or "?"
+        path = scope.get("path") or "?"
+        if method != "POST" or not str(path).startswith("/mcp"):
+            return "{} {}".format(method, path)
+
+        try:
+            payload = json.loads(body.decode("utf-8", errors="replace") or "{}")
+        except Exception:
+            return "{} {}".format(method, path)
+
+        if isinstance(payload, list) and payload:
+            payload = payload[0]
+        if not isinstance(payload, dict):
+            return "{} {}".format(method, path)
+
+        rpc_method = payload.get("method") or "POST {}".format(path)
+        if rpc_method == "tools/call":
+            params = payload.get("params")
+            if isinstance(params, dict) and params.get("name"):
+                return "tools/call: {}".format(params.get("name"))
+        return str(rpc_method)
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        body_events = []
+        body = b""
+        if scope.get("method") == "POST":
+            while True:
+                message = await receive()
+                body_events.append(message)
+                if message.get("type") == "http.request":
+                    body += message.get("body") or b""
+                    if not message.get("more_body", False):
+                        break
+                else:
+                    break
+
+        label = self._request_label(scope, body)
+        self._record(label, "active")
+
+        event_index = 0
+
+        async def replay_receive():
+            nonlocal event_index
+            if event_index < len(body_events):
+                event = body_events[event_index]
+                event_index += 1
+                return event
+            return await receive()
+
+        response_status = None
+
+        async def send_wrapper(message):
+            nonlocal response_status
+            if message.get("type") == "http.response.start":
+                response_status = message.get("status")
+            await send(message)
+
+        try:
+            await self.app(scope, replay_receive if body_events else receive, send_wrapper)
+        except Exception as exc:
+            self._record("Error: {}".format(exc), "error")
+            raise
+
+        try:
+            if response_status is not None and int(response_status) >= 400:
+                self._record("Error: HTTP {}".format(int(response_status)), "error")
+            else:
+                self._record(label, "ok")
+        except Exception:
+            self._record(label, "ok")
 
 
 class MCPBridgePlugin(GeneralPlugin):
@@ -71,16 +173,67 @@ class MCPBridgePlugin(GeneralPlugin):
         self._tool_registry_snapshot = None
 
         # Localized menu titles (via Glyphs.localize in i18n.tr)
-        self.name_start = tr("menu.start")
-        self.name_running = tr("menu.running")
-        self.name_status = tr("menu.status")
+        self.name_menu = tr("menu.main")
         self.name_autostart = tr("menu.autostart")
+        self._activity_text = tr("activity.idle")
+        self._activity_state = "idle"
         # Configuration
-        self.default_port = 9680
+        self.default_port = self._configured_default_port()
         try:
             set_debug_event_logging_enabled(self._debug_logging_enabled())
         except Exception:
             pass
+
+    @objc.python_method
+    def _configured_default_port(self):
+        try:
+            initialized = bool(Glyphs.defaults[PORT_DEFAULTS_INITIALIZED_KEY])
+        except Exception:
+            initialized = False
+
+        if not initialized:
+            self._set_configured_default_port(DEFAULT_PORT)
+            try:
+                Glyphs.defaults[PORT_DEFAULTS_INITIALIZED_KEY] = True
+            except Exception:
+                pass
+            return DEFAULT_PORT
+
+        try:
+            value = Glyphs.defaults[DEFAULT_PORT_DEFAULTS_KEY]
+        except Exception:
+            value = None
+
+        try:
+            port = int(value)
+        except Exception:
+            self._set_configured_default_port(DEFAULT_PORT)
+            return DEFAULT_PORT
+
+        if 1 <= port <= 65535:
+            return port
+
+        self._set_configured_default_port(DEFAULT_PORT)
+        return DEFAULT_PORT
+
+    @objc.python_method
+    def _set_configured_default_port(self, port):
+        try:
+            value = int(port)
+        except Exception:
+            value = DEFAULT_PORT
+        if not (1 <= value <= 65535):
+            value = DEFAULT_PORT
+
+        self.default_port = value
+        try:
+            Glyphs.defaults[DEFAULT_PORT_DEFAULTS_KEY] = int(value)
+            Glyphs.defaults[PORT_DEFAULTS_INITIALIZED_KEY] = True
+        except Exception as e:
+            try:
+                print("[Glyphs MCP][Port] Failed to persist default port: {}".format(e))
+            except Exception:
+                pass
 
     @objc.python_method
     def _selected_tool_profile_name(self):
@@ -90,7 +243,7 @@ class MCPBridgePlugin(GeneralPlugin):
             stored = None
 
         try:
-            name = str(stored) if stored else DEFAULT_TOOL_PROFILE
+            name = normalize_profile_name(stored) if stored else DEFAULT_TOOL_PROFILE
         except Exception:
             name = DEFAULT_TOOL_PROFILE
 
@@ -101,7 +254,7 @@ class MCPBridgePlugin(GeneralPlugin):
     @objc.python_method
     def _set_selected_tool_profile_name(self, name):
         try:
-            value = str(name) if name else DEFAULT_TOOL_PROFILE
+            value = normalize_profile_name(name) if name else DEFAULT_TOOL_PROFILE
         except Exception:
             value = DEFAULT_TOOL_PROFILE
         if not is_valid_profile_name(value):
@@ -199,6 +352,7 @@ class MCPBridgePlugin(GeneralPlugin):
     def _http_middleware(self):
         """Return security middleware for the embedded HTTP server."""
         middleware = [
+            Middleware(McpActivityStatusMiddleware, recorder=self._record_activity),
             Middleware(McpDebugEventLoggingMiddleware),
             Middleware(McpNormalizeMcpPathMiddleware),
             Middleware(McpErrorEnvelopeMiddleware),
@@ -219,19 +373,11 @@ class MCPBridgePlugin(GeneralPlugin):
             pass
 
         newMenuItem = NSMenuItem.new()
-        newMenuItem.setTitle_(self.name_start)
-        # Keep a reference so we can update the label later
+        newMenuItem.setTitle_(self.name_menu)
         self.menuItem = newMenuItem
         newMenuItem.setTarget_(self)
-        newMenuItem.setAction_(self.StartStopServer_)
+        newMenuItem.setAction_(self.ShowStatusWindow_)
         Glyphs.menu[EDIT_MENU].append(newMenuItem)
-
-        status_item = NSMenuItem.new()
-        status_item.setTitle_(self.name_status)
-        status_item.setTarget_(self)
-        status_item.setAction_(self.ShowStatusWindow_)
-        Glyphs.menu[EDIT_MENU].append(status_item)
-        self.statusMenuItem = status_item
 
         try:
             self._maybe_autostart_on_launch()
@@ -240,35 +386,41 @@ class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
     def _start_server_on_port(self, port, sender, notify=True):
+        self._mark_server_starting()
         try:
             self._apply_tool_profile_to_mcp_for_next_start()
         except Exception:
             pass
 
-        self._server_thread = threading.Thread(
-            target=mcp.run,
-            kwargs=dict(
+        try:
+            app = mcp.http_app(
+                path="/mcp/",
                 transport="http",
+                middleware=self._http_middleware(),
+            )
+            config = uvicorn.Config(
+                app,
                 host="127.0.0.1",
                 port=port,
-                middleware=self._http_middleware(),
-            ),
-            daemon=True,
-        )
-        self._server_thread.start()
-        self._port = port
+                timeout_graceful_shutdown=0,
+                lifespan="on",
+            )
+            self._server = uvicorn.Server(config)
+            self._server_thread = threading.Thread(
+                target=self._server.run,
+                daemon=True,
+            )
+            self._server_thread.start()
+            self._port = port
+        except Exception as e:
+            self._finish_server_starting(error=e)
+            raise
 
         if notify:
             notify_server_started(port)
         self._show_startup_message(port)
 
-        # Update menu title to indicate the server is running
-        try:
-            sender.setTitle_(self.name_running)
-        except Exception:
-            if hasattr(self, "menuItem"):
-                self.menuItem.setTitle_(self.name_running)
-
+        self._finish_server_starting_soon()
         self._refresh_status_panel_if_visible()
 
     @objc.python_method
@@ -355,40 +507,17 @@ class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
     def _prompt_when_default_port_busy(self):
-        message = tr("portbusy.message", port="9680")
+        message = tr("portbusy.message", port=self.default_port)
 
         alert = NSAlert.alloc().init()
         alert.setMessageText_(tr("app.title"))
         alert.setInformativeText_(message)
         alert.addButtonWithTitle_(tr("portbusy.wait"))
-        alert.addButtonWithTitle_(tr("portbusy.custom"))
         alert.addButtonWithTitle_(tr("common.cancel"))
-
-        port_field = NSTextField.alloc().initWithFrame_(((0, 0), (220, 24)))
-        port_field.setPlaceholderString_(tr("portbusy.placeholder"))
-        port_field.setStringValue_("9681")
-        try:
-            formatter = NSNumberFormatter.alloc().init()
-            formatter.setAllowsFloats_(False)
-            port_field.setFormatter_(formatter)
-        except Exception:
-            pass
-
-        accessory = NSView.alloc().initWithFrame_(((0, 0), (220, 24)))
-        accessory.addSubview_(port_field)
-        alert.setAccessoryView_(accessory)
 
         response = alert.runModal()
         if response == NSAlertFirstButtonReturn:
             return ("wait", None)
-        if response == NSAlertSecondButtonReturn:
-            try:
-                value = int(port_field.stringValue().strip())
-            except Exception:
-                return ("custom", None)
-            return ("custom", value)
-        if response == NSAlertThirdButtonReturn:
-            return (None, None)
         return (None, None)
 
     @objc.python_method
@@ -533,45 +662,90 @@ class MCPBridgePlugin(GeneralPlugin):
         except Exception:
             print(text)
 
-    def StartStopServer_(self, sender):
-        """Toggle the local FastMCP server running on localhost.
+    def ToggleServer_(self, sender):
+        """Start or stop the local FastMCP server from the status panel."""
+        if getattr(self, "_stopping_server", False):
+            return
+        if self._server_is_running():
+            self.StopServer_(sender)
+            return
+        self.StartServer_(sender)
 
-        Clicking the menu item starts the server (if stopped) or shows status if already running.
-        """
-        # Check if server is running and provide status
-        if hasattr(self, "_server_thread") and self._server_thread.is_alive():
-            self._show_server_status()
+    def StartServer_(self, sender):
+        """Start the local FastMCP server on the configured localhost port."""
+        if getattr(self, "_stopping_server", False):
+            return
+        if self._server_is_running():
+            self._refresh_status_panel_if_visible()
             return
 
-        while True:
-            if is_port_available(self.default_port, host="127.0.0.1"):
-                port = self.default_port
-                break
-
-            action, custom_port = self._prompt_when_default_port_busy()
+        port = int(self.default_port)
+        if not is_port_available(port, host="127.0.0.1"):
+            action, _ = self._prompt_when_default_port_busy()
             if action == "wait":
-                self._begin_wait_for_port_and_start(self.default_port, sender)
-                return
-            if action == "custom":
-                if custom_port is None:
-                    self._show_error(tr("portbusy.invalid"))
-                    continue
-                if not (1 <= custom_port <= 65535):
-                    self._show_error(tr("portbusy.range"))
-                    continue
-                if not is_port_available(custom_port, host="127.0.0.1"):
-                    self._show_error(
-                        tr("portbusy.inuse", port=custom_port)
-                    )
-                    continue
-                port = custom_port
-                break
+                self._begin_wait_for_port_and_start(port, sender)
             return
 
         try:
             self._start_server_on_port(port, sender)
         except Exception as e:
             print("Failed to start server: {}".format(e))
+            self._show_error(tr("error.start_server", error=e))
+
+    def StopServer_(self, sender):
+        """Request a graceful shutdown of the embedded MCP HTTP server."""
+        if getattr(self, "_stopping_server", False):
+            return
+
+        thread = getattr(self, "_server_thread", None)
+        server = getattr(self, "_server", None)
+        if not is_thread_running(thread):
+            self._finish_stop_server()
+            return
+        if server is None:
+            self._show_error(tr("error.stop_server", error="missing server handle"))
+            return
+
+        self._stopping_server = True
+        try:
+            if server is not None:
+                server.should_exit = True
+        except Exception as e:
+            self._stopping_server = False
+            self._show_error(tr("error.stop_server", error=e))
+            return
+
+        self._refresh_status_panel_if_visible()
+        self._begin_stop_poll()
+
+    @objc.python_method
+    def _begin_stop_poll(self):
+        if getattr(self, "_stop_timer", None) is not None:
+            return
+        self._stop_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+            0.2, self, "StopPoll:", None, True
+        )
+
+    def StopPoll_(self, timer):
+        thread = getattr(self, "_server_thread", None)
+        if is_thread_running(thread):
+            return
+        self._finish_stop_server()
+
+    @objc.python_method
+    def _finish_stop_server(self):
+        timer = getattr(self, "_stop_timer", None)
+        if timer is not None:
+            try:
+                timer.invalidate()
+            except Exception:
+                pass
+        self._stop_timer = None
+        self._stopping_server = False
+        self._server = None
+        self._server_thread = None
+        self._port = None
+        self._refresh_status_panel_if_visible()
 
     def ShowStatusWindow_(self, sender):
         """Open a small floating window with server status and endpoint."""
@@ -579,6 +753,7 @@ class MCPBridgePlugin(GeneralPlugin):
             self._ensure_status_panel()
             self._refresh_status_panel()
             self._status_panel.makeKeyAndOrderFront_(None)
+            self._refresh_status_panel()
         except Exception as e:
             self._show_error(tr("error.open_status_window", error=e))
 
@@ -594,105 +769,308 @@ class MCPBridgePlugin(GeneralPlugin):
         return is_thread_running(getattr(self, "_server_thread", None))
 
     @objc.python_method
+    def _mark_server_starting(self):
+        self._starting_server = True
+        self._activity_text = tr("status.starting")
+        self._activity_state = "starting"
+        self._refresh_status_panel_if_visible()
+
+    @objc.python_method
+    def _finish_server_starting_soon(self):
+        timer = getattr(self, "_starting_timer", None)
+        if timer is not None:
+            try:
+                timer.invalidate()
+            except Exception:
+                pass
+        self._starting_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+            0.35, self, "StartingPoll:", None, False
+        )
+
+    def StartingPoll_(self, timer):
+        self._finish_server_starting()
+
+    @objc.python_method
+    def _finish_server_starting(self, error=None):
+        timer = getattr(self, "_starting_timer", None)
+        if timer is not None:
+            try:
+                timer.invalidate()
+            except Exception:
+                pass
+        self._starting_timer = None
+        self._starting_server = False
+
+        if error is not None:
+            self._activity_text = "Error: {}".format(error)
+            self._activity_state = "error"
+        elif self._server_is_running() and getattr(self, "_activity_state", None) == "starting":
+            self._activity_text = tr("activity.idle")
+            self._activity_state = "idle"
+
+        self._refresh_status_panel_if_visible()
+
+    @objc.python_method
+    def _record_activity(self, message, state="ok"):
+        text = str(message or "").strip() or tr("activity.idle")
+        self._activity_text = text
+        self._activity_state = str(state or "ok")
+        self._schedule_status_refresh()
+
+    @objc.python_method
+    def _schedule_status_refresh(self):
+        try:
+            NSOperationQueue.mainQueue().addOperationWithBlock_(
+                lambda: self._refresh_status_panel_if_visible()
+            )
+        except Exception:
+            try:
+                self._refresh_status_panel_if_visible()
+            except Exception:
+                pass
+
+    @objc.python_method
+    def _quiet_text_field(self, frame, value="", selectable=False, bold=False, size=13):
+        field = NSTextField.alloc().initWithFrame_(frame)
+        field.setStringValue_(value)
+        field.setEditable_(False)
+        field.setSelectable_(bool(selectable))
+        field.setBordered_(False)
+        field.setDrawsBackground_(False)
+        try:
+            font = AppKit.NSFont.boldSystemFontOfSize_(size) if bold else AppKit.NSFont.systemFontOfSize_(size)
+            field.setFont_(font)
+        except Exception:
+            pass
+        return field
+
+    @objc.python_method
+    def _small_icon_button(self, frame, symbol, fallback, tooltip, action):
+        button = NSButton.alloc().initWithFrame_(frame)
+        button.setTitle_(fallback)
+        button.setTarget_(self)
+        button.setAction_(action)
+        try:
+            button.setToolTip_(tooltip)
+        except Exception:
+            pass
+        try:
+            button.setBordered_(False)
+        except Exception:
+            pass
+        try:
+            image = AppKit.NSImage.imageWithSystemSymbolName_accessibilityDescription_(symbol, tooltip)
+            if image is not None:
+                button.setImage_(image)
+                button.setTitle_("")
+        except Exception:
+            pass
+        return button
+
+    @objc.python_method
+    def _status_color(self, state):
+        color_names = {
+            "running": ("systemGreenColor", "greenColor"),
+            "starting": ("systemBlueColor", "blueColor"),
+            "waiting": ("systemBlueColor", "blueColor"),
+            "stopping": ("systemBlueColor", "blueColor"),
+            "error": ("systemRedColor", "redColor"),
+            "stopped": ("systemGrayColor", "grayColor"),
+            "idle": ("secondaryLabelColor", "grayColor"),
+            "ok": ("secondaryLabelColor", "grayColor"),
+        }
+        preferred, fallback = color_names.get(state, ("secondaryLabelColor", "grayColor"))
+        for name in (preferred, fallback):
+            try:
+                method = getattr(AppKit.NSColor, name)
+                return method()
+            except Exception:
+                pass
+        return None
+
+    @objc.python_method
+    def _status_state_is_pulsing(self, state):
+        return state in ("starting", "waiting", "stopping")
+
+    @objc.python_method
+    def _update_status_dot_pulse(self, state):
+        panel = getattr(self, "_status_panel", None)
+        visible = False
+        try:
+            visible = bool(panel is not None and panel.isVisible())
+        except Exception:
+            visible = False
+
+        if visible and self._status_state_is_pulsing(state):
+            self._start_status_dot_pulse()
+        else:
+            self._stop_status_dot_pulse()
+
+    @objc.python_method
+    def _start_status_dot_pulse(self):
+        if getattr(self, "_status_dot_pulse_timer", None) is not None:
+            return
+        self._status_dot_pulse_dim = False
+        self._status_dot_pulse_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+            0.55, self, "PulseStatusDot:", None, True
+        )
+
+    def PulseStatusDot_(self, timer):
+        panel = getattr(self, "_status_panel", None)
+        try:
+            if panel is None or not panel.isVisible():
+                self._stop_status_dot_pulse()
+                return
+        except Exception:
+            self._stop_status_dot_pulse()
+            return
+
+        dot = getattr(self, "_status_dot_field", None)
+        if dot is None:
+            self._stop_status_dot_pulse()
+            return
+
+        dim = not bool(getattr(self, "_status_dot_pulse_dim", False))
+        self._status_dot_pulse_dim = dim
+        try:
+            dot.setAlphaValue_(0.35 if dim else 1.0)
+        except Exception:
+            pass
+
+    @objc.python_method
+    def _stop_status_dot_pulse(self):
+        timer = getattr(self, "_status_dot_pulse_timer", None)
+        if timer is not None:
+            try:
+                timer.invalidate()
+            except Exception:
+                pass
+        self._status_dot_pulse_timer = None
+        self._status_dot_pulse_dim = False
+        dot = getattr(self, "_status_dot_field", None)
+        if dot is not None:
+            try:
+                dot.setAlphaValue_(1.0)
+            except Exception:
+                pass
+
+    @objc.python_method
     def _ensure_status_panel(self):
         if hasattr(self, "_status_panel") and self._status_panel is not None:
             return
 
-        width = 420
-        height = 280
+        width = 368
+        height = 300
         rect = ((0, 0), (width, height))
         style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow
         panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer_(
             rect, style, NSBackingStoreBuffered, False
         )
-        panel.setTitle_(tr("app.title"))
+        panel.setTitle_("{} {}".format(tr("app.title"), get_plugin_version()))
         panel.setFloatingPanel_(True)
 
         content = panel.contentView()
-        margin = 16
-        row_h = 22
-        row_gap = 8
-        label_w = 80
-        value_w = width - margin * 2 - label_w
-        y = height - margin - row_h
+        margin = 18
+        row_h = 20
+        icon_w = 22
+        icon_gap = 4
+        center_x = width / 2.0
 
-        status_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
-        status_label.setStringValue_(tr("status.label"))
-        status_label.setEditable_(False)
-        status_label.setSelectable_(False)
-        status_label.setBordered_(False)
-        status_label.setDrawsBackground_(False)
-        content.addSubview_(status_label)
-
-        status_value = NSTextField.alloc().initWithFrame_(((margin + label_w, y), (value_w, row_h)))
-        status_value.setEditable_(False)
-        status_value.setSelectable_(True)
-        status_value.setBordered_(False)
-        status_value.setDrawsBackground_(False)
-        content.addSubview_(status_value)
-
-        y -= (row_h + row_gap)
-
-        version_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
-        version_label.setStringValue_(tr("version.label"))
-        version_label.setEditable_(False)
-        version_label.setSelectable_(False)
-        version_label.setBordered_(False)
-        version_label.setDrawsBackground_(False)
-        content.addSubview_(version_label)
-
-        version_value = NSTextField.alloc().initWithFrame_(((margin + label_w, y), (value_w, row_h)))
-        version_value.setEditable_(False)
-        version_value.setSelectable_(True)
-        version_value.setBordered_(False)
-        version_value.setDrawsBackground_(False)
-        content.addSubview_(version_value)
-
-        y -= (row_h + row_gap)
-
-        endpoint_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
-        endpoint_label.setStringValue_(tr("endpoint.label"))
-        endpoint_label.setEditable_(False)
-        endpoint_label.setSelectable_(False)
-        endpoint_label.setBordered_(False)
-        endpoint_label.setDrawsBackground_(False)
-        content.addSubview_(endpoint_label)
-
-        endpoint_value = NSTextField.alloc().initWithFrame_(((margin + label_w, y), (value_w, row_h)))
-        endpoint_value.setEditable_(False)
-        endpoint_value.setSelectable_(True)
-        endpoint_value.setBordered_(False)
-        endpoint_value.setDrawsBackground_(False)
+        endpoint_y = height - 48
+        endpoint_x = margin + 12
+        endpoint_value_w = width - endpoint_x - margin - icon_w - icon_gap
+        endpoint_value = self._quiet_text_field(
+            ((endpoint_x, endpoint_y), (endpoint_value_w, row_h)),
+            "",
+            selectable=True,
+            bold=True,
+            size=10,
+        )
         content.addSubview_(endpoint_value)
 
-        y -= (row_h + row_gap)
+        endpoint_copy_button = self._small_icon_button(
+            ((endpoint_x + endpoint_value_w + icon_gap, endpoint_y - 1), (icon_w, icon_w)),
+            "doc.on.doc",
+            "C",
+            tr("copy.tooltip"),
+            self.CopyEndpoint_,
+        )
+        content.addSubview_(endpoint_copy_button)
 
-        docs_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
-        docs_label.setStringValue_(tr("docs.label"))
-        docs_label.setEditable_(False)
-        docs_label.setSelectable_(False)
-        docs_label.setBordered_(False)
-        docs_label.setDrawsBackground_(False)
-        content.addSubview_(docs_label)
+        dot_w = 24
+        dot_y = height - 114
+        status_dot = self._quiet_text_field(
+            ((center_x - dot_w / 2.0, dot_y), (dot_w, row_h + 4)),
+            "●",
+            selectable=False,
+            size=18,
+        )
+        try:
+            status_dot.setAlignment_(getattr(AppKit, "NSTextAlignmentCenter", 2))
+        except Exception:
+            pass
+        content.addSubview_(status_dot)
 
-        docs_value = NSTextField.alloc().initWithFrame_(((margin + label_w, y), (value_w, row_h)))
-        docs_value.setEditable_(False)
-        docs_value.setSelectable_(True)
-        docs_value.setBordered_(False)
-        docs_value.setDrawsBackground_(False)
-        content.addSubview_(docs_value)
+        server_button_w = 78
+        server_button_h = 30
+        server_button_y = dot_y - 36
+        server_button = NSButton.alloc().initWithFrame_(
+            ((center_x - server_button_w / 2.0, server_button_y), (server_button_w, server_button_h))
+        )
+        server_button.setTarget_(self)
+        server_button.setAction_(self.ToggleServer_)
+        content.addSubview_(server_button)
 
-        y -= (row_h + row_gap)
+        controls_y = 74
+        activity_y = controls_y + 38
+        activity_w = width - margin * 2
+        activity_value = self._quiet_text_field(
+            ((margin, activity_y), (activity_w, row_h)),
+            tr("activity.idle"),
+            selectable=True,
+            size=12,
+        )
+        try:
+            activity_value.setAlignment_(getattr(AppKit, "NSTextAlignmentCenter", 2))
+        except Exception:
+            pass
+        content.addSubview_(activity_value)
 
-        profile_label = NSTextField.alloc().initWithFrame_(((margin, y), (label_w, row_h)))
-        profile_label.setStringValue_(tr("profile.label"))
-        profile_label.setEditable_(False)
-        profile_label.setSelectable_(False)
-        profile_label.setBordered_(False)
-        profile_label.setDrawsBackground_(False)
-        content.addSubview_(profile_label)
+        port_label = self._quiet_text_field(
+            ((margin, controls_y + 2), (34, row_h)),
+            tr("port.label"),
+            selectable=False,
+            size=11,
+        )
+        content.addSubview_(port_label)
 
-        profile_popup = NSPopUpButton.alloc().initWithFrame_(((margin + label_w, y - 2), (value_w, row_h + 6)))
+        port_field_w = 58
+        port_field = NSTextField.alloc().initWithFrame_(((margin + 36, controls_y - 2), (port_field_w, row_h + 4)))
+        port_field.setEditable_(True)
+        port_field.setSelectable_(True)
+        try:
+            formatter = NSNumberFormatter.alloc().init()
+            formatter.setAllowsFloats_(False)
+            port_field.setFormatter_(formatter)
+        except Exception:
+            pass
+        port_field.setTarget_(self)
+        port_field.setAction_(self.ChangePort_)
+        content.addSubview_(port_field)
+
+        port_button = NSButton.alloc().initWithFrame_(
+            ((margin + 36 + port_field_w + 5, controls_y - 4), (42, row_h + 8))
+        )
+        port_button.setTitle_(tr("port.apply"))
+        port_button.setTarget_(self)
+        port_button.setAction_(self.ChangePort_)
+        content.addSubview_(port_button)
+
+        profile_label_x = margin + 36 + port_field_w + 5 + 42 + 10
+        profile_x = profile_label_x
+        profile_popup = NSPopUpButton.alloc().initWithFrame_(
+            ((profile_x, controls_y - 3), (width - margin - profile_x, row_h + 7))
+        )
         try:
             profile_popup.removeAllItems()
         except Exception:
@@ -709,16 +1087,9 @@ class MCPBridgePlugin(GeneralPlugin):
         profile_popup.setAction_(self.ChangeToolProfile_)
         content.addSubview_(profile_popup)
 
-        button_w = 110
-        button_h = 28
-        button_y = margin
-        button_gap = 10
-        copy_button_x = width - margin - button_w
-        docs_button_x = copy_button_x - button_gap - button_w
-
-        debug_checkbox_y = button_y + button_h + row_gap
-        debug_checkbox = NSButton.alloc().initWithFrame_(((margin, debug_checkbox_y), (width - margin * 2, button_h)))
-        debug_checkbox.setTitle_(tr("debug.checkbox"))
+        checkbox_y = 40
+        debug_checkbox = NSButton.alloc().initWithFrame_(((margin + 110, checkbox_y), (150, 22)))
+        debug_checkbox.setTitle_(tr("debug.short"))
         switch_type = getattr(AppKit, "NSSwitchButton", None) or getattr(AppKit, "NSButtonTypeSwitch", None)
         if switch_type is None:
             switch_type = 3
@@ -730,9 +1101,8 @@ class MCPBridgePlugin(GeneralPlugin):
         debug_checkbox.setAction_(self.ToggleDebugLogging_)
         content.addSubview_(debug_checkbox)
 
-        autostart_w = max(10, docs_button_x - margin - 10)
-        autostart_checkbox = NSButton.alloc().initWithFrame_(((margin, button_y), (autostart_w, button_h)))
-        autostart_checkbox.setTitle_(getattr(self, "name_autostart", "Auto-start server on launch"))
+        autostart_checkbox = NSButton.alloc().initWithFrame_(((margin, checkbox_y), (104, 22)))
+        autostart_checkbox.setTitle_(tr("autostart.short"))
         switch_type = getattr(AppKit, "NSSwitchButton", None) or getattr(AppKit, "NSButtonTypeSwitch", None)
         if switch_type is None:
             switch_type = 3
@@ -744,23 +1114,39 @@ class MCPBridgePlugin(GeneralPlugin):
         autostart_checkbox.setAction_(self.ToggleAutostart_)
         content.addSubview_(autostart_checkbox)
 
-        open_docs_button = NSButton.alloc().initWithFrame_(((docs_button_x, button_y), (button_w, button_h)))
-        open_docs_button.setTitle_(tr("docs.open"))
-        open_docs_button.setTarget_(self)
-        open_docs_button.setAction_(self.OpenDocs_)
-        content.addSubview_(open_docs_button)
+        footer = self._quiet_text_field(
+            ((margin, 13), (width - margin * 2, 18)),
+            tr("feedback.footer"),
+            selectable=False,
+            size=10,
+        )
+        try:
+            footer.setAlignment_(getattr(AppKit, "NSTextAlignmentCenter", 2))
+        except Exception:
+            pass
+        try:
+            color = self._status_color("idle")
+            if color is not None:
+                footer.setTextColor_(color)
+        except Exception:
+            pass
+        content.addSubview_(footer)
 
-        copy_button = NSButton.alloc().initWithFrame_(((copy_button_x, button_y), (button_w, button_h)))
-        copy_button.setTitle_(tr("endpoint.copy"))
-        copy_button.setTarget_(self)
-        copy_button.setAction_(self.CopyEndpoint_)
-        content.addSubview_(copy_button)
+        feedback_button = self._small_icon_button(
+            ((width - margin - icon_w, 10), (icon_w, icon_w)),
+            "info.circle",
+            "i",
+            tr("feedback.tooltip"),
+            self.OpenFeedback_,
+        )
+        content.addSubview_(feedback_button)
 
         self._status_panel = panel
-        self._status_field = status_value
-        self._version_field = version_value
+        self._status_dot_field = status_dot
+        self._server_button = server_button
+        self._activity_field = activity_value
         self._endpoint_field = endpoint_value
-        self._docs_field = docs_value
+        self._port_field = port_field
         self._autostart_checkbox = autostart_checkbox
         self._tool_profile_popup = profile_popup
         self._debug_logging_checkbox = debug_checkbox
@@ -782,30 +1168,82 @@ class MCPBridgePlugin(GeneralPlugin):
         port = self._current_port()
         endpoint = endpoint_for(port)
         version = get_plugin_version()
-        docs_url = get_docs_url_latest()
         tool_profile = self._selected_tool_profile_name()
+        status_state = "running" if running else "stopped"
+        status_value = tr("status." + status_text(running))
 
         try:
-            if getattr(self, "_waiting_for_port", False) and not running:
-                self._status_field.setStringValue_(
-                    tr(
-                        "status.waiting",
-                        port=getattr(self, "_wait_target_port", self.default_port),
-                    )
+            if getattr(self, "_starting_server", False):
+                status_state = "starting"
+                status_value = tr("status.starting")
+            elif getattr(self, "_stopping_server", False):
+                status_state = "stopping"
+                status_value = tr("status.stopping")
+            elif getattr(self, "_waiting_for_port", False) and not running:
+                status_state = "waiting"
+                status_value = tr(
+                    "status.waiting",
+                    port=getattr(self, "_wait_target_port", self.default_port),
                 )
             elif getattr(self, "_autostart_waiting", False) and not running:
-                self._status_field.setStringValue_(
-                    tr(
-                        "status.autostart_waiting",
-                        port=int(
-                            getattr(self, "_autostart_target_port", self.default_port)
-                        ),
-                    )
+                status_state = "waiting"
+                status_value = tr(
+                    "status.autostart_waiting",
+                    port=int(
+                        getattr(self, "_autostart_target_port", self.default_port)
+                    ),
                 )
-            else:
-                self._status_field.setStringValue_(
-                    tr("status." + status_text(running))
-                )
+            dot = getattr(self, "_status_dot_field", None)
+            if dot is not None:
+                dot.setStringValue_("●")
+                try:
+                    dot.setToolTip_(status_value)
+                except Exception:
+                    pass
+                color = self._status_color(status_state)
+                if color is not None:
+                    dot.setTextColor_(color)
+            self._update_status_dot_pulse(status_state)
+        except Exception:
+            pass
+        try:
+            button = getattr(self, "_server_button", None)
+            if button is not None:
+                if getattr(self, "_starting_server", False):
+                    button.setTitle_(tr("server.starting"))
+                    button.setEnabled_(False)
+                elif getattr(self, "_stopping_server", False):
+                    button.setTitle_(tr("server.stopping"))
+                    button.setEnabled_(False)
+                elif getattr(self, "_waiting_for_port", False) or getattr(self, "_autostart_waiting", False):
+                    button.setTitle_(tr("server.start"))
+                    button.setEnabled_(False)
+                elif running:
+                    button.setTitle_(tr("server.stop"))
+                    button.setEnabled_(True)
+                else:
+                    button.setTitle_(tr("server.start"))
+                    button.setEnabled_(True)
+        except Exception:
+            pass
+        try:
+            panel = getattr(self, "_status_panel", None)
+            if panel is not None:
+                panel.setTitle_("{} {}".format(tr("app.title"), version))
+        except Exception:
+            pass
+        try:
+            field = getattr(self, "_activity_field", None)
+            if field is not None:
+                activity_text = ""
+                if getattr(self, "_starting_server", False):
+                    activity_text = tr("status.starting")
+                elif running:
+                    activity_text = getattr(self, "_activity_text", tr("activity.idle")) or tr("activity.idle")
+                field.setStringValue_(activity_text)
+                color = self._status_color(getattr(self, "_activity_state", "idle"))
+                if color is not None:
+                    field.setTextColor_(color)
         except Exception:
             pass
         try:
@@ -813,15 +1251,9 @@ class MCPBridgePlugin(GeneralPlugin):
         except Exception:
             pass
         try:
-            field = getattr(self, "_version_field", None)
+            field = getattr(self, "_port_field", None)
             if field is not None:
-                field.setStringValue_(version)
-        except Exception:
-            pass
-        try:
-            field = getattr(self, "_docs_field", None)
-            if field is not None:
-                field.setStringValue_(docs_url)
+                field.setStringValue_(str(int(self.default_port)))
         except Exception:
             pass
         try:
@@ -864,6 +1296,25 @@ class MCPBridgePlugin(GeneralPlugin):
                 name = None
 
         self._set_selected_tool_profile_name(name)
+        self._refresh_status_panel_if_visible()
+
+    def ChangePort_(self, sender):
+        """Persist the default server port. Takes effect on next server start."""
+        field = getattr(self, "_port_field", None)
+        try:
+            raw = field.stringValue() if field is not None else sender.stringValue()
+            port = int(str(raw).strip())
+        except Exception:
+            self._show_error(tr("port.invalid"))
+            self._refresh_status_panel_if_visible()
+            return
+
+        if not (1 <= port <= 65535):
+            self._show_error(tr("port.invalid"))
+            self._refresh_status_panel_if_visible()
+            return
+
+        self._set_configured_default_port(port)
         self._refresh_status_panel_if_visible()
 
     def ToggleAutostart_(self, sender):
@@ -966,6 +1417,16 @@ class MCPBridgePlugin(GeneralPlugin):
         except Exception as e:
             self._show_error(tr("error.open_docs", url=docs_url, error=e))
 
+    def OpenFeedback_(self, sender):
+        """Open the Glyphs MCP project page."""
+        try:
+            nsurl = NSURL.URLWithString_(PROJECT_URL)
+            if nsurl is None:
+                raise ValueError("Invalid URL")
+            NSWorkspace.sharedWorkspace().openURL_(nsurl)
+        except Exception as e:
+            self._show_error(tr("error.open_feedback", url=PROJECT_URL, error=e))
+
     @objc.python_method
     def _show_server_status(self):
         """Show the current server status."""
@@ -1005,7 +1466,7 @@ class MCPBridgePlugin(GeneralPlugin):
             print("  Tools information unavailable: {}".format(e))
         
         print(
-            "  To stop: restart Glyphs or use Activity Monitor to kill the process."
+            "  To stop: click Stop in the Glyphs MCP Server status window."
         )
 
     @objc.python_method

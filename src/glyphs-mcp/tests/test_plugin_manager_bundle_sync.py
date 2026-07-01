@@ -22,11 +22,13 @@ def _plugin_manager_bundle() -> Path:
 def _ignore_rel_path(rel_path: Path, *, ignore_vendor: bool) -> bool:
     parts = rel_path.parts
     name = rel_path.name
-    if any(part in {"__pycache__", "__MACOSX", ".venv", "venv"} for part in parts):
+    if any(part in {"__pycache__", "__MACOSX", "_CodeSignature", ".venv", "venv"} for part in parts):
         return True
     if name == ".DS_Store" or name.startswith("._"):
         return True
     if rel_path.suffix in {".pyc", ".pyo"}:
+        return True
+    if rel_path == Path("Contents/MacOS/plugin"):
         return True
     if ignore_vendor and parts[:3] == ("Contents", "Resources", "vendor"):
         return True

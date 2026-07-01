@@ -77,9 +77,25 @@ def _font():
     )
 
 
+class _GlyphsWithBrokenFonts:
+    def __init__(self, font):
+        self.documents = [types.SimpleNamespace(font=font)]
+        self.currentDocument = types.SimpleNamespace(font=font)
+        self.font = font
+
+    @property
+    def fonts(self):
+        raise TypeError(
+            "Can't instantiate abstract class AppFontProxy without an implementation "
+            "for abstract methods 'getByIndex', 'insertAtIndex', 'removeByIndex', 'setByIndex'"
+        )
+
+
 class McpToolsFontTests(unittest.TestCase):
-    def _load_module(self, font):
-        glyphs_module = types.SimpleNamespace(Glyphs=types.SimpleNamespace(fonts=[font], font=font))
+    def _load_module(self, font, glyphs=None):
+        glyphs_module = types.SimpleNamespace(
+            Glyphs=glyphs or types.SimpleNamespace(fonts=[font], documents=[], currentDocument=None, font=font)
+        )
         helpers_module = types.SimpleNamespace(
             _coerce_numeric=_coerce_numeric,
             _custom_parameter=_custom_parameter,
@@ -108,6 +124,25 @@ class McpToolsFontTests(unittest.TestCase):
             assert spec.loader is not None
             spec.loader.exec_module(module)
         return module
+
+    def test_list_open_fonts_falls_back_to_documents_when_fonts_proxy_fails(self) -> None:
+        font = _font()
+        module = self._load_module(font, glyphs=_GlyphsWithBrokenFonts(font))
+
+        payload = json.loads(asyncio.run(module.list_open_fonts()))
+
+        self.assertEqual(len(payload), 1)
+        self.assertEqual(payload[0]["familyName"], "Test")
+        self.assertEqual(payload[0]["filePath"], "/tmp/Test.glyphs")
+
+    def test_get_font_masters_falls_back_to_documents_when_fonts_proxy_fails(self) -> None:
+        font = _font()
+        module = self._load_module(font, glyphs=_GlyphsWithBrokenFonts(font))
+
+        payload = json.loads(asyncio.run(module.get_font_masters(0)))
+
+        self.assertEqual(payload[0]["id"], "roman")
+        self.assertEqual(payload[1]["id"], "italic")
 
     def test_get_font_masters_reports_italic_angle_separately_from_slant_angle(self) -> None:
         font = _font()

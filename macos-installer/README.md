@@ -30,7 +30,7 @@ Open the project in Xcode:
 Minimum requirements:
 - macOS 13.0+
 - Glyphs 3
-- Python 3.11–3.13 (recommended: python.org 3.12)
+- Python 3.11–3.14 (recommended: python.org 3.14)
 
 Notes for Xcode builds:
 - Debug builds use **Apple Development** signing with Team `N9U29A4T8J` so the app can run locally from Xcode.

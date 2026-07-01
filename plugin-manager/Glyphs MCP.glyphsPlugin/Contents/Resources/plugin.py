@@ -10,12 +10,49 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 
+def _glyphs_major_version() -> str:
+    """Best-effort Glyphs major version detection for app support paths."""
+    override = os.environ.get("GLYPHS_MCP_GLYPHS_VERSION", "").strip()
+    if override in {"3", "4"}:
+        return override
+
+    try:
+        from Foundation import NSBundle  # type: ignore[import-not-found]
+
+        bundle = NSBundle.mainBundle()
+        values = [
+            bundle.bundleIdentifier() or "",
+            bundle.objectForInfoDictionaryKey_("CFBundleName") or "",
+            bundle.objectForInfoDictionaryKey_("CFBundleExecutable") or "",
+        ]
+        haystack = " ".join(str(value) for value in values).lower()
+        if "glyphs4" in haystack or "glyphs 4" in haystack:
+            return "4"
+        if "glyphs3" in haystack or "glyphs 3" in haystack:
+            return "3"
+    except Exception:
+        pass
+
+    try:
+        exe = Path(sys.executable).resolve()
+        names = [exe.name] + [parent.name for parent in exe.parents]
+        haystack = " ".join(names).lower()
+        if "glyphs 4" in haystack or "glyphs4" in haystack:
+            return "4"
+        if "glyphs 3" in haystack or "glyphs3" in haystack:
+            return "3"
+    except Exception:
+        pass
+
+    return "3"
+
+
 def _glyphs_user_site_packages() -> Path:
     """Return the user-writable site-packages used by Glyphs scripts.
 
-    This is typically "~/Library/Application Support/Glyphs 3/Scripts/site-packages".
+    This is typically "~/Library/Application Support/Glyphs N/Scripts/site-packages".
     """
-    base = Path.home() / "Library" / "Application Support" / "Glyphs 3"
+    base = Path.home() / "Library" / "Application Support" / ("Glyphs " + _glyphs_major_version())
     return base / "Scripts" / "site-packages"
 
 
@@ -110,6 +147,28 @@ def _ensure_user_site_packages_on_path() -> None:
         _add(Path(os.path.expanduser(entry)))
 
 
+# --- Glyphs MCP Vendor Deps (Plugin Manager build) ---
+def _maybe_prefer_vendored_site_packages() -> None:
+    try:
+        import platform
+
+        py_tag = f"py{sys.version_info.major}{sys.version_info.minor}"
+        machine = (platform.machine() or "").lower()
+        if machine == "aarch64":
+            machine = "arm64"
+        vendor_root = Path(__file__).resolve().parent / "vendor"
+        candidate = vendor_root / f"{py_tag}-{machine}" / "site-packages"
+        if not candidate.is_dir():
+            return
+        cand = str(candidate)
+        # De-dupe and prefer vendored deps.
+        sys.path[:] = [p for p in sys.path if p != cand]
+        sys.path.insert(0, cand)
+    except Exception:
+        pass
+
+_maybe_prefer_vendored_site_packages()
+# --- End Glyphs MCP Vendor Deps ---
 _ensure_user_site_packages_on_path()
 
 
@@ -140,7 +199,61 @@ from utils import fix_glyphs_console
 import importlib
 fix_glyphs_console()
 
+
+def _console_log(message: str) -> None:
+    """Log to the Glyphs macro console and, when available, macOS Console."""
+    try:
+        print(message)
+    except Exception:
+        pass
+
+    try:
+        from Foundation import NSLog  # type: ignore[import-not-found]
+
+        NSLog(message)
+    except Exception:
+        pass
+
+
+def _debug_startup_environment() -> None:
+    """Print import diagnostics before loading Glyphs MCP tool modules."""
+    try:
+        _console_log("[Glyphs MCP] startup debug")
+        _console_log("[Glyphs MCP] sys.executable: {}".format(sys.executable))
+        _console_log("[Glyphs MCP] sys.version: {}".format(sys.version.replace("\n", " ")))
+        _console_log("[Glyphs MCP] sys.prefix: {}".format(sys.prefix))
+        _console_log("[Glyphs MCP] sys.base_prefix: {}".format(getattr(sys, "base_prefix", "")))
+        _console_log("[Glyphs MCP] Glyphs major: {}".format(_glyphs_major_version()))
+        _console_log("[Glyphs MCP] Glyphs site-packages: {}".format(_glyphs_user_site_packages()))
+        try:
+            _console_log("[Glyphs MCP] Python user site: {}".format(site.getusersitepackages()))
+        except Exception as exc:
+            _console_log("[Glyphs MCP] Python user site unavailable: {}".format(repr(exc)))
+
+        _console_log("[Glyphs MCP] sys.path:")
+        for entry in sys.path:
+            _console_log("[Glyphs MCP]   {}".format(entry))
+
+        for name in ("objc", "Foundation", "AppKit", "GlyphsApp"):
+            try:
+                module = __import__(name)
+                _console_log("[Glyphs MCP] import {} OK: {}".format(name, getattr(module, "__file__", "<built-in>")))
+            except Exception as exc:
+                _console_log("[Glyphs MCP] import {} FAILED: {}".format(name, repr(exc)))
+                try:
+                    traceback.print_exc()
+                except Exception:
+                    pass
+    except Exception:
+        try:
+            traceback.print_exc()
+        except Exception:
+            pass
+
+
 STARTUP_IMPORT_ERROR = None
+
+_debug_startup_environment()
 
 try:
     # Import MCP tools (this registers all the tools)
@@ -183,7 +296,7 @@ except Exception as exc:  # pragma: no cover - requires broken local environment
             "{}\n\n"
             "Re-run the installer to refresh the runtime packages. "
             "If you recently changed Glyphs Python versions, remove the old "
-            "packages from ~/Library/Application Support/Glyphs 3/Scripts/site-packages "
+            "packages from the active ~/Library/Application Support/Glyphs N/Scripts/site-packages "
             "before reinstalling."
         ).format(err)
 
@@ -318,9 +431,12 @@ def run_diagnostics() -> None:
             "httpx",
             "sse_starlette",
             "typing_extensions",
+            "objc",
+            "Foundation",
+            "AppKit",
         ]
         # Also useful in the Glyphs environment
-        optional: List[str] = ["GlyphsApp", "objc", "AppKit", "httpx_sse"]
+        optional: List[str] = ["GlyphsApp", "httpx_sse"]
 
         # Required deps table
         h("Required Dependencies")
@@ -359,21 +475,21 @@ def run_diagnostics() -> None:
             pass
 
         print("\n" + line)
-        print("Diagnostics complete. Start the server from the menu to proceed.")
+        print("Diagnostics complete. Click Start in the status window to proceed.")
         print(line)
     except Exception as e:  # pragma: no cover - diagnostics must not fail
         print("Diagnostics error:", e)
 
 
-# Monkey-patch the plugin menu action to run diagnostics before server launch
-if hasattr(MCPBridgePlugin, "StartStopServer_"):
-    _orig_StartStopServer_ = MCPBridgePlugin.StartStopServer_
+# Monkey-patch the plugin start action to run diagnostics before server launch
+if hasattr(MCPBridgePlugin, "StartServer_"):
+    _orig_StartServer_ = MCPBridgePlugin.StartServer_
 
-    def _patched_StartStopServer_(self, sender):  # type: ignore[override]
+    def _patched_StartServer_(self, sender):  # type: ignore[override]
         # Run diagnostics only once per plugin instance to reduce noise
         if not getattr(self, "_diagnostics_done", False):
             run_diagnostics()
             setattr(self, "_diagnostics_done", True)
-        return _orig_StartStopServer_(self, sender)
+        return _orig_StartServer_(self, sender)
 
-    MCPBridgePlugin.StartStopServer_ = _patched_StartStopServer_  # type: ignore[assignment]
+    MCPBridgePlugin.StartServer_ = _patched_StartServer_  # type: ignore[assignment]

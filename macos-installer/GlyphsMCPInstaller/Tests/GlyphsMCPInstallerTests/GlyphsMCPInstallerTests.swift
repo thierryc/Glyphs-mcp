@@ -176,6 +176,34 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertTrue(summary.contains("Ignored: 1 too old"), summary)
 	}
 
+	func testVersionGateAllowsPython312Through314AndBlocks315() {
+		for version in ["3.12.0", "3.13.0", "3.14.0"] {
+			XCTAssertTrue(VersionGate.isSupported(version: version), "\(version) should be supported")
+		}
+		XCTAssertFalse(VersionGate.isSupported(version: "3.15.0"))
+	}
+
+	func testInstallerVerificationRequiresPyObjCBridgeModules() {
+		XCTAssertTrue(requiredRuntimeModules.contains("objc"))
+		XCTAssertTrue(requiredRuntimeModules.contains("Foundation"))
+		XCTAssertTrue(requiredRuntimeModules.contains("AppKit"))
+		XCTAssertTrue(requiredRuntimeModules.contains("pkg_resources"))
+	}
+
+	func testGlyphsPreferencesUsesVersionSpecificDomains() {
+		XCTAssertEqual(GlyphsPreferences.suiteName(glyphsVersion: .v3), "com.GeorgSeifert.Glyphs3")
+		XCTAssertEqual(GlyphsPreferences.suiteName(glyphsVersion: .v4), "com.GeorgSeifert.Glyphs4")
+	}
+
+	func testInstallerPathsCanTargetGlyphs3And4() {
+		XCTAssertTrue(InstallerPaths.glyphsBaseDir(glyphsVersion: .v3).path.hasSuffix("Library/Application Support/Glyphs 3"))
+		XCTAssertTrue(InstallerPaths.glyphsBaseDir(glyphsVersion: .v4).path.hasSuffix("Library/Application Support/Glyphs 4"))
+		XCTAssertTrue(InstallerPaths.glyphsPluginsDir(glyphsVersion: .v3).path.hasSuffix("Library/Application Support/Glyphs 3/Plugins"))
+		XCTAssertTrue(InstallerPaths.glyphsPluginsDir(glyphsVersion: .v4).path.hasSuffix("Library/Application Support/Glyphs 4/Plugins"))
+		XCTAssertTrue(InstallerPaths.glyphsScriptsSitePackages(glyphsVersion: .v3).path.hasSuffix("Library/Application Support/Glyphs 3/Scripts/site-packages"))
+		XCTAssertTrue(InstallerPaths.glyphsScriptsSitePackages(glyphsVersion: .v4).path.hasSuffix("Library/Application Support/Glyphs 4/Scripts/site-packages"))
+	}
+
 	func testInstallButtonTitleChangesForInstalledPlugin() {
 		XCTAssertEqual(InstallerSimpleUI.installButtonTitle(installedPluginVersion: nil), "Install Glyphs MCP Server")
 		XCTAssertEqual(
@@ -287,7 +315,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		}
 	}
 
-	func testGlyphsPythonResolverBlocksUnsupportedVersion() throws {
+	func testGlyphsPythonResolverAllowsPython314() throws {
 		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
 		let framework = tmp.appendingPathComponent("Python.framework/Versions/3.14", isDirectory: true)
 		let python = framework.appendingPathComponent("bin/python3")
@@ -300,6 +328,34 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 			glyphsPipVersion: nil,
 			glyphsSelectedPythonFrameworkPath: framework.path,
 			glyphsSelectedPythonVersion: "3.14.0",
+			customPythons: [],
+			customPythonTooOldCount: 0,
+			customPythonTooNewCount: 0,
+			customPythonUnknownCount: 0,
+			codexPath: nil,
+			claudePath: nil,
+			nodePath: nil
+		)
+
+		let status = GlyphsPythonResolver.resolve(preflight: preflight)
+		XCTAssertTrue(status.canInstall)
+		XCTAssertNil(status.installFailureReason)
+		XCTAssertEqual(status.version, "3.14.0")
+	}
+
+	func testGlyphsPythonResolverBlocksUnsupportedVersion() throws {
+		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+		let framework = tmp.appendingPathComponent("Python.framework/Versions/3.15", isDirectory: true)
+		let python = framework.appendingPathComponent("bin/python3")
+		try FileManager.default.createDirectory(at: python.deletingLastPathComponent(), withIntermediateDirectories: true, attributes: nil)
+		try Data().write(to: python)
+
+		let preflight = PreflightResult(
+			items: [],
+			glyphsPipPath: nil,
+			glyphsPipVersion: nil,
+			glyphsSelectedPythonFrameworkPath: framework.path,
+			glyphsSelectedPythonVersion: "3.15.0",
 			customPythons: [],
 			customPythonTooOldCount: 0,
 			customPythonTooNewCount: 0,
@@ -702,6 +758,28 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertEqual(inspection.mode, .bundle)
 		XCTAssertEqual(inspection.version?.displayString, "1.2.3")
 		XCTAssertFalse(inspection.isSymlink)
+	}
+
+	func testPluginInstallerSignsCopiedBundle() throws {
+		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+		let src = tmp.appendingPathComponent("Source/Glyphs MCP.glyphsPlugin", isDirectory: true)
+		let pluginsDir = tmp.appendingPathComponent("Installed", isDirectory: true)
+		try makePluginBundle(at: src, version: "1.2.3")
+
+		var signed: [URL] = []
+		let installer = PluginInstaller(
+			log: { _ in },
+			signer: PluginExecutableSigner { bundleURL in
+				signed.append(bundleURL)
+			}
+		)
+
+		let outcome = try installer.installPluginBundle(from: src, toPluginsDir: pluginsDir, allowReplace: true)
+
+		let dest = pluginsDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+		XCTAssertTrue(FileManager.default.fileExists(atPath: dest.path))
+		XCTAssertEqual(outcome.destBundle, dest)
+		XCTAssertEqual(signed, [dest])
 	}
 
 	func testPluginInstallerInspectionDetectsSymlinkedBundle() throws {

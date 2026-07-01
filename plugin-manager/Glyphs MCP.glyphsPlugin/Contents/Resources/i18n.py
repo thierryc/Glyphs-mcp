@@ -10,29 +10,13 @@ except Exception:  # pragma: no cover
 
 STRINGS = {
     # Menu
-    "menu.start": {
-        "en": "Start Glyphs MCP Server",
-        "de": "Glyphs MCP-Server starten",
-        "fr": "Démarrer le serveur MCP",
-        "es": "Iniciar el servidor MCP",
-        "pt": "Iniciar o servidor Glyphs MCP",
-        "zh-Hans": "启动 Glyphs MCP 服务器",
-    },
-    "menu.running": {
-        "en": "Glyphs MCP Server is running",
-        "de": "Glyphs MCP-Server läuft",
-        "fr": "Le serveur MCP est en cours d'exécution",
-        "es": "El servidor MCP está en ejecución",
-        "pt": "O servidor MCP está em execução",
-        "zh-Hans": "Glyphs MCP 服务器正在运行",
-    },
-    "menu.status": {
-        "en": "Glyphs MCP Server Status…",
-        "de": "Glyphs MCP-Server-Status…",
-        "fr": "Statut du serveur MCP…",
-        "es": "Estado del servidor MCP…",
-        "pt": "Status do servidor MCP…",
-        "zh-Hans": "Glyphs MCP 服务器状态…",
+    "menu.main": {
+        "en": "Glyphs MCP Server",
+        "de": "Glyphs MCP-Server",
+        "fr": "Serveur MCP Glyphs",
+        "es": "Servidor MCP de Glyphs",
+        "pt": "Servidor Glyphs MCP",
+        "zh-Hans": "Glyphs MCP 服务器",
     },
     "menu.autostart": {
         "en": "Auto-start server on launch",
@@ -55,48 +39,23 @@ STRINGS = {
     "portbusy.message": {
         "en": (
             'I can\'t start the MCP server on "{port}".\n\n'
-            "Wait (preferred) until the previous instance has finished shutting down, "
-            "or start on a custom port below."
+            "Wait until the previous instance has finished shutting down, "
+            "or cancel and close the app that is using this port."
         ),
         "fr": (
             'Impossible de démarrer le serveur MCP sur « {port} ».\n\n'
-            "Attendez (recommandé) que l’instance précédente se ferme complètement, "
-            "ou choisissez un port personnalisé ci-dessous."
+            "Attendez que l’instance précédente se ferme complètement, "
+            "ou annulez et fermez l’application qui utilise ce port."
         ),
         "zh-Hans": (
             "无法在“{port}”上启动 MCP 服务器。\n\n"
-            "请等待（推荐）之前的实例完全关闭，或在下方选择自定义端口。"
+            "请等待之前的实例完全关闭，或取消并关闭正在使用此端口的应用。"
         ),
     },
     "portbusy.wait": {
-        "en": "Wait (preferred)",
-        "fr": "Attendre (recommandé)",
-        "zh-Hans": "等待（推荐）",
-    },
-    "portbusy.custom": {
-        "en": "Start on Custom Port",
-        "fr": "Démarrer sur un port personnalisé",
-        "zh-Hans": "使用自定义端口启动",
-    },
-    "portbusy.placeholder": {
-        "en": "Custom port (1–65535)",
-        "fr": "Port personnalisé (1–65535)",
-        "zh-Hans": "自定义端口（1–65535）",
-    },
-    "portbusy.invalid": {
-        "en": "Enter a valid port number (1–65535).",
-        "fr": "Saisissez un numéro de port valide (1–65535).",
-        "zh-Hans": "请输入有效的端口号（1–65535）。",
-    },
-    "portbusy.range": {
-        "en": "Port must be between 1 and 65535.",
-        "fr": "Le port doit être compris entre 1 et 65535.",
-        "zh-Hans": "端口必须在 1 到 65535 之间。",
-    },
-    "portbusy.inuse": {
-        "en": "Port {port} is already in use. Choose another port.",
-        "fr": "Le port {port} est déjà utilisé. Choisissez un autre port.",
-        "zh-Hans": "端口 {port} 已被占用。请选择另一个端口。",
+        "en": "Wait for Port",
+        "fr": "Attendre le port",
+        "zh-Hans": "等待端口",
     },
     # Waiting panel
     "wait.info": {
@@ -108,6 +67,13 @@ STRINGS = {
     "status.label": {"en": "Status:", "fr": "État :", "zh-Hans": "状态："},
     "version.label": {"en": "Version:", "fr": "Version :", "zh-Hans": "版本："},
     "endpoint.label": {"en": "Endpoint:", "fr": "Endpoint :", "zh-Hans": "端点："},
+    "port.label": {"en": "Port:", "fr": "Port :", "zh-Hans": "端口："},
+    "port.apply": {"en": "Set", "fr": "Définir", "zh-Hans": "设置"},
+    "port.invalid": {
+        "en": "Enter a valid port number between 1 and 65535.",
+        "fr": "Saisissez un numéro de port valide entre 1 et 65535.",
+        "zh-Hans": "请输入 1 到 65535 之间的有效端口号。",
+    },
     "docs.label": {"en": "Docs:", "fr": "Docs :", "zh-Hans": "文档："},
     "profile.label": {"en": "Profile:", "fr": "Profil :", "zh-Hans": "配置："},
     "debug.checkbox": {
@@ -115,11 +81,29 @@ STRINGS = {
         "fr": "Journaliser tous les événements (debug, inclut SSE)",
         "zh-Hans": "记录所有事件（调试，包含 SSE）",
     },
+    "debug.short": {"en": "Debug log", "fr": "Debug log", "zh-Hans": "调试日志"},
+    "autostart.short": {"en": "Auto-start", "fr": "Démarrage auto", "zh-Hans": "自动启动"},
+    "activity.label": {"en": "Activity", "fr": "Activité", "zh-Hans": "活动"},
+    "activity.idle": {"en": "Idle", "fr": "Inactif", "zh-Hans": "空闲"},
+    "copy.tooltip": {"en": "Copy endpoint", "fr": "Copier l’endpoint", "zh-Hans": "复制端点"},
+    "docs.tooltip": {"en": "Open docs", "fr": "Ouvrir la doc", "zh-Hans": "打开文档"},
+    "feedback.tooltip": {"en": "Open project page", "fr": "Ouvrir la page du projet", "zh-Hans": "打开项目页面"},
+    "feedback.footer": {
+        "en": "Vibe coded with ✨ by Thierry Charbonnel t@ap.cx",
+        "fr": "Vibe coded with ✨ by Thierry Charbonnel t@ap.cx",
+        "zh-Hans": "Vibe coded with ✨ by Thierry Charbonnel t@ap.cx",
+    },
     "docs.open": {"en": "Open Docs", "fr": "Ouvrir la doc", "zh-Hans": "打开文档"},
     "endpoint.copy": {"en": "Copy Endpoint", "fr": "Copier l’endpoint", "zh-Hans": "复制端点"},
+    "server.start": {"en": "Start", "fr": "Démarrer", "zh-Hans": "启动"},
+    "server.starting": {"en": "Starting", "fr": "Démarrage", "zh-Hans": "正在启动"},
+    "server.stop": {"en": "Stop", "fr": "Arrêter", "zh-Hans": "停止"},
+    "server.stopping": {"en": "Stopping…", "fr": "Arrêt…", "zh-Hans": "正在停止…"},
     # Status values
     "status.running": {"en": "Running", "fr": "En cours", "zh-Hans": "运行中"},
     "status.stopped": {"en": "Stopped", "fr": "Arrêté", "zh-Hans": "已停止"},
+    "status.starting": {"en": "Starting", "fr": "Démarrage", "zh-Hans": "正在启动"},
+    "status.stopping": {"en": "Stopping…", "fr": "Arrêt…", "zh-Hans": "正在停止…"},
     "status.waiting": {
         "en": "Waiting for port {port}…",
         "fr": "En attente du port {port}…",
@@ -141,10 +125,20 @@ STRINGS = {
         "fr": "Impossible d’ouvrir l’URL de la doc :\n{url}\n\n{error}",
         "zh-Hans": "无法打开文档链接：\n{url}\n\n{error}",
     },
+    "error.open_feedback": {
+        "en": "Unable to open feedback URL:\n{url}\n\n{error}",
+        "fr": "Impossible d’ouvrir l’URL de feedback :\n{url}\n\n{error}",
+        "zh-Hans": "无法打开反馈链接：\n{url}\n\n{error}",
+    },
     "error.start_server": {
         "en": "Failed to start server: {error}",
         "fr": "Échec du démarrage du serveur : {error}",
         "zh-Hans": "启动服务器失败：{error}",
+    },
+    "error.stop_server": {
+        "en": "Failed to stop server: {error}",
+        "fr": "Échec de l’arrêt du serveur : {error}",
+        "zh-Hans": "停止服务器失败：{error}",
     },
 }
 

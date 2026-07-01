@@ -139,8 +139,8 @@
 "Claude CLI present, but cannot verify MCP configuration (no supported list command)." = "已安装 Claude CLI，但无法验证 MCP 配置（不支持的列表命令）。";
 
 /* Help sheet markdown */
-"For the smoothest custom setup, install Python **3.12** from python.org." = "为获得最佳自定义安装体验，请从 python.org 安装 Python **3.12**。";
-"Then, in **Glyphs → Settings → Addons → Python version**, select the same **3.12** version and restart Glyphs." = "然后在 **Glyphs → 设置 → 插件/扩展 → Python 版本** 中选择同一个 **3.12** 版本，并重启 Glyphs。";
+"For the smoothest custom setup, install Python **3.14** from python.org." = "为获得最佳自定义安装体验，请从 python.org 安装 Python **3.14**。";
+"Then, in **Glyphs → Settings → Addons → Python version**, select the same **3.14** version and restart Glyphs." = "然后在 **Glyphs → 设置 → 插件/扩展 → Python 版本** 中选择同一个 **3.14** 版本，并重启 Glyphs。";
 "2) In Glyphs: **Edit → Start MCP Server**" = "2）在 Glyphs 中：**编辑 → 启动 MCP 服务器**";
 "Download latest plug‑in from GitHub (optional)" = "从 GitHub 下载最新插件（可选）";
 "If enabled, the installer will download the latest plug‑in from GitHub over HTTPS before installing." = "启用后，安装器会在安装前通过 HTTPS 从 GitHub 下载最新插件。";

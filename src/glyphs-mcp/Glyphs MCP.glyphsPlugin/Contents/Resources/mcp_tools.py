@@ -29,5 +29,6 @@ import mcp_tools_paths  # noqa: F401
 import mcp_tools_selection  # noqa: F401
 import mcp_tools_smoothness  # noqa: F401
 import mcp_tools_spacing  # noqa: F401
+import mcp_tools_visual_review  # noqa: F401
 
 __all__ = ["mcp"]

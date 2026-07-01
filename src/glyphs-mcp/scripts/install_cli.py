@@ -168,14 +168,67 @@ except Exception:  # fallback if rich isn't available in the runner's Python
 console = Console()
 
 PYTHON_BINARY_PATTERN = re.compile(r"^python3(\.\d+)?$")
-MIN_PY_VERSION = (3, 11, 0)  # Allow 3.11+, prefer 3.12+
-MAX_PY_VERSION_EXCLUSIVE = (3, 14, 0)  # Disallow 3.14+ until tested
+MIN_PY_VERSION = (3, 11, 0)  # Allow 3.11+, prefer 3.14+
+MAX_PY_VERSION_EXCLUSIVE = (3, 15, 0)  # Disallow 3.15+ until tested
 SKILL_PREFIX = "glyphs-mcp-"
+REQUIRED_RUNTIME_MODULES = [
+    "mcp",
+    "fastmcp",
+    "pydantic_core",
+    "starlette",
+    "uvicorn",
+    "httpx",
+    "sse_starlette",
+    "typing_extensions",
+    "pkg_resources",
+    "fontParts",
+    "fontTools",
+    "objc",
+    "Foundation",
+    "AppKit",
+]
+
+
+def plugin_executable_path(bundle: Path) -> Path:
+    return bundle / "Contents" / "MacOS" / "plugin"
+
+
+def sign_plugin_executable(bundle: Path) -> None:
+    """Ad-hoc sign the native Glyphs plug-in loader for local installs."""
+    executable = plugin_executable_path(bundle)
+    if not executable.exists():
+        console.print(f"[yellow]Plugin executable not found, skipping signing:[/yellow] {executable}")
+        return
+
+    console.print(f"[cyan]Ad-hoc signing plug-in executable:[/cyan] {executable}")
+    try:
+        subprocess.run(
+            ["/usr/bin/codesign", "--force", "--sign", "-", str(executable)],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        subprocess.run(
+            ["/usr/bin/codesign", "--verify", "--verbose=2", str(executable)],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except FileNotFoundError:
+        console.print("[yellow]codesign not found; skipping plug-in executable signing.[/yellow]")
+    except subprocess.CalledProcessError as e:
+        details = (e.stderr or e.stdout or str(e)).strip()
+        console.print(f"[red]Failed to sign plug-in executable:[/red] {details}")
+        raise SystemExit(2)
 
 
 @dataclass
 class InstallerOptions:
     non_interactive: bool
+    glyphs_version: Literal["3", "4"] = "3"
+    skip_deps: bool = False
     python_mode: Optional[Literal["glyphs", "custom"]] = None
     python_path: Optional[Path] = None
     plugin_mode: Optional[Literal["copy", "link"]] = None
@@ -190,16 +243,16 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
-def glyphs_base_dir() -> Path:
-    return Path.home() / "Library" / "Application Support" / "Glyphs 3"
+def glyphs_base_dir(glyphs_version: Literal["3", "4"] = "3") -> Path:
+    return Path.home() / "Library" / "Application Support" / f"Glyphs {glyphs_version}"
 
 
-def glyphs_plugins_dir() -> Path:
-    return glyphs_base_dir() / "Plugins"
+def glyphs_plugins_dir(glyphs_version: Literal["3", "4"] = "3") -> Path:
+    return glyphs_base_dir(glyphs_version) / "Plugins"
 
 
-def glyphs_scripts_site_packages() -> Path:
-    return glyphs_base_dir() / "Scripts" / "site-packages"
+def glyphs_scripts_site_packages(glyphs_version: Literal["3", "4"] = "3") -> Path:
+    return glyphs_base_dir(glyphs_version) / "Scripts" / "site-packages"
 
 
 def codex_skills_dir() -> Path:
@@ -210,14 +263,50 @@ def claude_code_skills_dir() -> Path:
     return Path.home() / ".claude" / "skills"
 
 
-def glyphs_python_pip() -> Optional[Path]:
-    base = glyphs_base_dir() / "Repositories" / "GlyphsPythonPlugin" / "Python.framework"
+def glyphs_python_pip(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+    base = glyphs_base_dir(glyphs_version) / "Repositories" / "GlyphsPythonPlugin" / "Python.framework"
     pip = base / "Versions" / "Current" / "bin" / "pip3"
     return pip if pip.exists() else None
 
 
-def glyphs_python_bin() -> Optional[Path]:
-    pip = glyphs_python_pip()
+def glyphs_preferences_domain(glyphs_version: Literal["3", "4"] = "3") -> str:
+    return "com.GeorgSeifert.Glyphs4" if glyphs_version == "4" else "com.GeorgSeifert.Glyphs3"
+
+
+def glyphs_selected_python_framework(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+    try:
+        out = subprocess.check_output(
+            ["defaults", "read", glyphs_preferences_domain(glyphs_version), "GSPythonFrameworkPath"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except Exception:
+        return None
+    if not out:
+        return None
+    framework = Path(out).expanduser()
+    return framework if framework.exists() else None
+
+
+def glyphs_selected_python_bin(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+    framework = glyphs_selected_python_framework(glyphs_version)
+    if not framework:
+        return None
+    py = framework / "bin" / "python3"
+    if py.exists():
+        return py
+    # python.org framework installs often expose only python3.X.
+    candidates = sorted((framework / "bin").glob("python3.*")) if (framework / "bin").is_dir() else []
+    for candidate in candidates:
+        if candidate.name.endswith("-config"):
+            continue
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return candidate
+    return None
+
+
+def glyphs_python_bin(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+    pip = glyphs_python_pip(glyphs_version)
     if not pip:
         return None
     py = Path(pip).parent / "python3"
@@ -243,6 +332,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         add_help=True,
     )
     parser.add_argument("--non-interactive", action="store_true", help="Run without prompts. Required choices must be provided explicitly.")
+    parser.add_argument("--glyphs-version", choices=["3", "4"], default="3", help="Glyphs major version to target for plug-in and Glyphs Python paths.")
+    parser.add_argument("--skip-deps", action="store_true", help="Skip Python dependency installation. Useful for dev-mode plug-in symlink tests.")
     parser.add_argument("--python-mode", choices=["glyphs", "custom"], help="Python environment to use for dependency installation.")
     parser.add_argument("--python-path", help="Absolute path to python3 when using --python-mode custom.")
     parser.add_argument("--plugin-mode", choices=["copy", "link"], help="How to install the Glyphs plug-in bundle.")
@@ -286,6 +377,8 @@ def parse_cli_options(argv: Optional[List[str]] = None) -> InstallerOptions:
 
     options = InstallerOptions(
         non_interactive=ns.non_interactive,
+        glyphs_version=ns.glyphs_version,
+        skip_deps=ns.skip_deps,
         python_mode=ns.python_mode,
         python_path=python_path,
         plugin_mode=ns.plugin_mode,
@@ -300,6 +393,12 @@ def parse_cli_options(argv: Optional[List[str]] = None) -> InstallerOptions:
 
 
 def validate_options(options: InstallerOptions, parser: argparse.ArgumentParser) -> None:
+    if options.skip_deps:
+        if options.python_mode is not None:
+            parser.error("--python-mode cannot be used with --skip-deps.")
+        if options.python_path is not None:
+            parser.error("--python-path cannot be used with --skip-deps.")
+
     if options.python_mode == "custom" and options.python_path is None:
         parser.error("--python-path is required when --python-mode custom is used.")
 
@@ -314,7 +413,7 @@ def validate_options(options: InstallerOptions, parser: argparse.ArgumentParser)
 
     if options.non_interactive:
         missing: List[str] = []
-        if options.python_mode is None:
+        if not options.skip_deps and options.python_mode is None:
             missing.append("--python-mode")
         if options.plugin_mode is None:
             missing.append("--plugin-mode")
@@ -443,7 +542,7 @@ def detect_python_candidates() -> List[PythonCandidate]:
     return cands
 
 
-def verify_runtime(python: Path) -> bool:
+def verify_runtime(python: Path, extra_site_packages: Optional[Path] = None) -> bool:
     """Verify required packages import cleanly in the selected Python.
 
     Returns True on success, False otherwise, and prints guidance.
@@ -451,7 +550,11 @@ def verify_runtime(python: Path) -> bool:
     console.print(Panel.fit(f"Verifying runtime imports in: {python}", title="Verify", border_style="white"))
     code = (
         "import sys;\n"
-        "mods=['mcp','fastmcp','pydantic_core','starlette','uvicorn','httpx','sse_starlette','typing_extensions','fontParts','fontTools'];\n"
+        "import site;\n"
+        f"extra_site={str(extra_site_packages)!r};\n"
+        "if extra_site:\n"
+        "  site.addsitedir(extra_site)\n"
+        f"mods={REQUIRED_RUNTIME_MODULES!r};\n"
         "missing=[];\n"
         "import importlib;\n"
         "\n"
@@ -481,7 +584,8 @@ def verify_runtime(python: Path) -> bool:
                 "[red]Some packages failed to import.\n"
                 "Try reinstalling with --no-cache-dir and force-reinstall:[/red]\n"
                 f"  {python} -m pip install --user --no-cache-dir --force-reinstall -r {repo_root()/ 'requirements.txt'}\n"
-                "If using Apple Silicon, ensure you are using the native arm64 Python (not Rosetta) and matching wheels."
+                "If objc, Foundation, or AppKit are missing, PyObjC did not install into the Python selected in Glyphs. "
+                "Install the Glyphs Python module or run pip for the exact Python shown above."
             )
             return False
         return True
@@ -495,19 +599,37 @@ def run(cmd: List[str]) -> None:
     subprocess.check_call(cmd)
 
 
-def install_with_glyphs_python(requirements: Path) -> None:
-    pip = glyphs_python_pip()
-    if not pip:
+def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", "4"] = "3") -> None:
+    selected_python = glyphs_selected_python_bin(glyphs_version)
+    selected_version = python_version(selected_python) if selected_python else None
+    if selected_python and selected_version:
+        vt = version_tuple(selected_version)
+        if vt < MIN_PY_VERSION or vt >= MAX_PY_VERSION_EXCLUSIVE:
+            console.print(f"[red]Glyphs {glyphs_version} is set to unsupported Python {selected_version}. Please use 3.11–3.14.[/red]")
+            raise SystemExit(2)
+        pip_cmd = [str(selected_python), "-m", "pip"]
+        verify_python = selected_python
+        source = f"Glyphs {glyphs_version} selected Python {selected_version}"
+    else:
+        pip = glyphs_python_pip(glyphs_version)
+        if not pip:
+            console.print("[red]Glyphs Python not found.[/red]")
+            console.print(f"Open Glyphs {glyphs_version} → Settings → Addons and install Python (GlyphsPythonPlugin), then re-run.")
+            raise SystemExit(2)
+        pip_cmd = [str(pip)]
+        verify_python = Path(pip).parent / "python3"
+        source = f"Glyphs {glyphs_version} bundled Python"
+
+    if not verify_python.exists():
         console.print("[red]Glyphs Python not found.[/red]")
-        console.print("Open Glyphs → Settings → Addons and install Python (GlyphsPythonPlugin), then re-run.")
+        console.print(f"Open Glyphs {glyphs_version} → Settings → Addons and install Python (GlyphsPythonPlugin), then re-run.")
         raise SystemExit(2)
 
-    target = glyphs_scripts_site_packages()
+    target = glyphs_scripts_site_packages(glyphs_version)
     target.mkdir(parents=True, exist_ok=True)
-    console.print(Panel.fit(f"Installing requirements into:\n{target}", title="Glyphs Python", border_style="green"))
-    run([str(pip), "install", "--upgrade", "pip"])
-    run([
-        str(pip),
+    console.print(Panel.fit(f"{source}\nInstalling requirements into:\n{target}", title="Glyphs Python", border_style="green"))
+    run(pip_cmd + ["install", "--upgrade", "pip"])
+    run(pip_cmd + [
         "install",
         "--upgrade",
         "--force-reinstall",
@@ -519,10 +641,8 @@ def install_with_glyphs_python(requirements: Path) -> None:
         str(requirements),
     ])
 
-    # Verify using the interpreter next to pip (../python3)
-    glyphs_python = Path(pip).parent / "python3"
-    if glyphs_python.exists():
-        verify_runtime(glyphs_python)
+    if not verify_runtime(verify_python, target):
+        raise SystemExit(2)
 
 
 def install_with_custom_python(python: Path, requirements: Path) -> None:
@@ -543,17 +663,23 @@ def install_with_custom_python(python: Path, requirements: Path) -> None:
         "-r",
         str(requirements),
     ])
-    verify_runtime(python)
+    if not verify_runtime(python):
+        raise SystemExit(2)
 
 
-def install_plugin(mode: str = "copy", overwrite_existing: Optional[bool] = None) -> bool:
+def install_plugin(
+    mode: str = "copy",
+    overwrite_existing: Optional[bool] = None,
+    glyphs_version: Literal["3", "4"] = "3",
+    sign_executable: bool = True,
+) -> bool:
     """Install the plug-in by copying or linking (dev mode)."""
     src = repo_root() / "src" / "glyphs-mcp" / "Glyphs MCP.glyphsPlugin"
     if not src.exists():
         console.print(f"[red]Plugin bundle not found at:[/red] {src}")
         raise SystemExit(2)
 
-    dest_dir = glyphs_plugins_dir()
+    dest_dir = glyphs_plugins_dir(glyphs_version)
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / src.name
 
@@ -585,6 +711,8 @@ def install_plugin(mode: str = "copy", overwrite_existing: Optional[bool] = None
     else:
         console.print(Panel.fit(f"Copying plugin →\n{dest}", title="Install Plugin", border_style="magenta"))
         shutil.copytree(src, dest)
+    if sign_executable:
+        sign_plugin_executable(dest)
     return True
 
 
@@ -762,10 +890,18 @@ def choose_custom_python(cands: List[PythonCandidate]) -> Path:
     return p
 
 
-def resolve_python_selection_interactive(requirements: Path) -> None:
+def resolve_python_selection_interactive(
+    requirements: Path,
+    glyphs_version: Literal["3", "4"] = "3",
+    skip_deps: bool = False,
+) -> None:
+    if skip_deps:
+        console.print("[yellow]Skipping Python dependency installation.[/yellow]")
+        return
+
     choice = choose_mode()
     if choice == "1":
-        install_with_glyphs_python(requirements)
+        install_with_glyphs_python(requirements, glyphs_version=glyphs_version)
         return
 
     cands = detect_python_candidates()
@@ -775,7 +911,7 @@ def resolve_python_selection_interactive(requirements: Path) -> None:
     ver = python_version(python_path) or "unknown"
     vt = version_tuple(ver)
     if vt >= MAX_PY_VERSION_EXCLUSIVE:
-        console.print(f"[red]Python {ver} is not yet supported. Please use 3.11–3.13.[/red]")
+        console.print(f"[red]Python {ver} is not yet supported. Please use 3.11–3.14.[/red]")
         raise SystemExit(2)
     if vt < MIN_PY_VERSION:
         proceed = Confirm.ask(f"Selected Python {ver} is older than {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}. Continue?", default=False)
@@ -786,8 +922,12 @@ def resolve_python_selection_interactive(requirements: Path) -> None:
 
 
 def resolve_python_selection_non_interactive(options: InstallerOptions, requirements: Path) -> None:
+    if options.skip_deps:
+        console.print("[yellow]Skipping Python dependency installation.[/yellow]")
+        return
+
     if options.python_mode == "glyphs":
-        install_with_glyphs_python(requirements)
+        install_with_glyphs_python(requirements, glyphs_version=options.glyphs_version)
         return
 
     assert options.python_mode == "custom"
@@ -795,7 +935,7 @@ def resolve_python_selection_non_interactive(options: InstallerOptions, requirem
     ver = python_version(options.python_path) or "unknown"
     vt = version_tuple(ver)
     if vt >= MAX_PY_VERSION_EXCLUSIVE:
-        raise SystemExit(f"Python {ver} is not yet supported. Please use 3.11–3.13.")
+        raise SystemExit(f"Python {ver} is not yet supported. Please use 3.11–3.14.")
     if vt < MIN_PY_VERSION:
         raise SystemExit(f"Selected Python {ver} is older than {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}.")
     install_with_custom_python(options.python_path, requirements)
@@ -828,10 +968,10 @@ def run_non_interactive(options: InstallerOptions, requirements: Path) -> None:
     resolve_python_selection_non_interactive(options, requirements)
 
     assert options.plugin_mode is not None
-    dest = glyphs_plugins_dir() / "Glyphs MCP.glyphsPlugin"
+    dest = glyphs_plugins_dir(options.glyphs_version) / "Glyphs MCP.glyphsPlugin"
     if (dest.exists() or dest.is_symlink()) and options.overwrite_plugin is None:
         raise SystemExit(format_missing_policy_error("plug-in installation", "--overwrite-plugin", "--keep-plugin"))
-    install_plugin(options.plugin_mode, overwrite_existing=options.overwrite_plugin)
+    install_plugin(options.plugin_mode, overwrite_existing=options.overwrite_plugin, glyphs_version=options.glyphs_version)
 
     if options.install_skills:
         assert options.skills_target is not None
@@ -844,10 +984,17 @@ def run_non_interactive(options: InstallerOptions, requirements: Path) -> None:
         show_client_guidance()
 
 
-def run_interactive(requirements: Path) -> None:
-    resolve_python_selection_interactive(requirements)
+def run_interactive(requirements: Path, options: Optional[InstallerOptions] = None) -> None:
+    if options is None:
+        options = InstallerOptions(non_interactive=False)
+
+    resolve_python_selection_interactive(
+        requirements,
+        glyphs_version=options.glyphs_version,
+        skip_deps=options.skip_deps,
+    )
     mode = choose_plugin_mode_interactive()
-    install_plugin(mode)
+    install_plugin(mode, glyphs_version=options.glyphs_version)
     prompt_install_skill_bundle()
 
     console.rule("[green]Install complete[/green]")
@@ -867,7 +1014,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     if parsed.non_interactive:
         run_non_interactive(parsed, req)
     else:
-        run_interactive(req)
+        run_interactive(req, parsed)
 
     console.print()
     console.rule("Thanks ✨")

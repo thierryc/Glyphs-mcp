@@ -30,5 +30,33 @@ mkdir -p "$TARGET_DIR"
 echo "Installing dependencies into: $TARGET_DIR"
 "$PIP_BIN" install --upgrade pip
 "$PIP_BIN" install --upgrade --force-reinstall --no-compile --only-binary=:all: --target="$TARGET_DIR" -r "$req_file"
+TARGET_DIR="$TARGET_DIR" "$PYTHON_BASE/Versions/Current/bin/python3" - <<'PY'
+import importlib
+import os
+import site
+import sys
+
+site.addsitedir(os.environ["TARGET_DIR"])
+required = [
+    "mcp",
+    "fastmcp",
+    "pkg_resources",
+    "objc",
+    "Foundation",
+    "AppKit",
+]
+missing = []
+for name in required:
+    try:
+        importlib.import_module(name)
+    except Exception as exc:
+        missing.append((name, str(exc)))
+
+print("Python:", sys.executable)
+if missing:
+    print("Missing runtime modules:", missing)
+    raise SystemExit(1)
+print("Runtime imports OK")
+PY
 
 echo "Done. Restart Glyphs if it is running."

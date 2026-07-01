@@ -22,6 +22,7 @@ Use this skill for path editing, component or anchor work, selected-node workflo
    - `get_selected_font_and_master`
    - `get_selected_nodes`
    - `get_glyph_paths`
+   - `render_glyph_review_image`
    - `get_glyph_components`
    - `get_glyph_details`
 2. Prefer dedicated tools for the actual change:
@@ -31,9 +32,10 @@ Use this skill for path editing, component or anchor work, selected-node workflo
    - `review_collinear_handles`
    - `apply_collinear_handles_smooth`
    - compensated-tuning tools only when that workflow is explicitly requested
-3. Only use `execute_code_with_context` when the edit spans several glyph-scoped steps and the dedicated tools would be less reliable or less clear.
-4. When docs are needed, search first with `docs_search`, then fetch only the relevant page with `docs_get`.
-5. After every mutation, re-read the affected glyph or layer state and report what changed.
+3. Render a visual review image after outline proposals and before mutation when visual judgment matters.
+4. Only use `execute_code_with_context` when the edit spans several glyph-scoped steps and the dedicated tools would be less reliable or less clear.
+5. When docs are needed, search first with `docs_search`, then fetch only the relevant page with `docs_get`.
+6. After every mutation, re-read the affected glyph or layer state and report what changed.
 
 ## Deeper references
 

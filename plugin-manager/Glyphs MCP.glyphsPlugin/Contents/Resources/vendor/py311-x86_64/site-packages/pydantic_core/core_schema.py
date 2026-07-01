@@ -13,7 +13,7 @@ from decimal import Decimal
 from re import Pattern
 from typing import TYPE_CHECKING, Any, Callable, Literal, Union
 
-from typing_extensions import deprecated
+from typing_extensions import TypeVar, deprecated
 
 if sys.version_info < (3, 12):
     from typing_extensions import TypedDict
@@ -61,6 +61,10 @@ class CoreConfig(TypedDict, total=False):
         str_to_upper: Whether to convert string fields to uppercase.
         allow_inf_nan: Whether to allow infinity and NaN values for float fields. Default is `True`.
         ser_json_timedelta: The serialization option for `timedelta` values. Default is 'iso8601'.
+            Note that if ser_json_temporal is set, then this param will be ignored.
+        ser_json_temporal: The serialization option for datetime like values. Default is 'iso8601'.
+            The types this covers are datetime, date, time and timedelta.
+            If this is set, it will take precedence over ser_json_timedelta
         ser_json_bytes: The serialization option for `bytes` values. Default is 'utf8'.
         ser_json_inf_nan: The serialization option for infinity and NaN values
             in float fields. Default is 'null'.
@@ -75,6 +79,7 @@ class CoreConfig(TypedDict, total=False):
         validate_by_alias: Whether to use the field's alias when validating against the provided input data. Default is `True`.
         validate_by_name: Whether to use the field's name when validating against the provided input data. Default is `False`. Replacement for `populate_by_name`.
         serialize_by_alias: Whether to serialize by alias. Default is `False`, expected to change to `True` in V3.
+        url_preserve_empty_path: Whether to preserve empty URL paths when validating values for a URL type. Defaults to `False`.
     """
 
     title: str
@@ -102,6 +107,7 @@ class CoreConfig(TypedDict, total=False):
     allow_inf_nan: bool  # default: True
     # the config options are used to customise serialization to JSON
     ser_json_timedelta: Literal['iso8601', 'float']  # default: 'iso8601'
+    ser_json_temporal: Literal['iso8601', 'seconds', 'milliseconds']  # default: 'iso8601'
     ser_json_bytes: Literal['utf8', 'base64', 'hex']  # default: 'utf8'
     ser_json_inf_nan: Literal['null', 'constants', 'strings']  # default: 'null'
     val_json_bytes: Literal['utf8', 'base64', 'hex']  # default: 'utf8'
@@ -114,42 +120,71 @@ class CoreConfig(TypedDict, total=False):
     validate_by_alias: bool  # default: True
     validate_by_name: bool  # default: False
     serialize_by_alias: bool  # default: False
+    url_preserve_empty_path: bool  # default: False
 
 
 IncExCall: TypeAlias = 'set[int | str] | dict[int | str, IncExCall] | None'
 
+ContextT = TypeVar('ContextT', covariant=True, default='Any | None')
 
-class SerializationInfo(Protocol):
-    @property
-    def include(self) -> IncExCall: ...
 
-    @property
-    def exclude(self) -> IncExCall: ...
+class SerializationInfo(Protocol[ContextT]):
+    """Extra data used during serialization."""
 
     @property
-    def context(self) -> Any | None:
-        """Current serialization context."""
+    def include(self) -> IncExCall:
+        """The `include` argument set during serialization."""
+        ...
 
     @property
-    def mode(self) -> str: ...
+    def exclude(self) -> IncExCall:
+        """The `exclude` argument set during serialization."""
+        ...
 
     @property
-    def by_alias(self) -> bool: ...
+    def context(self) -> ContextT:
+        """The current serialization context."""
+        ...
 
     @property
-    def exclude_unset(self) -> bool: ...
+    def mode(self) -> Literal['python', 'json'] | str:
+        """The serialization mode set during serialization."""
+        ...
 
     @property
-    def exclude_defaults(self) -> bool: ...
+    def by_alias(self) -> bool:
+        """The `by_alias` argument set during serialization."""
+        ...
 
     @property
-    def exclude_none(self) -> bool: ...
+    def exclude_unset(self) -> bool:
+        """The `exclude_unset` argument set during serialization."""
+        ...
 
     @property
-    def serialize_as_any(self) -> bool: ...
+    def exclude_defaults(self) -> bool:
+        """The `exclude_defaults` argument set during serialization."""
+        ...
 
     @property
-    def round_trip(self) -> bool: ...
+    def exclude_none(self) -> bool:
+        """The `exclude_none` argument set during serialization."""
+        ...
+
+    @property
+    def exclude_computed_fields(self) -> bool:
+        """The `exclude_computed_fields` argument set during serialization."""
+        ...
+
+    @property
+    def serialize_as_any(self) -> bool:
+        """The `serialize_as_any` argument set during serialization."""
+        ...
+
+    @property
+    def round_trip(self) -> bool:
+        """The `round_trip` argument set during serialization."""
+        ...
 
     def mode_is_json(self) -> bool: ...
 
@@ -158,19 +193,21 @@ class SerializationInfo(Protocol):
     def __repr__(self) -> str: ...
 
 
-class FieldSerializationInfo(SerializationInfo, Protocol):
-    @property
-    def field_name(self) -> str: ...
-
-
-class ValidationInfo(Protocol):
-    """
-    Argument passed to validation functions.
-    """
+class FieldSerializationInfo(SerializationInfo[ContextT], Protocol):
+    """Extra data used during field serialization."""
 
     @property
-    def context(self) -> Any | None:
-        """Current validation context."""
+    def field_name(self) -> str:
+        """The name of the current field being serialized."""
+        ...
+
+
+class ValidationInfo(Protocol[ContextT]):
+    """Extra data used during validation."""
+
+    @property
+    def context(self) -> ContextT:
+        """The current validation context."""
         ...
 
     @property
@@ -180,7 +217,7 @@ class ValidationInfo(Protocol):
 
     @property
     def mode(self) -> Literal['python', 'json']:
-        """The type of input data we are currently validating"""
+        """The type of input data we are currently validating."""
         ...
 
     @property
@@ -240,11 +277,11 @@ def simple_ser_schema(type: ExpectedSerializationTypes) -> SimpleSerSchema:
 # (input_value: Any, /) -> Any
 GeneralPlainNoInfoSerializerFunction = Callable[[Any], Any]
 # (input_value: Any, info: FieldSerializationInfo, /) -> Any
-GeneralPlainInfoSerializerFunction = Callable[[Any, SerializationInfo], Any]
+GeneralPlainInfoSerializerFunction = Callable[[Any, SerializationInfo[Any]], Any]
 # (model: Any, input_value: Any, /) -> Any
 FieldPlainNoInfoSerializerFunction = Callable[[Any, Any], Any]
 # (model: Any, input_value: Any, info: FieldSerializationInfo, /) -> Any
-FieldPlainInfoSerializerFunction = Callable[[Any, Any, FieldSerializationInfo], Any]
+FieldPlainInfoSerializerFunction = Callable[[Any, Any, FieldSerializationInfo[Any]], Any]
 SerializerFunction = Union[
     GeneralPlainNoInfoSerializerFunction,
     GeneralPlainInfoSerializerFunction,
@@ -311,11 +348,11 @@ class SerializerFunctionWrapHandler(Protocol):  # pragma: no cover
 # (input_value: Any, serializer: SerializerFunctionWrapHandler, /) -> Any
 GeneralWrapNoInfoSerializerFunction = Callable[[Any, SerializerFunctionWrapHandler], Any]
 # (input_value: Any, serializer: SerializerFunctionWrapHandler, info: SerializationInfo, /) -> Any
-GeneralWrapInfoSerializerFunction = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo], Any]
+GeneralWrapInfoSerializerFunction = Callable[[Any, SerializerFunctionWrapHandler, SerializationInfo[Any]], Any]
 # (model: Any, input_value: Any, serializer: SerializerFunctionWrapHandler, /) -> Any
 FieldWrapNoInfoSerializerFunction = Callable[[Any, Any, SerializerFunctionWrapHandler], Any]
 # (model: Any, input_value: Any, serializer: SerializerFunctionWrapHandler, info: FieldSerializationInfo, /) -> Any
-FieldWrapInfoSerializerFunction = Callable[[Any, Any, SerializerFunctionWrapHandler, FieldSerializationInfo], Any]
+FieldWrapInfoSerializerFunction = Callable[[Any, Any, SerializerFunctionWrapHandler, FieldSerializationInfo[Any]], Any]
 WrapSerializerFunction = Union[
     GeneralWrapNoInfoSerializerFunction,
     GeneralWrapInfoSerializerFunction,
@@ -953,7 +990,7 @@ class DateSchema(TypedDict, total=False):
     gt: date
     now_op: Literal['past', 'future']
     # defaults to current local utc offset from `time.localtime().tm_gmtoff`
-    # value is restricted to -86_400 < offset < 86_400 by bounds in generate_self_schema.py
+    # value is restricted to -86_400 < offset < 86_400:
     now_utc_offset: int
     ref: str
     metadata: dict[str, Any]
@@ -1311,6 +1348,25 @@ def enum_schema(
         missing=missing,
         strict=strict,
         ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
+class MissingSentinelSchema(TypedDict, total=False):
+    type: Required[Literal['missing-sentinel']]
+    metadata: dict[str, Any]
+    serialization: SerSchema
+
+
+def missing_sentinel_schema(
+    metadata: dict[str, Any] | None = None,
+    serialization: SerSchema | None = None,
+) -> MissingSentinelSchema:
+    """Returns a schema for the `MISSING` sentinel."""
+
+    return _dict_not_none(
+        type='missing-sentinel',
         metadata=metadata,
         serialization=serialization,
     )
@@ -1885,6 +1941,7 @@ class DictSchema(TypedDict, total=False):
     values_schema: CoreSchema  # default: AnySchema
     min_length: int
     max_length: int
+    fail_fast: bool
     strict: bool
     ref: str
     metadata: dict[str, Any]
@@ -1897,6 +1954,7 @@ def dict_schema(
     *,
     min_length: int | None = None,
     max_length: int | None = None,
+    fail_fast: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
@@ -1920,6 +1978,7 @@ def dict_schema(
         values_schema: The value must be a dict with values that match this schema
         min_length: The value must be a dict with at least this many items
         max_length: The value must be a dict with at most this many items
+        fail_fast: Stop validation on the first error
         strict: Whether the keys and values should be validated with strict mode
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -1931,6 +1990,7 @@ def dict_schema(
         values_schema=values_schema,
         min_length=min_length,
         max_length=max_length,
+        fail_fast=fail_fast,
         strict=strict,
         ref=ref,
         metadata=metadata,
@@ -1948,13 +2008,13 @@ class NoInfoValidatorFunctionSchema(TypedDict):
 
 
 # (input_value: Any, info: ValidationInfo, /) -> Any
-WithInfoValidatorFunction = Callable[[Any, ValidationInfo], Any]
+WithInfoValidatorFunction = Callable[[Any, ValidationInfo[Any]], Any]
 
 
 class WithInfoValidatorFunctionSchema(TypedDict, total=False):
     type: Required[Literal['with-info']]
     function: Required[WithInfoValidatorFunction]
-    field_name: str
+    field_name: str  # deprecated
 
 
 ValidationFunction = Union[NoInfoValidatorFunctionSchema, WithInfoValidatorFunctionSchema]
@@ -2042,7 +2102,7 @@ def with_info_before_validator_function(
         return v.decode() + 'world'
 
     func_schema = core_schema.with_info_before_validator_function(
-        function=fn, schema=core_schema.str_schema(), field_name='a'
+        function=fn, schema=core_schema.str_schema()
     )
     schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
@@ -2052,13 +2112,20 @@ def with_info_before_validator_function(
 
     Args:
         function: The validator function to call
-        field_name: The name of the field
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         schema: The schema to validate the output of the validator function
         ref: optional unique identifier of the schema, used to reference the schema in other places
         json_schema_input_schema: The core schema to be used to generate the corresponding JSON Schema input type
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_before_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-before',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),
@@ -2140,7 +2207,7 @@ def with_info_after_validator_function(
         return v + 'world'
 
     func_schema = core_schema.with_info_after_validator_function(
-        function=fn, schema=core_schema.str_schema(), field_name='a'
+        function=fn, schema=core_schema.str_schema()
     )
     schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
@@ -2151,11 +2218,18 @@ def with_info_after_validator_function(
     Args:
         function: The validator function to call after the schema is validated
         schema: The schema to validate before the validator function
-        field_name: The name of the field this validators is applied to, if any
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_after_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-after',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),
@@ -2181,13 +2255,13 @@ class NoInfoWrapValidatorFunctionSchema(TypedDict):
 
 
 # (input_value: Any, validator: ValidatorFunctionWrapHandler, info: ValidationInfo, /) -> Any
-WithInfoWrapValidatorFunction = Callable[[Any, ValidatorFunctionWrapHandler, ValidationInfo], Any]
+WithInfoWrapValidatorFunction = Callable[[Any, ValidatorFunctionWrapHandler, ValidationInfo[Any]], Any]
 
 
 class WithInfoWrapValidatorFunctionSchema(TypedDict, total=False):
     type: Required[Literal['with-info']]
     function: Required[WithInfoWrapValidatorFunction]
-    field_name: str
+    field_name: str  # deprecated
 
 
 WrapValidatorFunction = Union[NoInfoWrapValidatorFunctionSchema, WithInfoWrapValidatorFunctionSchema]
@@ -2287,12 +2361,19 @@ def with_info_wrap_validator_function(
     Args:
         function: The validator function to call
         schema: The schema to validate the output of the validator function
-        field_name: The name of the field this validators is applied to, if any
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         json_schema_input_schema: The core schema to be used to generate the corresponding JSON Schema input type
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_wrap_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-wrap',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),
@@ -2379,12 +2460,19 @@ def with_info_plain_validator_function(
 
     Args:
         function: The validator function to call
-        field_name: The name of the field this validators is applied to, if any
+        field_name: The name of the field this validator is applied to, if any (deprecated)
         ref: optional unique identifier of the schema, used to reference the schema in other places
         json_schema_input_schema: The core schema to be used to generate the corresponding JSON Schema input type
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
+    if field_name is not None:
+        warnings.warn(
+            'The `field_name` argument on `with_info_plain_validator_function` is deprecated, it will be passed to the function through `ValidationState` instead.',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     return _dict_not_none(
         type='function-plain',
         function=_dict_not_none(type='with-info', function=function, field_name=field_name),
@@ -2839,6 +2927,7 @@ class TypedDictField(TypedDict, total=False):
     serialization_alias: str
     serialization_exclude: bool  # default: False
     metadata: dict[str, Any]
+    serialization_exclude_if: Callable[[Any], bool]  # default None
 
 
 def typed_dict_field(
@@ -2849,6 +2938,7 @@ def typed_dict_field(
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
     metadata: dict[str, Any] | None = None,
+    serialization_exclude_if: Callable[[Any], bool] | None = None,
 ) -> TypedDictField:
     """
     Returns a schema that matches a typed dict field, e.g.:
@@ -2865,6 +2955,7 @@ def typed_dict_field(
         validation_alias: The alias(es) to use to find the field in the validation data
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
+        serialization_exclude_if: A callable that determines whether to exclude the field when serializing based on its value.
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
     return _dict_not_none(
@@ -2874,6 +2965,7 @@ def typed_dict_field(
         validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
+        serialization_exclude_if=serialization_exclude_if,
         metadata=metadata,
     )
 
@@ -2965,6 +3057,7 @@ class ModelField(TypedDict, total=False):
     validation_alias: Union[str, list[Union[str, int]], list[list[Union[str, int]]]]
     serialization_alias: str
     serialization_exclude: bool  # default: False
+    serialization_exclude_if: Callable[[Any], bool]  # default: None
     frozen: bool
     metadata: dict[str, Any]
 
@@ -2975,6 +3068,7 @@ def model_field(
     validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
+    serialization_exclude_if: Callable[[Any], bool] | None = None,
     frozen: bool | None = None,
     metadata: dict[str, Any] | None = None,
 ) -> ModelField:
@@ -2992,6 +3086,7 @@ def model_field(
         validation_alias: The alias(es) to use to find the field in the validation data
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
+        serialization_exclude_if: A Callable that determines whether to exclude a field during serialization based on its value.
         frozen: Whether the field is frozen
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
@@ -3001,6 +3096,7 @@ def model_field(
         validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
+        serialization_exclude_if=serialization_exclude_if,
         frozen=frozen,
         metadata=metadata,
     )
@@ -3193,6 +3289,7 @@ class DataclassField(TypedDict, total=False):
     serialization_alias: str
     serialization_exclude: bool  # default: False
     metadata: dict[str, Any]
+    serialization_exclude_if: Callable[[Any], bool]  # default: None
 
 
 def dataclass_field(
@@ -3206,6 +3303,7 @@ def dataclass_field(
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
     metadata: dict[str, Any] | None = None,
+    serialization_exclude_if: Callable[[Any], bool] | None = None,
     frozen: bool | None = None,
 ) -> DataclassField:
     """
@@ -3231,6 +3329,7 @@ def dataclass_field(
         validation_alias: The alias(es) to use to find the field in the validation data
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
+        serialization_exclude_if: A callable that determines whether to exclude the field when serializing based on its value.
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         frozen: Whether the field is frozen
     """
@@ -3244,6 +3343,7 @@ def dataclass_field(
         validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
+        serialization_exclude_if=serialization_exclude_if,
         metadata=metadata,
         frozen=frozen,
     )
@@ -3810,6 +3910,7 @@ def url_schema(
     default_host: str | None = None,
     default_port: int | None = None,
     default_path: str | None = None,
+    preserve_empty_path: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
@@ -3834,6 +3935,7 @@ def url_schema(
         default_host: The default host to use if the URL does not have a host
         default_port: The default port to use if the URL does not have a port
         default_path: The default path to use if the URL does not have a path
+        preserve_empty_path: Whether to preserve an empty path or convert it to '/', default False
         strict: Whether to use strict URL parsing
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -3847,6 +3949,7 @@ def url_schema(
         default_host=default_host,
         default_port=default_port,
         default_path=default_path,
+        preserve_empty_path=preserve_empty_path,
         strict=strict,
         ref=ref,
         metadata=metadata,
@@ -3876,6 +3979,7 @@ def multi_host_url_schema(
     default_host: str | None = None,
     default_port: int | None = None,
     default_path: str | None = None,
+    preserve_empty_path: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: dict[str, Any] | None = None,
@@ -3900,6 +4004,7 @@ def multi_host_url_schema(
         default_host: The default host to use if the URL does not have a host
         default_port: The default port to use if the URL does not have a port
         default_path: The default path to use if the URL does not have a path
+        preserve_empty_path: Whether to preserve an empty path or convert it to '/', default False
         strict: Whether to use strict URL parsing
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -3913,6 +4018,7 @@ def multi_host_url_schema(
         default_host=default_host,
         default_port=default_port,
         default_path=default_path,
+        preserve_empty_path=preserve_empty_path,
         strict=strict,
         ref=ref,
         metadata=metadata,
@@ -4012,6 +4118,7 @@ if not MYPY:
         DatetimeSchema,
         TimedeltaSchema,
         LiteralSchema,
+        MissingSentinelSchema,
         EnumSchema,
         IsInstanceSchema,
         IsSubclassSchema,
@@ -4070,6 +4177,7 @@ CoreSchemaType = Literal[
     'datetime',
     'timedelta',
     'literal',
+    'missing-sentinel',
     'enum',
     'is-instance',
     'is-subclass',
@@ -4130,6 +4238,7 @@ ErrorType = Literal[
     'model_attributes_type',
     'dataclass_type',
     'dataclass_exact_type',
+    'default_factory_not_called',
     'none_required',
     'greater_than',
     'greater_than_equal',
@@ -4169,6 +4278,7 @@ ErrorType = Literal[
     'value_error',
     'assertion_error',
     'literal_error',
+    'missing_sentinel_error',
     'date_type',
     'date_parsing',
     'date_from_datetime_parsing',

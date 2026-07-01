@@ -233,6 +233,20 @@ cdef int _setNodeNamespaces(xmlNode* c_node, _Document doc,
                     c_ns.href is NULL or \
                     tree.xmlStrcmp(c_ns.href, c_href) != 0:
                 c_ns = tree.xmlNewNs(c_node, c_href, c_prefix)
+                if c_ns is NULL:
+                    # libxml2 has two error conditions: "out of memory" and "prefix exists already".
+                    # We ignore the latter for compatibility reasons. It currently only appears
+                    # during namespace cleanup.
+                    c_ns = c_node.nsDef
+                    while c_ns is not NULL:
+                        if c_prefix is NULL:
+                            if c_ns.prefix is NULL:
+                                break
+                        elif tree.xmlStrcmp(c_ns.prefix, c_prefix) == 0:
+                            break
+                        c_ns = c_ns.next
+                    else:
+                        raise MemoryError()
             if href_utf == node_ns_utf:
                 tree.xmlSetNs(c_node, c_ns)
                 node_ns_utf = None
@@ -275,8 +289,7 @@ cdef _iter_nsmap(nsmap):
         return nsmap.items()
     if len(nsmap) <= 1:
         return nsmap.items()
-    # nsmap will usually be a plain unordered dict => avoid type checking overhead
-    if type(nsmap) is not dict and isinstance(nsmap, OrderedDict):
+    if isinstance(nsmap, OrderedDict):
         return nsmap.items()  # keep existing order
     if None not in nsmap:
         return sorted(nsmap.items())
@@ -335,12 +348,13 @@ cdef int _addAttributeToNode(xmlNode* c_node, _Document doc, bint is_html,
         _attributeValidOrRaise(name_utf)
     value_utf = _utf8(value)
     if ns_utf is None:
-        tree.xmlNewProp(c_node, _xcstr(name_utf), _xcstr(value_utf))
+        new_attr = tree.xmlNewProp(c_node, _xcstr(name_utf), _xcstr(value_utf))
     else:
         _uriValidOrRaise(ns_utf)
         c_ns = doc._findOrBuildNodeNs(c_node, _xcstr(ns_utf), NULL, 1)
-        tree.xmlNewNsProp(c_node, c_ns,
-                          _xcstr(name_utf), _xcstr(value_utf))
+        new_attr = tree.xmlNewNsProp(c_node, c_ns, _xcstr(name_utf), _xcstr(value_utf))
+    if new_attr is NULL:
+        raise MemoryError()
     return 0
 
 
@@ -786,6 +800,7 @@ cdef inline Py_ssize_t _countElements(xmlNode* c_node) noexcept:
         c_node = c_node.next
     return count
 
+
 cdef int _findChildSlice(
     slice sliceobject, xmlNode* c_parent,
     xmlNode** c_start_node, Py_ssize_t* c_step, Py_ssize_t* c_length) except -1:
@@ -804,13 +819,16 @@ cdef int _findChildSlice(
         else:
             python._PyEval_SliceIndex(sliceobject.step, c_step)
         return 0
+
     python.PySlice_GetIndicesEx(
         sliceobject, childcount, &start, &stop, c_step, c_length)
+
     if start > childcount // 2:
         c_start_node[0] = _findChildBackwards(c_parent, childcount - start - 1)
     else:
         c_start_node[0] = _findChild(c_parent, start)
     return 0
+
 
 cdef bint _isFullSlice(slice sliceobject) except -1:
     """Conservative guess if this slice is a full slice as in ``s[:]``.
@@ -1170,7 +1188,7 @@ cdef int _deleteSlice(_Document doc, xmlNode* c_node,
     if step > 0:
         next_element = _nextElement
     else:
-        step = -step
+        step = -step if step != python.PY_SSIZE_T_MIN else python.PY_SSIZE_T_MAX
         next_element = _previousElement
     # now start deleting nodes
     c = 0
@@ -1200,7 +1218,7 @@ cdef int _replaceSlice(_Element parent, xmlNode* c_node,
     cdef _Element element
     cdef Py_ssize_t seqlength, i, c
     cdef _node_to_node_function next_element
-    assert step > 0
+    assert step > 0, step
     if left_to_right:
         next_element = _nextElement
     else:

@@ -1,0 +1,231 @@
+================================================================================
+Licenses for vendored code in rich_rst/_vendor/
+================================================================================
+
+This directory contains a vendored subset of Docutils 0.22.4, copied here to
+eliminate the docutils PyPI dependency and remove GPL code from the dependency
+tree. See VENDORED.md for the full rationale.
+
+All 41 vendored Python modules are either dedicated to the public domain or
+released under the BSD 2-Clause License. No GPL-licensed file is included.
+
+--------------------------------------------------------------------------------
+PART 1 — Public Domain (39 of 41 files)
+--------------------------------------------------------------------------------
+
+The following files have been dedicated to the public domain by their authors.
+They carry no license requirements and no restrictions on copying or usage.
+
+  docutils/__init__.py
+  docutils/core.py
+  docutils/frontend.py
+  docutils/io.py
+  docutils/nodes.py
+  docutils/statemachine.py
+  docutils/languages/__init__.py
+  docutils/languages/en.py
+  docutils/parsers/__init__.py
+  docutils/parsers/rst/__init__.py
+  docutils/parsers/rst/directives/__init__.py
+  docutils/parsers/rst/directives/admonitions.py
+  docutils/parsers/rst/directives/body.py
+  docutils/parsers/rst/directives/html.py
+  docutils/parsers/rst/directives/images.py
+  docutils/parsers/rst/directives/misc.py
+  docutils/parsers/rst/directives/parts.py
+  docutils/parsers/rst/directives/references.py
+  docutils/parsers/rst/directives/tables.py
+  docutils/parsers/rst/languages/__init__.py
+  docutils/parsers/rst/languages/en.py
+  docutils/parsers/rst/roles.py
+  docutils/parsers/rst/states.py
+  docutils/parsers/rst/tableparser.py
+  docutils/readers/__init__.py
+  docutils/readers/doctree.py
+  docutils/readers/standalone.py
+  docutils/transforms/__init__.py
+  docutils/transforms/frontmatter.py
+  docutils/transforms/misc.py
+  docutils/transforms/references.py
+  docutils/transforms/universal.py
+  docutils/utils/__init__.py
+  docutils/utils/_roman_numerals.py
+  docutils/utils/_typing.py
+  docutils/utils/code_analyzer.py
+  docutils/utils/urischemes.py
+  docutils/writers/__init__.py
+  docutils/writers/null.py
+
+Public Domain Dedication (from the Docutils project):
+
+  The persons who have associated their work with this project (the
+  "Dedicator": David Goodger and the many contributors to the Docutils
+  project) hereby dedicate the entire copyright in the work of authorship
+  known as "Docutils" to the public domain.
+
+  Most of the files included in this project have been placed in the public
+  domain, and therefore have no license requirements and no restrictions on
+  copying or usage.
+
+  Upstream project:  https://docutils.sourceforge.io/
+  Upstream COPYING:  https://docutils.sourceforge.io/COPYING.html
+
+--------------------------------------------------------------------------------
+PART 2 — BSD 2-Clause License (2 of 41 files)
+--------------------------------------------------------------------------------
+
+The following files are released under the BSD 2-Clause License:
+
+  docutils/utils/smartquotes.py
+  docutils/utils/punctuation_chars.py
+
+Both files were authored by Günter Milde. smartquotes.py is additionally
+derived from SmartyPants (John Gruber, BSD 3-Clause) and smartypants.py
+(Chad Miller, BSD 2-Clause); their licenses are reproduced below.
+
+------  docutils/utils/punctuation_chars.py  ----------------------------------
+
+  Copyright © 2011, 2017 Günter Milde.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions are met:
+
+  1. Redistributions of source code must retain the above copyright notice,
+     this list of conditions and the following disclaimer.
+
+  2. Redistributions in binary form must reproduce the above copyright
+     notice, this list of conditions and the following disclaimer in the
+     documentation and/or other materials provided with the distribution.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+  POSSIBILITY OF SUCH DAMAGE.
+
+------  docutils/utils/smartquotes.py  ----------------------------------------
+
+  Top-level file copyright:
+  Copyright © 2010–2023 Günter Milde,
+              original SmartyPants © 2003 John Gruber,
+              smartypants.py © 2004, 2007 Chad Miller.
+
+  The file is released as a whole under the BSD 2-Clause License (in short:
+  copying and distribution, with or without modification, are permitted in
+  any medium without royalty provided the copyright notices and this notice
+  are preserved; the file is offered as-is, without any warranty).
+
+  The file contains and derives from three separately-licensed components:
+
+  -- SmartyPants (BSD 3-Clause) --
+
+    Copyright (c) 2003 John Gruber (http://daringfireball.net/)
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are
+    met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in
+      the documentation and/or other materials provided with the
+      distribution.
+
+    * Neither the name "SmartyPants" nor the names of its contributors
+      may be used to endorse or promote products derived from this
+      software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+  -- smartypants.py (BSD 2-Clause) --
+
+    smartypants.py is a derivative work of SmartyPants.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are
+    met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in
+      the documentation and/or other materials provided with the
+      distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+    OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+  -- Günter Milde adaptations (BSD 2-Clause) --
+
+    Copyright © 2010–2023 Günter Milde.
+
+    Released under the terms of the 2-Clause BSD license:
+    https://opensource.org/licenses/BSD-2-Clause
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are
+    met:
+
+    1. Redistributions of source code must retain the above copyright
+       notice, this list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in
+       the documentation and/or other materials provided with the
+       distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+    A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+    HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+    DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+    THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------------------------------------------
+What is NOT vendored
+--------------------------------------------------------------------------------
+
+The following file exists in the Docutils source tree but is NOT vendored here
+and is NOT distributed with any Docutils wheel or sdist Python installation:
+
+  tools/editors/emacs/rst.el  —  GPL v3 or later (Emacs editor support file)
+
+This Emacs Lisp file is the sole reason Docutils' PyPI metadata lists GPL as
+one of its licenses. It is never imported by Python code, was not present in
+the installed wheel, and is entirely absent from this vendored copy.
+
+================================================================================

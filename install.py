@@ -5,6 +5,7 @@ Wrapper entrypoint for the Glyphs MCP installer.
 Usage:
   python3 install.py
   python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --skip-skills --skip-client-guidance
+  python3 install.py --non-interactive --glyphs-version 4 --skip-deps --plugin-mode link --skip-skills --overwrite-plugin --skip-client-guidance
 """
 import runpy
 from pathlib import Path
