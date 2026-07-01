@@ -82,6 +82,9 @@ mv -f "${converted_base}.dmg" "$dmg_versioned"
 
 rm -rf "$tmp_root"
 
+echo "Signing DMG…"
+/usr/bin/codesign --force --sign "$identity" --timestamp "$dmg_versioned"
+
 if [[ "$skip" == "1" ]]; then
   cp -f "$dmg_versioned" "$dmg_latest"
   echo "Skipping notarization (SKIP_NOTARIZATION=1)."

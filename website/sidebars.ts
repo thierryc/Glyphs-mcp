@@ -34,6 +34,7 @@ const sidebars: SidebarsConfig = {
         'compensated-tuning-tools',
         'workflows/style-set-inspection',
         'workflows/outlines-selected-nodes',
+        'workflows/visual-review',
         'workflows/export-designspace-ufo'
       ]
     },

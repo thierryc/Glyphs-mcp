@@ -5,7 +5,7 @@ description: The MCP tools exposed by the Glyphs MCP server.
 
 This is the canonical tool reference for the server shipped in this repo. The site navbar links to the current release/version; avoid copying the full command table into README or promotional pages.
 
-The active tool list can be smaller than this page when a **Tool Profile** is selected in **Edit -> Glyphs MCP Server Status...**. Reconnect your MCP client after changing profiles so it fetches the current `tools/list`.
+The active tool list can be smaller than this page when the `Read-only` profile is selected in **Edit -> Glyphs MCP Server**. Reconnect your MCP client after changing profiles so it fetches the current `tools/list`.
 
 ## Most used tools
 
@@ -16,6 +16,7 @@ The active tool list can be smaller than this page when a **Tool Profile** is se
 - `generate_kerning_tab`: open a kerning proof/worklist tab.
 - `review_kerning_bumper` / `apply_kerning_bumper`: audit and apply conservative collision fixes.
 - `review_italic_first_pass` / `apply_italic_first_pass`: preview and apply a guarded roman-to-italic first pass.
+- `render_glyph_review_image`: render a read-only PNG proof image for visual LLM review.
 - `docs_search` / `docs_get`: fetch focused Glyphs docs on demand.
 
 ## Discovery and inspection
@@ -40,6 +41,7 @@ Glyph and layer inspection responses may include Glyphs show links:
 | `get_selected_font_and_master` | Inspect current font, master, and selection snapshot. |
 | `get_selected_nodes` | Inspect selected nodes with per-master mapping for edits. |
 | `get_glyph_paths` | Export paths as JSON suitable for review or controlled editing. |
+| `render_glyph_review_image` | Render selected or named glyph layers to a PNG image with optional metrics, sidebearing, bounds, node, handle, anchor, and guide overlays. |
 | `review_collinear_handles` | Review curve nodes that should be smooth based on handle collinearity. |
 
 ## Kerning

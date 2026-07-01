@@ -78,6 +78,7 @@ def get_known_tools():
         "get_selected_font_and_master",
         "get_selected_nodes",
         "get_glyph_paths",
+        "render_glyph_review_image",
         "review_collinear_handles",
         "apply_collinear_handles_smooth",
         "set_glyph_paths",

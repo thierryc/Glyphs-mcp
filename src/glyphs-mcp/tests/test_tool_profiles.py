@@ -25,7 +25,7 @@ class ToolProfilesTests(unittest.TestCase):
 
     def test_readonly_excludes_exec_tools(self) -> None:
         enabled = tool_profiles.enabled_tool_names(
-            tool_profiles.PROFILE_CORE_READONLY,
+            tool_profiles.PROFILE_READONLY,
             {"execute_code", "execute_code_with_context", "list_open_fonts", "list_style_sets"},
         )
         self.assertNotIn("execute_code", enabled)
@@ -33,7 +33,14 @@ class ToolProfilesTests(unittest.TestCase):
         self.assertIn("list_open_fonts", enabled)
         self.assertIn("list_style_sets", enabled)
 
-    def test_all_non_readonly_profiles_include_exec_tools(self) -> None:
+    def test_only_readonly_and_edit_profiles_are_shown(self) -> None:
+        self.assertEqual(
+            tool_profiles.PROFILE_ORDER,
+            [tool_profiles.PROFILE_READONLY, tool_profiles.PROFILE_EDIT],
+        )
+        self.assertEqual(set(tool_profiles.PROFILES), set(tool_profiles.PROFILE_ORDER))
+
+    def test_edit_profile_returns_all_names(self) -> None:
         all_tools = {
             "execute_code",
             "execute_code_with_context",
@@ -42,26 +49,31 @@ class ToolProfilesTests(unittest.TestCase):
             "generate_kerning_tab",
             "set_glyph_paths",
         }
-        for name in tool_profiles.PROFILE_ORDER:
-            if name in (tool_profiles.PROFILE_FULL, tool_profiles.PROFILE_CORE_READONLY):
-                continue
-            enabled = tool_profiles.enabled_tool_names(name, all_tools)
-            self.assertIn("execute_code", enabled, msg=name)
-            self.assertIn("execute_code_with_context", enabled, msg=name)
+        enabled = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, all_tools)
+        self.assertEqual(enabled, all_tools)
 
-    def test_kerning_plus_spacing_contains_union(self) -> None:
-        # A curated tool universe that includes kerning+spacing extras.
-        universe = set(tool_profiles.CORE_READONLY_TOOLS) | set(tool_profiles.EXEC_TOOLS) | set(tool_profiles.KERNING_EXTRAS) | set(tool_profiles.SPACING_EXTRAS)
-        enabled = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_KERNING_SPACING, universe)
-        for tool in tool_profiles.KERNING_EXTRAS | tool_profiles.SPACING_EXTRAS:
-            self.assertIn(tool, enabled)
-
-    def test_full_returns_all_names(self) -> None:
+    def test_edit_is_default_fallback_and_most_capable(self) -> None:
         all_names = {"a", "b", "delete_glyph", "ExportDesignspaceAndUFO"}
-        enabled = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_FULL, all_names)
+        enabled = tool_profiles.enabled_tool_names("Missing profile", all_names)
         self.assertEqual(enabled, all_names)
 
-    def test_italic_tools_are_paths_and_editing_only(self) -> None:
+    def test_legacy_profiles_normalize_to_two_current_profiles(self) -> None:
+        self.assertEqual(tool_profiles.normalize_profile_name("Core (Read-only)"), tool_profiles.PROFILE_READONLY)
+        for legacy_name in (
+            "Full",
+            "Kerning",
+            "Spacing",
+            "Kerning + Spacing",
+            "Paths / Outlines",
+            "Editing",
+        ):
+            self.assertEqual(
+                tool_profiles.normalize_profile_name(legacy_name),
+                tool_profiles.PROFILE_EDIT,
+                msg=legacy_name,
+            )
+
+    def test_edit_includes_italic_tools_and_readonly_does_not(self) -> None:
         italic_tools = {
             "review_master_stem_metrics",
             "set_master_stem_metrics",
@@ -69,16 +81,17 @@ class ToolProfilesTests(unittest.TestCase):
             "review_italic_first_pass",
             "apply_italic_first_pass",
         }
-        universe = set(tool_profiles.CORE_READONLY_TOOLS) | set(tool_profiles.EXEC_TOOLS) | italic_tools
+        universe = set(tool_profiles.CORE_READONLY_TOOLS) | {"execute_code", "execute_code_with_context"} | italic_tools
 
-        readonly = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_CORE_READONLY, universe)
-        kerning = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_KERNING, universe)
-        spacing = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_SPACING, universe)
-        paths = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_PATHS, universe)
-        editing = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDITING, universe)
+        readonly = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_READONLY, universe)
+        editing = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, universe)
 
         self.assertTrue(italic_tools.isdisjoint(readonly))
-        self.assertTrue(italic_tools.isdisjoint(kerning))
-        self.assertTrue(italic_tools.isdisjoint(spacing))
-        self.assertTrue(italic_tools.issubset(paths))
         self.assertTrue(italic_tools.issubset(editing))
+
+    def test_visual_review_is_available_through_readonly_surface(self) -> None:
+        visual_tool = "render_glyph_review_image"
+        universe = set(tool_profiles.CORE_READONLY_TOOLS) | {"execute_code", "execute_code_with_context"} | {visual_tool}
+
+        self.assertIn(visual_tool, tool_profiles.enabled_tool_names(tool_profiles.PROFILE_READONLY, universe))
+        self.assertIn(visual_tool, tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, universe))

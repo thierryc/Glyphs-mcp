@@ -9,23 +9,13 @@ be unit-tested outside Glyphs.
 from __future__ import division, print_function, unicode_literals
 
 
-PROFILE_FULL = "Full"
-PROFILE_CORE_READONLY = "Core (Read-only)"
-PROFILE_KERNING = "Kerning"
-PROFILE_SPACING = "Spacing"
-PROFILE_KERNING_SPACING = "Kerning + Spacing"
-PROFILE_PATHS = "Paths / Outlines"
-PROFILE_EDITING = "Editing"
+PROFILE_READONLY = "Read-only"
+PROFILE_EDIT = "Edit"
 
 
 PROFILE_ORDER = [
-    PROFILE_FULL,
-    PROFILE_CORE_READONLY,
-    PROFILE_KERNING,
-    PROFILE_SPACING,
-    PROFILE_KERNING_SPACING,
-    PROFILE_PATHS,
-    PROFILE_EDITING,
+    PROFILE_READONLY,
+    PROFILE_EDIT,
 ]
 
 
@@ -42,81 +32,40 @@ CORE_READONLY_TOOLS = {
     "get_selected_font_and_master",
     "get_selected_nodes",
     "get_glyph_paths",
+    "render_glyph_review_image",
     "docs_search",
     "docs_get",
 }
 
 
-EXEC_TOOLS = {"execute_code", "execute_code_with_context"}
-
-
-KERNING_EXTRAS = {
-    "generate_kerning_tab",
-    "review_kerning_bumper",
-    "apply_kerning_bumper",
-    "set_kerning_pair",
-}
-
-
-SPACING_EXTRAS = {
-    "review_spacing",
-    "apply_spacing",
-    "set_spacing_params",
-    "set_spacing_guides",
-}
-
-
-PATHS_EXTRAS = {
-    "set_glyph_paths",
-    "review_collinear_handles",
-    "apply_collinear_handles_smooth",
-    "review_master_stem_metrics",
-    "set_master_stem_metrics",
-    "set_master_italic_angle",
-    "review_italic_first_pass",
-    "apply_italic_first_pass",
-    "measure_stem_ratio",
-    "review_compensated_tuning",
-    "apply_compensated_tuning",
-}
-
-
-EDITING_EXTRAS = {
-    "create_glyph",
-    "copy_glyph",
-    "update_glyph_properties",
-    "update_glyph_metrics",
-    "add_component_to_glyph",
-    "add_anchor_to_glyph",
-    "set_glyph_paths",
-    "review_master_stem_metrics",
-    "set_master_stem_metrics",
-    "set_master_italic_angle",
-    "review_italic_first_pass",
-    "apply_italic_first_pass",
-    "measure_stem_ratio",
-    "review_compensated_tuning",
-    "apply_compensated_tuning",
-}
-
-
 PROFILES = {
-    PROFILE_FULL: {"mode": "full"},
-    PROFILE_CORE_READONLY: {"mode": "allowlist", "tools": set(CORE_READONLY_TOOLS)},
-    PROFILE_KERNING: {"mode": "allowlist", "tools": set(CORE_READONLY_TOOLS | EXEC_TOOLS | KERNING_EXTRAS)},
-    PROFILE_SPACING: {"mode": "allowlist", "tools": set(CORE_READONLY_TOOLS | EXEC_TOOLS | SPACING_EXTRAS)},
-    PROFILE_KERNING_SPACING: {
-        "mode": "allowlist",
-        "tools": set(CORE_READONLY_TOOLS | EXEC_TOOLS | KERNING_EXTRAS | SPACING_EXTRAS),
-    },
-    PROFILE_PATHS: {"mode": "allowlist", "tools": set(CORE_READONLY_TOOLS | EXEC_TOOLS | PATHS_EXTRAS)},
-    PROFILE_EDITING: {"mode": "allowlist", "tools": set(CORE_READONLY_TOOLS | EXEC_TOOLS | EDITING_EXTRAS)},
+    PROFILE_READONLY: {"mode": "allowlist", "tools": set(CORE_READONLY_TOOLS)},
+    PROFILE_EDIT: {"mode": "full"},
 }
+
+
+LEGACY_PROFILE_ALIASES = {
+    "Full": PROFILE_EDIT,
+    "Core (Read-only)": PROFILE_READONLY,
+    "Kerning": PROFILE_EDIT,
+    "Spacing": PROFILE_EDIT,
+    "Kerning + Spacing": PROFILE_EDIT,
+    "Paths / Outlines": PROFILE_EDIT,
+    "Editing": PROFILE_EDIT,
+}
+
+
+def normalize_profile_name(name):
+    try:
+        value = str(name) if name else PROFILE_EDIT
+    except Exception:
+        return PROFILE_EDIT
+    return LEGACY_PROFILE_ALIASES.get(value, value)
 
 
 def is_valid_profile_name(name):
     try:
-        return bool(name) and str(name) in PROFILES
+        return bool(name) and normalize_profile_name(name) in PROFILES
     except Exception:
         return False
 
@@ -124,12 +73,12 @@ def is_valid_profile_name(name):
 def enabled_tool_names(profile_name, all_tool_names):
     """Return the enabled tool names for the requested profile.
 
-    Full profile returns all tool names as-is.
-    Other profiles return allowlist ∩ all_tool_names (unknown tools are ignored).
+    Edit returns all tool names as-is. Read-only returns allowlist ∩ all_tool_names
+    (unknown tools are ignored).
     """
-    profile = PROFILES.get(str(profile_name))
+    profile = PROFILES.get(normalize_profile_name(profile_name))
     if not profile:
-        profile = PROFILES.get(PROFILE_FULL)
+        profile = PROFILES.get(PROFILE_EDIT)
 
     mode = profile.get("mode")
     if mode == "full":

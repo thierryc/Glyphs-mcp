@@ -286,6 +286,7 @@ if [[ "$vendor_mode" == "1" ]]; then
   py311_x64="$glyphs_py_bin/python3.11-intel64"
 
   py312_bin="$(command -v python3.12 2>/dev/null || true)"
+  py314_bin="$(command -v python3.14 2>/dev/null || true)"
 
   vendor_root="$dst_bundle/Contents/Resources/vendor"
   rm -rf "$vendor_root"
@@ -295,10 +296,10 @@ if [[ "$vendor_mode" == "1" ]]; then
     vendor_source="$HOME/Library/Application Support/Glyphs 3/Scripts/site-packages"
   fi
 
-  target_names=( "py311-arm64" "py311-x86_64" "py312-arm64" "py312-x86_64" )
+  target_names=( "py311-arm64" "py311-x86_64" "py312-arm64" "py312-x86_64" "py314-arm64" "py314-x86_64" )
 
-  # Resolve interpreter commands per target. For py312-x86_64 use a universal2 python
-  # and run it under Rosetta when on Apple Silicon.
+  # Resolve interpreter commands per target. For x86_64 python.org targets, use
+  # universal2 Python and run it under Rosetta when on Apple Silicon.
   cmd_for_target() {
     local target="$1"
     case "$target" in
@@ -306,6 +307,8 @@ if [[ "$vendor_mode" == "1" ]]; then
       py311-x86_64) echo "$py311_x64" ;;
       py312-arm64) echo "$py312_bin" ;;
       py312-x86_64) echo "arch -x86_64 $py312_bin" ;;
+      py314-arm64) echo "$py314_bin" ;;
+      py314-x86_64) echo "arch -x86_64 $py314_bin" ;;
       *) echo "" ;;
     esac
   }
@@ -317,6 +320,8 @@ if [[ "$vendor_mode" == "1" ]]; then
       py311-x86_64) "$py311_x64" "$@" ;;
       py312-arm64) "$py312_bin" "$@" ;;
       py312-x86_64) arch -x86_64 "$py312_bin" "$@" ;;
+      py314-arm64) "$py314_bin" "$@" ;;
+      py314-x86_64) arch -x86_64 "$py314_bin" "$@" ;;
       *) return 127 ;;
     esac
   }
@@ -344,7 +349,7 @@ if [[ "$vendor_mode" == "1" ]]; then
       echo "  - $m" >&2
     done
     echo "hint: ensure GlyphsPythonPlugin is installed for py311 targets, and install" >&2
-    echo "      python.org Python 3.12 (universal2) for py312 targets," >&2
+    echo "      python.org Python 3.12 and 3.14 (universal2) for py312/py314 targets," >&2
     echo "      or re-run with --allow-missing-targets to skip missing targets." >&2
     exit 1
   fi
@@ -392,6 +397,20 @@ if [[ "$vendor_mode" == "1" ]]; then
         py312-arm64|py312-x86_64)
           # Source folder is typically tied to one Python minor version; do not guess.
           abi_ok="0"
+          ;;
+        py314-arm64)
+          if [[ "$pyd_core" == *"cpython-314"* ]]; then
+            if file "$pyd_core" | grep -q "arm64"; then
+              abi_ok="1"
+            elif file "$pyd_core" | grep -q "universal binary"; then
+              abi_ok="1"
+            fi
+          fi
+          ;;
+        py314-x86_64)
+          if [[ "$pyd_core" == *"cpython-314"* ]] && file "$pyd_core" | grep -q "x86_64"; then
+            abi_ok="1"
+          fi
           ;;
       esac
 

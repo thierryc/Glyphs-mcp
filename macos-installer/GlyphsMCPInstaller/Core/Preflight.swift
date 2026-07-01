@@ -271,7 +271,7 @@ public enum GlyphsPythonResolver {
 					pythonPath: pythonPath,
 					pipPath: nil,
 					summary: "Glyphs is set to Python \(version) at \(frameworkPath)",
-					installFailureReason: "Glyphs is set to Python \(version), but Glyphs MCP supports Python 3.11–3.13. Change the Python version in Glyphs and restart Glyphs."
+					installFailureReason: "Glyphs is set to Python \(version), but Glyphs MCP supports Python 3.11–3.14. Change the Python version in Glyphs and restart Glyphs."
 				)
 			}
 			return GlyphsPythonStatus(
@@ -303,7 +303,7 @@ public enum GlyphsPythonResolver {
 					pythonPath: pythonPath,
 					pipPath: pipPath,
 					summary: "Using Glyphs bundled Python \(version)",
-					installFailureReason: "Glyphs bundled Python is \(version), but Glyphs MCP supports Python 3.11–3.13. Update Glyphs Python and restart Glyphs."
+					installFailureReason: "Glyphs bundled Python is \(version), but Glyphs MCP supports Python 3.11–3.14. Update Glyphs Python and restart Glyphs."
 				)
 			}
 			let summaryVersion = preflight.glyphsPipVersion.map { " \($0)" } ?? ""
@@ -713,11 +713,11 @@ enum PythonDetector {
 
 		var parts: [String] = []
 		if good == 0 {
-			parts.append("No supported interpreters (3.11–3.13).")
+			parts.append("No supported interpreters (3.11–3.14).")
 		} else if good == 1 {
-			parts.append("Good candidates: 1 (3.11–3.13).")
+			parts.append("Good candidates: 1 (3.11–3.14).")
 		} else {
-			parts.append("Good candidates: \(good) (3.11–3.13).")
+			parts.append("Good candidates: \(good) (3.11–3.14).")
 		}
 
 		if ignored > 0 {
@@ -866,7 +866,7 @@ enum PythonDetector {
 				tooOldCount += 1
 				continue
 			}
-			if t >= (3, 14, 0) {
+			if t >= (3, 15, 0) {
 				tooNewCount += 1
 				continue
 			}
@@ -890,7 +890,7 @@ enum PythonDetector {
 enum VersionGate {
 	static func isSupported(version: String) -> Bool {
 		let t = tuple(version)
-		return t >= (3, 11, 0) && t < (3, 14, 0)
+		return t >= (3, 11, 0) && t < (3, 15, 0)
 	}
 
 	static func compare(_ a: String, _ b: String) -> Int {

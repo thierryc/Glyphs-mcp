@@ -153,6 +153,27 @@ class ConfigDict(TypedDict, total=False):
 
         1. The `= Field(init=False)` does not have any effect at runtime, but prevents the `__pydantic_extra__` field from
            being included as a parameter to the model's `__init__` method by type checkers.
+
+    As well as specifying an `extra` configuration value on the model, you can also provide it as an argument to the validation methods.
+    This will override any `extra` configuration value set on the model:
+    ```python
+    from pydantic import BaseModel, ConfigDict, ValidationError
+
+    class Model(BaseModel):
+        x: int
+        model_config = ConfigDict(extra="allow")
+
+    try:
+        # Override model config and forbid extra fields just this time
+        Model.model_validate({"x": 1, "y": 2}, extra="forbid")
+    except ValidationError as exc:
+        print(exc)
+        """
+        1 validation error for Model
+        y
+          Extra inputs are not permitted [type=extra_forbidden, input_value=2, input_type=int]
+        """
+    ```
     '''
 
     frozen: bool
@@ -194,7 +215,7 @@ class ConfigDict(TypedDict, total=False):
         print(m)
         #> my_field='foo'
 
-        m = Model(my_alias='foo')  # (3)!
+        m = Model(my_field='foo')  # (3)!
         print(m)
         #> my_field='foo'
         ```
@@ -367,7 +388,7 @@ class ConfigDict(TypedDict, total=False):
     If you want to use different alias generators for validation and serialization, you can use
     [`AliasGenerator`][pydantic.aliases.AliasGenerator] instead.
 
-    If data source field names do not match your code style (e. g. CamelCase fields),
+    If data source field names do not match your code style (e.g. CamelCase fields),
     you can automatically generate aliases using `alias_generator`. Here's an example with
     a basic callable:
 
@@ -594,8 +615,51 @@ class ConfigDict(TypedDict, total=False):
     The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'` and
     `'float'`. Defaults to `'iso8601'`.
 
-    - `'iso8601'` will serialize timedeltas to ISO 8601 durations.
+    - `'iso8601'` will serialize timedeltas to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
     - `'float'` will serialize timedeltas to the total number of seconds.
+
+    !!! warning
+        Starting in v2.12, it is recommended to use the [`ser_json_temporal`][pydantic.config.ConfigDict.ser_json_temporal]
+        setting instead of `ser_json_timedelta`. This setting will be deprecated in v3.
+    """
+
+    ser_json_temporal: Literal['iso8601', 'seconds', 'milliseconds']
+    """
+    The format of JSON serialized temporal types from the [`datetime`][] module. This includes:
+
+    - [`datetime.datetime`][]
+    - [`datetime.date`][]
+    - [`datetime.time`][]
+    - [`datetime.timedelta`][]
+
+    Can be one of:
+
+    - `'iso8601'` will serialize date-like types to [ISO 8601 text format](https://en.wikipedia.org/wiki/ISO_8601#Durations).
+    - `'milliseconds'` will serialize date-like types to a floating point number of milliseconds since the epoch.
+    - `'seconds'` will serialize date-like types to a floating point number of seconds since the epoch.
+
+    Defaults to `'iso8601'`.
+
+    !!! note
+        This setting was introduced in v2.12. It overlaps with the [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta]
+        setting which will be deprecated in v3. It also adds more configurability for
+        the other temporal types.
+    """
+
+    val_temporal_unit: Literal['seconds', 'milliseconds', 'infer']
+    """
+    The unit to assume for validating numeric input for datetime-like types ([`datetime.datetime`][] and [`datetime.date`][]). Can be one of:
+
+    - `'seconds'` will validate date or time numeric inputs as seconds since the [epoch].
+    - `'milliseconds'` will validate date or time numeric inputs as milliseconds since the [epoch].
+    - `'infer'` will infer the unit from the string numeric input on unix time as:
+
+        * seconds since the [epoch] if $-2^{10} <= v <= 2^{10}$
+        * milliseconds since the [epoch] (if $v < -2^{10}$ or $v > 2^{10}$).
+
+    Defaults to `'infer'`.
+
+    [epoch]: https://en.wikipedia.org/wiki/Unix_time
     """
 
     ser_json_bytes: Literal['utf8', 'base64', 'hex']
@@ -666,9 +730,9 @@ class ConfigDict(TypedDict, total=False):
     except UserWarning as e:
         print(e)
         '''
-        Field "model_dump_something" in Model has conflict with protected namespace "model_dump".
+        Field 'model_dump_something' in 'Model' conflicts with protected namespace 'model_dump'.
 
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('model_validate',)`.
+        You may be able to solve this by setting the 'protected_namespaces' configuration to ('model_validate',).
         '''
     ```
 
@@ -699,11 +763,11 @@ class ConfigDict(TypedDict, total=False):
     for warning in caught_warnings:
         print(f'{warning.message}')
         '''
-        Field "also_protect_field" in Model has conflict with protected namespace "also_protect_".
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', re.compile('^protect_this$'))`.
+        Field 'also_protect_field' in 'Model' conflicts with protected namespace 'also_protect_'.
+        You may be able to solve this by setting the 'protected_namespaces' configuration to ('protect_me_', re.compile('^protect_this$'))`.
 
-        Field "protect_this" in Model has conflict with protected namespace "re.compile('^protect_this$')".
-        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_', 'also_protect_')`.
+        Field 'protect_this' in 'Model' conflicts with protected namespace 're.compile('^protect_this$')'.
+        You may be able to solve this by setting the 'protected_namespaces' configuration to ('protect_me_', 'also_protect_')`.
         '''
     ```
 
@@ -720,10 +784,10 @@ class ConfigDict(TypedDict, total=False):
 
             model_config = ConfigDict(protected_namespaces=('model_',))
 
-    except NameError as e:
+    except ValueError as e:
         print(e)
         '''
-        Field "model_validate" conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace "model_".
+        Field 'model_validate' conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace 'model_'.
         '''
     ```
     """
@@ -933,14 +997,13 @@ class ConfigDict(TypedDict, total=False):
     The regex engine to be used for pattern validation.
     Defaults to `'rust-regex'`.
 
-    - `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust crate,
+    - `'rust-regex'` uses the [`regex`](https://docs.rs/regex) Rust crate,
       which is non-backtracking and therefore more DDoS resistant, but does not support all regex features.
-    - `python-re` use the [`re`](https://docs.python.org/3/library/re.html) module,
-      which supports all regex features, but may be slower.
+    - `'python-re'` use the [`re`][] module, which supports all regex features, but may be slower.
 
     !!! note
-        If you use a compiled regex pattern, the python-re engine will be used regardless of this setting.
-        This is so that flags such as `re.IGNORECASE` are respected.
+        If you use a compiled regex pattern, the `'python-re'` engine will be used regardless of this setting.
+        This is so that flags such as [`re.IGNORECASE`][] are respected.
 
     ```python
     from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -1013,7 +1076,7 @@ class ConfigDict(TypedDict, total=False):
         [`TypedDict`][typing.TypedDict] and stdlib dataclasses, in particular when:
 
         - inheritance is being used.
-        - multiple classes have the same name in the same source file.
+        - multiple classes have the same name in the same source file (unless Python 3.13 or greater is used).
     '''
 
     cache_strings: bool | Literal['all', 'keys', 'none']
@@ -1135,6 +1198,24 @@ class ConfigDict(TypedDict, total=False):
 
     1. The field `'my_field'` has an alias `'my_alias'`.
     2. The model is serialized using the alias `'my_alias'` for the `'my_field'` attribute.
+    """
+
+    url_preserve_empty_path: bool
+    """
+    Whether to preserve empty URL paths when validating values for a URL type. Defaults to `False`.
+
+    ```python
+    from pydantic import AnyUrl, BaseModel, ConfigDict
+
+    class Model(BaseModel):
+        model_config = ConfigDict(url_preserve_empty_path=True)
+
+        url: AnyUrl
+
+    m = Model(url='http://example.com')
+    print(m.url)
+    #> http://example.com
+    ```
     """
 
 

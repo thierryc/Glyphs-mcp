@@ -1,5 +1,5 @@
 {
-  "generatedAt": 1774613269,
+  "generatedAt": 1782895074,
   "targets": {
     "py311-arm64": {
       "machine": "arm64",
@@ -34,7 +34,7 @@
         },
         {
           "name": "cffi",
-          "version": "1.17.1"
+          "version": "2.0.0"
         },
         {
           "name": "click",
@@ -45,12 +45,24 @@
           "version": "45.0.5"
         },
         {
+          "name": "cyclopts",
+          "version": "4.20.0"
+        },
+        {
           "name": "defcon",
           "version": "0.12.1"
         },
         {
+          "name": "distro",
+          "version": "1.9.0"
+        },
+        {
           "name": "dnspython",
           "version": "2.7.0"
+        },
+        {
+          "name": "docstring_parser",
+          "version": "0.18.0"
         },
         {
           "name": "email_validator",
@@ -62,19 +74,19 @@
         },
         {
           "name": "fastmcp",
-          "version": "2.10.2"
+          "version": "2.12.0"
         },
         {
           "name": "fontParts",
           "version": "0.9.11"
         },
         {
-          "name": "fontPens",
-          "version": "0.2.4"
-        },
-        {
           "name": "fontMath",
           "version": "0.10.0"
+        },
+        {
+          "name": "fontPens",
+          "version": "0.4.0"
         },
         {
           "name": "fonttools",
@@ -105,32 +117,76 @@
           "version": "3.10"
         },
         {
+          "name": "isodate",
+          "version": "0.7.2"
+        },
+        {
+          "name": "jiter",
+          "version": "0.16.0"
+        },
+        {
           "name": "jsonschema",
           "version": "4.24.0"
+        },
+        {
+          "name": "jsonschema-path",
+          "version": "0.4.6"
         },
         {
           "name": "jsonschema-specifications",
           "version": "2025.4.1"
         },
         {
+          "name": "lazy-object-proxy",
+          "version": "1.12.0"
+        },
+        {
           "name": "lxml",
-          "version": "6.0.2"
+          "version": "6.1.1"
         },
         {
           "name": "markdown-it-py",
           "version": "3.0.0"
         },
         {
+          "name": "MarkupSafe",
+          "version": "3.0.3"
+        },
+        {
           "name": "mcp",
-          "version": "1.10.1"
+          "version": "1.12.4"
         },
         {
           "name": "mdurl",
           "version": "0.1.2"
         },
         {
+          "name": "more-itertools",
+          "version": "11.1.0"
+        },
+        {
+          "name": "openai",
+          "version": "2.44.0"
+        },
+        {
+          "name": "openapi-core",
+          "version": "0.23.1"
+        },
+        {
           "name": "openapi-pydantic",
           "version": "0.5.1"
+        },
+        {
+          "name": "openapi-schema-validator",
+          "version": "0.7.1"
+        },
+        {
+          "name": "openapi-spec-validator",
+          "version": "0.8.1"
+        },
+        {
+          "name": "pathable",
+          "version": "0.5.0"
         },
         {
           "name": "pyclipper",
@@ -142,11 +198,11 @@
         },
         {
           "name": "pydantic",
-          "version": "2.11.7"
+          "version": "2.12.0"
         },
         {
           "name": "pydantic_core",
-          "version": "2.33.2"
+          "version": "2.41.1"
         },
         {
           "name": "pydantic-settings",
@@ -157,6 +213,10 @@
           "version": "2.19.2"
         },
         {
+          "name": "pyperclip",
+          "version": "1.11.0"
+        },
+        {
           "name": "python-dotenv",
           "version": "1.1.1"
         },
@@ -165,12 +225,24 @@
           "version": "0.0.20"
         },
         {
+          "name": "PyYAML",
+          "version": "6.0.3"
+        },
+        {
           "name": "referencing",
           "version": "0.36.2"
         },
         {
+          "name": "rfc3339-validator",
+          "version": "0.1.4"
+        },
+        {
           "name": "rich",
           "version": "14.0.0"
+        },
+        {
+          "name": "rich-rst",
+          "version": "2.0.2"
         },
         {
           "name": "rpds-py",
@@ -201,6 +273,10 @@
           "version": "0.47.1"
         },
         {
+          "name": "tqdm",
+          "version": "4.68.3"
+        },
+        {
           "name": "typer",
           "version": "0.16.0"
         },
@@ -210,7 +286,7 @@
         },
         {
           "name": "typing-inspection",
-          "version": "0.4.1"
+          "version": "0.4.2"
         },
         {
           "name": "unicodedata2",
@@ -219,6 +295,10 @@
         {
           "name": "uvicorn",
           "version": "0.35.0"
+        },
+        {
+          "name": "Werkzeug",
+          "version": "3.1.8"
         }
       ],
       "python": "/Users/thierryc/Library/Application Support/Glyphs 3/Repositories/GlyphsPythonPlugin/Python.framework/Versions/Current/bin/python3.11",
@@ -258,7 +338,7 @@
         },
         {
           "name": "cffi",
-          "version": "1.17.1"
+          "version": "2.0.0"
         },
         {
           "name": "click",
@@ -269,12 +349,24 @@
           "version": "45.0.5"
         },
         {
+          "name": "cyclopts",
+          "version": "4.20.0"
+        },
+        {
           "name": "defcon",
           "version": "0.12.1"
         },
         {
+          "name": "distro",
+          "version": "1.9.0"
+        },
+        {
           "name": "dnspython",
           "version": "2.7.0"
+        },
+        {
+          "name": "docstring_parser",
+          "version": "0.18.0"
         },
         {
           "name": "email_validator",
@@ -286,19 +378,19 @@
         },
         {
           "name": "fastmcp",
-          "version": "2.10.2"
+          "version": "2.12.0"
         },
         {
           "name": "fontParts",
           "version": "0.9.11"
         },
         {
-          "name": "fontPens",
-          "version": "0.2.4"
-        },
-        {
           "name": "fontMath",
           "version": "0.10.0"
+        },
+        {
+          "name": "fontPens",
+          "version": "0.4.0"
         },
         {
           "name": "fonttools",
@@ -329,32 +421,76 @@
           "version": "3.10"
         },
         {
+          "name": "isodate",
+          "version": "0.7.2"
+        },
+        {
+          "name": "jiter",
+          "version": "0.16.0"
+        },
+        {
           "name": "jsonschema",
           "version": "4.24.0"
+        },
+        {
+          "name": "jsonschema-path",
+          "version": "0.4.6"
         },
         {
           "name": "jsonschema-specifications",
           "version": "2025.4.1"
         },
         {
+          "name": "lazy-object-proxy",
+          "version": "1.11.0"
+        },
+        {
           "name": "lxml",
-          "version": "6.0.2"
+          "version": "6.1.1"
         },
         {
           "name": "markdown-it-py",
           "version": "3.0.0"
         },
         {
+          "name": "MarkupSafe",
+          "version": "3.0.3"
+        },
+        {
           "name": "mcp",
-          "version": "1.10.1"
+          "version": "1.12.4"
         },
         {
           "name": "mdurl",
           "version": "0.1.2"
         },
         {
+          "name": "more-itertools",
+          "version": "11.1.0"
+        },
+        {
+          "name": "openai",
+          "version": "2.44.0"
+        },
+        {
+          "name": "openapi-core",
+          "version": "0.23.1"
+        },
+        {
           "name": "openapi-pydantic",
           "version": "0.5.1"
+        },
+        {
+          "name": "openapi-schema-validator",
+          "version": "0.7.1"
+        },
+        {
+          "name": "openapi-spec-validator",
+          "version": "0.8.1"
+        },
+        {
+          "name": "pathable",
+          "version": "0.5.0"
         },
         {
           "name": "pyclipper",
@@ -366,11 +502,11 @@
         },
         {
           "name": "pydantic",
-          "version": "2.11.7"
+          "version": "2.12.0"
         },
         {
           "name": "pydantic_core",
-          "version": "2.33.2"
+          "version": "2.41.1"
         },
         {
           "name": "pydantic-settings",
@@ -381,6 +517,10 @@
           "version": "2.19.2"
         },
         {
+          "name": "pyperclip",
+          "version": "1.11.0"
+        },
+        {
           "name": "python-dotenv",
           "version": "1.1.1"
         },
@@ -389,12 +529,24 @@
           "version": "0.0.20"
         },
         {
+          "name": "PyYAML",
+          "version": "6.0.3"
+        },
+        {
           "name": "referencing",
           "version": "0.36.2"
         },
         {
+          "name": "rfc3339-validator",
+          "version": "0.1.4"
+        },
+        {
           "name": "rich",
           "version": "14.0.0"
+        },
+        {
+          "name": "rich-rst",
+          "version": "2.0.2"
         },
         {
           "name": "rpds-py",
@@ -425,6 +577,10 @@
           "version": "0.47.1"
         },
         {
+          "name": "tqdm",
+          "version": "4.68.3"
+        },
+        {
           "name": "typer",
           "version": "0.16.0"
         },
@@ -434,7 +590,7 @@
         },
         {
           "name": "typing-inspection",
-          "version": "0.4.1"
+          "version": "0.4.2"
         },
         {
           "name": "unicodedata2",
@@ -443,6 +599,10 @@
         {
           "name": "uvicorn",
           "version": "0.35.0"
+        },
+        {
+          "name": "Werkzeug",
+          "version": "3.1.8"
         }
       ],
       "python": "/Users/thierryc/Library/Application Support/Glyphs 3/Repositories/GlyphsPythonPlugin/Python.framework/Versions/Current/bin/python3.11-intel64",
@@ -482,7 +642,7 @@
         },
         {
           "name": "cffi",
-          "version": "1.17.1"
+          "version": "2.0.0"
         },
         {
           "name": "click",
@@ -493,12 +653,24 @@
           "version": "45.0.5"
         },
         {
+          "name": "cyclopts",
+          "version": "4.20.0"
+        },
+        {
           "name": "defcon",
           "version": "0.12.1"
         },
         {
+          "name": "distro",
+          "version": "1.9.0"
+        },
+        {
           "name": "dnspython",
           "version": "2.7.0"
+        },
+        {
+          "name": "docstring_parser",
+          "version": "0.18.0"
         },
         {
           "name": "email_validator",
@@ -510,19 +682,19 @@
         },
         {
           "name": "fastmcp",
-          "version": "2.10.2"
+          "version": "2.12.0"
         },
         {
           "name": "fontParts",
           "version": "0.9.11"
         },
         {
-          "name": "fontPens",
-          "version": "0.2.4"
-        },
-        {
           "name": "fontMath",
           "version": "0.10.0"
+        },
+        {
+          "name": "fontPens",
+          "version": "0.4.0"
         },
         {
           "name": "fonttools",
@@ -553,32 +725,76 @@
           "version": "3.10"
         },
         {
+          "name": "isodate",
+          "version": "0.7.2"
+        },
+        {
+          "name": "jiter",
+          "version": "0.16.0"
+        },
+        {
           "name": "jsonschema",
           "version": "4.24.0"
+        },
+        {
+          "name": "jsonschema-path",
+          "version": "0.4.6"
         },
         {
           "name": "jsonschema-specifications",
           "version": "2025.4.1"
         },
         {
+          "name": "lazy-object-proxy",
+          "version": "1.12.0"
+        },
+        {
           "name": "lxml",
-          "version": "6.0.2"
+          "version": "6.1.1"
         },
         {
           "name": "markdown-it-py",
           "version": "3.0.0"
         },
         {
+          "name": "MarkupSafe",
+          "version": "3.0.3"
+        },
+        {
           "name": "mcp",
-          "version": "1.10.1"
+          "version": "1.12.4"
         },
         {
           "name": "mdurl",
           "version": "0.1.2"
         },
         {
+          "name": "more-itertools",
+          "version": "11.1.0"
+        },
+        {
+          "name": "openai",
+          "version": "2.44.0"
+        },
+        {
+          "name": "openapi-core",
+          "version": "0.23.1"
+        },
+        {
           "name": "openapi-pydantic",
           "version": "0.5.1"
+        },
+        {
+          "name": "openapi-schema-validator",
+          "version": "0.7.1"
+        },
+        {
+          "name": "openapi-spec-validator",
+          "version": "0.8.1"
+        },
+        {
+          "name": "pathable",
+          "version": "0.5.0"
         },
         {
           "name": "pyclipper",
@@ -590,11 +806,11 @@
         },
         {
           "name": "pydantic",
-          "version": "2.11.7"
+          "version": "2.12.0"
         },
         {
           "name": "pydantic_core",
-          "version": "2.33.2"
+          "version": "2.41.1"
         },
         {
           "name": "pydantic-settings",
@@ -605,6 +821,10 @@
           "version": "2.19.2"
         },
         {
+          "name": "pyperclip",
+          "version": "1.11.0"
+        },
+        {
           "name": "python-dotenv",
           "version": "1.1.1"
         },
@@ -613,12 +833,24 @@
           "version": "0.0.20"
         },
         {
+          "name": "PyYAML",
+          "version": "6.0.3"
+        },
+        {
           "name": "referencing",
           "version": "0.36.2"
         },
         {
+          "name": "rfc3339-validator",
+          "version": "0.1.4"
+        },
+        {
           "name": "rich",
           "version": "14.0.0"
+        },
+        {
+          "name": "rich-rst",
+          "version": "2.0.2"
         },
         {
           "name": "rpds-py",
@@ -649,6 +881,10 @@
           "version": "0.47.1"
         },
         {
+          "name": "tqdm",
+          "version": "4.68.3"
+        },
+        {
           "name": "typer",
           "version": "0.16.0"
         },
@@ -658,7 +894,7 @@
         },
         {
           "name": "typing-inspection",
-          "version": "0.4.1"
+          "version": "0.4.2"
         },
         {
           "name": "unicodedata2",
@@ -667,6 +903,10 @@
         {
           "name": "uvicorn",
           "version": "0.35.0"
+        },
+        {
+          "name": "Werkzeug",
+          "version": "3.1.8"
         }
       ],
       "python": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12",
@@ -706,7 +946,7 @@
         },
         {
           "name": "cffi",
-          "version": "1.17.1"
+          "version": "2.0.0"
         },
         {
           "name": "click",
@@ -717,12 +957,24 @@
           "version": "45.0.5"
         },
         {
+          "name": "cyclopts",
+          "version": "4.20.0"
+        },
+        {
           "name": "defcon",
           "version": "0.12.1"
         },
         {
+          "name": "distro",
+          "version": "1.9.0"
+        },
+        {
           "name": "dnspython",
           "version": "2.7.0"
+        },
+        {
+          "name": "docstring_parser",
+          "version": "0.18.0"
         },
         {
           "name": "email_validator",
@@ -734,19 +986,19 @@
         },
         {
           "name": "fastmcp",
-          "version": "2.10.2"
+          "version": "2.12.0"
         },
         {
           "name": "fontParts",
           "version": "0.9.11"
         },
         {
-          "name": "fontPens",
-          "version": "0.2.4"
-        },
-        {
           "name": "fontMath",
           "version": "0.10.0"
+        },
+        {
+          "name": "fontPens",
+          "version": "0.4.0"
         },
         {
           "name": "fonttools",
@@ -777,32 +1029,76 @@
           "version": "3.10"
         },
         {
+          "name": "isodate",
+          "version": "0.7.2"
+        },
+        {
+          "name": "jiter",
+          "version": "0.16.0"
+        },
+        {
           "name": "jsonschema",
           "version": "4.24.0"
+        },
+        {
+          "name": "jsonschema-path",
+          "version": "0.4.6"
         },
         {
           "name": "jsonschema-specifications",
           "version": "2025.4.1"
         },
         {
+          "name": "lazy-object-proxy",
+          "version": "1.11.0"
+        },
+        {
           "name": "lxml",
-          "version": "6.0.2"
+          "version": "6.1.1"
         },
         {
           "name": "markdown-it-py",
           "version": "3.0.0"
         },
         {
+          "name": "MarkupSafe",
+          "version": "3.0.3"
+        },
+        {
           "name": "mcp",
-          "version": "1.10.1"
+          "version": "1.12.4"
         },
         {
           "name": "mdurl",
           "version": "0.1.2"
         },
         {
+          "name": "more-itertools",
+          "version": "11.1.0"
+        },
+        {
+          "name": "openai",
+          "version": "2.44.0"
+        },
+        {
+          "name": "openapi-core",
+          "version": "0.23.1"
+        },
+        {
           "name": "openapi-pydantic",
           "version": "0.5.1"
+        },
+        {
+          "name": "openapi-schema-validator",
+          "version": "0.7.1"
+        },
+        {
+          "name": "openapi-spec-validator",
+          "version": "0.8.1"
+        },
+        {
+          "name": "pathable",
+          "version": "0.5.0"
         },
         {
           "name": "pyclipper",
@@ -814,11 +1110,11 @@
         },
         {
           "name": "pydantic",
-          "version": "2.11.7"
+          "version": "2.12.0"
         },
         {
           "name": "pydantic_core",
-          "version": "2.33.2"
+          "version": "2.41.1"
         },
         {
           "name": "pydantic-settings",
@@ -829,6 +1125,10 @@
           "version": "2.19.2"
         },
         {
+          "name": "pyperclip",
+          "version": "1.11.0"
+        },
+        {
           "name": "python-dotenv",
           "version": "1.1.1"
         },
@@ -837,12 +1137,24 @@
           "version": "0.0.20"
         },
         {
+          "name": "PyYAML",
+          "version": "6.0.3"
+        },
+        {
           "name": "referencing",
           "version": "0.36.2"
         },
         {
+          "name": "rfc3339-validator",
+          "version": "0.1.4"
+        },
+        {
           "name": "rich",
           "version": "14.0.0"
+        },
+        {
+          "name": "rich-rst",
+          "version": "2.0.2"
         },
         {
           "name": "rpds-py",
@@ -873,6 +1185,10 @@
           "version": "0.47.1"
         },
         {
+          "name": "tqdm",
+          "version": "4.68.3"
+        },
+        {
           "name": "typer",
           "version": "0.16.0"
         },
@@ -882,7 +1198,7 @@
         },
         {
           "name": "typing-inspection",
-          "version": "0.4.1"
+          "version": "0.4.2"
         },
         {
           "name": "unicodedata2",
@@ -891,11 +1207,615 @@
         {
           "name": "uvicorn",
           "version": "0.35.0"
+        },
+        {
+          "name": "Werkzeug",
+          "version": "3.1.8"
         }
       ],
       "python": "arch -x86_64 /Library/Frameworks/Python.framework/Versions/3.12/bin/python3.12",
       "pythonVersion": "3.12.3",
       "sitePackages": "plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Resources/vendor/py312-x86_64/site-packages"
+    },
+    "py314-arm64": {
+      "machine": "arm64",
+      "packages": [
+        {
+          "name": "annotated-types",
+          "version": "0.7.0"
+        },
+        {
+          "name": "anyio",
+          "version": "4.9.0"
+        },
+        {
+          "name": "appdirs",
+          "version": "1.4.4"
+        },
+        {
+          "name": "attrs",
+          "version": "25.3.0"
+        },
+        {
+          "name": "Authlib",
+          "version": "1.6.0"
+        },
+        {
+          "name": "booleanOperations",
+          "version": "0.10.0"
+        },
+        {
+          "name": "certifi",
+          "version": "2025.6.15"
+        },
+        {
+          "name": "cffi",
+          "version": "2.0.0"
+        },
+        {
+          "name": "click",
+          "version": "8.2.1"
+        },
+        {
+          "name": "cryptography",
+          "version": "45.0.5"
+        },
+        {
+          "name": "cyclopts",
+          "version": "4.20.0"
+        },
+        {
+          "name": "defcon",
+          "version": "0.12.1"
+        },
+        {
+          "name": "distro",
+          "version": "1.9.0"
+        },
+        {
+          "name": "dnspython",
+          "version": "2.7.0"
+        },
+        {
+          "name": "docstring_parser",
+          "version": "0.18.0"
+        },
+        {
+          "name": "email_validator",
+          "version": "2.2.0"
+        },
+        {
+          "name": "exceptiongroup",
+          "version": "1.3.0"
+        },
+        {
+          "name": "fastmcp",
+          "version": "2.12.0"
+        },
+        {
+          "name": "fontParts",
+          "version": "0.9.11"
+        },
+        {
+          "name": "fontMath",
+          "version": "0.10.0"
+        },
+        {
+          "name": "fontPens",
+          "version": "0.4.0"
+        },
+        {
+          "name": "fonttools",
+          "version": "4.54.1"
+        },
+        {
+          "name": "fs",
+          "version": "2.4.16"
+        },
+        {
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "name": "httpcore",
+          "version": "1.0.9"
+        },
+        {
+          "name": "httpx",
+          "version": "0.28.1"
+        },
+        {
+          "name": "httpx-sse",
+          "version": "0.4.1"
+        },
+        {
+          "name": "idna",
+          "version": "3.10"
+        },
+        {
+          "name": "isodate",
+          "version": "0.7.2"
+        },
+        {
+          "name": "jiter",
+          "version": "0.16.0"
+        },
+        {
+          "name": "jsonschema",
+          "version": "4.24.0"
+        },
+        {
+          "name": "jsonschema-path",
+          "version": "0.4.6"
+        },
+        {
+          "name": "jsonschema-specifications",
+          "version": "2025.4.1"
+        },
+        {
+          "name": "lazy-object-proxy",
+          "version": "1.12.0"
+        },
+        {
+          "name": "lxml",
+          "version": "6.1.1"
+        },
+        {
+          "name": "markdown-it-py",
+          "version": "3.0.0"
+        },
+        {
+          "name": "MarkupSafe",
+          "version": "3.0.3"
+        },
+        {
+          "name": "mcp",
+          "version": "1.12.4"
+        },
+        {
+          "name": "mdurl",
+          "version": "0.1.2"
+        },
+        {
+          "name": "more-itertools",
+          "version": "11.1.0"
+        },
+        {
+          "name": "openai",
+          "version": "2.44.0"
+        },
+        {
+          "name": "openapi-core",
+          "version": "0.23.1"
+        },
+        {
+          "name": "openapi-pydantic",
+          "version": "0.5.1"
+        },
+        {
+          "name": "openapi-schema-validator",
+          "version": "0.7.1"
+        },
+        {
+          "name": "openapi-spec-validator",
+          "version": "0.8.1"
+        },
+        {
+          "name": "pathable",
+          "version": "0.5.0"
+        },
+        {
+          "name": "pyclipper",
+          "version": "1.4.0"
+        },
+        {
+          "name": "pycparser",
+          "version": "2.22"
+        },
+        {
+          "name": "pydantic",
+          "version": "2.12.0"
+        },
+        {
+          "name": "pydantic_core",
+          "version": "2.41.1"
+        },
+        {
+          "name": "pydantic-settings",
+          "version": "2.10.1"
+        },
+        {
+          "name": "Pygments",
+          "version": "2.19.2"
+        },
+        {
+          "name": "pyperclip",
+          "version": "1.11.0"
+        },
+        {
+          "name": "python-dotenv",
+          "version": "1.1.1"
+        },
+        {
+          "name": "python-multipart",
+          "version": "0.0.20"
+        },
+        {
+          "name": "PyYAML",
+          "version": "6.0.3"
+        },
+        {
+          "name": "referencing",
+          "version": "0.36.2"
+        },
+        {
+          "name": "rfc3339-validator",
+          "version": "0.1.4"
+        },
+        {
+          "name": "rich",
+          "version": "14.0.0"
+        },
+        {
+          "name": "rich-rst",
+          "version": "2.0.2"
+        },
+        {
+          "name": "rpds-py",
+          "version": "0.26.0"
+        },
+        {
+          "name": "setuptools",
+          "version": "82.0.1"
+        },
+        {
+          "name": "shellingham",
+          "version": "1.5.4"
+        },
+        {
+          "name": "six",
+          "version": "1.17.0"
+        },
+        {
+          "name": "sniffio",
+          "version": "1.3.1"
+        },
+        {
+          "name": "sse-starlette",
+          "version": "2.4.1"
+        },
+        {
+          "name": "starlette",
+          "version": "0.47.1"
+        },
+        {
+          "name": "tqdm",
+          "version": "4.68.3"
+        },
+        {
+          "name": "typer",
+          "version": "0.16.0"
+        },
+        {
+          "name": "typing_extensions",
+          "version": "4.14.1"
+        },
+        {
+          "name": "typing-inspection",
+          "version": "0.4.2"
+        },
+        {
+          "name": "uvicorn",
+          "version": "0.35.0"
+        },
+        {
+          "name": "Werkzeug",
+          "version": "3.1.8"
+        }
+      ],
+      "python": "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "pythonVersion": "3.14.0",
+      "sitePackages": "plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Resources/vendor/py314-arm64/site-packages"
+    },
+    "py314-x86_64": {
+      "machine": "x86_64",
+      "packages": [
+        {
+          "name": "annotated-types",
+          "version": "0.7.0"
+        },
+        {
+          "name": "anyio",
+          "version": "4.9.0"
+        },
+        {
+          "name": "appdirs",
+          "version": "1.4.4"
+        },
+        {
+          "name": "attrs",
+          "version": "25.3.0"
+        },
+        {
+          "name": "Authlib",
+          "version": "1.6.0"
+        },
+        {
+          "name": "booleanOperations",
+          "version": "0.10.0"
+        },
+        {
+          "name": "certifi",
+          "version": "2025.6.15"
+        },
+        {
+          "name": "cffi",
+          "version": "2.0.0"
+        },
+        {
+          "name": "click",
+          "version": "8.2.1"
+        },
+        {
+          "name": "cryptography",
+          "version": "45.0.5"
+        },
+        {
+          "name": "cyclopts",
+          "version": "4.20.0"
+        },
+        {
+          "name": "defcon",
+          "version": "0.12.1"
+        },
+        {
+          "name": "distro",
+          "version": "1.9.0"
+        },
+        {
+          "name": "dnspython",
+          "version": "2.7.0"
+        },
+        {
+          "name": "docstring_parser",
+          "version": "0.18.0"
+        },
+        {
+          "name": "email_validator",
+          "version": "2.2.0"
+        },
+        {
+          "name": "exceptiongroup",
+          "version": "1.3.0"
+        },
+        {
+          "name": "fastmcp",
+          "version": "2.12.0"
+        },
+        {
+          "name": "fontParts",
+          "version": "0.9.11"
+        },
+        {
+          "name": "fontMath",
+          "version": "0.10.0"
+        },
+        {
+          "name": "fontPens",
+          "version": "0.4.0"
+        },
+        {
+          "name": "fonttools",
+          "version": "4.54.1"
+        },
+        {
+          "name": "fs",
+          "version": "2.4.16"
+        },
+        {
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "name": "httpcore",
+          "version": "1.0.9"
+        },
+        {
+          "name": "httpx",
+          "version": "0.28.1"
+        },
+        {
+          "name": "httpx-sse",
+          "version": "0.4.1"
+        },
+        {
+          "name": "idna",
+          "version": "3.10"
+        },
+        {
+          "name": "isodate",
+          "version": "0.7.2"
+        },
+        {
+          "name": "jiter",
+          "version": "0.16.0"
+        },
+        {
+          "name": "jsonschema",
+          "version": "4.24.0"
+        },
+        {
+          "name": "jsonschema-path",
+          "version": "0.4.6"
+        },
+        {
+          "name": "jsonschema-specifications",
+          "version": "2025.4.1"
+        },
+        {
+          "name": "lazy-object-proxy",
+          "version": "1.11.0"
+        },
+        {
+          "name": "lxml",
+          "version": "6.1.1"
+        },
+        {
+          "name": "markdown-it-py",
+          "version": "3.0.0"
+        },
+        {
+          "name": "MarkupSafe",
+          "version": "3.0.3"
+        },
+        {
+          "name": "mcp",
+          "version": "1.12.4"
+        },
+        {
+          "name": "mdurl",
+          "version": "0.1.2"
+        },
+        {
+          "name": "more-itertools",
+          "version": "11.1.0"
+        },
+        {
+          "name": "openai",
+          "version": "2.44.0"
+        },
+        {
+          "name": "openapi-core",
+          "version": "0.23.1"
+        },
+        {
+          "name": "openapi-pydantic",
+          "version": "0.5.1"
+        },
+        {
+          "name": "openapi-schema-validator",
+          "version": "0.7.1"
+        },
+        {
+          "name": "openapi-spec-validator",
+          "version": "0.8.1"
+        },
+        {
+          "name": "pathable",
+          "version": "0.5.0"
+        },
+        {
+          "name": "pyclipper",
+          "version": "1.4.0"
+        },
+        {
+          "name": "pycparser",
+          "version": "2.22"
+        },
+        {
+          "name": "pydantic",
+          "version": "2.12.0"
+        },
+        {
+          "name": "pydantic_core",
+          "version": "2.41.1"
+        },
+        {
+          "name": "pydantic-settings",
+          "version": "2.10.1"
+        },
+        {
+          "name": "Pygments",
+          "version": "2.19.2"
+        },
+        {
+          "name": "pyperclip",
+          "version": "1.11.0"
+        },
+        {
+          "name": "python-dotenv",
+          "version": "1.1.1"
+        },
+        {
+          "name": "python-multipart",
+          "version": "0.0.20"
+        },
+        {
+          "name": "PyYAML",
+          "version": "6.0.3"
+        },
+        {
+          "name": "referencing",
+          "version": "0.36.2"
+        },
+        {
+          "name": "rfc3339-validator",
+          "version": "0.1.4"
+        },
+        {
+          "name": "rich",
+          "version": "14.0.0"
+        },
+        {
+          "name": "rich-rst",
+          "version": "2.0.2"
+        },
+        {
+          "name": "rpds-py",
+          "version": "0.26.0"
+        },
+        {
+          "name": "setuptools",
+          "version": "82.0.1"
+        },
+        {
+          "name": "shellingham",
+          "version": "1.5.4"
+        },
+        {
+          "name": "six",
+          "version": "1.17.0"
+        },
+        {
+          "name": "sniffio",
+          "version": "1.3.1"
+        },
+        {
+          "name": "sse-starlette",
+          "version": "2.4.1"
+        },
+        {
+          "name": "starlette",
+          "version": "0.47.1"
+        },
+        {
+          "name": "tqdm",
+          "version": "4.68.3"
+        },
+        {
+          "name": "typer",
+          "version": "0.16.0"
+        },
+        {
+          "name": "typing_extensions",
+          "version": "4.14.1"
+        },
+        {
+          "name": "typing-inspection",
+          "version": "0.4.2"
+        },
+        {
+          "name": "uvicorn",
+          "version": "0.35.0"
+        },
+        {
+          "name": "Werkzeug",
+          "version": "3.1.8"
+        }
+      ],
+      "python": "arch -x86_64 /Library/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+      "pythonVersion": "3.14.0",
+      "sitePackages": "plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Resources/vendor/py314-x86_64/site-packages"
     }
   }
 }

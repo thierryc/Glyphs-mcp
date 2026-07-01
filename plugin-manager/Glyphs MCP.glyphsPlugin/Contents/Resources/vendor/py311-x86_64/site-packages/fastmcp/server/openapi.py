@@ -27,7 +27,9 @@ from fastmcp.utilities.logging import get_logger
 from fastmcp.utilities.openapi import (
     HTTPRoute,
     _combine_schemas,
+    extract_output_schema_from_responses,
     format_array_parameter,
+    format_deep_object_parameter,
     format_description_with_responses,
 )
 
@@ -234,6 +236,7 @@ class OpenAPITool(Tool):
         name: str,
         description: str,
         parameters: dict[str, Any],
+        output_schema: dict[str, Any] | None = None,
         tags: set[str] | None = None,
         timeout: float | None = None,
         annotations: ToolAnnotations | None = None,
@@ -243,6 +246,7 @@ class OpenAPITool(Tool):
             name=name,
             description=description,
             parameters=parameters,
+            output_schema=output_schema,
             tags=tags or set(),
             annotations=annotations,
             serializer=serializer,
@@ -258,19 +262,45 @@ class OpenAPITool(Tool):
     async def run(self, arguments: dict[str, Any]) -> ToolResult:
         """Execute the HTTP request based on the route configuration."""
 
+        # Create mapping from suffixed parameter names back to original names and locations
+        # This handles parameter collisions where suffixes were added during schema generation
+        param_mapping = {}  # suffixed_name -> (original_name, location)
+
+        # First, check if we have request body properties to detect collisions
+        body_props = set()
+        if self._route.request_body and self._route.request_body.content_schema:
+            content_type = next(iter(self._route.request_body.content_schema))
+            body_schema = self._route.request_body.content_schema[content_type]
+            body_props = set(body_schema.get("properties", {}).keys())
+
+        # Build parameter mapping for potentially suffixed parameters
+        for param in self._route.parameters:
+            original_name = param.name
+            suffixed_name = f"{param.name}__{param.location}"
+
+            # If parameter name collides with body property, it would have been suffixed
+            if param.name in body_props:
+                param_mapping[suffixed_name] = (original_name, param.location)
+            # Also map original name for backward compatibility when no collision
+            param_mapping[original_name] = (original_name, param.location)
+
         # Prepare URL
         path = self._route.path
 
-        # Replace path parameters with values from kwargs
-        # Path parameters should never be None as they're typically required
-        # but we'll handle that case anyway
-        path_params = {
-            p.name: arguments.get(p.name)
-            for p in self._route.parameters
-            if p.location == "path"
-            and p.name in arguments
-            and arguments.get(p.name) is not None
-        }
+        # Replace path parameters with values from arguments
+        # Look for both original and suffixed parameter names
+        path_params = {}
+        for p in self._route.parameters:
+            if p.location == "path":
+                # Try suffixed name first, then original name
+                suffixed_name = f"{p.name}__{p.location}"
+                if (
+                    suffixed_name in arguments
+                    and arguments.get(suffixed_name) is not None
+                ):
+                    path_params[p.name] = arguments[suffixed_name]
+                elif p.name in arguments and arguments.get(p.name) is not None:
+                    path_params[p.name] = arguments[p.name]
 
         # Ensure all path parameters are provided
         required_path_params = {
@@ -309,35 +339,82 @@ class OpenAPITool(Tool):
         # Prepare query parameters - filter out None and empty strings
         query_params = {}
         for p in self._route.parameters:
-            if (
-                p.location == "query"
-                and p.name in arguments
-                and arguments.get(p.name) is not None
-                and arguments.get(p.name) != ""
-            ):
-                param_value = arguments.get(p.name)
+            if p.location == "query":
+                # Try suffixed name first, then original name
+                suffixed_name = f"{p.name}__{p.location}"
+                param_value = None
 
-                # Format array query parameters as comma-separated strings
-                # following OpenAPI form style (default for query parameters)
-                if isinstance(param_value, list) and p.schema_.get("type") == "array":
-                    # Get explode parameter from the parameter info, default is True for query parameters
-                    # If explode is True, the array is serialized as separate parameters
-                    # If explode is False, the array is serialized as a comma-separated string
-                    explode = p.explode if p.explode is not None else True
-
-                    if explode:
-                        # When explode=True, we pass the array directly, which HTTPX will serialize
-                        # as multiple parameters with the same name
-                        query_params[p.name] = param_value
-                    else:
-                        # Format array as comma-separated string when explode=False
-                        formatted_value = format_array_parameter(
-                            param_value, p.name, is_query_parameter=True
-                        )
-                        query_params[p.name] = formatted_value
+                suffixed_value = arguments.get(suffixed_name)
+                if (
+                    suffixed_name in arguments
+                    and suffixed_value is not None
+                    and suffixed_value != ""
+                    and not (
+                        isinstance(suffixed_value, list | dict)
+                        and len(suffixed_value) == 0
+                    )
+                ):
+                    param_value = arguments[suffixed_name]
                 else:
-                    # Non-array parameters are passed as is
-                    query_params[p.name] = param_value
+                    name_value = arguments.get(p.name)
+                    if (
+                        p.name in arguments
+                        and name_value is not None
+                        and name_value != ""
+                        and not (
+                            isinstance(name_value, list | dict) and len(name_value) == 0
+                        )
+                    ):
+                        param_value = arguments[p.name]
+
+                if param_value is not None:
+                    # Handle different parameter styles and types
+                    param_style = (
+                        p.style or "form"
+                    )  # Default style for query parameters is "form"
+                    param_explode = (
+                        p.explode if p.explode is not None else True
+                    )  # Default explode for query is True
+
+                    # Handle deepObject style for object parameters
+                    if (
+                        param_style == "deepObject"
+                        and isinstance(param_value, dict)
+                        and len(param_value) > 0
+                    ):
+                        if param_explode:
+                            # deepObject with explode=true: object properties become separate parameters
+                            # e.g., target[id]=123&target[type]=user
+                            deep_obj_params = format_deep_object_parameter(
+                                param_value, p.name
+                            )
+                            query_params.update(deep_obj_params)
+                        else:
+                            # deepObject with explode=false is not commonly used, fallback to JSON
+                            logger.warning(
+                                f"deepObject style with explode=false for parameter '{p.name}' is not standard. "
+                                f"Using JSON serialization fallback."
+                            )
+                            query_params[p.name] = json.dumps(param_value)
+                    # Handle array parameters with form style (default)
+                    elif (
+                        isinstance(param_value, list)
+                        and p.schema_.get("type") == "array"
+                        and len(param_value) > 0
+                    ):
+                        if param_explode:
+                            # When explode=True, we pass the array directly, which HTTPX will serialize
+                            # as multiple parameters with the same name
+                            query_params[p.name] = param_value
+                        else:
+                            # Format array as comma-separated string when explode=False
+                            formatted_value = format_array_parameter(
+                                param_value, p.name, is_query_parameter=True
+                            )
+                            query_params[p.name] = formatted_value
+                    else:
+                        # Non-array, non-deepObject parameters are passed as is
+                        query_params[p.name] = param_value
 
         # Prepare headers - fix typing by ensuring all values are strings
         headers = {}
@@ -345,12 +422,21 @@ class OpenAPITool(Tool):
         # Start with OpenAPI-defined header parameters
         openapi_headers = {}
         for p in self._route.parameters:
-            if (
-                p.location == "header"
-                and p.name in arguments
-                and arguments[p.name] is not None
-            ):
-                openapi_headers[p.name.lower()] = str(arguments[p.name])
+            if p.location == "header":
+                # Try suffixed name first, then original name
+                suffixed_name = f"{p.name}__{p.location}"
+                param_value = None
+
+                if (
+                    suffixed_name in arguments
+                    and arguments.get(suffixed_name) is not None
+                ):
+                    param_value = arguments[suffixed_name]
+                elif p.name in arguments and arguments.get(p.name) is not None:
+                    param_value = arguments[p.name]
+
+                if param_value is not None:
+                    openapi_headers[p.name.lower()] = str(param_value)
         headers.update(openapi_headers)
 
         # Add headers from the current MCP client HTTP request (these take precedence)
@@ -360,16 +446,20 @@ class OpenAPITool(Tool):
         # Prepare request body
         json_data = None
         if self._route.request_body and self._route.request_body.content_schema:
-            # Extract body parameters, excluding path/query/header params that were already used
-            path_query_header_params = {
-                p.name
-                for p in self._route.parameters
-                if p.location in ("path", "query", "header")
-            }
+            # Extract body parameters with collision-aware logic
+            # Exclude all parameter names that belong to path/query/header locations
+            params_to_exclude = set()
+
+            for p in self._route.parameters:
+                if (
+                    p.name in body_props
+                ):  # This parameter had a collision, so it was suffixed
+                    params_to_exclude.add(f"{p.name}__{p.location}")
+                else:  # No collision, parameter keeps original name but should still be excluded from body
+                    params_to_exclude.add(p.name)
+
             body_params = {
-                k: v
-                for k, v in arguments.items()
-                if k not in path_query_header_params and k != "context"
+                k: v for k, v in arguments.items() if k not in params_to_exclude
             }
 
             if body_params:
@@ -392,9 +482,22 @@ class OpenAPITool(Tool):
             # Try to parse as JSON first
             try:
                 result = response.json()
-                if not isinstance(result, dict):
-                    result = {"result": result}
-                return ToolResult(structured_content=result)
+
+                # Handle structured content based on output schema, if any
+                structured_output = None
+                if self.output_schema is not None:
+                    if self.output_schema.get("x-fastmcp-wrap-result"):
+                        # Schema says wrap - always wrap in result key
+                        structured_output = {"result": result}
+                    else:
+                        structured_output = result
+                # If no output schema, use fallback logic for backward compatibility
+                elif not isinstance(result, dict):
+                    structured_output = {"result": result}
+                else:
+                    structured_output = result
+
+                return ToolResult(structured_content=structured_output)
             except json.JSONDecodeError:
                 return ToolResult(content=response.text)
 
@@ -787,6 +890,11 @@ class FastMCPOpenAPI(FastMCP):
         """Creates and registers an OpenAPITool with enhanced description."""
         combined_schema = _combine_schemas(route)
 
+        # Extract output schema from OpenAPI responses
+        output_schema = extract_output_schema_from_responses(
+            route.responses, route.schema_definitions, route.openapi_version
+        )
+
         # Get a unique tool name
         tool_name = self._get_unique_name(name, "tool")
 
@@ -810,6 +918,7 @@ class FastMCPOpenAPI(FastMCP):
             name=tool_name,
             description=enhanced_description,
             parameters=combined_schema,
+            output_schema=output_schema,
             tags=set(route.tags or []) | tags,
             timeout=self._timeout,
         )
@@ -825,10 +934,13 @@ class FastMCPOpenAPI(FastMCP):
                     f"Using component as-is."
                 )
 
+        # Use the potentially modified tool name as the registration key
+        final_tool_name = tool.name
+
         # Register the tool by directly assigning to the tools dictionary
-        self._tool_manager._tools[tool_name] = tool
+        self._tool_manager._tools[final_tool_name] = tool
         logger.debug(
-            f"Registered TOOL: {tool_name} ({route.method} {route.path}) with tags: {route.tags}"
+            f"Registered TOOL: {final_tool_name} ({route.method} {route.path}) with tags: {route.tags}"
         )
 
     def _create_openapi_resource(
@@ -875,10 +987,13 @@ class FastMCPOpenAPI(FastMCP):
                     f"Using component as-is."
                 )
 
+        # Use the potentially modified resource URI as the registration key
+        final_resource_uri = str(resource.uri)
+
         # Register the resource by directly assigning to the resources dictionary
-        self._resource_manager._resources[str(resource.uri)] = resource
+        self._resource_manager._resources[final_resource_uri] = resource
         logger.debug(
-            f"Registered RESOURCE: {resource_uri} ({route.method} {route.path}) with tags: {route.tags}"
+            f"Registered RESOURCE: {final_resource_uri} ({route.method} {route.path}) with tags: {route.tags}"
         )
 
     def _create_openapi_template(
@@ -954,8 +1069,11 @@ class FastMCPOpenAPI(FastMCP):
                     f"Using component as-is."
                 )
 
+        # Use the potentially modified template URI as the registration key
+        final_template_uri = template.uri_template
+
         # Register the template by directly assigning to the templates dictionary
-        self._resource_manager._templates[uri_template_str] = template
+        self._resource_manager._templates[final_template_uri] = template
         logger.debug(
-            f"Registered TEMPLATE: {uri_template_str} ({route.method} {route.path}) with tags: {route.tags}"
+            f"Registered TEMPLATE: {final_template_uri} ({route.method} {route.path}) with tags: {route.tags}"
         )

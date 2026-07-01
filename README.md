@@ -45,7 +45,7 @@ python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --i
 Minimum requirements:
 - macOS 13.0+
 - Glyphs 3
-- Python 3.11–3.13 (recommended: python.org 3.12)
+- Python 3.11–3.14 (recommended: python.org 3.14)
 
 ## Repo skills for Codex and Claude Code
 
@@ -73,7 +73,7 @@ claude mcp list
 
 3. In Codex, trust the workspace so `.agents/skills` loads.
 4. In Claude Code, reload or restart if `.claude/skills` does not appear immediately.
-5. Start Glyphs, confirm the server is running in **Edit -> Glyphs MCP Server Status...**, and pick the narrowest useful tool profile first.
+5. Start Glyphs, confirm the server is running in **Edit -> Glyphs MCP Server**, and keep the default `Edit` profile unless you only need read-only inspection.
 6. Invoke a specific skill when you want a guided workflow:
 
 ```text
@@ -122,8 +122,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.0.25)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.0.25"`).
+## Command Set (MCP server v1.1.0)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.1.0"`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
@@ -170,6 +170,7 @@ instead because Glyphs requires an absolute file path.
 | `get_selected_nodes` | Detailed selected nodes with per‑master mapping for edits, plus links for the containing glyph/layer. |
 | `add_corner_to_all_masters` | Add a `_corner.*` corner hint at selected nodes (and intersection handles) across all masters (requires `_corner_name`; optional `_alignment`: `left`/`right`/`center` or `0`/`1`/`2`). |
 | `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing, including a Glyphs show link for the layer. |
+| `render_glyph_review_image` | Render selected or named glyph layers to a read-only PNG visual review image with optional metrics, bounds, nodes, anchors, and guide overlays. |
 | `review_collinear_handles` | Review a single path for curve nodes that should be smooth based on handle collinearity (no mutation). |
 | `apply_collinear_handles_smooth` | Apply `smooth=True` for collinear-handle curve nodes in a single path (supports `dry_run`; requires `confirm=true` to mutate). |
 | `set_glyph_paths` | Replace glyph paths from JSON. |
@@ -299,10 +300,9 @@ python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --i
 
 If you need a manual install instead, copy or symlink `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
 
-After installation, Glyphs MCP adds two menu items:
+After installation, Glyphs MCP adds one menu item:
 
-- **Edit → Start Glyphs MCP Server**
-- **Edit → Glyphs MCP Server Status…**
+- **Edit → Glyphs MCP Server**
 
 The server endpoint is `http://127.0.0.1:9680/mcp/`.
 
@@ -310,7 +310,7 @@ The server endpoint is `http://127.0.0.1:9680/mcp/`.
 
 Many MCP clients include the tool list + schemas in their prompt context. As the tool surface grows, this can waste tokens.
 
-Use the **Profile** dropdown in **Glyphs MCP Server Status…** to expose only the tools you need for a task. The selection is saved in `Glyphs.defaults` and takes effect the next time the server starts (restart Glyphs if it’s already running).
+Use the **Profile** dropdown in **Glyphs MCP Server** to choose between `Read-only` and `Edit`. `Edit` is the default and exposes the complete server surface. The selection is saved in `Glyphs.defaults` and takes effect the next time the server starts.
 
 Tip: If your coding agent doesn't connect to Glyphs, start the MCP server first on a fresh Glyphs launch, then launch the coding agent afterwards.
 

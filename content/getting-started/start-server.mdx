@@ -8,9 +8,9 @@ Glyphs MCP runs inside Glyphs. Start it from the app before connecting your AI c
 ## Start in Glyphs
 
 1. Launch Glyphs 3.
-2. Choose **Edit -> Start Glyphs MCP Server**.
-3. Open **Edit -> Glyphs MCP Server Status...**.
-4. Confirm the status is running.
+2. Choose **Edit -> Glyphs MCP Server**.
+3. Click **Start** if the server is stopped.
+4. Confirm the status dot is green.
 
 ## Endpoint
 
@@ -35,17 +35,12 @@ If a client cannot connect, use this order:
 
 Many MCP clients include tool names and JSON Schemas in model context. Glyphs MCP can expose a smaller `tools/list` through **Tool Profile** in the status panel.
 
-Use the narrowest profile that fits the task:
+Choose between read-only inspection and full edit access:
 
 | Profile | Use when |
 | --- | --- |
-| `Core (Read-only)` | You only need inspection and want the smallest tool surface. |
-| `Kerning` | You are doing kerning review or bumper work. |
-| `Spacing` | You are reviewing or applying spacing. |
-| `Kerning + Spacing` | You are switching between those two workflows. |
-| `Paths / Outlines` | You are inspecting paths, selected nodes, smooth flags, stems, or italic first-pass previews. |
-| `Editing` | You need glyph, component, anchor, metric, stem, or italic first-pass edits. |
-| `Full` | You deliberately want the complete surface. |
+| `Read-only` | You only need inspection, docs, visual review, and other non-mutating tools. |
+| `Edit` | You want the complete server surface, including editing and execution tools. This is the default. |
 
 After changing a profile, restart the server and reconnect the client so it fetches the new tool list.
 

@@ -12,6 +12,7 @@ For recurring outline work, start with the `glyphs-mcp-outlines-docs` skill. It 
 - You want to inspect selected nodes or current selected glyphs.
 - You want to add a component or anchor to a known glyph/layer.
 - You want to export path JSON for review or controlled editing.
+- You want a visual proof image before accepting an outline proposal or mutation.
 - You want to review collinear curve handles before setting nodes to smooth.
 - You need a targeted GlyphsApp API lookup through `docs_search` and `docs_get`.
 
@@ -32,7 +33,7 @@ Mutating calls should be scoped to named glyphs, masters, layers, paths, or sele
 - The font is not auto-saved.
 - Kerning and spacing do not change unless you call separate kerning or spacing tools.
 - Bundled docs lookup does not mutate anything.
-- `get_selected_nodes`, `get_glyph_paths`, and `review_collinear_handles` are read-only.
+- `get_selected_nodes`, `get_glyph_paths`, `render_glyph_review_image`, and `review_collinear_handles` are read-only.
 
 ## Safe prompt template
 
@@ -44,6 +45,7 @@ Task: Inspect my current selected nodes and propose the safest next step.
 Rules:
 - Read current font, master, glyph, layer, and selection first.
 - Prefer dedicated outline tools before execute_code.
+- Render a visual review image after outline proposals and before any mutation.
 - Use docs_search and docs_get only for the specific Glyphs API detail you need.
 - Do not mutate until you show exact targets and I approve.
 - After any mutation, re-read the affected glyph/layer and report changed, skipped, and unresolved items.

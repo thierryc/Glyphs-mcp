@@ -1,0 +1,76 @@
+---
+title: Visual glyph review
+description: Render selected or named glyph layers as a read-only PNG image for visual LLM review.
+---
+
+Use this workflow when an agent needs a visual proof of selected or named glyphs before judging outlines, spacing, sidebearings, anchors, guides, or component composition.
+
+The `render_glyph_review_image` tool is read-only. It renders an in-memory PNG response through MCP image content and does not write files, add guides, edit glyph data, or save the font.
+
+## When to use it
+
+- After an outline or spacing proposal, before calling a mutating tool.
+- After a dry run, to give a vision-capable model a reviewable proof image.
+- When numeric path JSON is not enough to judge visual balance.
+- When components, anchors, guides, or selected nodes need visible context.
+
+## Inputs
+
+The tool uses the current selection when `glyph_names` is omitted. Pass names explicitly when reviewing a stable list.
+
+Common overlays:
+
+- `metrics`: baseline, x-height, cap height, ascender, and descender.
+- `sidebearings`: origin and advance-width lines.
+- `bounds`: layer bounds.
+- `nodes` and `handles`: outline point review.
+- `anchors`: anchor crosses.
+- `guides`: existing layer guides.
+
+## Sample tool calls
+
+Review the current Glyphs selection with default overlays:
+
+```json
+{
+  "font_index": 0
+}
+```
+
+Review named glyphs with outline details:
+
+```json
+{
+  "font_index": 0,
+  "glyph_names": ["A", "B", "O"],
+  "columns": 3,
+  "image_width": 1600,
+  "include_components": true,
+  "overlays": ["metrics", "sidebearings", "bounds", "nodes", "handles", "anchors", "guides"]
+}
+```
+
+Request a base64 fallback in metadata for clients that do not surface MCP image content:
+
+```json
+{
+  "font_index": 0,
+  "glyph_names": ["n", "o", "p"],
+  "include_base64": true
+}
+```
+
+## Safe prompt template
+
+```text
+Render a visual review image for my current selection.
+Use render_glyph_review_image with default overlays first.
+Do not mutate or save the font.
+Then inspect the image and report only concrete visual concerns and suggested next checks.
+```
+
+## Related reference
+
+- [Command set](../reference/command-set.mdx)
+- [Outlines workflow](./outlines-selected-nodes.mdx)
+- [Safety model](../concepts/safety-model.mdx)

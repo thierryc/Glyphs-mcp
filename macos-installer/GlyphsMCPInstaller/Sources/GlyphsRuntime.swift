@@ -3,8 +3,11 @@ import Foundation
 
 enum GlyphsRuntime {
 	static let bundleID = "com.GeorgSeifert.Glyphs3"
-	private static let otherBundleIDs = [
+	static let bundleIDs = [
+		"com.GeorgSeifert.Glyphs3",
+		"com.GeorgSeifert.Glyphs4",
 		"com.GeorgSeifert.Glyphs3Beta",
+		"com.GeorgSeifert.Glyphs4Beta",
 		"com.GeorgSeifert.GlyphsBeta",
 	]
 
@@ -37,7 +40,7 @@ enum GlyphsRuntime {
 
 		// Prefer bundle identifiers (most reliable).
 		var apps: [NSRunningApplication] = []
-		for id in [bundleID] + otherBundleIDs {
+		for id in bundleIDs {
 			apps.append(contentsOf: NSRunningApplication.runningApplications(withBundleIdentifier: id))
 		}
 		apps = apps.filter { $0.bundleIdentifier != selfBundleID && $0.processIdentifier != selfPID }
@@ -47,7 +50,7 @@ enum GlyphsRuntime {
 
 		// Fallback: match by bundle identifier prefix / exact app name.
 		// IMPORTANT: avoid matching this installer (localizedName starts with "Glyphs").
-		let names = Set(["glyphs", "glyphs 3"])
+		let names = Set(["glyphs", "glyphs 3", "glyphs 4"])
 		return NSWorkspace.shared.runningApplications.filter { app in
 			if app.processIdentifier == selfPID { return false }
 			if let selfBundleID, app.bundleIdentifier == selfBundleID { return false }

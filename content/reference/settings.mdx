@@ -5,24 +5,19 @@ description: Tool profiles and environment variables for configuring Glyphs MCP.
 
 Glyphs MCP has two configuration surfaces:
 
-- **Glyphs UI**: **Edit -> Glyphs MCP Server Status...**
+- **Glyphs UI**: **Edit -> Glyphs MCP Server**
 - **Environment variables**: optional security, docs, and debugging behavior
 
 ## Tool profiles
 
 Tool profiles reduce the tools exposed through `tools/list`. This matters because many MCP clients include tool names and JSON Schemas in model context.
 
-Choose the narrowest profile that fits the task:
+Choose between the read-only inspection surface and the full editing surface:
 
 | Profile | Use when |
 | --- | --- |
-| `Core (Read-only)` | Inspection only; smallest surface. |
-| `Kerning` | Kerning worklists, bumper review, and kerning apply steps. |
-| `Spacing` | Spacing review/apply and spacing guides. |
-| `Kerning + Spacing` | You need both kerning and spacing workflows. |
-| `Paths / Outlines` | You are inspecting paths, selected nodes, outline smoothness, stems, or italic first-pass previews. |
-| `Editing` | You need glyph, component, anchor, metrics, stem, or italic first-pass mutation tools. |
-| `Full` | You deliberately want the complete server surface. |
+| `Read-only` | Inspection, metadata, outlines, kerning data, docs, and visual review without mutation tools. |
+| `Edit` | The complete server surface, including edit and execution tools. This is the default. |
 
 After changing profiles, restart the server and reconnect the MCP client.
 
