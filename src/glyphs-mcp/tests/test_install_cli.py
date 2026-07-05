@@ -64,6 +64,7 @@ class InstallerSmokeTests(unittest.TestCase):
     def test_glyphs_preferences_domain_matches_major_version(self) -> None:
         install_cli = _load_install_cli()
 
+        self.assertEqual(install_cli.glyphs_preferences_domain(), "com.GeorgSeifert.Glyphs4")
         self.assertEqual(install_cli.glyphs_preferences_domain("3"), "com.GeorgSeifert.Glyphs3")
         self.assertEqual(install_cli.glyphs_preferences_domain("4"), "com.GeorgSeifert.Glyphs4")
 
@@ -121,7 +122,7 @@ class InstallerSmokeTests(unittest.TestCase):
                 Path(tmp)
                 / "Library"
                 / "Application Support"
-                / "Glyphs 3"
+                / "Glyphs 4"
                 / "Plugins"
                 / "Glyphs MCP.glyphsPlugin"
             )
@@ -152,7 +153,7 @@ class InstallerSmokeTests(unittest.TestCase):
                 Path(tmp)
                 / "Library"
                 / "Application Support"
-                / "Glyphs 3"
+                / "Glyphs 4"
                 / "Plugins"
                 / "Glyphs MCP.glyphsPlugin"
             )
@@ -339,7 +340,7 @@ class InstallerSmokeTests(unittest.TestCase):
                 Path(tmp)
                 / "Library"
                 / "Application Support"
-                / "Glyphs 3"
+                / "Glyphs 4"
                 / "Plugins"
                 / "Glyphs MCP.glyphsPlugin"
             )
@@ -404,7 +405,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     Path(tmp)
                     / "Library"
                     / "Application Support"
-                    / "Glyphs 3"
+                    / "Glyphs 4"
                     / "Plugins"
                     / "Glyphs MCP.glyphsPlugin"
                 )
@@ -634,7 +635,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     Path(tmp)
                     / "Library"
                     / "Application Support"
-                    / "Glyphs 3"
+                    / "Glyphs 4"
                     / "Plugins"
                     / "Glyphs MCP.glyphsPlugin"
                 )
@@ -661,7 +662,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     Path(tmp)
                     / "Library"
                     / "Application Support"
-                    / "Glyphs 3"
+                    / "Glyphs 4"
                     / "Plugins"
                     / "Glyphs MCP.glyphsPlugin"
                 )
@@ -696,8 +697,8 @@ class InstallerSmokeTests(unittest.TestCase):
             original_verify = install_cli.verify_runtime
             try:
                 install_cli.run = lambda cmd: calls.append(cmd)
-                install_cli.glyphs_selected_python_bin = lambda glyphs_version="3": None
-                install_cli.glyphs_python_pip = lambda glyphs_version="3": fake_pip
+                install_cli.glyphs_selected_python_bin = lambda glyphs_version="4": None
+                install_cli.glyphs_python_pip = lambda glyphs_version="4": fake_pip
                 install_cli.verify_runtime = lambda *args, **kwargs: True
                 install_cli.install_with_glyphs_python(_repo_root() / "requirements.txt")
             finally:
@@ -714,7 +715,7 @@ class InstallerSmokeTests(unittest.TestCase):
             Path(tmp)
             / "Library"
             / "Application Support"
-            / "Glyphs 3"
+            / "Glyphs 4"
             / "Scripts"
             / "site-packages"
         )

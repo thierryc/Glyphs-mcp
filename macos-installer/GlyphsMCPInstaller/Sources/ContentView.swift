@@ -487,7 +487,7 @@ private struct StatusTabView: View {
 						Text(InstallerConstants.endpointURL.absoluteString)
 							.font(.system(.body, design: .monospaced))
 							.textSelection(.enabled)
-						Text("If the server is not running, start it in Glyphs with Edit → Start MCP Server.")
+						Text("If the server is not running, start it in Glyphs with Edit → Glyphs MCP Server.")
 							.foregroundStyle(.secondary)
 					}
 					.frame(maxWidth: .infinity, alignment: .leading)

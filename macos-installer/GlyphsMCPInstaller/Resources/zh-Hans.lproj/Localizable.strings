@@ -75,7 +75,7 @@
 "Copy command" = "复制命令";
 "You’re ready" = "准备就绪";
 "Next steps" = "下一步";
-"2) In Glyphs: Edit → Start MCP Server" = "2）在 Glyphs 中：编辑 → 启动 MCP 服务器";
+"2) In Glyphs: Edit → Glyphs MCP Server" = "2）在 Glyphs 中：编辑 → Glyphs MCP 服务器";
 "Try it now" = "现在试试";
 "Example prompt: List open fonts" = "示例提示：列出已打开的字体";
 
@@ -141,7 +141,7 @@
 /* Help sheet markdown */
 "For the smoothest custom setup, install Python **3.14** from python.org." = "为获得最佳自定义安装体验，请从 python.org 安装 Python **3.14**。";
 "Then, in **Glyphs → Settings → Addons → Python version**, select the same **3.14** version and restart Glyphs." = "然后在 **Glyphs → 设置 → 插件/扩展 → Python 版本** 中选择同一个 **3.14** 版本，并重启 Glyphs。";
-"2) In Glyphs: **Edit → Start MCP Server**" = "2）在 Glyphs 中：**编辑 → 启动 MCP 服务器**";
+"2) In Glyphs: **Edit → Glyphs MCP Server**" = "2）在 Glyphs 中：**编辑 → Glyphs MCP 服务器**";
 "Download latest plug‑in from GitHub (optional)" = "从 GitHub 下载最新插件（可选）";
 "If enabled, the installer will download the latest plug‑in from GitHub over HTTPS before installing." = "启用后，安装器会在安装前通过 HTTPS 从 GitHub 下载最新插件。";
 "Use the same Python version shown in Glyphs → Settings → Addons → Python version. Changing it in Glyphs requires restarting Glyphs." = "请使用与 Glyphs → 设置 → 插件/扩展 → Python 版本 中显示的相同 Python 版本。在 Glyphs 中更改该设置需要重启 Glyphs。";

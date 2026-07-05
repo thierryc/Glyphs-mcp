@@ -3,7 +3,7 @@ title: Installation
 description: Install the Glyphs MCP plug-in and dependencies.
 ---
 
-Glyphs MCP ships as a **Glyphs 3 plug-in** plus a small Python dependency set. Install it first, then start the local MCP server from inside Glyphs.
+Glyphs MCP ships as a **Glyphs 4 beta plug-in** plus a small Python dependency set. Install it first, then start the local MCP server from inside Glyphs.
 
 ## Recommended path
 
@@ -28,7 +28,7 @@ On macOS, you can also double-click `RunInstall.command` in Finder. If Gatekeepe
 
 ## Requirements
 
-- macOS with **Glyphs 3**
+- macOS with **Glyphs 4 beta**
 - Python **3.11-3.14**
 - Local access to the repo checkout or a downloaded release package
 
@@ -45,9 +45,9 @@ If `python3` is missing or too old, install Python 3.14 from python.org and reru
 
 ## Downloads
 
-- [Latest release](https://github.com/thierryc/Glyphs-mcp/releases/latest)
-- [Installer DMG](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg)
-- [Installer ZIP](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip)
+- [Glyphs 4 beta release](https://github.com/thierryc/Glyphs-mcp/releases/tag/v1.2.0)
+- [Installer DMG](https://github.com/thierryc/Glyphs-mcp/releases/download/v1.2.0/GlyphsMCPInstaller.dmg)
+- [Installer ZIP](https://github.com/thierryc/Glyphs-mcp/releases/download/v1.2.0/GlyphsMCPInstaller.zip)
 
 ## Scripted install
 
@@ -56,6 +56,8 @@ For automation or reproducible development setup, use non-interactive mode:
 ```bash
 python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --skip-skills --skip-client-guidance
 ```
+
+On this branch the installer targets Glyphs 4 by default. For a Glyphs 3 install, add `--glyphs-version 3`.
 
 Add skill installation when needed:
 
@@ -77,13 +79,13 @@ Then continue to [Start the server](./start-server.mdx).
 2. Remove `Glyphs MCP.glyphsPlugin` from:
 
    ```text
-   ~/Library/Application Support/Glyphs 3/Plugins/
+   ~/Library/Application Support/Glyphs 4/Plugins/
    ```
 
 Optional advanced cleanup: remove Glyphs MCP packages from:
 
 ```text
-~/Library/Application Support/Glyphs 3/Scripts/site-packages
+~/Library/Application Support/Glyphs 4/Scripts/site-packages
 ```
 
 Be careful in `Scripts/site-packages`; other Glyphs scripts may depend on packages stored there.

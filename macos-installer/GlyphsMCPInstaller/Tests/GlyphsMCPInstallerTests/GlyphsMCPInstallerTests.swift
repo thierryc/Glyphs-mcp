@@ -191,11 +191,14 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 	}
 
 	func testGlyphsPreferencesUsesVersionSpecificDomains() {
+		XCTAssertEqual(GlyphsPreferences.suiteName(), "com.GeorgSeifert.Glyphs4")
 		XCTAssertEqual(GlyphsPreferences.suiteName(glyphsVersion: .v3), "com.GeorgSeifert.Glyphs3")
 		XCTAssertEqual(GlyphsPreferences.suiteName(glyphsVersion: .v4), "com.GeorgSeifert.Glyphs4")
 	}
 
 	func testInstallerPathsCanTargetGlyphs3And4() {
+		XCTAssertTrue(InstallerPaths.glyphsBaseDir.path.hasSuffix("Library/Application Support/Glyphs 4"))
+		XCTAssertTrue(InstallerPaths.glyphsPluginsDir.path.hasSuffix("Library/Application Support/Glyphs 4/Plugins"))
 		XCTAssertTrue(InstallerPaths.glyphsBaseDir(glyphsVersion: .v3).path.hasSuffix("Library/Application Support/Glyphs 3"))
 		XCTAssertTrue(InstallerPaths.glyphsBaseDir(glyphsVersion: .v4).path.hasSuffix("Library/Application Support/Glyphs 4"))
 		XCTAssertTrue(InstallerPaths.glyphsPluginsDir(glyphsVersion: .v3).path.hasSuffix("Library/Application Support/Glyphs 3/Plugins"))

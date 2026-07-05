@@ -317,6 +317,15 @@ class McpToolRegistrationTextTests(unittest.TestCase):
     def test_visual_review_tool_is_decorated(self) -> None:
         self._assert_async_tool_decorated("render_glyph_review_image")
 
+    def test_annotation_tools_are_decorated(self) -> None:
+        self._assert_async_tool_decorated("get_glyph_annotations")
+        self._assert_async_tool_decorated("add_glyph_annotation")
+        self._assert_async_tool_decorated("add_glyph_annotation_group")
+        self._assert_async_tool_decorated("update_glyph_annotation")
+        self._assert_async_tool_decorated("delete_glyph_annotation")
+        self._assert_async_tool_decorated("clear_glyph_annotations")
+        self._assert_async_tool_decorated("get_glyph_annotation_groups")
+
 
 if __name__ == "__main__":
     unittest.main()

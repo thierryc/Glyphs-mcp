@@ -17,6 +17,7 @@ The active tool list can be smaller than this page when the `Read-only` profile 
 - `review_kerning_bumper` / `apply_kerning_bumper`: audit and apply conservative collision fixes.
 - `review_italic_first_pass` / `apply_italic_first_pass`: preview and apply a guarded roman-to-italic first pass.
 - `render_glyph_review_image`: render a read-only PNG proof image for visual LLM review.
+- `add_glyph_annotation` / `clear_glyph_annotations`: place and remove MCP-managed native Glyphs annotations.
 - `docs_search` / `docs_get`: fetch focused Glyphs docs on demand.
 
 ## Discovery and inspection
@@ -41,6 +42,8 @@ Glyph and layer inspection responses may include Glyphs show links:
 | `get_selected_font_and_master` | Inspect current font, master, and selection snapshot. |
 | `get_selected_nodes` | Inspect selected nodes with per-master mapping for edits. |
 | `get_glyph_paths` | Export paths as JSON suitable for review or controlled editing. |
+| `get_glyph_annotations` | Inspect native Glyphs annotations for a layer, including MCP ownership metadata when available. |
+| `get_glyph_annotation_groups` | Inspect MCP-managed linked annotation groups on a layer. |
 | `render_glyph_review_image` | Render selected or named glyph layers to a PNG image with optional metrics, sidebearing, bounds, node, handle, anchor, and guide overlays. |
 | `review_collinear_handles` | Review curve nodes that should be smooth based on handle collinearity. |
 
@@ -89,6 +92,11 @@ Italic first-pass tools use the Glyphs source/Transformations angle convention: 
 | `update_glyph_metrics` | Adjust width and sidebearings. |
 | `add_component_to_glyph` | Append a component to a glyph layer. |
 | `add_anchor_to_glyph` | Add an anchor to a glyph layer. |
+| `add_glyph_annotation` | Add a native Glyphs annotation and store MCP ownership metadata in layer userData. |
+| `add_glyph_annotation_group` | Add linked annotations, such as a circle or arrow plus a text note, under one MCP group ID. |
+| `update_glyph_annotation` | Update a native annotation by MCP annotation ID or explicit layer annotation index. |
+| `delete_glyph_annotation` | Delete one native annotation by MCP annotation ID or explicit layer annotation index. |
+| `clear_glyph_annotations` | Clear MCP-managed annotations by default, or all annotations with `scope="all"`. |
 | `add_corner_to_all_masters` | Add a `_corner.*` corner hint at selected nodes across all masters. |
 | `set_glyph_paths` | Replace glyph paths from JSON. |
 | `apply_collinear_handles_smooth` | Set smooth flags for reviewed collinear-handle curve nodes; supports `dry_run` and requires `confirm=true` to mutate. |

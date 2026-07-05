@@ -227,7 +227,7 @@ def sign_plugin_executable(bundle: Path) -> None:
 @dataclass
 class InstallerOptions:
     non_interactive: bool
-    glyphs_version: Literal["3", "4"] = "3"
+    glyphs_version: Literal["3", "4"] = "4"
     skip_deps: bool = False
     python_mode: Optional[Literal["glyphs", "custom"]] = None
     python_path: Optional[Path] = None
@@ -243,15 +243,15 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
-def glyphs_base_dir(glyphs_version: Literal["3", "4"] = "3") -> Path:
+def glyphs_base_dir(glyphs_version: Literal["3", "4"] = "4") -> Path:
     return Path.home() / "Library" / "Application Support" / f"Glyphs {glyphs_version}"
 
 
-def glyphs_plugins_dir(glyphs_version: Literal["3", "4"] = "3") -> Path:
+def glyphs_plugins_dir(glyphs_version: Literal["3", "4"] = "4") -> Path:
     return glyphs_base_dir(glyphs_version) / "Plugins"
 
 
-def glyphs_scripts_site_packages(glyphs_version: Literal["3", "4"] = "3") -> Path:
+def glyphs_scripts_site_packages(glyphs_version: Literal["3", "4"] = "4") -> Path:
     return glyphs_base_dir(glyphs_version) / "Scripts" / "site-packages"
 
 
@@ -263,17 +263,17 @@ def claude_code_skills_dir() -> Path:
     return Path.home() / ".claude" / "skills"
 
 
-def glyphs_python_pip(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+def glyphs_python_pip(glyphs_version: Literal["3", "4"] = "4") -> Optional[Path]:
     base = glyphs_base_dir(glyphs_version) / "Repositories" / "GlyphsPythonPlugin" / "Python.framework"
     pip = base / "Versions" / "Current" / "bin" / "pip3"
     return pip if pip.exists() else None
 
 
-def glyphs_preferences_domain(glyphs_version: Literal["3", "4"] = "3") -> str:
+def glyphs_preferences_domain(glyphs_version: Literal["3", "4"] = "4") -> str:
     return "com.GeorgSeifert.Glyphs4" if glyphs_version == "4" else "com.GeorgSeifert.Glyphs3"
 
 
-def glyphs_selected_python_framework(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+def glyphs_selected_python_framework(glyphs_version: Literal["3", "4"] = "4") -> Optional[Path]:
     try:
         out = subprocess.check_output(
             ["defaults", "read", glyphs_preferences_domain(glyphs_version), "GSPythonFrameworkPath"],
@@ -288,7 +288,7 @@ def glyphs_selected_python_framework(glyphs_version: Literal["3", "4"] = "3") ->
     return framework if framework.exists() else None
 
 
-def glyphs_selected_python_bin(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+def glyphs_selected_python_bin(glyphs_version: Literal["3", "4"] = "4") -> Optional[Path]:
     framework = glyphs_selected_python_framework(glyphs_version)
     if not framework:
         return None
@@ -305,7 +305,7 @@ def glyphs_selected_python_bin(glyphs_version: Literal["3", "4"] = "3") -> Optio
     return None
 
 
-def glyphs_python_bin(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+def glyphs_python_bin(glyphs_version: Literal["3", "4"] = "4") -> Optional[Path]:
     pip = glyphs_python_pip(glyphs_version)
     if not pip:
         return None
@@ -332,7 +332,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         add_help=True,
     )
     parser.add_argument("--non-interactive", action="store_true", help="Run without prompts. Required choices must be provided explicitly.")
-    parser.add_argument("--glyphs-version", choices=["3", "4"], default="3", help="Glyphs major version to target for plug-in and Glyphs Python paths.")
+    parser.add_argument("--glyphs-version", choices=["3", "4"], default="4", help="Glyphs major version to target for plug-in and Glyphs Python paths.")
     parser.add_argument("--skip-deps", action="store_true", help="Skip Python dependency installation. Useful for dev-mode plug-in symlink tests.")
     parser.add_argument("--python-mode", choices=["glyphs", "custom"], help="Python environment to use for dependency installation.")
     parser.add_argument("--python-path", help="Absolute path to python3 when using --python-mode custom.")
@@ -599,7 +599,7 @@ def run(cmd: List[str]) -> None:
     subprocess.check_call(cmd)
 
 
-def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", "4"] = "3") -> None:
+def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", "4"] = "4") -> None:
     selected_python = glyphs_selected_python_bin(glyphs_version)
     selected_version = python_version(selected_python) if selected_python else None
     if selected_python and selected_version:
@@ -670,7 +670,7 @@ def install_with_custom_python(python: Path, requirements: Path) -> None:
 def install_plugin(
     mode: str = "copy",
     overwrite_existing: Optional[bool] = None,
-    glyphs_version: Literal["3", "4"] = "3",
+    glyphs_version: Literal["3", "4"] = "4",
     sign_executable: bool = True,
 ) -> bool:
     """Install the plug-in by copying or linking (dev mode)."""
@@ -892,7 +892,7 @@ def choose_custom_python(cands: List[PythonCandidate]) -> Path:
 
 def resolve_python_selection_interactive(
     requirements: Path,
-    glyphs_version: Literal["3", "4"] = "3",
+    glyphs_version: Literal["3", "4"] = "4",
     skip_deps: bool = False,
 ) -> None:
     if skip_deps:
@@ -979,7 +979,7 @@ def run_non_interactive(options: InstallerOptions, requirements: Path) -> None:
         install_skill_bundle_for_targets(targets, overwrite_existing=options.overwrite_skills, non_interactive=True)
 
     console.rule("[green]Install complete[/green]")
-    console.print("Open Glyphs and use [bold]Edit → Start MCP Server[/bold].")
+    console.print("Open Glyphs and use [bold]Edit → Glyphs MCP Server[/bold].")
     if options.show_client_guidance:
         show_client_guidance()
 
@@ -998,7 +998,7 @@ def run_interactive(requirements: Path, options: Optional[InstallerOptions] = No
     prompt_install_skill_bundle()
 
     console.rule("[green]Install complete[/green]")
-    console.print("Open Glyphs and use [bold]Edit → Start MCP Server[/bold].")
+    console.print("Open Glyphs and use [bold]Edit → Glyphs MCP Server[/bold].")
 
     if Confirm.ask("Show MCP client configuration instructions?", default=True):
         show_client_guidance()
@@ -1037,7 +1037,7 @@ def show_client_guidance() -> None:
         "Claude Code:\n"
         f"  claude mcp add --scope user --transport http glyphs-mcp {url}\n"
         "  claude mcp list\n\n"
-        "Then open Glyphs and run Edit → Start MCP Server.",
+        "Then open Glyphs and run Edit → Glyphs MCP Server.",
         title="Codex + Claude Code",
         border_style="cyan",
     ))

@@ -75,7 +75,7 @@
 "Copy command" = "Copier la commande";
 "You’re ready" = "Tout est prêt";
 "Next steps" = "Étapes suivantes";
-"2) In Glyphs: Edit → Start MCP Server" = "2) Dans Glyphs : Édition → Démarrer le serveur MCP";
+"2) In Glyphs: Edit → Glyphs MCP Server" = "2) Dans Glyphs : Édition → Serveur Glyphs MCP";
 "Try it now" = "Essayez maintenant";
 "Example prompt: List open fonts" = "Exemple de prompt : Lister les polices ouvertes";
 
@@ -141,7 +141,7 @@
 /* Help sheet markdown */
 "For the smoothest custom setup, install Python **3.14** from python.org." = "Pour une configuration personnalisée optimale, installez Python **3.14** depuis python.org.";
 "Then, in **Glyphs → Settings → Addons → Python version**, select the same **3.14** version and restart Glyphs." = "Ensuite, dans **Glyphs → Réglages → Modules complémentaires → Version Python**, sélectionnez la même version **3.14** et redémarrez Glyphs.";
-"2) In Glyphs: **Edit → Start MCP Server**" = "2) Dans Glyphs : **Édition → Démarrer le serveur MCP**";
+"2) In Glyphs: **Edit → Glyphs MCP Server**" = "2) Dans Glyphs : **Édition → Serveur Glyphs MCP**";
 "Download latest plug‑in from GitHub (optional)" = "Télécharger le dernier plug‑in depuis GitHub (optionnel)";
 "If enabled, the installer will download the latest plug‑in from GitHub over HTTPS before installing." = "Si activé, l’installateur téléchargera le dernier plug‑in depuis GitHub via HTTPS avant l’installation.";
 "Use the same Python version shown in Glyphs → Settings → Addons → Python version. Changing it in Glyphs requires restarting Glyphs." = "Utilisez la même version de Python que celle indiquée dans Glyphs → Réglages → Modules complémentaires → Version Python. Modifier ce réglage dans Glyphs nécessite de redémarrer Glyphs.";

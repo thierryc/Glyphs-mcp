@@ -29,7 +29,7 @@ Open the project in Xcode:
 
 Minimum requirements:
 - macOS 13.0+
-- Glyphs 3
+- Glyphs 4 beta
 - Python 3.11–3.14 (recommended: python.org 3.14)
 
 Notes for Xcode builds:

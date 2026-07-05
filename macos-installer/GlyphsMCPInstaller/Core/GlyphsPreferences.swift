@@ -4,6 +4,8 @@ public enum GlyphsMajorVersion: String, CaseIterable {
 	case v3 = "3"
 	case v4 = "4"
 
+	public static let installerDefault: GlyphsMajorVersion = .v4
+
 	public var applicationSupportName: String {
 		"Glyphs \(rawValue)"
 	}
@@ -17,7 +19,7 @@ public enum GlyphsMajorVersion: String, CaseIterable {
 }
 
 public enum GlyphsPreferences {
-	public static func suiteName(glyphsVersion: GlyphsMajorVersion = .v3) -> String {
+	public static func suiteName(glyphsVersion: GlyphsMajorVersion = .installerDefault) -> String {
 		glyphsVersion.preferencesSuiteName
 	}
 
@@ -25,7 +27,7 @@ public enum GlyphsPreferences {
 	/// Glyphs → Settings → Addons → Python.
 	///
 	/// Example: `/Library/Frameworks/Python.framework/Versions/3.12`
-	public static func pythonFrameworkPath(glyphsVersion: GlyphsMajorVersion = .v3) -> String? {
+	public static func pythonFrameworkPath(glyphsVersion: GlyphsMajorVersion = .installerDefault) -> String? {
 		guard let defaults = UserDefaults(suiteName: suiteName(glyphsVersion: glyphsVersion)) else { return nil }
 		return defaults.string(forKey: "GSPythonFrameworkPath")
 	}

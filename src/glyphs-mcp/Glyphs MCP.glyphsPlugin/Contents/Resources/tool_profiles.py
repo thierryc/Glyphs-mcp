@@ -32,6 +32,8 @@ CORE_READONLY_TOOLS = {
     "get_selected_font_and_master",
     "get_selected_nodes",
     "get_glyph_paths",
+    "get_glyph_annotations",
+    "get_glyph_annotation_groups",
     "render_glyph_review_image",
     "docs_search",
     "docs_get",

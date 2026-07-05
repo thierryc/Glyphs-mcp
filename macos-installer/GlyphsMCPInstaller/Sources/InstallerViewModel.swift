@@ -546,7 +546,7 @@ final class InstallerViewModel: ObservableObject {
 			}
 
 			mark(.done, .done)
-			log("Install complete. Next: open Glyphs and run Edit → Start MCP Server.")
+			log("Install complete. Next: open Glyphs and run Edit → Glyphs MCP Server.")
 			finish(true, false)
 		} catch is CancellationError {
 			mark(.done, .failure)
@@ -672,7 +672,7 @@ final class InstallerViewModel: ObservableObject {
 				}
 			}
 
-			log("Setup complete. Next: open Glyphs and run Edit → Start MCP Server.")
+			log("Setup complete. Next: open Glyphs and run Edit → Glyphs MCP Server.")
 			if reloadRecommended {
 				log("Reload or restart Codex / Claude Code to pick up the new configuration and skills.")
 			}

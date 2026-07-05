@@ -8,7 +8,7 @@ sidebar_position: 1
 
 ![Glyphs MCP splash](./images/glyphs-app-mcp/glyphs-mcp.png)
 
-Glyphs MCP is a **Model Context Protocol** server for [Glyphs 3](https://glyphsapp.com). It runs as a Glyphs plug-in, exposes a local Streamable HTTP endpoint, and lets AI clients call font-specific tools against the fonts you already have open.
+Glyphs MCP is a **Model Context Protocol** server for [Glyphs 4 beta](https://glyphsapp.com). It runs as a Glyphs plug-in, exposes a local Streamable HTTP endpoint, and lets AI clients call font-specific tools against the fonts you already have open.
 
 Current public docs URL:
 
@@ -54,7 +54,7 @@ The design is tools-first: use deterministic, named tools before falling back to
 2. In Glyphs, start the local server:
 
    ```text
-   Edit -> Start Glyphs MCP Server
+   Edit -> Glyphs MCP Server
    ```
 
 3. Connect your MCP client to:
