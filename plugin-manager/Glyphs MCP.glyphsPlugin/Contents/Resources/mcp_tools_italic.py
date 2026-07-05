@@ -11,6 +11,7 @@ from mcp_runtime import mcp
 from mcp_tool_helpers import (
     _clear_layer_paths,
     _coerce_numeric,
+    _resolve_font_by_index,
     _get_left_sidebearing,
     _get_right_sidebearing,
     _safe_json,
@@ -46,9 +47,8 @@ DEFAULT_PROTECTED_GLYPHS = {
 
 
 def _get_font(font_index):
-    if font_index >= len(Glyphs.fonts) or font_index < 0:
-        return None
-    return Glyphs.fonts[font_index]
+    font, _fonts = _resolve_font_by_index(Glyphs, font_index)
+    return font
 
 
 def _master_by_id(font, master_id):

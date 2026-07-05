@@ -9,15 +9,24 @@ from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
     _coerce_numeric,
+    _font_resolution_error,
     _glyph_unicode_char,
     _load_andre_fuchs_relevant_pairs,
     _open_tab_on_main_thread,
+    _resolve_font_by_index,
     _safe_json,
     _set_kerning_pairs_on_main_thread,
 )
 
 import kerning_collision_engine
 import kerning_proof_engine
+
+
+def _resolve_font_payload(font_index, ok_key=None):
+    font, fonts = _resolve_font_by_index(Glyphs, font_index)
+    if not font:
+        return None, _font_resolution_error(font_index, fonts, ok_key=ok_key)
+    return font, None
 
 
 @mcp.tool()
@@ -41,12 +50,9 @@ async def set_kerning_pair(
         str: JSON-encoded result with success status.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, error = _resolve_font_payload(font_index, ok_key="success")
+        if error:
+            return json.dumps(error)
 
         if not left or not right:
             return json.dumps(
@@ -55,8 +61,6 @@ async def set_kerning_pair(
 
         if value is None:
             return json.dumps({"error": "Kerning value is required"})
-
-        font = Glyphs.fonts[font_index]
 
         if master_id is None:
             master_id = font.masters[0].id
@@ -143,14 +147,10 @@ async def generate_kerning_tab(
           - warnings (list[str])
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, error = _resolve_font_payload(font_index, ok_key="success")
+        if error:
+            return json.dumps(error)
 
-        font = Glyphs.fonts[font_index]
         if not font.masters:
             return json.dumps({"error": "Font has no masters"})
 
@@ -730,15 +730,10 @@ async def review_kerning_bumper(
       - The suggested exception is always a *loosening* (never tightens).
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return _safe_json(
-                {
-                    "ok": False,
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
-                }
-            )
+        font, error = _resolve_font_payload(font_index, ok_key="ok")
+        if error:
+            return _safe_json(error)
 
-        font = Glyphs.fonts[font_index]
         if master_id is None:
             master_id = font.masters[0].id
 
@@ -943,15 +938,10 @@ async def apply_kerning_bumper(
                 }
             )
 
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return _safe_json(
-                {
-                    "ok": False,
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
-                }
-            )
+        font, error = _resolve_font_payload(font_index, ok_key="ok")
+        if error:
+            return _safe_json(error)
 
-        font = Glyphs.fonts[font_index]
         if master_id is None:
             master_id = font.masters[0].id
 

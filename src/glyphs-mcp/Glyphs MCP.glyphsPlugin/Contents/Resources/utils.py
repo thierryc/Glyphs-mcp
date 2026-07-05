@@ -59,6 +59,7 @@ def get_known_tools():
         list: List of tool names.
     """
     return [
+        "get_server_info",
         "list_open_fonts",
         "get_font_glyphs",
         "get_font_masters",

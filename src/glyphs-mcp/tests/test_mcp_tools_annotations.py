@@ -35,6 +35,18 @@ class _Lookup(dict):
         return self.get(key)
 
 
+def _resolve_font_by_index(glyphs, font_index):
+    fonts = list(getattr(glyphs, "fonts", []) or [])
+    index = int(font_index)
+    if index < 0 or index >= len(fonts):
+        return None, fonts
+    return fonts[index], fonts
+
+
+def _font_resolution_error(font_index, fonts=None, ok_key=None):
+    return {"error": "Font index out of range", "fontIndex": font_index, "availableFontCount": len(fonts or [])}
+
+
 class _FakePoint:
     def __init__(self, x=0.0, y=0.0):
         self.x = x
@@ -98,8 +110,10 @@ class McpToolsAnnotationsTests(unittest.TestCase):
             MINUS=5,
         )
         helpers_module = types.SimpleNamespace(
+            _font_resolution_error=_font_resolution_error,
             _get_layer_id=lambda target_layer: getattr(target_layer, "layerId", ""),
             _glyphs_show_layer_link_fields=lambda *args, **kwargs: {},
+            _resolve_font_by_index=_resolve_font_by_index,
             _safe_json=json.dumps,
         )
 

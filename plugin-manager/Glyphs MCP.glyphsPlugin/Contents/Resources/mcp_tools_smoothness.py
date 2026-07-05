@@ -5,7 +5,7 @@ from __future__ import division, print_function, unicode_literals
 from GlyphsApp import GSSMOOTH, Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
-from mcp_tool_helpers import _safe_json
+from mcp_tool_helpers import _font_resolution_error, _resolve_font_by_index, _safe_json
 
 import smoothness_engine
 
@@ -27,13 +27,9 @@ async def review_collinear_handles(
     It does not mutate anything.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return _safe_json(
-                {
-                    "ok": False,
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
-                }
-            )
+        font, fonts = _resolve_font_by_index(Glyphs, font_index)
+        if not font:
+            return _safe_json(_font_resolution_error(font_index, fonts, ok_key="ok"))
 
         if not glyph_name:
             return _safe_json({"ok": False, "error": "glyph_name is required"})
@@ -42,7 +38,6 @@ async def review_collinear_handles(
         if path_index is None:
             return _safe_json({"ok": False, "error": "path_index is required"})
 
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
         if not glyph:
             return _safe_json({"ok": False, "error": "Glyph '{}' not found".format(glyph_name)})
@@ -127,13 +122,9 @@ async def apply_collinear_handles_smooth(
                 }
             )
 
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return _safe_json(
-                {
-                    "ok": False,
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
-                }
-            )
+        font, fonts = _resolve_font_by_index(Glyphs, font_index)
+        if not font:
+            return _safe_json(_font_resolution_error(font_index, fonts, ok_key="ok"))
 
         if not glyph_name:
             return _safe_json({"ok": False, "error": "glyph_name is required"})
@@ -142,7 +133,6 @@ async def apply_collinear_handles_smooth(
         if path_index is None:
             return _safe_json({"ok": False, "error": "path_index is required"})
 
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
         if not glyph:
             return _safe_json({"ok": False, "error": "Glyph '{}' not found".format(glyph_name)})

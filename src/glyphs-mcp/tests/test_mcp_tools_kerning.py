@@ -65,6 +65,23 @@ class _ProofGlyph:
         self.char = char
 
 
+def _resolve_font_by_index(glyphs, font_index):
+    fonts = list(getattr(glyphs, "fonts", []) or [])
+    index = int(font_index)
+    if index < 0 or index >= len(fonts):
+        return None, fonts
+    return fonts[index], fonts
+
+
+def _font_resolution_error(font_index, fonts=None, ok_key=None):
+    payload = {"error": "Font index out of range", "fontIndex": font_index, "availableFontCount": len(fonts or [])}
+    if ok_key == "ok":
+        payload["ok"] = False
+    elif ok_key == "success":
+        payload["success"] = False
+    return payload
+
+
 class McpToolsKerningTests(unittest.TestCase):
     def _load_module(self):
         glyphs = [
@@ -83,9 +100,11 @@ class McpToolsKerningTests(unittest.TestCase):
         )
         helpers_module = types.SimpleNamespace(
             _coerce_numeric=lambda value: None if value is None else float(value),
+            _font_resolution_error=_font_resolution_error,
             _glyph_unicode_char=lambda glyph: getattr(glyph, "char", None),
             _load_andre_fuchs_relevant_pairs=lambda: ({"id": "test_pairs", "pairCount": 1}, [("A", "V")], []),
             _open_tab_on_main_thread=lambda font_obj, text: object(),
+            _resolve_font_by_index=_resolve_font_by_index,
             _safe_json=lambda payload: json.dumps(payload),
             _set_kerning_pairs_on_main_thread=lambda *args, **kwargs: None,
         )

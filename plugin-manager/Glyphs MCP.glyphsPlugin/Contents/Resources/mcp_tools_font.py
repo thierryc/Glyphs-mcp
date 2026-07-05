@@ -11,112 +11,27 @@ from mcp_runtime import mcp
 from mcp_tool_helpers import (
     _coerce_numeric,
     _custom_parameter,
+    _font_resolution_error,
     _get_component_automatic,
     _get_layer_id,
     _get_left_sidebearing,
     _get_right_sidebearing,
     _glyphs_show_layer_link_fields,
     _glyphs_show_link_fields,
+    _open_fonts_from_glyphs,
+    _resolve_font_by_index,
     _safe_attr,
     _safe_json,
 )
 
 
 def _font_by_index(font_index):
-    try:
-        fonts = _open_fonts()
-        if font_index >= len(fonts) or font_index < 0:
-            return None
-        return fonts[font_index]
-    except Exception:
-        return None
-
-
-def _add_font(fonts, seen, font):
-    if font is None:
-        return
-    key = None
-    try:
-        key = ("path", str(getattr(font, "filepath", None) or ""))
-    except Exception:
-        key = None
-    if not key or key == ("path", ""):
-        key = ("object", id(font))
-    if key in seen:
-        return
-    seen.add(key)
-    fonts.append(font)
-
-
-def _maybe_call(value):
-    try:
-        if callable(value):
-            return value()
-    except Exception:
-        return None
-    return value
-
-
-def _sequence_values(sequence):
-    if sequence is None:
-        return []
-
-    values = []
-    try:
-        count = len(sequence)
-    except Exception:
-        count = None
-
-    if count is not None:
-        for index in range(count):
-            try:
-                values.append(sequence[index])
-            except Exception:
-                pass
-        return values
-
-    try:
-        return list(sequence)
-    except Exception:
-        return []
+    font, _fonts = _resolve_font_by_index(Glyphs, font_index)
+    return font
 
 
 def _open_fonts():
-    fonts = []
-    seen = set()
-
-    try:
-        fonts_proxy = getattr(Glyphs, "fonts", None)
-    except Exception:
-        fonts_proxy = None
-    for font in _sequence_values(fonts_proxy):
-        _add_font(fonts, seen, font)
-
-    try:
-        documents = getattr(Glyphs, "documents", None)
-    except Exception:
-        documents = None
-    for document in _sequence_values(documents):
-        try:
-            _add_font(fonts, seen, _maybe_call(getattr(document, "font", None)))
-        except Exception:
-            pass
-
-    try:
-        current_document = getattr(Glyphs, "currentDocument", None)
-    except Exception:
-        current_document = None
-    try:
-        _add_font(fonts, seen, _maybe_call(getattr(current_document, "font", None)))
-    except Exception:
-        pass
-
-    try:
-        _add_font(fonts, seen, getattr(Glyphs, "font", None))
-    except Exception:
-        pass
-
-    return fonts
+    return _open_fonts_from_glyphs(Glyphs)
 
 
 def _font_count():
@@ -173,9 +88,10 @@ async def list_open_fonts() -> str:
     """
     try:
         fonts_info = []
-        for font in _open_fonts():
+        for font_index, font in enumerate(_open_fonts()):
             fonts_info.append(
                 {
+                    "fontIndex": font_index,
                     "familyName": font.familyName or "",
                     "filePath": font.filepath,
                     "masterCount": len(font.masters),
@@ -205,11 +121,7 @@ async def get_font_glyphs(font_index: int = 0) -> str:
     try:
         font = _font_by_index(font_index)
         if not font:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, _font_count())
-                }
-            )
+            return json.dumps(_font_resolution_error(font_index, _open_fonts()))
 
         file_path = getattr(font, "filepath", None)
         glyphs_info = []
@@ -250,11 +162,7 @@ async def get_font_masters(font_index: int = 0) -> str:
     try:
         font = _font_by_index(font_index)
         if not font:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, _font_count())
-                }
-            )
+            return json.dumps(_font_resolution_error(font_index, _open_fonts()))
 
         # Prepare axis tag list once for this font
         axes = []
@@ -327,13 +235,7 @@ async def set_master_italic_angle(
     try:
         font = _font_by_index(font_index)
         if not font:
-            return _safe_json(
-                {
-                    "ok": False,
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, _font_count()),
-                    "fontIndex": font_index,
-                }
-            )
+            return _safe_json(_font_resolution_error(font_index, _open_fonts(), ok_key="ok"))
 
         master = _master_by_id(font, master_id)
         if not master:
@@ -398,11 +300,7 @@ async def get_font_instances(font_index: int = 0) -> str:
     try:
         font = _font_by_index(font_index)
         if not font:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, _font_count())
-                }
-            )
+            return json.dumps(_font_resolution_error(font_index, _open_fonts()))
 
         instances_info = []
         for instance in font.instances:
@@ -445,11 +343,7 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
     try:
         font = _font_by_index(font_index)
         if not font:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, _font_count())
-                }
-            )
+            return json.dumps(_font_resolution_error(font_index, _open_fonts()))
 
         file_path = getattr(font, "filepath", None)
         glyph = font.glyphs[glyph_name]
@@ -530,11 +424,7 @@ async def get_font_kerning(font_index: int = 0, master_id: str = None) -> str:
     try:
         font = _font_by_index(font_index)
         if not font:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, _font_count())
-                }
-            )
+            return json.dumps(_font_resolution_error(font_index, _open_fonts()))
 
         if master_id is None:
             master_id = font.masters[0].id

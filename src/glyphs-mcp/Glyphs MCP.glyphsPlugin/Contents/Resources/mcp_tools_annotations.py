@@ -18,8 +18,10 @@ from GlyphsApp import (  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
+    _font_resolution_error,
     _get_layer_id,
     _glyphs_show_layer_link_fields,
+    _resolve_font_by_index,
     _safe_json,
 )
 
@@ -255,20 +257,13 @@ def _fingerprint_matches(stored, current):
 
 
 def _resolve_target(font_index, glyph_name, master_id):
-    try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return None, None, None, {
-                "error": "Font index {} out of range. Available fonts: {}".format(
-                    font_index, len(Glyphs.fonts)
-                )
-            }
-    except Exception:
-        return None, None, None, {"error": "Unable to access open fonts"}
+    font, fonts = _resolve_font_by_index(Glyphs, font_index)
+    if not font:
+        return None, None, None, _font_resolution_error(font_index, fonts)
 
     if not glyph_name:
         return None, None, None, {"error": "Glyph name is required"}
 
-    font = Glyphs.fonts[font_index]
     glyph = font.glyphs[glyph_name]
     if not glyph:
         return None, None, None, {"error": "Glyph '{}' not found".format(glyph_name)}

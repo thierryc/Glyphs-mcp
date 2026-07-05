@@ -96,6 +96,9 @@ class McpToolRegistrationTextTests(unittest.TestCase):
     def test_list_style_sets_is_decorated(self) -> None:
         self._assert_async_tool_decorated("list_style_sets")
 
+    def test_get_server_info_is_decorated(self) -> None:
+        self._assert_async_tool_decorated("get_server_info")
+
     def test_glyphs_show_bridge_route_is_registered(self) -> None:
         resources = _resources_dir()
         route_path = resources / "mcp_show_routes.py"
@@ -145,8 +148,9 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         plugin_path = resources / "glyphs_plugin.py"
         text = plugin_path.read_text(encoding="utf-8", errors="replace")
 
-        self.assertIn('panel.setTitle_("{} {}".format(tr("app.title"), get_plugin_version()))', text)
+        self.assertIn('panel.setTitle_("{} {}".format(tr("app.title"), get_runtime_label()))', text)
         self.assertIn('panel.setTitle_("{} {}".format(tr("app.title"), version))', text)
+        self.assertIn("version = get_runtime_label()", text)
         self.assertIn("self._status_dot_field = status_dot", text)
         self.assertIn('dot.setStringValue_("●")', text)
         self.assertIn("dot.setToolTip_(status_value)", text)

@@ -45,6 +45,70 @@ def _custom_parameter(obj, key, default=None):
         return default
 
 
+def _sequence_values(sequence):
+    if sequence is None:
+        return []
+    try:
+        return [sequence[index] for index in range(len(sequence))]
+    except Exception:
+        try:
+            return list(sequence)
+        except Exception:
+            return []
+
+
+def _add_font(fonts, seen, font):
+    if font is None:
+        return
+    key = ("path", str(getattr(font, "filepath", "") or "")) if getattr(font, "filepath", None) else ("object", id(font))
+    if key in seen:
+        return
+    seen.add(key)
+    fonts.append(font)
+
+
+def _open_fonts_from_glyphs(glyphs):
+    fonts = []
+    seen = set()
+    try:
+        fonts_proxy = getattr(glyphs, "fonts", None)
+    except Exception:
+        fonts_proxy = None
+    for font in _sequence_values(fonts_proxy):
+        _add_font(fonts, seen, font)
+    for document in _sequence_values(getattr(glyphs, "documents", None)):
+        _add_font(fonts, seen, getattr(document, "font", None))
+    _add_font(fonts, seen, getattr(getattr(glyphs, "currentDocument", None), "font", None))
+    try:
+        _add_font(fonts, seen, getattr(glyphs, "font", None))
+    except Exception:
+        pass
+    return fonts
+
+
+def _resolve_font_by_index(glyphs, font_index):
+    fonts = _open_fonts_from_glyphs(glyphs)
+    index = int(font_index)
+    if index < 0 or index >= len(fonts):
+        return None, fonts
+    return fonts[index], fonts
+
+
+def _font_resolution_error(font_index, fonts=None, ok_key=None):
+    fonts = list(fonts or [])
+    payload = {
+        "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(fonts)) if fonts else "No open fonts found. Open a font in Glyphs and run list_open_fonts to choose a font_index.",
+        "fontIndex": font_index,
+        "availableFontCount": len(fonts),
+        "availableFonts": [{"fontIndex": i, "familyName": getattr(font, "familyName", ""), "filePath": getattr(font, "filepath", None)} for i, font in enumerate(fonts)],
+    }
+    if ok_key == "ok":
+        payload["ok"] = False
+    elif ok_key == "success":
+        payload["success"] = False
+    return payload
+
+
 def _master(master_id, name, italic_angle, slant_angle=0):
     return types.SimpleNamespace(
         id=master_id,
@@ -99,12 +163,15 @@ class McpToolsFontTests(unittest.TestCase):
         helpers_module = types.SimpleNamespace(
             _coerce_numeric=_coerce_numeric,
             _custom_parameter=_custom_parameter,
+            _font_resolution_error=_font_resolution_error,
             _get_component_automatic=lambda component: False,
             _get_layer_id=lambda layer: "",
             _get_left_sidebearing=lambda layer: None,
             _get_right_sidebearing=lambda layer: None,
             _glyphs_show_layer_link_fields=lambda *args, **kwargs: {},
             _glyphs_show_link_fields=lambda *args, **kwargs: {},
+            _open_fonts_from_glyphs=_open_fonts_from_glyphs,
+            _resolve_font_by_index=_resolve_font_by_index,
             _safe_attr=lambda obj, attr, default=None: getattr(obj, attr, default),
             _safe_json=lambda payload: json.dumps(payload),
         )

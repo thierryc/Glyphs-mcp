@@ -69,6 +69,21 @@ class _FakeGlyphs(dict):
         return iter(self.values())
 
 
+def _resolve_font_by_index(glyphs, font_index):
+    fonts = list(getattr(glyphs, "fonts", []) or [])
+    index = int(font_index)
+    if index < 0 or index >= len(fonts):
+        return None, fonts
+    return fonts[index], fonts
+
+
+def _font_resolution_error(font_index, fonts=None, ok_key=None):
+    payload = {"error": "Font index out of range", "fontIndex": font_index, "availableFontCount": len(fonts or [])}
+    if ok_key == "ok":
+        payload["ok"] = False
+    return payload
+
+
 def _font_with_stems(master_stems):
     master = types.SimpleNamespace(
         id="m1",
@@ -101,6 +116,8 @@ class McpToolsStemsTests(unittest.TestCase):
         )
         helpers_module = types.SimpleNamespace(
             _coerce_numeric=lambda value: None if value is None else float(value),
+            _font_resolution_error=_font_resolution_error,
+            _resolve_font_by_index=_resolve_font_by_index,
             _safe_attr=lambda obj, attr, default=None: getattr(obj, attr, default),
             _safe_json=lambda payload: json.dumps(payload),
         )

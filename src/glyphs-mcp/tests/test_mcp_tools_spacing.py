@@ -30,6 +30,21 @@ class _FakeMCP:
         return decorator
 
 
+def _resolve_font_by_index(glyphs, font_index):
+    fonts = list(getattr(glyphs, "fonts", []) or [])
+    index = int(font_index)
+    if index < 0 or index >= len(fonts):
+        return None, fonts
+    return fonts[index], fonts
+
+
+def _font_resolution_error(font_index, fonts=None, ok_key=None):
+    payload = {"error": "Font index out of range", "fontIndex": font_index, "availableFontCount": len(fonts or [])}
+    if ok_key == "ok":
+        payload["ok"] = False
+    return payload
+
+
 class McpToolsSpacingTests(unittest.TestCase):
     def _load_module(self):
         layer = types.SimpleNamespace(width=300.0, leftSideBearing=40.0, rightSideBearing=60.0)
@@ -40,8 +55,11 @@ class McpToolsSpacingTests(unittest.TestCase):
         glyphs_module = types.SimpleNamespace(Glyphs=types.SimpleNamespace(fonts=[font], font=font), GSGuide=type("GSGuide", (), {}))
         helpers_module = types.SimpleNamespace(
             _custom_parameter=lambda obj, key, default=None: default,
+            _font_resolution_error=_font_resolution_error,
             _get_left_sidebearing=lambda layer_obj: layer_obj.leftSideBearing,
             _get_right_sidebearing=lambda layer_obj: layer_obj.rightSideBearing,
+            _is_active_font=lambda glyphs, font_obj: getattr(glyphs, "font", None) is font_obj,
+            _resolve_font_by_index=_resolve_font_by_index,
             _safe_json=lambda payload: json.dumps(payload),
             _set_sidebearing=lambda layer_obj, attr_name, legacy_attr, value: setattr(layer_obj, attr_name, float(value)) or True,
             _spacing_selected_glyph_names_for_font=lambda font_obj: ["A"],

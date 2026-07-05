@@ -17,7 +17,19 @@ from GlyphsApp import (  # type: ignore[import-not-found]
 )
 
 from mcp_runtime import mcp
-from mcp_tool_helpers import _get_component_automatic
+from mcp_tool_helpers import (
+    _active_font,
+    _font_resolution_error,
+    _get_component_automatic,
+    _resolve_font_by_index,
+)
+
+
+def _resolve_font_payload(font_index):
+    font, fonts = _resolve_font_by_index(Glyphs, font_index)
+    if not font:
+        return None, _font_resolution_error(font_index, fonts, ok_key="success")
+    return font, None
 
 
 @mcp.tool()
@@ -39,17 +51,13 @@ async def get_glyph_components(
             - Layer information
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return json.dumps(error)
 
         if not glyph_name:
             return json.dumps({"error": "Glyph name is required"})
 
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
@@ -151,19 +159,15 @@ async def add_component_to_glyph(
         str: JSON-encoded result with success status.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return json.dumps(error)
 
         if not glyph_name or not component_name:
             return json.dumps(
                 {"error": "Both glyph_name and component_name are required"}
             )
 
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
@@ -228,12 +232,9 @@ async def add_anchor_to_glyph(
         str: JSON-encoded result with success status.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return json.dumps(error)
 
         if not glyph_name or not anchor_name:
             return json.dumps({"error": "Both glyph_name and anchor_name are required"})
@@ -241,7 +242,6 @@ async def add_anchor_to_glyph(
         if x is None or y is None:
             return json.dumps({"error": "Both x and y coordinates are required"})
 
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
@@ -293,7 +293,7 @@ async def add_corner_to_all_masters(
         JSON encoded result with per-master add/skip details.
     """
     try:
-        font = Glyphs.font
+        font = _active_font(Glyphs)
         if not font:
             return json.dumps({"error": "No font is currently active"})
 

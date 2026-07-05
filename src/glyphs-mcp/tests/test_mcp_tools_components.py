@@ -37,6 +37,21 @@ class _FakeGSComponent:
         self.automaticAlignment = True
 
 
+def _resolve_font_by_index(glyphs, font_index):
+    fonts = list(getattr(glyphs, "fonts", []) or [])
+    index = int(font_index)
+    if index < 0 or index >= len(fonts):
+        return None, fonts
+    return fonts[index], fonts
+
+
+def _font_resolution_error(font_index, fonts=None, ok_key=None):
+    payload = {"error": "Font index out of range", "fontIndex": font_index, "availableFontCount": len(fonts or [])}
+    if ok_key == "success":
+        payload["success"] = False
+    return payload
+
+
 class McpToolsComponentsTests(unittest.TestCase):
     def _load_module(self):
         layer = types.SimpleNamespace(components=[])
@@ -66,7 +81,12 @@ class McpToolsComponentsTests(unittest.TestCase):
             {
                 "GlyphsApp": glyphs_module,
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
-                "mcp_tool_helpers": types.SimpleNamespace(_get_component_automatic=lambda component: getattr(component, "automaticAlignment", None)),
+                "mcp_tool_helpers": types.SimpleNamespace(
+                    _active_font=lambda glyphs: getattr(glyphs, "font", None),
+                    _font_resolution_error=_font_resolution_error,
+                    _get_component_automatic=lambda component: getattr(component, "automaticAlignment", None),
+                    _resolve_font_by_index=_resolve_font_by_index,
+                ),
             },
         ):
             sys.modules.pop(module_name, None)

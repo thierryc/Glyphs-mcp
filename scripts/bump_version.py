@@ -47,6 +47,12 @@ _FAST_MCP_VERSION_RE = re.compile(r"(FastMCP\s+`version=\")([^\"]+)(\"`)")
 _README_INSTALLER_URL_RE = re.compile(
     r"https://github\.com/thierryc/Glyphs-mcp/releases/(?:download/v\d+\.\d+\.\d+|latest/download)/GlyphsMCPInstaller(?:-\d+\.\d+\.\d+)?\.(dmg|zip)"
 )
+_RELEASE_TAG_URL_RE = re.compile(
+    r"https://github\.com/thierryc/Glyphs-mcp/releases/tag/v\d+\.\d+\.\d+"
+)
+_VERSIONED_INSTALLER_URL_RE = re.compile(
+    r"https://github\.com/thierryc/Glyphs-mcp/releases/download/v\d+\.\d+\.\d+/GlyphsMCPInstaller(?:-\d+\.\d+\.\d+)?\.(dmg|zip)"
+)
 _PBXPROJ_MARKETING_VERSION_RE = re.compile(r"(\bMARKETING_VERSION\s*=\s*)(\d+\.\d+\.\d+)(\s*;)")
 
 
@@ -87,6 +93,15 @@ def update_readme(readme_path: Path, version: str) -> None:
             f"error: could not find installer URL in {readme_path} (expected releases/latest/download/GlyphsMCPInstaller.(dmg|zip) or releases/download/vX.Y.Z/GlyphsMCPInstaller[-X.Y.Z].(dmg|zip))"
         )
 
+    text, n4 = _RELEASE_TAG_URL_RE.subn(
+        f"https://github.com/thierryc/Glyphs-mcp/releases/tag/v{version}",
+        text,
+    )
+    if n4 < 1:
+        raise SystemExit(
+            f"error: could not find release tag URL in {readme_path} (expected releases/tag/vX.Y.Z)"
+        )
+
     if text != original:
         readme_path.write_text(text, encoding="utf-8")
 
@@ -104,6 +119,33 @@ def update_command_set_mdx(path: Path, version: str) -> bool:
     if text != original:
         path.write_text(text, encoding="utf-8")
     return True
+
+
+def update_installation_doc(path: Path, version: str) -> None:
+    text = path.read_text(encoding="utf-8")
+    original = text
+
+    text, n1 = _RELEASE_TAG_URL_RE.subn(
+        f"https://github.com/thierryc/Glyphs-mcp/releases/tag/v{version}",
+        text,
+    )
+    if n1 < 1:
+        raise SystemExit(
+            f"error: could not find release tag URL in {path} (expected releases/tag/vX.Y.Z)"
+        )
+
+    def _installer_url_repl(match: re.Match[str]) -> str:
+        ext = match.group(1)
+        return f"https://github.com/thierryc/Glyphs-mcp/releases/download/v{version}/GlyphsMCPInstaller.{ext}"
+
+    text, n2 = _VERSIONED_INSTALLER_URL_RE.subn(_installer_url_repl, text)
+    if n2 < 1:
+        raise SystemExit(
+            f"error: could not find versioned installer URL in {path} (expected releases/download/vX.Y.Z/GlyphsMCPInstaller.(dmg|zip))"
+        )
+
+    if text != original:
+        path.write_text(text, encoding="utf-8")
 
 
 def update_marketing_version(pbxproj_path: Path, version: str) -> None:
@@ -149,6 +191,7 @@ def main(argv: list[str]) -> int:
     )
     readme_path = repo_root / "README.md"
     command_set_path = repo_root / "content" / "reference" / "command-set.mdx"
+    installation_doc_path = repo_root / "content" / "getting-started" / "installation.mdx"
     pbxproj_path = (
         repo_root
         / "macos-installer"
@@ -166,6 +209,9 @@ def main(argv: list[str]) -> int:
     if not command_set_path.exists():
         print(f"error: command set doc not found at: {command_set_path}", file=sys.stderr)
         return 1
+    if not installation_doc_path.exists():
+        print(f"error: installation doc not found at: {installation_doc_path}", file=sys.stderr)
+        return 1
     if not pbxproj_path.exists():
         print(f"error: installer pbxproj not found at: {pbxproj_path}", file=sys.stderr)
         return 1
@@ -177,6 +223,7 @@ def main(argv: list[str]) -> int:
         set_plist_key(plugin_manager_plist_path, "CFBundleVersion", version)
     update_readme(readme_path, version)
     updated_command_set = update_command_set_mdx(command_set_path, version)
+    update_installation_doc(installation_doc_path, version)
     update_marketing_version(pbxproj_path, version)
 
     print("Updated:")
@@ -188,6 +235,7 @@ def main(argv: list[str]) -> int:
         print(f"  - {command_set_path} (FastMCP version mention) -> {version}")
     else:
         print(f"  - {command_set_path} (no FastMCP version mention; skipped)")
+    print(f"  - {installation_doc_path} (release links) -> {version}")
     print(f"  - {pbxproj_path} (MARKETING_VERSION) -> {version}")
     return 0
 

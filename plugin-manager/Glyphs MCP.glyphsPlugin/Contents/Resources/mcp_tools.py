@@ -27,6 +27,7 @@ import mcp_tools_stems  # noqa: F401
 import mcp_tools_italic  # noqa: F401
 import mcp_tools_kerning  # noqa: F401
 import mcp_tools_paths  # noqa: F401
+import mcp_tools_server  # noqa: F401
 import mcp_tools_selection  # noqa: F401
 import mcp_tools_smoothness  # noqa: F401
 import mcp_tools_spacing  # noqa: F401

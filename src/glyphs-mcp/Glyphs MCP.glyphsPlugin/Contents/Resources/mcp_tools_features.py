@@ -8,9 +8,11 @@ from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
+    _font_resolution_error,
     _glyphs_show_glyphs_link_fields,
     _is_style_set_tag,
     _parse_style_set_substitutions,
+    _resolve_font_by_index,
     _safe_json,
     _style_set_name_from_metadata,
 )
@@ -41,14 +43,10 @@ async def list_style_sets(font_index: int = 0, include_inactive: bool = False) -
         group-level showMarkdown link for the replacement glyphs when possible.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, fonts = _resolve_font_by_index(Glyphs, font_index)
+        if not font:
+            return json.dumps(_font_resolution_error(font_index, fonts))
 
-        font = Glyphs.fonts[font_index]
         file_path = getattr(font, "filepath", None)
         style_sets = []
 

@@ -60,7 +60,7 @@ from utils import (
     notify_server_started,
     replace_tool_registry_in_place,
 )
-from versioning import get_docs_url_latest, get_plugin_version
+from versioning import get_docs_url_latest, get_plugin_version, get_runtime_info, get_runtime_label
 
 
 AUTOSTART_DEFAULTS_KEY = "io.anotherplanet.glyphs-mcp.autostart"
@@ -966,7 +966,7 @@ class MCPBridgePlugin(GeneralPlugin):
         panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer_(
             rect, style, NSBackingStoreBuffered, False
         )
-        panel.setTitle_("{} {}".format(tr("app.title"), get_plugin_version()))
+        panel.setTitle_("{} {}".format(tr("app.title"), get_runtime_label()))
         panel.setFloatingPanel_(True)
 
         content = panel.contentView()
@@ -1167,7 +1167,7 @@ class MCPBridgePlugin(GeneralPlugin):
         running = self._server_is_running()
         port = self._current_port()
         endpoint = endpoint_for(port)
-        version = get_plugin_version()
+        version = get_runtime_label()
         tool_profile = self._selected_tool_profile_name()
         status_state = "running" if running else "stopped"
         status_value = tr("status." + status_text(running))
@@ -1435,6 +1435,7 @@ class MCPBridgePlugin(GeneralPlugin):
         )
         try:
             print("  Version: {}".format(get_plugin_version()))
+            print("  Runtime ID: {}".format(get_runtime_info().get("runtimeId", "?")))
         except Exception:
             pass
         print(
@@ -1475,6 +1476,7 @@ class MCPBridgePlugin(GeneralPlugin):
         print("Glyphs MCP Server started successfully!")
         try:
             print("  Version: {}".format(get_plugin_version()))
+            print("  Runtime ID: {}".format(get_runtime_info().get("runtimeId", "?")))
         except Exception:
             pass
         print("  Port: {}".format(port))

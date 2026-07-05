@@ -20,6 +20,7 @@ PROFILE_ORDER = [
 
 
 CORE_READONLY_TOOLS = {
+    "get_server_info",
     "list_open_fonts",
     "get_font_glyphs",
     "get_font_masters",

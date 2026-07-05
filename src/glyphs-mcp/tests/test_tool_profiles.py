@@ -26,10 +26,11 @@ class ToolProfilesTests(unittest.TestCase):
     def test_readonly_excludes_exec_tools(self) -> None:
         enabled = tool_profiles.enabled_tool_names(
             tool_profiles.PROFILE_READONLY,
-            {"execute_code", "execute_code_with_context", "list_open_fonts", "list_style_sets"},
+            {"execute_code", "execute_code_with_context", "get_server_info", "list_open_fonts", "list_style_sets"},
         )
         self.assertNotIn("execute_code", enabled)
         self.assertNotIn("execute_code_with_context", enabled)
+        self.assertIn("get_server_info", enabled)
         self.assertIn("list_open_fonts", enabled)
         self.assertIn("list_style_sets", enabled)
 

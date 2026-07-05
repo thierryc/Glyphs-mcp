@@ -8,11 +8,20 @@ from GlyphsApp import Glyphs, GSGlyph  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
+    _font_resolution_error,
     _get_left_sidebearing,
     _get_right_sidebearing,
+    _resolve_font_by_index,
     _save_font_on_main_thread,
     _set_sidebearing,
 )
+
+
+def _resolve_font_payload(font_index):
+    font, fonts = _resolve_font_by_index(Glyphs, font_index)
+    if not font:
+        return None, _font_resolution_error(font_index, fonts, ok_key="success")
+    return font, None
 
 
 @mcp.tool()
@@ -36,17 +45,12 @@ async def create_glyph(
         str: JSON-encoded result with success status and glyph details.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return json.dumps(error)
 
         if not glyph_name:
             return json.dumps({"error": "Glyph name is required"})
-
-        font = Glyphs.fonts[font_index]
 
         # Check if glyph already exists
         if font.glyphs[glyph_name]:
@@ -97,17 +101,13 @@ async def delete_glyph(font_index: int = 0, glyph_name: str = None) -> str:
         str: JSON-encoded result with success status.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return json.dumps(error)
 
         if not glyph_name:
             return json.dumps({"error": "Glyph name is required"})
 
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
@@ -152,17 +152,13 @@ async def update_glyph_properties(
         str: JSON-encoded result with updated glyph properties.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return json.dumps(error)
 
         if not glyph_name:
             return json.dumps({"error": "Glyph name is required"})
 
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
@@ -222,19 +218,15 @@ async def copy_glyph(
         str: JSON-encoded result with success status.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return json.dumps(error)
 
         if not source_glyph or not target_glyph:
             return json.dumps(
                 {"error": "Both source and target glyph names are required"}
             )
 
-        font = Glyphs.fonts[font_index]
         src_glyph = font.glyphs[source_glyph]
 
         if not src_glyph:
@@ -300,17 +292,13 @@ async def update_glyph_metrics(
         str: JSON-encoded result with updated metrics.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return json.dumps(error)
 
         if not glyph_name:
             return json.dumps({"error": "Glyph name is required"})
 
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
@@ -366,14 +354,9 @@ async def save_font(font_index: int = 0, path: str = None) -> str:
         str: JSON-encoded result with success status and save path.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
-
-        font = Glyphs.fonts[font_index]
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return json.dumps(error)
 
         existing_path = getattr(font, "filepath", None)
         requested_path = path or existing_path
@@ -400,4 +383,3 @@ async def save_font(font_index: int = 0, path: str = None) -> str:
         )
     except Exception as e:
         return json.dumps({"error": str(e)})
-

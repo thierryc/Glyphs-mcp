@@ -18,9 +18,9 @@ The Installer app is the simplest way to install `Glyphs MCP.glyphsPlugin`, inst
 
 ![Glyphs MCP Installer](./website/static/img/glyphs-mcp-installer.png)
 
-- Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/download/v1.2.0/GlyphsMCPInstaller.dmg
-- Download (ZIP): https://github.com/thierryc/Glyphs-mcp/releases/download/v1.2.0/GlyphsMCPInstaller.zip
-- Glyphs 4 beta release: https://github.com/thierryc/Glyphs-mcp/releases/tag/v1.2.0
+- Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg
+- Download (ZIP): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip
+- Glyphs 4 beta release: https://github.com/thierryc/Glyphs-mcp/releases/tag/v1.2.1
 
 The installer can also install the bundled Glyphs MCP skills for Codex and Claude CLI.
 
@@ -126,8 +126,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.2.0)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.2.0"`).
+## Command Set (MCP server v1.2.1)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.2.1"`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
@@ -138,6 +138,7 @@ instead because Glyphs requires an absolute file path.
 
 | Tool | Description |
 |------|-------------|
+| `get_server_info` | Return runtime version, runtime ID, code hash, resource path, Glyphs reachability, and open-font count for health checks. |
 | `list_open_fonts` | List all open fonts and basic metadata. |
 | `get_font_glyphs` | Return glyph list and key attributes for a font, including clickable Glyphs show links when available. |
 | `get_font_masters` | Detailed master information for a font, including Metrics `italicAngle` and legacy custom-parameter `slantAngle`. |

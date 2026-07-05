@@ -114,8 +114,51 @@ class _FakeLayer:
         self.parent = None
 
 
+def _open_fonts_from_glyphs(glyphs):
+    fonts = []
+    try:
+        fonts.extend(list(getattr(glyphs, "fonts", None) or []))
+    except Exception:
+        pass
+    try:
+        for document in list(getattr(glyphs, "documents", None) or []):
+            font = getattr(document, "font", None)
+            if font is not None and font not in fonts:
+                fonts.append(font)
+    except Exception:
+        pass
+    try:
+        font = getattr(getattr(glyphs, "currentDocument", None), "font", None)
+        if font is not None and font not in fonts:
+            fonts.append(font)
+    except Exception:
+        pass
+    try:
+        font = getattr(glyphs, "font", None)
+        if font is not None and font not in fonts:
+            fonts.append(font)
+    except Exception:
+        pass
+    return fonts
+
+
+def _resolve_font_by_index(glyphs, font_index):
+    fonts = _open_fonts_from_glyphs(glyphs)
+    index = int(font_index)
+    if index < 0 or index >= len(fonts):
+        return None, fonts
+    return fonts[index], fonts
+
+
+def _font_resolution_error(font_index, fonts=None, ok_key=None):
+    payload = {"error": "Font index {} out of range. Available fonts: {}".format(font_index, len(fonts or []))}
+    if ok_key == "ok":
+        payload["ok"] = False
+    return payload
+
+
 class McpToolsVisualReviewTests(unittest.TestCase):
-    def _load_module(self, selected_layers=True, module_name="glyphs_mcp_test_mcp_tools_visual_review"):
+    def _load_module(self, selected_layers=True, module_name="glyphs_mcp_test_mcp_tools_visual_review", broken_fonts=False):
         master_1 = types.SimpleNamespace(id="m1", name="Regular", ascender=800, descender=-200, xHeight=500, capHeight=700)
         master_2 = types.SimpleNamespace(id="m2", name="Bold", ascender=810, descender=-210, xHeight=510, capHeight=710)
         layer_1 = _FakeLayer("m1", "Regular", width=500.0)
@@ -131,11 +174,25 @@ class McpToolsVisualReviewTests(unittest.TestCase):
             selectedLayers=[layer_1] if selected_layers else [],
         )
 
-        glyphs_module = types.SimpleNamespace(Glyphs=types.SimpleNamespace(fonts=[font], font=font))
+        if broken_fonts:
+            class BrokenGlyphs:
+                @property
+                def fonts(self):
+                    raise RuntimeError("broken fonts proxy")
+
+            glyphs_obj = BrokenGlyphs()
+            glyphs_obj.documents = [types.SimpleNamespace(font=font)]
+            glyphs_obj.currentDocument = types.SimpleNamespace(font=font)
+            glyphs_obj.font = font
+        else:
+            glyphs_obj = types.SimpleNamespace(fonts=[font], font=font)
+        glyphs_module = types.SimpleNamespace(Glyphs=glyphs_obj)
         helpers_module = types.SimpleNamespace(
+            _font_resolution_error=_font_resolution_error,
             _get_layer_id=lambda layer_obj: getattr(layer_obj, "associatedMasterId", None),
             _get_left_sidebearing=lambda layer_obj: getattr(layer_obj, "leftSideBearing", None),
             _get_right_sidebearing=lambda layer_obj: getattr(layer_obj, "rightSideBearing", None),
+            _resolve_font_by_index=_resolve_font_by_index,
             _safe_json=lambda payload: json.dumps(payload),
         )
         fastmcp_mod = types.ModuleType("fastmcp")
@@ -251,6 +308,17 @@ class McpToolsVisualReviewTests(unittest.TestCase):
 
         self.assertTrue(metadata["ok"])
         self.assertEqual(metadata["dataUri"], "data:image/png;base64,cG5n")
+        self.assertIsInstance(result[1], _FakeImage)
+
+    def test_render_falls_back_when_fonts_proxy_fails(self) -> None:
+        module, _font = self._load_module(broken_fonts=True)
+        captured = self._stub_renderer(module)
+
+        result = asyncio.run(module.render_glyph_review_image(glyph_names=["A"]))
+        metadata = json.loads(result[0])
+
+        self.assertTrue(metadata["ok"])
+        self.assertEqual(captured["glyphNames"], ["A"])
         self.assertIsInstance(result[1], _FakeImage)
 
     def test_no_selection_without_names_returns_error(self) -> None:

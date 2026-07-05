@@ -10,8 +10,11 @@ from GlyphsApp import Glyphs, GSGuide  # type: ignore[import-not-found]
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
     _custom_parameter,
+    _font_resolution_error,
     _get_left_sidebearing,
     _get_right_sidebearing,
+    _is_active_font,
+    _resolve_font_by_index,
     _safe_json,
     _set_sidebearing,
     _spacing_selected_glyph_names_for_font,
@@ -82,6 +85,13 @@ def _effective_master_params_for_spacing(font, master, merged_defaults, explicit
         "over": pick("over", merged_defaults.get("over")),
         "frequency": pick("frequency", merged_defaults.get("frequency")),
     }
+
+
+def _resolve_font_payload(font_index):
+    font, fonts = _resolve_font_by_index(Glyphs, font_index)
+    if not font:
+        return None, _font_resolution_error(font_index, fonts, ok_key="ok")
+    return font, None
 
 
 DEFAULT_SPACING_GUIDE_GLYPHS = [
@@ -204,15 +214,9 @@ async def set_spacing_guides(
         JSON payload with counts and per-layer actions (no auto-save).
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return _safe_json(
-                {
-                    "ok": False,
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
-                }
-            )
-
-        font = Glyphs.fonts[font_index]
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return _safe_json(error)
         scope = (master_scope or "current").strip().lower()
         if scope not in ("current", "all", "master"):
             return _safe_json(
@@ -786,16 +790,10 @@ async def review_spacing(
     This tool does not mutate the font.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return _safe_json(
-                {
-                    "ok": False,
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
-                    "results": [],
-                }
-            )
-
-        font = Glyphs.fonts[font_index]
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            error["results"] = []
+            return _safe_json(error)
 
         merged_defaults = _merge_spacing_defaults(defaults, debug)
         explicit_defaults = defaults if isinstance(defaults, dict) else {}
@@ -804,7 +802,7 @@ async def review_spacing(
             names = list(glyph_names)
         else:
             # Prefer selection, but only when the referenced font is active.
-            if not Glyphs.font or Glyphs.font != font:
+            if not _is_active_font(Glyphs, font):
                 return _safe_json(
                     {
                         "ok": False,
@@ -967,15 +965,9 @@ async def apply_spacing(
                 }
             )
 
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return _safe_json(
-                {
-                    "ok": False,
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
-                }
-            )
-
-        font = Glyphs.fonts[font_index]
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return _safe_json(error)
         merged_defaults = _merge_spacing_defaults(defaults, debug=None)
         explicit_defaults = defaults if isinstance(defaults, dict) else {}
 
@@ -984,7 +976,7 @@ async def apply_spacing(
         if glyph_names:
             names = list(glyph_names)
         else:
-            if not Glyphs.font or Glyphs.font != font:
+            if not _is_active_font(Glyphs, font):
                 return _safe_json(
                     {
                         "ok": False,
@@ -1219,15 +1211,9 @@ async def set_spacing_params(
         JSON payload with change list and read-back values.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return _safe_json(
-                {
-                    "ok": False,
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts)),
-                }
-            )
-
-        font = Glyphs.fonts[font_index]
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return _safe_json(error)
         params = params or {}
         if not isinstance(params, dict):
             return _safe_json({"ok": False, "error": "params must be an object/dict"})

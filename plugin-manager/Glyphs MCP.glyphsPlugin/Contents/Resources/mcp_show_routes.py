@@ -28,7 +28,7 @@ try:
 except Exception:  # pragma: no cover - only available inside Glyphs
     Glyphs = None
 
-from mcp_tool_helpers import _open_tab_on_main_thread
+from mcp_tool_helpers import _open_fonts_from_glyphs, _open_tab_on_main_thread
 
 
 _ALLOWED_SHOW_QUERY_KEYS = set(["path", "glyph", "production", "layer"])
@@ -99,7 +99,7 @@ def _font_for_path(path):
         return None
     try:
         wanted = str(path)
-        for font in list(Glyphs.fonts or []):
+        for font in _open_fonts_from_glyphs(Glyphs):
             if str(getattr(font, "filepath", "") or "") == wanted:
                 return font
     except Exception:

@@ -5,15 +5,14 @@ from __future__ import division, print_function, unicode_literals
 from GlyphsApp import Glyphs, GSMetric  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
-from mcp_tool_helpers import _coerce_numeric, _safe_json
+from mcp_tool_helpers import _coerce_numeric, _font_resolution_error, _resolve_font_by_index, _safe_json
 
 import stem_metrics_helpers
 
 
 def _get_font(font_index):
-    if font_index >= len(Glyphs.fonts) or font_index < 0:
-        return None
-    return Glyphs.fonts[font_index]
+    font, _fonts = _resolve_font_by_index(Glyphs, font_index)
+    return font
 
 
 def _master_by_id(font, master_id):
@@ -47,7 +46,8 @@ def _review_master_stem_metrics_impl(
     try:
         font = _get_font(font_index)
         if not font:
-            return {"ok": False, "error": "Font index out of range", "fontIndex": font_index}
+            _font, fonts = _resolve_font_by_index(Glyphs, font_index)
+            return _font_resolution_error(font_index, fonts, ok_key="ok")
 
         masters = list(getattr(font, "masters", []) or [])
         if not masters:
@@ -227,7 +227,8 @@ def _set_master_stem_metrics_impl(
     try:
         font = _get_font(font_index)
         if not font:
-            return {"ok": False, "error": "Font index out of range", "fontIndex": font_index}
+            _font, fonts = _resolve_font_by_index(Glyphs, font_index)
+            return _font_resolution_error(font_index, fonts, ok_key="ok")
         master = _master_by_id(font, master_id)
         if not master:
             return {"ok": False, "error": "Master ID not found", "masterId": master_id}

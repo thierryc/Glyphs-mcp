@@ -162,6 +162,8 @@ class McpErrorEnvelopeMiddlewareTests(unittest.TestCase):
         payload = res.json()
         self.assertTrue(payload.get("ok"))
         self.assertIn("version", payload)
+        self.assertIn("runtimeId", payload)
+        self.assertIn("codeHash", payload)
         self.assertIn("glyphsReachable", payload)
 
     def test_mcp_path_normalizer_avoids_post_redirect(self) -> None:

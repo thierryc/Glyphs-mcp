@@ -8,6 +8,7 @@ from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
+    _active_font,
     _get_layer_id,
     _get_left_sidebearing,
     _get_right_sidebearing,
@@ -25,12 +26,13 @@ async def get_selected_glyphs() -> str:
         str: JSON-encoded list of selected glyph names and their properties.
     """
     try:
-        if not Glyphs.font:
+        font = _active_font(Glyphs)
+        if not font:
             return json.dumps({"error": "No font is currently active"})
 
-        file_path = getattr(Glyphs.font, "filepath", None)
+        file_path = getattr(font, "filepath", None)
         selected = []
-        for layer in Glyphs.font.selectedLayers:
+        for layer in font.selectedLayers:
             glyph = layer.parent
             layer_id = _get_layer_id(layer)
             selected_entry = {
@@ -54,7 +56,7 @@ async def get_selected_glyphs() -> str:
 
         return json.dumps(
             {
-                "fontName": Glyphs.font.familyName,
+                "fontName": font.familyName,
                 "selectedCount": len(selected),
                 "selectedGlyphs": selected,
             }
@@ -74,10 +76,9 @@ async def get_selected_font_and_master() -> str:
             selectedGlyphs (list): List of currently selected glyphs.
     """
     try:
-        if not Glyphs.font:
+        font = _active_font(Glyphs)
+        if not font:
             return json.dumps({"error": "No font is currently active"})
-        
-        font = Glyphs.font
         
         # Get font information
         font_info = {
@@ -172,7 +173,7 @@ async def get_selected_nodes(include_master_mapping: bool = True) -> str:
                 - mapping (list|empty): per‑master mapping hints (present when include_master_mapping)
     """
     try:
-        font = Glyphs.font
+        font = _active_font(Glyphs)
         if not font:
             return json.dumps({"error": "No font is currently active"})
 

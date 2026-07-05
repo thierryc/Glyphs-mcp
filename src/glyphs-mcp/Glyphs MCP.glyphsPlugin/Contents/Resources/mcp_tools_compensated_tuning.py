@@ -8,12 +8,22 @@ from mcp_runtime import mcp
 from mcp_tool_helpers import (
     _clear_layer_paths,
     _coerce_numeric,
+    _font_resolution_error,
+    _is_active_font,
+    _resolve_font_by_index,
     _safe_json,
     _spacing_selected_glyph_names_for_font,
 )
 
 import compensated_tuning_engine
 import stem_metrics_helpers
+
+
+def _resolve_font_payload(font_index):
+    font, fonts = _resolve_font_by_index(Glyphs, font_index)
+    if not font:
+        return None, _font_resolution_error(font_index, fonts, ok_key="ok")
+    return font, None
 
 
 def _stem_ratio_payload(
@@ -87,14 +97,14 @@ def _measure_stem_ratio_impl(
         - warnings (list[str])
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return _safe_json({"ok": False, "error": "Font index out of range"})
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return _safe_json(error)
         if not base_master_id:
             return _safe_json({"ok": False, "error": "base_master_id is required"})
         if not ref_master_id:
             return _safe_json({"ok": False, "error": "ref_master_id is required"})
 
-        font = Glyphs.fonts[font_index]
         base_master = next((m for m in (font.masters or []) if str(getattr(m, "id", "")) == str(base_master_id)), None)
         ref_master = next((m for m in (font.masters or []) if str(getattr(m, "id", "")) == str(ref_master_id)), None)
         if not base_master:
@@ -224,8 +234,9 @@ def _review_compensated_tuning_impl(
       inputs, computed parameters, and warnings.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return {"ok": False, "error": "Font index out of range"}
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return error
         if not glyph_name:
             return {"ok": False, "error": "glyph_name is required"}
         if not base_master_id:
@@ -233,7 +244,6 @@ def _review_compensated_tuning_impl(
         if not ref_master_id:
             return {"ok": False, "error": "ref_master_id is required"}
 
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
         if not glyph:
             return {"ok": False, "error": "Glyph not found", "glyph_name": glyph_name}
@@ -552,15 +562,14 @@ def _apply_compensated_tuning_impl(
                 "hint": "Run with dry_run=true to preview or confirm=true to apply.",
             }
 
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return {"ok": False, "error": "Font index out of range"}
-
-        font = Glyphs.fonts[font_index]
+        font, error = _resolve_font_payload(font_index)
+        if error:
+            return error
 
         if glyph_names:
             names = list(glyph_names)
         else:
-            if not Glyphs.font or Glyphs.font != font:
+            if not _is_active_font(Glyphs, font):
                 return {"ok": False, "error": "No glyph_names provided and font_index is not the active font."}
             names = _spacing_selected_glyph_names_for_font(font)
 

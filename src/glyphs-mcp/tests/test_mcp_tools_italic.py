@@ -171,6 +171,21 @@ class GlyphsFilterTransformationsNoFilter:
     pass
 
 
+def _resolve_font_by_index(glyphs, font_index):
+    fonts = list(getattr(glyphs, "fonts", []) or [])
+    index = int(font_index)
+    if index < 0 or index >= len(fonts):
+        return None, fonts
+    return fonts[index], fonts
+
+
+def _font_resolution_error(font_index, fonts=None, ok_key=None):
+    payload = {"error": "Font index out of range", "fontIndex": font_index, "availableFontCount": len(fonts or [])}
+    if ok_key == "ok":
+        payload["ok"] = False
+    return payload
+
+
 def _make_font(complete_stems=True):
     source_master = types.SimpleNamespace(id="roman", name="Roman", stems={"Vertical": 82, "Horizontal": 74})
     target_stems = {"Vertical": 82, "Horizontal": 74} if complete_stems else {"Vertical": 82}
@@ -207,8 +222,10 @@ class McpToolsItalicTests(unittest.TestCase):
         helpers_module = types.SimpleNamespace(
             _clear_layer_paths=lambda layer: layer.paths.clear(),
             _coerce_numeric=lambda value: None if value is None else float(value),
+            _font_resolution_error=_font_resolution_error,
             _get_left_sidebearing=lambda layer: getattr(layer, "leftSideBearing", None),
             _get_right_sidebearing=lambda layer: getattr(layer, "rightSideBearing", None),
+            _resolve_font_by_index=_resolve_font_by_index,
             _safe_attr=lambda obj, attr, default=None: getattr(obj, attr, default),
             _safe_json=lambda payload: json.dumps(payload),
             _set_sidebearing=lambda layer, attr_name, legacy_attr, value: setattr(layer, attr_name, float(value)) or True,

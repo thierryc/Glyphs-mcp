@@ -68,6 +68,310 @@ def _safe_json(data):
     return json.dumps(_sanitize_for_json(data))
 
 
+def _maybe_call(value):
+    try:
+        if callable(value):
+            return value()
+    except Exception:
+        return None
+    return value
+
+
+def _sequence_values(sequence):
+    if sequence is None:
+        return []
+
+    values = []
+    try:
+        count = len(sequence)
+    except Exception:
+        count = None
+
+    if count is not None:
+        for index in range(count):
+            try:
+                values.append(sequence[index])
+            except Exception:
+                pass
+        return values
+
+    try:
+        return list(sequence)
+    except Exception:
+        return []
+
+
+def _font_identity(font):
+    if font is None:
+        return None
+    try:
+        path = str(getattr(font, "filepath", None) or "")
+    except Exception:
+        path = ""
+    if path:
+        return ("path", path)
+    return ("object", id(font))
+
+
+def _add_open_font(fonts, seen, font):
+    if font is None:
+        return
+    key = _font_identity(font)
+    if key is None or key in seen:
+        return
+    seen.add(key)
+    fonts.append(font)
+
+
+def _open_documents_from_appkit():
+    """Return open GSDocument objects through Cocoa when Glyphs proxies fail."""
+    try:
+        from AppKit import NSDocumentController  # type: ignore[import-not-found]
+    except Exception:
+        return []
+
+    try:
+        controller = NSDocumentController.sharedDocumentController()
+    except Exception:
+        return []
+
+    try:
+        return _sequence_values(_maybe_call(getattr(controller, "documents", None)))
+    except Exception:
+        return []
+
+
+def _active_font(Glyphs):
+    try:
+        return getattr(Glyphs, "font", None)
+    except Exception:
+        return None
+
+
+def _is_active_font(Glyphs, font):
+    active = _active_font(Glyphs)
+    if active is None or font is None:
+        return False
+    if active is font:
+        return True
+    return _font_identity(active) == _font_identity(font)
+
+
+def _open_fonts_from_glyphs(Glyphs):
+    fonts = []
+    seen = set()
+
+    # Glyphs.fonts is public API, but some Glyphs 4 builds can expose a broken
+    # private proxy before tool logic runs. Treat it as optional and fall back to
+    # other documented application/document entry points.
+    try:
+        fonts_proxy = getattr(Glyphs, "fonts", None)
+    except Exception:
+        fonts_proxy = None
+    for font in _sequence_values(fonts_proxy):
+        _add_open_font(fonts, seen, font)
+
+    try:
+        documents = getattr(Glyphs, "documents", None)
+    except Exception:
+        documents = None
+    for document in _sequence_values(documents):
+        try:
+            _add_open_font(fonts, seen, _maybe_call(getattr(document, "font", None)))
+        except Exception:
+            pass
+
+    for document in _open_documents_from_appkit():
+        try:
+            _add_open_font(fonts, seen, _maybe_call(getattr(document, "font", None)))
+        except Exception:
+            pass
+
+    try:
+        current_document = getattr(Glyphs, "currentDocument", None)
+    except Exception:
+        current_document = None
+    try:
+        _add_open_font(fonts, seen, _maybe_call(getattr(current_document, "font", None)))
+    except Exception:
+        pass
+
+    _add_open_font(fonts, seen, _active_font(Glyphs))
+    return fonts
+
+
+def _font_summary(font, font_index=None):
+    if font is None:
+        return None
+    summary = {}
+    if font_index is not None:
+        summary["fontIndex"] = int(font_index)
+    try:
+        summary["familyName"] = getattr(font, "familyName", None) or ""
+    except Exception:
+        summary["familyName"] = ""
+    try:
+        summary["filePath"] = getattr(font, "filepath", None)
+    except Exception:
+        summary["filePath"] = None
+    return summary
+
+
+def _resolve_font_by_index(Glyphs, font_index):
+    try:
+        index = int(font_index)
+    except Exception:
+        index = -1
+
+    fonts = _open_fonts_from_glyphs(Glyphs)
+    if index < 0 or index >= len(fonts):
+        return None, fonts
+    return fonts[index], fonts
+
+
+def _font_resolution_error(font_index, fonts=None, *, prefix=None, ok_key=None):
+    fonts = list(fonts or [])
+    try:
+        index = int(font_index)
+    except Exception:
+        index = font_index
+
+    if not fonts:
+        message = "No open fonts found. Open a font in Glyphs and run list_open_fonts to choose a font_index."
+    else:
+        message = "Font index {} out of range. Available fonts: {}".format(index, len(fonts))
+    if prefix:
+        message = "{}: {}".format(prefix, message)
+
+    payload = {
+        "error": message,
+        "fontIndex": index,
+        "availableFontCount": len(fonts),
+        "availableFonts": [_font_summary(font, i) for i, font in enumerate(fonts)],
+    }
+    if ok_key == "ok":
+        payload["ok"] = False
+    elif ok_key == "success":
+        payload["success"] = False
+    return payload
+
+
+def _font_context_source():
+    """Return standalone source used by code execution snippets/wrappers."""
+    return "\n".join(
+        [
+            "def __glyphs_mcp_maybe_call(value):",
+            "    try:",
+            "        if callable(value):",
+            "            return value()",
+            "    except Exception:",
+            "        return None",
+            "    return value",
+            "",
+            "def __glyphs_mcp_sequence_values(sequence):",
+            "    if sequence is None:",
+            "        return []",
+            "    values = []",
+            "    try:",
+            "        count = len(sequence)",
+            "    except Exception:",
+            "        count = None",
+            "    if count is not None:",
+            "        for index in range(count):",
+            "            try:",
+            "                values.append(sequence[index])",
+            "            except Exception:",
+            "                pass",
+            "        return values",
+            "    try:",
+            "        return list(sequence)",
+            "    except Exception:",
+            "        return []",
+            "",
+            "def __glyphs_mcp_font_identity(font):",
+            "    if font is None:",
+            "        return None",
+            "    try:",
+            "        path = str(getattr(font, 'filepath', None) or '')",
+            "    except Exception:",
+            "        path = ''",
+            "    if path:",
+            "        return ('path', path)",
+            "    return ('object', id(font))",
+            "",
+            "def __glyphs_mcp_add_font(fonts, seen, font):",
+            "    if font is None:",
+            "        return",
+            "    key = __glyphs_mcp_font_identity(font)",
+            "    if key is None or key in seen:",
+            "        return",
+            "    seen.add(key)",
+            "    fonts.append(font)",
+            "",
+            "def __glyphs_mcp_appkit_documents():",
+            "    try:",
+            "        from AppKit import NSDocumentController",
+            "    except Exception:",
+            "        return []",
+            "    try:",
+            "        controller = NSDocumentController.sharedDocumentController()",
+            "    except Exception:",
+            "        return []",
+            "    try:",
+            "        return __glyphs_mcp_sequence_values(__glyphs_mcp_maybe_call(getattr(controller, 'documents', None)))",
+            "    except Exception:",
+            "        return []",
+            "",
+            "def __glyphs_mcp_open_fonts(Glyphs):",
+            "    fonts = []",
+            "    seen = set()",
+            "    try:",
+            "        fonts_proxy = getattr(Glyphs, 'fonts', None)",
+            "    except Exception:",
+            "        fonts_proxy = None",
+            "    for font in __glyphs_mcp_sequence_values(fonts_proxy):",
+            "        __glyphs_mcp_add_font(fonts, seen, font)",
+            "    try:",
+            "        documents = getattr(Glyphs, 'documents', None)",
+            "    except Exception:",
+            "        documents = None",
+            "    for document in __glyphs_mcp_sequence_values(documents):",
+            "        try:",
+            "            __glyphs_mcp_add_font(fonts, seen, __glyphs_mcp_maybe_call(getattr(document, 'font', None)))",
+            "        except Exception:",
+            "            pass",
+            "    for document in __glyphs_mcp_appkit_documents():",
+            "        try:",
+            "            __glyphs_mcp_add_font(fonts, seen, __glyphs_mcp_maybe_call(getattr(document, 'font', None)))",
+            "        except Exception:",
+            "            pass",
+            "    try:",
+            "        current_document = getattr(Glyphs, 'currentDocument', None)",
+            "    except Exception:",
+            "        current_document = None",
+            "    try:",
+            "        __glyphs_mcp_add_font(fonts, seen, __glyphs_mcp_maybe_call(getattr(current_document, 'font', None)))",
+            "    except Exception:",
+            "        pass",
+            "    try:",
+            "        __glyphs_mcp_add_font(fonts, seen, getattr(Glyphs, 'font', None))",
+            "    except Exception:",
+            "        pass",
+            "    return fonts",
+            "",
+            "def __glyphs_mcp_font_by_index(Glyphs, font_index):",
+            "    try:",
+            "        index = int(font_index)",
+            "    except Exception:",
+            "        index = -1",
+            "    fonts = __glyphs_mcp_open_fonts(Glyphs)",
+            "    if index < 0 or index >= len(fonts):",
+            "        return None",
+            "    return fonts[index]",
+        ]
+    )
+
+
 def _markdown_link_label(text):
     """Escape Markdown link label characters without changing readable text."""
     try:

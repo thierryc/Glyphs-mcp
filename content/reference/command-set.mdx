@@ -9,6 +9,7 @@ The active tool list can be smaller than this page when the `Read-only` profile 
 
 ## Most used tools
 
+- `get_server_info`: confirm the running server version, runtime ID, code hash, and font discovery count.
 - `list_open_fonts`: list open fonts and pick a `font_index`.
 - `get_font_masters`: find master IDs.
 - `get_selected_font_and_master`: confirm current font, master, and selection.
@@ -31,6 +32,7 @@ Glyph and layer inspection responses may include Glyphs show links:
 
 | Tool | Description |
 | --- | --- |
+| `get_server_info` | Return runtime identity, code hash, resource path, Glyphs reachability, and open-font count for health checks. |
 | `list_open_fonts` | List open fonts and basic metadata. |
 | `get_font_glyphs` | Return glyph list and key attributes for a font, including show links when available. |
 | `get_font_masters` | Return detailed master information, including `italicAngle` from Glyphs Font Info Metrics and legacy `slantAngle` from the separate `postscriptSlantAngle` custom parameter. |

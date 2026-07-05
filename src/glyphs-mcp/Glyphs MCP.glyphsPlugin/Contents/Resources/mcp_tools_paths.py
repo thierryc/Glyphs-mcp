@@ -9,10 +9,12 @@ from GlyphsApp import Glyphs, GSNode, GSPath  # type: ignore[import-not-found]
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
     _clear_layer_paths,
+    _font_resolution_error,
     _get_layer_id,
     _get_left_sidebearing,
     _get_right_sidebearing,
     _glyphs_show_layer_link_fields,
+    _resolve_font_by_index,
     _safe_json,
     _set_sidebearing,
 )
@@ -41,17 +43,13 @@ async def get_glyph_paths(
             rightSideBearing (int): Right side bearing
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, fonts = _resolve_font_by_index(Glyphs, font_index)
+        if not font:
+            return json.dumps(_font_resolution_error(font_index, fonts))
         
         if not glyph_name:
             return json.dumps({"error": "Glyph name is required"})
         
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
         
         if not glyph:
@@ -134,12 +132,9 @@ async def set_glyph_paths(
         str: JSON-encoded result with success status.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, fonts = _resolve_font_by_index(Glyphs, font_index)
+        if not font:
+            return json.dumps(_font_resolution_error(font_index, fonts, ok_key="success"))
         
         if not glyph_name:
             return json.dumps({"error": "Glyph name is required"})
@@ -153,7 +148,6 @@ async def set_glyph_paths(
         except ValueError as e:
             return json.dumps({"error": "Invalid JSON in paths_data: {}".format(str(e))})
         
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
         
         if not glyph:

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sys
+import types
 import unittest
 from pathlib import Path
 
@@ -53,6 +54,152 @@ class McpToolHelpersTests(unittest.TestCase):
         encoded = json.dumps(sanitized)
         self.assertIn('"a"', encoded)
         self.assertIn('"weird"', encoded)
+
+    def test_open_fonts_falls_back_when_fonts_proxy_raises(self) -> None:
+        font = types.SimpleNamespace(familyName="Doc Font", filepath="/tmp/doc.glyphs")
+
+        class BrokenGlyphs:
+            @property
+            def fonts(self):
+                raise TypeError("broken private font proxy")
+
+        glyphs = BrokenGlyphs()
+        glyphs.documents = [types.SimpleNamespace(font=font)]
+        glyphs.currentDocument = types.SimpleNamespace(font=font)
+        glyphs.font = font
+
+        fonts = helpers._open_fonts_from_glyphs(glyphs)
+
+        self.assertEqual(fonts, [font])
+
+    def test_open_fonts_falls_back_to_cocoa_documents_when_glyphs_proxies_raise(self) -> None:
+        first = types.SimpleNamespace(familyName="Archivo", filepath="/tmp/Archivo.glyphs")
+        second = types.SimpleNamespace(familyName="Gee gee", filepath="/tmp/Gee gee.glyphspackage")
+        third = types.SimpleNamespace(familyName="Inter", filepath="/tmp/Inter-Roman.glyphspackage")
+
+        class BrokenGlyphs:
+            @property
+            def fonts(self):
+                raise TypeError("broken font proxy")
+
+            @property
+            def documents(self):
+                raise TypeError("broken document proxy")
+
+        class FakeNSDocumentController:
+            @staticmethod
+            def sharedDocumentController():
+                return types.SimpleNamespace(
+                    documents=lambda: [
+                        types.SimpleNamespace(font=first),
+                        types.SimpleNamespace(font=second),
+                        types.SimpleNamespace(font=third),
+                    ]
+                )
+
+        original_appkit = sys.modules.get("AppKit")
+        sys.modules["AppKit"] = types.SimpleNamespace(NSDocumentController=FakeNSDocumentController)
+        try:
+            glyphs = BrokenGlyphs()
+            glyphs.currentDocument = types.SimpleNamespace(font=second)
+            glyphs.font = second
+
+            fonts = helpers._open_fonts_from_glyphs(glyphs)
+        finally:
+            if original_appkit is None:
+                sys.modules.pop("AppKit", None)
+            else:
+                sys.modules["AppKit"] = original_appkit
+
+        self.assertEqual(fonts, [first, second, third])
+
+    def test_font_context_source_uses_cocoa_documents_when_glyphs_proxies_raise(self) -> None:
+        first = types.SimpleNamespace(familyName="Archivo", filepath="/tmp/Archivo.glyphs")
+        second = types.SimpleNamespace(familyName="Inter", filepath="/tmp/Inter.glyphspackage")
+
+        class BrokenGlyphs:
+            @property
+            def fonts(self):
+                raise TypeError("broken font proxy")
+
+            @property
+            def documents(self):
+                raise TypeError("broken document proxy")
+
+        class FakeNSDocumentController:
+            @staticmethod
+            def sharedDocumentController():
+                return types.SimpleNamespace(
+                    documents=lambda: [
+                        types.SimpleNamespace(font=first),
+                        types.SimpleNamespace(font=second),
+                    ]
+                )
+
+        namespace = {}
+        original_appkit = sys.modules.get("AppKit")
+        sys.modules["AppKit"] = types.SimpleNamespace(NSDocumentController=FakeNSDocumentController)
+        try:
+            exec(helpers._font_context_source(), namespace)
+            resolved = namespace["__glyphs_mcp_font_by_index"](BrokenGlyphs(), 1)
+        finally:
+            if original_appkit is None:
+                sys.modules.pop("AppKit", None)
+            else:
+                sys.modules["AppKit"] = original_appkit
+
+        self.assertIs(resolved, second)
+
+    def test_open_fonts_preserves_fonts_order_then_adds_public_fallbacks(self) -> None:
+        first = types.SimpleNamespace(familyName="First", filepath="/tmp/first.glyphs")
+        second = types.SimpleNamespace(familyName="Second", filepath="/tmp/second.glyphs")
+        third = types.SimpleNamespace(familyName="Third", filepath="/tmp/third.glyphs")
+        glyphs = types.SimpleNamespace(
+            fonts=[first, second],
+            documents=[types.SimpleNamespace(font=second), types.SimpleNamespace(font=third)],
+            currentDocument=types.SimpleNamespace(font=third),
+            font=first,
+        )
+
+        fonts = helpers._open_fonts_from_glyphs(glyphs)
+
+        self.assertEqual(fonts, [first, second, third])
+
+    def test_open_fonts_uses_current_document_and_active_font_without_documents(self) -> None:
+        current = types.SimpleNamespace(familyName="Current", filepath="/tmp/current.glyphs")
+        active = types.SimpleNamespace(familyName="Active", filepath="/tmp/active.glyphs")
+        glyphs = types.SimpleNamespace(
+            currentDocument=types.SimpleNamespace(font=current),
+            font=active,
+        )
+
+        fonts = helpers._open_fonts_from_glyphs(glyphs)
+
+        self.assertEqual(fonts, [current, active])
+
+    def test_resolve_font_invalid_index_returns_actionable_error(self) -> None:
+        font = types.SimpleNamespace(familyName="Only", filepath="/tmp/only.glyphs")
+        glyphs = types.SimpleNamespace(fonts=[font])
+
+        resolved, fonts = helpers._resolve_font_by_index(glyphs, 2)
+        error = helpers._font_resolution_error(2, fonts, ok_key="ok")
+
+        self.assertIsNone(resolved)
+        self.assertFalse(error["ok"])
+        self.assertEqual(error["fontIndex"], 2)
+        self.assertEqual(error["availableFontCount"], 1)
+        self.assertEqual(error["availableFonts"][0]["fontIndex"], 0)
+        self.assertIn("run list_open_fonts", helpers._font_resolution_error(0, [], ok_key="success")["error"])
+
+    def test_is_active_font_matches_by_identity_or_filepath(self) -> None:
+        active = types.SimpleNamespace(familyName="Active", filepath="/tmp/shared.glyphs")
+        same_path = types.SimpleNamespace(familyName="Same Path", filepath="/tmp/shared.glyphs")
+        other = types.SimpleNamespace(familyName="Other", filepath="/tmp/other.glyphs")
+        glyphs = types.SimpleNamespace(font=active)
+
+        self.assertTrue(helpers._is_active_font(glyphs, active))
+        self.assertTrue(helpers._is_active_font(glyphs, same_path))
+        self.assertFalse(helpers._is_active_font(glyphs, other))
 
     def test_get_component_automatic_prefers_present_flags(self) -> None:
         class HasAutomatic:
