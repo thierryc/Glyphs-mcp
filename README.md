@@ -1,4 +1,9 @@
 # Glyphs MCP
+
+> [!IMPORTANT]
+> **Glyphs 4 branch:** the future Glyphs 4 version is maintained on `origin/glyphs4`.  
+> Open it on GitHub: [github.com/thierryc/Glyphs-mcp/tree/glyphs4](https://github.com/thierryc/Glyphs-mcp/tree/glyphs4)
+
 Site: https://ap.cx/gmcp
 
 A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes font‑specific tools to AI/LLM agents.
