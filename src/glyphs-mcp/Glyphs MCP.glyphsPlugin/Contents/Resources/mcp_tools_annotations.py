@@ -21,6 +21,7 @@ from mcp_tool_helpers import (
     _font_resolution_error,
     _get_layer_id,
     _glyphs_show_layer_link_fields,
+    _layer_display_name,
     _resolve_font_by_index,
     _safe_json,
 )
@@ -92,6 +93,145 @@ def _as_plain_dict(value):
         return {}
 
 
+def _as_plain_list(value):
+    if isinstance(value, list):
+        return list(value)
+    if isinstance(value, tuple):
+        return list(value)
+    if isinstance(value, (str, bytes)):
+        return []
+    try:
+        return [item for item in value]
+    except Exception:
+        pass
+    try:
+        return [value[index] for index in range(len(value))]
+    except Exception:
+        return []
+
+
+def _read_user_data_value(user_data, key):
+    if user_data is None:
+        return None
+    try:
+        return user_data.get(key)
+    except Exception:
+        pass
+    try:
+        return user_data[key]
+    except Exception:
+        return None
+
+
+def _set_user_data_value(layer, key, value):
+    user_data = getattr(layer, "userData", None)
+    if user_data is None:
+        try:
+            layer.userData = {key: value}
+            return _read_user_data_value(getattr(layer, "userData", None), key) is not None
+        except Exception:
+            return False
+
+    try:
+        user_data[key] = value
+        if _read_user_data_value(user_data, key) is not None:
+            return True
+    except Exception:
+        pass
+
+    for method_name in ("setObject_forKey_", "setValue_forKey_"):
+        try:
+            method = getattr(user_data, method_name, None)
+            if callable(method):
+                method(value, key)
+                if _read_user_data_value(user_data, key) is not None:
+                    return True
+        except Exception:
+            pass
+
+    try:
+        replacement = dict(user_data)
+    except Exception:
+        replacement = {}
+    replacement[key] = value
+    try:
+        layer.userData = replacement
+        return _read_user_data_value(getattr(layer, "userData", None), key) is not None
+    except Exception:
+        return False
+
+
+def _delete_user_data_value(layer, key):
+    user_data = getattr(layer, "userData", None)
+    if user_data is None:
+        return
+
+    try:
+        del user_data[key]
+        if _read_user_data_value(user_data, key) is None:
+            return
+    except Exception:
+        pass
+
+    for method_name in ("removeObjectForKey_", "removeObject_forKey_"):
+        try:
+            method = getattr(user_data, method_name, None)
+            if callable(method):
+                method(key)
+                if _read_user_data_value(user_data, key) is None:
+                    return
+        except Exception:
+            pass
+
+    try:
+        replacement = dict(user_data)
+        replacement.pop(key, None)
+        layer.userData = replacement
+    except Exception:
+        pass
+
+
+def _registry_from_raw(raw):
+    registry = _as_plain_dict(raw)
+    if not registry:
+        return None
+
+    items = _as_plain_list(registry.get("items", []))
+
+    clean = _empty_registry()
+    clean["items"] = []
+    for item in items:
+        plain_item = _as_plain_dict(item)
+        if plain_item:
+            clean["items"].append(plain_item)
+    return clean
+
+
+def _parent_glyph(layer):
+    try:
+        parent = getattr(layer, "parent", None)
+        if callable(parent):
+            return parent()
+        return parent
+    except Exception:
+        return None
+
+
+def _layer_registry_key(layer):
+    layer_id = _get_layer_id(layer)
+    if layer_id:
+        return "{}.{}".format(REGISTRY_KEY, layer_id)
+    return REGISTRY_KEY
+
+
+def _target_registry_key(glyph, layer):
+    glyph_name = str(getattr(glyph, "name", "") or "")
+    layer_id = _get_layer_id(layer) or str(getattr(layer, "associatedMasterId", "") or "")
+    if glyph_name or layer_id:
+        return "{}.{}.{}".format(REGISTRY_KEY, glyph_name, layer_id)
+    return REGISTRY_KEY
+
+
 def _empty_registry():
     return {
         "owner": REGISTRY_OWNER,
@@ -102,48 +242,58 @@ def _empty_registry():
     }
 
 
-def _get_registry(layer):
+def _get_registry(font, glyph, layer):
+    # Prefer font-level userData for MCP ownership metadata. In Glyphs 4, layer
+    # and glyph proxy userData can appear writable while not surviving readback.
+    font_user_data = getattr(font, "userData", None)
+    registry = _registry_from_raw(_read_user_data_value(font_user_data, _target_registry_key(glyph, layer)))
+    if registry:
+        return registry
+
     user_data = getattr(layer, "userData", None)
-    if user_data is None:
-        return _empty_registry()
+    registry = _registry_from_raw(_read_user_data_value(user_data, REGISTRY_KEY))
+    if registry and registry.get("items"):
+        return registry
 
-    try:
-        raw = user_data.get(REGISTRY_KEY)
-    except Exception:
-        try:
-            raw = user_data[REGISTRY_KEY]
-        except Exception:
-            raw = None
+    if glyph is None:
+        glyph = _parent_glyph(layer)
+    glyph_user_data = getattr(glyph, "userData", None)
+    registry = _registry_from_raw(_read_user_data_value(glyph_user_data, _target_registry_key(glyph, layer)))
+    if registry:
+        return registry
 
-    registry = _as_plain_dict(raw)
-    if not registry:
-        return _empty_registry()
+    registry = _registry_from_raw(_read_user_data_value(glyph_user_data, _layer_registry_key(layer)))
+    if registry:
+        return registry
 
-    items = registry.get("items", [])
-    if not isinstance(items, list):
-        items = []
-
-    clean = _empty_registry()
-    clean["items"] = [_as_plain_dict(item) for item in items if _as_plain_dict(item)]
-    return clean
+    return _empty_registry()
 
 
-def _write_registry(layer, registry):
+def _write_registry(font, glyph, layer, registry):
     items = registry.get("items") or []
-    user_data = getattr(layer, "userData", None)
-    if user_data is None:
-        return
-
+    target_key = _target_registry_key(glyph, layer)
     if not items:
-        try:
-            del user_data[REGISTRY_KEY]
-        except Exception:
-            pass
+        if font is not None:
+            _delete_user_data_value(font, target_key)
+        _delete_user_data_value(layer, REGISTRY_KEY)
+        if glyph is not None:
+            _delete_user_data_value(glyph, target_key)
+            _delete_user_data_value(glyph, _layer_registry_key(layer))
         return
 
     clean = _empty_registry()
     clean["items"] = items
-    user_data[REGISTRY_KEY] = _plist_safe(clean)
+    wrote = False
+    if font is not None:
+        wrote = _set_user_data_value(font, target_key, _plist_safe(clean))
+    if glyph is not None and not wrote:
+        wrote = _set_user_data_value(glyph, target_key, _plist_safe(clean))
+    if not wrote:
+        # Layer userData is kept only as a last-resort fallback. Font userData
+        # is public API and avoids Glyphs 4 proxy readback problems seen on layers.
+        wrote = _set_user_data_value(layer, REGISTRY_KEY, _plist_safe(clean))
+    if glyph is not None and not wrote:
+        _set_user_data_value(glyph, _layer_registry_key(layer), _plist_safe(clean))
 
 
 def _annotation_list(layer):
@@ -285,8 +435,8 @@ def _resolve_target(font_index, glyph_name, master_id):
     return font, glyph, layer, None
 
 
-def _reconcile_registry(layer, persist=False):
-    registry = _get_registry(layer)
+def _reconcile_registry(font, glyph, layer, persist=False):
+    registry = _get_registry(font, glyph, layer)
     annotations = _annotation_list(layer)
     fingerprints = [_annotation_fingerprint(annotation) for annotation in annotations]
     used = set()
@@ -328,7 +478,7 @@ def _reconcile_registry(layer, persist=False):
             changed = True
 
     if persist and changed:
-        _write_registry(layer, registry)
+        _write_registry(font, glyph, layer, registry)
 
     return registry
 
@@ -389,10 +539,11 @@ def _annotation_payload(annotation, index, item=None):
 
 def _target_summary(font, glyph_name, layer):
     layer_id = _get_layer_id(layer)
+    layer_name = _layer_display_name(font, layer)
     result = {
         "glyphName": glyph_name,
         "masterId": getattr(layer, "associatedMasterId", None),
-        "masterName": getattr(layer, "name", None),
+        "masterName": layer_name,
         "layerId": layer_id,
         "registryKey": REGISTRY_KEY,
     }
@@ -401,7 +552,7 @@ def _target_summary(font, glyph_name, layer):
             getattr(font, "filepath", None),
             glyph_name=glyph_name,
             layer_id=layer_id,
-            label="Open {} {} in Glyphs".format(glyph_name, getattr(layer, "name", "")),
+            label="Open {} {} in Glyphs".format(glyph_name, layer_name),
         )
     )
     return result
@@ -419,6 +570,7 @@ def _append_annotation(layer, registry, x, y, annotation_type, text="", angle=0.
     annotation.angle = float(angle or 0.0)
     annotation.width = _default_width_for_type(type_code, width)
 
+    before = _annotation_list(layer)
     try:
         layer.annotations.append(annotation)
     except Exception:
@@ -428,7 +580,20 @@ def _append_annotation(layer, registry, x, y, annotation_type, text="", angle=0.
             raise
 
     annotations = _annotation_list(layer)
+    if not any(existing is annotation for existing in annotations):
+        try:
+            layer.annotations = before + [annotation]
+            annotations = _annotation_list(layer)
+        except Exception:
+            pass
+    if not any(existing is annotation for existing in annotations):
+        return None, None, "Glyphs did not accept the new annotation"
+
     index = max(len(annotations) - 1, 0)
+    for candidate_index, existing in enumerate(annotations):
+        if existing is annotation:
+            index = candidate_index
+            break
     timestamp = _now_timestamp()
     item = {
         "annotationId": _new_annotation_id(),
@@ -445,22 +610,22 @@ def _append_annotation(layer, registry, x, y, annotation_type, text="", angle=0.
     return annotation, item, None
 
 
-def _begin_undo(glyph):
+def _begin_layer_changes(layer):
     try:
-        if hasattr(glyph, "beginUndo"):
-            glyph.beginUndo()
+        if hasattr(layer, "beginChanges"):
+            layer.beginChanges()
             return True
     except Exception:
         return False
     return False
 
 
-def _end_undo(glyph, undo_open):
-    if not undo_open:
+def _end_layer_changes(layer, changes_open):
+    if not changes_open:
         return
     try:
-        if hasattr(glyph, "endUndo"):
-            glyph.endUndo()
+        if hasattr(layer, "endChanges"):
+            layer.endChanges()
     except Exception:
         pass
 
@@ -524,7 +689,7 @@ async def get_glyph_annotations(
         if error:
             return json.dumps(error)
 
-        registry = _reconcile_registry(layer, persist=False)
+        registry = _reconcile_registry(font, glyph, layer, persist=False)
         managed_by_index = _managed_item_by_index(registry)
         annotations = []
         for index, annotation in enumerate(_annotation_list(layer)):
@@ -576,9 +741,9 @@ async def add_glyph_annotation(
         if type_error:
             return json.dumps({"error": type_error})
 
-        undo_open = _begin_undo(glyph)
+        changes_open = _begin_layer_changes(layer)
         try:
-            registry = _reconcile_registry(layer, persist=True)
+            registry = _reconcile_registry(font, glyph, layer, persist=True)
             annotation, item, append_error = _append_annotation(
                 layer,
                 registry,
@@ -594,9 +759,9 @@ async def add_glyph_annotation(
             )
             if append_error:
                 return json.dumps({"error": append_error})
-            _write_registry(layer, registry)
+            _write_registry(font, glyph, layer, registry)
         finally:
-            _end_undo(glyph, undo_open)
+            _end_layer_changes(layer, changes_open)
 
         result = _target_summary(font, glyph_name, layer)
         result.update(
@@ -647,10 +812,10 @@ async def add_glyph_annotation_group(
             return json.dumps(error)
 
         group_id = _new_group_id()
-        undo_open = _begin_undo(glyph)
+        changes_open = _begin_layer_changes(layer)
         added = []
         try:
-            registry = _reconcile_registry(layer, persist=True)
+            registry = _reconcile_registry(font, glyph, layer, persist=True)
             for spec in validated_specs:
                 annotation_comment = spec.get("comment") or comment or ""
                 annotation, item, append_error = _append_annotation(
@@ -669,9 +834,9 @@ async def add_glyph_annotation_group(
                 if append_error:
                     return json.dumps({"error": append_error})
                 added.append(_annotation_payload(annotation, item.get("lastIndex"), item))
-            _write_registry(layer, registry)
+            _write_registry(font, glyph, layer, registry)
         finally:
-            _end_undo(glyph, undo_open)
+            _end_layer_changes(layer, changes_open)
 
         result = _target_summary(font, glyph_name, layer)
         result.update({"success": True, "groupId": group_id, "annotations": added})
@@ -703,9 +868,9 @@ async def update_glyph_annotation(
         if error:
             return json.dumps(error)
 
-        undo_open = _begin_undo(glyph)
+        changes_open = _begin_layer_changes(layer)
         try:
-            registry = _reconcile_registry(layer, persist=True)
+            registry = _reconcile_registry(font, glyph, layer, persist=True)
             managed_by_index = _managed_item_by_index(registry)
             item = _managed_item_by_id(registry, annotation_id)
             if item and item.get("orphaned"):
@@ -768,9 +933,9 @@ async def update_glyph_annotation(
             if role is not None:
                 item["role"] = str(role or "")
 
-            _write_registry(layer, registry)
+            _write_registry(font, glyph, layer, registry)
         finally:
-            _end_undo(glyph, undo_open)
+            _end_layer_changes(layer, changes_open)
 
         result = _target_summary(font, glyph_name, layer)
         result.update(
@@ -799,9 +964,9 @@ async def delete_glyph_annotation(
         if error:
             return json.dumps(error)
 
-        undo_open = _begin_undo(glyph)
+        changes_open = _begin_layer_changes(layer)
         try:
-            registry = _reconcile_registry(layer, persist=True)
+            registry = _reconcile_registry(font, glyph, layer, persist=True)
             item = _managed_item_by_id(registry, annotation_id)
             if item and item.get("orphaned"):
                 registry["items"] = [
@@ -809,7 +974,7 @@ async def delete_glyph_annotation(
                     for existing in registry.get("items", [])
                     if existing.get("annotationId") != annotation_id
                 ]
-                _write_registry(layer, registry)
+                _write_registry(font, glyph, layer, registry)
                 return _safe_json({"success": True, "deleted": False, "removedOrphanedRecord": True})
 
             if item:
@@ -831,11 +996,11 @@ async def delete_glyph_annotation(
                     for existing in registry.get("items", [])
                     if existing.get("annotationId") != managed_annotation_id
                 ]
-                _write_registry(layer, registry)
-            registry = _reconcile_registry(layer, persist=False)
-            _write_registry(layer, registry)
+                _write_registry(font, glyph, layer, registry)
+            registry = _reconcile_registry(font, glyph, layer, persist=False)
+            _write_registry(font, glyph, layer, registry)
         finally:
-            _end_undo(glyph, undo_open)
+            _end_layer_changes(layer, changes_open)
 
         result = _target_summary(font, glyph_name, layer)
         result.update({"success": True, "deleted": True, "managedByMcp": bool(item)})
@@ -861,11 +1026,11 @@ async def clear_glyph_annotations(
         if error:
             return json.dumps(error)
 
-        undo_open = _begin_undo(glyph)
+        changes_open = _begin_layer_changes(layer)
         deleted_count = 0
         preserved_user_count = 0
         try:
-            registry = _reconcile_registry(layer, persist=True)
+            registry = _reconcile_registry(font, glyph, layer, persist=True)
             annotations = _annotation_list(layer)
             if normalized_scope == "all":
                 indices = list(range(len(annotations)))
@@ -879,9 +1044,9 @@ async def clear_glyph_annotations(
             for index in sorted(indices, reverse=True):
                 _delete_annotation_at_index(layer, index)
                 deleted_count += 1
-            _write_registry(layer, registry)
+            _write_registry(font, glyph, layer, registry)
         finally:
-            _end_undo(glyph, undo_open)
+            _end_layer_changes(layer, changes_open)
 
         result = _target_summary(font, glyph_name, layer)
         result.update(
@@ -909,7 +1074,7 @@ async def get_glyph_annotation_groups(
         if error:
             return json.dumps(error)
 
-        registry = _reconcile_registry(layer, persist=False)
+        registry = _reconcile_registry(font, glyph, layer, persist=False)
         annotations = _annotation_list(layer)
         groups = {}
         for item in registry.get("items", []):

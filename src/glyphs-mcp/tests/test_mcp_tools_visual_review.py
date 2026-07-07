@@ -192,6 +192,7 @@ class McpToolsVisualReviewTests(unittest.TestCase):
             _get_layer_id=lambda layer_obj: getattr(layer_obj, "associatedMasterId", None),
             _get_left_sidebearing=lambda layer_obj: getattr(layer_obj, "leftSideBearing", None),
             _get_right_sidebearing=lambda layer_obj: getattr(layer_obj, "rightSideBearing", None),
+            _layer_display_name=lambda _font, layer_obj, master_id=None: getattr(layer_obj, "name", None) or "Regular",
             _resolve_font_by_index=_resolve_font_by_index,
             _safe_json=lambda payload: json.dumps(payload),
         )

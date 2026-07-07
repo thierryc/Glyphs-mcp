@@ -12,15 +12,12 @@ import unittest
 
 
 def _ensure_fake_fastmcp() -> None:
-    if "fastmcp.resources" in sys.modules:
-        return
-
     fastmcp_pkg = types.ModuleType("fastmcp")
     resources_mod = types.ModuleType("fastmcp.resources")
 
     class _DummyResource:  # noqa: D401 - simple placeholder
         def __init__(self, *args, **kwargs) -> None:
-            pass
+            self.uri = kwargs.get("uri")
 
     resources_mod.DirectoryResource = _DummyResource
     resources_mod.FileResource = _DummyResource
@@ -31,12 +28,12 @@ def _ensure_fake_fastmcp() -> None:
 
 
 def _ensure_fake_mcp_tools() -> None:
-    if "mcp_tools" in sys.modules:
-        return
-
     class _DummyMCP:
-        def add_resource(self, *args, **kwargs) -> None:  # pragma: no cover - noop stub
-            pass
+        def __init__(self) -> None:
+            self.resources = []
+
+        def add_resource(self, resource, *args, **kwargs) -> None:  # pragma: no cover - trivial
+            self.resources.append(resource)
 
         def tool(self, *args, **kwargs):  # pragma: no cover - decorator stub
             def _decorator(func):

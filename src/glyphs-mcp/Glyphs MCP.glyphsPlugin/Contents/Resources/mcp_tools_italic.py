@@ -9,13 +9,17 @@ from GlyphsApp import Glyphs, GSGlyph  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
+    _append_font_glyph,
     _clear_layer_paths,
     _coerce_numeric,
-    _resolve_font_by_index,
+    _component_transform_values,
     _get_left_sidebearing,
     _get_right_sidebearing,
+    _new_glyph,
+    _replace_layer_paths,
+    _resolve_font_by_index,
     _safe_json,
-    _set_sidebearing,
+    _set_layer_metrics,
 )
 from mcp_tools_stems import _review_master_stem_metrics_impl
 
@@ -251,12 +255,9 @@ def _component_translation(component):
     y_value = _coerce_numeric(getattr(position, "y", None) if position is not None else None)
     if x_value is not None and y_value is not None:
         return x_value, y_value
-    try:
-        transform = list(getattr(component, "transform", []) or [])
-    except Exception:
-        transform = []
+    transform = _component_transform_values(component)
     if len(transform) >= 6:
-        return _coerce_numeric(transform[4]), _coerce_numeric(transform[5])
+        return transform[4], transform[5]
     return None, None
 
 
@@ -274,10 +275,7 @@ def _set_component_x_translation(component, x_value):
         except Exception:
             pass
 
-    try:
-        transform = list(getattr(component, "transform", []) or [])
-    except Exception:
-        transform = []
+    transform = _component_transform_values(component)
     if len(transform) >= 6:
         transform[4] = float(x_value)
         try:
@@ -319,14 +317,9 @@ def _adjust_component_positions_for_slant(layer, angle):
 
 
 def _replace_paths(source_layer, target_layer):
-    _clear_layer_paths(target_layer)
-    for path in list(getattr(source_layer, "paths", []) or []):
-        new_path = _copy_item(path)
-        try:
-            target_layer.paths.append(new_path)
-        except Exception:
-            if hasattr(target_layer, "addPath_"):
-                target_layer.addPath_(new_path)
+    paths = [_copy_item(path) for path in list(getattr(source_layer, "paths", []) or [])]
+    paths = [path for path in paths if path is not None]
+    _replace_layer_paths(target_layer, paths)
 
 
 def _set_collection(target, attr_name, values, setter_name=None):
@@ -371,36 +364,34 @@ def _copy_layer_data(source_layer, target_layer, options):
             [_copy_item(anchor) for anchor in list(getattr(source_layer, "anchors", []) or [])],
         )
     if options.get("metrics"):
-        try:
-            target_layer.width = float(getattr(source_layer, "width"))
-        except Exception:
-            pass
         lsb = _get_left_sidebearing(source_layer)
         rsb = _get_right_sidebearing(source_layer)
-        if lsb is not None:
-            _set_sidebearing(target_layer, "leftSideBearing", "LSB", float(lsb))
-        if rsb is not None:
-            _set_sidebearing(target_layer, "rightSideBearing", "RSB", float(rsb))
+        try:
+            width = float(getattr(source_layer, "width"))
+        except Exception:
+            width = None
+        _set_layer_metrics(
+            target_layer,
+            width=width,
+            left_sidebearing=float(lsb) if lsb is not None else None,
+            right_sidebearing=float(rsb) if rsb is not None else None,
+        )
 
 
 def _ensure_target_glyph(source_glyph, target_font, glyph_name):
     target_glyph = _glyph_lookup(target_font, glyph_name)
     if target_glyph:
         return target_glyph, False
-    new_glyph = GSGlyph(glyph_name)
+    new_glyph = _new_glyph(GSGlyph, glyph_name)
     for attr in ("unicode", "category", "subCategory", "export", "leftKerningGroup", "rightKerningGroup"):
         try:
             setattr(new_glyph, attr, getattr(source_glyph, attr))
         except Exception:
             pass
-    try:
-        target_font.glyphs.append(new_glyph)
-    except Exception:
-        try:
-            target_font.glyphs[glyph_name] = new_glyph
-        except Exception:
-            return None, False
-    return new_glyph, True
+    verified_glyph = _append_font_glyph(target_font, new_glyph, glyph_name)
+    if not verified_glyph:
+        return None, False
+    return verified_glyph, True
 
 
 def _find_transformations_filter():
@@ -847,11 +838,11 @@ def _apply_italic_first_pass_impl(
                 error_count += 1
                 continue
 
-            undo_open = False
+            changes_open = False
             try:
-                if hasattr(target_glyph, "beginUndo"):
-                    target_glyph.beginUndo()
-                    undo_open = True
+                if hasattr(target_layer, "beginChanges"):
+                    target_layer.beginChanges()
+                    changes_open = True
                 if backup:
                     _append_backup_layer(target_glyph, target_layer, target_master_id, backup_layer_name, angle)
                     backup_count += 1
@@ -871,8 +862,8 @@ def _apply_italic_first_pass_impl(
                 applied.append({"glyphName": name, "status": "error", "reason": str(exc)})
                 error_count += 1
             finally:
-                if undo_open and hasattr(target_glyph, "endUndo"):
-                    target_glyph.endUndo()
+                if changes_open and hasattr(target_layer, "endChanges"):
+                    target_layer.endChanges()
 
         return {
             "ok": error_count == 0,

@@ -73,6 +73,11 @@ class CompensatedTuningToolWrapperTests(unittest.TestCase):
             _coerce_numeric=lambda value: None if value is None else float(value),
             _font_resolution_error=_font_resolution_error,
             _is_active_font=lambda glyphs, current_font: getattr(glyphs, "font", None) is current_font,
+            _replace_layer_paths_and_metrics=lambda layer, paths, width=None, **_kwargs: (
+                setattr(layer, "paths", list(paths or [])),
+                setattr(layer, "width", float(width)) if width is not None else None,
+                {"ok": True, "pathCount": len(paths or []), "nodeCount": 0},
+            )[-1],
             _resolve_font_by_index=_resolve_font_by_index,
             _safe_attr=lambda obj, attr: getattr(obj, attr, None),
             _safe_json=lambda payload: payload,

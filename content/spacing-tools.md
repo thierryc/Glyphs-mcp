@@ -339,8 +339,7 @@ Computes a per-glyph spacing report and suggestions.
 Applies the suggestions computed by the same engine.
 
 **Safety gates**
-- If `confirm=false` and `dry_run=false`, the tool refuses to run.
-- Use `dry_run=true` first to preview.
+`apply_spacing` follows the shared [safety model](./concepts/safety-model.mdx): preview with `dry_run=true`, then apply only after explicit approval with `confirm=true`.
 
 **Inputs**
 Same as `review_spacing`, plus:
@@ -503,50 +502,9 @@ Apply:
 
 ---
 
-## Prompt templates (copy/paste)
+## Prompt templates
 
-### HTspacer-style spacing pass (review → dry-run → apply)
-
-```text
-You are a meticulous spacing assistant for a type designer working in Glyphs.
-Rules:
-- Never auto-save.
-- Never mutate without a dry run first.
-- Keep changes conservative (prefer clamping).
-- If glyph_names isn't provided, use my current selection in the active font.
-
-Task: Review and (optionally) apply spacing suggestions to improve rhythm and consistency.
-
-1) Call review_spacing:
-{"font_index":0}
-
-2) Summarize:
-- Top 15 layers by |delta.lsb| + |delta.rsb| (and why they’re outliers)
-- Skipped layers grouped by reason (metrics keys, low coverage, etc.)
-- Any warnings that suggest a bad measurement band / reference glyph
-
-3) Call apply_spacing (dry run with a conservative clamp):
-{"font_index":0,"dry_run":true,"clamp":{"maxDeltaLSB":80,"maxDeltaRSB":80,"minLSB":-50,"minRSB":-50}}
-
-4) If I say “apply”, call apply_spacing again with confirm=true using the same clamp.
-5) If I say “save”, call save_font.
-```
-
-### Tabular figures spacing (fixed width)
-
-```text
-I want tabular figures to keep a fixed width by distributing width changes evenly across LSB/RSB.
-
-First, select your figure glyphs in Glyphs (Font view), then:
-
-1) Call review_spacing:
-{"font_index":0,"defaults":{"tabularMode":true,"tabularWidth":600,"referenceGlyph":"zero"}}
-
-2) Call apply_spacing (dry run):
-{"font_index":0,"dry_run":true,"defaults":{"tabularMode":true,"tabularWidth":600,"referenceGlyph":"zero"},"clamp":{"maxDeltaLSB":60,"maxDeltaRSB":60,"minLSB":-50,"minRSB":-50}}
-
-3) If I approve, call apply_spacing again with confirm=true using the same args.
-```
+Reusable spacing prompts live in the [command set prompt pack](./reference/command-set.mdx) and follow the shared [safety model](./concepts/safety-model.mdx). Keep this page focused on the spacing model, parameters, and tool behavior.
 
 ### Visualize the spacing model with guides (expert)
 

@@ -96,7 +96,7 @@ class McpToolsKerningTests(unittest.TestCase):
             kerning={"m1": {"A": {"V": -80}}},
         )
         glyphs_module = types.SimpleNamespace(
-            Glyphs=types.SimpleNamespace(fonts=[font]),
+            Glyphs=types.SimpleNamespace(fonts=[font], showNotification=lambda *args, **kwargs: None),
         )
         helpers_module = types.SimpleNamespace(
             _coerce_numeric=lambda value: None if value is None else float(value),
@@ -107,6 +107,7 @@ class McpToolsKerningTests(unittest.TestCase):
             _resolve_font_by_index=_resolve_font_by_index,
             _safe_json=lambda payload: json.dumps(payload),
             _set_kerning_pairs_on_main_thread=lambda *args, **kwargs: None,
+            _show_notification=lambda *args, **kwargs: None,
         )
         proof_module = types.SimpleNamespace(
             ProofGlyph=_ProofGlyph,
@@ -129,10 +130,10 @@ class McpToolsKerningTests(unittest.TestCase):
             sys.modules.pop(module_name, None)
             assert spec.loader is not None
             spec.loader.exec_module(module)
-        return module
+        return module, font
 
     def test_generate_kerning_tab_handles_numeric_kerning_values(self) -> None:
-        module = self._load_module()
+        module, _font = self._load_module()
 
         payload = json.loads(
             asyncio.run(
@@ -154,6 +155,152 @@ class McpToolsKerningTests(unittest.TestCase):
         self.assertEqual(payload["counts"]["existingTightIncluded"], 1)
         self.assertEqual(payload["counts"]["existingWideIncluded"], 1)
         self.assertEqual(payload["text"], "proof")
+
+    def test_set_kerning_pair_sets_and_removes_pair(self) -> None:
+        module, font = self._load_module()
+
+        set_payload = json.loads(
+            asyncio.run(
+                module.set_kerning_pair(
+                    font_index=0,
+                    master_id="m1",
+                    left="A",
+                    right="T",
+                    value=-40,
+                )
+            )
+        )
+        remove_payload = json.loads(
+            asyncio.run(
+                module.set_kerning_pair(
+                    font_index=0,
+                    master_id="m1",
+                    left="A",
+                    right="T",
+                    value=0,
+                )
+            )
+        )
+
+        self.assertTrue(set_payload["success"])
+        self.assertEqual(set_payload["kerning"]["value"], -40)
+        self.assertEqual(remove_payload["message"], "Removed kerning for 'A' - 'T'")
+        self.assertNotIn("T", font.kerning["m1"]["A"])
+
+    def test_set_kerning_pair_reports_required_arguments_and_bad_font(self) -> None:
+        module, _font = self._load_module()
+
+        missing_sides = json.loads(asyncio.run(module.set_kerning_pair(font_index=0, value=-20)))
+        missing_value = json.loads(
+            asyncio.run(module.set_kerning_pair(font_index=0, left="A", right="V"))
+        )
+        bad_font = json.loads(
+            asyncio.run(module.set_kerning_pair(font_index=2, left="A", right="V", value=-20))
+        )
+
+        self.assertEqual(missing_sides["error"], "Both left and right glyph/group names are required")
+        self.assertEqual(missing_value["error"], "Kerning value is required")
+        self.assertFalse(bad_font["success"])
+        self.assertEqual(bad_font["fontIndex"], 2)
+
+    def test_apply_kerning_bumper_refuses_without_dry_run_or_confirm(self) -> None:
+        module, _font = self._load_module()
+
+        payload = json.loads(asyncio.run(module.apply_kerning_bumper(font_index=0)))
+
+        self.assertFalse(payload["ok"])
+        self.assertIn("confirm=true", payload["error"])
+
+    def test_apply_kerning_bumper_dry_run_reports_changes_without_writing(self) -> None:
+        module, _font = self._load_module()
+        applied = []
+        module._set_kerning_pairs_on_main_thread = lambda *args: applied.append(args)
+        module._kerning_bumper_analyze = lambda **kwargs: {
+            "warnings": [],
+            "collisions": [
+                {
+                    "left": "A",
+                    "right": "V",
+                    "kerningValue": -120,
+                    "recommendedException": -80,
+                    "minGap": -5,
+                }
+            ],
+            "usedTopN": 1,
+            "minGap": 5.0,
+            "maxDelta": 200,
+            "scanMode": "two_pass",
+            "scanHeights": [0.25, 0.5, 0.75],
+            "denseStep": 10.0,
+            "bands": 8,
+        }
+
+        payload = json.loads(
+            asyncio.run(
+                module.apply_kerning_bumper(
+                    font_index=0,
+                    master_id="m1",
+                    pairs=[["A", "V"]],
+                    dry_run=True,
+                )
+            )
+        )
+
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["dryRun"])
+        self.assertEqual(payload["counts"]["pairsToApply"], 1)
+        self.assertEqual(payload["counts"]["pairsApplied"], 0)
+        self.assertEqual(payload["changes"][0]["newKerningValue"], -80)
+        self.assertEqual(applied, [])
+
+    def test_apply_kerning_bumper_confirm_writes_only_planned_pairs(self) -> None:
+        module, font = self._load_module()
+        applied = []
+        module._set_kerning_pairs_on_main_thread = lambda *args: applied.append(args)
+        module._kerning_bumper_analyze = lambda **kwargs: {
+            "warnings": ["scan warning"],
+            "collisions": [
+                {
+                    "left": "A",
+                    "right": "V",
+                    "kerningValue": -120,
+                    "recommendedException": -80,
+                    "minGap": -5,
+                },
+                {
+                    "left": "H",
+                    "right": "O",
+                    "kerningValue": 0,
+                    "recommendedException": 0,
+                    "minGap": 20,
+                },
+            ],
+            "usedTopN": 2,
+            "minGap": 5.0,
+            "maxDelta": 200,
+            "scanMode": "two_pass",
+            "scanHeights": [0.25],
+            "denseStep": 10.0,
+            "bands": 8,
+        }
+
+        payload = json.loads(
+            asyncio.run(
+                module.apply_kerning_bumper(
+                    font_index=0,
+                    master_id="m1",
+                    pairs=[["A", "V"], ["H", "O"]],
+                    confirm=True,
+                )
+            )
+        )
+
+        self.assertTrue(payload["ok"])
+        self.assertFalse(payload["dryRun"])
+        self.assertEqual(payload["counts"]["pairsToApply"], 1)
+        self.assertEqual(payload["counts"]["pairsApplied"], 1)
+        self.assertEqual(applied, [(font, "m1", [("A", "V", -80)])])
+        self.assertEqual(payload["warnings"], ["scan warning"])
 
 
 if __name__ == "__main__":

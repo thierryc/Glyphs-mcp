@@ -12,9 +12,6 @@ import unittest
 
 
 def _ensure_fake_fastmcp() -> None:
-    if "fastmcp.resources" in sys.modules:
-        return
-
     fastmcp_pkg = types.ModuleType("fastmcp")
     resources_mod = types.ModuleType("fastmcp.resources")
 
@@ -31,9 +28,6 @@ def _ensure_fake_fastmcp() -> None:
 
 
 def _ensure_fake_mcp_tools() -> None:
-    if "mcp_tools" in sys.modules:
-        return
-
     class _DummyMCP:
         def __init__(self) -> None:
             self.resources = []
@@ -55,6 +49,10 @@ def _resources_dir() -> Path:
     )
 
 
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
 def _load_module(name: str, path: Path) -> ModuleType:
     spec = importlib.util.spec_from_file_location(name, path)
     assert spec and spec.loader
@@ -69,6 +67,17 @@ class GuideResourcesTests(unittest.TestCase):
         self.assertTrue(guide_path.is_file(), f"Missing guide file at {guide_path}")
         self.assertGreater(len(guide_path.read_text(encoding="utf-8").strip()), 0)
 
+        glyphs3_path = _resources_dir() / "GLYPHS3_COMPATIBILITY.md"
+        self.assertTrue(glyphs3_path.is_file(), f"Missing Glyphs 3 compatibility file at {glyphs3_path}")
+        self.assertIn("Known Limitations", glyphs3_path.read_text(encoding="utf-8"))
+
+    def test_public_glyphs3_compatibility_page_exists(self) -> None:
+        page_path = _repo_root() / "content" / "reference" / "glyphs3-compatibility.mdx"
+        self.assertTrue(page_path.is_file(), f"Missing public compatibility page at {page_path}")
+        content = page_path.read_text(encoding="utf-8")
+        self.assertIn("Sidebearings", content)
+        self.assertIn("ExportDesignspaceAndUFO", content)
+
     def test_guide_contains_required_sections(self) -> None:
         guide_path = _resources_dir() / "MCP_GUIDE.md"
         content = guide_path.read_text(encoding="utf-8")
@@ -76,6 +85,7 @@ class GuideResourcesTests(unittest.TestCase):
             "## Mission",
             "## Execution Contract",
             "## Tool Selection Policy",
+            "## Glyphs 3 Compatibility",
             "## Balanced execute_code Policy",
             "## Mutation Safety Protocol",
             "## Failure and Retry Playbook",
@@ -105,6 +115,7 @@ class GuideResourcesTests(unittest.TestCase):
         uris = [u for u in uris if isinstance(u, str)]
 
         self.assertIn(module._GUIDE_RESOURCE_URI, uris)
+        self.assertIn(module._GLYPHS3_COMPAT_RESOURCE_URI, uris)
         self.assertEqual(len(uris), len(set(uris)))
 
 

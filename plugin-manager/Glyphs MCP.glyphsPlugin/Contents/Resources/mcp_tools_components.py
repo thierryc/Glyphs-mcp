@@ -19,8 +19,14 @@ from GlyphsApp import (  # type: ignore[import-not-found]
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
     _active_font,
+    _append_layer_anchor,
+    _append_layer_shape,
+    _component_transform_values,
     _font_resolution_error,
     _get_component_automatic,
+    _layer_components,
+    _layer_display_name,
+    _new_anchor,
     _resolve_font_by_index,
 )
 
@@ -76,9 +82,9 @@ async def get_glyph_components(
         for mid, layer in layers:
             layer_components = []
 
-            for component in layer.components:
+            for component in _layer_components(layer):
                 # Extract transform values
-                transform = component.transform
+                transform = _component_transform_values(component)
                 component_data = {
                     "name": component.componentName,
                     "transform": {
@@ -103,18 +109,13 @@ async def get_glyph_components(
 
                 layer_components.append(component_data)
 
-            # Find master name for this layer
-            master_name = None
-            for master in font.masters:
-                if master.id == mid:
-                    master_name = master.name
-                    break
+            master_name = _layer_display_name(font, layer, mid)
 
             components_info.append(
                 {
                     "masterId": mid,
-                    "masterName": master_name or layer.name,
-                    "layerName": layer.name,
+                    "masterName": master_name,
+                    "layerName": master_name,
                     "componentCount": len(layer_components),
                     "components": layer_components,
                 }
@@ -197,7 +198,27 @@ async def add_component_to_glyph(
                         break
                     except Exception:
                         continue
-            layer.components.append(component)
+            if not _append_layer_shape(layer, component):
+                return json.dumps(
+                    {
+                        "success": False,
+                        "error": "Failed to add component through GSLayer.shapes",
+                        "glyphName": glyph_name,
+                        "componentName": component_name,
+                    }
+                )
+            if not any(
+                getattr(existing_component, "componentName", None) == component_name
+                for existing_component in _layer_components(layer)
+            ):
+                return json.dumps(
+                    {
+                        "success": False,
+                        "error": "Component write could not be verified after append",
+                        "glyphName": glyph_name,
+                        "componentName": component_name,
+                    }
+                )
 
         return json.dumps(
             {
@@ -256,8 +277,16 @@ async def add_anchor_to_glyph(
             layers = [glyph.layers[master.id] for master in font.masters]
 
         for layer in layers:
-            anchor = GSAnchor(anchor_name, (x, y))
-            layer.anchors.append(anchor)
+            anchor = _new_anchor(GSAnchor, anchor_name, x, y)
+            if not _append_layer_anchor(layer, anchor):
+                return json.dumps(
+                    {
+                        "success": False,
+                        "error": "Failed to add anchor to layer",
+                        "glyphName": glyph_name,
+                        "anchorName": anchor_name,
+                    }
+                )
 
         return json.dumps(
             {
@@ -756,7 +785,7 @@ async def add_corner_to_all_masters(
                     "unicode": getattr(glyph, "unicode", None),
                 },
                 "activeLayer": {
-                    "name": getattr(layer, "name", ""),
+                    "name": _layer_display_name(font, layer),
                     "associatedMasterId": getattr(layer, "associatedMasterId", None),
                 },
                 "selection": {

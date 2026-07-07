@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import sys
+import types
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 def _resources_dir() -> Path:
@@ -165,6 +167,24 @@ class McpErrorEnvelopeMiddlewareTests(unittest.TestCase):
         self.assertIn("runtimeId", payload)
         self.assertIn("codeHash", payload)
         self.assertIn("glyphsReachable", payload)
+
+    def test_healthz_reports_glyphs_host_version_when_available(self) -> None:
+        glyphs_obj = types.SimpleNamespace(
+            versionNumber=4.0,
+            versionString="4.0",
+            buildNumber=4000,
+        )
+
+        with mock.patch.dict(sys.modules, {"GlyphsApp": types.SimpleNamespace(Glyphs=glyphs_obj)}):
+            with self._client() as client:
+                res = client.get("/healthz")
+
+        self.assertEqual(res.status_code, 200)
+        payload = res.json()
+        self.assertTrue(payload["glyphsReachable"])
+        self.assertEqual(payload["glyphsVersion"], 4.0)
+        self.assertEqual(payload["glyphsVersionString"], "4.0")
+        self.assertEqual(payload["glyphsBuildNumber"], 4000)
 
     def test_mcp_path_normalizer_avoids_post_redirect(self) -> None:
         from starlette.applications import Starlette

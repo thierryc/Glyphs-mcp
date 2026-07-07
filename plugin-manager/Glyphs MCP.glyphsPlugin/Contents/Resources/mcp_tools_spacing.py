@@ -16,7 +16,7 @@ from mcp_tool_helpers import (
     _is_active_font,
     _resolve_font_by_index,
     _safe_json,
-    _set_sidebearing,
+    _set_layer_metrics,
     _spacing_selected_glyph_names_for_font,
 )
 
@@ -1127,16 +1127,15 @@ async def apply_spacing(
                 before_r = _get_right_sidebearing(layer)
 
                 try:
-                    new_lsb = clamped.get("lsb")
-                    new_rsb = clamped.get("rsb")
-                    if new_lsb is not None:
-                        _set_sidebearing(layer, "leftSideBearing", "LSB", new_lsb)
-                    if new_rsb is not None:
-                        _set_sidebearing(layer, "rightSideBearing", "RSB", new_rsb)
-
-                    # If tabular spacing is enabled, enforce the desired width explicitly.
+                    width = None
                     if "tabular_width_preserved" in (r.get("warnings") or []) and clamped.get("width") is not None:
-                        layer.width = int(round(float(clamped.get("width"))))
+                        width = int(round(float(clamped.get("width"))))
+                    _set_layer_metrics(
+                        layer,
+                        width=width,
+                        left_sidebearing=clamped.get("lsb"),
+                        right_sidebearing=clamped.get("rsb"),
+                    )
 
                     after_w = layer.width
                     after_l = _get_left_sidebearing(layer)

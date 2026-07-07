@@ -20,6 +20,20 @@ except Exception:  # pragma: no cover - tests may import without bundle layout
     get_runtime_info = None
 
 
+def _glyphs_host_info() -> Dict[str, Any]:
+    payload = {"glyphsReachable": False}
+    try:
+        from GlyphsApp import Glyphs  # type: ignore[import-not-found]
+
+        payload["glyphsReachable"] = bool(Glyphs)
+        payload["glyphsVersion"] = getattr(Glyphs, "versionNumber", None)
+        payload["glyphsVersionString"] = getattr(Glyphs, "versionString", None)
+        payload["glyphsBuildNumber"] = getattr(Glyphs, "buildNumber", None)
+    except Exception as exc:
+        payload["glyphsError"] = str(exc)
+    return payload
+
+
 class McpNormalizeMcpPathMiddleware:
     """Normalize `/mcp` to `/mcp/` without relying on HTTP redirects.
 
@@ -403,16 +417,9 @@ class McpErrorEnvelopeMiddleware(BaseHTTPMiddleware):
                 except Exception:
                     runtime_info = {"version": "dev", "runtimeId": "dev+unknown"}
 
-            glyphs_reachable = False
-            try:
-                from GlyphsApp import Glyphs  # type: ignore[import-not-found]
-
-                glyphs_reachable = bool(Glyphs)
-            except Exception:
-                glyphs_reachable = False
-
-            payload = {"ok": True, "glyphsReachable": glyphs_reachable}
+            payload = {"ok": True}
             payload.update(runtime_info)
+            payload.update(_glyphs_host_info())
             return JSONResponse(
                 payload,
                 status_code=200,

@@ -73,6 +73,7 @@ from mcp_tool_helpers import (
     _get_layer_id,
     _get_left_sidebearing,
     _get_right_sidebearing,
+    _layer_display_name,
     _resolve_font_by_index,
     _safe_json,
 )
@@ -388,13 +389,14 @@ def _prepare_render_request(font_index, glyph_names, master_id, columns, image_w
 
         bounds = _layer_bounds(layer)
         width = _coerce_float(getattr(layer, "width", None), 0.0) or 0.0
+        layer_name = _layer_display_name(font, layer, getattr(master, "id", None))
         render_items.append(
             {
                 "glyph": glyph,
                 "glyphName": str(getattr(glyph, "name", name)),
                 "layer": layer,
                 "layerId": _get_layer_id(layer),
-                "layerName": getattr(layer, "name", None),
+                "layerName": layer_name,
                 "width": width,
                 "leftSideBearing": _get_left_sidebearing(layer),
                 "rightSideBearing": _get_right_sidebearing(layer),

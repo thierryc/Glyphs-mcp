@@ -3,6 +3,8 @@
 > [!IMPORTANT]
 > **Glyphs 4 branch:** this README is for `origin/glyphs4`, the branch used for the Glyphs 4 beta and future Glyphs 4 version of Glyphs MCP.  
 > Open it on GitHub: [github.com/thierryc/Glyphs-mcp/tree/glyphs4](https://github.com/thierryc/Glyphs-mcp/tree/glyphs4)
+>
+> **Glyphs 3 compatibility:** v1.2.24 keeps the Glyphs 3 install path available with `--glyphs-version 3` while this branch defaults to Glyphs 4. The local release gate passed with Python 3.12.
 
 Site: https://ap.cx/gmcp
 
@@ -23,7 +25,7 @@ The Installer app is the simplest way to install `Glyphs MCP.glyphsPlugin`, inst
 
 - Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg
 - Download (ZIP): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip
-- Glyphs 4 beta release: https://github.com/thierryc/Glyphs-mcp/releases/tag/v1.2.1
+- Glyphs 4 beta release: https://github.com/thierryc/Glyphs-mcp/releases/latest
 
 The installer can also install the bundled Glyphs MCP skills for Codex and Claude CLI.
 
@@ -53,6 +55,8 @@ Minimum requirements:
 - macOS 13.0+
 - Glyphs 4 beta
 - Python 3.11–3.14 (recommended: python.org 3.14)
+
+Glyphs 3 backward compatibility is maintained for the shared MCP server code where possible; use the terminal installer with `--glyphs-version 3` for Glyphs 3 installs.
 
 ## Repo skills for Codex and Claude Code
 
@@ -129,8 +133,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.2.1)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.2.1"`).
+## Command Set (MCP server v1.2.24)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.2.24"`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
@@ -203,7 +207,7 @@ For performance-sensitive scripts, you can opt into lower-overhead execution:
 - `max_output_chars` / `max_error_chars` to cap returned output and avoid huge responses.
 - `snippet_only=true` to return a ready-to-paste **Macro Panel** snippet instead of executing (useful when you want manual control).
 - Prefer `execute_code_with_context` for glyph-scoped mutations so the script runs with explicit `font` / `glyph` / `layer` helpers.
-- Large glyph edits should still use `glyph.beginUndo()/endUndo()` or `layer.beginChanges()/endChanges()` inside the script.
+- Large glyph edits should use documented layer/font update APIs such as `layer.beginChanges()/endChanges()`; avoid glyph-level undo groups for MCP-driven batch writes.
 - Glyphs undo is glyph-scoped, so master/global edits are not guaranteed undoable.
 
 Avoid calling `exit()` / `quit()` / `sys.exit()` in `execute_code*`; they won't exit Glyphs and can disrupt the call.

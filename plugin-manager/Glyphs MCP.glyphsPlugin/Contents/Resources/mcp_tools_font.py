@@ -10,6 +10,7 @@ from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
     _coerce_numeric,
+    _component_transform_values,
     _custom_parameter,
     _font_resolution_error,
     _get_component_automatic,
@@ -18,6 +19,8 @@ from mcp_tool_helpers import (
     _get_right_sidebearing,
     _glyphs_show_layer_link_fields,
     _glyphs_show_link_fields,
+    _layer_display_name,
+    _layer_components,
     _open_fonts_from_glyphs,
     _resolve_font_by_index,
     _safe_attr,
@@ -354,15 +357,17 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
         layers_info = []
         for layer in glyph.layers:
             layer_id = _get_layer_id(layer)
+            layer_name = _layer_display_name(font, layer)
+            components = _layer_components(layer)
             layer_info = {
-                "name": layer.name,
+                "name": layer_name,
                 "layerId": layer_id,
                 "associatedMasterId": getattr(layer, "associatedMasterId", None),
                 "width": layer.width,
                 "leftSideBearing": _get_left_sidebearing(layer),
                 "rightSideBearing": _get_right_sidebearing(layer),
                 "pathCount": len(layer.paths),
-                "componentCount": len(layer.components),
+                "componentCount": len(components),
                 "anchorCount": len(layer.anchors),
             }
             layer_info.update(
@@ -370,21 +375,21 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
                     file_path,
                     glyph_name=glyph.name,
                     layer_id=layer_id,
-                    label="Open {} {} in Glyphs".format(glyph.name, layer.name),
+                    label="Open {} {} in Glyphs".format(glyph.name, layer_name),
                 )
             )
 
             # Add component details
-            components = []
-            for component in layer.components:
-                components.append(
+            component_payloads = []
+            for component in components:
+                component_payloads.append(
                     {
                         "name": component.componentName,
-                        "transform": list(component.transform),
+                        "transform": _component_transform_values(component),
                         "automatic": _get_component_automatic(component),
                     }
                 )
-            layer_info["components"] = components
+            layer_info["components"] = component_payloads
 
             layers_info.append(layer_info)
 

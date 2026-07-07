@@ -69,6 +69,22 @@ class _FakeGlyphs(dict):
         return iter(self.values())
 
 
+class _Glyphs4StemProxy:
+    def __init__(self, values):
+        self._values = list(values)
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._values[key]
+        return 0.0
+
+    def __iter__(self):
+        return iter(self._values)
+
+    def __len__(self):
+        return len(self._values)
+
+
 def _resolve_font_by_index(glyphs, font_index):
     fonts = list(getattr(glyphs, "fonts", []) or [])
     index = int(font_index)
@@ -153,6 +169,23 @@ class McpToolsStemsTests(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertTrue(payload["readyForCursivy"])
         self.assertEqual(payload["summary"]["readyCount"], 1)
+
+    def test_review_reads_glyphs4_stem_proxy_by_index_when_name_returns_zero(self) -> None:
+        font, master = _font_with_stems({})
+        master.stems = _Glyphs4StemProxy([82, 74])
+        module = self._load_module(font)
+
+        payload = module._review_master_stem_metrics_impl(
+            font_index=0,
+            master_ids=["m1"],
+            include_measurements=False,
+        )
+
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["readyForCursivy"])
+        stems = payload["masters"][0]["stems"]
+        self.assertEqual(stems[0]["value"], 82.0)
+        self.assertEqual(stems[1]["value"], 74.0)
 
     def test_review_reports_missing_target_stems(self) -> None:
         font, _master = _font_with_stems({"Vertical": 82})

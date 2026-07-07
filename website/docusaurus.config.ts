@@ -39,7 +39,11 @@ const config: Config = {
   projectName: 'Glyphs-mcp',
 
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn'
+    }
+  },
 
   customFields: {
     gmcpVersion

@@ -84,6 +84,7 @@ class _FakeLayer:
         self.paths = [_FakePath(node_types or ["line", "line"])]
         self.components = []
         self.anchors = []
+        self.change_depth = 0
         self.width = width
         self.leftSideBearing = 40
         self.rightSideBearing = 60
@@ -101,6 +102,12 @@ class _FakeLayer:
         layer.leftSideBearing = self.leftSideBearing
         layer.rightSideBearing = self.rightSideBearing
         return layer
+
+    def beginChanges(self):
+        self.change_depth += 1
+
+    def endChanges(self):
+        self.change_depth -= 1
 
 
 class _FakeLayers(dict):
@@ -220,15 +227,24 @@ class McpToolsItalicTests(unittest.TestCase):
             GSMetric=lambda: _FakeStem("", False),
         )
         helpers_module = types.SimpleNamespace(
+            _append_font_glyph=lambda font, glyph, glyph_name: font.glyphs.append(glyph) or font.glyphs.get(glyph_name),
             _clear_layer_paths=lambda layer: layer.paths.clear(),
             _coerce_numeric=lambda value: None if value is None else float(value),
+            _component_transform_values=lambda component: list(getattr(component, "transform", (1, 0, 0, 1, 0, 0))),
             _font_resolution_error=_font_resolution_error,
             _get_left_sidebearing=lambda layer: getattr(layer, "leftSideBearing", None),
             _get_right_sidebearing=lambda layer: getattr(layer, "rightSideBearing", None),
+            _new_glyph=lambda GSGlyph, glyph_name: GSGlyph(glyph_name),
+            _replace_layer_paths=lambda layer, paths: setattr(layer, "paths", list(paths or [])) or {"ok": True, "pathCount": len(paths or []), "nodeCount": 0},
             _resolve_font_by_index=_resolve_font_by_index,
             _safe_attr=lambda obj, attr, default=None: getattr(obj, attr, default),
             _safe_json=lambda payload: json.dumps(payload),
-            _set_sidebearing=lambda layer, attr_name, legacy_attr, value: setattr(layer, attr_name, float(value)) or True,
+            _set_layer_metrics=lambda layer, width=None, left_sidebearing=None, right_sidebearing=None: (
+                setattr(layer, "width", float(width)) if width is not None else None,
+                setattr(layer, "leftSideBearing", float(left_sidebearing)) if left_sidebearing is not None else None,
+                setattr(layer, "rightSideBearing", float(right_sidebearing)) if right_sidebearing is not None else None,
+                True,
+            )[-1],
         )
         module_name = "glyphs_mcp_test_mcp_tools_italic"
         spec = importlib.util.spec_from_file_location(module_name, _module_path())
@@ -347,6 +363,8 @@ class McpToolsItalicTests(unittest.TestCase):
         self.assertEqual(filter_obj.calls[0]["args"]["SlantCorrection"], 1)
         self.assertEqual(filter_obj.calls[0]["args"]["Origin"], 3)
         self.assertTrue(target_layer.paths[0].transformed)
+        self.assertEqual(target_layer.change_depth, 0)
+        self.assertEqual(font.glyphs["b"].undo_depth, 0)
 
     def test_confirm_copies_live_components_but_skews_only_paths(self) -> None:
         font = _make_font()

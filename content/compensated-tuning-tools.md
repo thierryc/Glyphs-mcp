@@ -49,7 +49,7 @@ If `base_master_id == ref_master_id`, the current implementation has no geometri
 `keep_stroke` only matters when the tool is computing compensated interpolation from a real two-master setup. It is not a "lighten this master in place" knob.
 
 5) **Safety gates**
-`apply_compensated_tuning` refuses to mutate unless you use `dry_run=true` or `confirm=true`. It never auto-saves.
+`apply_compensated_tuning` follows the shared [safety model](./concepts/safety-model.mdx): preview with `dry_run=true`, then apply only after explicit approval with `confirm=true`.
 
 ---
 
@@ -205,20 +205,9 @@ After applying, consider doing a visual proof pass in Glyphs and optionally call
 
 ---
 
-## Safe prompt template
+## Prompt templates
 
-```text
-Task: Preview a compensated tuning transform before applying it.
-
-Rules:
-- Read open fonts and masters first.
-- Confirm base_master_id, ref_master_id, output_master_id, glyph_names, sx, sy, and keep_stroke before applying anything.
-- Do not use the same master as both base and reference unless I explicitly ask for a neutral baseline.
-- Run review_compensated_tuning on one glyph first.
-- Run apply_compensated_tuning with dry_run=true before mutation.
-- Wait for me to reply exactly "apply" before using confirm=true.
-- Never auto-save.
-```
+Use the shared [safety model](./concepts/safety-model.mdx) for dry-run and confirm-gated editing rules. For compensated tuning, the essential prompt constraints are: read open fonts and masters first, never use the same base and reference master unless explicitly requested, preview one glyph before batch apply, and require `dry_run=true` before any confirmed mutation.
 
 ---
 

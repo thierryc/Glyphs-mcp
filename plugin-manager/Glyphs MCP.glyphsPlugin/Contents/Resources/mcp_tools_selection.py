@@ -14,6 +14,7 @@ from mcp_tool_helpers import (
     _get_right_sidebearing,
     _glyphs_show_layer_link_fields,
     _glyphs_show_link_fields,
+    _layer_display_name,
     _safe_json,
 )
 
@@ -35,12 +36,13 @@ async def get_selected_glyphs() -> str:
         for layer in font.selectedLayers:
             glyph = layer.parent
             layer_id = _get_layer_id(layer)
+            layer_name = _layer_display_name(font, layer)
             selected_entry = {
                 "name": glyph.name,
                 "unicode": glyph.unicode,
                 "category": glyph.category,
                 "subCategory": glyph.subCategory,
-                "layerName": layer.name,
+                "layerName": layer_name,
                 "layerId": layer_id,
                 "width": layer.width,
             }
@@ -49,7 +51,7 @@ async def get_selected_glyphs() -> str:
                     file_path,
                     glyph_name=glyph.name,
                     layer_id=layer_id,
-                    label="Open {} {} in Glyphs".format(glyph.name, layer.name),
+                    label="Open {} {} in Glyphs".format(glyph.name, layer_name),
                 )
             )
             selected.append(selected_entry)
@@ -114,6 +116,7 @@ async def get_selected_font_and_master() -> str:
         for layer in font.selectedLayers:
             glyph = layer.parent
             layer_id = _get_layer_id(layer)
+            layer_name = _layer_display_name(font, layer)
             left_bearing = _get_left_sidebearing(layer)
             right_bearing = _get_right_sidebearing(layer)
             selected_entry = {
@@ -121,7 +124,7 @@ async def get_selected_font_and_master() -> str:
                 "unicode": glyph.unicode,
                 "category": glyph.category,
                 "subCategory": glyph.subCategory,
-                "layerName": layer.name,
+                "layerName": layer_name,
                 "layerId": layer_id,
                 "width": layer.width,
                 "leftSideBearing": left_bearing,
@@ -132,7 +135,7 @@ async def get_selected_font_and_master() -> str:
                     font_info["filePath"],
                     glyph_name=glyph.name,
                     layer_id=layer_id,
-                    label="Open {} {} in Glyphs".format(glyph.name, layer.name),
+                    label="Open {} {} in Glyphs".format(glyph.name, layer_name),
                 )
             )
             selected_glyphs.append(selected_entry)
@@ -196,7 +199,7 @@ async def get_selected_nodes(include_master_mapping: bool = True) -> str:
         def layer_info(l):
             layer_id = _get_layer_id(l)
             info = {
-                "name": getattr(l, "name", ""),
+                "name": _layer_display_name(font, l),
                 "associatedMasterId": getattr(l, "associatedMasterId", None),
                 "width": getattr(l, "width", 0),
             }
@@ -337,7 +340,7 @@ async def get_selected_nodes(include_master_mapping: bool = True) -> str:
                         mapping.append({
                             "masterId": master.id,
                             "masterName": master.name,
-                            "layerName": getattr(t_layer, "name", ""),
+                            "layerName": _layer_display_name(font, t_layer, master.id),
                             "pathIndex": None,
                             "nodeIndex": None,
                             "onCurveIndex": None,
@@ -431,7 +434,7 @@ async def get_selected_nodes(include_master_mapping: bool = True) -> str:
                     mapping.append({
                         "masterId": master.id,
                         "masterName": master.name,
-                        "layerName": getattr(t_layer, "name", ""),
+                        "layerName": _layer_display_name(font, t_layer, master.id),
                         "pathIndex": t_path_index,
                         "nodeIndex": t_node_index,
                         "onCurveIndex": t_oncurve_index,

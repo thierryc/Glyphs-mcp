@@ -97,9 +97,9 @@ def update_readme(readme_path: Path, version: str) -> None:
         f"https://github.com/thierryc/Glyphs-mcp/releases/tag/v{version}",
         text,
     )
-    if n4 < 1:
+    if n4 < 1 and "https://github.com/thierryc/Glyphs-mcp/releases/latest" not in text:
         raise SystemExit(
-            f"error: could not find release tag URL in {readme_path} (expected releases/tag/vX.Y.Z)"
+            f"error: could not find release URL in {readme_path} (expected releases/tag/vX.Y.Z or releases/latest)"
         )
 
     if text != original:
@@ -129,9 +129,9 @@ def update_installation_doc(path: Path, version: str) -> None:
         f"https://github.com/thierryc/Glyphs-mcp/releases/tag/v{version}",
         text,
     )
-    if n1 < 1:
+    if n1 < 1 and "https://github.com/thierryc/Glyphs-mcp/releases/latest" not in text:
         raise SystemExit(
-            f"error: could not find release tag URL in {path} (expected releases/tag/vX.Y.Z)"
+            f"error: could not find release URL in {path} (expected releases/tag/vX.Y.Z or releases/latest)"
         )
 
     def _installer_url_repl(match: re.Match[str]) -> str:
@@ -139,9 +139,9 @@ def update_installation_doc(path: Path, version: str) -> None:
         return f"https://github.com/thierryc/Glyphs-mcp/releases/download/v{version}/GlyphsMCPInstaller.{ext}"
 
     text, n2 = _VERSIONED_INSTALLER_URL_RE.subn(_installer_url_repl, text)
-    if n2 < 1:
+    if n2 < 1 and "https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller." not in text:
         raise SystemExit(
-            f"error: could not find versioned installer URL in {path} (expected releases/download/vX.Y.Z/GlyphsMCPInstaller.(dmg|zip))"
+            f"error: could not find installer URL in {path} (expected releases/download/vX.Y.Z/GlyphsMCPInstaller.(dmg|zip) or releases/latest/download/GlyphsMCPInstaller.(dmg|zip))"
         )
 
     if text != original:

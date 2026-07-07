@@ -63,6 +63,7 @@ class _FakeLayer:
         self.associatedMasterId = "m1"
         self.width = 500
         self.paths = [path]
+        self.fail_path_replace = False
 
 
 def _open_fonts_from_glyphs(glyphs):
@@ -154,6 +155,32 @@ class McpToolsPathsTests(unittest.TestCase):
             layer_obj.width = -1
             return True
 
+        def fake_layer_path_summary(layer_obj):
+            return {
+                "pathCount": len(getattr(layer_obj, "paths", []) or []),
+                "nodeCount": sum(len(path.nodes) for path in getattr(layer_obj, "paths", []) or []),
+            }
+
+        def fake_replace_layer_paths_and_metrics(
+            layer_obj,
+            paths,
+            width=None,
+            left_sidebearing=None,
+            right_sidebearing=None,
+        ):
+            if getattr(layer_obj, "fail_path_replace", False):
+                return {"ok": False, "error": "Path write verification failed", "pathCount": 0, "nodeCount": 0}
+            layer_obj.paths = list(paths or [])
+            if left_sidebearing is not None:
+                fake_set_sidebearing(layer_obj, "leftSideBearing", "LSB", left_sidebearing)
+            if right_sidebearing is not None:
+                fake_set_sidebearing(layer_obj, "rightSideBearing", "RSB", right_sidebearing)
+            if width is not None:
+                layer_obj.width = width
+            result = fake_layer_path_summary(layer_obj)
+            result["ok"] = True
+            return result
+
         helpers_module = types.SimpleNamespace(
             _clear_layer_paths=lambda layer_obj: setattr(layer_obj, "paths", []),
             _font_resolution_error=_font_resolution_error,
@@ -162,8 +189,11 @@ class McpToolsPathsTests(unittest.TestCase):
             _get_left_sidebearing=lambda layer_obj: getattr(layer_obj, "LSB", 0),
             _get_right_sidebearing=lambda layer_obj: getattr(layer_obj, "RSB", 0),
             _glyphs_show_layer_link_fields=lambda *args, **kwargs: {},
+            _layer_display_name=lambda _font, layer_obj, master_id=None: getattr(layer_obj, "name", None) or "Master 1",
+            _layer_path_summary=fake_layer_path_summary,
+            _replace_layer_paths_and_metrics=fake_replace_layer_paths_and_metrics,
             _resolve_font_by_index=_resolve_font_by_index,
-            _set_sidebearing=fake_set_sidebearing,
+            _show_notification=lambda *args, **kwargs: None,
         )
         module_name = "glyphs_mcp_test_mcp_tools_paths"
         spec = importlib.util.spec_from_file_location(module_name, _module_path())
@@ -246,6 +276,34 @@ class McpToolsPathsTests(unittest.TestCase):
         self.assertEqual(read_payload["glyphName"], "A")
         self.assertTrue(write_payload["success"])
         self.assertEqual(layer.width, 600.0)
+
+    def test_set_glyph_paths_reports_failed_write_verification(self) -> None:
+        module, layer, _helper_calls = self._load_module()
+        layer.fail_path_replace = True
+
+        payload = json.loads(
+            asyncio.run(
+                module.set_glyph_paths(
+                    font_index=0,
+                    glyph_name="A",
+                    master_id="m1",
+                    paths_data=json.dumps(
+                        {
+                            "paths": [
+                                {
+                                    "nodes": [{"x": 0, "y": 0, "type": "line", "smooth": False}],
+                                    "closed": True,
+                                }
+                            ]
+                        }
+                    ),
+                )
+            )
+        )
+
+        self.assertFalse(payload["success"])
+        self.assertEqual(payload["error"], "Path write verification failed")
+        self.assertEqual(payload["expectedPathCount"], 1)
 
 
 if __name__ == "__main__":

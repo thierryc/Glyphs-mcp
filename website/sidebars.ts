@@ -41,12 +41,21 @@ const sidebars: SidebarsConfig = {
     {
       type: 'category',
       label: 'Reference',
-      items: ['reference/command-set', 'reference/settings', 'reference/resources']
+      items: [
+        'reference/command-set',
+        'reference/glyphs3-compatibility',
+        'reference/settings',
+        'reference/resources'
+      ]
     },
     {
       type: 'category',
       label: 'Contributor Notes',
-      items: ['contributor/local-docs-development', 'contributor/release-build-notes']
+      items: [
+        'contributor/local-docs-development',
+        'contributor/release-qa-protocol',
+        'contributor/release-build-notes'
+      ]
     }
   ]
 };

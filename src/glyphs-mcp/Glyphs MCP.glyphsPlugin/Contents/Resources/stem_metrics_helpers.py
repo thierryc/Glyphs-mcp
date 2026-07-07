@@ -118,11 +118,40 @@ def _stem_value_from_collection(stems, stem_name=None, stem_id=None, stem_index=
         keys.append(stem_id)
     if stem_index is not None:
         keys.append(stem_index)
+        keys.append(str(stem_index))
+
+    deduped_keys = []
+    for key in keys:
+        marker = str(key)
+        if marker not in [str(existing) for existing in deduped_keys]:
+            deduped_keys.append(key)
+    keys = deduped_keys
+
+    fallback = None
+
+    def candidate(value):
+        numeric = _coerce_numeric(value)
+        if numeric is None:
+            for attr in ("value", "position", "width"):
+                numeric = _coerce_numeric(_safe_attr(value, attr, None))
+                if numeric is not None:
+                    break
+        return numeric
+
+    def remember(value):
+        nonlocal fallback
+        numeric = candidate(value)
+        if numeric is None:
+            return None
+        if float(numeric) > 0.0:
+            return numeric
+        if fallback is None:
+            fallback = numeric
+        return None
 
     for key in keys:
         try:
-            value = stems[key]
-            numeric = _coerce_numeric(value)
+            numeric = remember(stems[key])
             if numeric is not None:
                 return numeric
         except Exception:
@@ -132,13 +161,49 @@ def _stem_value_from_collection(stems, stem_name=None, stem_id=None, stem_index=
         if isinstance(stems, dict):
             for key in keys:
                 if key in stems:
-                    numeric = _coerce_numeric(stems.get(key))
+                    numeric = remember(stems.get(key))
+                    if numeric is not None:
+                        return numeric
+            wanted = set(str(key) for key in keys)
+            for key, value in stems.items():
+                if str(key) in wanted:
+                    numeric = remember(value)
                     if numeric is not None:
                         return numeric
     except Exception:
         pass
 
-    return None
+    if stem_index is not None:
+        try:
+            values = list(stems or [])
+        except Exception:
+            values = []
+        try:
+            numeric = remember(values[int(stem_index)])
+            if numeric is not None:
+                return numeric
+        except Exception:
+            pass
+
+    wanted_names = set(str(key) for key in keys if key is not None)
+    try:
+        values = list(stems or [])
+    except Exception:
+        values = []
+    for value in values:
+        metric = _safe_attr(value, "metric", None)
+        names = [
+            _safe_attr(value, "name", None),
+            _safe_attr(value, "id", None),
+            _safe_attr(metric, "name", None),
+            _safe_attr(metric, "id", None),
+        ]
+        if any(str(name) in wanted_names for name in names if name is not None):
+            numeric = remember(value)
+            if numeric is not None:
+                return numeric
+
+    return fallback
 
 
 def master_stem_value(master, stem_definition):
@@ -301,9 +366,13 @@ def stem_ratio_payload(
     stem_source,
     mismatch_tolerance,
 ):
-    stem_name = pick_font_vertical_stem_name(font)
-    base_stem_font = master_stem_value_by_name(base_master, stem_name)
-    ref_stem_font = master_stem_value_by_name(ref_master, stem_name)
+    stem_definition = None
+    vertical_definitions = stem_definitions_for_orientation(font, "vertical")
+    if vertical_definitions:
+        stem_definition = vertical_definitions[0]
+    stem_name = stem_definition.get("name") if stem_definition else pick_font_vertical_stem_name(font)
+    base_stem_font = master_stem_value(base_master, stem_definition) if stem_definition else master_stem_value_by_name(base_master, stem_name)
+    ref_stem_font = master_stem_value(ref_master, stem_definition) if stem_definition else master_stem_value_by_name(ref_master, stem_name)
     ratio_font = None
     if base_stem_font and ref_stem_font and base_stem_font > 0:
         ratio_font = float(ref_stem_font) / float(base_stem_font)

@@ -6,10 +6,10 @@ from GlyphsApp import Glyphs, GSNode, GSPath  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
-    _clear_layer_paths,
     _coerce_numeric,
     _font_resolution_error,
     _is_active_font,
+    _replace_layer_paths_and_metrics,
     _resolve_font_by_index,
     _safe_json,
     _spacing_selected_glyph_names_for_font,
@@ -712,7 +712,7 @@ def _apply_compensated_tuning_impl(
                 continue
 
             # Apply: replace paths and width.
-            _clear_layer_paths(dest_layer)
+            new_paths = []
             for path_data in review_data.get("paths", []) or []:
                 new_path = GSPath()
                 for node_data in path_data.get("nodes", []) or []:
@@ -725,17 +725,22 @@ def _apply_compensated_tuning_impl(
                     new_node.smooth = bool(node_data.get("smooth", False))
                     new_path.nodes.append(new_node)
                 new_path.closed = bool(path_data.get("closed", True))
-                try:
-                    dest_layer.paths.append(new_path)
-                except Exception:
-                    if hasattr(dest_layer, "addPath_"):
-                        dest_layer.addPath_(new_path)
-
-            if "width" in review_data:
-                try:
-                    dest_layer.width = float(review_data["width"])
-                except Exception:
-                    pass
+                new_paths.append(new_path)
+            replace_result = _replace_layer_paths_and_metrics(
+                dest_layer,
+                new_paths,
+                width=float(review_data["width"]) if "width" in review_data else None,
+            )
+            if not replace_result.get("ok"):
+                results.append(
+                    {
+                        "glyphName": name,
+                        "status": "error",
+                        "reason": replace_result.get("error") or "path_write_failed",
+                    }
+                )
+                error_count += 1
+                continue
 
             results.append({"glyphName": name, "status": "ok", "action": "applied"})
             ok_count += 1

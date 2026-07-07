@@ -351,16 +351,17 @@ def _measure_edges_at_y(
         return (None, None)
 
     try:
-        n = len(intersections)
+        points = list(intersections or [])
+        n = len(points)
     except Exception:
         return (None, None)
 
-    # Per Glyphs docs: [0] start, [-1] end, [1] first intersection, [-2] last intersection.
+    # Glyphs 4 proxy collections can reject negative indexes; use a real list.
     if n < 4:
         return (None, None)
 
-    left = _point_x(intersections[1])
-    right = _point_x(intersections[-2])
+    left = _point_x(points[1])
+    right = _point_x(points[n - 2])
     return (left, right)
 
 
