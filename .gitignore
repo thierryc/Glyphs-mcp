@@ -50,6 +50,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+.tmp/
 
 # Translations
 *.mo
@@ -212,6 +213,7 @@ __marimo__/
 
 # Exclude site-packages in plugin resources
 src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/site-packages/
+plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Resources/vendor/
 
 
 # Glyphs build environment
