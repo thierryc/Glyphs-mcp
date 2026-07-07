@@ -213,6 +213,7 @@ __marimo__/
 
 # Exclude site-packages in plugin resources
 src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/site-packages/
+plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Resources/vendor/
 
 # Generated Glyphs/macOS plugin artifacts
 **/* (autosave).*
