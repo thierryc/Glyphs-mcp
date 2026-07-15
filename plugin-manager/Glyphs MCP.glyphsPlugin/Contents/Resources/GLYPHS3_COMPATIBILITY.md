@@ -1,8 +1,8 @@
-# Glyphs 3 Compatibility Notes For The Glyphs 4 Branch
+# Glyphs 3 Compatibility Notes
 
-The `glyphs4` branch is the Glyphs 4 development branch. It keeps a Glyphs 3
-install path for compatibility testing, but Glyphs 3 is not the primary runtime
-for this branch.
+Glyphs MCP supports Glyphs 3 and Glyphs 4 from the `main` branch. The macOS
+installer detects both versions, while the terminal installer defaults to
+Glyphs 4 and accepts `--glyphs-version 3` for Glyphs 3.
 
 Always call `get_server_info` first. A Glyphs 3 compatibility run should report
 Glyphs `3.5`, Python `3.12.x`, and the expected Glyphs MCP runtime ID.
@@ -59,7 +59,7 @@ Expected behavior in Glyphs 3:
 
 ### ExportDesignspaceAndUFO
 
-`ExportDesignspaceAndUFO` is fully exercised on Glyphs 4 in this branch. In the
+`ExportDesignspaceAndUFO` is fully exercised on Glyphs 4. In the
 Glyphs 3 live pass, export returned a structured error on a test font containing
 stale disposable glyphs with empty component names:
 
@@ -75,8 +75,7 @@ Recommended handling:
 
 - Inspect and clean glyphs with empty component names before export.
 - Delete stale MCP test glyphs if they remain from interrupted QA runs.
-- Prefer the Glyphs 4 runtime for release export validation on the `glyphs4`
-  branch.
+- Prefer the Glyphs 4 runtime for release export validation.
 
 ## Agent Guidance
 
@@ -90,4 +89,3 @@ When a task must support Glyphs 3:
 - Stop after a structured Glyphs 3 limitation error; do not retry with larger
   scripts.
 - Do not auto-save fonts.
-

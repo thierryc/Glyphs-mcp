@@ -1,10 +1,7 @@
 # Glyphs MCP
 
 > [!IMPORTANT]
-> **Glyphs 4 branch:** this README is for `origin/glyphs4`, the branch used for the Glyphs 4 beta and future Glyphs 4 version of Glyphs MCP.  
-> Open it on GitHub: [github.com/thierryc/Glyphs-mcp/tree/glyphs4](https://github.com/thierryc/Glyphs-mcp/tree/glyphs4)
->
-> **Glyphs 3 compatibility:** v1.2.24 keeps the Glyphs 3 install path available with `--glyphs-version 3` while this branch defaults to Glyphs 4. The local release gate passed with Python 3.12.
+> **Glyphs 3 and Glyphs 4:** the `main` branch supports both major versions. The macOS installer detects each installed version and can target either or both. The terminal installer defaults to Glyphs 4; pass `--glyphs-version 3` for Glyphs 3.
 
 Site: https://ap.cx/gmcp
 
@@ -27,7 +24,7 @@ The macOS app detects Glyphs 3 and Glyphs 4 independently. If both are installed
 
 - Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg
 - Download (ZIP): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip
-- Glyphs 4 beta release: https://github.com/thierryc/Glyphs-mcp/releases/latest
+- Latest release: https://github.com/thierryc/Glyphs-mcp/releases/latest
 
 The installer can also install the bundled Glyphs MCP skills for Codex and Claude CLI.
 
@@ -43,7 +40,7 @@ Terminal installer:
 python3 install.py
 ```
 
-The terminal installer on this branch continues to target Glyphs 4 by default. To install into Glyphs 3 explicitly, pass `--glyphs-version 3`. The macOS app instead detects and offers every installed Glyphs 3/4 target.
+The terminal installer targets Glyphs 4 by default. To install into Glyphs 3 explicitly, pass `--glyphs-version 3`. The macOS app instead detects and offers every installed Glyphs 3/4 target.
 
 Finder alternative on macOS: double-click `RunInstall.command` in the repo root. It launches the same installer. If Gatekeeper blocks it, right-click → Open once.
 
