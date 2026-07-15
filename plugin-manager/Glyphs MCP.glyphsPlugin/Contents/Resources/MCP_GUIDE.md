@@ -37,8 +37,8 @@ Use `docs_search` and `docs_get` when API details are uncertain.
 
 ## Glyphs 3 Compatibility
 
-This `glyphs4` branch can run in Glyphs 3 for compatibility testing, but Glyphs
-4 is the primary runtime. When `get_server_info` reports Glyphs `3.x`, treat
+Glyphs MCP supports Glyphs 3 and Glyphs 4 from `main`. When `get_server_info`
+reports Glyphs `3.x`, treat
 sidebearing reads/writes as best-effort and prefer dry runs before confirmed
 spacing or metric mutations.
 

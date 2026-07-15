@@ -56,7 +56,7 @@ def register_guide_resource() -> None:
         _add_markdown_resource(
             uri=_GLYPHS3_COMPAT_RESOURCE_URI,
             name="Glyphs 3 compatibility notes",
-            description="Known Glyphs 3 limitations when running the Glyphs 4 branch of Glyphs MCP.",
+            description="Known limitations when running Glyphs MCP in Glyphs 3.",
             path=_GLYPHS3_COMPAT_PATH,
             tags={"guide", "glyphs-mcp", "glyphs3", "compatibility"},
         )
