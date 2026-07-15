@@ -1,6 +1,6 @@
 import Foundation
 
-public enum GlyphsMajorVersion: String, CaseIterable {
+public enum GlyphsMajorVersion: String, CaseIterable, Identifiable, Comparable, Sendable {
 	case v3 = "3"
 	case v4 = "4"
 
@@ -10,11 +10,44 @@ public enum GlyphsMajorVersion: String, CaseIterable {
 		"Glyphs \(rawValue)"
 	}
 
+	public var id: String { rawValue }
+
+	public var displayName: String {
+		"Glyphs \(rawValue)"
+	}
+
+	public var stableBundleIdentifier: String {
+		switch self {
+		case .v3: return "com.GeorgSeifert.Glyphs3"
+		case .v4: return "com.GeorgSeifert.Glyphs4"
+		}
+	}
+
+	public var bundleIdentifiers: [String] {
+		switch self {
+		case .v3:
+			return [stableBundleIdentifier, "com.GeorgSeifert.Glyphs3Beta"]
+		case .v4:
+			return [stableBundleIdentifier, "com.GeorgSeifert.Glyphs4Beta"]
+		}
+	}
+
+	public var applicationNames: [String] {
+		switch self {
+		case .v3: return ["Glyphs 3", "Glyphs3"]
+		case .v4: return ["Glyphs 4", "Glyphs4"]
+		}
+	}
+
 	public var preferencesSuiteName: String {
 		switch self {
 		case .v3: return "com.GeorgSeifert.Glyphs3"
 		case .v4: return "com.GeorgSeifert.Glyphs4"
 		}
+	}
+
+	public static func < (lhs: GlyphsMajorVersion, rhs: GlyphsMajorVersion) -> Bool {
+		lhs.rawValue < rhs.rawValue
 	}
 }
 

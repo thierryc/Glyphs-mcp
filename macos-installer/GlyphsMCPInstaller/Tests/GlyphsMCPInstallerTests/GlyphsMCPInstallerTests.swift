@@ -1115,4 +1115,500 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		let res = try await GitHubPluginVersionFetcher.fetchLatestVersion(client: client, timeout: 1, cacheMaxAge: -1)
 		XCTAssertEqual(res.version.displayString, "9.9.9")
 	}
+
+	func testGlyphsApplicationClassifierHandlesStableAndBetaBundles() {
+		XCTAssertEqual(
+			GlyphsApplicationDetector.classify(
+				bundleIdentifier: "com.GeorgSeifert.Glyphs3",
+				shortVersion: "3.5",
+				displayName: "Glyphs 3",
+				fileName: "Glyphs 3"
+			),
+			.v3
+		)
+		XCTAssertEqual(
+			GlyphsApplicationDetector.classify(
+				bundleIdentifier: "com.GeorgSeifert.Glyphs4Beta",
+				shortVersion: "4.0a",
+				displayName: "Glyphs 4",
+				fileName: "Glyphs 4"
+			),
+			.v4
+		)
+		XCTAssertEqual(
+			GlyphsApplicationDetector.classify(
+				bundleIdentifier: "com.GeorgSeifert.GlyphsBeta",
+				shortVersion: "4.1b",
+				displayName: "Glyphs Beta",
+				fileName: "Glyphs Beta"
+			),
+			.v4
+		)
+		XCTAssertNil(GlyphsApplicationDetector.classify(
+			bundleIdentifier: "cx.ap.glyphsMcpServerInstaller",
+			shortVersion: "1.2.3",
+			displayName: "Glyphs MCP Installer",
+			fileName: "GlyphsMCPInstaller"
+		))
+		XCTAssertNil(GlyphsApplicationDetector.classify(
+			bundleIdentifier: "com.example.Unrelated",
+			shortVersion: "4.0",
+			displayName: "Unrelated App",
+			fileName: "Unrelated App"
+		))
+	}
+
+	func testGlyphsApplicationDetectorFindsBothAndPrefersStableBundle() throws {
+		let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+		let glyphs3Beta = try makeFakeGlyphsApplication(
+			under: root,
+			name: "Glyphs 3 Beta",
+			bundleIdentifier: "com.GeorgSeifert.Glyphs3Beta",
+			shortVersion: "3.6b"
+		)
+		let glyphs3Stable = try makeFakeGlyphsApplication(
+			under: root,
+			name: "Glyphs 3",
+			bundleIdentifier: "com.GeorgSeifert.Glyphs3",
+			shortVersion: "3.5"
+		)
+		let glyphs4 = try makeFakeGlyphsApplication(
+			under: root,
+			name: "Glyphs Beta",
+			bundleIdentifier: "com.GeorgSeifert.GlyphsBeta",
+			shortVersion: "4.0a"
+		)
+		let unrelated = try makeFakeGlyphsApplication(
+			under: root,
+			name: "Glyphs MCP Installer",
+			bundleIdentifier: "cx.ap.glyphsMcpServerInstaller",
+			shortVersion: "1.2.3"
+		)
+
+		let detected = GlyphsApplicationDetector.detect(candidates: [glyphs3Beta, glyphs4, unrelated, glyphs3Stable])
+		XCTAssertEqual(detected.map(\.majorVersion), [.v3, .v4])
+		XCTAssertEqual(detected.first(where: { $0.majorVersion == .v3 })?.bundleIdentifier, "com.GeorgSeifert.Glyphs3")
+		XCTAssertEqual(detected.first(where: { $0.majorVersion == .v4 })?.shortVersion, "4.0a")
+		XCTAssertEqual(GlyphsApplicationDetector.detect(candidates: [glyphs3Stable]).map(\.majorVersion), [.v3])
+		XCTAssertEqual(GlyphsApplicationDetector.detect(candidates: [glyphs4]).map(\.majorVersion), [.v4])
+		XCTAssertTrue(GlyphsApplicationDetector.detect(candidates: [unrelated]).isEmpty)
+		XCTAssertTrue(GlyphsApplicationDetector.detect(candidates: []).isEmpty)
+	}
+
+	func testTargetSelectionDefaultsToEveryDetectedVersionAndExcludesMissing() {
+		let targets = [
+			makeTargetStatus(version: .v3, detected: true),
+			makeTargetStatus(version: .v4, detected: true),
+		]
+		XCTAssertEqual(InstallerTargetSelectionPolicy.initialSelection(from: targets), Set([.v3, .v4]))
+
+		let oneMissing = [
+			makeTargetStatus(version: .v3, detected: false),
+			makeTargetStatus(version: .v4, detected: true),
+		]
+		XCTAssertEqual(InstallerTargetSelectionPolicy.initialSelection(from: oneMissing), Set([.v4]))
+	}
+
+	func testTargetSelectionPreservesChoicesDuringRefresh() {
+		XCTAssertEqual(
+			InstallerTargetSelectionPolicy.reconciledSelection(
+				current: [],
+				detected: [.v3, .v4],
+				hasInitialized: false
+			),
+			[.v3, .v4]
+		)
+		XCTAssertEqual(
+			InstallerTargetSelectionPolicy.reconciledSelection(
+				current: [.v3],
+				detected: [.v3, .v4],
+				hasInitialized: true
+			),
+			[.v3]
+		)
+		XCTAssertEqual(
+			InstallerTargetSelectionPolicy.reconciledSelection(
+				current: [.v3],
+				detected: [.v4],
+				hasInitialized: true
+			),
+			[]
+		)
+	}
+
+	func testTargetSelectionBlocksOnlySelectedRunningOrInvalidVersion() {
+		let targets = [
+			makeTargetStatus(version: .v3, detected: true, isRunning: true),
+			makeTargetStatus(version: .v4, detected: true),
+		]
+		XCTAssertNil(InstallerTargetSelectionPolicy.installFailureReason(selectedVersions: [.v4], targets: targets))
+		XCTAssertTrue(
+			InstallerTargetSelectionPolicy.installFailureReason(selectedVersions: [.v3, .v4], targets: targets)?.contains("Glyphs 3") == true
+		)
+		XCTAssertNotNil(InstallerTargetSelectionPolicy.installFailureReason(selectedVersions: [], targets: targets))
+
+		let missing = [makeTargetStatus(version: .v3, detected: false)]
+		XCTAssertTrue(
+			InstallerTargetSelectionPolicy.installFailureReason(selectedVersions: [.v3], targets: missing)?.contains("not detected") == true
+		)
+
+		let invalidPython = [
+			makeTargetStatus(version: .v3, detected: true),
+			makeTargetStatus(version: .v4, detected: true, pythonInstallFailureReason: "Python is unavailable."),
+		]
+		XCTAssertTrue(
+			InstallerTargetSelectionPolicy.installFailureReason(selectedVersions: [.v3, .v4], targets: invalidPython)?.contains("Python is unavailable") == true
+		)
+	}
+
+	func testAggregateInstallButtonTitleHandlesMixedState() {
+		let targets = [
+			makeTargetStatus(version: .v3, detected: true, installedPluginVersion: "1.0.0"),
+			makeTargetStatus(version: .v4, detected: true),
+		]
+		XCTAssertEqual(
+			InstallerTargetSelectionPolicy.installButtonTitle(selectedVersions: [.v3, .v4], targets: targets),
+			"Install / Update Glyphs MCP Server"
+		)
+		XCTAssertEqual(
+			InstallerTargetSelectionPolicy.installButtonTitle(selectedVersions: [.v3], targets: targets),
+			"Update Glyphs MCP Server"
+		)
+	}
+
+	func testInstallTargetPlanDeduplicatesSharedCustomPythonOnly() {
+		let python = URL(fileURLWithPath: "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3")
+		let shared3 = GlyphsInstallTargetPlan(
+			version: .v3,
+			pythonSelection: .custom(python3: python),
+			pluginsDirectory: InstallerPaths.glyphsPluginsDir(glyphsVersion: .v3),
+			pluginInstallStrategy: .bundledPayload
+		)
+		let shared4 = GlyphsInstallTargetPlan(
+			version: .v4,
+			pythonSelection: .custom(python3: python),
+			pluginsDirectory: InstallerPaths.glyphsPluginsDir(glyphsVersion: .v4),
+			pluginInstallStrategy: .bundledPayload
+		)
+		XCTAssertEqual(shared3.dependencyInstallKey, shared4.dependencyInstallKey)
+		XCTAssertNotEqual(shared3.pluginsDirectory, shared4.pluginsDirectory)
+
+		let bundled3 = GlyphsInstallTargetPlan(
+			version: .v3,
+			pythonSelection: .glyphs(pip3: URL(fileURLWithPath: "/tmp/pip3"), python3: python),
+			pluginsDirectory: InstallerPaths.glyphsPluginsDir(glyphsVersion: .v3),
+			pluginInstallStrategy: .bundledPayload
+		)
+		let bundled4 = GlyphsInstallTargetPlan(
+			version: .v4,
+			pythonSelection: .glyphs(pip3: URL(fileURLWithPath: "/tmp/pip3"), python3: python),
+			pluginsDirectory: InstallerPaths.glyphsPluginsDir(glyphsVersion: .v4),
+			pluginInstallStrategy: .bundledPayload
+		)
+		XCTAssertNotEqual(bundled3.dependencyInstallKey, bundled4.dependencyInstallKey)
+	}
+
+	func testDevelopmentSymlinkStrategyKeepsByDefaultAndReplacesOnRequest() {
+		XCTAssertEqual(
+			GlyphsPluginInstallStrategy.resolve(installedPluginIsSymlink: true, replaceDevSymlink: false),
+			.keepDevSymlink
+		)
+		XCTAssertEqual(
+			GlyphsPluginInstallStrategy.resolve(installedPluginIsSymlink: true, replaceDevSymlink: true),
+			.latestFromGitHub
+		)
+		XCTAssertEqual(
+			GlyphsPluginInstallStrategy.resolve(installedPluginIsSymlink: false, replaceDevSymlink: true),
+			.bundledPayload
+		)
+	}
+
+	func testCodexUninstallerRemovesOnlyMatchingServerBlock() throws {
+		let toml = """
+		model = "gpt-5"
+
+		[mcp_servers.glyphs-mcp-server]
+		url = "http://127.0.0.1:9680/mcp/"
+		enabled = true
+
+		[mcp_servers.keep-me]
+		url = "https://example.test/mcp"
+		"""
+
+		XCTAssertEqual(CodexTomlUninstaller.inspect(toml: toml).safetyState, .removable)
+		let updated = try XCTUnwrap(CodexTomlUninstaller.removingMatchingEntry(toml: toml))
+		XCTAssertFalse(updated.contains("[mcp_servers.glyphs-mcp-server]"))
+		XCTAssertTrue(updated.contains("model = \"gpt-5\""))
+		XCTAssertTrue(updated.contains("[mcp_servers.keep-me]"))
+	}
+
+	func testCodexUninstallerPreservesSameNamedCustomEntry() {
+		let toml = """
+		[mcp_servers.glyphs-mcp-server]
+		url = "https://custom.example/mcp"
+		"""
+
+		XCTAssertEqual(CodexTomlUninstaller.inspect(toml: toml).safetyState, .preserved)
+		XCTAssertNil(CodexTomlUninstaller.removingMatchingEntry(toml: toml))
+	}
+
+	func testClaudeJSONUninstallerRequiresExactInstallerSignature() throws {
+		let root: [String: Any] = [
+			"theme": "dark",
+			"mcpServers": [
+				"glyphs-mcp": ["type": "http", "url": InstallerConstants.endpointURL.absoluteString],
+				"keep-me": ["type": "http", "url": "https://example.test/mcp"],
+			],
+		]
+		let data = try JSONSerialization.data(withJSONObject: root)
+
+		XCTAssertEqual(
+			ClaudeJSONUninstaller.inspect(json: data, client: .claudeCode, serverName: InstallerConstants.claudeCodeServerName).safetyState,
+			.removable
+		)
+		let updated = try XCTUnwrap(ClaudeJSONUninstaller.removingMatchingEntry(
+			json: data,
+			client: .claudeCode,
+			serverName: InstallerConstants.claudeCodeServerName
+		))
+		let updatedRoot = try XCTUnwrap(JSONSerialization.jsonObject(with: updated) as? [String: Any])
+		let servers = try XCTUnwrap(updatedRoot["mcpServers"] as? [String: Any])
+		XCTAssertNil(servers["glyphs-mcp"])
+		XCTAssertNotNil(servers["keep-me"])
+		XCTAssertEqual(updatedRoot["theme"] as? String, "dark")
+
+		let custom = try JSONSerialization.data(withJSONObject: [
+			"mcpServers": ["glyphs-mcp": ["type": "http", "url": "https://custom.example/mcp"]],
+		])
+		XCTAssertEqual(
+			ClaudeJSONUninstaller.inspect(json: custom, client: .claudeCode, serverName: InstallerConstants.claudeCodeServerName).safetyState,
+			.preserved
+		)
+	}
+
+	func testClaudeDesktopUninstallerMatchesMcpRemoteCommand() throws {
+		let data = try JSONSerialization.data(withJSONObject: [
+			"mcpServers": [
+				"glyphs-mcp-server": [
+					"command": "npx",
+					"args": ["mcp-remote", InstallerConstants.endpointURL.absoluteString],
+				],
+			],
+		])
+		XCTAssertEqual(
+			ClaudeJSONUninstaller.inspect(json: data, client: .claudeDesktop, serverName: InstallerConstants.claudeDesktopServerName).safetyState,
+			.removable
+		)
+	}
+
+	func testUninstallScannerSelectsOnlyExactManagedArtifacts() throws {
+		let root = FileManager.default.temporaryDirectory.appendingPathComponent("glyphs-mcp-uninstall-scan-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let locations = makeUninstallLocations(root: root)
+		let plugin3 = try XCTUnwrap(locations.pluginBundles[.v3])
+		try FileManager.default.createDirectory(at: plugin3, withIntermediateDirectories: true)
+
+		let managed = locations.codexSkillsRoot.appendingPathComponent("glyphs-mcp-connect", isDirectory: true)
+		let similarlyNamed = locations.codexSkillsRoot.appendingPathComponent("glyphs-mcp-private-notes", isDirectory: true)
+		try FileManager.default.createDirectory(at: managed, withIntermediateDirectories: true)
+		try FileManager.default.createDirectory(at: similarlyNamed, withIntermediateDirectories: true)
+
+		let plan = GlyphsUninstallScanner.scan(managedSkillNames: ["glyphs-mcp-connect"], locations: locations)
+		XCTAssertEqual(plan.candidates.first(where: { $0.id == "plugin-3" })?.safetyState, .removable)
+		XCTAssertEqual(plan.candidates.first(where: { $0.id == "plugin-4" })?.safetyState, .missing)
+		XCTAssertTrue(plan.selectedCandidateIDs.contains("skill-codex-glyphs-mcp-connect"))
+		XCTAssertFalse(plan.candidates.contains(where: { $0.location == similarlyNamed }))
+	}
+
+	func testUninstallSelectionBlocksOnlySelectedRunningGlyphsVersion() {
+		let plugin3 = UninstallCandidate(
+			id: "plugin-3",
+			component: .plugin,
+			title: "Glyphs 3 plug-in",
+			location: URL(fileURLWithPath: "/tmp/Glyphs 3/Plugins/Glyphs MCP.glyphsPlugin"),
+			safetyState: .removable,
+			detail: "Installed",
+			glyphsVersion: .v3
+		)
+		let plugin4 = UninstallCandidate(
+			id: "plugin-4",
+			component: .plugin,
+			title: "Glyphs 4 plug-in",
+			location: URL(fileURLWithPath: "/tmp/Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin"),
+			safetyState: .removable,
+			detail: "Installed",
+			glyphsVersion: .v4
+		)
+		let selected3 = GlyphsUninstallPlan(candidates: [plugin3, plugin4]).selecting(["plugin-3"])
+
+		XCTAssertTrue(GlyphsUninstallSelectionPolicy.canExecute(
+			plan: selected3,
+			hasAcknowledged: true,
+			runningVersions: [.v4],
+			isBusy: false
+		))
+		XCTAssertFalse(GlyphsUninstallSelectionPolicy.canExecute(
+			plan: selected3,
+			hasAcknowledged: true,
+			runningVersions: [.v3],
+			isBusy: false
+		))
+		XCTAssertFalse(GlyphsUninstallSelectionPolicy.canExecute(
+			plan: selected3,
+			hasAcknowledged: false,
+			runningVersions: [],
+			isBusy: false
+		))
+	}
+
+	func testUninstallerRemovesSymlinkWithoutFollowingItAndPreservesPython() throws {
+		let root = FileManager.default.temporaryDirectory.appendingPathComponent("glyphs-mcp-uninstall-symlink-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let locations = makeUninstallLocations(root: root)
+		let source = root.appendingPathComponent("source/Glyphs MCP.glyphsPlugin", isDirectory: true)
+		try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+		let sourceMarker = source.appendingPathComponent("keep.txt")
+		try Data("keep".utf8).write(to: sourceMarker)
+
+		let plugin4 = try XCTUnwrap(locations.pluginBundles[.v4])
+		try FileManager.default.createDirectory(at: plugin4.deletingLastPathComponent(), withIntermediateDirectories: true)
+		try FileManager.default.createSymbolicLink(at: plugin4, withDestinationURL: source)
+		let pythonMarker = root.appendingPathComponent("Glyphs 4/Scripts/site-packages/shared-package/__init__.py")
+		try FileManager.default.createDirectory(at: pythonMarker.deletingLastPathComponent(), withIntermediateDirectories: true)
+		try Data("shared".utf8).write(to: pythonMarker)
+
+		let scanned = GlyphsUninstallScanner.scan(managedSkillNames: [], locations: locations)
+		let plan = scanned.selecting(["plugin-4"])
+		let report = GlyphsUninstaller(log: { _ in }).execute(plan: plan)
+
+		XCTAssertEqual(report.removedCount, 1)
+		XCTAssertFalse(GlyphsUninstallScanner.itemExists(at: plugin4))
+		XCTAssertTrue(FileManager.default.fileExists(atPath: sourceMarker.path))
+		XCTAssertTrue(FileManager.default.fileExists(atPath: pythonMarker.path))
+		XCTAssertTrue(FileManager.default.fileExists(atPath: plugin4.deletingLastPathComponent().path))
+	}
+
+	func testUninstallerBacksUpConfigAndIsIdempotent() throws {
+		let root = FileManager.default.temporaryDirectory.appendingPathComponent("glyphs-mcp-uninstall-config-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let locations = makeUninstallLocations(root: root)
+		try FileManager.default.createDirectory(at: locations.codexConfig.deletingLastPathComponent(), withIntermediateDirectories: true)
+		let toml = """
+		model = "gpt-5"
+		[mcp_servers.glyphs-mcp-server]
+		url = "http://127.0.0.1:9680/mcp/"
+		[mcp_servers.keep-me]
+		url = "https://example.test/mcp"
+		"""
+		try toml.write(to: locations.codexConfig, atomically: true, encoding: .utf8)
+
+		let scanned = GlyphsUninstallScanner.scan(managedSkillNames: [], locations: locations)
+		let first = GlyphsUninstaller(log: { _ in }).execute(plan: scanned.selecting(["client-codex"]))
+		XCTAssertEqual(first.removedCount, 1)
+		let updated = try String(contentsOf: locations.codexConfig, encoding: .utf8)
+		XCTAssertFalse(updated.contains("[mcp_servers.glyphs-mcp-server]"))
+		XCTAssertTrue(updated.contains("[mcp_servers.keep-me]"))
+		let backups = try FileManager.default.contentsOfDirectory(at: locations.codexConfig.deletingLastPathComponent(), includingPropertiesForKeys: nil)
+			.filter { $0.lastPathComponent.hasPrefix("config.toml.bak-") }
+		XCTAssertEqual(backups.count, 1)
+
+		let rescanned = GlyphsUninstallScanner.scan(managedSkillNames: [], locations: locations)
+		XCTAssertEqual(rescanned.candidates.first(where: { $0.id == "client-codex" })?.safetyState, .missing)
+		let second = GlyphsUninstaller(log: { _ in }).execute(plan: rescanned.selecting(["client-codex"]))
+		XCTAssertEqual(second.removedCount, 0)
+		XCTAssertEqual(second.failedCount, 0)
+	}
+
+	func testMalformedClientConfigurationIsDisabledAndPreserved() throws {
+		let root = FileManager.default.temporaryDirectory.appendingPathComponent("glyphs-mcp-uninstall-malformed-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let locations = makeUninstallLocations(root: root)
+		try FileManager.default.createDirectory(at: locations.claudeCodeConfig.deletingLastPathComponent(), withIntermediateDirectories: true)
+		try Data("{not-json".utf8).write(to: locations.claudeCodeConfig)
+
+		let plan = GlyphsUninstallScanner.scan(managedSkillNames: [], locations: locations)
+		let candidate = try XCTUnwrap(plan.candidates.first(where: { $0.id == "client-claudeCode" }))
+		XCTAssertEqual(candidate.safetyState, .blocked)
+		XCTAssertFalse(plan.selectedCandidateIDs.contains(candidate.id))
+		XCTAssertEqual(try Data(contentsOf: locations.claudeCodeConfig), Data("{not-json".utf8))
+	}
+
+	private func makeUninstallLocations(root: URL) -> GlyphsUninstallLocations {
+		GlyphsUninstallLocations(
+			pluginBundles: [
+				.v3: root.appendingPathComponent("Glyphs 3/Plugins/Glyphs MCP.glyphsPlugin", isDirectory: true),
+				.v4: root.appendingPathComponent("Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin", isDirectory: true),
+			],
+			codexSkillsRoot: root.appendingPathComponent(".codex/skills", isDirectory: true),
+			claudeCodeSkillsRoot: root.appendingPathComponent(".claude/skills", isDirectory: true),
+			codexConfig: root.appendingPathComponent(".codex/config.toml"),
+			claudeDesktopConfig: root.appendingPathComponent("Claude/claude_desktop_config.json"),
+			claudeCodeConfig: root.appendingPathComponent(".claude.json")
+		)
+	}
+
+	private func makeFakeGlyphsApplication(
+		under root: URL,
+		name: String,
+		bundleIdentifier: String,
+		shortVersion: String
+	) throws -> URL {
+		let appURL = root.appendingPathComponent("\(name).app", isDirectory: true)
+		let contents = appURL.appendingPathComponent("Contents", isDirectory: true)
+		try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true, attributes: nil)
+		let plist: [String: Any] = [
+			"CFBundleIdentifier": bundleIdentifier,
+			"CFBundleShortVersionString": shortVersion,
+			"CFBundleDisplayName": name,
+		]
+		let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+		try data.write(to: contents.appendingPathComponent("Info.plist"))
+		return appURL
+	}
+
+	private func makeTargetStatus(
+		version: GlyphsMajorVersion,
+		detected: Bool,
+		isRunning: Bool = false,
+		installedPluginVersion: String? = nil,
+		pythonInstallFailureReason: String? = nil
+	) -> GlyphsTargetStatusSnapshot {
+		let app = detected ? GlyphsApplicationInfo(
+			majorVersion: version,
+			appURL: URL(fileURLWithPath: "/Applications/\(version.displayName).app"),
+			bundleIdentifier: version.stableBundleIdentifier,
+			shortVersion: version.rawValue + ".0",
+			displayName: version.displayName,
+			isBeta: false
+		) : nil
+		let pluginVersion = installedPluginVersion.map {
+			PluginBundleVersion(shortVersion: $0, buildVersion: $0)
+		}
+		let pluginURL = InstallerPaths.glyphsPluginsDir(glyphsVersion: version)
+			.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+		let inspection = PluginInstaller.InstalledPluginInspection(
+			bundleURL: pluginURL,
+			mode: pluginVersion == nil ? .notInstalled : .bundle,
+			version: pluginVersion,
+			symlinkTargetPath: nil
+		)
+		let pythonStatus = GlyphsPythonStatus(
+			source: pythonInstallFailureReason == nil ? .glyphsSetting : nil,
+			version: pythonInstallFailureReason == nil ? "3.14.0" : nil,
+			pythonPath: pythonInstallFailureReason == nil ? "/Library/Frameworks/Python.framework/Versions/3.14/bin/python3" : nil,
+			pipPath: nil,
+			summary: pythonInstallFailureReason == nil ? "Using Glyphs-selected Python 3.14.0" : "No usable Glyphs Python detected",
+			installFailureReason: pythonInstallFailureReason
+		)
+		return GlyphsTargetStatusSnapshot(
+			version: version,
+			application: app,
+			baseDirectory: InstallerPaths.glyphsBaseDir(glyphsVersion: version),
+			pluginsDirectory: InstallerPaths.glyphsPluginsDir(glyphsVersion: version),
+			pluginInspection: inspection,
+			payloadPluginVersion: PluginBundleVersion(shortVersion: "1.2.3", buildVersion: "1.2.3"),
+			pythonStatus: pythonStatus,
+			isRunning: isRunning
+		)
+	}
 }

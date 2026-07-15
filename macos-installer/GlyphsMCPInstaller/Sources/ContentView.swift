@@ -18,26 +18,36 @@ struct ContentView: View {
 				switch model.selectedTab {
 				case .wizard:
 					WizardTabView(
-						snapshot: snapshot,
 						action: action,
 						configureCodex: $model.configureCodex,
 						configureClaudeDesktop: $model.configureClaudeDesktop,
 						configureClaudeCode: $model.configureClaudeCode,
 						installCodexSkills: $model.installCodexSkills,
 						installClaudeCodeSkills: $model.installClaudeCodeSkills,
-						replaceDevPluginWithLatestOnlineVersion: $model.replaceDevPluginWithLatestOnlineVersion,
+						targets: snapshot.glyphsTargets,
+						selectedGlyphsRunning: model.selectedGlyphsAreRunning,
+						installMessage: model.installFailureReason,
+						canInstall: model.canInstall,
+						wizardButtonTitle: model.wizardButtonTitle,
+						bindingForTarget: model.binding(for:),
+						replacementBindingForTarget: model.replacementBinding(for:),
 						onRunWizard: model.startWizard,
 						onCancel: model.cancelWizard,
-						onQuitGlyphs: GlyphsRuntime.quitGlyphsWithConfirmation
+						onQuitGlyphs: model.quitSelectedGlyphsWithConfirmation
 					)
 				case .install:
 					InstallTabView(
-						snapshot: snapshot,
+						targets: snapshot.glyphsTargets,
 						action: action,
-						replaceDevPluginWithLatestOnlineVersion: $model.replaceDevPluginWithLatestOnlineVersion,
+						selectedGlyphsRunning: model.selectedGlyphsAreRunning,
+						installMessage: model.installFailureReason,
+						canInstall: model.canInstall,
+						installButtonTitle: model.installButtonTitle,
+						bindingForTarget: model.binding(for:),
+						replacementBindingForTarget: model.replacementBinding(for:),
 						onInstall: model.startInstall,
 						onCancel: model.cancelInstall,
-						onQuitGlyphs: GlyphsRuntime.quitGlyphsWithConfirmation
+						onQuitGlyphs: model.quitSelectedGlyphsWithConfirmation
 					)
 				case .link:
 					LinkTabView(
@@ -62,8 +72,8 @@ struct ContentView: View {
 					StatusTabView(
 						snapshot: snapshot,
 						isAdvancedModeEnabled: model.isAdvancedModeEnabled,
-						pluginsFolder: model.glyphsPluginsDir,
 						onRefresh: model.refreshSnapshot,
+						onUninstall: model.presentUninstall,
 						onReveal: model.revealInFinder(url:)
 					)
 				case .help:
@@ -84,24 +94,46 @@ struct ContentView: View {
 		.frame(minWidth: 920, minHeight: 700)
 		.background(VisualEffectBackground().ignoresSafeArea())
 		.groupBoxStyle(GlassGroupBoxStyle())
+		.sheet(isPresented: $model.isShowingUninstallSheet) {
+			UninstallReviewSheet(
+				plan: model.uninstallPlan,
+				action: model.actionState,
+				report: model.uninstallReport,
+				hasAcknowledged: $model.hasAcknowledgedUninstall,
+				selectedCount: model.selectedUninstallCandidates.count,
+				selectedGlyphsRunning: model.selectedUninstallGlyphsAreRunning,
+				canUninstall: model.canRunUninstall,
+				bindingForCandidate: model.uninstallBinding(for:),
+				onQuitGlyphs: model.quitSelectedUninstallGlyphsWithConfirmation,
+				onUninstall: model.startUninstall,
+				onDismiss: model.dismissUninstall
+			)
+		}
 	}
 }
 
 private struct WizardTabView: View {
-	let snapshot: InstallerStatusSnapshot
 	let action: InstallerActionState
 	@Binding var configureCodex: Bool
 	@Binding var configureClaudeDesktop: Bool
 	@Binding var configureClaudeCode: Bool
 	@Binding var installCodexSkills: Bool
 	@Binding var installClaudeCodeSkills: Bool
-	@Binding var replaceDevPluginWithLatestOnlineVersion: Bool
+	let targets: [GlyphsTargetStatusSnapshot]
+	let selectedGlyphsRunning: Bool
+	let installMessage: String?
+	let canInstall: Bool
+	let wizardButtonTitle: String
+	let bindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
+	let replacementBindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
 	let onRunWizard: () -> Void
 	let onCancel: () -> Void
 	let onQuitGlyphs: () -> Void
 
 	private var selectedSummary: String {
-		var items: [String] = ["plug-in", "dependencies"]
+		var items = targets
+			.filter { bindingForTarget($0.version).wrappedValue }
+			.map { $0.version.displayName }
 		if configureCodex { items.append("Codex") }
 		if configureClaudeDesktop { items.append("Claude Desktop") }
 		if configureClaudeCode { items.append("Claude Code") }
@@ -116,31 +148,25 @@ private struct WizardTabView: View {
 					.foregroundStyle(.secondary)
 					.font(.title3)
 
-				if snapshot.glyphsRunning {
+				if selectedGlyphsRunning {
 					WarningBanner(
-						title: "Glyphs is running",
-						message: "Quit Glyphs before running the wizard so the plug-in can update cleanly.",
+						title: "Selected Glyphs version is running",
+						message: installMessage ?? "Quit the selected Glyphs versions before running the wizard.",
 						buttonTitle: "Quit Glyphs…",
 						action: onQuitGlyphs
 					)
 					.frame(maxWidth: 760)
-				} else if let message = snapshot.installMessage {
+				} else if let message = installMessage {
 					WarningBanner(title: "Setup blocked", message: message)
 						.frame(maxWidth: 760)
 				}
 
-				if snapshot.showsDevPluginReplacementOption, let devPluginWarning = snapshot.devPluginWarning {
-					GroupBox {
-						VStack(alignment: .leading, spacing: 12) {
-							WarningBanner(
-								title: "Development plug-in detected",
-								message: devPluginWarning
-							)
-							Toggle("Replace dev plug-in with latest online version", isOn: $replaceDevPluginWithLatestOnlineVersion)
-						}
-					}
-					.frame(maxWidth: 760)
-				}
+				GlyphsTargetSelectionGroup(
+					targets: targets,
+					isBusy: action.isBusy,
+					bindingForTarget: bindingForTarget,
+					replacementBindingForTarget: replacementBindingForTarget
+				)
 
 				GroupBox("Setup") {
 					VStack(alignment: .leading, spacing: 14) {
@@ -166,8 +192,8 @@ private struct WizardTabView: View {
 				}
 
 				HeroActionSection(
-					title: snapshot.wizardButtonTitle,
-					isDisabled: !snapshot.canInstall || action.isBusy,
+					title: wizardButtonTitle,
+					isDisabled: !canInstall || action.isBusy,
 					action: onRunWizard,
 					showsProgress: action.activeKind == .wizard
 				) {
@@ -205,9 +231,14 @@ private struct WizardTabView: View {
 }
 
 private struct InstallTabView: View {
-	let snapshot: InstallerStatusSnapshot
+	let targets: [GlyphsTargetStatusSnapshot]
 	let action: InstallerActionState
-	@Binding var replaceDevPluginWithLatestOnlineVersion: Bool
+	let selectedGlyphsRunning: Bool
+	let installMessage: String?
+	let canInstall: Bool
+	let installButtonTitle: String
+	let bindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
+	let replacementBindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
 	let onInstall: () -> Void
 	let onCancel: () -> Void
 	let onQuitGlyphs: () -> Void
@@ -216,40 +247,27 @@ private struct InstallTabView: View {
 		CenteredTabScroll {
 				PageIntroText("Update the Glyphs MCP plug-in and its Python dependencies.")
 
-				if snapshot.glyphsRunning {
+				if selectedGlyphsRunning {
 					WarningBanner(
-						title: "Glyphs is running",
-						message: "Quit Glyphs before updating the plug-in.",
+						title: "Selected Glyphs version is running",
+						message: installMessage ?? "Quit the selected Glyphs versions before updating the plug-in.",
 						buttonTitle: "Quit Glyphs…",
 						action: onQuitGlyphs
 					)
-				} else if let message = snapshot.installMessage {
+				} else if let message = installMessage {
 					WarningBanner(title: "Install blocked", message: message)
 				}
 
-				if snapshot.showsDevPluginReplacementOption, let devPluginWarning = snapshot.devPluginWarning {
-					GroupBox {
-						VStack(alignment: .leading, spacing: 12) {
-							WarningBanner(
-								title: "Development plug-in",
-								message: devPluginWarning
-							)
-							Toggle("Replace with latest online plug-in", isOn: $replaceDevPluginWithLatestOnlineVersion)
-						}
-					}
-				}
-
-				GroupBox("Plugin") {
-					VStack(alignment: .leading, spacing: 14) {
-						SimpleInfoRow(title: "Versions", value: snapshot.versionLine)
-						SimpleInfoRow(title: "Glyphs Python", value: snapshot.pythonStatus.summary)
-					}
-					.frame(maxWidth: .infinity, alignment: .leading)
-				}
+				GlyphsTargetSelectionGroup(
+					targets: targets,
+					isBusy: action.isBusy,
+					bindingForTarget: bindingForTarget,
+					replacementBindingForTarget: replacementBindingForTarget
+				)
 
 				HeroActionSection(
-					title: snapshot.installButtonTitle,
-					isDisabled: !snapshot.canInstall || action.isBusy,
+					title: installButtonTitle,
+					isDisabled: !canInstall || action.isBusy,
 					action: onInstall,
 					showsProgress: action.activeKind == .install
 				) {
@@ -282,6 +300,78 @@ private struct InstallTabView: View {
 
 				InstallerLogGroupBox(logText: action.logText, isBusy: action.activeKind == .install)
 		}
+	}
+}
+
+private struct GlyphsTargetSelectionGroup: View {
+	let targets: [GlyphsTargetStatusSnapshot]
+	let isBusy: Bool
+	let bindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
+	let replacementBindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
+
+	var body: some View {
+		GroupBox("Install for") {
+			VStack(alignment: .leading, spacing: 14) {
+				ForEach(Array(targets.sorted { $0.version < $1.version }.enumerated()), id: \.element.id) { entry in
+					if entry.offset > 0 { Divider() }
+					GlyphsTargetSelectionRow(
+						target: entry.element,
+						isSelected: bindingForTarget(entry.element.version),
+						replaceDevSymlink: replacementBindingForTarget(entry.element.version),
+						isBusy: isBusy
+					)
+				}
+			}
+			.frame(maxWidth: .infinity, alignment: .leading)
+		}
+	}
+}
+
+private struct GlyphsTargetSelectionRow: View {
+	let target: GlyphsTargetStatusSnapshot
+	@Binding var isSelected: Bool
+	@Binding var replaceDevSymlink: Bool
+	let isBusy: Bool
+
+	var body: some View {
+		VStack(alignment: .leading, spacing: 8) {
+			HStack(alignment: .firstTextBaseline) {
+				Toggle(target.version.displayName, isOn: $isSelected)
+					.disabled(!target.isDetected || isBusy)
+				Spacer()
+				Text(target.isDetected ? "Detected" : "Not detected")
+					.font(.callout.weight(.medium))
+					.foregroundStyle(target.isDetected ? Color.green : Color.secondary)
+			}
+
+			if let application = target.application {
+				Text([application.shortVersion, application.appURL.path].compactMap { $0 }.joined(separator: " • "))
+					.font(.callout)
+					.foregroundStyle(.secondary)
+					.textSelection(.enabled)
+			} else {
+				Text("Install \(target.version.displayName) before selecting this target.")
+					.font(.callout)
+					.foregroundStyle(.secondary)
+			}
+
+			Text("Plug-in: \(target.pluginStatusSummary) • Python: \(target.pythonStatus.summary)")
+				.font(.callout)
+				.foregroundStyle(.secondary)
+
+			if target.isRunning {
+				Label("Running — quit before installation", systemImage: "exclamationmark.triangle.fill")
+					.font(.callout)
+					.foregroundStyle(.orange)
+			}
+
+			if isSelected, let warning = target.devPluginWarning {
+				WarningBanner(title: "Development plug-in", message: warning)
+				Toggle("Replace \(target.version.displayName) symlink with latest GitHub plug-in", isOn: $replaceDevSymlink)
+					.disabled(isBusy)
+			}
+		}
+		.padding(.vertical, 2)
 	}
 }
 
@@ -444,26 +534,19 @@ private struct SkillTabView: View {
 private struct StatusTabView: View {
 	let snapshot: InstallerStatusSnapshot
 	let isAdvancedModeEnabled: Bool
-	let pluginsFolder: URL
 	let onRefresh: () -> Void
+	let onUninstall: () -> Void
 	let onReveal: (URL) -> Void
 
 	var body: some View {
 		CenteredTabScroll {
 				PageIntroText("Check the plug-in, agents, and local server details.")
 
-				GroupBox("Plugin") {
-					VStack(alignment: .leading, spacing: 10) {
-						SimpleInfoRow(title: "Plug-in", value: snapshot.pluginStatusSummary)
-						if let symlinkTarget = snapshot.installedPluginSymlinkTarget {
-							PathInfoRow(title: "Dev target", value: symlinkTarget) {
-								onReveal(URL(fileURLWithPath: symlinkTarget))
-							}
-						}
-						SimpleInfoRow(title: "Python", value: snapshot.pythonStatus.summary)
-						SimpleInfoRow(title: "Glyphs", value: snapshot.glyphsRunning ? "Running" : "Not running")
-						PathInfoRow(title: "Plug-ins folder", value: pluginsFolder.path) {
-							onReveal(pluginsFolder)
+				GroupBox("Glyphs installations") {
+					VStack(alignment: .leading, spacing: 14) {
+						ForEach(Array(snapshot.glyphsTargets.enumerated()), id: \.element.id) { entry in
+							if entry.offset > 0 { Divider() }
+							GlyphsTargetStatusCard(target: entry.element, onReveal: onReveal)
 						}
 					}
 					.frame(maxWidth: .infinity, alignment: .leading)
@@ -494,7 +577,293 @@ private struct StatusTabView: View {
 				}
 
 				HeroActionSection(title: "Re-scan", action: onRefresh)
+
+				Button("Uninstall…", role: .destructive, action: onUninstall)
+					.buttonStyle(SecondaryPillButtonStyle())
+					.accessibilityHint("Review exactly what will be removed before uninstalling.")
 		}
+	}
+}
+
+private struct UninstallReviewSheet: View {
+	let plan: GlyphsUninstallPlan
+	let action: InstallerActionState
+	let report: GlyphsUninstallReport?
+	@Binding var hasAcknowledged: Bool
+	let selectedCount: Int
+	let selectedGlyphsRunning: Bool
+	let canUninstall: Bool
+	let bindingForCandidate: (String) -> Binding<Bool>
+	let onQuitGlyphs: () -> Void
+	let onUninstall: () -> Void
+	let onDismiss: () -> Void
+
+	private var isUninstalling: Bool { action.activeKind == .uninstall }
+
+	var body: some View {
+		VStack(spacing: 0) {
+			HStack {
+				VStack(alignment: .leading, spacing: 4) {
+					Text("Review Glyphs MCP Uninstall")
+						.font(.title2.weight(.semibold))
+					Text("Nothing is removed until you confirm below.")
+						.foregroundStyle(.secondary)
+				}
+				Spacer()
+			}
+			.padding(24)
+
+			Divider()
+
+			ScrollView {
+				VStack(alignment: .leading, spacing: 18) {
+					UninstallDisclaimer()
+					if !plan.hasRemovableItems {
+						Label("Nothing safely attributable is currently installed.", systemImage: "checkmark.shield")
+							.foregroundStyle(.secondary)
+					}
+
+					if selectedGlyphsRunning {
+						WarningBanner(
+							title: "Selected Glyphs version is running",
+							message: "Quit only the selected running Glyphs versions before removing their plug-ins.",
+							buttonTitle: "Quit Selected Glyphs Apps…",
+							action: onQuitGlyphs
+						)
+					}
+
+					ForEach(UninstallComponentKind.allCases, id: \.rawValue) { component in
+						let candidates = plan.candidates.filter { $0.component == component }
+						if !candidates.isEmpty {
+							GroupBox(componentTitle(component)) {
+								VStack(alignment: .leading, spacing: 12) {
+									ForEach(Array(candidates.enumerated()), id: \.element.id) { entry in
+										if entry.offset > 0 { Divider() }
+										UninstallCandidateRow(
+											candidate: entry.element,
+											isSelected: bindingForCandidate(entry.element.id),
+											isDisabled: isUninstalling
+										)
+									}
+								}
+								.frame(maxWidth: .infinity, alignment: .leading)
+							}
+						}
+					}
+
+					GroupBox("Always preserved") {
+						VStack(alignment: .leading, spacing: 7) {
+							Label("Python packages and every site-packages folder", systemImage: "lock.shield")
+							Label("Glyphs preferences and Glyphs MCP settings", systemImage: "lock.shield")
+							Label("Font annotations, documents, repositories, and shared parent folders", systemImage: "lock.shield")
+						}
+						.frame(maxWidth: .infinity, alignment: .leading)
+					}
+
+					if let report {
+						UninstallReportView(report: report)
+					}
+
+					if report == nil {
+						Toggle("I understand that the selected items will be permanently removed.", isOn: $hasAcknowledged)
+							.toggleStyle(.checkbox)
+							.disabled(isUninstalling)
+					}
+
+					if isUninstalling || !action.logText.isEmpty {
+						InstallerLogGroupBox(logText: action.logText, isBusy: isUninstalling)
+					}
+				}
+				.padding(24)
+			}
+
+			Divider()
+
+			HStack {
+				Text(selectionSummary)
+					.foregroundStyle(.secondary)
+				Spacer()
+				Button(report == nil ? "Cancel" : "Close", action: onDismiss)
+					.keyboardShortcut(.cancelAction)
+					.disabled(isUninstalling)
+				if report == nil {
+					Button("Uninstall", role: .destructive, action: onUninstall)
+						.keyboardShortcut(.defaultAction)
+						.disabled(!canUninstall)
+				}
+			}
+			.padding(18)
+		}
+		.frame(width: 780, height: 720)
+	}
+
+	private var selectionSummary: String {
+		if selectedCount == 1 {
+			return NSLocalizedString("1 item selected", comment: "Uninstall selection count")
+		}
+		return String(format: NSLocalizedString("%d items selected", comment: "Uninstall selection count"), selectedCount)
+	}
+
+	private func componentTitle(_ component: UninstallComponentKind) -> String {
+		switch component {
+		case .plugin: return NSLocalizedString("Glyphs plug-ins", comment: "Uninstall component group")
+		case .skill: return NSLocalizedString("Managed skills", comment: "Uninstall component group")
+		case .client: return NSLocalizedString("Client configuration", comment: "Uninstall component group")
+		}
+	}
+}
+
+private struct UninstallDisclaimer: View {
+	var body: some View {
+		HStack(alignment: .top, spacing: 12) {
+			Image(systemName: "exclamationmark.triangle.fill")
+				.foregroundStyle(.red)
+				.font(.title2)
+			VStack(alignment: .leading, spacing: 7) {
+				Text("Important — review before continuing")
+					.font(.headline)
+				Text("The uninstaller removes only checked items at the exact paths shown below. Matching client configuration files are backed up first. Same-named custom entries are preserved.")
+				Text("Shared Python dependencies cannot be attributed safely and will not be removed.")
+					.fontWeight(.semibold)
+			}
+		}
+		.padding(14)
+		.frame(maxWidth: .infinity, alignment: .leading)
+		.background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+		.overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Color.red.opacity(0.25)))
+	}
+}
+
+private struct UninstallCandidateRow: View {
+	let candidate: UninstallCandidate
+	@Binding var isSelected: Bool
+	let isDisabled: Bool
+
+	var body: some View {
+		HStack(alignment: .top, spacing: 12) {
+			Toggle("", isOn: $isSelected)
+				.labelsHidden()
+				.toggleStyle(.checkbox)
+				.disabled(isDisabled || !candidate.safetyState.isSelectable)
+			VStack(alignment: .leading, spacing: 4) {
+				HStack {
+					Text(candidate.title)
+						.fontWeight(.medium)
+					Spacer()
+					Text(stateLabel)
+						.font(.caption.weight(.semibold))
+						.foregroundStyle(stateColor)
+				}
+				Text(candidate.location.path)
+					.font(.system(.caption, design: .monospaced))
+					.foregroundStyle(.secondary)
+					.textSelection(.enabled)
+				Text(candidate.detail)
+					.font(.caption)
+					.foregroundStyle(.secondary)
+			}
+		}
+	}
+
+	private var stateLabel: String {
+		switch candidate.safetyState {
+		case .removable:
+			return isSelected
+				? NSLocalizedString("Selected for removal", comment: "Uninstall candidate state")
+				: NSLocalizedString("Not selected", comment: "Uninstall candidate state")
+		case .missing: return NSLocalizedString("Not detected", comment: "Uninstall candidate state")
+		case .preserved: return NSLocalizedString("Preserved", comment: "Uninstall candidate state")
+		case .blocked: return NSLocalizedString("Cannot inspect — preserved", comment: "Uninstall candidate state")
+		}
+	}
+
+	private var stateColor: Color {
+		switch candidate.safetyState {
+		case .removable: return isSelected ? .red : .secondary
+		case .missing: return .secondary
+		case .preserved, .blocked: return .orange
+		}
+	}
+}
+
+private struct UninstallReportView: View {
+	let report: GlyphsUninstallReport
+
+	var body: some View {
+		GroupBox(report.succeeded
+			? NSLocalizedString("Uninstall complete", comment: "Uninstall result heading")
+			: NSLocalizedString("Uninstall partially completed", comment: "Uninstall result heading")) {
+			VStack(alignment: .leading, spacing: 8) {
+				Text(String(
+					format: NSLocalizedString("Removed: %d • Skipped: %d • Failed: %d", comment: "Uninstall result counts"),
+					report.removedCount,
+					report.skippedCount,
+					report.failedCount
+				))
+				ForEach(report.outcomes) { outcome in
+					Label {
+						Text("\(outcome.candidate.title): \(outcome.message)")
+					} icon: {
+						Image(systemName: outcomeIcon(outcome.status))
+							.foregroundStyle(outcomeColor(outcome.status))
+					}
+				}
+			}
+			.frame(maxWidth: .infinity, alignment: .leading)
+		}
+	}
+
+	private func outcomeIcon(_ status: UninstallOutcomeStatus) -> String {
+		switch status {
+		case .removed: return "checkmark.circle.fill"
+		case .skipped: return "minus.circle.fill"
+		case .failed: return "xmark.octagon.fill"
+		}
+	}
+
+	private func outcomeColor(_ status: UninstallOutcomeStatus) -> Color {
+		switch status {
+		case .removed: return .green
+		case .skipped: return .orange
+		case .failed: return .red
+		}
+	}
+}
+
+private struct GlyphsTargetStatusCard: View {
+	let target: GlyphsTargetStatusSnapshot
+	let onReveal: (URL) -> Void
+
+	var body: some View {
+		VStack(alignment: .leading, spacing: 10) {
+			HStack {
+				Text(target.version.displayName)
+					.font(.headline)
+				Spacer()
+				Text(target.isDetected ? "Detected" : "Not detected")
+					.foregroundStyle(target.isDetected ? Color.green : Color.secondary)
+			}
+			if let application = target.application {
+				SimpleInfoRow(title: "App version", value: application.shortVersion ?? "Unknown")
+				PathInfoRow(title: "Application", value: application.appURL.path) {
+					onReveal(application.appURL)
+				}
+			} else {
+				SimpleInfoRow(title: "Application", value: "Not detected")
+			}
+			SimpleInfoRow(title: "Plug-in", value: target.pluginStatusSummary)
+			if let symlinkTarget = target.installedPluginSymlinkTarget {
+				PathInfoRow(title: "Dev target", value: symlinkTarget) {
+					onReveal(URL(fileURLWithPath: symlinkTarget))
+				}
+			}
+			SimpleInfoRow(title: "Python", value: target.pythonStatus.summary)
+			SimpleInfoRow(title: "Running", value: target.isRunning ? "Yes" : "No")
+			PathInfoRow(title: "Plug-ins folder", value: target.pluginsDirectory.path) {
+				onReveal(target.pluginsDirectory)
+			}
+		}
+		.padding(.vertical, 3)
 	}
 }
 
