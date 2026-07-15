@@ -1,0 +1,93 @@
+# Glyphs 3 Compatibility Notes For The Glyphs 4 Branch
+
+The `glyphs4` branch is the Glyphs 4 development branch. It keeps a Glyphs 3
+install path for compatibility testing, but Glyphs 3 is not the primary runtime
+for this branch.
+
+Always call `get_server_info` first. A Glyphs 3 compatibility run should report
+Glyphs `3.5`, Python `3.12.x`, and the expected Glyphs MCP runtime ID.
+
+## Confirmed In Live Testing
+
+These tool groups passed through the MCP server in Glyphs 3.5 with the Inter
+test font:
+
+- Font discovery and metadata: `list_open_fonts`, `get_server_info`,
+  `get_font_masters`, `get_font_instances`, `get_font_glyphs`.
+- Read-only glyph inspection: `get_glyph_details`, `get_glyph_paths`,
+  `get_glyph_components`, `list_style_sets`, `get_font_kerning`.
+- Review tools: `review_collinear_handles`, `review_spacing`,
+  `review_kerning_bumper`, `review_master_stem_metrics`,
+  `review_italic_first_pass`.
+- Dry-run tools: `apply_spacing`, `apply_kerning_bumper`,
+  `set_spacing_params`, `set_spacing_guides`.
+- Small scoped mutations on a disposable glyph: `create_glyph`,
+  `set_glyph_paths`, `add_anchor_to_glyph`, `add_component_to_glyph`,
+  `update_glyph_metrics` for width, `set_kerning_pair`, `delete_glyph`.
+- Rendering and docs: `render_glyph_review_image`, `docs_search`, `docs_get`.
+- Code context setup: `execute_code_with_context`.
+
+No live test auto-saved the font.
+
+## Known Limitations
+
+### Sidebearings
+
+Glyphs 3.5 can freeze when accessed through some `GSLayer.LSB`, `GSLayer.RSB`,
+`leftSideBearing`, and `rightSideBearing` paths after component or path edits.
+To keep the server responsive, Glyphs MCP avoids those unsafe getters and
+setters in Glyphs 3.
+
+Affected tools:
+
+- `get_glyph_paths`
+- `get_glyph_details`
+- `render_glyph_review_image`
+- `set_glyph_paths`
+- `update_glyph_metrics`
+- `apply_spacing`
+
+Expected behavior in Glyphs 3:
+
+- Path and width data still work.
+- Sidebearing values may be `null`, `0`, or reported through structured
+  readback warnings.
+- `update_glyph_metrics` supports width changes. Treat explicit
+  `left_sidebearing` and `right_sidebearing` writes as limited in Glyphs 3.
+- Confirmed spacing applies should be used conservatively. Prefer
+  `dry_run=true`; inspect warnings before using `confirm=true`.
+
+### ExportDesignspaceAndUFO
+
+`ExportDesignspaceAndUFO` is fully exercised on Glyphs 4 in this branch. In the
+Glyphs 3 live pass, export returned a structured error on a test font containing
+stale disposable glyphs with empty component names:
+
+```text
+Glyph names must be at least one character long.
+```
+
+This is a Glyphs 3 compatibility limitation for malformed or legacy component
+data. The server should return a bounded structured error, not hang or save the
+font.
+
+Recommended handling:
+
+- Inspect and clean glyphs with empty component names before export.
+- Delete stale MCP test glyphs if they remain from interrupted QA runs.
+- Prefer the Glyphs 4 runtime for release export validation on the `glyphs4`
+  branch.
+
+## Agent Guidance
+
+When a task must support Glyphs 3:
+
+- Start with `get_server_info` and `list_open_fonts`.
+- Prefer explicit `font_index`, `master_id`, and `glyph_names` arguments instead
+  of relying on UI state.
+- Use review and dry-run tools before confirmed mutations.
+- Treat sidebearing reads and writes as best-effort in Glyphs 3.
+- Stop after a structured Glyphs 3 limitation error; do not retry with larger
+  scripts.
+- Do not auto-save fonts.
+

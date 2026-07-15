@@ -8,13 +8,17 @@ from GlyphsApp import Glyphs, GSNode, GSPath  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
-    _clear_layer_paths,
+    _font_resolution_error,
     _get_layer_id,
     _get_left_sidebearing,
     _get_right_sidebearing,
     _glyphs_show_layer_link_fields,
+    _layer_display_name,
+    _layer_path_summary,
+    _replace_layer_paths_and_metrics,
+    _resolve_font_by_index,
     _safe_json,
-    _set_sidebearing,
+    _show_notification,
 )
 
 
@@ -41,17 +45,13 @@ async def get_glyph_paths(
             rightSideBearing (int): Right side bearing
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, fonts = _resolve_font_by_index(Glyphs, font_index)
+        if not font:
+            return json.dumps(_font_resolution_error(font_index, fonts))
         
         if not glyph_name:
             return json.dumps({"error": "Glyph name is required"})
         
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
         
         if not glyph:
@@ -91,10 +91,11 @@ async def get_glyph_paths(
             })
         
         layer_id = _get_layer_id(layer)
+        layer_name = _layer_display_name(font, layer, getattr(layer, "associatedMasterId", None))
         result = {
             "glyphName": glyph_name,
             "masterId": getattr(layer, 'associatedMasterId', None),
-            "masterName": layer.name,
+            "masterName": layer_name,
             "layerId": layer_id,
             "paths": paths_data,
             "width": getattr(layer, 'width', 0),
@@ -106,7 +107,7 @@ async def get_glyph_paths(
                 getattr(font, "filepath", None),
                 glyph_name=glyph_name,
                 layer_id=layer_id,
-                label="Open {} {} in Glyphs".format(glyph_name, layer.name),
+                label="Open {} {} in Glyphs".format(glyph_name, layer_name),
             )
         )
         
@@ -134,12 +135,9 @@ async def set_glyph_paths(
         str: JSON-encoded result with success status.
     """
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(font_index, len(Glyphs.fonts))
-                }
-            )
+        font, fonts = _resolve_font_by_index(Glyphs, font_index)
+        if not font:
+            return json.dumps(_font_resolution_error(font_index, fonts, ok_key="success"))
         
         if not glyph_name:
             return json.dumps({"error": "Glyph name is required"})
@@ -153,7 +151,6 @@ async def set_glyph_paths(
         except ValueError as e:
             return json.dumps({"error": "Invalid JSON in paths_data: {}".format(str(e))})
         
-        font = Glyphs.fonts[font_index]
         glyph = font.glyphs[glyph_name]
         
         if not glyph:
@@ -171,10 +168,8 @@ async def set_glyph_paths(
             else:
                 layer = glyph.layers[font.masters[0].id]
         
-        # Clear existing paths (but keep components, anchors, etc.)
-        _clear_layer_paths(layer)
-        
         # Build new paths from the JSON data
+        new_paths = []
         if "paths" in path_info:
             for path_data in path_info["paths"]:
                 new_path = GSPath()
@@ -193,26 +188,31 @@ async def set_glyph_paths(
 
                 # Set closed property
                 new_path.closed = bool(path_data.get("closed", True))
+                new_paths.append(new_path)
 
-                # Add the path to the layer via the mutable collection
-                try:
-                    layer.paths.append(new_path)
-                except Exception:
-                    # Fallback if append is unavailable
-                    if hasattr(layer, "addPath_"):
-                        layer.addPath_(new_path)
-        
-        # Apply sidebearings before width so an explicit width wins over
-        # any width recomputation triggered by LSB/RSB setters.
-        if "leftSideBearing" in path_info:
-            _set_sidebearing(layer, "leftSideBearing", "LSB", float(path_info["leftSideBearing"]))
-        if "rightSideBearing" in path_info:
-            _set_sidebearing(layer, "rightSideBearing", "RSB", float(path_info["rightSideBearing"]))
-        if "width" in path_info:
-            layer.width = float(path_info["width"])
-        
+        replace_result = _replace_layer_paths_and_metrics(
+            layer,
+            new_paths,
+            width=float(path_info["width"]) if "width" in path_info else None,
+            left_sidebearing=float(path_info["leftSideBearing"]) if "leftSideBearing" in path_info else None,
+            right_sidebearing=float(path_info["rightSideBearing"]) if "rightSideBearing" in path_info else None,
+        )
+        if not replace_result.get("ok"):
+            return _safe_json(
+                {
+                    "success": False,
+                    "error": replace_result.get("error") or "Failed to replace glyph paths",
+                    "glyphName": glyph_name,
+                    "fontIndex": font_index,
+                    "expectedPathCount": len(new_paths),
+                    "pathCount": replace_result.get("pathCount", 0),
+                    "nodeCount": replace_result.get("nodeCount", 0),
+                }
+            )
+
         # Send notification
-        Glyphs.showNotification(
+        _show_notification(
+            Glyphs,
             "Paths Updated", 
             "Updated paths for glyph '{}' in {}".format(glyph_name, font.familyName)
         )
@@ -220,8 +220,7 @@ async def set_glyph_paths(
         return _safe_json({
             "success": True,
             "message": "Updated paths for glyph '{}'".format(glyph_name),
-            "pathCount": len(getattr(layer, "paths", [])),
-            "nodeCount": sum(len(path.nodes) for path in getattr(layer, "paths", []))
+            **_layer_path_summary(layer),
         })
         
     except Exception as e:

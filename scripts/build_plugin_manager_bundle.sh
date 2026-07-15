@@ -158,6 +158,8 @@ find "$src_bundle" -name "*.pyc" -print0 2>/dev/null | xargs -0 rm -f 2>/dev/nul
 find "$src_bundle" -name "*.pyo" -print0 2>/dev/null | xargs -0 rm -f 2>/dev/null || true
 find "$src_bundle" -name "__MACOSX" -type d -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true
 find "$src_bundle" -name "._*" -print0 2>/dev/null | xargs -0 rm -f 2>/dev/null || true
+find "$src_bundle" -name "_CodeSignature" -type d -print0 2>/dev/null | xargs -0 rm -rf 2>/dev/null || true
+find "$src_bundle" -name "* (autosave).*" -print0 2>/dev/null | xargs -0 rm -f 2>/dev/null || true
 
 src_version="$(read_plist_key "$src_info_plist" "CFBundleShortVersionString")"
 src_build="$(read_plist_key "$src_info_plist" "CFBundleVersion")"
@@ -237,7 +239,11 @@ def is_bad(rel_path: str) -> bool:
 
     if "__macosx" in parts:
         return True
+    if "_CodeSignature" in parts:
+        return True
     if name == ".DS_Store":
+        return True
+    if "(autosave)" in name:
         return True
     if name.startswith("._") or f"{os.sep}._" in rel_path:
         return True

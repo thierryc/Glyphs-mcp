@@ -12,9 +12,6 @@ import unittest
 
 
 def _ensure_fake_fastmcp() -> None:
-    if "fastmcp.resources" in sys.modules:
-        return
-
     fastmcp_pkg = types.ModuleType("fastmcp")
     resources_mod = types.ModuleType("fastmcp.resources")
 
@@ -31,9 +28,6 @@ def _ensure_fake_fastmcp() -> None:
 
 
 def _ensure_fake_mcp_tools() -> None:
-    if "mcp_tools" in sys.modules:
-        return
-
     class _DummyMCP:
         def __init__(self) -> None:
             self.resources = []
@@ -91,4 +85,3 @@ class KerningResourcesTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -3,11 +3,13 @@ title: Installation
 description: Install the Glyphs MCP plug-in and dependencies.
 ---
 
-Glyphs MCP ships as a **Glyphs 3 plug-in** plus a small Python dependency set. Install it first, then start the local MCP server from inside Glyphs.
+Glyphs MCP ships as a Glyphs plug-in plus a small Python dependency set. The macOS installer supports **Glyphs 3 and Glyphs 4 beta**; install it first, then start the local MCP server from inside Glyphs.
 
 ## Recommended path
 
 Use the installer. It can install the plug-in, install dependencies where Glyphs can load them, link supported clients, and optionally install bundled agent skills.
+
+The macOS app detects Glyphs 3 and Glyphs 4 separately. If both are installed, both are selected initially, and you can choose either version or install for both. A missing version is shown as not detected and cannot be selected.
 
 Supported automatic links:
 
@@ -28,15 +30,18 @@ On macOS, you can also double-click `RunInstall.command` in Finder. If Gatekeepe
 
 ## Requirements
 
-- macOS with **Glyphs 3**
+- macOS with **Glyphs 3 or Glyphs 4 beta**
 - Python **3.11-3.14**
 - Local access to the repo checkout or a downloaded release package
 
 If `python3` is missing or too old, install Python 3.14 from python.org and rerun the installer.
 
+Glyphs 3 backward compatibility is kept for the shared MCP server code where possible. The macOS app detects it automatically. The terminal installer still defaults to Glyphs 4; for a terminal-based Glyphs 3 install, use `--glyphs-version 3`.
+
 ## What the installer does
 
 - Detects a supported Python environment.
+- Detects installed Glyphs 3 and Glyphs 4 applications and lets you target either or both.
 - Installs Python dependencies for Glyphs.
 - Installs or links `Glyphs MCP.glyphsPlugin` into Glyphs' plug-ins folder.
 - Can link supported local MCP clients.
@@ -45,9 +50,9 @@ If `python3` is missing or too old, install Python 3.14 from python.org and reru
 
 ## Downloads
 
-- [Latest release](https://github.com/thierryc/Glyphs-mcp/releases/latest)
-- [Installer DMG](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg)
-- [Installer ZIP](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip)
+- [Latest Glyphs 4 beta release](https://github.com/thierryc/Glyphs-mcp/releases/latest)
+- [Latest installer DMG](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg)
+- [Latest installer ZIP](https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip)
 
 ## Scripted install
 
@@ -56,6 +61,8 @@ For automation or reproducible development setup, use non-interactive mode:
 ```bash
 python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --skip-skills --skip-client-guidance
 ```
+
+On this branch the terminal installer targets Glyphs 4 by default. For a Glyphs 3 install, add `--glyphs-version 3`. This option does not affect the macOS app’s automatic target detection.
 
 Add skill installation when needed:
 
@@ -73,17 +80,44 @@ Then continue to [Start the server](./start-server.mdx).
 
 ## Uninstall
 
-1. Quit Glyphs.
-2. Remove `Glyphs MCP.glyphsPlugin` from:
+### macOS app
 
-   ```text
-   ~/Library/Application Support/Glyphs 3/Plugins/
-   ```
+1. Open the installer’s **Status** page and choose **Uninstall…**.
+2. Review the exact plug-ins, managed skills, and matching MCP client entries. Missing items and same-named custom client entries stay visible but cannot be selected.
+3. Quit only the selected Glyphs versions if prompted.
+4. Read the disclaimer, select the acknowledgment checkbox, and choose **Uninstall**.
 
-Optional advanced cleanup: remove Glyphs MCP packages from:
+Client configuration files are backed up before their matching Glyphs MCP entry is removed. Unrelated configuration is preserved.
 
-```text
-~/Library/Application Support/Glyphs 3/Scripts/site-packages
+### Terminal
+
+Preview every safely attributable Glyphs 3 and Glyphs 4 artifact without changing files:
+
+```bash
+python3 install.py --uninstall --glyphs-version both --dry-run
 ```
 
-Be careful in `Scripts/site-packages`; other Glyphs scripts may depend on packages stored there.
+Run the interactive uninstall after reviewing that list:
+
+```bash
+python3 install.py --uninstall --glyphs-version both
+```
+
+For automation, explicit confirmation is mandatory:
+
+```bash
+python3 install.py --uninstall --glyphs-version both --non-interactive --confirm-uninstall
+```
+
+The terminal uninstaller continues to default to Glyphs 4. Use `--glyphs-version 3` or `--glyphs-version both` when needed. Repeat `--uninstall-component plugin`, `--uninstall-component skills`, or `--uninstall-component clients` to restrict the plan.
+
+### What is preserved
+
+The uninstaller never removes:
+
+- Python packages or any `Scripts/site-packages` folder
+- Glyphs preferences or Glyphs MCP settings
+- Font annotations or other font data
+- Documents, repositories, or shared parent folders
+
+Existing installations do not contain a dependency ownership receipt, and these Python locations may be shared with unrelated Glyphs scripts or Python tools. Removing packages automatically would therefore be unsafe.

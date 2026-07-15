@@ -1,0 +1,525 @@
+---
+title: Release QA protocol
+description: Manual release test protocol for validating Glyphs MCP against Glyphs 3.5 and Glyphs 4 on a large real font.
+---
+
+This protocol is the pre-release manual QA pass for Glyphs MCP. Run it before publishing a new public version, especially after changes to the plug-in bundle, command registration, Glyphs API compatibility, installer, tool profiles, tool schemas, or mutation helpers.
+
+The goal is not to prove every implementation branch. Unit tests do that. The goal is to verify that the most common real workflows still work in realistic conditions: a large production `.glyphs` file, real Glyphs UI state, a real MCP client, the Streamable HTTP endpoint, and both supported app lines.
+
+## Release gate
+
+A release is ready only when all required checks pass in both:
+
+| Runtime | Required result |
+| --- | --- |
+| Glyphs 3.5.x | All required checks pass or have documented, accepted Glyphs-3-only limitations. |
+| Glyphs 4.x | All required checks pass or have documented, accepted Glyphs-4-only limitations. |
+
+Release blockers:
+
+- Server cannot start, restart, or stop from **Edit -> Glyphs MCP Server**.
+- Client cannot connect to `http://127.0.0.1:9680/mcp/`.
+- `get_server_info`, `list_open_fonts`, or `get_selected_font_and_master` fails in normal use.
+- The advertised version, code hash, runtime ID, tool profile, or resource path is clearly wrong.
+- A read-only tool mutates the font.
+- A mutation tool changes the font without `confirm=true` when it is expected to be confirm-gated.
+- A dry run mutates the font.
+- A common workflow crashes Glyphs, hangs the server, corrupts the font, or returns unbounded output.
+- Glyphs 3.5 and Glyphs 4 expose materially different tool schemas without a documented compatibility reason.
+
+## Automated per-tool release gate
+
+Every public MCP tool must have an entry in `src/glyphs-mcp/tests/test_release_gate_tool_coverage.py`.
+
+That gate records:
+
+- The test owner or accepted live-smoke requirement.
+- Whether the tool is read-only, edits the font, runs code, writes files, opens UI, saves files, or exposes server docs.
+- The undo-risk level.
+- A short live smoke prompt that can be reused in Glyphs 3.5 and Glyphs 4.
+
+The automated gate must pass before any release candidate:
+
+```bash
+python3 -m unittest src/glyphs-mcp/tests/test_release_gate_tool_coverage.py
+python3 -m unittest discover -s src/glyphs-mcp/tests
+```
+
+Release blockers from this gate:
+
+- A registered MCP tool is missing from the release-gate manifest.
+- A stale manifest entry names a tool that is no longer registered.
+- A tool entry has no owner test, no live smoke prompt, or no undo-risk classification.
+- An editing or code-execution tool is not classified for undo risk.
+- Any executable Python resource calls `glyph.beginUndo()` or `glyph.endUndo()`.
+
+The last rule is intentional. Live Glyphs 4 QA showed that MCP-driven batch edits can trigger Glyphs' "There was a problem with undo" recovery dialog when glyph undo groups are used around larger script edits. Mutation helpers should use documented layer/font update APIs and small scoped writes instead.
+
+## Test assets
+
+Use at least one large real font file. A good release candidate font has:
+
+- 1,000+ glyphs.
+- 2+ masters, ideally with roman and italic or weight/width variation.
+- Multiple instances.
+- Real kerning groups and several thousand kerning pairs.
+- OpenType features, including at least one `ssXX` feature.
+- Components, anchors, annotations if available, guides, bracket layers if available, and non-exporting glyphs.
+- A mix of simple and complex outlines.
+
+Never run destructive tests on the only copy of a production file.
+
+Prepare these files:
+
+| File | Purpose |
+| --- | --- |
+| `LargeFont-release-baseline.glyphs` | Untouched reference copy. |
+| `LargeFont-release-glyphs35.glyphs` | Glyphs 3.5 working copy. |
+| `LargeFont-release-glyphs4.glyphs` | Glyphs 4 working copy. |
+
+For each working copy, record:
+
+- File path.
+- File size.
+- Glyph count.
+- Master count and master names.
+- Instance count.
+- Kerning pair count for the main master.
+- Glyphs app version and build number.
+- Glyphs MCP version being tested.
+- Git commit or release tag.
+
+## Environment matrix
+
+Run the same test script against each row:
+
+| Case | Glyphs app | Python mode | Tool profile | MCP client | Required |
+| --- | --- | --- | --- | --- | --- |
+| G35-edit | Glyphs 3.5.x | Glyphs Python or configured external runtime | `Edit` | Codex or Claude | Yes |
+| G35-readonly | Glyphs 3.5.x | Same as G35-edit | `Read-only` | Same client | Yes |
+| G4-edit | Glyphs 4.x | Glyphs Python or configured external runtime | `Edit` | Codex or Claude | Yes |
+| G4-readonly | Glyphs 4.x | Same as G4-edit | `Read-only` | Same client | Yes |
+| G35-secondary-client | Glyphs 3.5.x | Same as G35-edit | `Edit` | Other supported client | Recommended |
+| G4-secondary-client | Glyphs 4.x | Same as G4-edit | `Edit` | Other supported client | Recommended |
+
+Use the same release artifact for both app versions whenever possible. If Glyphs 3.5 and Glyphs 4 require different install paths or artifacts, record the exact artifact used for each.
+
+## Preflight
+
+For each app version:
+
+1. Quit all Glyphs versions.
+2. Install the release candidate plug-in and dependencies using the same path users will use: signed installer app, terminal installer, or manual plug-in install.
+3. Start only the app version under test.
+4. Open the matching large-font working copy.
+5. Start the server from **Edit -> Glyphs MCP Server**.
+6. Confirm the status panel shows the expected version, profile, endpoint, and docs URL.
+7. Connect the MCP client to:
+
+```text
+http://127.0.0.1:9680/mcp/
+```
+
+8. Reconnect the MCP client after every profile change.
+9. Keep the Macro Panel visible during at least one pass and capture any repeated tracebacks.
+
+Pass criteria:
+
+- Server starts without traceback.
+- Port `9680` is reachable locally.
+- Browser access to `/mcp/` returns discovery JSON or an expected MCP transport response.
+- MCP client can list tools.
+- The large font remains open and responsive.
+
+## Transport and schema checks
+
+Run once in each required matrix case before workflow testing.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| T1 | Connect a real MCP client to `/mcp/` using Streamable HTTP. | Client initializes without transport warnings. |
+| T2 | Inspect request/response headers if the client exposes them. | Session handling is stable; any returned `Mcp-Session-Id` is preserved by the client. |
+| T3 | Call `tools/list` or use the client's tool inventory view. | Tool names, descriptions, and schemas load without JSON schema errors. |
+| T4 | Compare `tools/list` in `Read-only` and `Edit` profiles. | `Read-only` hides mutation and execution tools; `Edit` exposes the full surface. |
+| T5 | Compare the observed `Edit` profile tool list with the current [command set](../reference/command-set.mdx). | Missing, renamed, or extra tools are intentional and documented. |
+| T6 | Call one tool with malformed JSON arguments. | Error is structured and bounded; server remains usable. |
+| T7 | Call one tool with a valid but semantically invalid argument, such as a bad `font_index`. | Error clearly identifies the invalid input. |
+
+## Smoke tests
+
+Run first in every matrix case.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| S1 | Call `get_server_info`. | Returns version, runtime ID, code hash, resource path, Glyphs reachability, open-font count, and no error. |
+| S2 | Call `list_open_fonts`. | Shows the large font with a stable `font_index`, family name, file path if saved, and expected glyph/master counts. |
+| S3 | Call `get_font_masters` for the large font. | Returns all masters with stable IDs, names, metrics, and no missing active master. |
+| S4 | Call `get_font_instances`. | Returns instances without crashing on interpolation data. |
+| S5 | Select 3-8 glyphs in Glyphs, then call `get_selected_font_and_master`. | Response matches the active font, active master, and current UI selection. |
+| S6 | Switch the active master in Glyphs and repeat S5. | Active master changes in the response. |
+| S7 | Stop and restart the server from Glyphs UI, then reconnect. | New calls succeed; stale client sessions fail gracefully or reconnect cleanly. |
+| S8 | Switch between `Read-only` and `Edit` profiles, reconnecting each time. | `tools/list` changes as expected; hidden mutation tools are unavailable in `Read-only`. |
+
+## Read-only inspection
+
+Run in both `Read-only` and `Edit` profiles. The font must not be marked dirty by these checks.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| R1 | Call `get_font_glyphs` with the large font. | Completes in acceptable time and returns glyph names, export flags, categories, and show links or unavailable reasons. |
+| R2 | Call `get_glyph_details` for `A`, `n`, `O`, one accented composite, and one non-exporting glyph. | Returns layers, components, anchors, paths, and metadata without schema errors. |
+| R3 | Call `get_glyph_components` for composite glyphs. | Component names, transforms, and target layers are understandable. |
+| R4 | Call `get_glyph_paths` for simple and complex glyphs. | Returns valid path JSON and bounded output. |
+| R5 | Select nodes in Glyphs and call `get_selected_nodes`. | Reports selected nodes with layer, path, node index, and per-master mapping when available. |
+| R6 | Call `get_selected_glyphs` after changing selection in Glyphs. | Response tracks the UI selection and includes show links where possible. |
+| R7 | Call `list_style_sets`. | Returns stylistic sets, source/replacement glyph groups, and group show links for alternates. |
+| R8 | Call `get_font_kerning` for the main master. | Returns kerning data without timeout, broken group names, or excessive client-side truncation. |
+| R9 | Call `review_collinear_handles` on one glyph with curves. | Returns findings or a clean result without mutation. |
+| R10 | Call `render_glyph_review_image` for 6-12 glyphs with metrics, sidebearings, bounds, nodes, handles, anchors, and guides overlays. | Client receives a visible image or base64 fallback; Glyphs does not become dirty. |
+| R11 | Click or open a returned `showHttpUrl` or `showMarkdown` link. | Glyphs focuses the expected glyph/layer, or the response explains why the link is unavailable. |
+| R12 | Call `docs_search` for `GSLayer bounds`, then `docs_get` for the best result. | Returns focused bundled docs without registering all pages. |
+| R13 | Call `resources/list` if the client exposes it. | Core resources are available without flooding the client with every docs page by default. |
+
+## Spacing workflow
+
+Run in `Edit` profile only. Use 10-30 glyphs, including `H`, `O`, `n`, `o`, sidebearing-sensitive punctuation, and one composite.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| SP1 | Call `review_spacing` on the selected glyphs or explicit glyph names. | Returns suggestions, skipped items, measurement bands, and no mutation. |
+| SP2 | Call `apply_spacing` with `dry_run=true` and conservative clamps. | Returns proposed deltas and changed-count preview; font is not dirty because of the dry run. |
+| SP3 | Call `set_spacing_params` with a small test parameter change on the working copy. | Updates only the intended font/master custom parameters and does not save automatically. |
+| SP4 | Call `set_spacing_guides` to add guides to 2-3 test glyphs. | Guides appear in Glyphs and are scoped to target glyphs/layers. |
+| SP5 | Call `set_spacing_guides` again to clear the guides. | Test guides are removed without deleting unrelated guides. |
+| SP6 | After explicit human approval, call `apply_spacing` with `confirm=true` on 1-3 expendable glyphs. | Only approved glyph/layer metrics change; changes are visible in Glyphs and undoable where Glyphs supports it. |
+
+Pass criteria:
+
+- Dry-run and review calls do not mutate.
+- Confirmed apply is scoped and predictable.
+- No auto-save occurs.
+- Glyphs 3.5 and Glyphs 4 produce equivalent results within expected API differences.
+
+## Kerning workflow
+
+Run in `Edit` profile. Use the main kerning master and a file with real kerning groups.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| K1 | Call `generate_kerning_tab` with a moderate limit. | Glyphs opens a proof tab with relevant strings; server response includes counts and skipped conditions. |
+| K2 | Call `review_kerning_bumper` with `include_existing=true`, `scan_mode="two_pass"`, and bounded limits. | Returns collisions/near-misses or a clean result without mutation. |
+| K3 | Call `apply_kerning_bumper` with `dry_run=true`. | Returns proposed glyph-glyph exceptions; no kerning changes are written. |
+| K4 | After explicit human approval, call `apply_kerning_bumper` with `confirm=true` on a small limited set. | Only approved kerning exceptions change. |
+| K5 | Call `set_kerning_pair` on one disposable pair, then call `get_font_kerning`. | Pair appears with the expected value. |
+| K6 | Remove or restore the disposable pair with `set_kerning_pair`. | Pair is removed/restored and no unrelated kerning changes occur. |
+
+Pass criteria:
+
+- Large kerning data does not hang the client.
+- Group and glyph exceptions resolve consistently.
+- Confirmed mutation does not affect unrelated pairs.
+
+## Outline and glyph editing workflow
+
+Run in `Edit` profile on disposable glyphs or a copied working file. In Glyphs 4, run each mutating row as a separate smoke step; do not chain create, path replacement, and delete into one batch. Pause after each mutation and stop immediately if Glyphs shows an undo recovery dialog.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| E1 | Call `create_glyph` for a test glyph such as `gmcp.test`. | Glyph appears in Glyphs with expected defaults. |
+| E2 | Call `update_glyph_properties` on `gmcp.test`. | Unicode/category/export/color or other targeted property changes correctly. |
+| E3 | Call `update_glyph_metrics` on `gmcp.test`. | Width and sidebearings update only on intended layers. |
+| E4 | Call `copy_glyph` from a simple source glyph to `gmcp.test`. | Outlines/components copy as requested. |
+| E5 | Call `add_component_to_glyph` on `gmcp.test`. | Component appears with expected transform. |
+| E6 | Call `add_anchor_to_glyph` on `gmcp.test`. | Anchor appears on the target layer. |
+| E7 | Call `get_glyph_paths`, modify a small path fixture, then call `set_glyph_paths` on `gmcp.test`. | Paths are replaced only on the target layer and remain valid in Glyphs. |
+| E8 | Select eligible nodes and call `add_corner_to_all_masters` with a known `_corner.*` name. | Corner hints are added across intended masters only, or the tool returns a clear precondition error. |
+| E9 | Call `apply_collinear_handles_smooth` with `dry_run=true`. | Reports proposed smooth flags and does not mutate. |
+| E10 | After explicit approval, call `apply_collinear_handles_smooth` with `confirm=true` on `gmcp.test`. | Smooth flags update only where reported. |
+| E11 | Call `delete_glyph` for `gmcp.test`. | Test glyph is removed and references are not left in a broken state. |
+
+Pass criteria:
+
+- All edit tools target the requested glyph/layer/master.
+- Error messages are clear for invalid glyph names, missing layers, bad path JSON, and incompatible selections.
+- The app remains responsive after path replacement and corner operations.
+
+## Annotation workflow
+
+Run in `Edit` profile on 1-2 disposable glyphs.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| A1 | Call `get_glyph_annotations`. | Existing annotations are listed or an empty list is returned. |
+| A2 | Call `add_glyph_annotation`. | Native Glyphs annotation appears and MCP ownership metadata is stored. |
+| A3 | Call `add_glyph_annotation_group` for a small linked note/shape group. | Group appears and is returned by `get_glyph_annotation_groups`. |
+| A4 | Call `update_glyph_annotation` on the created annotation. | Text, position, or style changes exactly as requested. |
+| A5 | Call `delete_glyph_annotation` on the created annotation. | Only that annotation is removed. |
+| A6 | Call `clear_glyph_annotations` with default MCP-managed scope. | MCP-managed test annotations are removed; unrelated manual annotations remain. |
+| A7 | On a copied file only, call `clear_glyph_annotations` with `scope="all"` for the test layer. | All annotations on that layer are removed and no other layer is affected. |
+
+## Italic and compensated tuning workflow
+
+Run only on copied working files. Prefer a multi-master font where roman/italic or weight masters are compatible enough for meaningful checks.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| I1 | Call `set_master_italic_angle` with `dry_run=true`. | Reports intended master and angle without changing Font Info. |
+| I2 | After approval, call `set_master_italic_angle` with `confirm=true` on the working copy. | Only the intended master's Metrics `italicAngle` changes. |
+| I3 | Call `review_italic_first_pass` for 3-5 glyphs. | Reports copy/slant plan, skips unsafe glyphs, and does not mutate. |
+| I4 | Call `apply_italic_first_pass` with `dry_run=true`. | Returns the same proposed scope without mutation. |
+| I5 | After approval, call `apply_italic_first_pass` with `confirm=true` on disposable glyphs/layers. | Creates expected backups if configured, updates only targets, and remains visually plausible. |
+| C1 | Call `review_master_stem_metrics`. | Reports existing or missing stem metrics for relevant masters. |
+| C2 | Call `set_master_stem_metrics` with `dry_run=true`. | Reports intended custom-parameter changes without mutation. |
+| C3 | Call `measure_stem_ratio` between two masters. | Returns numeric ratio or clear measurement failure. |
+| C4 | Call `review_compensated_tuning` on one compatible glyph. | Returns `set_glyph_paths`-compatible JSON and does not mutate. |
+| C5 | Call `apply_compensated_tuning` with `dry_run=true` on 1-3 glyphs. | Reports proposed transforms and backup behavior without mutation. |
+| C6 | After approval, call `apply_compensated_tuning` with `confirm=true` on disposable glyphs. | Only approved glyphs change; backups are created when requested. |
+
+Pass criteria:
+
+- Source angle convention is consistent in both app versions.
+- Tools reject incompatible layers with clear errors rather than producing broken outlines.
+- Confirmed changes are reviewable visually with `render_glyph_review_image`.
+
+## Export and save workflow
+
+Run on copied working files only.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| X1 | Call `ExportDesignspaceAndUFO` to a temporary output directory with `decompose_smart_components=false` and `decompose_smart_corners=false`. | Designspace and UFOs are written with structured logs and no silent failures. |
+| X2 | Inspect exported file count and error log. | All expected masters/instances are present or documented as skipped. |
+| X3 | Call `save_font` with no path after a small approved test mutation. | Active working copy is saved; no other open font is saved. |
+| X4 | Call `save_font` with a new temporary path. | Save-as path is created and the active document state is clear. |
+
+## Execute-code workflow
+
+Run in `Edit` profile. These checks verify real-world scripting without using it for tasks that have dedicated tools.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| EC1 | Call `execute_code` with a small read-only snippet that returns Glyphs version and active family name. | Captures stdout/stderr and returns the last expression as configured. |
+| EC2 | Call `execute_code` with `capture_output=false`. | Call completes and large output is not returned through MCP. |
+| EC3 | Call `execute_code` with `max_output_chars` and a deliberately long print. | Output is bounded and clearly truncated. |
+| EC4 | Call `execute_code_with_context` for a selected glyph/layer read-only snippet. | Injected `font`, `glyph`, and `layer` helpers point to the expected targets. |
+| EC5 | Call `execute_code` with `snippet_only=true`. | Returns a Macro Panel snippet without executing it. |
+| EC6 | Call an invalid snippet. | Error envelope is structured, bounded, and does not kill the server. |
+| EC7 | Attempt a snippet containing `exit()` or `sys.exit()` on a copied file. | Server returns an error or safe failure and remains usable afterward. |
+
+Pass criteria:
+
+- Execution tools do not leak unbounded output.
+- Errors stay structured and do not poison later calls.
+- Dedicated tools remain preferred in documentation and agent prompts.
+
+## Security and local access checks
+
+Run at least once per release candidate, preferably in Glyphs 4 unless auth/origin code changed.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| SEC1 | Start without `GLYPHS_MCP_AUTH_TOKEN`. | Local client connects normally. |
+| SEC2 | Start with `GLYPHS_MCP_AUTH_TOKEN` set. | Requests without token fail; requests with `Authorization: Bearer <token>` succeed. |
+| SEC3 | Test `mcp-auth-token` header if the client/tooling supports custom headers. | Valid token succeeds. |
+| SEC4 | Start with restrictive `GLYPHS_MCP_ALLOWED_ORIGINS`. | Allowed local origins work; disallowed origins fail when an `Origin` header is present. |
+| SEC5 | Confirm localhost binding. | Server is not unexpectedly exposed beyond local host. |
+
+## Installer and packaging checks
+
+Run on a clean or near-clean macOS user account when possible.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| P1 | Install with the signed installer app. | Plug-in, dependencies, client configs, and optional skills install without manual file edits. |
+| P2 | Install into Glyphs 3 explicitly. | Plug-in lands in the Glyphs 3-compatible location and starts in Glyphs 3.5. |
+| P3 | Install into Glyphs 4 explicitly or by branch default. | Plug-in lands in the Glyphs 4-compatible location and starts in Glyphs 4. |
+| P4 | Re-run installer over an existing install. | Upgrade path is clear and does not duplicate plug-ins or client entries. |
+| P5 | Install skills for Codex and Claude where selected. | Skills appear after client reload and reference the expected MCP endpoint/workflows. |
+| P6 | Uninstall or overwrite manually if that path is documented for users. | Leaves no stale duplicate bundle that Glyphs can load accidentally. |
+
+## Performance and resilience
+
+Measure on the large font in both Glyphs 3.5 and Glyphs 4.
+
+| Check | Target |
+| --- | --- |
+| Server start | Starts in less than 10 seconds on a normal development machine. |
+| `get_server_info` | Less than 2 seconds. |
+| `list_open_fonts` | Less than 3 seconds. |
+| `get_font_glyphs` on large font | Less than 15 seconds, or documented if the font is unusually large. |
+| `get_font_kerning` on main master | Less than 20 seconds with bounded response size acceptable to the client. |
+| `render_glyph_review_image` for 12 glyphs | Less than 20 seconds and image is visible. |
+| `review_kerning_bumper` with bounded limits | Completes without freezing Glyphs; record elapsed time. |
+| Repeated calls | 20 mixed read calls in a row do not leak obvious memory, crash, or progressively slow down. |
+
+Resilience checks:
+
+- Close the active font and call `list_open_fonts`.
+- Call a glyph-specific tool with no open font.
+- Call a tool with an invalid `font_index`.
+- Call a tool with a missing glyph name.
+- Call a mutating tool in `Read-only` profile.
+- Interrupt or cancel a client request if the client supports cancellation.
+- Restart the MCP client while the Glyphs server remains running.
+
+Expected result: clear errors, no crash, and subsequent valid calls still work.
+
+## Cross-version comparison
+
+After the two required app passes, compare the result logs.
+
+Record differences in:
+
+- Tool list and schemas.
+- Server info fields.
+- Font, master, instance, glyph, path, component, and kerning response shapes.
+- Show-link availability.
+- Image rendering output.
+- Error messages.
+- Performance.
+- Dirty-state behavior.
+- Any Glyphs API compatibility warning in the Macro Panel.
+
+Acceptable differences:
+
+- Glyphs app build numbers.
+- Glyphs API fields that do not exist in one app version.
+- Different internal layer/master IDs for files resaved by different app versions.
+- Minor rendering differences that do not block visual review.
+
+Unacceptable differences:
+
+- Same tool call succeeds in one app version and crashes or hangs in the other.
+- Mutating calls affect different targets.
+- Dry runs mutate in either app.
+- Tool schemas are missing in one app version without intentional profile or compatibility reason.
+
+## Regression prompt pack
+
+Use these prompts in a real MCP client rather than calling only low-level test scripts. They verify the agent-facing experience and common user paths.
+
+### Connection
+
+```text
+Use Glyphs MCP to verify the current setup.
+Call get_server_info, list_open_fonts, and get_selected_font_and_master.
+Tell me the app version, MCP version, active font, active master, selected glyphs, and whether this looks ready for editing.
+Do not mutate or save.
+```
+
+### Large-font inspection
+
+```text
+Inspect the active large font with Glyphs MCP.
+Call get_font_glyphs, get_font_masters, get_font_instances, list_style_sets, and get_font_kerning for the active master.
+Summarize counts, feature coverage, and any errors.
+Do not mutate or save.
+```
+
+### Visual review
+
+```text
+Render a visual review image for A, O, n, o, a composite glyph, and one punctuation glyph.
+Use metrics, sidebearings, bounds, nodes, handles, anchors, and guides overlays.
+Report concrete visual or data issues only.
+Do not mutate or save.
+```
+
+### Spacing safe apply
+
+```text
+Review spacing for my current selection.
+Rules: read first, never auto-save, and do not mutate without a dry run.
+
+1. Call review_spacing.
+2. Call apply_spacing with dry_run=true and conservative clamps.
+3. Summarize changed glyphs, largest deltas, and skipped items.
+4. Stop before confirm=true.
+```
+
+### Kerning safe apply
+
+```text
+Review kerning collisions and near-misses in the active font/master.
+Use bounded limits suitable for a large production font.
+Call review_kerning_bumper first, then apply_kerning_bumper with dry_run=true.
+Summarize the worst findings and proposed exceptions.
+Stop before confirm=true.
+```
+
+### Docs and scripting
+
+```text
+Search the bundled Glyphs docs for GSLayer bounds, fetch the best result, then run a small read-only execute_code snippet that returns the active Glyphs version and active family name.
+Keep output bounded and do not mutate or save.
+```
+
+## Test log template
+
+Copy this section into the release notes or QA issue for each candidate.
+
+```md
+# Glyphs MCP release QA
+
+- Release candidate:
+- Git commit:
+- Artifact:
+- Tester:
+- Date:
+- Large font:
+- Baseline file:
+- Glyphs 3.5 working copy:
+- Glyphs 4 working copy:
+
+## Matrix
+
+| Case | App build | Python runtime | Client | Profile | Result | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| G35-edit | | | | Edit | | |
+| G35-readonly | | | | Read-only | | |
+| G4-edit | | | | Edit | | |
+| G4-readonly | | | | Read-only | | |
+
+## Required sections
+
+| Section | Glyphs 3.5 | Glyphs 4 | Notes |
+| --- | --- | --- | --- |
+| Preflight | | | |
+| Smoke tests | | | |
+| Read-only inspection | | | |
+| Spacing workflow | | | |
+| Kerning workflow | | | |
+| Outline and glyph editing | | | |
+| Annotation workflow | | | |
+| Italic and compensated tuning | | | |
+| Export and save | | | |
+| Execute-code | | | |
+| Security/local access | | | |
+| Installer/packaging | | | |
+| Performance/resilience | | | |
+| Cross-version comparison | | | |
+
+## Blockers
+
+- [ ] None
+
+## Accepted limitations
+
+- 
+
+## Final decision
+
+- [ ] Ready to publish
+- [ ] Not ready
+```
+
+## Cleanup
+
+After testing:
+
+1. Restore or delete all working copies.
+2. Remove temporary export directories.
+3. Remove test client config entries if they point to a development checkout.
+4. Reinstall the public stable version if the machine is used for normal production work.
+5. Archive the test log with the release artifacts.

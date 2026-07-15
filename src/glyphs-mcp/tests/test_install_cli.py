@@ -10,6 +10,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import io
+import json
 import os
 import sys
 import tempfile
@@ -64,6 +65,7 @@ class InstallerSmokeTests(unittest.TestCase):
     def test_glyphs_preferences_domain_matches_major_version(self) -> None:
         install_cli = _load_install_cli()
 
+        self.assertEqual(install_cli.glyphs_preferences_domain(), "com.GeorgSeifert.Glyphs4")
         self.assertEqual(install_cli.glyphs_preferences_domain("3"), "com.GeorgSeifert.Glyphs3")
         self.assertEqual(install_cli.glyphs_preferences_domain("4"), "com.GeorgSeifert.Glyphs4")
 
@@ -121,7 +123,7 @@ class InstallerSmokeTests(unittest.TestCase):
                 Path(tmp)
                 / "Library"
                 / "Application Support"
-                / "Glyphs 3"
+                / "Glyphs 4"
                 / "Plugins"
                 / "Glyphs MCP.glyphsPlugin"
             )
@@ -152,7 +154,7 @@ class InstallerSmokeTests(unittest.TestCase):
                 Path(tmp)
                 / "Library"
                 / "Application Support"
-                / "Glyphs 3"
+                / "Glyphs 4"
                 / "Plugins"
                 / "Glyphs MCP.glyphsPlugin"
             )
@@ -339,7 +341,7 @@ class InstallerSmokeTests(unittest.TestCase):
                 Path(tmp)
                 / "Library"
                 / "Application Support"
-                / "Glyphs 3"
+                / "Glyphs 4"
                 / "Plugins"
                 / "Glyphs MCP.glyphsPlugin"
             )
@@ -404,7 +406,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     Path(tmp)
                     / "Library"
                     / "Application Support"
-                    / "Glyphs 3"
+                    / "Glyphs 4"
                     / "Plugins"
                     / "Glyphs MCP.glyphsPlugin"
                 )
@@ -634,7 +636,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     Path(tmp)
                     / "Library"
                     / "Application Support"
-                    / "Glyphs 3"
+                    / "Glyphs 4"
                     / "Plugins"
                     / "Glyphs MCP.glyphsPlugin"
                 )
@@ -661,7 +663,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     Path(tmp)
                     / "Library"
                     / "Application Support"
-                    / "Glyphs 3"
+                    / "Glyphs 4"
                     / "Plugins"
                     / "Glyphs MCP.glyphsPlugin"
                 )
@@ -696,8 +698,8 @@ class InstallerSmokeTests(unittest.TestCase):
             original_verify = install_cli.verify_runtime
             try:
                 install_cli.run = lambda cmd: calls.append(cmd)
-                install_cli.glyphs_selected_python_bin = lambda glyphs_version="3": None
-                install_cli.glyphs_python_pip = lambda glyphs_version="3": fake_pip
+                install_cli.glyphs_selected_python_bin = lambda glyphs_version="4": None
+                install_cli.glyphs_python_pip = lambda glyphs_version="4": fake_pip
                 install_cli.verify_runtime = lambda *args, **kwargs: True
                 install_cli.install_with_glyphs_python(_repo_root() / "requirements.txt")
             finally:
@@ -714,7 +716,7 @@ class InstallerSmokeTests(unittest.TestCase):
             Path(tmp)
             / "Library"
             / "Application Support"
-            / "Glyphs 3"
+            / "Glyphs 4"
             / "Scripts"
             / "site-packages"
         )
@@ -816,6 +818,249 @@ class InstallerSmokeTests(unittest.TestCase):
                 str(_repo_root() / "requirements.txt"),
             ],
         )
+
+    def test_uninstall_parser_keeps_glyphs_4_default_and_accepts_both(self) -> None:
+        install_cli = _load_install_cli()
+
+        default_options = install_cli.parse_cli_options(["--uninstall", "--dry-run"])
+        both_options = install_cli.parse_cli_options(["--uninstall", "--dry-run", "--glyphs-version", "both"])
+
+        self.assertEqual(default_options.glyphs_version, "4")
+        self.assertEqual(both_options.glyphs_version, "both")
+        self.assertTrue(default_options.uninstall)
+
+    def test_glyphs_both_is_rejected_for_install(self) -> None:
+        self.assert_parser_error(
+            ["--glyphs-version", "both"],
+            "--glyphs-version both can only be used with --uninstall.",
+        )
+
+    def test_non_interactive_uninstall_requires_explicit_confirmation(self) -> None:
+        self.assert_parser_error(
+            ["--uninstall", "--non-interactive"],
+            "--non-interactive --uninstall requires --confirm-uninstall",
+        )
+
+        install_cli = _load_install_cli()
+        options = install_cli.parse_cli_options(["--uninstall", "--non-interactive", "--dry-run"])
+        self.assertTrue(options.dry_run)
+
+    def test_uninstall_component_flag_is_repeatable(self) -> None:
+        install_cli = _load_install_cli()
+        options = install_cli.parse_cli_options([
+            "--uninstall",
+            "--dry-run",
+            "--uninstall-component",
+            "plugin",
+            "--uninstall-component",
+            "clients",
+        ])
+        self.assertEqual(options.uninstall_components, frozenset({"plugin", "clients"}))
+
+    def test_uninstall_rejects_install_only_options(self) -> None:
+        self.assert_parser_error(
+            ["--uninstall", "--skip-deps"],
+            "Install-only options cannot be used with --uninstall.",
+        )
+
+    def test_uninstall_plan_targets_both_exact_plugin_paths(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-uninstall-home.") as tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            try:
+                plan = install_cli.build_uninstall_plan("both", frozenset({"plugin"}))
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+        self.assertEqual([item.glyphs_version for item in plan.candidates], ["3", "4"])
+        self.assertTrue(str(plan.candidates[0].location).endswith("Glyphs 3/Plugins/Glyphs MCP.glyphsPlugin"))
+        self.assertTrue(str(plan.candidates[1].location).endswith("Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin"))
+
+    def test_uninstalling_plugin_symlink_never_removes_target(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-uninstall-home.") as tmp, tempfile.TemporaryDirectory(prefix="glyphs-mcp-plugin-source.") as source_tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            try:
+                source = Path(source_tmp) / "Glyphs MCP.glyphsPlugin"
+                source.mkdir()
+                marker = source / "keep.txt"
+                marker.write_text("keep\n", encoding="utf-8")
+                dest = install_cli.glyphs_plugins_dir("4") / source.name
+                dest.parent.mkdir(parents=True)
+                dest.symlink_to(source, target_is_directory=True)
+
+                plan = install_cli.build_uninstall_plan("4", frozenset({"plugin"}))
+                outcomes = install_cli.execute_uninstall_plan(plan)
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            self.assertEqual(outcomes[0].status, "removed")
+            self.assertFalse(dest.exists())
+            self.assertTrue(marker.exists())
+
+    def test_uninstaller_removes_only_explicit_managed_skill_names(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-uninstall-home.") as tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            try:
+                root = install_cli.codex_skills_dir()
+                managed = root / "glyphs-mcp-connect"
+                custom = root / "glyphs-mcp-private-notes"
+                unrelated = root / "another-skill"
+                for path in (managed, custom, unrelated):
+                    path.mkdir(parents=True, exist_ok=True)
+                plan = install_cli.build_uninstall_plan("4", frozenset({"skills"}))
+                outcomes = install_cli.execute_uninstall_plan(plan)
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            self.assertEqual([outcome.candidate.location.name for outcome in outcomes], ["glyphs-mcp-connect"])
+            self.assertFalse(managed.exists())
+            self.assertTrue(custom.exists())
+            self.assertTrue(unrelated.exists())
+
+    def test_uninstaller_removes_matching_client_entries_with_backups(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-uninstall-home.") as tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            try:
+                codex = install_cli.codex_config_path()
+                codex.parent.mkdir(parents=True)
+                codex.write_text(
+                    "model = \"gpt-5\"\n\n"
+                    "[mcp_servers.glyphs-mcp-server]\n"
+                    f"url = \"{install_cli.MCP_ENDPOINT}\"\n"
+                    "enabled = true\n\n"
+                    "[mcp_servers.keep-me]\nurl = \"https://example.test\"\n",
+                    encoding="utf-8",
+                )
+                claude_code = install_cli.claude_code_config_path()
+                claude_code.write_text(json.dumps({
+                    "theme": "dark",
+                    "mcpServers": {
+                        "glyphs-mcp": {"type": "http", "url": install_cli.MCP_ENDPOINT},
+                        "keep-me": {"type": "http", "url": "https://example.test"},
+                    },
+                }), encoding="utf-8")
+                desktop = install_cli.claude_desktop_config_path()
+                desktop.parent.mkdir(parents=True)
+                desktop.write_text(json.dumps({
+                    "preferences": {"theme": "dark"},
+                    "mcpServers": {
+                        "glyphs-mcp-server": {"command": "npx", "args": ["mcp-remote", install_cli.MCP_ENDPOINT]},
+                    },
+                }), encoding="utf-8")
+
+                plan = install_cli.build_uninstall_plan("4", frozenset({"clients"}))
+                outcomes = install_cli.execute_uninstall_plan(plan)
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            self.assertTrue(all(outcome.status == "removed" for outcome in outcomes))
+            self.assertNotIn("[mcp_servers.glyphs-mcp-server]", codex.read_text(encoding="utf-8"))
+            self.assertIn("[mcp_servers.keep-me]", codex.read_text(encoding="utf-8"))
+            self.assertIn("keep-me", json.loads(claude_code.read_text(encoding="utf-8"))["mcpServers"])
+            self.assertEqual(json.loads(desktop.read_text(encoding="utf-8"))["preferences"], {"theme": "dark"})
+            self.assertTrue(list(codex.parent.glob("config.toml.bak-*")))
+            self.assertTrue(list(claude_code.parent.glob(".claude.json.bak-*")))
+            self.assertTrue(list(desktop.parent.glob("claude_desktop_config.json.bak-*")))
+
+    def test_same_named_custom_client_entry_is_preserved(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-uninstall-home.") as tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            try:
+                path = install_cli.codex_config_path()
+                path.parent.mkdir(parents=True)
+                original = "[mcp_servers.glyphs-mcp-server]\nurl = \"https://custom.example/mcp\"\n"
+                path.write_text(original, encoding="utf-8")
+                plan = install_cli.build_uninstall_plan("4", frozenset({"clients"}))
+                codex = next(item for item in plan.candidates if item.client_kind == "codex")
+                outcomes = install_cli.execute_uninstall_plan(plan)
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            self.assertEqual(codex.state, "preserved")
+            self.assertEqual(path.read_text(encoding="utf-8"), original)
+            self.assertFalse(any(outcome.candidate.client_kind == "codex" and outcome.status == "removed" for outcome in outcomes))
+
+    def test_uninstall_never_touches_python_dependencies_or_parent_folders(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-uninstall-home.") as tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            try:
+                plugin = install_cli.glyphs_plugins_dir("4") / "Glyphs MCP.glyphsPlugin"
+                plugin.mkdir(parents=True)
+                site_package = install_cli.glyphs_scripts_site_packages("4") / "shared_package" / "__init__.py"
+                site_package.parent.mkdir(parents=True)
+                site_package.write_text("shared = True\n", encoding="utf-8")
+                plugins_parent = plugin.parent
+                plan = install_cli.build_uninstall_plan("4", frozenset({"plugin"}))
+                install_cli.execute_uninstall_plan(plan)
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            self.assertTrue(site_package.exists())
+            self.assertTrue(plugins_parent.is_dir())
+
+    def test_running_app_detection_fails_closed_when_processes_cannot_be_read(self) -> None:
+        install_cli = _load_install_cli()
+        original = install_cli.subprocess.check_output
+        try:
+            install_cli.subprocess.check_output = lambda *args, **kwargs: (_ for _ in ()).throw(PermissionError("denied"))
+            self.assertEqual(install_cli._running_glyphs_versions(), frozenset({"unknown"}))
+        finally:
+            install_cli.subprocess.check_output = original
+
+    def test_interactive_uninstall_decline_changes_nothing(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-uninstall-home.") as tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            original_confirm = install_cli.Confirm.ask
+            original_running = install_cli._running_glyphs_versions
+            try:
+                plugin = install_cli.glyphs_plugins_dir("4") / "Glyphs MCP.glyphsPlugin"
+                plugin.mkdir(parents=True)
+                install_cli.Confirm.ask = lambda *args, **kwargs: False
+                install_cli._running_glyphs_versions = lambda: frozenset()
+                options = install_cli.parse_cli_options(["--uninstall", "--uninstall-component", "plugin"])
+                with self.assertRaises(SystemExit) as ctx:
+                    install_cli.run_uninstall(options)
+            finally:
+                install_cli.Confirm.ask = original_confirm
+                install_cli._running_glyphs_versions = original_running
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            self.assertEqual(ctx.exception.code, 3)
+            self.assertTrue(plugin.exists())
 
 
 if __name__ == "__main__":

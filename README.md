@@ -1,8 +1,10 @@
 # Glyphs MCP
 
 > [!IMPORTANT]
-> **Glyphs 4 branch:** the future Glyphs 4 version is maintained on `origin/glyphs4`.  
+> **Glyphs 4 branch:** this README is for `origin/glyphs4`, the branch used for the Glyphs 4 beta and future Glyphs 4 version of Glyphs MCP.  
 > Open it on GitHub: [github.com/thierryc/Glyphs-mcp/tree/glyphs4](https://github.com/thierryc/Glyphs-mcp/tree/glyphs4)
+>
+> **Glyphs 3 compatibility:** v1.2.24 keeps the Glyphs 3 install path available with `--glyphs-version 3` while this branch defaults to Glyphs 4. The local release gate passed with Python 3.12.
 
 Site: https://ap.cx/gmcp
 
@@ -19,11 +21,13 @@ The Installer app is the simplest way to install `Glyphs MCP.glyphsPlugin`, inst
 - Claude App
 - Claude CLI (terminal tools or in VS Code)
 
+The macOS app detects Glyphs 3 and Glyphs 4 independently. If both are installed, both are selected by default; you can install or update either version alone by clearing the other checkbox. Each version keeps its own plug-in, Python, and Application Support status.
+
 ![Glyphs MCP Installer](./website/static/img/glyphs-mcp-installer.png)
 
 - Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg
 - Download (ZIP): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip
-- Latest release: https://github.com/thierryc/Glyphs-mcp/releases/latest
+- Glyphs 4 beta release: https://github.com/thierryc/Glyphs-mcp/releases/latest
 
 The installer can also install the bundled Glyphs MCP skills for Codex and Claude CLI.
 
@@ -39,7 +43,18 @@ Terminal installer:
 python3 install.py
 ```
 
+The terminal installer on this branch continues to target Glyphs 4 by default. To install into Glyphs 3 explicitly, pass `--glyphs-version 3`. The macOS app instead detects and offers every installed Glyphs 3/4 target.
+
 Finder alternative on macOS: double-click `RunInstall.command` in the repo root. It launches the same installer. If Gatekeeper blocks it, right-click → Open once.
+
+To uninstall, open the app’s **Status** page and choose **Uninstall…**. The review sheet lists the exact Glyphs 3/4 plug-ins, managed skills, and matching client entries before asking for confirmation. From Terminal, preview both versions first and then run the interactive uninstall:
+
+```bash
+python3 install.py --uninstall --glyphs-version both --dry-run
+python3 install.py --uninstall --glyphs-version both
+```
+
+The uninstaller intentionally preserves shared Python packages, Glyphs preferences, plug-in settings, font annotations, documents, repositories, and shared parent folders.
 
 Scripted install example:
 
@@ -49,8 +64,10 @@ python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --i
 
 Minimum requirements:
 - macOS 13.0+
-- Glyphs 3
+- Glyphs 3 or Glyphs 4 beta
 - Python 3.11–3.14 (recommended: python.org 3.14)
+
+Glyphs 3 backward compatibility is maintained for the shared MCP server code where possible. The macOS app can target it directly; use `--glyphs-version 3` with the terminal installer.
 
 ## Repo skills for Codex and Claude Code
 
@@ -127,8 +144,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.1.0)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.1.0"`).
+## Command Set (MCP server v1.2.24)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.2.24"`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
@@ -139,6 +156,7 @@ instead because Glyphs requires an absolute file path.
 
 | Tool | Description |
 |------|-------------|
+| `get_server_info` | Return runtime version, runtime ID, code hash, resource path, Glyphs reachability, and open-font count for health checks. |
 | `list_open_fonts` | List all open fonts and basic metadata. |
 | `get_font_glyphs` | Return glyph list and key attributes for a font, including clickable Glyphs show links when available. |
 | `get_font_masters` | Detailed master information for a font, including Metrics `italicAngle` and legacy custom-parameter `slantAngle`. |
@@ -169,6 +187,13 @@ instead because Glyphs requires an absolute file path.
 | `get_glyph_components` | Inspect components used in a glyph. |
 | `add_component_to_glyph` | Append a component to a glyph layer. |
 | `add_anchor_to_glyph` | Add an anchor to a glyph layer. |
+| `get_glyph_annotations` | Inspect native Glyphs annotations for a layer, including MCP ownership metadata when available. |
+| `get_glyph_annotation_groups` | Inspect MCP-managed linked annotation groups on a layer. |
+| `add_glyph_annotation` | Add a native Glyphs annotation and store MCP ownership metadata in layer userData. |
+| `add_glyph_annotation_group` | Add linked annotations, such as a circle or arrow plus a text note, under one MCP group ID. |
+| `update_glyph_annotation` | Update a native annotation by MCP annotation ID or explicit layer annotation index. |
+| `delete_glyph_annotation` | Delete one native annotation by MCP annotation ID or explicit layer annotation index. |
+| `clear_glyph_annotations` | Clear MCP-managed annotations by default, or all annotations with `scope="all"`. |
 | `set_kerning_pair` | Set or remove a kerning value. |
 | `get_selected_glyphs` | Info about glyphs currently selected in UI, including Glyphs show links. |
 | `get_selected_font_and_master` | Current font + master and selection snapshot, including Glyphs show links for selected glyph layers. |
@@ -193,7 +218,7 @@ For performance-sensitive scripts, you can opt into lower-overhead execution:
 - `max_output_chars` / `max_error_chars` to cap returned output and avoid huge responses.
 - `snippet_only=true` to return a ready-to-paste **Macro Panel** snippet instead of executing (useful when you want manual control).
 - Prefer `execute_code_with_context` for glyph-scoped mutations so the script runs with explicit `font` / `glyph` / `layer` helpers.
-- Large glyph edits should still use `glyph.beginUndo()/endUndo()` or `layer.beginChanges()/endChanges()` inside the script.
+- Large glyph edits should use documented layer/font update APIs such as `layer.beginChanges()/endChanges()`; avoid glyph-level undo groups for MCP-driven batch writes.
 - Glyphs undo is glyph-scoped, so master/global edits are not guaranteed undoable.
 
 Avoid calling `exit()` / `quit()` / `sys.exit()` in `execute_code*`; they won't exit Glyphs and can disrupt the call.
@@ -291,6 +316,8 @@ The installer installs the plug-in, installs Python dependencies, and links Glyp
 - Claude App
 - Claude CLI (terminal tools or in VS Code)
 
+In the macOS app, choose Glyphs 3, Glyphs 4, or both. Missing versions remain visible but disabled, and a running unselected Glyphs version does not block the selected installation.
+
 Any MCP-compatible client can use this server. For now, the automatic installer covers only the apps above. Because this is a localhost MCP server, manual configuration in other clients is usually just the endpoint URL:
 
 ```text
@@ -303,7 +330,16 @@ For automation or reproducible dev setup, use non-interactive mode:
 python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
 ```
 
-If you need a manual install instead, copy or symlink `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 3/Plugins/`, then restart Glyphs.
+Safe uninstall preview and non-interactive removal:
+
+```bash
+python3 install.py --uninstall --glyphs-version both --dry-run
+python3 install.py --uninstall --glyphs-version both --non-interactive --confirm-uninstall
+```
+
+Use repeatable `--uninstall-component plugin`, `skills`, or `clients` options to limit the removal. Without those options, all safely attributable components are reviewed. Python dependencies are never removed because their installation locations can be shared with unrelated Glyphs scripts and Python tools.
+
+If you need a manual install instead, copy or symlink `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 4/Plugins/`, then restart Glyphs.
 
 After installation, Glyphs MCP adds one menu item:
 

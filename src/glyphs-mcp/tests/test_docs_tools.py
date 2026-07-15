@@ -102,6 +102,13 @@ class DocsToolsTests(unittest.TestCase):
         self.assertFalse(payload["ok"])
         self.assertIn("Missing doc_id or path", payload["error"])
 
+    def test_docs_enable_page_resources_registers_pages(self) -> None:
+        out = asyncio.run(self.module.docs_enable_page_resources())
+        payload = json.loads(out)
+        self.assertTrue(payload["ok"])
+        self.assertGreater(payload["registeredPages"], 0)
+        self.assertIn("Per-page resources", payload["note"])
+
 
 if __name__ == "__main__":
     unittest.main()

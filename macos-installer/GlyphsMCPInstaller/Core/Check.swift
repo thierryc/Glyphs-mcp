@@ -16,7 +16,6 @@ public enum Check {
 	public static func scan() -> CheckResult {
 		var items: [PreflightItem] = []
 		let fm = FileManager.default
-		let runner = ProcessRunner()
 
 		let glyphsBase = InstallerPaths.glyphsBaseDir
 		let pluginsDir = InstallerPaths.glyphsPluginsDir
@@ -50,6 +49,17 @@ public enum Check {
 		let pluginsCount = (try? fm.contentsOfDirectory(atPath: pluginsDir.path).filter { $0.hasSuffix(".glyphsPlugin") }.count) ?? 0
 		items.append(.init(level: .ok, title: NSLocalizedString("Glyphs plugins detected", comment: "Check item title"), details: "\(pluginsCount)"))
 
+		items.append(contentsOf: clientItems())
+		return CheckResult(items: items)
+	}
+
+	public static func scanClients() -> CheckResult {
+		CheckResult(items: clientItems())
+	}
+
+	private static func clientItems() -> [PreflightItem] {
+		var items: [PreflightItem] = []
+		let runner = ProcessRunner()
 		let codexApp = AppLocator.findApp(namedAnyOf: ["Codex"], home: InstallerPaths.home)
 		items.append(.init(
 			level: codexApp == nil ? .warn : .ok,
@@ -81,7 +91,7 @@ public enum Check {
 		items.append(claudeDesktopMcpStatus(claudeAppPath: claudeApp))
 		items.append(claudeCodeMcpStatus(claudeCliPath: claudeCli, runner: runner))
 
-		return CheckResult(items: items)
+		return items
 	}
 
 	private static func codexMcpStatus(codexAppPath: String?, codexCliPath: String?, runner: ProcessRunner) -> PreflightItem {

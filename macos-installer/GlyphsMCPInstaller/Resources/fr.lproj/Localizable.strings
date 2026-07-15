@@ -75,7 +75,7 @@
 "Copy command" = "Copier la commande";
 "You’re ready" = "Tout est prêt";
 "Next steps" = "Étapes suivantes";
-"2) In Glyphs: Edit → Start MCP Server" = "2) Dans Glyphs : Édition → Démarrer le serveur MCP";
+"2) In Glyphs: Edit → Glyphs MCP Server" = "2) Dans Glyphs : Édition → Serveur Glyphs MCP";
 "Try it now" = "Essayez maintenant";
 "Example prompt: List open fonts" = "Exemple de prompt : Lister les polices ouvertes";
 
@@ -141,7 +141,7 @@
 /* Help sheet markdown */
 "For the smoothest custom setup, install Python **3.14** from python.org." = "Pour une configuration personnalisée optimale, installez Python **3.14** depuis python.org.";
 "Then, in **Glyphs → Settings → Addons → Python version**, select the same **3.14** version and restart Glyphs." = "Ensuite, dans **Glyphs → Réglages → Modules complémentaires → Version Python**, sélectionnez la même version **3.14** et redémarrez Glyphs.";
-"2) In Glyphs: **Edit → Start MCP Server**" = "2) Dans Glyphs : **Édition → Démarrer le serveur MCP**";
+"2) In Glyphs: **Edit → Glyphs MCP Server**" = "2) Dans Glyphs : **Édition → Serveur Glyphs MCP**";
 "Download latest plug‑in from GitHub (optional)" = "Télécharger le dernier plug‑in depuis GitHub (optionnel)";
 "If enabled, the installer will download the latest plug‑in from GitHub over HTTPS before installing." = "Si activé, l’installateur téléchargera le dernier plug‑in depuis GitHub via HTTPS avant l’installation.";
 "Use the same Python version shown in Glyphs → Settings → Addons → Python version. Changing it in Glyphs requires restarting Glyphs." = "Utilisez la même version de Python que celle indiquée dans Glyphs → Réglages → Modules complémentaires → Version Python. Modifier ce réglage dans Glyphs nécessite de redémarrer Glyphs.";
@@ -150,3 +150,78 @@
 "Optional. This edits local config files (with backups) or uses CLIs when available." = "Optionnel. Modifie des fichiers de configuration locaux (avec sauvegardes) ou utilise des CLI si disponibles.";
 "3) Try an example prompt (below)" = "3) Essayez un exemple de prompt (ci-dessous)";
 "If your agent can’t connect, restart Glyphs and start the MCP server first, then try again." = "Si votre agent ne peut pas se connecter, redémarrez Glyphs et démarrez d’abord le serveur MCP, puis réessayez.";
+
+/* Sélection des cibles Glyphs 3 / Glyphs 4 */
+"Install for" = "Installer pour";
+"Detected" = "Détecté";
+"Not detected" = "Non détecté";
+"Selected Glyphs version is running" = "La version de Glyphs sélectionnée est ouverte";
+"Quit the selected Glyphs versions before running the wizard." = "Quittez les versions de Glyphs sélectionnées avant de lancer l’assistant.";
+"Quit the selected Glyphs versions before updating the plug-in." = "Quittez les versions de Glyphs sélectionnées avant de mettre à jour le plug-in.";
+"Install %@ before selecting this target." = "Installez %@ avant de sélectionner cette cible.";
+"Plug-in: %@ • Python: %@" = "Plug-in : %@ • Python : %@";
+"Running — quit before installation" = "Ouvert — quittez avant l’installation";
+"Replace %@ symlink with latest GitHub plug-in" = "Remplacer le lien symbolique de %@ par le dernier plug-in GitHub";
+"Glyphs installations" = "Installations de Glyphs";
+"App version" = "Version de l’app";
+"Application" = "Application";
+"Running" = "Ouvert";
+"Yes" = "Oui";
+"No" = "Non";
+"Install %@ dependencies" = "Installer les dépendances de %@";
+"Install %@ plug-in" = "Installer le plug-in de %@";
+"Install Glyphs MCP Server" = "Installer Glyphs MCP Server";
+"Update Glyphs MCP Server" = "Mettre à jour Glyphs MCP Server";
+"Install / Update Glyphs MCP Server" = "Installer / mettre à jour Glyphs MCP Server";
+"%@ must be closed so the plug-in can update cleanly.\n\nQuit now?" = "%@ doit être fermé pour que le plug-in soit mis à jour correctement.\n\nQuitter maintenant ?";
+
+/* Désinstallation sécurisée */
+"Uninstall…" = "Désinstaller…";
+"Review exactly what will be removed before uninstalling." = "Vérifiez précisément ce qui sera supprimé avant la désinstallation.";
+"Review Glyphs MCP Uninstall" = "Vérifier la désinstallation de Glyphs MCP";
+"Nothing is removed until you confirm below." = "Rien ne sera supprimé avant votre confirmation ci-dessous.";
+"Quit only the selected running Glyphs versions before removing their plug-ins." = "Quittez uniquement les versions de Glyphs sélectionnées avant de supprimer leurs plug-ins.";
+"Quit Selected Glyphs Apps…" = "Quitter les apps Glyphs sélectionnées…";
+"Glyphs plug-ins" = "Plug-ins Glyphs";
+"Managed skills" = "Skills gérés";
+"Client configuration" = "Configuration des clients";
+"Always preserved" = "Toujours conservé";
+"Python packages and every site-packages folder" = "Paquets Python et tous les dossiers site-packages";
+"Glyphs preferences and Glyphs MCP settings" = "Préférences de Glyphs et réglages de Glyphs MCP";
+"Font annotations, documents, repositories, and shared parent folders" = "Annotations de polices, documents, dépôts et dossiers parents partagés";
+"I understand that the selected items will be permanently removed." = "Je comprends que les éléments sélectionnés seront définitivement supprimés.";
+"1 item selected" = "1 élément sélectionné";
+"%d items selected" = "%d éléments sélectionnés";
+"Uninstall" = "Désinstaller";
+"Uninstall complete" = "Désinstallation terminée";
+"Uninstall partially completed" = "Désinstallation partiellement terminée";
+"Removed: %d • Skipped: %d • Failed: %d" = "Supprimés : %d • Ignorés : %d • Échecs : %d";
+"Important — review before continuing" = "Important — vérifiez avant de continuer";
+"The uninstaller removes only checked items at the exact paths shown below. Matching client configuration files are backed up first. Same-named custom entries are preserved." = "Le programme de désinstallation supprime uniquement les éléments cochés aux chemins exacts indiqués ci-dessous. Les fichiers de configuration correspondants sont d’abord sauvegardés. Les entrées personnalisées de même nom sont conservées.";
+"Shared Python dependencies cannot be attributed safely and will not be removed." = "Les dépendances Python partagées ne peuvent pas être attribuées de manière fiable et ne seront pas supprimées.";
+"Selected for removal" = "Sélectionné pour suppression";
+"Not selected" = "Non sélectionné";
+"Nothing safely attributable is currently installed." = "Aucun élément attribuable de manière fiable n’est actuellement installé.";
+"Preserved" = "Conservé";
+"Cannot inspect — preserved" = "Inspection impossible — conservé";
+"must be closed so its plug-in can be removed safely." = "doit être fermé pour que son plug-in puisse être supprimé en toute sécurité.";
+"%@ %@\n\nQuit now?" = "%@ %@\n\nQuitter maintenant ?";
+"== Uninstall ==" = "== Désinstallation ==";
+"Uninstall complete. Removed %d item(s)." = "Désinstallation terminée. %d élément(s) supprimé(s).";
+"Uninstall finished with %d failure(s). Completed changes were kept." = "La désinstallation s’est terminée avec %d échec(s). Les modifications terminées ont été conservées.";
+"No matching Glyphs MCP entry." = "Aucune entrée Glyphs MCP correspondante.";
+"A same-named entry has different settings and will be preserved." = "Une entrée de même nom possède des réglages différents et sera conservée.";
+"Matching Glyphs MCP client entry." = "Entrée client Glyphs MCP correspondante.";
+"The configuration root is not a JSON object." = "La racine de la configuration n’est pas un objet JSON.";
+"The configuration could not be parsed and will not be changed." = "La configuration n’a pas pu être analysée et ne sera pas modifiée.";
+"%@ plug-in" = "Plug-in %@";
+"Development symlink; only the link will be removed." = "Lien symbolique de développement ; seul le lien sera supprimé.";
+"Installed plug-in bundle." = "Bundle du plug-in installé.";
+"Exact managed skill destination." = "Destination exacte du skill géré.";
+"%@ MCP entry" = "Entrée MCP %@";
+"Configuration file not found." = "Fichier de configuration introuvable.";
+"Could not read configuration: %@" = "Impossible de lire la configuration : %@";
+"Already absent." = "Déjà absent.";
+"Removed." = "Supprimé.";
+"The entry changed and was preserved." = "L’entrée a changé et a été conservée.";
+"Removed; configuration backup created." = "Supprimé ; une sauvegarde de la configuration a été créée.";

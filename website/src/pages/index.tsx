@@ -19,8 +19,8 @@ export default function Home(): React.JSX.Element {
         <div className={styles.heroInner}>
           <h1 className="hero__title">Glyphs MCP</h1>
           <p className={styles.tagline}>
-            Canonical documentation for the Glyphs 3 plug-in that exposes safe, font-specific
-            Model Context Protocol tools to AI clients.
+            Canonical documentation for the Glyphs plug-in that exposes safe, font-specific
+            Model Context Protocol tools to AI clients, with Glyphs 4 beta support on this branch.
           </p>
           <p className={styles.endpoint}>
             Local endpoint: <code>http://127.0.0.1:9680/mcp/</code>
@@ -71,7 +71,7 @@ export default function Home(): React.JSX.Element {
                   Install the plug-in and dependencies: <code>python3 install.py</code>
                 </li>
                 <li>
-                  In Glyphs, start the server: <strong>Edit -&gt; Start Glyphs MCP Server</strong>
+                  In Glyphs, start the server: <strong>Edit -&gt; Glyphs MCP Server</strong>
                 </li>
                 <li>
                   Connect your client to <code>http://127.0.0.1:9680/mcp/</code>
@@ -82,7 +82,7 @@ export default function Home(): React.JSX.Element {
               </ol>
 
               <CodeBlock language="bash">{`python3 install.py
-# In Glyphs: Edit -> Start Glyphs MCP Server
+# In Glyphs: Edit -> Glyphs MCP Server
 # Connect: http://127.0.0.1:9680/mcp/`}</CodeBlock>
 
               <p>

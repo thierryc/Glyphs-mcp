@@ -62,24 +62,24 @@ public enum InstallerConstants {
 public enum InstallerPaths {
 	public static var home: URL { FileManager.default.homeDirectoryForCurrentUser }
 	public static var glyphsBaseDir: URL {
-		glyphsBaseDir(glyphsVersion: .v3)
+		glyphsBaseDir(glyphsVersion: .installerDefault)
 	}
-	public static func glyphsBaseDir(glyphsVersion: GlyphsMajorVersion = .v3) -> URL {
+	public static func glyphsBaseDir(glyphsVersion: GlyphsMajorVersion = .installerDefault) -> URL {
 		home.appendingPathComponent("Library/Application Support/\(glyphsVersion.applicationSupportName)", isDirectory: true)
 	}
 	public static var glyphsPluginsDir: URL {
-		glyphsPluginsDir(glyphsVersion: .v3)
+		glyphsPluginsDir(glyphsVersion: .installerDefault)
 	}
-	public static func glyphsPluginsDir(glyphsVersion: GlyphsMajorVersion = .v3) -> URL {
+	public static func glyphsPluginsDir(glyphsVersion: GlyphsMajorVersion = .installerDefault) -> URL {
 		glyphsBaseDir(glyphsVersion: glyphsVersion).appendingPathComponent("Plugins", isDirectory: true)
 	}
-	public static func glyphsScriptsSitePackages(glyphsVersion: GlyphsMajorVersion = .v3) -> URL {
+	public static func glyphsScriptsSitePackages(glyphsVersion: GlyphsMajorVersion = .installerDefault) -> URL {
 		glyphsBaseDir(glyphsVersion: glyphsVersion).appendingPathComponent("Scripts/site-packages", isDirectory: true)
 	}
 	public static func glyphsPythonPip3() -> URL? {
-		glyphsPythonPip3(glyphsVersion: .v3)
+		glyphsPythonPip3(glyphsVersion: .installerDefault)
 	}
-	public static func glyphsPythonPip3(glyphsVersion: GlyphsMajorVersion = .v3) -> URL? {
+	public static func glyphsPythonPip3(glyphsVersion: GlyphsMajorVersion = .installerDefault) -> URL? {
 		let base = glyphsBaseDir(glyphsVersion: glyphsVersion).appendingPathComponent("Repositories/GlyphsPythonPlugin/Python.framework/Versions/Current/bin/pip3")
 		return FileManager.default.isExecutableFile(atPath: base.path) ? base : nil
 	}

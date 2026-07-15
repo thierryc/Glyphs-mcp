@@ -16,14 +16,17 @@ Run:
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import plistlib
 import re
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
-from typing import List, Literal, Optional, Tuple
+from typing import FrozenSet, List, Literal, Optional, Tuple
 
 try:
     from rich import box
@@ -171,6 +174,19 @@ PYTHON_BINARY_PATTERN = re.compile(r"^python3(\.\d+)?$")
 MIN_PY_VERSION = (3, 11, 0)  # Allow 3.11+, prefer 3.14+
 MAX_PY_VERSION_EXCLUSIVE = (3, 15, 0)  # Disallow 3.15+ until tested
 SKILL_PREFIX = "glyphs-mcp-"
+MANAGED_SKILL_NAMES = (
+    "glyphs-mcp-connect",
+    "glyphs-mcp-features",
+    "glyphs-mcp-italic-first-pass",
+    "glyphs-mcp-kerning",
+    "glyphs-mcp-outlines-docs",
+    "glyphs-mcp-spacing",
+)
+MCP_ENDPOINT = "http://127.0.0.1:9680/mcp/"
+CODEX_SERVER_NAME = "glyphs-mcp-server"
+CLAUDE_DESKTOP_SERVER_NAME = "glyphs-mcp-server"
+CLAUDE_CODE_SERVER_NAME = "glyphs-mcp"
+UNINSTALL_COMPONENTS = frozenset({"plugin", "skills", "clients"})
 REQUIRED_RUNTIME_MODULES = [
     "mcp",
     "fastmcp",
@@ -227,7 +243,7 @@ def sign_plugin_executable(bundle: Path) -> None:
 @dataclass
 class InstallerOptions:
     non_interactive: bool
-    glyphs_version: Literal["3", "4"] = "3"
+    glyphs_version: Literal["3", "4", "both"] = "4"
     skip_deps: bool = False
     python_mode: Optional[Literal["glyphs", "custom"]] = None
     python_path: Optional[Path] = None
@@ -237,21 +253,54 @@ class InstallerOptions:
     overwrite_plugin: Optional[bool] = None
     overwrite_skills: Optional[bool] = None
     show_client_guidance: Optional[bool] = None
+    uninstall: bool = False
+    uninstall_components: FrozenSet[str] = field(default_factory=frozenset)
+    dry_run: bool = False
+    confirm_uninstall: bool = False
+
+
+@dataclass(frozen=True)
+class UninstallCandidate:
+    identifier: str
+    component: Literal["plugin", "skills", "clients"]
+    label: str
+    location: Path
+    state: Literal["removable", "missing", "preserved", "blocked"]
+    detail: str
+    glyphs_version: Optional[Literal["3", "4"]] = None
+    client_kind: Optional[Literal["codex", "claude-desktop", "claude-code"]] = None
+
+
+@dataclass(frozen=True)
+class GlyphsUninstallPlan:
+    components: FrozenSet[str]
+    candidates: Tuple[UninstallCandidate, ...]
+
+    @property
+    def removable_candidates(self) -> Tuple[UninstallCandidate, ...]:
+        return tuple(candidate for candidate in self.candidates if candidate.state == "removable")
+
+
+@dataclass(frozen=True)
+class UninstallOutcome:
+    candidate: UninstallCandidate
+    status: Literal["removed", "skipped", "failed"]
+    message: str
 
 
 def repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
-def glyphs_base_dir(glyphs_version: Literal["3", "4"] = "3") -> Path:
+def glyphs_base_dir(glyphs_version: Literal["3", "4"] = "4") -> Path:
     return Path.home() / "Library" / "Application Support" / f"Glyphs {glyphs_version}"
 
 
-def glyphs_plugins_dir(glyphs_version: Literal["3", "4"] = "3") -> Path:
+def glyphs_plugins_dir(glyphs_version: Literal["3", "4"] = "4") -> Path:
     return glyphs_base_dir(glyphs_version) / "Plugins"
 
 
-def glyphs_scripts_site_packages(glyphs_version: Literal["3", "4"] = "3") -> Path:
+def glyphs_scripts_site_packages(glyphs_version: Literal["3", "4"] = "4") -> Path:
     return glyphs_base_dir(glyphs_version) / "Scripts" / "site-packages"
 
 
@@ -263,17 +312,29 @@ def claude_code_skills_dir() -> Path:
     return Path.home() / ".claude" / "skills"
 
 
-def glyphs_python_pip(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+def codex_config_path() -> Path:
+    return Path.home() / ".codex" / "config.toml"
+
+
+def claude_desktop_config_path() -> Path:
+    return Path.home() / "Library" / "Application Support" / "Claude" / "claude_desktop_config.json"
+
+
+def claude_code_config_path() -> Path:
+    return Path.home() / ".claude.json"
+
+
+def glyphs_python_pip(glyphs_version: Literal["3", "4"] = "4") -> Optional[Path]:
     base = glyphs_base_dir(glyphs_version) / "Repositories" / "GlyphsPythonPlugin" / "Python.framework"
     pip = base / "Versions" / "Current" / "bin" / "pip3"
     return pip if pip.exists() else None
 
 
-def glyphs_preferences_domain(glyphs_version: Literal["3", "4"] = "3") -> str:
+def glyphs_preferences_domain(glyphs_version: Literal["3", "4"] = "4") -> str:
     return "com.GeorgSeifert.Glyphs4" if glyphs_version == "4" else "com.GeorgSeifert.Glyphs3"
 
 
-def glyphs_selected_python_framework(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+def glyphs_selected_python_framework(glyphs_version: Literal["3", "4"] = "4") -> Optional[Path]:
     try:
         out = subprocess.check_output(
             ["defaults", "read", glyphs_preferences_domain(glyphs_version), "GSPythonFrameworkPath"],
@@ -288,7 +349,7 @@ def glyphs_selected_python_framework(glyphs_version: Literal["3", "4"] = "3") ->
     return framework if framework.exists() else None
 
 
-def glyphs_selected_python_bin(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+def glyphs_selected_python_bin(glyphs_version: Literal["3", "4"] = "4") -> Optional[Path]:
     framework = glyphs_selected_python_framework(glyphs_version)
     if not framework:
         return None
@@ -305,7 +366,7 @@ def glyphs_selected_python_bin(glyphs_version: Literal["3", "4"] = "3") -> Optio
     return None
 
 
-def glyphs_python_bin(glyphs_version: Literal["3", "4"] = "3") -> Optional[Path]:
+def glyphs_python_bin(glyphs_version: Literal["3", "4"] = "4") -> Optional[Path]:
     pip = glyphs_python_pip(glyphs_version)
     if not pip:
         return None
@@ -332,7 +393,17 @@ def build_arg_parser() -> argparse.ArgumentParser:
         add_help=True,
     )
     parser.add_argument("--non-interactive", action="store_true", help="Run without prompts. Required choices must be provided explicitly.")
-    parser.add_argument("--glyphs-version", choices=["3", "4"], default="3", help="Glyphs major version to target for plug-in and Glyphs Python paths.")
+    parser.add_argument("--glyphs-version", choices=["3", "4", "both"], default="4", help="Glyphs major version to target. 'both' is available only with --uninstall.")
+    parser.add_argument("--uninstall", action="store_true", help="Review and remove safely attributable Glyphs MCP components.")
+    parser.add_argument(
+        "--uninstall-component",
+        action="append",
+        choices=sorted(UNINSTALL_COMPONENTS),
+        default=[],
+        help="Limit uninstall to a component category. Repeat for multiple categories.",
+    )
+    parser.add_argument("--dry-run", action="store_true", help="Preview an uninstall without changing files.")
+    parser.add_argument("--confirm-uninstall", action="store_true", help="Required confirmation for a non-interactive uninstall.")
     parser.add_argument("--skip-deps", action="store_true", help="Skip Python dependency installation. Useful for dev-mode plug-in symlink tests.")
     parser.add_argument("--python-mode", choices=["glyphs", "custom"], help="Python environment to use for dependency installation.")
     parser.add_argument("--python-path", help="Absolute path to python3 when using --python-mode custom.")
@@ -387,12 +458,43 @@ def parse_cli_options(argv: Optional[List[str]] = None) -> InstallerOptions:
         overwrite_plugin=overwrite_plugin,
         overwrite_skills=overwrite_skills,
         show_client_guidance=show_client_guidance,
+        uninstall=ns.uninstall,
+        uninstall_components=frozenset(ns.uninstall_component),
+        dry_run=ns.dry_run,
+        confirm_uninstall=ns.confirm_uninstall,
     )
     validate_options(options, parser)
     return options
 
 
 def validate_options(options: InstallerOptions, parser: argparse.ArgumentParser) -> None:
+    if options.uninstall:
+        install_only_options = [
+            options.skip_deps,
+            options.python_mode is not None,
+            options.python_path is not None,
+            options.plugin_mode is not None,
+            options.install_skills is not None,
+            options.skills_target is not None,
+            options.overwrite_plugin is not None,
+            options.overwrite_skills is not None,
+            options.show_client_guidance is not None,
+        ]
+        if any(install_only_options):
+            parser.error("Install-only options cannot be used with --uninstall.")
+        if options.non_interactive and not options.dry_run and not options.confirm_uninstall:
+            parser.error("--non-interactive --uninstall requires --confirm-uninstall (or use --dry-run).")
+        return
+
+    if options.glyphs_version == "both":
+        parser.error("--glyphs-version both can only be used with --uninstall.")
+    if options.uninstall_components:
+        parser.error("--uninstall-component can only be used with --uninstall.")
+    if options.dry_run:
+        parser.error("--dry-run can only be used with --uninstall.")
+    if options.confirm_uninstall:
+        parser.error("--confirm-uninstall can only be used with --uninstall.")
+
     if options.skip_deps:
         if options.python_mode is not None:
             parser.error("--python-mode cannot be used with --skip-deps.")
@@ -599,7 +701,7 @@ def run(cmd: List[str]) -> None:
     subprocess.check_call(cmd)
 
 
-def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", "4"] = "3") -> None:
+def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", "4"] = "4") -> None:
     selected_python = glyphs_selected_python_bin(glyphs_version)
     selected_version = python_version(selected_python) if selected_python else None
     if selected_python and selected_version:
@@ -670,7 +772,7 @@ def install_with_custom_python(python: Path, requirements: Path) -> None:
 def install_plugin(
     mode: str = "copy",
     overwrite_existing: Optional[bool] = None,
-    glyphs_version: Literal["3", "4"] = "3",
+    glyphs_version: Literal["3", "4"] = "4",
     sign_executable: bool = True,
 ) -> bool:
     """Install the plug-in by copying or linking (dev mode)."""
@@ -892,7 +994,7 @@ def choose_custom_python(cands: List[PythonCandidate]) -> Path:
 
 def resolve_python_selection_interactive(
     requirements: Path,
-    glyphs_version: Literal["3", "4"] = "3",
+    glyphs_version: Literal["3", "4"] = "4",
     skip_deps: bool = False,
 ) -> None:
     if skip_deps:
@@ -964,6 +1066,382 @@ def skill_targets_from_option(skills_target: Literal["codex", "claude", "both"])
     return [("Codex", codex_skills_dir()), ("Claude Code", claude_code_skills_dir())]
 
 
+# MARK: - Safe uninstall
+
+def _path_exists(path: Path) -> bool:
+    return path.exists() or path.is_symlink()
+
+
+def _uninstall_versions(selection: Literal["3", "4", "both"]) -> Tuple[Literal["3", "4"], ...]:
+    if selection == "both":
+        return ("3", "4")
+    return (selection,)
+
+
+def _read_codex_server_block(toml: str) -> Optional[Tuple[int, int, Optional[str]]]:
+    lines = toml.splitlines(keepends=True)
+    header = f"[mcp_servers.{CODEX_SERVER_NAME}]"
+    start: Optional[int] = None
+    for index, line in enumerate(lines):
+        if line.strip() == header:
+            start = index
+            break
+    if start is None:
+        return None
+
+    end = len(lines)
+    url: Optional[str] = None
+    for index in range(start + 1, len(lines)):
+        stripped = lines[index].strip()
+        if stripped.startswith("["):
+            end = index
+            break
+        match = re.match(r"^url\s*=\s*(['\"])(.*?)\1\s*(?:#.*)?$", stripped)
+        if match:
+            url = match.group(2)
+    return start, end, url
+
+
+def inspect_codex_config(path: Path) -> Tuple[str, str]:
+    if not path.exists():
+        return "missing", "Configuration file not found."
+    try:
+        toml = path.read_text(encoding="utf-8")
+    except Exception as error:
+        return "blocked", f"Could not read configuration: {error}"
+    block = _read_codex_server_block(toml)
+    if block is None:
+        return "missing", f"No {CODEX_SERVER_NAME} entry."
+    if block[2] != MCP_ENDPOINT:
+        return "preserved", "A same-named entry has a different URL and is treated as user-managed."
+    return "removable", "Matching Glyphs MCP Codex entry."
+
+
+def remove_codex_config_entry(path: Path) -> bool:
+    toml = path.read_text(encoding="utf-8")
+    block = _read_codex_server_block(toml)
+    if block is None or block[2] != MCP_ENDPOINT:
+        return False
+    start, end, _url = block
+    lines = toml.splitlines(keepends=True)
+    del lines[start:end]
+    updated = "".join(lines)
+    _backup_file(path)
+    path.write_text(updated, encoding="utf-8")
+    return True
+
+
+def _load_json_object(path: Path) -> Tuple[Optional[dict], Optional[str]]:
+    if not path.exists():
+        return None, None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as error:
+        return None, f"Could not parse configuration: {error}"
+    if not isinstance(data, dict):
+        return None, "The configuration root is not a JSON object."
+    return data, None
+
+
+def _json_server(path: Path, server_name: str) -> Tuple[Optional[dict], Optional[str]]:
+    root, error = _load_json_object(path)
+    if error or root is None:
+        return None, error
+    servers = root.get("mcpServers")
+    if servers is None:
+        return None, None
+    if not isinstance(servers, dict):
+        return None, "The mcpServers value is not a JSON object."
+    server = servers.get(server_name)
+    if server is None:
+        return None, None
+    if not isinstance(server, dict):
+        return None, "The matching server entry is not a JSON object."
+    return server, None
+
+
+def inspect_claude_code_config(path: Path) -> Tuple[str, str]:
+    if not path.exists():
+        return "missing", "Configuration file not found."
+    server, error = _json_server(path, CLAUDE_CODE_SERVER_NAME)
+    if error:
+        return "blocked", error
+    if server is None:
+        return "missing", f"No {CLAUDE_CODE_SERVER_NAME} entry."
+    if server.get("type") != "http" or server.get("url") != MCP_ENDPOINT:
+        return "preserved", "A same-named entry has a different transport or URL and is treated as user-managed."
+    return "removable", "Matching Glyphs MCP Claude Code entry."
+
+
+def inspect_claude_desktop_config(path: Path) -> Tuple[str, str]:
+    if not path.exists():
+        return "missing", "Configuration file not found."
+    server, error = _json_server(path, CLAUDE_DESKTOP_SERVER_NAME)
+    if error:
+        return "blocked", error
+    if server is None:
+        return "missing", f"No {CLAUDE_DESKTOP_SERVER_NAME} entry."
+    args = server.get("args")
+    matches_args = (
+        isinstance(args, list)
+        and all(isinstance(value, str) for value in args)
+        and "mcp-remote" in args
+        and MCP_ENDPOINT in args
+    )
+    if server.get("command") != "npx" or not matches_args:
+        return "preserved", "A same-named entry has a different command or endpoint and is treated as user-managed."
+    return "removable", "Matching Glyphs MCP Claude Desktop entry."
+
+
+def remove_json_config_entry(
+    path: Path,
+    client_kind: Literal["claude-desktop", "claude-code"],
+    server_name: str,
+) -> bool:
+    state, _detail = (
+        inspect_claude_desktop_config(path)
+        if client_kind == "claude-desktop"
+        else inspect_claude_code_config(path)
+    )
+    if state != "removable":
+        return False
+    root, error = _load_json_object(path)
+    if error or root is None:
+        return False
+    servers = root.get("mcpServers")
+    if not isinstance(servers, dict) or server_name not in servers:
+        return False
+    updated_servers = dict(servers)
+    del updated_servers[server_name]
+    updated_root = dict(root)
+    updated_root["mcpServers"] = updated_servers
+    _backup_file(path)
+    path.write_text(json.dumps(updated_root, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return True
+
+
+def _backup_file(path: Path) -> Path:
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    backup = path.with_name(f"{path.name}.bak-{timestamp}")
+    shutil.copy2(path, backup)
+    return backup
+
+
+def build_uninstall_plan(
+    glyphs_version: Literal["3", "4", "both"] = "4",
+    components: Optional[FrozenSet[str]] = None,
+) -> GlyphsUninstallPlan:
+    selected_components = UNINSTALL_COMPONENTS if components is None else components
+    candidates: List[UninstallCandidate] = []
+
+    if "plugin" in selected_components:
+        for version in _uninstall_versions(glyphs_version):
+            path = glyphs_plugins_dir(version) / "Glyphs MCP.glyphsPlugin"
+            exists = _path_exists(path)
+            candidates.append(UninstallCandidate(
+                identifier=f"plugin-{version}",
+                component="plugin",
+                label=f"Glyphs {version} plug-in",
+                location=path,
+                state="removable" if exists else "missing",
+                detail=("Development symlink; only the link will be removed." if path.is_symlink() else "Installed plug-in bundle.") if exists else "Not installed.",
+                glyphs_version=version,
+            ))
+
+    if "skills" in selected_components:
+        for client_name, root in (("Codex", codex_skills_dir()), ("Claude Code", claude_code_skills_dir())):
+            for skill_name in MANAGED_SKILL_NAMES:
+                path = root / skill_name
+                if not _path_exists(path):
+                    continue
+                candidates.append(UninstallCandidate(
+                    identifier=f"skill-{client_name.lower().replace(' ', '-')}-{skill_name}",
+                    component="skills",
+                    label=f"{client_name} skill: {skill_name}",
+                    location=path,
+                    state="removable",
+                    detail="Exact managed skill destination.",
+                ))
+
+    if "clients" in selected_components:
+        client_specs = (
+            ("codex", "Codex MCP entry", codex_config_path(), inspect_codex_config),
+            ("claude-desktop", "Claude Desktop MCP entry", claude_desktop_config_path(), inspect_claude_desktop_config),
+            ("claude-code", "Claude Code MCP entry", claude_code_config_path(), inspect_claude_code_config),
+        )
+        for client_kind, label, path, inspector in client_specs:
+            state, detail = inspector(path)
+            candidates.append(UninstallCandidate(
+                identifier=f"client-{client_kind}",
+                component="clients",
+                label=label,
+                location=path,
+                state=state,
+                detail=detail,
+                client_kind=client_kind,
+            ))
+
+    return GlyphsUninstallPlan(frozenset(selected_components), tuple(candidates))
+
+
+def print_uninstall_plan(plan: GlyphsUninstallPlan) -> None:
+    console.rule("Glyphs MCP Uninstaller")
+    console.print(Panel.fit(
+        "Only the exact selected plug-in bundles, managed skill folders, and matching MCP client entries can be removed.\n\n"
+        "PRESERVED: all Python packages and site-packages folders, Glyphs preferences, plug-in settings, "
+        "font annotations and other user data, repositories, documents, and shared parent folders.",
+        title="Important — review before continuing",
+        border_style="red",
+    ))
+    table = Table(box=box.SIMPLE_HEAVY)
+    table.add_column("Component")
+    table.add_column("Status")
+    table.add_column("Location")
+    table.add_column("Details")
+    if not plan.candidates:
+        table.add_row("None", "Nothing detected", "—", "No selected component has an installed artifact.")
+    for candidate in plan.candidates:
+        table.add_row(candidate.label, candidate.state.replace("-", " ").title(), str(candidate.location), candidate.detail)
+    console.print(table)
+
+
+def _running_glyphs_versions() -> FrozenSet[str]:
+    try:
+        output = subprocess.check_output(["ps", "-ax", "-o", "command="], text=True, stderr=subprocess.DEVNULL)
+    except Exception:
+        # Fail closed when a selected plug-in would be removed. Callers treat
+        # this marker as a verification failure rather than assuming Glyphs is closed.
+        return frozenset({"unknown"})
+
+    versions: set[str] = set()
+    app_pattern = re.compile(r"^\s*(?P<path>/.*?/Glyphs[^/]*?\.app)/Contents/MacOS/", re.IGNORECASE)
+    for line in output.splitlines():
+        if "glyphs" not in line.lower() or ".app/Contents/MacOS/" not in line:
+            continue
+        match = app_pattern.search(line)
+        if not match:
+            continue
+        app_path = Path(match.group("path"))
+        info: dict = {}
+        try:
+            with (app_path / "Contents" / "Info.plist").open("rb") as handle:
+                loaded = plistlib.load(handle)
+                if isinstance(loaded, dict):
+                    info = loaded
+        except Exception:
+            pass
+        version_text = str(info.get("CFBundleShortVersionString", ""))
+        bundle_id = str(info.get("CFBundleIdentifier", "")).lower()
+        name_text = app_path.stem.lower()
+        major = version_text.split(".", 1)[0]
+        if major in {"3", "4"}:
+            versions.add(major)
+        elif "glyphs3" in bundle_id or re.search(r"glyphs\s*3", name_text):
+            versions.add("3")
+        elif "glyphs4" in bundle_id or re.search(r"glyphs\s*4", name_text):
+            versions.add("4")
+        else:
+            versions.add("unknown")
+    return frozenset(versions)
+
+
+def execute_uninstall_plan(plan: GlyphsUninstallPlan) -> Tuple[UninstallOutcome, ...]:
+    outcomes: List[UninstallOutcome] = []
+    for candidate in plan.candidates:
+        if candidate.state != "removable":
+            outcomes.append(UninstallOutcome(candidate, "skipped", candidate.detail))
+            continue
+        try:
+            if candidate.component in {"plugin", "skills"}:
+                if not _path_exists(candidate.location):
+                    outcomes.append(UninstallOutcome(candidate, "skipped", "Already absent."))
+                    continue
+                _remove_existing_path(candidate.location)
+            elif candidate.client_kind == "codex":
+                state, detail = inspect_codex_config(candidate.location)
+                if state != "removable" or not remove_codex_config_entry(candidate.location):
+                    outcomes.append(UninstallOutcome(candidate, "skipped", detail))
+                    continue
+            elif candidate.client_kind == "claude-code":
+                state, detail = inspect_claude_code_config(candidate.location)
+                if state != "removable" or not remove_json_config_entry(candidate.location, "claude-code", CLAUDE_CODE_SERVER_NAME):
+                    outcomes.append(UninstallOutcome(candidate, "skipped", detail))
+                    continue
+            elif candidate.client_kind == "claude-desktop":
+                state, detail = inspect_claude_desktop_config(candidate.location)
+                if state != "removable" or not remove_json_config_entry(candidate.location, "claude-desktop", CLAUDE_DESKTOP_SERVER_NAME):
+                    outcomes.append(UninstallOutcome(candidate, "skipped", detail))
+                    continue
+            outcomes.append(UninstallOutcome(candidate, "removed", "Removed."))
+        except Exception as error:
+            outcomes.append(UninstallOutcome(candidate, "failed", str(error)))
+    return tuple(outcomes)
+
+
+def run_uninstall(options: InstallerOptions) -> None:
+    components = options.uninstall_components or UNINSTALL_COMPONENTS
+    plan = build_uninstall_plan(options.glyphs_version, components)
+    print_uninstall_plan(plan)
+
+    if not options.non_interactive and not options.uninstall_components and not options.dry_run:
+        chosen: set[str] = set()
+        prompts = (
+            ("plugin", "Remove detected Glyphs MCP plug-in bundles?"),
+            ("skills", "Remove detected managed Codex and Claude Code skills?"),
+            ("clients", "Remove matching Glyphs MCP client configuration entries?"),
+        )
+        for component, prompt in prompts:
+            if any(candidate.component == component and candidate.state == "removable" for candidate in plan.candidates):
+                if Confirm.ask(prompt, default=True):
+                    chosen.add(component)
+        plan = build_uninstall_plan(options.glyphs_version, frozenset(chosen))
+        console.print("\n[bold]Final removal selection:[/bold]")
+        print_uninstall_plan(plan)
+
+    if options.dry_run:
+        console.print("[cyan]Dry run complete. No files were changed.[/cyan]")
+        return
+
+    removable = plan.removable_candidates
+    if not removable:
+        console.print("[green]Nothing safely attributable is installed for the selected targets.[/green]")
+        return
+
+    plugin_versions = frozenset(
+        candidate.glyphs_version
+        for candidate in removable
+        if candidate.component == "plugin" and candidate.glyphs_version is not None
+    )
+    running_detection = _running_glyphs_versions()
+    if "unknown" in running_detection and plugin_versions:
+        console.print("[red]Could not safely verify whether the selected Glyphs apps are closed. Quit Glyphs and re-run the uninstall.[/red]")
+        raise SystemExit(2)
+    running = running_detection.intersection(plugin_versions)
+    if running:
+        names = ", ".join(f"Glyphs {version}" for version in sorted(running))
+        console.print(f"[red]{names} must be quit before removing the selected plug-in.[/red]")
+        raise SystemExit(2)
+
+    if not options.non_interactive:
+        confirmed = Confirm.ask(
+            "I understand the listed items will be removed while Python packages, settings, and user data are preserved. Continue?",
+            default=False,
+        )
+        if not confirmed:
+            console.print("[yellow]Uninstall cancelled. Nothing was changed.[/yellow]")
+            raise SystemExit(3)
+
+    outcomes = execute_uninstall_plan(plan)
+    console.rule("Uninstall results")
+    for outcome in outcomes:
+        color = "green" if outcome.status == "removed" else "red" if outcome.status == "failed" else "yellow"
+        console.print(f"[{color}]{outcome.status.upper()}[/{color}] {outcome.candidate.label}: {outcome.message}")
+    console.print("[cyan]Python packages, Glyphs settings, font data, and shared folders were preserved.[/cyan]")
+    if any(outcome.status == "failed" for outcome in outcomes):
+        raise SystemExit(1)
+    console.print("[green]Glyphs MCP uninstall complete.[/green]")
+
+
 def run_non_interactive(options: InstallerOptions, requirements: Path) -> None:
     resolve_python_selection_non_interactive(options, requirements)
 
@@ -979,7 +1457,7 @@ def run_non_interactive(options: InstallerOptions, requirements: Path) -> None:
         install_skill_bundle_for_targets(targets, overwrite_existing=options.overwrite_skills, non_interactive=True)
 
     console.rule("[green]Install complete[/green]")
-    console.print("Open Glyphs and use [bold]Edit → Start MCP Server[/bold].")
+    console.print("Open Glyphs and use [bold]Edit → Glyphs MCP Server[/bold].")
     if options.show_client_guidance:
         show_client_guidance()
 
@@ -998,19 +1476,23 @@ def run_interactive(requirements: Path, options: Optional[InstallerOptions] = No
     prompt_install_skill_bundle()
 
     console.rule("[green]Install complete[/green]")
-    console.print("Open Glyphs and use [bold]Edit → Start MCP Server[/bold].")
+    console.print("Open Glyphs and use [bold]Edit → Glyphs MCP Server[/bold].")
 
     if Confirm.ask("Show MCP client configuration instructions?", default=True):
         show_client_guidance()
 
 
 def main(argv: Optional[List[str]] = None) -> None:
+    parsed = parse_cli_options(argv)
+    if parsed.uninstall:
+        run_uninstall(parsed)
+        return
+
     req = repo_root() / "requirements.txt"
     if not req.exists():
         console.print("[red]requirements.txt not found[/red]")
         raise SystemExit(2)
 
-    parsed = parse_cli_options(argv)
     if parsed.non_interactive:
         run_non_interactive(parsed, req)
     else:
@@ -1037,7 +1519,7 @@ def show_client_guidance() -> None:
         "Claude Code:\n"
         f"  claude mcp add --scope user --transport http glyphs-mcp {url}\n"
         "  claude mcp list\n\n"
-        "Then open Glyphs and run Edit → Start MCP Server.",
+        "Then open Glyphs and run Edit → Glyphs MCP Server.",
         title="Codex + Claude Code",
         border_style="cyan",
     ))

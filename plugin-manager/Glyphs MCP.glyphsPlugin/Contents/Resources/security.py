@@ -15,9 +15,23 @@ from starlette.responses import JSONResponse, PlainTextResponse, Response
 from starlette.types import Scope, Receive, Send
 
 try:
-    from versioning import get_plugin_version
+    from versioning import get_runtime_info
 except Exception:  # pragma: no cover - tests may import without bundle layout
-    get_plugin_version = None
+    get_runtime_info = None
+
+
+def _glyphs_host_info() -> Dict[str, Any]:
+    payload = {"glyphsReachable": False}
+    try:
+        from GlyphsApp import Glyphs  # type: ignore[import-not-found]
+
+        payload["glyphsReachable"] = bool(Glyphs)
+        payload["glyphsVersion"] = getattr(Glyphs, "versionNumber", None)
+        payload["glyphsVersionString"] = getattr(Glyphs, "versionString", None)
+        payload["glyphsBuildNumber"] = getattr(Glyphs, "buildNumber", None)
+    except Exception as exc:
+        payload["glyphsError"] = str(exc)
+    return payload
 
 
 class McpNormalizeMcpPathMiddleware:
@@ -396,23 +410,18 @@ class McpErrorEnvelopeMiddleware(BaseHTTPMiddleware):
 
         # Lightweight diagnostics endpoint that never depends on SSE/session setup.
         if request.method == "GET" and path == "/healthz":
-            version = "dev"
-            if get_plugin_version is not None:
+            runtime_info = {"version": "dev", "runtimeId": "dev+unknown"}
+            if get_runtime_info is not None:
                 try:
-                    version = str(get_plugin_version())
+                    runtime_info = dict(get_runtime_info())
                 except Exception:
-                    version = "dev"
+                    runtime_info = {"version": "dev", "runtimeId": "dev+unknown"}
 
-            glyphs_reachable = False
-            try:
-                from GlyphsApp import Glyphs  # type: ignore[import-not-found]
-
-                glyphs_reachable = bool(Glyphs)
-            except Exception:
-                glyphs_reachable = False
-
+            payload = {"ok": True}
+            payload.update(runtime_info)
+            payload.update(_glyphs_host_info())
             return JSONResponse(
-                {"ok": True, "version": version, "glyphsReachable": glyphs_reachable},
+                payload,
                 status_code=200,
             )
 

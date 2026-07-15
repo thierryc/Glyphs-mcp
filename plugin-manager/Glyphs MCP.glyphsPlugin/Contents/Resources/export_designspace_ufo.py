@@ -34,6 +34,10 @@ from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 from GlyphsApp import GSFont, GSFontMaster, GSInstance, GSLayer  # type: ignore[import-not-found]
+try:  # Glyphs public hint type constant; absent in the lightweight unit-test stub.
+    from GlyphsApp import CORNER as GLYPHS_CORNER  # type: ignore[import-not-found]
+except Exception:  # pragma: no cover - exercised by mocked tests
+    GLYPHS_CORNER = None
 from fontTools.designspaceLib import (
     AxisDescriptor,
     DesignSpaceDocument,
@@ -51,6 +55,8 @@ from fontParts.fontshell.guideline import RGuideline
 from fontParts.fontshell.layer import RLayer
 from fontParts.fontshell.lib import RLib
 from fontParts.world import NewFont
+
+from mcp_tool_helpers import _component_transform_values
 
 __all__ = [
     "ExportDesignspaceAndUFO",
@@ -484,7 +490,8 @@ class ExportDesignspaceAndUFO:
         master_id = self.origin_master
         special_layers = self.special_layers
         for layer in special_layers:
-            layer.associatedMasterId = master_id
+            if getattr(layer, "associatedMasterId", None) != master_id:
+                layer.associatedMasterId = master_id
 
     def getSources(self, format: str) -> List[SourceDescriptor]:
         sources: List[SourceDescriptor] = []
@@ -580,6 +587,81 @@ class ExportDesignspaceAndUFO:
                     axis_map.setdefault(axis_tag, dict())[internal] = external
         return axis_map
 
+    def _axis_map_for_tag(self, axis_tag: str) -> Dict[Union[int, float], Union[int, float]]:
+        if self.font.customParameters["Axis Mappings"]:
+            axis_map = self.font.customParameters["Axis Mappings"].get(axis_tag)
+        else:
+            axis_map = self.axis_map_to_build.get(axis_tag)
+        return axis_map or {}
+
+    def _axis_map_pairs(self, axis_map: Dict[Union[int, float], Union[int, float]]) -> List[Tuple[float, float]]:
+        pairs: List[Tuple[float, float]] = []
+        for key, value in (axis_map or {}).items():
+            try:
+                pairs.append((float(key), float(value)))
+            except Exception:
+                continue
+        return sorted(pairs, key=lambda item: item[0])
+
+    def _axis_coord_value(self, value: float) -> Union[int, float]:
+        rounded = round(float(value))
+        if abs(float(value) - float(rounded)) < 1e-9:
+            return int(rounded)
+        return float(value)
+
+    def _mapped_axis_coord(
+        self,
+        axis_tag: str,
+        design_coord: Union[int, float],
+        axis_map: Optional[Dict[Union[int, float], Union[int, float]]] = None,
+        context: str = "",
+    ) -> Union[int, float]:
+        axis_map = axis_map if axis_map is not None else self._axis_map_for_tag(axis_tag)
+        if not axis_map:
+            return design_coord
+
+        try:
+            return axis_map[design_coord]  # type: ignore[index]
+        except Exception:
+            pass
+
+        try:
+            design_float = float(design_coord)
+        except Exception:
+            return design_coord
+
+        for key, value in (axis_map or {}).items():
+            try:
+                if abs(float(key) - design_float) < 1e-9:
+                    return value
+            except Exception:
+                continue
+
+        pairs = self._axis_map_pairs(axis_map)
+        for (x0, y0), (x1, y1) in zip(pairs, pairs[1:]):
+            if x0 <= design_float <= x1 and abs(x1 - x0) > 1e-9:
+                t = (design_float - x0) / (x1 - x0)
+                mapped = y0 + t * (y1 - y0)
+                self._debug(
+                    "Interpolated axis mapping for '{}' coordinate {}{} -> {}".format(
+                        axis_tag,
+                        design_coord,
+                        " ({})".format(context) if context else "",
+                        self._axis_coord_value(mapped),
+                    )
+                )
+                return self._axis_coord_value(mapped)
+
+        self._debug(
+            "Missing axis mapping for '{}' coordinate {}{}; using design coordinate. Available keys: {}".format(
+                axis_tag,
+                design_coord,
+                " ({})".format(context) if context else "",
+                [self._axis_coord_value(key) for key, _value in pairs],
+            )
+        )
+        return design_coord
+
     def getLabels(self, format: str) -> List[LocationLabelDescriptor]:
         labels: List[LocationLabelDescriptor] = []
         instances = [instance for instance in self.font.instances if instance.active and instance.type == 0]
@@ -598,15 +680,11 @@ class ExportDesignspaceAndUFO:
                 ):
                     elidable = True
 
-            if self.font.customParameters["Axis Mappings"]:
-                axis_map = self.font.customParameters["Axis Mappings"]
-            else:
-                axis_map = self.axis_map_to_build
-
-            user_location: Dict[str, int] = dict()
+            user_location: Dict[str, Union[int, float]] = dict()
             for i, axis in enumerate(instance.axes):
                 user_name = self.font.axes[i].name
-                user_coord = axis_map[self.font.axes[i].axisTag][axis]
+                axis_tag = self.font.axes[i].axisTag
+                user_coord = self._mapped_axis_coord(axis_tag, axis, context="label {}".format(style_name))
                 user_location[user_name] = user_coord
 
             label = LocationLabelDescriptor(name=style_name, userLocation=user_location, elidable=elidable)
@@ -621,20 +699,15 @@ class ExportDesignspaceAndUFO:
 
     def addAxes(self, doc: DesignSpaceDocument) -> None:
         for i, axis in enumerate(self.font.axes):
-            if self.font.customParameters["Axis Mappings"]:
-                axis_map = self.font.customParameters["Axis Mappings"].get(axis.axisTag)
-                self._debug(
-                    f"Axis '{axis.name}' uses custom Axis Mapping keys: "
-                    f"{sorted((axis_map or {}).keys()) if axis_map else '[]'}"
+            axis_map = self._axis_map_for_tag(axis.axisTag)
+            source = "custom" if self.font.customParameters["Axis Mappings"] else "computed"
+            self._debug(
+                "Axis '{}' uses {} Axis Mapping keys: {}".format(
+                    axis.name,
+                    source,
+                    sorted((axis_map or {}).keys()) if axis_map else [],
                 )
-            else:
-                axis_map = self.axis_map_to_build
-                if axis_map is not None:
-                    axis_map = axis_map.get(axis.axisTag)
-                self._debug(
-                    f"Axis '{axis.name}' uses computed Axis Mapping keys: "
-                    f"{sorted((axis_map or {}).keys()) if axis_map else '[]'}"
-                )
+            )
             if axis_map:
                 descriptor = AxisDescriptor()
 
@@ -645,30 +718,10 @@ class ExportDesignspaceAndUFO:
 
                 for k in sorted(axis_map.keys()):
                     descriptor.map.append((axis_map[k], k))
-                try:
-                    descriptor.maximum = axis_map[axis_max]  # type: ignore[index]
-                    descriptor.minimum = axis_map[axis_min]  # type: ignore[index]
-                except KeyError as missing_key:
-                    available = sorted(axis_map.keys())
-                    self._debug(
-                        f"Axis '{axis.name}' missing mapping for coordinate {missing_key!r}. Available keys: {available}"
-                    )
-                    raise
-                except Exception as exc:
-                    self._logger.log("Error: the font's axis mappings don't match its real min/max coords")
-                    self._debug(
-                        f"Axis '{axis.name}' mismatch while resolving min/max ({exc!r}). "
-                        f"Axis map keys: {sorted(axis_map.keys())}"
-                    )
+                descriptor.maximum = self._mapped_axis_coord(axis.axisTag, axis_max, axis_map, context="maximum")
+                descriptor.minimum = self._mapped_axis_coord(axis.axisTag, axis_min, axis_map, context="minimum")
                 origin_coord = self.origin_coords[i]
-                try:
-                    user_origin = axis_map[origin_coord]
-                except KeyError as missing_origin:
-                    available = sorted(axis_map.keys())
-                    self._debug(
-                        f"Axis '{axis.name}' missing mapping for origin coordinate {missing_origin!r}. Available keys: {available}"
-                    )
-                    raise
+                user_origin = self._mapped_axis_coord(axis.axisTag, origin_coord, axis_map, context="origin")
                 descriptor.default = user_origin
                 descriptor.name = axis.name
                 descriptor.tag = axis.axisTag
@@ -778,10 +831,16 @@ class ExportDesignspaceAndUFO:
                 design_location[self.font.axes[i].name] = axis_value
             ins.designLocation = design_location
 
-            axis_map = self.axis_map_to_build
             user_location: Dict[str, Union[int, float]] = {}
             for i, axis_value in enumerate(instance.axes):
-                user_location[self.font.axes[i].name] = axis_map[self.font.axes[i].axisTag][axis_value]
+                axis_tag = self.font.axes[i].axisTag
+                axis_map = self._axis_map_for_tag(axis_tag)
+                user_location[self.font.axes[i].name] = self._mapped_axis_coord(
+                    axis_tag,
+                    axis_value,
+                    axis_map,
+                    context="instance {}".format(style_name),
+                )
             ins.userLocation = user_location
 
             instances_to_return.append(ins)
@@ -1012,11 +1071,13 @@ class ExportDesignspaceAndUFO:
                     glyph.appendContour(contour)
                 elif shape.shapeType == 4:
                     component = RComponent()
-                    component.baseGlyph = shape.name
-                    component.scale = (shape.scale.x, shape.scale.y)
-                    component.transform = shape.transform
-                    component.rotateBy(shape.rotation)
-                    component.offset = (shape.x, shape.y)
+                    component.baseGlyph = self._component_base_glyph_name(shape)
+                    component.scale = self._component_scale(shape)
+                    component.transform = self._component_transform(shape)
+                    rotation = self._component_rotation(shape)
+                    if rotation:
+                        component.rotateBy(rotation)
+                    component.offset = self._component_offset(shape)
                     glyph.appendComponent(component=component)
         if layer.guides:
             for guide in layer.guides:
@@ -1027,6 +1088,53 @@ class ExportDesignspaceAndUFO:
                 guideline.name = guide.name
                 ufo[glyph.name].appendGuideline(guideline=guideline)
         return glyph
+
+    def _component_base_glyph_name(self, component):
+        return getattr(component, "componentName", None) or getattr(component, "name", None)
+
+    def _component_transform(self, component):
+        return tuple(_component_transform_values(component))
+
+    def _component_scale(self, component):
+        scale = getattr(component, "scale", None)
+        sx = getattr(scale, "x", None)
+        sy = getattr(scale, "y", None)
+        if sx is not None and sy is not None:
+            return (sx, sy)
+        transform = self._component_transform(component)
+        try:
+            return (float(transform[0]), float(transform[3]))
+        except Exception:
+            return (1.0, 1.0)
+
+    def _component_rotation(self, component):
+        try:
+            return float(getattr(component, "rotation", 0.0) or 0.0)
+        except Exception:
+            return 0.0
+
+    def _component_offset(self, component):
+        # Glyphs components are positioned through public transform/position APIs.
+        # Some Glyphs versions expose convenience x/y properties, but Glyphs 4
+        # component proxies do not, so derive translation from documented state.
+        position = getattr(component, "position", None)
+        x = getattr(position, "x", None)
+        y = getattr(position, "y", None)
+        if x is not None and y is not None:
+            return (float(x), float(y))
+
+        transform = self._component_transform(component)
+        try:
+            return (float(transform[4]), float(transform[5]))
+        except Exception:
+            pass
+
+        x = getattr(component, "x", 0.0)
+        y = getattr(component, "y", 0.0)
+        try:
+            return (float(x), float(y))
+        except Exception:
+            return (0.0, 0.0)
 
     def buildUfoFromMaster(self, master: GSFontMaster) -> RFont:
         font = master.font
@@ -1080,22 +1188,42 @@ class ExportDesignspaceAndUFO:
         feature_kerning: Dict[str, str] = dict()
         ufo_kerning: Dict[str, List[List[Union[str, int]]]] = dict()
         for glyph in self.font.glyphs:
-            glyph_ids[glyph.id] = glyph.name
+            try:
+                glyph_ids[glyph.id] = glyph.name
+                glyph_ids[str(glyph.id)] = glyph.name
+            except Exception:
+                pass
         for master_id, value in self.font.kerning.items():
             kerning_str = ""
             for left_group, value in self.font.kerning[master_id].items():
-                if left_group[0:4] == "@MMK":
-                    left_ufo_group = "public.kern1." + left_group[7:]
+                left_key = str(left_group)
+                if left_key[0:4] == "@MMK":
+                    left_ufo_group = "public.kern1." + left_key[7:]
                 else:
-                    left_ufo_group = glyph_ids[left_group]
-                for right_group, value in value.items():
-                    if right_group[0:4] == "@MMK":
-                        right_ufo_group = "public.kern2." + right_group[7:]
+                    left_ufo_group = glyph_ids.get(left_group) or glyph_ids.get(left_key)
+                    if left_ufo_group is None:
+                        self._debug(
+                            "Skipping kerning left key '{}' because no matching glyph is open/exportable.".format(
+                                left_key
+                            )
+                        )
+                        continue
+                for right_group, pair_value in value.items():
+                    right_key = str(right_group)
+                    if right_key[0:4] == "@MMK":
+                        right_ufo_group = "public.kern2." + right_key[7:]
                     else:
-                        right_ufo_group = glyph_ids[right_group]
-                    ufo_kerning.setdefault(master_id, []).append([left_ufo_group, right_ufo_group, int(value)])
-                    continue
-                kerning_str += f"        pos {left_group} {right_group} {value};\n"
+                        right_ufo_group = glyph_ids.get(right_group) or glyph_ids.get(right_key)
+                        if right_ufo_group is None:
+                            self._debug(
+                                "Skipping kerning pair '{} {}' because the right glyph key has no matching glyph.".format(
+                                    left_key,
+                                    right_key,
+                                )
+                            )
+                            continue
+                    ufo_kerning.setdefault(master_id, []).append([left_ufo_group, right_ufo_group, int(pair_value)])
+                    kerning_str += f"        pos {left_group} {right_group} {pair_value};\n"
             kerning_str.strip()
 
             use_extension = " useExtension" if self.font.customParameters["Use Extension Kerning"] else None
@@ -1293,8 +1421,65 @@ include(../features/classes.fea);
                                 if component.smartComponentValues:
                                     component.decompose()
 
+    def _is_corner_hint(self, hint) -> bool:
+        if GLYPHS_CORNER is not None:
+            try:
+                if getattr(hint, "type", None) == GLYPHS_CORNER:
+                    return True
+            except Exception:
+                pass
+        try:
+            return str(getattr(hint, "name", "") or "").startswith("_corner.")
+        except Exception:
+            return False
+
+    def _layer_has_corner_hints(self, layer) -> bool:
+        try:
+            hints = list(getattr(layer, "hints", []) or [])
+        except Exception:
+            return False
+        return any(self._is_corner_hint(hint) for hint in hints)
+
+    def _begin_layer_changes(self, layer) -> bool:
+        try:
+            begin = getattr(layer, "beginChanges", None)
+        except Exception:
+            return False
+        if not callable(begin):
+            return False
+        try:
+            begin()
+            return True
+        except Exception:
+            return False
+
+    def _end_layer_changes(self, layer, changes_open: bool) -> None:
+        if not changes_open:
+            return
+        try:
+            end = getattr(layer, "endChanges", None)
+        except Exception:
+            return
+        if not callable(end):
+            return
+        try:
+            end()
+        except Exception:
+            pass
+
     def decomposeCorners(self) -> None:
+        decomposed_layers = 0
         for glyph in self.font.glyphs:
             for layer in glyph.layers:
-                if layer.isMasterLayer or layer.isSpecialLayer:
+                if not (layer.isMasterLayer or layer.isSpecialLayer):
+                    continue
+                if not self._layer_has_corner_hints(layer):
+                    continue
+                changes_open = self._begin_layer_changes(layer)
+                try:
                     layer.decomposeCorners()
+                    decomposed_layers += 1
+                finally:
+                    self._end_layer_changes(layer, changes_open)
+        if decomposed_layers:
+            self._logger.log("Decomposed corner hints on {} copied export layers.".format(decomposed_layers))

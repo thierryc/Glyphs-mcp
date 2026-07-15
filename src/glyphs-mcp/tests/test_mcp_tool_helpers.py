@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sys
+import types
 import unittest
 from pathlib import Path
 
@@ -53,6 +54,335 @@ class McpToolHelpersTests(unittest.TestCase):
         encoded = json.dumps(sanitized)
         self.assertIn('"a"', encoded)
         self.assertIn('"weird"', encoded)
+
+    def test_component_transform_values_do_not_iterate_proxy(self) -> None:
+        class NonIterableTransform:
+            def __iter__(self):
+                raise AssertionError("component transform must not be iterated")
+
+            def __getitem__(self, index):
+                raise AssertionError("component transform proxy must not be indexed")
+
+        component = types.SimpleNamespace(
+            transform=NonIterableTransform(),
+            position=types.SimpleNamespace(x=10, y=0),
+            scale=types.SimpleNamespace(x=0.25, y=0.25),
+            rotation=0,
+        )
+
+        self.assertEqual(
+            helpers._component_transform_values(component),
+            [0.25, 0.0, 0.0, 0.25, 10.0, 0.0],
+        )
+
+    def test_component_transform_values_accept_plain_python_sequence(self) -> None:
+        self.assertEqual(
+            helpers._component_transform_values((0.5, 0.0, 0.0, 0.75, 25.0, 12.0)),
+            [0.5, 0.0, 0.0, 0.75, 25.0, 12.0],
+        )
+
+    def test_layer_components_prefers_shapes_over_hostile_components_proxy(self) -> None:
+        class HostileComponents:
+            def __iter__(self):
+                raise AssertionError("layer.components must not be iterated")
+
+            def __len__(self):
+                raise AssertionError("layer.components must not be sized")
+
+        component = types.SimpleNamespace(componentName="acute")
+        path = types.SimpleNamespace(nodes=[])
+        layer = types.SimpleNamespace(shapes=[path, component], components=HostileComponents())
+
+        self.assertEqual(helpers._layer_components(layer), [component])
+
+    def test_layer_components_falls_back_when_shapes_has_no_component_data(self) -> None:
+        component = types.SimpleNamespace(componentName="acute")
+        path = types.SimpleNamespace(nodes=[])
+        layer = types.SimpleNamespace(shapes=[path], components=[component])
+        previous_glyphs_app = sys.modules.get("GlyphsApp")
+
+        try:
+            sys.modules["GlyphsApp"] = types.SimpleNamespace(
+                Glyphs=types.SimpleNamespace(versionNumber=4.0)
+            )
+            self.assertEqual(helpers._layer_components(layer), [component])
+        finally:
+            if previous_glyphs_app is None:
+                sys.modules.pop("GlyphsApp", None)
+            else:
+                sys.modules["GlyphsApp"] = previous_glyphs_app
+
+    def test_layer_components_skips_components_fallback_in_glyphs3(self) -> None:
+        class HostileComponents:
+            def __len__(self):
+                raise AssertionError("Glyphs 3 layer.components fallback must not be touched")
+
+            def __getitem__(self, _index):
+                raise AssertionError("Glyphs 3 layer.components fallback must not be touched")
+
+            def __iter__(self):
+                raise AssertionError("Glyphs 3 layer.components fallback must not be touched")
+
+        path = types.SimpleNamespace(nodes=[])
+        layer = types.SimpleNamespace(shapes=[path], components=HostileComponents())
+        previous_glyphs_app = sys.modules.get("GlyphsApp")
+
+        try:
+            sys.modules["GlyphsApp"] = types.SimpleNamespace(
+                Glyphs=types.SimpleNamespace(versionNumber=3.5)
+            )
+            self.assertEqual(helpers._layer_components(layer), [])
+        finally:
+            if previous_glyphs_app is None:
+                sys.modules.pop("GlyphsApp", None)
+            else:
+                sys.modules["GlyphsApp"] = previous_glyphs_app
+
+    def test_append_component_shape_does_not_use_components_fallback_in_glyphs3(self) -> None:
+        class IgnoringShapes(list):
+            def append(self, _item):
+                return None
+
+        class Layer:
+            def __init__(self) -> None:
+                self._shapes = IgnoringShapes()
+
+            @property
+            def shapes(self):
+                return self._shapes
+
+            @shapes.setter
+            def shapes(self, _value):
+                raise RuntimeError("shapes assignment ignored")
+
+            @property
+            def components(self):
+                raise AssertionError("Glyphs 3 component append fallback must not be touched")
+
+        previous_glyphs_app = sys.modules.get("GlyphsApp")
+
+        try:
+            sys.modules["GlyphsApp"] = types.SimpleNamespace(
+                Glyphs=types.SimpleNamespace(versionNumber=3.5)
+            )
+            self.assertFalse(
+                helpers._append_layer_shape_unmanaged(
+                    Layer(), types.SimpleNamespace(componentName="acute")
+                )
+            )
+        finally:
+            if previous_glyphs_app is None:
+                sys.modules.pop("GlyphsApp", None)
+            else:
+                sys.modules["GlyphsApp"] = previous_glyphs_app
+
+    def test_run_on_main_thread_reuses_objc_helper_class(self) -> None:
+        class FakeObjCSuper:
+            def __init__(self, obj) -> None:
+                self.obj = obj
+
+            def init(self):
+                return self.obj
+
+        class FakeObjC:
+            def __init__(self) -> None:
+                self.classes = {}
+
+            def super(self, _cls, obj):
+                return FakeObjCSuper(obj)
+
+            def lookUpClass(self, name):
+                if name not in self.classes:
+                    raise RuntimeError("not registered")
+                return self.classes[name]
+
+        class FakeNSObject:
+            @classmethod
+            def alloc(cls):
+                return cls.__new__(cls)
+
+            def performSelectorOnMainThread_withObject_waitUntilDone_(self, selector, obj, _wait):
+                getattr(self, selector.replace(":", "_"))(obj)
+
+        class FakeThread:
+            @staticmethod
+            def isMainThread():
+                return False
+
+        original_objc = helpers.objc
+        original_nsobject = helpers.NSObject
+        original_nsthread = helpers.NSThread
+        original_helper_class = helpers._OBJC_MAIN_THREAD_HELPER_CLASS
+        fake_objc = FakeObjC()
+
+        try:
+            helpers.objc = fake_objc
+            helpers.NSObject = FakeNSObject
+            helpers.NSThread = FakeThread
+            helpers._OBJC_MAIN_THREAD_HELPER_CLASS = None
+
+            self.assertEqual(helpers._run_on_main_thread(lambda: "first"), "first")
+            first_class = helpers._OBJC_MAIN_THREAD_HELPER_CLASS
+            self.assertIsNotNone(first_class)
+
+            self.assertEqual(helpers._run_on_main_thread(lambda: "second"), "second")
+            self.assertIs(helpers._OBJC_MAIN_THREAD_HELPER_CLASS, first_class)
+
+            fake_objc.classes[helpers._OBJC_MAIN_THREAD_HELPER_CLASS_NAME] = first_class
+            helpers._OBJC_MAIN_THREAD_HELPER_CLASS = None
+            self.assertEqual(helpers._run_on_main_thread(lambda: "reloaded"), "reloaded")
+            self.assertIs(helpers._OBJC_MAIN_THREAD_HELPER_CLASS, first_class)
+        finally:
+            helpers.objc = original_objc
+            helpers.NSObject = original_nsobject
+            helpers.NSThread = original_nsthread
+            helpers._OBJC_MAIN_THREAD_HELPER_CLASS = original_helper_class
+
+    def test_open_fonts_falls_back_when_fonts_proxy_raises(self) -> None:
+        font = types.SimpleNamespace(familyName="Doc Font", filepath="/tmp/doc.glyphs")
+
+        class BrokenGlyphs:
+            @property
+            def fonts(self):
+                raise TypeError("broken private font proxy")
+
+        glyphs = BrokenGlyphs()
+        glyphs.documents = [types.SimpleNamespace(font=font)]
+        glyphs.currentDocument = types.SimpleNamespace(font=font)
+        glyphs.font = font
+
+        fonts = helpers._open_fonts_from_glyphs(glyphs)
+
+        self.assertEqual(fonts, [font])
+
+    def test_open_fonts_falls_back_to_cocoa_documents_when_glyphs_proxies_raise(self) -> None:
+        first = types.SimpleNamespace(familyName="Archivo", filepath="/tmp/Archivo.glyphs")
+        second = types.SimpleNamespace(familyName="Gee gee", filepath="/tmp/Gee gee.glyphspackage")
+        third = types.SimpleNamespace(familyName="Inter", filepath="/tmp/Inter-Roman.glyphspackage")
+
+        class BrokenGlyphs:
+            @property
+            def fonts(self):
+                raise TypeError("broken font proxy")
+
+            @property
+            def documents(self):
+                raise TypeError("broken document proxy")
+
+        class FakeNSDocumentController:
+            @staticmethod
+            def sharedDocumentController():
+                return types.SimpleNamespace(
+                    documents=lambda: [
+                        types.SimpleNamespace(font=first),
+                        types.SimpleNamespace(font=second),
+                        types.SimpleNamespace(font=third),
+                    ]
+                )
+
+        original_appkit = sys.modules.get("AppKit")
+        sys.modules["AppKit"] = types.SimpleNamespace(NSDocumentController=FakeNSDocumentController)
+        try:
+            glyphs = BrokenGlyphs()
+            glyphs.currentDocument = types.SimpleNamespace(font=second)
+            glyphs.font = second
+
+            fonts = helpers._open_fonts_from_glyphs(glyphs)
+        finally:
+            if original_appkit is None:
+                sys.modules.pop("AppKit", None)
+            else:
+                sys.modules["AppKit"] = original_appkit
+
+        self.assertEqual(fonts, [first, second, third])
+
+    def test_font_context_source_uses_cocoa_documents_when_glyphs_proxies_raise(self) -> None:
+        first = types.SimpleNamespace(familyName="Archivo", filepath="/tmp/Archivo.glyphs")
+        second = types.SimpleNamespace(familyName="Inter", filepath="/tmp/Inter.glyphspackage")
+
+        class BrokenGlyphs:
+            @property
+            def fonts(self):
+                raise TypeError("broken font proxy")
+
+            @property
+            def documents(self):
+                raise TypeError("broken document proxy")
+
+        class FakeNSDocumentController:
+            @staticmethod
+            def sharedDocumentController():
+                return types.SimpleNamespace(
+                    documents=lambda: [
+                        types.SimpleNamespace(font=first),
+                        types.SimpleNamespace(font=second),
+                    ]
+                )
+
+        namespace = {}
+        original_appkit = sys.modules.get("AppKit")
+        sys.modules["AppKit"] = types.SimpleNamespace(NSDocumentController=FakeNSDocumentController)
+        try:
+            exec(helpers._font_context_source(), namespace)
+            resolved = namespace["__glyphs_mcp_font_by_index"](BrokenGlyphs(), 1)
+        finally:
+            if original_appkit is None:
+                sys.modules.pop("AppKit", None)
+            else:
+                sys.modules["AppKit"] = original_appkit
+
+        self.assertIs(resolved, second)
+
+    def test_open_fonts_preserves_fonts_order_then_adds_public_fallbacks(self) -> None:
+        first = types.SimpleNamespace(familyName="First", filepath="/tmp/first.glyphs")
+        second = types.SimpleNamespace(familyName="Second", filepath="/tmp/second.glyphs")
+        third = types.SimpleNamespace(familyName="Third", filepath="/tmp/third.glyphs")
+        glyphs = types.SimpleNamespace(
+            fonts=[first, second],
+            documents=[types.SimpleNamespace(font=second), types.SimpleNamespace(font=third)],
+            currentDocument=types.SimpleNamespace(font=third),
+            font=first,
+        )
+
+        fonts = helpers._open_fonts_from_glyphs(glyphs)
+
+        self.assertEqual(fonts, [first, second, third])
+
+    def test_open_fonts_uses_current_document_and_active_font_without_documents(self) -> None:
+        current = types.SimpleNamespace(familyName="Current", filepath="/tmp/current.glyphs")
+        active = types.SimpleNamespace(familyName="Active", filepath="/tmp/active.glyphs")
+        glyphs = types.SimpleNamespace(
+            currentDocument=types.SimpleNamespace(font=current),
+            font=active,
+        )
+
+        fonts = helpers._open_fonts_from_glyphs(glyphs)
+
+        self.assertEqual(fonts, [current, active])
+
+    def test_resolve_font_invalid_index_returns_actionable_error(self) -> None:
+        font = types.SimpleNamespace(familyName="Only", filepath="/tmp/only.glyphs")
+        glyphs = types.SimpleNamespace(fonts=[font])
+
+        resolved, fonts = helpers._resolve_font_by_index(glyphs, 2)
+        error = helpers._font_resolution_error(2, fonts, ok_key="ok")
+
+        self.assertIsNone(resolved)
+        self.assertFalse(error["ok"])
+        self.assertEqual(error["fontIndex"], 2)
+        self.assertEqual(error["availableFontCount"], 1)
+        self.assertEqual(error["availableFonts"][0]["fontIndex"], 0)
+        self.assertIn("run list_open_fonts", helpers._font_resolution_error(0, [], ok_key="success")["error"])
+
+    def test_is_active_font_matches_by_identity_or_filepath(self) -> None:
+        active = types.SimpleNamespace(familyName="Active", filepath="/tmp/shared.glyphs")
+        same_path = types.SimpleNamespace(familyName="Same Path", filepath="/tmp/shared.glyphs")
+        other = types.SimpleNamespace(familyName="Other", filepath="/tmp/other.glyphs")
+        glyphs = types.SimpleNamespace(font=active)
+
+        self.assertTrue(helpers._is_active_font(glyphs, active))
+        self.assertTrue(helpers._is_active_font(glyphs, same_path))
+        self.assertFalse(helpers._is_active_font(glyphs, other))
 
     def test_get_component_automatic_prefers_present_flags(self) -> None:
         class HasAutomatic:
@@ -106,6 +436,330 @@ class McpToolHelpersTests(unittest.TestCase):
 
         self.assertEqual(layer.shapes, [component])
 
+    def test_new_glyph_falls_back_when_positional_constructor_fails(self) -> None:
+        class FakeGSGlyph:
+            def __init__(self, *args) -> None:
+                if args:
+                    raise TypeError("positional constructor unavailable")
+                self.name = ""
+
+        glyph = helpers._new_glyph(FakeGSGlyph, "mcpProbe")
+
+        self.assertEqual(glyph.name, "mcpProbe")
+
+    def test_new_glyph_disables_auto_name_for_named_constructor(self) -> None:
+        calls = []
+
+        class FakeGSGlyph:
+            def __init__(self, *args) -> None:
+                calls.append(args)
+                self.name = "normalized" if args and len(args) == 1 else ""
+
+        glyph = helpers._new_glyph(FakeGSGlyph, "mcpProbe")
+
+        self.assertEqual(calls[0], ("mcpProbe", False))
+        self.assertEqual(glyph.name, "mcpProbe")
+
+    def test_append_font_glyph_returns_verified_lookup(self) -> None:
+        class FakeGlyphs(dict):
+            def append(self, glyph) -> None:
+                self[glyph.name] = glyph
+
+        glyph = type("Glyph", (), {"name": ""})()
+        font = type("Font", (), {"glyphs": FakeGlyphs()})()
+
+        self.assertIs(helpers._append_font_glyph(font, glyph, "mcpProbe"), glyph)
+        self.assertIn("mcpProbe", font.glyphs)
+
+    def test_append_font_glyph_brackets_font_update_interface(self) -> None:
+        log = []
+
+        class FakeGlyphs(dict):
+            def append(self, glyph) -> None:
+                log.append("append")
+                self[glyph.name] = glyph
+
+        class FakeFont:
+            def __init__(self) -> None:
+                self.glyphs = FakeGlyphs()
+
+            def disableUpdateInterface(self) -> None:
+                log.append("disable")
+
+            def enableUpdateInterface(self) -> None:
+                log.append("enable")
+
+        glyph = type("Glyph", (), {"name": ""})()
+        font = FakeFont()
+
+        self.assertIs(helpers._append_font_glyph(font, glyph, "mcpProbe"), glyph)
+        self.assertEqual(log, ["disable", "append", "enable"])
+
+    def test_append_font_glyph_closes_update_interface_on_failure(self) -> None:
+        log = []
+
+        class RejectingGlyphs(dict):
+            def append(self, _glyph) -> None:
+                log.append("append")
+                raise RuntimeError("append failed")
+
+        class FakeFont:
+            def __init__(self) -> None:
+                self.glyphs = RejectingGlyphs()
+
+            def disableUpdateInterface(self) -> None:
+                log.append("disable")
+
+            def enableUpdateInterface(self) -> None:
+                log.append("enable")
+
+        glyph = type("Glyph", (), {"name": ""})()
+        font = FakeFont()
+
+        self.assertIsNone(helpers._append_font_glyph(font, glyph, "mcpProbe"))
+        self.assertEqual(log, ["disable", "append", "enable"])
+
+    def test_delete_font_glyph_brackets_font_update_interface(self) -> None:
+        log = []
+
+        class FakeGlyphs(dict):
+            def __delitem__(self, key) -> None:
+                log.append("delete")
+                super().__delitem__(key)
+
+            def __getitem__(self, key):
+                return self.get(key)
+
+        class FakeFont:
+            def __init__(self) -> None:
+                self.glyphs = FakeGlyphs({"mcpProbe": object(), "A": object()})
+
+            def disableUpdateInterface(self) -> None:
+                log.append("disable")
+
+            def enableUpdateInterface(self) -> None:
+                log.append("enable")
+
+        font = FakeFont()
+
+        self.assertTrue(helpers._delete_font_glyph(font, "mcpProbe"))
+        self.assertEqual(log, ["disable", "delete", "enable"])
+        self.assertIn("A", font.glyphs)
+        self.assertNotIn("mcpProbe", font.glyphs)
+
+    def test_new_anchor_falls_back_when_positional_constructor_fails(self) -> None:
+        class FakeGSAnchor:
+            def __init__(self, *args) -> None:
+                if args:
+                    raise TypeError("positional constructor unavailable")
+                self.name = ""
+                self.position = None
+
+        anchor = helpers._new_anchor(FakeGSAnchor, "top", 10, 20)
+
+        self.assertEqual(anchor.name, "top")
+        self.assertEqual(anchor.position, (10.0, 20.0))
+
+    def test_replace_layer_paths_uses_shapes_and_preserves_components(self) -> None:
+        class FakePath:
+            def __init__(self, node_count=1) -> None:
+                self.nodes = [object() for _ in range(node_count)]
+
+        class FakeComponent:
+            pass
+
+        class FakeLayer:
+            def __init__(self) -> None:
+                self.component = FakeComponent()
+                self.shapes = [FakePath(), self.component]
+
+            @property
+            def paths(self):
+                return [shape for shape in self.shapes if hasattr(shape, "nodes")]
+
+        layer = FakeLayer()
+        new_path = FakePath(node_count=3)
+
+        result = helpers._replace_layer_paths(layer, [new_path])
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(layer.shapes, [layer.component, new_path])
+        self.assertEqual(result["pathCount"], 1)
+        self.assertEqual(result["nodeCount"], 3)
+
+    def test_append_layer_shape_prefers_shapes_for_components(self) -> None:
+        class RejectingComponents(list):
+            def append(self, _item):  # pragma: no cover - should not be called
+                raise AssertionError("components append should not be used")
+
+        class FakeComponent:
+            pass
+
+        layer = types.SimpleNamespace(shapes=[], components=RejectingComponents())
+        component = FakeComponent()
+
+        self.assertTrue(helpers._append_layer_shape(layer, component))
+        self.assertEqual(layer.shapes, [component])
+
+    def test_append_layer_shape_brackets_public_layer_changes_without_glyph_undo(self) -> None:
+        log = []
+
+        class FakeGlyph:
+            def beginUndo(self) -> None:
+                log.append("glyph.beginUndo")
+
+            def endUndo(self) -> None:
+                log.append("glyph.endUndo")
+
+        class FakeLayer:
+            def __init__(self) -> None:
+                self.parent = FakeGlyph()
+                self.shapes = []
+
+            def beginChanges(self) -> None:
+                log.append("layer.beginChanges")
+
+            def endChanges(self) -> None:
+                log.append("layer.endChanges")
+
+        component = type("Component", (), {})()
+        layer = FakeLayer()
+
+        self.assertTrue(helpers._append_layer_shape(layer, component))
+        self.assertEqual(layer.shapes, [component])
+        self.assertEqual(
+            log,
+            [
+                "layer.beginChanges",
+                "layer.endChanges",
+            ],
+        )
+
+    def test_replace_layer_paths_brackets_public_layer_changes_without_glyph_undo(self) -> None:
+        log = []
+
+        class FakeGlyph:
+            def beginUndo(self) -> None:
+                log.append("glyph.beginUndo")
+
+            def endUndo(self) -> None:
+                log.append("glyph.endUndo")
+
+        class FakePath:
+            def __init__(self, node_count=1) -> None:
+                self.nodes = [object() for _ in range(node_count)]
+
+        class FakeLayer:
+            def __init__(self) -> None:
+                self.parent = FakeGlyph()
+                self.shapes = []
+
+            @property
+            def paths(self):
+                return [shape for shape in self.shapes if hasattr(shape, "nodes")]
+
+            def beginChanges(self) -> None:
+                log.append("layer.beginChanges")
+
+            def endChanges(self) -> None:
+                log.append("layer.endChanges")
+
+        layer = FakeLayer()
+        path = FakePath(node_count=4)
+
+        result = helpers._replace_layer_paths(layer, [path])
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["pathCount"], 1)
+        self.assertEqual(
+            log,
+            [
+                "layer.beginChanges",
+                "layer.endChanges",
+            ],
+        )
+
+    def test_replace_layer_paths_and_metrics_uses_one_layer_change_block(self) -> None:
+        log = []
+
+        class FakePath:
+            def __init__(self, node_count=1) -> None:
+                self.nodes = [object() for _ in range(node_count)]
+
+        class FakeLayer:
+            def __init__(self) -> None:
+                self.shapes = []
+                self.width = 0
+                self.leftSideBearing = 0
+                self.rightSideBearing = 0
+
+            @property
+            def paths(self):
+                return [shape for shape in self.shapes if hasattr(shape, "nodes")]
+
+            def beginChanges(self) -> None:
+                log.append("layer.beginChanges")
+
+            def endChanges(self) -> None:
+                log.append("layer.endChanges")
+
+        layer = FakeLayer()
+        path = FakePath(node_count=4)
+
+        result = helpers._replace_layer_paths_and_metrics(
+            layer,
+            [path],
+            width=400,
+            left_sidebearing=100,
+            right_sidebearing=100,
+        )
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(layer.width, 400)
+        self.assertEqual(layer.leftSideBearing, 100)
+        self.assertEqual(layer.rightSideBearing, 100)
+        self.assertEqual(log, ["layer.beginChanges", "layer.endChanges"])
+
+    def test_append_layer_anchor_brackets_public_layer_changes_without_glyph_undo(self) -> None:
+        log = []
+
+        class FakeGlyph:
+            def beginUndo(self) -> None:
+                log.append("glyph.beginUndo")
+
+            def endUndo(self) -> None:
+                log.append("glyph.endUndo")
+
+        class FakeLayer:
+            def __init__(self) -> None:
+                self.parent = FakeGlyph()
+                self.anchors = {}
+
+            def beginChanges(self) -> None:
+                log.append("layer.beginChanges")
+
+            def endChanges(self) -> None:
+                log.append("layer.endChanges")
+
+        anchor = types.SimpleNamespace(name="top")
+        layer = FakeLayer()
+
+        self.assertTrue(helpers._append_layer_anchor(layer, anchor))
+        self.assertIs(layer.anchors["top"], anchor)
+        self.assertEqual(
+            log,
+            [
+                "layer.beginChanges",
+                "layer.endChanges",
+            ],
+        )
+
+    def test_layer_display_name_falls_back_to_master_name(self) -> None:
+        layer = types.SimpleNamespace(name=None, associatedMasterId="m1")
+        font = types.SimpleNamespace(masters=[types.SimpleNamespace(id="m1", name="Regular")])
+
+        self.assertEqual(helpers._layer_display_name(font, layer), "Regular")
+
     def test_sidebearing_helpers_fall_back_to_lsb_rsb(self) -> None:
         class LegacyLayer:
             __slots__ = ("LSB", "RSB")
@@ -122,6 +776,79 @@ class McpToolHelpersTests(unittest.TestCase):
         self.assertTrue(helpers._set_sidebearing(layer, "rightSideBearing", "RSB", 35))
         self.assertEqual(layer.LSB, 25)
         self.assertEqual(layer.RSB, 35)
+
+    def test_sidebearing_reads_use_main_thread_bridge(self) -> None:
+        layer = types.SimpleNamespace(leftSideBearing=40, rightSideBearing=55)
+        calls = []
+        original_run_on_main_thread = helpers._run_on_main_thread
+
+        def fake_run_on_main_thread(callback):
+            calls.append(callback)
+            return callback()
+
+        try:
+            helpers._run_on_main_thread = fake_run_on_main_thread
+
+            self.assertEqual(helpers._get_left_sidebearing(layer), 40)
+            self.assertEqual(helpers._get_right_sidebearing(layer), 55)
+        finally:
+            helpers._run_on_main_thread = original_run_on_main_thread
+
+        self.assertEqual(len(calls), 2)
+
+    def test_sidebearing_reads_are_skipped_in_glyphs3_host(self) -> None:
+        class HostileLayer:
+            @property
+            def leftSideBearing(self):
+                raise AssertionError("Glyphs 3 LSB getter must not be touched")
+
+            @property
+            def LSB(self):
+                raise AssertionError("Glyphs 3 LSB fallback must not be touched")
+
+        original = sys.modules.get("GlyphsApp")
+        sys.modules["GlyphsApp"] = types.SimpleNamespace(
+            Glyphs=types.SimpleNamespace(versionNumber=3.5)
+        )
+        try:
+            self.assertIsNone(helpers._get_left_sidebearing(HostileLayer()))
+        finally:
+            if original is None:
+                sys.modules.pop("GlyphsApp", None)
+            else:
+                sys.modules["GlyphsApp"] = original
+
+    def test_sidebearing_writes_are_skipped_in_glyphs3_host(self) -> None:
+        class HostileLayer:
+            @property
+            def leftSideBearing(self):
+                return None
+
+            @leftSideBearing.setter
+            def leftSideBearing(self, _value):
+                raise AssertionError("Glyphs 3 LSB setter must not be touched")
+
+            @property
+            def LSB(self):
+                return None
+
+            @LSB.setter
+            def LSB(self, _value):
+                raise AssertionError("Glyphs 3 LSB fallback setter must not be touched")
+
+        original = sys.modules.get("GlyphsApp")
+        sys.modules["GlyphsApp"] = types.SimpleNamespace(
+            Glyphs=types.SimpleNamespace(versionNumber=3.5)
+        )
+        try:
+            self.assertFalse(
+                helpers._set_sidebearing(HostileLayer(), "leftSideBearing", "LSB", 25)
+            )
+        finally:
+            if original is None:
+                sys.modules.pop("GlyphsApp", None)
+            else:
+                sys.modules["GlyphsApp"] = original
 
     def test_glyphs_show_url_encodes_path_and_glyph(self) -> None:
         url, reason = helpers._glyphs_show_url(
@@ -324,6 +1051,13 @@ class McpToolHelpersTests(unittest.TestCase):
         self.assertIn("m1", font.kerning)
         self.assertEqual(font.kerning["m1"]["A"]["Y"], -60)
         self.assertNotIn("V", font.kerning["m1"]["A"])
+
+    def test_set_kerning_pairs_on_main_thread_removes_empty_left_key(self) -> None:
+        font = type("Font", (), {"kerning": {"m1": {"A": {"V": -80}}}})()
+
+        helpers._set_kerning_pairs_on_main_thread(font, "m1", [("A", "V", 0)])
+
+        self.assertNotIn("A", font.kerning["m1"])
 
 
 if __name__ == "__main__":

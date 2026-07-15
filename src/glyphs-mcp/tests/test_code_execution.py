@@ -68,7 +68,7 @@ class _FakeObjCModule:
 
 
 class CodeExecutionTests(unittest.TestCase):
-    def _load_module(self, module_name: str = "glyphs_mcp_test_code_execution"):
+    def _load_module(self, module_name: str = "glyphs_mcp_test_code_execution", broken_fonts: bool = False):
         fake_layer = types.SimpleNamespace(name="Regular")
         fake_master = types.SimpleNamespace(id="m1")
         fake_glyph = types.SimpleNamespace(name="A", layers={"m1": fake_layer})
@@ -112,10 +112,23 @@ class CodeExecutionTests(unittest.TestCase):
                     collector.setWriteError_(traceback.format_exc())
 
         fake_handler = FakeScriptingHandler(glyphs_app)
-        glyphs_app.Glyphs = types.SimpleNamespace(
-            fonts=[fake_font],
-            scriptingHandler=lambda: fake_handler,
-        )
+        if broken_fonts:
+            class BrokenGlyphs:
+                @property
+                def fonts(self):
+                    raise RuntimeError("broken fonts proxy")
+
+            glyphs_obj = BrokenGlyphs()
+            glyphs_obj.documents = [types.SimpleNamespace(font=fake_font)]
+            glyphs_obj.currentDocument = types.SimpleNamespace(font=fake_font)
+            glyphs_obj.font = fake_font
+            glyphs_obj.scriptingHandler = lambda: fake_handler
+        else:
+            glyphs_obj = types.SimpleNamespace(
+                fonts=[fake_font],
+                scriptingHandler=lambda: fake_handler,
+            )
+        glyphs_app.Glyphs = glyphs_obj
 
         spec = importlib.util.spec_from_file_location(module_name, _module_path())
         self.assertIsNotNone(spec)
@@ -127,6 +140,7 @@ class CodeExecutionTests(unittest.TestCase):
                 "mcp_tools": types.SimpleNamespace(mcp=_FakeMCP()),
             },
         ):
+            sys.path.insert(0, str(_module_path().parent))
             sys.modules.pop(module_name, None)
             assert spec.loader is not None
             spec.loader.exec_module(module)
@@ -158,6 +172,28 @@ class CodeExecutionTests(unittest.TestCase):
         self.assertEqual(payload["context"]["glyph"], "A")
         self.assertEqual(payload["context"]["layer"], "Regular")
         self.assertEqual(len(handler.calls), 1)
+
+    def test_execute_code_with_context_falls_back_when_fonts_proxy_fails(self) -> None:
+        module, handler = self._load_module("glyphs_mcp_test_code_execution_broken_fonts", broken_fonts=True)
+
+        out = asyncio.run(module.execute_code_with_context("glyph.name", glyph_name="A"))
+        payload = json.loads(out)
+
+        self.assertTrue(payload["success"])
+        self.assertEqual(payload["result"], "A")
+        self.assertEqual(payload["context"]["font"], "Unit Test Sans")
+        self.assertEqual(len(handler.calls), 1)
+
+    def test_execute_code_context_snippet_uses_public_api_resolver(self) -> None:
+        module, _handler = self._load_module()
+
+        out = asyncio.run(module.execute_code_with_context("glyph.name", glyph_name="A", snippet_only=True))
+        payload = json.loads(out)
+
+        self.assertTrue(payload["success"])
+        self.assertIn("__glyphs_mcp_font_by_index", payload["snippet"])
+        self.assertNotIn("Glyphs.fonts[font_index]", payload["snippet"])
+        self.assertNotIn("len(Glyphs.fonts)", payload["snippet"])
 
     def test_execute_code_runner_captures_output_and_result(self) -> None:
         module, _handler = self._load_module()

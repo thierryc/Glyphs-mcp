@@ -26,10 +26,11 @@ class ToolProfilesTests(unittest.TestCase):
     def test_readonly_excludes_exec_tools(self) -> None:
         enabled = tool_profiles.enabled_tool_names(
             tool_profiles.PROFILE_READONLY,
-            {"execute_code", "execute_code_with_context", "list_open_fonts", "list_style_sets"},
+            {"execute_code", "execute_code_with_context", "get_server_info", "list_open_fonts", "list_style_sets"},
         )
         self.assertNotIn("execute_code", enabled)
         self.assertNotIn("execute_code_with_context", enabled)
+        self.assertIn("get_server_info", enabled)
         self.assertIn("list_open_fonts", enabled)
         self.assertIn("list_style_sets", enabled)
 
@@ -95,3 +96,22 @@ class ToolProfilesTests(unittest.TestCase):
 
         self.assertIn(visual_tool, tool_profiles.enabled_tool_names(tool_profiles.PROFILE_READONLY, universe))
         self.assertIn(visual_tool, tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, universe))
+
+    def test_annotation_read_tools_are_available_through_readonly_surface(self) -> None:
+        read_tools = {"get_glyph_annotations", "get_glyph_annotation_groups"}
+        edit_tools = {
+            "add_glyph_annotation",
+            "add_glyph_annotation_group",
+            "update_glyph_annotation",
+            "delete_glyph_annotation",
+            "clear_glyph_annotations",
+        }
+        universe = set(tool_profiles.CORE_READONLY_TOOLS) | edit_tools
+
+        readonly = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_READONLY, universe)
+        editing = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, universe)
+
+        self.assertTrue(read_tools.issubset(readonly))
+        self.assertTrue(edit_tools.isdisjoint(readonly))
+        self.assertTrue(read_tools.issubset(editing))
+        self.assertTrue(edit_tools.issubset(editing))

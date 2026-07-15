@@ -2,3 +2,77 @@
    Most SwiftUI strings use their literal English value as the key; missing
    entries fall back to the key itself. */
 
+/* Glyphs 3 / Glyphs 4 target selection */
+"Install for" = "Install for";
+"Detected" = "Detected";
+"Not detected" = "Not detected";
+"Selected Glyphs version is running" = "Selected Glyphs version is running";
+"Quit the selected Glyphs versions before running the wizard." = "Quit the selected Glyphs versions before running the wizard.";
+"Quit the selected Glyphs versions before updating the plug-in." = "Quit the selected Glyphs versions before updating the plug-in.";
+"Install %@ before selecting this target." = "Install %@ before selecting this target.";
+"Plug-in: %@ • Python: %@" = "Plug-in: %@ • Python: %@";
+"Running — quit before installation" = "Running — quit before installation";
+"Replace %@ symlink with latest GitHub plug-in" = "Replace %@ symlink with latest GitHub plug-in";
+"Glyphs installations" = "Glyphs installations";
+"App version" = "App version";
+"Application" = "Application";
+"Running" = "Running";
+"Yes" = "Yes";
+"No" = "No";
+"Install %@ dependencies" = "Install %@ dependencies";
+"Install %@ plug-in" = "Install %@ plug-in";
+"Install Glyphs MCP Server" = "Install Glyphs MCP Server";
+"Update Glyphs MCP Server" = "Update Glyphs MCP Server";
+"Install / Update Glyphs MCP Server" = "Install / Update Glyphs MCP Server";
+"%@ must be closed so the plug-in can update cleanly.\n\nQuit now?" = "%@ must be closed so the plug-in can update cleanly.\n\nQuit now?";
+
+/* Safe uninstaller */
+"Uninstall…" = "Uninstall…";
+"Review exactly what will be removed before uninstalling." = "Review exactly what will be removed before uninstalling.";
+"Review Glyphs MCP Uninstall" = "Review Glyphs MCP Uninstall";
+"Nothing is removed until you confirm below." = "Nothing is removed until you confirm below.";
+"Quit only the selected running Glyphs versions before removing their plug-ins." = "Quit only the selected running Glyphs versions before removing their plug-ins.";
+"Quit Selected Glyphs Apps…" = "Quit Selected Glyphs Apps…";
+"Glyphs plug-ins" = "Glyphs plug-ins";
+"Managed skills" = "Managed skills";
+"Client configuration" = "Client configuration";
+"Always preserved" = "Always preserved";
+"Python packages and every site-packages folder" = "Python packages and every site-packages folder";
+"Glyphs preferences and Glyphs MCP settings" = "Glyphs preferences and Glyphs MCP settings";
+"Font annotations, documents, repositories, and shared parent folders" = "Font annotations, documents, repositories, and shared parent folders";
+"I understand that the selected items will be permanently removed." = "I understand that the selected items will be permanently removed.";
+"1 item selected" = "1 item selected";
+"%d items selected" = "%d items selected";
+"Uninstall" = "Uninstall";
+"Uninstall complete" = "Uninstall complete";
+"Uninstall partially completed" = "Uninstall partially completed";
+"Removed: %d • Skipped: %d • Failed: %d" = "Removed: %d • Skipped: %d • Failed: %d";
+"Important — review before continuing" = "Important — review before continuing";
+"The uninstaller removes only checked items at the exact paths shown below. Matching client configuration files are backed up first. Same-named custom entries are preserved." = "The uninstaller removes only checked items at the exact paths shown below. Matching client configuration files are backed up first. Same-named custom entries are preserved.";
+"Shared Python dependencies cannot be attributed safely and will not be removed." = "Shared Python dependencies cannot be attributed safely and will not be removed.";
+"Selected for removal" = "Selected for removal";
+"Not selected" = "Not selected";
+"Nothing safely attributable is currently installed." = "Nothing safely attributable is currently installed.";
+"Preserved" = "Preserved";
+"Cannot inspect — preserved" = "Cannot inspect — preserved";
+"must be closed so its plug-in can be removed safely." = "must be closed so its plug-in can be removed safely.";
+"%@ %@\n\nQuit now?" = "%@ %@\n\nQuit now?";
+"== Uninstall ==" = "== Uninstall ==";
+"Uninstall complete. Removed %d item(s)." = "Uninstall complete. Removed %d item(s).";
+"Uninstall finished with %d failure(s). Completed changes were kept." = "Uninstall finished with %d failure(s). Completed changes were kept.";
+"No matching Glyphs MCP entry." = "No matching Glyphs MCP entry.";
+"A same-named entry has different settings and will be preserved." = "A same-named entry has different settings and will be preserved.";
+"Matching Glyphs MCP client entry." = "Matching Glyphs MCP client entry.";
+"The configuration root is not a JSON object." = "The configuration root is not a JSON object.";
+"The configuration could not be parsed and will not be changed." = "The configuration could not be parsed and will not be changed.";
+"%@ plug-in" = "%@ plug-in";
+"Development symlink; only the link will be removed." = "Development symlink; only the link will be removed.";
+"Installed plug-in bundle." = "Installed plug-in bundle.";
+"Exact managed skill destination." = "Exact managed skill destination.";
+"%@ MCP entry" = "%@ MCP entry";
+"Configuration file not found." = "Configuration file not found.";
+"Could not read configuration: %@" = "Could not read configuration: %@";
+"Already absent." = "Already absent.";
+"Removed." = "Removed.";
+"The entry changed and was preserved." = "The entry changed and was preserved.";
+"Removed; configuration backup created." = "Removed; configuration backup created.";

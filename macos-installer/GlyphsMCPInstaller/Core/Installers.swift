@@ -44,7 +44,7 @@ public struct DepsInstaller {
 	public func installAndVerify(
 		python: PythonSelection,
 		requirementsTxt: URL,
-		glyphsVersion: GlyphsMajorVersion = .v3
+		glyphsVersion: GlyphsMajorVersion = .installerDefault
 	) async throws {
 		switch python {
 		case .glyphs(let pip3, let python3):

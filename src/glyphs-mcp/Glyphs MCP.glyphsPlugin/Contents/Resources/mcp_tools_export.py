@@ -9,6 +9,7 @@ from dataclasses import asdict
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from mcp_tool_helpers import _font_resolution_error, _resolve_font_by_index
 
 from export_designspace_ufo import (
     ExportDesignspaceAndUFO as ExportDesignspaceAndUFOExporter,
@@ -47,7 +48,7 @@ async def ExportDesignspaceAndUFO(
     """Export designspace and UFO packages for the selected font.
 
     Args:
-        font_index: Index of the font in ``Glyphs.fonts`` to export.
+        font_index: Index of the open font to export.
         include_variable: Whether to generate variable designspace/UFO sources.
         include_static: Whether to generate static designspace/UFO sources.
         brace_layers_mode: ``"layers"`` keeps brace layers as glyph layers,
@@ -80,16 +81,9 @@ async def ExportDesignspaceAndUFO(
             log_messages.append(message)
 
     try:
-        if font_index >= len(Glyphs.fonts) or font_index < 0:
-            return json.dumps(
-                {
-                    "error": "Font index {} out of range. Available fonts: {}".format(
-                        font_index, len(Glyphs.fonts)
-                    )
-                }
-            )
-
-        font = Glyphs.fonts[font_index]
+        font, fonts = _resolve_font_by_index(Glyphs, font_index)
+        if not font:
+            return json.dumps(_font_resolution_error(font_index, fonts))
 
         brace_mode = (brace_layers_mode or "layers").strip().lower()
 
@@ -146,4 +140,3 @@ async def ExportDesignspaceAndUFO(
         if log_messages:
             error_payload["log"] = log_messages
         return json.dumps(error_payload)
-

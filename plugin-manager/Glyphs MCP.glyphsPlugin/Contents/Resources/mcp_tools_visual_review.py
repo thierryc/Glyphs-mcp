@@ -69,9 +69,12 @@ except Exception:  # pragma: no cover - unit tests run without AppKit/Glyphs
 
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
+    _font_resolution_error,
     _get_layer_id,
     _get_left_sidebearing,
     _get_right_sidebearing,
+    _layer_display_name,
+    _resolve_font_by_index,
     _safe_json,
 )
 
@@ -332,11 +335,9 @@ def _prepare_render_request(font_index, glyph_names, master_id, columns, image_w
     except Exception:
         return {"ok": False, "error": "Invalid font_index: {}".format(font_index)}
 
-    if font_index_i >= len(Glyphs.fonts) or font_index_i < 0:
-        return {
-            "ok": False,
-            "error": "Font index {} out of range. Available fonts: {}".format(font_index_i, len(Glyphs.fonts)),
-        }
+    font, fonts = _resolve_font_by_index(Glyphs, font_index_i)
+    if not font:
+        return _font_resolution_error(font_index_i, fonts, ok_key="ok")
 
     normalized_overlays, invalid = _normalize_overlays(overlays)
     if invalid:
@@ -364,7 +365,6 @@ def _prepare_render_request(font_index, glyph_names, master_id, columns, image_w
     if image_width_i > 4096:
         image_width_i = 4096
 
-    font = Glyphs.fonts[font_index_i]
     master = _get_master(font, master_id)
     if master is None:
         return {"ok": False, "error": "No matching master found", "masterId": master_id}
@@ -389,13 +389,14 @@ def _prepare_render_request(font_index, glyph_names, master_id, columns, image_w
 
         bounds = _layer_bounds(layer)
         width = _coerce_float(getattr(layer, "width", None), 0.0) or 0.0
+        layer_name = _layer_display_name(font, layer, getattr(master, "id", None))
         render_items.append(
             {
                 "glyph": glyph,
                 "glyphName": str(getattr(glyph, "name", name)),
                 "layer": layer,
                 "layerId": _get_layer_id(layer),
-                "layerName": getattr(layer, "name", None),
+                "layerName": layer_name,
                 "width": width,
                 "leftSideBearing": _get_left_sidebearing(layer),
                 "rightSideBearing": _get_right_sidebearing(layer),
@@ -717,7 +718,7 @@ async def render_glyph_review_image(
     or save the font.
 
     Args:
-        font_index: Index of the font in ``Glyphs.fonts``.
+        font_index: Index of the open font.
         glyph_names: Optional list of glyph names. If omitted, uses selected glyphs.
         master_id: Optional master ID. If omitted, uses the selected master.
         columns: Number of contact-sheet columns.

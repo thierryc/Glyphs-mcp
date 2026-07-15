@@ -29,7 +29,7 @@ Open the project in Xcode:
 
 Minimum requirements:
 - macOS 13.0+
-- Glyphs 3
+- Glyphs 3 or Glyphs 4 beta
 - Python 3.11–3.14 (recommended: python.org 3.14)
 
 Notes for Xcode builds:
@@ -62,6 +62,12 @@ The Claude integrations are intentionally separate:
 - Claude Code is configured through the `claude` CLI when available, with `~/.claude.json` as fallback
 
 Only Codex and Claude Code receive the managed `glyphs-mcp-*` skill bundle.
+
+## Safe uninstall
+
+The Status page includes a reviewable uninstaller for Glyphs 3 and Glyphs 4 plug-ins, exact managed skill destinations, and matching Glyphs MCP client entries. It requires an explicit acknowledgment and blocks only when a selected Glyphs target is running.
+
+Client configuration is backed up before patching. Same-named entries with a different endpoint or command are treated as user-managed and preserved. The uninstaller does not remove shared Python packages, Glyphs preferences, font data, repositories, documents, or shared parent folders.
 
 ## Releasing
 

@@ -127,39 +127,9 @@ The tools only propose/apply **loosening** (increasing kerning values). They nev
 
 ---
 
-## Prompt templates (copy/paste)
+## Prompt templates
 
-### Review only
-```text
-In Glyphs, review kerning collisions in my current font/master.
-Rules:
-- Do not mutate anything.
-- Summarize the worst problems first.
-
-Call review_kerning_bumper:
-{"font_index":0,"min_gap":5,"relevant_limit":2000,"include_existing":true,"scan_mode":"two_pass","dense_step":10,"bands":8,"result_limit":200}
-
-Then:
-- list the 20 worst collisions with recommendedException
-- tell me which ones should be class kerning vs exceptions
-```
-
-### Dry run apply → confirm apply
-```text
-Fix collisions by adding glyph–glyph kerning exceptions only.
-Rules:
-- Never auto-save.
-- Never mutate without a dry run first.
-- Only loosen (never tighten).
-
-1) Call apply_kerning_bumper (dry run):
-{"font_index":0,"dry_run":true,"min_gap":5,"extra_gap":0,"max_delta":200,"relevant_limit":2000,"include_existing":true}
-
-2) If I approve, call apply_kerning_bumper again with confirm=true using the same args.
-3) After applying, open a proof tab:
-Call review_kerning_bumper:
-{"font_index":0,"min_gap":5,"open_tab":true,"result_limit":120,"rendering":"hybrid"}
-```
+Reusable kerning prompts live in the [kerning workflow](./kerning-workflow.md) and the [command set prompt pack](./reference/command-set.mdx). Keep this page focused on bumper measurement behavior, pair selection, and limits.
 
 ---
 

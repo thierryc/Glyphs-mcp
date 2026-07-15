@@ -29,6 +29,8 @@
 		AA1111111111111111111128 /* GitHubPluginDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000019 /* GitHubPluginDownloader.swift */; };
 		AA1111111111111111111129 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000021 /* Assets.xcassets */; };
 		AA1111111111111111111130 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000025 /* Localizable.strings */; };
+		AA1111111111111111111131 /* GlyphsTargets.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000026 /* GlyphsTargets.swift */; };
+		AA1111111111111111111132 /* Uninstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA3000000000000000000027 /* Uninstaller.swift */; };
 		F4C332F82F538E3E00BF5B52 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = F4C332F72F538E3E00BF5B52 /* AppIcon.icon */; };
 /* End PBXBuildFile section */
 
@@ -95,6 +97,8 @@
 		AA3000000000000000000022 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Resources/en.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
 		AA3000000000000000000023 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = Resources/fr.lproj/Localizable.strings; sourceTree = SOURCE_ROOT; };
 		AA3000000000000000000024 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "Resources/zh-Hans.lproj/Localizable.strings"; sourceTree = SOURCE_ROOT; };
+		AA3000000000000000000026 /* GlyphsTargets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlyphsTargets.swift; sourceTree = "<group>"; };
+		AA3000000000000000000027 /* Uninstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Uninstaller.swift; sourceTree = "<group>"; };
 		F4C332F72F538E3E00BF5B52 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; name = AppIcon.icon; path = Resources/AppIcon.icon; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -200,6 +204,8 @@
 				AA3000000000000000000004 /* ProcessRunner.swift */,
 				AA3000000000000000000005 /* Preflight.swift */,
 				AA3000000000000000000016 /* GlyphsPreferences.swift */,
+				AA3000000000000000000026 /* GlyphsTargets.swift */,
+				AA3000000000000000000027 /* Uninstaller.swift */,
 				AA3000000000000000000018 /* PluginUpdate.swift */,
 				AA3000000000000000000019 /* GitHubPluginDownloader.swift */,
 				AA3000000000000000000006 /* Installers.swift */,
@@ -376,6 +382,8 @@
 				AA1111111111111111111114 /* ProcessRunner.swift in Sources */,
 				AA1111111111111111111115 /* Preflight.swift in Sources */,
 				AA1111111111111111111126 /* GlyphsPreferences.swift in Sources */,
+				AA1111111111111111111131 /* GlyphsTargets.swift in Sources */,
+				AA1111111111111111111132 /* Uninstaller.swift in Sources */,
 				AA1111111111111111111127 /* PluginUpdate.swift in Sources */,
 				AA1111111111111111111128 /* GitHubPluginDownloader.swift in Sources */,
 				AA1111111111111111111116 /* Installers.swift in Sources */,
@@ -529,7 +537,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -543,7 +551,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.24;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -563,7 +571,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 10;
+				CURRENT_PROJECT_VERSION = 11;
 				DEAD_CODE_STRIPPING = YES;
 				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = N9U29A4T8J;
@@ -577,7 +585,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.24;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++14";
 				PRODUCT_BUNDLE_IDENTIFIER = cx.ap.glyphsMcpServerInstaller;
 				PRODUCT_NAME = "$(TARGET_NAME)";

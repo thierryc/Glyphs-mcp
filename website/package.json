@@ -5,7 +5,7 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "docusaurus start",
-    "build": "docusaurus build",
+    "build": "NO_UPDATE_NOTIFIER=1 docusaurus build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
@@ -14,18 +14,18 @@
     "write-heading-ids": "docusaurus write-heading-ids"
   },
   "dependencies": {
-    "@docusaurus/core": "3.6.3",
-    "@docusaurus/preset-classic": "3.6.3",
-    "@mdx-js/react": "3.0.1",
+    "@docusaurus/core": "3.10.1",
+    "@docusaurus/preset-classic": "3.10.1",
+    "@mdx-js/react": "3.1.1",
     "clsx": "2.1.1",
     "prism-react-renderer": "2.4.1",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.6.3",
-    "@docusaurus/tsconfig": "3.6.3",
-    "@docusaurus/types": "3.6.3",
+    "@docusaurus/module-type-aliases": "3.10.1",
+    "@docusaurus/tsconfig": "3.10.1",
+    "@docusaurus/types": "3.10.1",
     "typescript": "5.6.3"
   },
   "browserslist": {
@@ -41,4 +41,3 @@
     ]
   }
 }
-

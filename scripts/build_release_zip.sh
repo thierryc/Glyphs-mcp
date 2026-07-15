@@ -141,6 +141,12 @@ with zipfile.ZipFile(zip_path) as zf:
         if name.startswith("__MACOSX/"):
             bad.append(name)
             continue
+        if "/_CodeSignature/" in name:
+            bad.append(name)
+            continue
+        if "(autosave)" in name:
+            bad.append(name)
+            continue
         if lower.endswith(".ds_store"):
             bad.append(name)
             continue

@@ -215,6 +215,11 @@ __marimo__/
 src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/site-packages/
 plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Resources/vendor/
 
+# Generated Glyphs/macOS plugin artifacts
+**/* (autosave).*
+**/Glyphs MCP.glyphsPlugin/Contents/_CodeSignature/
+plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Resources/vendor/
+
 
 # Glyphs build environment
 glyphs-build-env/

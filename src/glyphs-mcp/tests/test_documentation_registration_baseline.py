@@ -20,9 +20,6 @@ import unittest
 def _ensure_fake_fastmcp() -> None:
     """Provide a minimal stub for fastmcp.resources used by the plugin."""
 
-    if "fastmcp.resources" in sys.modules:
-        return
-
     fastmcp_pkg = types.ModuleType("fastmcp")
     resources_mod = types.ModuleType("fastmcp.resources")
 
@@ -41,9 +38,6 @@ def _ensure_fake_fastmcp() -> None:
 
 def _ensure_fake_mcp_tools() -> None:
     """Provide a stub mcp_tools.mcp that records added resources."""
-
-    if "mcp_tools" in sys.modules:
-        return
 
     class _DummyMCP:
         def __init__(self) -> None:

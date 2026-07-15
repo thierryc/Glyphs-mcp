@@ -181,6 +181,95 @@ public enum Preflight {
 		)
 	}
 
+	/// Scans only the paths and Python configuration owned by one Glyphs major version.
+	/// Client/tool detection is deliberately excluded so a multi-target refresh does not
+	/// invoke the same global probes twice.
+	public static func scanGlyphs(glyphsVersion: GlyphsMajorVersion) -> PreflightResult {
+		var items: [PreflightItem] = []
+		let runner = ProcessRunner()
+		let glyphsBase = InstallerPaths.glyphsBaseDir(glyphsVersion: glyphsVersion)
+		let pluginsDir = InstallerPaths.glyphsPluginsDir(glyphsVersion: glyphsVersion)
+		items.append(.init(level: .ok, title: "\(glyphsVersion.displayName) base folder", details: glyphsBase.path))
+		items.append(.init(level: .ok, title: "\(glyphsVersion.displayName) plugins folder", details: pluginsDir.path))
+
+		let glyphsPip = InstallerPaths.glyphsPythonPip3(glyphsVersion: glyphsVersion)
+		let glyphsPipVersion: String? = {
+			guard let glyphsPip else { return nil }
+			let python3 = glyphsPip.deletingLastPathComponent().appendingPathComponent("python3")
+			let result = runner.runSyncWithStderr(executable: python3, args: ["-c", "import sys; print(sys.version.split()[0])"])
+			guard result.exitCode == 0 else { return nil }
+			let version = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+			return version.isEmpty ? nil : version
+		}()
+
+		let glyphsSelectedFramework = GlyphsPreferences.pythonFrameworkPath(glyphsVersion: glyphsVersion)
+		let glyphsSelectedVersion: String? = {
+			guard let glyphsSelectedFramework else { return nil }
+			let python3 = URL(fileURLWithPath: glyphsSelectedFramework, isDirectory: true).appendingPathComponent("bin/python3")
+			let result = runner.runSyncWithStderr(executable: python3, args: ["-c", "import sys; print(sys.version.split()[0])"])
+			guard result.exitCode == 0 else {
+				return GlyphsPreferences.pythonFrameworkMajorMinor(from: glyphsSelectedFramework)
+			}
+			let version = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+			return version.isEmpty ? GlyphsPreferences.pythonFrameworkMajorMinor(from: glyphsSelectedFramework) : version
+		}()
+
+		return PreflightResult(
+			items: items,
+			glyphsPipPath: glyphsPip?.path,
+			glyphsPipVersion: glyphsPipVersion,
+			glyphsSelectedPythonFrameworkPath: glyphsSelectedFramework,
+			glyphsSelectedPythonVersion: glyphsSelectedVersion,
+			customPythons: [],
+			customPythonTooOldCount: 0,
+			customPythonTooNewCount: 0,
+			customPythonUnknownCount: 0,
+			codexPath: nil,
+			claudePath: nil,
+			nodePath: nil
+		)
+	}
+
+	/// Scans global Python candidates and client CLIs exactly once per installer refresh.
+	public static func scanGlobal() -> PreflightResult {
+		var items: [PreflightItem] = []
+		let pythonScan = PythonDetector.scanCustomPythons()
+		items.append(.init(
+			level: pythonScan.good.isEmpty ? .warn : .ok,
+			title: NSLocalizedString("Custom Python", comment: "Preflight item title"),
+			details: PythonDetector.formatSummary(scan: pythonScan)
+		))
+
+		let codex = ToolLocator.findTool(named: "codex", extraCandidates: ["/opt/homebrew/bin/codex", "/usr/local/bin/codex"])
+		items.append(.init(
+			level: codex == nil ? .warn : .ok,
+			title: NSLocalizedString("Codex CLI", comment: "Preflight item title"),
+			details: codex ?? NSLocalizedString("Not found (will patch ~/.codex/config.toml instead).", comment: "Preflight item details")
+		))
+
+		let claude = ToolLocator.findTool(named: "claude", extraCandidates: ["/opt/homebrew/bin/claude", "/usr/local/bin/claude"])
+		items.append(.init(
+			level: claude == nil ? .warn : .ok,
+			title: NSLocalizedString("Claude CLI", comment: "Preflight item title"),
+			details: claude ?? NSLocalizedString("Not found (Claude Code will not be auto-configured).", comment: "Preflight item details")
+		))
+
+		return PreflightResult(
+			items: items,
+			glyphsPipPath: nil,
+			glyphsPipVersion: nil,
+			glyphsSelectedPythonFrameworkPath: nil,
+			glyphsSelectedPythonVersion: nil,
+			customPythons: pythonScan.good,
+			customPythonTooOldCount: pythonScan.tooOldCount,
+			customPythonTooNewCount: pythonScan.tooNewCount,
+			customPythonUnknownCount: pythonScan.unknownCount,
+			codexPath: codex,
+			claudePath: claude,
+			nodePath: nil
+		)
+	}
+
 	static func readPluginVersion(bundle: Bundle, pluginBundleURL: URL?) -> String? {
 		if let pluginBundleURL {
 			return readPluginVersionFromBundle(pluginBundle: pluginBundleURL)
@@ -514,6 +603,7 @@ public enum InstallerSkillTargetDetector {
 }
 
 public struct InstallerStatusSnapshot: Equatable {
+	public let glyphsTargets: [GlyphsTargetStatusSnapshot]
 	public let pluginInspection: PluginInstaller.InstalledPluginInspection
 	public let installedPluginVersion: PluginBundleVersion?
 	public let payloadPluginVersion: PluginBundleVersion?
@@ -556,6 +646,7 @@ public enum InstallerStatusSnapshotBuilder {
 			: nil
 
 		return InstallerStatusSnapshot(
+			glyphsTargets: [],
 			pluginInspection: pluginInspection,
 			installedPluginVersion: effectiveInstalledPluginVersion,
 			payloadPluginVersion: payloadPluginVersion,
@@ -574,6 +665,44 @@ public enum InstallerStatusSnapshotBuilder {
 			clients: orderedClients,
 			detectedClientsSummary: detectedNames.isEmpty ? "No compatible clients detected on this Mac yet." : "Detected: " + detectedNames.joined(separator: ", "),
 			skills: skillTargets
+		)
+	}
+
+	public static func build(
+		glyphsTargets: [GlyphsTargetStatusSnapshot],
+		globalPreflight: PreflightResult,
+		check: CheckResult,
+		payloadPluginVersion: PluginBundleVersion?
+	) -> InstallerStatusSnapshot {
+		let primary = glyphsTargets.first(where: { $0.version == .installerDefault }) ?? glyphsTargets.first
+		let legacy = build(
+			preflight: globalPreflight,
+			check: check,
+			installedPluginVersion: primary?.installedPluginVersion,
+			payloadPluginVersion: payloadPluginVersion,
+			glyphsRunning: primary?.isRunning ?? false,
+			pluginInspection: primary?.pluginInspection ?? .notInstalled()
+		)
+		return InstallerStatusSnapshot(
+			glyphsTargets: glyphsTargets.sorted { $0.version < $1.version },
+			pluginInspection: legacy.pluginInspection,
+			installedPluginVersion: legacy.installedPluginVersion,
+			payloadPluginVersion: legacy.payloadPluginVersion,
+			pluginStatusSummary: legacy.pluginStatusSummary,
+			installedPluginIsSymlink: legacy.installedPluginIsSymlink,
+			installedPluginSymlinkTarget: legacy.installedPluginSymlinkTarget,
+			devPluginWarning: legacy.devPluginWarning,
+			showsDevPluginReplacementOption: legacy.showsDevPluginReplacementOption,
+			versionLine: legacy.versionLine,
+			glyphsRunning: legacy.glyphsRunning,
+			pythonStatus: legacy.pythonStatus,
+			wizardButtonTitle: legacy.wizardButtonTitle,
+			installButtonTitle: legacy.installButtonTitle,
+			installMessage: legacy.installMessage,
+			canInstall: legacy.canInstall,
+			clients: legacy.clients,
+			detectedClientsSummary: legacy.detectedClientsSummary,
+			skills: legacy.skills
 		)
 	}
 

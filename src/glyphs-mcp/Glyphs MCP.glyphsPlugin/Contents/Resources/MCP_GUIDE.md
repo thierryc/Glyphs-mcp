@@ -1,6 +1,6 @@
 # Glyphs MCP Guide
 
-Glyphs MCP is a local MCP server that runs inside Glyphs 3.
+Glyphs MCP is a local MCP server that runs inside Glyphs.
 
 Endpoint: `http://127.0.0.1:9680/mcp/` over MCP Streamable HTTP (SSE).  
 If your coding agent cannot connect, launch Glyphs fresh, start the MCP server first, then launch the coding agent.
@@ -34,6 +34,17 @@ Choose tools in this order:
 3. `execute_code` for broader scripts when context injection is unnecessary.
 
 Use `docs_search` and `docs_get` when API details are uncertain.
+
+## Glyphs 3 Compatibility
+
+This `glyphs4` branch can run in Glyphs 3 for compatibility testing, but Glyphs
+4 is the primary runtime. When `get_server_info` reports Glyphs `3.x`, treat
+sidebearing reads/writes as best-effort and prefer dry runs before confirmed
+spacing or metric mutations.
+
+Load `glyphs://glyphs-mcp/glyphs3-compatibility` for the current Glyphs 3
+limitations list. In particular, avoid escalating structured Glyphs 3 limitation
+errors into larger retry scripts.
 
 ## Glyphs Show Links
 
@@ -73,7 +84,7 @@ Execution rules:
 - Use `capture_output=false` for large loops.
 - Use `max_output_chars` and `max_error_chars` to bound output.
 - If you want manual control, request a Macro Panel snippet via `snippet_only=true` (returns code to paste; does not execute).
-- Large glyph edits should still call `glyph.beginUndo()/endUndo()` or `layer.beginChanges()/endChanges()`.
+- Large glyph edits should use documented `layer.beginChanges()/endChanges()` blocks; avoid `glyph.beginUndo()/endUndo()` in MCP-driven scripts because live Glyphs 4 QA showed those undo groups can trigger Glyphs' undo recovery dialog.
 - Glyphs undo is glyph-scoped, so master/global edits are not guaranteed undoable.
 - Never call `exit()`, `quit()`, or `sys.exit()`.
 

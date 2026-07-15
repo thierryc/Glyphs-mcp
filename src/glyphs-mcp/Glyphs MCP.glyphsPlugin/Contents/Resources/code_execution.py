@@ -20,6 +20,7 @@ except Exception:  # pragma: no cover - depends on Glyphs runtime
 from GlyphsApp import Glyphs, GSAnchor, GSComponent, GSGlyph, GSLayer, GSNode, GSPath  # type: ignore[import-not-found]
 
 from mcp_tools import mcp
+from mcp_tool_helpers import _font_context_source, _font_resolution_error, _resolve_font_by_index
 
 
 _SCRIPT_PAYLOAD_PREFIX = "__glyphs_mcp_payload__:"
@@ -79,7 +80,9 @@ def _macro_panel_snippet_with_context(user_code: str, font_index: int, glyph_nam
         "glyph_name = {}".format(glyph_literal),
         "master_id = None  # set to a specific master id string for more control",
         "",
-        "font = Glyphs.fonts[font_index] if 0 <= font_index < len(Glyphs.fonts) else None",
+        _font_context_source(),
+        "",
+        "font = __glyphs_mcp_font_by_index(Glyphs, font_index)",
         "glyph = font.glyphs[glyph_name] if (font is not None and glyph_name and font.glyphs[glyph_name]) else None",
         "layer = None",
         "if glyph is not None and font is not None:",
@@ -244,9 +247,11 @@ def _context_setup_source(font_index: Optional[int], glyph_name: Optional[str]) 
 
     return "\n".join(
         [
+            _font_context_source(),
+            "",
             "font_index = {}".format(int(font_index)),
             "glyph_name = {!r}".format(glyph_name),
-            "font = Glyphs.fonts[font_index] if 0 <= font_index < len(Glyphs.fonts) else None",
+            "font = __glyphs_mcp_font_by_index(Glyphs, font_index)",
             "glyph = font.glyphs[glyph_name] if (font is not None and glyph_name and font.glyphs[glyph_name]) else None",
             "layer = None",
             "if glyph is not None and font is not None:",
@@ -577,10 +582,10 @@ def _execute_code_via_script_runner(
 
 def _resolve_context_info(font_index: int, glyph_name: Optional[str]) -> dict:
     context_info = {}
-    if len(Glyphs.fonts) <= font_index or font_index < 0:
+    font, _fonts = _resolve_font_by_index(Glyphs, font_index)
+    if not font:
         return context_info
 
-    font = Glyphs.fonts[font_index]
     context_info["font"] = font.familyName
 
     if glyph_name and font.glyphs[glyph_name]:
@@ -595,6 +600,26 @@ def _resolve_context_info(font_index: int, glyph_name: Optional[str]) -> dict:
             context_info["layer"] = layer.name
 
     return context_info
+
+
+def _resolve_context_objects(font_index: int, glyph_name: Optional[str]):
+    font, fonts = _resolve_font_by_index(Glyphs, font_index)
+    if not font:
+        return None, None, None, {}, _font_resolution_error(font_index, fonts, ok_key="success")
+
+    glyph = None
+    layer = None
+    context_info = {"font": getattr(font, "familyName", None)}
+    if glyph_name and font.glyphs[glyph_name]:
+        glyph = font.glyphs[glyph_name]
+        context_info["glyph"] = glyph_name
+        if font.selectedFontMaster:
+            layer = glyph.layers[font.selectedFontMaster.id]
+        elif font.masters:
+            layer = glyph.layers[font.masters[0].id]
+        if layer is not None:
+            context_info["layer"] = getattr(layer, "name", None)
+    return font, glyph, layer, context_info, None
 
 
 @mcp.tool()
@@ -731,7 +756,21 @@ async def execute_code_with_context(
                 }
             )
 
-        context_info = _resolve_context_info(font_index, glyph_name)
+        font, glyph, layer, context_info, context_error = _resolve_context_objects(font_index, glyph_name)
+        if context_error:
+            return json.dumps(
+                {
+                    "success": False,
+                    "executed": False,
+                    "snippet": None,
+                    "output": "",
+                    "error": context_error.get("error"),
+                    "result": None,
+                    "context": context_error,
+                    "output_truncated": False,
+                    "error_truncated": False,
+                }
+            )
 
         if _script_runner_available():
             return _execute_code_via_script_runner(
@@ -746,18 +785,6 @@ async def execute_code_with_context(
                 font_index=font_index,
                 glyph_name=glyph_name,
             )
-
-        font = None
-        glyph = None
-        layer = None
-        if len(Glyphs.fonts) > font_index >= 0:
-            font = Glyphs.fonts[font_index]
-            if glyph_name and font.glyphs[glyph_name]:
-                glyph = font.glyphs[glyph_name]
-                if font.selectedFontMaster:
-                    layer = glyph.layers[font.selectedFontMaster.id]
-                elif font.masters:
-                    layer = glyph.layers[font.masters[0].id]
 
         namespace = _namespace_base()
         namespace.update({"font": font, "glyph": glyph, "layer": layer})
