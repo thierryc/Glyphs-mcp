@@ -1,12 +1,6 @@
-.. attribute:: metrics
-		a list of all :class:`GSMetric` objects.
+.. function:: activateReporter(reporter)
 
-		:type: list
+		Activate a reporter plug-in by its object (see Glyphs.reporters) or class name.
 
 		.. code-block:: python
-			# to add a new metric
-			metric = GSMetric(GSMetricsTypexHeight)
-			font.metrics.append(metric)
-			metricValue = master.metricValues[metric.id]
-			metricValue.position = 543
-			metricValue.overshoot = 17
+			Glyphs.activateReporter('GlyphsMasterCompatibility')

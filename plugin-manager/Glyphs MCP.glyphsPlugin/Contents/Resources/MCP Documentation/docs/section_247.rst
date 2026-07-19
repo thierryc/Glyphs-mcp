@@ -1,30 +1,18 @@
-:mod:`GSFeature`
+:mod:`GSClass`
 ===============================================================================
 
-Implementation of the feature object. It is used to implement OpenType Features in the Font Info.
+Implementation of the class object. It is used to store OpenType classes.
 
-For details on how to access them, please look at :class:`GSFont.features`
+For details on how to access them, please look at :class:`GSFont.classes`
 
-.. class:: GSFeature([tag, code])
+.. class:: GSClass([tag, code])
 
-	:param tag: The feature name
-	:param code: The feature code in Adobe FDK syntax
+	:param tag: The class name
+	:param code: A list of glyph names, separated by space or newline
 
-	Properties
-
-	.. autosummary::
-
-		name
-		code
-		automatic
-		notes
-		active
-		layers
-
-	Functions
-
-	.. autosummary::
-
-		update()
+		* :attr:`name`
+		* :attr:`code`
+		* :attr:`automatic`
+		* :attr:`active`
 
 	**Properties**

@@ -1,4 +1,5 @@
-.. attribute:: gridLength
-		Ready calculated size of grid for rounding purposes. Result of division of grid with gridSubDivisions.
+.. attribute:: upm
 
-		:type: float
+		Units per Em
+
+		:type: int

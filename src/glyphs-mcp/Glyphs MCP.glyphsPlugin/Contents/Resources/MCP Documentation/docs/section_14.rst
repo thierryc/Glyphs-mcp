@@ -1,4 +1,9 @@
-.. attribute:: languageScripts
-		A dictionary with language tag to script tag mapping, e.g., 'ENG': 'latn'
+.. attribute:: colorDefaults
+		Access to default settings cast to a color.
 
-		:type: dict
+		:type: NSColor
+
+		.. code-block:: python
+			color = Glyphs.colorDefaults["GSColorCanvas"]
+			color.set()
+			NSBezierPath.fillRect_(rect)

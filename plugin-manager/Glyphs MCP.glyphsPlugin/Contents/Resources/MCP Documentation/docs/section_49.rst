@@ -1,14 +1,6 @@
-.. attribute:: stems
-		The stems. A list of :class:`GSMetric` objects. For each metric, there is a metricsValue in the masters, linked by the `id`.
+.. function:: deactivateReporter(reporter)
 
-		:type: list, dict
+		Deactivate a reporter plug-in by its object (see Glyphs.reporters) or class name.
 
 		.. code-block:: python
-			font.stems[0].horizontal = False
-
-			# add a stem
-			stem = GSMetric()
-			stem.horizontal = False # or True
-			stem.name = "Some Name"
-			font.stems.append(stem)
-			master.stems[stem.name] = 123
+			Glyphs.deactivateReporter('GlyphsMasterCompatibility')

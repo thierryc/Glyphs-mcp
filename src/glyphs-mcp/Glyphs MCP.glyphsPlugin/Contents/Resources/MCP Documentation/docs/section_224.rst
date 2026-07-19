@@ -1,5 +1,7 @@
-.. attribute:: manualInterpolation
-		Disables automatic calculation of instanceInterpolations
-		This allows manual setting of instanceInterpolations.
+.. attribute:: trademark
 
-		:type: bool
+		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+
+		:type: str
+
+		.. versionadded:: 3.0.3

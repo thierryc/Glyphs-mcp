@@ -1,4 +1,5 @@
-.. attribute:: filter
-		A filter to limit the scope of the metric.
+.. attribute:: font
 
-		:type: NSPredicate
+		Reference to the :class:`GSFont` object that contains the axis. Normally that is set by the app.
+
+		:type: GSFont

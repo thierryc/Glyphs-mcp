@@ -1,4 +1,5 @@
-.. attribute:: overshoot
-		Value of overshoot’s width.
+.. attribute:: name
 
-		:type: float
+		Human-readable name of glyph ("nice name").
+
+		:type: str

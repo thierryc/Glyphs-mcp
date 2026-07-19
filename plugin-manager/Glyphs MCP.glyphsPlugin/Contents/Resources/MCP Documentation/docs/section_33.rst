@@ -1,7 +1,7 @@
-.. function:: removeCallback(function)
+.. function:: glyphInfoForUnicode(Unicode, [font=None])
 
-		Remove the function you’ve previously added.
+		Generates :class:`GSGlyphInfo` object for a given hex unicode.
 
-		.. code-block:: python
-			# remove your function from the hook
-			Glyphs.removeCallback(drawGlyphIntoBackground)
+		:param Unicode: Hex unicode
+		:param font: if you add a font, and the font has a local glyph info, it will be used instead of the global info data.
+		:return: :class:`GSGlyphInfo`

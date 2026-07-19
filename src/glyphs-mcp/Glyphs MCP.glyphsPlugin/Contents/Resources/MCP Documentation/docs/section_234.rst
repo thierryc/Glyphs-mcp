@@ -1,4 +1,6 @@
-.. attribute:: active
-		If the the parameter should be used or not
+.. attribute:: manualInterpolation
+
+		Disables automatic calculation of instanceInterpolations
+		This allows manual setting of instanceInterpolations.
 
 		:type: bool

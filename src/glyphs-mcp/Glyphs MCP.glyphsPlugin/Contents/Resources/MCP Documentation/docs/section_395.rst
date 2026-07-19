@@ -1,16 +1,7 @@
-:mod:`GSGlyphReference`
-===============================================================================
+.. attribute:: scale
 
-a small helper class to store a reference to a glyph in userData that will keep track of changes to the glyph name.
+		Scale factor of the component.
 
-.. versionadded:: 3.0.4
+		A tuple containing the horizontal and vertical scale.
 
-.. class:: GSGlyphReference()
-
-	Properties
-
-	.. autosummary::
-
-		glyph
-
-	**Properties**
+		:type: tuple, NSPoint

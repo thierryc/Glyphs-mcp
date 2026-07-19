@@ -1,13 +1,10 @@
-.. attribute:: bounds
-		Bounding box of the path, read-only
+.. attribute:: attributes
 
-		:type: NSRect
+		attributes attributes like :samp:`mask` or :samp:`reversePaths`
 
 		.. code-block:: python
-			path = layer.paths[0] # first path
 
-			# origin
-			print(path.bounds.origin.x, path.bounds.origin.y)
+			component.attributes['mask'] = True
+			component.attributes['reversePaths'] = True
 
-			# size
-			print(path.bounds.size.width, path.bounds.size.height)
+		:type: dict

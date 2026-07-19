@@ -1,10 +1,12 @@
-.. function:: cutBetweenPoints(Point1, Point2)
+.. attribute:: background
 
-		Cuts all paths that intersect the line from Point1 to Point2
+		The background layer
 
-		:param Point1: one point
-		:param Point2: the other point
+		:type: :class:`GSLayer`
 
 		.. code-block:: python
-			# cut glyph in half horizontally at y=100
-			layer.cutBetweenPoints(NSPoint(0, 100), NSPoint(layer.width, 100))
+			# copy layer to its background
+			layer.background = layer.copy()
+
+			# remove background layer
+			layer.background = None

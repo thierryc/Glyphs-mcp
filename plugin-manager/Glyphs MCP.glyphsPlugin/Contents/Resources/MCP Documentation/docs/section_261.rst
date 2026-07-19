@@ -1,5 +1,5 @@
-.. attribute:: string
-		String representation of glyph, if encoded.
-		This is similar to the string representation that you get when copying glyphs into the clipboard.
+.. attribute:: code
+
+		The Feature code in Adobe FDK syntax.
 
 		:type: str

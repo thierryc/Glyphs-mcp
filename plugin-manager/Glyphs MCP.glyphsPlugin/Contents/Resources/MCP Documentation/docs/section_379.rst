@@ -1,8 +1,3 @@
-.. attribute:: componentLayer
-		The :class:`GSLayer` the component is pointing to. This is read-only. In order to change the referenced base glyph, set :attr:`componentName <GSComponent.componentName>` to the new glyph name.
+.. function:: endChanges()
 
-		For Smart Components, the `componentLayer` contains the interpolated result.
-
-		:type: :class:`GSLayer`
-
-		.. versionadded:: 2.5
+		Call this if you have called layer.beginChanges before. Make sure to group bot calls properly.

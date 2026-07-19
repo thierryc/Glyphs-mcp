@@ -1,33 +1,5 @@
-:mod:`GSGlyphInfo`
-===============================================================================
+.. attribute:: end
 
-Implementation of the GSGlyphInfo object.
+		A NSPoint that relatively to the shapes bounding box defines the ending point of the gradient
 
-This contains valuable information from the glyph database. See :class:`GSGlyphsInfo` for how to create these objects.
-
-.. class:: GSGlyphInfo()
-
-	Properties
-
-	.. autosummary::
-
-		name
-		productionName
-		category
-		subCategory
-		components
-		accents
-		anchors
-		unicode
-		unicodes
-		script
-		index
-		sortName
-		sortNameKeep
-		desc
-		altNames
-		direction
-		desc
-		case
-
-	**Properties**
+		:type: NSPoint

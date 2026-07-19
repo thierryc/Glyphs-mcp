@@ -1,4 +1,5 @@
-.. attribute:: locked
-		Defines whether image is locked for access in UI.
+.. attribute:: angle
 
-		:type: bool
+		The angle of the annotation.
+
+		:type: float

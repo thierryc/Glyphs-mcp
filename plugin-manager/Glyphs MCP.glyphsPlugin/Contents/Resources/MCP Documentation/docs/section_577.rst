@@ -1,9 +1,5 @@
-.. function:: GetSaveFile(message=None, ProposedFileName=None, filetypes=None)
+.. attribute:: filter
 
-	Opens a file chooser dialog.
+		A filter to limit the scope of the metric.
 
-	:param message:
-	:param filetypes:
-	:param ProposedFileName:
-	:return: The selected file or None
-	:rtype: unicode
+		:type: NSPredicate

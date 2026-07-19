@@ -22,12 +22,16 @@ from mcp_tool_helpers import (
     _append_layer_anchor,
     _append_layer_shape,
     _component_transform_values,
+    _font_format_metadata,
     _font_resolution_error,
     _get_component_automatic,
     _layer_components,
     _layer_display_name,
+    _layer_shape_summary,
     _new_anchor,
     _resolve_font_by_index,
+    _safe_attr,
+    _shape_attribute_metadata,
 )
 
 
@@ -78,6 +82,7 @@ async def get_glyph_components(
             layers = [(master.id, glyph.layers[master.id]) for master in font.masters]
 
         components_info = []
+        compatibility_warnings = []
 
         for mid, layer in layers:
             layer_components = []
@@ -96,7 +101,14 @@ async def get_glyph_components(
                         "yOffset": transform[5],
                     },
                     "automatic": _get_component_automatic(component),
+                    "alignment": _safe_attr(component, "alignment", None),
+                    "anchor": _safe_attr(component, "anchor", None),
+                    "locked": _safe_attr(component, "locked", None),
+                    "traverseAnchors": _safe_attr(
+                        component, "traverseAnchors", None
+                    ),
                 }
+                component_data.update(_shape_attribute_metadata(component))
 
                 # Check if the component glyph exists
                 component_glyph = font.glyphs[component.componentName]
@@ -110,6 +122,10 @@ async def get_glyph_components(
                 layer_components.append(component_data)
 
             master_name = _layer_display_name(font, layer, mid)
+            shape_summary = _layer_shape_summary(layer)
+            for warning in shape_summary.get("compatibilityWarnings") or []:
+                if warning not in compatibility_warnings:
+                    compatibility_warnings.append(warning)
 
             components_info.append(
                 {
@@ -118,16 +134,18 @@ async def get_glyph_components(
                     "layerName": master_name,
                     "componentCount": len(layer_components),
                     "components": layer_components,
+                    "shapeDiagnostics": shape_summary,
                 }
             )
 
-        return json.dumps(
-            {
-                "glyphName": glyph_name,
-                "totalLayers": len(components_info),
-                "layers": components_info,
-            }
-        )
+        result = {
+            "glyphName": glyph_name,
+            "totalLayers": len(components_info),
+            "layers": components_info,
+            "compatibilityWarnings": compatibility_warnings,
+        }
+        result.update(_font_format_metadata(font))
+        return json.dumps(result)
 
     except Exception as e:
         return json.dumps({"error": str(e)})

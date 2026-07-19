@@ -1,4 +1,7 @@
-.. attribute:: unicodeRanges
-		Names of unicode ranges.
+.. attribute:: floatDefaults
+		Access to default settings cast to a float.
 
-		:type: list
+		:type: float
+
+		.. code-block:: python
+			scaleX = Glyphs.floatDefaults["GSTransformScaleX"]

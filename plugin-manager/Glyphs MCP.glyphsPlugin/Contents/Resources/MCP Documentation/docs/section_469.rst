@@ -1,35 +1,16 @@
-:mod:`GSBackgroundImage`
+:mod:`GSAnnotation`
 ===============================================================================
 
-Implementation of background image.
+Implementation of the annotation object.
 
-For details on how to access it, please see :class:`GSLayer.backgroundImage`
+For details on how to access them, please see :class:`GSLayer.annotations`
 
-.. class:: GSBackgroundImage([path])
+.. class:: GSAnnotation()
 
-	:param path: Initialize with an image file (optional)
-
-	Properties
-
-	.. autosummary::
-
-		path
-		image
-		crop
-		locked
-		position
-		scale
-		rotation
-		slant
-		transform
-		alpha
-
-	Functions
-
-	.. autosummary::
-
-		resetCrop()
-		scaleWidthToEmUnits()
-		scaleHeightToEmUnits()
+		* :attr:`position`
+		* :attr:`type`
+		* :attr:`text`
+		* :attr:`angle`
+		* :attr:`width`
 
 	**Properties**

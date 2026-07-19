@@ -1,6 +1,12 @@
-.. attribute:: componentMasterId
-		The ID of the master to component is pointing to.
+.. function:: transform(transform, [selection=False, components=True])
 
-		:type: str
+		Apply a :attr:`NSAffineTransform` to the layer.
 
-		.. versionadded:: 3.1
+		:param transform: A :attr:`NSAffineTransform`
+		:param selection: check selection
+		:param components: if components should be transformed
+
+		.. code-block:: python
+			transformation = NSAffineTransform()
+			transformation.rotate(45, (200, 200))
+			layer.transform(transformation)

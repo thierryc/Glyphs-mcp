@@ -1,5 +1,5 @@
-.. attribute:: script
-		The script of the glyph, e.g., 'latin', 'arabic'.
-		Setting only works if :attr:`GSGlyph.storeScript` is set (see below).
+.. attribute:: unicodes
 
-		:type: str
+		List of Strings‚ with the hex Unicode values of glyph, if encoded.
+
+		:type: list

@@ -1,18 +1,5 @@
-:mod:`GSAxis`
-===============================================================================
+**Functions**
 
-Implementation of the axis object.
+	.. function:: copy()
 
-.. class:: GSAxis()
-
-	Properties
-
-	.. autosummary::
-
-		name
-		axisTag
-		id
-		hidden
-		font
-
-	**Properties**
+		Returns a full copy of the font

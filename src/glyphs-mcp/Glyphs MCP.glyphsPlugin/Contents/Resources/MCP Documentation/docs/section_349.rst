@@ -1,11 +1,7 @@
-.. attribute:: userData
-		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
+.. attribute:: descender
 
-		:type: dict
+		The descender for this layer.
 
-		.. code-block:: python
-			# set value
-			layer.userData['rememberToMakeCoffee'] = True
+		:type: float
 
-			# delete value
-			del layer.userData['rememberToMakeCoffee']
+		.. versionadded:: 3.0.2

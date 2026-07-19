@@ -1,4 +1,5 @@
-.. attribute:: automatic
-		Define whether this class should be auto-generated when pressing the 'Update' button in the Font Info.
+.. function:: addAsMaster()
 
-		:type: bool
+		Add this instance as a new master to the font. Identical to "Instance as Master" menu item in the Font Info’s Instances section.
+
+		.. versionadded:: 2.6.2

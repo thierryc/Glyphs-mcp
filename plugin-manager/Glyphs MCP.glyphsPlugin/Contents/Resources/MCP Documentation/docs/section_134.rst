@@ -1,4 +1,5 @@
-.. attribute:: horizontal
-		This is used for stem metrics. so only use this for font.stems
+.. attribute:: name
 
-		:type: bool
+		The name of the axis
+
+		:type: str

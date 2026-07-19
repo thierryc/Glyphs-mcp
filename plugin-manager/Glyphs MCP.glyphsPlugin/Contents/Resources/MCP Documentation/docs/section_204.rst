@@ -1,4 +1,5 @@
-.. attribute:: preferredSubfamilyName
-		preferredSubfamilyName
+.. attribute:: designerURL
 
-		:type: string
+		:type: str
+
+		.. versionadded:: 3.0.2

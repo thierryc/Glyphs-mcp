@@ -1,6 +1,10 @@
-.. attribute:: trademark
-		This accesses the default value only. The localizations can be accessed by :attr:`GSFont.properties`
+.. attribute:: copyrights
 
-		:type: str
+		This accesses all localized copyright values.
+		For details :attr:`GSFont.properties`
+
+		:type: dict
+		.. code-block:: python
+			font.copyrights["ENG"] = "All rights reserved"
 
 		.. versionadded:: 3.0.3

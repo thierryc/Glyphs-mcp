@@ -1,8 +1,6 @@
-.. function:: saveToPDF(path[, rect])
+.. attribute:: type
 
-		Save the view to a PDF file.
+		The gradient type.
+		Linear = 0, Circular = 1
 
-		:param path: Path to the file
-		:param rect: Optional. NSRect defining the view port. If omitted, :attr:`GSEditViewController.viewPort` will be used.
-
-		.. versionadded:: 2.4
+		:type: int

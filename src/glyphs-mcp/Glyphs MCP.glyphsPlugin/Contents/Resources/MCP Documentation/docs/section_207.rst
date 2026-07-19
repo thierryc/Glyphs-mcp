@@ -1,10 +1,11 @@
-.. attribute:: sampleTexts
-		This accesses all localized designer values.
+.. attribute:: familyNames
+
+		This accesses all localized family name values.
 		For details :attr:`GSInstance.properties`
 
 		:type: dict
 
 		.. code-block:: python
-			instance.sampleTexts["ENG"] = "This is my sample text"
+			instance.familyNames["ENG"] = "MyFamilyName"
 
 		.. versionadded:: 3.0.3

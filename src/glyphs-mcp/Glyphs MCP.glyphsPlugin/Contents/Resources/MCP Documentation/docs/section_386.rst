@@ -1,11 +1,3 @@
-.. attribute:: selected
-		Selection state of component in UI.
+.. function:: swapForegroundWithBackground()
 
-		:type: bool
-
-		.. code-block:: python
-			# select component
-			layer.components[0].selected = True
-
-			# print(selection state)
-			print(layer.components[0].selected)
+		Swap Foreground layer with Background layer.

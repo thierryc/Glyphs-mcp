@@ -1,4 +1,4 @@
-.. attribute:: rotation
-		Rotation angle of image.
+.. attribute:: originNode
+		The first node the hint is attached to.
 
-		:type: float
+		:type: :class:`GSNode` or :class:`GSHandle` (e.g. when attached to intersections)

@@ -11,8 +11,8 @@ Glyphs MCP supports both Glyphs 3 and Glyphs 4 from `main`. See [Glyphs 3 compat
 
 ## Most used tools
 
-- `get_server_info`: confirm the running server version, runtime ID, code hash, and font discovery count.
-- `list_open_fonts`: list open fonts and pick a `font_index`.
+- `get_server_info`: confirm runtime identity and open-font source-format metadata.
+- `list_open_fonts`: list open fonts, their source format, and pick a `font_index`.
 - `get_font_masters`: find master IDs.
 - `get_selected_font_and_master`: confirm current font, master, and selection.
 - `review_spacing` / `apply_spacing`: review, dry-run, and apply spacing changes.
@@ -34,22 +34,45 @@ Glyph and layer inspection responses may include Glyphs show links:
 
 | Tool | Description |
 | --- | --- |
-| `get_server_info` | Return runtime identity, code hash, resource path, Glyphs reachability, and open-font count for health checks. |
-| `list_open_fonts` | List open fonts and basic metadata. |
+| `get_server_info` | Return runtime identity, Glyphs reachability, and open-font summaries including `formatVersion` and `lastSavedAppVersion`. |
+| `list_open_fonts` | List open fonts and source metadata, including `formatVersion` and `lastSavedAppVersion`. |
 | `get_font_glyphs` | Return glyph list and key attributes for a font, including show links when available. |
 | `get_font_masters` | Return detailed master information, including `italicAngle` from Glyphs Font Info Metrics and legacy `slantAngle` from the separate `postscriptSlantAngle` custom parameter. |
 | `get_font_instances` | List instances and interpolation data. |
-| `get_glyph_details` | Return glyph details, layers, paths, components, and show links. |
+| `get_glyph_details` | Return glyph details, shape-type counts, component metadata, grouping/styling diagnostics, compatibility warnings, and show links. |
 | `list_style_sets` | List `ss01`-`ss20` features, source/replacement glyphs, and group links. |
-| `get_glyph_components` | Inspect components used in a glyph. |
+| `get_glyph_components` | Inspect components, including `traverseAnchors`, shape diagnostics, and compatibility warnings. |
 | `get_selected_glyphs` | Inspect glyphs currently selected in the UI. |
 | `get_selected_font_and_master` | Inspect current font, master, and selection snapshot. |
 | `get_selected_nodes` | Inspect selected nodes with per-master mapping for edits. |
-| `get_glyph_paths` | Export paths as JSON suitable for review or controlled editing. |
+| `get_glyph_paths` | Export `pathDataVersion: 2` JSON with raw node metadata, shape indices, non-path counts, and compatibility warnings. |
 | `get_glyph_annotations` | Inspect native Glyphs annotations for a layer, including MCP ownership metadata when available. |
 | `get_glyph_annotation_groups` | Inspect MCP-managed linked annotation groups on a layer. |
 | `render_glyph_review_image` | Render selected or named glyph layers to a PNG image with optional metrics, sidebearing, bounds, node, handle, anchor, and guide overlays. |
 | `review_collinear_handles` | Review curve nodes that should be smooth based on handle collinearity. |
+
+## Codex feedback panel
+
+These tools share the versioned `ui://glyphs-mcp/feedback-v1.html` MCP App
+resource. Non-UI clients receive the same information as concise text plus
+structured output. The panel is a review and feedback surface, not an editor.
+
+| Tool | Description |
+| --- | --- |
+| `show_glyphs_status` | Show server, Glyphs, and open-font status. |
+| `show_font_feedback` | Show bounded, read-only information for an open font. |
+| `show_glyph_feedback` | Show glyph metadata, dimensions, sidebearings, anchors, components, layers, and warnings without outline paths. |
+| `show_opentype_features` | Show OpenType feature state, warnings, line counts, and parsed stylistic-set substitutions; code is omitted unless requested. |
+| `preview_spacing_feedback` | Run spacing with `dry_run=true` and create a short-lived reviewed plan. |
+| `preview_kerning_feedback` | Run kerning bumper analysis with `dry_run=true` and create a short-lived reviewed plan. |
+| `preview_handle_smoothing_feedback` | Run collinear-handle smoothing with `dry_run=true` and create a short-lived reviewed plan. |
+| `apply_feedback_plan` | From the app, re-run the dry run, compare its canonical change-set hash, consume the plan, and apply only after explicit confirmation. |
+| `open_feedback_target` | From the app, open only resolved glyph/layer objects belonging to an already open font. |
+
+Feedback plans expire after ten minutes, are capped at 64 process-local plans,
+and are never persisted. Every apply attempt consumes its plan before mutation.
+Stale state, partial results, failure, or an uncertain transport outcome requires
+a new dry run. None of these tools saves a font.
 
 ## Kerning
 
@@ -102,15 +125,15 @@ Italic first-pass tools use the Glyphs source/Transformations angle convention: 
 | `delete_glyph_annotation` | Delete one native annotation by MCP annotation ID or explicit layer annotation index. |
 | `clear_glyph_annotations` | Clear MCP-managed annotations by default, or all annotations with `scope="all"`. |
 | `add_corner_to_all_masters` | Add a `_corner.*` corner hint at selected nodes across all masters. |
-| `set_glyph_paths` | Replace glyph paths from JSON. |
+| `set_glyph_paths` | Accept legacy or version-2 path JSON; preserve metadata and mixed-shape order, reject unsafe raw-node rewrites before mutation, and roll back failed verification. |
 | `apply_collinear_handles_smooth` | Set smooth flags for reviewed collinear-handle curve nodes; supports `dry_run` and requires `confirm=true` to mutate. |
 
 ## Docs helpers
 
 | Tool | Description |
 | --- | --- |
-| `docs_search` | Search bundled Glyphs SDK/ObjectWrapper docs by title and summary. |
-| `docs_get` | Fetch a bundled docs page by id/path, with paging support. |
+| `docs_search` | Search the official Glyphs ObjectWrapper, version 3/4 format specifications, and regular schemas; results include source kind, format version, and URL. |
+| `docs_get` | Fetch a bundled docs page by id/path with paging and official source metadata. |
 | `docs_enable_page_resources` | Register each documentation page as a separate MCP resource; optional and noisy. |
 
 Prefer `docs_search` plus `docs_get` over registering every page as a resource.
@@ -122,7 +145,7 @@ Prefer `docs_search` plus `docs_get` over registering every page as a resource.
 | `ExportDesignspaceAndUFO` | Export UFO masters and designspace documents with structured logs and errors. |
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |
 | `execute_code_with_context` | Execute Python with injected helper objects such as font, glyph, and layer. |
-| `save_font` | Save the active font, optionally to a new path. |
+| `save_font` | Save the active font without requesting format conversion; reports format version before and after. |
 
 Execution notes:
 

@@ -12,6 +12,7 @@ from mcp_tool_helpers import (
     _coerce_numeric,
     _component_transform_values,
     _custom_parameter,
+    _font_format_metadata,
     _font_resolution_error,
     _get_component_automatic,
     _get_layer_id,
@@ -21,6 +22,7 @@ from mcp_tool_helpers import (
     _glyphs_show_link_fields,
     _layer_display_name,
     _layer_components,
+    _layer_shape_summary,
     _open_fonts_from_glyphs,
     _resolve_font_by_index,
     _safe_attr,
@@ -103,6 +105,7 @@ async def list_open_fonts() -> str:
                     "unitsPerEm": font.upm,
                     "versionMajor": getattr(font, "versionMajor", 0),
                     "versionMinor": getattr(font, "versionMinor", 0),
+                    **_font_format_metadata(font),
                 }
             )
         print(json.dumps(fonts_info))
@@ -370,6 +373,7 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
                 "componentCount": len(components),
                 "anchorCount": len(layer.anchors),
             }
+            layer_info.update(_layer_shape_summary(layer))
             layer_info.update(
                 _glyphs_show_layer_link_fields(
                     file_path,
@@ -387,6 +391,11 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
                         "name": component.componentName,
                         "transform": _component_transform_values(component),
                         "automatic": _get_component_automatic(component),
+                        "traverseAnchors": _safe_attr(
+                            component, "traverseAnchors", None
+                        ),
+                        "locked": _safe_attr(component, "locked", None),
+                        "anchor": _safe_attr(component, "anchor", None),
                     }
                 )
             layer_info["components"] = component_payloads
@@ -402,6 +411,7 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
             "productionName": glyph.productionName,
             "layers": layers_info,
         }
+        glyph_details.update(_font_format_metadata(font))
         glyph_details.update(
             _glyphs_show_link_fields(
                 file_path,

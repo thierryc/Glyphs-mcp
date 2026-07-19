@@ -1,4 +1,5 @@
-.. attribute:: font
-		The active :class:`GSFont`
+.. attribute:: title
 
-		:type: GSFont
+		the title of the notification
+
+		:type: str

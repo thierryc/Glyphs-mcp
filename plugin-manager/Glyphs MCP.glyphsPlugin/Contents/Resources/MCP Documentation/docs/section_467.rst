@@ -1,6 +1,6 @@
-.. attribute:: isCorner
-		if it is a Corner (or Cap, Brush...) component
+.. attribute:: showMeasurement
+		If the guide is showing measurements
 
 		:type: bool
 
-		.. versionadded:: 3
+		.. versionadded:: 3.1

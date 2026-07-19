@@ -1,2 +1,5 @@
-.. function:: close()
-		closes the Preview Text Window
+.. attribute:: index
+
+		Index of glyph in database. Used for sorting in UI.
+
+		:type: str

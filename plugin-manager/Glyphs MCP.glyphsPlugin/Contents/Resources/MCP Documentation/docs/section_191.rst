@@ -1,6 +1,5 @@
-.. attribute:: description
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+.. attribute:: preferredFamily
+
+		preferredFamily
 
 		:type: str
-
-		.. versionadded:: 3.0.3

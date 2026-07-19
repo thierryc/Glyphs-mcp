@@ -1,7 +1,7 @@
-.. function:: productionGlyphName(name, [font=None])
+.. function:: showMacroWindow
 
-		Converts glyph name to production glyph name (e.g. afii10017 or A-cy to uni0410)
+		Opens the macro window
 
-		:param name: glyph name
-		:param font: if you add a font, and the font has a local glyph info, it will be used instead of the global info data.
-		:return: string
+	.. function:: clearLog
+
+		Deletes the content of the console in the macro window

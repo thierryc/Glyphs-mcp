@@ -1,6 +1,20 @@
-.. attribute:: metrics
-		The metrics layer are a list of horizontal metrics filtered specifically for this layer. Use this instead of :attr:`master.alignmentZones <GSFontMaster.alignmentZones>`.
+.. attribute:: anchors
 
-		:type: :class:`GSMetricValue`
+		List of :class:`GSAnchor` objects.
 
-		.. versionadded:: 3.0.1
+		:type: list, dict
+
+		.. code-block:: python
+			# access all anchors:
+			for a in layer.anchors:
+			    print(a)
+
+			# add a new anchor
+			layer.anchors['top'] = GSAnchor()
+
+			# delete anchor
+			del layer.anchors['top']
+
+			# copy anchors from another layer
+			import copy
+			layer.anchors = copy.copy(anotherlayer.anchors)

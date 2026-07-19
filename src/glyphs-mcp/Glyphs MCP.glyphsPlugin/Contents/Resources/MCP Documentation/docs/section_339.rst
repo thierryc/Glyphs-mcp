@@ -1,11 +1,10 @@
-.. attribute:: backgroundImage
-		The background image. It will be scaled so that 1 em unit equals 1 of the image’s pixels.
+.. attribute:: paths
 
-		:type: :class:`GSBackgroundImage`
+		List of :class:`GSPath` objects. This is only a helper proxy to iterate all paths (without components). To add/remove items, use :attr:`GSLayer.shapes`.
+
+		:type: list
 
 		.. code-block:: python
-			# set background image
-			layer.backgroundImage = GSBackgroundImage('/path/to/file.jpg')
-
-			# remove background image
-			layer.backgroundImage = None
+			# access all paths
+			for path in layer.paths:
+			    print(path)

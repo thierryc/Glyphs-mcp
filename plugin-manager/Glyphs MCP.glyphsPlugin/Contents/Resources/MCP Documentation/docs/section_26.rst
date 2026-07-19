@@ -1,5 +1,6 @@
-.. function:: showGlyphInfoPanelWithSearchString(String)
+.. attribute:: buildNumber
+		Glyph.app’s build number.
 
-		Shows the Glyph Info window with a preset search string
+		Especially if you’re using preview builds, this number may be more important to you than the version number. The build number increases with every released build and is the most significant evidence of new Glyphs versions, while the version number is set arbitrarily and stays the same until the next stable release.
 
-		:param String: The search term
+		:type: float

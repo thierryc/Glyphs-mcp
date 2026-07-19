@@ -1,4 +1,4 @@
-.. attribute:: name
-		Name of the axis. The name is for display purpose only.
+.. attribute:: componentName
+		The glyph name the component is pointing to.
 
 		:type: str

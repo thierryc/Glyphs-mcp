@@ -1,31 +1,5 @@
-.. autosummary::
+.. attribute:: id
 
-		id
-		name
-		internalAxesValues
-		externalAxesValues
-		properties
-		metrics
-		ascender
-		capHeight
-		xHeight
-		descender
-		italicAngle
-		alignmentZones
-		blueValues
-		otherBlues
-		guides
-		stems
-		numbers
-		userData
-		customParameters
-		font
-		iconName
+		The id to link the values in the masters
 
-	Functions
-
-	.. autosummary::
-
-		copy()
-
-	**Properties**
+		:type: str

@@ -1,5 +1,5 @@
-**Functions**
+.. attribute:: selectedFontMaster
 
-		.. function:: copy()
+		Returns the active master (selected in the toolbar).
 
-		Returns a full copy of the font
+		:type: :class:`GSFontMaster`

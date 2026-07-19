@@ -1,6 +1,12 @@
-.. attribute:: previewRemoveOverlap
-		disable preview remove overlap
+.. attribute:: tempData
 
-		:type: bool
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use layer.userData
 
-		.. versionadded:: 3.0.1
+		:type: dict
+
+		.. code-block:: python
+			# set value
+			layer.tempData['rememberToMakeCoffee'] = True
+
+			# delete value
+			del layer.tempData['rememberToMakeCoffee']

@@ -1,4 +1,7 @@
-.. attribute:: tools
-		Returns a list of available tool names, including third-party plug-ins.
+.. attribute:: previewRemoveOverlap
 
-		:type: list, string
+		disable preview remove overlap
+
+		:type: bool
+
+		.. versionadded:: 3.0.1

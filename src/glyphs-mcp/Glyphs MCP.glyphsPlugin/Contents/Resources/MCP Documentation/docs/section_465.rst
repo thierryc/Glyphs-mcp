@@ -1,6 +1,5 @@
-.. attribute:: isTrueType
-		if it is a TrueType instruction
+.. attribute:: locked
+
+		Locked
 
 		:type: bool
-
-		.. versionadded:: 3

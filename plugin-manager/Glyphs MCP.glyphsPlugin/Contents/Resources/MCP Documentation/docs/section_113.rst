@@ -1,5 +1,16 @@
-.. function:: show()
+.. attribute:: tabs
 
-		Makes font visible in the application, either by bringing an already open font window to the front or by appending a formerly invisible font object (such as the result of a `copy()` operation) as a window to the application.
+		List of open Edit view tabs in UI, as list of :class:`GSEditViewController` objects.
 
-		.. versionadded:: 2.4.1
+		:type: list
+
+		.. code-block:: python
+			# open new tab with text
+			font.newTab('hello')
+
+			# access all tabs
+			for tab in font.tabs:
+			    print(tab)
+
+			# close last tab
+			font.tabs[-1].close()

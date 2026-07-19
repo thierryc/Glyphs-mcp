@@ -1,6 +1,5 @@
-:mod:`GSInstance`
-===============================================================================
+.. attribute:: alignmentZones
 
-Implementation of the instance object. This corresponds with the "Exports" pane in Font Info.
+		Collection of :class:`GSAlignmentZone` objects. Read-only.
 
-.. class:: GSInstance()
+		:type: list

@@ -1,13 +1,24 @@
-.. attribute:: userData
-		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
+.. attribute:: name
 
-		:type: dict
+		The name of the anchor
+
+		:type: str
+
+	.. attribute:: selected
+
+		Selection state of anchor in UI.
 
 		.. code-block:: python
-			# set value
-			component.userData['rememberToMakeCoffee'] = True
+			# select anchor
+			layer.anchors[0].selected = True
 
-			# delete value
-			del component.userData['rememberToMakeCoffee']
+			# log selection state
+			print(layer.anchors[0].selected)
 
-		.. versionadded:: 2.5
+		:type: bool
+
+	.. attribute:: orientation
+
+		If the position of the anchor is relative to the LSB (0), center (2) or RSB (1).
+
+		:type: int

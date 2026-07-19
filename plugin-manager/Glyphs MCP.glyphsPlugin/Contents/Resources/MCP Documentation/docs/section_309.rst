@@ -1,4 +1,5 @@
-.. attribute:: master
-		Master that this layer is connected to. Read only.
+.. attribute:: export
 
-		:type: GSFontMaster
+		Defines whether glyph will export upon font generation
+
+		:type: bool

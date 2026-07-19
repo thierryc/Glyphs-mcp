@@ -1,5 +1,13 @@
-.. function:: append(item)
+:mod:`GSInfoValueSingle`
+===============================================================================
 
-		:param item: a NSMenuItem
+The GSInfoValueSingle
 
-		adds another item to the items submenu
+.. class:: GSInfoValueSingle()
+
+	Properties
+
+		* :attr:`key`
+		* :attr:`value`
+
+	**Properties**

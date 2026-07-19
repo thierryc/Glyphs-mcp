@@ -1,6 +1,5 @@
-.. attribute:: copyright
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+.. attribute:: isBold
 
-		:type: str
+		Bold flag for style linking
 
-		.. versionadded:: 3.0.2
+		:type: bool

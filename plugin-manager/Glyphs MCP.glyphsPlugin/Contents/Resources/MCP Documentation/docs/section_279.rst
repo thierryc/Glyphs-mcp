@@ -1,4 +1,5 @@
-.. attribute:: sortNameKeep
-		Alternative name of glyph used for sorting in UI, when using 'Keep Alternates Next to Base Glyph' from Font Info.
-		see :attr:`GSGlyph.storeSortName`
-		:type: str
+.. attribute:: storeSubCategory
+		Set to True in order to manipulate the :attr:`GSGlyph.subCategory` of the glyph (see above).
+		Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file. Same as Cmd-Alt-i dialog in UI.
+
+		:type: bool

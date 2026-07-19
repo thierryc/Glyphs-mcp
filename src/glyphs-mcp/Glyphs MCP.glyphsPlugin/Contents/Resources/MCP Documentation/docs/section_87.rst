@@ -1,21 +1,14 @@
-.. attribute:: customParameters
-		The custom parameters. List of :class:`GSCustomParameter` objects. You can access them by name or by index.
+.. attribute:: date
 
-		:type: list, dict
+		:type: datetime.datetime
 
 		.. code-block:: python
-			# access all parameters
-			for parameter in font.customParameters:
-			    print(parameter)
+			print(font.date)
+			>> 2015-06-08 09:39:05
 
-			# set a parameter
-			font.customParameters['glyphOrder'] = ["a", "b", "c"]
-
-			# add multiple parameters:
-			parameter = GSCustomParameter("Name Table Entry", "1 1;"font name")
-			font.customParameters.append(parameter)
-			parameter = GSCustomParameter("Name Table Entry", "2 1;"style name")
-			font.customParameters.append(parameter)
-
-			# delete a parameter
-			del font.customParameters['glyphOrder']
+			# set date to now
+			font.date = datetime.datetime.now()
+			# using NSDate
+			font.date = NSDate.date()
+			# or in seconds since Epoch
+			font.date = time.time()

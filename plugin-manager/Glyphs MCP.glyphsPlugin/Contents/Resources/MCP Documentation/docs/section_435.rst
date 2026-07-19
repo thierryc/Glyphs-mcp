@@ -1,28 +1,5 @@
-:mod:`GSGuide`
-===============================================================================
+.. attribute:: direction
 
-Implementation of the guide object.
+		Path direction. -1 for counter clockwise, 1 for clockwise.
 
-For details on how to access them, please see :attr:`GSLayer.guides`
-
-
-.. class:: GSGuide()
-
-	Properties
-
-	.. autosummary::
-
-		position
-		angle
-		name
-		filter
-		showMeasurement
-		selected
-		locked
-		userData
-
-	Functions
-
-	.. autosummary::
-
-		copy()
+		:type: int

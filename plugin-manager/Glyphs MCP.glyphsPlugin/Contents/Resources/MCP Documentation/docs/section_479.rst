@@ -1,17 +1,4 @@
-.. attribute:: transform
-		Transformation matrix.
+.. attribute:: otherNode1
+		A third node this hint is attached to. Used for Interpolation or Diagonal hints.
 
-		:type: :class:`NSAffineTransformStruct`
-
-		.. code-block:: python
-			# change transformation
-			layer.backgroundImage.transform = ((
-			    1.0, # x scale factor
-			    0.0, # x skew factor
-			    0.0, # y skew factor
-			    1.0, # y scale factor
-			    0.0, # x position
-			    0.0  # y position
-			))
-
-	**Functions**
+		:type: :class:`GSNode` or :class:`GSHandle` (e.g. when attached to intersections)

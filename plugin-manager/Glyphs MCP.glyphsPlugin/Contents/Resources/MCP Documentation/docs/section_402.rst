@@ -1,16 +1,8 @@
-:mod:`GSShape`
-===============================================================================
+.. attribute:: componentLayer
+		The :class:`GSLayer` the component is pointing to. This is read-only. In order to change the referenced base glyph, set :attr:`componentName <GSComponent.componentName>` to the new glyph name.
 
-Implementation of the shape object. This a superclass for GSPath and GSComponent. You can’t instantiate GSShape directly
+		For Smart Components, the `componentLayer` contains the interpolated result.
 
-For details on how to access them, please see :attr:`GSLayer.shapes`
+		:type: :class:`GSLayer`
 
-.. class:: GSShape()
-
-	Properties
-
-	.. autosummary::
-
-		position
-		locked
-		shapeType
+		.. versionadded:: 2.5

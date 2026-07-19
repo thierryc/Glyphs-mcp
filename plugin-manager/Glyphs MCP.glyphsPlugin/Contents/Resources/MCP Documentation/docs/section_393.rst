@@ -1,19 +1,39 @@
-.. function:: applyTransform
+:mod:`GSComponent`
+===============================================================================
 
-		Apply a transformation matrix to the component.
+Implementation of the component object.
+For details on how to access them, please see :attr:`GSLayer.components`
 
-		.. code-block:: python
-			component = layer.components[0]
+.. class:: GSComponent(glyph [, position])
 
-			component.applyTransform((
-			    0.5, # x scale factor
-			    0.0, # x skew factor
-			    0.0, # y skew factor
-			    0.5, # y scale factor
-			    0.0, # x position
-			    0.0  # y position
-			))
+	:param glyph: a :class:`GSGlyph` object or the glyph name
+	:param position: the position of the component as NSPoint
 
-	.. function:: copy()
+	Properties
 
-		Returns a full copy of the component
+		* :attr:`position`
+		* :attr:`scale`
+		* :attr:`rotation`
+		* :attr:`slant`
+		* :attr:`componentName`
+		* :attr:`componentMasterId`
+		* :attr:`component`
+		* :attr:`alignment`
+		* :attr:`layer`
+		* :attr:`transform`
+		* :attr:`bounds`
+		* :attr:`automaticAlignment`
+		* :attr:`anchor`
+		* :attr:`selected`
+		* :attr:`smartComponentValues`
+		* :attr:`bezierPath`
+		* :attr:`userData`
+		* :attr:`traverseAnchors`
+
+	Functions
+
+		* :meth:`applyTransform`
+		* :meth:`copy`
+		* :meth:`decompose`
+
+	**Properties**

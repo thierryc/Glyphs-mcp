@@ -1,12 +1,12 @@
 """Guards against documentation drift for the MCP tool surface.
 
 We avoid importing the tool modules because they import GlyphsApp (not present
-in the normal unit test runner). Instead, we extract tool names from source
-text by looking for @mcp.tool() followed by an async def.
+in the normal unit test runner). Instead, we parse decorators from source.
 """
 
 from __future__ import annotations
 
+import ast
 import re
 import unittest
 from pathlib import Path
@@ -37,15 +37,12 @@ def _tool_source_paths() -> list[Path]:
 def _extract_tool_names(paths: list[Path]) -> set[str]:
     tool_names: set[str] = set()
     for path in paths:
-        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-        for i, line in enumerate(lines):
-            if line.strip() != "@mcp.tool()":
+        tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
-            for j in range(i + 1, min(i + 12, len(lines))):
-                match = re.match(r"^\s*async def (\w+)\s*\(", lines[j])
-                if match:
-                    tool_names.add(match.group(1))
-                    break
+            if any(ast.unparse(decorator).startswith("mcp.tool") for decorator in node.decorator_list):
+                tool_names.add(node.name)
     return tool_names
 
 
@@ -89,4 +86,3 @@ class DocsSurfaceSyncTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

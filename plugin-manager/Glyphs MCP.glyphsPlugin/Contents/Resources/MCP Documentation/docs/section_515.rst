@@ -1,4 +1,4 @@
-.. attribute:: name
-		Human-readable name of glyph ("nice name").
+.. attribute:: absoluteStart
+		A NSPoint of the absolute starting point of the gradient
 
-		:type: str
+		:type: NSPoint

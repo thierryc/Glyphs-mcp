@@ -1,3 +1,3 @@
-.. attribute:: disablesAutomaticAlignment
+.. attribute:: note
 
-		:type: bool
+		:type: str

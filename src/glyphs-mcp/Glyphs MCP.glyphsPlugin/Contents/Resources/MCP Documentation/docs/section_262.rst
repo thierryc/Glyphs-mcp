@@ -1,4 +1,5 @@
-.. attribute:: id
-		An unique identifier for each glyph
+.. attribute:: automatic
 
-		:type: string
+		Define whether this feature should be auto-generated when pressing the 'Update' button in the Font Info.
+
+		:type: bool

@@ -1,16 +1,6 @@
-:mod:`GSFontInfoValue`
-===============================================================================
+.. attribute:: bottomToolbarHeight
+		Height of the little toolbar at the very bottom of the window. Read-only.
 
-The GSFontInfoValue
+		:type: float
 
-.. class:: GSFontInfoValue()
-
-	Properties
-
-	.. autosummary::
-
-		key
-		value
-		languageTag
-
-	**Properties**
+		.. versionadded:: 2.4

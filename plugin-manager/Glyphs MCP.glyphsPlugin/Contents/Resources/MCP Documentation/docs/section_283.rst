@@ -1,4 +1,7 @@
-.. attribute:: topKerningGroup
-		The topKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.
+.. attribute:: case
 
-		:type: str
+		e.g: GSUppercase, GSLowercase, GSSmallcaps
+
+		:type: int
+
+		.. versionadded:: 3

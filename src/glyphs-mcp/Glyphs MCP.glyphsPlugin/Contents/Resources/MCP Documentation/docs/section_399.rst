@@ -1,5 +1,6 @@
-.. attribute:: id
-		Id of the axis. This Id will be used to map the Smart Glyph’s layers to the poles of the interpolation. See :attr:`GSLayer.smartComponentPoleMapping`
+.. attribute:: name
+
+		The glyph name the component is pointing to.
 
 		:type: str
 

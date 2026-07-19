@@ -1,30 +1,8 @@
-:mod:`GSHint`
-===============================================================================
+.. attribute:: connection
 
-Implementation of the hint object.
+		The type of the connection, SHARP or SMOOTH
 
-For details on how to access them, please see :class:`GSLayer.hints`
+		:type: str
 
-.. class:: GSHint()
-
-	.. autosummary::
-
-		parent
-		originNode
-		targetNode
-		otherNode1
-		otherNode2
-		originIndex
-		targetIndex
-		otherIndex1
-		otherIndex2
-		type
-		horizontal
-		selected
-		isTrueType
-		isPostScript
-		isCorner
-		name
-		stem
-
-	**Properties**
+		.. deprecated:: 2.3
+			Use :attr:`smooth <GSNode.smooth>` instead.

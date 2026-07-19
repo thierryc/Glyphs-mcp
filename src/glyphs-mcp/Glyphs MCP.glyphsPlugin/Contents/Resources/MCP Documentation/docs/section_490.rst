@@ -1,41 +1,9 @@
-:mod:`GSEditViewController`
-===============================================================================
+.. attribute:: stem
 
-Implementation of the GSEditViewController object, which represents Edit tabs in the UI.
+		Index of TrueType stem that this hint is attached to. The stems are defined in the custom parameter "TTFStems" per master.
 
-For details on how to access them, please look at :class:`GSFont.tabs`
+		For no stem, value is -1.
 
+		For automatic, value is -2.
 
-.. class:: GSEditViewController()
-
-	Properties
-
-	.. autosummary::
-
-		parent
-		text
-		layers
-		composedLayers
-		scale
-		viewPort
-		bounds
-		selectedLayerOrigin
-		textCursor
-		textRange
-		direction
-		features
-		previewInstances
-		previewHeight
-		bottomToolbarHeight
-		masterIndex
-		tempData
-
-	Functions
-
-	.. autosummary::
-
-		close()
-		saveToPDF()
-		redraw()
-
-	**Properties**
+		:type: int

@@ -1,9 +1,5 @@
-.. attribute:: attributes
-		attributes attributes like :samp:`mask` or :samp:`reversePaths`
+.. function:: reinterpolate()
 
-		.. code-block:: python
+		Re-interpolate a layer according the other layers and its interpolation values.
 
-			component.attributes['mask'] = True
-			component.attributes['reversePaths'] = True
-
-		:type: dict
+		Applies to both master layers as well as brace layers and is equivalent to the 'Re-Interpolate' command from the Layers palette.

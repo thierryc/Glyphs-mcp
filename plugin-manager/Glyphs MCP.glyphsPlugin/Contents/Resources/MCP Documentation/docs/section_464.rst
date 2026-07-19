@@ -1,8 +1,18 @@
-.. attribute:: stem
-		Index of TrueType stem that this hint is attached to. The stems are defined in the custom parameter "TTFStems" per master.
+.. attribute:: name
 
-		For no stem, value is -1.
+		a optional name
 
-		For automatic, value is -2.
+		:type: str
 
-		:type: int
+	.. attribute:: selected
+
+		Selection state of guide in UI.
+
+		:type: bool
+
+		.. code-block:: python
+			# select guide
+			layer.guides[0].selected = True
+
+			# print(selection state)
+			print(layer.guides[0].selected)

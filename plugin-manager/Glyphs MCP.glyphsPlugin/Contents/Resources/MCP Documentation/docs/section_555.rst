@@ -1,2 +1,5 @@
-.. function:: reloadFont()
-		refreshes the Preview Text Window
+.. attribute:: script
+
+		Script of glyph, e.g: "latin", "cyrillic", "greek".
+
+		:type: str

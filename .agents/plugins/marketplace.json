@@ -1,0 +1,20 @@
+{
+  "name": "glyphs-mcp",
+  "interface": {
+    "displayName": "Glyphs MCP"
+  },
+  "plugins": [
+    {
+      "name": "glyphs-mcp",
+      "source": {
+        "source": "local",
+        "path": "./plugins/glyphs-mcp"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Creativity"
+    }
+  ]
+}

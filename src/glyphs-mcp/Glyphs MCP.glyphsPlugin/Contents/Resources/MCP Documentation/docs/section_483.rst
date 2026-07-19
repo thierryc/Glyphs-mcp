@@ -1,19 +1,4 @@
-:mod:`GSGradient`
-===============================================================================
+.. attribute:: otherIndex1
+		A indexPath to the third node this hint is attached to. Used for Interpolation or Diagonal hints.
 
-Implementation of the gradient object.
-
-.. class:: GSGradient()
-
-	Properties
-
-	.. autosummary::
-
-		colors
-		type
-		start
-		end
-		absoluteStart
-		absoluteEnd
-
-	**Properties**
+		:type: :class:`NSIndexPath`

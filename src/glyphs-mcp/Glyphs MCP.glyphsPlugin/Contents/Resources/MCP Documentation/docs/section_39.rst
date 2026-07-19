@@ -1,15 +1,3 @@
-:mod:`GSDocument`
-===============================================================================
+.. function:: redraw()
 
-The document class
-
-.. class:: GSDocument()
-
-	Properties
-
-	.. autosummary::
-
-		font
-		filePath
-
-	**Properties**
+		Redraws all Edit views and Preview views.

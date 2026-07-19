@@ -1,8 +1,14 @@
-.. function:: scalePoint(P, scalar)
+:mod:`GSMetricStore`
+===============================================================================
 
-	Scaled a point.
+The GSMetricStore objects represent vertical metrics values and theirs overshoots.
 
-	:param P: a NSPoint
-	:param scalar: The multiplier
-	:return: The multiplied point
-	:rtype: NSPoint
+.. class:: GSMetricStore()
+
+		* :attr:`position`
+		* :attr:`overshoot`
+		* :attr:`name`
+		* :attr:`filter`
+		* :attr:`metric`
+
+	**Properties**

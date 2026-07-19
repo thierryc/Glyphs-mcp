@@ -1,4 +1,8 @@
-.. attribute:: scriptSuffixes
-		A dictionary with glyphs name suffixes for scripts and their respective script names, e.g., 'cy': 'cyrillic'
+.. attribute:: boolDefaults
+		Access to default settings cast to a bool.
 
-		:type: dict
+		:type: bool
+
+		.. code-block:: python
+			if Glyphs.boolDefaults["com_MyName_foo_bar"]:
+			    print('"com_MyName_foo_bar" is set')

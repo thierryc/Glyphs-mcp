@@ -25,6 +25,14 @@ fi
 
 dmg_versioned="$out_dir/$scheme-$version.dmg"
 dmg_latest="$out_dir/$scheme.dmg"
+if [[ "$skip" == "1" ]]; then
+  dmg_versioned="$out_dir/$scheme-$version-UNNOTARIZED.dmg"
+fi
+
+if [[ "$skip" != "1" ]]; then
+  /usr/bin/codesign --verify --deep --strict --verbose=2 "$app"
+  xcrun stapler validate "$app"
+fi
 
 rm -rf "$stage"
 mkdir -p "$stage"
@@ -45,6 +53,14 @@ echo "Creating DMG: $dmg_versioned"
 tmp_root="$(mktemp -d "/tmp/gmcp-installer-dmg.XXXXXX")"
 mnt="$tmp_root/mnt"
 mkdir -p "$mnt"
+device=""
+cleanup() {
+  if [[ -n "${device:-}" ]]; then
+    hdiutil detach -force "$device" >/dev/null 2>&1 || true
+  fi
+  rm -rf "$tmp_root"
+}
+trap cleanup EXIT
 
 rw_image="$tmp_root/$scheme-rw.dmg"
 
@@ -70,6 +86,7 @@ echo "Populating image at: $mnt"
 
 echo "Detaching: $device"
 hdiutil detach "$device" >/dev/null
+device=""
 
 echo "Converting to UDZO: $dmg_versioned"
 converted_base="$tmp_root/$scheme-udzo"
@@ -84,12 +101,12 @@ rm -rf "$tmp_root"
 
 echo "Signing DMG…"
 /usr/bin/codesign --force --sign "$identity" --timestamp "$dmg_versioned"
+/usr/bin/codesign --verify --strict --verbose=2 "$dmg_versioned"
 
 if [[ "$skip" == "1" ]]; then
-  cp -f "$dmg_versioned" "$dmg_latest"
   echo "Skipping notarization (SKIP_NOTARIZATION=1)."
-  echo "Done: $dmg_versioned"
-  echo "Also wrote: $dmg_latest"
+  echo "Wrote a deliberately non-release artifact: $dmg_versioned"
+  echo "The secure publisher will never upload this filename."
   exit 0
 fi
 
@@ -104,6 +121,7 @@ fi
 
 echo "Stapling DMG…"
 xcrun stapler staple "$dmg_versioned"
+xcrun stapler validate "$dmg_versioned"
 
 cp -f "$dmg_versioned" "$dmg_latest"
 echo "Done: $dmg_versioned"

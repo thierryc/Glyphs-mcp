@@ -1,9 +1,23 @@
-.. attribute:: copyrights
-		This accesses all localized copyright values.
-		For details :attr:`GSFont.properties`
+.. attribute:: axes
 
-		:type: dict
+		Collection of :class:`GSAxis`:
+
 		.. code-block:: python
-			font.copyrights["ENG"] = "All rights reserved"
+			for axis in font.axes:
+			    print(axis)
 
-		.. versionadded:: 3.0.3
+			# to add a new axis
+			axis = GSAxis()
+			axis.name = "Some custom Axis"
+			axis.axisTag = "SCAX"
+			font.axes.append(axis)
+
+			# to delete an axis
+			del font.axes[0]
+
+			font.axes.remove(someAxis)
+
+		:type: list
+
+		.. versionadded:: 2.5
+		.. versionchanged:: 3

@@ -1,8 +1,5 @@
-.. attribute:: features
-		List of OpenType features applied to text in Edit view.
+.. attribute:: slant
 
-		:type: list
+		The slant of the image.
 
-	.. code-block:: python
-
-		font.currentTab.features = ['locl', 'ss01']
+		:type: tuple, NSPoint

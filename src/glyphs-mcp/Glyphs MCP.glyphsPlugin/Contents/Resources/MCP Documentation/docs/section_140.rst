@@ -1,4 +1,5 @@
-.. attribute:: iconName
-		The name of the icon
+.. attribute:: name
 
-		:type: string
+		The name of the metric or stem
+
+		:type: str

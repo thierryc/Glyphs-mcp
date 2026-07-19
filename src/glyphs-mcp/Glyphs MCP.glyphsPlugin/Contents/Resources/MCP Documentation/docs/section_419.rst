@@ -1,35 +1,6 @@
-:mod:`GSNode`
-===============================================================================
+.. function:: decompose([doAnchors=True, doHints=True])
 
-Implementation of the node object.
+		Decomposes the component.
 
-For details on how to access them, please see :attr:`GSPath.nodes`
-
-.. class:: GSNode([pt, type = type])
-
-	:param pt: The position of the node.
-	:param type: The type of the node, LINE, CURVE or OFFCURVE
-
-	Properties
-
-	.. autosummary::
-
-		position
-		type
-		connection
-		selected
-		index
-		nextNode
-		prevNode
-		name
-		orientation
-
-	Functions
-
-	.. autosummary::
-
-		copy()
-		makeNodeFirst()
-		toggleConnection()
-
-	**Properties**
+		:param doAnchors: get anchors from components
+		:param doHints: get hints from components

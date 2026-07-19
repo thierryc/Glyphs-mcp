@@ -1,4 +1,5 @@
-.. attribute:: end
-		A NSPoint that relatively to the shapes bounding box defines the ending point of the gradient
+.. attribute:: horizontal
 
-		:type: NSPoint
+		True if hint is horizontal, False if vertical.
+
+		:type: bool

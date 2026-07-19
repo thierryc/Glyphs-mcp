@@ -40,7 +40,13 @@ class _FakeGSNode:
     def __init__(self) -> None:
         self._position = _Point(0.0, 0.0)
         self.type = "line"
+        self.rawType = 1
+        self.rawConnection = 0
         self.smooth = False
+        self.orientation = 0
+        self.name = None
+        self.attributes = {}
+        self.userData = {}
 
     @property
     def position(self):
@@ -55,6 +61,9 @@ class _FakeGSPath:
     def __init__(self) -> None:
         self.nodes = []
         self.closed = True
+        self.locked = False
+        self.attributes = {}
+        self.userData = {}
 
 
 class _FakeLayer:
@@ -163,14 +172,27 @@ class McpToolsPathsTests(unittest.TestCase):
 
         def fake_replace_layer_paths_and_metrics(
             layer_obj,
-            paths,
+            path_specs,
+            path_class,
+            node_class,
             width=None,
             left_sidebearing=None,
             right_sidebearing=None,
         ):
             if getattr(layer_obj, "fail_path_replace", False):
                 return {"ok": False, "error": "Path write verification failed", "pathCount": 0, "nodeCount": 0}
-            layer_obj.paths = list(paths or [])
+            paths = []
+            for path_spec in path_specs:
+                path_obj = path_class()
+                path_obj.closed = bool(path_spec.get("closed", True))
+                for node_spec in path_spec.get("nodes", []):
+                    node_obj = node_class()
+                    node_obj.position = (node_spec["x"], node_spec["y"])
+                    node_obj.type = node_spec.get("type", "line")
+                    node_obj.smooth = bool(node_spec.get("smooth", False))
+                    path_obj.nodes.append(node_obj)
+                paths.append(path_obj)
+            layer_obj.paths = paths
             if left_sidebearing is not None:
                 fake_set_sidebearing(layer_obj, "leftSideBearing", "LSB", left_sidebearing)
             if right_sidebearing is not None:
@@ -179,10 +201,16 @@ class McpToolsPathsTests(unittest.TestCase):
                 layer_obj.width = width
             result = fake_layer_path_summary(layer_obj)
             result["ok"] = True
+            result["pathEditMode"] = "topology-rewrite"
+            result["rolledBack"] = False
             return result
 
         helpers_module = types.SimpleNamespace(
-            _clear_layer_paths=lambda layer_obj: setattr(layer_obj, "paths", []),
+            _apply_path_specs_and_metrics=fake_replace_layer_paths_and_metrics,
+            _font_format_metadata=lambda font_obj: {
+                "formatVersion": getattr(font_obj, "formatVersion", None),
+                "lastSavedAppVersion": getattr(font_obj, "appVersion", None),
+            },
             _font_resolution_error=_font_resolution_error,
             _safe_json=lambda payload: json.dumps(payload),
             _get_layer_id=lambda layer_obj: getattr(layer_obj, "associatedMasterId", None),
@@ -190,9 +218,34 @@ class McpToolsPathsTests(unittest.TestCase):
             _get_right_sidebearing=lambda layer_obj: getattr(layer_obj, "RSB", 0),
             _glyphs_show_layer_link_fields=lambda *args, **kwargs: {},
             _layer_display_name=lambda _font, layer_obj, master_id=None: getattr(layer_obj, "name", None) or "Master 1",
+            _layer_paths=lambda layer_obj: list(getattr(layer_obj, "paths", []) or []),
             _layer_path_summary=fake_layer_path_summary,
-            _replace_layer_paths_and_metrics=fake_replace_layer_paths_and_metrics,
+            _layer_shape_summary=lambda layer_obj: {
+                "shapeCount": len(getattr(layer_obj, "paths", []) or []),
+                "pathCount": len(getattr(layer_obj, "paths", []) or []),
+                "componentCount": 0,
+                "imageCount": 0,
+                "shapeGroupCount": 0,
+                "otherShapeCount": 0,
+                "shapeTypeCounts": {"path": len(getattr(layer_obj, "paths", []) or [])},
+            },
+            _mapping_keys=lambda mapping: sorted(list((mapping or {}).keys())),
+            _node_orientation=lambda node_obj: (
+                {0: "left", 1: "right", 2: "center"}.get(
+                    getattr(node_obj, "orientation", None),
+                    "unknown",
+                ),
+                getattr(node_obj, "orientation", None),
+            ),
+            _node_raw_connection=lambda node_obj: getattr(node_obj, "rawConnection", None),
+            _node_raw_type=lambda node_obj: getattr(node_obj, "rawType", None),
+            _normalized_node_type=lambda node_obj: getattr(node_obj, "type", "unknown"),
             _resolve_font_by_index=_resolve_font_by_index,
+            _shape_attribute_metadata=lambda shape: {
+                "attributeKeys": sorted(list(getattr(shape, "attributes", {}).keys())),
+                "groupId": getattr(shape, "attributes", {}).get("shapeGroup"),
+                "hasUserData": bool(getattr(shape, "userData", {})),
+            },
             _show_notification=lambda *args, **kwargs: None,
         )
         module_name = "glyphs_mcp_test_mcp_tools_paths"
@@ -221,6 +274,10 @@ class McpToolsPathsTests(unittest.TestCase):
 
         self.assertEqual(payload["leftSideBearing"], 42)
         self.assertEqual(payload["rightSideBearing"], 58)
+        self.assertEqual(payload["pathDataVersion"], 2)
+        self.assertEqual(payload["paths"][0]["nodes"][0]["rawType"], 1)
+        self.assertEqual(payload["paths"][0]["nodes"][0]["orientation"], "left")
+        self.assertEqual(payload["paths"][0]["nodes"][0]["rawOrientation"], 0)
 
     def test_set_glyph_paths_uses_sidebearing_helper_setter(self) -> None:
         module, layer, helper_calls = self._load_module()

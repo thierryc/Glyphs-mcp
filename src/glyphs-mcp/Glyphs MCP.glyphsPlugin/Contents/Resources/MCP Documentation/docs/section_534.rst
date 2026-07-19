@@ -1,9 +1,10 @@
-.. attribute:: values
-		A list of :class:`GSFontInfoValue` objects.
+.. attribute:: direction
 
-		:type: list
+		Writing direction.
 
-	.. code-block:: python
-		# listing values of GSFontInfoValueLocalized
-		for fontInfoValue in fontInfoValueLocalized.values:
-		    print(fontInfoValue)
+		See `Writing Directions`_
+
+		:type: integer
+
+		.. code-block:: python
+			font.currentTab.direction = GSRTL

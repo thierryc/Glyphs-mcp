@@ -1,4 +1,13 @@
-.. attribute:: filter
-		A filter to only show the guide in certain glyphs. Only relevant in global guides
+.. attribute:: userData
+		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
 
-		:type: NSPredicate
+		:type: dict
+
+		.. code-block:: python
+			# set value
+			path.userData['rememberToMakeCoffee'] = True
+
+			# delete value
+			del path.userData['rememberToMakeCoffee']
+
+		.. versionadded:: 4

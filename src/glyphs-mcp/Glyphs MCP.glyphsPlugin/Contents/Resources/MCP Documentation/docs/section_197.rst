@@ -1,10 +1,7 @@
-.. attribute:: familyNames
-		This accesses all localized family name values.
-		For details :attr:`GSInstance.properties`
+.. attribute:: compatibleFullName
 
-		:type: dict
+		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
 
-		.. code-block:: python
-			instance.familyNames["ENG"] = "MyFamilyName"
+		:type: str
 
 		.. versionadded:: 3.0.3

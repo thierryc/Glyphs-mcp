@@ -1,6 +1,7 @@
-.. function:: deactivateReporter(reporter)
+.. function:: removeCallback(function)
 
-		Deactivate a reporter plug-in by its object (see Glyphs.reporters) or class name.
+		Remove the function you’ve previously added.
 
 		.. code-block:: python
-			Glyphs.deactivateReporter('GlyphsMasterCompatibility')
+			# remove your function from the hook
+			Glyphs.removeCallback(drawGlyphIntoBackground)

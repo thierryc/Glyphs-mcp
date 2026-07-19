@@ -1,18 +1,6 @@
-:mod:`GSAnnotation`
-===============================================================================
+.. function:: addNodesAtExtremes([force=False, checkSelection=False])
 
-Implementation of the annotation object.
+		Add nodes at path’s extrema, e.g., top, bottom etc.
 
-For details on how to access them, please see :class:`GSLayer.annotations`
-
-.. class:: GSAnnotation()
-
-	.. autosummary::
-
-		position
-		type
-		text
-		angle
-		width
-
-	**Properties**
+		:param force: if points are always added, even if that would distort the shape
+		:param checkSelection: only process selected segments

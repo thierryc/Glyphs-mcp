@@ -1,4 +1,5 @@
-.. attribute:: isBold
-		Bold flag for style linking
+.. attribute:: type
 
-		:type: bool
+		the type of the instance. Can be either INSTANCETYPESINGLE or INSTANCETYPEVARIABLE.
+
+		:type: int

@@ -1,16 +1,8 @@
-:mod:`GSFontInfoValueLocalized`
-===============================================================================
+.. attribute:: layersRange
+		number of selected layers
 
-The GSFontInfoValueLocalized
+		.. seealso:: `GSEditViewController.layers`
 
-.. class:: GSFontInfoValueLocalized()
+		:type: integer
 
-	Properties
-
-	.. autosummary::
-
-		key
-		values
-		defaultValue
-
-	**Properties**
+		.. versionadded:: 4

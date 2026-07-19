@@ -1,4 +1,4 @@
-.. attribute:: closed
-		Returns True if the the path is closed
+.. attribute:: traverseAnchors
+		If anchors should be traversed from this component
 
 		:type: bool

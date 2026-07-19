@@ -1,4 +1,5 @@
-.. attribute:: parent
-		Reference to the :class:`GSFont` object.
+.. attribute:: automatic
 
-		:type: :class:`GSFont`
+		Define whether this should be auto-generated when pressing the 'Update' button in the Font Info.
+
+		:type: bool

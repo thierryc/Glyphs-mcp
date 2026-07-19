@@ -1,4 +1,5 @@
-.. attribute:: familyName
-		familyName
+.. attribute:: fullName
 
-		:type: string
+		fullName (postscriptFullName)
+
+		:type: str

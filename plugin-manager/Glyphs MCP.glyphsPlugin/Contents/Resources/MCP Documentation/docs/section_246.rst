@@ -1,5 +1,3 @@
-.. attribute:: active
+.. attribute:: parent
 
-		:type: bool
-
-		.. versionadded:: 2.5
+		:type: GSFont, GSFontMaster or GSInstance

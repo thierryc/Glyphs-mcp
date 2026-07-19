@@ -1,16 +1,8 @@
-.. attribute:: languageTag
-		The languageTag
+.. function:: saveToPDF(path[, rect])
 
-		:type: str
+		Save the view to a PDF file.
 
-	.. code-block:: python
-		# GSFontInfoValue is stored in e.g. values attribute of font.properties
-		for fontProperty in font.properties:
+		:param path: Path to the file
+		:param rect: Optional. NSRect defining the view port. If omitted, :attr:`GSEditViewController.viewPort` will be used.
 
-		    # not all of font.properties contains this attribute
-		    # so we are going to look for those, that have it
-		    if hasattr(fontProperty, "values"):
-		        for fontInfoValue in fontProperty.values:
-		            # this line prints out the languageTag attribute of
-		            # found GSFontInfoValue instance
-		            print(fontInfoValue.languageTag)
+		.. versionadded:: 2.4

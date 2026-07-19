@@ -1,4 +1,12 @@
-.. attribute:: image
-		:class:`NSImage` object of background image, read-only (as in: not settable)
+.. attribute:: type
 
-		:type: :class:`NSImage`
+		The type of the annotation.
+
+		Available constants are:
+		:const:`TEXT`
+		:const:`ARROW`
+		:const:`CIRCLE`
+		:const:`PLUS`
+		:const:`MINUS`
+
+		:type: int

@@ -1,4 +1,5 @@
-.. attribute:: unicodes
-		List of Strings‚ with the hex Unicode values of glyph, if encoded.
+.. attribute:: name
 
-		:type: list
+		The feature name
+
+		:type: str

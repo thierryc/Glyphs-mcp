@@ -1,6 +1,10 @@
-.. attribute:: bottomToolbarHeight
-		Height of the little toolbar at the very bottom of the window. Read-only.
+.. function:: scaleHeightToEmUnits
 
-		:type: float
+		Scale the image’s cropped height to a certain em unit value, retaining its aspect ratio.
 
-		.. versionadded:: 2.4
+		.. code-block:: python
+			# position image’s origin at descender line
+			layer.backgroundImage.position = NSPoint(0, font.masters[0].descender)
+
+			# scale image to UPM value
+			layer.backgroundImage.scaleHeightToEmUnits(font.upm)

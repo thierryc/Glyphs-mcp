@@ -1,10 +1,19 @@
-.. attribute:: descriptions
-		This accesses all localized designer values.
-		For details :attr:`GSFont.properties`
+.. attribute:: features
 
-		:type: dict
+		Collection of :class:`GSFeature` objects, representing OpenType features.
+
+		:type: list
 
 		.. code-block:: python
-			font.descriptions["ENG"] = "This is my description"
+			# add a feature
+			font.features.append(GSFeature('liga', 'sub f i by fi;'))
 
-		.. versionadded:: 3.0.3
+			# access all features
+			for feature in font.features:
+			    print(feature.code)
+
+			# access one feature
+			print(font.features['liga'].code)
+
+			# delete a feature
+			del font.features['liga']

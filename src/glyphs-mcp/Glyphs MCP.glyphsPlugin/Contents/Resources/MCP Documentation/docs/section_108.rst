@@ -1,4 +1,5 @@
-.. attribute:: appVersion
-		Returns the version that the file was last saved
+.. attribute:: selection
 
-		.. versionadded:: 2.5
+		Returns a list of all selected glyphs in the Font View.
+
+		:type: list

@@ -1,6 +1,18 @@
-.. attribute:: font
-		Reference to the :class:`GSFont` object that contains the master. Normally that is set by the app, only if the instance is not actually added to the font, then set this manually.
+:mod:`GSMetric`
+===============================================================================
 
-		:type: GSFont
+Implementation of the metric object. It is used to link the metrics and stems in the masters.
 
-		.. versionadded:: 2.5.2
+.. class:: GSMetric()
+
+	Properties
+
+		* :attr:`font`
+		* :attr:`name`
+		* :attr:`id`
+		* :attr:`title`
+		* :attr:`filter`
+		* :attr:`type`
+		* :attr:`horizontal`
+
+	**Properties**

@@ -1,3 +1,4 @@
-.. function:: swapForegroundWithBackground()
+.. attribute:: isAligned
+		Indicates if the components are auto aligned.
 
-		Swap Foreground layer with Background layer.
+		:type: bool

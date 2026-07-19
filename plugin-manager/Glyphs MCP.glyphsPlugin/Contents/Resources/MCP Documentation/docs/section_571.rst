@@ -1,8 +1,17 @@
-.. function:: addPoints(P1, P2)
+.. attribute:: value
 
-	Add the points.
+		The value
 
-	:param P0: a NSPoint
-	:param P1: another NSPoint
-	:return: The sum of both points
-	:rtype: NSPoint
+		:type: str
+
+	.. code-block:: python
+		# GSInfoValue is stored in e.g. values attribute of font.properties
+		for fontProperty in font.properties:
+
+		    # not all of font.properties contains this attribute
+		    # so we are going to look for those, that have it
+		    if hasattr(fontProperty, "values"):
+		        for fontInfoValue in fontProperty.values:
+		            # this line prints out the value attribute of
+		            # found GSInfoValue instance
+		            print(fontInfoValue.value)

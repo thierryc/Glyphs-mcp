@@ -12,48 +12,44 @@ The mothership. Everything starts here.
 .. class:: GSApplication()
 
 	Properties
-
-	.. autosummary::
-		currentDocument
-		documents
-		font
-		fonts
-		reporters
-		activeReporters
-		filters
-		defaults
-		scriptAbbreviations
-		scriptSuffixes
-		languageScripts
-		languageData
-		unicodeRanges
-		editViewWidth
-		handleSize
-		versionString
-		versionNumber
-		buildNumber
-		menu
+		* :attr:`currentDocument`
+		* :attr:`documents`
+		* :attr:`font`
+		* :attr:`fonts`
+		* :attr:`reporters`
+		* :attr:`activeReporters`
+		* :attr:`filters`
+		* :attr:`defaults`
+		* :attr:`scriptAbbreviations`
+		* :attr:`scriptSuffixes`
+		* :attr:`languageScripts`
+		* :attr:`languageData`
+		* :attr:`unicodeRanges`
+		* :attr:`editViewWidth`
+		* :attr:`handleSize`
+		* :attr:`versionString`
+		* :attr:`versionNumber`
+		* :attr:`buildNumber`
+		* :attr:`menu`
 
 	Functions
 
-	.. autosummary::
-
-		open()
-		showMacroWindow()
-		clearLog()
-		showGlyphInfoPanelWithSearchString()
-		glyphInfoForName()
-		glyphInfoForUnicode()
-		niceGlyphName()
-		productionGlyphName()
-		ligatureComponents()
-		addCallback()
-		removeCallback()
-		redraw()
-		showNotification()
-		localize()
-		activateReporter()
-		deactivateReporter()
+		* :meth:`open`
+		* :meth:`showMacroWindow`
+		* :meth:`clearLog`
+		* :meth:`showGlyphInfoPanelWithSearchString`
+		* :meth:`glyphInfoForName()`
+		* :meth:`glyphInfoForUnicode()`
+		* :meth:`niceGlyphName()`
+		* :meth:`productionGlyphName()`
+		* :meth:`ligatureComponents()`
+		* :meth:`addCallback()`
+		* :meth:`removeCallback()`
+		* :meth:`redraw()`
+		* :meth:`showNotification()`
+		* :meth:`localize()`
+		* :meth:`activateReporter()`
+		* :meth:`deactivateReporter()`
 
 
 	**Properties**

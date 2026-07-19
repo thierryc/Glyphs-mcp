@@ -1,4 +1,5 @@
-.. attribute:: originNode
-		The first node the hint is attached to.
+.. attribute:: index
 
-		:type: :class:`GSNode` or :class:`GSHandle` (e.g. when attached to intersections)
+		Returns the index of the node in the containing path or maxint if it is not in a path.
+
+		:type: int

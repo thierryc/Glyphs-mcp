@@ -1,10 +1,4 @@
-.. attribute:: sampleTexts
-		This accesses all localized designer values.
-		For details :attr:`GSFont.properties`
+.. function:: characterForGlyph(glyph)
+		The (internal) character that is used in the edit view. It the glyph has a unicode, that is used, otherwise a temporary code is assigned. That can change over time, so don’t rely on it. This is mostly useful for constructing a string for see :attr:`tab.text <GSEditViewController.text>`
 
-		:type: dict
-
-		.. code-block:: python
-			font.sampleTexts["ENG"] = "This is my sample text"
-
-		.. versionadded:: 3.0.3
+		.. versionadded:: 3.1

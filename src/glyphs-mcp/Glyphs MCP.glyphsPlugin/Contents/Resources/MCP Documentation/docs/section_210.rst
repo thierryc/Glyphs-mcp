@@ -1,6 +1,7 @@
-.. attribute:: styleMapStyleName
+.. attribute:: manufacturer
+
 		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
 
 		:type: str
 
-		.. versionadded:: 3.0.3
+		.. versionadded:: 3.0.2

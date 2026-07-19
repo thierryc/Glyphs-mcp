@@ -1,20 +1,17 @@
-:mod:`GSClass`
-===============================================================================
+.. attribute:: interpolatedFont
 
-Implementation of the class object. It is used to store OpenType classes.
+		Returns a ready interpolated :class:`GSFont` object representing this instance. Other than the source object, this interpolated font will contain only one master and one instance.
 
-For details on how to access them, please look at :class:`GSFont.classes`
+		Note: When accessing several properties of such an instance consecutively, it is advisable to create the instance once into a variable and then use that. Otherwise, the instance object will be completely interpolated upon each access. See sample below.
 
-.. class:: GSClass([tag, code])
+		:type: :class:`GSFont`
 
-	:param tag: The class name
-	:param code: A list of glyph names, separated by space or newline
+		.. code-block:: python
+			# create instance once
+			interpolated = Glyphs.font.instances[0].interpolatedFont
 
-	.. autosummary::
-
-		name
-		code
-		automatic
-		active
-
-	**Properties**
+			# then access it several times
+			print(interpolated.masters)
+			>> (<GSFontMaster "Light" width 100.0 weight 75.0>)
+			print(interpolated.instances)
+			>> (<GSInstance "Web" width 100.0 weight 75.0>)

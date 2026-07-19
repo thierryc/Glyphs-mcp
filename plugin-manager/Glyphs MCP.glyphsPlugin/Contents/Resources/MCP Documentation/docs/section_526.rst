@@ -1,4 +1,5 @@
-.. attribute:: index
-		Index of glyph in database. Used for sorting in UI.
+.. attribute:: bounds
 
-		:type: str
+		Bounding box of all glyphs in the Edit view in view coordinate values.
+
+		:type: NSRect

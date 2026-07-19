@@ -21,6 +21,7 @@ import mcp_tools_components  # noqa: F401
 import mcp_tools_compensated_tuning  # noqa: F401
 import mcp_tools_export  # noqa: F401
 import mcp_tools_features  # noqa: F401
+import mcp_tools_feedback  # noqa: F401
 import mcp_tools_font  # noqa: F401
 import mcp_tools_glyph_ops  # noqa: F401
 import mcp_tools_stems  # noqa: F401

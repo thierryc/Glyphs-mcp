@@ -1,11 +1,5 @@
-.. function:: removeOverlap(paths)
+.. attribute:: position
 
-	removes the overlaps from the list of paths
+		The y position of the metric.
 
-	.. code-block:: python
-		paths = [path1, path2, path3]
-		mergePaths = removeOverlap(paths)
-
-	:param paths: A list of paths
-	:return: The resulting list of paths
-	:rtype: list
+		:type: float

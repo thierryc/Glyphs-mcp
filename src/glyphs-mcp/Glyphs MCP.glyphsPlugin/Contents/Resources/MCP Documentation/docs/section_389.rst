@@ -1,9 +1,15 @@
-.. attribute:: bezierPath
-		The component as an NSBezierPath object. Useful for drawing glyphs in plugins.
+.. attribute:: position
 
-		:type: NSBezierPath
+		The position of the anchor
+
+		:type: NSPoint
 
 		.. code-block:: python
-			# draw the path into the Edit view
-			NSColor.redColor().set()
-			layer.components[0].bezierPath.fill()
+			# read position
+			print(layer.anchors['top'].position.x, layer.anchors['top'].position.y)
+
+			# set position
+			layer.anchors['top'].position = NSPoint(175, 575)
+
+			# increase vertical position by 50 units
+			layer.anchors['top'].position = NSPoint(layer.anchors['top'].position.x, layer.anchors['top'].position.y + 50)

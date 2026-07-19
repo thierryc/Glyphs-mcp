@@ -13,7 +13,39 @@ Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish 
 
 ## Prepared version
 
-Version `1.2.24` established the unified mainline build for Glyphs 3 and Glyphs 4. The macOS installer detects both versions, and the terminal installer keeps Glyphs 4 as its default while supporting Glyphs 3 with `--glyphs-version 3`.
+Version `1.3.0` is the Glyphs 4 safe-compatibility release. It preserves the
+unified Glyphs 3.5/4 bundle introduced in `1.2.24` while adding format-aware,
+metadata-preserving outline inspection and editing. It also ships the
+repository Codex marketplace plug-in, embedded feedback panel, guarded
+preview/apply plans, and the fail-closed local publishing workflow.
+
+Release highlights:
+
+- Pin the official GlyphsSDK `Glyphs4` source at
+  `0f5422db727b78cb42abfb386f33ae0b382b0c4d`.
+- Bundle the official version 3/4 specifications and regular `.glyphs` and
+  `fontinfo.plist` schemas with stable source metadata.
+- Add `formatVersion` and `lastSavedAppVersion` to font summaries and report the
+  format before and after `save_font` without requesting conversion.
+- Introduce `pathDataVersion: 2` while retaining legacy payload input.
+- Preserve mixed shape order, grouping, styling, user data, higher-order
+  interpolation attributes, raw node enums, and unknown properties during path
+  edits.
+- Reject unsafe rewrites before mutation and restore the original layer after
+  failed writes or verification.
+- Add richer shape, component, grouping, attribute, and compatibility
+  diagnostics.
+- Add the Codex marketplace plug-in, synchronize its six skills from canonical
+  repository sources, and expose bounded feedback-panel tools for status, font,
+  glyph, OpenType, spacing, kerning, and handle review.
+- Require local tests, exact remote/tag alignment, Developer ID signatures,
+  notarization, Gatekeeper acceptance, checksums, and draft-asset review before
+  publishing installer artifacts.
+
+The compatibility boundary is intentional: dedicated authoring for Glyphs
+4-only gradients, palettes, shape groups, contextual kerning, smart-glyph axes,
+and higher-order interpolation remains deferred. Glyphs continues to own
+file-format upgrades.
 
 This prep includes an undo-safety hardening pass after live Glyphs 4 testing showed the recovery dialog after a disposable glyph create/path/delete probe. Glyphs font/layer mutations now route through shared public-API helpers and the manual QA protocol isolates mutating smoke tests. Version `1.2.15` superseded `1.2.14`, which exposed a repeated Objective-C helper-class registration error during the first isolated live mutation probe. Version `1.2.16` superseded `1.2.15` after live testing found an empty kerning parent key left behind after pair removal and an over-constrained metrics update that needed explicit readback warnings. Version `1.2.17` superseded `1.2.16` after Glyphs 3 live testing found `get_glyph_details` could hang on component transform conversion. Version `1.2.18` superseded `1.2.17` after the Glyphs 3 live retest showed the same path could still hang when a Glyphs 3 transform proxy was indexed. Version `1.2.19` superseded `1.2.18` after the Glyphs 3 live retest showed `layer.components` itself can hang in read-only component payloads. Version `1.2.20` superseded `1.2.19` after a macOS process sample showed the remaining Glyphs 3 hang was `GSLayer LSB` on the MCP background thread. Version `1.2.21` superseded `1.2.20` after the follow-up sample showed Glyphs 3 can also hang inside `GSLayer LSB` on the main thread; sidebearing reads now return an explicit unknown value under Glyphs 3 instead of calling the unsafe getter. Version `1.2.22` superseded `1.2.21` after the Glyphs 3 live retest showed sidebearing setters can also hang after component edits; sidebearing writes are skipped under Glyphs 3 and surfaced through structured readback warnings instead of blocking the server. Version `1.2.23` superseded `1.2.22` after the restart-forced retest showed the component fallback path could still reach Glyphs 3's unsafe `layer.components` proxy; Glyphs 3 now refuses that fallback and returns structured verification failures instead of risking an app freeze. Version `1.2.24` documents the live Glyphs 3 compatibility limits as both a public docs page and a bundled MCP resource (`glyphs://glyphs-mcp/glyphs3-compatibility`) while preserving the Glyphs 4 behavior validated in `1.2.23`.
 
@@ -23,7 +55,8 @@ Local verification for this prep:
 /usr/local/bin/python3.12 -m unittest discover -s src/glyphs-mcp/tests
 ```
 
-Result: `303` tests passed, `1` skipped, using Python `3.12`.
+Result: `354` Python tests passed, `1` skipped; `78` macOS installer
+tests passed; the unsigned Debug installer build completed successfully.
 
 ## Future cleanup targets
 

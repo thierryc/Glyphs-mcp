@@ -1,14 +1,11 @@
-:mod:`NSMenu`
-===============================================================================
+.. attribute:: key
 
-The NSMenuItem object.
+		the key
 
-.. class:: NSMenu()
+		:type: str
 
-	Functions
-	.. autosummary::
-
-		append()
-		insert()
-
-	**Functions**
+	.. code-block:: python
+		# searching for GSInfoValueLocalized with given "designers" key
+		for fontInfo in font.properties:
+		    if fontInfo.key == "designers":
+		        print(fontInfo)

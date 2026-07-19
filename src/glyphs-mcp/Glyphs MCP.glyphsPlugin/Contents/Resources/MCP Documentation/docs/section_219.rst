@@ -1,6 +1,12 @@
-.. attribute:: font
-		Reference to the :class:`GSFont` object that contains the instance. Normally that is set by the app, only if the instance is not actually added to the font, then set this manually.
+.. attribute:: styleMapFamilyNames
 
-		:type: GSFont
+		This accesses all localized designer values.
+		For details :attr:`GSInstance.properties`
 
-		.. versionadded:: 2.5.1
+		:type: dict
+
+
+		.. code-block:: python
+			instance.styleMapFamilyNames["ENG"] = "MyFamily Bold"
+
+		.. versionadded:: 3.0.3

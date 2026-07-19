@@ -1,16 +1,15 @@
-.. attribute:: name
-		a optional name
+.. attribute:: bezierPath
+		The same path as an NSBezierPath object. Useful for drawing glyphs in plugins.
 
-		:type: str
-
-	.. attribute:: selected
-		Selection state of guide in UI.
-
-		:type: bool
+		:type: NSBezierPath
 
 		.. code-block:: python
-			# select guide
-			layer.guides[0].selected = True
+			# draw the path into the Edit view
+			NSColor.redColor().set()
+			layer.paths[0].bezierPath.fill()
 
-			# print(selection state)
-			print(layer.guides[0].selected)
+	**Functions**
+
+	.. function:: reverse()
+
+		Reverses the path direction

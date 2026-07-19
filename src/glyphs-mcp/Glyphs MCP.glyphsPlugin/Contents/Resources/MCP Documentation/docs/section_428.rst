@@ -1,4 +1,5 @@
-.. attribute:: name
-		Attaches a name to a node.
+.. attribute:: locked
 
-		:type: str
+		Locked
+
+		:type: bool

@@ -47,7 +47,9 @@ def _normalize(text: str) -> str:
     return (text or "").strip().lower()
 
 
-def _score_match(query: str, title: str, summary: str, path: str) -> float:
+def _score_match(
+    query: str, title: str, summary: str, path: str, keywords: str = ""
+) -> float:
     q = _normalize(query)
     if not q:
         return 0.0
@@ -55,6 +57,7 @@ def _score_match(query: str, title: str, summary: str, path: str) -> float:
     t = _normalize(title)
     s = _normalize(summary)
     p = _normalize(path)
+    k = _normalize(keywords)
 
     # Prefer title hits, then summary, then path.
     score = 0.0
@@ -66,6 +69,8 @@ def _score_match(query: str, title: str, summary: str, path: str) -> float:
         score = max(score, 5.0)
     if q in p:
         score = max(score, 3.0)
+    if q in k:
+        score = max(score, 4.0)
     return score
 
 
@@ -136,7 +141,9 @@ async def docs_search(query: str, max_results: int = 10) -> str:
         title = entry.get("title") or ""
         summary = entry.get("summary") or ""
 
-        score = _score_match(query, title, summary, path)
+        score = _score_match(
+            query, title, summary, path, entry.get("keywords") or ""
+        )
         if score <= 0:
             continue
 
@@ -147,6 +154,9 @@ async def docs_search(query: str, max_results: int = 10) -> str:
                 "summary": summary,
                 "path": path,
                 "uri": f"{DOCS_URI_PREFIX}{path}" if path else None,
+                "sourceKind": entry.get("sourceKind"),
+                "formatVersion": entry.get("formatVersion"),
+                "sourceUrl": entry.get("sourceUrl"),
                 "score": score,
             }
         )
@@ -235,6 +245,9 @@ async def docs_get(
             "docId": (chosen or {}).get("id") or (doc_id.strip() or None),
             "title": title,
             "summary": summary,
+            "sourceKind": (chosen or {}).get("sourceKind"),
+            "formatVersion": (chosen or {}).get("formatVersion"),
+            "sourceUrl": (chosen or {}).get("sourceUrl"),
             "path": resolved.relative_to(DOCS_DIRECTORY).as_posix(),
             "uri": f"{DOCS_URI_PREFIX}{resolved.relative_to(DOCS_DIRECTORY).as_posix()}",
             "offset": max(offset, 0),

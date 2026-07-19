@@ -1,4 +1,7 @@
-.. attribute:: visible
-		if the layer is visible (the eye icon in the layer panel)
+.. attribute:: ascender
 
-		:type: bool
+		The ascender for this layer.
+
+		:type: float
+
+		.. versionadded:: 3.0.2

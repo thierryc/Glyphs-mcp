@@ -1,11 +1,13 @@
-.. attribute:: tempData
-		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use path.userData
+.. attribute:: userData
+		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
 
 		:type: dict
 
 		.. code-block:: python
 			# set value
-			path.tempData['rememberToMakeCoffee'] = True
+			component.userData['rememberToMakeCoffee'] = True
 
 			# delete value
-			del path.tempData['rememberToMakeCoffee']
+			del component.userData['rememberToMakeCoffee']
+
+		.. versionadded:: 2.5

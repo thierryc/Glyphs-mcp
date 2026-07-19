@@ -1,14 +1,11 @@
-.. function:: newTab([tabText])
+.. attribute:: tool
 
-		Opens a new tab in the current document window, optionally with text, and return that tab object
+		Name of tool selected in toolbar.
 
-		:param tabText: Text or glyph names escaped with '/' OR list of layers
+		For available names including third-party plug-ins that come in the form of selectable tools, see `GSFont.tools` below.
+
+		:type: str
 
 		.. code-block:: python
-			# open new tab
-			tab = font.newTab('abcdef')
-			print(tab)
-
-			# or
-			tab = font.newTab([layer1, layer2])
-			print(tab)
+			font.tool = 'SelectTool' # Built-in tool
+			font.tool = 'GlyphsAppSpeedPunkTool' # Third party plug-in

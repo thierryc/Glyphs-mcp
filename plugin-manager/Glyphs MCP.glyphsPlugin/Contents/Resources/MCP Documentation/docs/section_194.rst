@@ -1,5 +1,5 @@
-.. attribute:: designerURL
+.. attribute:: windowsLinkedToStyle
+
+		windowsLinkedToStyle. Read-only.
 
 		:type: str
-
-		.. versionadded:: 3.0.2

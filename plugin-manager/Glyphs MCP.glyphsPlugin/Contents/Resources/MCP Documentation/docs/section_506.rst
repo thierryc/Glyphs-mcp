@@ -1,11 +1,18 @@
-.. attribute:: tempData
-		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use layer.userData
+.. attribute:: transform
 
-		:type: dict
+		Transformation matrix.
+
+		:type: :class:`NSAffineTransformStruct`
 
 		.. code-block:: python
-			# set value
-			layer.tempData['rememberToMakeCoffee'] = True
+			# change transformation
+			layer.backgroundImage.transform = ((
+			    1.0, # x scale factor
+			    0.0, # x skew factor
+			    0.0, # y skew factor
+			    1.0, # y scale factor
+			    0.0, # x position
+			    0.0  # y position
+			))
 
-			# delete value
-			del layer.tempData['rememberToMakeCoffee']
+	**Functions**

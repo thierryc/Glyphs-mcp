@@ -1,5 +1,5 @@
-.. attribute:: active
+.. function:: fileName(format)
 
-		:type: bool
+		returns the filename with the suffix depending on the format (OTF, TTF)
 
-		.. versionadded:: 2.5
+		.. versionadded:: 4

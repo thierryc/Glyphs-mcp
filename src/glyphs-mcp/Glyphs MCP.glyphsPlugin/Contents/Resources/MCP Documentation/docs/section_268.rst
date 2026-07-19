@@ -1,6 +1,5 @@
-.. attribute:: case
-		e.g: GSUppercase, GSLowercase, GSSmallcaps
+.. attribute:: parent
 
-		:type: int
+		Reference to the :class:`GSFont` object.
 
-		.. versionadded:: 3
+		:type: :class:`GSFont`

@@ -1,4 +1,7 @@
-.. attribute:: xHeight
-		This is the default xHeight of the master. There might be other values that are for specific glyphs. See :attr:`master.metrics <GSFontMaster.metrics>` and :attr:`layer.metrics <GSLayer.metrics>`
+.. attribute:: font
 
-		:type: float
+		Reference to the :class:`GSFont` object that contains the master. Normally that is set by the app, only if the instance is not actually added to the font, then set this manually.
+
+		:type: GSFont
+
+		.. versionadded:: 2.5.2

@@ -9,6 +9,25 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
+## What's new in 1.3.0
+
+**Glyphs 4 support that protects the intelligence inside your outlines—plus a
+first-class Codex review experience.**
+
+- Install the repository Codex marketplace plug-in for six focused typography
+  skills and an embedded feedback panel with guarded preview-and-apply flows.
+- Edit paths while preserving shape groups, styling, gradients, colors,
+  higher-order interpolation metadata, user data, and mixed shape order.
+- Inspect raw node and shape metadata through the new
+  `pathDataVersion: 2` response while keeping legacy path payloads compatible.
+- See a font's source format before and after saving—without automatic format
+  upgrades.
+- Search the official Glyphs 4 ObjectWrapper, file-format specifications, and
+  schemas directly through the MCP documentation tools.
+- Use the same plug-in with Glyphs 3.5 and Glyphs 4.
+
+[Read the full 1.3.0 changelog →](CHANGELOG.md)
+
 ## macOS Installer app (recommended)
 
 The Installer app is the simplest way to install `Glyphs MCP.glyphsPlugin`, install Python dependencies, and link Glyphs MCP into:
@@ -65,6 +84,36 @@ Minimum requirements:
 - Python 3.11–3.14 (recommended: python.org 3.14)
 
 Glyphs 3 backward compatibility is maintained for the shared MCP server code where possible. The macOS app can target it directly; use `--glyphs-version 3` with the terminal installer.
+
+## Codex marketplace plug-in
+
+Codex users can install the repository plug-in after the native Glyphs MCP
+plug-in is installed and its local server is running:
+
+```bash
+codex plugin marketplace add thierryc/Glyphs-mcp
+codex plugin add glyphs-mcp@glyphs-mcp
+```
+
+Start a new Codex task after installation. The Codex plug-in bundles the six
+Glyphs MCP skills and connects to `http://127.0.0.1:9680/mcp/`. It also enables
+an embedded feedback panel for status, font and glyph information, OpenType
+feature reports, reviewed dry runs, explicit apply confirmation, simple
+progress, completion, and safe error feedback. Glyphs remains the only editor;
+the panel has no editable paths, metrics, coordinates, feature code, file
+navigation, arbitrary Python, or replacement canvas.
+
+Existing global Codex MCP configuration remains supported as a legacy setup.
+Verify that the marketplace plug-in connects first. If Codex then shows a
+duplicate `glyphs-mcp-server` connection, you may remove only the legacy global
+entry:
+
+```bash
+codex mcp remove glyphs-mcp-server
+```
+
+The macOS and terminal installers do not install or remove this marketplace
+plug-in; Codex owns its installation lifecycle.
 
 ## Repo skills for Codex and Claude Code
 
@@ -141,8 +190,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.2.24)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.2.24"`).
+## Command Set (MCP server v1.3.0)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.3.0"`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
@@ -153,13 +202,22 @@ instead because Glyphs requires an absolute file path.
 
 | Tool | Description |
 |------|-------------|
-| `get_server_info` | Return runtime version, runtime ID, code hash, resource path, Glyphs reachability, and open-font count for health checks. |
-| `list_open_fonts` | List all open fonts and basic metadata. |
+| `get_server_info` | Return runtime health plus open-font summaries with source format and last-saved app versions. |
+| `list_open_fonts` | List all open fonts, including `formatVersion` and `lastSavedAppVersion`. |
 | `get_font_glyphs` | Return glyph list and key attributes for a font, including clickable Glyphs show links when available. |
 | `get_font_masters` | Detailed master information for a font, including Metrics `italicAngle` and legacy custom-parameter `slantAngle`. |
 | `get_font_instances` | List instances and their interpolation data. |
 | `get_glyph_details` | Full glyph data including layers, paths, components, and Glyphs show links. |
 | `list_style_sets` | List stylistic-set features (`ss01`-`ss20`) with source/replacement glyphs and a group-level Glyphs show link for alternates. |
+| `show_glyphs_status` | Show server, Glyphs, and open-font status in the embedded feedback panel. |
+| `show_font_feedback` | Show bounded, read-only information for one open font. |
+| `show_glyph_feedback` | Show metadata, dimensions, sidebearings, anchors, components, layers, and warnings without outline paths. |
+| `show_opentype_features` | Show a read-only OpenType report with active/automatic state, warnings, line counts, and parsed stylistic-set substitutions. |
+| `preview_spacing_feedback` | Create a ten-minute, process-local reviewed spacing plan without mutation. |
+| `preview_kerning_feedback` | Create a ten-minute, process-local reviewed kerning-bumper plan without mutation. |
+| `preview_handle_smoothing_feedback` | Create a ten-minute, process-local reviewed collinear-handle smoothing plan without mutation. |
+| `apply_feedback_plan` | Revalidate and consume one reviewed plan before applying it; requires confirmation and never saves the font. |
+| `open_feedback_target` | Open only resolved glyph/layer objects from an already open font in Glyphs. |
 | `get_font_kerning` | All kerning pairs for a given master. |
 | `generate_kerning_tab` | Generate a kerning review proof tab (missing relevant pairs + outliers) and open it. |
 | `review_kerning_bumper` | Review kerning collisions / near-misses and compute deterministic “bumper” suggestions (no mutation). |
@@ -181,7 +239,7 @@ instead because Glyphs requires an absolute file path.
 | `measure_stem_ratio` | Measure a stem ratio `b` between two masters (ref/base) for compensated tuning (no mutation). |
 | `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph from a base master plus a different compatible reference master (returns `set_glyph_paths`-compatible JSON; no mutation). |
 | `apply_compensated_tuning` | Apply the same two-master compensated scaling transform across glyphs (backs up layers; supports `dry_run`; requires `confirm=true` to mutate). |
-| `get_glyph_components` | Inspect components used in a glyph. |
+| `get_glyph_components` | Inspect components, `traverseAnchors`, grouping/styling diagnostics, and Glyphs 4 compatibility warnings. |
 | `add_component_to_glyph` | Append a component to a glyph layer. |
 | `add_anchor_to_glyph` | Add an anchor to a glyph layer. |
 | `get_glyph_annotations` | Inspect native Glyphs annotations for a layer, including MCP ownership metadata when available. |
@@ -196,17 +254,17 @@ instead because Glyphs requires an absolute file path.
 | `get_selected_font_and_master` | Current font + master and selection snapshot, including Glyphs show links for selected glyph layers. |
 | `get_selected_nodes` | Detailed selected nodes with per‑master mapping for edits, plus links for the containing glyph/layer. |
 | `add_corner_to_all_masters` | Add a `_corner.*` corner hint at selected nodes (and intersection handles) across all masters (requires `_corner_name`; optional `_alignment`: `left`/`right`/`center` or `0`/`1`/`2`). |
-| `get_glyph_paths` | Export paths in a JSON format suitable for LLM editing, including a Glyphs show link for the layer. |
+| `get_glyph_paths` | Export version-2 path JSON with raw node metadata, shape indices, grouping/styling diagnostics, non-path counts, and a Glyphs show link. |
 | `render_glyph_review_image` | Render selected or named glyph layers to a read-only PNG visual review image with optional metrics, bounds, nodes, anchors, and guide overlays. |
 | `review_collinear_handles` | Review a single path for curve nodes that should be smooth based on handle collinearity (no mutation). |
 | `apply_collinear_handles_smooth` | Apply `smooth=True` for collinear-handle curve nodes in a single path (supports `dry_run`; requires `confirm=true` to mutate). |
-| `set_glyph_paths` | Replace glyph paths from JSON. |
+| `set_glyph_paths` | Accept legacy or version-2 path JSON and preserve path/node metadata plus interleaved non-path shape order; unsafe raw-node rewrites are rejected atomically. |
 | `ExportDesignspaceAndUFO` | Export designspace/UFO bundles with structured logs and errors. |
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |
 | `execute_code_with_context` | Execute Python with injected helper objects. |
-| `save_font` | Save the active font (optionally to a new path). |
-| `docs_search` | Search bundled Glyphs SDK/ObjectWrapper docs by title/summary. |
-| `docs_get` | Fetch a bundled docs page by id/path (supports paging via offset/max_chars). |
+| `save_font` | Save the active font without changing its format version and report the version before and after. |
+| `docs_search` | Search bundled official Glyphs ObjectWrapper and version 3/4 file-format references, with source metadata. |
+| `docs_get` | Fetch a bundled docs page with paging and official source metadata. |
 | `docs_enable_page_resources` | Register each documentation page as its own MCP resource (optional; can flood clients). |
 
 For performance-sensitive scripts, you can opt into lower-overhead execution:
@@ -378,10 +436,11 @@ Preferred: use `docs_search` + `docs_get` (on-demand). If you really want per-pa
 - No `sudo` is required.
 - Verify the local endpoint with `curl -H 'Accept: application/json' http://127.0.0.1:9680/mcp/`.
 
-After regenerating the ObjectWrapper documentation, refresh the bundled copy with:
+Regenerate the bundled ObjectWrapper and Glyphs file-format documentation from
+the pinned official SDK with:
 
 ```bash
-python src/glyphs-mcp/scripts/copy_documentation.py
+python3 src/glyphs-mcp/scripts/generate_documentation.py
 ```
 
 ## Build Site Images (WebP)
@@ -417,6 +476,8 @@ The ZIP is written to `dist/` (ignored by git).
 
 ## Release
 
+Installer releases are built, tested, signed, notarized, and verified locally. No GitHub Actions release job or hosted signing secret is used. See [`macos-installer/RELEASING.md`](macos-installer/RELEASING.md) for the fail-closed local workflow.
+
 This repo ships two plugin bundle locations:
 
 - Canonical source bundle: `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`
@@ -437,8 +498,8 @@ python3 scripts/bump_version.py X.Y.Z
 # If you already have deps installed into Glyphs' Scripts/site-packages and want an offline build:
 # ./scripts/build_plugin_manager_bundle.sh --vendor-from-installed --allow-missing-targets
 
-# 3) Run tests
-python3 -m unittest discover -s src/glyphs-mcp/tests
+# 3) Run the full local release gate (Python, Xcode tests, unsigned Debug build)
+./scripts/run_local_release_tests.sh
 
 # 4) Commit release artifacts
 git add README.md
@@ -449,8 +510,8 @@ git commit -m "Release X.Y.Z"
 # 5) Build a clean ZIP for distribution
 ./scripts/build_release_zip.sh
 
-# 6) Tag + push
-git tag "vX.Y.Z"
+# 6) Merge to main, then sign + push the exact reviewed tag
+git tag -s "vX.Y.Z" -m "vX.Y.Z"
 git push origin HEAD --tags
 ```
 

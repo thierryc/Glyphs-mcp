@@ -1,0 +1,41 @@
+{
+  "name": "glyphs-mcp",
+  "version": "0.1.0",
+  "description": "Inspect and safely control open Glyphs fonts through the local Glyphs MCP server.",
+  "author": {
+    "name": "Thierry Charbonnel",
+    "url": "https://github.com/thierryc"
+  },
+  "homepage": "https://ap.cx/gmcp",
+  "repository": "https://github.com/thierryc/Glyphs-mcp",
+  "license": "Apache-2.0",
+  "keywords": [
+    "Glyphs",
+    "fonts",
+    "typography",
+    "MCP"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Glyphs MCP",
+    "shortDescription": "Review and control open Glyphs fonts from Codex.",
+    "longDescription": "Connect Codex to the local Glyphs MCP plug-in for read-only font feedback, bounded dry runs, explicit apply confirmation, and focused progress or error cards. Glyphs remains the editor.",
+    "developerName": "Thierry Charbonnel",
+    "category": "Creativity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://ap.cx/gmcp",
+    "defaultPrompt": [
+      "Show the Glyphs MCP server and open-font status.",
+      "Review the selected glyph and explain any warnings.",
+      "Preview spacing changes for my selected glyphs."
+    ],
+    "brandColor": "#08C464",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png"
+  }
+}

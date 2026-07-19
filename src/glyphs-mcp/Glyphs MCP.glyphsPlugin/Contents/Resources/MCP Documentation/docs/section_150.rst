@@ -1,4 +1,5 @@
-.. attribute:: descender
-		This is the default descender of the master. There might be other values that are for specific glyphs. See :attr:`master.metrics <GSFontMaster.metrics>` and :attr:`layer.metrics <GSLayer.metrics>`
+.. attribute:: name
 
-		:type: float
+		The human-readable identification of the master, e.g., "Bold Condensed".
+
+		:type: str

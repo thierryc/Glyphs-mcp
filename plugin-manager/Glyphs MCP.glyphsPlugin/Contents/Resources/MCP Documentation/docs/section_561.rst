@@ -1,5 +1,12 @@
-.. attribute:: skew
-		if a single number, skew in x-direction otherwise skew by x, y
-		if center is given, that is used as the origin of the skew
+.. attribute:: direction
 
-		:type: int/float or tuple
+		Writing direction.
+
+		See `Writing Directions`_
+
+		:type: integer
+
+		.. code-block:: python
+			glyph.direction = GSRTL
+
+		.. versionadded:: 3

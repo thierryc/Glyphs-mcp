@@ -1,16 +1,7 @@
-.. attribute:: layers
-		Alternatively, you can set (and read) a list of :class:`GSLayer` objects. These can be any of the layers of a glyph.
+.. attribute:: alignment
 
-		:type: list
+		For corner components: left = 0, center = 2, right = 1, fixed = 4
 
-		.. code-block:: python
-			layers = []
+		:type: int
 
-			# display all layers of one glyph next to each other
-			for layer in font.glyphs['a'].layers:
-			    layers.append(layer)
-
-			# append line break
-			layers.append(GSControlLayer(10)) # 10 being the ASCII code of the new line character (\n)
-
-			font.tabs[0].layers = layers
+		.. versionadded:: 3.2

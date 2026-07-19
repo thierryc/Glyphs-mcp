@@ -1,4 +1,5 @@
-.. attribute:: leftMetricsKey
-		The leftMetricsKey of the glyph. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
+.. attribute:: productionName
+		The productionName of the glyph.
+		Setting only works if :attr:`GSGlyph.storeProductionName` is set (see below).
 
 		:type: str

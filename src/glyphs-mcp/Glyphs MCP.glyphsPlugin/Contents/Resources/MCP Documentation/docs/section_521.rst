@@ -1,4 +1,6 @@
-.. attribute:: accents
-		This glyph may be combined with these accents, returned as a list of glyph names.
+.. attribute:: masterIndex
+		The index of the active master (selected in the toolbar).
 
-		:type: list
+		:type: int
+
+		.. versionadded:: 2.6.1

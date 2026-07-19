@@ -1,4 +1,8 @@
-.. attribute:: altNames
-		Alternative names for glyphs that are not used, but should be recognized (e.g., for conversion to nice names).
+.. attribute:: selectedTextRange
+		range of of selection in the text
 
-		:type: str
+		.. seealso:: `GSEditViewController.layers`
+
+		:type: NSRange
+
+		.. versionadded:: 4

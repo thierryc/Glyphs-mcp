@@ -1,13 +1,20 @@
-.. attribute:: associatedMasterId
-		The ID of the :class:`fontMaster <GSFontMaster>` this layer belongs to, in case this isn't a master layer. Every layer that isn't a master layer needs to be attached to one master layer.
+.. attribute:: color
+
+		Color marking of glyph in UI
+
+		:type: int
 
 		.. code-block:: python
-			# add a new layer
-			newLayer = GSLayer()
-			newLayer.name = '{125, 100}' # (example for glyph-level intermediate master)
-
-			# you may set the master ID that this layer will be associated with, otherwise the first master will be used
-			newLayer.associatedMasterId = font.masters[-1].id # attach to last master
-			font.glyphs['a'].layers.append(newLayer)
-
-		:type: str
+			glyph.color = 0		# red
+			glyph.color = 1		# orange
+			glyph.color = 2		# brown
+			glyph.color = 3		# yellow
+			glyph.color = 4		# light green
+			glyph.color = 5		# dark green
+			glyph.color = 6		# light blue
+			glyph.color = 7		# dark blue
+			glyph.color = 8		# purple
+			glyph.color = 9		# magenta
+			glyph.color = 10	# light gray
+			glyph.color = 11	# charcoal
+			glyph.color = None	# not colored, white (before version 1235, use -1)

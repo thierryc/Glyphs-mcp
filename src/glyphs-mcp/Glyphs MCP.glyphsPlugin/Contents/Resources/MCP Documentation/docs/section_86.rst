@@ -1,4 +1,3 @@
-.. attribute:: disablesNiceNames
-		Corresponds to the “Don't use nice names” setting from the Font Info dialog.
+.. attribute:: versionMinor
 
-		:type: bool
+		:type: int

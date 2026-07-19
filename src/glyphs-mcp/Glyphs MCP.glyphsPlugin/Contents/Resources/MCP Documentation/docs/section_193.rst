@@ -1,6 +1,5 @@
-.. attribute:: designer
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+.. attribute:: windowsStyle
+
+		This is computed from "isBold" and "isItalic". Read-only.
 
 		:type: str
-
-		.. versionadded:: 3.0.2

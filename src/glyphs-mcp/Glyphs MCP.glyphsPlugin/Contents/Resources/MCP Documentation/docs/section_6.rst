@@ -1,4 +1,5 @@
 .. attribute:: fonts
+
 		Be aware that the order is defined by last used font. Append and extend generally don't insert at the end of the list.
 
 		:type: list

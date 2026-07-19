@@ -75,6 +75,29 @@ class DocsToolsTests(unittest.TestCase):
         self.assertIn("results", payload)
         self.assertTrue(any("GSApplication" in (r.get("title") or "") for r in payload["results"]))
 
+    def test_glyphs_4_format_searches_return_official_source_metadata(self) -> None:
+        for query in (
+            "file format version 4",
+            "shape group",
+            "higher-order interpolation",
+        ):
+            payload = json.loads(
+                asyncio.run(self.module.docs_search(query=query, max_results=10))
+            )
+            self.assertTrue(payload["ok"])
+            official = [
+                result
+                for result in payload["results"]
+                if result.get("formatVersion") == 4
+                and str(result.get("sourceUrl") or "").startswith(
+                    "https://github.com/schriftgestalt/GlyphsSDK/"
+                )
+            ]
+            self.assertTrue(official, query)
+            self.assertTrue(
+                all(result.get("sourceKind") for result in official), query
+            )
+
     def test_docs_get_by_id_returns_content_slice(self) -> None:
         # Use a deterministic entry from the index.
         index_path = _resources_dir() / "MCP Documentation" / "index.json"
@@ -90,6 +113,9 @@ class DocsToolsTests(unittest.TestCase):
         self.assertEqual(payload["path"], doc_path)
         self.assertGreater(payload["returnedChars"], 0)
         self.assertIn("content", payload)
+        self.assertIn("sourceKind", payload)
+        self.assertIn("formatVersion", payload)
+        self.assertIn("sourceUrl", payload)
 
         # Ensure the returned content matches the file prefix.
         docs_file = _resources_dir() / "MCP Documentation" / "docs" / doc_path
@@ -108,6 +134,41 @@ class DocsToolsTests(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertGreater(payload["registeredPages"], 0)
         self.assertIn("Per-page resources", payload["note"])
+
+    def test_index_covers_every_bundled_page_and_schemas_are_valid_json(self) -> None:
+        bundle_root = _resources_dir() / "MCP Documentation"
+        docs_root = bundle_root / "docs"
+        index = json.loads((bundle_root / "index.json").read_text(encoding="utf-8"))
+        documents = index.get("documents") or []
+        indexed_paths = {entry["path"] for entry in documents}
+        bundled_paths = {
+            path.relative_to(docs_root).as_posix()
+            for path in docs_root.rglob("*")
+            if path.is_file()
+        }
+
+        self.assertEqual(indexed_paths, bundled_paths)
+        self.assertEqual(index.get("sourceRevision"), "0f5422db727b78cb42abfb386f33ae0b382b0c4d")
+        self.assertTrue(
+            all(
+                "sourceKind" in entry
+                and "formatVersion" in entry
+                and str(entry.get("sourceUrl") or "").startswith(
+                    "https://github.com/schriftgestalt/GlyphsSDK/"
+                )
+                for entry in documents
+            )
+        )
+
+        for schema_name in (
+            "glyphs-3.schema.json",
+            "glyphs-4.schema.json",
+            "fontinfo-3.schema.json",
+            "fontinfo-4.schema.json",
+        ):
+            schema_path = docs_root / "file-format" / "schemas" / schema_name
+            parsed = json.loads(schema_path.read_text(encoding="utf-8"))
+            self.assertIsInstance(parsed, dict)
 
 
 if __name__ == "__main__":

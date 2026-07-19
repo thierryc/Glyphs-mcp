@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glyphs MCP Feedback</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font: 100%/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --gm-bg: var(--color-background-primary, Canvas);
+      --gm-panel: var(--color-background-secondary, Canvas);
+      --gm-text: var(--color-text-primary, CanvasText);
+      --gm-muted: var(--color-text-secondary, GrayText);
+      --gm-border: var(--color-border-secondary, color-mix(in srgb, CanvasText 22%, Canvas));
+      --gm-accent: var(--color-accent, #087b43);
+      --gm-on-accent: #fff;
+      --gm-warning: #9a5b00;
+      --gm-danger: #b42318;
+      --gm-success: #067647;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body { background: var(--gm-bg); color: var(--gm-text); padding: 12px; }
+    main { max-width: 760px; margin: 0 auto; }
+    .card {
+      background: var(--gm-panel); border: 1px solid var(--gm-border); border-radius: 14px;
+      box-shadow: 0 1px 2px color-mix(in srgb, CanvasText 10%, transparent); padding: 16px;
+    }
+    .eyebrow { color: var(--gm-muted); font-size: .78rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+    h1 { font-size: 1.12rem; line-height: 1.25; margin: 4px 0 6px; }
+    p { margin: 6px 0; }
+    .summary { color: var(--gm-muted); }
+    .state { align-items: center; display: flex; gap: 8px; margin-bottom: 10px; }
+    .dot { background: var(--gm-muted); border-radius: 50%; display: inline-block; height: 9px; width: 9px; }
+    .success .dot { background: var(--gm-success); }
+    .warning .dot, .partial .dot { background: var(--gm-warning); }
+    .error .dot { background: var(--gm-danger); }
+    .working .dot { animation: pulse 1s ease-in-out infinite; background: var(--gm-accent); }
+    @keyframes pulse { 50% { opacity: .25; transform: scale(.76); } }
+    dl { display: grid; gap: 7px 12px; grid-template-columns: minmax(7rem, auto) 1fr; margin: 14px 0 0; }
+    dt { color: var(--gm-muted); }
+    dd { margin: 0; overflow-wrap: anywhere; }
+    ul { margin: 12px 0 0; padding-left: 1.25rem; }
+    li { margin: 7px 0; }
+    .item { border-top: 1px solid var(--gm-border); padding: 10px 0; }
+    .item:first-child { margin-top: 12px; }
+    .item-title { font-weight: 650; }
+    .item-detail, .meta { color: var(--gm-muted); font-size: .9rem; }
+    .warning-box, .error-box, .confirm-box {
+      border: 1px solid currentColor; border-radius: 9px; margin-top: 12px; padding: 10px 12px;
+    }
+    .warning-box { color: var(--gm-warning); }
+    .error-box { color: var(--gm-danger); }
+    .confirm-box { color: var(--gm-text); }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    button {
+      appearance: none; background: var(--gm-accent); border: 1px solid var(--gm-accent); border-radius: 8px;
+      color: var(--gm-on-accent); cursor: pointer; font: inherit; font-weight: 650; min-height: 38px; padding: 7px 12px;
+    }
+    button.secondary { background: transparent; color: var(--gm-text); border-color: var(--gm-border); }
+    button.danger { background: var(--gm-danger); border-color: var(--gm-danger); }
+    button:disabled { cursor: wait; opacity: .55; }
+    button:focus-visible, summary:focus-visible { outline: 3px solid color-mix(in srgb, var(--gm-accent) 55%, transparent); outline-offset: 2px; }
+    details { margin-top: 10px; }
+    summary { cursor: pointer; font-weight: 600; }
+    pre { background: var(--gm-bg); border: 1px solid var(--gm-border); border-radius: 8px; font: .82rem/1.45 ui-monospace, monospace; overflow-wrap: anywhere; padding: 10px; white-space: pre-wrap; }
+    .show-more { background: transparent; border-color: var(--gm-border); color: var(--gm-text); margin-top: 10px; }
+    .visually-hidden { height: 1px; margin: -1px; overflow: hidden; padding: 0; position: absolute; width: 1px; clip: rect(0 0 0 0); }
+    @media (prefers-reduced-motion: reduce) { .working .dot { animation: none; } }
+    @media (max-width: 460px) { body { padding: 8px; } .card { padding: 13px; } dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 6px; } }
+  </style>
+</head>
+<body>
+  <main id="app" aria-live="polite" aria-busy="true"></main>
+  <div id="announcer" class="visually-hidden" aria-live="assertive"></div>
+  <script>
+    (() => {
+      "use strict";
+      const PROTOCOL_VERSION = "2026-01-26";
+      const pending = new Map();
+      const app = document.getElementById("app");
+      const announcer = document.getElementById("announcer");
+      let sequence = 0;
+      let busy = true;
+      let bridgeReady = false;
+      let current = null;
+      let lastCall = null;
+      let featureLimit = 8;
+
+      const escapeHTML = (value) => String(value ?? "")
+        .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+
+      function send(method, params) {
+        const id = ++sequence;
+        window.parent.postMessage({ jsonrpc: "2.0", id, method, params: params || {} }, "*");
+        return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
+      }
+
+      function notify(method, params) {
+        window.parent.postMessage({ jsonrpc: "2.0", method, params: params || {} }, "*");
+      }
+
+      function structured(result) {
+        if (!result) return null;
+        return result.structuredContent || result.structured_content || result;
+      }
+
+      function applyTheme(context) {
+        const root = document.documentElement;
+        const theme = context && context.theme;
+        if (theme === "dark" || theme === "light") root.style.colorScheme = theme;
+        const variables = (context && (context.cssVariables || context.css_variables)) || {};
+        Object.entries(variables).forEach(([key, value]) => {
+          if (String(key).startsWith("--") && typeof value === "string") root.style.setProperty(key, value);
+        });
+      }
+
+      function countsMarkup(progress) {
+        if (!progress) return "";
+        const entries = [
+          ["Reviewed", progress.reviewed], ["Changed", progress.changed],
+          ["Skipped", progress.skipped], ["Failed", progress.failed]
+        ].filter((entry) => Number.isFinite(entry[1]));
+        if (!entries.length) return "";
+        return `<dl>${entries.map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`).join("")}</dl>`;
+      }
+
+      function targetMarkup(target) {
+        if (!target || typeof target !== "object") return "";
+        const labels = { familyName: "Font", fontIndex: "Font index", glyphName: "Glyph", masterName: "Master", masterId: "Master ID", fileState: "File" };
+        const entries = Object.entries(target).filter(([key, value]) => labels[key] && value !== null && value !== "");
+        if (!entries.length) return "";
+        return `<dl>${entries.map(([key, value]) => `<dt>${labels[key]}</dt><dd>${escapeHTML(value)}</dd>`).join("")}</dl>`;
+      }
+
+      function itemMarkup(item) {
+        const title = escapeHTML(item.label || item.tag || item.name || item.id || "Item");
+        const value = item.value === undefined ? "" : `<span class="meta"> — ${escapeHTML(item.value)}</span>`;
+        const detail = item.detail ? `<div class="item-detail">${escapeHTML(item.detail)}</div>` : "";
+        const metrics = item.metrics && typeof item.metrics === "object"
+          ? `<dl>${Object.entries(item.metrics).map(([key, val]) => `<dt>${escapeHTML(key)}</dt><dd>${escapeHTML(val)}</dd>`).join("")}</dl>` : "";
+        const code = item.code ? `<details><summary>Show feature code</summary><pre>${escapeHTML(item.code)}</pre></details>` : "";
+        return `<section class="item"><div class="item-title">${title}${value}</div>${detail}${metrics}${code}</section>`;
+      }
+
+      function render(payload) {
+        current = payload || {};
+        featureLimit = 8;
+        busy = current.status === "working";
+        app.setAttribute("aria-busy", String(busy));
+        const state = escapeHTML(current.status || "ready");
+        const allItems = Array.isArray(current.items) ? current.items : [];
+        const shownItems = current.kind === "opentype" ? allItems.slice(0, featureLimit) : allItems;
+        const warningBlock = Array.isArray(current.warnings) && current.warnings.length
+          ? `<div class="warning-box"><strong>Warnings</strong><ul>${current.warnings.map((w) => `<li>${escapeHTML(w.message || w)}</li>`).join("")}</ul></div>` : "";
+        const error = current.error;
+        const errorBlock = error
+          ? `<div class="error-box"><strong>${escapeHTML(error.code || "error")}</strong><p>${escapeHTML(error.message || "The request failed.")}</p>${error.nextAction ? `<p>${escapeHTML(error.nextAction)}</p>` : ""}${error.technical ? `<details><summary>Technical detail</summary><pre>${escapeHTML(error.technical)}</pre></details>` : ""}</div>` : "";
+        const confirmBlock = current.kind === "confirmation"
+          ? `<div class="confirm-box"><strong>Review before applying</strong><p>This changes only the reviewed open Glyphs objects. Glyphs remains the editor, and the font is never saved automatically.</p></div>` : "";
+        const actions = (Array.isArray(current.actions) ? current.actions : []).slice(0, 2);
+        app.innerHTML = `<article class="card ${state}">
+          <div class="state"><span class="dot" aria-hidden="true"></span><span class="eyebrow">${state}</span></div>
+          <h1>${escapeHTML(current.title || "Glyphs MCP")}</h1>
+          <p class="summary">${escapeHTML(current.summary || "")}</p>
+          ${targetMarkup(current.target)}${countsMarkup(current.progress || current.result)}
+          <div id="items">${shownItems.map(itemMarkup).join("")}</div>
+          ${current.kind === "opentype" && allItems.length > 8 ? `<button id="show-more" class="show-more secondary" type="button">Show more (${allItems.length - 8})</button>` : ""}
+          ${warningBlock}${errorBlock}${confirmBlock}
+          <div class="actions">${actions.map((action, index) => `<button type="button" data-action="${index}" class="${action.destructive ? "danger" : index ? "secondary" : ""}" ${action.local === "restore" ? "autofocus" : ""} ${busy ? "disabled" : ""}>${escapeHTML(action.label || "Continue")}</button>`).join("")}</div>
+        </article>`;
+        announcer.textContent = `${current.title || "Glyphs MCP"}. ${current.summary || ""}`;
+        const more = document.getElementById("show-more");
+        if (more) more.addEventListener("click", showMore);
+        app.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", () => runAction(actions[Number(button.dataset.action)])));
+      }
+
+      function showMore() {
+        featureLimit += 8;
+        const items = current.items.slice(0, featureLimit);
+        document.getElementById("items").innerHTML = items.map(itemMarkup).join("");
+        const more = document.getElementById("show-more");
+        if (more) {
+          const remaining = current.items.length - featureLimit;
+          if (remaining > 0) more.textContent = `Show more (${remaining})`; else more.remove();
+        }
+      }
+
+      function confirmationFor(action) {
+        return {
+          schemaVersion: "1.0", kind: "confirmation", status: "warning",
+          title: action.confirmationTitle || "Apply reviewed changes in Glyphs?",
+          summary: action.confirmationSummary || current.summary,
+          target: current.target, items: current.items, warnings: current.warnings,
+          progress: current.progress,
+          actions: [
+            { label: "Cancel", local: "restore", payload: current },
+            { label: "Apply in Glyphs", tool: action.tool, arguments: action.arguments, destructive: true }
+          ]
+        };
+      }
+
+      async function runAction(action) {
+        if (!action || busy) return;
+        if (action.local === "restore") { render(action.payload); return; }
+        if (action.local === "retry-bridge") { window.location.reload(); return; }
+        if (action.requiresConfirmation) { render(confirmationFor(action)); return; }
+        if (!action.tool) return;
+        lastCall = { name: action.tool, arguments: action.arguments || {} };
+        const workingActions = Array.isArray(current && current.actions) ? current.actions : [];
+        busy = true;
+        render({ schemaVersion: "1.0", kind: "progress", status: "working", title: "Working in Glyphs", summary: "Preparing and running the requested action…", progress: { reviewed: 0, changed: 0, skipped: 0, failed: 0 }, actions: workingActions });
+        try {
+          const result = await send("tools/call", lastCall);
+          render(structured(result));
+        } catch (_error) {
+          render({ schemaVersion: "1.0", kind: "error", status: "error", title: "Glyphs action failed", summary: "The host could not complete the tool call.", items: [], warnings: [], actions: [], error: { code: "bridge_call_failed", message: "Codex could not complete this panel action.", recoverable: true, nextAction: "Refresh the feedback and try a new dry run." } });
+        }
+      }
+
+      window.addEventListener("message", (event) => {
+        if (event.source !== window.parent) return;
+        const message = event.data || {};
+        if (message.id && pending.has(message.id)) {
+          const waiter = pending.get(message.id); pending.delete(message.id);
+          if (message.error) waiter.reject(message.error); else waiter.resolve(message.result);
+          return;
+        }
+        if (message.method === "ui/notifications/tool-input") {
+          render({ schemaVersion: "1.0", kind: "progress", status: "working", title: "Preparing Glyphs feedback", summary: "Reading the requested open Glyphs state…", target: {}, items: [], warnings: [], actions: [], progress: { reviewed: 0, changed: 0, skipped: 0, failed: 0 }, result: {} });
+        }
+        if (message.method === "ui/notifications/tool-result") render(structured(message.params));
+        if (message.method === "ui/notifications/host-context-changed") applyTheme(message.params && (message.params.hostContext || message.params));
+      });
+
+      render({ schemaVersion: "1.0", kind: "progress", status: "working", title: "Connecting to Glyphs MCP", summary: "Initializing the embedded feedback panel…", items: [], warnings: [], actions: [] });
+      const bridgeTimer = window.setTimeout(() => {
+        if (!bridgeReady) render({ schemaVersion: "1.0", kind: "error", status: "error", title: "Feedback panel unavailable", summary: "The Codex UI bridge did not initialize.", items: [], warnings: [], error: { code: "bridge_unavailable", message: "The embedded panel could not connect to its host within five seconds.", recoverable: true, nextAction: "Retry the panel, or ask Codex for the same information as text." }, actions: [{ label: "Retry", local: "retry-bridge" }] });
+      }, 5000);
+
+      send("ui/initialize", { protocolVersion: PROTOCOL_VERSION, appInfo: { name: "Glyphs MCP Feedback", version: "1.0.0" }, appCapabilities: { tools: {} } })
+        .then((result) => {
+          bridgeReady = true; window.clearTimeout(bridgeTimer); applyTheme(result && result.hostContext);
+          notify("ui/notifications/initialized", {});
+        })
+        .catch(() => {});
+
+    })();
+  </script>
+</body>
+</html>

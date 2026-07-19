@@ -1,12 +1,6 @@
-.. attribute:: value
-		The value
+.. attribute:: previewHeight
+		Height of the preview panel in the Edit view in pixels.
 
-		:type: str
+		Needs to be set to 16 or higher for the preview panel to be visible at all. Will return 0 for a closed preview panel or the current size when visible.
 
-	.. code-block:: python
-		# GSFontInfoValueSingle is stored in e.g. font.properties
-		# one of the differences between GSFontInfoValueSingle and GSFontInfoValueLocalized
-		# is that the first doesn't have "values" attribute
-		for fontProperty in font.properties:
-		    if not hasattr(fontProperty, "values"):
-		        print(fontProperty.value)
+		:type: float

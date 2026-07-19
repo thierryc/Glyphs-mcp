@@ -1,14 +1,66 @@
-.. attribute:: internalAxesValues
-		List of floats specifying the positions for each axis
+Properties
 
-		:type: list
+		* :attr:`active`
+		* :attr:`name`
+		* :attr:`type`
+		* :attr:`visible`
+		* :attr:`weightClass`
+		* :attr:`widthClass`
+		* :attr:`axes`
+		* :attr:`properties`
+		* :attr:`isItalic`
+		* :attr:`isBold`
+		* :attr:`linkStyle`
+		* :attr:`preferredFamily`
+		* :attr:`preferredSubfamilyName`
+		* :attr:`windowsFamily`
+		* :attr:`windowsStyle`
+		* :attr:`windowsLinkedToStyle`
+		* :attr:`fontName`
+		* :attr:`fullName`
+		* :attr:`compatibleFullName`
+		* :attr:`compatibleFullNames`
+		* :attr:`copyright`
+		* :attr:`copyrights`
+		* :attr:`description`
+		* :attr:`descriptions`
+		* :attr:`designer`
+		* :attr:`designers`
+		* :attr:`designerURL`
+		* :attr:`familyName`
+		* :attr:`familyNames`
+		* :attr:`license`
+		* :attr:`licenses`
+		* :attr:`manufacturer`
+		* :attr:`manufacturers`
+		* :attr:`manufacturerURL`
+		* :attr:`preferredFamilyName`
+		* :attr:`preferredFamilyNames`
+		* :attr:`preferredSubfamilyName`
+		* :attr:`preferredSubfamilyNames`
+		* :attr:`sampleText`
+		* :attr:`sampleTexts`
+		* :attr:`styleMapFamilyName`
+		* :attr:`styleMapFamilyNames`
+		* :attr:`styleMapStyleName`
+		* :attr:`styleMapStyleNames`
+		* :attr:`styleName`
+		* :attr:`styleNames`
+		* :attr:`trademark`
+		* :attr:`trademarks`
+		* :attr:`variableStyleName`
+		* :attr:`variableStyleNames`
+		* :attr:`font`
+		* :attr:`customParameters`
+		* :attr:`instanceInterpolations`
+		* :attr:`manualInterpolation`
+		* :attr:`interpolatedFontProxy`
+		* :attr:`interpolatedFont`
+		* :attr:`lastExportedFilePath`
 
-		.. code-block:: python
-			# setting a value for a specific axis
-			instance.internalAxesValues[2] = 12
-			# or more precisely
-			instance.internalAxesValues[axis.axisId] = 12
-			# setting all values at once
-			instance.internalAxesValues = [100, 12, 3.5]
+	Functions
 
-		.. versionadded:: 3.2
+		* :meth:`generate`
+		* :meth:`addAsMaster`
+
+	**Properties**

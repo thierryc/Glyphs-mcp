@@ -1,4 +1,5 @@
-.. attribute:: path
-		Path to image file.
+.. attribute:: position
 
-		:type: str
+		The position of the annotation.
+
+		:type: NSPoint

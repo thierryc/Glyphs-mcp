@@ -1,22 +1,22 @@
-.. attribute:: guides
-		List of :class:`GSGuide` objects.
+.. attribute:: axes
+
+		Collection of :class:`GSAxis`:
+
+		.. code-block:: python
+			for axis in font.axes:
+			    print(axis)
+
+			# to add a new axis
+			axis = GSAxis()
+			axis.name = "Some custom Axis"
+			axis.axisTag = "SCAX"
+			glyph.axes.append(axis)
+
+			# to delete an axis
+			del glyph.axes[0]
+
+						glyph.axes.remove(someAxis)
 
 		:type: list
 
-		.. code-block:: python
-			# access all guides
-			for guide in layer.guides:
-			    print(guide)
-
-			# add guide
-			newGuide = GSGuide()
-			newGuide.position = NSPoint(100, 100)
-			newGuide.angle = -10.0
-			layer.guides.append(newGuide)
-
-			# delete guide
-			del layer.guides[0]
-
-			# copy guides from another layer
-			import copy
-			layer.guides = copy.copy(anotherlayer.guides)
+		.. versionadded:: 4

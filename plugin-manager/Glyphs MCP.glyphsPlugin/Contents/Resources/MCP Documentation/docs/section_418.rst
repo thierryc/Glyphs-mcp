@@ -1,11 +1,11 @@
 .. function:: applyTransform
 
-		Apply a transformation matrix to the path.
+		Apply a transformation matrix to the component.
 
 		.. code-block:: python
-			path = layer.paths[0]
+			component = layer.components[0]
 
-			path.applyTransform((
+			component.applyTransform((
 			    0.5, # x scale factor
 			    0.0, # x skew factor
 			    0.0, # y skew factor
@@ -16,4 +16,4 @@
 
 	.. function:: copy()
 
-		Returns a full copy of the path
+		Returns a full copy of the component

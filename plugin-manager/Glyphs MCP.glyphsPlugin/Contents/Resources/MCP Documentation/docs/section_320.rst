@@ -1,16 +1,3 @@
-.. attribute:: shapes
-		List of :class:`GSShape` objects. That are most likely :class:`GSPath` or :class:`GSComponent`
+.. function:: endUndo()
 
-		:type: list
-
-		.. code-block:: python
-			# access all shapes
-			for shape in layer.shapes:
-			    print(shape)
-
-			# delete shape
-			del layer.shapes[0]
-
-			# copy shapes from another layer
-			import copy
-			layer.shapes = copy.copy(anotherlayer.shapes)
+		This closes a undo group that was opened by a previous call of :meth:`glyph.beginUndo() <GSGlyph.beginUndo()>` Make sure that you call this for each `beginUndo()` call.

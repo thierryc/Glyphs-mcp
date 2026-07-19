@@ -1,17 +1,9 @@
-.. attribute:: attributes
-		path attributes like :samp:`fill`, :samp:`mask`, :samp:`strokeWidth`, :samp:`strokeHeight`, :samp:`strokeColor'`, :samp:`strokePos`
+.. attribute:: openBezierPath
+		Returns the open paths of the component as bezier path, already transformed. Useful for drawing glyphs in plugins.
+
+		:type: NSBezierPath
 
 		.. code-block:: python
-
-			# in B/W layers:
-			path.attributes['fill'] = True
-			path.attributes['mask'] = True
-			path.attributes['strokeWidth'] = 100
-			path.attributes['strokeHeight'] = 80
-
-			# in color layers:
-			path.attributes['strokeColor'] = NSColor.redColor()
-			path.attributes['fillColor'] = NSColor.blueColor()
-			path.attributes['strokePos'] = 1 # or 0, -1
-
-		:type: dict
+			# draw the path into the Edit view
+			NSColor.redColor().set()
+			layer.components[0].openBezierPath.stroke()

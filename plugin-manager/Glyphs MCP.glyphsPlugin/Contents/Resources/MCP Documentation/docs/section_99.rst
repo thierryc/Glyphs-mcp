@@ -1,4 +1,5 @@
-.. attribute:: selectedFontMaster
-		Returns the active master (selected in the toolbar).
+.. attribute:: grid
 
-		:type: :class:`GSFontMaster`
+		Corresponds to the “Grid spacing” setting from the Info dialog.
+
+		:type: int

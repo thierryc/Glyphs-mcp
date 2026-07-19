@@ -1,9 +1,5 @@
-.. attribute:: direction
-		Writing direction.
+.. attribute:: rotation
 
-		See `Writing Directions`_
+		Rotation angle of image.
 
-		:type: integer
-
-		.. code-block:: python
-			font.currentTab.direction = GSRTL
+		:type: float

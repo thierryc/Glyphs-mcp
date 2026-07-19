@@ -1,4 +1,5 @@
-.. attribute:: grid
-		Corresponds to the “Grid spacing” setting from the Info dialog.
+.. attribute:: familyName
 
-		:type: int
+		Family name of the typeface.
+
+		:type: str

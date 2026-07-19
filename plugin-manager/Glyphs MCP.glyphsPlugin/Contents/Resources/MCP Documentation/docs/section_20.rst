@@ -1,4 +1,4 @@
-.. attribute:: versionNumber
-		Glyph.app’s version number. Use this to check for version in your code.
+.. attribute:: languageData
+		A list of dictionaries with more detailed language informations.
 
-		:type: float
+		:type: list

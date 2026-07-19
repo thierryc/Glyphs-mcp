@@ -1,4 +1,4 @@
-.. attribute:: parent
-		Returns the internal NSDocument document. Read-only.
+.. attribute:: userInfo
+		the userInfo of the notification
 
-		:type: NSDocument
+		:type: dict

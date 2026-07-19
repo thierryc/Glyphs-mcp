@@ -1,4 +1,8 @@
-.. attribute:: italicAngle
-		The italic angle that applies to this layer
+.. attribute:: vertOrigin
+		Layer vertical origin
+
+		set it to None to reset it to default
 
 		:type: float
+
+		.. versionadded:: 2.6.2

@@ -1,4 +1,5 @@
-.. attribute:: variableStyleName
+.. attribute:: sampleText
+
 		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
 
 		:type: str

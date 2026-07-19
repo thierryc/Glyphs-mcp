@@ -1,4 +1,6 @@
-.. attribute:: filter
-		A filter to limit the scope of the metric.
+.. attribute:: category
 
-		:type: NSPredicate
+		This is mostly from the UnicodeData.txt file from unicode.org. Some corrections have been made (Accents, ...)
+		e.g: "Letter", "Number", "Punctuation", "Mark", "Separator", "Symbol", "Other"
+
+		:type: str

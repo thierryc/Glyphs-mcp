@@ -1,7 +1,5 @@
-.. attribute:: storeDirection
-		Set to True in order to manipulate the :attr:`GSGlyph.direction` of the glyph (see above).
-		Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file. Same as Cmd-Alt-i dialog in UI.
+.. attribute:: unicode
 
-		:type: bool
+		String with the hex Unicode value of glyph, if encoded.
 
-		.. versionadded:: 3
+		:type: str

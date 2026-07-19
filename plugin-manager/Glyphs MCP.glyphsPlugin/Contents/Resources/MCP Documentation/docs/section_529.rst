@@ -1,4 +1,4 @@
-.. attribute:: desc
-		Unicode description of glyph.
+.. attribute:: textRange
+		Amount of selected glyphs in text, starting at cursor position (see above).
 
-		:type: str
+		:type: integer

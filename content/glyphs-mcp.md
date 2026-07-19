@@ -8,7 +8,7 @@ sidebar_position: 1
 
 ![Glyphs MCP splash](./images/glyphs-app-mcp/glyphs-mcp.png)
 
-Glyphs MCP is a **Model Context Protocol** server for [Glyphs 4 beta](https://glyphsapp.com). It runs as a Glyphs plug-in, exposes a local Streamable HTTP endpoint, and lets AI clients call font-specific tools against the fonts you already have open.
+Glyphs MCP is a **Model Context Protocol** server for Glyphs 3.5 and Glyphs 4. It runs as a Glyphs plug-in, exposes a local Streamable HTTP endpoint, and lets AI clients call font-specific tools against the fonts you already have open.
 
 Current public docs URL:
 
@@ -80,5 +80,7 @@ The design is tools-first: use deterministic, named tools before falling back to
 - Preview and apply compensated tuning transforms across compatible masters.
 - Export UFO masters and designspace documents with structured logs.
 - Search bundled Glyphs docs on demand with `docs_search` and `docs_get`.
+- Inspect Glyphs 3/4 source-format metadata and safely edit version 4 outlines
+  without flattening grouped/styled shapes or advanced node metadata.
 
 For deeper workflow guidance, start with [How Glyphs MCP works](./concepts/how-glyphs-mcp-works.mdx) and [Safety model](./concepts/safety-model.mdx).

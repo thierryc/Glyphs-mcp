@@ -1,6 +1,5 @@
-.. attribute:: currentText
-		The text of the current Edit view.
+.. attribute:: gridLength
 
-		Unencoded and none ASCII glyphs will use a slash and the glyph name. (e.g: /a.sc). Setting unicode strings works.
+		Ready calculated size of grid for rounding purposes. Result of division of grid with gridSubDivisions.
 
-		:type: str
+		:type: float (readonly)

@@ -1,4 +1,5 @@
 .. attribute:: code
-		The Feature code in Adobe FDK syntax.
+
+		A string with space separated glyph names.
 
 		:type: str

@@ -1,14 +1,11 @@
-.. attribute:: date
+.. attribute:: descriptions
 
-		:type: datetime.datetime
+		This accesses all localized designer values.
+		For details :attr:`GSFont.properties`
+
+		:type: dict
 
 		.. code-block:: python
-			print(font.date)
-			>> 2015-06-08 09:39:05
+			font.descriptions["ENG"] = "This is my description"
 
-			# set date to now
-			font.date = datetime.datetime.now()
-			# using NSDate
-			font.date = NSDate.date()
-			# or in seconds since Epoch
-			font.date = time.time()
+		.. versionadded:: 3.0.3

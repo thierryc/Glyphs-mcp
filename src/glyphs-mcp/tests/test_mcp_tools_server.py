@@ -32,13 +32,20 @@ class _FakeMCP:
 
 class McpToolsServerTests(unittest.TestCase):
     def _load_module(self):
-        font = types.SimpleNamespace(familyName="Runtime Test", filepath="/tmp/Runtime.glyphs")
+        font = types.SimpleNamespace(
+            familyName="Runtime Test",
+            filepath="/tmp/Runtime.glyphs",
+            formatVersion=4,
+            appVersion="4012",
+        )
         glyphs = types.SimpleNamespace(versionNumber=4.0, fonts=[font])
         helpers = types.SimpleNamespace(
             _font_summary=lambda font, i=None: {
                 "fontIndex": i,
                 "familyName": getattr(font, "familyName", ""),
                 "filePath": getattr(font, "filepath", None),
+                "formatVersion": getattr(font, "formatVersion", None),
+                "lastSavedAppVersion": getattr(font, "appVersion", None),
             },
             _open_fonts_from_glyphs=lambda _glyphs: list(getattr(_glyphs, "fonts", [])),
             _safe_json=lambda payload: json.dumps(payload),
@@ -83,3 +90,7 @@ class McpToolsServerTests(unittest.TestCase):
         self.assertEqual(payload["glyphsVersion"], 4.0)
         self.assertEqual(payload["openFontCount"], 1)
         self.assertEqual(payload["availableFonts"][0]["familyName"], "Runtime Test")
+        self.assertEqual(payload["availableFonts"][0]["formatVersion"], 4)
+        self.assertEqual(
+            payload["availableFonts"][0]["lastSavedAppVersion"], "4012"
+        )

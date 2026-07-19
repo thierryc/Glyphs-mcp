@@ -1,4 +1,12 @@
-.. attribute:: direction
-		Path direction. -1 for counter clockwise, 1 for clockwise.
+.. attribute:: selected
 
-		:type: int
+		Selection state of component in UI.
+
+		:type: bool
+
+		.. code-block:: python
+			# select component
+			layer.components[0].selected = True
+
+			# print(selection state)
+			print(layer.components[0].selected)

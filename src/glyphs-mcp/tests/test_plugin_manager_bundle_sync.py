@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -78,6 +79,23 @@ class PluginManagerBundleSyncTests(unittest.TestCase):
                 _normalized_bytes(pm_path, rel),
                 msg="Bundle drift detected for {}".format(rel.as_posix()),
             )
+
+    def test_plugin_manager_documentation_index_has_every_page(self) -> None:
+        for bundle in (_src_bundle(), _plugin_manager_bundle()):
+            docs_root = bundle / "Contents" / "Resources" / "MCP Documentation"
+            index = json.loads(
+                (docs_root / "index.json").read_text(encoding="utf-8")
+            )
+            indexed = {
+                Path(entry["path"])
+                for entry in index.get("documents") or []
+            }
+            bundled = {
+                path.relative_to(docs_root / "docs")
+                for path in (docs_root / "docs").rglob("*")
+                if path.is_file()
+            }
+            self.assertEqual(indexed, bundled)
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
-.. attribute:: otherNode2
-		A fourth node this hint is attached to. Used for Diagonal hints.
+.. attribute:: name
 
-		:type: :class:`GSNode` or :class:`GSHandle` (e.g. when attached to intersections)
+		Attaches a name to a node.
+
+		:type: str

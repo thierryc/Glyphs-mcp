@@ -1,6 +1,6 @@
 # Releasing Glyphs MCP Installer (macOS)
 
-This repo ships a signed + notarized (non–Mac App Store) SwiftUI installer app, distributed as a drag‑and‑drop DMG.
+This repo ships a signed + notarized (non–Mac App Store) SwiftUI installer app, distributed as a drag‑and‑drop DMG. The release build, tests, signing, notarization, verification, and upload all run locally. GitHub Actions is not used for installer releases, and no signing credentials are stored on GitHub.
 
 ## Prereqs (one-time)
 
@@ -58,6 +58,16 @@ Update:
 - Root `README.md` download link should match the future release asset name:
   - `GlyphsMCPInstaller-X.Y.Z.dmg`
 
+## Local release test gate
+
+Run the same mandatory test gate used by the publisher:
+
+```bash
+./scripts/run_local_release_tests.sh
+```
+
+It runs the complete Python suite, the complete Xcode test suite, shell syntax checks, patch whitespace checks, and an unsigned Debug installer build. The Debug build is deliberately unsigned because it is only a local compilation check. Distribution artifacts are built separately in Release configuration and must have a valid Developer ID signature, hardened runtime, secure timestamp, notarization ticket, and Gatekeeper acceptance.
+
 ## Build, sign, notarize, DMG
 
 From repo root:
@@ -74,11 +84,20 @@ From repo root:
 
 # Create DMG (app + /Applications symlink), notarize + staple
 ./scripts/make_installer_dmg.sh
+
+# Verify every artifact and write its exact SHA-256 manifest
+./scripts/verify_release_artifacts.sh --tag vX.Y.Z --write-checksums
 ```
 
 Outputs:
 - `dist/GlyphsMCPInstaller-X.Y.Z.dmg` (versioned)
 - `dist/GlyphsMCPInstaller.dmg` (latest alias)
+- `dist/installer-app/GlyphsMCPInstaller.zip` (contains the stapled app)
+- `dist/SHA256SUMS` (exact release artifact set)
+
+The verifier checks source/Xcode/built versions, Developer ID authority and Team ID, nested payload signatures, hardened runtime, secure timestamps, stapled tickets, Gatekeeper, ZIP contents, byte-identical latest/versioned DMGs, and the exact checksum set.
+
+`SKIP_NOTARIZATION=1` is for local diagnostics only. It creates filenames containing `UNNOTARIZED`; the publisher refuses to run in that mode and never uploads those files.
 
 ### Important: payload plug-in signing
 
@@ -89,53 +108,56 @@ The Xcode build phase **Copy Payload** now signs and timestamps:
 
 If notarization fails with errors like “binary is not signed” or “no secure timestamp”, rebuild the app (Release) and re-run notarization.
 
-## QA (recommended)
+## QA
 
-Before releasing:
+The local test gate is mandatory before publishing. It can also be run independently:
 
 ```bash
-xcodebuild test \
-  -project macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj \
-  -scheme GlyphsMCPInstaller \
-  -destination 'platform=macOS'
+./scripts/run_local_release_tests.sh
 ```
 
-Optionally verify signatures:
+To rebuild and verify locally without uploading:
 
 ```bash
-codesign -dv --verbose=4 dist/installer-app/GlyphsMCPInstaller.app 2>&1 | head
-spctl -a -vv dist/installer-app/GlyphsMCPInstaller.app
+./scripts/publish_release_assets.sh --tag vX.Y.Z --dry-run
 ```
 
-## Commit, tag, merge, release
+This dry run still requires a clean `main`, an annotated tag at `HEAD`, a matching remote `main` and remote tag, and a valid tag signature by default.
 
-Typical flow (adjust to your branching policy):
+## Commit, tag, and local publish
+
+Prepare the release changes on a branch, merge them to `main`, then create a signed annotated tag on the exact reviewed commit:
 
 ```bash
-# Commit version bump + changes
 git add -A
 git commit -m "Release vX.Y.Z"
-
-# Tag
-git tag -a vX.Y.Z -m "vX.Y.Z"
-
-# Merge to main (example)
 git switch main
 git pull --ff-only
 git merge <your-release-branch>
-
-# Push
 git push origin main
+
+git tag -s vX.Y.Z -m "vX.Y.Z"
 git push origin vX.Y.Z
 ```
 
-Create the GitHub Release and upload the DMG:
+If signed tags are not configured, `--allow-unsigned-tag` is an explicit escape hatch for an annotated tag after manual commit review. A lightweight tag is never accepted.
+
+Create an empty draft release, then run the local publisher:
 
 ```bash
-gh release create vX.Y.Z dist/GlyphsMCPInstaller-X.Y.Z.dmg \
+gh release create vX.Y.Z --verify-tag --draft \
   --title "vX.Y.Z" \
   --notes "macOS installer app (signed + notarized)."
+
+# Build and verify without uploading first
+./scripts/publish_release_assets.sh --tag vX.Y.Z --dry-run
+
+# Reuse those artifacts, re-run all tests and verification, then upload
+./scripts/publish_release_assets.sh --tag vX.Y.Z --skip-build \
+  --confirm-publish vX.Y.Z
 ```
+
+The exact tag confirmation is required for non-interactive use; an interactive terminal asks you to type it. The script refuses dirty worktrees, non-`main` branches, stale or mismatched remote commits/tags, unsigned tags by default, published releases, pre-existing asset names, skipped notarization, signature/notary failures, and checksum drift. It does not overwrite release assets. The release stays a draft after upload so its notes and asset list can be reviewed before publication.
 
 ## Troubleshooting
 
@@ -153,3 +175,7 @@ xcrun notarytool log <SUBMISSION_ID> --keychain-profile gmcp-notary
 Common causes:
 - A nested binary in the payload isn’t signed or lacks a secure timestamp.
 - Rebuild the app and ensure the payload signing step ran.
+
+### The release is not a draft or already contains an asset
+
+The publisher intentionally refuses to modify an already-published release or overwrite an existing asset. Review the remote state. For a new release, use an empty draft. Do not delete or replace a public artifact merely to bypass this gate; publish a new patch version when an artifact has already been distributed.

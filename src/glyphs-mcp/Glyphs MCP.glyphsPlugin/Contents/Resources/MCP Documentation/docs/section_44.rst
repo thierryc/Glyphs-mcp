@@ -1,4 +1,3 @@
-.. attribute:: masters
-		Collection of :class:`GSFontMaster` objects.
+.. function:: deliver()
 
-		:type: list
+		Shows the notification

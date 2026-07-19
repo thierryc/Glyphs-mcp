@@ -1,7 +1,5 @@
-.. function:: Message(message, title="Alert", OKButton=None)
+.. attribute:: font
 
-	Shows an alert panel.
+		The font
 
-	:param message: the string
-	:param title: a title of the dialog
-	:param OKButton: the label of the confirmation button
+		:type: GSFont

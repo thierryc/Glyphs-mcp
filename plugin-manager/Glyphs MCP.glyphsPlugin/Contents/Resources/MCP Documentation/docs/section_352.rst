@@ -1,9 +1,4 @@
-.. function:: removeOverlap([checkSelection=False])
+.. attribute:: widthMetricsKey
+		The widthMetricsKey of the layer. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
 
-		Joins all contours.
-
-		:param checkSelection: If the selection will be considered. Default: False
-
-	.. function:: roundCoordinates()
-
-		Round the positions of all coordinates to the grid (size of which is set in the Font Info).
+		:type: str

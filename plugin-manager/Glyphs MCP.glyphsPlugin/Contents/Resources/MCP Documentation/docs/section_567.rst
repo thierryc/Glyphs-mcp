@@ -1,6 +1,13 @@
-.. function:: insert(idx, item)
+.. attribute:: key
 
-		:param idx: the index
-		:param item: a NSMenuItem
+		the key
 
-		inserts the item into the items submenu at the specified index
+		:type: str
+
+	.. code-block:: python
+		# GSInfoValueSingle is stored in e.g. font.properties
+		# one of the differences between GSInfoValueSingle and GSInfoValueLocalized
+		# is that the first doesn't have "values" attribute
+		for fontProperty in font.properties:
+		    if not hasattr(fontProperty, "values"):
+		        print(fontProperty.key)

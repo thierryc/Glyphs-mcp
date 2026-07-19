@@ -1,3 +1,5 @@
-.. function:: redraw()
+.. attribute:: start
 
-		forces a update of the edit view
+		A NSPoint that relatively to the shapes bounding box defines the starting point of the gradient
+
+		:type: NSPoint

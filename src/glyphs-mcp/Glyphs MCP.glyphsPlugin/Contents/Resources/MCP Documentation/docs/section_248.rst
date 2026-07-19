@@ -1,4 +1,5 @@
 .. attribute:: name
-		The feature name
+
+		The class name
 
 		:type: str

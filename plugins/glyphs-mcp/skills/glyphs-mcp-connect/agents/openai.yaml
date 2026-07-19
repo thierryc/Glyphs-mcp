@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs MCP Connect"
+  short_description: "Connect Codex to the local Glyphs MCP server."
+  default_prompt: "Use $glyphs-mcp-connect to connect Codex to my local Glyphs MCP server and verify it with list_open_fonts."
+
+policy:
+  allow_implicit_invocation: true

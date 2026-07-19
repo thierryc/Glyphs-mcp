@@ -1,8 +1,5 @@
-.. function:: subtractPaths(paths, subtract)
+.. attribute:: overshoot
 
-	removes the overlaps from the list of paths
+		Value of overshoot’s width.
 
-	:param paths: a list of paths
-	:param subtract: the subtracting paths
-	:return: The resulting list of paths
-	:rtype: list
+		:type: float

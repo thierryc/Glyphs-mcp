@@ -8,16 +8,25 @@ from GlyphsApp import Glyphs, GSNode, GSPath  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
+    _apply_path_specs_and_metrics,
+    _font_format_metadata,
     _font_resolution_error,
     _get_layer_id,
     _get_left_sidebearing,
     _get_right_sidebearing,
     _glyphs_show_layer_link_fields,
     _layer_display_name,
+    _layer_paths,
     _layer_path_summary,
-    _replace_layer_paths_and_metrics,
+    _layer_shape_summary,
+    _mapping_keys,
+    _node_orientation,
+    _node_raw_connection,
+    _node_raw_type,
+    _normalized_node_type,
     _resolve_font_by_index,
     _safe_json,
+    _shape_attribute_metadata,
     _show_notification,
 )
 
@@ -37,6 +46,8 @@ async def get_glyph_paths(
     
     Returns:
         str: JSON-encoded path data containing:
+            pathDataVersion (int): Payload version. Version 2 includes raw node
+                types and additive compatibility metadata.
             paths (list): List of paths, each containing:
                 nodes (list): List of nodes with x, y, type, smooth properties
                 closed (bool): Whether the path is closed
@@ -73,26 +84,72 @@ async def get_glyph_paths(
         if not layer:
             return json.dumps({"error": "No valid layer found for glyph '{}'".format(glyph_name)})
         
-        # Serialize paths
+        # Serialize paths without flattening raw Glyphs 4 node types or shape
+        # metadata. Attribute values stay read-only in this compatibility pass;
+        # their keys and group relationship are exposed for diagnostics.
         paths_data = []
-        for path in getattr(layer, 'paths', []):
+        unsupported_node_types = []
+        try:
+            layer_shapes = list(getattr(layer, "shapes", None) or [])
+        except Exception:
+            layer_shapes = []
+        shape_indices = {id(shape): index for index, shape in enumerate(layer_shapes)}
+
+        for path_index, path in enumerate(_layer_paths(layer)):
             nodes_data = []
-            for node in path.nodes:
-                nodes_data.append({
-                    "x": float(node.position.x),
-                    "y": float(node.position.y),
-                    "type": getattr(node, 'type', 'line'),
-                    "smooth": getattr(node, 'smooth', False)
-                })
-            
-            paths_data.append({
-                "nodes": nodes_data,
-                "closed": getattr(path, 'closed', True)
-            })
+            for node_index, node in enumerate(path.nodes):
+                raw_type = _node_raw_type(node)
+                node_type = _normalized_node_type(node)
+                orientation, raw_orientation = _node_orientation(node)
+                if node_type == "unknown":
+                    unsupported_node_types.append(
+                        {
+                            "pathIndex": path_index,
+                            "nodeIndex": node_index,
+                            "rawType": raw_type,
+                        }
+                    )
+                try:
+                    attributes = getattr(node, "attributes", None)
+                except Exception:
+                    attributes = None
+                try:
+                    user_data = getattr(node, "userData", None)
+                except Exception:
+                    user_data = None
+                nodes_data.append(
+                    {
+                        "nodeIndex": node_index,
+                        "x": float(node.position.x),
+                        "y": float(node.position.y),
+                        "type": node_type,
+                        "rawType": raw_type,
+                        "smooth": bool(getattr(node, "smooth", False)),
+                        "rawConnection": _node_raw_connection(node),
+                        "orientation": orientation,
+                        "rawOrientation": raw_orientation,
+                        "name": getattr(node, "name", None),
+                        "attributeKeys": _mapping_keys(attributes),
+                        "hasUserData": bool(_mapping_keys(user_data)),
+                    }
+                )
+
+            path_metadata = _shape_attribute_metadata(path)
+            paths_data.append(
+                {
+                    "pathIndex": path_index,
+                    "shapeIndex": shape_indices.get(id(path)),
+                    "nodes": nodes_data,
+                    "closed": bool(getattr(path, "closed", True)),
+                    "locked": bool(getattr(path, "locked", False)),
+                    **path_metadata,
+                }
+            )
         
         layer_id = _get_layer_id(layer)
         layer_name = _layer_display_name(font, layer, getattr(layer, "associatedMasterId", None))
         result = {
+            "pathDataVersion": 2,
             "glyphName": glyph_name,
             "masterId": getattr(layer, 'associatedMasterId', None),
             "masterName": layer_name,
@@ -101,6 +158,29 @@ async def get_glyph_paths(
             "width": getattr(layer, 'width', 0),
             "leftSideBearing": _get_left_sidebearing(layer) or 0,
             "rightSideBearing": _get_right_sidebearing(layer) or 0
+        }
+        result.update(_font_format_metadata(font))
+        shape_summary = _layer_shape_summary(layer)
+        warnings = list(shape_summary.get("compatibilityWarnings") or [])
+        if unsupported_node_types:
+            warnings.append(
+                "One or more node types are not normalized by the current Glyphs Python wrapper. "
+                "Their raw types are preserved, and unsafe rewrites will be rejected."
+            )
+        if any(
+            path_data["attributeKeys"] or path_data["hasUserData"]
+            for path_data in paths_data
+        ):
+            warnings.append(
+                "Path attributes and user data are read-only in this compatibility pass and are "
+                "preserved automatically by set_glyph_paths."
+            )
+        result["compatibility"] = {
+            **shape_summary,
+            "metadataPolicy": "preserve",
+            "unsupportedNodeTypes": unsupported_node_types,
+            "safeForTopologyRewrite": not unsupported_node_types,
+            "warnings": warnings,
         }
         result.update(
             _glyphs_show_layer_link_fields(
@@ -111,7 +191,7 @@ async def get_glyph_paths(
             )
         )
         
-        return json.dumps(result)
+        return _safe_json(result)
         
     except Exception as e:
         return json.dumps({"error": str(e)})
@@ -150,6 +230,13 @@ async def set_glyph_paths(
             path_info = json.loads(paths_data)
         except ValueError as e:
             return json.dumps({"error": "Invalid JSON in paths_data: {}".format(str(e))})
+        if not isinstance(path_info, dict):
+            return _safe_json(
+                {
+                    "success": False,
+                    "error": "paths_data must decode to a JSON object",
+                }
+            )
         
         glyph = font.glyphs[glyph_name]
         
@@ -168,31 +255,31 @@ async def set_glyph_paths(
             else:
                 layer = glyph.layers[font.masters[0].id]
         
-        # Build new paths from the JSON data
-        new_paths = []
-        if "paths" in path_info:
-            for path_data in path_info["paths"]:
-                new_path = GSPath()
+        metadata_policy = path_info.get("metadataPolicy", "preserve")
+        if metadata_policy != "preserve":
+            return _safe_json(
+                {
+                    "success": False,
+                    "error": "Unsupported metadataPolicy",
+                    "metadataPolicy": metadata_policy,
+                    "allowedMetadataPolicies": ["preserve"],
+                }
+            )
 
-                # Add nodes
-                if "nodes" in path_data:
-                    for node_data in path_data["nodes"]:
-                        new_node = GSNode()
-                        new_node.position = (
-                            float(node_data.get("x", 0.0)),
-                            float(node_data.get("y", 0.0)),
-                        )
-                        new_node.type = node_data.get("type", "line")
-                        new_node.smooth = bool(node_data.get("smooth", False))
-                        new_path.nodes.append(new_node)
+        path_specs = path_info.get("paths", [])
+        if not isinstance(path_specs, list):
+            return _safe_json(
+                {
+                    "success": False,
+                    "error": "paths must be a JSON array",
+                }
+            )
 
-                # Set closed property
-                new_path.closed = bool(path_data.get("closed", True))
-                new_paths.append(new_path)
-
-        replace_result = _replace_layer_paths_and_metrics(
+        replace_result = _apply_path_specs_and_metrics(
             layer,
-            new_paths,
+            path_specs,
+            GSPath,
+            GSNode,
             width=float(path_info["width"]) if "width" in path_info else None,
             left_sidebearing=float(path_info["leftSideBearing"]) if "leftSideBearing" in path_info else None,
             right_sidebearing=float(path_info["rightSideBearing"]) if "rightSideBearing" in path_info else None,
@@ -204,9 +291,11 @@ async def set_glyph_paths(
                     "error": replace_result.get("error") or "Failed to replace glyph paths",
                     "glyphName": glyph_name,
                     "fontIndex": font_index,
-                    "expectedPathCount": len(new_paths),
+                    "expectedPathCount": len(path_specs),
                     "pathCount": replace_result.get("pathCount", 0),
                     "nodeCount": replace_result.get("nodeCount", 0),
+                    "details": replace_result.get("details", []),
+                    "rolledBack": replace_result.get("rolledBack"),
                 }
             )
 
@@ -220,6 +309,10 @@ async def set_glyph_paths(
         return _safe_json({
             "success": True,
             "message": "Updated paths for glyph '{}'".format(glyph_name),
+            "pathDataVersion": 2,
+            "metadataPolicy": "preserve",
+            "pathEditMode": replace_result.get("pathEditMode"),
+            "rolledBack": replace_result.get("rolledBack", False),
             **_layer_path_summary(layer),
         })
         

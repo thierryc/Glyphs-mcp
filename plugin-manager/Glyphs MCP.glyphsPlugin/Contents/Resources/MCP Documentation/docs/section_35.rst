@@ -1,6 +1,7 @@
-.. function:: showNotification(title, message)
+.. function:: productionGlyphName(name, [font=None])
 
-		Shows the user a notification in Mac’s Notification Center.
+		Converts glyph name to production glyph name (e.g. afii10017 or A-cy to uni0410)
 
-		.. code-block:: python
-			Glyphs.showNotification('Export fonts', 'The export of the fonts was successful.')
+		:param name: glyph name
+		:param font: if you add a font, and the font has a local glyph info, it will be used instead of the global info data.
+		:return: str

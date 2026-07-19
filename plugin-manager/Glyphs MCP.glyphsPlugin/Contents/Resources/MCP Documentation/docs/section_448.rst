@@ -1,4 +1,5 @@
-.. attribute:: width
-		The width of the annotation.
+.. attribute:: smooth
 
-		:type: float
+		If it is a smooth connection or not
+
+		:type: BOOL

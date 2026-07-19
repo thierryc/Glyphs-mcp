@@ -1,5 +1,5 @@
-.. attribute:: productionName
-		The productionName of the glyph.
-		Setting only works if :attr:`GSGlyph.storeProductionName` is set (see below).
+.. attribute:: id
+
+		An unique identifier for each glyph
 
 		:type: str

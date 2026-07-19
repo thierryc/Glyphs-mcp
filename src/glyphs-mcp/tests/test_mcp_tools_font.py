@@ -197,6 +197,8 @@ def _font():
         upm=1000,
         versionMajor=1,
         versionMinor=0,
+        formatVersion=3,
+        appVersion="3300",
     )
 
 
@@ -223,6 +225,10 @@ class McpToolsFontTests(unittest.TestCase):
             _coerce_numeric=_coerce_numeric,
             _component_transform_values=_component_transform_values,
             _custom_parameter=_custom_parameter,
+            _font_format_metadata=lambda font_obj: {
+                "formatVersion": getattr(font_obj, "formatVersion", None),
+                "lastSavedAppVersion": getattr(font_obj, "appVersion", None),
+            },
             _font_resolution_error=_font_resolution_error,
             _get_component_automatic=lambda component: False,
             _get_layer_id=lambda layer: "",
@@ -232,6 +238,15 @@ class McpToolsFontTests(unittest.TestCase):
             _glyphs_show_link_fields=lambda *args, **kwargs: {"showMarkdown": kwargs.get("label", "Open in Glyphs")},
             _layer_display_name=lambda _font, layer, master_id=None: getattr(layer, "name", None) or "Regular",
             _layer_components=_layer_components,
+            _layer_shape_summary=lambda layer: {
+                "shapeCount": len(getattr(layer, "shapes", []) or []),
+                "pathCount": len(getattr(layer, "paths", []) or []),
+                "componentCount": len(_layer_components(layer)),
+                "imageCount": 0,
+                "shapeGroupCount": 0,
+                "otherShapeCount": 0,
+                "shapeTypeCounts": {},
+            },
             _open_fonts_from_glyphs=_open_fonts_from_glyphs,
             _resolve_font_by_index=_resolve_font_by_index,
             _safe_attr=lambda obj, attr, default=None: getattr(obj, attr, default),
@@ -263,6 +278,8 @@ class McpToolsFontTests(unittest.TestCase):
         self.assertEqual(len(payload), 1)
         self.assertEqual(payload[0]["familyName"], "Test")
         self.assertEqual(payload[0]["filePath"], "/tmp/Test.glyphs")
+        self.assertEqual(payload[0]["formatVersion"], 3)
+        self.assertEqual(payload[0]["lastSavedAppVersion"], "3300")
 
     def test_get_font_masters_falls_back_to_documents_when_fonts_proxy_fails(self) -> None:
         font = _font()

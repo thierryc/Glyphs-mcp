@@ -1,5 +1,5 @@
-.. attribute:: storeCategory
-		Set to True in order to manipulate the :attr:`GSGlyph.category` of the glyph (see above).
-		Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file. Same as Cmd-Alt-i dialog in UI.
+.. attribute:: labels
 
-		:type: bool
+		List of Feature names for stylistic set features
+
+		:type: list

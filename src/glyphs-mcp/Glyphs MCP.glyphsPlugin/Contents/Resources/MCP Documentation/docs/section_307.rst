@@ -1,4 +1,6 @@
-.. attribute:: parent
-		Reference to the :class:`glyph <GSGlyph>` object that this layer is attached to.
+.. attribute:: topMetricsKey
+		The topMetricsKey of the glyph. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
 
-		:type: :class:`GSGlyph`
+		:type: str
+
+		.. versionadded:: 3.4

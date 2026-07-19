@@ -1,24 +1,5 @@
-:mod:`PreviewTextWindow`
-===============================================================================
+.. attribute:: case
 
-The Text Preview Window
+		e.g: GSUppercase, GSLowercase, GSSmallcaps
 
-.. class:: PreviewTextWindow()
-
-	Properties
-
-	.. autosummary::
-
-		text
-		font
-		instanceIndex
-		fontSize
-
-	Functions
-
-	.. autosummary::
-
-		open()
-		close()
-
-	**Properties**
+		:type: int

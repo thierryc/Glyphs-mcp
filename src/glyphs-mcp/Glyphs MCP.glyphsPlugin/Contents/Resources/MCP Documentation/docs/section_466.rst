@@ -1,6 +1,5 @@
-.. attribute:: isPostScript
-		if it is a PostScript hint
+.. attribute:: filter
 
-		:type: bool
+		A filter to only show the guide in certain glyphs. Only relevant in global guides
 
-		.. versionadded:: 3
+		:type: NSPredicate

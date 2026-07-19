@@ -1,4 +1,5 @@
 .. attribute:: filters
+
 		List of available filters (same as 'Filter' menu). These are the actual objects.
 
 		Below sample code shows how to get hold of a particular filter and use it. You invoke it using the `processFont_withArguments_()` function for old plugins, or the `filter()` function for newer plugins.

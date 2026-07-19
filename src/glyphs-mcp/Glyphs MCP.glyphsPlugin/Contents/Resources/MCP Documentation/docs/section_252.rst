@@ -1,23 +1,12 @@
-.. attribute:: active
+.. attribute:: tempData
 
-		:type: bool
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use class.userData
 
-		.. versionadded:: 2.5
-
-	**Functions**
-
-	.. function:: update()
-
-		Calls the automatic feature code generator for this feature.
-		You can use this to update all OpenType features before export.
+		:type: dict
 
 		.. code-block:: python
-			# first update all features
-			for feature in font.features:
-			    if feature.automatic:
-			        feature.update()
+			# set value
+			class.tempData['rememberToMakeCoffee'] = True
 
-			# then export fonts
-			for instance in font.instances:
-			    if instance.active:
-			        instance.generate()
+			# delete value
+			del class.tempData['rememberToMakeCoffee']

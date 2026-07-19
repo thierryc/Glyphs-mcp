@@ -1,22 +1,17 @@
-.. function:: localize(localization)
+.. function:: ligatureComponents(name, [font=None])
 
-		Return a string in the language of Glyphs.app’s UI locale, which must be supplied as a dictionary using language codes as keys.
+		If defined as a ligature in the glyph database, this function returns a list of glyph names that this ligature could be composed of.
 
-		The argument is a dictionary in the `languageCode: translatedString` format.
-
-		You don’t need to supply strings in all languages that the Glyphs.app UI supports. A subset will do. Just make sure that you add at least an English string to default to next to all your other translated strings. Also don’t forget to mark strings as unicode strings (:samp:`'öäüß'`) when they contain non-ASCII content for proper encoding, and add a `# encoding: utf-8` to the top of all your .py files.
-
-		Tip: You can find Glyphs’ localized languages here :samp:`Glyphs.defaults["AppleLanguages"]`.
+		:param name: glyph name
+		:param font: if you add a font, and the font has a local glyph info, it will be used instead of the global info data.
+		:rtype: list
 
 		.. code-block:: python
-			print(Glyphs.localize({
-			    'en': 'Hello World',
-			    'de': 'Hallöle Welt',
-			    'fr': 'Bonjour tout le monde',
-			    'es': 'Hola Mundo',
-			}))
+			print(Glyphs.ligatureComponents('allah-ar'))
 
-			# Given that your Mac’s system language is set to German
-			# and Glyphs.app UI is set to use localization (change in app settings),
-			# it will print:
-			>> Hallöle Welt
+			>> (
+			    "alef-ar",
+			    "lam-ar.init",
+			    "lam-ar.medi",
+			    "heh-ar.fina"
+			)

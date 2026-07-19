@@ -1,6 +1,4 @@
-.. attribute:: ascender
-		The ascender for this layer.
+.. attribute:: axesValues
+		a list of floats, one per axis
 
-		:type: float
-
-		.. versionadded:: 3.0.2
+		:type: list

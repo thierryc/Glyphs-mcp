@@ -1,4 +1,13 @@
-.. attribute:: otherIndex2
-		A indexPath to the fourth node this hint is attached to. Used for Diagonal hints.
+.. attribute:: bounds
 
-		:type: :class:`NSIndexPath`
+		Bounding box of the segment as NSRect. Read-only.
+
+		:type: NSRect
+
+		.. code-block:: python
+			bounds = segment.bounds
+			# origin
+			print(bounds.origin.x, bounds.origin.y)
+
+			# size
+			print(bounds.size.width, bounds.size.height)

@@ -1,3 +1,4 @@
-.. function:: resetCrop
+.. attribute:: otherNode2
+		A fourth node this hint is attached to. Used for Diagonal hints.
 
-		Resets the cropping to the image’s original dimensions.
+		:type: :class:`GSNode` or :class:`GSHandle` (e.g. when attached to intersections)

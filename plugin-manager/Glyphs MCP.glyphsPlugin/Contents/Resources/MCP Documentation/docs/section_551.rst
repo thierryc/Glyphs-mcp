@@ -1,4 +1,5 @@
-.. attribute:: text
-		The text
+.. attribute:: accents
 
-		:type: str
+		This glyph may be combined with these accents, returned as a list of glyph names.
+
+		:type: list

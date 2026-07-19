@@ -1,4 +1,3 @@
-.. attribute:: alignment
-		.. versionadded:: 2.5
+.. function:: addMissingAnchors()
 
-	TODO
+		Adds missing anchors defined in the glyph database.

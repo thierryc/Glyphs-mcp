@@ -36,6 +36,13 @@ CORE_READONLY_TOOLS = {
     "get_glyph_annotations",
     "get_glyph_annotation_groups",
     "render_glyph_review_image",
+    "show_glyphs_status",
+    "show_font_feedback",
+    "show_glyph_feedback",
+    "show_opentype_features",
+    "preview_spacing_feedback",
+    "preview_kerning_feedback",
+    "preview_handle_smoothing_feedback",
     "docs_search",
     "docs_get",
 }

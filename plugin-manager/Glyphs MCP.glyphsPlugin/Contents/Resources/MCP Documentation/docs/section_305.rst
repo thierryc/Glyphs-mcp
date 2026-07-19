@@ -1,5 +1,4 @@
-.. function:: duplicate([name])
+.. attribute:: rightMetricsKey
+		The rightMetricsKey of the glyph. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
 
-		Duplicate the glyph under a new name and return it.
-
-		If no name is given, .00n will be appended to it.
+		:type: str

@@ -1,3 +1,9 @@
-.. function:: addMissingAnchors()
+.. attribute:: openBezierPath
+		All open paths of the layer as an NSBezierPath object. Useful for drawing glyphs as outlines in plug-ins.
 
-		Adds missing anchors defined in the glyph database.
+		:type: NSBezierPath
+
+		.. code-block:: python
+			# draw the path into the Edit view
+			NSColor.redColor().set()
+			layer.openBezierPath.stroke()

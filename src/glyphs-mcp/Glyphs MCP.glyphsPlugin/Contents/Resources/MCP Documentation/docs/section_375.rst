@@ -1,4 +1,6 @@
-.. attribute:: componentName
-		The glyph name the component is pointing to.
+.. function:: addNodesAtExtremes([force=False, checkSelection=False])
 
-		:type: str
+		Add nodes at layer’s extrema, e.g., top, bottom etc.
+
+		:param force: if points are always added, even if that would distort the shape
+		:param checkSelection: only process selected segments

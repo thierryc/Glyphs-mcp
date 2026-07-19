@@ -1,5 +1,4 @@
-.. function:: LogToConsole(message)
+.. attribute:: fontSize
+		The font size
 
-	Write a message to the Mac’s Console.app for debugging.
-
-	:param str message:
+		:type: int

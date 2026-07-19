@@ -10,6 +10,7 @@ from mcp_runtime import mcp
 from mcp_tool_helpers import (
     _append_font_glyph,
     _delete_font_glyph,
+    _font_format_metadata,
     _font_resolution_error,
     _get_left_sidebearing,
     _get_right_sidebearing,
@@ -447,9 +448,11 @@ async def save_font(font_index: int = 0, path: str = None) -> str:
                 {"error": "No file path specified and font has not been saved before"}
             )
 
+        format_before = _font_format_metadata(font)
         target_override = path if path else None
         saved_path = _save_font_on_main_thread(font, target_override)
         resolved_path = saved_path or getattr(font, "filepath", None) or requested_path
+        format_after = _font_format_metadata(font)
 
         # Send notification
         _show_notification(
@@ -462,6 +465,10 @@ async def save_font(font_index: int = 0, path: str = None) -> str:
                 "success": True,
                 "message": "Saved font to {}".format(resolved_path),
                 "path": resolved_path,
+                "formatVersion": format_after["formatVersion"],
+                "formatVersionBefore": format_before["formatVersion"],
+                "formatVersionAfter": format_after["formatVersion"],
+                "lastSavedAppVersion": format_after["lastSavedAppVersion"],
             }
         )
     except Exception as e:

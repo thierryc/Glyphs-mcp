@@ -1,6 +1,11 @@
-.. attribute:: showMeasurement
-		If the guide is showing measurements
+.. attribute:: tempData
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use path.userData
 
-		:type: bool
+		:type: dict
 
-		.. versionadded:: 3.1
+		.. code-block:: python
+			# set value
+			path.tempData['rememberToMakeCoffee'] = True
+
+			# delete value
+			del path.tempData['rememberToMakeCoffee']

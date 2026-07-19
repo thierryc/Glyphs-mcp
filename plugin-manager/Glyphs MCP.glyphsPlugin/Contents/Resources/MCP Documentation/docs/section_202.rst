@@ -1,6 +1,11 @@
-.. attribute:: preferredFamilyName
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+.. attribute:: descriptions
 
-		:type: str
+		This accesses all localized description values.
+		For details :attr:`GSInstance.properties`
+
+		:type: dict
+
+		.. code-block:: python
+			instance.descriptions["ENG"] = "This is my description"
 
 		.. versionadded:: 3.0.3

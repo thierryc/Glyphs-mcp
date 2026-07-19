@@ -1,10 +1,7 @@
-.. attribute:: segments
-		A list of segments as NSPoint objects. Two objects represent a line, four represent a curve. Start point of the segment is included.
+.. attribute:: anchor
 
-		:type: list
+		If more than one anchor/_anchor pair would match, this property can be used to set the anchor to use for automatic alignment
 
-		.. code-block:: python
-			# access all segments
-			for path in layer.paths:
-			    for segment in path.segments:
-			        print(segment)
+		This can be set from the anchor button in the component info box in the UI
+
+		:type: str

@@ -1,7 +1,4 @@
-.. function:: showMacroWindow
+.. attribute:: versionNumber
+		Glyph.app’s version number. Use this to check for version in your code.
 
-		Opens the macro window
-
-	.. function:: clearLog
-
-		Deletes the content of the console in the macro window
+		:type: float

@@ -1,8 +1,31 @@
-.. attribute:: composedLayers
-		Similar to the above, but this list contains the :class:`GSLayer` objects after the OpenType features have been applied (see :class:`GSEditViewController.features`). Read-only.
+:mod:`GSBackgroundImage`
+===============================================================================
 
-		Deprecated. .layers behave like this now.
+Implementation of background image.
 
-		:type: list
+For details on how to access it, please see :class:`GSLayer.backgroundImage`
 
-		.. versionadded:: 2.4
+.. class:: GSBackgroundImage([path])
+
+	:param path: Initialize with an image file (optional)
+
+	Properties
+
+		* :attr:`path`
+		* :attr:`image`
+		* :attr:`crop`
+		* :attr:`locked`
+		* :attr:`position`
+		* :attr:`scale`
+		* :attr:`rotation`
+		* :attr:`slant`
+		* :attr:`transform`
+		* :attr:`alpha`
+
+	Functions
+
+		* :meth:`resetCrop`
+		* :meth:`scaleWidthToEmUnits`
+		* :meth:`scaleHeightToEmUnits`
+
+	**Properties**

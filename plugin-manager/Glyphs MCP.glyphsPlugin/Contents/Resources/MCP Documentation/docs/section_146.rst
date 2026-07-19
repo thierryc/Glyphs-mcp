@@ -1,13 +1,6 @@
-.. attribute:: metrics
-		a dict of all :class:`GSMetricValue` objects. Keys are font.metrics[].id
+:mod:`GSFontMaster`
+===============================================================================
 
-		:type: dict
+Implementation of the master object. This corresponds with the "Masters" pane in the Font Info. In Glyphs.app, the glyphs of each master are reachable not here, but as :class:`layers <GSLayer>` attached to the :class:`glyphs <GSGlyph>` attached to the :class:`font <GSFont>` object. See the infographic on top for better understanding.
 
-		.. code-block:: python
-			for metric in Font.metrics:
-			    if metric.type == GSMetricsTypexHeight and metric.filter is None:
-			        metricValue = master.metrics[metric.id]
-			        metricValue.position = 543
-			        metricValue.overshoot = 17
-
-		.. versionadded:: 3.3
+.. class:: GSFontMaster()

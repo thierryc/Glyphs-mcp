@@ -1,7 +1,3 @@
-.. attribute:: locked
-		.. versionadded:: 2.5
+.. function:: clearSelection()
 
-		If the component is locked
-		TODO
-
-		:type: bool
+		Unselect all selected items in this layer.

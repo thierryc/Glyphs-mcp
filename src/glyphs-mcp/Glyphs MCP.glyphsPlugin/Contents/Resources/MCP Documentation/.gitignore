@@ -1,6 +1,3 @@
-# Virtual environments
+# Local virtual environments are not part of the generated documentation bundle.
 .venv/
 venv/
-
-# Generated documentation
-index.json

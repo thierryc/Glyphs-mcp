@@ -1,4 +1,5 @@
-.. attribute:: TSB
-		Top sidebearing
+.. attribute:: name
 
-		:type: float
+		Name of layer
+
+		:type: str

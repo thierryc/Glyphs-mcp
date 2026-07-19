@@ -1,4 +1,10 @@
-.. attribute:: originIndex
-		The indexPath to the first node the hint is attached to.
+.. attribute:: attributes
 
-		:type: :class:`NSIndexPath`
+		attributes attributes like :samp:`mask` or :samp:`reversePaths`
+
+		.. code-block:: python
+
+			component.attributes['mask'] = True
+			component.attributes['reversePaths'] = True
+
+		:type: dict

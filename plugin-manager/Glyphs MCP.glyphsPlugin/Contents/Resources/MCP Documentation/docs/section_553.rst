@@ -1,4 +1,5 @@
-.. attribute:: fontSize
-		The font size
+.. attribute:: unicode
 
-		:type: int
+		Unicode value
+
+		:type: str

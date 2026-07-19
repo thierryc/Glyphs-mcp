@@ -1,4 +1,5 @@
-.. attribute:: automatic
-		Define whether this should be auto-generated when pressing the 'Update' button in the Font Info.
+.. attribute:: active
+
+		If the the parameter should be used or not
 
 		:type: bool

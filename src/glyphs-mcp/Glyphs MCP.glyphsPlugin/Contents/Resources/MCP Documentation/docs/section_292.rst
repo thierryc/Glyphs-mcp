@@ -1,4 +1,4 @@
-.. attribute:: export
-		Defines whether glyph will export upon font generation
+.. attribute:: glyphInfo
+		:class:`GSGlyphInfo` object for this glyph with detailed information.
 
-		:type: bool
+		:type: :class:`GSGlyphInfo`

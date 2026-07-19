@@ -1,4 +1,6 @@
-.. attribute:: parent
-		Reference to the :class:`layer <GSLayer>` object.
+.. attribute:: alignment
 
-		:type: :class:`GSLayer`
+
+		See :ref:`component-alignment` for available constants.
+
+		.. versionadded:: 2.5

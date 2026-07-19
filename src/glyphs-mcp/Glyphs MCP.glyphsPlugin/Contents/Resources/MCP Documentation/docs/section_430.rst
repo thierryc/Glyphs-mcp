@@ -1,27 +1,32 @@
-.. attribute:: userData
-		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
+:mod:`GSPath`
+===============================================================================
 
-		:type: dict
+Implementation of the path object.
 
-		.. code-block:: python
-			# set value
-			node.userData['rememberToMakeCoffee'] = True
+For details on how to access them, please see :attr:`GSLayer.paths`
 
-			# delete value
-			del node.userData['rememberToMakeCoffee']
+If you build a path in code, make sure that the structure is valid. A curve node has to be preceded by two off-curve nodes. And an open path has to start with a line node.
 
-		.. versionadded:: 2.4.1
+.. class:: GSPath()
 
-	**Functions**
+	Properties
 
-	.. function:: copy()
+		* :attr:`parent`
+		* :attr:`nodes`
+		* :attr:`segments`
+		* :attr:`closed`
+		* :attr:`direction`
+		* :attr:`bounds`
+		* :attr:`selected`
+		* :attr:`bezierPath`
+		* :attr:`attributes`
+		* :attr:`tempData`
 
-		Returns a full copy of the node
+	Functions
 
-	.. function:: makeNodeFirst()
+		* :meth:`addNodesAtExtremes`
+		* :meth:`applyTransform`
+		* :meth:`copy`
+		* :meth:`reverse`
 
-		Turn this node into the start point of the path.
-
-	.. function:: toggleConnection()
-
-		Toggle between sharp and smooth connections.
+	**Properties**

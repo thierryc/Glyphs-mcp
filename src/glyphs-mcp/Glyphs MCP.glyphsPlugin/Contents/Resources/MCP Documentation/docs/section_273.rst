@@ -1,5 +1,6 @@
-.. attribute:: storeScript
-		Set to True in order to manipulate the :attr:`GSGlyph.script` of the glyph (see above).
-		Makes it possible to ship custom glyph data inside a .glyphs file without a separate GlyphData file. Same as Cmd-Alt-i dialog in UI.
+.. attribute:: string
 
-		:type: bool
+		String representation of glyph, if encoded.
+		This is similar to the string representation that you get when copying glyphs into the clipboard.
+
+		:type: str

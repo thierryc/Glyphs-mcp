@@ -1,4 +1,4 @@
-.. attribute:: index
-		Returns the index of the node in the containing path or maxint if it is not in a path.
+.. attribute:: topValue
+		Top end (pole) value on interpolation axis.
 
-		:type: int
+		:type: int, float

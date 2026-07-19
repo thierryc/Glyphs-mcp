@@ -1,5 +1,5 @@
-.. attribute:: metricValues
-		only there for compatibility. use  :attr:`GSFontMaster.metrics`
+.. attribute:: horizontal
 
-		.. versionadded:: 3
-		.. deprecated:: 3.2
+		This is used for stem metrics. so only use this for font.stems
+
+		:type: bool

@@ -1,4 +1,27 @@
-.. attribute:: ascender
-		This is the default ascender of the master. There might be other values that are for specific glyphs. See :attr:`master.metrics <GSFontMaster.metrics>` and :attr:`layer.metrics <GSLayer.metrics>`
+* :attr:`id`
+		* :attr:`name`
+		* :attr:`internalAxesValues`
+		* :attr:`externalAxesValues`
+		* :attr:`properties`
+		* :attr:`metrics`
+		* :attr:`ascender`
+		* :attr:`capHeight`
+		* :attr:`xHeight`
+		* :attr:`descender`
+		* :attr:`italicAngle`
+		* :attr:`alignmentZones`
+		* :attr:`blueValues`
+		* :attr:`otherBlues`
+		* :attr:`guides`
+		* :attr:`stems`
+		* :attr:`numbers`
+		* :attr:`userData`
+		* :attr:`customParameters`
+		* :attr:`font`
+		* :attr:`iconName`
 
-		:type: float
+	Functions
+
+		* :meth:`copy()`
+
+	**Properties**

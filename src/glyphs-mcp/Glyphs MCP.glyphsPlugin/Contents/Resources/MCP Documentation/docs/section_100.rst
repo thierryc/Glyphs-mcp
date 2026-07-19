@@ -1,4 +1,5 @@
-.. attribute:: masterIndex
-		Returns the index of the active master (selected in the toolbar).
+.. attribute:: gridSubDivision
+
+		Corresponds to the “Grid sub divisions” setting from the Info dialog.
 
 		:type: int

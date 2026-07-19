@@ -1,3 +1,4 @@
-.. function:: beginUndo()
+.. attribute:: topKerningKey
+		The key to be used with the kerning functions (:meth:`GSFont.kerningForPair()`, :meth:`GSFont.setKerningForPair()`, :meth:`GSFont.removeKerningForPair()`).
 
-		Call this before you do a longer running change to the glyph. Be extra careful to call :meth:`glyph.endUndo() <GSGlyph.endUndo()>` when you are finished.
+		.. versionadded:: 3

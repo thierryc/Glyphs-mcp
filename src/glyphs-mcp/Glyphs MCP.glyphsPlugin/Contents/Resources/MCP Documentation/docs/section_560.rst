@@ -1,5 +1,4 @@
-.. attribute:: rotate
-		The angle of the rotation. In degree, positive angles are CCW
-		if center is given, that is used as the origin of the rotation
+.. attribute:: altNames
+		Alternative names for glyphs that are not used, but should be recognized (e.g., for conversion to nice names).
 
-		:type: int/float
+		:type: str

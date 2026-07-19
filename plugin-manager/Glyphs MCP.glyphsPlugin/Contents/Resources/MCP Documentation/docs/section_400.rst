@@ -1,4 +1,6 @@
-.. attribute:: topValue
-		Top end (pole) value on interpolation axis.
+.. attribute:: componentMasterId
+		The ID of the master to component is pointing to.
 
-		:type: int, float
+		:type: str
+
+		.. versionadded:: 3.1

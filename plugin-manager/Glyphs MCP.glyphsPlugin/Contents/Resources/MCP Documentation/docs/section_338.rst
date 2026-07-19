@@ -1,11 +1,17 @@
-.. attribute:: background
-		The background layer
+.. attribute:: shapes
 
-		:type: :class:`GSLayer`
+		List of :class:`GSShape` objects. That are most likely :class:`GSPath` or :class:`GSComponent`
+
+		:type: list
 
 		.. code-block:: python
-			# copy layer to its background
-			layer.background = layer.copy()
+			# access all shapes
+			for shape in layer.shapes:
+			    print(shape)
 
-			# remove background layer
-			layer.background = None
+			# delete shape
+			del layer.shapes[0]
+
+			# copy shapes from another layer
+			import copy
+			layer.shapes = copy.copy(anotherlayer.shapes)

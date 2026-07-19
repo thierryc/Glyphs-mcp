@@ -23,6 +23,19 @@ def _resources_dir() -> Path:
 
 
 class McpToolHelpersTests(unittest.TestCase):
+    def test_node_orientation_uses_raw_objc_value(self) -> None:
+        class InstanceMethods:
+            @staticmethod
+            def orientation():
+                return 2
+
+        node = types.SimpleNamespace(
+            orientation=lambda: "native selector",
+            pyobjc_instanceMethods=InstanceMethods(),
+        )
+
+        self.assertEqual(helpers._node_orientation(node), ("center", 2))
+
     @classmethod
     def setUpClass(cls) -> None:
         sys.path.insert(0, str(_resources_dir()))
@@ -54,6 +67,37 @@ class McpToolHelpersTests(unittest.TestCase):
         encoded = json.dumps(sanitized)
         self.assertIn('"a"', encoded)
         self.assertIn('"weird"', encoded)
+
+    def test_font_format_metadata_supports_glyphs_3_and_4_values(self) -> None:
+        glyphs_3 = types.SimpleNamespace(formatVersion=3, appVersion="3300")
+        glyphs_4 = types.SimpleNamespace(
+            formatVersion=lambda: 4,
+            appVersion=lambda: 4012,
+        )
+
+        self.assertEqual(
+            helpers._font_format_metadata(glyphs_3),
+            {"formatVersion": 3, "lastSavedAppVersion": "3300"},
+        )
+        self.assertEqual(
+            helpers._font_format_metadata(glyphs_4),
+            {"formatVersion": 4, "lastSavedAppVersion": "4012"},
+        )
+
+    def test_font_resolution_error_includes_format_metadata(self) -> None:
+        font = types.SimpleNamespace(
+            familyName="Glyphs Four",
+            filepath="/tmp/GlyphsFour.glyphs",
+            formatVersion=4,
+            appVersion="4012",
+        )
+
+        payload = helpers._font_resolution_error(2, [font])
+
+        self.assertEqual(payload["availableFonts"][0]["formatVersion"], 4)
+        self.assertEqual(
+            payload["availableFonts"][0]["lastSavedAppVersion"], "4012"
+        )
 
     def test_component_transform_values_do_not_iterate_proxy(self) -> None:
         class NonIterableTransform:
@@ -583,9 +627,446 @@ class McpToolHelpersTests(unittest.TestCase):
         result = helpers._replace_layer_paths(layer, [new_path])
 
         self.assertTrue(result["ok"])
-        self.assertEqual(layer.shapes, [layer.component, new_path])
+        self.assertEqual(layer.shapes, [new_path, layer.component])
         self.assertEqual(result["pathCount"], 1)
         self.assertEqual(result["nodeCount"], 3)
+
+    def test_apply_path_specs_updates_matching_topology_in_place(self) -> None:
+        class Point:
+            def __init__(self, x=0, y=0) -> None:
+                self.x = float(x)
+                self.y = float(y)
+
+        class Node:
+            def __init__(self, x=0, y=0, raw_type=1) -> None:
+                self._position = Point(x, y)
+                self.rawType = raw_type
+                self.rawConnection = 0
+                self.smooth = False
+                self.orientation = 0
+                self.name = None
+                self.attributes = {"hoi": {"wght": {"linear": True}}}
+                self.userData = {"node": "metadata"}
+
+            @property
+            def position(self):
+                return self._position
+
+            @position.setter
+            def position(self, value):
+                self._position = Point(value[0], value[1])
+
+            @property
+            def type(self):
+                return {1: "line", 35: "curve"}.get(self.rawType, "line")
+
+            @type.setter
+            def type(self, value):
+                if isinstance(value, int):
+                    self.rawType = value
+                else:
+                    self.rawType = {"line": 1, "curve": 35}[value]
+
+            @property
+            def connection(self):
+                return self.rawConnection
+
+            @connection.setter
+            def connection(self, value):
+                self.rawConnection = int(value)
+
+        class Path:
+            def __init__(self):
+                self.nodes = [Node(10, 20), Node(30, 40)]
+                self.closed = True
+                self.locked = True
+                self.attributes = {"gradient": {"type": "linear"}, "group": "g1"}
+                self.userData = {"path": "metadata"}
+
+        class Layer:
+            def __init__(self):
+                self.shapes = [Path()]
+                self.width = 500
+                self.leftSideBearing = 40
+                self.rightSideBearing = 60
+
+            @property
+            def paths(self):
+                return [shape for shape in self.shapes if hasattr(shape, "nodes")]
+
+        layer = Layer()
+        original_path = layer.paths[0]
+        original_nodes = list(original_path.nodes)
+        specs = [
+            {
+                "closed": True,
+                "locked": True,
+                "nodes": [
+                    {"x": 11, "y": 21, "type": "line", "rawType": 1},
+                    {"x": 31, "y": 41, "type": "line", "rawType": 1},
+                ],
+            }
+        ]
+
+        result = helpers._apply_path_specs_and_metrics(
+            layer, specs, Path, Node, width=510
+        )
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["pathEditMode"], "inPlace")
+        self.assertIs(layer.paths[0], original_path)
+        self.assertEqual(layer.paths[0].nodes, original_nodes)
+        self.assertEqual(layer.paths[0].attributes["group"], "g1")
+        self.assertIn("hoi", layer.paths[0].nodes[0].attributes)
+        self.assertEqual(layer.width, 510)
+
+    def test_apply_path_specs_topology_rewrite_preserves_shape_order_and_metadata(self) -> None:
+        class Point:
+            def __init__(self, x=0, y=0) -> None:
+                self.x = float(x)
+                self.y = float(y)
+
+        class Node:
+            def __init__(self, x=0, y=0, raw_type=1) -> None:
+                self._position = Point(x, y)
+                self.rawType = raw_type
+                self.rawConnection = 0
+                self.smooth = False
+                self.orientation = 0
+                self.name = None
+                self.attributes = {"hoi": {"wght": {"linear": True}}}
+                self.userData = {"node": "metadata"}
+
+            @property
+            def position(self):
+                return self._position
+
+            @position.setter
+            def position(self, value):
+                self._position = Point(value[0], value[1])
+
+            @property
+            def type(self):
+                return {1: "line", 35: "curve"}.get(self.rawType, "line")
+
+            @type.setter
+            def type(self, value):
+                if isinstance(value, int):
+                    self.rawType = value
+                else:
+                    self.rawType = {"line": 1, "curve": 35}.get(value, 1)
+
+            @property
+            def connection(self):
+                return self.rawConnection
+
+            @connection.setter
+            def connection(self, value):
+                self.rawConnection = int(value)
+
+            def copy(self):
+                copied = Node(
+                    self.position.x, self.position.y, raw_type=self.rawType
+                )
+                copied.rawConnection = self.rawConnection
+                copied.smooth = self.smooth
+                copied.orientation = self.orientation
+                copied.name = self.name
+                copied.attributes = json.loads(json.dumps(self.attributes))
+                copied.userData = dict(self.userData)
+                return copied
+
+        class Path:
+            def __init__(self, nodes=None, token="path"):
+                self.nodes = list(nodes or [])
+                self.closed = True
+                self.locked = True
+                self.attributes = {
+                    "gradient": {"type": "linear"},
+                    "fillColor": [1, 0, 0, 1],
+                    "group": "g1",
+                }
+                self.userData = {"path": "metadata"}
+                self.unknownProperty = token
+
+            def copy(self):
+                copied = Path(
+                    [node.copy() for node in self.nodes],
+                    token=self.unknownProperty,
+                )
+                copied.closed = self.closed
+                copied.locked = self.locked
+                copied.attributes = json.loads(json.dumps(self.attributes))
+                copied.userData = dict(self.userData)
+                return copied
+
+        class Component:
+            componentName = "acute"
+
+        class GSImage:
+            pass
+
+        class GSShapeGroup:
+            def __init__(self):
+                self.groupId = "g1"
+                self.attributes = {}
+                self.userData = {}
+
+        class Layer:
+            def __init__(self):
+                self.first = Path([Node(0, 0), Node(100, 0)], token="first")
+                self.second = Path([Node(0, 100), Node(100, 100)], token="second")
+                self.component = Component()
+                self.image = GSImage()
+                self.group = GSShapeGroup()
+                self.shapes = [
+                    self.first,
+                    self.component,
+                    self.image,
+                    self.group,
+                    self.second,
+                ]
+                self.width = 500
+                self.leftSideBearing = 40
+                self.rightSideBearing = 60
+
+            @property
+            def paths(self):
+                return [shape for shape in self.shapes if hasattr(shape, "nodes")]
+
+        layer = Layer()
+        non_paths = [layer.component, layer.image, layer.group]
+        specs = [
+            {
+                "closed": True,
+                "locked": True,
+                "nodes": [
+                    {"x": 1, "y": 2, "type": "line"},
+                    {"x": 101, "y": 2, "type": "line"},
+                    {"x": 101, "y": 50, "type": "line"},
+                ],
+            },
+            {
+                "closed": True,
+                "locked": True,
+                "nodes": [
+                    {"x": 2, "y": 102, "type": "line"},
+                    {"x": 102, "y": 102, "type": "line"},
+                ],
+            },
+        ]
+
+        result = helpers._apply_path_specs_and_metrics(
+            layer, specs, Path, Node
+        )
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["pathEditMode"], "topologyRewrite")
+        self.assertEqual(
+            layer.shapes[1:4],
+            non_paths,
+        )
+        self.assertIsNot(layer.paths[0], layer.first)
+        self.assertEqual(layer.paths[0].unknownProperty, "first")
+        self.assertEqual(layer.paths[0].attributes["group"], "g1")
+        self.assertIn("gradient", layer.paths[0].attributes)
+        self.assertIn("hoi", layer.paths[0].nodes[0].attributes)
+        self.assertEqual(layer.paths[0].userData, {"path": "metadata"})
+
+        diagnostics = helpers._layer_shape_summary(layer)
+        self.assertEqual(diagnostics["shapeTypeCounts"]["shapeGroup"], 1)
+        self.assertEqual(diagnostics["shapeTypeCounts"]["image"], 1)
+        self.assertEqual(diagnostics["groupedShapeCount"], 2)
+        self.assertIn("gradient", diagnostics["shapeAttributeKeys"])
+        self.assertTrue(diagnostics["compatibilityWarnings"])
+
+    def test_apply_path_specs_rejects_unknown_raw_type_before_mutation(self) -> None:
+        class Point:
+            def __init__(self, x=0, y=0) -> None:
+                self.x = float(x)
+                self.y = float(y)
+
+        class Node:
+            def __init__(self):
+                self._position = Point(10, 20)
+                self.rawType = 77
+                self.rawConnection = 0
+                self.smooth = False
+                self.orientation = 0
+                self.name = None
+
+            @property
+            def position(self):
+                return self._position
+
+            @position.setter
+            def position(self, value):
+                self._position = Point(value[0], value[1])
+
+            def copy(self):
+                copied = Node()
+                copied.position = (self.position.x, self.position.y)
+                return copied
+
+        class Path:
+            def __init__(self):
+                self.nodes = [Node()]
+                self.closed = True
+                self.locked = False
+
+            def copy(self):
+                copied = Path()
+                copied.nodes = [node.copy() for node in self.nodes]
+                return copied
+
+        class Layer:
+            def __init__(self):
+                self.shapes = [Path()]
+                self.width = 500
+                self.leftSideBearing = 40
+                self.rightSideBearing = 60
+                self.change_count = 0
+
+            @property
+            def paths(self):
+                return [shape for shape in self.shapes if hasattr(shape, "nodes")]
+
+            def beginChanges(self):
+                self.change_count += 1
+
+        layer = Layer()
+        original_path = layer.paths[0]
+        original_position = (
+            original_path.nodes[0].position.x,
+            original_path.nodes[0].position.y,
+        )
+
+        result = helpers._apply_path_specs_and_metrics(
+            layer,
+            [
+                {
+                    "closed": True,
+                    "nodes": [
+                        {"x": 99, "y": 20, "type": "line"}
+                    ],
+                }
+            ],
+            Path,
+            Node,
+        )
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"], "Unsafe path rewrite rejected")
+        self.assertTrue(result["rolledBack"])
+        self.assertEqual(layer.change_count, 0)
+        self.assertIs(layer.paths[0], original_path)
+        self.assertEqual(
+            (
+                original_path.nodes[0].position.x,
+                original_path.nodes[0].position.y,
+            ),
+            original_position,
+        )
+
+    def test_apply_path_specs_rolls_back_after_verification_failure(self) -> None:
+        class Point:
+            def __init__(self, x=0, y=0) -> None:
+                self.x = float(x)
+                self.y = float(y)
+
+        class Node:
+            def __init__(self, x=0, y=0):
+                self._position = Point(x, y)
+                self.rawType = 1
+                self.rawConnection = 0
+                self.smooth = False
+                self.orientation = 0
+                self.name = None
+
+            @property
+            def position(self):
+                return self._position
+
+            @position.setter
+            def position(self, value):
+                self._position = Point(value[0], value[1])
+
+            @property
+            def type(self):
+                return "line"
+
+            @type.setter
+            def type(self, _value):
+                self.rawType = 1
+
+            def copy(self):
+                return Node(self.position.x, self.position.y)
+
+        class Path:
+            def __init__(self, nodes=None):
+                self.nodes = list(nodes or [])
+                self.closed = True
+                self.locked = False
+                self.attributes = {"group": "g1"}
+
+            def copy(self):
+                copied = Path([node.copy() for node in self.nodes])
+                copied.attributes = dict(self.attributes)
+                return copied
+
+        class Component:
+            componentName = "acute"
+
+        class Layer:
+            def __init__(self):
+                self.original_path = Path([Node(0, 0)])
+                self.component = Component()
+                self._shapes = [self.original_path, self.component]
+                self._shape_writes = 0
+                self.width = 500
+                self.leftSideBearing = 40
+                self.rightSideBearing = 60
+
+            @property
+            def shapes(self):
+                return self._shapes
+
+            @shapes.setter
+            def shapes(self, value):
+                self._shape_writes += 1
+                self._shapes = list(value)
+                if self._shape_writes == 1:
+                    self.paths[0].nodes[0].position = (999, 999)
+
+            @property
+            def paths(self):
+                return [shape for shape in self._shapes if hasattr(shape, "nodes")]
+
+        layer = Layer()
+        original_shapes = list(layer.shapes)
+        result = helpers._apply_path_specs_and_metrics(
+            layer,
+            [
+                {
+                    "closed": True,
+                    "nodes": [
+                        {"x": 10, "y": 20, "type": "line"},
+                        {"x": 30, "y": 40, "type": "line"},
+                    ],
+                }
+            ],
+            Path,
+            Node,
+            width=700,
+        )
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"], "Path write verification failed")
+        self.assertTrue(result["rolledBack"])
+        self.assertEqual(layer.shapes, original_shapes)
+        self.assertIs(layer.shapes[0], layer.original_path)
+        self.assertIs(layer.shapes[1], layer.component)
+        self.assertEqual(layer.width, 500)
 
     def test_append_layer_shape_prefers_shapes_for_components(self) -> None:
         class RejectingComponents(list):

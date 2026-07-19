@@ -1,4 +1,5 @@
-.. attribute:: name
-		The human-readable identification of the master, e.g., "Bold Condensed".
+.. attribute:: font
 
-		:type: string
+		Reference to the :class:`GSFont` object that contains the metric. Normally that is set by the app.
+
+		:type: GSFont

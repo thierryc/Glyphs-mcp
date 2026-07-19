@@ -1,5 +1,5 @@
-.. function:: compileFeatures()
+.. attribute:: appVersion
 
-		Compiles the features, thus making the new feature code functionally available in the editor. Equivalent to the "Compile" button in the features panel.
+		Returns the version that the file was last saved
 
 		.. versionadded:: 2.5

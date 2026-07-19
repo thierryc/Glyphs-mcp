@@ -1,4 +1,12 @@
-.. attribute:: absoluteStart
-		A NSPoint of the absolute starting point of the gradient
+.. attribute:: selected
 
-		:type: NSPoint
+		Selection state of hint in UI.
+
+		:type: bool
+
+		.. code-block:: python
+			# select hint
+			layer.hints[0].selected = True
+
+			# print(selection state)
+			print(layer.hints[0].selected)

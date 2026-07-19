@@ -1,4 +1,7 @@
-.. attribute:: languageData
-		A list of dictionaries with more detailed language informations.
+.. attribute:: intDefaults
+		Access to default settings cast to a int.
 
-		:type: list
+		:type: int
+
+		.. code-block:: python
+			number = Glyphs.intDefaults["GSHandleSize"]

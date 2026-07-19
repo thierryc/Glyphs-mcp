@@ -1,4 +1,6 @@
-.. attribute:: parent
-		The :class:`GSFont` object that this tab belongs to.
+.. attribute:: isTrueType
+		if it is a TrueType instruction
 
-		:type: :class:`GSFont`
+		:type: bool
+
+		.. versionadded:: 3

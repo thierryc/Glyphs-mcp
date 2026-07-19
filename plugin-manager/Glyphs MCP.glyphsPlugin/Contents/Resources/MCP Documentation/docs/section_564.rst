@@ -1,5 +1,10 @@
-.. function:: append(item)
+.. attribute:: values
 
-		:param item: a NSMenuItem
+		A list of :class:`GSInfoValue` objects.
 
-		adds the item to the menu
+		:type: list
+
+	.. code-block:: python
+		# listing values of GSInfoValueLocalized
+		for fontInfoValue in fontInfoValueLocalized.values:
+		    print(fontInfoValue)

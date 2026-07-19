@@ -42,11 +42,15 @@ Notes for Xcode builds:
 Or use scripts from repo root:
 
 ```bash
+./scripts/run_local_release_tests.sh
 ./scripts/generate_installer_appicon_assets.sh
 ./scripts/build_installer_app.sh
 ./scripts/notarize_installer_app.sh
 ./scripts/make_installer_dmg.sh
+./scripts/verify_release_artifacts.sh --tag vX.Y.Z --write-checksums
 ```
+
+Release tests and builds run locally; the installer release does not use GitHub Actions. The test gate uses an unsigned Debug build, while distributable artifacts must be Developer ID signed, notarized, stapled, and accepted by Gatekeeper.
 
 ## Client configuration
 
@@ -77,3 +81,5 @@ Environment variables:
 - `CODESIGN_IDENTITY` (defaults to `Developer ID Application: Thierry Charbonnel (N9U29A4T8J)`)
 - `NOTARY_PROFILE` (defaults to `gmcp-notary`)
 - `DERIVED_DATA_PATH` (defaults to `/tmp/gmcp-installer-deriveddata`)
+
+The publisher also checks `EXPECTED_CODESIGN_IDENTITY` (defaulting to `CODESIGN_IDENTITY`) and `EXPECTED_TEAM_ID` during final artifact verification. See `RELEASING.md` for the required clean-main, signed-tag, draft-release, checksum, and confirmation gates.

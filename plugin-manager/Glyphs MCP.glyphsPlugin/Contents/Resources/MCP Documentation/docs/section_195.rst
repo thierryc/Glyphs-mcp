@@ -1,10 +1,5 @@
-.. attribute:: designers
-		This accesses all localized designer values.
-		For details :attr:`GSInstance.properties`
+.. attribute:: fontName
 
-		:type: dict
+		fontName (postscriptFontName)
 
-		.. code-block:: python
-			instance.designers["ENG"] = "John Smith"
-
-		.. versionadded:: 3.0.3
+		:type: str

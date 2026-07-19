@@ -1,10 +1,5 @@
-.. attribute:: designers
-		This accesses all localized designer values.
-		For details :attr:`GSFont.properties`
+.. attribute:: copyright
 
-		:type: dict
+		This accesses the default value only. The localizations can be accessed by :attr:`GSFont.properties`
 
-		.. code-block:: python
-			font.designers["ENG"] = "John Smith"
-
-		.. versionadded:: 3.0.3
+		:type: str

@@ -1,11 +1,4 @@
-.. attribute:: userData
-		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
+.. attribute:: topKerningGroup
+		The topKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.
 
-		:type: dict
-
-		.. code-block:: python
-			# set value
-			glyph.userData['rememberToMakeCoffee'] = True
-
-			# delete value
-			del glyph.userData['rememberToMakeCoffee']
+		:type: str

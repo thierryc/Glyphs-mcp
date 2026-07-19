@@ -1,4 +1,5 @@
-.. attribute:: text
-		The content of the annotation. Only useful if type == TEXT
+.. attribute:: position
 
-		:type: str
+		The position of the node.
+
+		:type: NSPoint

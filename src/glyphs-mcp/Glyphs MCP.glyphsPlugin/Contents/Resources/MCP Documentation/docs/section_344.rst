@@ -1,4 +1,4 @@
-.. attribute:: isAligned
-		Indicates if the components are auto aligned.
+.. attribute:: BSB
+		Bottom sidebearing
 
-		:type: bool
+		:type: float

@@ -1,4 +1,5 @@
-.. attribute:: notes
-		Some extra text. Is shown in the bottom of the feature window. Contains the stylistic set name parameter
+.. attribute:: active
 
-		:type: str
+		:type: bool
+
+		.. versionadded:: 2.5

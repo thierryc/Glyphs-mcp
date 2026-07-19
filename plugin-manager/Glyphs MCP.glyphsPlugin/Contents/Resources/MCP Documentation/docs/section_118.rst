@@ -1,5 +1,5 @@
-.. function:: updateFeatures()
+.. attribute:: tools
 
-		Updates all OpenType features and classes at once, including generating necessary new features and classes. Equivalent to the "Update" button in the features panel. This already includes the compilation of the features (see :meth:`font.compileFeatures() <GSFont.compileFeatures()>`).
+		Returns a list of available tool names, including third-party plug-ins.
 
-		.. versionadded:: 2.4
+		:type: list, str

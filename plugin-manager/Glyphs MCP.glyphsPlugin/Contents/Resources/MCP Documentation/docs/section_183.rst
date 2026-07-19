@@ -1,4 +1,5 @@
-.. attribute:: windowsStyle
-		This is computed from "isBold" and "isItalic". Read-only.
+.. attribute:: widthClassName
 
-		:type: string
+		Human readable name corresponding to the value of GSInstance.widthClass. This attribute is read-only.
+
+		:type: str

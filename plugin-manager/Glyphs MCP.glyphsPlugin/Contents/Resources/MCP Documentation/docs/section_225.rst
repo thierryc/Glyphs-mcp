@@ -1,4 +1,11 @@
-.. attribute:: interpolatedFontProxy
-		a proxy font that acts similar to a normal font object but only interpolates the glyphs you ask it for.
+.. attribute:: trademarks
 
-		It is not properly wrapped yet. So you need to use the ObjectiveC methods directly.
+		This accesses all localized trademark values.
+		For details :attr:`GSInstance.properties`
+
+		:type: dict
+
+		.. code-block:: python
+			instance.trademarks["ENG"] = "ThisFont is a trademark by MyFoundry.com"
+
+		.. versionadded:: 3.0.3

@@ -1,3 +1,5 @@
-.. attribute:: fontView
+.. attribute:: keyboardIncrement
 
-		:type: :class:`GSFontViewController`
+		Distance of movement by arrow keys. Default:1
+
+		:type: float

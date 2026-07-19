@@ -173,12 +173,37 @@ class McpToolsComponentsTests(unittest.TestCase):
                     _append_layer_anchor=lambda layer_obj, anchor: layer_obj.anchors.__setitem__(anchor.name, anchor) is None or True,
                     _append_layer_shape=lambda layer_obj, shape: layer_obj.shapes.append(shape) is None or True,
                     _component_transform_values=lambda component: list(getattr(component, "transform", (1, 0, 0, 1, 0, 0))),
+                    _font_format_metadata=lambda font_obj: {
+                        "formatVersion": getattr(font_obj, "formatVersion", None),
+                        "lastSavedAppVersion": getattr(font_obj, "appVersion", None),
+                    },
                     _font_resolution_error=_font_resolution_error,
                     _get_component_automatic=lambda component: getattr(component, "automaticAlignment", None),
                     _layer_components=_layer_components,
                     _layer_display_name=lambda _font, _layer, _master_id=None: "Regular",
+                    _layer_shape_summary=lambda layer_obj: {
+                        "shapeCount": len(getattr(layer_obj, "shapes", []) or []),
+                        "shapeTypeCounts": {
+                            "component": len(_layer_components(layer_obj))
+                        },
+                        "nonPathShapeCounts": {
+                            "component": len(_layer_components(layer_obj))
+                        },
+                        "shapeAttributeKeys": [],
+                        "groupedShapeCount": 0,
+                        "shapeGroupIds": [],
+                        "styledShapeCount": 0,
+                        "hasGlyphs4Shapes": False,
+                        "compatibilityWarnings": [],
+                    },
                     _new_anchor=lambda _GSAnchor, name, x, y: types.SimpleNamespace(name=name, position=(float(x), float(y))),
                     _resolve_font_by_index=_resolve_font_by_index,
+                    _safe_attr=lambda obj, attr, default=None: getattr(obj, attr, default),
+                    _shape_attribute_metadata=lambda shape: {
+                        "attributeKeys": sorted(list(getattr(shape, "attributes", {}).keys())),
+                        "groupId": getattr(shape, "attributes", {}).get("shapeGroup"),
+                        "hasUserData": bool(getattr(shape, "userData", {})),
+                    },
                 ),
             },
         ):

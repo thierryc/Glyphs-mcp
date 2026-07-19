@@ -1,4 +1,14 @@
-.. attribute:: matrix
-		The transformation matrix.
+:mod:`GSInfoValueLocalized`
+===============================================================================
 
-		:type: tuple
+The GSInfoValueLocalized
+
+.. class:: GSInfoValueLocalized()
+
+	Properties
+
+		* :attr:`key`
+		* :attr:`values`
+		* :attr:`defaultValue`
+
+	**Properties**

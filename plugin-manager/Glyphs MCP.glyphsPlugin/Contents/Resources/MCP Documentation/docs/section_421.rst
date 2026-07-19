@@ -1,6 +1,9 @@
-.. attribute:: type
-		The type of the node, LINE, CURVE or OFFCURVE
+.. attribute:: glyph
 
-		Always compare against the constants, never against the actual value.
+	the GSGlyph to keep track of
 
-		:type: str
+	:type: GSGlyph
+
+	.. code-block:: python
+
+		glyphReference = GSGlyphReference(font.glyphs["A"])

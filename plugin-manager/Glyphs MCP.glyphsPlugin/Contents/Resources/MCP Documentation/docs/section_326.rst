@@ -1,4 +1,5 @@
-.. attribute:: BSB
-		Bottom sidebearing
+.. attribute:: master
 
-		:type: float
+		Master that this layer is connected to. Read only.
+
+		:type: GSFontMaster

@@ -1,4 +1,5 @@
-.. attribute:: absoluteEnd
-		A NSPoint of the absolute ending point of the gradient
+.. attribute:: name
 
-		:type: NSPoint
+		Name of the hint. This is the referenced glyph for corner and cap components.
+
+		:type: str

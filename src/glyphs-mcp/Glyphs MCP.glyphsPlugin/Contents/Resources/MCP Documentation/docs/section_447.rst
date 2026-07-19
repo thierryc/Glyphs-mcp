@@ -1,4 +1,7 @@
-.. attribute:: angle
-		The angle of the annotation.
+.. attribute:: type
 
-		:type: float
+		The type of the node, LINE, CURVE or OFFCURVE
+
+		Always compare against the constants, never against the actual value.
+
+		:type: str

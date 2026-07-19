@@ -1,12 +1,12 @@
-.. function:: transform(transform, [selection=False, components=True])
+.. attribute:: bounds
 
-		Apply a :attr:`NSAffineTransform` to the layer.
+		Bounding box of whole glyph as NSRect. Read-only.
 
-		:param transform: A :attr:`NSAffineTransform`
-		:param selection: check selection
-		:param components: if components should be transformed
+		:type: NSRect
 
 		.. code-block:: python
-			transformation = NSAffineTransform()
-			transformation.rotate(45, (200, 200))
-			layer.transform(transformation)
+			# origin
+			print(layer.bounds.origin.x, layer.bounds.origin.y)
+
+			# size
+			print(layer.bounds.size.width, layer.bounds.size.height)

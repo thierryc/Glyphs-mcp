@@ -1,6 +1,5 @@
-.. attribute:: trademark
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+.. attribute:: preferredSubfamilyName
+
+		preferredSubfamilyName
 
 		:type: str
-
-		.. versionadded:: 3.0.3

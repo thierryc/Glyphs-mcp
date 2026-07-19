@@ -1,4 +1,7 @@
-.. attribute:: filepath
-		On-disk location of GSFont object.
+.. attribute:: keyboardIncrementHuge
 
-		:type: str
+		Distance of movement by arrow plus Command key. Default:100
+
+		:type: float
+
+		.. versionadded:: 3.0

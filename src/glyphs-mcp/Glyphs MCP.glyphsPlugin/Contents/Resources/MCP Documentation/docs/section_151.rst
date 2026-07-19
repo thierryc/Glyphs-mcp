@@ -1,3 +1,5 @@
-.. attribute:: italicAngle
+.. attribute:: iconName
 
-		:type: float
+		The name of the icon
+
+		:type: str

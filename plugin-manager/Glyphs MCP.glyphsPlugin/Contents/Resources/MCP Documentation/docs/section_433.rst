@@ -1,6 +1,11 @@
-.. attribute:: type
-		The type of the node, LINE, CURVE or QCURVE
+.. attribute:: segments
 
-		Always compare against the constants, never against the actual value.
+		A list of segments as NSPoint objects. Two objects represent a line, four represent a curve. Start point of the segment is included.
 
-		:type: str
+		:type: list
+
+		.. code-block:: python
+			# access all segments
+			for path in layer.paths:
+			    for segment in path.segments:
+			        print(segment)

@@ -1,4 +1,5 @@
-.. attribute:: filePath
-		The last save location
+.. attribute:: subtitle
+
+		the subtitle of the notification
 
 		:type: str

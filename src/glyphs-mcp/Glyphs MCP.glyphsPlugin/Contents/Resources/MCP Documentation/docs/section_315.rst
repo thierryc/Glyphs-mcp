@@ -1,8 +1,11 @@
-.. attribute:: components
-		Collection of :class:`GSComponent` objects. This is only a helper proxy to iterate all components (without paths). To add/remove items, use :attr:`GSLayer.shapes`.
+.. attribute:: userData
+		A dictionary to store user data. Use a unique key and only use objects that can be stored in a property list (string, list, dict, numbers, NSData) otherwise the data will not be recoverable from the saved file.
 
-		:type: list
+		:type: dict
 
 		.. code-block:: python
-			for component in layer.components:
-			    print(component)
+			# set value
+			glyph.userData['rememberToMakeCoffee'] = True
+
+			# delete value
+			del glyph.userData['rememberToMakeCoffee']

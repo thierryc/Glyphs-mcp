@@ -1,4 +1,7 @@
-.. attribute:: currentTab
-		Active Edit view tab.
+.. attribute:: keyboardIncrementBig
 
-		:type: :class:`GSEditViewController`
+		Distance of movement by arrow plus Shift key. Default:10
+
+		:type: float
+
+		.. versionadded:: 3.0

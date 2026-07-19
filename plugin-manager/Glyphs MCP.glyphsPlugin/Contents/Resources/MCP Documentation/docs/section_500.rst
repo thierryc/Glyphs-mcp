@@ -1,4 +1,5 @@
-.. attribute:: selectedLayerOrigin
-		Position of the active layer’s origin (0,0) relative to the origin of the view plane (see :attr:`bounds <GSEditViewController.bounds>`), in view coordinates.
+.. attribute:: locked
 
-		:type: NSPoint
+		Defines whether image is locked for access in UI.
+
+		:type: bool

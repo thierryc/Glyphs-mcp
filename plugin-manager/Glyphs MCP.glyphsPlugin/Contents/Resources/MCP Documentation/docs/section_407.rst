@@ -1,10 +1,7 @@
-.. attribute:: nodes
-		A list of :class:`GSNode` objects
+.. attribute:: locked
 
-		:type: list
+		.. versionadded:: 2.5
 
-		.. code-block:: python
-			# access all nodes
-			for path in layer.paths:
-			    for node in path.nodes:
-			        print(node)
+		If the component is locked
+
+		:type: bool

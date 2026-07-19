@@ -1,3 +1,4 @@
-.. function:: updateGlyphInfo(changeName = True)
+.. attribute:: leftMetricsKey
+		The leftMetricsKey of the glyph. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
 
-		Updates all information like name, unicode etc. for this glyph.
+		:type: str

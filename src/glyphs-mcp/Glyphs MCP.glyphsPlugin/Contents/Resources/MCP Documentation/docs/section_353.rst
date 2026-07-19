@@ -1,6 +1,6 @@
-.. function:: addNodesAtExtremes([force=False, checkSelection=False])
+.. attribute:: topMetricsKey
+		The topMetricsKey of the glyph. This is a reference to another glyph by name or formula. It is used to synchronize the metrics with the linked glyph.
 
-		Add nodes at layer’s extrema, e.g., top, bottom etc.
+		:type: str
 
-		:param force: if points are always added, even if that would distort the shape
-		:param checkSelection: only process selected segments
+		.. versionadded:: 3.4

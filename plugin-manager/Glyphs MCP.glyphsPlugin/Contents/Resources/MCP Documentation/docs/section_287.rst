@@ -1,4 +1,6 @@
-.. attribute:: topKerningKey
-		The key to be used with the kerning functions (:meth:`GSFont.kerningForPair()`, :meth:`GSFont.setKerningForPair()`, :meth:`GSFont.removeKerningForPair()`).
+.. attribute:: script
 
-		.. versionadded:: 3
+		The script of the glyph, e.g., 'latin', 'arabic'.
+		Setting only works if :attr:`GSGlyph.storeScript` is set (see below).
+
+		:type: str

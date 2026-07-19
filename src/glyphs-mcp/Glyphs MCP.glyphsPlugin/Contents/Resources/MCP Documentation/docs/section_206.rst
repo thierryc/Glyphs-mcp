@@ -1,6 +1,5 @@
-.. attribute:: sampleText
-		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
+.. attribute:: familyName
+
+		familyName
 
 		:type: str
-
-		.. versionadded:: 3.0.3

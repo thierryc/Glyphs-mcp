@@ -179,6 +179,11 @@ mkdir -p "$dst_bundle"
 
 copied=0
 while IFS= read -r -d '' file; do
+  # A release build may run before deletions are staged. Skip tracked paths
+  # that no longer exist in the source working tree.
+  if [[ ! -f "$file" ]]; then
+    continue
+  fi
   rel="${file#"$src_bundle/"}"
   if [[ "$rel" == "$file" ]]; then
     echo "error: unexpected path (not under $src_bundle): $file" >&2
@@ -193,6 +198,48 @@ done < <(git ls-files -z "$src_bundle")
 if [[ "$copied" -eq 0 ]]; then
   echo "error: no tracked files found under: $src_bundle" >&2
   exit 1
+fi
+
+# Generated documentation pages are allowlisted by the tracked manifest. Copy
+# them even before a release commit has added newly generated pages to Git, so
+# the documented build-before-stage workflow cannot produce an index that
+# points at missing GlyphsSDK references.
+src_docs_root="$src_bundle/Contents/Resources/MCP Documentation"
+dst_docs_root="$dst_bundle/Contents/Resources/MCP Documentation"
+if [[ -f "$src_docs_root/index.json" ]]; then
+  python3 - "$src_docs_root" "$dst_docs_root" <<'PY'
+import json
+import shutil
+import sys
+from pathlib import Path
+
+source_root = Path(sys.argv[1]).resolve()
+destination_root = Path(sys.argv[2]).resolve()
+index_path = source_root / "index.json"
+index = json.loads(index_path.read_text(encoding="utf-8"))
+documents = index.get("documents")
+if not isinstance(documents, list):
+    raise SystemExit("error: documentation index has no documents list")
+
+source_docs = (source_root / "docs").resolve()
+destination_docs = destination_root / "docs"
+for entry in documents:
+    relative = Path(str(entry.get("path") or ""))
+    source = (source_docs / relative).resolve()
+    try:
+        source.relative_to(source_docs)
+    except ValueError as exc:
+        raise SystemExit(
+            "error: documentation index path escapes docs root: {}".format(relative)
+        ) from exc
+    if not source.is_file():
+        raise SystemExit(
+            "error: indexed documentation page is missing: {}".format(source)
+        )
+    destination = destination_docs / relative
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, destination)
+PY
 fi
 
 # Ensure the plugin binary remains executable.

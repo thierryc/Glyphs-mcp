@@ -1,10 +1,7 @@
-.. attribute:: preferredFamilyNames
-		This accesses all localized designer values.
-		For details :attr:`GSInstance.properties`
+.. attribute:: designer
 
-		:type: dict
+		This accesses the default value only. The localizations can be accessed by :attr:`GSInstance.properties`
 
-		.. code-block:: python
-			instance.preferredFamilyNames["ENG"] = "MyFamilyName"
+		:type: str
 
-		.. versionadded:: 3.0.3
+		.. versionadded:: 3.0.2

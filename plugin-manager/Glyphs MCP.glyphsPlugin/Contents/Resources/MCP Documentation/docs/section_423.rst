@@ -1,7 +1,5 @@
-.. attribute:: connection
-		The type of the connection, SHARP or SMOOTH
+.. attribute:: name
 
-		:type: string
+		Name of the axis. The name is for display purpose only.
 
-		.. deprecated:: 2.3
-			Use :attr:`smooth <GSNode.smooth>` instead.
+		:type: str

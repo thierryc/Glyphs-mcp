@@ -1,5 +1,40 @@
-.. attribute:: category
-		This is mostly from the UnicodeData.txt file from unicode.org. Some corrections have been made (Accents, ...)
-		e.g: "Letter", "Number", "Punctuation", "Mark", "Separator", "Symbol", "Other"
+:mod:`GSEditViewController`
+===============================================================================
 
-		:type: str
+Implementation of the GSEditViewController object, which represents Edit tabs in the UI.
+
+For details on how to access them, please look at :class:`GSFont.tabs`
+
+
+.. class:: GSEditViewController()
+
+	Properties
+
+		* :attr:`parent`
+		* :attr:`text`
+		* :attr:`textCursor`
+		* :attr:`textRange`
+		* :attr:`selectedTextRange`
+		* :attr:`layers`
+		* :attr:`layersCursor`
+		* :attr:`layersRange`
+		* :attr:`selectedLayerRange`
+		* :attr:`scale`
+		* :attr:`viewPort`
+		* :attr:`bounds`
+		* :attr:`selectedLayerOrigin`
+		* :attr:`direction`
+		* :attr:`features`
+		* :attr:`previewInstances`
+		* :attr:`previewHeight`
+		* :attr:`bottomToolbarHeight`
+		* :attr:`masterIndex`
+		* :attr:`tempData`
+
+	Functions
+
+		* :meth:`close`
+		* :meth:`saveToPDF`
+		* :meth:`redraw`
+
+	**Properties**

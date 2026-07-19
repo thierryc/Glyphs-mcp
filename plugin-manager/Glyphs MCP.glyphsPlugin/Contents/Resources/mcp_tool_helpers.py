@@ -219,7 +219,30 @@ def _font_summary(font, font_index=None):
         summary["filePath"] = getattr(font, "filepath", None)
     except Exception:
         summary["filePath"] = None
+    summary.update(_font_format_metadata(font))
     return summary
+
+
+def _font_format_metadata(font):
+    """Return additive, JSON-safe Glyphs source-format metadata."""
+    format_version = None
+    last_saved_app_version = None
+    try:
+        format_version = _maybe_call(getattr(font, "formatVersion", None))
+        if format_version is not None:
+            format_version = int(format_version)
+    except Exception:
+        format_version = None
+    try:
+        last_saved_app_version = _maybe_call(getattr(font, "appVersion", None))
+        if last_saved_app_version is not None:
+            last_saved_app_version = str(last_saved_app_version)
+    except Exception:
+        last_saved_app_version = None
+    return {
+        "formatVersion": format_version,
+        "lastSavedAppVersion": last_saved_app_version,
+    }
 
 
 def _resolve_font_by_index(Glyphs, font_index):
@@ -1125,6 +1148,240 @@ def _is_path_shape(shape):
     return nodes is not None
 
 
+def _mapping_keys(mapping):
+    """Return stable string keys from dict-like Glyphs proxy objects."""
+    if mapping is None:
+        return []
+    try:
+        keys = list(mapping.keys())
+    except Exception:
+        try:
+            keys = list(mapping)
+        except Exception:
+            return []
+    return sorted({str(key) for key in keys})
+
+
+def _mapping_value(mapping, key, default=None):
+    if mapping is None:
+        return default
+    try:
+        return mapping[key]
+    except Exception:
+        return default
+
+
+def _shape_attribute_metadata(shape):
+    try:
+        attributes = getattr(shape, "attributes", None)
+    except Exception:
+        attributes = None
+    try:
+        user_data = getattr(shape, "userData", None)
+    except Exception:
+        user_data = None
+    attribute_keys = _mapping_keys(attributes)
+    group_id = _mapping_value(attributes, "group")
+    return {
+        "attributeKeys": attribute_keys,
+        "groupId": str(group_id) if group_id not in (None, "") else None,
+        "hasUserData": bool(_mapping_keys(user_data)),
+    }
+
+
+def _shape_kind(shape):
+    if _is_path_shape(shape):
+        return "path"
+    if _is_component_shape(shape):
+        return "component"
+
+    class_name = ""
+    try:
+        class_name = str(shape.__class__.__name__)
+    except Exception:
+        pass
+    try:
+        objc_name = getattr(shape, "className", None)
+        if callable(objc_name):
+            objc_name = objc_name()
+        if objc_name:
+            class_name = "{} {}".format(class_name, objc_name)
+    except Exception:
+        pass
+    normalized = class_name.lower()
+    if "shapegroup" in normalized or "shape group" in normalized:
+        return "shapeGroup"
+    if "image" in normalized:
+        return "image"
+    try:
+        if getattr(shape, "groupId", None) is not None:
+            return "shapeGroup"
+    except Exception:
+        pass
+    return "unknown"
+
+
+def _layer_shape_summary(layer):
+    try:
+        shapes = _sequence_values(getattr(layer, "shapes", None))
+    except Exception:
+        shapes = []
+    if not shapes:
+        paths = _layer_paths(layer)
+        try:
+            components = _layer_components(layer)
+        except Exception:
+            components = []
+        shapes = list(paths) + list(components)
+
+    counts = {
+        "path": 0,
+        "component": 0,
+        "image": 0,
+        "shapeGroup": 0,
+        "unknown": 0,
+    }
+    for shape in shapes:
+        kind = _shape_kind(shape)
+        counts[kind if kind in counts else "unknown"] += 1
+    attribute_keys = set()
+    grouped_shape_count = 0
+    group_ids = set()
+    styled_shape_count = 0
+    for shape in shapes:
+        metadata = _shape_attribute_metadata(shape)
+        keys = set(metadata["attributeKeys"])
+        attribute_keys.update(keys)
+        if metadata["groupId"]:
+            grouped_shape_count += 1
+            group_ids.add(metadata["groupId"])
+        if keys - {"group"}:
+            styled_shape_count += 1
+
+    compatibility_warnings = []
+    if counts["shapeGroup"]:
+        compatibility_warnings.append(
+            "This layer contains Glyphs 4 shape groups. Outline edits preserve "
+            "their identities and member relationships but do not author groups."
+        )
+    if counts["image"]:
+        compatibility_warnings.append(
+            "This layer contains image shapes. Outline edits preserve their "
+            "identity and draw order but do not author images."
+        )
+    if grouped_shape_count or styled_shape_count:
+        compatibility_warnings.append(
+            "This layer contains grouped or styled shapes. Shape attributes are "
+            "diagnostic-only and are preserved automatically."
+        )
+    return {
+        "shapeCount": len(shapes),
+        "shapeTypeCounts": counts,
+        "nonPathShapeCounts": {
+            key: value for key, value in counts.items() if key != "path"
+        },
+        "shapeAttributeKeys": sorted(attribute_keys),
+        "groupedShapeCount": grouped_shape_count,
+        "shapeGroupIds": sorted(group_ids),
+        "styledShapeCount": styled_shape_count,
+        "hasGlyphs4Shapes": bool(counts["image"] or counts["shapeGroup"]),
+        "compatibilityWarnings": compatibility_warnings,
+    }
+
+
+def _raw_objc_value(obj, selector_name):
+    """Read an Objective-C scalar without passing through lossy wrappers."""
+    try:
+        instance_methods = getattr(obj, "pyobjc_instanceMethods", None)
+        selector = getattr(instance_methods, selector_name, None)
+        if callable(selector):
+            return selector()
+    except Exception:
+        pass
+    return None
+
+
+def _node_raw_type(node):
+    value = _raw_objc_value(node, "type")
+    if value is None:
+        try:
+            value = getattr(node, "rawType", None)
+        except Exception:
+            value = None
+    try:
+        return int(value) if value is not None else None
+    except Exception:
+        return None
+
+
+def _node_raw_connection(node):
+    value = _raw_objc_value(node, "connection")
+    if value is None:
+        try:
+            value = getattr(node, "rawConnection", None)
+        except Exception:
+            value = None
+    try:
+        return int(value) if value is not None else None
+    except Exception:
+        return None
+
+
+def _node_orientation(node):
+    """Return the normalized and raw GSElementOrientation values."""
+    value = _raw_objc_value(node, "orientation")
+    if value is None:
+        try:
+            value = getattr(node, "orientation", None)
+            if callable(value):
+                value = value()
+        except Exception:
+            value = None
+
+    try:
+        raw_value = int(value) if value is not None else None
+    except Exception:
+        raw_value = None
+
+    if raw_value is not None:
+        # GSElementOrientation is shared with components: left=0, right=1,
+        # center=2. The v4 node serialization spells these values as strings.
+        normalized = {0: "left", 1: "right", 2: "center"}.get(
+            raw_value, "unknown"
+        )
+        return normalized, raw_value
+
+    normalized = str(value or "").strip().lower()
+    if normalized not in {"left", "right", "center"}:
+        normalized = None
+    return normalized, None
+
+
+def _set_node_raw_value(node, selector_name, value):
+    """Set an Objective-C node enum without lossy wrapper normalization."""
+    setter_name = "set{}_".format(selector_name[:1].upper() + selector_name[1:])
+    try:
+        instance_methods = getattr(node, "pyobjc_instanceMethods", None)
+        setter = getattr(instance_methods, setter_name, None)
+        if callable(setter):
+            setter(int(value))
+            return True
+    except Exception:
+        pass
+    try:
+        setter = getattr(node, setter_name, None)
+        if callable(setter):
+            setter(int(value))
+            return True
+    except Exception:
+        pass
+    try:
+        setattr(node, selector_name, int(value))
+        return True
+    except Exception:
+        return False
+
+
 def _collection_contains_identity(collection, item):
     for value in _sequence_values(collection):
         if value is item:
@@ -1312,6 +1569,597 @@ def _replace_layer_paths_and_metrics(
     return _run_on_main_thread(_mutate)
 
 
+_KNOWN_NODE_TYPES = {
+    "move",
+    "line",
+    "curve",
+    "qcurve",
+    "offcurve",
+    "hobbycurve",
+    "raphnewspiral",
+}
+
+
+def _point_values(point):
+    if point is None:
+        return (0.0, 0.0)
+    try:
+        return (float(point.x), float(point.y))
+    except Exception:
+        pass
+    try:
+        return (float(point[0]), float(point[1]))
+    except Exception:
+        return (0.0, 0.0)
+
+
+def _copy_glyphs_object(value):
+    try:
+        copied = value.copy()
+        if copied is not None:
+            return copied
+    except Exception:
+        pass
+    try:
+        copied = value.mutableCopy()
+        if copied is not None:
+            return copied
+    except Exception:
+        pass
+    return None
+
+
+def _set_path_nodes(path, nodes):
+    nodes = list(nodes or [])
+    try:
+        path.nodes = nodes
+        return len(_sequence_values(getattr(path, "nodes", None))) == len(nodes)
+    except Exception:
+        pass
+    try:
+        collection = getattr(path, "nodes", None)
+        for index in range(len(collection) - 1, -1, -1):
+            del collection[index]
+        for node in nodes:
+            collection.append(node)
+        return len(_sequence_values(collection)) == len(nodes)
+    except Exception:
+        return False
+
+
+def _normalized_node_type(node):
+    raw_type = _node_raw_type(node)
+    raw_names = {
+        17: "move",
+        1: "line",
+        35: "curve",
+        36: "qcurve",
+        37: "hobbycurve",
+        39: "raphnewspiral",
+        65: "offcurve",
+    }
+    if raw_type is not None:
+        return raw_names.get(raw_type, "unknown")
+    try:
+        value = str(getattr(node, "type", "") or "").lower()
+    except Exception:
+        value = ""
+    return value if value in _KNOWN_NODE_TYPES else "unknown"
+
+
+def _path_specs_topology_matches(paths, path_specs):
+    if len(paths) != len(path_specs):
+        return False
+    for path, spec in zip(paths, path_specs):
+        if len(_sequence_values(getattr(path, "nodes", None))) != len(spec.get("nodes") or []):
+            return False
+    return True
+
+
+def _validate_path_specs(paths, path_specs):
+    topology_matches = _path_specs_topology_matches(paths, path_specs)
+    errors = []
+    for path_index, spec in enumerate(path_specs):
+        old_nodes = []
+        if path_index < len(paths):
+            old_nodes = _sequence_values(getattr(paths[path_index], "nodes", None))
+        for node_index, node_spec in enumerate(spec.get("nodes") or []):
+            try:
+                x = float(node_spec.get("x", 0.0))
+                y = float(node_spec.get("y", 0.0))
+                if not math.isfinite(x) or not math.isfinite(y):
+                    raise ValueError("coordinates must be finite")
+            except Exception:
+                errors.append(
+                    "Path {} node {} has invalid coordinates".format(path_index, node_index)
+                )
+                continue
+
+            requested_type = str(node_spec.get("type", "line") or "line").lower()
+            requested_raw = node_spec.get("rawType")
+            old_node = old_nodes[node_index] if node_index < len(old_nodes) else None
+            old_type = _normalized_node_type(old_node) if old_node is not None else None
+            old_raw = _node_raw_type(old_node) if old_node is not None else None
+
+            if old_type == "unknown" and requested_raw is None:
+                errors.append(
+                    "Path {} node {} requires pathDataVersion 2 rawType metadata".format(
+                        path_index, node_index
+                    )
+                )
+                continue
+            if requested_type == "unknown":
+                if old_node is None or requested_raw is None:
+                    errors.append(
+                        "Path {} node {} uses an unknown type without a matching source node".format(
+                            path_index, node_index
+                        )
+                    )
+                    continue
+                try:
+                    if int(requested_raw) != int(old_raw):
+                        raise ValueError
+                except Exception:
+                    errors.append(
+                        "Path {} node {} changes an unknown raw type".format(
+                            path_index, node_index
+                        )
+                    )
+            elif requested_type not in _KNOWN_NODE_TYPES:
+                errors.append(
+                    "Path {} node {} has unsupported type '{}'".format(
+                        path_index, node_index, requested_type
+                    )
+                )
+            elif requested_raw is not None and old_node is None:
+                errors.append(
+                    "Path {} node {} supplies rawType for a new node".format(
+                        path_index, node_index
+                    )
+                )
+            elif (
+                requested_raw is not None
+                and old_node is not None
+                and requested_type == old_type
+            ):
+                try:
+                    if int(requested_raw) != int(old_raw):
+                        raise ValueError
+                except Exception:
+                    errors.append(
+                        "Path {} node {} changes rawType without a normalized type change".format(
+                            path_index, node_index
+                        )
+                    )
+
+            requested_connection = node_spec.get("rawConnection")
+            if requested_connection is not None and old_node is None:
+                errors.append(
+                    "Path {} node {} supplies rawConnection for a new node".format(
+                        path_index, node_index
+                    )
+                )
+            elif requested_connection is not None and old_node is not None:
+                try:
+                    int(requested_connection)
+                except Exception:
+                    errors.append(
+                        "Path {} node {} has invalid rawConnection".format(
+                            path_index, node_index
+                        )
+                    )
+
+    if not topology_matches:
+        for path_index, old_path in enumerate(paths):
+            old_nodes = _sequence_values(getattr(old_path, "nodes", None))
+            requested_nodes = (
+                path_specs[path_index].get("nodes") or []
+                if path_index < len(path_specs)
+                else []
+            )
+            for node_index, old_node in enumerate(old_nodes):
+                if _normalized_node_type(old_node) != "unknown":
+                    continue
+                if node_index >= len(requested_nodes):
+                    errors.append(
+                        "Path {} node {} has an unknown raw type and cannot be "
+                        "dropped by a topology rewrite".format(path_index, node_index)
+                    )
+                    continue
+                requested_raw = requested_nodes[node_index].get("rawType")
+                try:
+                    raw_matches = int(requested_raw) == int(_node_raw_type(old_node))
+                except Exception:
+                    raw_matches = False
+                if not raw_matches:
+                    errors.append(
+                        "Path {} node {} has an unknown raw type that cannot be "
+                        "matched safely during a topology rewrite".format(
+                            path_index, node_index
+                        )
+                    )
+    return topology_matches, errors
+
+
+def _apply_node_spec(node, spec, old_node=None):
+    node.position = (float(spec.get("x", 0.0)), float(spec.get("y", 0.0)))
+
+    requested_type = str(spec.get("type", "line") or "line").lower()
+    old_type = _normalized_node_type(old_node) if old_node is not None else None
+    if requested_type != "unknown" and (old_node is None or requested_type != old_type):
+        node.type = requested_type
+
+    if "rawConnection" in spec and old_node is not None:
+        requested_raw_connection = spec.get("rawConnection")
+        old_raw_connection = _node_raw_connection(old_node)
+        if (
+            requested_raw_connection is not None
+            and old_raw_connection is not None
+            and int(requested_raw_connection) != int(old_raw_connection)
+        ):
+            if not _set_node_raw_value(
+                node, "connection", requested_raw_connection
+            ):
+                node.smooth = bool(spec.get("smooth", False))
+    elif "smooth" in spec:
+        node.smooth = bool(spec.get("smooth", False))
+
+    if "orientation" in spec and spec.get("orientation") is not None:
+        try:
+            node.orientation = int(spec["orientation"])
+        except Exception:
+            pass
+    if "name" in spec:
+        try:
+            node.name = spec.get("name")
+        except Exception:
+            pass
+
+
+def _snapshot_existing_paths(paths):
+    snapshot = []
+    for path in paths:
+        path_state = {
+            "path": path,
+            "closed": bool(getattr(path, "closed", True)),
+            "locked": getattr(path, "locked", None),
+            "nodes": [],
+        }
+        for node in _sequence_values(getattr(path, "nodes", None)):
+            path_state["nodes"].append(
+                {
+                    "node": node,
+                    "position": _point_values(getattr(node, "position", None)),
+                    "rawType": _node_raw_type(node),
+                    "type": _normalized_node_type(node),
+                    "rawConnection": _node_raw_connection(node),
+                    "smooth": bool(getattr(node, "smooth", False)),
+                    "orientation": _node_orientation(node),
+                    "name": getattr(node, "name", None),
+                }
+            )
+        snapshot.append(path_state)
+    return snapshot
+
+
+def _restore_existing_paths(snapshot):
+    restored = True
+    for path_state in snapshot:
+        path = path_state["path"]
+        try:
+            path.closed = path_state["closed"]
+            if path_state["locked"] is not None:
+                path.locked = path_state["locked"]
+        except Exception:
+            restored = False
+        for node_state in path_state["nodes"]:
+            node = node_state["node"]
+            try:
+                node.position = node_state["position"]
+                raw_type = node_state["rawType"]
+                if raw_type is not None:
+                    if not _set_node_raw_value(node, "type", raw_type):
+                        restored = False
+                else:
+                    node.type = node_state["type"]
+                raw_connection = node_state["rawConnection"]
+                if raw_connection is not None:
+                    if not _set_node_raw_value(
+                        node, "connection", raw_connection
+                    ):
+                        restored = False
+                else:
+                    node.smooth = node_state["smooth"]
+                orientation, raw_orientation = node_state["orientation"]
+                if raw_orientation is not None:
+                    if not _set_node_raw_value(
+                        node, "orientation", raw_orientation
+                    ):
+                        restored = False
+                elif orientation is not None:
+                    node.orientation = orientation
+                node.name = node_state["name"]
+            except Exception:
+                restored = False
+    return restored
+
+
+def _build_path_from_spec(spec, old_path, GSPath, GSNode):
+    if old_path is not None:
+        path = _copy_glyphs_object(old_path)
+        if path is None:
+            return None, "Unable to copy an existing path while preserving metadata"
+        old_nodes = _sequence_values(getattr(old_path, "nodes", None))
+    else:
+        path = GSPath()
+        old_nodes = []
+
+    new_nodes = []
+    for node_index, node_spec in enumerate(spec.get("nodes") or []):
+        old_node = old_nodes[node_index] if node_index < len(old_nodes) else None
+        if old_node is not None:
+            node = _copy_glyphs_object(old_node)
+            if node is None:
+                return None, "Unable to copy an existing node while preserving metadata"
+        else:
+            node = GSNode()
+        _apply_node_spec(node, node_spec, old_node=old_node)
+        new_nodes.append(node)
+
+    if not _set_path_nodes(path, new_nodes):
+        return None, "Unable to replace path nodes"
+    path.closed = bool(spec.get("closed", True))
+    if "locked" in spec:
+        try:
+            path.locked = bool(spec.get("locked"))
+        except Exception:
+            pass
+    return path, None
+
+
+def _merge_paths_into_shape_order(original_shapes, new_paths):
+    merged = []
+    path_index = 0
+    insertion_index = None
+    for shape in original_shapes:
+        if _is_path_shape(shape):
+            if path_index < len(new_paths):
+                merged.append(new_paths[path_index])
+                insertion_index = len(merged)
+                path_index += 1
+            continue
+        merged.append(shape)
+
+    if path_index < len(new_paths):
+        if insertion_index is None:
+            insertion_index = len(merged)
+        merged[insertion_index:insertion_index] = new_paths[path_index:]
+    return merged
+
+
+def _verify_path_specs(layer, path_specs):
+    paths = _layer_paths(layer)
+    if len(paths) != len(path_specs):
+        return False
+    for path, spec in zip(paths, path_specs):
+        nodes = _sequence_values(getattr(path, "nodes", None))
+        expected_nodes = spec.get("nodes") or []
+        if len(nodes) != len(expected_nodes):
+            return False
+        if bool(getattr(path, "closed", True)) != bool(spec.get("closed", True)):
+            return False
+        if "locked" in spec and bool(getattr(path, "locked", False)) != bool(
+            spec.get("locked")
+        ):
+            return False
+        for node, node_spec in zip(nodes, expected_nodes):
+            x, y = _point_values(getattr(node, "position", None))
+            if abs(x - float(node_spec.get("x", 0.0))) > 0.001:
+                return False
+            if abs(y - float(node_spec.get("y", 0.0))) > 0.001:
+                return False
+            expected_type = str(
+                node_spec.get("type", "line") or "line"
+            ).lower()
+            if (
+                expected_type != "unknown"
+                and _normalized_node_type(node) != expected_type
+            ):
+                return False
+            if node_spec.get("rawType") is not None:
+                try:
+                    if int(_node_raw_type(node)) != int(node_spec["rawType"]):
+                        return False
+                except Exception:
+                    return False
+            if node_spec.get("rawConnection") is not None:
+                try:
+                    if int(_node_raw_connection(node)) != int(
+                        node_spec["rawConnection"]
+                    ):
+                        return False
+                except Exception:
+                    return False
+    return True
+
+
+def _apply_path_specs_and_metrics(
+    layer,
+    path_specs,
+    GSPath,
+    GSNode,
+    width=None,
+    left_sidebearing=None,
+    right_sidebearing=None,
+):
+    """Apply path JSON while preserving Glyphs 3/4 shape metadata and order."""
+    path_specs = list(path_specs or [])
+    existing_paths = _layer_paths(layer)
+    topology_matches, errors = _validate_path_specs(existing_paths, path_specs)
+    if errors:
+        return {
+            "ok": False,
+            "error": "Unsafe path rewrite rejected",
+            "details": errors,
+            "pathCount": len(existing_paths),
+            "nodeCount": _layer_path_summary(layer)["nodeCount"],
+            "rolledBack": True,
+        }
+
+    original_shapes = _sequence_values(getattr(layer, "shapes", None))
+    has_shapes_surface = bool(original_shapes) or hasattr(layer, "shapes")
+    original_non_paths = [shape for shape in original_shapes if not _is_path_shape(shape)]
+    snapshot = _snapshot_existing_paths(existing_paths)
+    original_metrics = {
+        "width": getattr(layer, "width", None),
+        "left": _get_left_sidebearing(layer),
+        "right": _get_right_sidebearing(layer),
+    }
+
+    def _restore_metrics():
+        try:
+            if original_metrics["left"] is not None:
+                _set_sidebearing(
+                    layer, "leftSideBearing", "LSB", original_metrics["left"]
+                )
+            if original_metrics["right"] is not None:
+                _set_sidebearing(
+                    layer, "rightSideBearing", "RSB", original_metrics["right"]
+                )
+            if original_metrics["width"] is not None:
+                layer.width = original_metrics["width"]
+            return True
+        except Exception:
+            return False
+
+    def _mutate():
+        mutation_state = _begin_layer_mutation(layer)
+        changed_shape_list = False
+        try:
+            if topology_matches:
+                for path, spec in zip(existing_paths, path_specs):
+                    path.closed = bool(spec.get("closed", True))
+                    if "locked" in spec:
+                        try:
+                            path.locked = bool(spec.get("locked"))
+                        except Exception:
+                            pass
+                    for node, node_spec in zip(
+                        _sequence_values(getattr(path, "nodes", None)),
+                        spec.get("nodes") or [],
+                    ):
+                        _apply_node_spec(node, node_spec, old_node=node)
+            else:
+                staged_paths = []
+                for path_index, spec in enumerate(path_specs):
+                    old_path = (
+                        existing_paths[path_index]
+                        if path_index < len(existing_paths)
+                        else None
+                    )
+                    staged_path, error = _build_path_from_spec(
+                        spec, old_path, GSPath, GSNode
+                    )
+                    if error:
+                        return {
+                            "ok": False,
+                            "error": error,
+                            "rolledBack": True,
+                        }
+                    staged_paths.append(staged_path)
+
+                if has_shapes_surface:
+                    merged = _merge_paths_into_shape_order(
+                        original_shapes, staged_paths
+                    )
+                    if not _set_layer_shapes(layer, merged):
+                        raise RuntimeError(
+                            "Unable to replace paths through GSLayer.shapes"
+                        )
+                    changed_shape_list = True
+                else:
+                    changed_shape_list = True
+                    _clear_layer_paths(layer)
+                    for path in staged_paths:
+                        if not _append_layer_shape(
+                            layer, path, _manage_changes=False
+                        ):
+                            raise RuntimeError(
+                                "Failed to append path through the documented layer API"
+                            )
+                    changed_shape_list = True
+
+            if left_sidebearing is not None:
+                _set_sidebearing(
+                    layer, "leftSideBearing", "LSB", left_sidebearing
+                )
+            if right_sidebearing is not None:
+                _set_sidebearing(
+                    layer, "rightSideBearing", "RSB", right_sidebearing
+                )
+            if width is not None:
+                layer.width = width
+
+            current_shapes = _sequence_values(getattr(layer, "shapes", None))
+            current_non_paths = [
+                shape for shape in current_shapes if not _is_path_shape(shape)
+            ]
+            non_paths_preserved = (
+                len(current_non_paths) == len(original_non_paths)
+                and all(
+                    current is original
+                    for current, original in zip(
+                        current_non_paths, original_non_paths
+                    )
+                )
+            )
+            if has_shapes_surface and not non_paths_preserved:
+                raise RuntimeError("Non-path shape order or identity changed")
+            if not _verify_path_specs(layer, path_specs):
+                raise RuntimeError("Path write verification failed")
+
+            summary = _layer_path_summary(layer)
+            summary.update(
+                {
+                    "ok": True,
+                    "pathEditMode": (
+                        "inPlace" if topology_matches else "topologyRewrite"
+                    ),
+                    "metadataPolicy": "preserve",
+                    "rolledBack": False,
+                }
+            )
+            return summary
+        except Exception as exc:
+            restored = True
+            if changed_shape_list and has_shapes_surface:
+                restored = bool(_set_layer_shapes(layer, original_shapes))
+            elif changed_shape_list:
+                _clear_layer_paths(layer)
+                for original_path in existing_paths:
+                    restored = bool(
+                        _append_layer_shape(
+                            layer, original_path, _manage_changes=False
+                        )
+                    ) and restored
+            elif topology_matches:
+                restored = _restore_existing_paths(snapshot)
+            restored = _restore_metrics() and restored
+            summary = _layer_path_summary(layer)
+            summary.update(
+                {
+                    "ok": False,
+                    "error": str(exc) or "Path mutation failed",
+                    "rolledBack": bool(restored),
+                }
+            )
+            return summary
+        finally:
+            _end_layer_mutation(layer, mutation_state)
+
+    return _run_on_main_thread(_mutate)
+
+
 def _replace_layer_paths_unmanaged(layer, new_paths):
     new_paths = list(new_paths or [])
 
@@ -1321,11 +2169,13 @@ def _replace_layer_paths_unmanaged(layer, new_paths):
         shapes = None
 
     if shapes is not None:
-        preserved = [shape for shape in _sequence_values(shapes) if not _is_path_shape(shape)]
-        if _set_layer_shapes(layer, preserved + new_paths):
+        original_shapes = _sequence_values(shapes)
+        merged_shapes = _merge_paths_into_shape_order(original_shapes, new_paths)
+        if _set_layer_shapes(layer, merged_shapes):
             summary = _layer_path_summary(layer)
             if summary["pathCount"] == len(new_paths):
                 return {"ok": True, **summary}
+            _set_layer_shapes(layer, original_shapes)
 
     _clear_layer_paths(layer)
     for path in new_paths:

@@ -1,6 +1,5 @@
-.. function:: decompose([doAnchors=True, doHints=True])
+.. attribute:: position
 
-		Decomposes the component.
+		The position of the component.
 
-		:param doAnchors: get anchors from components
-		:param doHints: get hints from components
+		:type: NSPoint

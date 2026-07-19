@@ -1,18 +1,4 @@
-:mod:`NSAffineTransform`
-===============================================================================
+.. attribute:: sortName
+		Alternative name of glyph used for sorting in UI.
 
-The NSAffineTransform object.
-
-.. class:: NSAffineTransform()
-
-	Functions
-
-	.. autosummary::
-
-		shift
-		scale
-		rotate
-		skew
-
-	**Properties**
-		transformStruct
+		:type: str

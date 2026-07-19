@@ -1,4 +1,4 @@
-.. attribute:: colors
-		A list of colors. Each is an list containing a NSColor and and position between 0.0 and 1.0.
+.. attribute:: otherIndex2
+		A indexPath to the fourth node this hint is attached to. Used for Diagonal hints.
 
-		:type: list
+		:type: :class:`NSIndexPath`

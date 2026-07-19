@@ -1,4 +1,5 @@
-.. attribute:: instanceIndex
-		The index of the selected instance
+.. attribute:: anchors
 
-		:type: int
+		Anchors defined for this glyph, as a list of anchor names.
+
+		:type: list

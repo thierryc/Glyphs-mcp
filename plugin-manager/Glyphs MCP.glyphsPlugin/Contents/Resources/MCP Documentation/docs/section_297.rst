@@ -1,4 +1,4 @@
-.. attribute:: mastersCompatible
-		Return True when all layers in this glyph are compatible (same components, anchors, paths etc.)
+.. attribute:: rightKerningGroup
+		The rightKerningGroup of the glyph. All glyphs with the same text in the kerning group end up in the same kerning class.
 
-		:type: bool
+		:type: str

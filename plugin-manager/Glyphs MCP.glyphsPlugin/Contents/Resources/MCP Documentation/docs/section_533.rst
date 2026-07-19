@@ -1,10 +1,8 @@
-.. attribute:: key
-		the key
+.. attribute:: selectedLayerRange
+		range of of selection in the layers list
 
-		:type: str
+		.. seealso:: `GSEditViewController.layers`
 
-	.. code-block:: python
-		# searching for GSFontInfoValueLocalized with given "designers" key
-		for fontInfo in font.properties:
-		    if fontInfo.key == "designers":
-		        print(fontInfo)
+		:type: NSRange
+
+		.. versionadded:: 4

@@ -1,4 +1,5 @@
-.. attribute:: selection
-		Returns a list of all selected glyphs in the Font View.
+.. attribute:: disablesNiceNames
 
-		:type: list
+		Corresponds to the “Don't use nice names” setting from the Font Info dialog.
+
+		:type: bool

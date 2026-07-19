@@ -1,10 +1,7 @@
-.. attribute:: tool
-		Name of tool selected in toolbar.
+.. attribute:: snapToObjects
 
-		For available names including third-party plug-ins that come in the form of selectable tools, see `GSFont.tools` below.
+		disable snapping to nodes and background
 
-		:type: string
+		:type: bool
 
-		.. code-block:: python
-			font.tool = 'SelectTool' # Built-in tool
-			font.tool = 'GlyphsAppSpeedPunkTool' # Third party plug-in
+		.. versionadded:: 3.0.1

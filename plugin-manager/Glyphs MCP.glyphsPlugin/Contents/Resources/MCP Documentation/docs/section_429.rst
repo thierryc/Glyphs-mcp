@@ -1,4 +1,4 @@
-.. attribute:: orientation
-		If the position of the node is relative to the LSB (0), center (2) or RSB (1).
+.. attribute:: shapeType
+		the type of the shapes. can be GSShapeTypePath or GSShapeTypeComponent
 
 		:type: int

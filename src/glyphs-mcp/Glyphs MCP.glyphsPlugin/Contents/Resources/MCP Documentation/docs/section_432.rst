@@ -1,12 +1,11 @@
-.. attribute:: bounds
-		Bounding box of the segment as NSRect. Read-only.
+.. attribute:: nodes
 
-		:type: NSRect
+		A list of :class:`GSNode` objects
+
+		:type: list
 
 		.. code-block:: python
-			bounds = segment.bounds
-			# origin
-			print(bounds.origin.x, bounds.origin.y)
-
-			# size
-			print(bounds.size.width, bounds.size.height)
+			# access all nodes
+			for path in layer.paths:
+			    for node in path.nodes:
+			        print(node)

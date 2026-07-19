@@ -1,15 +1,11 @@
-:mod:`GSFontInfoValueSingle`
-===============================================================================
+.. attribute:: tempData
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use layer.userData
 
-The GSFontInfoValueSingle
+		:type: dict
 
-.. class:: GSFontInfoValueSingle()
+		.. code-block:: python
+			# set value
+			layer.tempData['rememberToMakeCoffee'] = True
 
-	Properties
-
-	.. autosummary::
-
-		key
-		value
-
-	**Properties**
+			# delete value
+			del layer.tempData['rememberToMakeCoffee']

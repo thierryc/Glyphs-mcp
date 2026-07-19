@@ -115,3 +115,24 @@ class ToolProfilesTests(unittest.TestCase):
         self.assertTrue(edit_tools.isdisjoint(readonly))
         self.assertTrue(read_tools.issubset(editing))
         self.assertTrue(edit_tools.issubset(editing))
+
+    def test_feedback_inspection_and_preview_tools_are_readonly_but_app_actions_are_not(self) -> None:
+        read_tools = {
+            "show_glyphs_status",
+            "show_font_feedback",
+            "show_glyph_feedback",
+            "show_opentype_features",
+            "preview_spacing_feedback",
+            "preview_kerning_feedback",
+            "preview_handle_smoothing_feedback",
+        }
+        app_actions = {"apply_feedback_plan", "open_feedback_target"}
+        universe = set(tool_profiles.CORE_READONLY_TOOLS) | app_actions
+
+        readonly = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_READONLY, universe)
+        editing = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, universe)
+
+        self.assertTrue(read_tools.issubset(readonly))
+        self.assertTrue(app_actions.isdisjoint(readonly))
+        self.assertTrue(read_tools.issubset(editing))
+        self.assertTrue(app_actions.issubset(editing))

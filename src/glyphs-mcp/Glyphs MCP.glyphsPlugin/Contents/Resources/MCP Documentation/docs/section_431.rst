@@ -1,33 +1,5 @@
-:mod:`GSPathSegment`
-===============================================================================
+.. attribute:: parent
 
-Implementation of the segment object.
+		Reference to the :class:`layer <GSLayer>` object.
 
-For details on how to access them, please see :attr:`GSPath.segments`
-
-.. class:: GSPathSegment()
-
-	Properties
-
-	.. autosummary::
-
-		type
-		bounds
-		length
-
-	Functions
-
-	.. autosummary::
-
-		copy()
-		curvatureAtTime_()
-		extremePoints()
-		extremeTimes()
-		inflectionPoints()
-		lastPoint()
-		middlePoint()
-		normalAtTime_()
-		normalizeHandles()
-		pointAtTime_()
-		reverse()
-		tangentAtTime_()
+		:type: :class:`GSLayer`

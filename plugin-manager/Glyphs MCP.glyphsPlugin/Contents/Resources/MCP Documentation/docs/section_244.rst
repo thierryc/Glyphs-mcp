@@ -1,4 +1,3 @@
-.. attribute:: code
-		A String containing feature code.
+.. attribute:: value
 
-		:type: str
+		:type: str, list, dict, int, float

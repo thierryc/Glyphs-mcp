@@ -1,8 +1,29 @@
-.. attribute:: position
-		Position of image in font units.
+:mod:`GSHint`
+===============================================================================
 
-		:type: :class:`NSPoint`
+Implementation of the hint object.
 
-	.. code-block:: python
-		# change position
-		layer.backgroundImage.position = NSPoint(50, 50)
+For details on how to access them, please see :class:`GSLayer.hints`
+
+.. class:: GSHint()
+
+		* :attr:`parent`
+		* :attr:`originNode`
+		* :attr:`targetNode`
+		* :attr:`otherNode1`
+		* :attr:`otherNode2`
+		* :attr:`originIndex`
+		* :attr:`targetIndex`
+		* :attr:`otherIndex1`
+		* :attr:`otherIndex2`
+		* :attr:`type`
+		* :attr:`horizontal`
+		* :attr:`selected`
+		* :attr:`isTrueType`
+		* :attr:`isPostScript`
+		* :attr:`isCorner`
+		* :attr:`name`
+		* :attr:`stem`
+		* :attr:`alignment`
+
+	**Properties**

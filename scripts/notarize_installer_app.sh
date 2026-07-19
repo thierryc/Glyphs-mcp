@@ -15,6 +15,9 @@ if [[ ! -d "$app" ]]; then
 fi
 
 zip="$repo_root/dist/installer-app/$scheme.zip"
+if [[ "$skip" == "1" ]]; then
+  zip="$repo_root/dist/installer-app/$scheme-UNNOTARIZED.zip"
+fi
 rm -f "$zip"
 
 echo "Zipping for notarization: $zip"
@@ -22,7 +25,8 @@ ditto -c -k --keepParent "$app" "$zip"
 
 if [[ "$skip" == "1" ]]; then
   echo "Skipping notarization (SKIP_NOTARIZATION=1)."
-  echo "Wrote (unsigned for distribution): $zip"
+  echo "Wrote a deliberately non-release artifact: $zip"
+  echo "The secure publisher will never upload this filename."
   exit 0
 fi
 
@@ -37,5 +41,12 @@ fi
 
 echo "Stapling ticket…"
 xcrun stapler staple "$app"
+xcrun stapler validate "$app"
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$app"
+
+# Recreate the ZIP after stapling so the uploaded archive contains the ticket.
+rm -f "$zip"
+ditto -c -k --keepParent "$app" "$zip"
 
 echo "Notarized + stapled: $app"
+echo "Repacked stapled app: $zip"

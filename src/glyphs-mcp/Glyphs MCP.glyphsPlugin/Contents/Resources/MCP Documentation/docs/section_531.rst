@@ -1,11 +1,8 @@
-.. attribute:: direction
-		Writing direction.
+.. attribute:: layersCursor
+		Position of cursor in the layers list, starting with 0.
 
-		See `Writing Directions`_
+		.. seealso:: `GSEditViewController.layers`
 
 		:type: integer
 
-		.. code-block:: python
-			glyph.direction = GSRTL
-
-		.. versionadded:: 3
+		.. versionadded:: 2.4

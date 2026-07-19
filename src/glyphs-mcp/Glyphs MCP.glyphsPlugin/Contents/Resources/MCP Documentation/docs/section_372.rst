@@ -1,6 +1,11 @@
-.. attribute:: scale
-		Scale factor of the component.
+.. attribute:: tempData
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use layer.userData
 
-		A tuple containing the horizontal and vertical scale.
+		:type: dict
 
-		:type: tuple, NSPoint
+		.. code-block:: python
+			# set value
+			layer.tempData['rememberToMakeCoffee'] = True
+
+			# delete value
+			del layer.tempData['rememberToMakeCoffee']

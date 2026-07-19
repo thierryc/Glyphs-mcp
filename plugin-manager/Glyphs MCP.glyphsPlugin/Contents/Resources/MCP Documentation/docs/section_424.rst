@@ -1,11 +1,7 @@
-.. attribute:: selected
-		Selection state of node in UI.
+.. attribute:: id
 
-		:type: bool
+		Id of the axis. This Id will be used to map the Smart Glyph’s layers to the poles of the interpolation. See :attr:`GSLayer.smartComponentPoleMapping`
 
-		.. code-block:: python
-			# select node
-			layer.paths[0].nodes[0].selected = True
+		:type: str
 
-			# print(selection state)
-			print(layer.paths[0].nodes[0].selected)
+		.. versionadded:: 2.5

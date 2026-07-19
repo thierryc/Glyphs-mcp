@@ -1,19 +1,5 @@
-:mod:`GSSmartComponentAxis`
-===============================================================================
+.. attribute:: slant
 
-Implementation of the Smart Component interpolation axis object.
-For details on how to access them, please see :attr:`GSGlyph.smartComponentAxes`
+		The slant of the component.
 
-.. versionadded:: 2.3
-
-.. class:: GSSmartComponentAxis()
-
-	Properties
-
-	.. autosummary::
-
-		name
-		topValue
-		bottomValue
-
-	**Properties**
+		:type: tuple, NSPoint

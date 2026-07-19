@@ -1,5 +1,7 @@
-.. function:: addAsMaster()
+.. attribute:: font
 
-		Add this instance as a new master to the font. Identical to "Instance as Master" menu item in the Font Info’s Instances section.
+		Reference to the :class:`GSFont` object that contains the instance. Normally that is set by the app, only if the instance is not actually added to the font, then set this manually.
 
-		.. versionadded:: 2.6.2
+		:type: GSFont
+
+		.. versionadded:: 2.5.1

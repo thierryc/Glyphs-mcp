@@ -1,10 +1,5 @@
-.. attribute:: descriptions
-		This accesses all localized description values.
-		For details :attr:`GSInstance.properties`
+.. attribute:: windowsFamily
 
-		:type: dict
+		windowsFamily
 
-		.. code-block:: python
-			instance.descriptions["ENG"] = "This is my description"
-
-		.. versionadded:: 3.0.3
+		:type: str

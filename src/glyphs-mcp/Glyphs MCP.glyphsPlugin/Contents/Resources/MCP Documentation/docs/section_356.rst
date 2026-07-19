@@ -1,5 +1,4 @@
-.. function:: beginChanges()
+.. attribute:: selectionBounds
+		Bounding box of the layer’s selection (nodes, anchors, components etc). Read-only.
 
-		Call this before you do bigger changes to the Layer.
-		This will increase performance and prevent undo problems.
-		Always call layer.endChanges() if you are finished.
+		:type: NSRect

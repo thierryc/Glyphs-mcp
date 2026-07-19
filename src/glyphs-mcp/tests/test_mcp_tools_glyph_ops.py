@@ -146,6 +146,8 @@ class McpToolsGlyphOpsTests(unittest.TestCase):
             filepath=filepath,
             masters=[types.SimpleNamespace(id="m1", name="Regular")],
             instances=[],
+            formatVersion=3,
+            appVersion="3300",
         )
         font.removeGlyph_ = lambda glyph: glyphs_collection.pop(glyph.name, None)
         glyphs_module = types.SimpleNamespace(
@@ -354,6 +356,9 @@ class McpToolsGlyphOpsTests(unittest.TestCase):
 
         self.assertTrue(payload["success"])
         self.assertEqual(payload["path"], "/tmp/UnitTestSans.glyphs")
+        self.assertEqual(payload["formatVersionBefore"], 3)
+        self.assertEqual(payload["formatVersionAfter"], 3)
+        self.assertEqual(payload["formatVersion"], 3)
         save.assert_called_once_with(mock.ANY, None)
 
     def test_save_font_uses_mocked_save_helper_for_save_as_path(self) -> None:

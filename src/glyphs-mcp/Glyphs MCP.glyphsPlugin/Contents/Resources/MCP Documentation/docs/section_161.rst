@@ -1,8 +1,3 @@
-Properties
+.. attribute:: italicAngle
 
-	.. autosummary::
-
-		position
-		size
-
-	**Properties**
+		:type: float

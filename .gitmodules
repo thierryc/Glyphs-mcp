@@ -1,3 +1,4 @@
 [submodule "GlyphsSDK"]
 	path = GlyphsSDK
-	url = https://github.com/thierryc/GlyphsSDK.git
+	url = https://github.com/schriftgestalt/GlyphsSDK.git
+	branch = Glyphs4

@@ -1,6 +1,11 @@
-.. attribute:: masterIndex
-		The index of the active master (selected in the toolbar).
+.. attribute:: tempData
+		A dictionary to store data temporarily. Use a unique key. This will not be saved to file. If you need the data persistent, use hint.userData
 
-		:type: int
+		:type: dict
 
-		.. versionadded:: 2.6.1
+		.. code-block:: python
+			# set value
+			hint.tempData['rememberToMakeCoffee'] = True
+
+			# delete value
+			del hint.tempData['rememberToMakeCoffee']
