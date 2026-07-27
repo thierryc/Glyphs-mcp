@@ -104,6 +104,10 @@ print(json.dumps({'uri': str(captured[0].uri), 'mime': captured[0].mime_type, 'c
         self.assertIn("ui/notifications/tool-input", html)
         self.assertIn("ui/notifications/host-context-changed", html)
         self.assertIn("tools/call", html)
+        self.assertIn("window.openai", html)
+        self.assertIn("hostCapabilities.serverTools", html)
+        self.assertIn("bridge_call_unavailable", html)
+        self.assertIn("appCapabilities: {}", html)
         self.assertIn("bridge_unavailable", html)
         self.assertIn("5000", html)
         self.assertIn("aria-live", html)
@@ -130,6 +134,18 @@ print(json.dumps({'uri': str(captured[0].uri), 'mime': captured[0].mime_type, 'c
         self.assertNotIn("overflow-y: auto", lower)
         self.assertNotIn("overflow-y:auto", lower)
         self.assertIn("slice(0, 2)", html)
+
+    def test_html_uses_chatgpt_surface_typography_and_standard_theme_tokens(self) -> None:
+        html = (_resources_dir() / "feedback_ui_v1.html").read_text(encoding="utf-8")
+
+        self.assertIn("font-size: 15px", html)
+        self.assertIn("h1 { font-size: 18px; font-weight: 600;", html)
+        self.assertIn("--gm-bg: var(--color-background-primary, light-dark(#fff, #212121));", html)
+        self.assertIn("--gm-panel: var(--color-background-primary, light-dark(#fff, #212121));", html)
+        self.assertIn("--gm-muted: var(--color-text-secondary, light-dark(#5d5d5d, #b4b4b4));", html)
+        self.assertIn("--gm-accent: var(--color-accent, #10a37f);", html)
+        self.assertIn("context.styles && context.styles.variables", html)
+        self.assertIn("root.style.colorScheme = theme", html)
 
     def test_mock_mcp_apps_host_exercises_bridge_actions_theme_and_errors(self) -> None:
         node = shutil.which("node")

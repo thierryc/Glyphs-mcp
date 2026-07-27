@@ -47,6 +47,38 @@ ALLOWED_UNDO_RISK = {"none", "low", "medium", "high"}
 
 
 TOOL_RELEASE_GATE = {
+    "get_custom_parameters": {
+        "coverage": UNIT_BEHAVIOR,
+        "tests": ("test_mcp_tools_custom_parameters.py",),
+        "mutation": READ_ONLY,
+        "undoRisk": "none",
+        "undoNote": "Reads font/master custom-parameter records and resolves effective values only.",
+        "smoke": "Read a small prefixed parameter set at font and effective-master scopes.",
+    },
+    "set_custom_parameters": {
+        "coverage": UNIT_BEHAVIOR,
+        "tests": ("test_mcp_tools_custom_parameters.py",),
+        "mutation": EDITS_FONT,
+        "undoRisk": "low",
+        "undoNote": "Writes explicit font/master custom parameters only after dry-run and confirmation; never saves.",
+        "smoke": "On a disposable font, preview one set and one delete, confirm, verify read-back, then close without saving.",
+    },
+    "review_unicode_assignments": {
+        "coverage": UNIT_BEHAVIOR,
+        "tests": ("test_unicode_assignment_engine.py", "test_mcp_tools_unicode_assignments.py"),
+        "mutation": READ_ONLY,
+        "undoRisk": "none",
+        "undoNote": "Reads glyph Unicode/export state and computes plain-data findings only.",
+        "smoke": "Review selected glyphs with allocate_unencoded=false, then a small disposable PUA allocation preview.",
+    },
+    "apply_unicode_assignments": {
+        "coverage": UNIT_BEHAVIOR,
+        "tests": ("test_unicode_assignment_engine.py", "test_mcp_tools_unicode_assignments.py"),
+        "mutation": EDITS_FONT,
+        "undoRisk": "medium",
+        "undoNote": "Can change multiple glyph Unicode values; require dry-run, a disposable copy, and a small confirmed batch.",
+        "smoke": "Dry-run one reviewed assignment; confirm only on a disposable glyph and verify no auto-save.",
+    },
     "execute_code": {
         "coverage": UNIT_BEHAVIOR,
         "tests": ("test_code_execution.py",),

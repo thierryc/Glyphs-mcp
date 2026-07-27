@@ -1,0 +1,150 @@
+# encoding: utf-8
+
+###########################################################################################################
+#
+#
+# Select Tool Plugin
+#
+# Read the docs:
+# https://github.com/schriftgestalt/GlyphsSDK/tree/master/Python%20Templates/SelectTool
+#
+#
+###########################################################################################################
+
+from __future__ import division, print_function, unicode_literals
+import objc
+import os
+from GlyphsApp import Glyphs, GSAnchor, subtractPoints
+from GlyphsApp.plugins import SelectTool
+from AppKit import NSImage, NSColor, NSBezierPath, NSPoint
+
+
+class ____PluginClassName____(SelectTool):
+
+	@objc.python_method
+	def settings(self):
+		self.name = Glyphs.localize({
+			'en': 'My Select Tool',
+			'de': 'Mein Auswahlwerkzeug'
+		})
+		self.generalContextMenus = [
+			{
+				'name': Glyphs.localize({
+					'en': 'Layer info in Macro window',
+					'de': 'Ebenen-Infos in Makro-Fenster'
+				}),
+				'action': self.printInfo_
+			},
+		]
+		icon_path = os.path.join(os.path.dirname(self.__file__()), "toolbarIconTemplate.pdf")
+		my_image = NSImage.alloc().initByReferencingFile_(icon_path)
+		self._icon = None  # needs to be set to None for now. Is fixed in 3.4 (3416)
+		self.tool_bar_image = my_image
+		self.keyboardShortcut = 'c'
+
+	@objc.python_method
+	def start(self):
+		pass
+
+	@objc.python_method
+	def activate(self):
+		pass
+
+	@objc.python_method
+	def background(self, layer):
+
+		# Draw a red rectangle behind the glyph as big as the glyph’s bounding box
+		NSColor.redColor().set()
+		NSBezierPath.fillRect_(layer.bounds)
+
+	@objc.python_method
+	def deactivate(self):
+		pass
+
+	def mouseDown_(self, theEvent):
+		objc.super(____PluginClassName____, self).mouseDown_(theEvent)
+		"""
+		Do more stuff that you need on mouseDown_(). Like custom selection
+		"""
+		loc = self.editViewController().graphicView().getActiveLocation_(theEvent)
+		layer = self.editViewController().graphicView().activeLayer()
+		self.clickedElement = self.elementAtPoint_atLayer_(loc, layer)
+
+	def mouseDragged_(self, theEvent):
+		objc.super(____PluginClassName____, self).mouseDragged_(theEvent)
+		"""
+		Do more stuff that you need on mouseDragged_(). Like moving custom objects
+		"""
+		loc = self.editViewController().graphicView().getActiveLocation_(theEvent)
+		layer = self.editViewController().graphicView().activeLayer()
+		offset = subtractPoints(loc, self.draggStart())
+		# now you can move stuff with that offset.
+
+	def mouseUp_(self, theEvent):
+		objc.super(____PluginClassName____, self).mouseUp_(theEvent)
+		"""
+		Do more stuff that you need on mouseUp_(). Like custom selection
+		"""
+		# some selection is only done on mouseUp_
+		loc = self.editViewController().graphicView().getActiveLocation_(theEvent)
+		layer = self.editViewController().graphicView().activeLayer()
+		clickedElement = self.elementAtPoint_atLayer_(loc, layer)
+		if clickedElement is not None:
+			layer.selection.append(clickedElement)
+
+	@objc.python_method
+	def conditionalContextMenus(self):
+
+		# Empty list of context menu items
+		contextMenus = []
+
+		# Execute only if layers are actually selected
+		if Glyphs.font.selectedLayers:
+			layer = Glyphs.font.selectedLayers[0]
+
+			# Exactly one object is selected and it’s an anchor
+			if len(layer.selection) == 1 and isinstance(layer.selection[0], GSAnchor):
+				# Add context menu item
+				contextMenus.append({'name': Glyphs.localize({'en': u'Randomly move anchor', 'de': u'Anker zufällig verschieben'}), 'action': self.randomlyMoveAnchor_})
+
+		# Return list of context menu items
+		return contextMenus
+
+	def printInfo_(self, sender):
+		"""
+		Example for a method triggered by a context menu item.
+		Fill in your own method name and code.
+		Remove this method if you do not want any extra context menu items.
+		"""
+
+		# Execute only if layers are actually selected
+		if Glyphs.font.selectedLayers:
+			layer = Glyphs.font.selectedLayers[0]
+
+			# Do stuff:
+			print("Current layer:", layer.parent.name, layer.name)
+			print("  Number of paths:", len(layer.paths))
+			print("  Number of components:", len(layer.components))
+			print("  Number of anchors:", len(layer.anchors))
+
+	def randomlyMoveAnchor_(self, sender):
+		"""
+		Example for a method triggered by a conditional context menu item.
+		Fill in your own method name and code.
+		Sender contains the NSMenuItem, so that’s not really useful for you.
+		Remove this method if you do not want any extra context menu items.
+		"""
+		import random
+
+		# Just for your understanding:
+		# Here we don’t need to check how many objects are selected and what types they are.
+		# Because this has already been done in conditionalContextMenus() and didn’t change since.
+		# So our anchor is the first and only selected item in the layer.
+
+		anchor = Glyphs.font.selectedLayers[0].selection[0]
+		anchor.position = NSPoint(anchor.position.x + random.randint(-50, 50), anchor.position.y + random.randint(-50, 50))
+
+	@objc.python_method
+	def __file__(self):
+		"""Please leave this method unchanged"""
+		return __file__

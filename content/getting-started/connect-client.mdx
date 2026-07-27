@@ -1,6 +1,6 @@
 ---
 title: Connect a client
-description: Connect Codex, Claude, or another MCP client to Glyphs MCP.
+description: Connect Codex, ChatGPT, Claude, Cursor, or another MCP client to Glyphs MCP.
 ---
 
 import CodeBlock from '@theme/CodeBlock';
@@ -40,6 +40,9 @@ startup_timeout_sec = 30
 tool_timeout_sec = 120`}</CodeBlock>
 
 Reload Codex after changing MCP configuration.
+
+For the repository plugin, embedded feedback panel, and bundled skills, see
+[Codex and ChatGPT plugin UI](./codex-chatgpt-plugin-ui.mdx).
 
 ## Claude CLI and Claude Code
 
@@ -92,6 +95,28 @@ Some users prefer a Python bridge such as `mcp-proxy`:
 }`}</CodeBlock>
 
 Set `env.PATH` when the app cannot find commands that work in Terminal. Common command locations include `~/.local/bin`, `/opt/homebrew/bin`, and `/usr/local/bin`.
+
+## Cursor
+
+Cursor supports Streamable HTTP MCP servers through project or global
+`mcp.json` files. Add a project connection at `.cursor/mcp.json`:
+
+<CodeBlock language="json">{`{
+  "mcpServers": {
+    "glyphs-mcp-server": {
+      "url": "http://127.0.0.1:9680/mcp/"
+    }
+  }
+}`}</CodeBlock>
+
+Use `~/.cursor/mcp.json` instead when the connection should be available across
+projects. Reload Cursor, open its MCP settings or **Available Tools**, and
+confirm that `glyphs-mcp-server` is enabled.
+
+The Glyphs MCP installers do not currently write Cursor configuration. Preserve
+other servers if you edit either file manually. See
+[Cursor's MCP documentation](https://docs.cursor.com/context/model-context-protocol)
+for current configuration locations and client behavior.
 
 ## Verify
 

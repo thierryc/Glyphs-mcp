@@ -16,7 +16,7 @@ Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish 
 Version `1.3.0` is the Glyphs 4 safe-compatibility release. It preserves the
 unified Glyphs 3.5/4 bundle introduced in `1.2.24` while adding format-aware,
 metadata-preserving outline inspection and editing. It also ships the
-repository Codex marketplace plug-in, embedded feedback panel, guarded
+repository ChatGPT/Codex marketplace plug-in, embedded feedback panel, guarded
 preview/apply plans, and the fail-closed local publishing workflow.
 
 Release highlights:
@@ -35,7 +35,7 @@ Release highlights:
   failed writes or verification.
 - Add richer shape, component, grouping, attribute, and compatibility
   diagnostics.
-- Add the Codex marketplace plug-in, synchronize its six skills from canonical
+- Add the ChatGPT/Codex marketplace plug-in, synchronize its eight skills from canonical
   repository sources, and expose bounded feedback-panel tools for status, font,
   glyph, OpenType, spacing, kerning, and handle review.
 - Require local tests, exact remote/tag alignment, Developer ID signatures,
@@ -55,7 +55,7 @@ Local verification for this prep:
 /usr/local/bin/python3.12 -m unittest discover -s src/glyphs-mcp/tests
 ```
 
-Result: `354` Python tests passed, `1` skipped; `78` macOS installer
+Result: `400` Python tests passed, `1` skipped; `78` macOS installer
 tests passed; the unsigned Debug installer build completed successfully.
 
 ## Future cleanup targets

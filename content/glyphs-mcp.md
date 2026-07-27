@@ -79,7 +79,7 @@ The design is tools-first: use deterministic, named tools before falling back to
 - Review stem prerequisites and apply guarded first-pass italic or oblique transforms.
 - Preview and apply compensated tuning transforms across compatible masters.
 - Export UFO masters and designspace documents with structured logs.
-- Search bundled Glyphs docs on demand with `docs_search` and `docs_get`.
+- Search bundled Glyphs API, scripting, plug-in-template, and file-format docs on demand with `docs_search` and `docs_get`.
 - Inspect Glyphs 3/4 source-format metadata and safely edit version 4 outlines
   without flattening grouped/styled shapes or advanced node metadata.
 

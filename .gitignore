@@ -241,3 +241,7 @@ node_modules
 
 # Local scratch workspace
 _crea/
+
+# Local browser verification artifacts
+.playwright-mcp/
+output/playwright/

@@ -65,7 +65,7 @@ The Claude integrations are intentionally separate:
 - Claude Desktop is patched through `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Claude Code is configured through the `claude` CLI when available, with `~/.claude.json` as fallback
 
-Only Codex and Claude Code receive the managed `glyphs-mcp-*` skill bundle.
+Only Codex and Claude Code receive the managed Glyphs MCP skill bundle.
 
 ## Safe uninstall
 

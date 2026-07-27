@@ -1,0 +1,141 @@
+{
+.appVersion = "3415";
+.formatVersion = 3;
+DisplayStrings = (
+"/toolbarIconTemplate"
+);
+customParameters = (
+{
+name = "Point To Unit Ratio";
+value = 10;
+}
+);
+date = "2025-05-18 19:11:44 +0000";
+familyName = "New Font";
+fontMaster = (
+{
+customParameters = (
+{
+name = "Preview Descender";
+value = 0;
+}
+);
+id = "7684949A-14C3-4E15-9070-3ED6616EDEE8";
+metricValues = (
+{
+pos = 180;
+},
+{
+},
+{
+}
+);
+name = Regular;
+}
+);
+glyphs = (
+{
+category = Icon;
+glyphname = toolbarIconTemplate;
+lastChange = "2025-05-18 21:47:24 +0000";
+layers = (
+{
+attr = {
+color = 1;
+};
+layerId = "7684949A-14C3-4E15-9070-3ED6616EDEE8";
+shapes = (
+{
+attr = {
+fill = 1;
+fillColor = (26,25,25,64);
+strokePos = -1;
+strokeWidth = 10;
+};
+closed = 1;
+nodes = (
+(50,140,l),
+(10,140,l),
+(10,30,l),
+(50,30,l)
+);
+},
+{
+attr = {
+fill = 1;
+fillColor = (26,25,25,64);
+strokePos = -1;
+strokeWidth = 10;
+};
+closed = 1;
+nodes = (
+(100,120,l),
+(60,120,l),
+(60,30,l),
+(100,30,l)
+);
+},
+{
+attr = {
+fill = 1;
+fillColor = (26,25,25,64);
+strokePos = -1;
+strokeWidth = 10;
+};
+closed = 1;
+nodes = (
+(150,100,l),
+(110,100,l),
+(110,30,l),
+(150,30,l)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../Images";
+presets = (
+{
+filename = "{{{glyph.name}}}";
+format = PDF;
+name = default;
+size = 18;
+}
+);
+};
+com.glyphsapp.ImageExportSettings = {
+path = "..";
+presets = (
+{
+filename = "{{{glyph.name}}}";
+format = PDF;
+name = default;
+size = 18;
+}
+);
+};
+};
+width = 160;
+}
+);
+}
+);
+metrics = (
+{
+type = ascender;
+},
+{
+type = baseline;
+},
+{
+type = descender;
+}
+);
+settings = {
+gridLength = 10;
+gridSubDivision = 10;
+};
+unitsPerEm = 180;
+versionMajor = 1;
+versionMinor = 0;
+}

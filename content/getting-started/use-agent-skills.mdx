@@ -1,20 +1,43 @@
 ---
 title: Use skills
-description: Use the bundled Glyphs MCP skills in Codex or Claude Code.
+description: Use the bundled Glyphs MCP skills in Codex, Claude Code, or Cursor.
 ---
 
-Glyphs MCP ships focused workflow skills in `skills/`. They do not replace MCP tools; they teach an agent how to use those tools safely for recurring Glyphs tasks.
+Glyphs MCP ships a general launcher and focused workflow skills in `skills/`. They do not replace MCP tools; they teach an agent how to use those tools safely for Glyphs tasks.
 
-Use skills when you want the agent to follow a known workflow for connection checks, OpenType feature inspection, kerning, spacing, or outline work.
+Start with `glyphs` for a general task or context check. Use a focused skill
+when you already know the task is OpenType feature inspection, icon-font
+encoding, kerning, spacing, outline work, an italic first pass, or Glyphs
+script and plug-in development.
 
 ## Before you use a skill
 
 - Glyphs MCP is installed.
-- The local server is running at `http://127.0.0.1:9680/mcp/`.
-- Your client is connected.
+- For live font work, the local server is running at `http://127.0.0.1:9680/mcp/`
+  and your client is connected. Workspace-only development can start offline.
 - You have either opened this repository in the client or installed the skills globally.
 
 If the client is not connected yet, start with [Connect a client](./connect-client.mdx).
+
+## Client compatibility
+
+| Client | Repo-local skills | User skills | MCP connection | Embedded feedback UI |
+| --- | --- | --- | --- | --- |
+| Codex and ChatGPT plugin hosts | Installed plugin bundle or `.agents/skills` | `~/.codex/skills` | Bundled plugin connection or Codex MCP config | Available on compatible MCP Apps hosts |
+| Claude Code | `.claude/skills` | `~/.claude/skills` | Claude CLI MCP config | Text and structured results |
+| Cursor | `.agents/skills` or explicit `.cursor/skills` fallback | `~/.cursor/skills` | `.cursor/mcp.json` | Text and structured results |
+
+The installer manages Codex and Claude Code skill targets. Cursor setup is
+manual: this repository's existing `.agents/skills` bridge is the shared
+repo-local source, while `.cursor/skills` is an explicit fallback if a Cursor
+version or configuration does not discover it. Confirm the skills in Cursor's
+settings before relying on automatic invocation.
+
+Claude Code loads project skills from `.claude/skills` and personal skills from
+`~/.claude/skills`; see
+[Claude's skills documentation](https://code.claude.com/docs/en/slash-commands).
+The ordinary Claude App MCP connection provides tools, but does not imply that
+Claude Code filesystem skills are loaded into every Claude chat surface.
 
 ## Repo-local skills
 
@@ -22,7 +45,7 @@ The authored skill source lives in `skills/`.
 
 This repo exposes the same skill bundle through client-specific bridges:
 
-- Codex: `.agents/skills`
+- Codex and Cursor: `.agents/skills`
 - Claude Code: `.claude/skills`
 
 Open this repository in the client, trust or reload the workspace if needed, then invoke the skill by name.
@@ -30,13 +53,19 @@ Open this repository in the client, trust or reload the workspace if needed, the
 Codex example:
 
 ```text
-Use $glyphs-mcp-connect to verify my Glyphs MCP setup, call list_open_fonts, and tell me which font_index to use next.
+Use $glyphs to inspect the current Glyphs context and help with my font task.
 ```
 
 Claude Code example:
 
 ```text
-Use the glyphs-mcp-connect skill to verify my Glyphs MCP setup, call list_open_fonts, and tell me which font_index to use next.
+Use the glyphs skill to inspect the current Glyphs context and help with my font task.
+```
+
+Cursor example:
+
+```text
+Use the glyphs skill to inspect the current Glyphs context and help with my font task.
 ```
 
 ## Global skills
@@ -47,19 +76,25 @@ Use the installer when you want the bundled skills available without opening the
 python3 install.py
 ```
 
-Enable **Install Glyphs MCP agent skills** for Codex and/or Claude Code. The installer copies the bundled `glyphs-mcp-*` skills into:
+Enable **Install Glyphs MCP agent skills** for Codex and/or Claude Code. The installer copies the bundled Glyphs MCP skills into:
 
 - `~/.codex/skills/`
 - `~/.claude/skills/`
 
 Reload or restart the client after installation.
 
+For a manual global Cursor install, copy the eight skill directories from
+`skills/` into `~/.cursor/skills/`, preserving each directory's `SKILL.md` and
+supporting files.
+
 ## Available skills
 
 | Skill | Use it for | Example prompt |
 | --- | --- | --- |
-| `glyphs-mcp-connect` | Startup checks, endpoint verification, and first health checks | `Use the glyphs-mcp-connect skill to verify my setup and call list_open_fonts.` |
+| `glyphs` | General tasks, connection and context checks, and workflow routing | `Use $glyphs to inspect my current Glyphs context and help with this font task.` |
+| `glyphs-mcp-development` | Documentation-grounded Glyphs Python scripts and plug-in scaffolds | `Use $glyphs-mcp-development to create a reporter plug-in in this workspace.` |
 | `glyphs-mcp-features` | OpenType features and stylistic-set glyph groups with Glyphs links | `Use the glyphs-mcp-features skill to list glyphs by style set with group links.` |
+| `glyphs-mcp-icon-font` | Stable icon-font Unicode and PUA assignment workflows | `Use the glyphs-mcp-icon-font skill to audit this icon font and preserve its existing mappings.` |
 | `glyphs-mcp-kerning` | Kerning bumper review and approved applies | `Use the glyphs-mcp-kerning skill to review kerning collisions and do a dry run first.` |
 | `glyphs-mcp-spacing` | Spacing review and approved applies | `Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.` |
 | `glyphs-mcp-outlines-docs` | Outline edits, selected nodes, components, anchors, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes and fetch only the docs pages I need.` |
@@ -74,9 +109,11 @@ Reload or restart the client after installation.
 - Require explicit approval before confirm-gated mutations.
 - Never auto-save the font unless a human explicitly asks for it.
 - Use `docs_search` and `docs_get` instead of loading broad documentation into context.
+- Create scripts and plug-ins in the workspace; install or run them only after a separate explicit request.
 
 ## Related docs
 
 - [Agent skills](../concepts/agent-skills.mdx)
+- [Codex and ChatGPT plugin UI](./codex-chatgpt-plugin-ui.mdx)
 - [First session](../tutorial/first-session.mdx)
 - [Command set](../reference/command-set.mdx)

@@ -450,10 +450,20 @@ class InstallerSmokeTests(unittest.TestCase):
                     os.environ["HOME"] = old_home
 
             self.assertFalse(skipped)
-            self.assertGreaterEqual(len(installed), 1)
+            self.assertEqual(set(installed), set(install_cli.MANAGED_SKILL_NAMES))
             for skill_name in installed:
-                self.assertTrue(skill_name.startswith("glyphs-mcp-"))
+                self.assertIn(skill_name, install_cli.MANAGED_SKILL_NAMES)
                 self.assertTrue((Path(tmp) / ".codex" / "skills" / skill_name / "SKILL.md").is_file())
+            self.assertTrue(
+                (
+                    Path(tmp)
+                    / ".codex"
+                    / "skills"
+                    / "glyphs-mcp-development"
+                    / "scripts"
+                    / "scaffold.py"
+                ).is_file()
+            )
             self.assertTrue((Path(tmp) / ".codex" / "skills" / "third-party-skill" / "SKILL.md").is_file())
 
     def test_install_skill_bundle_overwrites_managed_skills_only_when_requested(self) -> None:
@@ -464,9 +474,13 @@ class InstallerSmokeTests(unittest.TestCase):
             os.environ["HOME"] = tmp
             try:
                 dest_root = install_cli.claude_code_skills_dir()
-                managed_dest = dest_root / "glyphs-mcp-connect"
+                managed_dest = dest_root / "glyphs"
                 managed_dest.mkdir(parents=True, exist_ok=True)
                 (managed_dest / "SKILL.md").write_text("old managed skill\n", encoding="utf-8")
+
+                legacy_dest = dest_root / "glyphs-mcp-connect"
+                legacy_dest.mkdir(parents=True, exist_ok=True)
+                (legacy_dest / "SKILL.md").write_text("old connect skill\n", encoding="utf-8")
 
                 unrelated = dest_root / "another-skill"
                 unrelated.mkdir(parents=True, exist_ok=True)
@@ -479,9 +493,10 @@ class InstallerSmokeTests(unittest.TestCase):
                 else:
                     os.environ["HOME"] = old_home
 
-            self.assertIn("glyphs-mcp-connect", installed)
+            self.assertIn("glyphs", installed)
             self.assertFalse(skipped)
-            self.assertIn("name: glyphs-mcp-connect", (managed_dest / "SKILL.md").read_text(encoding="utf-8"))
+            self.assertIn("name: glyphs", (managed_dest / "SKILL.md").read_text(encoding="utf-8"))
+            self.assertFalse(legacy_dest.exists())
             self.assertEqual((unrelated / "SKILL.md").read_text(encoding="utf-8"), "keep me\n")
 
     def test_programmatic_skill_install_targets_codex_only(self) -> None:
@@ -503,7 +518,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     os.environ["HOME"] = old_home
 
             self.assertTrue(installed)
-            self.assertTrue((Path(tmp) / ".codex" / "skills" / "glyphs-mcp-connect" / "SKILL.md").is_file())
+            self.assertTrue((Path(tmp) / ".codex" / "skills" / "glyphs" / "SKILL.md").is_file())
             self.assertFalse((Path(tmp) / ".claude" / "skills").exists())
 
     def test_programmatic_skill_install_targets_claude_only(self) -> None:
@@ -525,7 +540,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     os.environ["HOME"] = old_home
 
             self.assertTrue(installed)
-            self.assertTrue((Path(tmp) / ".claude" / "skills" / "glyphs-mcp-connect" / "SKILL.md").is_file())
+            self.assertTrue((Path(tmp) / ".claude" / "skills" / "glyphs" / "SKILL.md").is_file())
             self.assertFalse((Path(tmp) / ".codex" / "skills").exists())
 
     def test_programmatic_skill_install_targets_both(self) -> None:
@@ -547,8 +562,8 @@ class InstallerSmokeTests(unittest.TestCase):
                     os.environ["HOME"] = old_home
 
             self.assertTrue(installed)
-            self.assertTrue((Path(tmp) / ".codex" / "skills" / "glyphs-mcp-connect" / "SKILL.md").is_file())
-            self.assertTrue((Path(tmp) / ".claude" / "skills" / "glyphs-mcp-connect" / "SKILL.md").is_file())
+            self.assertTrue((Path(tmp) / ".codex" / "skills" / "glyphs" / "SKILL.md").is_file())
+            self.assertTrue((Path(tmp) / ".claude" / "skills" / "glyphs" / "SKILL.md").is_file())
 
     def test_install_skill_bundle_for_targets_requires_policy_when_managed_skills_exist(self) -> None:
         install_cli = _load_install_cli()
@@ -557,7 +572,7 @@ class InstallerSmokeTests(unittest.TestCase):
             old_home = os.environ.get("HOME")
             os.environ["HOME"] = tmp
             try:
-                managed_dest = install_cli.codex_skills_dir() / "glyphs-mcp-connect"
+                managed_dest = install_cli.codex_skills_dir() / "glyphs"
                 managed_dest.mkdir(parents=True, exist_ok=True)
                 (managed_dest / "SKILL.md").write_text("old managed skill\n", encoding="utf-8")
                 with self.assertRaises(SystemExit) as ctx:
@@ -585,7 +600,7 @@ class InstallerSmokeTests(unittest.TestCase):
             os.environ["HOME"] = tmp
             try:
                 dest_root = install_cli.codex_skills_dir()
-                managed_dest = dest_root / "glyphs-mcp-connect"
+                managed_dest = dest_root / "glyphs"
                 managed_dest.mkdir(parents=True, exist_ok=True)
                 (managed_dest / "SKILL.md").write_text("old managed skill\n", encoding="utf-8")
                 install_cli.install_skill_bundle_for_targets(
@@ -599,7 +614,7 @@ class InstallerSmokeTests(unittest.TestCase):
                 else:
                     os.environ["HOME"] = old_home
 
-            self.assertIn("name: glyphs-mcp-connect", (managed_dest / "SKILL.md").read_text(encoding="utf-8"))
+            self.assertIn("name: glyphs", (managed_dest / "SKILL.md").read_text(encoding="utf-8"))
 
     def test_existing_managed_skills_are_kept_when_requested(self) -> None:
         install_cli = _load_install_cli()
@@ -609,7 +624,7 @@ class InstallerSmokeTests(unittest.TestCase):
             os.environ["HOME"] = tmp
             try:
                 dest_root = install_cli.codex_skills_dir()
-                managed_dest = dest_root / "glyphs-mcp-connect"
+                managed_dest = dest_root / "glyphs"
                 managed_dest.mkdir(parents=True, exist_ok=True)
                 (managed_dest / "SKILL.md").write_text("old managed skill\n", encoding="utf-8")
                 install_cli.install_skill_bundle_for_targets(
@@ -913,7 +928,7 @@ class InstallerSmokeTests(unittest.TestCase):
             os.environ["HOME"] = tmp
             try:
                 root = install_cli.codex_skills_dir()
-                managed = root / "glyphs-mcp-connect"
+                managed = root / "glyphs"
                 custom = root / "glyphs-mcp-private-notes"
                 unrelated = root / "another-skill"
                 for path in (managed, custom, unrelated):
@@ -926,7 +941,7 @@ class InstallerSmokeTests(unittest.TestCase):
                 else:
                     os.environ["HOME"] = old_home
 
-            self.assertEqual([outcome.candidate.location.name for outcome in outcomes], ["glyphs-mcp-connect"])
+            self.assertEqual([outcome.candidate.location.name for outcome in outcomes], ["glyphs"])
             self.assertFalse(managed.exists())
             self.assertTrue(custom.exists())
             self.assertTrue(unrelated.exists())
