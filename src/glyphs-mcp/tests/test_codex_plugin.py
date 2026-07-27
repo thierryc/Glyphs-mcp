@@ -15,8 +15,10 @@ REPO = Path(__file__).resolve().parents[3]
 PLUGIN = REPO / "plugins" / "glyphs-mcp"
 CANONICAL_SKILLS = REPO / "skills"
 SKILL_NAMES = (
-    "glyphs-mcp-connect",
+    "glyphs",
+    "glyphs-mcp-development",
     "glyphs-mcp-features",
+    "glyphs-mcp-icon-font",
     "glyphs-mcp-italic-first-pass",
     "glyphs-mcp-kerning",
     "glyphs-mcp-outlines-docs",
@@ -61,7 +63,7 @@ class CodexPluginTests(unittest.TestCase):
         self.assertEqual(entry["policy"], {"installation": "AVAILABLE", "authentication": "ON_INSTALL"})
         self.assertEqual(entry["category"], "Creativity")
 
-    def test_plugin_skill_copies_match_the_six_canonical_sources(self) -> None:
+    def test_plugin_skill_copies_match_the_eight_canonical_sources(self) -> None:
         plugin_names = tuple(sorted(path.name for path in (PLUGIN / "skills").iterdir() if path.is_dir()))
         self.assertEqual(plugin_names, tuple(sorted(SKILL_NAMES)))
         for name in SKILL_NAMES:
@@ -72,6 +74,62 @@ class CodexPluginTests(unittest.TestCase):
             text = (CANONICAL_SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
             self.assertNotIn("../../", text, name)
             self.assertIn("https://github.com/thierryc/Glyphs-mcp/blob/main/", text, name)
+
+    def test_generic_glyphs_skill_is_an_explicit_router(self) -> None:
+        root = CANONICAL_SKILLS / "glyphs"
+        files = {
+            str(path.relative_to(root))
+            for path in root.rglob("*")
+            if path.is_file()
+        }
+        self.assertEqual(files, {"SKILL.md", "agents/openai.yaml"})
+
+        skill_text = (root / "SKILL.md").read_text(encoding="utf-8")
+        metadata_text = (root / "agents" / "openai.yaml").read_text(encoding="utf-8")
+        self.assertLessEqual(len(skill_text.splitlines()), 55)
+        self.assertIn("name: glyphs", skill_text)
+        self.assertIn("get_server_info", skill_text)
+        self.assertIn("list_open_fonts", skill_text)
+        self.assertIn("glyphs-mcp-spacing", skill_text)
+        self.assertIn("glyphs-mcp-kerning", skill_text)
+        self.assertIn("glyphs-mcp-development", skill_text)
+        self.assertIn('display_name: "Glyphs MCP"', metadata_text)
+        self.assertIn("$glyphs", metadata_text)
+        self.assertIn("allow_implicit_invocation: false", metadata_text)
+
+    def test_development_skill_is_workspace_first_and_documented(self) -> None:
+        root = CANONICAL_SKILLS / "glyphs-mcp-development"
+        skill_text = (root / "SKILL.md").read_text(encoding="utf-8")
+        metadata_text = (root / "agents" / "openai.yaml").read_text(encoding="utf-8")
+
+        self.assertIn("docs_search", skill_text)
+        self.assertIn("docs_get", skill_text)
+        self.assertIn("current workspace", skill_text)
+        self.assertIn("Never install, execute, reload, restart Glyphs", skill_text)
+        self.assertTrue((root / "scripts" / "scaffold.py").is_file())
+        self.assertTrue((root / "assets" / "GlyphsSDK-LICENSE.txt").is_file())
+        self.assertIn('display_name: "Glyphs MCP Development"', metadata_text)
+        self.assertIn("$glyphs-mcp-development", metadata_text)
+        self.assertIn("allow_implicit_invocation: true", metadata_text)
+
+    def test_icon_font_skill_stays_narrow_and_domain_specific(self) -> None:
+        root = CANONICAL_SKILLS / "glyphs-mcp-icon-font"
+        files = {
+            str(path.relative_to(root))
+            for path in root.rglob("*")
+            if path.is_file()
+        }
+        self.assertEqual(files, {"SKILL.md", "agents/openai.yaml"})
+
+        text = (root / "SKILL.md").read_text(encoding="utf-8")
+        self.assertLessEqual(len(text.splitlines()), 55)
+        self.assertIn("specifically in an icon or symbol font", text)
+        self.assertIn("not icon drawing or general PUA work", text)
+        self.assertIn("require its previous map before allocation", text)
+        self.assertIn("review_unicode_assignments", text)
+        self.assertIn("apply_unicode_assignments", text)
+        self.assertIn("glyphs-mcp-outlines-docs", text)
+        self.assertIn("glyphs-mcp-spacing", text)
 
     def test_plugin_installs_from_the_marketplace_in_an_isolated_codex_home(self) -> None:
         codex = shutil.which("codex")

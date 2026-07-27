@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs MCP Development"
+  short_description: "Write documented Glyphs scripts and plug-ins."
+  default_prompt: "Use $glyphs-mcp-development to create a documented Glyphs Python script or plug-in in this workspace."
+
+policy:
+  allow_implicit_invocation: true

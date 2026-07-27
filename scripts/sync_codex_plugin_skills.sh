@@ -5,8 +5,10 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SOURCE="$ROOT/skills"
 DESTINATION="$ROOT/plugins/glyphs-mcp/skills"
 SKILLS=(
-  glyphs-mcp-connect
+  glyphs
+  glyphs-mcp-development
   glyphs-mcp-features
+  glyphs-mcp-icon-font
   glyphs-mcp-italic-first-pass
   glyphs-mcp-kerning
   glyphs-mcp-outlines-docs
@@ -30,4 +32,6 @@ for skill in "${SKILLS[@]}"; do
 done
 
 find "$DESTINATION" -name '.DS_Store' -delete
+find "$DESTINATION" -type d -name '__pycache__' -prune -exec rm -rf {} +
+find "$DESTINATION" -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 echo "Synchronized ${#SKILLS[@]} Glyphs MCP skills."

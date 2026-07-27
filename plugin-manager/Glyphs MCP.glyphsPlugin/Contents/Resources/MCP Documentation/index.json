@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "sourceRevision": "0f5422db727b78cb42abfb386f33ae0b382b0c4d",
   "documents": [
     {
@@ -6237,6 +6237,204 @@
       "formatVersion": 4,
       "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/GlyphsFileFormat/Schemas/fontinfo-4.schema.json",
       "keywords": "file format version 4 schema fontinfo shape group higher-order interpolation quartic gradients palettes contextual kerning"
+    },
+    {
+      "id": "glyphs-handbook-scripts",
+      "path": "development/handbook-scripts.md",
+      "title": "Creating Glyphs Scripts",
+      "summary": "Official Glyphs Handbook guidance for creating and organizing Python scripts.",
+      "checksum": "db3b974fc91d3a51eae5658f9da93e1e97736aad680926ded70186e554425e42",
+      "sourceKind": "glyphs-handbook",
+      "formatVersion": null,
+      "sourceUrl": "https://handbook.glyphsapp.com/scripts/",
+      "keywords": "creating Glyphs scripts MenuTitle Python Scripts folder"
+    },
+    {
+      "id": "glyphs-handbook-plugins",
+      "path": "development/handbook-plugins.md",
+      "title": "Creating Glyphs Plug-ins",
+      "summary": "Official Glyphs Handbook overview of Python and Objective-C plug-in types and installation.",
+      "checksum": "d566b99bd03f3940c3d1629a0cd3819a42668e570a97afd92c3482d64baf1d05",
+      "sourceKind": "glyphs-handbook",
+      "formatVersion": null,
+      "sourceUrl": "https://handbook.glyphsapp.com/plugins/",
+      "keywords": "creating Glyphs plugins plug-ins reporter filter palette file format tool general"
+    },
+    {
+      "id": "glyphs-python-plugin-api",
+      "path": "development/plugins.py",
+      "title": "Glyphs Python Plug-in API",
+      "summary": "Official Python wrapper implementation and lifecycle methods for Glyphs plug-in base classes.",
+      "checksum": "c30aee458cf9b22936f7ff5e74f734a20f6af45cd6ea79482e5d11190597619e",
+      "sourceKind": "glyphs-plugin-api",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/ObjectWrapper/GlyphsApp/plugins.py",
+      "keywords": "FileFormatPlugin FilterWithDialog FilterWithoutDialog GeneralPlugin PalettePlugin ReporterPlugin SelectTool"
+    },
+    {
+      "id": "glyphs-python-plugin-template-overview",
+      "path": "development/templates/README.md",
+      "title": "Glyphs Python Plug-in Templates",
+      "summary": "Official SDK instructions for metadata, placeholders, user interfaces, and Python plug-in packaging.",
+      "checksum": "493778e65d791e453980d425e3a5374aef0cfb129bdc54ac0d68caa0d8fd9e7f",
+      "sourceKind": "glyphs-plugin-template",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/README.md",
+      "keywords": "Glyphs Python plug-in templates Info.plist principal class placeholders Xcode Vanilla"
+    },
+    {
+      "id": "glyphs-python-plugin-info-plist",
+      "path": "development/templates/Info.plist",
+      "title": "Glyphs Python Plug-in Info.plist Template",
+      "summary": "Official SDK bundle metadata template for Python plug-ins.",
+      "checksum": "d8dfa95dcd756bbc4ac86f56557d5d2ac6b38bd7bfefde76d43f71a91dac9a6b",
+      "sourceKind": "glyphs-plugin-template-source",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/General%20Plugin/____PluginName____.glyphsPlugin/Contents/Info.plist",
+      "keywords": "Info.plist CFBundleIdentifier NSPrincipalClass PyMainFileNames plugin metadata"
+    },
+    {
+      "id": "glyphs-sdk-license",
+      "path": "development/GlyphsSDK-LICENSE.txt",
+      "title": "GlyphsSDK Apache 2.0 License",
+      "summary": "License and redistribution terms for the pinned GlyphsSDK templates and source.",
+      "checksum": "bb28c48e3e078166e91cfc2b6db7ffebb8a0973b9e23b3df060561292d8d69ec",
+      "sourceKind": "glyphs-sdk-license",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/LICENSE",
+      "keywords": "GlyphsSDK license Apache 2.0 attribution"
+    },
+    {
+      "id": "glyphs-python-general-guide",
+      "path": "development/templates/general/README.md",
+      "title": "GeneralPlugin Template Guide",
+      "summary": "Official SDK guide for a general Glyphs Python plug-in.",
+      "checksum": "a2bd2e3a3b408cb9773d9fc73545b92b495e9ef98d992ca6aefd685b92788986",
+      "sourceKind": "glyphs-plugin-template",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/General%20Plugin/README.md",
+      "keywords": "GeneralPlugin menu start settings"
+    },
+    {
+      "id": "glyphs-python-general-source",
+      "path": "development/templates/general/plugin.py",
+      "title": "GeneralPlugin Template Source",
+      "summary": "Official SDK Python source template for a general Glyphs Python plug-in.",
+      "checksum": "b8d5d42f8a4371692fac2cfd5aa9c4ba8c6383a3bcc03bcf9fee13e01081b101",
+      "sourceKind": "glyphs-plugin-template-source",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/General%20Plugin/____PluginName____.glyphsPlugin/Contents/Resources/plugin.py",
+      "keywords": "GeneralPlugin source plugin.py menu start settings"
+    },
+    {
+      "id": "glyphs-python-reporter-guide",
+      "path": "development/templates/reporter/README.md",
+      "title": "ReporterPlugin Template Guide",
+      "summary": "Official SDK guide for drawing foreground and background reports in Edit View.",
+      "checksum": "8e031b9dba9d51245c75dbb3d6006d48336797c6b92ffe6fd60045d8050e5749",
+      "sourceKind": "glyphs-plugin-template",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/Reporter/README.md",
+      "keywords": "ReporterPlugin foreground background drawing Edit View"
+    },
+    {
+      "id": "glyphs-python-reporter-source",
+      "path": "development/templates/reporter/plugin.py",
+      "title": "ReporterPlugin Template Source",
+      "summary": "Official SDK Python source template for drawing foreground and background reports in Edit View.",
+      "checksum": "0a75a504d800380dbc2441612844aebe324440d360bdff8fc0eb24852fa87c53",
+      "sourceKind": "glyphs-plugin-template-source",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/Reporter/____PluginName____.glyphsReporter/Contents/Resources/plugin.py",
+      "keywords": "ReporterPlugin source plugin.py foreground background drawing Edit View"
+    },
+    {
+      "id": "glyphs-python-filter-guide",
+      "path": "development/templates/filter/README.md",
+      "title": "FilterWithoutDialog Template Guide",
+      "summary": "Official SDK guide for a Glyphs filter plug-in without a dialog.",
+      "checksum": "7793206710a9681b7db514bf0cea8e1c752e1f882d5c2fc49f3263791144a4f7",
+      "sourceKind": "glyphs-plugin-template",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/Filter/without%20dialog/README.md",
+      "keywords": "FilterWithoutDialog filter custom parameters export layer"
+    },
+    {
+      "id": "glyphs-python-filter-source",
+      "path": "development/templates/filter/plugin.py",
+      "title": "FilterWithoutDialog Template Source",
+      "summary": "Official SDK Python source template for a Glyphs filter plug-in without a dialog.",
+      "checksum": "1be3dc2dc6292bb0fb0b8f692ad04e3c580101577b57ce0533b1ebb820210ed7",
+      "sourceKind": "glyphs-plugin-template-source",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/Filter/without%20dialog/____PluginName____.glyphsFilter/Contents/Resources/plugin.py",
+      "keywords": "FilterWithoutDialog source plugin.py filter custom parameters export layer"
+    },
+    {
+      "id": "glyphs-python-palette-guide",
+      "path": "development/templates/palette/README.md",
+      "title": "PalettePlugin Template Guide",
+      "summary": "Official SDK guide for palette callbacks, views, and Vanilla interfaces.",
+      "checksum": "3e5466c7cefb13ec379b2bf778df166af4be0407d46d53cc803dfa1589df1bfe",
+      "sourceKind": "glyphs-plugin-template",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/Palette/README.md",
+      "keywords": "PalettePlugin palette callback Vanilla dialog view"
+    },
+    {
+      "id": "glyphs-python-palette-source",
+      "path": "development/templates/palette/plugin.py",
+      "title": "PalettePlugin Template Source",
+      "summary": "Official SDK Python source template for palette callbacks, views, and Vanilla interfaces.",
+      "checksum": "f658228e8d0aa48e6369c74dbdb626c5915510c1a67c69bdf9b9d656d55f5ddc",
+      "sourceKind": "glyphs-plugin-template-source",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/Palette/____PluginName____.glyphsPalette/Contents/Resources/plugin.py",
+      "keywords": "PalettePlugin source plugin.py palette callback Vanilla dialog view"
+    },
+    {
+      "id": "glyphs-python-select-tool-guide",
+      "path": "development/templates/select-tool/README.md",
+      "title": "SelectTool Template Guide",
+      "summary": "Official SDK guide for custom selection tools, drawing, and context menus.",
+      "checksum": "1c73da9391b4e9701f625df4d5e944b92286c53d697d6e8f93f580a9b353c7d8",
+      "sourceKind": "glyphs-plugin-template",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/SelectTool/README.md",
+      "keywords": "SelectTool select tool context menu foreground background toolbar"
+    },
+    {
+      "id": "glyphs-python-select-tool-source",
+      "path": "development/templates/select-tool/plugin.py",
+      "title": "SelectTool Template Source",
+      "summary": "Official SDK Python source template for custom selection tools, drawing, and context menus.",
+      "checksum": "203d46cedd5d86fea20c41a1a5d581b6e85bffa568fa859c54e6bff5f1f61c09",
+      "sourceKind": "glyphs-plugin-template-source",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/SelectTool/____PluginName____.glyphsTool/Contents/Resources/plugin.py",
+      "keywords": "SelectTool source plugin.py select tool context menu foreground background toolbar"
+    },
+    {
+      "id": "glyphs-python-file-format-guide",
+      "path": "development/templates/file-format/README.md",
+      "title": "FileFormatPlugin Template Guide",
+      "summary": "Official SDK guide for custom Glyphs file-format import and export plug-ins.",
+      "checksum": "b0dcada3313e79537d525e343ecd7c097f9fcf0f3af6aa522f2b9c412fa72712",
+      "sourceKind": "glyphs-plugin-template",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/File%20Format/README.md",
+      "keywords": "FileFormatPlugin file format import export Vanilla"
+    },
+    {
+      "id": "glyphs-python-file-format-source",
+      "path": "development/templates/file-format/plugin.py",
+      "title": "FileFormatPlugin Template Source",
+      "summary": "Official SDK Python source template for custom Glyphs file-format import and export plug-ins.",
+      "checksum": "d00dbf8d22355a26d5b0aafde7ea73ffa7361e82c16aaf7c590cdc67277705dd",
+      "sourceKind": "glyphs-plugin-template-source",
+      "formatVersion": null,
+      "sourceUrl": "https://github.com/schriftgestalt/GlyphsSDK/blob/0f5422db727b78cb42abfb386f33ae0b382b0c4d/Python%20Templates/File%20Format/dialog%20with%20vanilla/____PluginName____.glyphsFileFormat/Contents/Resources/plugin.py",
+      "keywords": "FileFormatPlugin source plugin.py file format import export Vanilla"
     }
   ],
   "titles": {
@@ -6862,6 +7060,24 @@
     "glyphs-file-format-schema-glyphs-v3": "Glyphs File Format .glyphs Schema, Version 3",
     "glyphs-file-format-schema-fontinfo-v3": "Glyphs File Format fontinfo.plist Schema, Version 3",
     "glyphs-file-format-schema-glyphs-v4": "Glyphs File Format .glyphs Schema, Version 4",
-    "glyphs-file-format-schema-fontinfo-v4": "Glyphs File Format fontinfo.plist Schema, Version 4"
+    "glyphs-file-format-schema-fontinfo-v4": "Glyphs File Format fontinfo.plist Schema, Version 4",
+    "glyphs-handbook-scripts": "Creating Glyphs Scripts",
+    "glyphs-handbook-plugins": "Creating Glyphs Plug-ins",
+    "glyphs-python-plugin-api": "Glyphs Python Plug-in API",
+    "glyphs-python-plugin-template-overview": "Glyphs Python Plug-in Templates",
+    "glyphs-python-plugin-info-plist": "Glyphs Python Plug-in Info.plist Template",
+    "glyphs-sdk-license": "GlyphsSDK Apache 2.0 License",
+    "glyphs-python-general-guide": "GeneralPlugin Template Guide",
+    "glyphs-python-general-source": "GeneralPlugin Template Source",
+    "glyphs-python-reporter-guide": "ReporterPlugin Template Guide",
+    "glyphs-python-reporter-source": "ReporterPlugin Template Source",
+    "glyphs-python-filter-guide": "FilterWithoutDialog Template Guide",
+    "glyphs-python-filter-source": "FilterWithoutDialog Template Source",
+    "glyphs-python-palette-guide": "PalettePlugin Template Guide",
+    "glyphs-python-palette-source": "PalettePlugin Template Source",
+    "glyphs-python-select-tool-guide": "SelectTool Template Guide",
+    "glyphs-python-select-tool-source": "SelectTool Template Source",
+    "glyphs-python-file-format-guide": "FileFormatPlugin Template Guide",
+    "glyphs-python-file-format-source": "FileFormatPlugin Template Source"
   }
 }

@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Generate the searchable Glyphs MCP documentation bundle.
 
-The generated bundle combines the official Glyphs Python ObjectWrapper
-documentation with the pinned Glyphs file-format specifications and schemas.
-Keeping the generator in this repository avoids requiring a custom GlyphsSDK
-fork while still making the official references available to MCP clients.
+The generated bundle combines the official Glyphs Python ObjectWrapper and
+plug-in APIs, scripting and plug-in guides, pinned Python templates, and the
+Glyphs file-format specifications and schemas.
 """
 
 from __future__ import annotations
@@ -24,6 +23,7 @@ SDK_REVISION = "0f5422db727b78cb42abfb386f33ae0b382b0c4d"
 SDK_BLOB_BASE = "https://github.com/schriftgestalt/GlyphsSDK/blob/{}".format(SDK_REVISION)
 OBJECT_WRAPPER_PATH = SDK_ROOT / "ObjectWrapper" / "GlyphsApp" / "__init__.py"
 FILE_FORMAT_ROOT = SDK_ROOT / "GlyphsFileFormat"
+HANDBOOK_ROOT = REPO_ROOT / "Documentations" / "Markdown"
 OUTPUT_ROOT = (
     REPO_ROOT
     / "src"
@@ -91,6 +91,149 @@ SCHEMA_DOCUMENTS = tuple(
     }
     for version in (3, 4)
     for kind in ("glyphs", "fontinfo")
+)
+
+PLUGIN_TEMPLATE_SPECS = (
+    (
+        "general",
+        "General Plugin",
+        "____PluginName____.glyphsPlugin",
+        "GeneralPlugin",
+        "a general Glyphs Python plug-in",
+        "menu start settings",
+    ),
+    (
+        "reporter",
+        "Reporter",
+        "____PluginName____.glyphsReporter",
+        "ReporterPlugin",
+        "drawing foreground and background reports in Edit View",
+        "foreground background drawing Edit View",
+    ),
+    (
+        "filter",
+        "Filter/without dialog",
+        "____PluginName____.glyphsFilter",
+        "FilterWithoutDialog",
+        "a Glyphs filter plug-in without a dialog",
+        "filter custom parameters export layer",
+    ),
+    (
+        "palette",
+        "Palette",
+        "____PluginName____.glyphsPalette",
+        "PalettePlugin",
+        "palette callbacks, views, and Vanilla interfaces",
+        "palette callback Vanilla dialog view",
+    ),
+    (
+        "select-tool",
+        "SelectTool",
+        "____PluginName____.glyphsTool",
+        "SelectTool",
+        "custom selection tools, drawing, and context menus",
+        "select tool context menu foreground background toolbar",
+    ),
+    (
+        "file-format",
+        "File Format",
+        "dialog with vanilla/____PluginName____.glyphsFileFormat",
+        "FileFormatPlugin",
+        "custom Glyphs file-format import and export plug-ins",
+        "file format import export Vanilla",
+    ),
+)
+
+DEVELOPMENT_DOCUMENTS = (
+    {
+        "id": "glyphs-handbook-scripts",
+        "sourceRoot": "handbook",
+        "source": "117_extensions_scripts.md",
+        "destination": "development/handbook-scripts.md",
+        "title": "Creating Glyphs Scripts",
+        "summary": "Official Glyphs Handbook guidance for creating and organizing Python scripts.",
+        "sourceKind": "glyphs-handbook",
+        "sourceUrl": "https://handbook.glyphsapp.com/scripts/",
+        "keywords": "creating Glyphs scripts MenuTitle Python Scripts folder",
+    },
+    {
+        "id": "glyphs-handbook-plugins",
+        "sourceRoot": "handbook",
+        "source": "118_extensions_plugins.md",
+        "destination": "development/handbook-plugins.md",
+        "title": "Creating Glyphs Plug-ins",
+        "summary": "Official Glyphs Handbook overview of Python and Objective-C plug-in types and installation.",
+        "sourceKind": "glyphs-handbook",
+        "sourceUrl": "https://handbook.glyphsapp.com/plugins/",
+        "keywords": "creating Glyphs plugins plug-ins reporter filter palette file format tool general",
+    },
+    {
+        "id": "glyphs-python-plugin-api",
+        "sourceRoot": "sdk",
+        "source": "ObjectWrapper/GlyphsApp/plugins.py",
+        "destination": "development/plugins.py",
+        "title": "Glyphs Python Plug-in API",
+        "summary": "Official Python wrapper implementation and lifecycle methods for Glyphs plug-in base classes.",
+        "sourceKind": "glyphs-plugin-api",
+        "keywords": "FileFormatPlugin FilterWithDialog FilterWithoutDialog GeneralPlugin PalettePlugin ReporterPlugin SelectTool",
+    },
+    {
+        "id": "glyphs-python-plugin-template-overview",
+        "sourceRoot": "sdk",
+        "source": "Python Templates/README.md",
+        "destination": "development/templates/README.md",
+        "title": "Glyphs Python Plug-in Templates",
+        "summary": "Official SDK instructions for metadata, placeholders, user interfaces, and Python plug-in packaging.",
+        "sourceKind": "glyphs-plugin-template",
+        "keywords": "Glyphs Python plug-in templates Info.plist principal class placeholders Xcode Vanilla",
+    },
+    {
+        "id": "glyphs-python-plugin-info-plist",
+        "sourceRoot": "sdk",
+        "source": "Python Templates/General Plugin/____PluginName____.glyphsPlugin/Contents/Info.plist",
+        "destination": "development/templates/Info.plist",
+        "title": "Glyphs Python Plug-in Info.plist Template",
+        "summary": "Official SDK bundle metadata template for Python plug-ins.",
+        "sourceKind": "glyphs-plugin-template-source",
+        "keywords": "Info.plist CFBundleIdentifier NSPrincipalClass PyMainFileNames plugin metadata",
+    },
+    {
+        "id": "glyphs-sdk-license",
+        "sourceRoot": "sdk",
+        "source": "LICENSE",
+        "destination": "development/GlyphsSDK-LICENSE.txt",
+        "title": "GlyphsSDK Apache 2.0 License",
+        "summary": "License and redistribution terms for the pinned GlyphsSDK templates and source.",
+        "sourceKind": "glyphs-sdk-license",
+        "keywords": "GlyphsSDK license Apache 2.0 attribution",
+    },
+) + tuple(
+    document
+    for slug, folder, bundle, class_name, purpose, keywords in PLUGIN_TEMPLATE_SPECS
+    for document in (
+        {
+            "id": "glyphs-python-{}-guide".format(slug),
+            "sourceRoot": "sdk",
+            "source": "Python Templates/{}/README.md".format(folder),
+            "destination": "development/templates/{}/README.md".format(slug),
+            "title": "{} Template Guide".format(class_name),
+            "summary": "Official SDK guide for {}.".format(purpose),
+            "sourceKind": "glyphs-plugin-template",
+            "keywords": "{} {}".format(class_name, keywords),
+        },
+        {
+            "id": "glyphs-python-{}-source".format(slug),
+            "sourceRoot": "sdk",
+            "source": "Python Templates/{}/{}/Contents/Resources/plugin.py".format(
+                folder, bundle
+            ),
+            "destination": "development/templates/{}/plugin.py".format(slug),
+            "title": "{} Template Source".format(class_name),
+            "summary": "Official SDK Python source template for {}.".format(purpose),
+            "sourceKind": "glyphs-plugin-template-source",
+            "keywords": "{} source plugin.py {}".format(class_name, keywords),
+        },
+    )
 )
 
 SKIP_BLOCK_DIRECTIVES = {
@@ -219,6 +362,9 @@ def _clean_generated_docs() -> None:
     format_root = DOCS_ROOT / "file-format"
     if format_root.exists():
         shutil.rmtree(format_root)
+    development_root = DOCS_ROOT / "development"
+    if development_root.exists():
+        shutil.rmtree(development_root)
 
 
 def _write_object_wrapper_docs() -> list[dict[str, Any]]:
@@ -252,7 +398,15 @@ def _write_object_wrapper_docs() -> list[dict[str, Any]]:
 
 
 def _copy_reference(entry: dict[str, Any]) -> dict[str, Any]:
-    source = FILE_FORMAT_ROOT / entry["source"]
+    source_root_name = entry.get("sourceRoot", "file-format")
+    source_root = {
+        "file-format": FILE_FORMAT_ROOT,
+        "sdk": SDK_ROOT,
+        "handbook": HANDBOOK_ROOT,
+    }.get(source_root_name)
+    if source_root is None:
+        raise ValueError("Unknown documentation source root: {}".format(source_root_name))
+    source = source_root / entry["source"]
     if not source.is_file():
         raise FileNotFoundError("Missing GlyphsSDK reference: {}".format(source))
 
@@ -266,7 +420,16 @@ def _copy_reference(entry: dict[str, Any]) -> dict[str, Any]:
     else:
         shutil.copy2(source, destination)
     checksum = hashlib.sha256(destination.read_bytes()).hexdigest()
-    source_url = "{}/GlyphsFileFormat/{}".format(SDK_BLOB_BASE, entry["source"])
+    source_url = entry.get("sourceUrl")
+    if not source_url:
+        if source_root_name == "file-format":
+            source_url = "{}/GlyphsFileFormat/{}".format(
+                SDK_BLOB_BASE, entry["source"]
+            )
+        else:
+            source_url = "{}/{}".format(
+                SDK_BLOB_BASE, entry["source"].replace(" ", "%20")
+            )
     return {
         "id": entry["id"],
         "path": entry["destination"],
@@ -274,7 +437,7 @@ def _copy_reference(entry: dict[str, Any]) -> dict[str, Any]:
         "summary": entry["summary"],
         "checksum": checksum,
         "sourceKind": entry["sourceKind"],
-        "formatVersion": entry["formatVersion"],
+        "formatVersion": entry.get("formatVersion"),
         "sourceUrl": source_url,
         "keywords": entry.get("keywords", ""),
     }
@@ -290,11 +453,11 @@ def generate_documentation() -> dict[str, Any]:
     documents = _write_object_wrapper_docs()
     documents.extend(
         _copy_reference(entry)
-        for entry in FORMAT_DOCUMENTS + SCHEMA_DOCUMENTS
+        for entry in FORMAT_DOCUMENTS + SCHEMA_DOCUMENTS + DEVELOPMENT_DOCUMENTS
     )
 
     payload = {
-        "version": 3,
+        "version": 4,
         "sourceRevision": SDK_REVISION,
         "documents": documents,
         "titles": {document["id"]: document["title"] for document in documents},

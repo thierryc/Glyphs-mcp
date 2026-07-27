@@ -297,6 +297,15 @@ public struct AgentSkillBundleInstaller {
 		var installedNames: [String] = []
 		var skippedNames: [String] = []
 
+		if overwriteExisting {
+			for legacyName in InstallerPayload.legacyManagedSkillNames {
+				let legacyDest = destRoot.appendingPathComponent(legacyName, isDirectory: true)
+				if itemExists(at: legacyDest) {
+					try fm.removeItem(at: legacyDest)
+				}
+			}
+		}
+
 		for skillDir in managedSkills {
 			let dest = destRoot.appendingPathComponent(skillDir.lastPathComponent, isDirectory: true)
 			if itemExists(at: dest) {
@@ -323,10 +332,15 @@ public struct AgentSkillBundleInstaller {
 	}
 
 	public func existingManagedSkillDestinations(from payload: InstallerPayload, under destRoot: URL) -> [URL] {
-		payload.managedSkillDirectories().compactMap { skillDir in
+		let current = payload.managedSkillDirectories().compactMap { skillDir in
 			let dest = destRoot.appendingPathComponent(skillDir.lastPathComponent, isDirectory: true)
 			return itemExists(at: dest) ? dest : nil
 		}
+		let legacy = InstallerPayload.legacyManagedSkillNames.compactMap { skillName in
+			let dest = destRoot.appendingPathComponent(skillName, isDirectory: true)
+			return itemExists(at: dest) ? dest : nil
+		}
+		return (current + legacy).sorted { $0.lastPathComponent < $1.lastPathComponent }
 	}
 
 	private func itemExists(at url: URL) -> Bool {

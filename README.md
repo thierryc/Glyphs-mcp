@@ -12,18 +12,19 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 ## What's new in 1.3.0
 
 **Glyphs 4 support that protects the intelligence inside your outlines—plus a
-first-class Codex review experience.**
+first-class ChatGPT and Codex review experience.**
 
-- Install the repository Codex marketplace plug-in for six focused typography
-  skills and an embedded feedback panel with guarded preview-and-apply flows.
+- Install the repository marketplace plug-in for a general Glyphs launcher,
+  seven focused skills, and an embedded feedback panel with guarded
+  preview-and-apply flows.
 - Edit paths while preserving shape groups, styling, gradients, colors,
   higher-order interpolation metadata, user data, and mixed shape order.
 - Inspect raw node and shape metadata through the new
   `pathDataVersion: 2` response while keeping legacy path payloads compatible.
 - See a font's source format before and after saving—without automatic format
   upgrades.
-- Search the official Glyphs 4 ObjectWrapper, file-format specifications, and
-  schemas directly through the MCP documentation tools.
+- Search the official Glyphs ObjectWrapper and plug-in APIs, scripting and
+  template guides, file-format specifications, and schemas through MCP.
 - Use the same plug-in with Glyphs 3.5 and Glyphs 4.
 
 [Read the full 1.3.0 changelog →](CHANGELOG.md)
@@ -85,23 +86,24 @@ Minimum requirements:
 
 Glyphs 3 backward compatibility is maintained for the shared MCP server code where possible. The macOS app can target it directly; use `--glyphs-version 3` with the terminal installer.
 
-## Codex marketplace plug-in
+## Codex and ChatGPT marketplace plug-in
 
-Codex users can install the repository plug-in after the native Glyphs MCP
-plug-in is installed and its local server is running:
+Codex and compatible ChatGPT plugin hosts can install the repository plug-in
+after the native Glyphs MCP plug-in is installed and its local server is
+running:
 
 ```bash
 codex plugin marketplace add thierryc/Glyphs-mcp
 codex plugin add glyphs-mcp@glyphs-mcp
 ```
 
-Start a new Codex task after installation. The Codex plug-in bundles the six
-Glyphs MCP skills and connects to `http://127.0.0.1:9680/mcp/`. It also enables
-an embedded feedback panel for status, font and glyph information, OpenType
-feature reports, reviewed dry runs, explicit apply confirmation, simple
-progress, completion, and safe error feedback. Glyphs remains the only editor;
-the panel has no editable paths, metrics, coordinates, feature code, file
-navigation, arbitrary Python, or replacement canvas.
+Start a new task after installation. The plugin bundles eight Glyphs MCP skills
+and connects to `http://127.0.0.1:9680/mcp/`. It also enables an embedded
+feedback panel for status, font and glyph information, OpenType feature
+reports, reviewed dry runs, explicit apply confirmation, simple progress,
+completion, and safe error feedback. Glyphs remains the only editor; the panel
+has no editable paths, metrics, coordinates, feature code, file navigation,
+arbitrary Python, or replacement canvas.
 
 Existing global Codex MCP configuration remains supported as a legacy setup.
 Verify that the marketplace plug-in connects first. If Codex then shows a
@@ -115,11 +117,16 @@ codex mcp remove glyphs-mcp-server
 The macOS and terminal installers do not install or remove this marketplace
 plug-in; Codex owns its installation lifecycle.
 
-## Repo skills for Codex and Claude Code
+See [Codex and ChatGPT plugin UI](content/getting-started/codex-chatgpt-plugin-ui.mdx)
+for screenshots, theme behavior, supported panel states, action routing, and
+non-UI fallbacks.
 
-This repo ships a small bundle of workflow skills in `skills/` for common Glyphs MCP tasks. The same source of truth is exposed to both clients:
+## Repo skills for Codex, Claude Code, and Cursor
 
-- Codex reads them through `.agents/skills`
+This repo ships eight workflow skills in `skills/` for common Glyphs MCP tasks.
+The same source of truth is exposed through client-specific discovery paths:
+
+- Codex and Cursor read them through `.agents/skills`
 - Claude Code reads them through `.claude/skills`
 
 The supported usage patterns are:
@@ -128,7 +135,7 @@ The supported usage patterns are:
 
 Use this when you are developing in this repository or want the clients to discover the skills directly from the repo checkout.
 
-1. Open this repository in Codex or Claude Code so the repo-local bridges are visible.
+1. Open this repository in Codex, Claude Code, or Cursor so the repo-local bridges are visible.
 2. Connect Glyphs MCP:
 
 ```bash
@@ -141,16 +148,18 @@ claude mcp list
 
 3. In Codex, trust the workspace so `.agents/skills` loads.
 4. In Claude Code, reload or restart if `.claude/skills` does not appear immediately.
-5. Start Glyphs, confirm the server is running in **Edit -> Glyphs MCP Server**, and keep the default `Edit` profile unless you only need read-only inspection.
-6. Invoke a specific skill when you want a guided workflow:
+5. In Cursor, use the repo's `.agents/skills` bridge and add the local endpoint
+   to `.cursor/mcp.json`; use `.cursor/skills` only as an explicit fallback.
+6. Start Glyphs, confirm the server is running in **Edit -> Glyphs MCP Server**, and keep the default `Edit` profile unless you only need read-only inspection.
+7. Start with the general Glyphs launcher, or invoke a focused skill when you already know the workflow:
 
 ```text
-Use $glyphs-mcp-connect to verify my Glyphs MCP setup, call list_open_fonts, and tell me which font_index to use next.
+Use $glyphs to inspect the current Glyphs context and help with my font task.
 ```
 
 ### Install skills globally
 
-Use this when you want the bundled `glyphs-mcp-*` skills available without opening the repo.
+Use this when you want the bundled Glyphs MCP skills available without opening the repo.
 
 1. Run the installer from the repo root, or use the signed macOS installer app:
 
@@ -166,20 +175,23 @@ python3 install.py
 5. Ask for the skill by name:
 
 ```text
-Use the glyphs-mcp-connect skill to verify my Glyphs MCP setup, call list_open_fonts, and tell me which font_index to use next.
+Use the glyphs skill to inspect the current Glyphs context and help with my font task.
 ```
 
 Advanced Codex-only alternative: you can install individual skills with Codex’s built-in `$skill-installer`, but that is not the primary Glyphs MCP workflow.
 
 Current repo skills focus on:
-- connection and health checks for the local Glyphs MCP server
+- a general `$glyphs` launcher with connection and context checks
+- documentation-grounded Glyphs Python script and plug-in development
 - OpenType feature and stylistic-set inspection with Glyphs links
+- stable Unicode and PUA assignments for icon and symbol fonts
 - guarded kerning bumper reviews and applies
 - guarded spacing reviews and applies
 - outlines, components, anchors, and docs lookup workflows
 - guarded roman-to-italic first-pass copy and slant workflows
 
-For the website docs version, see the agent skills pages in the docs site.
+For exact per-client paths and a compatibility matrix, see
+[Use skills](content/getting-started/use-agent-skills.mdx).
 
 ## What Is an MCP Server?
 
@@ -207,8 +219,11 @@ instead because Glyphs requires an absolute file path.
 | `get_font_glyphs` | Return glyph list and key attributes for a font, including clickable Glyphs show links when available. |
 | `get_font_masters` | Detailed master information for a font, including Metrics `italicAngle` and legacy custom-parameter `slantAngle`. |
 | `get_font_instances` | List instances and their interpolation data. |
+| `get_custom_parameters` | Read font/master custom parameters, including effective master-over-font values and duplicate records. |
+| `set_custom_parameters` | Preview or confirm generic font/master custom-parameter sets and deletes; redraws but never auto-saves. |
 | `get_glyph_details` | Full glyph data including layers, paths, components, and Glyphs show links. |
 | `list_style_sets` | List stylistic-set features (`ss01`-`ss20`) with source/replacement glyphs and a group-level Glyphs show link for alternates. |
+| `review_unicode_assignments` | Review whole-font Unicode mappings and optionally propose deterministic assignments in a caller-selected range. |
 | `show_glyphs_status` | Show server, Glyphs, and open-font status in the embedded feedback panel. |
 | `show_font_feedback` | Show bounded, read-only information for one open font. |
 | `show_glyph_feedback` | Show metadata, dimensions, sidebearings, anchors, components, layers, and warnings without outline paths. |
@@ -225,6 +240,7 @@ instead because Glyphs requires an absolute file path.
 | `create_glyph` | Add a new glyph to the font. |
 | `delete_glyph` | Remove a glyph from the font. |
 | `update_glyph_properties` | Change unicode, category, export flags, etc. |
+| `apply_unicode_assignments` | Apply an explicit reviewed Unicode batch with dry-run, confirmation, verification, and rollback; never auto-saves. |
 | `copy_glyph` | Duplicate outlines / components from one glyph to another. |
 | `update_glyph_metrics` | Adjust width and side‑bearings. |
 | `review_spacing` | Review spacing and suggest sidebearings/width (area-based; no mutation). |
@@ -263,7 +279,7 @@ instead because Glyphs requires an absolute file path.
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |
 | `execute_code_with_context` | Execute Python with injected helper objects. |
 | `save_font` | Save the active font without changing its format version and report the version before and after. |
-| `docs_search` | Search bundled official Glyphs ObjectWrapper and version 3/4 file-format references, with source metadata. |
+| `docs_search` | Search bundled official Glyphs API, scripting, plug-in-template, and version 3/4 file-format references, with source metadata. |
 | `docs_get` | Fetch a bundled docs page with paging and official source metadata. |
 | `docs_enable_page_resources` | Register each documentation page as its own MCP resource (optional; can flood clients). |
 
@@ -436,8 +452,8 @@ Preferred: use `docs_search` + `docs_get` (on-demand). If you really want per-pa
 - No `sudo` is required.
 - Verify the local endpoint with `curl -H 'Accept: application/json' http://127.0.0.1:9680/mcp/`.
 
-Regenerate the bundled ObjectWrapper and Glyphs file-format documentation from
-the pinned official SDK with:
+Regenerate the bundled API, scripting, plug-in-template, and file-format
+documentation from the pinned official SDK and Handbook sources with:
 
 ```bash
 python3 src/glyphs-mcp/scripts/generate_documentation.py

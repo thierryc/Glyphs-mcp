@@ -235,7 +235,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertEqual(
 			InstallerSimpleUI.wizardButtonTitle(
 				installedPluginVersion: nil,
-				skills: [.init(kind: .codex, installedSkillNames: ["glyphs-mcp-connect"])]
+				skills: [.init(kind: .codex, installedSkillNames: ["glyphs"])]
 			),
 			"Update Setup"
 		)
@@ -622,10 +622,11 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		let skillsDir = payloadDir.appendingPathComponent("skills", isDirectory: true)
 		let codexRoot = tmp.appendingPathComponent("codex-skills", isDirectory: true)
 		let claudeRoot = tmp.appendingPathComponent("claude-skills", isDirectory: true)
-		let codexSkill = codexRoot.appendingPathComponent("glyphs-mcp-connect", isDirectory: true)
+		let codexSkill = codexRoot.appendingPathComponent("glyphs", isDirectory: true)
 
 		try FileManager.default.createDirectory(at: plugin, withIntermediateDirectories: true, attributes: nil)
-		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-connect", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-development", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 		try FileManager.default.createDirectory(at: codexSkill, withIntermediateDirectories: true, attributes: nil)
@@ -635,7 +636,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 
 		let codexTarget = try XCTUnwrap(detected.first(where: { $0.kind == .codex }))
 		let claudeTarget = try XCTUnwrap(detected.first(where: { $0.kind == .claudeCode }))
-		XCTAssertEqual(codexTarget.installedSkillNames, ["glyphs-mcp-connect"])
+		XCTAssertEqual(codexTarget.installedSkillNames, ["glyphs"])
 		XCTAssertTrue(codexTarget.hasInstalledSkills)
 		XCTAssertEqual(claudeTarget.installedSkillNames, [])
 		XCTAssertFalse(claudeTarget.hasInstalledSkills)
@@ -1020,14 +1021,15 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		let skillsDir = payloadDir.appendingPathComponent("skills", isDirectory: true)
 
 		try FileManager.default.createDirectory(at: plugin, withIntermediateDirectories: true, attributes: nil)
-		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-connect", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-development", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("other-skill", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 
 		let payload = InstallerPayload(payloadDir: payloadDir, pluginBundle: plugin, requirementsTxt: req, skillsDir: skillsDir)
 		let managed = payload.managedSkillDirectories().map(\.lastPathComponent)
-		XCTAssertEqual(managed, ["glyphs-mcp-connect", "glyphs-mcp-spacing"])
+		XCTAssertEqual(managed, ["glyphs", "glyphs-mcp-development", "glyphs-mcp-spacing"])
 	}
 
 	func testAgentSkillBundleInstallerOverwritesManagedSkillsOnlyWhenRequested() throws {
@@ -1036,28 +1038,30 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		let plugin = payloadDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
 		let req = payloadDir.appendingPathComponent("requirements.txt")
 		let skillsDir = payloadDir.appendingPathComponent("skills", isDirectory: true)
-		let connect = skillsDir.appendingPathComponent("glyphs-mcp-connect", isDirectory: true)
+		let glyphs = skillsDir.appendingPathComponent("glyphs", isDirectory: true)
 		let spacing = skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true)
 		let destRoot = tmp.appendingPathComponent("dest", isDirectory: true)
-		let existingManaged = destRoot.appendingPathComponent("glyphs-mcp-connect", isDirectory: true)
+		let installedGeneric = destRoot.appendingPathComponent("glyphs", isDirectory: true)
+		let legacyConnect = destRoot.appendingPathComponent("glyphs-mcp-connect", isDirectory: true)
 		let unrelated = destRoot.appendingPathComponent("third-party-skill", isDirectory: true)
 
 		try FileManager.default.createDirectory(at: plugin, withIntermediateDirectories: true, attributes: nil)
-		try FileManager.default.createDirectory(at: connect, withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: glyphs, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: spacing, withIntermediateDirectories: true, attributes: nil)
-		try FileManager.default.createDirectory(at: existingManaged, withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: legacyConnect, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: unrelated, withIntermediateDirectories: true, attributes: nil)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
-		try "new managed\n".write(to: connect.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+		try "new managed\n".write(to: glyphs.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
 		try "new spacing\n".write(to: spacing.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
-		try "old managed\n".write(to: existingManaged.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+		try "old connect\n".write(to: legacyConnect.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
 		try "keep me\n".write(to: unrelated.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
 
 		let payload = InstallerPayload(payloadDir: payloadDir, pluginBundle: plugin, requirementsTxt: req, skillsDir: skillsDir)
 		let installer = AgentSkillBundleInstaller(log: { _ in })
 		_ = try installer.installManagedSkills(from: payload, to: destRoot, clientName: "Codex", overwriteExisting: true)
 
-		XCTAssertEqual(try String(contentsOf: existingManaged.appendingPathComponent("SKILL.md"), encoding: .utf8), "new managed\n")
+		XCTAssertEqual(try String(contentsOf: installedGeneric.appendingPathComponent("SKILL.md"), encoding: .utf8), "new managed\n")
+		XCTAssertFalse(FileManager.default.fileExists(atPath: legacyConnect.path))
 		XCTAssertEqual(try String(contentsOf: destRoot.appendingPathComponent("glyphs-mcp-spacing/SKILL.md"), encoding: .utf8), "new spacing\n")
 		XCTAssertEqual(try String(contentsOf: unrelated.appendingPathComponent("SKILL.md"), encoding: .utf8), "keep me\n")
 	}

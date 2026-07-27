@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Glyphs MCP feedback visual host</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --host-background: #f7f7f8;
+      --host-border: #d9d9e3;
+      --host-text: #0d0d0d;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      align-items: flex-start;
+      background: var(--host-background);
+      color: var(--host-text);
+      display: flex;
+      justify-content: center;
+      padding: 32px;
+    }
+    .tool {
+      background: #fff;
+      border: 1px solid var(--host-border);
+      border-radius: 18px;
+      overflow: hidden;
+      width: min(680px, 100%);
+    }
+    .tool-label {
+      align-items: center;
+      border-bottom: 1px solid var(--host-border);
+      display: flex;
+      font-size: 14px;
+      gap: 8px;
+      line-height: 20px;
+      padding: 12px 16px;
+    }
+    iframe {
+      border: 0;
+      display: block;
+      min-height: 900px;
+      width: 100%;
+    }
+    html[data-theme="dark"] {
+      --host-background: #171717;
+      --host-border: #424242;
+      --host-text: #f2f2f2;
+    }
+    html[data-theme="dark"] .tool { background: #212121; }
+  </style>
+</head>
+<body>
+  <section class="tool" aria-label="ChatGPT MCP app preview">
+    <div class="tool-label">⌘ Show font feedback</div>
+    <iframe
+      id="feedback"
+      title="Glyphs MCP font feedback"
+      src="../../Glyphs%20MCP.glyphsPlugin/Contents/Resources/feedback_ui_v1.html?v=chatgpt-surface"
+    ></iframe>
+  </section>
+  <script>
+    (() => {
+      "use strict";
+      const params = new URLSearchParams(window.location.search);
+      const theme = params.get("theme") === "dark" ? "dark" : "light";
+      const root = document.documentElement;
+      const frame = document.getElementById("feedback");
+      root.dataset.theme = theme;
+      root.style.colorScheme = theme;
+
+      const variables = theme === "dark" ? {
+        "--color-background-primary": "#212121",
+        "--color-background-secondary": "#2f2f2f",
+        "--color-text-primary": "#f2f2f2",
+        "--color-text-secondary": "#b4b4b4",
+        "--color-border-secondary": "#424242",
+        "--color-accent": "#10a37f"
+      } : {
+        "--color-background-primary": "#ffffff",
+        "--color-background-secondary": "#f7f7f8",
+        "--color-text-primary": "#0d0d0d",
+        "--color-text-secondary": "#5d5d5d",
+        "--color-border-secondary": "#d9d9e3",
+        "--color-accent": "#10a37f"
+      };
+
+      const payload = {
+        schemaVersion: "1.0",
+        kind: "font",
+        status: "ready",
+        title: "Font information",
+        summary: "Read-only information for IconGrid Test Fixture.",
+        target: {
+          fontIndex: 1,
+          familyName: "IconGrid Test Fixture",
+          fileState: "Saved"
+        },
+        progress: {
+          reviewed: 6,
+          changed: 0,
+          skipped: 0,
+          failed: 0
+        },
+        items: [
+          { label: "Glyphs", value: 8 },
+          { label: "Masters", value: 2, detail: "Regular, Bold" },
+          { label: "Instances", value: 0 },
+          { label: "Units per em", value: 1000 },
+          { label: "Current master", value: "Regular" },
+          { label: "OpenType features", value: 0 }
+        ],
+        warnings: [],
+        actions: [
+          {
+            label: "OpenType Features",
+            tool: "show_opentype_features",
+            arguments: { font_index: 0 }
+          },
+          {
+            label: "Refresh",
+            tool: "show_font_feedback",
+            arguments: { font_index: 0 }
+          }
+        ]
+      };
+
+      function post(message) {
+        frame.contentWindow.postMessage(message, "*");
+      }
+
+      window.addEventListener("message", (event) => {
+        if (event.source !== frame.contentWindow) return;
+        const message = event.data || {};
+        if (message.method === "ui/initialize") {
+          post({
+            jsonrpc: "2.0",
+            id: message.id,
+            result: {
+              hostCapabilities: { serverTools: {} },
+              hostContext: {
+                theme,
+                styles: { variables }
+              }
+            }
+          });
+          return;
+        }
+        if (message.method === "ui/notifications/initialized") {
+          post({
+            jsonrpc: "2.0",
+            method: "ui/notifications/tool-result",
+            params: { structuredContent: payload }
+          });
+          return;
+        }
+        if (message.method === "tools/call") {
+          post({
+            jsonrpc: "2.0",
+            id: message.id,
+            result: {
+              structuredContent: {
+                ...payload,
+                kind: message.params && message.params.name === "show_opentype_features" ? "opentype" : "font",
+                title: message.params && message.params.name === "show_opentype_features"
+                  ? "OpenType features"
+                  : payload.title,
+                summary: "The embedded action completed successfully."
+              }
+            }
+          });
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

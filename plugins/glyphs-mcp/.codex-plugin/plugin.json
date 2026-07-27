@@ -19,8 +19,8 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Glyphs MCP",
-    "shortDescription": "Review and control open Glyphs fonts from Codex.",
-    "longDescription": "Connect Codex to the local Glyphs MCP plug-in for read-only font feedback, bounded dry runs, explicit apply confirmation, and focused progress or error cards. Glyphs remains the editor.",
+    "shortDescription": "Review and control open Glyphs fonts from ChatGPT and Codex.",
+    "longDescription": "Connect ChatGPT and Codex to the local Glyphs MCP plug-in for read-only font feedback, bounded dry runs, explicit apply confirmation, and focused progress or error cards. Glyphs remains the editor.",
     "developerName": "Thierry Charbonnel",
     "category": "Creativity",
     "capabilities": [

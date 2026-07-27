@@ -15,6 +15,7 @@ const sidebars: SidebarsConfig = {
         'tutorial/first-session',
         'getting-started/start-server',
         'getting-started/connect-client',
+        'getting-started/codex-chatgpt-plugin-ui',
         'getting-started/use-agent-skills',
         'getting-started/troubleshooting'
       ]
@@ -53,6 +54,7 @@ const sidebars: SidebarsConfig = {
       label: 'Contributor Notes',
       items: [
         'contributor/local-docs-development',
+        'contributor/unicode-assignment-tools',
         'contributor/release-qa-protocol',
         'contributor/release-build-notes'
       ]

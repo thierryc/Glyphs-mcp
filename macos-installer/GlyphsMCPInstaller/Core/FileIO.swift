@@ -101,6 +101,8 @@ public enum InstallerPaths {
 }
 
 public struct InstallerPayload {
+	public static let legacyManagedSkillNames = ["glyphs-mcp-connect"]
+
 	public let payloadDir: URL
 	public let pluginBundle: URL
 	public let requirementsTxt: URL
@@ -113,7 +115,7 @@ public struct InstallerPayload {
 			return []
 		}
 		return entries
-			.filter { $0.lastPathComponent.hasPrefix(prefix) }
+			.filter { $0.lastPathComponent == "glyphs" || $0.lastPathComponent.hasPrefix(prefix) }
 			.filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false }
 			.sorted { $0.lastPathComponent < $1.lastPathComponent }
 	}

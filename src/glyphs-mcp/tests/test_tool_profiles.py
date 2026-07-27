@@ -26,13 +26,23 @@ class ToolProfilesTests(unittest.TestCase):
     def test_readonly_excludes_exec_tools(self) -> None:
         enabled = tool_profiles.enabled_tool_names(
             tool_profiles.PROFILE_READONLY,
-            {"execute_code", "execute_code_with_context", "get_server_info", "list_open_fonts", "list_style_sets"},
+            {
+                "execute_code",
+                "execute_code_with_context",
+                "get_server_info",
+                "list_open_fonts",
+                "list_style_sets",
+                "get_custom_parameters",
+                "set_custom_parameters",
+            },
         )
         self.assertNotIn("execute_code", enabled)
         self.assertNotIn("execute_code_with_context", enabled)
         self.assertIn("get_server_info", enabled)
         self.assertIn("list_open_fonts", enabled)
         self.assertIn("list_style_sets", enabled)
+        self.assertIn("get_custom_parameters", enabled)
+        self.assertNotIn("set_custom_parameters", enabled)
 
     def test_only_readonly_and_edit_profiles_are_shown(self) -> None:
         self.assertEqual(
@@ -96,6 +106,19 @@ class ToolProfilesTests(unittest.TestCase):
 
         self.assertIn(visual_tool, tool_profiles.enabled_tool_names(tool_profiles.PROFILE_READONLY, universe))
         self.assertIn(visual_tool, tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, universe))
+
+    def test_unicode_review_is_readonly_but_unicode_apply_is_not(self) -> None:
+        read_tool = "review_unicode_assignments"
+        apply_tool = "apply_unicode_assignments"
+        universe = set(tool_profiles.CORE_READONLY_TOOLS) | {apply_tool}
+
+        readonly = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_READONLY, universe)
+        editing = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, universe)
+
+        self.assertIn(read_tool, readonly)
+        self.assertNotIn(apply_tool, readonly)
+        self.assertIn(read_tool, editing)
+        self.assertIn(apply_tool, editing)
 
     def test_annotation_read_tools_are_available_through_readonly_surface(self) -> None:
         read_tools = {"get_glyph_annotations", "get_glyph_annotation_groups"}

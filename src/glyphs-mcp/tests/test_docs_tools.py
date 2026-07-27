@@ -98,6 +98,29 @@ class DocsToolsTests(unittest.TestCase):
                 all(result.get("sourceKind") for result in official), query
             )
 
+    def test_development_searches_return_guides_api_and_templates(self) -> None:
+        expected = {
+            "creating Glyphs scripts": "glyphs-handbook",
+            "Glyphs Python plug-in templates": "glyphs-plugin-template",
+            "ReporterPlugin": "glyphs-plugin-template",
+            "FilterWithoutDialog": "glyphs-plugin-template",
+            "PalettePlugin": "glyphs-plugin-template",
+            "SelectTool": "glyphs-plugin-template",
+            "FileFormatPlugin": "glyphs-plugin-template",
+        }
+        for query, source_kind in expected.items():
+            payload = json.loads(
+                asyncio.run(self.module.docs_search(query=query, max_results=10))
+            )
+            self.assertTrue(payload["ok"], query)
+            self.assertTrue(
+                any(result.get("sourceKind") == source_kind for result in payload["results"]),
+                query,
+            )
+            self.assertTrue(
+                all(result.get("sourceUrl") for result in payload["results"]), query
+            )
+
     def test_docs_get_by_id_returns_content_slice(self) -> None:
         # Use a deterministic entry from the index.
         index_path = _resources_dir() / "MCP Documentation" / "index.json"
@@ -154,7 +177,10 @@ class DocsToolsTests(unittest.TestCase):
                 "sourceKind" in entry
                 and "formatVersion" in entry
                 and str(entry.get("sourceUrl") or "").startswith(
-                    "https://github.com/schriftgestalt/GlyphsSDK/"
+                    (
+                        "https://github.com/schriftgestalt/GlyphsSDK/",
+                        "https://handbook.glyphsapp.com/",
+                    )
                 )
                 for entry in documents
             )

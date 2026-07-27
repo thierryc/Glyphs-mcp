@@ -65,6 +65,8 @@ def get_known_tools():
         "get_font_masters",
         "get_font_instances",
         "get_glyph_details",
+        "review_unicode_assignments",
+        "apply_unicode_assignments",
         "get_font_kerning",
         "create_glyph",
         "delete_glyph",

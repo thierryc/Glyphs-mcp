@@ -181,6 +181,25 @@ Run in both `Read-only` and `Edit` profiles. The font must not be marked dirty b
 | R12 | Call `docs_search` for `GSLayer bounds`, then `docs_get` for the best result. | Returns focused bundled docs without registering all pages. |
 | R13 | Call `resources/list` if the client exposes it. | Core resources are available without flooding the client with every docs page by default. |
 
+## Unicode assignment workflow
+
+Run review cases in both profiles. Run mutation cases in `Edit` on a disposable
+working copy. Include a regular text font and an icon or symbol font.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| UA1 | Select encoded, unencoded, multiple-Unicode, and non-exporting glyphs; call `review_unicode_assignments`. | Reports normalized mappings and findings without changing the font. |
+| UA2 | Request BMP PUA allocation with one occupied and one reserved value. | Proposals are deterministic and skip both values. |
+| UA3 | Review with a previous map containing one removed glyph and one changed mapping. | Removed values stay reserved and the changed mapping is a breaking finding. |
+| UA4 | Use an explicit supplementary PUA range. | Proposals contain valid supplementary scalar values and no noncharacters. |
+| UA5 | Call `apply_unicode_assignments` with `dry_run=true`. | Exact before/after values are returned and the font remains unchanged. |
+| UA6 | Change one reviewed glyph manually, then apply the old batch with `confirm=true`. | The entire batch is rejected as stale before mutation. |
+| UA7 | Apply a fresh small batch with `confirm=true`. | Every changed glyph verifies, unrelated glyphs remain unchanged, and the font is not saved. |
+| UA8 | Exercise a controlled write failure with the adapter test fixture. | All original values are restored and rollback status is reported. |
+
+Do not treat alternate glyphs as private characters merely to make them directly
+addressable. Verify that OpenType alternates and components remain unencoded.
+
 ## Spacing workflow
 
 Run in `Edit` profile only. Use 10-30 glyphs, including `H`, `O`, `n`, `o`, sidebearing-sensitive punctuation, and one composite.

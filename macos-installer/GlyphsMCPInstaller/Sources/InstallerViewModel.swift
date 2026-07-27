@@ -333,7 +333,8 @@ final class InstallerViewModel: ObservableObject {
 	}
 
 	private func makeUninstallPlan() -> GlyphsUninstallPlan {
-		let skillNames = (try? InstallerPayload.resolve())?.managedSkillDirectories().map(\.lastPathComponent) ?? []
+		let currentSkillNames = (try? InstallerPayload.resolve())?.managedSkillDirectories().map(\.lastPathComponent) ?? []
+		let skillNames = currentSkillNames + InstallerPayload.legacyManagedSkillNames
 		return GlyphsUninstallScanner.scan(managedSkillNames: skillNames)
 	}
 

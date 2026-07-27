@@ -66,21 +66,22 @@ This avoids duplicated skill folders and keeps updates simple.
 
 ## V1 skill catalog
 
-### 1. `glyphs-mcp-connect`
+### 1. `glyphs`
 
 Use when the task is about:
 
-- starting the server
-- choosing the right tool profile
-- connecting Codex to the local endpoint
-- running a first health check
+- starting a general Glyphs MCP task
+- reading the current server, font, master, and selection context
+- choosing the matching focused workflow
+- recovering from a missing local connection
 
 Core rules:
 
-- use the local endpoint `http://127.0.0.1:9680/mcp/`
-- prefer a narrower Glyphs tool profile before connecting
-- use `codex mcp add` and `codex mcp list`
-- verify with `list_open_fonts`
+- start with `get_server_info` and `list_open_fonts` when context is unknown
+- route focused tasks to the matching narrow skill
+- prefer dedicated tools, reviews, and dry runs before mutation
+- require explicit approval for confirm-gated actions
+- never auto-save the font
 
 Primary repo references:
 
@@ -157,6 +158,29 @@ Core rules:
 - only mutate with explicit approval and `confirm=true`
 - never auto-save the font
 
+### 6. `glyphs-mcp-icon-font`
+
+Use for stable Unicode and PUA assignment workflows in icon or symbol fonts.
+Review before allocation, require a previous map for released fonts, preserve
+existing assignments, dry-run before applying, and delegate drawing or metrics
+work to the existing specialized skills.
+
+### 7. `glyphs-mcp-development`
+
+Use when the task is about:
+
+- creating or reviewing standalone Glyphs Python scripts
+- scaffolding general, reporter, filter, palette, select-tool, or file-format plug-ins
+- grounding Glyphs development work in the bundled Handbook, API, and SDK templates
+
+Core rules:
+
+- search with `docs_search`, then fetch focused pages with `docs_get`
+- generate into the current workspace from pinned SDK assets
+- validate Python syntax, bundle metadata, principal class, and placeholders
+- never overwrite, install, execute, reload, or restart automatically
+- target Glyphs 3.5 and Glyphs 4 unless the user requests one version
+
 ## Phase 2 candidates
 
 These should only be added after repeated demand:
@@ -195,6 +219,7 @@ Use these prompts as smoke tests:
 - "Help me connect Codex to Glyphs MCP and verify it works."
 - "Review kerning collisions and only apply approved bumper fixes."
 - "Review spacing for the selected glyphs and do a dry run first."
+- "Create a documented Glyphs reporter plug-in in this workspace."
 - "Inspect selected nodes, edit outlines safely, and look up the relevant Glyphs docs."
 - "Create a first-pass italic for selected glyphs, checking Cursivy stems and doing a dry run first."
 

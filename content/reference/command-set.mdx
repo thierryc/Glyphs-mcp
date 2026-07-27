@@ -14,7 +14,9 @@ Glyphs MCP supports both Glyphs 3 and Glyphs 4 from `main`. See [Glyphs 3 compat
 - `get_server_info`: confirm runtime identity and open-font source-format metadata.
 - `list_open_fonts`: list open fonts, their source format, and pick a `font_index`.
 - `get_font_masters`: find master IDs.
+- `get_custom_parameters` / `set_custom_parameters`: inspect or guardedly update font/master custom parameters without implicit saving.
 - `get_selected_font_and_master`: confirm current font, master, and selection.
+- `review_unicode_assignments` / `apply_unicode_assignments`: review and safely apply Unicode mappings.
 - `review_spacing` / `apply_spacing`: review, dry-run, and apply spacing changes.
 - `generate_kerning_tab`: open a kerning proof/worklist tab.
 - `review_kerning_bumper` / `apply_kerning_bumper`: audit and apply conservative collision fixes.
@@ -51,11 +53,18 @@ Glyph and layer inspection responses may include Glyphs show links:
 | `render_glyph_review_image` | Render selected or named glyph layers to a PNG image with optional metrics, sidebearing, bounds, node, handle, anchor, and guide overlays. |
 | `review_collinear_handles` | Review curve nodes that should be smooth based on handle collinearity. |
 
-## Codex feedback panel
+## Codex and ChatGPT feedback panel
 
 These tools share the versioned `ui://glyphs-mcp/feedback-v1.html` MCP App
 resource. Non-UI clients receive the same information as concise text plus
 structured output. The panel is a review and feedback surface, not an editor.
+It follows host light/dark theme variables and uses a standard server-tool
+bridge with an OpenAI compatibility fallback for actions such as **OpenType
+Features** and **Refresh**.
+
+See [Codex and ChatGPT plugin UI](../getting-started/codex-chatgpt-plugin-ui.mdx)
+for installation, screenshots, supported states, action behavior, and safety
+boundaries.
 
 | Tool | Description |
 | --- | --- |
@@ -84,6 +93,17 @@ a new dry run. None of these tools saves a font.
 | `apply_kerning_bumper` | Apply bumper suggestions as glyph-glyph exceptions; supports `dry_run` and requires `confirm=true` to mutate. |
 | `set_kerning_pair` | Set or remove a specific kerning pair. |
 
+## Custom parameters
+
+| Tool | Description |
+| --- | --- |
+| `get_custom_parameters` | Read font, master, or effective master-over-font parameters; filter by exact names or prefix and report duplicates without collapsing raw records. |
+| `set_custom_parameters` | Preview explicit font/master sets and deletes. Mutation requires `dry_run=false` and `confirm=true`, rejects targeted duplicates and non-JSON values, redraws, verifies read-back, and never saves. |
+
+Use `null` to request deletion. Master and effective scopes require an explicit
+`master_id`; call `get_font_masters` first when needed. The setter defaults to a
+dry run so an agent can present the exact changes before confirmation.
+
 ## Spacing
 
 | Tool | Description |
@@ -92,6 +112,27 @@ a new dry run. None of these tools saves a font.
 | `apply_spacing` | Apply spacing suggestions; supports `dry_run` and requires `confirm=true` to mutate. |
 | `set_spacing_params` | Set spacing parameters as font/master custom parameters; no auto-save. |
 | `set_spacing_guides` | Add or clear glyph-level guides visualizing the spacing measurement model; no auto-save. |
+
+## Unicode assignments
+
+| Tool | Description |
+| --- | --- |
+| `review_unicode_assignments` | Review complete font mappings, collisions, invalid values, previous-map changes, and optional deterministic allocations. BMP PUA is the default range, not an icon-font mode. |
+| `apply_unicode_assignments` | Apply explicit assignments after expected-state and whole-font collision preflight; supports `dry_run`, requires `confirm=true`, verifies read-back, rolls back failures, and never saves. |
+
+Use the review tool in either profile. The apply tool is available only in `Edit`.
+Selection is the default target, but every review scans the complete font map for
+collisions. Pass `scope="font"` explicitly for a whole-font target or provide
+`glyph_names`.
+
+PUA values require a private agreement outside Unicode. They can support icon
+fonts, gaiji, historical or experimental characters, legacy mappings, and other
+closed character sets. Do not use PUA merely for swashes, small caps, contextual
+forms, localized shapes, ordinary ligatures, or components; those normally
+belong in OpenType features, character sequences, or unencoded glyphs.
+
+See [Unicode assignment tools](../contributor/unicode-assignment-tools.md) for
+the input contract, previous-map format, safety model, and usage boundaries.
 
 ## Compensated tuning
 
@@ -132,7 +173,7 @@ Italic first-pass tools use the Glyphs source/Transformations angle convention: 
 
 | Tool | Description |
 | --- | --- |
-| `docs_search` | Search the official Glyphs ObjectWrapper, version 3/4 format specifications, and regular schemas; results include source kind, format version, and URL. |
+| `docs_search` | Search the official Glyphs API, scripting, plug-in-template, version 3/4 format, and schema references; results include source kind, format version, and URL. |
 | `docs_get` | Fetch a bundled docs page by id/path with paging and official source metadata. |
 | `docs_enable_page_resources` | Register each documentation page as a separate MCP resource; optional and noisy. |
 

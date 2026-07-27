@@ -103,7 +103,7 @@ def _slice_text(text: str, offset: int, max_chars: int) -> Tuple[str, bool]:
 
 @mcp.tool()
 async def docs_search(query: str, max_results: int = 10) -> str:
-    """Search bundled documentation by title/summary.
+    """Search bundled official Glyphs API, development, and file-format docs.
 
     Args:
         query: Search string (required).

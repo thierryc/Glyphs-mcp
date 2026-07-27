@@ -173,15 +173,17 @@ console = Console()
 PYTHON_BINARY_PATTERN = re.compile(r"^python3(\.\d+)?$")
 MIN_PY_VERSION = (3, 11, 0)  # Allow 3.11+, prefer 3.14+
 MAX_PY_VERSION_EXCLUSIVE = (3, 15, 0)  # Disallow 3.15+ until tested
-SKILL_PREFIX = "glyphs-mcp-"
 MANAGED_SKILL_NAMES = (
-    "glyphs-mcp-connect",
+    "glyphs",
+    "glyphs-mcp-development",
     "glyphs-mcp-features",
+    "glyphs-mcp-icon-font",
     "glyphs-mcp-italic-first-pass",
     "glyphs-mcp-kerning",
     "glyphs-mcp-outlines-docs",
     "glyphs-mcp-spacing",
 )
+LEGACY_MANAGED_SKILL_NAMES = ("glyphs-mcp-connect",)
 MCP_ENDPOINT = "http://127.0.0.1:9680/mcp/"
 CODEX_SERVER_NAME = "glyphs-mcp-server"
 CLAUDE_DESKTOP_SERVER_NAME = "glyphs-mcp-server"
@@ -825,13 +827,15 @@ def managed_skill_directories(skills_root: Optional[Path] = None) -> List[Path]:
 
     managed: List[Path] = []
     for entry in sorted(root.iterdir()):
-        if entry.is_dir() and entry.name.startswith(SKILL_PREFIX):
+        if entry.is_dir() and entry.name in MANAGED_SKILL_NAMES:
             managed.append(entry)
     return managed
 
 
 def existing_managed_skill_destinations(dest_root: Path, skills_root: Optional[Path] = None) -> List[Path]:
-    return [dest_root / src.name for src in managed_skill_directories(skills_root) if (dest_root / src.name).exists() or (dest_root / src.name).is_symlink()]
+    names = [src.name for src in managed_skill_directories(skills_root)]
+    names.extend(LEGACY_MANAGED_SKILL_NAMES)
+    return [dest_root / name for name in names if (dest_root / name).exists() or (dest_root / name).is_symlink()]
 
 
 def _remove_existing_path(path: Path) -> None:
@@ -858,6 +862,12 @@ def install_skill_bundle(
     dest_root.mkdir(parents=True, exist_ok=True)
     installed: List[str] = []
     skipped: List[str] = []
+
+    if overwrite_existing:
+        for legacy_name in LEGACY_MANAGED_SKILL_NAMES:
+            legacy_dest = dest_root / legacy_name
+            if legacy_dest.exists() or legacy_dest.is_symlink():
+                _remove_existing_path(legacy_dest)
 
     for src in skill_dirs:
         dest = dest_root / src.name
@@ -1250,7 +1260,7 @@ def build_uninstall_plan(
 
     if "skills" in selected_components:
         for client_name, root in (("Codex", codex_skills_dir()), ("Claude Code", claude_code_skills_dir())):
-            for skill_name in MANAGED_SKILL_NAMES:
+            for skill_name in (*MANAGED_SKILL_NAMES, *LEGACY_MANAGED_SKILL_NAMES):
                 path = root / skill_name
                 if not _path_exists(path):
                     continue
