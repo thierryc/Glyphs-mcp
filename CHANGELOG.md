@@ -1,5 +1,53 @@
 # Changelog
 
+## 1.4.0 — A reliable plug-in UI and portable skill workflow
+
+_July 27, 2026_
+
+Glyphs MCP 1.4.0 expands the repository plug-in into a consistent workflow for
+ChatGPT, Codex, Claude, and Cursor. It repairs embedded feedback actions,
+refreshes the UI for current ChatGPT light and dark surfaces, adds guarded
+authoring tools, and grows the synchronized skill bundle to eight workflows.
+
+### The highlights
+
+- **Feedback actions now reach the host.** OpenType Features, Refresh, and
+  reviewed actions detect the host's server-tool capability, use the compatible
+  OpenAI bridge when needed, and surface recoverable failures instead of
+  appearing to do nothing.
+- **A ChatGPT-aligned review panel.** Updated colors, type sizes, whitespace,
+  focus states, action hierarchy, and responsive layouts work across light,
+  dark, and narrow embedded surfaces.
+- **Eight portable skills.** The canonical skill sources and packaged plug-in
+  mirrors now cover connection, spacing, kerning, OpenType features, outlines
+  and documentation, italic first passes, icon-font Unicode workflows, and
+  Glyphs plug-in development.
+- **More guarded font operations.** New tools support previewable custom
+  parameters and Unicode assignment while preserving the existing confirmation
+  and no-automatic-save boundaries.
+- **Cross-client setup guidance.** New documentation covers the embedded
+  Codex/ChatGPT UI, Claude Code and standard Claude MCP connections, and Cursor
+  through `.agents/skills`, optional `.cursor/skills`, and
+  `.cursor/mcp.json`.
+- **Structured and text fallbacks remain first-class.** Claude, Cursor, and
+  other MCP clients can use the same tools and skills even when their host does
+  not render the embedded OpenAI UI.
+
+### Verification
+
+- The complete Python suite, Xcode installer tests, unsigned Debug installer
+  build, documentation build, source/package synchronization checks, and local
+  release checks cover this release.
+- Browser fixtures exercise light, dark, and narrow layouts.
+- Host-bridge fixtures verify successful OpenType Features and Refresh calls as
+  well as recoverable unavailable and failure states.
+
+### Remaining live QA
+
+Live Glyphs 3.5 and Glyphs 4 compatibility checks remain a separate manual
+validation step before publishing signed and notarized installer assets. This
+tag does not create a GitHub Release or publish packages.
+
 ## 1.3.0 — Glyphs 4, safely—and a better Codex workflow
 
 _July 19, 2026_

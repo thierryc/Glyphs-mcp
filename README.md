@@ -9,25 +9,24 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-## What's new in 1.3.0
+## What's new in 1.4.0
 
-**Glyphs 4 support that protects the intelligence inside your outlines—plus a
-first-class ChatGPT and Codex review experience.**
+**A reliable, portable Glyphs MCP plug-in experience across ChatGPT, Codex,
+Claude, and Cursor.**
 
-- Install the repository marketplace plug-in for a general Glyphs launcher,
-  seven focused skills, and an embedded feedback panel with guarded
-  preview-and-apply flows.
-- Edit paths while preserving shape groups, styling, gradients, colors,
-  higher-order interpolation metadata, user data, and mixed shape order.
-- Inspect raw node and shape metadata through the new
-  `pathDataVersion: 2` response while keeping legacy path payloads compatible.
-- See a font's source format before and after saving—without automatic format
-  upgrades.
-- Search the official Glyphs ObjectWrapper and plug-in APIs, scripting and
-  template guides, file-format specifications, and schemas through MCP.
-- Use the same plug-in with Glyphs 3.5 and Glyphs 4.
+- Use OpenType Features, Refresh, and reviewed actions through a
+  capability-aware host bridge with actionable, recoverable failure states.
+- Review feedback in a responsive embedded panel aligned with ChatGPT's light
+  and dark surfaces, typography, spacing, focus states, and safety boundaries.
+- Install eight synchronized skills covering connection, spacing, kerning,
+  OpenType features, outlines and documentation, italic first passes,
+  icon-font Unicode workflows, and Glyphs plug-in development.
+- Use guarded custom-parameter and Unicode assignment tools with the same
+  structured and text fallbacks available to non-UI MCP clients.
+- Follow dedicated setup guidance for ChatGPT, Codex, Claude Code, standard
+  Claude MCP connections, and Cursor.
 
-[Read the full 1.3.0 changelog →](CHANGELOG.md)
+[Read the full 1.4.0 changelog →](CHANGELOG.md)
 
 ## macOS Installer app (recommended)
 
@@ -202,8 +201,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.3.0)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.3.0"`).
+## Command Set (MCP server v1.4.0)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.4.0"`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
