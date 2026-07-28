@@ -1,9 +1,10 @@
 {
   "schemaVersion": 1,
-  "description": "Fixed Broad-Latin benchmark manifest for encoded glyphs selected from pinned Inter and mapped by Unicode to pinned Noto Sans.",
+  "description": "Fixed Broad-Latin benchmark manifest for encoded glyphs selected from pinned Inter, mapped by Unicode to pinned Noto Sans, and intersected by Unicode with pinned IBM Plex Sans Roman and Italic UFOs.",
   "sources": {
     "interCommit": "e3a3d4c57d5ecc01453a575621882a384c1995a3",
-    "notoSansCommit": "cb097900c74b26e6dcab899b4f07b2bc79dd80c4"
+    "notoSansCommit": "cb097900c74b26e6dcab899b4f07b2bc79dd80c4",
+    "ibmPlexSansCommit": "71d012bccb31a2e282cc46de63b387ff7f676287"
   },
   "ranges": [
     {

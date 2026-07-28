@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Broad-Latin clean-room benchmark and conditional Balanced promotion gate.
 
-The benchmark reads a fixed 543-entry manifest and pinned Inter/Noto Sans
-Glyphs packages. Full paginated raster evidence and JSON stay beneath the
-ignored benchmark cache. A small deterministic audit selection can be copied
-into contributor documentation after review.
+The benchmark reads a fixed 543-entry manifest and pinned Inter, Noto Sans,
+and IBM Plex Sans sources. Plex contributes the Unicode intersection available
+in both of its pinned Regular and Italic UFO masters. Full paginated raster
+evidence and JSON stay beneath the ignored benchmark cache. A small
+deterministic audit selection can be copied into contributor documentation
+after review.
 """
 
 from __future__ import annotations
@@ -23,7 +25,8 @@ from typing import Any, Iterable
 import glyphsLib
 
 import benchmark_italic_inter as base
-from benchmark_italic_sans_expanded import NOTO_SANS_COMMIT, _mode_labels
+import benchmark_ufo_adapter as ufo_adapter
+from benchmark_italic_sans_expanded import NOTO_SANS_COMMIT
 
 
 MANIFEST_PATH = (
@@ -43,11 +46,26 @@ MAX_PAGE_SIZE = 64
 DEFAULT_RENDER_SCALE = 2.0
 DEFAULT_AUDIT_LIMIT = 64
 MODE_NAMES = ("raw", "cursivy", "balanced")
-COMPARISON_KEYS = (
-    "balancedVsRaw",
-    "balancedVsCursivy",
-    "balancedVsOfficial",
+DIFF_COMPARISONS = (
+    ("raw", "cursivy", "Partial compensation vs Raw"),
+    ("raw", "balanced", "Balanced vs Raw"),
+    ("cursivy", "balanced", "Balanced vs Partial compensation"),
+    ("official", "balanced", "Balanced vs Official Italic"),
 )
+COMPARISON_KEYS = tuple(
+    "{}Vs{}".format(candidate, reference[:1].upper() + reference[1:])
+    for reference, candidate, _label in DIFF_COMPARISONS
+)
+PLEX_COMMIT = "71d012bccb31a2e282cc46de63b387ff7f676287"
+PLEX_EXPECTED_GROUP_COUNTS = {
+    "basicLatin": 95,
+    "latin1": 91,
+    "latinExtended": 158,
+    "generalPunctuation": 16,
+    "currencySymbols": 14,
+    "letterlikeSymbols": 3,
+    "numberForms": 14,
+}
 FAMILY_CONFIGS = {
     "inter": {
         "displayName": "Inter",
@@ -68,7 +86,34 @@ FAMILY_CONFIGS = {
         "googleFonts": "https://github.com/google/fonts/tree/main/ofl/notosans",
         "commit": NOTO_SANS_COMMIT,
     },
+    "ibmPlexSans": {
+        "displayName": "IBM Plex Sans",
+        "manifestNameKey": "plexGlyphName",
+        "angle": 11.31,
+        "expectedAxes": {"wght": 400},
+        "minimumCompensatedPairs": 12,
+        "repository": "https://github.com/googlefonts/plex",
+        "upstreamRepository": "https://github.com/IBM/plex",
+        "commit": PLEX_COMMIT,
+        "sourceFormat": "ufo",
+        "resolveNamesByUnicode": True,
+        "sourceAxes": {"wght": 0},
+        "externalAxes": {"wght": 400},
+        "sourceVersion": "3.200",
+        "expectedSharedEntryCount": 391,
+        "expectedGroupCounts": PLEX_EXPECTED_GROUP_COUNTS,
+    },
 }
+
+
+def _mode_labels(family_name: str) -> list[tuple[str, str]]:
+    return [
+        ("roman", "{} Roman".format(family_name)),
+        ("raw", "Raw shear"),
+        ("cursivy", "Partial compensation (0.35)"),
+        ("balanced", "Balanced/full compensation"),
+        ("official", "Official {} Italic".format(family_name)),
+    ]
 
 
 def load_manifest(path: Path = MANIFEST_PATH) -> dict[str, Any]:
@@ -155,6 +200,52 @@ def missing_family_glyphs(
     return missing
 
 
+def resolve_unicode_family_entries(
+    roman_font: Any,
+    italic_font: Any,
+    entries: Iterable[dict[str, Any]],
+    name_key: str,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Resolve a pinned family's shared Roman/Italic Unicode intersection."""
+
+    roman_names = ufo_adapter.unicode_name_map(roman_font)
+    italic_names = ufo_adapter.unicode_name_map(italic_font)
+    selected = []
+    unavailable = []
+    for entry in entries:
+        codepoint = int(entry["codepoint"])
+        roman_name = roman_names.get(codepoint)
+        italic_name = italic_names.get(codepoint)
+        if roman_name is None or italic_name is None:
+            unavailable.append(
+                {
+                    "unicode": str(entry["unicode"]),
+                    "codepoint": codepoint,
+                    "group": str(entry["group"]),
+                    "romanGlyphName": roman_name,
+                    "italicGlyphName": italic_name,
+                    "reason": "missingRoman"
+                    if roman_name is None
+                    else "missingOfficialItalic",
+                }
+            )
+            continue
+        if roman_name != italic_name:
+            unavailable.append(
+                {
+                    "unicode": str(entry["unicode"]),
+                    "codepoint": codepoint,
+                    "group": str(entry["group"]),
+                    "romanGlyphName": roman_name,
+                    "italicGlyphName": italic_name,
+                    "reason": "glyphNameMismatch",
+                }
+            )
+            continue
+        selected.append({**copy.deepcopy(entry), name_key: roman_name})
+    return selected, unavailable
+
+
 def _numeric_delta(
     candidate: dict[str, float] | None,
     reference: dict[str, float] | None,
@@ -218,6 +309,66 @@ def _component_rows(
     return rows, explicit_reference_count
 
 
+def _component_transform_risks(
+    font: Any,
+    master: Any,
+    glyph_name: str,
+    *,
+    angle: float,
+    stack: tuple[str, ...] = (),
+) -> list[dict[str, Any]]:
+    """Find component transforms that do not commute with the benchmark shear.
+
+    Generated component bases are slanted in local coordinates before their
+    component matrix is applied (``L × S``). Shearing the complete Roman
+    construction would apply ``S × L``. These are equivalent only when the
+    component's linear transform commutes with the shear.
+    """
+
+    if glyph_name in stack or len(stack) > 12:
+        return []
+    layer = _layer(font, master, glyph_name)
+    if layer is None:
+        return []
+    tangent = math.tan(math.radians(float(angle)))
+    risks = []
+    for index, component in enumerate(list(layer.components or [])):
+        transform = tuple(float(value) for value in component.transform)
+        if len(transform) != 6:
+            continue
+        a, b, c, d, tx, ty = transform
+        commutator_error = max(
+            abs(tangent * b),
+            abs(tangent * (d - a)),
+        )
+        component_name = base._component_name(component)
+        chain = stack + (glyph_name, component_name)
+        if commutator_error > 1e-9:
+            determinant = a * d - b * c
+            risks.append(
+                {
+                    "componentPath": list(chain),
+                    "componentIndex": index,
+                    "glyphName": component_name,
+                    "transform": [a, b, c, d, tx, ty],
+                    "determinant": determinant,
+                    "reflected": determinant < 0.0,
+                    "commutatorError": commutator_error,
+                    "reason": "componentLinearTransformDoesNotCommuteWithShear",
+                }
+            )
+        risks.extend(
+            _component_transform_risks(
+                font,
+                master,
+                component_name,
+                angle=angle,
+                stack=stack + (glyph_name,),
+            )
+        )
+    return risks
+
+
 def _official_component_rows(layer: Any) -> list[dict[str, Any]]:
     return [
         {
@@ -252,6 +403,9 @@ def _aggregate_diff_rows(
     return {
         key: {
             "glyphCount": len(ratios),
+            "differentGlyphCount": len(
+                [ratio for ratio in ratios if ratio > 0.0]
+            ),
             "meanDifferentPixelRatio": (
                 float(statistics.fmean(ratios)) if ratios else 0.0
             ),
@@ -325,10 +479,56 @@ def _benchmark_family(
                 config["displayName"]
             )
         )
-    roman_font = glyphsLib.load(str(roman_path))
-    italic_font = glyphsLib.load(str(italic_path))
+    if config.get("sourceFormat") == "ufo":
+        roman_font = ufo_adapter.load_ufo(
+            roman_path,
+            master_id="PLEX_ROMAN_REGULAR",
+            master_name="Regular",
+        )
+        italic_font = ufo_adapter.load_ufo(
+            italic_path,
+            master_id="PLEX_ITALIC_REGULAR",
+            master_name="Italic",
+        )
+    else:
+        roman_font = glyphsLib.load(str(roman_path))
+        italic_font = glyphsLib.load(str(italic_path))
     roman_master = base._select_master(roman_font, config["expectedAxes"])
     italic_master = base._select_master(italic_font, config["expectedAxes"])
+    coverage_unavailable = []
+    if config.get("resolveNamesByUnicode"):
+        entries, coverage_unavailable = resolve_unicode_family_entries(
+            roman_font,
+            italic_font,
+            entries,
+            config["manifestNameKey"],
+        )
+        if not entries:
+            raise RuntimeError(
+                "{} has no glyphs shared with the fixed manifest".format(
+                    config["displayName"]
+                )
+            )
+        expected_shared_count = int(config["expectedSharedEntryCount"])
+        if len(entries) != expected_shared_count:
+            raise RuntimeError(
+                "{} shared manifest coverage changed: expected {}, found "
+                "{}".format(
+                    config["displayName"],
+                    expected_shared_count,
+                    len(entries),
+                )
+            )
+        family_group_counts = Counter(
+            str(entry["group"]) for entry in entries
+        )
+        if dict(family_group_counts) != config["expectedGroupCounts"]:
+            raise RuntimeError(
+                "{} shared manifest group coverage changed: {}".format(
+                    config["displayName"],
+                    dict(family_group_counts),
+                )
+            )
     official_angle = float(italic_master.italicAngle)
     if abs(official_angle - float(config["angle"])) > 0.01:
         raise RuntimeError(
@@ -338,13 +538,17 @@ def _benchmark_family(
                 config["angle"],
             )
         )
-    missing = missing_family_glyphs(
-        roman_font,
-        italic_font,
-        roman_master,
-        italic_master,
-        entries,
-        config["manifestNameKey"],
+    missing = (
+        []
+        if config.get("resolveNamesByUnicode")
+        else missing_family_glyphs(
+            roman_font,
+            italic_font,
+            roman_master,
+            italic_master,
+            entries,
+            config["manifestNameKey"],
+        )
     )
     if missing:
         raise RuntimeError(
@@ -368,6 +572,7 @@ def _benchmark_family(
     total_runtime_start = time.perf_counter()
     explicit_component_references = 0
     unsafe_applied_compensations = []
+    component_transform_risks = []
 
     for entry in entries:
         glyph_name = str(entry[config["manifestNameKey"]])
@@ -418,6 +623,20 @@ def _benchmark_family(
                 angle=float(config["angle"]),
             )
             explicit_component_references += explicit_count
+            glyph_component_transform_risks = _component_transform_risks(
+                roman_font,
+                roman_master,
+                glyph_name,
+                angle=float(config["angle"]),
+            )
+            component_transform_risks.extend(
+                {
+                    "unicode": entry["unicode"],
+                    "rootGlyphName": glyph_name,
+                    **risk,
+                }
+                for risk in glyph_component_transform_risks
+            )
             official_paths = base._serialize_layer_paths(official_layer)
             direct_bounds = {
                 **record["bounds"],
@@ -513,6 +732,9 @@ def _benchmark_family(
                     "components": {
                         "generated": component_rows,
                         "official": _official_component_rows(official_layer),
+                        "nonCommutingTransformRisks": (
+                            glyph_component_transform_risks
+                        ),
                     },
                     "bounds": {
                         "direct": direct_bounds,
@@ -540,7 +762,7 @@ def _benchmark_family(
                             "official",
                         )
                     },
-                    "backend": "purePythonCursivyFallback",
+                    "backend": "purePythonDeterministicStemCompensation",
                     "filterFailures": [],
                 }
             )
@@ -612,6 +834,18 @@ def _benchmark_family(
         "unsafeAppliedCompensationCount": len(
             unsafe_applied_compensations
         ),
+        "nonCommutingComponentTransformRiskCount": len(
+            component_transform_risks
+        ),
+        "reflectedComponentTransformRiskCount": len(
+            [risk for risk in component_transform_risks if risk["reflected"]]
+        ),
+        "affectedComponentTransformGlyphCount": len(
+            {
+                str(risk["unicode"])
+                for risk in component_transform_risks
+            }
+        ),
         "runtimeSeconds": time.perf_counter() - total_runtime_start,
         "meanGlyphRuntimeSeconds": (
             float(
@@ -644,6 +878,9 @@ def _benchmark_family(
         ),
         "noUnsafeAppliedCompensation": (
             summary["unsafeAppliedCompensationCount"] == 0
+        ),
+        "noNonCommutingComponentTransforms": (
+            summary["nonCommutingComponentTransformRiskCount"] == 0
         ),
         "minimumCompensatedPairsRetained": (
             summary["compensatedPairCount"]
@@ -681,20 +918,45 @@ def _benchmark_family(
                 base.engine.CURSIVY_FALLBACK_STEM_STRENGTH
             ),
             "manifestNameKey": config["manifestNameKey"],
+            "modeDefinitions": {
+                "raw": "pure shear with no deterministic stem correction",
+                "cursivy": (
+                    "legacy result key; pure-Python partial stem compensation "
+                    "at strength {}, not the Glyphs Cursivy filter"
+                ).format(base.engine.CURSIVY_FALLBACK_STEM_STRENGTH),
+                "balanced": (
+                    "curve interpolation strength {} followed by deterministic "
+                    "full stem compensation at strength {}"
+                ).format(base.CURVE_STRENGTH, base.STEM_COMPENSATION),
+            },
         },
         "summary": summary,
         "groupSummary": _family_group_summary(glyph_rows),
         "acceptance": acceptance,
         "generationFailures": generation_failures,
         "unsafeAppliedCompensations": unsafe_applied_compensations,
+        "componentTransformRisks": component_transform_risks,
+        "coverage": {
+            "fixedManifestEntryCount": EXPECTED_ENTRY_COUNT,
+            "sharedRomanItalicEntryCount": len(entries),
+            "unavailableEntryCount": len(coverage_unavailable),
+            "unavailableEntries": coverage_unavailable,
+        },
         "glyphs": glyph_rows,
     }
-    if "googleFonts" in config:
+    if family_key == "notoSans":
         result["source"]["googleFonts"] = config["googleFonts"]
         result["source"]["sourceAxes"] = {"wght": 90, "wdth": 100}
         result["source"]["externalAxes"] = {"wght": 400, "wdth": 100}
-    else:
+    elif family_key == "inter":
         result["source"]["externalAxes"] = {"opsz": 14, "wght": 400}
+    else:
+        result["source"]["upstreamRepository"] = config["upstreamRepository"]
+        result["source"]["sourceFormat"] = config["sourceFormat"]
+        result["source"]["sourceVersion"] = config["sourceVersion"]
+        result["source"]["sourceAxes"] = config["sourceAxes"]
+        result["source"]["externalAxes"] = config["externalAxes"]
+        result["source"]["ufoItalicAngle"] = italic_master.ufoItalicAngle
     context = {
         "familyKey": family_key,
         "displayName": config["displayName"],
@@ -705,6 +967,7 @@ def _benchmark_family(
         "italicFont": italic_font,
         "italicMaster": italic_master,
         "generated": generated,
+        "entries": entries,
     }
     return result, context
 
@@ -785,6 +1048,7 @@ def _render_full_pages(
             angle=context["angle"],
             normalize_upm=True,
             render_scale=render_scale,
+            comparisons=list(DIFF_COMPARISONS),
         )
         for row in page_diff["glyphs"]:
             manifest_entry = entry_by_name[row["glyphName"]]
@@ -838,6 +1102,22 @@ def select_audit_entries(
             return
         seen.add(unicode_value)
         selected.append(entry)
+
+    component_risks = sorted(
+        [
+            row
+            for row in glyph_rows
+            if row.get("status") == "ok"
+            and bool(
+                row.get("components", {}).get(
+                    "nonCommutingTransformRisks"
+                )
+            )
+        ],
+        key=lambda row: int(row["codepoint"]),
+    )
+    for row in component_risks[:24]:
+        add(entry_by_unicode[str(row["unicode"])])
 
     compensated = sorted(
         [
@@ -934,6 +1214,7 @@ def _render_audit(
         angle=context["angle"],
         normalize_upm=True,
         render_scale=render_scale,
+        comparisons=list(DIFF_COMPARISONS),
     )
     gc.collect()
     return {
@@ -990,6 +1271,20 @@ def evaluate_promotion(
         and improvement_gate
         and winner == "balanced"
     )
+    failed_safety_gates = {
+        family_key: [
+            gate
+            for gate, value in family["acceptance"].items()
+            if gate
+            not in {
+                "balancedAtLeast50PercentBetterThanRaw",
+                "balancedAtLeast50PercentBetterThanCursivy",
+            }
+            and not bool(value)
+        ]
+        for family_key, family in families.items()
+        if not family_safety[family_key]
+    }
     return {
         "familySafetyPass": family_safety,
         "combinedMeanAbsoluteStemWidthError": combined_errors,
@@ -998,9 +1293,11 @@ def evaluate_promotion(
         "winner": winner,
         "balancedImprovementGatePass": improvement_gate,
         "balancedPromoted": balanced_promoted,
+        "deterministicGeometryWinner": winner,
+        "failedSafetyGates": failed_safety_gates,
         "publicDefault": "cursivy",
         "recommendedExperimentalMode": (
-            "balanced" if balanced_promoted else "cursivy"
+            "balanced" if balanced_promoted else None
         ),
     }
 
@@ -1008,6 +1305,7 @@ def evaluate_promotion(
 def run(
     inter_root: Path,
     noto_root: Path,
+    plex_root: Path,
     output_dir: Path,
     *,
     render_scale: float = DEFAULT_RENDER_SCALE,
@@ -1037,13 +1335,39 @@ def run(
         italic_path=noto_root / "sources" / "NotoSans-Italic.glyphspackage",
         entries=entries,
     )
-    families = {"inter": inter, "notoSans": noto}
-    contexts = {"inter": inter_context, "notoSans": noto_context}
+    plex, plex_context = _benchmark_family(
+        family_key="ibmPlexSans",
+        config=FAMILY_CONFIGS["ibmPlexSans"],
+        roman_path=(
+            plex_root
+            / "sources"
+            / "masters"
+            / "IBM Plex Sans-Regular.ufo"
+        ),
+        italic_path=(
+            plex_root
+            / "sources"
+            / "masters"
+            / "IBM Plex Sans-Italic.ufo"
+        ),
+        entries=entries,
+    )
+    families = {
+        "inter": inter,
+        "notoSans": noto,
+        "ibmPlexSans": plex,
+    }
+    contexts = {
+        "inter": inter_context,
+        "notoSans": noto_context,
+        "ibmPlexSans": plex_context,
+    }
 
     for family_key, family_result in families.items():
+        family_entries = contexts[family_key]["entries"]
         full_artifacts, diff_by_unicode = _render_full_pages(
             context=contexts[family_key],
-            entries=entries,
+            entries=family_entries,
             output_dir=output_dir / family_key,
             render_scale=scale,
             page_size=int(page_size),
@@ -1051,11 +1375,11 @@ def run(
         family_result["imageDiff"] = {
             "summary": _aggregate_diff_rows(list(diff_by_unicode.values())),
             "glyphs": [
-                diff_by_unicode[entry["unicode"]] for entry in entries
+                diff_by_unicode[entry["unicode"]] for entry in family_entries
             ],
         }
         audit_entries = select_audit_entries(
-            entries,
+            family_entries,
             family_result["glyphs"],
             diff_by_unicode,
             limit=int(audit_limit),
@@ -1084,7 +1408,12 @@ def run(
             "renderScale": scale,
             "dpi": 72.0 * scale,
             "pageSize": int(page_size),
-            "pageCountPerFamily": len(paginate(entries, int(page_size))),
+            "pageCountPerFamily": {
+                family_key: len(
+                    paginate(context["entries"], int(page_size))
+                )
+                for family_key, context in contexts.items()
+            },
             "auditLimit": int(audit_limit),
             "origin": base.ORIGIN,
             "curveStrength": base.CURVE_STRENGTH,
@@ -1116,6 +1445,11 @@ def main() -> int:
         default=cache_root / "noto-sans-{}".format(NOTO_SANS_COMMIT),
     )
     parser.add_argument(
+        "--plex-root",
+        type=Path,
+        default=cache_root / "plex-{}".format(PLEX_COMMIT),
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
         default=cache_root / "results-broad",
@@ -1145,6 +1479,7 @@ def main() -> int:
         result = run(
             args.inter_root.resolve(),
             args.noto_root.resolve(),
+            args.plex_root.resolve(),
             args.output_dir.resolve(),
             render_scale=args.render_scale,
             page_size=args.page_size,

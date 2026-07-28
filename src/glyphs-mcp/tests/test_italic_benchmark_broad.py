@@ -23,10 +23,10 @@ class _FakeMaster:
 
 
 class _FakeLayer:
-    def __init__(self) -> None:
+    def __init__(self, components: list | None = None) -> None:
         self.paths = []
         self.anchors = []
-        self.components = []
+        self.components = list(components or [])
         self.width = 500
 
 
@@ -48,6 +48,35 @@ class _FakeFont:
         self.glyphs = _FakeGlyphProxy(mapping)
 
 
+class _FakeComponent:
+    def __init__(
+        self,
+        name: str,
+        transform: tuple[float, float, float, float, float, float],
+    ) -> None:
+        self.componentName = name
+        self.transform = transform
+
+
+class _FakeUnicodeGlyph:
+    def __init__(self, name: str, unicodes: tuple[int, ...]) -> None:
+        self.name = name
+        self.unicodes = unicodes
+
+
+class _FakeUnicodeGlyphProxy:
+    def __init__(self, glyphs: list[_FakeUnicodeGlyph]) -> None:
+        self.glyphs = glyphs
+
+    def __iter__(self):
+        return iter(self.glyphs)
+
+
+class _FakeUnicodeFont:
+    def __init__(self, glyphs: list[_FakeUnicodeGlyph]) -> None:
+        self.glyphs = _FakeUnicodeGlyphProxy(glyphs)
+
+
 def _family_result(
     *,
     raw_error: float,
@@ -63,6 +92,7 @@ def _family_result(
             "anchorErrorWithinPointZeroOne": accepted,
             "noUnexpectedComponentMasterMismatch": accepted,
             "noUnsafeAppliedCompensation": accepted,
+            "noNonCommutingComponentTransforms": accepted,
             "minimumCompensatedPairsRetained": accepted,
             "balancedAtLeast50PercentBetterThanRaw": (
                 balanced_error <= raw_error * 0.5
@@ -97,6 +127,10 @@ class BroadItalicBenchmarkTests(unittest.TestCase):
         )
         self.assertEqual(glyphs[0]["unicode"], "U+0020")
         self.assertEqual(glyphs[-1]["unicode"], "U+2189")
+        self.assertEqual(
+            manifest["sources"]["ibmPlexSansCommit"],
+            broad.PLEX_COMMIT,
+        )
 
     def test_manifest_resolves_two_source_naming_mismatches_by_unicode(
         self,
@@ -234,6 +268,40 @@ class BroadItalicBenchmarkTests(unittest.TestCase):
             <= {row["group"] for row in first}
         )
 
+    def test_audit_selection_prioritizes_component_direction_risks(
+        self,
+    ) -> None:
+        entries = broad.load_manifest()["glyphs"][:3]
+        glyph_rows = [
+            {
+                **row,
+                "status": "ok",
+                "compensatedPairCount": 0,
+                "components": {
+                    "nonCommutingTransformRisks": (
+                        [{"reason": "test"}] if index == 2 else []
+                    )
+                },
+            }
+            for index, row in enumerate(entries)
+        ]
+        diff_by_unicode = {
+            row["unicode"]: {
+                **row,
+                "comparisons": {
+                    "balancedVsOfficial": {"differentPixelRatio": 0.0}
+                },
+            }
+            for row in entries
+        }
+        selected = broad.select_audit_entries(
+            entries,
+            glyph_rows,
+            diff_by_unicode,
+            limit=1,
+        )
+        self.assertEqual(selected, [entries[2]])
+
     def test_all_visual_comparison_columns_are_declared(self) -> None:
         self.assertEqual(
             tuple(
@@ -241,14 +309,112 @@ class BroadItalicBenchmarkTests(unittest.TestCase):
                     candidate,
                     reference[:1].upper() + reference[1:],
                 )
-                for reference, candidate, _label in broad.base.DIFF_COMPARISONS
+                for reference, candidate, _label in broad.DIFF_COMPARISONS
             ),
             broad.COMPARISON_KEYS,
+        )
+        self.assertEqual(
+            broad.COMPARISON_KEYS,
+            (
+                "cursivyVsRaw",
+                "balancedVsRaw",
+                "balancedVsCursivy",
+                "balancedVsOfficial",
+            ),
         )
         self.assertEqual(
             [mode for mode, _label in broad._mode_labels("Test")],
             ["roman", "raw", "cursivy", "balanced", "official"],
         )
+        self.assertIn(
+            "Partial compensation",
+            dict(broad._mode_labels("Test"))["cursivy"],
+        )
+
+    def test_plex_is_pinned_as_a_regular_italic_ufo_pair(self) -> None:
+        config = broad.FAMILY_CONFIGS["ibmPlexSans"]
+        self.assertEqual(config["commit"], broad.PLEX_COMMIT)
+        self.assertEqual(config["sourceFormat"], "ufo")
+        self.assertEqual(config["expectedAxes"], {"wght": 400})
+        self.assertEqual(config["angle"], 11.31)
+        self.assertEqual(config["expectedSharedEntryCount"], 391)
+        self.assertEqual(
+            sum(config["expectedGroupCounts"].values()),
+            391,
+        )
+
+    def test_unicode_family_selection_records_missing_and_mismatched_names(
+        self,
+    ) -> None:
+        roman = _FakeUnicodeFont(
+            [
+                _FakeUnicodeGlyph("space", (0x20,)),
+                _FakeUnicodeGlyph("A", (0x41,)),
+                _FakeUnicodeGlyph("romanB", (0x42,)),
+            ]
+        )
+        italic = _FakeUnicodeFont(
+            [
+                _FakeUnicodeGlyph("space", (0x20,)),
+                _FakeUnicodeGlyph("italicB", (0x42,)),
+            ]
+        )
+        entries = [
+            {"unicode": "U+0020", "codepoint": 0x20, "group": "basicLatin"},
+            {"unicode": "U+0041", "codepoint": 0x41, "group": "basicLatin"},
+            {"unicode": "U+0042", "codepoint": 0x42, "group": "basicLatin"},
+        ]
+        selected, unavailable = broad.resolve_unicode_family_entries(
+            roman,
+            italic,
+            entries,
+            "plexGlyphName",
+        )
+        self.assertEqual(selected[0]["plexGlyphName"], "space")
+        self.assertEqual(
+            [row["reason"] for row in unavailable],
+            ["missingOfficialItalic", "glyphNameMismatch"],
+        )
+
+    def test_component_transform_gate_detects_reflection_not_translation(
+        self,
+    ) -> None:
+        leaf = _FakeGlyph(_FakeLayer())
+        translated = _FakeGlyph(
+            _FakeLayer(
+                [_FakeComponent("leaf", (1, 0, 0, 1, 120, 50))]
+            )
+        )
+        reflected = _FakeGlyph(
+            _FakeLayer(
+                [_FakeComponent("leaf", (-1, 0, 0, 1, 500, 0))]
+            )
+        )
+        font = _FakeFont(
+            {
+                "leaf": leaf,
+                "translated": translated,
+                "reflected": reflected,
+            }
+        )
+        self.assertEqual(
+            broad._component_transform_risks(
+                font,
+                _FakeMaster(),
+                "translated",
+                angle=12,
+            ),
+            [],
+        )
+        risks = broad._component_transform_risks(
+            font,
+            _FakeMaster(),
+            "reflected",
+            angle=12,
+        )
+        self.assertEqual(len(risks), 1)
+        self.assertTrue(risks[0]["reflected"])
+        self.assertGreater(risks[0]["commutatorError"], 0)
 
     def test_balanced_wins_only_when_every_family_passes(self) -> None:
         families = {
@@ -265,10 +431,18 @@ class BroadItalicBenchmarkTests(unittest.TestCase):
         }
         promotion = broad.evaluate_promotion(families)
         self.assertEqual(promotion["winner"], "balanced")
+        self.assertEqual(
+            promotion["deterministicGeometryWinner"], "balanced"
+        )
         self.assertTrue(promotion["balancedPromoted"])
         families["notoSans"]["acceptance"]["reviewSourceUnchanged"] = False
         self.assertFalse(
             broad.evaluate_promotion(families)["balancedPromoted"]
+        )
+        self.assertIsNone(
+            broad.evaluate_promotion(families)[
+                "recommendedExperimentalMode"
+            ]
         )
 
     def test_cursivy_wins_ties_within_point_zero_one(self) -> None:

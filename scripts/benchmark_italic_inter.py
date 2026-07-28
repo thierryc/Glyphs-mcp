@@ -688,7 +688,7 @@ def _draw_difference_sheet(
         )
         draw.text(
             (left + 12 * pixel_ratio, 43 * pixel_ratio),
-            "blue Balanced only  |  coral reference only  |  dark overlap",
+            "blue candidate only  |  coral reference only  |  dark overlap",
             fill=(80, 80, 80),
             font=detail_font,
         )
