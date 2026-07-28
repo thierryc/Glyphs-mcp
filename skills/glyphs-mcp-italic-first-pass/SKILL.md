@@ -19,6 +19,9 @@ Use this skill for a guarded roman-to-italic first pass. It accelerates the work
 - Copy components as live components, but do not skew component transforms or component outlines; component shapes should resolve from their own italic master layers.
 - Default `compatibility_mode` is `preserve_if_possible`; path compatibility is useful but not required.
 - Before `slant_mode="cursivy"`, run `review_master_stem_metrics` for the target italic master.
+- Use `slant_mode="balanced"` when the user wants an adjustable Raw/Cursivy
+  blend plus conservative straight-stem compensation. Its default
+  `curve_strength` is `0.75` and default `stem_compensation` is `1.0`.
 - If Cursivy stems are missing, ask whether to set stems, measure suggestions, use raw slant, or stop.
 - Run `review_italic_first_pass` before `apply_italic_first_pass`.
 - Always run `apply_italic_first_pass` with `dry_run=true` before any mutating call.
@@ -67,6 +70,8 @@ Use these defaults unless the user says otherwise:
   "scope": "selected_glyphs",
   "angle": 12.0,
   "slant_mode": "cursivy",
+  "curve_strength": 0.75,
+  "stem_compensation": 1.0,
   "stem_policy": "require_existing",
   "compatibility_mode": "preserve_if_possible",
   "copy_options": {
@@ -91,6 +96,11 @@ However, component placement must follow the same slant geometry as paths. After
 Use the Glyphs source angle convention from this skill. If `old_y == 0`, leave the x position unchanged.
 
 This keeps baseline components unmoved while shifting components placed above or below the baseline so they align with the slanted path geometry.
+
+Balanced mode additionally shears copied anchors around the selected origin.
+An explicit component master that does not resolve to the target master blocks
+that glyph in Balanced mode. Raw and Cursivy retain their legacy component and
+anchor behavior.
 
 ## Manual review reminders
 

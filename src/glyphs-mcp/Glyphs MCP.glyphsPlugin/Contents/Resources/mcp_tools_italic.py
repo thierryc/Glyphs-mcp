@@ -7,6 +7,7 @@ import math
 
 from GlyphsApp import Glyphs, GSGlyph  # type: ignore[import-not-found]
 
+import italic_correction_engine
 from mcp_runtime import mcp
 from mcp_tool_helpers import (
     _append_font_glyph,
@@ -334,6 +335,13 @@ def _set_collection(target, attr_name, values, setter_name=None):
         return True
     except Exception:
         pass
+    if attr_name == "components" and hasattr(target, "shapes"):
+        try:
+            paths = [_copy_item(path) for path in list(getattr(target, "paths", []) or [])]
+            target.shapes = paths + list(values or [])
+            return True
+        except Exception:
+            pass
     try:
         collection = getattr(target, attr_name)
         try:
@@ -420,12 +428,207 @@ def _apply_transformations_filter(layer, angle, slant_mode, origin):
     }
     try:
         filter_method(layer, False, args)
-        return {"ok": True, "args": args}
+        return {"ok": True, "args": args, "backend": "glyphs_filter"}
     except Exception as exc:
         return {"ok": False, "error": str(exc), "args": args}
 
 
-def _prepare_path_only_candidate(source_layer, target_layer, options, angle, slant_mode, origin):
+def _origin_pivot_y(master, origin):
+    origin_value = int(origin)
+    cap_height = _coerce_numeric(getattr(master, "capHeight", None)) if master is not None else None
+    x_height = _coerce_numeric(getattr(master, "xHeight", None)) if master is not None else None
+    if origin_value == 0:
+        return float(cap_height or 0.0)
+    if origin_value == 1:
+        return float(cap_height or 0.0) * 0.5
+    if origin_value == 2:
+        return float(x_height or 0.0)
+    if origin_value == 3:
+        return float(x_height or 0.0) * 0.5
+    return 0.0
+
+
+def _node_xy(node):
+    position = getattr(node, "position", None)
+    x_value = _coerce_numeric(getattr(position, "x", None) if position is not None else None)
+    y_value = _coerce_numeric(getattr(position, "y", None) if position is not None else None)
+    if x_value is None:
+        x_value = _coerce_numeric(getattr(node, "x", None))
+    if y_value is None:
+        y_value = _coerce_numeric(getattr(node, "y", None))
+    return float(x_value or 0.0), float(y_value or 0.0)
+
+
+def _node_smooth(node):
+    smooth = getattr(node, "smooth", None)
+    if smooth is not None:
+        return bool(smooth)
+    return str(getattr(node, "connection", "") or "").strip().lower() == "smooth"
+
+
+def _serialize_paths(layer):
+    result = []
+    for path in list(getattr(layer, "paths", []) or []):
+        nodes = []
+        for node in list(getattr(path, "nodes", []) or []):
+            x_value, y_value = _node_xy(node)
+            nodes.append(
+                {
+                    "x": x_value,
+                    "y": y_value,
+                    "type": str(getattr(node, "type", "")),
+                    "smooth": _node_smooth(node),
+                }
+            )
+        result.append({"closed": bool(getattr(path, "closed", True)), "nodes": nodes})
+    return result
+
+
+def _set_node_xy(node, x_value, y_value):
+    position = getattr(node, "position", None)
+    if position is not None and hasattr(position, "x") and hasattr(position, "y"):
+        try:
+            position.x = float(x_value)
+            position.y = float(y_value)
+            try:
+                node.position = position
+            except Exception:
+                pass
+            return True
+        except Exception:
+            pass
+    try:
+        node.position = (float(x_value), float(y_value))
+        return True
+    except Exception:
+        pass
+    changed = False
+    for attr_name, value in (("x", x_value), ("y", y_value)):
+        try:
+            setattr(node, attr_name, float(value))
+            changed = True
+        except Exception:
+            pass
+    return changed
+
+
+def _apply_serialized_paths(layer, serialized):
+    paths = list(getattr(layer, "paths", []) or [])
+    if len(paths) != len(serialized):
+        return False
+    for path_index, path in enumerate(paths):
+        nodes = list(getattr(path, "nodes", []) or [])
+        source_nodes = list(serialized[path_index].get("nodes") or [])
+        if len(nodes) != len(source_nodes):
+            return False
+        for node_index, node in enumerate(nodes):
+            record = source_nodes[node_index]
+            if not _set_node_xy(node, record["x"], record["y"]):
+                return False
+    return True
+
+
+def _shear_anchors(layer, angle, pivot_y):
+    tangent = math.tan(math.radians(float(angle)))
+    shifted = []
+    for anchor in list(getattr(layer, "anchors", []) or []):
+        position = getattr(anchor, "position", None)
+        x_value = _coerce_numeric(getattr(position, "x", None) if position is not None else None)
+        y_value = _coerce_numeric(getattr(position, "y", None) if position is not None else None)
+        if x_value is None or y_value is None:
+            shifted.append({"name": str(getattr(anchor, "name", "")), "status": "unreadable"})
+            continue
+        new_x = float(x_value) + tangent * (float(y_value) - float(pivot_y))
+        if _set_node_xy(anchor, new_x, y_value):
+            shifted.append(
+                {
+                    "name": str(getattr(anchor, "name", "")),
+                    "beforeX": float(x_value),
+                    "afterX": float(new_x),
+                    "y": float(y_value),
+                    "deltaX": float(new_x) - float(x_value),
+                    "status": "shifted",
+                }
+            )
+        else:
+            shifted.append({"name": str(getattr(anchor, "name", "")), "status": "write_failed"})
+    return {
+        "pivotY": float(pivot_y),
+        "shiftedCount": len([item for item in shifted if item.get("status") == "shifted"]),
+        "anchors": shifted,
+    }
+
+
+def _component_master_mismatches(layer, target_master_id):
+    mismatches = []
+    for component in list(getattr(layer, "components", []) or []):
+        component_master_id = getattr(component, "componentMasterId", None)
+        if component_master_id in (None, "") or str(component_master_id) == str(target_master_id):
+            continue
+        mismatches.append(
+            {
+                "componentName": str(getattr(component, "componentName", getattr(component, "name", ""))),
+                "componentMasterId": str(component_master_id),
+                "targetMasterId": str(target_master_id),
+            }
+        )
+    return mismatches
+
+
+def _stem_values(stem_review, target_master_id):
+    for master in list((stem_review or {}).get("masters") or []):
+        if str(master.get("masterId")) != str(target_master_id):
+            continue
+        values = []
+        for stem in list(master.get("stems") or []):
+            value = _coerce_numeric(stem.get("value"))
+            if value is not None and value > 0:
+                values.append(float(value))
+        return values
+    return []
+
+
+def _empty_stem_diagnostics():
+    return {
+        "detectedPairCount": 0,
+        "acceptedPairCount": 0,
+        "compensatedPairCount": 0,
+        "compensatedPairs": [],
+        "skippedPairs": [],
+    }
+
+
+def _fallback_cursivy_paths(source_paths, raw_paths, upm, stem_values):
+    fallback = italic_correction_engine.compensate_stems(
+        source_paths,
+        raw_paths,
+        strength=italic_correction_engine.CURSIVY_FALLBACK_STEM_STRENGTH,
+        upm=upm,
+        stem_values=stem_values,
+    )
+    return fallback["paths"], {
+        "ok": True,
+        "backend": "pure_stem_fallback",
+        "warning": "glyphs_transformations_filter_unavailable",
+        "stemStrength": italic_correction_engine.CURSIVY_FALLBACK_STEM_STRENGTH,
+        "stemDiagnostics": fallback["diagnostics"],
+    }
+
+
+def _prepare_path_only_candidate(
+    source_layer,
+    target_layer,
+    options,
+    angle,
+    slant_mode,
+    origin,
+    target_master=None,
+    target_master_id=None,
+    upm=1000.0,
+    stem_values=None,
+    curve_strength=0.75,
+    stem_compensation=1.0,
+):
     candidate = _copy_item(target_layer) if target_layer is not None else _copy_item(source_layer)
     if candidate is None:
         return {"ok": False, "reason": "candidate_layer_create_failed"}
@@ -444,13 +647,28 @@ def _prepare_path_only_candidate(source_layer, target_layer, options, angle, sla
         if options.get("components")
         else {"angle": float(angle), "adjustedCount": 0, "baselineCount": 0, "unreadableCount": 0}
     )
-
     preserved_components = _copied_collection(candidate, "components")
     preserved_component_signature = _component_signature_from_items(preserved_components)
     preserved_anchors = _copied_collection(candidate, "anchors")
     preserved_anchor_signature = _anchor_signature_from_items(preserved_anchors)
+    component_mismatches = _component_master_mismatches(candidate, target_master_id)
+    mode = str(slant_mode)
+    pivot_y = _origin_pivot_y(target_master, origin)
+
+    if mode == "balanced" and component_mismatches:
+        return {
+            "ok": False,
+            "reason": "component_master_mismatch",
+            "componentWarnings": component_mismatches,
+            "componentTransformPolicy": "copy_components_preserve_unskewed",
+        }
 
     if not options.get("paths"):
+        anchor_positioning = (
+            _shear_anchors(candidate, angle, pivot_y)
+            if options.get("anchors") and mode == "balanced"
+            else {"pivotY": pivot_y, "shiftedCount": 0, "anchors": []}
+        )
         return {
             "ok": True,
             "candidateLayer": candidate,
@@ -459,32 +677,98 @@ def _prepare_path_only_candidate(source_layer, target_layer, options, angle, sla
             "anchorsPreserved": True,
             "componentPositioning": component_positioning,
             "componentTransformPolicy": "copy_components_preserve_unskewed",
+            "componentWarnings": component_mismatches,
+            "anchorPositioning": anchor_positioning,
+            "topologyPreserved": True,
+            "stemDiagnostics": _empty_stem_diagnostics(),
+            "curveStrength": float(curve_strength) if mode == "balanced" else (0.0 if mode == "raw" else 1.0),
+            "stemCompensation": float(stem_compensation) if mode == "balanced" else 0.0,
+            "pivotY": pivot_y,
         }
 
-    if not _set_collection(candidate, "components", [], "setComponents_"):
-        return {"ok": False, "reason": "component_detach_failed"}
-    if not _set_collection(candidate, "anchors", []):
-        return {"ok": False, "reason": "anchor_detach_failed"}
+    source_paths = _serialize_paths(source_layer)
+    raw_paths = italic_correction_engine.shear_paths(source_paths, angle=angle, pivot_y=pivot_y)
 
-    transform = _apply_transformations_filter(
+    cursivy_paths = None
+    cursivy_transform = None
+    if mode != "raw":
+        filter_candidate = _copy_item(candidate)
+        if filter_candidate is not None:
+            if not _set_collection(filter_candidate, "components", [], "setComponents_"):
+                filter_candidate = None
+            elif not _set_collection(filter_candidate, "anchors", []):
+                filter_candidate = None
+        if filter_candidate is not None:
+            filter_transform = _apply_transformations_filter(
+                filter_candidate,
+                angle=angle,
+                slant_mode="cursivy",
+                origin=origin,
+            )
+            if filter_transform.get("ok"):
+                cursivy_paths = _serialize_paths(filter_candidate)
+                cursivy_transform = filter_transform
+        if cursivy_paths is None:
+            cursivy_paths, cursivy_transform = _fallback_cursivy_paths(
+                source_paths,
+                raw_paths,
+                upm=upm,
+                stem_values=stem_values,
+            )
+
+        if not italic_correction_engine.topology_matches(raw_paths, cursivy_paths):
+            return {
+                "ok": False,
+                "reason": "raw_cursivy_topology_mismatch",
+                "transform": cursivy_transform,
+                "componentTransformPolicy": "copy_components_preserve_unskewed",
+            }
+
+    stem_diagnostics = _empty_stem_diagnostics()
+    if mode == "raw":
+        final_paths = raw_paths
+        transform = {"ok": True, "backend": "pure_affine", "angle": float(angle), "origin": int(origin)}
+    elif mode == "cursivy":
+        final_paths = cursivy_paths
+        transform = cursivy_transform
+    else:
+        blended_paths = italic_correction_engine.interpolate_paths(raw_paths, cursivy_paths, curve_strength)
+        compensated = italic_correction_engine.compensate_stems(
+            source_paths,
+            blended_paths,
+            strength=stem_compensation,
+            upm=upm,
+            stem_values=stem_values,
+        )
+        final_paths = compensated["paths"]
+        stem_diagnostics = compensated["diagnostics"]
+        transform = {
+            "ok": True,
+            "backend": "balanced",
+            "rawBackend": "pure_affine",
+            "cursivyBackend": cursivy_transform.get("backend"),
+            "cursivyWarning": cursivy_transform.get("warning"),
+            "angle": float(angle),
+            "origin": int(origin),
+        }
+
+    if not _apply_serialized_paths(candidate, final_paths):
+        return {"ok": False, "reason": "candidate_path_write_failed", "transform": transform}
+    if not _set_collection(
         candidate,
-        angle=angle,
-        slant_mode=slant_mode,
-        origin=origin,
-    )
-    if not transform.get("ok"):
-        return {
-            "ok": False,
-            "reason": "transform_failed",
-            "transform": transform,
-            "componentTransformPolicy": "copy_components_preserve_unskewed",
-        }
-
-    if not _set_collection(candidate, "components", [_copy_item(component) for component in preserved_components], "setComponents_"):
+        "components",
+        [_copy_item(component) for component in preserved_components],
+        "setComponents_",
+    ):
         return {"ok": False, "reason": "component_restore_failed", "transform": transform}
     if not _set_collection(candidate, "anchors", [_copy_item(anchor) for anchor in preserved_anchors]):
         return {"ok": False, "reason": "anchor_restore_failed", "transform": transform}
 
+    anchor_positioning = (
+        _shear_anchors(candidate, angle, pivot_y)
+        if options.get("anchors") and mode == "balanced"
+        else {"pivotY": pivot_y, "shiftedCount": 0, "anchors": []}
+    )
     restored_component_signature = _component_signature_from_items(list(getattr(candidate, "components", []) or []))
     if restored_component_signature != preserved_component_signature:
         return {
@@ -494,9 +778,8 @@ def _prepare_path_only_candidate(source_layer, target_layer, options, angle, sla
             "before": preserved_component_signature,
             "after": restored_component_signature,
         }
-
     restored_anchor_signature = _anchor_signature_from_items(list(getattr(candidate, "anchors", []) or []))
-    if restored_anchor_signature != preserved_anchor_signature:
+    if mode != "balanced" and restored_anchor_signature != preserved_anchor_signature:
         return {
             "ok": False,
             "reason": "anchor_preservation_failed",
@@ -513,12 +796,19 @@ def _prepare_path_only_candidate(source_layer, target_layer, options, angle, sla
         "anchorsPreserved": True,
         "componentPositioning": component_positioning,
         "componentTransformPolicy": "copy_components_preserve_unskewed",
+        "componentWarnings": component_mismatches,
+        "anchorPositioning": anchor_positioning,
+        "topologyPreserved": italic_correction_engine.topology_matches(source_paths, final_paths),
+        "stemDiagnostics": stem_diagnostics,
+        "curveStrength": float(curve_strength) if mode == "balanced" else (0.0 if mode == "raw" else 1.0),
+        "stemCompensation": float(stem_compensation) if mode == "balanced" else 0.0,
+        "pivotY": pivot_y,
     }
 
 
 def _effective_slant_mode(slant_mode, stem_policy, stem_review):
     mode = str(slant_mode or "cursivy").strip().lower()
-    if mode not in ("raw", "cursivy"):
+    if mode not in ("raw", "cursivy", "balanced"):
         mode = "cursivy"
     if mode == "cursivy" and not stem_review.get("readyForCursivy") and stem_policy == "skip_for_raw":
         return "raw"
@@ -550,8 +840,15 @@ def _review_italic_first_pass_impl(
     protected_glyphs=None,
     skip_glyphs=None,
     origin=3,
+    curve_strength=0.75,
+    stem_compensation=1.0,
 ):
     try:
+        curve_strength = italic_correction_engine.validate_unit_interval(curve_strength, "curve_strength")
+        stem_compensation = italic_correction_engine.validate_unit_interval(
+            stem_compensation,
+            "stem_compensation",
+        )
         source_index = font_index if source_font_index is None else source_font_index
         target_index = source_index if target_font_index is None else target_font_index
         source_font = _get_font(source_index)
@@ -563,9 +860,11 @@ def _review_italic_first_pass_impl(
 
         source_master_id = source_master_id or _selected_master_id(source_font)
         target_master_id = target_master_id or _selected_master_id(target_font)
-        if not _master_by_id(source_font, source_master_id):
+        source_master = _master_by_id(source_font, source_master_id)
+        target_master = _master_by_id(target_font, target_master_id)
+        if not source_master:
             return {"ok": False, "error": "Source master not found", "sourceMasterId": source_master_id}
-        if not _master_by_id(target_font, target_master_id):
+        if not target_master:
             return {"ok": False, "error": "Target master not found", "targetMasterId": target_master_id}
 
         names, resolved_scope = _resolve_glyph_names(source_font, scope, glyph_names)
@@ -589,8 +888,17 @@ def _review_italic_first_pass_impl(
                 master_ids=[source_master_id],
                 include_measurements=False,
             )
+        policy_warnings = []
+        if (
+            stem_policy == "copy_from_source"
+            and source_stem_review
+            and source_stem_review.get("readyForCursivy")
+            and not stem_review.get("readyForCursivy")
+        ):
+            policy_warnings.append("source_stems_available_but_not_applied")
         effective_mode = _effective_slant_mode(slant_mode, stem_policy, stem_review)
         cursivy_blocked = effective_mode == "cursivy" and not stem_review.get("readyForCursivy")
+        target_stem_values = _stem_values(stem_review, target_master_id)
 
         protected = set(protected_glyphs or DEFAULT_PROTECTED_GLYPHS)
         explicit_skip = set(skip_glyphs or [])
@@ -620,7 +928,7 @@ def _review_italic_first_pass_impl(
                 error_count += 1
                 continue
 
-            warnings = []
+            warnings = list(policy_warnings)
             if name in protected:
                 warnings.append("protected_glyph_needs_manual_review")
             if target_glyph is None:
@@ -641,11 +949,39 @@ def _review_italic_first_pass_impl(
             if compatibility_status == "blocked":
                 blocked_reasons.append("strict_compatibility_would_replace_incompatible_layer")
 
+            candidate = None
             status = "blocked" if blocked_reasons else "ok"
             if status == "ok":
+                candidate = _prepare_path_only_candidate(
+                    source_layer,
+                    target_layer,
+                    options,
+                    angle=angle,
+                    slant_mode=effective_mode,
+                    origin=origin,
+                    target_master=target_master,
+                    target_master_id=target_master_id,
+                    upm=float(getattr(target_font, "upm", 1000) or 1000),
+                    stem_values=target_stem_values,
+                    curve_strength=curve_strength,
+                    stem_compensation=stem_compensation,
+                )
+                if not candidate.get("ok"):
+                    reason = candidate.get("reason", "candidate_prepare_failed")
+                    if reason == "component_master_mismatch":
+                        blocked_reasons.append(reason)
+                        status = "blocked"
+                    else:
+                        status = "error"
+                elif candidate.get("transform", {}).get("warning"):
+                    warnings.append(candidate["transform"]["warning"])
+
+            if status == "ok":
                 ok_count += 1
-            else:
+            elif status == "blocked":
                 blocked_count += 1
+            else:
+                error_count += 1
 
             current_metrics = None
             if target_layer:
@@ -659,12 +995,21 @@ def _review_italic_first_pass_impl(
                 "leftSideBearing": _get_left_sidebearing(source_layer),
                 "rightSideBearing": _get_right_sidebearing(source_layer),
             }
+            candidate_layer = candidate.get("candidateLayer") if candidate and candidate.get("ok") else None
+            candidate_metrics = None
+            if candidate_layer is not None:
+                candidate_metrics = {
+                    "width": getattr(candidate_layer, "width", None),
+                    "leftSideBearing": _get_left_sidebearing(candidate_layer),
+                    "rightSideBearing": _get_right_sidebearing(candidate_layer),
+                }
 
             results.append(
                 {
                     "glyphName": name,
                     "status": status,
                     "blockedReasons": blocked_reasons,
+                    "reason": candidate.get("reason") if candidate and not candidate.get("ok") else None,
                     "warnings": warnings,
                     "compatibility": {
                         "mode": compatibility_mode,
@@ -675,11 +1020,22 @@ def _review_italic_first_pass_impl(
                     "bounds": {
                         "source": _bounds(source_layer),
                         "target": _bounds(target_layer),
+                        "candidate": _bounds(candidate_layer),
                     },
                     "metrics": {
                         "source": source_metrics,
                         "target": current_metrics,
+                        "candidate": candidate_metrics,
                     },
+                    "transform": candidate.get("transform") if candidate else None,
+                    "topologyPreserved": candidate.get("topologyPreserved") if candidate else None,
+                    "curveStrength": candidate.get("curveStrength") if candidate else None,
+                    "stemCompensation": candidate.get("stemCompensation") if candidate else None,
+                    "pivotY": candidate.get("pivotY") if candidate else _origin_pivot_y(target_master, origin),
+                    "stemDiagnostics": candidate.get("stemDiagnostics") if candidate else _empty_stem_diagnostics(),
+                    "anchorPositioning": candidate.get("anchorPositioning") if candidate else None,
+                    "componentPositioning": candidate.get("componentPositioning") if candidate else None,
+                    "componentWarnings": candidate.get("componentWarnings", []) if candidate else [],
                 }
             )
 
@@ -697,9 +1053,12 @@ def _review_italic_first_pass_impl(
             "origin": int(origin),
             "slantMode": str(slant_mode or "cursivy"),
             "effectiveSlantMode": effective_mode,
+            "curveStrength": curve_strength,
+            "stemCompensation": stem_compensation,
             "stemPolicy": stem_policy,
             "stemReview": stem_review,
             "sourceStemReview": source_stem_review,
+            "policyWarnings": policy_warnings,
             "copyOptions": options,
             "summary": {
                 "glyphCount": len(names),
@@ -740,6 +1099,8 @@ def _apply_italic_first_pass_impl(
     protected_glyphs=None,
     skip_glyphs=None,
     origin=3,
+    curve_strength=0.75,
+    stem_compensation=1.0,
     dry_run=False,
     confirm=False,
     backup=True,
@@ -762,6 +1123,8 @@ def _apply_italic_first_pass_impl(
             protected_glyphs=protected_glyphs,
             skip_glyphs=skip_glyphs,
             origin=origin,
+            curve_strength=curve_strength,
+            stem_compensation=stem_compensation,
         )
         if not review.get("ok"):
             return review
@@ -778,6 +1141,8 @@ def _apply_italic_first_pass_impl(
         source_master_id = review["sourceMasterId"]
         target_master_id = review["targetMasterId"]
         options = review["copyOptions"]
+        target_master = _master_by_id(target_font, target_master_id)
+        target_stem_values = _stem_values(review.get("stemReview"), target_master_id)
 
         applied = []
         backup_count = 0
@@ -806,6 +1171,12 @@ def _apply_italic_first_pass_impl(
                 angle=angle,
                 slant_mode=review["effectiveSlantMode"],
                 origin=origin,
+                target_master=target_master,
+                target_master_id=target_master_id,
+                upm=float(getattr(target_font, "upm", 1000) or 1000),
+                stem_values=target_stem_values,
+                curve_strength=review.get("curveStrength", curve_strength),
+                stem_compensation=review.get("stemCompensation", stem_compensation),
             )
             if not candidate.get("ok"):
                 applied.append(
@@ -856,6 +1227,13 @@ def _apply_italic_first_pass_impl(
                         "componentsPreserved": candidate["componentsPreserved"],
                         "componentPositioning": candidate["componentPositioning"],
                         "componentTransformPolicy": candidate["componentTransformPolicy"],
+                        "componentWarnings": candidate.get("componentWarnings", []),
+                        "anchorPositioning": candidate.get("anchorPositioning"),
+                        "topologyPreserved": candidate.get("topologyPreserved"),
+                        "curveStrength": candidate.get("curveStrength"),
+                        "stemCompensation": candidate.get("stemCompensation"),
+                        "stemDiagnostics": candidate.get("stemDiagnostics"),
+                        "pivotY": candidate.get("pivotY"),
                     }
                 )
             except Exception as exc:
@@ -899,6 +1277,8 @@ async def review_italic_first_pass(
     protected_glyphs: list = None,
     skip_glyphs: list = None,
     origin: int = 3,
+    curve_strength: float = 0.75,
+    stem_compensation: float = 1.0,
 ) -> str:
     """Preview a roman-to-italic first-pass copy and slant workflow.
 
@@ -923,6 +1303,8 @@ async def review_italic_first_pass(
             protected_glyphs=protected_glyphs,
             skip_glyphs=skip_glyphs,
             origin=origin,
+            curve_strength=curve_strength,
+            stem_compensation=stem_compensation,
         )
     )
 
@@ -944,6 +1326,8 @@ async def apply_italic_first_pass(
     protected_glyphs: list = None,
     skip_glyphs: list = None,
     origin: int = 3,
+    curve_strength: float = 0.75,
+    stem_compensation: float = 1.0,
     dry_run: bool = False,
     confirm: bool = False,
     backup: bool = True,
@@ -972,6 +1356,8 @@ async def apply_italic_first_pass(
             protected_glyphs=protected_glyphs,
             skip_glyphs=skip_glyphs,
             origin=origin,
+            curve_strength=curve_strength,
+            stem_compensation=stem_compensation,
             dry_run=dry_run,
             confirm=confirm,
             backup=backup,

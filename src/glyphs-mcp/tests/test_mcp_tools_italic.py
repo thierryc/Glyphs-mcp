@@ -42,17 +42,26 @@ class _FakeStem:
 
 
 class _FakeNode:
-    def __init__(self, node_type="line"):
+    def __init__(self, node_type="line", x=0.0, y=0.0, smooth=False):
         self.type = node_type
+        self.position = types.SimpleNamespace(x=float(x), y=float(y))
+        self.smooth = smooth
 
 
 class _FakePath:
-    def __init__(self, node_types, transformed=False):
-        self.nodes = [_FakeNode(t) for t in node_types]
+    def __init__(self, node_types, transformed=False, points=None, closed=True):
+        points = list(points or [(index * 100.0, (index % 2) * 700.0) for index in range(len(node_types))])
+        self.nodes = [_FakeNode(t, *points[index]) for index, t in enumerate(node_types)]
         self.transformed = transformed
+        self.closed = closed
 
     def copy(self):
-        return _FakePath([node.type for node in self.nodes], transformed=self.transformed)
+        return _FakePath(
+            [node.type for node in self.nodes],
+            transformed=self.transformed,
+            points=[(node.position.x, node.position.y) for node in self.nodes],
+            closed=self.closed,
+        )
 
 
 class _FakeComponent:
@@ -168,6 +177,8 @@ class GlyphsFilterTransformations:
             raise RuntimeError("transform failed")
         for path in layer.paths:
             path.transformed = True
+            for node in path.nodes:
+                node.position.x += 10.0
         for component in layer.components:
             component.transform = [2, 0, 1, 2, 999, 999]
         for anchor in layer.anchors:
@@ -176,6 +187,13 @@ class GlyphsFilterTransformations:
 
 class GlyphsFilterTransformationsNoFilter:
     pass
+
+
+class GlyphsFilterTransformationsTopologyMismatch(GlyphsFilterTransformations):
+    def filter(self, layer, include, args):
+        super().filter(layer, include, args)
+        if layer.paths and layer.paths[0].nodes:
+            layer.paths[0].nodes.pop()
 
 
 def _resolve_font_by_index(glyphs, font_index):
@@ -194,9 +212,21 @@ def _font_resolution_error(font_index, fonts=None, ok_key=None):
 
 
 def _make_font(complete_stems=True):
-    source_master = types.SimpleNamespace(id="roman", name="Roman", stems={"Vertical": 82, "Horizontal": 74})
+    source_master = types.SimpleNamespace(
+        id="roman",
+        name="Roman",
+        stems={"Vertical": 82, "Horizontal": 74},
+        capHeight=700,
+        xHeight=500,
+    )
     target_stems = {"Vertical": 82, "Horizontal": 74} if complete_stems else {"Vertical": 82}
-    target_master = types.SimpleNamespace(id="italic", name="Italic", stems=target_stems)
+    target_master = types.SimpleNamespace(
+        id="italic",
+        name="Italic",
+        stems=target_stems,
+        capHeight=700,
+        xHeight=500,
+    )
 
     a = _FakeGlyph("a", _FakeLayer(500, ["line", "curve"]), _FakeLayer(490, ["line"]))
     b = _FakeGlyph("b", _FakeLayer(510, ["line", "line"]), _FakeLayer(500, ["line", "line"]))
@@ -358,11 +388,11 @@ class McpToolsItalicTests(unittest.TestCase):
         self.assertEqual(target_layer.width, 510.0)
         self.assertEqual(len(target_layer.paths), 1)
         self.assertEqual(len(font.glyphs["b"].layers.backups), 1)
-        self.assertEqual(len(filter_obj.calls), 1)
-        self.assertEqual(filter_obj.calls[0]["args"]["Slant"], 12.0)
-        self.assertEqual(filter_obj.calls[0]["args"]["SlantCorrection"], 1)
-        self.assertEqual(filter_obj.calls[0]["args"]["Origin"], 3)
-        self.assertTrue(target_layer.paths[0].transformed)
+        self.assertEqual(len(filter_obj.calls), 2)
+        self.assertEqual(filter_obj.calls[-1]["args"]["Slant"], 12.0)
+        self.assertEqual(filter_obj.calls[-1]["args"]["SlantCorrection"], 1)
+        self.assertEqual(filter_obj.calls[-1]["args"]["Origin"], 3)
+        self.assertAlmostEqual(target_layer.paths[0].nodes[0].position.x, 10.0)
         self.assertEqual(target_layer.change_depth, 0)
         self.assertEqual(font.glyphs["b"].undo_depth, 0)
 
@@ -389,10 +419,9 @@ class McpToolsItalicTests(unittest.TestCase):
         )
 
         self.assertTrue(payload["ok"])
-        self.assertEqual(filter_obj.calls[0]["pathCount"], 1)
-        self.assertEqual(filter_obj.calls[0]["componentCount"], 0)
-        self.assertEqual(filter_obj.calls[0]["anchorCount"], 0)
-        self.assertTrue(target_layer.paths[0].transformed)
+        self.assertEqual(filter_obj.calls, [])
+        expected_node_x = math.tan(math.radians(12.0)) * -250.0
+        self.assertAlmostEqual(target_layer.paths[0].nodes[0].position.x, expected_node_x)
         self.assertEqual(len(target_layer.components), 2)
         self.assertIsNot(target_layer.components[0], source_component)
         expected_x = 35 + math.tan(math.radians(12.0)) * 40
@@ -422,19 +451,19 @@ class McpToolsItalicTests(unittest.TestCase):
         original_paths = list(target_layer.paths)
         original_components = list(target_layer.components)
         original_width = target_layer.width
-        module, filter_obj = self._load_module(font, filter_obj=GlyphsFilterTransformations(fail=True))
+        module, filter_obj = self._load_module(font, filter_obj=GlyphsFilterTransformationsTopologyMismatch())
 
         payload = module._apply_italic_first_pass_impl(
             source_master_id="roman",
             target_master_id="italic",
             scope="glyph_names",
             glyph_names=["b"],
-            slant_mode="raw",
+            slant_mode="cursivy",
             confirm=True,
         )
 
         self.assertFalse(payload["ok"])
-        self.assertEqual(payload["results"][0]["reason"], "transform_failed")
+        self.assertEqual(payload["review"]["results"][0]["reason"], "raw_cursivy_topology_mismatch")
         self.assertEqual(len(filter_obj.calls), 1)
         self.assertEqual(target_layer.paths, original_paths)
         self.assertEqual(target_layer.components, original_components)
@@ -447,7 +476,10 @@ class McpToolsItalicTests(unittest.TestCase):
         target_font = _make_font()
         target_font.glyphs = _FakeGlyphs({})
         target_font.selectedLayers = []
-        module, _filter = self._load_module([source_font, target_font], filter_obj=GlyphsFilterTransformations(fail=True))
+        module, _filter = self._load_module(
+            [source_font, target_font],
+            filter_obj=GlyphsFilterTransformationsTopologyMismatch(),
+        )
 
         payload = module._apply_italic_first_pass_impl(
             source_font_index=0,
@@ -456,15 +488,15 @@ class McpToolsItalicTests(unittest.TestCase):
             target_master_id="italic",
             scope="glyph_names",
             glyph_names=["b"],
-            slant_mode="raw",
+            slant_mode="cursivy",
             confirm=True,
         )
 
         self.assertFalse(payload["ok"])
-        self.assertEqual(payload["results"][0]["reason"], "transform_failed")
+        self.assertEqual(payload["review"]["results"][0]["reason"], "raw_cursivy_topology_mismatch")
         self.assertNotIn("b", target_font.glyphs)
 
-    def test_missing_transform_filter_method_fails_without_mutation(self) -> None:
+    def test_missing_transform_filter_method_uses_reported_fallback_without_mutation(self) -> None:
         font = _make_font()
         target_layer = font.glyphs["b"].layers["italic"]
         original_paths = list(target_layer.paths)
@@ -476,13 +508,14 @@ class McpToolsItalicTests(unittest.TestCase):
             target_master_id="italic",
             scope="glyph_names",
             glyph_names=["b"],
-            slant_mode="raw",
-            confirm=True,
+            slant_mode="cursivy",
+            dry_run=True,
         )
 
-        self.assertFalse(payload["ok"])
-        self.assertEqual(payload["results"][0]["reason"], "transform_failed")
-        self.assertIn("no callable filter method", payload["results"][0]["transform"]["error"])
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["readyToApply"])
+        self.assertEqual(payload["results"][0]["transform"]["backend"], "pure_stem_fallback")
+        self.assertIn("glyphs_transformations_filter_unavailable", payload["results"][0]["warnings"])
         self.assertEqual(target_layer.paths, original_paths)
         self.assertEqual(target_layer.width, original_width)
         self.assertEqual(len(font.glyphs["b"].layers.backups), 0)
@@ -504,6 +537,101 @@ class McpToolsItalicTests(unittest.TestCase):
         self.assertFalse(payload["readyToApply"])
         self.assertEqual(payload["results"][0]["blockedReasons"], ["strict_compatibility_would_replace_incompatible_layer"])
 
+    def test_cursivy_dry_run_builds_candidate_without_target_mutation(self) -> None:
+        font = _make_font()
+        target_layer = font.glyphs["b"].layers["italic"]
+        before = [(node.position.x, node.position.y) for node in target_layer.paths[0].nodes]
+        module, filter_obj = self._load_module(font)
+
+        payload = module._apply_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="cursivy",
+            dry_run=True,
+        )
+
+        after = [(node.position.x, node.position.y) for node in target_layer.paths[0].nodes]
+        self.assertTrue(payload["ok"])
+        self.assertEqual(len(filter_obj.calls), 1)
+        self.assertEqual(before, after)
+        self.assertTrue(payload["results"][0]["topologyPreserved"])
+
+    def test_balanced_shears_anchors_around_selected_pivot(self) -> None:
+        font = _make_font()
+        source_layer = font.glyphs["b"].layers["roman"]
+        source_layer.anchors = [_FakeAnchor("top", 120, 700)]
+        module, _filter = self._load_module(font)
+
+        payload = module._apply_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="balanced",
+            origin=3,
+            curve_strength=0.75,
+            stem_compensation=1.0,
+            confirm=True,
+        )
+
+        self.assertTrue(payload["ok"])
+        target_anchor = font.glyphs["b"].layers["italic"].anchors[0]
+        expected_x = 120 + math.tan(math.radians(12.0)) * (700 - 250)
+        self.assertAlmostEqual(target_anchor.position.x, expected_x, places=6)
+        self.assertEqual(target_anchor.position.y, 700)
+        self.assertEqual(payload["results"][0]["anchorPositioning"]["shiftedCount"], 1)
+        self.assertAlmostEqual(payload["results"][0]["pivotY"], 250.0)
+
+    def test_balanced_blocks_explicit_component_master_mismatch(self) -> None:
+        font = _make_font()
+        source_layer = font.glyphs["b"].layers["roman"]
+        source_layer.components = [_FakeComponent("acute", component_master_id="roman")]
+        module, _filter = self._load_module(font)
+
+        payload = module._review_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="balanced",
+        )
+
+        self.assertTrue(payload["ok"])
+        self.assertFalse(payload["readyToApply"])
+        self.assertEqual(payload["results"][0]["blockedReasons"], ["component_master_mismatch"])
+        self.assertEqual(payload["results"][0]["componentWarnings"][0]["componentName"], "acute")
+
+    def test_component_translation_cancels_local_pivot(self) -> None:
+        font = _make_font()
+        module, _filter = self._load_module(font)
+        component = _FakeComponent("acute", transform=[1, 0, 0, 1, 35, 40])
+        layer = _FakeLayer()
+        layer.components = [component]
+        tangent = math.tan(math.radians(12.0))
+        local_point = (100.0, 700.0)
+        pivot_y = 250.0
+
+        module._adjust_component_positions_for_slant(layer, 12.0)
+        resolved_world_x = component.position.x + local_point[0] + tangent * (local_point[1] - pivot_y)
+        direct_world_x = 35.0 + local_point[0] + tangent * ((40.0 + local_point[1]) - pivot_y)
+        self.assertAlmostEqual(resolved_world_x, direct_world_x, places=9)
+
+    def test_strength_parameters_must_be_between_zero_and_one(self) -> None:
+        font = _make_font()
+        module, _filter = self._load_module(font)
+        payload = module._review_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="balanced",
+            curve_strength=1.1,
+        )
+        self.assertFalse(payload["ok"])
+        self.assertIn("curve_strength", payload["error"])
+
     def test_copy_from_source_policy_reports_source_stems(self) -> None:
         font = _make_font(complete_stems=False)
         module, _filter = self._load_module(font)
@@ -519,6 +647,7 @@ class McpToolsItalicTests(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertFalse(payload["stemReview"]["readyForCursivy"])
         self.assertTrue(payload["sourceStemReview"]["readyForCursivy"])
+        self.assertEqual(payload["policyWarnings"], ["source_stems_available_but_not_applied"])
 
 
 if __name__ == "__main__":

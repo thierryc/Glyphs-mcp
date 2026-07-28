@@ -148,10 +148,17 @@ the input contract, previous-map format, safety model, and usage boundaries.
 
 Italic first-pass tools use the Glyphs source/Transformations angle convention: positive `angle` values lean Latin outlines to the right. The default is `12.0`, chosen as a modern common working default. Exported OpenType/UFO metadata uses the opposite sign convention, so a Glyphs `+12` degree source angle corresponds to about `-12` in `post.italicAngle` or an OpenType `slnt` axis value.
 
+`slant_mode` accepts `raw`, `cursivy`, or `balanced`. Balanced defaults to
+`curve_strength=0.75` and `stem_compensation=1.0`; both strengths must be
+between `0` and `1`. It interpolates compatible Raw and Cursivy node
+coordinates, compensates only confidently detected straight stem pairs,
+shears copied anchors around the selected origin, and preserves live
+components. Review executes this full pipeline on detached layer copies.
+
 | Tool | Description |
 | --- | --- |
-| `review_italic_first_pass` | Preview a roman-to-italic layer copy and slant workflow without mutation. |
-| `apply_italic_first_pass` | Apply a guarded first-pass italic/oblique workflow; supports `dry_run`, requires `confirm=true`, and can create backup layers. |
+| `review_italic_first_pass` | Preview a Raw, Cursivy, or Balanced roman-to-italic candidate without mutating the font; includes topology, anchor, component, bounds, metrics, filter-backend, and stem diagnostics. |
+| `apply_italic_first_pass` | Apply the reviewed first-pass italic/oblique candidate; supports `dry_run`, requires `confirm=true`, and can create backup layers. |
 | `set_master_italic_angle` | Set a master's Glyphs Font Info Metrics `italicAngle`; supports `dry_run` and requires `confirm=true` to mutate. |
 | `create_glyph` | Add a new glyph. |
 | `delete_glyph` | Remove a glyph. |

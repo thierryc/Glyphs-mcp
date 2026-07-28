@@ -245,8 +245,8 @@ instead because Glyphs requires an absolute file path.
 | `review_master_stem_metrics` | Review master stem metrics required by Cursivy and related filters (no mutation). |
 | `set_master_stem_metrics` | Create or update master stem metrics (supports `dry_run`; requires `confirm=true` to mutate). |
 | `set_master_italic_angle` | Set a master’s Glyphs Font Info Metrics `italicAngle` (supports `dry_run`; requires `confirm=true` to mutate). |
-| `review_italic_first_pass` | Preview a guarded roman-to-italic layer copy and slant workflow (default `+12` Glyphs source angle; no mutation). |
-| `apply_italic_first_pass` | Apply a first-pass italic/oblique copy and slant workflow (default `+12` Glyphs source angle; supports `dry_run`; requires `confirm=true` to mutate). |
+| `review_italic_first_pass` | Preview a guarded roman-to-italic layer copy and build detached Raw, Cursivy, or Balanced candidates (default `+12` Glyphs source angle; no mutation). |
+| `apply_italic_first_pass` | Apply a first-pass italic/oblique copy and slant workflow; `balanced` blends Raw/Cursivy geometry and conservatively compensates straight stems (supports `dry_run`; requires `confirm=true`). |
 | `measure_stem_ratio` | Measure a stem ratio `b` between two masters (ref/base) for compensated tuning (no mutation). |
 | `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph from a base master plus a different compatible reference master (returns `set_glyph_paths`-compatible JSON; no mutation). |
 | `apply_compensated_tuning` | Apply the same two-master compensated scaling transform across glyphs (backs up layers; supports `dry_run`; requires `confirm=true` to mutate). |

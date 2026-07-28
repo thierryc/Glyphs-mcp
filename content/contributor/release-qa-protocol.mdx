@@ -285,8 +285,8 @@ Run only on copied working files. Prefer a multi-master font where roman/italic 
 | --- | --- | --- |
 | I1 | Call `set_master_italic_angle` with `dry_run=true`. | Reports intended master and angle without changing Font Info. |
 | I2 | After approval, call `set_master_italic_angle` with `confirm=true` on the working copy. | Only the intended master's Metrics `italicAngle` changes. |
-| I3 | Call `review_italic_first_pass` for 3-5 glyphs. | Reports copy/slant plan, skips unsafe glyphs, and does not mutate. |
-| I4 | Call `apply_italic_first_pass` with `dry_run=true`. | Returns the same proposed scope without mutation. |
+| I3 | Call `review_italic_first_pass` for 3-5 glyphs in `balanced` mode. | Builds detached candidates, reports topology/stem/anchor/component diagnostics, skips unsafe glyphs, and does not mutate. |
+| I4 | Call `apply_italic_first_pass` with `dry_run=true`, including `curve_strength` and `stem_compensation`. | Returns the same generated candidate diagnostics without mutation. |
 | I5 | After approval, call `apply_italic_first_pass` with `confirm=true` on disposable glyphs/layers. | Creates expected backups if configured, updates only targets, and remains visually plausible. |
 | C1 | Call `review_master_stem_metrics`. | Reports existing or missing stem metrics for relevant masters. |
 | C2 | Call `set_master_stem_metrics` with `dry_run=true`. | Reports intended custom-parameter changes without mutation. |
@@ -299,6 +299,8 @@ Pass criteria:
 
 - Source angle convention is consistent in both app versions.
 - Tools reject incompatible layers with clear errors rather than producing broken outlines.
+- Balanced interpolation endpoints match Raw at `0` and Cursivy at `1`.
+- Balanced anchor movement matches the selected-origin shear within `0.01` units.
 - Confirmed changes are reviewable visually with `render_glyph_review_image`.
 
 ## Export and save workflow
