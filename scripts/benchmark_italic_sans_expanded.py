@@ -2,9 +2,10 @@
 """Expanded clean-room italic benchmark for Inter and Noto Sans.
 
 The benchmark covers the complete Latin uppercase and lowercase alphabets,
-all ten lining figures, and four retained punctuation/diacritic cases. Pinned
-font sources remain beneath the ignored benchmark cache and are never modified
-or committed.
+all ten lining figures, and four retained punctuation/diacritic cases. It
+produces high-resolution outline contact sheets and filled silhouette
+difference sheets. Pinned font sources remain beneath the ignored benchmark
+cache and are never modified or committed.
 """
 
 from __future__ import annotations
@@ -86,7 +87,14 @@ def _require_matching_angle(result: dict[str, Any], expected_angle: float) -> No
         )
 
 
-def run(inter_root: Path, noto_root: Path, output_dir: Path) -> dict[str, Any]:
+def run(
+    inter_root: Path,
+    noto_root: Path,
+    output_dir: Path,
+    render_scale: float = 2.0,
+) -> dict[str, Any]:
+    if not 1.0 <= float(render_scale) <= 4.0:
+        raise ValueError("render_scale must be between 1 and 4")
     output_dir.mkdir(parents=True, exist_ok=True)
     inter = base.benchmark_family(
         family_name="Inter",
@@ -98,6 +106,9 @@ def run(inter_root: Path, noto_root: Path, output_dir: Path) -> dict[str, Any]:
         png_path=output_dir / "italic-balanced-inter-v4.1-expanded.png",
         mode_labels=_mode_labels("Inter"),
         normalize_upm=True,
+        render_scale=render_scale,
+        diff_png_path=output_dir
+        / "italic-balanced-inter-v4.1-diff.png",
     )
     noto = base.benchmark_family(
         family_name="Noto Sans",
@@ -112,6 +123,11 @@ def run(inter_root: Path, noto_root: Path, output_dir: Path) -> dict[str, Any]:
         ),
         mode_labels=_mode_labels("Noto Sans"),
         normalize_upm=True,
+        render_scale=render_scale,
+        diff_png_path=output_dir
+        / "italic-balanced-noto-sans-{}-diff.png".format(
+            NOTO_SANS_COMMIT[:8]
+        ),
     )
     _require_matching_angle(inter, 9.4)
     _require_matching_angle(noto, 12.0)
@@ -144,6 +160,7 @@ def run(inter_root: Path, noto_root: Path, output_dir: Path) -> dict[str, Any]:
             "origin": base.ORIGIN,
             "curveStrength": base.CURVE_STRENGTH,
             "stemCompensation": base.STEM_COMPENSATION,
+            "contactSheetScale": render_scale,
             "cursivyFallbackStemStrength": (
                 base.engine.CURSIVY_FALLBACK_STEM_STRENGTH
             ),
@@ -161,7 +178,9 @@ def run(inter_root: Path, noto_root: Path, output_dir: Path) -> dict[str, Any]:
     result["artifacts"] = {
         "json": str(json_path),
         "interPng": inter["artifacts"]["png"],
+        "interDiffPng": inter["artifacts"]["diffPng"],
         "notoSansPng": noto["artifacts"]["png"],
+        "notoSansDiffPng": noto["artifacts"]["diffPng"],
     }
     json_path.write_text(
         json.dumps(result, indent=2, sort_keys=True) + "\n",
@@ -189,11 +208,20 @@ def main() -> int:
         type=Path,
         default=cache_root / "results-expanded",
     )
+    parser.add_argument(
+        "--render-scale",
+        type=float,
+        default=2.0,
+        help="Raster scale from 1 to 4; default 2 produces 144-DPI evidence.",
+    )
     args = parser.parse_args()
+    if not 1.0 <= float(args.render_scale) <= 4.0:
+        parser.error("--render-scale must be between 1 and 4")
     result = run(
         args.inter_root.resolve(),
         args.noto_root.resolve(),
         args.output_dir.resolve(),
+        render_scale=args.render_scale,
     )
     print(
         json.dumps(

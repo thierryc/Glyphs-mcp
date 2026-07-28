@@ -35,13 +35,41 @@ Accepted pairs by group:
 | Inter v4.1 | 9 | 5 | 1 | 0 |
 | Noto Sans | 8 | 3 | 1 | 0 |
 
+## Raster difference review
+
+The high-resolution silhouette diff aligns every comparison to the same glyph
+origin and baseline. Dark pixels overlap, blue pixels exist only in Balanced,
+and coral pixels exist only in the reference. Thin blue and coral vertical
+lines mark the respective advance widths.
+
+Mean differing pixels as a share of the union silhouette:
+
+| Family | Balanced vs Raw | Balanced vs Cursivy | Balanced vs official |
+| --- | ---: | ---: | ---: |
+| Inter v4.1 | 0.172% | 0.089% | 6.206% |
+| Noto Sans | 0.318% | 0.156% | 27.472% |
+
+These raster ratios are descriptive, not acceptance targets. Raw and Cursivy
+differ from Balanced only where the conservative correction engine acts.
+Official-italic differences also include redrawing, sidebearing changes, and
+other family-specific optical decisions. The largest Inter differences occur
+in `q`, `d`, `a`, `adieresis`, and `f`; Noto Sans is most different in `w`,
+`v`, `Y`, `W`, and `M`.
+
 ### Inter v4.1
 
 ![Expanded Inter Roman, generated modes, and official Italic](images/italic-balanced-inter-v4.1-expanded.png)
 
+![Inter Balanced silhouette differences against Raw, Cursivy, and official Italic](images/italic-balanced-inter-v4.1-diff.png)
+
 ### Noto Sans
 
 ![Expanded Noto Sans Roman, generated modes, and official Italic](images/italic-balanced-noto-sans-cb097900-expanded.png)
+
+![Noto Sans Balanced silhouette differences against Raw, Cursivy, and official Italic](images/italic-balanced-noto-sans-cb097900-diff.png)
+
+The outline contact sheets are rendered at `4300 × 24540` pixels with 144 DPI
+metadata. Difference sheets are `3340 × 24584` pixels at the same density.
 
 ## Sources and exact masters
 
@@ -91,10 +119,15 @@ Then run:
 /usr/local/bin/python3.12 scripts/benchmark_italic_sans_expanded.py
 ```
 
+The default `--render-scale 2` produces the committed 144-DPI evidence.
+Values from `1` to `4` are accepted when a larger local inspection image is
+needed.
+
 The script fails clearly when either exact Roman/Italic master pair is absent,
 when any of the 66 glyphs is missing, when the official italic angle does not
 match, or when a geometry acceptance check fails. Generated JSON and PNG files
-are written beneath `.cache/italic-benchmark/results-expanded`.
+are written beneath `.cache/italic-benchmark/results-expanded`. The JSON
+includes per-glyph and aggregate silhouette-difference ratios.
 
 ## Clean-room provenance
 

@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 import glyphsLib
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont
 
 
 INTER_COMMIT = "e3a3d4c57d5ecc01453a575621882a384c1995a3"
@@ -55,6 +55,11 @@ MODE_LABELS = [
     ("cursivy", "Current Cursivy"),
     ("balanced", "New Balanced"),
     ("official", "Official Inter Italic"),
+]
+DIFF_COMPARISONS = [
+    ("raw", "balanced", "Balanced vs Raw"),
+    ("cursivy", "balanced", "Balanced vs Cursivy"),
+    ("official", "balanced", "Balanced vs Official Italic"),
 ]
 ANGLE = 9.4
 ORIGIN = 3
@@ -288,7 +293,10 @@ def _cubic(
     return result
 
 
-def _sample_path(path: dict[str, Any]) -> list[tuple[float, float]]:
+def _sample_path(
+    path: dict[str, Any],
+    curve_steps: int = 12,
+) -> list[tuple[float, float]]:
     nodes = list(path.get("nodes") or [])
     if not nodes:
         return []
@@ -313,7 +321,15 @@ def _sample_path(path: dict[str, Any]) -> list[tuple[float, float]]:
         if str(nodes[end_index].get("type", "")).lower() == "curve" and len(between) == 2:
             control_1 = (float(between[0]["x"]), float(between[0]["y"]))
             control_2 = (float(between[1]["x"]), float(between[1]["y"]))
-            sampled.extend(_cubic(start, control_1, control_2, end))
+            sampled.extend(
+                _cubic(
+                    start,
+                    control_1,
+                    control_2,
+                    end,
+                    steps=max(4, int(curve_steps)),
+                )
+            )
         else:
             sampled.append(end)
         if not path.get("closed", True) and position == len(on_curve) - 2:
@@ -332,6 +348,7 @@ def _glyph_contours(
     mode: str,
     generated: dict[str, Any] | None,
     angle: float,
+    curve_steps: int = 12,
     transform: tuple[float, float, float, float, float, float] = (1, 0, 0, 1, 0, 0),
     stack: tuple[str, ...] = (),
 ) -> list[list[tuple[float, float]]]:
@@ -357,7 +374,10 @@ def _glyph_contours(
         paths = _serialize_layer_paths(layer)
     contours = []
     for path in paths:
-        contour = [_apply_transform(point, transform) for point in _sample_path(path)]
+        contour = [
+            _apply_transform(point, transform)
+            for point in _sample_path(path, curve_steps=curve_steps)
+        ]
         if contour:
             contours.append(contour)
     for component in list(layer.components or []):
@@ -370,11 +390,127 @@ def _glyph_contours(
                 mode,
                 generated,
                 angle,
+                curve_steps=curve_steps,
                 transform=_compose(transform, component_transform),
                 stack=stack + (glyph_name,),
             )
         )
     return contours
+
+
+def _label_font(pixel_size: int) -> ImageFont.ImageFont:
+    try:
+        return ImageFont.truetype("DejaVuSans.ttf", max(10, int(pixel_size)))
+    except OSError:
+        return ImageFont.load_default()
+
+
+def _render_geometry(
+    roman_font: Any,
+    roman_master: Any,
+    row_height: float,
+    normalize_upm: bool,
+) -> tuple[float, float]:
+    if normalize_upm:
+        outline_scale = 0.083 * 2048.0 / max(float(roman_font.upm), 1.0)
+        descender = abs(float(getattr(roman_master, "descender", 0.0)))
+        baseline_offset = row_height - max(
+            12.0,
+            descender * outline_scale + 8.0,
+        )
+        return outline_scale, baseline_offset
+    return 0.083, 145.0
+
+
+def _glyph_mode_geometry(
+    *,
+    roman_font: Any,
+    roman_master: Any,
+    italic_font: Any,
+    italic_master: Any,
+    generated: dict[str, Any],
+    glyph_name: str,
+    mode: str,
+    angle: float,
+    curve_steps: int,
+) -> tuple[list[list[tuple[float, float]]], float]:
+    if mode == "official":
+        contours = _glyph_contours(
+            italic_font,
+            italic_master,
+            glyph_name,
+            mode,
+            None,
+            angle,
+            curve_steps=curve_steps,
+        )
+        layer = italic_font.glyphs[glyph_name].layers[italic_master.id]
+        return contours, float(layer.width)
+    contours = _glyph_contours(
+        roman_font,
+        roman_master,
+        glyph_name,
+        mode,
+        generated,
+        angle,
+        curve_steps=curve_steps,
+    )
+    layer = roman_font.glyphs[glyph_name].layers[roman_master.id]
+    return contours, float(layer.width)
+
+
+def _signed_area(points: list[tuple[float, float]]) -> float:
+    if len(points) < 3:
+        return 0.0
+    return 0.5 * sum(
+        points[index][0] * points[(index + 1) % len(points)][1]
+        - points[(index + 1) % len(points)][0] * points[index][1]
+        for index in range(len(points))
+    )
+
+
+def _contours_to_mask(
+    contours: list[list[tuple[float, float]]],
+    *,
+    size: tuple[int, int],
+    origin_x: float,
+    baseline_y: float,
+    outline_scale: float,
+) -> Image.Image:
+    converted = [
+        [
+            (
+                int(round(origin_x + x_value * outline_scale)),
+                int(round(baseline_y - y_value * outline_scale)),
+            )
+            for x_value, y_value in contour
+        ]
+        for contour in contours
+        if len(contour) >= 3
+    ]
+    converted = [contour for contour in converted if abs(_signed_area(contour)) > 0]
+    mask = Image.new("L", size, 0)
+    if not converted:
+        return mask
+    dominant = max(converted, key=lambda contour: abs(_signed_area(contour)))
+    dominant_sign = 1.0 if _signed_area(dominant) >= 0 else -1.0
+    draw = ImageDraw.Draw(mask)
+    for contour in sorted(
+        converted,
+        key=lambda item: abs(_signed_area(item)),
+        reverse=True,
+    ):
+        contour_sign = 1.0 if _signed_area(contour) >= 0 else -1.0
+        draw.polygon(
+            contour,
+            fill=255 if contour_sign == dominant_sign else 0,
+        )
+    return mask
+
+
+def _nonzero_pixel_count(mask: Image.Image) -> int:
+    histogram = mask.histogram()
+    return int(sum(histogram[1:]))
 
 
 def _draw_contact_sheet(
@@ -388,71 +524,355 @@ def _draw_contact_sheet(
     angle: float = ANGLE,
     mode_labels: list[tuple[str, str]] = MODE_LABELS,
     normalize_upm: bool = False,
+    render_scale: float = 1.0,
 ) -> None:
-    cell_width = 410
-    row_height = 185
-    header_height = 60
-    label_width = 100
-    width = label_width + cell_width * len(mode_labels)
-    height = header_height + row_height * len(glyphs)
+    pixel_ratio = max(1.0, min(4.0, float(render_scale)))
+    cell_width = 410.0
+    row_height = 185.0
+    header_height = 60.0
+    label_width = 100.0
+    width = int(round((label_width + cell_width * len(mode_labels)) * pixel_ratio))
+    height = int(round((header_height + row_height * len(glyphs)) * pixel_ratio))
     image = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(image)
-    font = ImageFont.load_default()
+    header_font = _label_font(int(round(15 * pixel_ratio)))
+    label_font = _label_font(int(round(13 * pixel_ratio)))
+    line_width = max(1, int(round(pixel_ratio)))
+    outline_width = max(2, int(round(2 * pixel_ratio)))
     for column, (_mode, label) in enumerate(mode_labels):
-        x_value = label_width + column * cell_width
-        draw.rectangle((x_value, 0, x_value + cell_width, height), outline=(220, 220, 220))
-        draw.text((x_value + 12, 20), label, fill=(20, 20, 20), font=font)
-    if normalize_upm:
-        scale = 0.083 * 2048.0 / max(float(roman_font.upm), 1.0)
-        descender = abs(float(getattr(roman_master, "descender", 0.0)))
-        baseline_offset = row_height - max(12.0, descender * scale + 8.0)
-    else:
-        scale = 0.083
-        baseline_offset = 145
+        x_value = (label_width + column * cell_width) * pixel_ratio
+        draw.rectangle(
+            (x_value, 0, x_value + cell_width * pixel_ratio, height),
+            outline=(220, 220, 220),
+            width=line_width,
+        )
+        draw.text(
+            (x_value + 12 * pixel_ratio, 19 * pixel_ratio),
+            label,
+            fill=(20, 20, 20),
+            font=header_font,
+        )
+    logical_outline_scale, baseline_offset = _render_geometry(
+        roman_font,
+        roman_master,
+        row_height,
+        normalize_upm,
+    )
+    outline_scale = logical_outline_scale * pixel_ratio
+    curve_steps = max(12, int(round(12 * pixel_ratio)))
     for row, glyph_name in enumerate(glyphs):
         top = header_height + row * row_height
-        draw.text((12, top + 75), glyph_name, fill=(20, 20, 20), font=font)
+        draw.text(
+            (12 * pixel_ratio, (top + 72) * pixel_ratio),
+            glyph_name,
+            fill=(20, 20, 20),
+            font=label_font,
+        )
         for column, (mode, _label) in enumerate(mode_labels):
             left = label_width + column * cell_width
-            draw.line((left, top, left + cell_width, top), fill=(230, 230, 230), width=1)
-            if mode == "official":
-                contours = _glyph_contours(
-                    italic_font,
-                    italic_master,
-                    glyph_name,
-                    mode,
-                    None,
-                    angle,
-                )
-                layer = italic_font.glyphs[glyph_name].layers[italic_master.id]
-                advance = float(layer.width)
-            else:
-                contours = _glyph_contours(
-                    roman_font,
-                    roman_master,
-                    glyph_name,
-                    mode,
-                    generated,
-                    angle,
-                )
-                advance = float(roman_font.glyphs[glyph_name].layers[roman_master.id].width)
-            origin_x = left + (cell_width - advance * scale) * 0.5
-            baseline_y = top + baseline_offset
             draw.line(
-                (origin_x, baseline_y, origin_x + advance * scale, baseline_y),
+                (
+                    left * pixel_ratio,
+                    top * pixel_ratio,
+                    (left + cell_width) * pixel_ratio,
+                    top * pixel_ratio,
+                ),
+                fill=(230, 230, 230),
+                width=line_width,
+            )
+            contours, advance = _glyph_mode_geometry(
+                roman_font=roman_font,
+                roman_master=roman_master,
+                italic_font=italic_font,
+                italic_master=italic_master,
+                generated=generated,
+                glyph_name=glyph_name,
+                mode=mode,
+                angle=angle,
+                curve_steps=curve_steps,
+            )
+            origin_x = (
+                left + (cell_width - advance * logical_outline_scale) * 0.5
+            ) * pixel_ratio
+            baseline_y = (top + baseline_offset) * pixel_ratio
+            draw.line(
+                (
+                    origin_x,
+                    baseline_y,
+                    origin_x + advance * outline_scale,
+                    baseline_y,
+                ),
                 fill=(205, 205, 205),
-                width=1,
+                width=line_width,
             )
             color = (20, 20, 20) if mode != "balanced" else (0, 91, 187)
             for contour in contours:
                 screen = [
-                    (origin_x + x_value * scale, baseline_y - y_value * scale)
+                    (
+                        origin_x + x_value * outline_scale,
+                        baseline_y - y_value * outline_scale,
+                    )
                     for x_value, y_value in contour
                 ]
                 if len(screen) > 1:
-                    draw.line(screen, fill=color, width=2, joint="curve")
+                    draw.line(
+                        screen,
+                        fill=color,
+                        width=outline_width,
+                        joint="curve",
+                    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    image.save(output_path)
+    image.save(
+        output_path,
+        dpi=(72.0 * pixel_ratio, 72.0 * pixel_ratio),
+        compress_level=6,
+    )
+
+
+def _draw_difference_sheet(
+    output_path: Path,
+    roman_font: Any,
+    roman_master: Any,
+    italic_font: Any,
+    italic_master: Any,
+    generated: dict[str, Any],
+    *,
+    glyphs: list[str],
+    angle: float,
+    normalize_upm: bool,
+    render_scale: float,
+    comparisons: list[tuple[str, str, str]] = DIFF_COMPARISONS,
+) -> dict[str, Any]:
+    pixel_ratio = max(1.0, min(4.0, float(render_scale)))
+    cell_width = 520.0
+    row_height = 185.0
+    header_height = 82.0
+    label_width = 110.0
+    width = int(round((label_width + cell_width * len(comparisons)) * pixel_ratio))
+    height = int(round((header_height + row_height * len(glyphs)) * pixel_ratio))
+    image = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(image)
+    header_font = _label_font(int(round(15 * pixel_ratio)))
+    label_font = _label_font(int(round(13 * pixel_ratio)))
+    detail_font = _label_font(int(round(10 * pixel_ratio)))
+    line_width = max(1, int(round(pixel_ratio)))
+    curve_steps = max(12, int(round(12 * pixel_ratio)))
+    logical_outline_scale, baseline_offset = _render_geometry(
+        roman_font,
+        roman_master,
+        row_height,
+        normalize_upm,
+    )
+    outline_scale = logical_outline_scale * pixel_ratio
+    cell_size = (
+        int(round(cell_width * pixel_ratio)),
+        int(round(row_height * pixel_ratio)),
+    )
+    cell_origin_x = 110.0 * pixel_ratio
+    cell_baseline_y = baseline_offset * pixel_ratio
+    comparison_ratios: dict[str, list[float]] = {}
+    glyph_results: list[dict[str, Any]] = []
+
+    for column, (_reference, _candidate, label) in enumerate(comparisons):
+        left = (label_width + column * cell_width) * pixel_ratio
+        draw.rectangle(
+            (left, 0, left + cell_width * pixel_ratio, height),
+            outline=(220, 220, 220),
+            width=line_width,
+        )
+        draw.text(
+            (left + 12 * pixel_ratio, 14 * pixel_ratio),
+            label,
+            fill=(20, 20, 20),
+            font=header_font,
+        )
+        draw.text(
+            (left + 12 * pixel_ratio, 43 * pixel_ratio),
+            "blue Balanced only  |  coral reference only  |  dark overlap",
+            fill=(80, 80, 80),
+            font=detail_font,
+        )
+
+    for row, glyph_name in enumerate(glyphs):
+        top = header_height + row * row_height
+        draw.text(
+            (12 * pixel_ratio, (top + 72) * pixel_ratio),
+            glyph_name,
+            fill=(20, 20, 20),
+            font=label_font,
+        )
+        glyph_result: dict[str, Any] = {
+            "glyphName": glyph_name,
+            "comparisons": {},
+        }
+        for column, (reference_mode, candidate_mode, _label) in enumerate(
+            comparisons
+        ):
+            reference_contours, reference_advance = _glyph_mode_geometry(
+                roman_font=roman_font,
+                roman_master=roman_master,
+                italic_font=italic_font,
+                italic_master=italic_master,
+                generated=generated,
+                glyph_name=glyph_name,
+                mode=reference_mode,
+                angle=angle,
+                curve_steps=curve_steps,
+            )
+            candidate_contours, candidate_advance = _glyph_mode_geometry(
+                roman_font=roman_font,
+                roman_master=roman_master,
+                italic_font=italic_font,
+                italic_master=italic_master,
+                generated=generated,
+                glyph_name=glyph_name,
+                mode=candidate_mode,
+                angle=angle,
+                curve_steps=curve_steps,
+            )
+            reference_mask = _contours_to_mask(
+                reference_contours,
+                size=cell_size,
+                origin_x=cell_origin_x,
+                baseline_y=cell_baseline_y,
+                outline_scale=outline_scale,
+            )
+            candidate_mask = _contours_to_mask(
+                candidate_contours,
+                size=cell_size,
+                origin_x=cell_origin_x,
+                baseline_y=cell_baseline_y,
+                outline_scale=outline_scale,
+            )
+            shared = ImageChops.multiply(reference_mask, candidate_mask)
+            reference_only = ImageChops.subtract(reference_mask, candidate_mask)
+            candidate_only = ImageChops.subtract(candidate_mask, reference_mask)
+            different = ImageChops.lighter(reference_only, candidate_only)
+            union = ImageChops.lighter(reference_mask, candidate_mask)
+            different_pixels = _nonzero_pixel_count(different)
+            union_pixels = _nonzero_pixel_count(union)
+            different_ratio = (
+                float(different_pixels) / float(union_pixels)
+                if union_pixels
+                else 0.0
+            )
+            comparison_key = "{}Vs{}".format(
+                candidate_mode,
+                reference_mode[:1].upper() + reference_mode[1:],
+            )
+            comparison_ratios.setdefault(comparison_key, []).append(
+                different_ratio
+            )
+            glyph_result["comparisons"][comparison_key] = {
+                "candidate": candidate_mode,
+                "reference": reference_mode,
+                "differentPixelRatio": different_ratio,
+                "differentPixelCount": different_pixels,
+                "unionPixelCount": union_pixels,
+                "candidateAdvanceWidth": candidate_advance,
+                "referenceAdvanceWidth": reference_advance,
+            }
+
+            cell = Image.new("RGB", cell_size, "white")
+            cell_draw = ImageDraw.Draw(cell)
+            cell_draw.line(
+                (
+                    0,
+                    cell_baseline_y,
+                    cell_size[0],
+                    cell_baseline_y,
+                ),
+                fill=(224, 224, 224),
+                width=line_width,
+            )
+            cell_draw.line(
+                (
+                    cell_origin_x,
+                    0,
+                    cell_origin_x,
+                    cell_size[1],
+                ),
+                fill=(235, 235, 235),
+                width=line_width,
+            )
+            reference_advance_x = (
+                cell_origin_x + reference_advance * outline_scale
+            )
+            candidate_advance_x = (
+                cell_origin_x + candidate_advance * outline_scale
+            )
+            cell_draw.line(
+                (
+                    reference_advance_x,
+                    0,
+                    reference_advance_x,
+                    cell_size[1],
+                ),
+                fill=(224, 84, 94),
+                width=line_width,
+            )
+            cell_draw.line(
+                (
+                    candidate_advance_x,
+                    0,
+                    candidate_advance_x,
+                    cell_size[1],
+                ),
+                fill=(0, 137, 207),
+                width=line_width,
+            )
+            cell.paste((54, 58, 64), (0, 0), shared)
+            cell.paste((224, 84, 94), (0, 0), reference_only)
+            cell.paste((0, 137, 207), (0, 0), candidate_only)
+            cell_draw.text(
+                (12 * pixel_ratio, 10 * pixel_ratio),
+                "diff {:.1%}".format(different_ratio),
+                fill=(70, 70, 70),
+                font=detail_font,
+            )
+            left = int(
+                round((label_width + column * cell_width) * pixel_ratio)
+            )
+            image.paste(cell, (left, int(round(top * pixel_ratio))))
+            draw.line(
+                (
+                    left,
+                    top * pixel_ratio,
+                    left + cell_size[0],
+                    top * pixel_ratio,
+                ),
+                fill=(230, 230, 230),
+                width=line_width,
+            )
+        glyph_results.append(glyph_result)
+
+    summary = {}
+    for comparison_key, ratios in comparison_ratios.items():
+        summary[comparison_key] = {
+            "glyphCount": len(ratios),
+            "meanDifferentPixelRatio": (
+                float(statistics.fmean(ratios)) if ratios else 0.0
+            ),
+            "medianDifferentPixelRatio": (
+                float(statistics.median(ratios)) if ratios else 0.0
+            ),
+            "maxDifferentPixelRatio": max(ratios) if ratios else 0.0,
+        }
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(
+        output_path,
+        dpi=(72.0 * pixel_ratio, 72.0 * pixel_ratio),
+        compress_level=6,
+    )
+    return {
+        "legend": {
+            "balancedOnly": "#0089CF",
+            "referenceOnly": "#E0545E",
+            "overlap": "#363A40",
+        },
+        "summary": summary,
+        "glyphs": glyph_results,
+    }
 
 
 def benchmark_family(
@@ -466,6 +886,8 @@ def benchmark_family(
     png_path: Path,
     mode_labels: list[tuple[str, str]],
     normalize_upm: bool = False,
+    render_scale: float = 1.0,
+    diff_png_path: Path | None = None,
 ) -> dict[str, Any]:
     if not roman_path.is_dir() or not italic_path.is_dir():
         raise RuntimeError(
@@ -616,8 +1038,23 @@ def benchmark_family(
         angle=angle,
         mode_labels=mode_labels,
         normalize_upm=normalize_upm,
+        render_scale=render_scale,
     )
     result["artifacts"] = {"png": str(png_path)}
+    if diff_png_path is not None:
+        result["imageDiff"] = _draw_difference_sheet(
+            diff_png_path,
+            roman_font,
+            roman_master,
+            italic_font,
+            italic_master,
+            generated,
+            glyphs=glyphs,
+            angle=angle,
+            normalize_upm=normalize_upm,
+            render_scale=render_scale,
+        )
+        result["artifacts"]["diffPng"] = str(diff_png_path)
     return result
 
 
