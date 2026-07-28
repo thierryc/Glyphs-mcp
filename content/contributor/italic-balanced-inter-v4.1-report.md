@@ -21,6 +21,10 @@ The official Inter Italic is a qualitative reference only. Its `f`, `a`,
 terminals, joins, proportions, and spacing show deliberate design changes that
 no mechanical italicification pass should claim to reproduce.
 
+An [expanded follow-up](italic-balanced-expanded-sans-benchmark.md) covers all
+uppercase and lowercase Latin letters, all ten figures, and retained extras in
+both Inter and Noto Sans.
+
 ## Reproduction
 
 Run:

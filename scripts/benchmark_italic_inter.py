@@ -80,19 +80,32 @@ if str(RESOURCES) not in sys.path:
 import italic_correction_engine as engine  # noqa: E402
 
 
-def _select_master(font: Any, opsz: float, wght: float) -> Any:
+def _select_master(font: Any, expected_axes: dict[str, float]) -> Any:
+    axis_tags = [
+        str(getattr(axis, "axisTag", "") or getattr(axis, "tag", ""))
+        for axis in font.axes
+    ]
+    missing_tags = sorted(set(expected_axes) - set(axis_tags))
+    if missing_tags:
+        raise RuntimeError(
+            "Source is missing required axes: {}".format(", ".join(missing_tags))
+        )
     matches = [
         master
         for master in font.masters
-        if len(master.axes) >= 2
-        and abs(float(master.axes[0]) - opsz) < 1e-9
-        and abs(float(master.axes[1]) - wght) < 1e-9
+        if len(master.axes) >= len(axis_tags)
+        and all(
+            abs(float(master.axes[axis_tags.index(tag)]) - float(value)) < 1e-9
+            for tag, value in expected_axes.items()
+        )
     ]
     if len(matches) != 1:
         raise RuntimeError(
-            "Expected exactly one opsz={} wght={} master; found {}".format(
-                opsz,
-                wght,
+            "Expected exactly one {} master; found {}".format(
+                " ".join(
+                    "{}={}".format(tag, value)
+                    for tag, value in expected_axes.items()
+                ),
                 [(master.name, list(master.axes)) for master in matches],
             )
         )
@@ -128,8 +141,13 @@ def _pivot_y(master: Any) -> float:
     return 0.0
 
 
-def _anchors(layer: Any, mode: str, pivot_y: float) -> list[dict[str, float | str]]:
-    tangent = math.tan(math.radians(ANGLE))
+def _anchors(
+    layer: Any,
+    mode: str,
+    pivot_y: float,
+    angle: float,
+) -> list[dict[str, float | str]]:
+    tangent = math.tan(math.radians(angle))
     result = []
     for anchor in list(layer.anchors or []):
         x_value = float(anchor.position.x)
@@ -160,10 +178,16 @@ def _bounds(paths: list[dict[str, Any]]) -> dict[str, float] | None:
     }
 
 
-def _generate_glyph(layer: Any, master: Any, upm: float, stem_values: list[float]) -> dict[str, Any]:
+def _generate_glyph(
+    layer: Any,
+    master: Any,
+    upm: float,
+    stem_values: list[float],
+    angle: float = ANGLE,
+) -> dict[str, Any]:
     source = _serialize_layer_paths(layer)
     pivot_y = _pivot_y(master)
-    raw = engine.shear_paths(source, angle=ANGLE, pivot_y=pivot_y)
+    raw = engine.shear_paths(source, angle=angle, pivot_y=pivot_y)
     cursivy_result = engine.compensate_stems(
         source,
         raw,
@@ -188,7 +212,7 @@ def _generate_glyph(layer: Any, master: Any, upm: float, stem_values: list[float
         "balanced": balanced,
         "balancedDiagnostics": balanced_result["diagnostics"],
         "anchors": {
-            mode: _anchors(layer, mode, pivot_y)
+            mode: _anchors(layer, mode, pivot_y, angle)
             for mode in ("roman", "raw", "cursivy", "balanced")
         },
         "width": float(layer.width),
@@ -205,13 +229,17 @@ def _generate_glyph(layer: Any, master: Any, upm: float, stem_values: list[float
     }
 
 
-def _transform_tuple(component: Any, mode: str) -> tuple[float, float, float, float, float, float]:
+def _transform_tuple(
+    component: Any,
+    mode: str,
+    angle: float,
+) -> tuple[float, float, float, float, float, float]:
     values = tuple(float(value) for value in component.transform)
     if len(values) != 6:
         return (1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
     a, b, c, d, tx, ty = values
     if mode in ("raw", "cursivy", "balanced"):
-        tx += math.tan(math.radians(ANGLE)) * ty
+        tx += math.tan(math.radians(angle)) * ty
     return (a, b, c, d, tx, ty)
 
 
@@ -303,6 +331,7 @@ def _glyph_contours(
     glyph_name: str,
     mode: str,
     generated: dict[str, Any] | None,
+    angle: float,
     transform: tuple[float, float, float, float, float, float] = (1, 0, 0, 1, 0, 0),
     stack: tuple[str, ...] = (),
 ) -> list[list[tuple[float, float]]]:
@@ -321,6 +350,7 @@ def _glyph_contours(
                 master,
                 float(font.upm),
                 [float(value) for value in master.stems if float(value) > 0],
+                angle=angle,
             )
         paths = generated[glyph_name]["source" if mode == "roman" else mode]
     else:
@@ -331,7 +361,7 @@ def _glyph_contours(
         if contour:
             contours.append(contour)
     for component in list(layer.components or []):
-        component_transform = _transform_tuple(component, mode)
+        component_transform = _transform_tuple(component, mode, angle)
         contours.extend(
             _glyph_contours(
                 font,
@@ -339,6 +369,7 @@ def _glyph_contours(
                 _component_name(component),
                 mode,
                 generated,
+                angle,
                 transform=_compose(transform, component_transform),
                 stack=stack + (glyph_name,),
             )
@@ -353,26 +384,35 @@ def _draw_contact_sheet(
     italic_font: Any,
     italic_master: Any,
     generated: dict[str, Any],
+    glyphs: list[str] = GLYPHS,
+    angle: float = ANGLE,
+    mode_labels: list[tuple[str, str]] = MODE_LABELS,
+    normalize_upm: bool = False,
 ) -> None:
     cell_width = 410
     row_height = 185
     header_height = 60
     label_width = 100
-    width = label_width + cell_width * len(MODE_LABELS)
-    height = header_height + row_height * len(GLYPHS)
+    width = label_width + cell_width * len(mode_labels)
+    height = header_height + row_height * len(glyphs)
     image = Image.new("RGB", (width, height), "white")
     draw = ImageDraw.Draw(image)
     font = ImageFont.load_default()
-    for column, (_mode, label) in enumerate(MODE_LABELS):
+    for column, (_mode, label) in enumerate(mode_labels):
         x_value = label_width + column * cell_width
         draw.rectangle((x_value, 0, x_value + cell_width, height), outline=(220, 220, 220))
         draw.text((x_value + 12, 20), label, fill=(20, 20, 20), font=font)
-    scale = 0.083
-    baseline_offset = 145
-    for row, glyph_name in enumerate(GLYPHS):
+    if normalize_upm:
+        scale = 0.083 * 2048.0 / max(float(roman_font.upm), 1.0)
+        descender = abs(float(getattr(roman_master, "descender", 0.0)))
+        baseline_offset = row_height - max(12.0, descender * scale + 8.0)
+    else:
+        scale = 0.083
+        baseline_offset = 145
+    for row, glyph_name in enumerate(glyphs):
         top = header_height + row * row_height
         draw.text((12, top + 75), glyph_name, fill=(20, 20, 20), font=font)
-        for column, (mode, _label) in enumerate(MODE_LABELS):
+        for column, (mode, _label) in enumerate(mode_labels):
             left = label_width + column * cell_width
             draw.line((left, top, left + cell_width, top), fill=(230, 230, 230), width=1)
             if mode == "official":
@@ -382,6 +422,7 @@ def _draw_contact_sheet(
                     glyph_name,
                     mode,
                     None,
+                    angle,
                 )
                 layer = italic_font.glyphs[glyph_name].layers[italic_master.id]
                 advance = float(layer.width)
@@ -392,6 +433,7 @@ def _draw_contact_sheet(
                     glyph_name,
                     mode,
                     generated,
+                    angle,
                 )
                 advance = float(roman_font.glyphs[glyph_name].layers[roman_master.id].width)
             origin_x = left + (cell_width - advance * scale) * 0.5
@@ -413,23 +455,41 @@ def _draw_contact_sheet(
     image.save(output_path)
 
 
-def run(inter_root: Path, output_dir: Path) -> dict[str, Any]:
-    roman_path = inter_root / "src" / "Inter-Roman.glyphspackage"
-    italic_path = inter_root / "src" / "Inter-Italic.glyphspackage"
+def benchmark_family(
+    *,
+    family_name: str,
+    roman_path: Path,
+    italic_path: Path,
+    expected_axes: dict[str, float],
+    glyphs: list[str],
+    angle: float,
+    png_path: Path,
+    mode_labels: list[tuple[str, str]],
+    normalize_upm: bool = False,
+) -> dict[str, Any]:
     if not roman_path.is_dir() or not italic_path.is_dir():
-        raise RuntimeError("Pinned Inter Roman and Italic glyphspackage sources were not found")
+        raise RuntimeError(
+            "Pinned {} Roman and Italic glyphspackage sources were not found".format(
+                family_name
+            )
+        )
     roman_font = glyphsLib.load(str(roman_path))
     italic_font = glyphsLib.load(str(italic_path))
-    roman_master = _select_master(roman_font, opsz=14, wght=400)
-    italic_master = _select_master(italic_font, opsz=14, wght=400)
+    roman_master = _select_master(roman_font, expected_axes)
+    italic_master = _select_master(italic_font, expected_axes)
     generated: dict[str, Any] = {}
     missing = [
         glyph_name
-        for glyph_name in GLYPHS
+        for glyph_name in glyphs
         if roman_font.glyphs[glyph_name] is None or italic_font.glyphs[glyph_name] is None
     ]
     if missing:
-        raise RuntimeError("Benchmark glyphs missing from pinned Inter sources: {}".format(missing))
+        raise RuntimeError(
+            "Benchmark glyphs missing from pinned {} sources: {}".format(
+                family_name,
+                missing,
+            )
+        )
     stem_values = [float(value) for value in roman_master.stems if float(value) > 0]
     raw_errors: list[float] = []
     cursivy_errors: list[float] = []
@@ -437,9 +497,15 @@ def run(inter_root: Path, output_dir: Path) -> dict[str, Any]:
     glyph_results = []
     anchor_errors = []
     compensated_pair_count = 0
-    for glyph_name in GLYPHS:
+    for glyph_name in glyphs:
         layer = roman_font.glyphs[glyph_name].layers[roman_master.id]
-        record = _generate_glyph(layer, roman_master, float(roman_font.upm), stem_values)
+        record = _generate_glyph(
+            layer,
+            roman_master,
+            float(roman_font.upm),
+            stem_values,
+            angle=angle,
+        )
         generated[glyph_name] = record
         compensated_ids = {
             pair["pairId"]
@@ -472,7 +538,7 @@ def run(inter_root: Path, output_dir: Path) -> dict[str, Any]:
             source_anchor = source_anchors.get(anchor["name"])
             if source_anchor is None:
                 continue
-            expected_x = source_anchor["x"] + math.tan(math.radians(ANGLE)) * (
+            expected_x = source_anchor["x"] + math.tan(math.radians(angle)) * (
                 source_anchor["y"] - _pivot_y(roman_master)
             )
             anchor_errors.append(abs(float(anchor["x"]) - float(expected_x)))
@@ -490,7 +556,7 @@ def run(inter_root: Path, output_dir: Path) -> dict[str, Any]:
         return float(statistics.fmean(values)) if values else 0.0
 
     summary = {
-        "glyphCount": len(GLYPHS),
+        "glyphCount": len(glyphs),
         "topologyPreservedCount": len([row for row in glyph_results if row["topologyPreserved"]]),
         "compensatedPairCount": compensated_pair_count,
         "meanAbsoluteStemWidthError": {
@@ -507,15 +573,14 @@ def run(inter_root: Path, output_dir: Path) -> dict[str, Any]:
         1.0 - summary["meanAbsoluteStemWidthError"]["balanced"] / cursivy_reference
     )
     acceptance = {
-        "topologyPreserved": summary["topologyPreservedCount"] == len(GLYPHS),
+        "topologyPreserved": summary["topologyPreservedCount"] == len(glyphs),
         "atLeastSixCompensatedPairs": compensated_pair_count >= 6,
         "balancedAtLeast50PercentBetterThanRaw": summary["balancedImprovementVsRaw"] >= 0.5,
         "balancedAtLeast50PercentBetterThanCursivy": summary["balancedImprovementVsCursivy"] >= 0.5,
         "anchorErrorWithinPointZeroOne": summary["maxAnchorError"] <= 0.01,
     }
     result = {
-        "inter": {
-            "commit": INTER_COMMIT,
+        "source": {
             "romanMaster": {
                 "id": roman_master.id,
                 "name": roman_master.name,
@@ -529,28 +594,17 @@ def run(inter_root: Path, output_dir: Path) -> dict[str, Any]:
             },
         },
         "settings": {
-            "angle": ANGLE,
+            "angle": angle,
             "origin": ORIGIN,
             "curveStrength": CURVE_STRENGTH,
             "stemCompensation": STEM_COMPENSATION,
             "cursivyFallbackStemStrength": engine.CURSIVY_FALLBACK_STEM_STRENGTH,
-            "glyphs": GLYPHS,
-        },
-        "legacyMcpBaseline": {
-            "status": "failed",
-            "reason": "component_detach_failed",
-            "appliedCount": 0,
-            "errorCount": len(GLYPHS),
-            "note": "Observed before implementation on Glyphs 4; intended Raw/Cursivy geometry is reproduced here.",
+            "glyphs": glyphs,
         },
         "summary": summary,
         "acceptance": acceptance,
         "glyphs": glyph_results,
     }
-    output_dir.mkdir(parents=True, exist_ok=True)
-    json_path = output_dir / "benchmark-results.json"
-    png_path = output_dir / "italic-balanced-inter-v4.1.png"
-    json_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     _draw_contact_sheet(
         png_path,
         roman_font,
@@ -558,8 +612,53 @@ def run(inter_root: Path, output_dir: Path) -> dict[str, Any]:
         italic_font,
         italic_master,
         generated,
+        glyphs=glyphs,
+        angle=angle,
+        mode_labels=mode_labels,
+        normalize_upm=normalize_upm,
     )
-    result["artifacts"] = {"json": str(json_path), "png": str(png_path)}
+    result["artifacts"] = {"png": str(png_path)}
+    return result
+
+
+def run(inter_root: Path, output_dir: Path) -> dict[str, Any]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    family_result = benchmark_family(
+        family_name="Inter",
+        roman_path=inter_root / "src" / "Inter-Roman.glyphspackage",
+        italic_path=inter_root / "src" / "Inter-Italic.glyphspackage",
+        expected_axes={"opsz": 14, "wght": 400},
+        glyphs=GLYPHS,
+        angle=ANGLE,
+        png_path=output_dir / "italic-balanced-inter-v4.1.png",
+        mode_labels=MODE_LABELS,
+    )
+    result = {
+        "inter": {
+            "commit": INTER_COMMIT,
+            **family_result["source"],
+        },
+        "settings": family_result["settings"],
+        "legacyMcpBaseline": {
+            "status": "failed",
+            "reason": "component_detach_failed",
+            "appliedCount": 0,
+            "errorCount": len(GLYPHS),
+            "note": "Observed before implementation on Glyphs 4; intended Raw/Cursivy geometry is reproduced here.",
+        },
+        "summary": family_result["summary"],
+        "acceptance": family_result["acceptance"],
+        "glyphs": family_result["glyphs"],
+    }
+    json_path = output_dir / "benchmark-results.json"
+    json_path.write_text(
+        json.dumps(result, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    result["artifacts"] = {
+        "json": str(json_path),
+        "png": family_result["artifacts"]["png"],
+    }
     return result
 
 
