@@ -243,6 +243,12 @@ def _make_font(complete_stems=True):
     return font
 
 
+def _add_glyph(font, name, source_layer=None, target_layer=None):
+    glyph = _FakeGlyph(name, source_layer or _FakeLayer(), target_layer or _FakeLayer())
+    font.glyphs[name] = glyph
+    return glyph
+
+
 class McpToolsItalicTests(unittest.TestCase):
     def _load_module(self, font, filter_obj=None):
         class FakeGSGlyph(_FakeGlyph):
@@ -584,6 +590,37 @@ class McpToolsItalicTests(unittest.TestCase):
         self.assertEqual(payload["results"][0]["anchorPositioning"]["shiftedCount"], 1)
         self.assertAlmostEqual(payload["results"][0]["pivotY"], 250.0)
 
+    def test_balanced_is_deterministic_and_never_calls_glyphs_filter(self) -> None:
+        font = _make_font()
+        module, filter_obj = self._load_module(
+            font,
+            filter_obj=GlyphsFilterTransformationsTopologyMismatch(),
+        )
+
+        first = module._review_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="balanced",
+        )
+        second = module._review_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="balanced",
+        )
+
+        self.assertTrue(first["readyToApply"])
+        self.assertEqual(filter_obj.calls, [])
+        self.assertEqual(first["results"][0]["transform"], second["results"][0]["transform"])
+        self.assertEqual(first["results"][0]["stemDiagnostics"], second["results"][0]["stemDiagnostics"])
+        self.assertEqual(first["results"][0]["transform"]["backend"], "pure_python_balanced")
+        self.assertTrue(first["results"][0]["transform"]["deterministic"])
+        self.assertEqual(first["results"][0]["transform"]["partialBackend"], "pure_stem_partial")
+        self.assertEqual(first["results"][0]["outcome"], "balanced_raw_equivalent")
+
     def test_balanced_blocks_explicit_component_master_mismatch(self) -> None:
         font = _make_font()
         source_layer = font.glyphs["b"].layers["roman"]
@@ -602,6 +639,176 @@ class McpToolsItalicTests(unittest.TestCase):
         self.assertFalse(payload["readyToApply"])
         self.assertEqual(payload["results"][0]["blockedReasons"], ["component_master_mismatch"])
         self.assertEqual(payload["results"][0]["componentWarnings"][0]["componentName"], "acute")
+
+    def test_balanced_allows_translation_and_uniform_scale_components(self) -> None:
+        for transform in ([1, 0, 0, 1, 10, 20], [2, 0, 0.25, 2, 10, 20]):
+            with self.subTest(transform=transform):
+                font = _make_font()
+                source_layer = font.glyphs["b"].layers["roman"]
+                source_layer.components = [_FakeComponent("acute", transform=transform)]
+                _add_glyph(font, "acute")
+                module, _filter = self._load_module(font)
+
+                payload = module._review_italic_first_pass_impl(
+                    source_master_id="roman",
+                    target_master_id="italic",
+                    scope="glyph_names",
+                    glyph_names=["b"],
+                    slant_mode="balanced",
+                )
+
+                self.assertTrue(payload["readyToApply"])
+                analysis = payload["results"][0]["componentAnalysis"]
+                self.assertTrue(analysis["safe"])
+                self.assertEqual(analysis["blockedCount"], 0)
+                self.assertEqual(analysis["checkedCount"], 1)
+
+    def test_balanced_blocks_noncommuting_component_transforms(self) -> None:
+        cases = {
+            "reflection": [-1, 0, 0, 1, 0, 0],
+            "rotation": [0, 1, -1, 0, 0, 0],
+            "nonuniform_scale": [2, 0, 0, 1, 0, 0],
+        }
+        for label, transform in cases.items():
+            with self.subTest(label=label):
+                font = _make_font()
+                font.glyphs["b"].layers["roman"].components = [_FakeComponent("acute", transform=transform)]
+                _add_glyph(font, "acute")
+                module, _filter = self._load_module(font)
+
+                payload = module._review_italic_first_pass_impl(
+                    source_master_id="roman",
+                    target_master_id="italic",
+                    scope="glyph_names",
+                    glyph_names=["b"],
+                    slant_mode="balanced",
+                )
+
+                self.assertFalse(payload["readyToApply"])
+                result = payload["results"][0]
+                self.assertEqual(result["blockedReasons"], ["component_construction_unsafe"])
+                self.assertEqual(result["outcome"], "balanced_blocked_component")
+                blockers = result["componentAnalysis"]["blockers"]
+                self.assertIn("component_transform_noncommuting", [item["reason"] for item in blockers])
+                self.assertGreater(blockers[0]["commutatorError"], 1e-6)
+
+    def test_balanced_reports_nested_component_chain_and_cycles(self) -> None:
+        font = _make_font()
+        font.glyphs["b"].layers["roman"].components = [_FakeComponent("acute")]
+        acute = _add_glyph(font, "acute")
+        acute.layers["roman"].components = [_FakeComponent("mark", transform=[-1, 0, 0, 1, 0, 0])]
+        _add_glyph(font, "mark")
+        module, _filter = self._load_module(font)
+
+        nested = module._review_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="balanced",
+        )
+
+        nested_blockers = nested["results"][0]["componentAnalysis"]["blockers"]
+        reflected = next(item for item in nested_blockers if item["reason"] == "component_transform_noncommuting")
+        self.assertEqual(reflected["componentPath"], ["b", "acute", "mark"])
+
+        acute.layers["roman"].components = [_FakeComponent("b")]
+        cyclic = module._review_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="balanced",
+        )
+        cycle_reasons = [
+            item["reason"]
+            for item in cyclic["results"][0]["componentAnalysis"]["blockers"]
+        ]
+        self.assertIn("component_cycle", cycle_reasons)
+
+    def test_balanced_blocked_batch_can_be_rerun_with_explicit_skip(self) -> None:
+        font = _make_font()
+        font.glyphs["b"].layers["roman"].components = [
+            _FakeComponent("acute", transform=[-1, 0, 0, 1, 0, 0])
+        ]
+        _add_glyph(font, "acute")
+        module, _filter = self._load_module(font)
+
+        blocked = module._review_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["a", "b"],
+            slant_mode="balanced",
+        )
+        skipped = module._review_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["a", "b"],
+            skip_glyphs=["b"],
+            slant_mode="balanced",
+        )
+
+        self.assertFalse(blocked["readyToApply"])
+        self.assertTrue(skipped["readyToApply"])
+        self.assertEqual(skipped["summary"]["skippedCount"], 1)
+        self.assertEqual(skipped["results"][1]["reason"], "explicit_skip")
+
+    def test_balanced_pathless_layer_reports_noop(self) -> None:
+        font = _make_font()
+        font.glyphs["b"].layers["roman"].paths = []
+        module, filter_obj = self._load_module(font)
+
+        payload = module._review_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="balanced",
+        )
+
+        self.assertTrue(payload["readyToApply"])
+        self.assertEqual(filter_obj.calls, [])
+        self.assertEqual(payload["results"][0]["outcome"], "pathless_noop")
+
+    def test_balanced_outcome_distinguishes_compensation_from_raw_equivalence(self) -> None:
+        font = _make_font()
+        font.glyphs["b"].layers["roman"].paths = [
+            _FakePath(
+                ["line", "line", "line", "line"],
+                points=[(0, 0), (100, 0), (100, 800), (0, 800)],
+            )
+        ]
+        module, _filter = self._load_module(font)
+
+        compensated = module._review_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="balanced",
+            stem_compensation=1.0,
+        )
+        uncompensated = module._review_italic_first_pass_impl(
+            source_master_id="roman",
+            target_master_id="italic",
+            scope="glyph_names",
+            glyph_names=["b"],
+            slant_mode="balanced",
+            stem_compensation=0.0,
+        )
+
+        self.assertEqual(compensated["results"][0]["outcome"], "balanced_applied")
+        self.assertEqual(
+            compensated["results"][0]["stemDiagnostics"]["compensatedPairCount"],
+            1,
+        )
+        self.assertEqual(uncompensated["results"][0]["outcome"], "balanced_applied")
+        self.assertEqual(
+            uncompensated["results"][0]["stemDiagnostics"]["compensatedPairs"][0]["delta"],
+            0.0,
+        )
 
     def test_component_translation_cancels_local_pivot(self) -> None:
         font = _make_font()

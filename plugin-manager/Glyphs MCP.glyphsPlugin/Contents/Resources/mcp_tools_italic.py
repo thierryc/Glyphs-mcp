@@ -50,6 +50,9 @@ DEFAULT_PROTECTED_GLYPHS = {
     "quotedblright",
 }
 
+COMPONENT_COMMUTATOR_TOLERANCE = 1e-6
+MAX_COMPONENT_ANALYSIS_DEPTH = 32
+
 
 def _get_font(font_index):
     font, _fonts = _resolve_font_by_index(Glyphs, font_index)
@@ -559,20 +562,136 @@ def _shear_anchors(layer, angle, pivot_y):
     }
 
 
-def _component_master_mismatches(layer, target_master_id):
-    mismatches = []
-    for component in list(getattr(layer, "components", []) or []):
-        component_master_id = getattr(component, "componentMasterId", None)
-        if component_master_id in (None, "") or str(component_master_id) == str(target_master_id):
-            continue
-        mismatches.append(
-            {
-                "componentName": str(getattr(component, "componentName", getattr(component, "name", ""))),
-                "componentMasterId": str(component_master_id),
+def _component_name(component):
+    return str(getattr(component, "componentName", getattr(component, "name", "")) or "")
+
+
+def _component_transform_analysis(component, angle):
+    try:
+        transform = list(_component_transform_values(component))
+    except Exception:
+        transform = []
+    if len(transform) != 6:
+        return {
+            "ok": False,
+            "reason": "component_transform_unreadable",
+            "transform": transform,
+        }
+    try:
+        values = [float(value) for value in transform]
+    except (TypeError, ValueError):
+        return {
+            "ok": False,
+            "reason": "component_transform_unreadable",
+            "transform": transform,
+        }
+    if not all(math.isfinite(value) for value in values):
+        return {
+            "ok": False,
+            "reason": "component_transform_unreadable",
+            "transform": values,
+        }
+    a, b, c, d, tx, ty = values
+    tangent = math.tan(math.radians(float(angle)))
+    commutator_error = max(abs(tangent * b), abs(tangent * (d - a)))
+    determinant = a * d - b * c
+    return {
+        "ok": True,
+        "transform": values,
+        "determinant": determinant,
+        "reflected": determinant < 0.0,
+        "commutatorError": commutator_error,
+        "commutesWithShear": commutator_error <= COMPONENT_COMMUTATOR_TOLERANCE,
+    }
+
+
+def _component_safety_analysis(
+    source_font,
+    source_master_id,
+    target_master_id,
+    root_glyph_name,
+    root_layer,
+    angle,
+):
+    checked = []
+    blockers = []
+
+    def append_blocker(entry, reason):
+        blocked = dict(entry)
+        blocked["reason"] = reason
+        blockers.append(blocked)
+
+    def visit(glyph_name, layer, chain, depth):
+        if depth > MAX_COMPONENT_ANALYSIS_DEPTH:
+            append_blocker(
+                {"componentPath": list(chain), "glyphName": str(glyph_name)},
+                "component_depth_exceeded",
+            )
+            return
+        for index, component in enumerate(list(getattr(layer, "components", []) or [])):
+            component_name = _component_name(component)
+            component_path = tuple(chain) + (component_name or "<unreadable>",)
+            transform_analysis = _component_transform_analysis(component, angle)
+            entry = {
+                "componentPath": list(component_path),
+                "componentIndex": index,
+                "glyphName": component_name,
+                "componentName": component_name,
+                "componentMasterId": _signature_value(getattr(component, "componentMasterId", None)),
                 "targetMasterId": str(target_master_id),
+                "transform": transform_analysis.get("transform"),
+                "determinant": transform_analysis.get("determinant"),
+                "reflected": transform_analysis.get("reflected"),
+                "commutatorError": transform_analysis.get("commutatorError"),
+                "commutesWithShear": transform_analysis.get("commutesWithShear"),
             }
+            checked.append(entry)
+
+            component_master_id = getattr(component, "componentMasterId", None)
+            if component_master_id not in (None, "") and str(component_master_id) != str(target_master_id):
+                append_blocker(entry, "component_master_mismatch")
+            if not transform_analysis.get("ok"):
+                append_blocker(entry, transform_analysis.get("reason", "component_transform_unreadable"))
+            elif not transform_analysis.get("commutesWithShear"):
+                append_blocker(entry, "component_transform_noncommuting")
+
+            if not component_name:
+                append_blocker(entry, "component_name_unreadable")
+                continue
+            if component_name in chain:
+                append_blocker(entry, "component_cycle")
+                continue
+            component_glyph = _glyph_lookup(source_font, component_name) if source_font is not None else None
+            if component_glyph is None:
+                append_blocker(entry, "component_glyph_missing")
+                continue
+            component_layer = _layer_for_glyph(component_glyph, source_master_id)
+            if component_layer is None:
+                append_blocker(entry, "component_source_layer_missing")
+                continue
+            visit(component_name, component_layer, component_path, depth + 1)
+
+    visit(str(root_glyph_name or ""), root_layer, (str(root_glyph_name or ""),), 0)
+    unique_blockers = []
+    seen = set()
+    for blocker in blockers:
+        key = (
+            tuple(blocker.get("componentPath") or []),
+            blocker.get("componentIndex"),
+            blocker.get("reason"),
         )
-    return mismatches
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_blockers.append(blocker)
+    return {
+        "safe": not unique_blockers,
+        "tolerance": COMPONENT_COMMUTATOR_TOLERANCE,
+        "checkedCount": len(checked),
+        "blockedCount": len(unique_blockers),
+        "components": checked,
+        "blockers": unique_blockers,
+    }
 
 
 def _stem_values(stem_review, target_master_id):
@@ -599,19 +718,30 @@ def _empty_stem_diagnostics():
 
 
 def _fallback_cursivy_paths(source_paths, raw_paths, upm, stem_values):
-    fallback = italic_correction_engine.compensate_stems(
+    fallback_paths, fallback_transform = _deterministic_partial_paths(
+        source_paths,
+        raw_paths,
+        upm,
+        stem_values,
+    )
+    fallback_transform["backend"] = "pure_stem_fallback"
+    fallback_transform["warning"] = "glyphs_transformations_filter_unavailable"
+    return fallback_paths, fallback_transform
+
+
+def _deterministic_partial_paths(source_paths, raw_paths, upm, stem_values):
+    partial = italic_correction_engine.compensate_stems(
         source_paths,
         raw_paths,
         strength=italic_correction_engine.CURSIVY_FALLBACK_STEM_STRENGTH,
         upm=upm,
         stem_values=stem_values,
     )
-    return fallback["paths"], {
+    return partial["paths"], {
         "ok": True,
-        "backend": "pure_stem_fallback",
-        "warning": "glyphs_transformations_filter_unavailable",
+        "backend": "pure_stem_partial",
         "stemStrength": italic_correction_engine.CURSIVY_FALLBACK_STEM_STRENGTH,
-        "stemDiagnostics": fallback["diagnostics"],
+        "stemDiagnostics": partial["diagnostics"],
     }
 
 
@@ -624,6 +754,9 @@ def _prepare_path_only_candidate(
     origin,
     target_master=None,
     target_master_id=None,
+    source_font=None,
+    source_master_id=None,
+    source_glyph_name=None,
     upm=1000.0,
     stem_values=None,
     curve_strength=0.75,
@@ -651,15 +784,45 @@ def _prepare_path_only_candidate(
     preserved_component_signature = _component_signature_from_items(preserved_components)
     preserved_anchors = _copied_collection(candidate, "anchors")
     preserved_anchor_signature = _anchor_signature_from_items(preserved_anchors)
-    component_mismatches = _component_master_mismatches(candidate, target_master_id)
     mode = str(slant_mode)
     pivot_y = _origin_pivot_y(target_master, origin)
+    component_analysis = {
+        "safe": True,
+        "tolerance": COMPONENT_COMMUTATOR_TOLERANCE,
+        "checkedCount": 0,
+        "blockedCount": 0,
+        "components": [],
+        "blockers": [],
+    }
+    if mode == "balanced" and options.get("components"):
+        component_analysis = _component_safety_analysis(
+            source_font,
+            source_master_id,
+            target_master_id,
+            source_glyph_name,
+            source_layer,
+            angle,
+        )
+    component_mismatches = [
+        blocker
+        for blocker in component_analysis.get("blockers", [])
+        if blocker.get("reason") == "component_master_mismatch"
+    ]
 
-    if mode == "balanced" and component_mismatches:
+    if mode == "balanced" and not component_analysis.get("safe"):
+        blocker_reasons = [item.get("reason") for item in component_analysis.get("blockers", [])]
+        reason = (
+            "component_master_mismatch"
+            if "component_master_mismatch" in blocker_reasons
+            else "component_construction_unsafe"
+        )
         return {
             "ok": False,
-            "reason": "component_master_mismatch",
-            "componentWarnings": component_mismatches,
+            "blocked": True,
+            "reason": reason,
+            "componentWarnings": component_analysis.get("blockers", []),
+            "componentAnalysis": component_analysis,
+            "outcome": "balanced_blocked_component",
             "componentTransformPolicy": "copy_components_preserve_unskewed",
         }
 
@@ -678,12 +841,14 @@ def _prepare_path_only_candidate(
             "componentPositioning": component_positioning,
             "componentTransformPolicy": "copy_components_preserve_unskewed",
             "componentWarnings": component_mismatches,
+            "componentAnalysis": component_analysis,
             "anchorPositioning": anchor_positioning,
             "topologyPreserved": True,
             "stemDiagnostics": _empty_stem_diagnostics(),
             "curveStrength": float(curve_strength) if mode == "balanced" else (0.0 if mode == "raw" else 1.0),
             "stemCompensation": float(stem_compensation) if mode == "balanced" else 0.0,
             "pivotY": pivot_y,
+            "outcome": "paths_not_requested",
         }
 
     source_paths = _serialize_paths(source_layer)
@@ -691,7 +856,7 @@ def _prepare_path_only_candidate(
 
     cursivy_paths = None
     cursivy_transform = None
-    if mode != "raw":
+    if mode == "cursivy":
         filter_candidate = _copy_item(candidate)
         if filter_candidate is not None:
             if not _set_collection(filter_candidate, "components", [], "setComponents_"):
@@ -723,6 +888,20 @@ def _prepare_path_only_candidate(
                 "transform": cursivy_transform,
                 "componentTransformPolicy": "copy_components_preserve_unskewed",
             }
+    elif mode == "balanced":
+        cursivy_paths, cursivy_transform = _deterministic_partial_paths(
+            source_paths,
+            raw_paths,
+            upm=upm,
+            stem_values=stem_values,
+        )
+        if not italic_correction_engine.topology_matches(raw_paths, cursivy_paths):
+            return {
+                "ok": False,
+                "reason": "raw_partial_topology_mismatch",
+                "transform": cursivy_transform,
+                "componentTransformPolicy": "copy_components_preserve_unskewed",
+            }
 
     stem_diagnostics = _empty_stem_diagnostics()
     if mode == "raw":
@@ -744,10 +923,11 @@ def _prepare_path_only_candidate(
         stem_diagnostics = compensated["diagnostics"]
         transform = {
             "ok": True,
-            "backend": "balanced",
+            "backend": "pure_python_balanced",
+            "deterministic": True,
             "rawBackend": "pure_affine",
-            "cursivyBackend": cursivy_transform.get("backend"),
-            "cursivyWarning": cursivy_transform.get("warning"),
+            "partialBackend": cursivy_transform.get("backend"),
+            "partialStemStrength": cursivy_transform.get("stemStrength"),
             "angle": float(angle),
             "origin": int(origin),
         }
@@ -797,12 +977,26 @@ def _prepare_path_only_candidate(
         "componentPositioning": component_positioning,
         "componentTransformPolicy": "copy_components_preserve_unskewed",
         "componentWarnings": component_mismatches,
+        "componentAnalysis": component_analysis,
         "anchorPositioning": anchor_positioning,
         "topologyPreserved": italic_correction_engine.topology_matches(source_paths, final_paths),
         "stemDiagnostics": stem_diagnostics,
         "curveStrength": float(curve_strength) if mode == "balanced" else (0.0 if mode == "raw" else 1.0),
         "stemCompensation": float(stem_compensation) if mode == "balanced" else 0.0,
         "pivotY": pivot_y,
+        "outcome": (
+            "pathless_noop"
+            if not source_paths
+            else (
+                "balanced_applied"
+                if mode == "balanced" and stem_diagnostics.get("compensatedPairCount", 0) > 0
+                else (
+                    "balanced_raw_equivalent"
+                    if mode == "balanced"
+                    else "{}_applied".format(mode)
+                )
+            )
+        ),
     }
 
 
@@ -961,6 +1155,9 @@ def _review_italic_first_pass_impl(
                     origin=origin,
                     target_master=target_master,
                     target_master_id=target_master_id,
+                    source_font=source_font,
+                    source_master_id=source_master_id,
+                    source_glyph_name=name,
                     upm=float(getattr(target_font, "upm", 1000) or 1000),
                     stem_values=target_stem_values,
                     curve_strength=curve_strength,
@@ -968,7 +1165,7 @@ def _review_italic_first_pass_impl(
                 )
                 if not candidate.get("ok"):
                     reason = candidate.get("reason", "candidate_prepare_failed")
-                    if reason == "component_master_mismatch":
+                    if candidate.get("blocked"):
                         blocked_reasons.append(reason)
                         status = "blocked"
                     else:
@@ -1036,6 +1233,12 @@ def _review_italic_first_pass_impl(
                     "anchorPositioning": candidate.get("anchorPositioning") if candidate else None,
                     "componentPositioning": candidate.get("componentPositioning") if candidate else None,
                     "componentWarnings": candidate.get("componentWarnings", []) if candidate else [],
+                    "componentAnalysis": candidate.get("componentAnalysis") if candidate else None,
+                    "outcome": (
+                        candidate.get("outcome")
+                        if candidate
+                        else ("balanced_blocked_component" if status == "blocked" else None)
+                    ),
                 }
             )
 
@@ -1173,6 +1376,9 @@ def _apply_italic_first_pass_impl(
                 origin=origin,
                 target_master=target_master,
                 target_master_id=target_master_id,
+                source_font=source_font,
+                source_master_id=source_master_id,
+                source_glyph_name=name,
                 upm=float(getattr(target_font, "upm", 1000) or 1000),
                 stem_values=target_stem_values,
                 curve_strength=review.get("curveStrength", curve_strength),
@@ -1228,12 +1434,14 @@ def _apply_italic_first_pass_impl(
                         "componentPositioning": candidate["componentPositioning"],
                         "componentTransformPolicy": candidate["componentTransformPolicy"],
                         "componentWarnings": candidate.get("componentWarnings", []),
+                        "componentAnalysis": candidate.get("componentAnalysis"),
                         "anchorPositioning": candidate.get("anchorPositioning"),
                         "topologyPreserved": candidate.get("topologyPreserved"),
                         "curveStrength": candidate.get("curveStrength"),
                         "stemCompensation": candidate.get("stemCompensation"),
                         "stemDiagnostics": candidate.get("stemDiagnostics"),
                         "pivotY": candidate.get("pivotY"),
+                        "outcome": candidate.get("outcome"),
                     }
                 )
             except Exception as exc:
@@ -1283,10 +1491,12 @@ async def review_italic_first_pass(
     """Preview an experimental Roman-to-italic design-assistance first pass.
 
     The result is a construction draft for a Roman's emphasis companion, not a
-    finished italic. Balanced is the deterministic path-geometry candidate,
-    but reflected or non-uniform component transforms require manual review.
-    Omitted slant_mode calls remain Cursivy-compatible. This review transforms
-    detached layer copies and never mutates the font.
+    finished italic. Balanced uses a pure-Python deterministic Raw/partial-stem
+    pipeline and blocks component constructions whose linear transforms do not
+    commute with the requested shear. Omitted slant_mode calls remain
+    Cursivy-compatible. This review transforms detached layer copies and never
+    mutates the font. If a glyph is blocked, rerun explicitly with skip_glyphs
+    rather than silently applying a partial batch.
 
     The angle uses Glyphs' source/Transformations convention: positive values
     lean Latin outlines to the right. Default +12 maps to about -12 in exported
@@ -1342,8 +1552,10 @@ async def apply_italic_first_pass(
     """Apply an experimental italic construction draft after review and dry run.
 
     The tool assists the designer with a starting point; it does not replace
-    optical drawing, spacing, kerning, alternates, or proofing. It requires
-    explicit confirmation to mutate and never saves the font.
+    optical drawing, spacing, kerning, alternates, or proofing. Balanced is
+    deterministic and refuses unsafe component constructions. It requires
+    explicit confirmation to mutate, applies only a fully ready reviewed
+    batch, and never saves the font.
 
     The angle uses Glyphs' source/Transformations convention: positive values
     lean Latin outlines to the right. Default +12 maps to about -12 in exported

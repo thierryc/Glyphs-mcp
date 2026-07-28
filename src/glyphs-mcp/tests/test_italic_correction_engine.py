@@ -91,6 +91,56 @@ class ItalicCorrectionEngineTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     engine.validate_unit_interval(value, "strength")
 
+    def test_deterministic_balanced_pipeline_repeats_exactly(self) -> None:
+        source = [_path([(0, 0), (100, 0), (100, 800), (0, 800)])]
+
+        def generate():
+            raw = engine.shear_paths(source, angle=12, pivot_y=250)
+            partial = engine.compensate_stems(
+                source,
+                raw,
+                strength=engine.CURSIVY_FALLBACK_STEM_STRENGTH,
+                upm=1000,
+                stem_values=[100],
+            )["paths"]
+            blended = engine.interpolate_paths(raw, partial, 0.75)
+            return engine.compensate_stems(
+                source,
+                blended,
+                strength=1.0,
+                upm=1000,
+                stem_values=[100],
+            )
+
+        self.assertEqual(generate(), generate())
+
+    def test_intermediate_and_final_strengths_are_independent(self) -> None:
+        source = [_path([(0, 0), (100, 0), (100, 800), (0, 800)])]
+        raw = engine.shear_paths(source, angle=12, pivot_y=0)
+        partial = engine.compensate_stems(
+            source,
+            raw,
+            strength=engine.CURSIVY_FALLBACK_STEM_STRENGTH,
+            upm=1000,
+        )["paths"]
+        raw_endpoint = engine.interpolate_paths(raw, partial, 0.0)
+        partial_endpoint = engine.interpolate_paths(raw, partial, 1.0)
+        self.assertEqual(raw_endpoint, raw)
+        self.assertEqual(partial_endpoint, partial)
+
+        full_from_raw = engine.compensate_stems(source, raw_endpoint, strength=1.0, upm=1000)
+        full_from_partial = engine.compensate_stems(source, partial_endpoint, strength=1.0, upm=1000)
+        first_width = full_from_raw["diagnostics"]["compensatedPairs"][0]["afterWidth"]
+        second_width = full_from_partial["diagnostics"]["compensatedPairs"][0]["afterWidth"]
+        self.assertAlmostEqual(first_width, second_width, places=9)
+        self.assertAlmostEqual(first_width, 100.0, places=9)
+
+    def test_empty_paths_are_a_deterministic_noop(self) -> None:
+        self.assertEqual(engine.shear_paths([], angle=12, pivot_y=0), [])
+        result = engine.compensate_stems([], [], strength=1.0, upm=1000)
+        self.assertEqual(result["paths"], [])
+        self.assertEqual(result["diagnostics"]["acceptedPairCount"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
