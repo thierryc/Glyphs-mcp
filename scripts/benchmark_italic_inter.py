@@ -1,0 +1,584 @@
+#!/usr/bin/env python3
+"""Reproducible clean-room Inter benchmark for balanced italicification.
+
+The script reads pinned Inter Glyphs packages with glyphsLib. It never modifies
+or commits those sources. Generated evidence is written to an ignored cache by
+default; the reviewed PNG may then be copied into contributor documentation.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import statistics
+import sys
+from pathlib import Path
+from typing import Any
+
+import glyphsLib
+from PIL import Image, ImageDraw, ImageFont
+
+
+INTER_COMMIT = "e3a3d4c57d5ecc01453a575621882a384c1995a3"
+GLYPHS = [
+    "H",
+    "O",
+    "A",
+    "V",
+    "W",
+    "X",
+    "n",
+    "o",
+    "p",
+    "b",
+    "d",
+    "c",
+    "e",
+    "f",
+    "s",
+    "k",
+    "v",
+    "w",
+    "x",
+    "y",
+    "zero",
+    "eight",
+    "parenleft",
+    "ampersand",
+    "adieresis",
+    "iacute",
+]
+MODE_LABELS = [
+    ("roman", "Inter Roman"),
+    ("raw", "Current Raw"),
+    ("cursivy", "Current Cursivy"),
+    ("balanced", "New Balanced"),
+    ("official", "Official Inter Italic"),
+]
+ANGLE = 9.4
+ORIGIN = 3
+CURVE_STRENGTH = 0.75
+STEM_COMPENSATION = 1.0
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
+RESOURCES = (
+    _repo_root()
+    / "src"
+    / "glyphs-mcp"
+    / "Glyphs MCP.glyphsPlugin"
+    / "Contents"
+    / "Resources"
+)
+if str(RESOURCES) not in sys.path:
+    sys.path.insert(0, str(RESOURCES))
+
+import italic_correction_engine as engine  # noqa: E402
+
+
+def _select_master(font: Any, opsz: float, wght: float) -> Any:
+    matches = [
+        master
+        for master in font.masters
+        if len(master.axes) >= 2
+        and abs(float(master.axes[0]) - opsz) < 1e-9
+        and abs(float(master.axes[1]) - wght) < 1e-9
+    ]
+    if len(matches) != 1:
+        raise RuntimeError(
+            "Expected exactly one opsz={} wght={} master; found {}".format(
+                opsz,
+                wght,
+                [(master.name, list(master.axes)) for master in matches],
+            )
+        )
+    return matches[0]
+
+
+def _serialize_layer_paths(layer: Any) -> list[dict[str, Any]]:
+    paths: list[dict[str, Any]] = []
+    for path in list(layer.paths or []):
+        nodes = []
+        for node in list(path.nodes or []):
+            nodes.append(
+                {
+                    "x": float(node.position.x),
+                    "y": float(node.position.y),
+                    "type": str(node.type),
+                    "smooth": bool(node.smooth),
+                }
+            )
+        paths.append({"closed": bool(path.closed), "nodes": nodes})
+    return paths
+
+
+def _pivot_y(master: Any) -> float:
+    if ORIGIN == 0:
+        return float(master.capHeight)
+    if ORIGIN == 1:
+        return float(master.capHeight) * 0.5
+    if ORIGIN == 2:
+        return float(master.xHeight)
+    if ORIGIN == 3:
+        return float(master.xHeight) * 0.5
+    return 0.0
+
+
+def _anchors(layer: Any, mode: str, pivot_y: float) -> list[dict[str, float | str]]:
+    tangent = math.tan(math.radians(ANGLE))
+    result = []
+    for anchor in list(layer.anchors or []):
+        x_value = float(anchor.position.x)
+        y_value = float(anchor.position.y)
+        if mode == "balanced":
+            x_value += tangent * (y_value - pivot_y)
+        result.append({"name": str(anchor.name), "x": x_value, "y": y_value})
+    return result
+
+
+def _bounds(paths: list[dict[str, Any]]) -> dict[str, float] | None:
+    points = [
+        (float(node["x"]), float(node["y"]))
+        for path in paths
+        for node in list(path.get("nodes") or [])
+    ]
+    if not points:
+        return None
+    xs = [point[0] for point in points]
+    ys = [point[1] for point in points]
+    return {
+        "minX": min(xs),
+        "maxX": max(xs),
+        "minY": min(ys),
+        "maxY": max(ys),
+        "width": max(xs) - min(xs),
+        "height": max(ys) - min(ys),
+    }
+
+
+def _generate_glyph(layer: Any, master: Any, upm: float, stem_values: list[float]) -> dict[str, Any]:
+    source = _serialize_layer_paths(layer)
+    pivot_y = _pivot_y(master)
+    raw = engine.shear_paths(source, angle=ANGLE, pivot_y=pivot_y)
+    cursivy_result = engine.compensate_stems(
+        source,
+        raw,
+        strength=engine.CURSIVY_FALLBACK_STEM_STRENGTH,
+        upm=upm,
+        stem_values=stem_values,
+    )
+    cursivy = cursivy_result["paths"]
+    blended = engine.interpolate_paths(raw, cursivy, CURVE_STRENGTH)
+    balanced_result = engine.compensate_stems(
+        source,
+        blended,
+        strength=STEM_COMPENSATION,
+        upm=upm,
+        stem_values=stem_values,
+    )
+    balanced = balanced_result["paths"]
+    return {
+        "source": source,
+        "raw": raw,
+        "cursivy": cursivy,
+        "balanced": balanced,
+        "balancedDiagnostics": balanced_result["diagnostics"],
+        "anchors": {
+            mode: _anchors(layer, mode, pivot_y)
+            for mode in ("roman", "raw", "cursivy", "balanced")
+        },
+        "width": float(layer.width),
+        "topologyPreserved": all(
+            engine.topology_matches(source, paths)
+            for paths in (raw, cursivy, balanced)
+        ),
+        "bounds": {
+            "roman": _bounds(source),
+            "raw": _bounds(raw),
+            "cursivy": _bounds(cursivy),
+            "balanced": _bounds(balanced),
+        },
+    }
+
+
+def _transform_tuple(component: Any, mode: str) -> tuple[float, float, float, float, float, float]:
+    values = tuple(float(value) for value in component.transform)
+    if len(values) != 6:
+        return (1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+    a, b, c, d, tx, ty = values
+    if mode in ("raw", "cursivy", "balanced"):
+        tx += math.tan(math.radians(ANGLE)) * ty
+    return (a, b, c, d, tx, ty)
+
+
+def _compose(
+    outer: tuple[float, float, float, float, float, float],
+    inner: tuple[float, float, float, float, float, float],
+) -> tuple[float, float, float, float, float, float]:
+    oa, ob, oc, od, otx, oty = outer
+    ia, ib, ic, id_, itx, ity = inner
+    return (
+        oa * ia + oc * ib,
+        ob * ia + od * ib,
+        oa * ic + oc * id_,
+        ob * ic + od * id_,
+        oa * itx + oc * ity + otx,
+        ob * itx + od * ity + oty,
+    )
+
+
+def _apply_transform(
+    point: tuple[float, float],
+    transform: tuple[float, float, float, float, float, float],
+) -> tuple[float, float]:
+    a, b, c, d, tx, ty = transform
+    x_value, y_value = point
+    return (a * x_value + c * y_value + tx, b * x_value + d * y_value + ty)
+
+
+def _cubic(
+    p0: tuple[float, float],
+    p1: tuple[float, float],
+    p2: tuple[float, float],
+    p3: tuple[float, float],
+    steps: int = 12,
+) -> list[tuple[float, float]]:
+    result = []
+    for index in range(1, steps + 1):
+        t = index / steps
+        mt = 1.0 - t
+        result.append(
+            (
+                mt**3 * p0[0] + 3 * mt * mt * t * p1[0] + 3 * mt * t * t * p2[0] + t**3 * p3[0],
+                mt**3 * p0[1] + 3 * mt * mt * t * p1[1] + 3 * mt * t * t * p2[1] + t**3 * p3[1],
+            )
+        )
+    return result
+
+
+def _sample_path(path: dict[str, Any]) -> list[tuple[float, float]]:
+    nodes = list(path.get("nodes") or [])
+    if not nodes:
+        return []
+    on_curve = [
+        index
+        for index, node in enumerate(nodes)
+        if str(node.get("type", "")).lower() != "offcurve"
+    ]
+    if not on_curve:
+        return []
+    sampled = [(float(nodes[on_curve[0]]["x"]), float(nodes[on_curve[0]]["y"]))]
+    count = len(nodes)
+    for position, start_index in enumerate(on_curve):
+        end_index = on_curve[(position + 1) % len(on_curve)]
+        between = []
+        index = (start_index + 1) % count
+        while index != end_index:
+            between.append(nodes[index])
+            index = (index + 1) % count
+        start = sampled[-1]
+        end = (float(nodes[end_index]["x"]), float(nodes[end_index]["y"]))
+        if str(nodes[end_index].get("type", "")).lower() == "curve" and len(between) == 2:
+            control_1 = (float(between[0]["x"]), float(between[0]["y"]))
+            control_2 = (float(between[1]["x"]), float(between[1]["y"]))
+            sampled.extend(_cubic(start, control_1, control_2, end))
+        else:
+            sampled.append(end)
+        if not path.get("closed", True) and position == len(on_curve) - 2:
+            break
+    return sampled
+
+
+def _component_name(component: Any) -> str:
+    return str(getattr(component, "componentName", getattr(component, "name", "")))
+
+
+def _glyph_contours(
+    font: Any,
+    master: Any,
+    glyph_name: str,
+    mode: str,
+    generated: dict[str, Any] | None,
+    transform: tuple[float, float, float, float, float, float] = (1, 0, 0, 1, 0, 0),
+    stack: tuple[str, ...] = (),
+) -> list[list[tuple[float, float]]]:
+    if glyph_name in stack or len(stack) > 12:
+        return []
+    glyph = font.glyphs[glyph_name]
+    if glyph is None:
+        return []
+    layer = glyph.layers[master.id]
+    if layer is None:
+        return []
+    if generated is not None:
+        if glyph_name not in generated:
+            generated[glyph_name] = _generate_glyph(
+                layer,
+                master,
+                float(font.upm),
+                [float(value) for value in master.stems if float(value) > 0],
+            )
+        paths = generated[glyph_name]["source" if mode == "roman" else mode]
+    else:
+        paths = _serialize_layer_paths(layer)
+    contours = []
+    for path in paths:
+        contour = [_apply_transform(point, transform) for point in _sample_path(path)]
+        if contour:
+            contours.append(contour)
+    for component in list(layer.components or []):
+        component_transform = _transform_tuple(component, mode)
+        contours.extend(
+            _glyph_contours(
+                font,
+                master,
+                _component_name(component),
+                mode,
+                generated,
+                transform=_compose(transform, component_transform),
+                stack=stack + (glyph_name,),
+            )
+        )
+    return contours
+
+
+def _draw_contact_sheet(
+    output_path: Path,
+    roman_font: Any,
+    roman_master: Any,
+    italic_font: Any,
+    italic_master: Any,
+    generated: dict[str, Any],
+) -> None:
+    cell_width = 410
+    row_height = 185
+    header_height = 60
+    label_width = 100
+    width = label_width + cell_width * len(MODE_LABELS)
+    height = header_height + row_height * len(GLYPHS)
+    image = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default()
+    for column, (_mode, label) in enumerate(MODE_LABELS):
+        x_value = label_width + column * cell_width
+        draw.rectangle((x_value, 0, x_value + cell_width, height), outline=(220, 220, 220))
+        draw.text((x_value + 12, 20), label, fill=(20, 20, 20), font=font)
+    scale = 0.083
+    baseline_offset = 145
+    for row, glyph_name in enumerate(GLYPHS):
+        top = header_height + row * row_height
+        draw.text((12, top + 75), glyph_name, fill=(20, 20, 20), font=font)
+        for column, (mode, _label) in enumerate(MODE_LABELS):
+            left = label_width + column * cell_width
+            draw.line((left, top, left + cell_width, top), fill=(230, 230, 230), width=1)
+            if mode == "official":
+                contours = _glyph_contours(
+                    italic_font,
+                    italic_master,
+                    glyph_name,
+                    mode,
+                    None,
+                )
+                layer = italic_font.glyphs[glyph_name].layers[italic_master.id]
+                advance = float(layer.width)
+            else:
+                contours = _glyph_contours(
+                    roman_font,
+                    roman_master,
+                    glyph_name,
+                    mode,
+                    generated,
+                )
+                advance = float(roman_font.glyphs[glyph_name].layers[roman_master.id].width)
+            origin_x = left + (cell_width - advance * scale) * 0.5
+            baseline_y = top + baseline_offset
+            draw.line(
+                (origin_x, baseline_y, origin_x + advance * scale, baseline_y),
+                fill=(205, 205, 205),
+                width=1,
+            )
+            color = (20, 20, 20) if mode != "balanced" else (0, 91, 187)
+            for contour in contours:
+                screen = [
+                    (origin_x + x_value * scale, baseline_y - y_value * scale)
+                    for x_value, y_value in contour
+                ]
+                if len(screen) > 1:
+                    draw.line(screen, fill=color, width=2, joint="curve")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(output_path)
+
+
+def run(inter_root: Path, output_dir: Path) -> dict[str, Any]:
+    roman_path = inter_root / "src" / "Inter-Roman.glyphspackage"
+    italic_path = inter_root / "src" / "Inter-Italic.glyphspackage"
+    if not roman_path.is_dir() or not italic_path.is_dir():
+        raise RuntimeError("Pinned Inter Roman and Italic glyphspackage sources were not found")
+    roman_font = glyphsLib.load(str(roman_path))
+    italic_font = glyphsLib.load(str(italic_path))
+    roman_master = _select_master(roman_font, opsz=14, wght=400)
+    italic_master = _select_master(italic_font, opsz=14, wght=400)
+    generated: dict[str, Any] = {}
+    missing = [
+        glyph_name
+        for glyph_name in GLYPHS
+        if roman_font.glyphs[glyph_name] is None or italic_font.glyphs[glyph_name] is None
+    ]
+    if missing:
+        raise RuntimeError("Benchmark glyphs missing from pinned Inter sources: {}".format(missing))
+    stem_values = [float(value) for value in roman_master.stems if float(value) > 0]
+    raw_errors: list[float] = []
+    cursivy_errors: list[float] = []
+    balanced_errors: list[float] = []
+    glyph_results = []
+    anchor_errors = []
+    compensated_pair_count = 0
+    for glyph_name in GLYPHS:
+        layer = roman_font.glyphs[glyph_name].layers[roman_master.id]
+        record = _generate_glyph(layer, roman_master, float(roman_font.upm), stem_values)
+        generated[glyph_name] = record
+        compensated_ids = {
+            pair["pairId"]
+            for pair in record["balancedDiagnostics"]["compensatedPairs"]
+        }
+        measurements = {
+            mode: engine.measure_stem_widths(
+                record["source"],
+                record[mode],
+                upm=float(roman_font.upm),
+                stem_values=stem_values,
+            )
+            for mode in ("raw", "cursivy", "balanced")
+        }
+        by_mode = {
+            mode: {
+                item["pairId"]: item
+                for item in measurements[mode]["measurements"]
+            }
+            for mode in measurements
+        }
+        for pair_id in sorted(compensated_ids):
+            if all(pair_id in by_mode[mode] for mode in by_mode):
+                raw_errors.append(by_mode["raw"][pair_id]["absoluteError"])
+                cursivy_errors.append(by_mode["cursivy"][pair_id]["absoluteError"])
+                balanced_errors.append(by_mode["balanced"][pair_id]["absoluteError"])
+                compensated_pair_count += 1
+        source_anchors = {item["name"]: item for item in record["anchors"]["roman"]}
+        for anchor in record["anchors"]["balanced"]:
+            source_anchor = source_anchors.get(anchor["name"])
+            if source_anchor is None:
+                continue
+            expected_x = source_anchor["x"] + math.tan(math.radians(ANGLE)) * (
+                source_anchor["y"] - _pivot_y(roman_master)
+            )
+            anchor_errors.append(abs(float(anchor["x"]) - float(expected_x)))
+        glyph_results.append(
+            {
+                "glyphName": glyph_name,
+                "topologyPreserved": record["topologyPreserved"],
+                "compensatedPairCount": len(compensated_ids),
+                "bounds": record["bounds"],
+                "advanceWidth": record["width"],
+            }
+        )
+
+    def mean(values: list[float]) -> float:
+        return float(statistics.fmean(values)) if values else 0.0
+
+    summary = {
+        "glyphCount": len(GLYPHS),
+        "topologyPreservedCount": len([row for row in glyph_results if row["topologyPreserved"]]),
+        "compensatedPairCount": compensated_pair_count,
+        "meanAbsoluteStemWidthError": {
+            "raw": mean(raw_errors),
+            "cursivy": mean(cursivy_errors),
+            "balanced": mean(balanced_errors),
+        },
+        "maxAnchorError": max(anchor_errors) if anchor_errors else 0.0,
+    }
+    raw_reference = max(summary["meanAbsoluteStemWidthError"]["raw"], 1e-9)
+    cursivy_reference = max(summary["meanAbsoluteStemWidthError"]["cursivy"], 1e-9)
+    summary["balancedImprovementVsRaw"] = 1.0 - summary["meanAbsoluteStemWidthError"]["balanced"] / raw_reference
+    summary["balancedImprovementVsCursivy"] = (
+        1.0 - summary["meanAbsoluteStemWidthError"]["balanced"] / cursivy_reference
+    )
+    acceptance = {
+        "topologyPreserved": summary["topologyPreservedCount"] == len(GLYPHS),
+        "atLeastSixCompensatedPairs": compensated_pair_count >= 6,
+        "balancedAtLeast50PercentBetterThanRaw": summary["balancedImprovementVsRaw"] >= 0.5,
+        "balancedAtLeast50PercentBetterThanCursivy": summary["balancedImprovementVsCursivy"] >= 0.5,
+        "anchorErrorWithinPointZeroOne": summary["maxAnchorError"] <= 0.01,
+    }
+    result = {
+        "inter": {
+            "commit": INTER_COMMIT,
+            "romanMaster": {
+                "id": roman_master.id,
+                "name": roman_master.name,
+                "axes": list(roman_master.axes),
+            },
+            "italicMaster": {
+                "id": italic_master.id,
+                "name": italic_master.name,
+                "axes": list(italic_master.axes),
+                "italicAngle": float(italic_master.italicAngle),
+            },
+        },
+        "settings": {
+            "angle": ANGLE,
+            "origin": ORIGIN,
+            "curveStrength": CURVE_STRENGTH,
+            "stemCompensation": STEM_COMPENSATION,
+            "cursivyFallbackStemStrength": engine.CURSIVY_FALLBACK_STEM_STRENGTH,
+            "glyphs": GLYPHS,
+        },
+        "legacyMcpBaseline": {
+            "status": "failed",
+            "reason": "component_detach_failed",
+            "appliedCount": 0,
+            "errorCount": len(GLYPHS),
+            "note": "Observed before implementation on Glyphs 4; intended Raw/Cursivy geometry is reproduced here.",
+        },
+        "summary": summary,
+        "acceptance": acceptance,
+        "glyphs": glyph_results,
+    }
+    output_dir.mkdir(parents=True, exist_ok=True)
+    json_path = output_dir / "benchmark-results.json"
+    png_path = output_dir / "italic-balanced-inter-v4.1.png"
+    json_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    _draw_contact_sheet(
+        png_path,
+        roman_font,
+        roman_master,
+        italic_font,
+        italic_master,
+        generated,
+    )
+    result["artifacts"] = {"json": str(json_path), "png": str(png_path)}
+    return result
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    default_inter = (
+        _repo_root()
+        / ".cache"
+        / "italic-benchmark"
+        / "inter-{}".format(INTER_COMMIT)
+    )
+    default_output = _repo_root() / ".cache" / "italic-benchmark" / "results"
+    parser.add_argument("--inter-root", type=Path, default=default_inter)
+    parser.add_argument("--output-dir", type=Path, default=default_output)
+    args = parser.parse_args()
+    result = run(args.inter_root.resolve(), args.output_dir.resolve())
+    print(json.dumps({"summary": result["summary"], "acceptance": result["acceptance"], "artifacts": result["artifacts"]}, indent=2))
+    return 0 if all(result["acceptance"].values()) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
