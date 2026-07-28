@@ -27,19 +27,22 @@ usually need deliberate redrawing.
 - `cursivy` uses Glyphs' callable Transformations filter when available. On
   hosts where that public Python entry point is unavailable, it reports and
   uses a conservative pure-Python straight-stem fallback.
-- `balanced` interpolates Raw and Cursivy-compatible node coordinates and then
-  compensates confidently detected straight vertical or diagonal stem pairs.
+- `balanced` is a reproducible pure-Python pipeline. It builds Raw, applies the
+  conservative straight-stem correction at partial strength, interpolates
+  between those compatible coordinates, and then applies the requested final
+  compensation to confidently detected vertical or diagonal stem pairs. It
+  never invokes the Glyphs Transformations filter.
 
-Balanced is the current deterministic path-geometry winner, but it is not
-promoted as a global recommendation: the expanded component-direction gate
-found reflected and non-uniform component transforms that do not commute with
-the current local shear. Calls that omit `slant_mode` continue to use Cursivy
-for backward compatibility.
+Balanced is the recommended experimental deterministic option. Calls that omit
+`slant_mode` continue to use Cursivy for backward compatibility.
 
 Balanced defaults to `curve_strength=0.75` and
 `stem_compensation=1.0`. Both accept values from `0` through `1`.
-`curve_strength=0` is exactly Raw, while `curve_strength=1` is exactly the
-available Cursivy candidate before final stem compensation.
+`curve_strength=0` is exactly Raw before final compensation, while
+`curve_strength=1` uses the complete deterministic partial-correction
+candidate. The controls are independent. At `stem_compensation=1`, accepted
+stems converge to their Roman perpendicular width, so the final correction can
+make the intermediate `curve_strength` difference visually subtle.
 
 ## Broad-Latin evidence
 
@@ -56,9 +59,10 @@ UFOs:
 Every generated mode preserved topology, review left all source layers
 unchanged, anchor error was zero, and no unsafe compensation was applied.
 Balanced exceeded the required 50% source-width improvement over both
-alternatives in each family. The global gate still fails because the current
-live-component placement is not equivalent to shearing the whole Roman
-construction for 23 Inter glyphs and 2 Noto Sans glyphs. In Inter, this
+deterministic alternatives in each family. Recursive component analysis found
+23 Inter glyphs and 2 Noto Sans glyphs whose transforms do not commute with
+the requested shear. Balanced blocked every one before application, so the
+safety gates pass with zero unsafe component applications. In Inter, this
 includes `d` and `q`, which are built from horizontally reflected components;
 Plex draws those forms directly and does not show the reversal.
 
@@ -69,7 +73,11 @@ for IBM Plex Sans because the official italics include deliberate redrawing,
 recomposition, and spacing.
 
 [Read the complete three-family report](contributor/italic-balanced-broad-latin-benchmark.md).
-Click a contact sheet for its full 144-DPI source.
+Click the combined story sheet for the full `4800 × 6424`, 144-DPI source.
+
+[![Deterministic Balanced capacity and limits in Inter, Noto Sans, and IBM Plex Sans](contributor/images/italic-balanced-three-family-story.png)](contributor/images/italic-balanced-three-family-story.png)
+
+The family-specific audit sheets remain available for closer inspection:
 
 [![Inter Broad-Latin italic audit](contributor/images/italic-balanced-inter-v4.1-broad-audit.png)](contributor/images/italic-balanced-inter-v4.1-broad-audit.png)
 
@@ -93,11 +101,19 @@ Balanced mode:
   `x += tan(angle) * y`.
 - Shears copied anchors using
   `x′ = x + tan(angle) * (y - pivotY)`.
-- Blocks an explicit component master that differs from the target master.
+- Recursively inspects component chains and reports each matrix, determinant,
+  shear commutator, and chain.
+- Permits translation and commuting linear transforms, including uniform
+  scale.
+- Blocks reflection, rotation, non-uniform scale, cycles, unreadable
+  transforms, and explicit component-master mismatches when safety cannot be
+  established within `1e-6`.
+- Applies a reviewed batch all-or-nothing. It never silently excludes glyphs;
+  the designer can explicitly rerun with `skip_glyphs`.
 
-Until the component-order issue is fixed, inspect reflected, rotated, or
-non-uniformly scaled component constructions manually. The full benchmark
-lists every currently affected Inter and Noto Sans glyph.
+Safety is based on actual outlines and component construction, not glyph names
+or Unicode categories. Protected and design-sensitive forms still receive
+manual-review warnings without being blocked merely because of their identity.
 
 `stem_policy=copy_from_source` remains review-only. It reports source stem
 availability but does not silently edit Font Info; use
@@ -111,7 +127,9 @@ availability but does not silently edit Font Info; use
    and Cursivy; inspect blocked glyphs, components, anchors, topology, stems,
    bounds, and metrics.
 3. Run `apply_italic_first_pass` with `dry_run=true`.
-4. Apply only the approved scope with `confirm=true`.
-5. Redraw and proof the result as an italic design.
+4. If the batch is blocked, decide whether to rebuild those components or
+   explicitly rerun with `skip_glyphs`.
+5. Apply only the approved scope with `confirm=true`.
+6. Redraw, space, kern, and proof the result as an italic design.
 
 The tool never saves the font.

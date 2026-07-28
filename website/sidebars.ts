@@ -57,6 +57,7 @@ const sidebars: SidebarsConfig = {
         'contributor/local-docs-development',
         'contributor/unicode-assignment-tools',
         'contributor/italic-balanced-broad-latin-benchmark',
+        'contributor/italic-deterministic-balanced-forum-draft',
         'contributor/release-qa-protocol',
         'contributor/release-build-notes'
       ]

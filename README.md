@@ -22,8 +22,9 @@ italic.**
   reporting skipped or blocked cases.
 - Review Inter, Noto Sans, and IBM Plex Sans at 543, 543, and 391 shared
   glyphs, including high-resolution contact and silhouette-difference sheets.
-- Treat promotion as blocked until reflected and non-uniform component
-  transforms are handled in the same coordinate order as whole-glyph shear.
+- Use Balanced as the recommended experimental option. It blocks reflected,
+  rotated, non-uniformly scaled, cyclic, unreadable, and mismatched component
+  chains instead of silently applying an unsafe construction.
 
 The workflow aims to help construct a useful emphasis companion to the Roman.
 It does not replace the designer's optical drawing, rhythm, spacing, kerning,
@@ -31,7 +32,8 @@ alternates, or final proofing.
 
 [Read the full 1.5.0 changelog →](CHANGELOG.md) ·
 [Experimental italic guide](content/italic-first-pass.md) ·
-[Broad-Latin benchmark](content/contributor/italic-balanced-broad-latin-benchmark.md)
+[Broad-Latin benchmark](content/contributor/italic-balanced-broad-latin-benchmark.md) ·
+[Full-resolution three-family sheet](content/contributor/images/italic-balanced-three-family-story.png)
 
 ## macOS Installer app (recommended)
 
@@ -255,7 +257,7 @@ instead because Glyphs requires an absolute file path.
 | `set_master_stem_metrics` | Create or update master stem metrics (supports `dry_run`; requires `confirm=true` to mutate). |
 | `set_master_italic_angle` | Set a master’s Glyphs Font Info Metrics `italicAngle` (supports `dry_run`; requires `confirm=true` to mutate). |
 | `review_italic_first_pass` | Preview the experimental Roman-to-italic design-assistance workflow and build detached Raw, Cursivy, or Balanced candidates (default `+12` Glyphs source angle; no mutation). |
-| `apply_italic_first_pass` | Apply an experimental starting point for a Roman's emphasis companion; recommended `balanced` mode blends Raw/Cursivy geometry and conservatively compensates straight stems (supports `dry_run`; requires `confirm=true`; never saves). |
+| `apply_italic_first_pass` | Apply an experimental starting point for a Roman's emphasis companion; recommended experimental `balanced` mode uses a reproducible pure-Python Raw/partial-correction/final-compensation pipeline and blocks unsafe component chains (supports `dry_run`; requires `confirm=true`; never saves). |
 | `measure_stem_ratio` | Measure a stem ratio `b` between two masters (ref/base) for compensated tuning (no mutation). |
 | `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph from a base master plus a different compatible reference master (returns `set_glyph_paths`-compatible JSON; no mutation). |
 | `apply_compensated_tuning` | Apply the same two-master compensated scaling transform across glyphs (backs up layers; supports `dry_run`; requires `confirm=true` to mutate). |

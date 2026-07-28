@@ -8,15 +8,16 @@ Glyphs MCP 1.5.0 introduces Balanced italicification as an opt-in candidate
 inside an explicitly experimental first-pass workflow. Its purpose is to help
 a designer construct a useful emphasis companion to a Roman—not to generate
 or replace a finished italic design. The expanded validation ranks Balanced
-best for deterministic path geometry but blocks global promotion pending a
-component-transform correction.
+best for deterministic path geometry and promotes it as the recommended
+experimental mode. Existing calls still default to Cursivy.
 
 ### The highlights
 
-- **A safer mechanical starting point.** Balanced interpolates Raw and
-  Cursivy-compatible coordinates, then restores confidently detected
-  perpendicular straight-stem widths without changing topology or curve
-  handles.
+- **A reproducible mechanical starting point.** Balanced no longer depends on
+  the installed Glyphs Transformations filter. It builds Raw, applies the
+  pure-Python conservative correction at partial strength, interpolates those
+  coordinates, then applies the requested final straight-stem compensation
+  without changing topology or curve handles.
 - **Design work remains visible.** Review reports anchors, components, bounds,
   metrics, topology, stem measurements, filter failures, and blocked component
   masters before any confirmed apply. Optical form, rhythm, spacing, kerning,
@@ -25,22 +26,26 @@ component-transform correction.
   Basic Latin, Latin-1, Latin Extended, punctuation, currency, letterlike
   symbols, and number forms in pinned Inter and Noto Sans sources; pinned IBM
   Plex Sans contributes 391 Roman/Italic shared values.
-- **Balanced wins path geometry; promotion remains blocked.** All 543 Inter,
-  543 Noto Sans, and 391 Plex glyphs preserved topology and source data. The
-  test accepted 135, 102, and 102 stem pairs respectively, with effectively
-  zero source-width error after compensation. A stricter construction gate
-  found 23 Inter and 2 Noto Sans glyphs whose component transforms do not
-  commute with local shear, including Inter's reflected `d` and `q`.
+- **Balanced passes the promotion gates.** All 543 Inter, 543 Noto Sans, and
+  391 Plex glyphs preserved topology and source data. The test accepted 135,
+  102, and 102 stem pairs respectively, with effectively zero source-width
+  error after compensation. Recursive construction analysis identified and
+  blocked 23 Inter and 2 Noto Sans glyphs whose component transforms do not
+  commute with local shear, including Inter's reflected `d` and `q`. No unsafe
+  component construction was applied.
 - **High-resolution visual evidence.** Paginated 144-DPI contact and
-  silhouette-difference sheets compare Roman, all generated modes, and each
-  family's official italic. Official italics remain qualitative references,
-  not numeric targets.
+  silhouette-difference sheets compare Roman, Raw, deterministic Partial,
+  deterministic Balanced, and each family's official italic. A combined
+  `4800 × 6424` story sheet shows both capacity and design limits. Official
+  italics remain qualitative references, not numeric targets.
 
 ### Compatibility
 
 - Existing calls that omit `slant_mode` continue to use Cursivy.
-- Balanced remains opt-in with `curve_strength=0.75` and
-  `stem_compensation=1.0`.
+- Balanced remains opt-in and is the recommended experimental option, with
+  `curve_strength=0.75` and `stem_compensation=1.0`. The controls are
+  independent; full final compensation can make the partial interpolation
+  visually subtle on accepted stems.
 - Review is a genuine detached-layer dry run, confirmed apply never saves the
   font, and Raw/Cursivy behavior remains compatible with previous releases.
 

@@ -21,18 +21,25 @@ it does not create, replace, or claim optical completion of a designed italic.
 - Copy components as live components, but do not skew component transforms or component outlines; component shapes should resolve from their own italic master layers.
 - Default `compatibility_mode` is `preserve_if_possible`; path compatibility is useful but not required.
 - Before `slant_mode="cursivy"`, run `review_master_stem_metrics` for the target italic master.
-- Use `slant_mode="balanced"` when the user wants an adjustable Raw/Cursivy
-  blend plus conservative straight-stem compensation. Its default
-  `curve_strength` is `0.75` and default `stem_compensation` is `1.0`.
-- Treat Balanced as the deterministic path-geometry winner, not a global
-  recommendation. The Inter/Noto Sans/IBM Plex Sans validation preserved
-  topology and source layers but blocked promotion because reflected and
-  non-uniform component transforms do not commute with the current local
-  shear. Keep omitted `slant_mode` calls defaulting to Cursivy for
-  compatibility.
+- Prefer `slant_mode="balanced"` when the user wants the recommended
+  experimental reproducible option. Balanced builds Raw, applies the
+  pure-Python conservative correction at partial strength, interpolates using
+  `curve_strength`, and then applies the independent final
+  `stem_compensation`. It never calls the Glyphs Transformations filter.
+- Balanced defaults to `curve_strength=0.75` and
+  `stem_compensation=1.0`. Full final compensation can neutralize visible
+  intermediate differences on accepted stems. Keep omitted `slant_mode` calls
+  defaulting to Cursivy for compatibility.
+- The Inter/Noto Sans/IBM Plex Sans validation preserved topology and source
+  layers, accepted 135/102/102 stem pairs, and passed because every
+  non-commuting component construction was blocked before application.
 - For reflected, rotated, or non-uniformly scaled component constructions,
-  stop after review and ask the designer to inspect or decompose the
-  construction; do not claim that the generated direction is safe.
+  cycles, unreadable transforms, or component-master mismatches, stop after
+  review and ask the designer to inspect or rebuild the construction. Do not
+  silently omit it or claim that the generated direction is safe.
+- Do not exclude glyphs by name or Unicode category. Use the reported outline
+  and recursive component analysis. If the user explicitly approves a smaller
+  safe scope, rerun with `skip_glyphs`.
 - If Cursivy stems are missing, ask whether to set stems, measure suggestions, use raw slant, or stop.
 - Run `review_italic_first_pass` before `apply_italic_first_pass`.
 - Always run `apply_italic_first_pass` with `dry_run=true` before any mutating call.
@@ -66,11 +73,14 @@ it does not create, replace, or claim optical completion of a designed italic.
    - missing stems
    - protected glyph warnings
    - compatibility mode and compatibility issues
-   - live component preservation and any component warnings
+   - live component preservation, component chain/matrix diagnostics, and any
+     blocking reason
    - target glyphs that would be created
-8. If the user approves, call `apply_italic_first_pass` with `dry_run=true`.
-9. After approval of the dry run, call `apply_italic_first_pass` with `confirm=true`.
-10. Re-read or summarize returned results and list glyphs that still need manual optical work.
+8. If review blocks the batch, pause. Only after the designer explicitly
+   chooses a smaller scope, rerun review with `skip_glyphs`.
+9. If the user approves, call `apply_italic_first_pass` with `dry_run=true`.
+10. After approval of the dry run, call `apply_italic_first_pass` with `confirm=true`.
+11. Re-read or summarize returned results and list glyphs that still need manual optical work.
 
 ## Defaults
 
@@ -109,9 +119,12 @@ Use the Glyphs source angle convention from this skill. If `old_y == 0`, leave t
 This keeps baseline components unmoved while shifting components placed above or below the baseline so they align with the slanted path geometry.
 
 Balanced mode additionally shears copied anchors around the selected origin.
-An explicit component master that does not resolve to the target master blocks
-that glyph in Balanced mode. Raw and Cursivy retain their legacy component and
-anchor behavior.
+It recursively checks whether each component transform commutes with the
+requested shear within `1e-6`. Translation and commuting linear transforms
+such as uniform scale are permitted. Reflection, rotation, non-uniform scale,
+cycles, unreadable transforms, and an explicit component master that does not
+resolve to the target master block that glyph. Raw and Cursivy retain their
+legacy component and anchor behavior.
 
 ## Manual review reminders
 

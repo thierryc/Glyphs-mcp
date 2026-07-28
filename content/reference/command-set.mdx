@@ -155,14 +155,20 @@ alternates, or proofing.
 
 `slant_mode` accepts `raw`, `cursivy`, or `balanced`. Balanced defaults to
 `curve_strength=0.75` and `stem_compensation=1.0`; both strengths must be
-between `0` and `1`. It interpolates compatible Raw and Cursivy node
-coordinates, compensates only confidently detected straight stem pairs,
-shears copied anchors around the selected origin, and preserves live
-components. Review executes this full pipeline on detached layer copies.
-Balanced is the deterministic path-geometry winner in the Inter, Noto Sans,
-and IBM Plex Sans benchmark, but global promotion is blocked until reflected
-and non-uniform component transforms are handled in whole-glyph shear order.
-Omitted `slant_mode` calls remain Cursivy-compatible.
+between `0` and `1`. It builds Raw, applies the pure-Python straight-stem
+correction at partial strength, interpolates those compatible coordinates, and
+then applies the requested final compensation. The controls are independent:
+at `stem_compensation=1`, accepted stems converge to their Roman perpendicular
+width, which can make the intermediate `curve_strength` blend visually subtle.
+Balanced never calls the Glyphs Transformations filter.
+
+Review executes the full pipeline on detached layer copies. Balanced recursively
+checks component chains and blocks reflected, rotated, non-uniformly scaled,
+cyclic, unreadable, or component-master-mismatched constructions when they do
+not commute with the requested shear. The reviewed batch is all-or-nothing;
+rerunning with an explicit `skip_glyphs` list is a designer decision. The
+three-family benchmark promotes Balanced as the recommended experimental
+deterministic option. Omitted `slant_mode` calls remain Cursivy-compatible.
 
 | Tool | Description |
 | --- | --- |
