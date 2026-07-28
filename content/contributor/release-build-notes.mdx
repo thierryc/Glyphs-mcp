@@ -13,50 +13,69 @@ Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish 
 
 ## Prepared version
 
-Version `1.3.0` is the Glyphs 4 safe-compatibility release. It preserves the
-unified Glyphs 3.5/4 bundle introduced in `1.2.24` while adding format-aware,
-metadata-preserving outline inspection and editing. It also ships the
-repository ChatGPT/Codex marketplace plug-in, embedded feedback panel, guarded
-preview/apply plans, and the fail-closed local publishing workflow.
+Version `1.5.0` (installer build `15`) is the experimental deterministic
+Balanced italicification release candidate. It preserves the unified Glyphs
+3.5/4 bundle and the existing Cursivy default while adding an opt-in,
+pure-Python `balanced` mode for reproducible mechanical italic first passes.
+
+The feature is a design assistant for constructing a functional emphasis
+companion to a Roman. It does not create or replace a deliberately drawn
+italic. Optical forms, rhythm, spacing, kerning, alternates, and proofing remain
+the designer's responsibility.
 
 Release highlights:
 
-- Pin the official GlyphsSDK `Glyphs4` source at
-  `0f5422db727b78cb42abfb386f33ae0b382b0c4d`.
-- Bundle the official version 3/4 specifications and regular `.glyphs` and
-  `fontinfo.plist` schemas with stable source metadata.
-- Add `formatVersion` and `lastSavedAppVersion` to font summaries and report the
-  format before and after `save_font` without requesting conversion.
-- Introduce `pathDataVersion: 2` while retaining legacy payload input.
-- Preserve mixed shape order, grouping, styling, user data, higher-order
-  interpolation attributes, raw node enums, and unknown properties during path
-  edits.
-- Reject unsafe rewrites before mutation and restore the original layer after
-  failed writes or verification.
-- Add richer shape, component, grouping, attribute, and compatibility
-  diagnostics.
-- Add the ChatGPT/Codex marketplace plug-in, synchronize its eight skills from canonical
-  repository sources, and expose bounded feedback-panel tools for status, font,
-  glyph, OpenType, spacing, kerning, and handle review.
-- Require local tests, exact remote/tag alignment, Developer ID signatures,
-  notarization, Gatekeeper acceptance, checksums, and draft-asset review before
-  publishing installer artifacts.
-
-The compatibility boundary is intentional: dedicated authoring for Glyphs
-4-only gradients, palettes, shape groups, contextual kerning, smart-glyph axes,
-and higher-order interpolation remains deferred. Glyphs continues to own
-file-format upgrades.
-
-This prep includes an undo-safety hardening pass after live Glyphs 4 testing showed the recovery dialog after a disposable glyph create/path/delete probe. Glyphs font/layer mutations now route through shared public-API helpers and the manual QA protocol isolates mutating smoke tests. Version `1.2.15` superseded `1.2.14`, which exposed a repeated Objective-C helper-class registration error during the first isolated live mutation probe. Version `1.2.16` superseded `1.2.15` after live testing found an empty kerning parent key left behind after pair removal and an over-constrained metrics update that needed explicit readback warnings. Version `1.2.17` superseded `1.2.16` after Glyphs 3 live testing found `get_glyph_details` could hang on component transform conversion. Version `1.2.18` superseded `1.2.17` after the Glyphs 3 live retest showed the same path could still hang when a Glyphs 3 transform proxy was indexed. Version `1.2.19` superseded `1.2.18` after the Glyphs 3 live retest showed `layer.components` itself can hang in read-only component payloads. Version `1.2.20` superseded `1.2.19` after a macOS process sample showed the remaining Glyphs 3 hang was `GSLayer LSB` on the MCP background thread. Version `1.2.21` superseded `1.2.20` after the follow-up sample showed Glyphs 3 can also hang inside `GSLayer LSB` on the main thread; sidebearing reads now return an explicit unknown value under Glyphs 3 instead of calling the unsafe getter. Version `1.2.22` superseded `1.2.21` after the Glyphs 3 live retest showed sidebearing setters can also hang after component edits; sidebearing writes are skipped under Glyphs 3 and surfaced through structured readback warnings instead of blocking the server. Version `1.2.23` superseded `1.2.22` after the restart-forced retest showed the component fallback path could still reach Glyphs 3's unsafe `layer.components` proxy; Glyphs 3 now refuses that fallback and returns structured verification failures instead of risking an app freeze. Version `1.2.24` documents the live Glyphs 3 compatibility limits as both a public docs page and a bundled MCP resource (`glyphs://glyphs-mcp/glyphs3-compatibility`) while preserving the Glyphs 4 behavior validated in `1.2.23`.
+- Replace Balanced's host-filter intermediate with the deterministic
+  `pure_python_balanced` backend.
+- Preserve Raw and Cursivy behavior and keep omitted `slant_mode` calls on
+  Cursivy for backward compatibility.
+- Keep `curve_strength=0.75` and `stem_compensation=1.0` as independent,
+  opt-in experimental controls.
+- Make review and apply dry runs operate on detached layers and return matching
+  topology, anchor, component, bounds, metrics, and stem-pair diagnostics.
+- Recursively block reflected, rotated, non-uniformly scaled, cyclic,
+  unreadable, or master-mismatched component constructions when their transforms
+  do not commute with the requested shear. Unsafe glyphs are never silently
+  omitted; users must rerun with explicit `skip_glyphs`.
+- Publish clean-room, OFL-compatible benchmark evidence for pinned Inter, Noto
+  Sans, and IBM Plex Sans sources without committing those font sources.
+- Synchronize the canonical plug-in, Plugin Manager bundle, MCP descriptions,
+  documentation, and packaged italic skill.
 
 Local verification for this prep:
 
 ```bash
-/usr/local/bin/python3.12 -m unittest discover -s src/glyphs-mcp/tests
+PYTHON_BIN=.cache/release-venv/bin/python ./scripts/run_local_release_tests.sh
+cd website && npm run build
 ```
 
-Result: `400` Python tests passed, `1` skipped; `78` macOS installer
-tests passed; the unsigned Debug installer build completed successfully.
+Result on July 28, 2026:
+
+- `439` Python tests passed; `1` intentional skip.
+- `82` macOS installer tests passed.
+- The unsigned Debug installer build completed successfully.
+- The Docusaurus production build completed successfully.
+- The 26- and 66-glyph deterministic regressions passed.
+- The Broad-Latin rerun passed for `543` Inter, `543` Noto Sans, and
+  `391` IBM Plex Sans glyphs, with zero generation failures, topology changes,
+  review mutations, anchor errors, or unsafe component applications.
+- Balanced retained `135`, `102`, and `102` accepted stem pairs respectively
+  and remained the deterministic geometry winner in every family.
+- A registered Glyphs 4 MCP smoke test passed review, dry-run immutability,
+  explicit component blocking and skipping, confirmed apply, backup creation,
+  topology preservation, and no-save cleanup on a disposable Inter copy.
+
+Before publication, complete the remaining manual release boundary:
+
+- Run the required Glyphs 3.5 live compatibility pass from the
+  [Release QA protocol](./release-qa-protocol.mdx).
+- Merge the reviewed release commit to `main` and create the exact signed
+  annotated `v1.5.0` tag.
+- Build the Developer ID-signed Release installer, notarize and staple the app
+  and DMG, verify Gatekeeper acceptance, and generate the final exact-asset
+  checksum manifest.
+- Upload only to an empty draft GitHub release, review its notes and assets, and
+  publish separately.
 
 ## Future cleanup targets
 
