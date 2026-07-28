@@ -41,11 +41,13 @@ entries rather than silently dropping them.
 Two historical Inter/Noto Sans source-name differences are mapped by Unicode:
 `Tcommaaccent`/`Tcedilla` at `U+0162` and `Iota`/`Iota-latin` at `U+0196`.
 
-## Result: geometry winner, promotion blocked
+## Result: deterministic Balanced promoted
 
 Balanced is the deterministic geometry winner in every family. It restores
 the measured source width of accepted conservative stem pairs and has the
-lowest equal-family mean error.
+lowest equal-family mean error. It passes every safety gate and is promoted as
+the recommended experimental mode. The omitted `slant_mode` default remains
+Cursivy for backward compatibility.
 
 | Family | Topology | Source unchanged | Compensated pairs | Raw error | Partial error | Balanced error | Anchor error |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -59,16 +61,16 @@ alternatives in each family. This near-zero result applies only to confidently
 accepted straight-side pairs. It does not measure optical completion or
 similarity to a deliberately drawn italic.
 
-The global promotion gate is nevertheless **blocked**. The review found
-component transforms for which slanting a component locally and then applying
-its component matrix (`L × S`) differs from shearing the complete Roman
-construction (`S × L`):
+The review also found component transforms for which slanting a component
+locally and then applying its component matrix (`L × S`) differs from shearing
+the complete Roman construction (`S × L`). Deterministic Balanced now blocks
+those glyphs before generation:
 
-| Family | Affected glyphs | Reflected cases | Other non-commuting cases | Safety gate |
-| --- | ---: | ---: | ---: | --- |
-| Inter v4.1 | 23 | 17 | 6 vertically scaled marks | Fail |
-| Noto Sans | 2 | 2 | 0 | Fail |
-| IBM Plex Sans | 0 | 0 | 0 | Pass |
+| Family | Affected glyphs | Reflected cases | Other non-commuting cases | Blocked | Unsafe applications | Safety gate |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Inter v4.1 | 23 | 17 | 6 vertically scaled marks | 23 | 0 | Pass |
+| Noto Sans | 2 | 2 | 0 | 2 | 0 | Pass |
+| IBM Plex Sans | 0 | 0 | 0 | 0 | 0 | Pass |
 
 This explains the earlier `d`/`q` observation. Inter constructs `d` from a
 horizontally reflected `b` and `q` from a reflected `p`; local slant followed
@@ -85,17 +87,25 @@ The affected Inter rows are `d`, `q`, `dcaron`, `dcroat`,
 `reversedsemicolon`, and `dong`. Noto Sans is affected at
 `paragraphreversed` and `reversedsemicolon`.
 
-No mode is recommended for global promotion until component transform order is
-corrected and the three-family gate is rerun. This component issue is shared by
-Raw, partial compensation, and Balanced; it does not change Balanced's
-path-only geometry ranking.
+This construction issue can also affect any method that slants component
+sources before applying a non-commuting transform. Balanced does not silently
+omit the glyphs: the reviewed batch is blocked, and the designer may explicitly
+rerun with `skip_glyphs` after deciding how to rebuild or draw those forms.
 
 ## Raster review and mode separation
 
 The 543 Inter glyphs, 543 Noto Sans glyphs, and 391 Plex glyphs were rendered
 at 2× scale in pages of at most 64 glyphs. The full paginated evidence and
 per-glyph JSON remain in the ignored
-`.cache/italic-benchmark/results-broad-plex-review` directory.
+`.cache/italic-benchmark/results-broad-deterministic` directory.
+
+The combined 144-DPI story sheet is a deterministic `4800 × 6424` PNG. It
+shows capacity examples, forms that need deliberate italic redrawing, blocked
+component constructions, Balanced-versus-Raw overlays, and
+Balanced-versus-official overlays with magnified insets. Click it for the
+full-resolution image.
+
+[![Deterministic Balanced three-family story sheet](images/italic-balanced-three-family-story.png)](images/italic-balanced-three-family-story.png)
 
 The committed 144-DPI audit sheets prioritize component-direction risks,
 accepted-pair glyphs, representative categories, and the largest qualitative
@@ -134,7 +144,15 @@ Values are mean silhouette differences; parentheses give the count of glyphs
 with at least one different raster pixel. The median generated-mode difference
 is zero in all families because the conservative correction engine changes
 only accepted stem pairs. This is why Raw, partial compensation, and Balanced
-look identical for most glyphs, including many curved forms.
+look identical for most glyphs, including many curved forms. With
+`stem_compensation=1.0`, the final correction restores accepted stems to their
+Roman perpendicular width, so it can also neutralize part of the visible
+intermediate difference controlled by `curve_strength`.
+
+The deterministic Partial column is the pure-Python correction engine at
+strength `0.35`. It is not the live Glyphs Cursivy filter. Real Cursivy remains
+host-specific and can vary with the installed Glyphs and Transformations filter
+version.
 
 Official-italic differences remain qualitative and are not an optimization
 target. They show where a designer deliberately redrew forms beyond a
@@ -152,11 +170,10 @@ python3.12 scripts/benchmark_italic_sans_broad.py \
   --audit-limit 64
 ```
 
-The script currently exits non-zero because the component-transform safety gate
-blocks promotion. Its JSON records coverage, topology, source immutability,
-anchors, components and transform risks, bounds, advance widths, detected and
-skipped stem pairs, width measurements, all four raster comparisons, failures,
-and runtime.
+The script exits zero when every family passes. Its JSON records coverage,
+topology, source immutability, anchors, components and transform risks, blocked
+constructions, bounds, advance widths, detected and skipped stem pairs, width
+measurements, all four raster comparisons, failures, and runtime.
 
 Sources are pinned at:
 

@@ -92,7 +92,7 @@ def _family_result(
             "anchorErrorWithinPointZeroOne": accepted,
             "noUnexpectedComponentMasterMismatch": accepted,
             "noUnsafeAppliedCompensation": accepted,
-            "noNonCommutingComponentTransforms": accepted,
+            "allNonCommutingComponentTransformsBlocked": accepted,
             "minimumCompensatedPairsRetained": accepted,
             "balancedAtLeast50PercentBetterThanRaw": (
                 balanced_error <= raw_error * 0.5
@@ -330,6 +330,15 @@ class BroadItalicBenchmarkTests(unittest.TestCase):
             "Partial compensation",
             dict(broad._mode_labels("Test"))["cursivy"],
         )
+        story_codepoints = {
+            codepoint
+            for _label, codepoints in broad.STORY_GROUPS
+            for codepoint in codepoints
+        }
+        self.assertTrue(
+            {0x0048, 0x006E, 0x0030, 0x00A5, 0x0061, 0x0026, 0x0064, 0x0071}
+            <= story_codepoints
+        )
 
     def test_plex_is_pinned_as_a_regular_italic_ufo_pair(self) -> None:
         config = broad.FAMILY_CONFIGS["ibmPlexSans"]
@@ -341,6 +350,13 @@ class BroadItalicBenchmarkTests(unittest.TestCase):
         self.assertEqual(
             sum(config["expectedGroupCounts"].values()),
             391,
+        )
+        self.assertEqual(
+            {
+                key: broad.FAMILY_CONFIGS[key]["minimumCompensatedPairs"]
+                for key in ("inter", "notoSans", "ibmPlexSans")
+            },
+            {"inter": 135, "notoSans": 102, "ibmPlexSans": 102},
         )
 
     def test_unicode_family_selection_records_missing_and_mismatched_names(
@@ -415,6 +431,10 @@ class BroadItalicBenchmarkTests(unittest.TestCase):
         self.assertEqual(len(risks), 1)
         self.assertTrue(risks[0]["reflected"])
         self.assertGreater(risks[0]["commutatorError"], 0)
+        self.assertEqual(
+            risks[0]["tolerance"],
+            broad.COMPONENT_COMMUTATOR_TOLERANCE,
+        )
 
     def test_balanced_wins_only_when_every_family_passes(self) -> None:
         families = {

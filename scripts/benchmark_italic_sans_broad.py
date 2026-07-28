@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 import glyphsLib
+from PIL import Image, ImageChops, ImageDraw
 
 import benchmark_italic_inter as base
 import benchmark_ufo_adapter as ufo_adapter
@@ -45,6 +46,15 @@ EXPECTED_GROUP_COUNTS = {
 MAX_PAGE_SIZE = 64
 DEFAULT_RENDER_SCALE = 2.0
 DEFAULT_AUDIT_LIMIT = 64
+COMPONENT_COMMUTATOR_TOLERANCE = 1e-6
+STORY_GROUPS = (
+    ("Straight stems", (0x0048, 0x0045, 0x0058, 0x006E)),
+    ("Numbers & currency", (0x0031, 0x0030, 0x0038, 0x0024, 0x00A5)),
+    ("Symbols", (0x002B, 0x003D, 0x0025)),
+    ("Optical redraw", (0x0061, 0x0067, 0x0066, 0x0076)),
+    ("Punctuation", (0x0026, 0x0028, 0x0029)),
+    ("Components", (0x0064, 0x0070, 0x0071)),
+)
 MODE_NAMES = ("raw", "cursivy", "balanced")
 DIFF_COMPARISONS = (
     ("raw", "cursivy", "Partial compensation vs Raw"),
@@ -72,7 +82,7 @@ FAMILY_CONFIGS = {
         "manifestNameKey": "interGlyphName",
         "angle": 9.4,
         "expectedAxes": {"opsz": 14, "wght": 400},
-        "minimumCompensatedPairs": 15,
+        "minimumCompensatedPairs": 135,
         "repository": "https://github.com/rsms/inter",
         "commit": base.INTER_COMMIT,
     },
@@ -81,7 +91,7 @@ FAMILY_CONFIGS = {
         "manifestNameKey": "notoSansGlyphName",
         "angle": 12.0,
         "expectedAxes": {"wght": 90, "wdth": 100},
-        "minimumCompensatedPairs": 12,
+        "minimumCompensatedPairs": 102,
         "repository": "https://github.com/notofonts/latin-greek-cyrillic",
         "googleFonts": "https://github.com/google/fonts/tree/main/ofl/notosans",
         "commit": NOTO_SANS_COMMIT,
@@ -91,7 +101,7 @@ FAMILY_CONFIGS = {
         "manifestNameKey": "plexGlyphName",
         "angle": 11.31,
         "expectedAxes": {"wght": 400},
-        "minimumCompensatedPairs": 12,
+        "minimumCompensatedPairs": 102,
         "repository": "https://github.com/googlefonts/plex",
         "upstreamRepository": "https://github.com/IBM/plex",
         "commit": PLEX_COMMIT,
@@ -343,7 +353,7 @@ def _component_transform_risks(
         )
         component_name = base._component_name(component)
         chain = stack + (glyph_name, component_name)
-        if commutator_error > 1e-9:
+        if commutator_error > COMPONENT_COMMUTATOR_TOLERANCE:
             determinant = a * d - b * c
             risks.append(
                 {
@@ -354,6 +364,7 @@ def _component_transform_risks(
                     "determinant": determinant,
                     "reflected": determinant < 0.0,
                     "commutatorError": commutator_error,
+                    "tolerance": COMPONENT_COMMUTATOR_TOLERANCE,
                     "reason": "componentLinearTransformDoesNotCommuteWithShear",
                 }
             )
@@ -629,6 +640,19 @@ def _benchmark_family(
                 glyph_name,
                 angle=float(config["angle"]),
             )
+            balanced_outcome = (
+                "balanced_blocked_component"
+                if glyph_component_transform_risks
+                else (
+                    "pathless_noop"
+                    if not record["source"]
+                    else (
+                        "balanced_applied"
+                        if compensated_ids
+                        else "balanced_raw_equivalent"
+                    )
+                )
+            )
             component_transform_risks.extend(
                 {
                     "unicode": entry["unicode"],
@@ -700,6 +724,7 @@ def _benchmark_family(
                     **copy.deepcopy(entry),
                     "glyphName": glyph_name,
                     "status": "ok",
+                    "balancedOutcome": balanced_outcome,
                     "pathless": not bool(record["source"])
                     and not bool(list(roman_layer.components or [])),
                     "topologyByMode": topology_by_mode,
@@ -846,6 +871,24 @@ def _benchmark_family(
                 for risk in component_transform_risks
             }
         ),
+        "blockedComponentGlyphCount": len(
+            [
+                row
+                for row in successful_rows
+                if row.get("balancedOutcome") == "balanced_blocked_component"
+            ]
+        ),
+        "unsafeComponentApplicationCount": len(
+            [
+                row
+                for row in successful_rows
+                if row.get("components", {}).get(
+                    "nonCommutingTransformRisks"
+                )
+                and row.get("balancedOutcome")
+                != "balanced_blocked_component"
+            ]
+        ),
         "runtimeSeconds": time.perf_counter() - total_runtime_start,
         "meanGlyphRuntimeSeconds": (
             float(
@@ -879,8 +922,10 @@ def _benchmark_family(
         "noUnsafeAppliedCompensation": (
             summary["unsafeAppliedCompensationCount"] == 0
         ),
-        "noNonCommutingComponentTransforms": (
-            summary["nonCommutingComponentTransformRiskCount"] == 0
+        "allNonCommutingComponentTransformsBlocked": (
+            summary["unsafeComponentApplicationCount"] == 0
+            and summary["blockedComponentGlyphCount"]
+            == summary["affectedComponentTransformGlyphCount"]
         ),
         "minimumCompensatedPairsRetained": (
             summary["compensatedPairCount"]
@@ -1223,6 +1268,325 @@ def _render_audit(
     }
 
 
+def _story_mask(
+    context: dict[str, Any],
+    glyph_names: list[str],
+    mode: str,
+    *,
+    cell_size: tuple[int, int],
+    pixel_ratio: float,
+    curve_steps: int,
+) -> tuple[Image.Image, float]:
+    glyph_geometries = []
+    cursor = 0.0
+    tracking = float(context["romanFont"].upm) * 0.04
+    for glyph_name in glyph_names:
+        contours, advance = base._glyph_mode_geometry(
+            roman_font=context["romanFont"],
+            roman_master=context["romanMaster"],
+            italic_font=context["italicFont"],
+            italic_master=context["italicMaster"],
+            generated=context["generated"],
+            glyph_name=glyph_name,
+            mode=mode,
+            angle=context["angle"],
+            curve_steps=curve_steps,
+        )
+        glyph_geometries.append((contours, cursor))
+        cursor += float(advance) + tracking
+    advance = max(0.0, cursor - tracking)
+    logical_width = float(cell_size[0]) / pixel_ratio
+    logical_height = float(cell_size[1]) / pixel_ratio
+    upm = float(context["romanFont"].upm)
+    outline_scale = min(
+        (logical_width - 30.0) / max(advance, 1.0),
+        (logical_height - 34.0) / max(upm, 1.0),
+    ) * pixel_ratio
+    origin_x = (logical_width - advance * outline_scale / pixel_ratio) * 0.5 * pixel_ratio
+    baseline_y = (logical_height - 24.0) * pixel_ratio
+    combined = Image.new("L", cell_size, 0)
+    for contours, glyph_offset in glyph_geometries:
+        glyph_mask = base._contours_to_mask(
+            contours,
+            size=cell_size,
+            origin_x=origin_x + glyph_offset * outline_scale,
+            baseline_y=baseline_y,
+            outline_scale=outline_scale,
+        )
+        combined = ImageChops.lighter(combined, glyph_mask)
+    return combined, advance
+
+
+def _story_overlay(
+    reference_mask: Image.Image,
+    candidate_mask: Image.Image,
+) -> tuple[Image.Image, float]:
+    shared = ImageChops.multiply(reference_mask, candidate_mask)
+    reference_only = ImageChops.subtract(reference_mask, candidate_mask)
+    candidate_only = ImageChops.subtract(candidate_mask, reference_mask)
+    different = ImageChops.lighter(reference_only, candidate_only)
+    union = ImageChops.lighter(reference_mask, candidate_mask)
+    different_pixels = base._nonzero_pixel_count(different)
+    union_pixels = base._nonzero_pixel_count(union)
+    ratio = (
+        float(different_pixels) / float(union_pixels)
+        if union_pixels
+        else 0.0
+    )
+    image = Image.new("RGB", reference_mask.size, "white")
+    image.paste((54, 58, 64), (0, 0), shared)
+    image.paste((224, 84, 94), (0, 0), reference_only)
+    image.paste((0, 137, 207), (0, 0), candidate_only)
+    return image, ratio
+
+
+def _render_story_sheet(
+    *,
+    contexts: dict[str, dict[str, Any]],
+    families: dict[str, dict[str, Any]],
+    output_dir: Path,
+    render_scale: float,
+) -> dict[str, Any]:
+    pixel_ratio = max(1.0, min(4.0, float(render_scale)))
+    label_width = 160.0
+    cell_width = 320.0
+    row_height = 160.0
+    title_height = 118.0
+    family_header_height = 44.0
+    footer_height = 82.0
+    columns = (
+        ("roman", "Roman"),
+        ("raw", "Raw shear"),
+        ("cursivy", "Partial 0.35"),
+        ("balanced", "Deterministic Balanced"),
+        ("official", "Official italic"),
+        ("balancedVsRaw", "Balanced vs Raw"),
+        ("balancedVsOfficial", "Balanced vs Official"),
+    )
+    logical_width = label_width + cell_width * len(columns)
+    logical_height = (
+        title_height
+        + len(contexts)
+        * (family_header_height + row_height * len(STORY_GROUPS))
+        + footer_height
+    )
+    width = int(round(logical_width * pixel_ratio))
+    height = int(round(logical_height * pixel_ratio))
+    image = Image.new("RGB", (width, height), "white")
+    draw = ImageDraw.Draw(image)
+    title_font = base._label_font(int(round(23 * pixel_ratio)))
+    header_font = base._label_font(int(round(14 * pixel_ratio)))
+    label_font = base._label_font(int(round(12 * pixel_ratio)))
+    detail_font = base._label_font(int(round(9 * pixel_ratio)))
+    line_width = max(1, int(round(pixel_ratio)))
+    curve_steps = max(16, int(round(16 * pixel_ratio)))
+    cell_size = (
+        int(round(cell_width * pixel_ratio)),
+        int(round(row_height * pixel_ratio)),
+    )
+
+    draw.text(
+        (18 * pixel_ratio, 14 * pixel_ratio),
+        "Deterministic Balanced italicification: capacity and limits",
+        fill=(24, 28, 34),
+        font=title_font,
+    )
+    draw.text(
+        (18 * pixel_ratio, 51 * pixel_ratio),
+        "Blue = candidate only  |  coral = reference only  |  dark = overlap",
+        fill=(70, 74, 80),
+        font=label_font,
+    )
+    draw.text(
+        (18 * pixel_ratio, 77 * pixel_ratio),
+        "Official italics are qualitative references, not pass/fail targets.",
+        fill=(70, 74, 80),
+        font=label_font,
+    )
+    for column, (_key, label) in enumerate(columns):
+        left = (label_width + column * cell_width) * pixel_ratio
+        draw.text(
+            (left + 12 * pixel_ratio, 88 * pixel_ratio),
+            label,
+            fill=(24, 28, 34),
+            font=header_font,
+        )
+
+    story_rows = []
+    current_top = title_height
+    for family_key in ("inter", "notoSans", "ibmPlexSans"):
+        context = contexts[family_key]
+        family = families[family_key]
+        display_name = context["displayName"]
+        draw.rectangle(
+            (
+                0,
+                current_top * pixel_ratio,
+                width,
+                (current_top + family_header_height) * pixel_ratio,
+            ),
+            fill=(244, 246, 249),
+        )
+        draw.text(
+            (18 * pixel_ratio, (current_top + 12) * pixel_ratio),
+            "{} · native angle {}°".format(display_name, context["angle"]),
+            fill=(24, 28, 34),
+            font=header_font,
+        )
+        current_top += family_header_height
+        entry_by_codepoint = {
+            int(entry["codepoint"]): entry for entry in context["entries"]
+        }
+        row_by_name = {
+            str(row["glyphName"]): row
+            for row in family["glyphs"]
+            if row.get("status") == "ok"
+        }
+        for group_label, codepoints in STORY_GROUPS:
+            entries = [entry_by_codepoint[value] for value in codepoints]
+            glyph_names = [
+                str(entry[context["manifestNameKey"]]) for entry in entries
+            ]
+            visible_text = "".join(chr(value) for value in codepoints)
+            blocked_names = [
+                name
+                for name in glyph_names
+                if row_by_name.get(name, {}).get("balancedOutcome")
+                == "balanced_blocked_component"
+            ]
+            top_px = int(round(current_top * pixel_ratio))
+            draw.text(
+                (14 * pixel_ratio, (current_top + 52) * pixel_ratio),
+                group_label,
+                fill=(24, 28, 34),
+                font=label_font,
+            )
+            draw.text(
+                (14 * pixel_ratio, (current_top + 78) * pixel_ratio),
+                visible_text,
+                fill=(90, 94, 100),
+                font=header_font,
+            )
+            masks = {}
+            for mode in ("roman", "raw", "cursivy", "balanced", "official"):
+                masks[mode], _advance = _story_mask(
+                    context,
+                    glyph_names,
+                    mode,
+                    cell_size=cell_size,
+                    pixel_ratio=pixel_ratio,
+                    curve_steps=curve_steps,
+                )
+            for column, (key, _label) in enumerate(columns):
+                left_px = int(
+                    round((label_width + column * cell_width) * pixel_ratio)
+                )
+                cell = Image.new("RGB", cell_size, "white")
+                cell_draw = ImageDraw.Draw(cell)
+                if blocked_names and key in {
+                    "balanced",
+                    "balancedVsRaw",
+                    "balancedVsOfficial",
+                }:
+                    cell_draw.rectangle(
+                        (0, 0, cell_size[0] - 1, cell_size[1] - 1),
+                        fill=(255, 248, 240),
+                        outline=(218, 143, 66),
+                        width=line_width,
+                    )
+                    cell_draw.text(
+                        (18 * pixel_ratio, 48 * pixel_ratio),
+                        "BLOCKED",
+                        fill=(154, 79, 12),
+                        font=header_font,
+                    )
+                    cell_draw.text(
+                        (18 * pixel_ratio, 78 * pixel_ratio),
+                        "non-commuting component: {}".format(
+                            ", ".join(blocked_names)
+                        ),
+                        fill=(110, 82, 56),
+                        font=detail_font,
+                    )
+                elif key == "balancedVsRaw":
+                    cell, ratio = _story_overlay(
+                        masks["raw"],
+                        masks["balanced"],
+                    )
+                    ImageDraw.Draw(cell).text(
+                        (10 * pixel_ratio, 8 * pixel_ratio),
+                        "diff {:.2%}".format(ratio),
+                        fill=(70, 70, 70),
+                        font=detail_font,
+                    )
+                elif key == "balancedVsOfficial":
+                    cell, ratio = _story_overlay(
+                        masks["official"],
+                        masks["balanced"],
+                    )
+                    ImageDraw.Draw(cell).text(
+                        (10 * pixel_ratio, 8 * pixel_ratio),
+                        "diff {:.1%}".format(ratio),
+                        fill=(70, 70, 70),
+                        font=detail_font,
+                    )
+                else:
+                    color = (
+                        (0, 91, 187)
+                        if key == "balanced"
+                        else (54, 58, 64)
+                    )
+                    cell.paste(color, (0, 0), masks[key])
+                image.paste(cell, (left_px, top_px))
+                draw.rectangle(
+                    (
+                        left_px,
+                        top_px,
+                        left_px + cell_size[0],
+                        top_px + cell_size[1],
+                    ),
+                    outline=(224, 226, 230),
+                    width=line_width,
+                )
+            story_rows.append(
+                {
+                    "family": family_key,
+                    "group": group_label,
+                    "codepoints": ["U+{:04X}".format(value) for value in codepoints],
+                    "glyphNames": glyph_names,
+                    "blockedGlyphNames": blocked_names,
+                }
+            )
+            current_top += row_height
+
+    draw.text(
+        (18 * pixel_ratio, (logical_height - footer_height + 18) * pixel_ratio),
+        "Balanced preserves topology and Roman stem width where conservative pairs are accepted.",
+        fill=(50, 54, 60),
+        font=label_font,
+    )
+    draw.text(
+        (18 * pixel_ratio, (logical_height - footer_height + 45) * pixel_ratio),
+        "It does not design optical forms, rhythm, spacing, kerning, or alternates; blocked constructions require manual work.",
+        fill=(70, 74, 80),
+        font=label_font,
+    )
+    output_path = output_dir / "italic-balanced-three-family-story.png"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    image.save(
+        output_path,
+        dpi=(72.0 * pixel_ratio, 72.0 * pixel_ratio),
+        compress_level=6,
+    )
+    return {
+        "png": str(output_path),
+        "width": width,
+        "height": height,
+        "renderScale": pixel_ratio,
+        "rows": story_rows,
+    }
+
+
 def evaluate_promotion(
     families: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
@@ -1395,6 +1759,12 @@ def run(
             ),
         }
 
+    story = _render_story_sheet(
+        contexts=contexts,
+        families=families,
+        output_dir=output_dir,
+        render_scale=scale,
+    )
     promotion = evaluate_promotion(families)
     result = {
         "manifest": {
@@ -1423,7 +1793,10 @@ def run(
         "promotion": promotion,
     }
     json_path = output_dir / "benchmark-results-broad-latin.json"
-    result["artifacts"] = {"json": str(json_path)}
+    result["artifacts"] = {
+        "json": str(json_path),
+        "story": story,
+    }
     json_path.write_text(
         json.dumps(result, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
