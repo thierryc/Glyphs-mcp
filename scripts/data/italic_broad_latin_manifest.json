@@ -1,0 +1,3849 @@
+{
+  "schemaVersion": 1,
+  "description": "Fixed Broad-Latin benchmark manifest for encoded glyphs selected from pinned Inter and mapped by Unicode to pinned Noto Sans.",
+  "sources": {
+    "interCommit": "e3a3d4c57d5ecc01453a575621882a384c1995a3",
+    "notoSansCommit": "cb097900c74b26e6dcab899b4f07b2bc79dd80c4"
+  },
+  "ranges": [
+    {
+      "group": "basicLatin",
+      "start": "U+0020",
+      "end": "U+007E"
+    },
+    {
+      "group": "latin1",
+      "start": "U+00A0",
+      "end": "U+00FF"
+    },
+    {
+      "group": "latinExtended",
+      "start": "U+0100",
+      "end": "U+024F"
+    },
+    {
+      "group": "generalPunctuation",
+      "start": "U+2000",
+      "end": "U+206F"
+    },
+    {
+      "group": "currencySymbols",
+      "start": "U+20A0",
+      "end": "U+20CF"
+    },
+    {
+      "group": "letterlikeSymbols",
+      "start": "U+2100",
+      "end": "U+214F"
+    },
+    {
+      "group": "numberForms",
+      "start": "U+2150",
+      "end": "U+218F"
+    }
+  ],
+  "entryCount": 543,
+  "glyphs": [
+    {
+      "unicode": "U+0020",
+      "codepoint": 32,
+      "group": "basicLatin",
+      "interGlyphName": "space",
+      "notoSansGlyphName": "space"
+    },
+    {
+      "unicode": "U+0021",
+      "codepoint": 33,
+      "group": "basicLatin",
+      "interGlyphName": "exclam",
+      "notoSansGlyphName": "exclam"
+    },
+    {
+      "unicode": "U+0022",
+      "codepoint": 34,
+      "group": "basicLatin",
+      "interGlyphName": "quotedbl",
+      "notoSansGlyphName": "quotedbl"
+    },
+    {
+      "unicode": "U+0023",
+      "codepoint": 35,
+      "group": "basicLatin",
+      "interGlyphName": "numbersign",
+      "notoSansGlyphName": "numbersign"
+    },
+    {
+      "unicode": "U+0024",
+      "codepoint": 36,
+      "group": "basicLatin",
+      "interGlyphName": "dollar",
+      "notoSansGlyphName": "dollar"
+    },
+    {
+      "unicode": "U+0025",
+      "codepoint": 37,
+      "group": "basicLatin",
+      "interGlyphName": "percent",
+      "notoSansGlyphName": "percent"
+    },
+    {
+      "unicode": "U+0026",
+      "codepoint": 38,
+      "group": "basicLatin",
+      "interGlyphName": "ampersand",
+      "notoSansGlyphName": "ampersand"
+    },
+    {
+      "unicode": "U+0027",
+      "codepoint": 39,
+      "group": "basicLatin",
+      "interGlyphName": "quotesingle",
+      "notoSansGlyphName": "quotesingle"
+    },
+    {
+      "unicode": "U+0028",
+      "codepoint": 40,
+      "group": "basicLatin",
+      "interGlyphName": "parenleft",
+      "notoSansGlyphName": "parenleft"
+    },
+    {
+      "unicode": "U+0029",
+      "codepoint": 41,
+      "group": "basicLatin",
+      "interGlyphName": "parenright",
+      "notoSansGlyphName": "parenright"
+    },
+    {
+      "unicode": "U+002A",
+      "codepoint": 42,
+      "group": "basicLatin",
+      "interGlyphName": "asterisk",
+      "notoSansGlyphName": "asterisk"
+    },
+    {
+      "unicode": "U+002B",
+      "codepoint": 43,
+      "group": "basicLatin",
+      "interGlyphName": "plus",
+      "notoSansGlyphName": "plus"
+    },
+    {
+      "unicode": "U+002C",
+      "codepoint": 44,
+      "group": "basicLatin",
+      "interGlyphName": "comma",
+      "notoSansGlyphName": "comma"
+    },
+    {
+      "unicode": "U+002D",
+      "codepoint": 45,
+      "group": "basicLatin",
+      "interGlyphName": "hyphen",
+      "notoSansGlyphName": "hyphen"
+    },
+    {
+      "unicode": "U+002E",
+      "codepoint": 46,
+      "group": "basicLatin",
+      "interGlyphName": "period",
+      "notoSansGlyphName": "period"
+    },
+    {
+      "unicode": "U+002F",
+      "codepoint": 47,
+      "group": "basicLatin",
+      "interGlyphName": "slash",
+      "notoSansGlyphName": "slash"
+    },
+    {
+      "unicode": "U+0030",
+      "codepoint": 48,
+      "group": "basicLatin",
+      "interGlyphName": "zero",
+      "notoSansGlyphName": "zero"
+    },
+    {
+      "unicode": "U+0031",
+      "codepoint": 49,
+      "group": "basicLatin",
+      "interGlyphName": "one",
+      "notoSansGlyphName": "one"
+    },
+    {
+      "unicode": "U+0032",
+      "codepoint": 50,
+      "group": "basicLatin",
+      "interGlyphName": "two",
+      "notoSansGlyphName": "two"
+    },
+    {
+      "unicode": "U+0033",
+      "codepoint": 51,
+      "group": "basicLatin",
+      "interGlyphName": "three",
+      "notoSansGlyphName": "three"
+    },
+    {
+      "unicode": "U+0034",
+      "codepoint": 52,
+      "group": "basicLatin",
+      "interGlyphName": "four",
+      "notoSansGlyphName": "four"
+    },
+    {
+      "unicode": "U+0035",
+      "codepoint": 53,
+      "group": "basicLatin",
+      "interGlyphName": "five",
+      "notoSansGlyphName": "five"
+    },
+    {
+      "unicode": "U+0036",
+      "codepoint": 54,
+      "group": "basicLatin",
+      "interGlyphName": "six",
+      "notoSansGlyphName": "six"
+    },
+    {
+      "unicode": "U+0037",
+      "codepoint": 55,
+      "group": "basicLatin",
+      "interGlyphName": "seven",
+      "notoSansGlyphName": "seven"
+    },
+    {
+      "unicode": "U+0038",
+      "codepoint": 56,
+      "group": "basicLatin",
+      "interGlyphName": "eight",
+      "notoSansGlyphName": "eight"
+    },
+    {
+      "unicode": "U+0039",
+      "codepoint": 57,
+      "group": "basicLatin",
+      "interGlyphName": "nine",
+      "notoSansGlyphName": "nine"
+    },
+    {
+      "unicode": "U+003A",
+      "codepoint": 58,
+      "group": "basicLatin",
+      "interGlyphName": "colon",
+      "notoSansGlyphName": "colon"
+    },
+    {
+      "unicode": "U+003B",
+      "codepoint": 59,
+      "group": "basicLatin",
+      "interGlyphName": "semicolon",
+      "notoSansGlyphName": "semicolon"
+    },
+    {
+      "unicode": "U+003C",
+      "codepoint": 60,
+      "group": "basicLatin",
+      "interGlyphName": "less",
+      "notoSansGlyphName": "less"
+    },
+    {
+      "unicode": "U+003D",
+      "codepoint": 61,
+      "group": "basicLatin",
+      "interGlyphName": "equal",
+      "notoSansGlyphName": "equal"
+    },
+    {
+      "unicode": "U+003E",
+      "codepoint": 62,
+      "group": "basicLatin",
+      "interGlyphName": "greater",
+      "notoSansGlyphName": "greater"
+    },
+    {
+      "unicode": "U+003F",
+      "codepoint": 63,
+      "group": "basicLatin",
+      "interGlyphName": "question",
+      "notoSansGlyphName": "question"
+    },
+    {
+      "unicode": "U+0040",
+      "codepoint": 64,
+      "group": "basicLatin",
+      "interGlyphName": "at",
+      "notoSansGlyphName": "at"
+    },
+    {
+      "unicode": "U+0041",
+      "codepoint": 65,
+      "group": "basicLatin",
+      "interGlyphName": "A",
+      "notoSansGlyphName": "A"
+    },
+    {
+      "unicode": "U+0042",
+      "codepoint": 66,
+      "group": "basicLatin",
+      "interGlyphName": "B",
+      "notoSansGlyphName": "B"
+    },
+    {
+      "unicode": "U+0043",
+      "codepoint": 67,
+      "group": "basicLatin",
+      "interGlyphName": "C",
+      "notoSansGlyphName": "C"
+    },
+    {
+      "unicode": "U+0044",
+      "codepoint": 68,
+      "group": "basicLatin",
+      "interGlyphName": "D",
+      "notoSansGlyphName": "D"
+    },
+    {
+      "unicode": "U+0045",
+      "codepoint": 69,
+      "group": "basicLatin",
+      "interGlyphName": "E",
+      "notoSansGlyphName": "E"
+    },
+    {
+      "unicode": "U+0046",
+      "codepoint": 70,
+      "group": "basicLatin",
+      "interGlyphName": "F",
+      "notoSansGlyphName": "F"
+    },
+    {
+      "unicode": "U+0047",
+      "codepoint": 71,
+      "group": "basicLatin",
+      "interGlyphName": "G",
+      "notoSansGlyphName": "G"
+    },
+    {
+      "unicode": "U+0048",
+      "codepoint": 72,
+      "group": "basicLatin",
+      "interGlyphName": "H",
+      "notoSansGlyphName": "H"
+    },
+    {
+      "unicode": "U+0049",
+      "codepoint": 73,
+      "group": "basicLatin",
+      "interGlyphName": "I",
+      "notoSansGlyphName": "I"
+    },
+    {
+      "unicode": "U+004A",
+      "codepoint": 74,
+      "group": "basicLatin",
+      "interGlyphName": "J",
+      "notoSansGlyphName": "J"
+    },
+    {
+      "unicode": "U+004B",
+      "codepoint": 75,
+      "group": "basicLatin",
+      "interGlyphName": "K",
+      "notoSansGlyphName": "K"
+    },
+    {
+      "unicode": "U+004C",
+      "codepoint": 76,
+      "group": "basicLatin",
+      "interGlyphName": "L",
+      "notoSansGlyphName": "L"
+    },
+    {
+      "unicode": "U+004D",
+      "codepoint": 77,
+      "group": "basicLatin",
+      "interGlyphName": "M",
+      "notoSansGlyphName": "M"
+    },
+    {
+      "unicode": "U+004E",
+      "codepoint": 78,
+      "group": "basicLatin",
+      "interGlyphName": "N",
+      "notoSansGlyphName": "N"
+    },
+    {
+      "unicode": "U+004F",
+      "codepoint": 79,
+      "group": "basicLatin",
+      "interGlyphName": "O",
+      "notoSansGlyphName": "O"
+    },
+    {
+      "unicode": "U+0050",
+      "codepoint": 80,
+      "group": "basicLatin",
+      "interGlyphName": "P",
+      "notoSansGlyphName": "P"
+    },
+    {
+      "unicode": "U+0051",
+      "codepoint": 81,
+      "group": "basicLatin",
+      "interGlyphName": "Q",
+      "notoSansGlyphName": "Q"
+    },
+    {
+      "unicode": "U+0052",
+      "codepoint": 82,
+      "group": "basicLatin",
+      "interGlyphName": "R",
+      "notoSansGlyphName": "R"
+    },
+    {
+      "unicode": "U+0053",
+      "codepoint": 83,
+      "group": "basicLatin",
+      "interGlyphName": "S",
+      "notoSansGlyphName": "S"
+    },
+    {
+      "unicode": "U+0054",
+      "codepoint": 84,
+      "group": "basicLatin",
+      "interGlyphName": "T",
+      "notoSansGlyphName": "T"
+    },
+    {
+      "unicode": "U+0055",
+      "codepoint": 85,
+      "group": "basicLatin",
+      "interGlyphName": "U",
+      "notoSansGlyphName": "U"
+    },
+    {
+      "unicode": "U+0056",
+      "codepoint": 86,
+      "group": "basicLatin",
+      "interGlyphName": "V",
+      "notoSansGlyphName": "V"
+    },
+    {
+      "unicode": "U+0057",
+      "codepoint": 87,
+      "group": "basicLatin",
+      "interGlyphName": "W",
+      "notoSansGlyphName": "W"
+    },
+    {
+      "unicode": "U+0058",
+      "codepoint": 88,
+      "group": "basicLatin",
+      "interGlyphName": "X",
+      "notoSansGlyphName": "X"
+    },
+    {
+      "unicode": "U+0059",
+      "codepoint": 89,
+      "group": "basicLatin",
+      "interGlyphName": "Y",
+      "notoSansGlyphName": "Y"
+    },
+    {
+      "unicode": "U+005A",
+      "codepoint": 90,
+      "group": "basicLatin",
+      "interGlyphName": "Z",
+      "notoSansGlyphName": "Z"
+    },
+    {
+      "unicode": "U+005B",
+      "codepoint": 91,
+      "group": "basicLatin",
+      "interGlyphName": "bracketleft",
+      "notoSansGlyphName": "bracketleft"
+    },
+    {
+      "unicode": "U+005C",
+      "codepoint": 92,
+      "group": "basicLatin",
+      "interGlyphName": "backslash",
+      "notoSansGlyphName": "backslash"
+    },
+    {
+      "unicode": "U+005D",
+      "codepoint": 93,
+      "group": "basicLatin",
+      "interGlyphName": "bracketright",
+      "notoSansGlyphName": "bracketright"
+    },
+    {
+      "unicode": "U+005E",
+      "codepoint": 94,
+      "group": "basicLatin",
+      "interGlyphName": "asciicircum",
+      "notoSansGlyphName": "asciicircum"
+    },
+    {
+      "unicode": "U+005F",
+      "codepoint": 95,
+      "group": "basicLatin",
+      "interGlyphName": "underscore",
+      "notoSansGlyphName": "underscore"
+    },
+    {
+      "unicode": "U+0060",
+      "codepoint": 96,
+      "group": "basicLatin",
+      "interGlyphName": "grave",
+      "notoSansGlyphName": "grave"
+    },
+    {
+      "unicode": "U+0061",
+      "codepoint": 97,
+      "group": "basicLatin",
+      "interGlyphName": "a",
+      "notoSansGlyphName": "a"
+    },
+    {
+      "unicode": "U+0062",
+      "codepoint": 98,
+      "group": "basicLatin",
+      "interGlyphName": "b",
+      "notoSansGlyphName": "b"
+    },
+    {
+      "unicode": "U+0063",
+      "codepoint": 99,
+      "group": "basicLatin",
+      "interGlyphName": "c",
+      "notoSansGlyphName": "c"
+    },
+    {
+      "unicode": "U+0064",
+      "codepoint": 100,
+      "group": "basicLatin",
+      "interGlyphName": "d",
+      "notoSansGlyphName": "d"
+    },
+    {
+      "unicode": "U+0065",
+      "codepoint": 101,
+      "group": "basicLatin",
+      "interGlyphName": "e",
+      "notoSansGlyphName": "e"
+    },
+    {
+      "unicode": "U+0066",
+      "codepoint": 102,
+      "group": "basicLatin",
+      "interGlyphName": "f",
+      "notoSansGlyphName": "f"
+    },
+    {
+      "unicode": "U+0067",
+      "codepoint": 103,
+      "group": "basicLatin",
+      "interGlyphName": "g",
+      "notoSansGlyphName": "g"
+    },
+    {
+      "unicode": "U+0068",
+      "codepoint": 104,
+      "group": "basicLatin",
+      "interGlyphName": "h",
+      "notoSansGlyphName": "h"
+    },
+    {
+      "unicode": "U+0069",
+      "codepoint": 105,
+      "group": "basicLatin",
+      "interGlyphName": "i",
+      "notoSansGlyphName": "i"
+    },
+    {
+      "unicode": "U+006A",
+      "codepoint": 106,
+      "group": "basicLatin",
+      "interGlyphName": "j",
+      "notoSansGlyphName": "j"
+    },
+    {
+      "unicode": "U+006B",
+      "codepoint": 107,
+      "group": "basicLatin",
+      "interGlyphName": "k",
+      "notoSansGlyphName": "k"
+    },
+    {
+      "unicode": "U+006C",
+      "codepoint": 108,
+      "group": "basicLatin",
+      "interGlyphName": "l",
+      "notoSansGlyphName": "l"
+    },
+    {
+      "unicode": "U+006D",
+      "codepoint": 109,
+      "group": "basicLatin",
+      "interGlyphName": "m",
+      "notoSansGlyphName": "m"
+    },
+    {
+      "unicode": "U+006E",
+      "codepoint": 110,
+      "group": "basicLatin",
+      "interGlyphName": "n",
+      "notoSansGlyphName": "n"
+    },
+    {
+      "unicode": "U+006F",
+      "codepoint": 111,
+      "group": "basicLatin",
+      "interGlyphName": "o",
+      "notoSansGlyphName": "o"
+    },
+    {
+      "unicode": "U+0070",
+      "codepoint": 112,
+      "group": "basicLatin",
+      "interGlyphName": "p",
+      "notoSansGlyphName": "p"
+    },
+    {
+      "unicode": "U+0071",
+      "codepoint": 113,
+      "group": "basicLatin",
+      "interGlyphName": "q",
+      "notoSansGlyphName": "q"
+    },
+    {
+      "unicode": "U+0072",
+      "codepoint": 114,
+      "group": "basicLatin",
+      "interGlyphName": "r",
+      "notoSansGlyphName": "r"
+    },
+    {
+      "unicode": "U+0073",
+      "codepoint": 115,
+      "group": "basicLatin",
+      "interGlyphName": "s",
+      "notoSansGlyphName": "s"
+    },
+    {
+      "unicode": "U+0074",
+      "codepoint": 116,
+      "group": "basicLatin",
+      "interGlyphName": "t",
+      "notoSansGlyphName": "t"
+    },
+    {
+      "unicode": "U+0075",
+      "codepoint": 117,
+      "group": "basicLatin",
+      "interGlyphName": "u",
+      "notoSansGlyphName": "u"
+    },
+    {
+      "unicode": "U+0076",
+      "codepoint": 118,
+      "group": "basicLatin",
+      "interGlyphName": "v",
+      "notoSansGlyphName": "v"
+    },
+    {
+      "unicode": "U+0077",
+      "codepoint": 119,
+      "group": "basicLatin",
+      "interGlyphName": "w",
+      "notoSansGlyphName": "w"
+    },
+    {
+      "unicode": "U+0078",
+      "codepoint": 120,
+      "group": "basicLatin",
+      "interGlyphName": "x",
+      "notoSansGlyphName": "x"
+    },
+    {
+      "unicode": "U+0079",
+      "codepoint": 121,
+      "group": "basicLatin",
+      "interGlyphName": "y",
+      "notoSansGlyphName": "y"
+    },
+    {
+      "unicode": "U+007A",
+      "codepoint": 122,
+      "group": "basicLatin",
+      "interGlyphName": "z",
+      "notoSansGlyphName": "z"
+    },
+    {
+      "unicode": "U+007B",
+      "codepoint": 123,
+      "group": "basicLatin",
+      "interGlyphName": "braceleft",
+      "notoSansGlyphName": "braceleft"
+    },
+    {
+      "unicode": "U+007C",
+      "codepoint": 124,
+      "group": "basicLatin",
+      "interGlyphName": "bar",
+      "notoSansGlyphName": "bar"
+    },
+    {
+      "unicode": "U+007D",
+      "codepoint": 125,
+      "group": "basicLatin",
+      "interGlyphName": "braceright",
+      "notoSansGlyphName": "braceright"
+    },
+    {
+      "unicode": "U+007E",
+      "codepoint": 126,
+      "group": "basicLatin",
+      "interGlyphName": "asciitilde",
+      "notoSansGlyphName": "asciitilde"
+    },
+    {
+      "unicode": "U+00A0",
+      "codepoint": 160,
+      "group": "latin1",
+      "interGlyphName": "nbspace",
+      "notoSansGlyphName": "nbspace"
+    },
+    {
+      "unicode": "U+00A1",
+      "codepoint": 161,
+      "group": "latin1",
+      "interGlyphName": "exclamdown",
+      "notoSansGlyphName": "exclamdown"
+    },
+    {
+      "unicode": "U+00A2",
+      "codepoint": 162,
+      "group": "latin1",
+      "interGlyphName": "cent",
+      "notoSansGlyphName": "cent"
+    },
+    {
+      "unicode": "U+00A3",
+      "codepoint": 163,
+      "group": "latin1",
+      "interGlyphName": "sterling",
+      "notoSansGlyphName": "sterling"
+    },
+    {
+      "unicode": "U+00A4",
+      "codepoint": 164,
+      "group": "latin1",
+      "interGlyphName": "currency",
+      "notoSansGlyphName": "currency"
+    },
+    {
+      "unicode": "U+00A5",
+      "codepoint": 165,
+      "group": "latin1",
+      "interGlyphName": "yen",
+      "notoSansGlyphName": "yen"
+    },
+    {
+      "unicode": "U+00A6",
+      "codepoint": 166,
+      "group": "latin1",
+      "interGlyphName": "brokenbar",
+      "notoSansGlyphName": "brokenbar"
+    },
+    {
+      "unicode": "U+00A7",
+      "codepoint": 167,
+      "group": "latin1",
+      "interGlyphName": "section",
+      "notoSansGlyphName": "section"
+    },
+    {
+      "unicode": "U+00A8",
+      "codepoint": 168,
+      "group": "latin1",
+      "interGlyphName": "dieresis",
+      "notoSansGlyphName": "dieresis"
+    },
+    {
+      "unicode": "U+00A9",
+      "codepoint": 169,
+      "group": "latin1",
+      "interGlyphName": "copyright",
+      "notoSansGlyphName": "copyright"
+    },
+    {
+      "unicode": "U+00AA",
+      "codepoint": 170,
+      "group": "latin1",
+      "interGlyphName": "ordfeminine",
+      "notoSansGlyphName": "ordfeminine"
+    },
+    {
+      "unicode": "U+00AB",
+      "codepoint": 171,
+      "group": "latin1",
+      "interGlyphName": "guillemetleft",
+      "notoSansGlyphName": "guillemetleft"
+    },
+    {
+      "unicode": "U+00AC",
+      "codepoint": 172,
+      "group": "latin1",
+      "interGlyphName": "logicalnot",
+      "notoSansGlyphName": "logicalnot"
+    },
+    {
+      "unicode": "U+00AE",
+      "codepoint": 174,
+      "group": "latin1",
+      "interGlyphName": "registered",
+      "notoSansGlyphName": "registered"
+    },
+    {
+      "unicode": "U+00B0",
+      "codepoint": 176,
+      "group": "latin1",
+      "interGlyphName": "degree",
+      "notoSansGlyphName": "degree"
+    },
+    {
+      "unicode": "U+00B1",
+      "codepoint": 177,
+      "group": "latin1",
+      "interGlyphName": "plusminus",
+      "notoSansGlyphName": "plusminus"
+    },
+    {
+      "unicode": "U+00B4",
+      "codepoint": 180,
+      "group": "latin1",
+      "interGlyphName": "acute",
+      "notoSansGlyphName": "acute"
+    },
+    {
+      "unicode": "U+00B5",
+      "codepoint": 181,
+      "group": "latin1",
+      "interGlyphName": "micro",
+      "notoSansGlyphName": "micro"
+    },
+    {
+      "unicode": "U+00B6",
+      "codepoint": 182,
+      "group": "latin1",
+      "interGlyphName": "paragraph",
+      "notoSansGlyphName": "paragraph"
+    },
+    {
+      "unicode": "U+00B7",
+      "codepoint": 183,
+      "group": "latin1",
+      "interGlyphName": "periodcentered",
+      "notoSansGlyphName": "periodcentered"
+    },
+    {
+      "unicode": "U+00B8",
+      "codepoint": 184,
+      "group": "latin1",
+      "interGlyphName": "cedilla",
+      "notoSansGlyphName": "cedilla"
+    },
+    {
+      "unicode": "U+00BA",
+      "codepoint": 186,
+      "group": "latin1",
+      "interGlyphName": "ordmasculine",
+      "notoSansGlyphName": "ordmasculine"
+    },
+    {
+      "unicode": "U+00BB",
+      "codepoint": 187,
+      "group": "latin1",
+      "interGlyphName": "guillemetright",
+      "notoSansGlyphName": "guillemetright"
+    },
+    {
+      "unicode": "U+00BC",
+      "codepoint": 188,
+      "group": "latin1",
+      "interGlyphName": "onequarter",
+      "notoSansGlyphName": "onequarter"
+    },
+    {
+      "unicode": "U+00BD",
+      "codepoint": 189,
+      "group": "latin1",
+      "interGlyphName": "onehalf",
+      "notoSansGlyphName": "onehalf"
+    },
+    {
+      "unicode": "U+00BE",
+      "codepoint": 190,
+      "group": "latin1",
+      "interGlyphName": "threequarters",
+      "notoSansGlyphName": "threequarters"
+    },
+    {
+      "unicode": "U+00BF",
+      "codepoint": 191,
+      "group": "latin1",
+      "interGlyphName": "questiondown",
+      "notoSansGlyphName": "questiondown"
+    },
+    {
+      "unicode": "U+00C0",
+      "codepoint": 192,
+      "group": "latin1",
+      "interGlyphName": "Agrave",
+      "notoSansGlyphName": "Agrave"
+    },
+    {
+      "unicode": "U+00C1",
+      "codepoint": 193,
+      "group": "latin1",
+      "interGlyphName": "Aacute",
+      "notoSansGlyphName": "Aacute"
+    },
+    {
+      "unicode": "U+00C2",
+      "codepoint": 194,
+      "group": "latin1",
+      "interGlyphName": "Acircumflex",
+      "notoSansGlyphName": "Acircumflex"
+    },
+    {
+      "unicode": "U+00C3",
+      "codepoint": 195,
+      "group": "latin1",
+      "interGlyphName": "Atilde",
+      "notoSansGlyphName": "Atilde"
+    },
+    {
+      "unicode": "U+00C4",
+      "codepoint": 196,
+      "group": "latin1",
+      "interGlyphName": "Adieresis",
+      "notoSansGlyphName": "Adieresis"
+    },
+    {
+      "unicode": "U+00C5",
+      "codepoint": 197,
+      "group": "latin1",
+      "interGlyphName": "Aring",
+      "notoSansGlyphName": "Aring"
+    },
+    {
+      "unicode": "U+00C6",
+      "codepoint": 198,
+      "group": "latin1",
+      "interGlyphName": "AE",
+      "notoSansGlyphName": "AE"
+    },
+    {
+      "unicode": "U+00C7",
+      "codepoint": 199,
+      "group": "latin1",
+      "interGlyphName": "Ccedilla",
+      "notoSansGlyphName": "Ccedilla"
+    },
+    {
+      "unicode": "U+00C8",
+      "codepoint": 200,
+      "group": "latin1",
+      "interGlyphName": "Egrave",
+      "notoSansGlyphName": "Egrave"
+    },
+    {
+      "unicode": "U+00C9",
+      "codepoint": 201,
+      "group": "latin1",
+      "interGlyphName": "Eacute",
+      "notoSansGlyphName": "Eacute"
+    },
+    {
+      "unicode": "U+00CA",
+      "codepoint": 202,
+      "group": "latin1",
+      "interGlyphName": "Ecircumflex",
+      "notoSansGlyphName": "Ecircumflex"
+    },
+    {
+      "unicode": "U+00CB",
+      "codepoint": 203,
+      "group": "latin1",
+      "interGlyphName": "Edieresis",
+      "notoSansGlyphName": "Edieresis"
+    },
+    {
+      "unicode": "U+00CC",
+      "codepoint": 204,
+      "group": "latin1",
+      "interGlyphName": "Igrave",
+      "notoSansGlyphName": "Igrave"
+    },
+    {
+      "unicode": "U+00CD",
+      "codepoint": 205,
+      "group": "latin1",
+      "interGlyphName": "Iacute",
+      "notoSansGlyphName": "Iacute"
+    },
+    {
+      "unicode": "U+00CE",
+      "codepoint": 206,
+      "group": "latin1",
+      "interGlyphName": "Icircumflex",
+      "notoSansGlyphName": "Icircumflex"
+    },
+    {
+      "unicode": "U+00CF",
+      "codepoint": 207,
+      "group": "latin1",
+      "interGlyphName": "Idieresis",
+      "notoSansGlyphName": "Idieresis"
+    },
+    {
+      "unicode": "U+00D0",
+      "codepoint": 208,
+      "group": "latin1",
+      "interGlyphName": "Eth",
+      "notoSansGlyphName": "Eth"
+    },
+    {
+      "unicode": "U+00D1",
+      "codepoint": 209,
+      "group": "latin1",
+      "interGlyphName": "Ntilde",
+      "notoSansGlyphName": "Ntilde"
+    },
+    {
+      "unicode": "U+00D2",
+      "codepoint": 210,
+      "group": "latin1",
+      "interGlyphName": "Ograve",
+      "notoSansGlyphName": "Ograve"
+    },
+    {
+      "unicode": "U+00D3",
+      "codepoint": 211,
+      "group": "latin1",
+      "interGlyphName": "Oacute",
+      "notoSansGlyphName": "Oacute"
+    },
+    {
+      "unicode": "U+00D4",
+      "codepoint": 212,
+      "group": "latin1",
+      "interGlyphName": "Ocircumflex",
+      "notoSansGlyphName": "Ocircumflex"
+    },
+    {
+      "unicode": "U+00D5",
+      "codepoint": 213,
+      "group": "latin1",
+      "interGlyphName": "Otilde",
+      "notoSansGlyphName": "Otilde"
+    },
+    {
+      "unicode": "U+00D6",
+      "codepoint": 214,
+      "group": "latin1",
+      "interGlyphName": "Odieresis",
+      "notoSansGlyphName": "Odieresis"
+    },
+    {
+      "unicode": "U+00D7",
+      "codepoint": 215,
+      "group": "latin1",
+      "interGlyphName": "multiply",
+      "notoSansGlyphName": "multiply"
+    },
+    {
+      "unicode": "U+00D8",
+      "codepoint": 216,
+      "group": "latin1",
+      "interGlyphName": "Oslash",
+      "notoSansGlyphName": "Oslash"
+    },
+    {
+      "unicode": "U+00D9",
+      "codepoint": 217,
+      "group": "latin1",
+      "interGlyphName": "Ugrave",
+      "notoSansGlyphName": "Ugrave"
+    },
+    {
+      "unicode": "U+00DA",
+      "codepoint": 218,
+      "group": "latin1",
+      "interGlyphName": "Uacute",
+      "notoSansGlyphName": "Uacute"
+    },
+    {
+      "unicode": "U+00DB",
+      "codepoint": 219,
+      "group": "latin1",
+      "interGlyphName": "Ucircumflex",
+      "notoSansGlyphName": "Ucircumflex"
+    },
+    {
+      "unicode": "U+00DC",
+      "codepoint": 220,
+      "group": "latin1",
+      "interGlyphName": "Udieresis",
+      "notoSansGlyphName": "Udieresis"
+    },
+    {
+      "unicode": "U+00DD",
+      "codepoint": 221,
+      "group": "latin1",
+      "interGlyphName": "Yacute",
+      "notoSansGlyphName": "Yacute"
+    },
+    {
+      "unicode": "U+00DE",
+      "codepoint": 222,
+      "group": "latin1",
+      "interGlyphName": "Thorn",
+      "notoSansGlyphName": "Thorn"
+    },
+    {
+      "unicode": "U+00DF",
+      "codepoint": 223,
+      "group": "latin1",
+      "interGlyphName": "germandbls",
+      "notoSansGlyphName": "germandbls"
+    },
+    {
+      "unicode": "U+00E0",
+      "codepoint": 224,
+      "group": "latin1",
+      "interGlyphName": "agrave",
+      "notoSansGlyphName": "agrave"
+    },
+    {
+      "unicode": "U+00E1",
+      "codepoint": 225,
+      "group": "latin1",
+      "interGlyphName": "aacute",
+      "notoSansGlyphName": "aacute"
+    },
+    {
+      "unicode": "U+00E2",
+      "codepoint": 226,
+      "group": "latin1",
+      "interGlyphName": "acircumflex",
+      "notoSansGlyphName": "acircumflex"
+    },
+    {
+      "unicode": "U+00E3",
+      "codepoint": 227,
+      "group": "latin1",
+      "interGlyphName": "atilde",
+      "notoSansGlyphName": "atilde"
+    },
+    {
+      "unicode": "U+00E4",
+      "codepoint": 228,
+      "group": "latin1",
+      "interGlyphName": "adieresis",
+      "notoSansGlyphName": "adieresis"
+    },
+    {
+      "unicode": "U+00E5",
+      "codepoint": 229,
+      "group": "latin1",
+      "interGlyphName": "aring",
+      "notoSansGlyphName": "aring"
+    },
+    {
+      "unicode": "U+00E6",
+      "codepoint": 230,
+      "group": "latin1",
+      "interGlyphName": "ae",
+      "notoSansGlyphName": "ae"
+    },
+    {
+      "unicode": "U+00E7",
+      "codepoint": 231,
+      "group": "latin1",
+      "interGlyphName": "ccedilla",
+      "notoSansGlyphName": "ccedilla"
+    },
+    {
+      "unicode": "U+00E8",
+      "codepoint": 232,
+      "group": "latin1",
+      "interGlyphName": "egrave",
+      "notoSansGlyphName": "egrave"
+    },
+    {
+      "unicode": "U+00E9",
+      "codepoint": 233,
+      "group": "latin1",
+      "interGlyphName": "eacute",
+      "notoSansGlyphName": "eacute"
+    },
+    {
+      "unicode": "U+00EA",
+      "codepoint": 234,
+      "group": "latin1",
+      "interGlyphName": "ecircumflex",
+      "notoSansGlyphName": "ecircumflex"
+    },
+    {
+      "unicode": "U+00EB",
+      "codepoint": 235,
+      "group": "latin1",
+      "interGlyphName": "edieresis",
+      "notoSansGlyphName": "edieresis"
+    },
+    {
+      "unicode": "U+00EC",
+      "codepoint": 236,
+      "group": "latin1",
+      "interGlyphName": "igrave",
+      "notoSansGlyphName": "igrave"
+    },
+    {
+      "unicode": "U+00ED",
+      "codepoint": 237,
+      "group": "latin1",
+      "interGlyphName": "iacute",
+      "notoSansGlyphName": "iacute"
+    },
+    {
+      "unicode": "U+00EE",
+      "codepoint": 238,
+      "group": "latin1",
+      "interGlyphName": "icircumflex",
+      "notoSansGlyphName": "icircumflex"
+    },
+    {
+      "unicode": "U+00EF",
+      "codepoint": 239,
+      "group": "latin1",
+      "interGlyphName": "idieresis",
+      "notoSansGlyphName": "idieresis"
+    },
+    {
+      "unicode": "U+00F0",
+      "codepoint": 240,
+      "group": "latin1",
+      "interGlyphName": "eth",
+      "notoSansGlyphName": "eth"
+    },
+    {
+      "unicode": "U+00F1",
+      "codepoint": 241,
+      "group": "latin1",
+      "interGlyphName": "ntilde",
+      "notoSansGlyphName": "ntilde"
+    },
+    {
+      "unicode": "U+00F2",
+      "codepoint": 242,
+      "group": "latin1",
+      "interGlyphName": "ograve",
+      "notoSansGlyphName": "ograve"
+    },
+    {
+      "unicode": "U+00F3",
+      "codepoint": 243,
+      "group": "latin1",
+      "interGlyphName": "oacute",
+      "notoSansGlyphName": "oacute"
+    },
+    {
+      "unicode": "U+00F4",
+      "codepoint": 244,
+      "group": "latin1",
+      "interGlyphName": "ocircumflex",
+      "notoSansGlyphName": "ocircumflex"
+    },
+    {
+      "unicode": "U+00F5",
+      "codepoint": 245,
+      "group": "latin1",
+      "interGlyphName": "otilde",
+      "notoSansGlyphName": "otilde"
+    },
+    {
+      "unicode": "U+00F6",
+      "codepoint": 246,
+      "group": "latin1",
+      "interGlyphName": "odieresis",
+      "notoSansGlyphName": "odieresis"
+    },
+    {
+      "unicode": "U+00F7",
+      "codepoint": 247,
+      "group": "latin1",
+      "interGlyphName": "divide",
+      "notoSansGlyphName": "divide"
+    },
+    {
+      "unicode": "U+00F8",
+      "codepoint": 248,
+      "group": "latin1",
+      "interGlyphName": "oslash",
+      "notoSansGlyphName": "oslash"
+    },
+    {
+      "unicode": "U+00F9",
+      "codepoint": 249,
+      "group": "latin1",
+      "interGlyphName": "ugrave",
+      "notoSansGlyphName": "ugrave"
+    },
+    {
+      "unicode": "U+00FA",
+      "codepoint": 250,
+      "group": "latin1",
+      "interGlyphName": "uacute",
+      "notoSansGlyphName": "uacute"
+    },
+    {
+      "unicode": "U+00FB",
+      "codepoint": 251,
+      "group": "latin1",
+      "interGlyphName": "ucircumflex",
+      "notoSansGlyphName": "ucircumflex"
+    },
+    {
+      "unicode": "U+00FC",
+      "codepoint": 252,
+      "group": "latin1",
+      "interGlyphName": "udieresis",
+      "notoSansGlyphName": "udieresis"
+    },
+    {
+      "unicode": "U+00FD",
+      "codepoint": 253,
+      "group": "latin1",
+      "interGlyphName": "yacute",
+      "notoSansGlyphName": "yacute"
+    },
+    {
+      "unicode": "U+00FE",
+      "codepoint": 254,
+      "group": "latin1",
+      "interGlyphName": "thorn",
+      "notoSansGlyphName": "thorn"
+    },
+    {
+      "unicode": "U+00FF",
+      "codepoint": 255,
+      "group": "latin1",
+      "interGlyphName": "ydieresis",
+      "notoSansGlyphName": "ydieresis"
+    },
+    {
+      "unicode": "U+0100",
+      "codepoint": 256,
+      "group": "latinExtended",
+      "interGlyphName": "Amacron",
+      "notoSansGlyphName": "Amacron"
+    },
+    {
+      "unicode": "U+0101",
+      "codepoint": 257,
+      "group": "latinExtended",
+      "interGlyphName": "amacron",
+      "notoSansGlyphName": "amacron"
+    },
+    {
+      "unicode": "U+0102",
+      "codepoint": 258,
+      "group": "latinExtended",
+      "interGlyphName": "Abreve",
+      "notoSansGlyphName": "Abreve"
+    },
+    {
+      "unicode": "U+0103",
+      "codepoint": 259,
+      "group": "latinExtended",
+      "interGlyphName": "abreve",
+      "notoSansGlyphName": "abreve"
+    },
+    {
+      "unicode": "U+0104",
+      "codepoint": 260,
+      "group": "latinExtended",
+      "interGlyphName": "Aogonek",
+      "notoSansGlyphName": "Aogonek"
+    },
+    {
+      "unicode": "U+0105",
+      "codepoint": 261,
+      "group": "latinExtended",
+      "interGlyphName": "aogonek",
+      "notoSansGlyphName": "aogonek"
+    },
+    {
+      "unicode": "U+0106",
+      "codepoint": 262,
+      "group": "latinExtended",
+      "interGlyphName": "Cacute",
+      "notoSansGlyphName": "Cacute"
+    },
+    {
+      "unicode": "U+0107",
+      "codepoint": 263,
+      "group": "latinExtended",
+      "interGlyphName": "cacute",
+      "notoSansGlyphName": "cacute"
+    },
+    {
+      "unicode": "U+0108",
+      "codepoint": 264,
+      "group": "latinExtended",
+      "interGlyphName": "Ccircumflex",
+      "notoSansGlyphName": "Ccircumflex"
+    },
+    {
+      "unicode": "U+0109",
+      "codepoint": 265,
+      "group": "latinExtended",
+      "interGlyphName": "ccircumflex",
+      "notoSansGlyphName": "ccircumflex"
+    },
+    {
+      "unicode": "U+010A",
+      "codepoint": 266,
+      "group": "latinExtended",
+      "interGlyphName": "Cdotaccent",
+      "notoSansGlyphName": "Cdotaccent"
+    },
+    {
+      "unicode": "U+010B",
+      "codepoint": 267,
+      "group": "latinExtended",
+      "interGlyphName": "cdotaccent",
+      "notoSansGlyphName": "cdotaccent"
+    },
+    {
+      "unicode": "U+010C",
+      "codepoint": 268,
+      "group": "latinExtended",
+      "interGlyphName": "Ccaron",
+      "notoSansGlyphName": "Ccaron"
+    },
+    {
+      "unicode": "U+010D",
+      "codepoint": 269,
+      "group": "latinExtended",
+      "interGlyphName": "ccaron",
+      "notoSansGlyphName": "ccaron"
+    },
+    {
+      "unicode": "U+010E",
+      "codepoint": 270,
+      "group": "latinExtended",
+      "interGlyphName": "Dcaron",
+      "notoSansGlyphName": "Dcaron"
+    },
+    {
+      "unicode": "U+010F",
+      "codepoint": 271,
+      "group": "latinExtended",
+      "interGlyphName": "dcaron",
+      "notoSansGlyphName": "dcaron"
+    },
+    {
+      "unicode": "U+0110",
+      "codepoint": 272,
+      "group": "latinExtended",
+      "interGlyphName": "Dcroat",
+      "notoSansGlyphName": "Dcroat"
+    },
+    {
+      "unicode": "U+0111",
+      "codepoint": 273,
+      "group": "latinExtended",
+      "interGlyphName": "dcroat",
+      "notoSansGlyphName": "dcroat"
+    },
+    {
+      "unicode": "U+0112",
+      "codepoint": 274,
+      "group": "latinExtended",
+      "interGlyphName": "Emacron",
+      "notoSansGlyphName": "Emacron"
+    },
+    {
+      "unicode": "U+0113",
+      "codepoint": 275,
+      "group": "latinExtended",
+      "interGlyphName": "emacron",
+      "notoSansGlyphName": "emacron"
+    },
+    {
+      "unicode": "U+0114",
+      "codepoint": 276,
+      "group": "latinExtended",
+      "interGlyphName": "Ebreve",
+      "notoSansGlyphName": "Ebreve"
+    },
+    {
+      "unicode": "U+0115",
+      "codepoint": 277,
+      "group": "latinExtended",
+      "interGlyphName": "ebreve",
+      "notoSansGlyphName": "ebreve"
+    },
+    {
+      "unicode": "U+0116",
+      "codepoint": 278,
+      "group": "latinExtended",
+      "interGlyphName": "Edotaccent",
+      "notoSansGlyphName": "Edotaccent"
+    },
+    {
+      "unicode": "U+0117",
+      "codepoint": 279,
+      "group": "latinExtended",
+      "interGlyphName": "edotaccent",
+      "notoSansGlyphName": "edotaccent"
+    },
+    {
+      "unicode": "U+0118",
+      "codepoint": 280,
+      "group": "latinExtended",
+      "interGlyphName": "Eogonek",
+      "notoSansGlyphName": "Eogonek"
+    },
+    {
+      "unicode": "U+0119",
+      "codepoint": 281,
+      "group": "latinExtended",
+      "interGlyphName": "eogonek",
+      "notoSansGlyphName": "eogonek"
+    },
+    {
+      "unicode": "U+011A",
+      "codepoint": 282,
+      "group": "latinExtended",
+      "interGlyphName": "Ecaron",
+      "notoSansGlyphName": "Ecaron"
+    },
+    {
+      "unicode": "U+011B",
+      "codepoint": 283,
+      "group": "latinExtended",
+      "interGlyphName": "ecaron",
+      "notoSansGlyphName": "ecaron"
+    },
+    {
+      "unicode": "U+011C",
+      "codepoint": 284,
+      "group": "latinExtended",
+      "interGlyphName": "Gcircumflex",
+      "notoSansGlyphName": "Gcircumflex"
+    },
+    {
+      "unicode": "U+011D",
+      "codepoint": 285,
+      "group": "latinExtended",
+      "interGlyphName": "gcircumflex",
+      "notoSansGlyphName": "gcircumflex"
+    },
+    {
+      "unicode": "U+011E",
+      "codepoint": 286,
+      "group": "latinExtended",
+      "interGlyphName": "Gbreve",
+      "notoSansGlyphName": "Gbreve"
+    },
+    {
+      "unicode": "U+011F",
+      "codepoint": 287,
+      "group": "latinExtended",
+      "interGlyphName": "gbreve",
+      "notoSansGlyphName": "gbreve"
+    },
+    {
+      "unicode": "U+0120",
+      "codepoint": 288,
+      "group": "latinExtended",
+      "interGlyphName": "Gdotaccent",
+      "notoSansGlyphName": "Gdotaccent"
+    },
+    {
+      "unicode": "U+0121",
+      "codepoint": 289,
+      "group": "latinExtended",
+      "interGlyphName": "gdotaccent",
+      "notoSansGlyphName": "gdotaccent"
+    },
+    {
+      "unicode": "U+0122",
+      "codepoint": 290,
+      "group": "latinExtended",
+      "interGlyphName": "Gcommaaccent",
+      "notoSansGlyphName": "Gcommaaccent"
+    },
+    {
+      "unicode": "U+0123",
+      "codepoint": 291,
+      "group": "latinExtended",
+      "interGlyphName": "gcommaaccent",
+      "notoSansGlyphName": "gcommaaccent"
+    },
+    {
+      "unicode": "U+0124",
+      "codepoint": 292,
+      "group": "latinExtended",
+      "interGlyphName": "Hcircumflex",
+      "notoSansGlyphName": "Hcircumflex"
+    },
+    {
+      "unicode": "U+0125",
+      "codepoint": 293,
+      "group": "latinExtended",
+      "interGlyphName": "hcircumflex",
+      "notoSansGlyphName": "hcircumflex"
+    },
+    {
+      "unicode": "U+0126",
+      "codepoint": 294,
+      "group": "latinExtended",
+      "interGlyphName": "Hbar",
+      "notoSansGlyphName": "Hbar"
+    },
+    {
+      "unicode": "U+0127",
+      "codepoint": 295,
+      "group": "latinExtended",
+      "interGlyphName": "hbar",
+      "notoSansGlyphName": "hbar"
+    },
+    {
+      "unicode": "U+0128",
+      "codepoint": 296,
+      "group": "latinExtended",
+      "interGlyphName": "Itilde",
+      "notoSansGlyphName": "Itilde"
+    },
+    {
+      "unicode": "U+0129",
+      "codepoint": 297,
+      "group": "latinExtended",
+      "interGlyphName": "itilde",
+      "notoSansGlyphName": "itilde"
+    },
+    {
+      "unicode": "U+012A",
+      "codepoint": 298,
+      "group": "latinExtended",
+      "interGlyphName": "Imacron",
+      "notoSansGlyphName": "Imacron"
+    },
+    {
+      "unicode": "U+012B",
+      "codepoint": 299,
+      "group": "latinExtended",
+      "interGlyphName": "imacron",
+      "notoSansGlyphName": "imacron"
+    },
+    {
+      "unicode": "U+012C",
+      "codepoint": 300,
+      "group": "latinExtended",
+      "interGlyphName": "Ibreve",
+      "notoSansGlyphName": "Ibreve"
+    },
+    {
+      "unicode": "U+012D",
+      "codepoint": 301,
+      "group": "latinExtended",
+      "interGlyphName": "ibreve",
+      "notoSansGlyphName": "ibreve"
+    },
+    {
+      "unicode": "U+012E",
+      "codepoint": 302,
+      "group": "latinExtended",
+      "interGlyphName": "Iogonek",
+      "notoSansGlyphName": "Iogonek"
+    },
+    {
+      "unicode": "U+012F",
+      "codepoint": 303,
+      "group": "latinExtended",
+      "interGlyphName": "iogonek",
+      "notoSansGlyphName": "iogonek"
+    },
+    {
+      "unicode": "U+0130",
+      "codepoint": 304,
+      "group": "latinExtended",
+      "interGlyphName": "Idotaccent",
+      "notoSansGlyphName": "Idotaccent"
+    },
+    {
+      "unicode": "U+0131",
+      "codepoint": 305,
+      "group": "latinExtended",
+      "interGlyphName": "idotless",
+      "notoSansGlyphName": "idotless"
+    },
+    {
+      "unicode": "U+0132",
+      "codepoint": 306,
+      "group": "latinExtended",
+      "interGlyphName": "IJ",
+      "notoSansGlyphName": "IJ"
+    },
+    {
+      "unicode": "U+0133",
+      "codepoint": 307,
+      "group": "latinExtended",
+      "interGlyphName": "ij",
+      "notoSansGlyphName": "ij"
+    },
+    {
+      "unicode": "U+0134",
+      "codepoint": 308,
+      "group": "latinExtended",
+      "interGlyphName": "Jcircumflex",
+      "notoSansGlyphName": "Jcircumflex"
+    },
+    {
+      "unicode": "U+0135",
+      "codepoint": 309,
+      "group": "latinExtended",
+      "interGlyphName": "jcircumflex",
+      "notoSansGlyphName": "jcircumflex"
+    },
+    {
+      "unicode": "U+0136",
+      "codepoint": 310,
+      "group": "latinExtended",
+      "interGlyphName": "Kcommaaccent",
+      "notoSansGlyphName": "Kcommaaccent"
+    },
+    {
+      "unicode": "U+0137",
+      "codepoint": 311,
+      "group": "latinExtended",
+      "interGlyphName": "kcommaaccent",
+      "notoSansGlyphName": "kcommaaccent"
+    },
+    {
+      "unicode": "U+0138",
+      "codepoint": 312,
+      "group": "latinExtended",
+      "interGlyphName": "kgreenlandic",
+      "notoSansGlyphName": "kgreenlandic"
+    },
+    {
+      "unicode": "U+0139",
+      "codepoint": 313,
+      "group": "latinExtended",
+      "interGlyphName": "Lacute",
+      "notoSansGlyphName": "Lacute"
+    },
+    {
+      "unicode": "U+013A",
+      "codepoint": 314,
+      "group": "latinExtended",
+      "interGlyphName": "lacute",
+      "notoSansGlyphName": "lacute"
+    },
+    {
+      "unicode": "U+013B",
+      "codepoint": 315,
+      "group": "latinExtended",
+      "interGlyphName": "Lcommaaccent",
+      "notoSansGlyphName": "Lcommaaccent"
+    },
+    {
+      "unicode": "U+013C",
+      "codepoint": 316,
+      "group": "latinExtended",
+      "interGlyphName": "lcommaaccent",
+      "notoSansGlyphName": "lcommaaccent"
+    },
+    {
+      "unicode": "U+013D",
+      "codepoint": 317,
+      "group": "latinExtended",
+      "interGlyphName": "Lcaron",
+      "notoSansGlyphName": "Lcaron"
+    },
+    {
+      "unicode": "U+013E",
+      "codepoint": 318,
+      "group": "latinExtended",
+      "interGlyphName": "lcaron",
+      "notoSansGlyphName": "lcaron"
+    },
+    {
+      "unicode": "U+013F",
+      "codepoint": 319,
+      "group": "latinExtended",
+      "interGlyphName": "Ldot",
+      "notoSansGlyphName": "Ldot"
+    },
+    {
+      "unicode": "U+0140",
+      "codepoint": 320,
+      "group": "latinExtended",
+      "interGlyphName": "ldot",
+      "notoSansGlyphName": "ldot"
+    },
+    {
+      "unicode": "U+0141",
+      "codepoint": 321,
+      "group": "latinExtended",
+      "interGlyphName": "Lslash",
+      "notoSansGlyphName": "Lslash"
+    },
+    {
+      "unicode": "U+0142",
+      "codepoint": 322,
+      "group": "latinExtended",
+      "interGlyphName": "lslash",
+      "notoSansGlyphName": "lslash"
+    },
+    {
+      "unicode": "U+0143",
+      "codepoint": 323,
+      "group": "latinExtended",
+      "interGlyphName": "Nacute",
+      "notoSansGlyphName": "Nacute"
+    },
+    {
+      "unicode": "U+0144",
+      "codepoint": 324,
+      "group": "latinExtended",
+      "interGlyphName": "nacute",
+      "notoSansGlyphName": "nacute"
+    },
+    {
+      "unicode": "U+0145",
+      "codepoint": 325,
+      "group": "latinExtended",
+      "interGlyphName": "Ncommaaccent",
+      "notoSansGlyphName": "Ncommaaccent"
+    },
+    {
+      "unicode": "U+0146",
+      "codepoint": 326,
+      "group": "latinExtended",
+      "interGlyphName": "ncommaaccent",
+      "notoSansGlyphName": "ncommaaccent"
+    },
+    {
+      "unicode": "U+0147",
+      "codepoint": 327,
+      "group": "latinExtended",
+      "interGlyphName": "Ncaron",
+      "notoSansGlyphName": "Ncaron"
+    },
+    {
+      "unicode": "U+0148",
+      "codepoint": 328,
+      "group": "latinExtended",
+      "interGlyphName": "ncaron",
+      "notoSansGlyphName": "ncaron"
+    },
+    {
+      "unicode": "U+014A",
+      "codepoint": 330,
+      "group": "latinExtended",
+      "interGlyphName": "Eng",
+      "notoSansGlyphName": "Eng"
+    },
+    {
+      "unicode": "U+014B",
+      "codepoint": 331,
+      "group": "latinExtended",
+      "interGlyphName": "eng",
+      "notoSansGlyphName": "eng"
+    },
+    {
+      "unicode": "U+014C",
+      "codepoint": 332,
+      "group": "latinExtended",
+      "interGlyphName": "Omacron",
+      "notoSansGlyphName": "Omacron"
+    },
+    {
+      "unicode": "U+014D",
+      "codepoint": 333,
+      "group": "latinExtended",
+      "interGlyphName": "omacron",
+      "notoSansGlyphName": "omacron"
+    },
+    {
+      "unicode": "U+014E",
+      "codepoint": 334,
+      "group": "latinExtended",
+      "interGlyphName": "Obreve",
+      "notoSansGlyphName": "Obreve"
+    },
+    {
+      "unicode": "U+014F",
+      "codepoint": 335,
+      "group": "latinExtended",
+      "interGlyphName": "obreve",
+      "notoSansGlyphName": "obreve"
+    },
+    {
+      "unicode": "U+0150",
+      "codepoint": 336,
+      "group": "latinExtended",
+      "interGlyphName": "Ohungarumlaut",
+      "notoSansGlyphName": "Ohungarumlaut"
+    },
+    {
+      "unicode": "U+0151",
+      "codepoint": 337,
+      "group": "latinExtended",
+      "interGlyphName": "ohungarumlaut",
+      "notoSansGlyphName": "ohungarumlaut"
+    },
+    {
+      "unicode": "U+0152",
+      "codepoint": 338,
+      "group": "latinExtended",
+      "interGlyphName": "OE",
+      "notoSansGlyphName": "OE"
+    },
+    {
+      "unicode": "U+0153",
+      "codepoint": 339,
+      "group": "latinExtended",
+      "interGlyphName": "oe",
+      "notoSansGlyphName": "oe"
+    },
+    {
+      "unicode": "U+0154",
+      "codepoint": 340,
+      "group": "latinExtended",
+      "interGlyphName": "Racute",
+      "notoSansGlyphName": "Racute"
+    },
+    {
+      "unicode": "U+0155",
+      "codepoint": 341,
+      "group": "latinExtended",
+      "interGlyphName": "racute",
+      "notoSansGlyphName": "racute"
+    },
+    {
+      "unicode": "U+0156",
+      "codepoint": 342,
+      "group": "latinExtended",
+      "interGlyphName": "Rcommaaccent",
+      "notoSansGlyphName": "Rcommaaccent"
+    },
+    {
+      "unicode": "U+0157",
+      "codepoint": 343,
+      "group": "latinExtended",
+      "interGlyphName": "rcommaaccent",
+      "notoSansGlyphName": "rcommaaccent"
+    },
+    {
+      "unicode": "U+0158",
+      "codepoint": 344,
+      "group": "latinExtended",
+      "interGlyphName": "Rcaron",
+      "notoSansGlyphName": "Rcaron"
+    },
+    {
+      "unicode": "U+0159",
+      "codepoint": 345,
+      "group": "latinExtended",
+      "interGlyphName": "rcaron",
+      "notoSansGlyphName": "rcaron"
+    },
+    {
+      "unicode": "U+015A",
+      "codepoint": 346,
+      "group": "latinExtended",
+      "interGlyphName": "Sacute",
+      "notoSansGlyphName": "Sacute"
+    },
+    {
+      "unicode": "U+015B",
+      "codepoint": 347,
+      "group": "latinExtended",
+      "interGlyphName": "sacute",
+      "notoSansGlyphName": "sacute"
+    },
+    {
+      "unicode": "U+015C",
+      "codepoint": 348,
+      "group": "latinExtended",
+      "interGlyphName": "Scircumflex",
+      "notoSansGlyphName": "Scircumflex"
+    },
+    {
+      "unicode": "U+015D",
+      "codepoint": 349,
+      "group": "latinExtended",
+      "interGlyphName": "scircumflex",
+      "notoSansGlyphName": "scircumflex"
+    },
+    {
+      "unicode": "U+015E",
+      "codepoint": 350,
+      "group": "latinExtended",
+      "interGlyphName": "Scedilla",
+      "notoSansGlyphName": "Scedilla"
+    },
+    {
+      "unicode": "U+015F",
+      "codepoint": 351,
+      "group": "latinExtended",
+      "interGlyphName": "scedilla",
+      "notoSansGlyphName": "scedilla"
+    },
+    {
+      "unicode": "U+0160",
+      "codepoint": 352,
+      "group": "latinExtended",
+      "interGlyphName": "Scaron",
+      "notoSansGlyphName": "Scaron"
+    },
+    {
+      "unicode": "U+0161",
+      "codepoint": 353,
+      "group": "latinExtended",
+      "interGlyphName": "scaron",
+      "notoSansGlyphName": "scaron"
+    },
+    {
+      "unicode": "U+0162",
+      "codepoint": 354,
+      "group": "latinExtended",
+      "interGlyphName": "Tcommaaccent",
+      "notoSansGlyphName": "Tcedilla"
+    },
+    {
+      "unicode": "U+0163",
+      "codepoint": 355,
+      "group": "latinExtended",
+      "interGlyphName": "tcedilla",
+      "notoSansGlyphName": "tcedilla"
+    },
+    {
+      "unicode": "U+0164",
+      "codepoint": 356,
+      "group": "latinExtended",
+      "interGlyphName": "Tcaron",
+      "notoSansGlyphName": "Tcaron"
+    },
+    {
+      "unicode": "U+0165",
+      "codepoint": 357,
+      "group": "latinExtended",
+      "interGlyphName": "tcaron",
+      "notoSansGlyphName": "tcaron"
+    },
+    {
+      "unicode": "U+0166",
+      "codepoint": 358,
+      "group": "latinExtended",
+      "interGlyphName": "Tbar",
+      "notoSansGlyphName": "Tbar"
+    },
+    {
+      "unicode": "U+0167",
+      "codepoint": 359,
+      "group": "latinExtended",
+      "interGlyphName": "tbar",
+      "notoSansGlyphName": "tbar"
+    },
+    {
+      "unicode": "U+0168",
+      "codepoint": 360,
+      "group": "latinExtended",
+      "interGlyphName": "Utilde",
+      "notoSansGlyphName": "Utilde"
+    },
+    {
+      "unicode": "U+0169",
+      "codepoint": 361,
+      "group": "latinExtended",
+      "interGlyphName": "utilde",
+      "notoSansGlyphName": "utilde"
+    },
+    {
+      "unicode": "U+016A",
+      "codepoint": 362,
+      "group": "latinExtended",
+      "interGlyphName": "Umacron",
+      "notoSansGlyphName": "Umacron"
+    },
+    {
+      "unicode": "U+016B",
+      "codepoint": 363,
+      "group": "latinExtended",
+      "interGlyphName": "umacron",
+      "notoSansGlyphName": "umacron"
+    },
+    {
+      "unicode": "U+016C",
+      "codepoint": 364,
+      "group": "latinExtended",
+      "interGlyphName": "Ubreve",
+      "notoSansGlyphName": "Ubreve"
+    },
+    {
+      "unicode": "U+016D",
+      "codepoint": 365,
+      "group": "latinExtended",
+      "interGlyphName": "ubreve",
+      "notoSansGlyphName": "ubreve"
+    },
+    {
+      "unicode": "U+016E",
+      "codepoint": 366,
+      "group": "latinExtended",
+      "interGlyphName": "Uring",
+      "notoSansGlyphName": "Uring"
+    },
+    {
+      "unicode": "U+016F",
+      "codepoint": 367,
+      "group": "latinExtended",
+      "interGlyphName": "uring",
+      "notoSansGlyphName": "uring"
+    },
+    {
+      "unicode": "U+0170",
+      "codepoint": 368,
+      "group": "latinExtended",
+      "interGlyphName": "Uhungarumlaut",
+      "notoSansGlyphName": "Uhungarumlaut"
+    },
+    {
+      "unicode": "U+0171",
+      "codepoint": 369,
+      "group": "latinExtended",
+      "interGlyphName": "uhungarumlaut",
+      "notoSansGlyphName": "uhungarumlaut"
+    },
+    {
+      "unicode": "U+0172",
+      "codepoint": 370,
+      "group": "latinExtended",
+      "interGlyphName": "Uogonek",
+      "notoSansGlyphName": "Uogonek"
+    },
+    {
+      "unicode": "U+0173",
+      "codepoint": 371,
+      "group": "latinExtended",
+      "interGlyphName": "uogonek",
+      "notoSansGlyphName": "uogonek"
+    },
+    {
+      "unicode": "U+0174",
+      "codepoint": 372,
+      "group": "latinExtended",
+      "interGlyphName": "Wcircumflex",
+      "notoSansGlyphName": "Wcircumflex"
+    },
+    {
+      "unicode": "U+0175",
+      "codepoint": 373,
+      "group": "latinExtended",
+      "interGlyphName": "wcircumflex",
+      "notoSansGlyphName": "wcircumflex"
+    },
+    {
+      "unicode": "U+0176",
+      "codepoint": 374,
+      "group": "latinExtended",
+      "interGlyphName": "Ycircumflex",
+      "notoSansGlyphName": "Ycircumflex"
+    },
+    {
+      "unicode": "U+0177",
+      "codepoint": 375,
+      "group": "latinExtended",
+      "interGlyphName": "ycircumflex",
+      "notoSansGlyphName": "ycircumflex"
+    },
+    {
+      "unicode": "U+0178",
+      "codepoint": 376,
+      "group": "latinExtended",
+      "interGlyphName": "Ydieresis",
+      "notoSansGlyphName": "Ydieresis"
+    },
+    {
+      "unicode": "U+0179",
+      "codepoint": 377,
+      "group": "latinExtended",
+      "interGlyphName": "Zacute",
+      "notoSansGlyphName": "Zacute"
+    },
+    {
+      "unicode": "U+017A",
+      "codepoint": 378,
+      "group": "latinExtended",
+      "interGlyphName": "zacute",
+      "notoSansGlyphName": "zacute"
+    },
+    {
+      "unicode": "U+017B",
+      "codepoint": 379,
+      "group": "latinExtended",
+      "interGlyphName": "Zdotaccent",
+      "notoSansGlyphName": "Zdotaccent"
+    },
+    {
+      "unicode": "U+017C",
+      "codepoint": 380,
+      "group": "latinExtended",
+      "interGlyphName": "zdotaccent",
+      "notoSansGlyphName": "zdotaccent"
+    },
+    {
+      "unicode": "U+017D",
+      "codepoint": 381,
+      "group": "latinExtended",
+      "interGlyphName": "Zcaron",
+      "notoSansGlyphName": "Zcaron"
+    },
+    {
+      "unicode": "U+017E",
+      "codepoint": 382,
+      "group": "latinExtended",
+      "interGlyphName": "zcaron",
+      "notoSansGlyphName": "zcaron"
+    },
+    {
+      "unicode": "U+017F",
+      "codepoint": 383,
+      "group": "latinExtended",
+      "interGlyphName": "longs",
+      "notoSansGlyphName": "longs"
+    },
+    {
+      "unicode": "U+0181",
+      "codepoint": 385,
+      "group": "latinExtended",
+      "interGlyphName": "Bhook",
+      "notoSansGlyphName": "Bhook"
+    },
+    {
+      "unicode": "U+0182",
+      "codepoint": 386,
+      "group": "latinExtended",
+      "interGlyphName": "Btopbar",
+      "notoSansGlyphName": "Btopbar"
+    },
+    {
+      "unicode": "U+0183",
+      "codepoint": 387,
+      "group": "latinExtended",
+      "interGlyphName": "btopbar",
+      "notoSansGlyphName": "btopbar"
+    },
+    {
+      "unicode": "U+0184",
+      "codepoint": 388,
+      "group": "latinExtended",
+      "interGlyphName": "Tonesix",
+      "notoSansGlyphName": "Tonesix"
+    },
+    {
+      "unicode": "U+0185",
+      "codepoint": 389,
+      "group": "latinExtended",
+      "interGlyphName": "tonesix",
+      "notoSansGlyphName": "tonesix"
+    },
+    {
+      "unicode": "U+0186",
+      "codepoint": 390,
+      "group": "latinExtended",
+      "interGlyphName": "Oopen",
+      "notoSansGlyphName": "Oopen"
+    },
+    {
+      "unicode": "U+0187",
+      "codepoint": 391,
+      "group": "latinExtended",
+      "interGlyphName": "Chook",
+      "notoSansGlyphName": "Chook"
+    },
+    {
+      "unicode": "U+0188",
+      "codepoint": 392,
+      "group": "latinExtended",
+      "interGlyphName": "chook",
+      "notoSansGlyphName": "chook"
+    },
+    {
+      "unicode": "U+018A",
+      "codepoint": 394,
+      "group": "latinExtended",
+      "interGlyphName": "Dhook",
+      "notoSansGlyphName": "Dhook"
+    },
+    {
+      "unicode": "U+018B",
+      "codepoint": 395,
+      "group": "latinExtended",
+      "interGlyphName": "Dtopbar",
+      "notoSansGlyphName": "Dtopbar"
+    },
+    {
+      "unicode": "U+018C",
+      "codepoint": 396,
+      "group": "latinExtended",
+      "interGlyphName": "dtopbar",
+      "notoSansGlyphName": "dtopbar"
+    },
+    {
+      "unicode": "U+018F",
+      "codepoint": 399,
+      "group": "latinExtended",
+      "interGlyphName": "Schwa",
+      "notoSansGlyphName": "Schwa"
+    },
+    {
+      "unicode": "U+0191",
+      "codepoint": 401,
+      "group": "latinExtended",
+      "interGlyphName": "Fhook",
+      "notoSansGlyphName": "Fhook"
+    },
+    {
+      "unicode": "U+0193",
+      "codepoint": 403,
+      "group": "latinExtended",
+      "interGlyphName": "Ghook",
+      "notoSansGlyphName": "Ghook"
+    },
+    {
+      "unicode": "U+0195",
+      "codepoint": 405,
+      "group": "latinExtended",
+      "interGlyphName": "hv",
+      "notoSansGlyphName": "hv"
+    },
+    {
+      "unicode": "U+0196",
+      "codepoint": 406,
+      "group": "latinExtended",
+      "interGlyphName": "Iota",
+      "notoSansGlyphName": "Iota-latin"
+    },
+    {
+      "unicode": "U+0197",
+      "codepoint": 407,
+      "group": "latinExtended",
+      "interGlyphName": "Istroke",
+      "notoSansGlyphName": "Istroke"
+    },
+    {
+      "unicode": "U+0198",
+      "codepoint": 408,
+      "group": "latinExtended",
+      "interGlyphName": "Khook",
+      "notoSansGlyphName": "Khook"
+    },
+    {
+      "unicode": "U+0199",
+      "codepoint": 409,
+      "group": "latinExtended",
+      "interGlyphName": "khook",
+      "notoSansGlyphName": "khook"
+    },
+    {
+      "unicode": "U+019A",
+      "codepoint": 410,
+      "group": "latinExtended",
+      "interGlyphName": "lbar",
+      "notoSansGlyphName": "lbar"
+    },
+    {
+      "unicode": "U+01A0",
+      "codepoint": 416,
+      "group": "latinExtended",
+      "interGlyphName": "Ohorn",
+      "notoSansGlyphName": "Ohorn"
+    },
+    {
+      "unicode": "U+01A1",
+      "codepoint": 417,
+      "group": "latinExtended",
+      "interGlyphName": "ohorn",
+      "notoSansGlyphName": "ohorn"
+    },
+    {
+      "unicode": "U+01A3",
+      "codepoint": 419,
+      "group": "latinExtended",
+      "interGlyphName": "oi",
+      "notoSansGlyphName": "oi"
+    },
+    {
+      "unicode": "U+01A4",
+      "codepoint": 420,
+      "group": "latinExtended",
+      "interGlyphName": "Phook",
+      "notoSansGlyphName": "Phook"
+    },
+    {
+      "unicode": "U+01A5",
+      "codepoint": 421,
+      "group": "latinExtended",
+      "interGlyphName": "phook",
+      "notoSansGlyphName": "phook"
+    },
+    {
+      "unicode": "U+01A7",
+      "codepoint": 423,
+      "group": "latinExtended",
+      "interGlyphName": "Tonetwo",
+      "notoSansGlyphName": "Tonetwo"
+    },
+    {
+      "unicode": "U+01A8",
+      "codepoint": 424,
+      "group": "latinExtended",
+      "interGlyphName": "tonetwo",
+      "notoSansGlyphName": "tonetwo"
+    },
+    {
+      "unicode": "U+01A9",
+      "codepoint": 425,
+      "group": "latinExtended",
+      "interGlyphName": "Esh",
+      "notoSansGlyphName": "Esh"
+    },
+    {
+      "unicode": "U+01AB",
+      "codepoint": 427,
+      "group": "latinExtended",
+      "interGlyphName": "tpalatalhook",
+      "notoSansGlyphName": "tpalatalhook"
+    },
+    {
+      "unicode": "U+01AC",
+      "codepoint": 428,
+      "group": "latinExtended",
+      "interGlyphName": "Thook",
+      "notoSansGlyphName": "Thook"
+    },
+    {
+      "unicode": "U+01AD",
+      "codepoint": 429,
+      "group": "latinExtended",
+      "interGlyphName": "thook",
+      "notoSansGlyphName": "thook"
+    },
+    {
+      "unicode": "U+01AF",
+      "codepoint": 431,
+      "group": "latinExtended",
+      "interGlyphName": "Uhorn",
+      "notoSansGlyphName": "Uhorn"
+    },
+    {
+      "unicode": "U+01B0",
+      "codepoint": 432,
+      "group": "latinExtended",
+      "interGlyphName": "uhorn",
+      "notoSansGlyphName": "uhorn"
+    },
+    {
+      "unicode": "U+01B3",
+      "codepoint": 435,
+      "group": "latinExtended",
+      "interGlyphName": "Yhook",
+      "notoSansGlyphName": "Yhook"
+    },
+    {
+      "unicode": "U+01B4",
+      "codepoint": 436,
+      "group": "latinExtended",
+      "interGlyphName": "yhook",
+      "notoSansGlyphName": "yhook"
+    },
+    {
+      "unicode": "U+01B7",
+      "codepoint": 439,
+      "group": "latinExtended",
+      "interGlyphName": "Ezh",
+      "notoSansGlyphName": "Ezh"
+    },
+    {
+      "unicode": "U+01B8",
+      "codepoint": 440,
+      "group": "latinExtended",
+      "interGlyphName": "Ezhreversed",
+      "notoSansGlyphName": "Ezhreversed"
+    },
+    {
+      "unicode": "U+01B9",
+      "codepoint": 441,
+      "group": "latinExtended",
+      "interGlyphName": "ezhreversed",
+      "notoSansGlyphName": "ezhreversed"
+    },
+    {
+      "unicode": "U+01BA",
+      "codepoint": 442,
+      "group": "latinExtended",
+      "interGlyphName": "ezhtail",
+      "notoSansGlyphName": "ezhtail"
+    },
+    {
+      "unicode": "U+01BB",
+      "codepoint": 443,
+      "group": "latinExtended",
+      "interGlyphName": "twostroke",
+      "notoSansGlyphName": "twostroke"
+    },
+    {
+      "unicode": "U+01BC",
+      "codepoint": 444,
+      "group": "latinExtended",
+      "interGlyphName": "Tonefive",
+      "notoSansGlyphName": "Tonefive"
+    },
+    {
+      "unicode": "U+01BD",
+      "codepoint": 445,
+      "group": "latinExtended",
+      "interGlyphName": "tonefive",
+      "notoSansGlyphName": "tonefive"
+    },
+    {
+      "unicode": "U+01BF",
+      "codepoint": 447,
+      "group": "latinExtended",
+      "interGlyphName": "wynn",
+      "notoSansGlyphName": "wynn"
+    },
+    {
+      "unicode": "U+01C6",
+      "codepoint": 454,
+      "group": "latinExtended",
+      "interGlyphName": "dzcaron",
+      "notoSansGlyphName": "dzcaron"
+    },
+    {
+      "unicode": "U+01C7",
+      "codepoint": 455,
+      "group": "latinExtended",
+      "interGlyphName": "LJ",
+      "notoSansGlyphName": "LJ"
+    },
+    {
+      "unicode": "U+01C8",
+      "codepoint": 456,
+      "group": "latinExtended",
+      "interGlyphName": "Lj",
+      "notoSansGlyphName": "Lj"
+    },
+    {
+      "unicode": "U+01C9",
+      "codepoint": 457,
+      "group": "latinExtended",
+      "interGlyphName": "lj",
+      "notoSansGlyphName": "lj"
+    },
+    {
+      "unicode": "U+01CA",
+      "codepoint": 458,
+      "group": "latinExtended",
+      "interGlyphName": "NJ",
+      "notoSansGlyphName": "NJ"
+    },
+    {
+      "unicode": "U+01CB",
+      "codepoint": 459,
+      "group": "latinExtended",
+      "interGlyphName": "Nj",
+      "notoSansGlyphName": "Nj"
+    },
+    {
+      "unicode": "U+01CC",
+      "codepoint": 460,
+      "group": "latinExtended",
+      "interGlyphName": "nj",
+      "notoSansGlyphName": "nj"
+    },
+    {
+      "unicode": "U+01CD",
+      "codepoint": 461,
+      "group": "latinExtended",
+      "interGlyphName": "Acaron",
+      "notoSansGlyphName": "Acaron"
+    },
+    {
+      "unicode": "U+01CE",
+      "codepoint": 462,
+      "group": "latinExtended",
+      "interGlyphName": "acaron",
+      "notoSansGlyphName": "acaron"
+    },
+    {
+      "unicode": "U+01CF",
+      "codepoint": 463,
+      "group": "latinExtended",
+      "interGlyphName": "Icaron",
+      "notoSansGlyphName": "Icaron"
+    },
+    {
+      "unicode": "U+01D0",
+      "codepoint": 464,
+      "group": "latinExtended",
+      "interGlyphName": "icaron",
+      "notoSansGlyphName": "icaron"
+    },
+    {
+      "unicode": "U+01D1",
+      "codepoint": 465,
+      "group": "latinExtended",
+      "interGlyphName": "Ocaron",
+      "notoSansGlyphName": "Ocaron"
+    },
+    {
+      "unicode": "U+01D2",
+      "codepoint": 466,
+      "group": "latinExtended",
+      "interGlyphName": "ocaron",
+      "notoSansGlyphName": "ocaron"
+    },
+    {
+      "unicode": "U+01D3",
+      "codepoint": 467,
+      "group": "latinExtended",
+      "interGlyphName": "Ucaron",
+      "notoSansGlyphName": "Ucaron"
+    },
+    {
+      "unicode": "U+01D4",
+      "codepoint": 468,
+      "group": "latinExtended",
+      "interGlyphName": "ucaron",
+      "notoSansGlyphName": "ucaron"
+    },
+    {
+      "unicode": "U+01D5",
+      "codepoint": 469,
+      "group": "latinExtended",
+      "interGlyphName": "Udieresismacron",
+      "notoSansGlyphName": "Udieresismacron"
+    },
+    {
+      "unicode": "U+01D6",
+      "codepoint": 470,
+      "group": "latinExtended",
+      "interGlyphName": "udieresismacron",
+      "notoSansGlyphName": "udieresismacron"
+    },
+    {
+      "unicode": "U+01D7",
+      "codepoint": 471,
+      "group": "latinExtended",
+      "interGlyphName": "Udieresisacute",
+      "notoSansGlyphName": "Udieresisacute"
+    },
+    {
+      "unicode": "U+01D8",
+      "codepoint": 472,
+      "group": "latinExtended",
+      "interGlyphName": "udieresisacute",
+      "notoSansGlyphName": "udieresisacute"
+    },
+    {
+      "unicode": "U+01D9",
+      "codepoint": 473,
+      "group": "latinExtended",
+      "interGlyphName": "Udieresiscaron",
+      "notoSansGlyphName": "Udieresiscaron"
+    },
+    {
+      "unicode": "U+01DA",
+      "codepoint": 474,
+      "group": "latinExtended",
+      "interGlyphName": "udieresiscaron",
+      "notoSansGlyphName": "udieresiscaron"
+    },
+    {
+      "unicode": "U+01DB",
+      "codepoint": 475,
+      "group": "latinExtended",
+      "interGlyphName": "Udieresisgrave",
+      "notoSansGlyphName": "Udieresisgrave"
+    },
+    {
+      "unicode": "U+01DC",
+      "codepoint": 476,
+      "group": "latinExtended",
+      "interGlyphName": "udieresisgrave",
+      "notoSansGlyphName": "udieresisgrave"
+    },
+    {
+      "unicode": "U+01DE",
+      "codepoint": 478,
+      "group": "latinExtended",
+      "interGlyphName": "Adieresismacron",
+      "notoSansGlyphName": "Adieresismacron"
+    },
+    {
+      "unicode": "U+01DF",
+      "codepoint": 479,
+      "group": "latinExtended",
+      "interGlyphName": "adieresismacron",
+      "notoSansGlyphName": "adieresismacron"
+    },
+    {
+      "unicode": "U+01E0",
+      "codepoint": 480,
+      "group": "latinExtended",
+      "interGlyphName": "Adotmacron",
+      "notoSansGlyphName": "Adotmacron"
+    },
+    {
+      "unicode": "U+01E1",
+      "codepoint": 481,
+      "group": "latinExtended",
+      "interGlyphName": "adotmacron",
+      "notoSansGlyphName": "adotmacron"
+    },
+    {
+      "unicode": "U+01E2",
+      "codepoint": 482,
+      "group": "latinExtended",
+      "interGlyphName": "AEmacron",
+      "notoSansGlyphName": "AEmacron"
+    },
+    {
+      "unicode": "U+01E3",
+      "codepoint": 483,
+      "group": "latinExtended",
+      "interGlyphName": "aemacron",
+      "notoSansGlyphName": "aemacron"
+    },
+    {
+      "unicode": "U+01E6",
+      "codepoint": 486,
+      "group": "latinExtended",
+      "interGlyphName": "Gcaron",
+      "notoSansGlyphName": "Gcaron"
+    },
+    {
+      "unicode": "U+01E7",
+      "codepoint": 487,
+      "group": "latinExtended",
+      "interGlyphName": "gcaron",
+      "notoSansGlyphName": "gcaron"
+    },
+    {
+      "unicode": "U+01E8",
+      "codepoint": 488,
+      "group": "latinExtended",
+      "interGlyphName": "Kcaron",
+      "notoSansGlyphName": "Kcaron"
+    },
+    {
+      "unicode": "U+01E9",
+      "codepoint": 489,
+      "group": "latinExtended",
+      "interGlyphName": "kcaron",
+      "notoSansGlyphName": "kcaron"
+    },
+    {
+      "unicode": "U+01EA",
+      "codepoint": 490,
+      "group": "latinExtended",
+      "interGlyphName": "Oogonek",
+      "notoSansGlyphName": "Oogonek"
+    },
+    {
+      "unicode": "U+01EB",
+      "codepoint": 491,
+      "group": "latinExtended",
+      "interGlyphName": "oogonek",
+      "notoSansGlyphName": "oogonek"
+    },
+    {
+      "unicode": "U+01EC",
+      "codepoint": 492,
+      "group": "latinExtended",
+      "interGlyphName": "Oogonekmacron",
+      "notoSansGlyphName": "Oogonekmacron"
+    },
+    {
+      "unicode": "U+01ED",
+      "codepoint": 493,
+      "group": "latinExtended",
+      "interGlyphName": "oogonekmacron",
+      "notoSansGlyphName": "oogonekmacron"
+    },
+    {
+      "unicode": "U+01EE",
+      "codepoint": 494,
+      "group": "latinExtended",
+      "interGlyphName": "Ezhcaron",
+      "notoSansGlyphName": "Ezhcaron"
+    },
+    {
+      "unicode": "U+01EF",
+      "codepoint": 495,
+      "group": "latinExtended",
+      "interGlyphName": "ezhcaron",
+      "notoSansGlyphName": "ezhcaron"
+    },
+    {
+      "unicode": "U+01F0",
+      "codepoint": 496,
+      "group": "latinExtended",
+      "interGlyphName": "jcaron",
+      "notoSansGlyphName": "jcaron"
+    },
+    {
+      "unicode": "U+01F1",
+      "codepoint": 497,
+      "group": "latinExtended",
+      "interGlyphName": "DZ",
+      "notoSansGlyphName": "DZ"
+    },
+    {
+      "unicode": "U+01F2",
+      "codepoint": 498,
+      "group": "latinExtended",
+      "interGlyphName": "Dz",
+      "notoSansGlyphName": "Dz"
+    },
+    {
+      "unicode": "U+01F3",
+      "codepoint": 499,
+      "group": "latinExtended",
+      "interGlyphName": "dz",
+      "notoSansGlyphName": "dz"
+    },
+    {
+      "unicode": "U+01F4",
+      "codepoint": 500,
+      "group": "latinExtended",
+      "interGlyphName": "Gacute",
+      "notoSansGlyphName": "Gacute"
+    },
+    {
+      "unicode": "U+01F5",
+      "codepoint": 501,
+      "group": "latinExtended",
+      "interGlyphName": "gacute",
+      "notoSansGlyphName": "gacute"
+    },
+    {
+      "unicode": "U+01FA",
+      "codepoint": 506,
+      "group": "latinExtended",
+      "interGlyphName": "Aringacute",
+      "notoSansGlyphName": "Aringacute"
+    },
+    {
+      "unicode": "U+01FB",
+      "codepoint": 507,
+      "group": "latinExtended",
+      "interGlyphName": "aringacute",
+      "notoSansGlyphName": "aringacute"
+    },
+    {
+      "unicode": "U+01FC",
+      "codepoint": 508,
+      "group": "latinExtended",
+      "interGlyphName": "AEacute",
+      "notoSansGlyphName": "AEacute"
+    },
+    {
+      "unicode": "U+01FD",
+      "codepoint": 509,
+      "group": "latinExtended",
+      "interGlyphName": "aeacute",
+      "notoSansGlyphName": "aeacute"
+    },
+    {
+      "unicode": "U+01FE",
+      "codepoint": 510,
+      "group": "latinExtended",
+      "interGlyphName": "Oslashacute",
+      "notoSansGlyphName": "Oslashacute"
+    },
+    {
+      "unicode": "U+01FF",
+      "codepoint": 511,
+      "group": "latinExtended",
+      "interGlyphName": "oslashacute",
+      "notoSansGlyphName": "oslashacute"
+    },
+    {
+      "unicode": "U+0200",
+      "codepoint": 512,
+      "group": "latinExtended",
+      "interGlyphName": "Adblgrave",
+      "notoSansGlyphName": "Adblgrave"
+    },
+    {
+      "unicode": "U+0201",
+      "codepoint": 513,
+      "group": "latinExtended",
+      "interGlyphName": "adblgrave",
+      "notoSansGlyphName": "adblgrave"
+    },
+    {
+      "unicode": "U+0202",
+      "codepoint": 514,
+      "group": "latinExtended",
+      "interGlyphName": "Ainvertedbreve",
+      "notoSansGlyphName": "Ainvertedbreve"
+    },
+    {
+      "unicode": "U+0203",
+      "codepoint": 515,
+      "group": "latinExtended",
+      "interGlyphName": "ainvertedbreve",
+      "notoSansGlyphName": "ainvertedbreve"
+    },
+    {
+      "unicode": "U+0204",
+      "codepoint": 516,
+      "group": "latinExtended",
+      "interGlyphName": "Edblgrave",
+      "notoSansGlyphName": "Edblgrave"
+    },
+    {
+      "unicode": "U+0205",
+      "codepoint": 517,
+      "group": "latinExtended",
+      "interGlyphName": "edblgrave",
+      "notoSansGlyphName": "edblgrave"
+    },
+    {
+      "unicode": "U+0206",
+      "codepoint": 518,
+      "group": "latinExtended",
+      "interGlyphName": "Einvertedbreve",
+      "notoSansGlyphName": "Einvertedbreve"
+    },
+    {
+      "unicode": "U+0207",
+      "codepoint": 519,
+      "group": "latinExtended",
+      "interGlyphName": "einvertedbreve",
+      "notoSansGlyphName": "einvertedbreve"
+    },
+    {
+      "unicode": "U+0208",
+      "codepoint": 520,
+      "group": "latinExtended",
+      "interGlyphName": "Idblgrave",
+      "notoSansGlyphName": "Idblgrave"
+    },
+    {
+      "unicode": "U+0209",
+      "codepoint": 521,
+      "group": "latinExtended",
+      "interGlyphName": "idblgrave",
+      "notoSansGlyphName": "idblgrave"
+    },
+    {
+      "unicode": "U+020A",
+      "codepoint": 522,
+      "group": "latinExtended",
+      "interGlyphName": "Iinvertedbreve",
+      "notoSansGlyphName": "Iinvertedbreve"
+    },
+    {
+      "unicode": "U+020B",
+      "codepoint": 523,
+      "group": "latinExtended",
+      "interGlyphName": "iinvertedbreve",
+      "notoSansGlyphName": "iinvertedbreve"
+    },
+    {
+      "unicode": "U+020C",
+      "codepoint": 524,
+      "group": "latinExtended",
+      "interGlyphName": "Odblgrave",
+      "notoSansGlyphName": "Odblgrave"
+    },
+    {
+      "unicode": "U+020D",
+      "codepoint": 525,
+      "group": "latinExtended",
+      "interGlyphName": "odblgrave",
+      "notoSansGlyphName": "odblgrave"
+    },
+    {
+      "unicode": "U+020E",
+      "codepoint": 526,
+      "group": "latinExtended",
+      "interGlyphName": "Oinvertedbreve",
+      "notoSansGlyphName": "Oinvertedbreve"
+    },
+    {
+      "unicode": "U+020F",
+      "codepoint": 527,
+      "group": "latinExtended",
+      "interGlyphName": "oinvertedbreve",
+      "notoSansGlyphName": "oinvertedbreve"
+    },
+    {
+      "unicode": "U+0210",
+      "codepoint": 528,
+      "group": "latinExtended",
+      "interGlyphName": "Rdblgrave",
+      "notoSansGlyphName": "Rdblgrave"
+    },
+    {
+      "unicode": "U+0211",
+      "codepoint": 529,
+      "group": "latinExtended",
+      "interGlyphName": "rdblgrave",
+      "notoSansGlyphName": "rdblgrave"
+    },
+    {
+      "unicode": "U+0212",
+      "codepoint": 530,
+      "group": "latinExtended",
+      "interGlyphName": "Rinvertedbreve",
+      "notoSansGlyphName": "Rinvertedbreve"
+    },
+    {
+      "unicode": "U+0213",
+      "codepoint": 531,
+      "group": "latinExtended",
+      "interGlyphName": "rinvertedbreve",
+      "notoSansGlyphName": "rinvertedbreve"
+    },
+    {
+      "unicode": "U+0214",
+      "codepoint": 532,
+      "group": "latinExtended",
+      "interGlyphName": "Udblgrave",
+      "notoSansGlyphName": "Udblgrave"
+    },
+    {
+      "unicode": "U+0215",
+      "codepoint": 533,
+      "group": "latinExtended",
+      "interGlyphName": "udblgrave",
+      "notoSansGlyphName": "udblgrave"
+    },
+    {
+      "unicode": "U+0216",
+      "codepoint": 534,
+      "group": "latinExtended",
+      "interGlyphName": "Uinvertedbreve",
+      "notoSansGlyphName": "Uinvertedbreve"
+    },
+    {
+      "unicode": "U+0217",
+      "codepoint": 535,
+      "group": "latinExtended",
+      "interGlyphName": "uinvertedbreve",
+      "notoSansGlyphName": "uinvertedbreve"
+    },
+    {
+      "unicode": "U+0218",
+      "codepoint": 536,
+      "group": "latinExtended",
+      "interGlyphName": "Scommaaccent",
+      "notoSansGlyphName": "Scommaaccent"
+    },
+    {
+      "unicode": "U+0219",
+      "codepoint": 537,
+      "group": "latinExtended",
+      "interGlyphName": "scommaaccent",
+      "notoSansGlyphName": "scommaaccent"
+    },
+    {
+      "unicode": "U+021B",
+      "codepoint": 539,
+      "group": "latinExtended",
+      "interGlyphName": "tcommaaccent",
+      "notoSansGlyphName": "tcommaaccent"
+    },
+    {
+      "unicode": "U+0221",
+      "codepoint": 545,
+      "group": "latinExtended",
+      "interGlyphName": "dcurl",
+      "notoSansGlyphName": "dcurl"
+    },
+    {
+      "unicode": "U+0224",
+      "codepoint": 548,
+      "group": "latinExtended",
+      "interGlyphName": "Zhook",
+      "notoSansGlyphName": "Zhook"
+    },
+    {
+      "unicode": "U+0225",
+      "codepoint": 549,
+      "group": "latinExtended",
+      "interGlyphName": "zhook",
+      "notoSansGlyphName": "zhook"
+    },
+    {
+      "unicode": "U+0227",
+      "codepoint": 551,
+      "group": "latinExtended",
+      "interGlyphName": "adotaccent",
+      "notoSansGlyphName": "adotaccent"
+    },
+    {
+      "unicode": "U+0234",
+      "codepoint": 564,
+      "group": "latinExtended",
+      "interGlyphName": "lcurl",
+      "notoSansGlyphName": "lcurl"
+    },
+    {
+      "unicode": "U+0235",
+      "codepoint": 565,
+      "group": "latinExtended",
+      "interGlyphName": "ncurl",
+      "notoSansGlyphName": "ncurl"
+    },
+    {
+      "unicode": "U+0236",
+      "codepoint": 566,
+      "group": "latinExtended",
+      "interGlyphName": "tcurl",
+      "notoSansGlyphName": "tcurl"
+    },
+    {
+      "unicode": "U+0237",
+      "codepoint": 567,
+      "group": "latinExtended",
+      "interGlyphName": "jdotless",
+      "notoSansGlyphName": "jdotless"
+    },
+    {
+      "unicode": "U+023B",
+      "codepoint": 571,
+      "group": "latinExtended",
+      "interGlyphName": "Cstroke",
+      "notoSansGlyphName": "Cstroke"
+    },
+    {
+      "unicode": "U+023C",
+      "codepoint": 572,
+      "group": "latinExtended",
+      "interGlyphName": "cstroke",
+      "notoSansGlyphName": "cstroke"
+    },
+    {
+      "unicode": "U+023D",
+      "codepoint": 573,
+      "group": "latinExtended",
+      "interGlyphName": "Lbar",
+      "notoSansGlyphName": "Lbar"
+    },
+    {
+      "unicode": "U+2000",
+      "codepoint": 8192,
+      "group": "generalPunctuation",
+      "interGlyphName": "enquad",
+      "notoSansGlyphName": "enquad"
+    },
+    {
+      "unicode": "U+2001",
+      "codepoint": 8193,
+      "group": "generalPunctuation",
+      "interGlyphName": "emquad",
+      "notoSansGlyphName": "emquad"
+    },
+    {
+      "unicode": "U+2002",
+      "codepoint": 8194,
+      "group": "generalPunctuation",
+      "interGlyphName": "enspace",
+      "notoSansGlyphName": "enspace"
+    },
+    {
+      "unicode": "U+2003",
+      "codepoint": 8195,
+      "group": "generalPunctuation",
+      "interGlyphName": "emspace",
+      "notoSansGlyphName": "emspace"
+    },
+    {
+      "unicode": "U+2007",
+      "codepoint": 8199,
+      "group": "generalPunctuation",
+      "interGlyphName": "figurespace",
+      "notoSansGlyphName": "figurespace"
+    },
+    {
+      "unicode": "U+2008",
+      "codepoint": 8200,
+      "group": "generalPunctuation",
+      "interGlyphName": "punctuationspace",
+      "notoSansGlyphName": "punctuationspace"
+    },
+    {
+      "unicode": "U+2009",
+      "codepoint": 8201,
+      "group": "generalPunctuation",
+      "interGlyphName": "thinspace",
+      "notoSansGlyphName": "thinspace"
+    },
+    {
+      "unicode": "U+200A",
+      "codepoint": 8202,
+      "group": "generalPunctuation",
+      "interGlyphName": "hairspace",
+      "notoSansGlyphName": "hairspace"
+    },
+    {
+      "unicode": "U+200B",
+      "codepoint": 8203,
+      "group": "generalPunctuation",
+      "interGlyphName": "zerowidthspace",
+      "notoSansGlyphName": "zerowidthspace"
+    },
+    {
+      "unicode": "U+2012",
+      "codepoint": 8210,
+      "group": "generalPunctuation",
+      "interGlyphName": "figuredash",
+      "notoSansGlyphName": "figuredash"
+    },
+    {
+      "unicode": "U+2013",
+      "codepoint": 8211,
+      "group": "generalPunctuation",
+      "interGlyphName": "endash",
+      "notoSansGlyphName": "endash"
+    },
+    {
+      "unicode": "U+2014",
+      "codepoint": 8212,
+      "group": "generalPunctuation",
+      "interGlyphName": "emdash",
+      "notoSansGlyphName": "emdash"
+    },
+    {
+      "unicode": "U+2015",
+      "codepoint": 8213,
+      "group": "generalPunctuation",
+      "interGlyphName": "horizontalbar",
+      "notoSansGlyphName": "horizontalbar"
+    },
+    {
+      "unicode": "U+2017",
+      "codepoint": 8215,
+      "group": "generalPunctuation",
+      "interGlyphName": "underscoredbl",
+      "notoSansGlyphName": "underscoredbl"
+    },
+    {
+      "unicode": "U+2018",
+      "codepoint": 8216,
+      "group": "generalPunctuation",
+      "interGlyphName": "quoteleft",
+      "notoSansGlyphName": "quoteleft"
+    },
+    {
+      "unicode": "U+2019",
+      "codepoint": 8217,
+      "group": "generalPunctuation",
+      "interGlyphName": "quoteright",
+      "notoSansGlyphName": "quoteright"
+    },
+    {
+      "unicode": "U+201A",
+      "codepoint": 8218,
+      "group": "generalPunctuation",
+      "interGlyphName": "quotesinglbase",
+      "notoSansGlyphName": "quotesinglbase"
+    },
+    {
+      "unicode": "U+201B",
+      "codepoint": 8219,
+      "group": "generalPunctuation",
+      "interGlyphName": "quotereversed",
+      "notoSansGlyphName": "quotereversed"
+    },
+    {
+      "unicode": "U+201C",
+      "codepoint": 8220,
+      "group": "generalPunctuation",
+      "interGlyphName": "quotedblleft",
+      "notoSansGlyphName": "quotedblleft"
+    },
+    {
+      "unicode": "U+201D",
+      "codepoint": 8221,
+      "group": "generalPunctuation",
+      "interGlyphName": "quotedblright",
+      "notoSansGlyphName": "quotedblright"
+    },
+    {
+      "unicode": "U+201E",
+      "codepoint": 8222,
+      "group": "generalPunctuation",
+      "interGlyphName": "quotedblbase",
+      "notoSansGlyphName": "quotedblbase"
+    },
+    {
+      "unicode": "U+2020",
+      "codepoint": 8224,
+      "group": "generalPunctuation",
+      "interGlyphName": "dagger",
+      "notoSansGlyphName": "dagger"
+    },
+    {
+      "unicode": "U+2021",
+      "codepoint": 8225,
+      "group": "generalPunctuation",
+      "interGlyphName": "daggerdbl",
+      "notoSansGlyphName": "daggerdbl"
+    },
+    {
+      "unicode": "U+2022",
+      "codepoint": 8226,
+      "group": "generalPunctuation",
+      "interGlyphName": "bullet",
+      "notoSansGlyphName": "bullet"
+    },
+    {
+      "unicode": "U+2026",
+      "codepoint": 8230,
+      "group": "generalPunctuation",
+      "interGlyphName": "ellipsis",
+      "notoSansGlyphName": "ellipsis"
+    },
+    {
+      "unicode": "U+202F",
+      "codepoint": 8239,
+      "group": "generalPunctuation",
+      "interGlyphName": "narrownbspace",
+      "notoSansGlyphName": "narrownbspace"
+    },
+    {
+      "unicode": "U+2030",
+      "codepoint": 8240,
+      "group": "generalPunctuation",
+      "interGlyphName": "perthousand",
+      "notoSansGlyphName": "perthousand"
+    },
+    {
+      "unicode": "U+2031",
+      "codepoint": 8241,
+      "group": "generalPunctuation",
+      "interGlyphName": "pertenthousand",
+      "notoSansGlyphName": "pertenthousand"
+    },
+    {
+      "unicode": "U+2034",
+      "codepoint": 8244,
+      "group": "generalPunctuation",
+      "interGlyphName": "tripleprime",
+      "notoSansGlyphName": "tripleprime"
+    },
+    {
+      "unicode": "U+2038",
+      "codepoint": 8248,
+      "group": "generalPunctuation",
+      "interGlyphName": "caretSign",
+      "notoSansGlyphName": "caretSign"
+    },
+    {
+      "unicode": "U+2039",
+      "codepoint": 8249,
+      "group": "generalPunctuation",
+      "interGlyphName": "guilsinglleft",
+      "notoSansGlyphName": "guilsinglleft"
+    },
+    {
+      "unicode": "U+203A",
+      "codepoint": 8250,
+      "group": "generalPunctuation",
+      "interGlyphName": "guilsinglright",
+      "notoSansGlyphName": "guilsinglright"
+    },
+    {
+      "unicode": "U+203B",
+      "codepoint": 8251,
+      "group": "generalPunctuation",
+      "interGlyphName": "referencemark",
+      "notoSansGlyphName": "referencemark"
+    },
+    {
+      "unicode": "U+203D",
+      "codepoint": 8253,
+      "group": "generalPunctuation",
+      "interGlyphName": "interrobang",
+      "notoSansGlyphName": "interrobang"
+    },
+    {
+      "unicode": "U+203E",
+      "codepoint": 8254,
+      "group": "generalPunctuation",
+      "interGlyphName": "overline",
+      "notoSansGlyphName": "overline"
+    },
+    {
+      "unicode": "U+203F",
+      "codepoint": 8255,
+      "group": "generalPunctuation",
+      "interGlyphName": "undertie",
+      "notoSansGlyphName": "undertie"
+    },
+    {
+      "unicode": "U+2040",
+      "codepoint": 8256,
+      "group": "generalPunctuation",
+      "interGlyphName": "charactertie",
+      "notoSansGlyphName": "charactertie"
+    },
+    {
+      "unicode": "U+2041",
+      "codepoint": 8257,
+      "group": "generalPunctuation",
+      "interGlyphName": "caretinsertionpoint",
+      "notoSansGlyphName": "caretinsertionpoint"
+    },
+    {
+      "unicode": "U+2042",
+      "codepoint": 8258,
+      "group": "generalPunctuation",
+      "interGlyphName": "asterism",
+      "notoSansGlyphName": "asterism"
+    },
+    {
+      "unicode": "U+2043",
+      "codepoint": 8259,
+      "group": "generalPunctuation",
+      "interGlyphName": "hyphenbullet",
+      "notoSansGlyphName": "hyphenbullet"
+    },
+    {
+      "unicode": "U+2044",
+      "codepoint": 8260,
+      "group": "generalPunctuation",
+      "interGlyphName": "fraction",
+      "notoSansGlyphName": "fraction"
+    },
+    {
+      "unicode": "U+204B",
+      "codepoint": 8267,
+      "group": "generalPunctuation",
+      "interGlyphName": "paragraphreversed",
+      "notoSansGlyphName": "paragraphreversed"
+    },
+    {
+      "unicode": "U+204C",
+      "codepoint": 8268,
+      "group": "generalPunctuation",
+      "interGlyphName": "blackleftbullet",
+      "notoSansGlyphName": "blackleftbullet"
+    },
+    {
+      "unicode": "U+204D",
+      "codepoint": 8269,
+      "group": "generalPunctuation",
+      "interGlyphName": "blackrightbullet",
+      "notoSansGlyphName": "blackrightbullet"
+    },
+    {
+      "unicode": "U+204F",
+      "codepoint": 8271,
+      "group": "generalPunctuation",
+      "interGlyphName": "reversedsemicolon",
+      "notoSansGlyphName": "reversedsemicolon"
+    },
+    {
+      "unicode": "U+2052",
+      "codepoint": 8274,
+      "group": "generalPunctuation",
+      "interGlyphName": "commercialMinusSign",
+      "notoSansGlyphName": "commercialMinusSign"
+    },
+    {
+      "unicode": "U+2057",
+      "codepoint": 8279,
+      "group": "generalPunctuation",
+      "interGlyphName": "quadrupleprime",
+      "notoSansGlyphName": "quadrupleprime"
+    },
+    {
+      "unicode": "U+205F",
+      "codepoint": 8287,
+      "group": "generalPunctuation",
+      "interGlyphName": "mediumspace-math",
+      "notoSansGlyphName": "mediumspace-math"
+    },
+    {
+      "unicode": "U+20A0",
+      "codepoint": 8352,
+      "group": "currencySymbols",
+      "interGlyphName": "eurocurrency",
+      "notoSansGlyphName": "eurocurrency"
+    },
+    {
+      "unicode": "U+20A2",
+      "codepoint": 8354,
+      "group": "currencySymbols",
+      "interGlyphName": "cruzeiro",
+      "notoSansGlyphName": "cruzeiro"
+    },
+    {
+      "unicode": "U+20A3",
+      "codepoint": 8355,
+      "group": "currencySymbols",
+      "interGlyphName": "franc",
+      "notoSansGlyphName": "franc"
+    },
+    {
+      "unicode": "U+20A4",
+      "codepoint": 8356,
+      "group": "currencySymbols",
+      "interGlyphName": "lira",
+      "notoSansGlyphName": "lira"
+    },
+    {
+      "unicode": "U+20A5",
+      "codepoint": 8357,
+      "group": "currencySymbols",
+      "interGlyphName": "mill",
+      "notoSansGlyphName": "mill"
+    },
+    {
+      "unicode": "U+20A6",
+      "codepoint": 8358,
+      "group": "currencySymbols",
+      "interGlyphName": "naira",
+      "notoSansGlyphName": "naira"
+    },
+    {
+      "unicode": "U+20A7",
+      "codepoint": 8359,
+      "group": "currencySymbols",
+      "interGlyphName": "peseta",
+      "notoSansGlyphName": "peseta"
+    },
+    {
+      "unicode": "U+20A8",
+      "codepoint": 8360,
+      "group": "currencySymbols",
+      "interGlyphName": "rupee",
+      "notoSansGlyphName": "rupee"
+    },
+    {
+      "unicode": "U+20A9",
+      "codepoint": 8361,
+      "group": "currencySymbols",
+      "interGlyphName": "won",
+      "notoSansGlyphName": "won"
+    },
+    {
+      "unicode": "U+20AB",
+      "codepoint": 8363,
+      "group": "currencySymbols",
+      "interGlyphName": "dong",
+      "notoSansGlyphName": "dong"
+    },
+    {
+      "unicode": "U+20AC",
+      "codepoint": 8364,
+      "group": "currencySymbols",
+      "interGlyphName": "euro",
+      "notoSansGlyphName": "euro"
+    },
+    {
+      "unicode": "U+20AD",
+      "codepoint": 8365,
+      "group": "currencySymbols",
+      "interGlyphName": "kip",
+      "notoSansGlyphName": "kip"
+    },
+    {
+      "unicode": "U+20AE",
+      "codepoint": 8366,
+      "group": "currencySymbols",
+      "interGlyphName": "tugrik",
+      "notoSansGlyphName": "tugrik"
+    },
+    {
+      "unicode": "U+20AF",
+      "codepoint": 8367,
+      "group": "currencySymbols",
+      "interGlyphName": "drachma",
+      "notoSansGlyphName": "drachma"
+    },
+    {
+      "unicode": "U+20B1",
+      "codepoint": 8369,
+      "group": "currencySymbols",
+      "interGlyphName": "peso",
+      "notoSansGlyphName": "peso"
+    },
+    {
+      "unicode": "U+20B2",
+      "codepoint": 8370,
+      "group": "currencySymbols",
+      "interGlyphName": "guarani",
+      "notoSansGlyphName": "guarani"
+    },
+    {
+      "unicode": "U+20B3",
+      "codepoint": 8371,
+      "group": "currencySymbols",
+      "interGlyphName": "austral",
+      "notoSansGlyphName": "austral"
+    },
+    {
+      "unicode": "U+20B4",
+      "codepoint": 8372,
+      "group": "currencySymbols",
+      "interGlyphName": "hryvnia",
+      "notoSansGlyphName": "hryvnia"
+    },
+    {
+      "unicode": "U+20B5",
+      "codepoint": 8373,
+      "group": "currencySymbols",
+      "interGlyphName": "cedi",
+      "notoSansGlyphName": "cedi"
+    },
+    {
+      "unicode": "U+20B8",
+      "codepoint": 8376,
+      "group": "currencySymbols",
+      "interGlyphName": "tenge",
+      "notoSansGlyphName": "tenge"
+    },
+    {
+      "unicode": "U+20BC",
+      "codepoint": 8380,
+      "group": "currencySymbols",
+      "interGlyphName": "manat",
+      "notoSansGlyphName": "manat"
+    },
+    {
+      "unicode": "U+20BE",
+      "codepoint": 8382,
+      "group": "currencySymbols",
+      "interGlyphName": "lari",
+      "notoSansGlyphName": "lari"
+    },
+    {
+      "unicode": "U+20BF",
+      "codepoint": 8383,
+      "group": "currencySymbols",
+      "interGlyphName": "bitcoin",
+      "notoSansGlyphName": "bitcoin"
+    },
+    {
+      "unicode": "U+2100",
+      "codepoint": 8448,
+      "group": "letterlikeSymbols",
+      "interGlyphName": "accountof",
+      "notoSansGlyphName": "accountof"
+    },
+    {
+      "unicode": "U+2105",
+      "codepoint": 8453,
+      "group": "letterlikeSymbols",
+      "interGlyphName": "careof",
+      "notoSansGlyphName": "careof"
+    },
+    {
+      "unicode": "U+2106",
+      "codepoint": 8454,
+      "group": "letterlikeSymbols",
+      "interGlyphName": "cadauna",
+      "notoSansGlyphName": "cadauna"
+    },
+    {
+      "unicode": "U+2116",
+      "codepoint": 8470,
+      "group": "letterlikeSymbols",
+      "interGlyphName": "numero",
+      "notoSansGlyphName": "numero"
+    },
+    {
+      "unicode": "U+2117",
+      "codepoint": 8471,
+      "group": "letterlikeSymbols",
+      "interGlyphName": "published",
+      "notoSansGlyphName": "published"
+    },
+    {
+      "unicode": "U+211F",
+      "codepoint": 8479,
+      "group": "letterlikeSymbols",
+      "interGlyphName": "response",
+      "notoSansGlyphName": "response"
+    },
+    {
+      "unicode": "U+2120",
+      "codepoint": 8480,
+      "group": "letterlikeSymbols",
+      "interGlyphName": "servicemark",
+      "notoSansGlyphName": "servicemark"
+    },
+    {
+      "unicode": "U+2122",
+      "codepoint": 8482,
+      "group": "letterlikeSymbols",
+      "interGlyphName": "trademark",
+      "notoSansGlyphName": "trademark"
+    },
+    {
+      "unicode": "U+212B",
+      "codepoint": 8491,
+      "group": "letterlikeSymbols",
+      "interGlyphName": "angstrom",
+      "notoSansGlyphName": "angstrom"
+    },
+    {
+      "unicode": "U+212E",
+      "codepoint": 8494,
+      "group": "letterlikeSymbols",
+      "interGlyphName": "estimated",
+      "notoSansGlyphName": "estimated"
+    },
+    {
+      "unicode": "U+2150",
+      "codepoint": 8528,
+      "group": "numberForms",
+      "interGlyphName": "oneseventh",
+      "notoSansGlyphName": "oneseventh"
+    },
+    {
+      "unicode": "U+2151",
+      "codepoint": 8529,
+      "group": "numberForms",
+      "interGlyphName": "oneninth",
+      "notoSansGlyphName": "oneninth"
+    },
+    {
+      "unicode": "U+2152",
+      "codepoint": 8530,
+      "group": "numberForms",
+      "interGlyphName": "onetenth",
+      "notoSansGlyphName": "onetenth"
+    },
+    {
+      "unicode": "U+2153",
+      "codepoint": 8531,
+      "group": "numberForms",
+      "interGlyphName": "onethird",
+      "notoSansGlyphName": "onethird"
+    },
+    {
+      "unicode": "U+2154",
+      "codepoint": 8532,
+      "group": "numberForms",
+      "interGlyphName": "twothirds",
+      "notoSansGlyphName": "twothirds"
+    },
+    {
+      "unicode": "U+2155",
+      "codepoint": 8533,
+      "group": "numberForms",
+      "interGlyphName": "onefifth",
+      "notoSansGlyphName": "onefifth"
+    },
+    {
+      "unicode": "U+2156",
+      "codepoint": 8534,
+      "group": "numberForms",
+      "interGlyphName": "twofifths",
+      "notoSansGlyphName": "twofifths"
+    },
+    {
+      "unicode": "U+2157",
+      "codepoint": 8535,
+      "group": "numberForms",
+      "interGlyphName": "threefifths",
+      "notoSansGlyphName": "threefifths"
+    },
+    {
+      "unicode": "U+2158",
+      "codepoint": 8536,
+      "group": "numberForms",
+      "interGlyphName": "fourfifths",
+      "notoSansGlyphName": "fourfifths"
+    },
+    {
+      "unicode": "U+2159",
+      "codepoint": 8537,
+      "group": "numberForms",
+      "interGlyphName": "onesixth",
+      "notoSansGlyphName": "onesixth"
+    },
+    {
+      "unicode": "U+215A",
+      "codepoint": 8538,
+      "group": "numberForms",
+      "interGlyphName": "fivesixths",
+      "notoSansGlyphName": "fivesixths"
+    },
+    {
+      "unicode": "U+215B",
+      "codepoint": 8539,
+      "group": "numberForms",
+      "interGlyphName": "oneeighth",
+      "notoSansGlyphName": "oneeighth"
+    },
+    {
+      "unicode": "U+215C",
+      "codepoint": 8540,
+      "group": "numberForms",
+      "interGlyphName": "threeeighths",
+      "notoSansGlyphName": "threeeighths"
+    },
+    {
+      "unicode": "U+215D",
+      "codepoint": 8541,
+      "group": "numberForms",
+      "interGlyphName": "fiveeighths",
+      "notoSansGlyphName": "fiveeighths"
+    },
+    {
+      "unicode": "U+215E",
+      "codepoint": 8542,
+      "group": "numberForms",
+      "interGlyphName": "seveneighths",
+      "notoSansGlyphName": "seveneighths"
+    },
+    {
+      "unicode": "U+215F",
+      "codepoint": 8543,
+      "group": "numberForms",
+      "interGlyphName": "onefraction",
+      "notoSansGlyphName": "onefraction"
+    },
+    {
+      "unicode": "U+2189",
+      "codepoint": 8585,
+      "group": "numberForms",
+      "interGlyphName": "zerothird",
+      "notoSansGlyphName": "zerothird"
+    }
+  ]
+}
