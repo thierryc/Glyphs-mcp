@@ -216,6 +216,13 @@ private struct WizardTabView: View {
 									Spacer()
 								}
 							}
+							if let progressText = action.progressText {
+								Text(progressText)
+									.foregroundStyle(.secondary)
+									.font(.callout)
+									.lineLimit(2)
+									.truncationMode(.middle)
+							}
 							if action.clientReloadRecommended {
 								Text("Reload Codex / Claude Code after the wizard finishes.")
 									.foregroundStyle(.secondary)
@@ -288,6 +295,13 @@ private struct InstallTabView: View {
 								Text(step.title)
 								Spacer()
 							}
+						}
+						if let progressText = action.progressText {
+							Text(progressText)
+								.foregroundStyle(.secondary)
+								.font(.callout)
+								.lineLimit(2)
+								.truncationMode(.middle)
 						}
 						if action.restartRecommended {
 							Text("Restart Glyphs if you had it open before updating.")

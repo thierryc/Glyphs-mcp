@@ -1,5 +1,41 @@
 # Changelog
 
+## 1.4.1 — Faster, bounded installer dependency setup
+
+_July 28, 2026_
+
+Glyphs MCP 1.4.1 makes repeated installer runs substantially smaller and more
+predictable, especially with Glyphs 4 and Python 3.14.
+
+### The highlights
+
+- **Only the required PyObjC bindings.** The installer now installs
+  `pyobjc-core` and `pyobjc-framework-Cocoa`, which provide the Objective-C
+  runtime, Foundation, and AppKit used by Glyphs MCP, instead of every macOS
+  framework binding.
+- **Healthy dependencies are reused.** Before invoking pip, the installer
+  compares every pinned requirement and verifies the runtime imports. When the
+  installed environment is current, dependency installation is skipped.
+- **Bounded waits and useful failures.** Dependency commands have an overall
+  timeout, while pip uses bounded network timeouts and retries. Cancellation
+  terminates the running command cleanly.
+- **Visible Wizard progress.** The Wizard and advanced Install view show the
+  current resolution, download, installation, or verification activity instead
+  of leaving package details only in the Status log.
+- **Consistent helper installers.** Terminal and shell installation paths no
+  longer upgrade pip or request forced package reinstalls.
+
+### Verification
+
+- The complete local release gate passes with `401` Python tests and `82`
+  macOS installer tests, followed by a successful unsigned Debug build.
+- A disposable Python 3.14 environment imports `objc`, `Foundation`, `AppKit`,
+  MCP, and FastMCP with `75` installed distributions, including only `2`
+  PyObjC distributions. The previous full PyObjC dependency path installed
+  `232` distributions, including `159` PyObjC distributions.
+- The dependency preflight recognizes the completed environment and skips pip
+  on the next installer run.
+
 ## 1.4.0 — A reliable plug-in UI and portable skill workflow
 
 _July 27, 2026_

@@ -698,9 +698,21 @@ def verify_runtime(python: Path, extra_site_packages: Optional[Path] = None) -> 
         return False
 
 
-def run(cmd: List[str]) -> None:
+def run(
+    cmd: List[str],
+    *,
+    env: Optional[dict[str, str]] = None,
+    timeout: int = 600,
+) -> None:
     console.log(f"[dim]$ {' '.join(cmd)}[/dim]")
-    subprocess.check_call(cmd)
+    try:
+        subprocess.check_call(cmd, env=env, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        console.print(
+            f"[red]Dependency command timed out after {timeout} seconds. "
+            "Check your network connection and try again.[/red]"
+        )
+        raise SystemExit(2) from exc
 
 
 def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", "4"] = "4") -> None:
@@ -732,18 +744,33 @@ def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", 
     target = glyphs_scripts_site_packages(glyphs_version)
     target.mkdir(parents=True, exist_ok=True)
     console.print(Panel.fit(f"{source}\nInstalling requirements into:\n{target}", title="Glyphs Python", border_style="green"))
-    run(pip_cmd + ["install", "--upgrade", "pip"])
+    pip_environment = os.environ.copy()
+    existing_pythonpath = pip_environment.get("PYTHONPATH")
+    pip_environment["PYTHONPATH"] = (
+        f"{target}{os.pathsep}{existing_pythonpath}"
+        if existing_pythonpath
+        else str(target)
+    )
     run(pip_cmd + [
         "install",
         "--upgrade",
-        "--force-reinstall",
+        "--upgrade-strategy",
+        "only-if-needed",
+        "--disable-pip-version-check",
+        "--no-input",
+        "--progress-bar",
+        "off",
+        "--timeout",
+        "30",
+        "--retries",
+        "2",
         "--no-compile",
         "--only-binary=:all:",
         "--target",
         str(target),
         "-r",
         str(requirements),
-    ])
+    ], env=pip_environment)
 
     if not verify_runtime(verify_python, target):
         raise SystemExit(2)
@@ -753,14 +780,22 @@ def install_with_custom_python(python: Path, requirements: Path) -> None:
     console.print(Panel.fit(f"Installing requirements to user site for:\n{python}"
                            f"\n(version: {python_version(python) or 'unknown'})",
                            title="Custom Python", border_style="cyan"))
-    run([str(python), "-m", "pip", "install", "--upgrade", "pip"])
     run([
         str(python),
         "-m",
         "pip",
         "install",
         "--upgrade",
-        "--force-reinstall",
+        "--upgrade-strategy",
+        "only-if-needed",
+        "--disable-pip-version-check",
+        "--no-input",
+        "--progress-bar",
+        "off",
+        "--timeout",
+        "30",
+        "--retries",
+        "2",
         "--no-compile",
         "--only-binary=:all:",
         "--user",

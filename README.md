@@ -9,24 +9,20 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-## What's new in 1.4.0
+## What's new in 1.4.1
 
-**A reliable, portable Glyphs MCP plug-in experience across ChatGPT, Codex,
-Claude, and Cursor.**
+**A faster, clearer dependency setup for Glyphs 4 and Python 3.14.**
 
-- Use OpenType Features, Refresh, and reviewed actions through a
-  capability-aware host bridge with actionable, recoverable failure states.
-- Review feedback in a responsive embedded panel aligned with ChatGPT's light
-  and dark surfaces, typography, spacing, focus states, and safety boundaries.
-- Install eight synchronized skills covering connection, spacing, kerning,
-  OpenType features, outlines and documentation, italic first passes,
-  icon-font Unicode workflows, and Glyphs plug-in development.
-- Use guarded custom-parameter and Unicode assignment tools with the same
-  structured and text fallbacks available to non-UI MCP clients.
-- Follow dedicated setup guidance for ChatGPT, Codex, Claude Code, standard
-  Claude MCP connections, and Cursor.
+- Install only the PyObjC runtime and Cocoa bindings used by Glyphs MCP instead
+  of the full macOS framework bundle.
+- Skip pip entirely when every pinned dependency and required runtime import is
+  already healthy.
+- See live package resolution, download, installation, and verification
+  activity directly in the Wizard.
+- Stop stalled dependency commands with bounded network retries and an
+  actionable timeout error.
 
-[Read the full 1.4.0 changelog →](CHANGELOG.md)
+[Read the full 1.4.1 changelog →](CHANGELOG.md)
 
 ## macOS Installer app (recommended)
 
@@ -201,8 +197,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.4.0)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.4.0"`).
+## Command Set (MCP server v1.4.1)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.4.1"`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.

@@ -51,7 +51,8 @@ echo "Using Python: $PYTHON"
 "$PYTHON" -c 'import sys; print(sys.version)' || { echo "error: failed to run $PYTHON"; exit 1; }
 
 echo "Installing dependencies into user site for: $PYTHON"
-"$PYTHON" -m pip install --upgrade pip
-"$PYTHON" -m pip install --upgrade --force-reinstall --no-compile --only-binary=:all: --user -r "$req_file"
+"$PYTHON" -m pip install --upgrade --upgrade-strategy only-if-needed \
+  --disable-pip-version-check --no-input --progress-bar off --timeout 30 --retries 2 \
+  --no-compile --only-binary=:all: --user -r "$req_file"
 
 echo "Done. Restart Glyphs if it is running."

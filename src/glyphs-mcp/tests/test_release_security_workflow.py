@@ -199,6 +199,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
 
     def test_publisher_has_local_fail_closed_gates_and_no_release_action(self) -> None:
         publish = (REPO / "scripts" / "publish_release_assets.sh").read_text(encoding="utf-8")
+        build = (REPO / "scripts" / "build_installer_app.sh").read_text(encoding="utf-8")
         verify = (REPO / "scripts" / "verify_release_artifacts.sh").read_text(encoding="utf-8")
         notarize = (REPO / "scripts" / "notarize_installer_app.sh").read_text(encoding="utf-8")
 
@@ -212,12 +213,16 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
         self.assertIn("SHA256SUMS", publish)
         self.assertNotIn("--clobber", publish)
         self.assertIn("release-state", publish)
+        self.assertIn("sign_nested_payload_executables", build)
+        self.assertIn("*/Contents/MacOS/*", build)
+        self.assertIn("--timestamp --options runtime", build)
         self.assertIn("Authority=$expected_identity", verify)
         self.assertIn("TeamIdentifier=$expected_team", verify)
         self.assertIn("stapler validate", verify)
         self.assertIn("spctl_bin", verify)
         self.assertIn("verify_checksum_args", verify)
-        self.assertIn("zipped_payload_bin", verify)
+        self.assertIn("verify_payload_executables", verify)
+        self.assertIn("zipped_payload_root", verify)
         self.assertIn("zipped_core_framework", verify)
         self.assertLess(notarize.index("stapler staple"), notarize.rindex("ditto -c -k --keepParent"))
 

@@ -22,7 +22,10 @@ mcp==1.12.4
 mdurl==0.1.2
 openapi-pydantic==0.5.1
 pycparser==2.22
-pyobjc==11.1
+# Glyphs MCP only imports the Objective-C runtime and Cocoa (Foundation/AppKit).
+# Avoid the pyobjc meta-package, which installs every macOS framework binding.
+pyobjc-core==11.1
+pyobjc-framework-Cocoa==11.1
 pydantic==2.12.0
 pydantic-settings==2.10.1
 pydantic_core==2.41.1

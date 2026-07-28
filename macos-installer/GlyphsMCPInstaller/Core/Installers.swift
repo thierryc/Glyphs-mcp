@@ -18,6 +18,42 @@ public let requiredRuntimeModules = [
 	"AppKit",
 ]
 
+public enum InstallerProgressText {
+	public static func detail(for line: String, limit: Int = 180) -> String? {
+		let text = line.trimmingCharacters(in: .whitespacesAndNewlines)
+		guard !text.isEmpty else { return nil }
+
+		let detail: String?
+		if text.hasPrefix("-- "), text.hasSuffix(" --"), text.count > 6 {
+			detail = String(text.dropFirst(3).dropLast(3))
+		} else if text.hasPrefix("Checking for missing or outdated Python dependencies") {
+			detail = "Checking installed Python dependencies…"
+		} else if text.hasPrefix("Collecting ") {
+			detail = "Resolving " + text.dropFirst("Collecting ".count)
+		} else if text.hasPrefix("Requirement already satisfied: ") {
+			detail = "Already installed: " + text.dropFirst("Requirement already satisfied: ".count)
+		} else if text.hasPrefix("Using cached ") || text.hasPrefix("Downloading ") || text.hasPrefix("Processing ") {
+			detail = text
+		} else if text.hasPrefix("Installing collected packages:") {
+			detail = "Installing resolved Python packages…"
+		} else if text.hasPrefix("Successfully installed")
+			|| text.hasPrefix("Python dependencies are up to date")
+			|| text.hasPrefix("Python dependencies are already up to date") {
+			detail = "Python dependencies are ready."
+		} else if text.hasPrefix("Verifying imports in:") {
+			detail = "Verifying Python dependencies…"
+		} else if text.hasPrefix("ERROR:") || text == "Still working…" {
+			detail = text
+		} else {
+			detail = nil
+		}
+
+		guard let detail else { return nil }
+		if detail.count <= limit { return detail }
+		return String(detail.prefix(max(1, limit - 1))) + "…"
+	}
+}
+
 public enum PythonSelection {
 	case glyphs(pip3: URL, python3: URL)
 	case custom(python3: URL)
@@ -33,6 +69,8 @@ public enum PythonSelection {
 extension PythonSelection: Sendable {}
 
 public struct DepsInstaller {
+	static let dependencyCommandTimeout: TimeInterval = 600
+
 	let runner: ProcessRunner
 	let log: (String) -> Void
 
@@ -51,30 +89,123 @@ public struct DepsInstaller {
 			let target = InstallerPaths.glyphsScriptsSitePackages(glyphsVersion: glyphsVersion)
 			try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true, attributes: nil)
 			log("Installing into: \(target.path)")
-			try await runner.runStreaming(executable: pip3, args: ["install", "--upgrade", "pip"], onLine: log)
+			if await canReuseInstalledDependencies(
+				python: python3,
+				requirementsTxt: requirementsTxt,
+				extraSitePackages: target
+			) {
+				return
+			}
+			log("Checking for missing or outdated Python dependencies…")
 			try await runner.runStreaming(
 				executable: pip3,
 				args: pipInstallArgs(requirementsTxt: requirementsTxt, target: target),
+				environment: pipEnvironment(target: target),
+				timeout: Self.dependencyCommandTimeout,
 				onLine: log
 			)
+			log("Python dependencies are up to date.")
 			try await verify(python: python3, extraSitePackages: target)
 		case .custom(let python3):
 			let ver = runner.runSync(executable: python3, args: ["-c", "import sys; print(sys.version.split()[0])"]).trimmingCharacters(in: .whitespacesAndNewlines)
 			if !VersionGate.isSupported(version: ver) {
 				throw InstallerError.userFacing("Selected Python \(ver) is not supported. Please use 3.11–3.14.")
 			}
-			try await runner.runStreaming(executable: python3, args: ["-m", "pip", "install", "--upgrade", "pip"], onLine: log)
+			if await canReuseInstalledDependencies(python: python3, requirementsTxt: requirementsTxt) {
+				return
+			}
+			log("Checking for missing or outdated Python dependencies…")
 			try await runner.runStreaming(
 				executable: python3,
 				args: ["-m", "pip"] + pipInstallArgs(requirementsTxt: requirementsTxt),
+				timeout: Self.dependencyCommandTimeout,
 				onLine: log
 			)
+			log("Python dependencies are up to date.")
 			try await verify(python: python3)
 		}
 	}
 
-	private func pipInstallArgs(requirementsTxt: URL, target: URL? = nil) -> [String] {
-		var args = ["install", "--upgrade", "--force-reinstall", "--no-compile", "--only-binary=:all:"]
+	private func canReuseInstalledDependencies(
+		python: URL,
+		requirementsTxt: URL,
+		extraSitePackages: URL? = nil
+	) async -> Bool {
+		guard requirementsAreSatisfied(
+			python: python,
+			requirementsTxt: requirementsTxt,
+			extraSitePackages: extraSitePackages
+		) else {
+			return false
+		}
+
+		do {
+			try await verify(python: python, extraSitePackages: extraSitePackages)
+			log("Python dependencies are already up to date; skipped installation.")
+			return true
+		} catch {
+			log("Installed Python dependencies need repair; reinstalling them.")
+			return false
+		}
+	}
+
+	func requirementsAreSatisfied(
+		python: URL,
+		requirementsTxt: URL,
+		extraSitePackages: URL? = nil
+	) -> Bool {
+		let code = """
+import importlib.metadata as metadata
+import re
+import site
+import sys
+extra_site=\(Self.pythonStringLiteral(extraSitePackages?.path ?? ""))
+if extra_site:
+  site.addsitedir(extra_site)
+  if extra_site in sys.path:
+    sys.path.remove(extra_site)
+  sys.path.insert(0, extra_site)
+requirements_path=\(Self.pythonStringLiteral(requirementsTxt.path))
+mismatches=[]
+try:
+  with open(requirements_path, encoding='utf-8') as requirements_file:
+    for raw_line in requirements_file:
+      line=raw_line.partition('#')[0].strip()
+      if not line:
+        continue
+      match=re.fullmatch(r'([A-Za-z0-9_.-]+)==([^\\s;]+)', line)
+      if not match:
+        mismatches.append((line, 'unsupported requirement'))
+        continue
+      name,wanted=match.groups()
+      try:
+        installed=metadata.version(name)
+      except metadata.PackageNotFoundError:
+        installed=None
+      if installed != wanted:
+        mismatches.append((name, installed, wanted))
+except Exception as error:
+  mismatches.append(('requirements', str(error)))
+print('SATISFIED' if not mismatches else 'MISMATCH:'+repr(mismatches))
+"""
+		let result = runner.runSyncWithStderr(executable: python, args: ["-c", code])
+		return result.exitCode == 0
+			&& result.stdout.trimmingCharacters(in: .whitespacesAndNewlines) == "SATISFIED"
+	}
+
+	func pipInstallArgs(requirementsTxt: URL, target: URL? = nil) -> [String] {
+		var args = [
+			"install",
+			"--upgrade",
+			"--upgrade-strategy", "only-if-needed",
+			"--disable-pip-version-check",
+			"--no-input",
+			"--progress-bar", "off",
+			"--timeout", "30",
+			"--retries", "2",
+			"--no-compile",
+			"--only-binary=:all:",
+		]
 		if let target {
 			args += ["--target", target.path]
 		} else {
@@ -82,6 +213,16 @@ public struct DepsInstaller {
 		}
 		args += ["-r", requirementsTxt.path]
 		return args
+	}
+
+	func pipEnvironment(target: URL) -> [String: String] {
+		var environment = ProcessInfo.processInfo.environment
+		if let existing = environment["PYTHONPATH"], !existing.isEmpty {
+			environment["PYTHONPATH"] = target.path + ":" + existing
+		} else {
+			environment["PYTHONPATH"] = target.path
+		}
+		return environment
 	}
 
 	private func verify(python: URL, extraSitePackages: URL? = nil) async throws {
@@ -92,6 +233,9 @@ import site
 extra_site=\(Self.pythonStringLiteral(extraSitePackages?.path ?? ""))
 if extra_site:
   site.addsitedir(extra_site)
+  if extra_site in sys.path:
+    sys.path.remove(extra_site)
+  sys.path.insert(0, extra_site)
 mods=\(Self.pythonListLiteral(requiredRuntimeModules))
 missing=[]
 import importlib

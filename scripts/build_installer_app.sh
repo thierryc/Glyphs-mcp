@@ -60,16 +60,36 @@ fi
 rm -rf "$out_dir/$scheme.app"
 /usr/bin/ditto "$app_path" "$out_dir/$scheme.app"
 
-# Xcode/archive can leave the embedded payload executable with a stale signature
-# after export. Re-sign the payload executable in the exported app, then re-sign
-# the outer app bundle so the final distributable verifies cleanly.
-payload_bin="$out_dir/$scheme.app/Contents/Resources/Payload/Glyphs MCP.glyphsPlugin/Contents/MacOS/plugin"
-if [[ -f "$payload_bin" ]]; then
-  echo "Re-signing exported payload executable…"
-  /usr/bin/codesign --force --sign "$identity" --timestamp --options runtime "$payload_bin"
-else
-  echo "warn: payload executable not found at $payload_bin" >&2
-fi
+# Xcode/archive can leave Mach-O executables embedded in the payload with stale
+# or ad-hoc signatures after export. This includes the main Glyphs plug-in and
+# the pinned plug-in templates shipped by glyphs-mcp-development. Sign every
+# nested Contents/MacOS executable before re-signing the outer app.
+sign_nested_payload_executables() {
+  local payload_root="$1"
+  local signed_count=0
+
+  if [[ ! -d "$payload_root" ]]; then
+    echo "error: exported app payload not found at $payload_root" >&2
+    exit 1
+  fi
+
+  while IFS= read -r -d '' candidate; do
+    if /usr/bin/file -b "$candidate" | /usr/bin/grep -q 'Mach-O'; then
+      echo "Re-signing payload executable: $candidate"
+      /usr/bin/codesign --force --sign "$identity" --timestamp --options runtime "$candidate"
+      signed_count=$((signed_count + 1))
+    fi
+  done < <(/usr/bin/find "$payload_root" -type f -path '*/Contents/MacOS/*' -print0)
+
+  if [[ "$signed_count" -eq 0 ]]; then
+    echo "error: no Mach-O payload executables were found under $payload_root" >&2
+    exit 1
+  fi
+  echo "Re-signed $signed_count payload executable(s)."
+}
+
+payload_root="$out_dir/$scheme.app/Contents/Resources/Payload"
+sign_nested_payload_executables "$payload_root"
 
 echo "Re-signing exported app…"
 /usr/bin/codesign --force --sign "$identity" --timestamp --options runtime "$out_dir/$scheme.app"

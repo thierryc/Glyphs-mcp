@@ -1097,6 +1097,79 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		}
 	}
 
+	func testProcessRunnerRunStreamingTimesOut() async {
+		let runner = ProcessRunner()
+		let startedAt = Date()
+
+		do {
+			try await runner.runStreaming(
+				executable: URL(fileURLWithPath: "/bin/sleep"),
+				args: ["5"],
+				timeout: 0.05,
+				onLine: { _ in }
+			)
+			XCTFail("Expected runStreaming to time out.")
+		} catch {
+			guard let installerError = error as? InstallerError else {
+				return XCTFail("Expected InstallerError, got: \(type(of: error)) \(error)")
+			}
+			XCTAssertTrue(installerError.localizedDescription.contains("timed out"), installerError.localizedDescription)
+			XCTAssertLessThan(Date().timeIntervalSince(startedAt), 2)
+		}
+	}
+
+	func testDependencyPipArgumentsReuseSatisfiedPackagesAndBoundNetworkWaits() {
+		let installer = DepsInstaller(runner: ProcessRunner(), log: { _ in })
+		let requirements = URL(fileURLWithPath: "/tmp/requirements.txt")
+		let target = URL(fileURLWithPath: "/tmp/glyphs-mcp-site-packages")
+		let args = installer.pipInstallArgs(requirementsTxt: requirements, target: target)
+
+		XCTAssertFalse(args.contains("--force-reinstall"), "\(args)")
+		XCTAssertTrue(args.contains("--upgrade"), "\(args)")
+		XCTAssertTrue(args.contains("--upgrade-strategy"), "\(args)")
+		XCTAssertTrue(args.contains("--disable-pip-version-check"), "\(args)")
+		XCTAssertTrue(args.contains("--timeout"), "\(args)")
+		XCTAssertTrue(args.contains("--retries"), "\(args)")
+		XCTAssertEqual(installer.pipEnvironment(target: target)["PYTHONPATH"]?.split(separator: ":").first, Substring(target.path))
+	}
+
+	func testDependencyPreflightRecognizesSatisfiedAndMismatchedRequirements() throws {
+		let installer = DepsInstaller(runner: ProcessRunner(), log: { _ in })
+		let tempDirectory = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-requirements-\(UUID().uuidString)", isDirectory: true)
+		try FileManager.default.createDirectory(at: tempDirectory, withIntermediateDirectories: true)
+		defer { try? FileManager.default.removeItem(at: tempDirectory) }
+
+		let requirements = tempDirectory.appendingPathComponent("requirements.txt")
+		try "# No dependencies\n".write(to: requirements, atomically: true, encoding: .utf8)
+		XCTAssertTrue(
+			installer.requirementsAreSatisfied(
+				python: URL(fileURLWithPath: "/usr/bin/python3"),
+				requirementsTxt: requirements
+			)
+		)
+
+		try "glyphs-mcp-package-that-does-not-exist==1.0\n".write(to: requirements, atomically: true, encoding: .utf8)
+		XCTAssertFalse(
+			installer.requirementsAreSatisfied(
+				python: URL(fileURLWithPath: "/usr/bin/python3"),
+				requirementsTxt: requirements
+			)
+		)
+	}
+
+	func testInstallerProgressTextSummarizesPipActivity() {
+		XCTAssertEqual(InstallerProgressText.detail(for: "Collecting pyobjc-core==11.1"), "Resolving pyobjc-core==11.1")
+		XCTAssertEqual(
+			InstallerProgressText.detail(for: "Requirement already satisfied: pyobjc-core==11.1 in /tmp/site-packages"),
+			"Already installed: pyobjc-core==11.1 in /tmp/site-packages"
+		)
+		XCTAssertEqual(InstallerProgressText.detail(for: "Installing collected packages: attrs, anyio"), "Installing resolved Python packages…")
+		XCTAssertEqual(InstallerProgressText.detail(for: "Successfully installed attrs-25.3.0"), "Python dependencies are ready.")
+		XCTAssertNil(InstallerProgressText.detail(for: "unrelated diagnostic output"))
+		XCTAssertLessThanOrEqual(InstallerProgressText.detail(for: "Downloading " + String(repeating: "x", count: 300))?.count ?? 0, 180)
+	}
+
 	func testGitHubPluginVersionFetcherParsesPlistViaHTTPClient() async throws {
 		UserDefaults.standard.removeObject(forKey: "gmcp.githubPluginVersionFetchedAt")
 		UserDefaults.standard.removeObject(forKey: "gmcp.githubPluginVersionString")

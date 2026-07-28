@@ -28,8 +28,10 @@ fi
 mkdir -p "$TARGET_DIR"
 
 echo "Installing dependencies into: $TARGET_DIR"
-"$PIP_BIN" install --upgrade pip
-"$PIP_BIN" install --upgrade --force-reinstall --no-compile --only-binary=:all: --target="$TARGET_DIR" -r "$req_file"
+PYTHONPATH="$TARGET_DIR${PYTHONPATH:+:$PYTHONPATH}" "$PIP_BIN" install \
+  --upgrade --upgrade-strategy only-if-needed \
+  --disable-pip-version-check --no-input --progress-bar off --timeout 30 --retries 2 \
+  --no-compile --only-binary=:all: --target="$TARGET_DIR" -r "$req_file"
 TARGET_DIR="$TARGET_DIR" "$PYTHON_BASE/Versions/Current/bin/python3" - <<'PY'
 import importlib
 import os

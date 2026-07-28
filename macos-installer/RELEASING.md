@@ -99,12 +99,17 @@ The verifier checks source/Xcode/built versions, Developer ID authority and Team
 
 `SKIP_NOTARIZATION=1` is for local diagnostics only. It creates filenames containing `UNNOTARIZED`; the publisher refuses to run in that mode and never uploads those files.
 
-### Important: payload plug-in signing
+### Important: nested payload signing
 
-Apple notarization validates **all nested executables inside the app bundle** (including the embedded payload plug‑in).
+Apple notarization validates **all nested executables inside the app bundle** (including the embedded payload plug-in).
 
-The Xcode build phase **Copy Payload** now signs and timestamps:
-- `…/Contents/Resources/Payload/Glyphs MCP.glyphsPlugin/Contents/MacOS/plugin`
+The Release export step signs and timestamps every Mach-O executable under:
+
+- `…/Contents/Resources/Payload/**/Contents/MacOS/*`
+
+This includes the main Glyphs MCP plug-in executable and the pinned SDK
+executables inside plug-in templates shipped with the
+`glyphs-mcp-development` skill.
 
 If notarization fails with errors like “binary is not signed” or “no secure timestamp”, rebuild the app (Release) and re-run notarization.
 

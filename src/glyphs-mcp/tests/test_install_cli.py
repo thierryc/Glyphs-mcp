@@ -695,7 +695,7 @@ class InstallerSmokeTests(unittest.TestCase):
             self.assertFalse(changed)
             self.assertEqual(marker.read_text(encoding="utf-8"), "old plugin\n")
 
-    def test_install_with_glyphs_python_forces_binary_reinstall(self) -> None:
+    def test_install_with_glyphs_python_avoids_forced_reinstall(self) -> None:
         install_cli = _load_install_cli()
         calls: list[list[str]] = []
         old_home = os.environ.get("HOME")
@@ -712,7 +712,7 @@ class InstallerSmokeTests(unittest.TestCase):
             original_selected_python = install_cli.glyphs_selected_python_bin
             original_verify = install_cli.verify_runtime
             try:
-                install_cli.run = lambda cmd: calls.append(cmd)
+                install_cli.run = lambda cmd, **kwargs: calls.append(cmd)
                 install_cli.glyphs_selected_python_bin = lambda glyphs_version="4": None
                 install_cli.glyphs_python_pip = lambda glyphs_version="4": fake_pip
                 install_cli.verify_runtime = lambda *args, **kwargs: True
@@ -735,14 +735,22 @@ class InstallerSmokeTests(unittest.TestCase):
             / "Scripts"
             / "site-packages"
         )
-        self.assertEqual(calls[0], [str(fake_pip), "install", "--upgrade", "pip"])
         self.assertEqual(
-            calls[1],
+            calls[0],
             [
                 str(fake_pip),
                 "install",
                 "--upgrade",
-                "--force-reinstall",
+                "--upgrade-strategy",
+                "only-if-needed",
+                "--disable-pip-version-check",
+                "--no-input",
+                "--progress-bar",
+                "off",
+                "--timeout",
+                "30",
+                "--retries",
+                "2",
                 "--no-compile",
                 "--only-binary=:all:",
                 "--target",
@@ -770,7 +778,7 @@ class InstallerSmokeTests(unittest.TestCase):
             original_python_version = install_cli.python_version
             original_verify = install_cli.verify_runtime
             try:
-                install_cli.run = lambda cmd: calls.append(cmd)
+                install_cli.run = lambda cmd, **kwargs: calls.append(cmd)
                 install_cli.glyphs_python_pip = lambda glyphs_version="3": self.fail("Glyphs 4 selected Python should be preferred")
                 install_cli.glyphs_selected_python_bin = lambda glyphs_version="3": selected_python if glyphs_version == "4" else None
                 install_cli.python_version = lambda python: "3.14.0"
@@ -795,19 +803,19 @@ class InstallerSmokeTests(unittest.TestCase):
             / "Scripts"
             / "site-packages"
         )
-        self.assertEqual(calls[0], [str(selected_python), "-m", "pip", "install", "--upgrade", "pip"])
-        self.assertEqual(calls[1][:5], [str(selected_python), "-m", "pip", "install", "--upgrade"])
-        self.assertIn(str(target), calls[1])
+        self.assertEqual(calls[0][:5], [str(selected_python), "-m", "pip", "install", "--upgrade"])
+        self.assertIn(str(target), calls[0])
+        self.assertNotIn("--force-reinstall", calls[0])
         self.assertEqual(verify_calls, [(selected_python, target)])
 
-    def test_install_with_custom_python_forces_binary_reinstall(self) -> None:
+    def test_install_with_custom_python_avoids_forced_reinstall(self) -> None:
         install_cli = _load_install_cli()
         calls: list[list[str]] = []
         original_run = install_cli.run
         original_verify = install_cli.verify_runtime
         original_python_version = install_cli.python_version
         try:
-            install_cli.run = lambda cmd: calls.append(cmd)
+            install_cli.run = lambda cmd, **kwargs: calls.append(cmd)
             install_cli.verify_runtime = lambda *args, **kwargs: True
             install_cli.python_version = lambda python: "3.12.9"
             install_cli.install_with_custom_python(Path("/tmp/python3.12"), _repo_root() / "requirements.txt")
@@ -816,16 +824,24 @@ class InstallerSmokeTests(unittest.TestCase):
             install_cli.verify_runtime = original_verify
             install_cli.python_version = original_python_version
 
-        self.assertEqual(calls[0], ["/tmp/python3.12", "-m", "pip", "install", "--upgrade", "pip"])
         self.assertEqual(
-            calls[1],
+            calls[0],
             [
                 "/tmp/python3.12",
                 "-m",
                 "pip",
                 "install",
                 "--upgrade",
-                "--force-reinstall",
+                "--upgrade-strategy",
+                "only-if-needed",
+                "--disable-pip-version-check",
+                "--no-input",
+                "--progress-bar",
+                "off",
+                "--timeout",
+                "30",
+                "--retries",
+                "2",
                 "--no-compile",
                 "--only-binary=:all:",
                 "--user",

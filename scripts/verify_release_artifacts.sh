@@ -44,6 +44,7 @@ expected_team="${EXPECTED_TEAM_ID:-N9U29A4T8J}"
 app="$repo_root/dist/installer-app/GlyphsMCPInstaller.app"
 app_plist="$app/Contents/Info.plist"
 payload_bin="$app/Contents/Resources/Payload/Glyphs MCP.glyphsPlugin/Contents/MacOS/plugin"
+payload_root="$app/Contents/Resources/Payload"
 core_framework="$app/Contents/Frameworks/GlyphsMCPInstallerCore.framework"
 zip="$repo_root/dist/installer-app/GlyphsMCPInstaller.zip"
 
@@ -94,8 +95,31 @@ verify_runtime_signature() {
   fi
 }
 
+verify_payload_executables() {
+  local root="$1"
+  local verified_count=0
+
+  if [[ ! -d "$root" ]]; then
+    echo "error: installer payload is missing: $root" >&2
+    exit 1
+  fi
+
+  while IFS= read -r -d '' candidate; do
+    if /usr/bin/file -b "$candidate" | /usr/bin/grep -q 'Mach-O'; then
+      verify_runtime_signature "$candidate" 0
+      verified_count=$((verified_count + 1))
+    fi
+  done < <(/usr/bin/find "$root" -type f -path '*/Contents/MacOS/*' -print0)
+
+  if [[ "$verified_count" -eq 0 ]]; then
+    echo "error: no Mach-O payload executables were found under $root" >&2
+    exit 1
+  fi
+  echo "Verified $verified_count payload executable(s) under $root."
+}
+
 verify_runtime_signature "$app" 1
-verify_runtime_signature "$payload_bin" 0
+verify_payload_executables "$payload_root"
 verify_runtime_signature "$core_framework" 0
 verify_developer_id "$dmg_versioned" 0
 
@@ -119,12 +143,8 @@ if [[ ! -d "$zipped_app" ]]; then
   exit 1
 fi
 verify_runtime_signature "$zipped_app" 1
-zipped_payload_bin="$zipped_app/Contents/Resources/Payload/Glyphs MCP.glyphsPlugin/Contents/MacOS/plugin"
-if [[ ! -f "$zipped_payload_bin" ]]; then
-  echo "error: installer ZIP is missing its plug-in payload executable" >&2
-  exit 1
-fi
-verify_runtime_signature "$zipped_payload_bin" 0
+zipped_payload_root="$zipped_app/Contents/Resources/Payload"
+verify_payload_executables "$zipped_payload_root"
 zipped_core_framework="$zipped_app/Contents/Frameworks/GlyphsMCPInstallerCore.framework"
 if [[ ! -d "$zipped_core_framework" ]]; then
   echo "error: installer ZIP is missing its core framework" >&2

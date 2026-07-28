@@ -26,11 +26,27 @@ IMPORT_MODULES = (
     "sse_starlette",
     "fontParts",
     "fontTools",
+    "objc",
+    "Foundation",
+    "AppKit",
 )
 
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
+
+
+class PythonRequirementsTests(unittest.TestCase):
+    def test_uses_only_required_pyobjc_components(self) -> None:
+        lines = {
+            line.strip()
+            for line in (_repo_root() / "requirements.txt").read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        }
+
+        self.assertIn("pyobjc-core==11.1", lines)
+        self.assertIn("pyobjc-framework-Cocoa==11.1", lines)
+        self.assertNotIn("pyobjc==11.1", lines)
 
 
 @unittest.skipUnless(

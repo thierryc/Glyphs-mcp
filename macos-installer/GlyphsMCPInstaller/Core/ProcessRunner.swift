@@ -39,7 +39,13 @@ public final class ProcessRunner {
 		return Result(exitCode: proc.terminationStatus, stdout: stdout, stderr: stderr)
 	}
 
-	public func runStreaming(executable: URL, args: [String], environment: [String: String]? = nil, onLine: @escaping (String) -> Void) async throws {
+	public func runStreaming(
+		executable: URL,
+		args: [String],
+		environment: [String: String]? = nil,
+		timeout: TimeInterval = 600,
+		onLine: @escaping (String) -> Void
+	) async throws {
 		if Task.isCancelled { throw CancellationError() }
 
 		let proc = Process()
@@ -76,22 +82,56 @@ public final class ProcessRunner {
 			}
 		}
 
-		let status: Int32 = try await withTaskCancellationHandler(operation: {
-			try await withCheckedThrowingContinuation { cont in
-				proc.terminationHandler = { p in
-					cont.resume(returning: p.terminationStatus)
+		let status: Int32
+		do {
+			status = try await withTaskCancellationHandler(operation: {
+				try await withThrowingTaskGroup(of: Int32.self) { group in
+					group.addTask {
+						try await withCheckedThrowingContinuation { cont in
+							proc.terminationHandler = { p in
+								cont.resume(returning: p.terminationStatus)
+							}
+							do {
+								try proc.run()
+								outPipe.fileHandleForWriting.closeFile()
+								errPipe.fileHandleForWriting.closeFile()
+							} catch {
+								outPipe.fileHandleForWriting.closeFile()
+								errPipe.fileHandleForWriting.closeFile()
+								cont.resume(throwing: error)
+							}
+						}
+					}
+					group.addTask {
+						let nanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
+						try await Task.sleep(nanoseconds: nanoseconds)
+						if proc.isRunning {
+							proc.terminate()
+						}
+						throw InstallerError.userFacing(
+							"Command timed out after \(Self.timeoutDescription(timeout)): \(executable.lastPathComponent). Check your network connection and try again."
+						)
+					}
+
+					defer { group.cancelAll() }
+					guard let first = try await group.next() else {
+						throw InstallerError.userFacing("Command did not return a result: \(executable.lastPathComponent)")
+					}
+					return first
 				}
-				do {
-					try proc.run()
-				} catch {
-					cont.resume(throwing: error)
+			}, onCancel: {
+				if proc.isRunning {
+					proc.terminate()
 				}
+			})
+		} catch {
+			_ = await outTask.value
+			_ = await errTask.value
+			if Task.isCancelled {
+				throw CancellationError()
 			}
-		}, onCancel: {
-			if proc.isRunning {
-				proc.terminate()
-			}
-		})
+			throw error
+		}
 
 		_ = await outTask.value
 		_ = await errTask.value
@@ -100,5 +140,12 @@ public final class ProcessRunner {
 		if status != 0 {
 			throw InstallerError.userFacing("Command failed (\(status)): \(executable.lastPathComponent) \(args.joined(separator: " "))")
 		}
+	}
+
+	private static func timeoutDescription(_ timeout: TimeInterval) -> String {
+		if timeout.rounded() == timeout {
+			return "\(Int(timeout)) seconds"
+		}
+		return String(format: "%.1f seconds", timeout)
 	}
 }

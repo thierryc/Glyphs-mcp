@@ -43,6 +43,7 @@ enum InstallerActionKind: Equatable {
 struct InstallerActionState: Equatable {
 	var activeKind: InstallerActionKind? = nil
 	var logText: String = ""
+	var progressText: String? = nil
 	var installSteps: [InstallStep] = InstallStep.defaultSteps
 	var restartRecommended: Bool = false
 	var clientReloadRecommended: Bool = false
@@ -52,6 +53,7 @@ struct InstallerActionState: Equatable {
 	mutating func resetFor(_ kind: InstallerActionKind) {
 		activeKind = kind
 		logText = ""
+		progressText = nil
 		restartRecommended = false
 		clientReloadRecommended = false
 		if kind == .install {
@@ -629,6 +631,9 @@ final class InstallerViewModel: ObservableObject {
 
 	private func appendLog(_ line: String) {
 		lastLogAt = Date()
+		if let progressText = InstallerProgressText.detail(for: line) {
+			actionState.progressText = progressText
+		}
 		if actionState.logText.isEmpty {
 			actionState.logText = line
 		} else {
