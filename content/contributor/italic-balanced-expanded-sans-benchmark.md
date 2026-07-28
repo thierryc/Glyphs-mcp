@@ -1,7 +1,7 @@
 # Expanded Balanced italicification benchmark
 
 > This 66-glyph study is retained as historical evidence. The
-> [543-glyph Broad-Latin promotion benchmark](italic-balanced-broad-latin-benchmark.md)
+> [Three-family Broad-Latin benchmark](italic-balanced-broad-latin-benchmark.md)
 > is the current release gate and canonical result.
 
 ## Scope

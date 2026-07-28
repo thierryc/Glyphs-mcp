@@ -4,10 +4,12 @@
 
 _July 28, 2026_
 
-Glyphs MCP 1.5.0 introduces Balanced italicification as the recommended mode
+Glyphs MCP 1.5.0 introduces Balanced italicification as an opt-in candidate
 inside an explicitly experimental first-pass workflow. Its purpose is to help
 a designer construct a useful emphasis companion to a Roman—not to generate
-or replace a finished italic design.
+or replace a finished italic design. The expanded validation ranks Balanced
+best for deterministic path geometry but blocks global promotion pending a
+component-transform correction.
 
 ### The highlights
 
@@ -19,13 +21,16 @@ or replace a finished italic design.
   metrics, topology, stem measurements, filter failures, and blocked component
   masters before any confirmed apply. Optical form, rhythm, spacing, kerning,
   alternates, and proofing remain manual design decisions.
-- **Broad-Latin evidence.** A fixed 543-glyph manifest covers Basic Latin,
-  Latin-1, Latin Extended, punctuation, currency, letterlike symbols, and
-  number forms in pinned Inter and Noto Sans sources.
-- **Balanced passed the promotion gate.** All 543 glyphs in both families
-  preserved topology and source data. The test accepted 135 Inter and 102 Noto
-  Sans stem pairs, with effectively zero source-width error after compensation
-  versus combined means of `2.0362` for Raw and `1.3235` for Cursivy.
+- **Three-family Broad-Latin evidence.** A fixed 543-glyph manifest covers
+  Basic Latin, Latin-1, Latin Extended, punctuation, currency, letterlike
+  symbols, and number forms in pinned Inter and Noto Sans sources; pinned IBM
+  Plex Sans contributes 391 Roman/Italic shared values.
+- **Balanced wins path geometry; promotion remains blocked.** All 543 Inter,
+  543 Noto Sans, and 391 Plex glyphs preserved topology and source data. The
+  test accepted 135, 102, and 102 stem pairs respectively, with effectively
+  zero source-width error after compensation. A stricter construction gate
+  found 23 Inter and 2 Noto Sans glyphs whose component transforms do not
+  commute with local shear, including Inter's reflected `d` and `q`.
 - **High-resolution visual evidence.** Paginated 144-DPI contact and
   silhouette-difference sheets compare Roman, all generated modes, and each
   family's official italic. Official italics remain qualitative references,

@@ -159,8 +159,10 @@ between `0` and `1`. It interpolates compatible Raw and Cursivy node
 coordinates, compensates only confidently detected straight stem pairs,
 shears copied anchors around the selected origin, and preserves live
 components. Review executes this full pipeline on detached layer copies.
-Balanced is the recommended experimental mode after the 543-glyph Inter/Noto
-Sans promotion benchmark; omitted `slant_mode` calls remain Cursivy-compatible.
+Balanced is the deterministic path-geometry winner in the Inter, Noto Sans,
+and IBM Plex Sans benchmark, but global promotion is blocked until reflected
+and non-uniform component transforms are handled in whole-glyph shear order.
+Omitted `slant_mode` calls remain Cursivy-compatible.
 
 | Tool | Description |
 | --- | --- |

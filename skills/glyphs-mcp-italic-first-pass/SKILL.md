@@ -24,10 +24,15 @@ it does not create, replace, or claim optical completion of a designed italic.
 - Use `slant_mode="balanced"` when the user wants an adjustable Raw/Cursivy
   blend plus conservative straight-stem compensation. Its default
   `curve_strength` is `0.75` and default `stem_compensation` is `1.0`.
-- Recommend Balanced for experimental higher-quality first passes. It passed
-  the fixed 543-glyph Inter/Noto Sans promotion benchmark while preserving
-  topology and source layers. Keep omitted `slant_mode` calls defaulting to
-  Cursivy for compatibility.
+- Treat Balanced as the deterministic path-geometry winner, not a global
+  recommendation. The Inter/Noto Sans/IBM Plex Sans validation preserved
+  topology and source layers but blocked promotion because reflected and
+  non-uniform component transforms do not commute with the current local
+  shear. Keep omitted `slant_mode` calls defaulting to Cursivy for
+  compatibility.
+- For reflected, rotated, or non-uniformly scaled component constructions,
+  stop after review and ask the designer to inspect or decompose the
+  construction; do not claim that the generated direction is safe.
 - If Cursivy stems are missing, ask whether to set stems, measure suggestions, use raw slant, or stop.
 - Run `review_italic_first_pass` before `apply_italic_first_pass`.
 - Always run `apply_italic_first_pass` with `dry_run=true` before any mutating call.

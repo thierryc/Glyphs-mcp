@@ -25,7 +25,8 @@ An [expanded follow-up](italic-balanced-expanded-sans-benchmark.md) covers all
 uppercase and lowercase Latin letters, all ten figures, and retained extras in
 both Inter and Noto Sans. The current
 [Broad-Latin promotion benchmark](italic-balanced-broad-latin-benchmark.md)
-covers 543 encoded glyphs per family.
+covers 543 Inter, 543 Noto Sans, and 391 IBM Plex Sans shared glyphs and
+documents the component-transform gate that blocks global promotion.
 
 ## Reproduction
 

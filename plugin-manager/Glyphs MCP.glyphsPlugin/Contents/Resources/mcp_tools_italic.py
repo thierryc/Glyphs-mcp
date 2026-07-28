@@ -1283,9 +1283,10 @@ async def review_italic_first_pass(
     """Preview an experimental Roman-to-italic design-assistance first pass.
 
     The result is a construction draft for a Roman's emphasis companion, not a
-    finished italic. Balanced is the recommended experimental mode; omitted
-    slant_mode calls remain Cursivy-compatible. This review transforms detached
-    layer copies and never mutates the font.
+    finished italic. Balanced is the deterministic path-geometry candidate,
+    but reflected or non-uniform component transforms require manual review.
+    Omitted slant_mode calls remain Cursivy-compatible. This review transforms
+    detached layer copies and never mutates the font.
 
     The angle uses Glyphs' source/Transformations convention: positive values
     lean Latin outlines to the right. Default +12 maps to about -12 in exported

@@ -16,12 +16,14 @@ italic.**
 
 - Generate Raw, Cursivy, or Balanced candidates from a Roman master with a
   genuine detached-layer review before any apply.
-- Use Balanced as the recommended experimental mode for a Raw/Cursivy blend
-  with conservative straight-stem width compensation.
+- Compare Raw, Cursivy, and Balanced; Balanced is the deterministic
+  path-geometry winner, with conservative straight-stem width compensation.
 - Preserve topology, live components, and origin-aware anchor placement while
   reporting skipped or blocked cases.
-- Review the fixed 543-glyph Inter and Noto Sans benchmark, including
-  high-resolution contact and silhouette-difference sheets.
+- Review Inter, Noto Sans, and IBM Plex Sans at 543, 543, and 391 shared
+  glyphs, including high-resolution contact and silhouette-difference sheets.
+- Treat promotion as blocked until reflected and non-uniform component
+  transforms are handled in the same coordinate order as whole-glyph shear.
 
 The workflow aims to help construct a useful emphasis companion to the Roman.
 It does not replace the designer's optical drawing, rhythm, spacing, kerning,
