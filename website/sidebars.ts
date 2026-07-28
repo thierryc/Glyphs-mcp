@@ -32,6 +32,7 @@ const sidebars: SidebarsConfig = {
         'kerning-workflow',
         'kerning-tools',
         'spacing-tools',
+        'italic-first-pass',
         'compensated-tuning-tools',
         'workflows/style-set-inspection',
         'workflows/outlines-selected-nodes',
@@ -55,6 +56,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'contributor/local-docs-development',
         'contributor/unicode-assignment-tools',
+        'contributor/italic-balanced-broad-latin-benchmark',
         'contributor/release-qa-protocol',
         'contributor/release-build-notes'
       ]

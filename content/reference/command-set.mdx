@@ -20,7 +20,7 @@ Glyphs MCP supports both Glyphs 3 and Glyphs 4 from `main`. See [Glyphs 3 compat
 - `review_spacing` / `apply_spacing`: review, dry-run, and apply spacing changes.
 - `generate_kerning_tab`: open a kerning proof/worklist tab.
 - `review_kerning_bumper` / `apply_kerning_bumper`: audit and apply conservative collision fixes.
-- `review_italic_first_pass` / `apply_italic_first_pass`: preview and apply a guarded roman-to-italic first pass.
+- `review_italic_first_pass` / `apply_italic_first_pass`: preview and apply an experimental construction draft for a Roman's emphasis companion; the tools do not claim to produce a finished italic.
 - `render_glyph_review_image`: render a read-only PNG proof image for visual LLM review.
 - `add_glyph_annotation` / `clear_glyph_annotations`: place and remove MCP-managed native Glyphs annotations.
 - `docs_search` / `docs_get`: fetch focused Glyphs docs on demand.
@@ -148,17 +148,24 @@ the input contract, previous-map format, safety model, and usage boundaries.
 
 Italic first-pass tools use the Glyphs source/Transformations angle convention: positive `angle` values lean Latin outlines to the right. The default is `12.0`, chosen as a modern common working default. Exported OpenType/UFO metadata uses the opposite sign convention, so a Glyphs `+12` degree source angle corresponds to about `-12` in `post.italicAngle` or an OpenType `slnt` axis value.
 
+This workflow is experimental design assistance. It helps establish a
+controlled starting point for an italic that complements the Roman in
+emphasized text; it does not replace optical drawing, spacing, kerning,
+alternates, or proofing.
+
 `slant_mode` accepts `raw`, `cursivy`, or `balanced`. Balanced defaults to
 `curve_strength=0.75` and `stem_compensation=1.0`; both strengths must be
 between `0` and `1`. It interpolates compatible Raw and Cursivy node
 coordinates, compensates only confidently detected straight stem pairs,
 shears copied anchors around the selected origin, and preserves live
 components. Review executes this full pipeline on detached layer copies.
+Balanced is the recommended experimental mode after the 543-glyph Inter/Noto
+Sans promotion benchmark; omitted `slant_mode` calls remain Cursivy-compatible.
 
 | Tool | Description |
 | --- | --- |
-| `review_italic_first_pass` | Preview a Raw, Cursivy, or Balanced roman-to-italic candidate without mutating the font; includes topology, anchor, component, bounds, metrics, filter-backend, and stem diagnostics. |
-| `apply_italic_first_pass` | Apply the reviewed first-pass italic/oblique candidate; supports `dry_run`, requires `confirm=true`, and can create backup layers. |
+| `review_italic_first_pass` | Preview an experimental Raw, Cursivy, or Balanced Roman-to-italic construction draft without mutating the font; includes topology, anchor, component, bounds, metrics, filter-backend, and stem diagnostics. |
+| `apply_italic_first_pass` | Apply the reviewed experimental starting point; supports `dry_run`, requires `confirm=true`, can create backup layers, and never saves the font. |
 | `set_master_italic_angle` | Set a master's Glyphs Font Info Metrics `italicAngle`; supports `dry_run` and requires `confirm=true` to mutate. |
 | `create_glyph` | Add a new glyph. |
 | `delete_glyph` | Remove a glyph. |

@@ -9,20 +9,27 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-## What's new in 1.4.1
+## What's new in 1.5.0
 
-**A faster, clearer dependency setup for Glyphs 4 and Python 3.14.**
+**An experimental italic first pass that helps the designer start—not finish—the
+italic.**
 
-- Install only the PyObjC runtime and Cocoa bindings used by Glyphs MCP instead
-  of the full macOS framework bundle.
-- Skip pip entirely when every pinned dependency and required runtime import is
-  already healthy.
-- See live package resolution, download, installation, and verification
-  activity directly in the Wizard.
-- Stop stalled dependency commands with bounded network retries and an
-  actionable timeout error.
+- Generate Raw, Cursivy, or Balanced candidates from a Roman master with a
+  genuine detached-layer review before any apply.
+- Use Balanced as the recommended experimental mode for a Raw/Cursivy blend
+  with conservative straight-stem width compensation.
+- Preserve topology, live components, and origin-aware anchor placement while
+  reporting skipped or blocked cases.
+- Review the fixed 543-glyph Inter and Noto Sans benchmark, including
+  high-resolution contact and silhouette-difference sheets.
 
-[Read the full 1.4.1 changelog →](CHANGELOG.md)
+The workflow aims to help construct a useful emphasis companion to the Roman.
+It does not replace the designer's optical drawing, rhythm, spacing, kerning,
+alternates, or final proofing.
+
+[Read the full 1.5.0 changelog →](CHANGELOG.md) ·
+[Experimental italic guide](content/italic-first-pass.md) ·
+[Broad-Latin benchmark](content/contributor/italic-balanced-broad-latin-benchmark.md)
 
 ## macOS Installer app (recommended)
 
@@ -197,8 +204,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.4.1)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.4.1"`).
+## Command Set (MCP server v1.5.0)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.5.0"`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
@@ -245,8 +252,8 @@ instead because Glyphs requires an absolute file path.
 | `review_master_stem_metrics` | Review master stem metrics required by Cursivy and related filters (no mutation). |
 | `set_master_stem_metrics` | Create or update master stem metrics (supports `dry_run`; requires `confirm=true` to mutate). |
 | `set_master_italic_angle` | Set a master’s Glyphs Font Info Metrics `italicAngle` (supports `dry_run`; requires `confirm=true` to mutate). |
-| `review_italic_first_pass` | Preview a guarded roman-to-italic layer copy and build detached Raw, Cursivy, or Balanced candidates (default `+12` Glyphs source angle; no mutation). |
-| `apply_italic_first_pass` | Apply a first-pass italic/oblique copy and slant workflow; `balanced` blends Raw/Cursivy geometry and conservatively compensates straight stems (supports `dry_run`; requires `confirm=true`). |
+| `review_italic_first_pass` | Preview the experimental Roman-to-italic design-assistance workflow and build detached Raw, Cursivy, or Balanced candidates (default `+12` Glyphs source angle; no mutation). |
+| `apply_italic_first_pass` | Apply an experimental starting point for a Roman's emphasis companion; recommended `balanced` mode blends Raw/Cursivy geometry and conservatively compensates straight stems (supports `dry_run`; requires `confirm=true`; never saves). |
 | `measure_stem_ratio` | Measure a stem ratio `b` between two masters (ref/base) for compensated tuning (no mutation). |
 | `review_compensated_tuning` | Compute compensated-tuned outlines for one glyph from a base master plus a different compatible reference master (returns `set_glyph_paths`-compatible JSON; no mutation). |
 | `apply_compensated_tuning` | Apply the same two-master compensated scaling transform across glyphs (backs up layers; supports `dry_run`; requires `confirm=true` to mutate). |

@@ -1280,7 +1280,12 @@ async def review_italic_first_pass(
     curve_strength: float = 0.75,
     stem_compensation: float = 1.0,
 ) -> str:
-    """Preview a roman-to-italic first-pass copy and slant workflow.
+    """Preview an experimental Roman-to-italic design-assistance first pass.
+
+    The result is a construction draft for a Roman's emphasis companion, not a
+    finished italic. Balanced is the recommended experimental mode; omitted
+    slant_mode calls remain Cursivy-compatible. This review transforms detached
+    layer copies and never mutates the font.
 
     The angle uses Glyphs' source/Transformations convention: positive values
     lean Latin outlines to the right. Default +12 maps to about -12 in exported
@@ -1333,7 +1338,11 @@ async def apply_italic_first_pass(
     backup: bool = True,
     backup_layer_name: str = "GMCP Backup: Italic First Pass",
 ) -> str:
-    """Apply a guarded roman-to-italic first pass after dry-run/confirmation.
+    """Apply an experimental italic construction draft after review and dry run.
+
+    The tool assists the designer with a starting point; it does not replace
+    optical drawing, spacing, kerning, alternates, or proofing. It requires
+    explicit confirmation to mutate and never saves the font.
 
     The angle uses Glyphs' source/Transformations convention: positive values
     lean Latin outlines to the right. Default +12 maps to about -12 in exported

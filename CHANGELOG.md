@@ -1,5 +1,48 @@
 # Changelog
 
+## 1.5.0 — Experimental italic first passes for design exploration
+
+_July 28, 2026_
+
+Glyphs MCP 1.5.0 introduces Balanced italicification as the recommended mode
+inside an explicitly experimental first-pass workflow. Its purpose is to help
+a designer construct a useful emphasis companion to a Roman—not to generate
+or replace a finished italic design.
+
+### The highlights
+
+- **A safer mechanical starting point.** Balanced interpolates Raw and
+  Cursivy-compatible coordinates, then restores confidently detected
+  perpendicular straight-stem widths without changing topology or curve
+  handles.
+- **Design work remains visible.** Review reports anchors, components, bounds,
+  metrics, topology, stem measurements, filter failures, and blocked component
+  masters before any confirmed apply. Optical form, rhythm, spacing, kerning,
+  alternates, and proofing remain manual design decisions.
+- **Broad-Latin evidence.** A fixed 543-glyph manifest covers Basic Latin,
+  Latin-1, Latin Extended, punctuation, currency, letterlike symbols, and
+  number forms in pinned Inter and Noto Sans sources.
+- **Balanced passed the promotion gate.** All 543 glyphs in both families
+  preserved topology and source data. The test accepted 135 Inter and 102 Noto
+  Sans stem pairs, with effectively zero source-width error after compensation
+  versus combined means of `2.0362` for Raw and `1.3235` for Cursivy.
+- **High-resolution visual evidence.** Paginated 144-DPI contact and
+  silhouette-difference sheets compare Roman, all generated modes, and each
+  family's official italic. Official italics remain qualitative references,
+  not numeric targets.
+
+### Compatibility
+
+- Existing calls that omit `slant_mode` continue to use Cursivy.
+- Balanced remains opt-in with `curve_strength=0.75` and
+  `stem_compensation=1.0`.
+- Review is a genuine detached-layer dry run, confirmed apply never saves the
+  font, and Raw/Cursivy behavior remains compatible with previous releases.
+
+Read the
+[experimental italic guide](content/italic-first-pass.md) and the
+[Broad-Latin benchmark](content/contributor/italic-balanced-broad-latin-benchmark.md).
+
 ## 1.4.1 — Faster, bounded installer dependency setup
 
 _July 28, 2026_

@@ -40,9 +40,9 @@ mode:
 
 | Family | Topology | Source unchanged | Compensated pairs | Raw error | Cursivy error | Balanced error | Anchor error |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Inter v4.1 | 543/543 | 543/543 | 135 | 2.7812 | 1.8078 | <0.00000000000004 | 0 |
-| Noto Sans | 543/543 | 543/543 | 102 | 1.2912 | 0.8393 | <0.00000000000002 | 0 |
-| Equal-family mean | — | — | 237 | 2.0362 | 1.3235 | <0.00000000000003 | — |
+| Inter v4.1 | 543/543 | 543/543 | 135 | 2.7812 | 1.8078 | &lt;0.00000000000004 | 0 |
+| Noto Sans | 543/543 | 543/543 | 102 | 1.2912 | 0.8393 | &lt;0.00000000000002 | 0 |
+| Equal-family mean | — | — | 237 | 2.0362 | 1.3235 | &lt;0.00000000000003 | — |
 
 There were no generation failures, partial results, unexpected explicit
 component-master mismatches, or unsafe applied compensations. Thirteen

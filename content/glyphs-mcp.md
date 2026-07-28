@@ -76,7 +76,7 @@ The design is tools-first: use deterministic, named tools before falling back to
 - Generate kerning worklists, audit collisions or near-misses, and apply approved bumper fixes safely.
 - Review spacing suggestions, run dry runs, apply conservative sidebearing changes, and visualize the spacing model.
 - Inspect OpenType stylistic sets and feature-linked glyph groups.
-- Review stem prerequisites and apply guarded first-pass italic or oblique transforms.
+- Review stem prerequisites and apply experimental first-pass italic or oblique construction drafts that assist—but do not replace—the designer.
 - Preview and apply compensated tuning transforms across compatible masters.
 - Export UFO masters and designspace documents with structured logs.
 - Search bundled Glyphs API, scripting, plug-in-template, and file-format docs on demand with `docs_search` and `docs_get`.

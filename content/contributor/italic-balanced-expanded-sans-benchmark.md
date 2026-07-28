@@ -1,5 +1,9 @@
 # Expanded Balanced italicification benchmark
 
+> This 66-glyph study is retained as historical evidence. The
+> [543-glyph Broad-Latin promotion benchmark](italic-balanced-broad-latin-benchmark.md)
+> is the current release gate and canonical result.
+
 ## Scope
 
 This follow-up expands the clean-room benchmark from 26 Inter glyphs to 66
@@ -19,8 +23,8 @@ redrawing beyond mechanical obliquing.
 
 | Family | Angle | Topology | Accepted pairs | Raw error | Cursivy error | Balanced error | Anchor error |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Inter v4.1 | 9.4° | 66/66 | 15 | 2.0106 | 1.3069 | <0.00000000000004 | 0 |
-| Noto Sans | 12° | 66/66 | 12 | 2.0413 | 1.3268 | <0.00000000000002 | 0 |
+| Inter v4.1 | 9.4° | 66/66 | 15 | 2.0106 | 1.3069 | &lt;0.00000000000004 | 0 |
+| Noto Sans | 12° | 66/66 | 12 | 2.0413 | 1.3268 | &lt;0.00000000000002 | 0 |
 
 Balanced reduced mean source-width error by more than 99.99% versus both Raw
 and Cursivy across accepted pairs in both families. This near-zero result is

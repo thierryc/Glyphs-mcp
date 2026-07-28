@@ -23,7 +23,9 @@ no mechanical italicification pass should claim to reproduce.
 
 An [expanded follow-up](italic-balanced-expanded-sans-benchmark.md) covers all
 uppercase and lowercase Latin letters, all ten figures, and retained extras in
-both Inter and Noto Sans.
+both Inter and Noto Sans. The current
+[Broad-Latin promotion benchmark](italic-balanced-broad-latin-benchmark.md)
+covers 543 encoded glyphs per family.
 
 ## Reproduction
 

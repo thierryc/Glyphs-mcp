@@ -1,11 +1,13 @@
 ---
 name: glyphs-mcp-italic-first-pass
-description: Use this skill when the task is to create a first-pass italic or oblique set from roman glyphs, selected glyphs, or one current glyph by copying layers and applying a guarded slant.
+description: Use this skill for an experimental first-pass italic or oblique construction draft from Roman glyphs, selected glyphs, or one current glyph.
 ---
 
 # Glyphs MCP italic first pass
 
-Use this skill for a guarded roman-to-italic first pass. It accelerates the work; it does not claim optical completion.
+Use this skill for a guarded Roman-to-italic first pass. Its goal is to help a
+designer begin an emphasis companion to the Roman. It accelerates construction;
+it does not create, replace, or claim optical completion of a designed italic.
 
 ## Core rules
 
@@ -22,6 +24,10 @@ Use this skill for a guarded roman-to-italic first pass. It accelerates the work
 - Use `slant_mode="balanced"` when the user wants an adjustable Raw/Cursivy
   blend plus conservative straight-stem compensation. Its default
   `curve_strength` is `0.75` and default `stem_compensation` is `1.0`.
+- Recommend Balanced for experimental higher-quality first passes. It passed
+  the fixed 543-glyph Inter/Noto Sans promotion benchmark while preserving
+  topology and source layers. Keep omitted `slant_mode` calls defaulting to
+  Cursivy for compatibility.
 - If Cursivy stems are missing, ask whether to set stems, measure suggestions, use raw slant, or stop.
 - Run `review_italic_first_pass` before `apply_italic_first_pass`.
 - Always run `apply_italic_first_pass` with `dry_run=true` before any mutating call.
@@ -104,12 +110,17 @@ anchor behavior.
 
 ## Manual review reminders
 
-Warn that mechanically slanted glyphs need review, especially `a`, `e`, `f`, `g`, `k`, `v`, `w`, `x`, `y`, punctuation, brackets, braces, quotes, and symbols.
+Warn that the output is a construction draft, not the italic design. The
+designer still owns optical form, rhythm, spacing, kerning, alternates,
+interpolation, and proofing. Mechanically transformed glyphs need review,
+especially `a`, `e`, `f`, `g`, `k`, `v`, `w`, `x`, `y`, punctuation,
+brackets, braces, quotes, and symbols.
 
 Kerning replacement is not part of this v1 skill. If the user wants kerning copied from roman to italic, treat it as a separate follow-up workflow.
 
 ## Deeper references
 
 - [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
+- [Broad-Latin benchmark](https://github.com/thierryc/Glyphs-mcp/blob/main/content/contributor/italic-balanced-broad-latin-benchmark.md)
 - [Glyphs Transformations docs](https://github.com/thierryc/Glyphs-mcp/blob/main/Documentations/Markdown/086_filters_filters_built-in_transformations.md)
 - [Stem metrics docs](https://github.com/thierryc/Glyphs-mcp/blob/main/Documentations/Markdown/041_font-info_masters.md)
