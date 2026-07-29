@@ -1,5 +1,6 @@
 import XCTest
 import Foundation
+import CryptoKit
 @testable import GlyphsMCPInstallerCore
 
 final class GlyphsMCPInstallerTests: XCTestCase {
@@ -764,17 +765,25 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertFalse(inspection.isSymlink)
 	}
 
-	func testPluginInstallerSignsCopiedBundle() throws {
+	func testPluginInstallerPreservesAndVerifiesCopiedBundleSignature() throws {
 		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
 		let src = tmp.appendingPathComponent("Source/Glyphs MCP.glyphsPlugin", isDirectory: true)
 		let pluginsDir = tmp.appendingPathComponent("Installed", isDirectory: true)
 		try makePluginBundle(at: src, version: "1.2.3")
 
-		var signed: [URL] = []
+		let signature = PluginExecutableSignature(
+			cdHash: "trusted-cdhash",
+			teamIdentifier: PluginExecutableVerifier.expectedTeamIdentifier,
+			authority: "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)",
+			hardenedRuntime: true,
+			timestamped: true
+		)
+		var verified: [URL] = []
 		let installer = PluginInstaller(
 			log: { _ in },
-			signer: PluginExecutableSigner { bundleURL in
-				signed.append(bundleURL)
+			verifier: PluginExecutableVerifier { bundleURL in
+				verified.append(bundleURL)
+				return signature
 			}
 		)
 
@@ -783,7 +792,45 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		let dest = pluginsDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
 		XCTAssertTrue(FileManager.default.fileExists(atPath: dest.path))
 		XCTAssertEqual(outcome.destBundle, dest)
-		XCTAssertEqual(signed, [dest])
+		XCTAssertEqual(verified.count, 3)
+		XCTAssertEqual(verified.first, src)
+		XCTAssertEqual(verified.last, dest)
+		XCTAssertTrue(verified[1].lastPathComponent.contains(".installing-"))
+	}
+
+	func testPluginInstallerRestoresExistingBundleWhenStagedSignatureChanges() throws {
+		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+		let src = tmp.appendingPathComponent("Source/Glyphs MCP.glyphsPlugin", isDirectory: true)
+		let pluginsDir = tmp.appendingPathComponent("Installed", isDirectory: true)
+		let dest = pluginsDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+		try makePluginBundle(at: src, version: "2.0.0")
+		try makePluginBundle(at: dest, version: "1.0.0")
+
+		let trusted = PluginExecutableSignature(
+			cdHash: "trusted",
+			teamIdentifier: PluginExecutableVerifier.expectedTeamIdentifier,
+			authority: "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)",
+			hardenedRuntime: true,
+			timestamped: true
+		)
+		let changed = PluginExecutableSignature(
+			cdHash: "changed",
+			teamIdentifier: PluginExecutableVerifier.expectedTeamIdentifier,
+			authority: trusted.authority,
+			hardenedRuntime: true,
+			timestamped: true
+		)
+		let installer = PluginInstaller(
+			log: { _ in },
+			verifier: PluginExecutableVerifier { bundleURL in
+				bundleURL.lastPathComponent.contains(".installing-") ? changed : trusted
+			}
+		)
+
+		XCTAssertThrowsError(
+			try installer.installPluginBundle(from: src, toPluginsDir: pluginsDir, allowReplace: true)
+		)
+		XCTAssertEqual(PluginVersionReader.readPluginVersion(pluginBundle: dest)?.displayString, "1.0.0")
 	}
 
 	func testPluginInstallerInspectionDetectsSymlinkedBundle() throws {
@@ -1013,6 +1060,49 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertTrue(FileManager.default.fileExists(atPath: resolved.requirementsTxt.path))
 	}
 
+	func testInstallerPayloadResolveExtractsSignedPayloadArchive() throws {
+		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+		let bundleURL = tmp.appendingPathComponent("Archived.bundle", isDirectory: true)
+		let contents = bundleURL.appendingPathComponent("Contents", isDirectory: true)
+		let resources = contents.appendingPathComponent("Resources", isDirectory: true)
+		let sourceRoot = tmp.appendingPathComponent("source", isDirectory: true)
+		let payload = sourceRoot.appendingPathComponent("Payload", isDirectory: true)
+		let plugin = payload.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+		let req = payload.appendingPathComponent("requirements.txt")
+		try FileManager.default.createDirectory(at: plugin, withIntermediateDirectories: true, attributes: nil)
+		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
+		try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true, attributes: nil)
+
+		let infoPlist = contents.appendingPathComponent("Info.plist")
+		let plist = """
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+  <key>CFBundleIdentifier</key>
+  <string>cx.ap.tests.archived-payload</string>
+  <key>CFBundleName</key>
+  <string>Archived</string>
+  <key>CFBundlePackageType</key>
+  <string>BNDL</string>
+</dict>
+</plist>
+"""
+		try plist.write(to: infoPlist, atomically: true, encoding: .utf8)
+		let archive = resources.appendingPathComponent("Payload.gmcparchive")
+		let process = Process()
+		process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+		process.arguments = ["-czf", archive.path, "-C", sourceRoot.path, "Payload"]
+		try process.run()
+		process.waitUntilExit()
+		XCTAssertEqual(process.terminationStatus, 0)
+
+		let bundle = try XCTUnwrap(Bundle(url: bundleURL))
+		let resolved = try InstallerPayload.resolve(bundle: bundle)
+		XCTAssertEqual(resolved.pluginBundle.lastPathComponent, "Glyphs MCP.glyphsPlugin")
+		XCTAssertTrue(FileManager.default.fileExists(atPath: resolved.requirementsTxt.path))
+		XCTAssertNotEqual(resolved.payloadDir.path, payload.path)
+	}
+
 	func testPayloadManagedSkillDirectoriesFiltersGlyphsSkills() throws {
 		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
 		let payloadDir = tmp.appendingPathComponent("Payload", isDirectory: true)
@@ -1170,27 +1260,124 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertLessThanOrEqual(InstallerProgressText.detail(for: "Downloading " + String(repeating: "x", count: 300))?.count ?? 0, 180)
 	}
 
-	func testGitHubPluginVersionFetcherParsesPlistViaHTTPClient() async throws {
+	func testGitHubPluginVersionFetcherUsesPublishedReleaseMetadata() async throws {
 		UserDefaults.standard.removeObject(forKey: "gmcp.githubPluginVersionFetchedAt")
 		UserDefaults.standard.removeObject(forKey: "gmcp.githubPluginVersionString")
 
-		let plist = """
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>CFBundleShortVersionString</key>
-  <string>9.9.9</string>
-  <key>CFBundleVersion</key>
-  <string>9.9.9</string>
-</dict>
-</plist>
+		let json = """
+{
+  "tag_name": "v9.9.9",
+  "draft": false,
+  "prerelease": false,
+  "assets": []
+}
 """
-		let data = try XCTUnwrap(plist.data(using: .utf8))
+		let data = try XCTUnwrap(json.data(using: .utf8))
 		let client = FakeHTTPClient(dataToReturn: data, onRequest: nil)
 
 		let res = try await GitHubPluginVersionFetcher.fetchLatestVersion(client: client, timeout: 1, cacheMaxAge: -1)
 		XCTAssertEqual(res.version.displayString, "9.9.9")
+	}
+
+	func testGitHubReleaseResolverRejectsPrerelease() throws {
+		let json = """
+{
+  "tag_name": "v9.9.9",
+  "draft": false,
+  "prerelease": true,
+  "assets": []
+}
+"""
+		let data = try XCTUnwrap(json.data(using: .utf8))
+		XCTAssertThrowsError(try GitHubReleaseResolver.parsePublishedRelease(data))
+	}
+
+	func testPublishedReleaseRequiresOneTrustedAssetURL() throws {
+		let trusted = GitHubReleaseAsset(
+			name: "GlyphsMCPInstaller.zip",
+			browserDownloadURL: try XCTUnwrap(
+				URL(string: "https://github.com/thierryc/Glyphs-mcp/releases/download/v1.5.0/GlyphsMCPInstaller.zip")
+			)
+		)
+		let release = GitHubPublishedRelease(
+			tagName: "v1.5.0",
+			draft: false,
+			prerelease: false,
+			assets: [trusted]
+		)
+		XCTAssertEqual(
+			try release.requiredAsset(named: "GlyphsMCPInstaller.zip"),
+			trusted
+		)
+		XCTAssertThrowsError(try release.requiredAsset(named: "SHA256SUMS"))
+
+		let duplicate = GitHubPublishedRelease(
+			tagName: "v1.5.0",
+			draft: false,
+			prerelease: false,
+			assets: [trusted, trusted]
+		)
+		XCTAssertThrowsError(
+			try duplicate.requiredAsset(named: "GlyphsMCPInstaller.zip")
+		)
+
+		let untrusted = GitHubPublishedRelease(
+			tagName: "v1.5.0",
+			draft: false,
+			prerelease: false,
+			assets: [
+				GitHubReleaseAsset(
+					name: "GlyphsMCPInstaller.zip",
+					browserDownloadURL: try XCTUnwrap(
+						URL(string: "https://example.com/GlyphsMCPInstaller.zip")
+					)
+				)
+			]
+		)
+		XCTAssertThrowsError(
+			try untrusted.requiredAsset(named: "GlyphsMCPInstaller.zip")
+		)
+	}
+
+	func testGitHubPluginDownloaderVerifiesPublishedChecksum() throws {
+		let payload = Data("trusted installer".utf8)
+		let digest = SHA256.hash(data: payload).map { String(format: "%02x", $0) }.joined()
+		let manifest = Data("\(digest)  installer-app/GlyphsMCPInstaller.zip\n".utf8)
+		XCTAssertNoThrow(
+			try GitHubPluginDownloader.verifyChecksum(
+				payload,
+				manifestData: manifest,
+				assetName: "GlyphsMCPInstaller.zip"
+			)
+		)
+		XCTAssertThrowsError(
+			try GitHubPluginDownloader.verifyChecksum(
+				Data("modified".utf8),
+				manifestData: manifest,
+				assetName: "GlyphsMCPInstaller.zip"
+			)
+		)
+		XCTAssertThrowsError(
+			try GitHubPluginDownloader.verifyChecksum(
+				payload,
+				manifestData: Data("\(digest)  first/GlyphsMCPInstaller.zip\n\(digest)  second/GlyphsMCPInstaller.zip\n".utf8),
+				assetName: "GlyphsMCPInstaller.zip"
+			)
+		)
+		XCTAssertThrowsError(
+			try GitHubPluginDownloader.verifyChecksum(
+				payload,
+				manifestData: Data("not-a-digest  GlyphsMCPInstaller.zip\n".utf8),
+				assetName: "GlyphsMCPInstaller.zip"
+			)
+		)
+		XCTAssertThrowsError(
+			try GitHubPluginDownloader.verifyChecksum(
+				payload,
+				manifestData: Data("\(digest)  ../GlyphsMCPInstaller.zip\n".utf8),
+				assetName: "GlyphsMCPInstaller.zip"
+			)
+		)
 	}
 
 	func testGlyphsApplicationClassifierHandlesStableAndBetaBundles() {

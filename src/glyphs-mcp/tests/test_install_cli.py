@@ -12,10 +12,13 @@ import importlib.util
 import io
 import json
 import os
+import shutil
 import sys
+import tarfile
 import tempfile
 import types
 import unittest
+import zipfile
 from pathlib import Path
 
 
@@ -112,7 +115,16 @@ class InstallerSmokeTests(unittest.TestCase):
             old_home = os.environ.get("HOME")
             os.environ["HOME"] = tmp
             try:
-                install_cli.install_plugin(mode="copy", sign_executable=False)
+                install_cli.install_plugin(
+                    mode="copy",
+                    sign_executable=False,
+                    release_plugin=(
+                        _repo_root()
+                        / "src"
+                        / "glyphs-mcp"
+                        / "Glyphs MCP.glyphsPlugin"
+                    ),
+                )
             finally:
                 if old_home is None:
                     os.environ.pop("HOME", None)
@@ -129,6 +141,291 @@ class InstallerSmokeTests(unittest.TestCase):
             )
             self.assertTrue(dest.is_dir(), f"Expected plugin folder at {dest}")
             self.assertTrue((dest / "Contents" / "Resources" / "plugin.py").is_file())
+
+    def test_release_copy_preserves_verified_signature_without_ad_hoc_signing(self) -> None:
+        install_cli = _load_install_cli()
+        signature = install_cli.PluginSignature(
+            cdhash="trusted",
+            team_identifier=install_cli.EXPECTED_DEVELOPER_TEAM,
+            authority=install_cli.EXPECTED_DEVELOPER_AUTHORITY,
+            hardened_runtime=True,
+            timestamped=True,
+        )
+
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-installer-home.") as tmp:
+            release_plugin = Path(tmp) / "release" / "Glyphs MCP.glyphsPlugin"
+            shutil.copytree(
+                _repo_root()
+                / "src"
+                / "glyphs-mcp"
+                / "Glyphs MCP.glyphsPlugin",
+                release_plugin,
+            )
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            original_verify = install_cli.verify_trusted_plugin_signature
+            original_sign = install_cli.sign_plugin_executable
+            verified: list[Path] = []
+            try:
+                install_cli.verify_trusted_plugin_signature = (
+                    lambda bundle: verified.append(bundle) or signature
+                )
+                install_cli.sign_plugin_executable = (
+                    lambda _bundle: self.fail("release copy must not be ad-hoc signed")
+                )
+                install_cli.install_plugin(
+                    mode="copy",
+                    release_plugin=release_plugin,
+                )
+            finally:
+                install_cli.verify_trusted_plugin_signature = original_verify
+                install_cli.sign_plugin_executable = original_sign
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            dest = (
+                Path(tmp)
+                / "Library"
+                / "Application Support"
+                / "Glyphs 4"
+                / "Plugins"
+                / "Glyphs MCP.glyphsPlugin"
+            )
+            self.assertEqual(len(verified), 3)
+            self.assertEqual(verified[0], release_plugin)
+            self.assertEqual(verified[-1], dest)
+            self.assertEqual(
+                (release_plugin / "Contents" / "MacOS" / "plugin").read_bytes(),
+                (dest / "Contents" / "MacOS" / "plugin").read_bytes(),
+            )
+
+    def test_release_copy_restores_existing_plugin_after_signature_mismatch(self) -> None:
+        install_cli = _load_install_cli()
+        trusted = install_cli.PluginSignature(
+            cdhash="trusted",
+            team_identifier=install_cli.EXPECTED_DEVELOPER_TEAM,
+            authority=install_cli.EXPECTED_DEVELOPER_AUTHORITY,
+            hardened_runtime=True,
+            timestamped=True,
+        )
+        changed = install_cli.PluginSignature(
+            cdhash="changed",
+            team_identifier=trusted.team_identifier,
+            authority=trusted.authority,
+            hardened_runtime=True,
+            timestamped=True,
+        )
+
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-installer-home.") as tmp:
+            release_plugin = Path(tmp) / "release" / "Glyphs MCP.glyphsPlugin"
+            shutil.copytree(
+                _repo_root()
+                / "src"
+                / "glyphs-mcp"
+                / "Glyphs MCP.glyphsPlugin",
+                release_plugin,
+            )
+            dest = (
+                Path(tmp)
+                / "Library"
+                / "Application Support"
+                / "Glyphs 4"
+                / "Plugins"
+                / "Glyphs MCP.glyphsPlugin"
+            )
+            dest.mkdir(parents=True)
+            marker = dest / "marker.txt"
+            marker.write_text("existing\n", encoding="utf-8")
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            original_verify = install_cli.verify_trusted_plugin_signature
+            try:
+                install_cli.verify_trusted_plugin_signature = (
+                    lambda bundle: (
+                        changed
+                        if ".installing-" in bundle.name
+                        else trusted
+                    )
+                )
+                with self.assertRaises(SystemExit):
+                    install_cli.install_plugin(
+                        mode="copy",
+                        overwrite_existing=True,
+                        release_plugin=release_plugin,
+                    )
+            finally:
+                install_cli.verify_trusted_plugin_signature = original_verify
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            self.assertEqual(marker.read_text(encoding="utf-8"), "existing\n")
+
+    def test_copy_mode_resolves_the_exact_checkout_release(self) -> None:
+        install_cli = _load_install_cli()
+        signature = install_cli.PluginSignature(
+            cdhash="trusted",
+            team_identifier=install_cli.EXPECTED_DEVELOPER_TEAM,
+            authority=install_cli.EXPECTED_DEVELOPER_AUTHORITY,
+            hardened_runtime=True,
+            timestamped=True,
+        )
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-installer-home.") as tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            original_resolve = install_cli.resolve_signed_release_plugin
+            original_verify = install_cli.verify_trusted_plugin_signature
+            versions: list[str] = []
+            try:
+                install_cli.resolve_signed_release_plugin = lambda version: (
+                    versions.append(version)
+                    or (
+                        _repo_root()
+                        / "src"
+                        / "glyphs-mcp"
+                        / "Glyphs MCP.glyphsPlugin",
+                        None,
+                    )
+                )
+                install_cli.verify_trusted_plugin_signature = lambda _bundle: signature
+                install_cli.install_plugin(mode="copy")
+            finally:
+                install_cli.resolve_signed_release_plugin = original_resolve
+                install_cli.verify_trusted_plugin_signature = original_verify
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+            self.assertEqual(versions, ["1.5.0"])
+
+    def test_installer_zip_validation_rejects_path_traversal(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-unsafe-zip.") as tmp:
+            archive = Path(tmp) / "unsafe.zip"
+            with zipfile.ZipFile(archive, "w") as handle:
+                handle.writestr("../escape", "unsafe")
+            with self.assertRaisesRegex(RuntimeError, "unsafe path"):
+                install_cli._validate_installer_zip_members(archive)
+
+    def test_installer_zip_validation_rejects_escaping_symlink(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-unsafe-link.") as tmp:
+            archive = Path(tmp) / "unsafe-link.zip"
+            with zipfile.ZipFile(archive, "w") as handle:
+                info = zipfile.ZipInfo("GlyphsMCPInstaller.app/escape")
+                info.create_system = 3
+                info.external_attr = (0o120777 << 16)
+                handle.writestr(info, "../../outside")
+            with self.assertRaisesRegex(RuntimeError, "escaping symlink"):
+                install_cli._validate_installer_zip_members(archive)
+
+    def test_release_checksum_requires_one_valid_sha256(self) -> None:
+        install_cli = _load_install_cli()
+        digest = "a" * 64
+        self.assertEqual(
+            install_cli._expected_asset_checksum(
+                f"{digest}  installer-app/GlyphsMCPInstaller.zip\n".encode(),
+                "GlyphsMCPInstaller.zip",
+            ),
+            digest,
+        )
+        with self.assertRaisesRegex(RuntimeError, "duplicate entries"):
+            install_cli._expected_asset_checksum(
+                (
+                    f"{digest}  one/GlyphsMCPInstaller.zip\n"
+                    f"{digest}  two/GlyphsMCPInstaller.zip\n"
+                ).encode(),
+                "GlyphsMCPInstaller.zip",
+            )
+        with self.assertRaisesRegex(RuntimeError, "invalid SHA-256"):
+            install_cli._expected_asset_checksum(
+                b"not-a-digest  GlyphsMCPInstaller.zip\n",
+                "GlyphsMCPInstaller.zip",
+            )
+        with self.assertRaisesRegex(RuntimeError, "does not list"):
+            install_cli._expected_asset_checksum(
+                f"{digest}  ../GlyphsMCPInstaller.zip\n".encode(),
+                "GlyphsMCPInstaller.zip",
+            )
+
+    def test_trusted_plugin_verification_requires_stapled_notarization_ticket(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-gatekeeper.") as tmp:
+            plugin = Path(tmp) / "Glyphs MCP.glyphsPlugin"
+            executable = plugin / "Contents" / "MacOS" / "plugin"
+            executable.parent.mkdir(parents=True)
+            executable.write_bytes(b"loader")
+            (plugin / "Contents" / "CodeResources").write_bytes(b"ticket")
+            commands: list[list[str]] = []
+            original_run = install_cli._run_signature_command
+            try:
+                def fake_run(command: list[str], _subject: Path) -> str:
+                    commands.append(command)
+                    if command[:3] == ["/usr/bin/codesign", "-d", "--verbose=4"]:
+                        return (
+                            "flags=0x10000(runtime)\n"
+                            "CDHash=trusted\n"
+                            f"Authority={install_cli.EXPECTED_DEVELOPER_AUTHORITY}\n"
+                            "Timestamp=Jul 29, 2026\n"
+                            f"TeamIdentifier={install_cli.EXPECTED_DEVELOPER_TEAM}\n"
+                        )
+                    return ""
+
+                install_cli._run_signature_command = fake_run
+                install_cli.verify_trusted_plugin_signature(plugin)
+            finally:
+                install_cli._run_signature_command = original_run
+
+            self.assertTrue(
+                any(command[:3] == ["/usr/bin/xcrun", "stapler", "validate"] for command in commands)
+            )
+
+    def test_signed_installer_payload_archive_resolves_plugin(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-payload-archive.") as tmp:
+            root = Path(tmp)
+            app = root / "GlyphsMCPInstaller.app"
+            resources = app / "Contents" / "Resources"
+            resources.mkdir(parents=True)
+            archive = resources / "Payload.gmcparchive"
+            source = root / "source"
+            info = (
+                source
+                / "Payload"
+                / "Glyphs MCP.glyphsPlugin"
+                / "Contents"
+                / "Info.plist"
+            )
+            info.parent.mkdir(parents=True)
+            info.write_bytes(b"plist")
+            with tarfile.open(archive, "w:gz") as handle:
+                handle.add(source / "Payload", arcname="Payload")
+            extraction = root / "extraction"
+            extraction.mkdir()
+
+            plugin = install_cli._resolve_installer_payload_plugin(app, extraction)
+
+            self.assertEqual(plugin.name, "Glyphs MCP.glyphsPlugin")
+            self.assertTrue((plugin / "Contents" / "Info.plist").is_file())
+
+    def test_signed_payload_archive_rejects_traversal(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-unsafe-payload.") as tmp:
+            root = Path(tmp)
+            archive_path = root / "Payload.gmcparchive"
+            with tarfile.open(archive_path, "w:gz") as archive:
+                info = tarfile.TarInfo("../escape")
+                payload = b"unsafe"
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+            with self.assertRaisesRegex(RuntimeError, "unsafe path"):
+                install_cli._extract_signed_payload_archive(
+                    archive_path,
+                    root / "extract",
+                )
 
     def test_install_plugin_symlink_uses_temp_home(self) -> None:
         if not hasattr(os, "symlink"):
@@ -657,7 +954,17 @@ class InstallerSmokeTests(unittest.TestCase):
                 )
                 dest.mkdir(parents=True, exist_ok=True)
                 (dest / "marker.txt").write_text("old plugin\n", encoding="utf-8")
-                install_cli.install_plugin(mode="copy", overwrite_existing=True, sign_executable=False)
+                install_cli.install_plugin(
+                    mode="copy",
+                    overwrite_existing=True,
+                    sign_executable=False,
+                    release_plugin=(
+                        _repo_root()
+                        / "src"
+                        / "glyphs-mcp"
+                        / "Glyphs MCP.glyphsPlugin"
+                    ),
+                )
             finally:
                 if old_home is None:
                     os.environ.pop("HOME", None)

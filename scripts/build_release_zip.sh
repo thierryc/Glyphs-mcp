@@ -3,10 +3,12 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Build a clean release ZIP for the Glyphs MCP plugin bundle.
+Build a clean development ZIP for the Glyphs MCP source bundle.
 
 This uses `git ls-files` so the ZIP only contains tracked files and never
 accidentally ships local artifacts like __pycache__, .venv, __MACOSX, etc.
+The result is not a signed or notarized release artifact and must not be
+published for end-user installation.
 
 Usage:
   ./scripts/build_release_zip.sh [--version X.Y.Z] [--output PATH] [--no-check]
@@ -66,9 +68,10 @@ if [[ -z "$output" ]]; then
   output="dist/Glyphs MCP.glyphsPlugin-v${version}.zip"
 fi
 
-echo "Building release ZIP from tracked files:"
+echo "Building development ZIP from tracked files:"
 echo "  plugin:  $plugin_dir"
 echo "  output:  $output"
+echo "  warning: this source ZIP is not signed/notarized; do not publish it"
 
 python3 - "$plugin_dir" "$output" <<'PY'
 import os

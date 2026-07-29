@@ -102,6 +102,8 @@ public enum InstallerPaths {
 
 public struct InstallerPayload {
 	public static let legacyManagedSkillNames = ["glyphs-mcp-connect"]
+	private static let extractionLock = NSLock()
+	private static var extractedPayloads: [String: URL] = [:]
 
 	public let payloadDir: URL
 	public let pluginBundle: URL
@@ -122,7 +124,7 @@ public struct InstallerPayload {
 
 	public static func resolve(bundle: Bundle = .main) throws -> InstallerPayload {
 		let fm = FileManager.default
-		let payloadDir: URL? = {
+		let directPayloadDir: URL? = {
 			// Prefer a direct path lookup to avoid any resource indexing weirdness for folder-based payloads.
 			if let root = bundle.resourceURL {
 				let direct = root.appendingPathComponent("Payload", isDirectory: true)
@@ -130,8 +132,19 @@ public struct InstallerPayload {
 			}
 			return bundle.url(forResource: "Payload", withExtension: nil)
 		}()
+		let payloadDir: URL?
+		if let directPayloadDir {
+			payloadDir = directPayloadDir
+		} else if let resourceRoot = bundle.resourceURL {
+			let archive = resourceRoot.appendingPathComponent("Payload.gmcparchive")
+			payloadDir = fm.fileExists(atPath: archive.path)
+				? try extractPayloadArchive(archive)
+				: nil
+		} else {
+			payloadDir = nil
+		}
 		guard let payloadDir else {
-			throw InstallerError.userFacing("Installer payload is missing. Rebuild the app (Copy Payload build phase).")
+			throw InstallerError.userFacing("Installer payload is missing. Rebuild the signed installer app.")
 		}
 		let plugin = payloadDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
 		let req = payloadDir.appendingPathComponent("requirements.txt")
@@ -144,5 +157,49 @@ public struct InstallerPayload {
 		}
 		let resolvedSkillsDir = FileManager.default.fileExists(atPath: skillsDir.path) ? skillsDir : nil
 		return InstallerPayload(payloadDir: payloadDir, pluginBundle: plugin, requirementsTxt: req, skillsDir: resolvedSkillsDir)
+	}
+
+	private static func extractPayloadArchive(_ archive: URL) throws -> URL {
+		extractionLock.lock()
+		defer { extractionLock.unlock() }
+
+		if let cached = extractedPayloads[archive.path],
+		   FileManager.default.fileExists(atPath: cached.path) {
+			return cached
+		}
+
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-installer-payload-\(UUID().uuidString)", isDirectory: true)
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true, attributes: nil)
+		let process = Process()
+		process.executableURL = URL(fileURLWithPath: "/usr/bin/tar")
+		process.arguments = ["-xzf", archive.path, "-C", root.path]
+		let pipe = Pipe()
+		process.standardOutput = pipe
+		process.standardError = pipe
+		do {
+			try process.run()
+			let data = pipe.fileHandleForReading.readDataToEndOfFile()
+			process.waitUntilExit()
+			guard process.terminationStatus == 0 else {
+				let details = String(data: data, encoding: .utf8)?
+					.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+				throw InstallerError.userFacing("Could not extract the signed installer payload: \(details)")
+			}
+		} catch {
+			try? FileManager.default.removeItem(at: root)
+			if let installerError = error as? InstallerError {
+				throw installerError
+			}
+			throw InstallerError.userFacing("Could not extract the signed installer payload: \(error.localizedDescription)")
+		}
+
+		let payload = root.appendingPathComponent("Payload", isDirectory: true)
+		guard FileManager.default.fileExists(atPath: payload.path) else {
+			try? FileManager.default.removeItem(at: root)
+			throw InstallerError.userFacing("Signed installer payload archive does not contain Payload.")
+		}
+		extractedPayloads[archive.path] = payload
+		return payload
 	}
 }

@@ -6,13 +6,12 @@ usage() {
 Build and upload Glyphs MCP release assets to an existing GitHub release.
 
 Usage:
-  ./scripts/publish_release_assets.sh --tag vX.Y.Z [--skip-build] [--include-plugin-zip]
+  ./scripts/publish_release_assets.sh --tag vX.Y.Z [--skip-build]
       [--dry-run] [--confirm-publish vX.Y.Z] [--allow-unsigned-tag]
 
 Options:
   --tag vX.Y.Z          Exact signed release tag. Must match all source and app versions.
   --skip-build          Reuse existing artifacts, but still run every verification gate.
-  --include-plugin-zip  Also build/upload dist/Glyphs MCP.glyphsPlugin-v<VERSION>.zip
   --dry-run             Build and verify locally without uploading anything.
   --confirm-publish TAG Non-interactive confirmation; value must exactly equal --tag.
   --allow-unsigned-tag  Explicitly allow an annotated but unsigned tag (not recommended).
@@ -26,7 +25,6 @@ cd "$repo_root"
 version=""
 tag=""
 skip_build="0"
-include_plugin_zip="0"
 dry_run="0"
 confirm_publish=""
 allow_unsigned_tag="0"
@@ -39,10 +37,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-build)
       skip_build="1"
-      shift
-      ;;
-    --include-plugin-zip)
-      include_plugin_zip="1"
       shift
       ;;
     --dry-run)
@@ -135,15 +129,9 @@ if [[ "$skip_build" != "1" ]]; then
   ./scripts/build_installer_app.sh
   ./scripts/notarize_installer_app.sh
   ./scripts/make_installer_dmg.sh
-  if [[ "$include_plugin_zip" == "1" ]]; then
-    ./scripts/build_release_zip.sh --version "$version"
-  fi
 fi
 
 verify_args=(--tag "$tag" --write-checksums)
-if [[ "$include_plugin_zip" == "1" ]]; then
-  verify_args+=(--include-plugin-zip)
-fi
 ./scripts/verify_release_artifacts.sh "${verify_args[@]}"
 
 assets=(
@@ -152,10 +140,6 @@ assets=(
   "$repo_root/dist/installer-app/GlyphsMCPInstaller.zip"
   "$repo_root/dist/SHA256SUMS"
 )
-
-if [[ "$include_plugin_zip" == "1" ]]; then
-  assets+=("$repo_root/dist/Glyphs MCP.glyphsPlugin-v$version.zip")
-fi
 
 for asset in "${assets[@]}"; do
   if [[ ! -f "$asset" ]]; then

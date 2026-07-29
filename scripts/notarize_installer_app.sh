@@ -7,6 +7,7 @@ app="$repo_root/dist/installer-app/$scheme.app"
 
 profile="${NOTARY_PROFILE:-gmcp-notary}"
 skip="${SKIP_NOTARIZATION:-0}"
+identity="${CODESIGN_IDENTITY:-Developer ID Application: Thierry Charbonnel (N9U29A4T8J)}"
 
 if [[ ! -d "$app" ]]; then
   echo "error: app not found: $app" >&2
@@ -20,17 +21,73 @@ if [[ "$skip" == "1" ]]; then
 fi
 rm -f "$zip"
 
-echo "Zipping for notarization: $zip"
-ditto -c -k --keepParent "$app" "$zip"
-
 if [[ "$skip" == "1" ]]; then
+  echo "Zipping deliberately unnotarized app: $zip"
+  ditto -c -k --keepParent "$app" "$zip"
   echo "Skipping notarization (SKIP_NOTARIZATION=1)."
   echo "Wrote a deliberately non-release artifact: $zip"
   echo "The secure publisher will never upload this filename."
   exit 0
 fi
 
-echo "Submitting to notarytool (profile: $profile)…"
+payload_archive="$app/Contents/Resources/Payload.gmcparchive"
+if [[ ! -f "$payload_archive" ]]; then
+  echo "error: signed installer payload archive not found: $payload_archive" >&2
+  exit 1
+fi
+
+notary_tmp="$(mktemp -d /tmp/gmcp-notary-payload.XXXXXX)"
+cleanup_notary_tmp() { rm -rf "$notary_tmp"; }
+trap cleanup_notary_tmp EXIT
+/usr/bin/tar -xzf "$payload_archive" -C "$notary_tmp"
+plugin="$notary_tmp/Payload/Glyphs MCP.glyphsPlugin"
+if [[ ! -d "$plugin" ]]; then
+  echo "error: signed installer payload does not contain Glyphs MCP.glyphsPlugin" >&2
+  exit 1
+fi
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$plugin"
+
+# Payload.gmcparchive is intentionally opaque to the outer app signature.
+# Submit the exact plug-in code hash separately so Gatekeeper can accept the
+# installed bundle after it is copied out of the notarized installer.
+plugin_zip="$notary_tmp/GlyphsMCPNotaryPayload.zip"
+/usr/bin/ditto -c -k --keepParent "$plugin" "$plugin_zip"
+echo "Submitting exact plug-in payload to notarytool (profile: $profile)…"
+if ! xcrun notarytool submit "$plugin_zip" --keychain-profile "$profile" --wait; then
+  echo "" >&2
+  echo "error: plug-in payload notarization failed." >&2
+  exit 1
+fi
+
+# A .glyphsPlugin is a custom code bundle, not an application. spctl's
+# execute assessment rejects it as "does not seem to be an app" even after
+# Apple accepts the notarization submission. Staple the accepted ticket to
+# the exact custom bundle and require Apple's ticket validator instead.
+echo "Stapling exact plug-in ticket…"
+xcrun stapler staple "$plugin"
+xcrun stapler validate "$plugin"
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$plugin"
+if [[ ! -f "$plugin/Contents/CodeResources" ]]; then
+  echo "error: stapled plug-in ticket is missing from Contents/CodeResources" >&2
+  exit 1
+fi
+
+# The stapled ticket changes the opaque payload archive, which is sealed by
+# the outer app. Rebuild the archive and re-sign the app before submitting the
+# final app bytes to Apple.
+stapled_payload_archive="$notary_tmp/Payload.gmcparchive"
+COPYFILE_DISABLE=1 /usr/bin/tar -czf "$stapled_payload_archive" -C "$notary_tmp" Payload
+/bin/mv "$stapled_payload_archive" "$payload_archive"
+echo "Re-signing installer app with stapled plug-in payload…"
+/usr/bin/codesign --remove-signature "$app" 2>/dev/null || true
+/usr/bin/codesign --sign "$identity" --timestamp --options runtime "$app"
+sleep 15
+/usr/bin/codesign --verify --deep --strict --verbose=2 "$app"
+
+echo "Zipping for notarization: $zip"
+ditto -c -k --keepParent "$app" "$zip"
+
+echo "Submitting installer app to notarytool (profile: $profile)…"
 if ! xcrun notarytool submit "$zip" --keychain-profile "$profile" --wait; then
   echo "" >&2
   echo "error: notarization failed (missing profile or auth error)." >&2
@@ -43,6 +100,7 @@ echo "Stapling ticket…"
 xcrun stapler staple "$app"
 xcrun stapler validate "$app"
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$app"
+xcrun stapler validate "$plugin"
 
 # Recreate the ZIP after stapling so the uploaded archive contains the ticket.
 rm -f "$zip"

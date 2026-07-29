@@ -275,11 +275,11 @@ print('OK' if not missing else 'MISSING:'+str(missing))
 
 public struct PluginInstaller {
 	let log: (String) -> Void
-	let signer: PluginExecutableSigner
+	let verifier: PluginExecutableVerifier
 
-	public init(log: @escaping (String) -> Void, signer: PluginExecutableSigner = .live) {
+	public init(log: @escaping (String) -> Void, verifier: PluginExecutableVerifier = .live) {
 		self.log = log
-		self.signer = signer
+		self.verifier = verifier
 	}
 
 	public struct InstalledPluginInspection: Equatable {
@@ -360,46 +360,191 @@ public struct PluginInstaller {
 	}
 
 	public func installPluginBundle(from srcBundle: URL, toPluginsDir pluginsDir: URL, allowReplace: Bool) throws -> Outcome {
-		try FileManager.default.createDirectory(at: pluginsDir, withIntermediateDirectories: true, attributes: nil)
+		let fm = FileManager.default
+		try fm.createDirectory(at: pluginsDir, withIntermediateDirectories: true, attributes: nil)
 		let dest = pluginsDir.appendingPathComponent(srcBundle.lastPathComponent, isDirectory: true)
 		let prev = PluginVersionReader.readPluginVersion(pluginBundle: dest)
-		if FileManager.default.fileExists(atPath: dest.path) {
+		let hadExisting = Self.pathExists(dest, fileManager: fm)
+		if hadExisting {
 			if !allowReplace {
 				log("Keeping existing plugin at: \(dest.path)")
 				return Outcome(didWrite: false, didReplace: false, previousVersion: prev, installedVersion: prev, destBundle: dest)
 			}
-			log("Replacing existing plugin: \(dest.path)")
-			try FileManager.default.removeItem(at: dest)
 		}
-		log("Copying plugin to: \(dest.path)")
-		try FileManager.default.copyItem(at: srcBundle, to: dest)
-		log("Ad-hoc signing plug-in executable.")
-		try signer.sign(dest)
-		let installed = PluginVersionReader.readPluginVersion(pluginBundle: dest)
-		return Outcome(didWrite: true, didReplace: prev != nil, previousVersion: prev, installedVersion: installed, destBundle: dest)
+
+		log("Verifying trusted plug-in payload.")
+		let sourceSignature = try verifier.verify(srcBundle)
+		let nonce = UUID().uuidString
+		let staged = pluginsDir.appendingPathComponent(".\(srcBundle.lastPathComponent).installing-\(nonce)", isDirectory: true)
+		let backup = pluginsDir.appendingPathComponent(".\(srcBundle.lastPathComponent).backup-\(nonce)", isDirectory: true)
+		var movedExistingToBackup = false
+		var installedNewBundle = false
+
+		do {
+			log("Staging plug-in at: \(staged.path)")
+			try fm.copyItem(at: srcBundle, to: staged)
+			let stagedSignature = try verifier.verify(staged)
+			guard stagedSignature == sourceSignature else {
+				throw InstallerError.userFacing("The staged plug-in signature changed during copy.")
+			}
+
+			if hadExisting {
+				log("Backing up existing plug-in before replacement.")
+				try fm.moveItem(at: dest, to: backup)
+				movedExistingToBackup = true
+			}
+
+			log("Installing verified plug-in at: \(dest.path)")
+			try fm.moveItem(at: staged, to: dest)
+			installedNewBundle = true
+
+			let installedSignature = try verifier.verify(dest)
+			guard installedSignature == sourceSignature else {
+				throw InstallerError.userFacing("The installed plug-in signature does not match the trusted payload.")
+			}
+
+			if movedExistingToBackup {
+				try fm.removeItem(at: backup)
+			}
+			let installed = PluginVersionReader.readPluginVersion(pluginBundle: dest)
+			return Outcome(didWrite: true, didReplace: hadExisting, previousVersion: prev, installedVersion: installed, destBundle: dest)
+		} catch {
+			if installedNewBundle, Self.pathExists(dest, fileManager: fm) {
+				try? fm.removeItem(at: dest)
+			}
+			if Self.pathExists(staged, fileManager: fm) {
+				try? fm.removeItem(at: staged)
+			}
+			if movedExistingToBackup, Self.pathExists(backup, fileManager: fm) {
+				do {
+					try fm.moveItem(at: backup, to: dest)
+				} catch {
+					throw InstallerError.userFacing(
+						"Plug-in installation failed and the previous plug-in could not be restored: \(error.localizedDescription)"
+					)
+				}
+			}
+			throw error
+		}
+	}
+
+	private static func pathExists(_ url: URL, fileManager: FileManager) -> Bool {
+		fileManager.fileExists(atPath: url.path)
+			|| (try? fileManager.destinationOfSymbolicLink(atPath: url.path)) != nil
 	}
 }
 
-public struct PluginExecutableSigner {
-	public let sign: (URL) throws -> Void
+public struct PluginExecutableSignature: Equatable {
+	public let cdHash: String
+	public let teamIdentifier: String
+	public let authority: String
+	public let hardenedRuntime: Bool
+	public let timestamped: Bool
 
-	public init(sign: @escaping (URL) throws -> Void) {
-		self.sign = sign
+	public init(
+		cdHash: String,
+		teamIdentifier: String,
+		authority: String,
+		hardenedRuntime: Bool,
+		timestamped: Bool
+	) {
+		self.cdHash = cdHash
+		self.teamIdentifier = teamIdentifier
+		self.authority = authority
+		self.hardenedRuntime = hardenedRuntime
+		self.timestamped = timestamped
+	}
+}
+
+public struct PluginExecutableVerifier {
+	public static let expectedTeamIdentifier = "N9U29A4T8J"
+	public static let expectedDeveloperIDAuthority = "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)"
+	public let verify: (URL) throws -> PluginExecutableSignature
+
+	public init(verify: @escaping (URL) throws -> PluginExecutableSignature) {
+		self.verify = verify
 	}
 
-	public static let live = PluginExecutableSigner { bundleURL in
+	public static let live = PluginExecutableVerifier { bundleURL in
 		let executable = bundleURL.appendingPathComponent("Contents/MacOS/plugin")
 		guard FileManager.default.fileExists(atPath: executable.path) else {
-			return
+			throw InstallerError.userFacing("Trusted plug-in executable is missing: \(executable.path)")
 		}
 
-		try runCodesign(arguments: ["--force", "--sign", "-", executable.path], executable: executable)
-		try runCodesign(arguments: ["--verify", "--verbose=2", executable.path], executable: executable)
+		_ = try runCodesign(arguments: ["--verify", "--deep", "--strict", "--verbose=2", bundleURL.path], executable: executable)
+		let details = try runCodesign(arguments: ["-d", "--verbose=4", executable.path], executable: executable)
+		let fields = parseDetails(details)
+		guard let cdHash = fields["CDHash"], !cdHash.isEmpty else {
+			throw InstallerError.userFacing("Trusted plug-in signature has no CDHash.")
+		}
+		guard fields["TeamIdentifier"] == expectedTeamIdentifier else {
+			throw InstallerError.userFacing("Trusted plug-in is not signed by the expected developer team.")
+		}
+		let authority = details
+			.split(separator: "\n")
+			.map(String.init)
+			.first(where: { $0.hasPrefix("Authority=") })?
+			.dropFirst("Authority=".count)
+			.description ?? ""
+		guard authority.hasPrefix("Developer ID Application:") || authority.hasPrefix("Apple Development:") else {
+			throw InstallerError.userFacing("Trusted plug-in has an unexpected signing authority.")
+		}
+		let runtime = details.range(of: #"flags=.*\(runtime\)"#, options: .regularExpression) != nil
+		guard runtime else {
+			throw InstallerError.userFacing("Trusted plug-in signature is missing the hardened runtime.")
+		}
+		let timestamped = details
+			.split(separator: "\n")
+			.contains(where: { $0.hasPrefix("Timestamp=") })
+		guard timestamped else {
+			throw InstallerError.userFacing("Trusted plug-in signature is missing a secure timestamp.")
+		}
+		if authority.hasPrefix("Developer ID Application:") {
+			_ = try runCommand(
+				executablePath: "/usr/bin/xcrun",
+				arguments: ["stapler", "validate", bundleURL.path],
+				subject: bundleURL
+			)
+			let ticket = bundleURL.appendingPathComponent("Contents/CodeResources")
+			guard FileManager.default.fileExists(atPath: ticket.path) else {
+				throw InstallerError.userFacing("Trusted plug-in is missing its stapled notarization ticket.")
+			}
+		}
+		return PluginExecutableSignature(
+			cdHash: cdHash,
+			teamIdentifier: expectedTeamIdentifier,
+			authority: authority,
+			hardenedRuntime: runtime,
+			timestamped: timestamped
+		)
 	}
 
-	private static func runCodesign(arguments: [String], executable: URL) throws {
+	private static func parseDetails(_ details: String) -> [String: String] {
+		var fields: [String: String] = [:]
+		for line in details.split(separator: "\n") {
+			let parts = line.split(separator: "=", maxSplits: 1).map(String.init)
+			if parts.count == 2, fields[parts[0]] == nil {
+				fields[parts[0]] = parts[1]
+			}
+		}
+		return fields
+	}
+
+	private static func runCodesign(arguments: [String], executable: URL) throws -> String {
+		try runCommand(
+			executablePath: "/usr/bin/codesign",
+			arguments: arguments,
+			subject: executable
+		)
+	}
+
+	private static func runCommand(
+		executablePath: String,
+		arguments: [String],
+		subject: URL
+	) throws -> String {
 		let process = Process()
-		process.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
+		process.executableURL = URL(fileURLWithPath: executablePath)
 		process.arguments = arguments
 
 		let pipe = Pipe()
@@ -408,15 +553,22 @@ public struct PluginExecutableSigner {
 
 		do {
 			try process.run()
-			process.waitUntilExit()
-		} catch {
-			throw InstallerError.userFacing("Could not run codesign for \(executable.path): \(error.localizedDescription)")
-		}
-
-		guard process.terminationStatus == 0 else {
 			let data = pipe.fileHandleForReading.readDataToEndOfFile()
-			let details = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines)
-			throw InstallerError.userFacing("Could not ad-hoc sign \(executable.path): \(details ?? "codesign exited with \(process.terminationStatus)")")
+			process.waitUntilExit()
+			let output = String(data: data, encoding: .utf8) ?? ""
+			guard process.terminationStatus == 0 else {
+				let details = output.trimmingCharacters(in: .whitespacesAndNewlines)
+				let tool = URL(fileURLWithPath: executablePath).lastPathComponent
+				let message = details.isEmpty ? "\(tool) exited with \(process.terminationStatus)" : details
+				throw InstallerError.userFacing("Plug-in security verification failed for \(subject.path): \(message)")
+			}
+			return output
+		} catch {
+			if let installerError = error as? InstallerError {
+				throw installerError
+			}
+			let tool = URL(fileURLWithPath: executablePath).lastPathComponent
+			throw InstallerError.userFacing("Could not run \(tool) for \(subject.path): \(error.localizedDescription)")
 		}
 	}
 }

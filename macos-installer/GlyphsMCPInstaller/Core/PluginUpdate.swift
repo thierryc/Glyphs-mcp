@@ -118,6 +118,77 @@ public struct URLSessionHTTPClient: HTTPClienting {
 	}
 }
 
+public struct GitHubReleaseAsset: Decodable, Equatable {
+	public let name: String
+	public let browserDownloadURL: URL
+
+	enum CodingKeys: String, CodingKey {
+		case name
+		case browserDownloadURL = "browser_download_url"
+	}
+}
+
+public struct GitHubPublishedRelease: Decodable, Equatable {
+	public let tagName: String
+	public let draft: Bool
+	public let prerelease: Bool
+	public let assets: [GitHubReleaseAsset]
+
+	enum CodingKeys: String, CodingKey {
+		case tagName = "tag_name"
+		case draft
+		case prerelease
+		case assets
+	}
+
+	public var version: String {
+		tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName
+	}
+
+	public func requiredAsset(named name: String) throws -> GitHubReleaseAsset {
+		let matches = assets.filter { $0.name == name }
+		guard matches.count == 1, let asset = matches.first else {
+			if matches.isEmpty {
+				throw InstallerError.userFacing("Published release \(tagName) is missing \(name).")
+			}
+			throw InstallerError.userFacing("Published release \(tagName) contains duplicate \(name) assets.")
+		}
+		guard asset.browserDownloadURL.scheme == "https",
+			  asset.browserDownloadURL.host == "github.com" else {
+			throw InstallerError.userFacing("Published release \(tagName) has an untrusted download URL for \(name).")
+		}
+		guard asset.browserDownloadURL.path.contains("/thierryc/Glyphs-mcp/releases/download/") else {
+			throw InstallerError.userFacing("Published release \(tagName) has an unexpected download path for \(name).")
+		}
+		guard asset.browserDownloadURL.lastPathComponent == name else {
+			throw InstallerError.userFacing("Published release \(tagName) is missing \(name).")
+		}
+		return asset
+	}
+}
+
+public enum GitHubReleaseResolver {
+	public static let latestReleaseURL = URL(
+		string: "https://api.github.com/repos/thierryc/Glyphs-mcp/releases/latest"
+	)!
+
+	public static func parsePublishedRelease(_ data: Data) throws -> GitHubPublishedRelease {
+		let release: GitHubPublishedRelease
+		do {
+			release = try JSONDecoder().decode(GitHubPublishedRelease.self, from: data)
+		} catch {
+			throw InstallerError.userFacing("GitHub release metadata could not be parsed.")
+		}
+		guard !release.draft, !release.prerelease else {
+			throw InstallerError.userFacing("GitHub returned a draft or prerelease instead of a published stable release.")
+		}
+		guard PluginVersionKey(release.version).tuple != nil else {
+			throw InstallerError.userFacing("Published release tag is not a valid numeric version.")
+		}
+		return release
+	}
+}
+
 public struct GitHubPluginVersionFetcher {
 	public struct Result: Equatable {
 		public let version: PluginBundleVersion
@@ -127,8 +198,6 @@ public struct GitHubPluginVersionFetcher {
 	private static let cacheKeyDate = "gmcp.githubPluginVersionFetchedAt"
 	private static let cacheKeyVersion = "gmcp.githubPluginVersionString"
 	private static var inMemory: Result?
-
-	public static let infoPlistURL = URL(string: "https://raw.githubusercontent.com/thierryc/Glyphs-mcp/main/src/glyphs-mcp/Glyphs%20MCP.glyphsPlugin/Contents/Info.plist")!
 
 	public static func fetchLatestVersion(client: HTTPClienting = URLSessionHTTPClient(), timeout: TimeInterval = 10, cacheMaxAge: TimeInterval = 3600) async throws -> Result {
 		if let cached = inMemory, Date().timeIntervalSince(cached.fetchedAt) <= cacheMaxAge {
@@ -145,10 +214,9 @@ public struct GitHubPluginVersionFetcher {
 			return cached
 		}
 
-		let data = try await client.data(from: infoPlistURL, timeout: timeout)
-		guard let version = PluginVersionReader.readInfoPlist(data: data) else {
-			throw InstallerError.userFacing("GitHub Info.plist could not be parsed.")
-		}
+		let data = try await client.data(from: GitHubReleaseResolver.latestReleaseURL, timeout: timeout)
+		let release = try GitHubReleaseResolver.parsePublishedRelease(data)
+		let version = PluginBundleVersion(shortVersion: release.version, buildVersion: release.version)
 
 		let res = Result(version: version, fetchedAt: Date())
 		inMemory = res

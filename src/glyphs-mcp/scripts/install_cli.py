@@ -16,13 +16,22 @@ Run:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import plistlib
+import posixpath
 import re
 import shutil
+import stat
 import subprocess
 import sys
+import tarfile
+import tempfile
+import urllib.error
+import urllib.request
+import uuid
+import zipfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -205,6 +214,13 @@ REQUIRED_RUNTIME_MODULES = [
     "Foundation",
     "AppKit",
 ]
+EXPECTED_DEVELOPER_TEAM = "N9U29A4T8J"
+EXPECTED_DEVELOPER_AUTHORITY = (
+    "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)"
+)
+RELEASE_DOWNLOAD_ROOT = (
+    "https://github.com/thierryc/Glyphs-mcp/releases/download"
+)
 
 
 def plugin_executable_path(bundle: Path) -> Path:
@@ -212,7 +228,7 @@ def plugin_executable_path(bundle: Path) -> Path:
 
 
 def sign_plugin_executable(bundle: Path) -> None:
-    """Ad-hoc sign the native Glyphs plug-in loader for local installs."""
+    """Ad-hoc sign the native loader for an explicit development link."""
     executable = plugin_executable_path(bundle)
     if not executable.exists():
         console.print(f"[yellow]Plugin executable not found, skipping signing:[/yellow] {executable}")
@@ -240,6 +256,344 @@ def sign_plugin_executable(bundle: Path) -> None:
         details = (e.stderr or e.stdout or str(e)).strip()
         console.print(f"[red]Failed to sign plug-in executable:[/red] {details}")
         raise SystemExit(2)
+
+
+@dataclass(frozen=True)
+class PluginSignature:
+    cdhash: str
+    team_identifier: str
+    authority: str
+    hardened_runtime: bool
+    timestamped: bool
+
+
+def _run_signature_command(command: List[str], subject: Path) -> str:
+    try:
+        completed = subprocess.run(
+            command,
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            f"Required macOS verification command is missing: {command[0]}"
+        ) from exc
+    except subprocess.CalledProcessError as exc:
+        details = (exc.stdout or str(exc)).strip()
+        raise RuntimeError(
+            f"Signature verification failed for {subject}: {details}"
+        ) from exc
+    return completed.stdout or ""
+
+
+def verify_trusted_plugin_signature(bundle: Path) -> PluginSignature:
+    executable = plugin_executable_path(bundle)
+    if not executable.is_file():
+        raise RuntimeError(f"Trusted plug-in executable is missing: {executable}")
+    _run_signature_command(
+        [
+            "/usr/bin/codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "--verbose=2",
+            str(bundle),
+        ],
+        bundle,
+    )
+    details = _run_signature_command(
+        ["/usr/bin/codesign", "-d", "--verbose=4", str(executable)],
+        executable,
+    )
+    fields: dict[str, str] = {}
+    authorities: List[str] = []
+    for raw_line in details.splitlines():
+        if "=" not in raw_line:
+            continue
+        key, value = raw_line.split("=", 1)
+        fields.setdefault(key, value)
+        if key == "Authority":
+            authorities.append(value)
+    authority = authorities[0] if authorities else ""
+    signature = PluginSignature(
+        cdhash=fields.get("CDHash", ""),
+        team_identifier=fields.get("TeamIdentifier", ""),
+        authority=authority,
+        hardened_runtime=bool(re.search(r"flags=.*\(runtime\)", details)),
+        timestamped="Timestamp=" in details,
+    )
+    if not signature.cdhash:
+        raise RuntimeError("Trusted plug-in signature has no CDHash.")
+    if signature.team_identifier != EXPECTED_DEVELOPER_TEAM:
+        raise RuntimeError("Trusted plug-in is not signed by the expected team.")
+    if signature.authority != EXPECTED_DEVELOPER_AUTHORITY:
+        raise RuntimeError("Trusted plug-in has an unexpected signing authority.")
+    if not signature.hardened_runtime:
+        raise RuntimeError("Trusted plug-in signature is missing hardened runtime.")
+    if not signature.timestamped:
+        raise RuntimeError("Trusted plug-in signature is missing a secure timestamp.")
+    _run_signature_command(
+        ["/usr/bin/xcrun", "stapler", "validate", str(bundle)],
+        bundle,
+    )
+    if not (bundle / "Contents" / "CodeResources").is_file():
+        raise RuntimeError("Trusted plug-in is missing its stapled notarization ticket.")
+    return signature
+
+
+def _plugin_version(bundle: Path) -> str:
+    info = bundle / "Contents" / "Info.plist"
+    try:
+        with info.open("rb") as handle:
+            data = plistlib.load(handle)
+    except Exception as exc:
+        raise RuntimeError(f"Could not read plug-in version from {info}") from exc
+    short = str(data.get("CFBundleShortVersionString") or "").strip()
+    build = str(data.get("CFBundleVersion") or "").strip()
+    if not short or short != build:
+        raise RuntimeError("Plug-in version metadata is missing or inconsistent.")
+    return short
+
+
+def _download_release_asset(url: str, timeout: int = 30) -> bytes:
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": "GlyphsMCPInstaller/1.5"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return response.read()
+    except (urllib.error.URLError, TimeoutError) as exc:
+        raise RuntimeError(f"Could not download signed release asset: {url}") from exc
+
+
+def _expected_asset_checksum(manifest: bytes, asset_name: str) -> str:
+    if "/" in asset_name or "\\" in asset_name:
+        raise RuntimeError("Release asset name is unsafe.")
+    try:
+        text = manifest.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise RuntimeError("Release checksum manifest is not UTF-8.") from exc
+    matches: List[str] = []
+    for line in text.splitlines():
+        parts = line.split(maxsplit=1)
+        if len(parts) != 2:
+            continue
+        logical_name = parts[1].lstrip(" *")
+        normalized = posixpath.normpath(logical_name)
+        if (
+            logical_name.startswith("/")
+            or "\\" in logical_name
+            or normalized == ".."
+            or normalized.startswith("../")
+        ):
+            continue
+        if posixpath.basename(normalized) == asset_name:
+            matches.append(parts[0].lower())
+    if not matches:
+        raise RuntimeError(
+            f"Release checksum manifest does not list {asset_name}."
+        )
+    if len(matches) != 1:
+        raise RuntimeError(
+            f"Release checksum manifest contains duplicate entries for {asset_name}."
+        )
+    checksum = matches[0]
+    if not re.fullmatch(r"[0-9a-f]{64}", checksum):
+        raise RuntimeError(
+            f"Release checksum manifest contains an invalid SHA-256 for {asset_name}."
+        )
+    return checksum
+
+
+def _validate_installer_zip_members(zip_path: Path) -> None:
+    try:
+        with zipfile.ZipFile(zip_path) as archive:
+            total_size = 0
+            for info in archive.infolist():
+                member = Path(info.filename)
+                if member.is_absolute() or ".." in member.parts:
+                    raise RuntimeError(
+                        f"Installer archive contains an unsafe path: {info.filename}"
+                    )
+                mode = (info.external_attr >> 16) & 0xFFFF
+                if stat.S_ISLNK(mode):
+                    try:
+                        target = archive.read(info).decode("utf-8")
+                    except (UnicodeDecodeError, OSError) as exc:
+                        raise RuntimeError(
+                            f"Installer archive has an unreadable symlink: {info.filename}"
+                        ) from exc
+                    if target.startswith("/"):
+                        raise RuntimeError(
+                            f"Installer archive has an unsafe symlink: {info.filename}"
+                        )
+                    resolved = posixpath.normpath(
+                        posixpath.join(posixpath.dirname(info.filename), target)
+                    )
+                    if resolved == ".." or resolved.startswith("../"):
+                        raise RuntimeError(
+                            f"Installer archive has an escaping symlink: {info.filename}"
+                        )
+                total_size += info.file_size
+                if total_size > 512 * 1024 * 1024:
+                    raise RuntimeError("Installer archive expands beyond the safety limit.")
+    except zipfile.BadZipFile as exc:
+        raise RuntimeError("Downloaded installer archive is not a valid ZIP.") from exc
+
+
+def _verify_installer_app(app: Path, expected_version: str) -> None:
+    _run_signature_command(
+        [
+            "/usr/bin/codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "--verbose=2",
+            str(app),
+        ],
+        app,
+    )
+    details = _run_signature_command(
+        ["/usr/bin/codesign", "-d", "--verbose=4", str(app)],
+        app,
+    )
+    if f"Authority={EXPECTED_DEVELOPER_AUTHORITY}" not in details:
+        raise RuntimeError("Installer app has an unexpected signing authority.")
+    if f"TeamIdentifier={EXPECTED_DEVELOPER_TEAM}" not in details:
+        raise RuntimeError("Installer app is not signed by the expected team.")
+    _run_signature_command(
+        ["/usr/bin/xcrun", "stapler", "validate", str(app)],
+        app,
+    )
+    _run_signature_command(
+        [
+            "/usr/sbin/spctl",
+            "--assess",
+            "--type",
+            "execute",
+            "--verbose=2",
+            str(app),
+        ],
+        app,
+    )
+    info = app / "Contents" / "Info.plist"
+    try:
+        with info.open("rb") as handle:
+            app_info = plistlib.load(handle)
+    except Exception as exc:
+        raise RuntimeError("Could not read signed installer version.") from exc
+    if str(app_info.get("CFBundleShortVersionString") or "") != expected_version:
+        raise RuntimeError("Signed installer version does not match the checkout.")
+
+
+def _extract_signed_payload_archive(archive_path: Path, destination: Path) -> None:
+    try:
+        with tarfile.open(archive_path, "r:gz") as archive:
+            members = archive.getmembers()
+            total_size = 0
+            for member in members:
+                logical = Path(member.name)
+                if (
+                    logical.is_absolute()
+                    or ".." in logical.parts
+                    or not logical.parts
+                    or logical.parts[0] != "Payload"
+                ):
+                    raise RuntimeError(
+                        f"Signed payload archive contains an unsafe path: {member.name}"
+                    )
+                if member.issym() or member.islnk():
+                    raise RuntimeError(
+                        f"Signed payload archive contains an unsupported link: {member.name}"
+                    )
+                if not (member.isfile() or member.isdir()):
+                    raise RuntimeError(
+                        f"Signed payload archive contains an unsupported entry: {member.name}"
+                    )
+                total_size += member.size
+                if total_size > 512 * 1024 * 1024:
+                    raise RuntimeError(
+                        "Signed payload archive expands beyond the safety limit."
+                    )
+            archive.extractall(destination)
+    except (tarfile.TarError, OSError) as exc:
+        raise RuntimeError(
+            "Could not extract the signed installer payload archive."
+        ) from exc
+
+
+def _resolve_installer_payload_plugin(app: Path, temp_root: Path) -> Path:
+    resources = app / "Contents" / "Resources"
+    payload = resources / "Payload"
+    if not payload.is_dir():
+        payload_archive = resources / "Payload.gmcparchive"
+        if not payload_archive.is_file():
+            raise RuntimeError(
+                "Signed installer app does not contain its payload archive."
+            )
+        payload_root = temp_root / "payload"
+        payload_root.mkdir()
+        _extract_signed_payload_archive(payload_archive, payload_root)
+        payload = payload_root / "Payload"
+    plugin = payload / "Glyphs MCP.glyphsPlugin"
+    if not plugin.is_dir():
+        raise RuntimeError(
+            "Signed installer payload does not contain Glyphs MCP.glyphsPlugin."
+        )
+    return plugin
+
+
+def resolve_signed_release_plugin(version: str) -> Tuple[Path, Path]:
+    tag = f"v{version}"
+    installer_name = "GlyphsMCPInstaller.zip"
+    release_root = f"{RELEASE_DOWNLOAD_ROOT}/{tag}"
+    console.print(
+        f"[cyan]Downloading verified signed plug-in payload for {tag}…[/cyan]"
+    )
+    installer_data = _download_release_asset(
+        f"{release_root}/{installer_name}"
+    )
+    checksum_data = _download_release_asset(f"{release_root}/SHA256SUMS")
+    expected = _expected_asset_checksum(checksum_data, installer_name)
+    actual = hashlib.sha256(installer_data).hexdigest()
+    if actual != expected:
+        raise RuntimeError(
+            "Downloaded installer checksum does not match the published manifest."
+        )
+
+    temp_root = Path(tempfile.mkdtemp(prefix="glyphs-mcp-signed-release."))
+    archive_path = temp_root / installer_name
+    archive_path.write_bytes(installer_data)
+    _validate_installer_zip_members(archive_path)
+    extracted = temp_root / "extracted"
+    extracted.mkdir()
+    try:
+        subprocess.run(
+            ["/usr/bin/ditto", "-x", "-k", str(archive_path), str(extracted)],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        app = extracted / "GlyphsMCPInstaller.app"
+        if not app.is_dir():
+            raise RuntimeError(
+                "Signed installer archive does not contain GlyphsMCPInstaller.app."
+            )
+        _verify_installer_app(app, version)
+        plugin = _resolve_installer_payload_plugin(app, temp_root)
+        if _plugin_version(plugin) != version:
+            raise RuntimeError(
+                "Signed plug-in payload version does not match the checkout."
+            )
+        verify_trusted_plugin_signature(plugin)
+        return plugin, temp_root
+    except Exception:
+        shutil.rmtree(temp_root, ignore_errors=True)
+        raise
 
 
 @dataclass
@@ -811,16 +1165,19 @@ def install_plugin(
     overwrite_existing: Optional[bool] = None,
     glyphs_version: Literal["3", "4"] = "4",
     sign_executable: bool = True,
+    release_plugin: Optional[Path] = None,
 ) -> bool:
-    """Install the plug-in by copying or linking (dev mode)."""
-    src = repo_root() / "src" / "glyphs-mcp" / "Glyphs MCP.glyphsPlugin"
-    if not src.exists():
-        console.print(f"[red]Plugin bundle not found at:[/red] {src}")
+    """Install a trusted release copy or create an explicit development link."""
+    checkout_plugin = (
+        repo_root() / "src" / "glyphs-mcp" / "Glyphs MCP.glyphsPlugin"
+    )
+    if not checkout_plugin.exists():
+        console.print(f"[red]Plugin bundle not found at:[/red] {checkout_plugin}")
         raise SystemExit(2)
 
     dest_dir = glyphs_plugins_dir(glyphs_version)
     dest_dir.mkdir(parents=True, exist_ok=True)
-    dest = dest_dir / src.name
+    dest = dest_dir / checkout_plugin.name
 
     if dest.exists() or dest.is_symlink():
         current = "symlink" if dest.is_symlink() else "folder"
@@ -831,7 +1188,10 @@ def install_plugin(
             )
         else:
             overwrite = overwrite_existing
-        if overwrite:
+        if not overwrite:
+            console.print("[yellow]Keeping existing installation.[/yellow]")
+            return False
+        if mode == "link":
             try:
                 if dest.is_symlink():
                     dest.unlink()
@@ -840,19 +1200,97 @@ def install_plugin(
             except Exception as e:
                 console.print(f"[red]Failed to remove existing plugin:[/red] {e}")
                 raise SystemExit(2)
-        else:
-            console.print("[yellow]Keeping existing installation.[/yellow]")
-            return False
 
     if mode == "link":
-        console.print(Panel.fit(f"Creating symlink (dev mode) →\n{dest}\n→ {src}", title="Install Plugin", border_style="magenta"))
-        os.symlink(src, dest)
-    else:
-        console.print(Panel.fit(f"Copying plugin →\n{dest}", title="Install Plugin", border_style="magenta"))
-        shutil.copytree(src, dest)
-    if sign_executable:
-        sign_plugin_executable(dest)
-    return True
+        console.print(
+            Panel.fit(
+                f"Creating symlink (developer mode) →\n{dest}\n→ {checkout_plugin}",
+                title="Install Plugin",
+                border_style="magenta",
+            )
+        )
+        console.print(
+            "[yellow]Developer links use checkout code and do not carry the "
+            "signed-release Gatekeeper guarantee.[/yellow]"
+        )
+        os.symlink(checkout_plugin, dest)
+        if sign_executable:
+            sign_plugin_executable(dest)
+        return True
+
+    temporary_release_root: Optional[Path] = None
+    try:
+        trusted_plugin = release_plugin
+        if trusted_plugin is None:
+            version = _plugin_version(checkout_plugin)
+            trusted_plugin, temporary_release_root = resolve_signed_release_plugin(
+                version
+            )
+        if not trusted_plugin.is_dir():
+            raise RuntimeError(
+                f"Verified release plug-in is missing: {trusted_plugin}"
+            )
+
+        source_signature = (
+            verify_trusted_plugin_signature(trusted_plugin)
+            if sign_executable
+            else None
+        )
+        nonce = uuid.uuid4().hex
+        staged = dest_dir / f".{dest.name}.installing-{nonce}"
+        backup = dest_dir / f".{dest.name}.backup-{nonce}"
+        moved_existing = False
+        installed_new = False
+        try:
+            console.print(
+                Panel.fit(
+                    f"Installing verified signed plug-in →\n{dest}",
+                    title="Install Plugin",
+                    border_style="magenta",
+                )
+            )
+            shutil.copytree(trusted_plugin, staged, symlinks=True)
+            if source_signature is not None:
+                staged_signature = verify_trusted_plugin_signature(staged)
+                if staged_signature != source_signature:
+                    raise RuntimeError(
+                        "The staged plug-in signature changed during copy."
+                    )
+
+            if dest.exists() or dest.is_symlink():
+                shutil.move(str(dest), str(backup))
+                moved_existing = True
+            shutil.move(str(staged), str(dest))
+            installed_new = True
+
+            if source_signature is not None:
+                installed_signature = verify_trusted_plugin_signature(dest)
+                if installed_signature != source_signature:
+                    raise RuntimeError(
+                        "The installed plug-in signature does not match the "
+                        "trusted release payload."
+                    )
+            if moved_existing:
+                _remove_existing_path(backup)
+            return True
+        except Exception:
+            if installed_new and (dest.exists() or dest.is_symlink()):
+                _remove_existing_path(dest)
+            if staged.exists() or staged.is_symlink():
+                _remove_existing_path(staged)
+            if moved_existing and (backup.exists() or backup.is_symlink()):
+                shutil.move(str(backup), str(dest))
+            raise
+    except RuntimeError as exc:
+        console.print(f"[red]Trusted plug-in installation failed:[/red] {exc}")
+        console.print(
+            "[yellow]Use the signed DMG, or use --plugin-mode link only for "
+            "local development.[/yellow]"
+        )
+        raise SystemExit(2) from exc
+    finally:
+        if temporary_release_root is not None:
+            shutil.rmtree(temporary_release_root, ignore_errors=True)
 
 
 def managed_skill_directories(skills_root: Optional[Path] = None) -> List[Path]:
@@ -1096,8 +1534,16 @@ def choose_plugin_mode_interactive() -> str:
     table.add_column("Option")
     table.add_column("Mode")
     table.add_column("Description")
-    table.add_row("1", "Copy", "Copies the bundle (recommended for users)")
-    table.add_row("2", "Link", "Creates a symlink to the repo (dev mode)")
+    table.add_row(
+        "1",
+        "Signed release",
+        "Downloads and verifies the exact published release (recommended)",
+    )
+    table.add_row(
+        "2",
+        "Development link",
+        "Links checkout code without a notarization guarantee",
+    )
     console.print(table)
     install_choice = Prompt.ask("Enter 1 or 2", choices=["1", "2"], default="1")
     return "link" if install_choice == "2" else "copy"
