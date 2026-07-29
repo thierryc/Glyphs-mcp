@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.5.2 — Ownership-safe skills and atomic parameter edits
+
+_July 29, 2026_
+
+Glyphs MCP 1.5.2 closes two safety gaps found in the 1.4.0 review while
+preserving the signed 1.5 release path and deterministic Balanced workflow.
+
+### Safety fixes
+
+- Global Codex and Claude Code skill installs now write a repository-owned
+  marker into every copied skill directory.
+- Skill overwrite and uninstall operations require that exact marker and skill
+  name. An unrelated or older unmarked same-name directory is preserved and
+  reported instead of being removed.
+- Confirmed `set_custom_parameters` batches now snapshot each targeted
+  parameter's existence, exact value, and active state before mutation.
+- Every assignment and deletion is verified. A failed write, read-back, or
+  redraw restores and verifies the complete batch and reports structured
+  rollback status without saving the font.
+
+### Upgrade note
+
+Skill directories installed before ownership markers were introduced are
+deliberately treated as unverified. Move or remove a confirmed older Glyphs MCP
+skill directory once before reinstalling; the new installation will carry the
+marker used by future updates and uninstall operations.
+
 ## 1.5.1 — Signed release provenance and corrected plug-in delivery
 
 _July 29, 2026_

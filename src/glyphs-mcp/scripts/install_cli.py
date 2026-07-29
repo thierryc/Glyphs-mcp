@@ -193,6 +193,9 @@ MANAGED_SKILL_NAMES = (
     "glyphs-mcp-spacing",
 )
 LEGACY_MANAGED_SKILL_NAMES = ("glyphs-mcp-connect",)
+SKILL_OWNERSHIP_MARKER = ".glyphs-mcp-owner.json"
+SKILL_OWNERSHIP_SCHEMA_VERSION = 1
+SKILL_OWNERSHIP_REPOSITORY = "thierryc/Glyphs-mcp"
 MCP_ENDPOINT = "http://127.0.0.1:9680/mcp/"
 CODEX_SERVER_NAME = "glyphs-mcp-server"
 CLAUDE_DESKTOP_SERVER_NAME = "glyphs-mcp-server"
@@ -1311,6 +1314,40 @@ def existing_managed_skill_destinations(dest_root: Path, skills_root: Optional[P
     return [dest_root / name for name in names if (dest_root / name).exists() or (dest_root / name).is_symlink()]
 
 
+def _skill_ownership_marker_path(path: Path) -> Path:
+    return path / SKILL_OWNERSHIP_MARKER
+
+
+def _write_skill_ownership_marker(path: Path, skill_name: str) -> None:
+    payload = {
+        "schemaVersion": SKILL_OWNERSHIP_SCHEMA_VERSION,
+        "repository": SKILL_OWNERSHIP_REPOSITORY,
+        "component": "agent-skill",
+        "skillName": skill_name,
+    }
+    _skill_ownership_marker_path(path).write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def _is_installer_owned_skill(path: Path, skill_name: str) -> bool:
+    marker = _skill_ownership_marker_path(path)
+    if marker.is_symlink() or not marker.is_file():
+        return False
+    try:
+        payload = json.loads(marker.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    return (
+        isinstance(payload, dict)
+        and payload.get("schemaVersion") == SKILL_OWNERSHIP_SCHEMA_VERSION
+        and payload.get("repository") == SKILL_OWNERSHIP_REPOSITORY
+        and payload.get("component") == "agent-skill"
+        and payload.get("skillName") == skill_name
+    )
+
+
 def _remove_existing_path(path: Path) -> None:
     if path.is_symlink() or path.is_file():
         path.unlink()
@@ -1340,7 +1377,13 @@ def install_skill_bundle(
         for legacy_name in LEGACY_MANAGED_SKILL_NAMES:
             legacy_dest = dest_root / legacy_name
             if legacy_dest.exists() or legacy_dest.is_symlink():
-                _remove_existing_path(legacy_dest)
+                if _is_installer_owned_skill(legacy_dest, legacy_name):
+                    _remove_existing_path(legacy_dest)
+                else:
+                    console.print(
+                        "[yellow]Preserving unverified same-named skill:[/yellow] "
+                        f"{legacy_dest}"
+                    )
 
     for src in skill_dirs:
         dest = dest_root / src.name
@@ -1348,8 +1391,16 @@ def install_skill_bundle(
             if not overwrite_existing:
                 skipped.append(src.name)
                 continue
+            if not _is_installer_owned_skill(dest, src.name):
+                console.print(
+                    "[yellow]Preserving unverified same-named skill:[/yellow] "
+                    f"{dest}"
+                )
+                skipped.append(src.name)
+                continue
             _remove_existing_path(dest)
         shutil.copytree(src, dest, ignore=_skill_copy_ignore)
+        _write_skill_ownership_marker(dest, src.name)
         installed.append(src.name)
 
     return installed, skipped
@@ -1745,13 +1796,18 @@ def build_uninstall_plan(
                 path = root / skill_name
                 if not _path_exists(path):
                     continue
+                installer_owned = _is_installer_owned_skill(path, skill_name)
                 candidates.append(UninstallCandidate(
                     identifier=f"skill-{client_name.lower().replace(' ', '-')}-{skill_name}",
                     component="skills",
                     label=f"{client_name} skill: {skill_name}",
                     location=path,
-                    state="removable",
-                    detail="Exact managed skill destination.",
+                    state="removable" if installer_owned else "preserved",
+                    detail=(
+                        "Verified Glyphs MCP skill installation."
+                        if installer_owned
+                        else "Same-named skill has no valid Glyphs MCP ownership marker."
+                    ),
                 ))
 
     if "clients" in selected_components:

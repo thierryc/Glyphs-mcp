@@ -70,6 +70,23 @@ class _Parameters:
             raise KeyError(name)
 
 
+class _FailingParameters(_Parameters):
+    def __init__(self, records=None, fail_on_set=None, fail_on_delete=None):
+        super().__init__(records)
+        self.fail_on_set = set(fail_on_set or [])
+        self.fail_on_delete = set(fail_on_delete or [])
+
+    def __setitem__(self, name, value):
+        if (name, value) in self.fail_on_set:
+            raise RuntimeError("simulated parameter assignment failure")
+        super().__setitem__(name, value)
+
+    def __delitem__(self, name):
+        if name in self.fail_on_delete:
+            raise RuntimeError("simulated parameter deletion failure")
+        super().__delitem__(name)
+
+
 class _Master:
     def __init__(self, master_id, name, records=None):
         self.id = master_id
@@ -236,6 +253,92 @@ class McpToolsCustomParametersTests(unittest.TestCase):
         self.assertEqual(font.customParameters["Grid.rows"], 20)
         self.assertIsNone(font.customParameters["Grid.remove"])
         self.assertEqual(glyphs.redraw_calls, 1)
+        self.assertEqual(font.save_calls, 0)
+        self.assertEqual(
+            payload["verifiedParameterNames"],
+            ["Grid.columns", "Grid.remove", "Grid.rows"],
+        )
+        self.assertIsNone(payload["rollback"])
+
+    def test_partial_assignment_failure_rolls_back_the_whole_batch(self):
+        font = _Font()
+        font.customParameters = _FailingParameters(
+            [
+                _Parameter("Grid.remove", True, active=False),
+                _Parameter("Grid.fail", 10),
+            ],
+            fail_on_set={("Grid.fail", 20)},
+        )
+        module, _font, _glyphs, _mcp = self._load_module(font)
+
+        payload = json.loads(asyncio.run(module.set_custom_parameters(
+            changes={"Grid.remove": None, "Grid.fail": 20},
+            dry_run=False,
+            confirm=True,
+        )))
+
+        self.assertFalse(payload["ok"])
+        self.assertFalse(payload["applied"])
+        self.assertEqual(payload["writtenParameterNames"], ["Grid.remove"])
+        self.assertTrue(payload["rollback"]["attempted"])
+        self.assertTrue(payload["rollback"]["succeeded"])
+        self.assertTrue(font.customParameters["Grid.remove"])
+        restored = [
+            parameter
+            for parameter in font.customParameters
+            if parameter.name == "Grid.remove"
+        ][0]
+        self.assertFalse(restored.active)
+        self.assertEqual(font.customParameters["Grid.fail"], 10)
+        self.assertEqual(font.save_calls, 0)
+
+    def test_redraw_failure_rolls_back_and_verifies_original_state(self):
+        font = _Font([_Parameter("Grid.columns", 24)])
+        module, _font, glyphs, _mcp = self._load_module(font)
+        redraw_calls = []
+
+        def flaky_redraw():
+            redraw_calls.append(True)
+            if len(redraw_calls) == 1:
+                raise RuntimeError("simulated redraw failure")
+
+        glyphs.redraw = flaky_redraw
+        payload = json.loads(asyncio.run(module.set_custom_parameters(
+            changes={"Grid.columns": 32},
+            dry_run=False,
+            confirm=True,
+        )))
+
+        self.assertFalse(payload["ok"])
+        self.assertFalse(payload["applied"])
+        self.assertTrue(payload["rollback"]["succeeded"])
+        self.assertEqual(font.customParameters["Grid.columns"], 24)
+        self.assertEqual(len(redraw_calls), 2)
+        self.assertEqual(font.save_calls, 0)
+
+    def test_partial_deletion_failure_rolls_back_earlier_assignments(self):
+        font = _Font()
+        font.customParameters = _FailingParameters(
+            [
+                _Parameter("Grid.columns", 24),
+                _Parameter("Grid.remove", True),
+            ],
+            fail_on_delete={"Grid.remove"},
+        )
+        module, _font, _glyphs, _mcp = self._load_module(font)
+
+        payload = json.loads(asyncio.run(module.set_custom_parameters(
+            changes={"Grid.columns": 32, "Grid.remove": None},
+            dry_run=False,
+            confirm=True,
+        )))
+
+        self.assertFalse(payload["ok"])
+        self.assertFalse(payload["applied"])
+        self.assertEqual(payload["writtenParameterNames"], ["Grid.columns"])
+        self.assertTrue(payload["rollback"]["succeeded"])
+        self.assertEqual(font.customParameters["Grid.columns"], 24)
+        self.assertTrue(font.customParameters["Grid.remove"])
         self.assertEqual(font.save_calls, 0)
 
     def test_targeted_duplicates_and_non_json_values_are_rejected(self):
