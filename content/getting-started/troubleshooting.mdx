@@ -48,8 +48,57 @@ Fix:
    ~/Library/Application Support/Glyphs 4/Plugins/
    ```
 
-3. Rerun `python3 install.py`.
+3. Reinstall with the signed macOS installer or terminal Copy mode.
 4. Reopen Glyphs.
+
+## macOS says the plug-in cannot be verified
+
+Do not bypass the warning or remove quarantine while diagnosing it. A normal
+installation from the signed DMG, signed installer ZIP, or terminal Copy mode
+must preserve a valid Developer ID signature on the installed plug-in.
+
+First record:
+
+- the exact installation method: DMG, installer ZIP, terminal Copy, or
+  development Link;
+- the Glyphs and macOS versions;
+- whether Glyphs 3 or Glyphs 4 was targeted;
+- the exact plug-in path and complete warning text.
+
+The supported paths are:
+
+```text
+~/Library/Application Support/Glyphs 3/Plugins/Glyphs MCP.glyphsPlugin
+~/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin
+```
+
+Then verify the installed bundle:
+
+```bash
+codesign --verify --deep --strict --verbose=2 \
+  "$HOME/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin"
+
+codesign -d --verbose=4 \
+  "$HOME/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin"
+
+xcrun stapler validate \
+  "$HOME/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin"
+
+xattr -lr \
+  "$HOME/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP.glyphsPlugin"
+```
+
+For Glyphs 3, replace `Glyphs 4` with `Glyphs 3`. The signature details should
+show Team ID `N9U29A4T8J`, a Developer ID Application authority, hardened
+runtime, and a secure timestamp. The stapler command should report that the
+validate action worked. A `.glyphsPlugin` is a custom code bundle rather than
+an app, so `spctl --type execute` is not a valid direct assessment for it.
+
+Terminal Copy mode downloads and verifies the exact signed release matching
+the checkout. Development Link mode and manually copied raw source are mutable
+developer setups; they do not have a release-signature or notarization
+guarantee. If the warning appears after a signed installation, report the
+details above rather than opening the bundle anyway.
 
 ## Client cannot connect
 

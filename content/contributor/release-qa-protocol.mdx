@@ -110,7 +110,11 @@ Use the same release artifact for both app versions whenever possible. If Glyphs
 For each app version:
 
 1. Quit all Glyphs versions.
-2. Install the release candidate plug-in and dependencies using the same path users will use: signed installer app, terminal installer, or manual plug-in install.
+2. Install the release candidate plug-in and dependencies using the same path
+   users will use: signed installer app or terminal **Copy** mode. Test
+   development **Link** mode separately when relevant, and label it as outside
+   the signed-release guarantee. Do not use a raw manual source copy as a
+   release-path test.
 3. Start only the app version under test.
 4. Open the matching large-font working copy.
 5. Start the server from **Edit -> Glyphs MCP Server**.

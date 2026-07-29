@@ -41,6 +41,17 @@ Release highlights:
   Sans, and IBM Plex Sans sources without committing those font sources.
 - Synchronize the canonical plug-in, Plugin Manager bundle, MCP descriptions,
   documentation, and packaged italic skill.
+- Preserve the Developer ID signature from the embedded release payload through
+  both macOS-app and terminal Copy installations. Source, staged, and installed
+  bundles must match or the previous plug-in is restored.
+- Resolve macOS updates and terminal Copy mode from an exact published release,
+  verify checksums, notarization, Gatekeeper, version, and the embedded
+  plug-in's signature, and stop using mutable `main` archives.
+- Publish no standalone source plug-in ZIP. Development Link mode remains
+  available but is explicitly outside the release signature guarantee.
+- Notarize the exact signed plug-in code hash independently from the outer app,
+  staple Apple's ticket into the custom bundle, and require both installers to
+  validate it before copying.
 
 Local verification for this prep:
 
@@ -49,7 +60,7 @@ PYTHON_BIN=.cache/release-venv/bin/python ./scripts/run_local_release_tests.sh
 cd website && npm run build
 ```
 
-Result on July 28, 2026:
+Feature verification on July 28, 2026:
 
 - `439` Python tests passed; `1` intentional skip.
 - `82` macOS installer tests passed.
@@ -65,15 +76,28 @@ Result on July 28, 2026:
   explicit component blocking and skipping, confirmed apply, backup creation,
   topology preservation, and no-save cleanup on a disposable Inter copy.
 
-Before publication, complete the remaining manual release boundary:
+Release-integrity verification on July 29, 2026:
+
+- `448` Python tests passed; `1` intentional skip.
+- `87` macOS installer tests passed.
+- The unsigned Debug installer build and Docusaurus production build completed.
+- The signed plug-in payload and installer app were accepted as independent
+  Apple notarization submissions.
+- The plug-in, app, and DMG tickets stapled and validated successfully.
+- Gatekeeper accepted the installer app and DMG as Notarized Developer ID.
+- The isolated GUI/Python Copy simulation preserved the plug-in bytes, CDHash,
+  Developer ID seal, and stapled ticket.
+- Final local artifact verification passed for `v1.5.0` and generated the exact
+  SHA-256 manifest.
+
+Before publication, complete the remaining release boundary:
 
 - Run the required Glyphs 3.5 live compatibility pass from the
   [Release QA protocol](./release-qa-protocol.mdx).
 - Merge the reviewed release commit to `main` and create the exact signed
   annotated `v1.5.0` tag.
-- Build the Developer ID-signed Release installer, notarize and staple the app
-  and DMG, verify Gatekeeper acceptance, and generate the final exact-asset
-  checksum manifest.
+- Rebuild the Developer ID-signed assets from the exact tagged commit and
+  repeat the notarization, Gatekeeper, installed-copy, and checksum gates.
 - Upload only to an empty draft GitHub release, review its notes and assets, and
   publish separately.
 

@@ -95,15 +95,33 @@ Outputs:
 - `dist/installer-app/GlyphsMCPInstaller.zip` (contains the stapled app)
 - `dist/SHA256SUMS` (exact release artifact set)
 
-The verifier checks source/Xcode/built versions, Developer ID authority and Team ID, nested payload signatures, hardened runtime, secure timestamps, stapled tickets, Gatekeeper, ZIP contents, byte-identical latest/versioned DMGs, and the exact checksum set.
+The verifier checks source/Xcode/built versions, Developer ID authority and Team ID, the extracted `Payload.gmcparchive` signatures, hardened runtime, secure timestamps, stapled tickets, Gatekeeper, ZIP contents, byte-identical latest/versioned DMGs, and the exact checksum set. It also copies the embedded plug-in into a temporary Glyphs plug-ins directory and requires the installed copy to preserve the executable bytes and Developer ID signature.
+
+There is deliberately no standalone `Glyphs MCP.glyphsPlugin.zip` release
+asset. The mutable tracked source bundle does not carry the release's Developer
+ID seal. End users receive the plug-in only through the signed, notarized
+installer app.
 
 `SKIP_NOTARIZATION=1` is for local diagnostics only. It creates filenames containing `UNNOTARIZED`; the publisher refuses to run in that mode and never uploads those files.
 
 ### Important: nested payload signing
 
-Apple notarization validates **all nested executables inside the app bundle** (including the embedded payload plug-in).
+The release pipeline validates **all executable code it ships**, including the
+plug-in and the pinned SDK executables inside the managed development skill.
+Apple notarization validates the installer app and framework; the local release
+verifier independently extracts and validates the archived payload before and
+after notarization.
 
-The Release export step signs and timestamps every Mach-O executable under:
+Because `Payload.gmcparchive` is opaque to the installer app's notarization
+submission, `notarize_installer_app.sh` also extracts the exact signed main
+plug-in and submits a temporary ZIP of that unchanged code hash to Apple. It
+then staples and validates Apple's ticket on the custom `.glyphsPlugin`,
+rebuilds the opaque payload archive, and re-signs the outer app before
+submitting that exact app to Apple. The temporary plug-in ZIP is never a
+release asset.
+
+The Release export step removes stale/ad-hoc signatures, then signs and
+timestamps every Mach-O executable under:
 
 - `…/Contents/Resources/Payload/**/Contents/MacOS/*`
 
@@ -111,7 +129,24 @@ This includes the main Glyphs MCP plug-in executable and the pinned SDK
 executables inside plug-in templates shipped with the
 `glyphs-mcp-development` skill.
 
+After the loaders are signed, it seals every Glyphs code bundle
+(`.glyphsPlugin`, `.glyphsReporter`, `.glyphsTool`, `.glyphsFilter`,
+`.glyphsFileFormat`, and `.glyphsPalette`) from the deepest bundle outward and
+verifies the complete resource seal. It then stores the signed payload as
+`Contents/Resources/Payload.gmcparchive`, removes the unpacked payload, signs
+the outer app, waits for the signing cache to expire, and verifies the archive
+bytes and every extracted signature again.
+
 If notarization fails with errors like “binary is not signed” or “no secure timestamp”, rebuild the app (Release) and re-run notarization.
+
+The installer must not re-sign the plug-in after copying it. Its transactional
+install compares the source, staged, and installed CDHash and Team ID. A
+mismatch restores the previous bundle and fails the installation.
+Both macOS-app and terminal Copy installations also require Gatekeeper to
+accept the installer application and require Apple's stapler validator to
+accept the extracted plug-in ticket before staging it. `spctl --type execute`
+is not used on `.glyphsPlugin` because that assessment is defined for
+applications and rejects custom bundles as “does not seem to be an app.”
 
 ## QA
 
@@ -162,7 +197,7 @@ gh release create vX.Y.Z --verify-tag --draft \
   --confirm-publish vX.Y.Z
 ```
 
-The exact tag confirmation is required for non-interactive use; an interactive terminal asks you to type it. The script refuses dirty worktrees, non-`main` branches, stale or mismatched remote commits/tags, unsigned tags by default, published releases, pre-existing asset names, skipped notarization, signature/notary failures, and checksum drift. It does not overwrite release assets. The release stays a draft after upload so its notes and asset list can be reviewed before publication.
+The exact tag confirmation is required for non-interactive use; an interactive terminal asks you to type it. The script refuses dirty worktrees, non-`main` branches, stale or mismatched remote commits/tags, unsigned tags by default, published releases, pre-existing asset names, skipped notarization, signature/notary failures, and checksum drift. It uploads only the versioned/latest DMGs, signed installer app ZIP, and checksum manifest; it never uploads a standalone plug-in ZIP. It does not overwrite release assets. The release stays a draft after upload so its notes and asset list can be reviewed before publication.
 
 ## Troubleshooting
 

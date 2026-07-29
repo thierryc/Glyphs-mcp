@@ -37,7 +37,9 @@ alternates, or final proofing.
 
 ## macOS Installer app (recommended)
 
-The Installer app is the simplest way to install `Glyphs MCP.glyphsPlugin`, install Python dependencies, and link Glyphs MCP into:
+The signed and notarized Installer app is the supported end-user path. It
+installs the already signed `Glyphs MCP.glyphsPlugin` without modifying its
+signature, installs Python dependencies, and links Glyphs MCP into:
 
 - Codex App
 - Codex CLI (terminal tools or in VS Code)
@@ -66,9 +68,16 @@ Terminal installer:
 python3 install.py
 ```
 
+In its default **Copy** mode, the terminal installer downloads the installer
+ZIP for the exact version in the checkout, verifies its published SHA-256,
+Developer ID signature, Team ID, notarization ticket, Gatekeeper acceptance,
+and embedded plug-in signature and stapled ticket, then installs that verified
+payload transactionally. The matching GitHub release must already exist and
+the machine must be online.
+
 The terminal installer targets Glyphs 4 by default. To install into Glyphs 3 explicitly, pass `--glyphs-version 3`. The macOS app instead detects and offers every installed Glyphs 3/4 target.
 
-Finder alternative on macOS: double-click `RunInstall.command` in the repo root. It launches the same installer. If Gatekeeper blocks it, right-click → Open once.
+Finder alternative on macOS: double-click `RunInstall.command` in the repo root. It launches the same terminal installer.
 
 To uninstall, open the app’s **Status** page and choose **Uninstall…**. The review sheet lists the exact Glyphs 3/4 plug-ins, managed skills, and matching client entries before asking for confirmation. From Terminal, preview both versions first and then run the interactive uninstall:
 
@@ -79,11 +88,15 @@ python3 install.py --uninstall --glyphs-version both
 
 The uninstaller intentionally preserves shared Python packages, Glyphs preferences, plug-in settings, font annotations, documents, repositories, and shared parent folders.
 
-Scripted install example:
+Scripted signed-release install example:
 
 ```bash
-python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode copy --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
 ```
+
+`--plugin-mode link` is only for development from a trusted checkout. It links
+mutable source code into Glyphs and provides no release-signature or
+notarization guarantee.
 
 Minimum requirements:
 - macOS 13.0+
@@ -401,11 +414,15 @@ Any MCP-compatible client can use this server. For now, the automatic installer 
 http://127.0.0.1:9680/mcp/
 ```
 
-For automation or reproducible dev setup, use non-interactive mode:
+For an automated signed-release install, use non-interactive mode:
 
 ```bash
-python3 install.py --non-interactive --python-mode glyphs --plugin-mode link --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
+python3 install.py --non-interactive --python-mode glyphs --plugin-mode copy --install-skills --skills-target codex --overwrite-plugin --overwrite-skills --skip-client-guidance
 ```
+
+Copy mode fetches and verifies the exact published release matching the
+checkout. Use `--plugin-mode link` only for development from a trusted
+checkout; a mutable source link is not a signed or notarized distribution.
 
 Safe uninstall preview and non-interactive removal:
 
@@ -416,7 +433,9 @@ python3 install.py --uninstall --glyphs-version both --non-interactive --confirm
 
 Use repeatable `--uninstall-component plugin`, `skills`, or `clients` options to limit the removal. Without those options, all safely attributable components are reviewed. Python dependencies are never removed because their installation locations can be shared with unrelated Glyphs scripts and Python tools.
 
-If you need a manual install instead, copy or symlink `src/glyphs-mcp/Glyphs MCP.glyphsPlugin` into `~/Library/Application Support/Glyphs 4/Plugins/`, then restart Glyphs.
+Do not copy the raw source bundle as an end-user installation. Its tracked
+files are intentionally mutable and therefore cannot retain a valid
+distribution signature. Use the signed installer app or terminal Copy mode.
 
 After installation, Glyphs MCP adds one menu item:
 
@@ -452,7 +471,7 @@ Preferred: use `docs_search` + `docs_get` (on-demand). If you really want per-pa
 
 ## Installer Notes
 
-- If you are unsure, accept the defaults: Glyphs Python and Copy.
+- If you are unsure, accept the defaults: Glyphs Python and signed-release Copy.
 - Prefer python.org Python 3.12+ over Homebrew for fewer macOS compatibility issues.
 - On Apple Silicon, avoid Rosetta-translated Python builds.
 - No `sudo` is required.
@@ -480,9 +499,10 @@ The script ensures `glyphs-mcp.webp` (the hero image for the doc) is generated, 
 
 ---
 
-## Build Release ZIP (Clean)
+## Build Development Plug-in ZIP
 
-To package the plug‑in for distribution without accidentally shipping local artifacts (`__pycache__`, `.pyc`, `.venv`, `__MACOSX`, etc.), use:
+For local source-bundle testing only, a clean ZIP can be built without local
+artifacts (`__pycache__`, `.pyc`, `.venv`, `__MACOSX`, etc.):
 
 ```bash
 ./scripts/build_release_zip.sh
@@ -494,7 +514,9 @@ Optionally override the version label used in the filename:
 ./scripts/build_release_zip.sh --version 1.0.0
 ```
 
-The ZIP is written to `dist/` (ignored by git).
+The ZIP is written to `dist/` (ignored by git). It is not Developer ID signed
+or notarized and must never be attached to a public release. Public releases
+contain only the signed installer app ZIP, DMGs, and checksum manifest.
 
 ## Release
 
@@ -529,19 +551,19 @@ git add "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist"
 git add "plugin-manager/Glyphs MCP.glyphsPlugin"
 git commit -m "Release X.Y.Z"
 
-# 5) Build a clean ZIP for distribution
-./scripts/build_release_zip.sh
-
-# 6) Merge to main, then sign + push the exact reviewed tag
+# 5) Merge to main, then sign + push the exact reviewed tag
 git tag -s "vX.Y.Z" -m "vX.Y.Z"
 git push origin HEAD --tags
 ```
 
 ## Glyphs Plugin Manager / glyphs-packages
 
-In `glyphs-packages` (`glyphs3/packages.plist`), the plug‑in entry uses `path=` to point at a folder inside this repo.
+Glyphs MCP is not currently published in the official Glyphs Plugin Manager.
+The local `plugin-manager/` bundle is a synchronization and compatibility test
+fixture, not an end-user distribution.
 
-For this repo, use:
+If a future Plugin Manager submission is prepared, its entry would use `path=`
+to point at the synchronized bundle:
 
 ```plist
 url = "https://github.com/thierryc/Glyphs-mcp";
@@ -549,7 +571,9 @@ path = "plugin-manager/Glyphs MCP.glyphsPlugin";
 dependencies = ();
 ```
 
-The Plugin Manager bundle generated by `./scripts/build_plugin_manager_bundle.sh --vendor` vendors its Python dependencies inside the plug‑in, so no additional `glyphs-packages` modules are required.
+Before enabling that entry, the Plugin Manager delivery path must pass the same
+installed-bundle signature and notarization-ticket checks as the installer
+paths.
 
 ## Contributing
 PRs and feedback are welcome.

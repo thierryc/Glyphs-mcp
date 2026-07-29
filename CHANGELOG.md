@@ -2,7 +2,7 @@
 
 ## 1.5.0 — Experimental italic first passes for design exploration
 
-_July 28, 2026_
+_July 29, 2026_
 
 Glyphs MCP 1.5.0 introduces Balanced italicification as an opt-in candidate
 inside an explicitly experimental first-pass workflow. Its purpose is to help
@@ -48,6 +48,32 @@ experimental mode. Existing calls still default to Cursivy.
   visually subtle on accepted stems.
 - Review is a genuine detached-layer dry run, confirmed apply never saves the
   font, and Raw/Cursivy behavior remains compatible with previous releases.
+
+### Installation integrity
+
+- The macOS installer now preserves the embedded plug-in's Developer ID
+  signature instead of replacing it with an ad-hoc signature. Source, staged,
+  and installed bundles must have the same CDHash and Team ID, or installation
+  is rolled back.
+- Terminal **Copy** mode downloads the installer ZIP for the checkout's exact
+  published version and verifies its SHA-256 manifest, Developer ID identity,
+  notarization ticket, Gatekeeper acceptance, version, and embedded plug-in
+  signature before installing it transactionally.
+- The installer's update check and update payload now resolve the latest
+  non-draft, non-prerelease GitHub release. Mutable `main` source archives are
+  no longer used as an update channel.
+- Source-link mode remains available for trusted development checkouts, but is
+  explicitly outside the signed-release and notarization guarantee.
+- Public release assets no longer include the unsigned standalone plug-in ZIP.
+  The release verifier simulates the final installed copy and requires its
+  executable bytes and Developer ID signature to remain unchanged.
+- Signed plug-in and skill payloads are stored in the installer as an immutable
+  compressed-tar resource. The release build verifies its checksum and every
+  extracted code signature again after signing the outer app.
+- The exact archived plug-in is notarized independently before the outer app,
+  and its Apple ticket is stapled into the custom `.glyphsPlugin` bundle before
+  the outer app is re-signed and notarized. Both installer paths validate that
+  ticket before copying the plug-in.
 
 Read the
 [experimental italic guide](content/italic-first-pass.md) and the

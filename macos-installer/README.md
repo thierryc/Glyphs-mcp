@@ -52,6 +52,17 @@ Or use scripts from repo root:
 
 Release tests and builds run locally; the installer release does not use GitHub Actions. The test gate uses an unsigned Debug build, while distributable artifacts must be Developer ID signed, notarized, stapled, and accepted by Gatekeeper.
 
+The release app embeds the signed plug-in and managed skills in
+`Payload.gmcparchive`, an immutable compressed-tar resource created before the
+outer app is signed. At runtime the installer extracts that resource to a
+private temporary directory, verifies the complete plug-in seal, copies it
+through a destination-local staging directory, verifies that its CDHash and
+Team ID are unchanged, and moves it into place atomically. It never ad-hoc
+re-signs the release payload. If any verification or final move fails, the
+previous plug-in is restored. The exact plug-in code hash is notarized
+separately from the outer app, its Apple ticket is stapled into the custom
+bundle, and both installer paths validate that ticket before installation.
+
 ## Client configuration
 
 The installer currently supports three local client targets:
@@ -82,4 +93,4 @@ Environment variables:
 - `NOTARY_PROFILE` (defaults to `gmcp-notary`)
 - `DERIVED_DATA_PATH` (defaults to `/tmp/gmcp-installer-deriveddata`)
 
-The publisher also checks `EXPECTED_CODESIGN_IDENTITY` (defaulting to `CODESIGN_IDENTITY`) and `EXPECTED_TEAM_ID` during final artifact verification. See `RELEASING.md` for the required clean-main, signed-tag, draft-release, checksum, and confirmation gates.
+The publisher also checks `EXPECTED_CODESIGN_IDENTITY` (defaulting to `CODESIGN_IDENTITY`) and `EXPECTED_TEAM_ID` during final artifact verification. The verifier copies the embedded plug-in to a temporary Glyphs plug-ins directory and requires the simulated installed bundle to retain its executable bytes and Developer ID signature. See `RELEASING.md` for the required clean-main, signed-tag, draft-release, checksum, and confirmation gates.
