@@ -9,7 +9,8 @@ Start with the shortest path that proves where the failure is: Glyphs, local end
 
 1. Relaunch Glyphs.
 2. Choose **Edit -> Glyphs MCP Server**.
-3. Click **Start** if the server is stopped, then confirm it is running.
+3. Click **Start** if the server is stopped, then wait for the status to change
+   from blue **Starting** to green **Running**.
 4. Confirm the endpoint is exactly:
 
    ```text
@@ -115,6 +116,25 @@ http://127.0.0.1:9680/mcp/
 ```
 
 If you changed the tool profile, restart the server and reload the client so it fetches the current `tools/list`.
+
+## Server shows Error
+
+Starting with 1.5.2, green **Running** means Uvicorn completed startup and
+bound the configured localhost port. A live background thread by itself is not
+reported as ready.
+
+If startup fails or the server exits unexpectedly, the status panel keeps a red
+**Error**, shows the affected port, and asks you to check the Macro Panel and
+retry. Open **Window -> Macro Panel** and look for the full entry beginning
+with:
+
+```text
+[Glyphs MCP][Server]
+```
+
+Correct the reported problem, then click **Start**. Auto-start failures remain
+non-modal so Glyphs can finish launching; a manual Start failure also opens an
+alert. Glyphs MCP does not retry automatically.
 
 ## Browser works but client does not
 

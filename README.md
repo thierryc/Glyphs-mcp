@@ -17,6 +17,9 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
   Glyphs MCP ownership marker before overwrite or uninstall.
 - Verify confirmed custom-parameter batches and restore their complete prior
   state when an assignment, deletion, verification, or redraw fails.
+- Report **Running** only after Uvicorn is ready, and preserve failed starts or
+  unexpected exits as a red **Error** with Macro Panel diagnostics and retry
+  guidance.
 - Continue shipping the deterministic Balanced workflow through a GPG-signed
   release tag and a Developer ID-signed, independently notarized plug-in
   payload.

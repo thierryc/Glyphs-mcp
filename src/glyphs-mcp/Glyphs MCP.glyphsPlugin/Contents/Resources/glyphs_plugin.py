@@ -3,6 +3,7 @@
 from __future__ import division, print_function, unicode_literals
 import json
 import time
+import traceback
 import objc
 import AppKit
 import threading
@@ -43,7 +44,15 @@ from debug_event_logging import (
     McpDebugEventLoggingMiddleware,
     set_enabled as set_debug_event_logging_enabled,
 )
-from status_panel_helpers import endpoint_for, is_thread_running, status_text
+from status_panel_helpers import (
+    endpoint_for,
+    is_thread_running,
+    server_exit_kind,
+    server_lifecycle_state,
+    should_emit_start_success,
+    should_show_start_failure_alert,
+    status_text,
+)
 from i18n import tr
 from tool_profiles import (
     PROFILE_EDIT,
@@ -171,6 +180,15 @@ class MCPBridgePlugin(GeneralPlugin):
     def settings(self):
         self._tool_registry_ref = None
         self._tool_registry_snapshot = None
+        self._server = None
+        self._server_thread = None
+        self._server_thread_error = None
+        self._server_was_ready = False
+        self._startup_notify = False
+        self._starting_server = False
+        self._stopping_server = False
+        self._starting_timer = None
+        self._port = None
 
         # Localized menu titles (via Glyphs.localize in i18n.tr)
         self.name_menu = tr("menu.main")
@@ -381,12 +399,19 @@ class MCPBridgePlugin(GeneralPlugin):
 
         try:
             self._maybe_autostart_on_launch()
-        except Exception:
-            pass
+        except Exception as error:
+            self._handle_start_request_exception(
+                error,
+                self.default_port,
+                show_alert=False,
+            )
 
     @objc.python_method
     def _start_server_on_port(self, port, sender, notify=True):
         self._mark_server_starting()
+        self._startup_notify = bool(notify)
+        self._server_thread_error = None
+        self._server_was_ready = False
         try:
             self._apply_tool_profile_to_mcp_for_next_start()
         except Exception:
@@ -407,27 +432,145 @@ class MCPBridgePlugin(GeneralPlugin):
             )
             self._server = uvicorn.Server(config)
             self._server_thread = threading.Thread(
-                target=self._server.run,
+                target=self._run_server_thread,
+                args=(self._server,),
                 daemon=True,
             )
             self._server_thread.start()
             self._port = port
-        except Exception as e:
-            self._finish_server_starting(error=e)
-            raise
+        except Exception as error:
+            self._handle_start_request_exception(
+                error,
+                port,
+                show_alert=bool(notify),
+            )
+            return False
 
-        if notify:
-            notify_server_started(port)
-        self._show_startup_message(port)
-
-        self._finish_server_starting_soon()
+        try:
+            self._begin_server_start_poll()
+        except Exception as error:
+            try:
+                self._server.should_exit = True
+            except Exception:
+                pass
+            self._handle_start_request_exception(
+                error,
+                port,
+                show_alert=bool(notify),
+            )
+            return False
         self._refresh_status_panel_if_visible()
+        return True
+
+    @objc.python_method
+    def _run_server_thread(self, server):
+        error_detail = None
+        try:
+            server.run()
+        except BaseException:
+            error_detail = traceback.format_exc()
+            self._server_thread_error = error_detail
+        finally:
+            try:
+                NSOperationQueue.mainQueue().addOperationWithBlock_(
+                    lambda: self._server_thread_did_exit(server, error_detail)
+                )
+            except Exception:
+                if error_detail:
+                    try:
+                        print("[Glyphs MCP][Server] {}".format(error_detail))
+                    except Exception:
+                        pass
+
+    @objc.python_method
+    def _server_thread_did_exit(self, server, error_detail=None):
+        if server is not getattr(self, "_server", None):
+            return
+        exit_kind = server_exit_kind(
+            server_started=getattr(server, "started", False),
+            was_ready=getattr(self, "_server_was_ready", False),
+            stop_requested=getattr(self, "_stopping_server", False),
+        )
+        if exit_kind == "intentional":
+            self._finish_stop_server()
+            return
+
+        port = self._current_port()
+        message = tr(
+            (
+                "error.unexpected_exit"
+                if exit_kind == "unexpected"
+                else "error.startup_failed"
+            ),
+            port=port,
+        )
+        detail = error_detail or getattr(self, "_server_thread_error", None)
+        if not detail:
+            detail = (
+                "Uvicorn server thread exited after readiness."
+                if exit_kind == "unexpected"
+                else "Uvicorn server thread exited before readiness."
+            )
+        self._record_server_failure(
+            message,
+            detail=detail,
+            show_alert=should_show_start_failure_alert(
+                getattr(self, "_startup_notify", False),
+                exit_kind,
+            ),
+        )
+
+    @objc.python_method
+    def _log_server_failure(self, message, detail=None):
+        text = "[Glyphs MCP][Server] {}".format(message)
+        if detail:
+            text = "{}\n{}".format(text, str(detail).rstrip())
+        try:
+            self.logError(text)
+            return
+        except Exception:
+            pass
+        try:
+            print(text)
+        except Exception:
+            pass
+
+    @objc.python_method
+    def _record_server_failure(self, message, detail=None, show_alert=False):
+        self._cancel_server_start_poll()
+        self._starting_server = False
+        self._stopping_server = False
+        self._activity_text = str(message)
+        self._activity_state = "error"
+        self._log_server_failure(message, detail)
+        self._server = None
+        self._server_thread = None
+        self._server_thread_error = None
+        self._server_was_ready = False
+        self._startup_notify = False
+        self._port = None
+        self._refresh_status_panel_if_visible()
+        if show_alert:
+            self._show_error(message)
+
+    @objc.python_method
+    def _handle_start_request_exception(self, error, port, show_alert=False):
+        detail = traceback.format_exc()
+        if detail.strip() == "NoneType: None":
+            detail = "{}: {}".format(type(error).__name__, error)
+        self._record_server_failure(
+            tr("error.startup_failed", port=int(port)),
+            detail=detail,
+            show_alert=show_alert,
+        )
 
     @objc.python_method
     def _maybe_autostart_on_launch(self):
         if not self._autostart_enabled():
             return
-        if self._server_is_running():
+        if self._server_is_running() or getattr(self, "_starting_server", False):
+            return
+        if is_thread_running(getattr(self, "_server_thread", None)):
             return
         if getattr(self, "_waiting_for_port", False):
             return
@@ -489,18 +632,24 @@ class MCPBridgePlugin(GeneralPlugin):
                     getattr(self, "menuItem", None),
                     notify=False,
                 )
-            except Exception as e:
-                self._show_error(tr("error.start_server", error=e))
+            except Exception as error:
+                self._handle_start_request_exception(
+                    error,
+                    port,
+                    show_alert=False,
+                )
             return
 
         deadline = getattr(self, "_autostart_deadline", None)
         try:
             if deadline is not None and time.monotonic() > float(deadline):
                 self._cancel_autostart_wait()
-                print(
-                    "[Glyphs MCP] Auto-start skipped: port {} still busy.".format(
-                        int(port)
-                    )
+                self._record_server_failure(
+                    tr("error.startup_failed", port=int(port)),
+                    detail=(
+                        "Auto-start timed out because port {} remained busy."
+                    ).format(int(port)),
+                    show_alert=False,
                 )
         except Exception:
             return
@@ -648,8 +797,12 @@ class MCPBridgePlugin(GeneralPlugin):
         self._cancel_wait_for_port()
         try:
             self._start_server_on_port(port, sender)
-        except Exception as e:
-            self._show_error(tr("error.start_server", error=e))
+        except Exception as error:
+            self._handle_start_request_exception(
+                error,
+                port,
+                show_alert=True,
+            )
 
     @objc.python_method
     def _show_error(self, text):
@@ -664,7 +817,10 @@ class MCPBridgePlugin(GeneralPlugin):
 
     def ToggleServer_(self, sender):
         """Start or stop the local FastMCP server from the status panel."""
-        if getattr(self, "_stopping_server", False):
+        if (
+            getattr(self, "_stopping_server", False)
+            or getattr(self, "_starting_server", False)
+        ):
             return
         if self._server_is_running():
             self.StopServer_(sender)
@@ -673,10 +829,15 @@ class MCPBridgePlugin(GeneralPlugin):
 
     def StartServer_(self, sender):
         """Start the local FastMCP server on the configured localhost port."""
-        if getattr(self, "_stopping_server", False):
+        if (
+            getattr(self, "_stopping_server", False)
+            or getattr(self, "_starting_server", False)
+        ):
             return
         if self._server_is_running():
             self._refresh_status_panel_if_visible()
+            return
+        if is_thread_running(getattr(self, "_server_thread", None)):
             return
 
         port = int(self.default_port)
@@ -688,9 +849,12 @@ class MCPBridgePlugin(GeneralPlugin):
 
         try:
             self._start_server_on_port(port, sender)
-        except Exception as e:
-            print("Failed to start server: {}".format(e))
-            self._show_error(tr("error.start_server", error=e))
+        except Exception as error:
+            self._handle_start_request_exception(
+                error,
+                port,
+                show_alert=True,
+            )
 
     def StopServer_(self, sender):
         """Request a graceful shutdown of the embedded MCP HTTP server."""
@@ -734,6 +898,7 @@ class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
     def _finish_stop_server(self):
+        self._cancel_server_start_poll()
         timer = getattr(self, "_stop_timer", None)
         if timer is not None:
             try:
@@ -741,10 +906,16 @@ class MCPBridgePlugin(GeneralPlugin):
             except Exception:
                 pass
         self._stop_timer = None
+        self._starting_server = False
         self._stopping_server = False
         self._server = None
         self._server_thread = None
+        self._server_thread_error = None
+        self._server_was_ready = False
+        self._startup_notify = False
         self._port = None
+        self._activity_text = tr("activity.idle")
+        self._activity_state = "idle"
         self._refresh_status_panel_if_visible()
 
     def ShowStatusWindow_(self, sender):
@@ -766,7 +937,10 @@ class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
     def _server_is_running(self):
-        return is_thread_running(getattr(self, "_server_thread", None))
+        return server_lifecycle_state(
+            getattr(self, "_server", None),
+            getattr(self, "_server_thread", None),
+        ) == "running"
 
     @objc.python_method
     def _mark_server_starting(self):
@@ -776,7 +950,7 @@ class MCPBridgePlugin(GeneralPlugin):
         self._refresh_status_panel_if_visible()
 
     @objc.python_method
-    def _finish_server_starting_soon(self):
+    def _begin_server_start_poll(self):
         timer = getattr(self, "_starting_timer", None)
         if timer is not None:
             try:
@@ -784,14 +958,26 @@ class MCPBridgePlugin(GeneralPlugin):
             except Exception:
                 pass
         self._starting_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
-            0.35, self, "StartingPoll:", None, False
+            0.1, self, "StartingPoll:", None, True
         )
 
     def StartingPoll_(self, timer):
-        self._finish_server_starting()
+        server = getattr(self, "_server", None)
+        thread = getattr(self, "_server_thread", None)
+        state = server_lifecycle_state(server, thread)
+        if state == "running":
+            self._finish_server_starting()
+            return
+        if state == "stopped":
+            self._server_thread_did_exit(
+                server,
+                getattr(self, "_server_thread_error", None),
+            )
+            return
+        self._refresh_status_panel_if_visible()
 
     @objc.python_method
-    def _finish_server_starting(self, error=None):
+    def _cancel_server_start_poll(self):
         timer = getattr(self, "_starting_timer", None)
         if timer is not None:
             try:
@@ -799,14 +985,27 @@ class MCPBridgePlugin(GeneralPlugin):
             except Exception:
                 pass
         self._starting_timer = None
-        self._starting_server = False
 
-        if error is not None:
-            self._activity_text = "Error: {}".format(error)
-            self._activity_state = "error"
-        elif self._server_is_running() and getattr(self, "_activity_state", None) == "starting":
-            self._activity_text = tr("activity.idle")
-            self._activity_state = "idle"
+    @objc.python_method
+    def _finish_server_starting(self):
+        ready = self._server_is_running()
+        if not should_emit_start_success(
+            ready,
+            getattr(self, "_server_was_ready", False),
+        ):
+            return
+
+        self._cancel_server_start_poll()
+        self._starting_server = False
+        self._server_was_ready = True
+        self._activity_text = tr("activity.idle")
+        self._activity_state = "idle"
+
+        port = self._current_port()
+        if getattr(self, "_startup_notify", False):
+            notify_server_started(port)
+        self._startup_notify = False
+        self._show_startup_message(port)
 
         self._refresh_status_panel_if_visible()
 
@@ -1025,13 +1224,21 @@ class MCPBridgePlugin(GeneralPlugin):
         activity_y = controls_y + 38
         activity_w = width - margin * 2
         activity_value = self._quiet_text_field(
-            ((margin, activity_y), (activity_w, row_h)),
+            ((margin, activity_y), (activity_w, 34)),
             tr("activity.idle"),
             selectable=True,
-            size=12,
+            size=11,
         )
         try:
             activity_value.setAlignment_(getattr(AppKit, "NSTextAlignmentCenter", 2))
+        except Exception:
+            pass
+        try:
+            activity_value.setUsesSingleLineMode_(False)
+            activity_value.cell().setWraps_(True)
+            activity_value.cell().setLineBreakMode_(
+                getattr(AppKit, "NSLineBreakByWordWrapping", 0)
+            )
         except Exception:
             pass
         content.addSubview_(activity_value)
@@ -1193,6 +1400,12 @@ class MCPBridgePlugin(GeneralPlugin):
                         getattr(self, "_autostart_target_port", self.default_port)
                     ),
                 )
+            elif (
+                not running
+                and getattr(self, "_activity_state", None) == "error"
+            ):
+                status_state = "error"
+                status_value = tr("status.error")
             dot = getattr(self, "_status_dot_field", None)
             if dot is not None:
                 dot.setStringValue_("●")
@@ -1238,9 +1451,16 @@ class MCPBridgePlugin(GeneralPlugin):
                 activity_text = ""
                 if getattr(self, "_starting_server", False):
                     activity_text = tr("status.starting")
-                elif running:
+                elif (
+                    running
+                    or getattr(self, "_activity_state", None) == "error"
+                ):
                     activity_text = getattr(self, "_activity_text", tr("activity.idle")) or tr("activity.idle")
                 field.setStringValue_(activity_text)
+                try:
+                    field.setToolTip_(activity_text or None)
+                except Exception:
+                    pass
                 color = self._status_color(getattr(self, "_activity_state", "idle"))
                 if color is not None:
                     field.setTextColor_(color)
@@ -1367,8 +1587,12 @@ class MCPBridgePlugin(GeneralPlugin):
         if not self._server_is_running():
             try:
                 self._maybe_autostart_on_launch()
-            except Exception:
-                pass
+            except Exception as error:
+                self._handle_start_request_exception(
+                    error,
+                    self.default_port,
+                    show_alert=False,
+                )
 
         self._refresh_status_panel_if_visible()
 

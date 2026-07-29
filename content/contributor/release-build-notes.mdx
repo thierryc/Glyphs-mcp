@@ -14,9 +14,10 @@ Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish 
 ## Prepared version
 
 Version `1.5.2` (installer build `17`) is the safety patch for global skill
-ownership and atomic custom-parameter edits. It preserves the unified Glyphs
-3.5/4 bundle, hardened plug-in delivery path, existing Cursivy default, and the
-opt-in deterministic `balanced` mode.
+ownership, atomic custom-parameter edits, and verified server startup
+diagnostics. It preserves the unified Glyphs 3.5/4 bundle, hardened plug-in
+delivery path, existing Cursivy default, and the opt-in deterministic
+`balanced` mode.
 
 The feature is a design assistant for constructing a functional emphasis
 companion to a Roman. It does not create or replace a deliberately drawn
@@ -31,6 +32,12 @@ Release highlights:
   inferring ownership from a directory name.
 - Snapshot, verify, and roll back complete confirmed custom-parameter batches
   when an assignment, deletion, read-back, or redraw fails.
+- Keep the panel in **Starting** until pinned Uvicorn 0.35 reports readiness,
+  then emit the server-started notification and Macro Panel success output
+  exactly once.
+- Persist startup failures and unexpected server exits as a red **Error** with
+  port-specific retry guidance, log full diagnostics through
+  `GeneralPlugin.logError`, and keep auto-start failures non-modal.
 - Publish from a GPG-signed annotated tag while keeping Git signing independent
   from Apple Developer ID signing and notarization.
 - Correct the installed-bundle failure confirmed in 1.4.1: the supported
@@ -114,13 +121,13 @@ Version 1.5.1 pre-publication verification on July 29, 2026:
 
 Version 1.5.2 pre-publication verification on July 29, 2026:
 
-- `452` Python tests passed; `1` intentional skip.
+- `457` Python tests passed; `1` intentional skip.
 - `87` macOS installer tests passed.
 - The unsigned Debug installer and Docusaurus production builds completed.
 - The source and Plugin Manager bundles report version `1.5.2`; the installer
   reports marketing version `1.5.2` and build `17`.
 - Release metadata alignment, canonical/Plugin Manager bundle synchronization,
-  and tracked patch whitespace passed.
+  verified server-lifecycle coverage, and tracked patch whitespace passed.
 
 The `v1.5.2` release boundary requires:
 

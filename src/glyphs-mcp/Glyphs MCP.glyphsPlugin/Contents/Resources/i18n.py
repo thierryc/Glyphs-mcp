@@ -102,6 +102,7 @@ STRINGS = {
     # Status values
     "status.running": {"en": "Running", "fr": "En cours", "zh-Hans": "运行中"},
     "status.stopped": {"en": "Stopped", "fr": "Arrêté", "zh-Hans": "已停止"},
+    "status.error": {"en": "Error", "fr": "Erreur", "zh-Hans": "错误"},
     "status.starting": {"en": "Starting", "fr": "Démarrage", "zh-Hans": "正在启动"},
     "status.stopping": {"en": "Stopping…", "fr": "Arrêt…", "zh-Hans": "正在停止…"},
     "status.waiting": {
@@ -134,6 +135,16 @@ STRINGS = {
         "en": "Failed to start server: {error}",
         "fr": "Échec du démarrage du serveur : {error}",
         "zh-Hans": "启动服务器失败：{error}",
+    },
+    "error.startup_failed": {
+        "en": "Failed to start on port {port}.\nCheck the Macro Panel, then click Start.",
+        "fr": "Échec du démarrage sur le port {port}.\nConsultez le panneau Macro, puis cliquez sur Démarrer.",
+        "zh-Hans": "无法在端口 {port} 上启动。\n请查看宏面板，然后点按“启动”。",
+    },
+    "error.unexpected_exit": {
+        "en": "Server stopped unexpectedly on port {port}.\nCheck the Macro Panel, then click Start.",
+        "fr": "Arrêt inattendu du serveur sur le port {port}.\nConsultez le panneau Macro, puis cliquez sur Démarrer.",
+        "zh-Hans": "服务器在端口 {port} 上意外停止。\n请查看宏面板，然后点按“启动”。",
     },
     "error.stop_server": {
         "en": "Failed to stop server: {error}",
