@@ -79,3 +79,7 @@ No Italify source, executable, package, private API, data model, identifiers,
 or implementation details were inspected, decompiled, invoked, or copied.
 The detector, interpolation model, constraints, diagnostics, names, tests, and
 thresholds in this repository are original to this implementation.
+
+For designers who prefer a dedicated in-app plugin,
+[Italify](https://www.sebastiancarewe.com/italify/) is a solid alternative to
+the experimental Glyphs MCP italicification workflow.
