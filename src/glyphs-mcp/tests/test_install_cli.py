@@ -299,7 +299,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     os.environ.pop("HOME", None)
                 else:
                     os.environ["HOME"] = old_home
-            self.assertEqual(versions, ["1.5.2"])
+            self.assertEqual(versions, ["1.5.3"])
 
     def test_installer_zip_validation_rejects_path_traversal(self) -> None:
         install_cli = _load_install_cli()

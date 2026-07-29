@@ -1,10 +1,30 @@
 # Changelog
 
+## 1.5.3 — Verified server readiness and startup diagnostics
+
+_July 29, 2026_
+
+Glyphs MCP 1.5.3 closes the diagnostic gap where a live server thread could be
+reported as running before Uvicorn had completed startup and bound its socket.
+
+### Server readiness
+
+- The server panel stays in **Starting** until pinned Uvicorn 0.35 confirms
+  readiness; only then does it report **Running** or emit success output.
+- Server-thread exceptions and exits are classified as startup failures,
+  unexpected exits, or intentional stops.
+- Failures persist as a red **Error** with the affected port and retry
+  guidance. Full diagnostics go through `GeneralPlugin.logError` to Glyphs’
+  Macro Panel, with `print` as a fallback.
+- Manual startup failures retain the alert, while auto-start failures remain
+  non-modal. Recovery stays user-controlled with no automatic retry loop.
+- The localhost endpoint and MCP protocol are unchanged.
+
 ## 1.5.2 — Ownership-safe skills and atomic parameter edits
 
 _July 29, 2026_
 
-Glyphs MCP 1.5.2 closes three safety gaps found in the 1.4.0 review while
+Glyphs MCP 1.5.2 closes two safety gaps found in the 1.4.0 review while
 preserving the signed 1.5 release path and deterministic Balanced workflow.
 
 ### Safety fixes
@@ -19,12 +39,6 @@ preserving the signed 1.5 release path and deterministic Balanced workflow.
 - Every assignment and deletion is verified. A failed write, read-back, or
   redraw restores and verifies the complete batch and reports structured
   rollback status without saving the font.
-- The server panel stays in **Starting** until Uvicorn has completed startup
-  and bound the configured localhost port; only then does it report
-  **Running** or emit a success notification.
-- Failed auto-starts and server-thread exits persist as a red **Error** with
-  the port and retry guidance. Full diagnostics go to Glyphs’ Macro Panel,
-  while only manual startup failures open an alert.
 
 ### Upgrade note
 
