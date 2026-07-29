@@ -1,5 +1,39 @@
 # Changelog
 
+## 1.5.1 — Signed release provenance and corrected plug-in delivery
+
+_July 29, 2026_
+
+Glyphs MCP 1.5.1 republishes the 1.5 feature line from a GPG-signed annotated
+tag and carries the deterministic Balanced workflow through the hardened
+release path introduced in 1.5.0.
+
+### Release integrity
+
+- The exact `.glyphsPlugin` payload is signed with Developer ID, submitted to
+  Apple independently, stapled, and then stored unchanged in the notarized
+  installer.
+- macOS-app and terminal Copy installations preserve the payload bytes, CDHash,
+  and Team ID. Any mismatch fails transactionally instead of ad-hoc re-signing
+  the installed plug-in.
+- The installer app, DMGs, checksum manifest, embedded payload, and a simulated
+  installed copy must all pass signature, timestamp, notarization, Gatekeeper,
+  version, and checksum gates before publication.
+- The source release is identified by a GPG-signed Git tag registered to
+  Thierry Charbonnel's verified GitHub email. This Git signature is separate
+  from Apple Developer ID signing and notarization.
+
+### Confirmed 1.4.1 issue
+
+The final plug-in installed by 1.4.1 can carry an ad-hoc signature, no Developer
+Team ID, and a quarantine attribute. macOS may consequently block it when
+Glyphs starts even though the outer installer was notarized. Users should
+upgrade through the signed installer and should not bypass Gatekeeper or remove
+quarantine manually.
+
+The experimental Balanced italicification behavior and compatibility defaults
+remain those documented for 1.5.0.
+
 ## 1.5.0 — Experimental italic first passes for design exploration
 
 _July 29, 2026_
@@ -82,6 +116,10 @@ Read the
 ## 1.4.1 — Faster, bounded installer dependency setup
 
 _July 28, 2026_
+
+**Known issue:** the final installed plug-in can be ad-hoc signed and retain a
+quarantine attribute, causing macOS to block it when Glyphs starts. Upgrade to
+1.5.1 or later; do not bypass Gatekeeper or remove quarantine manually.
 
 Glyphs MCP 1.4.1 makes repeated installer runs substantially smaller and more
 predictable, especially with Glyphs 4 and Python 3.14.

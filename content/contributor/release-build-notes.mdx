@@ -13,10 +13,10 @@ Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish 
 
 ## Prepared version
 
-Version `1.5.0` (installer build `15`) is the experimental deterministic
-Balanced italicification release candidate. It preserves the unified Glyphs
-3.5/4 bundle and the existing Cursivy default while adding an opt-in,
-pure-Python `balanced` mode for reproducible mechanical italic first passes.
+Version `1.5.1` (installer build `16`) is the signed patch release for the
+experimental deterministic Balanced italicification feature line. It preserves
+the unified Glyphs 3.5/4 bundle and existing Cursivy default while shipping the
+opt-in, pure-Python `balanced` mode through the hardened plug-in delivery path.
 
 The feature is a design assistant for constructing a functional emphasis
 companion to a Roman. It does not create or replace a deliberately drawn
@@ -25,6 +25,11 @@ the designer's responsibility.
 
 Release highlights:
 
+- Publish from a GPG-signed annotated tag while keeping Git signing independent
+  from Apple Developer ID signing and notarization.
+- Correct the installed-bundle failure confirmed in 1.4.1: the supported
+  installers preserve the notarized Developer ID payload rather than
+  ad-hoc-signing the copied plug-in.
 - Replace Balanced's host-filter intermediate with the deterministic
   `pure_python_balanced` backend.
 - Preserve Raw and Cursivy behavior and keep omitted `slant_mode` calls on
@@ -90,12 +95,23 @@ Release-integrity verification on July 29, 2026:
 - Final local artifact verification passed for `v1.5.0` and generated the exact
   SHA-256 manifest.
 
-Before publication, complete the remaining release boundary:
+Version 1.5.1 pre-publication verification on July 29, 2026:
+
+- `448` Python tests passed; `1` intentional skip.
+- `87` macOS installer tests passed.
+- The unsigned Debug installer and Docusaurus production builds completed.
+- The source and Plugin Manager bundles report version `1.5.1`; the installer
+  reports marketing version `1.5.1` and build `16`.
+- The Plugin Manager bundle was regenerated in vendor mode and passed its
+  per-target dependency import and bundle-hygiene checks.
+- Tracked patch whitespace and release metadata alignment passed.
+
+The `v1.5.1` release boundary requires:
 
 - Run the required Glyphs 3.5 live compatibility pass from the
   [Release QA protocol](./release-qa-protocol.mdx).
 - Merge the reviewed release commit to `main` and create the exact signed
-  annotated `v1.5.0` tag.
+  annotated `v1.5.1` tag.
 - Rebuild the Developer ID-signed assets from the exact tagged commit and
   repeat the notarization, Gatekeeper, installed-copy, and checksum gates.
 - Upload only to an empty draft GitHub release, review its notes and assets, and
