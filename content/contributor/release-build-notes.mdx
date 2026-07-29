@@ -13,10 +13,11 @@ Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish 
 
 ## Prepared version
 
-Version `1.5.1` (installer build `16`) is the signed patch release for the
-experimental deterministic Balanced italicification feature line. It preserves
-the unified Glyphs 3.5/4 bundle and existing Cursivy default while shipping the
-opt-in, pure-Python `balanced` mode through the hardened plug-in delivery path.
+Version `1.5.3` (installer build `18`) adds verified server startup diagnostics
+and carries forward the 1.5.2 global-skill ownership and atomic
+custom-parameter safety fixes. It preserves the unified Glyphs 3.5/4 bundle,
+hardened plug-in delivery path, existing Cursivy default, and the opt-in
+deterministic `balanced` mode.
 
 The feature is a design assistant for constructing a functional emphasis
 companion to a Roman. It does not create or replace a deliberately drawn
@@ -25,6 +26,18 @@ the designer's responsibility.
 
 Release highlights:
 
+- Write and verify a Glyphs MCP ownership marker for every globally installed
+  Codex and Claude Code skill.
+- Preserve same-named unmarked skills during overwrite and uninstall instead of
+  inferring ownership from a directory name.
+- Snapshot, verify, and roll back complete confirmed custom-parameter batches
+  when an assignment, deletion, read-back, or redraw fails.
+- Keep the panel in **Starting** until pinned Uvicorn 0.35 reports readiness,
+  then emit the server-started notification and Macro Panel success output
+  exactly once.
+- Persist startup failures and unexpected server exits as a red **Error** with
+  port-specific retry guidance, log full diagnostics through
+  `GeneralPlugin.logError`, and keep auto-start failures non-modal.
 - Publish from a GPG-signed annotated tag while keeping Git signing independent
   from Apple Developer ID signing and notarization.
 - Correct the installed-bundle failure confirmed in 1.4.1: the supported
@@ -106,12 +119,32 @@ Version 1.5.1 pre-publication verification on July 29, 2026:
   per-target dependency import and bundle-hygiene checks.
 - Tracked patch whitespace and release metadata alignment passed.
 
-The `v1.5.1` release boundary requires:
+Version 1.5.2 pre-publication verification on July 29, 2026:
+
+- `452` Python tests passed; `1` intentional skip.
+- `87` macOS installer tests passed.
+- The unsigned Debug installer and Docusaurus production builds completed.
+- The source and Plugin Manager bundles report version `1.5.2`; the installer
+  reports marketing version `1.5.2` and build `17`.
+- Release metadata alignment, canonical/Plugin Manager bundle synchronization,
+  and tracked patch whitespace passed.
+
+Version 1.5.3 pre-publication verification on July 29, 2026:
+
+- `457` Python tests passed; `1` intentional skip.
+- `87` macOS installer tests passed.
+- The unsigned Debug installer and Docusaurus production builds completed.
+- The source and Plugin Manager bundles report version `1.5.3`; the installer
+  reports marketing version `1.5.3` and build `18`.
+- Release metadata alignment, canonical/Plugin Manager bundle synchronization,
+  verified server-lifecycle coverage, and tracked patch whitespace passed.
+
+The `v1.5.3` release boundary requires:
 
 - Run the required Glyphs 3.5 live compatibility pass from the
   [Release QA protocol](./release-qa-protocol.mdx).
 - Merge the reviewed release commit to `main` and create the exact signed
-  annotated `v1.5.1` tag.
+  annotated `v1.5.3` tag.
 - Rebuild the Developer ID-signed assets from the exact tagged commit and
   repeat the notarization, Gatekeeper, installed-copy, and checksum gates.
 - Upload only to an empty draft GitHub release, review its notes and assets, and

@@ -9,13 +9,20 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-## What's new in 1.5.1
+## What's new in 1.5.3
 
-**An experimental italic first pass that helps the designer start—not finish—the
-italic.**
+**Verified server startup diagnostics, plus the 1.5.2 safety fixes.**
 
-- Ship the deterministic Balanced workflow through a GPG-signed release tag and
-  a Developer ID-signed, independently notarized plug-in payload.
+- Report **Running** only after Uvicorn is ready, and preserve failed starts or
+  unexpected exits as a red **Error** with Macro Panel diagnostics and retry
+  guidance.
+- Preserve unrelated same-named Codex and Claude Code skills by requiring a
+  Glyphs MCP ownership marker before overwrite or uninstall.
+- Verify confirmed custom-parameter batches and restore their complete prior
+  state when an assignment, deletion, verification, or redraw fails.
+- Continue shipping the deterministic Balanced workflow through a GPG-signed
+  release tag and a Developer ID-signed, independently notarized plug-in
+  payload.
 - Generate Raw, Cursivy, or Balanced candidates from a Roman master with a
   genuine detached-layer review before any apply.
 - Compare Raw, Cursivy, and Balanced; Balanced is the deterministic
@@ -32,7 +39,7 @@ The workflow aims to help construct a useful emphasis companion to the Roman.
 It does not replace the designer's optical drawing, rhythm, spacing, kerning,
 alternates, or final proofing.
 
-[Read the full 1.5.1 changelog →](CHANGELOG.md) ·
+[Read the full 1.5.3 changelog →](CHANGELOG.md) ·
 [Experimental italic guide](content/italic-first-pass.md) ·
 [Broad-Latin benchmark](content/contributor/italic-balanced-broad-latin-benchmark.md) ·
 [Full-resolution three-family sheet](content/contributor/images/italic-balanced-three-family-story.png)
@@ -223,8 +230,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.5.1)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.5.1"`).
+## Command Set (MCP server v1.5.3)
+This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.5.3"`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.

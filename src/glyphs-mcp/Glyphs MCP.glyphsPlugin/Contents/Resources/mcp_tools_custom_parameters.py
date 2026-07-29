@@ -242,6 +242,180 @@ def _records_by_name(records):
     return result
 
 
+def _raw_parameter_state(parameters, name):
+    if isinstance(parameters, dict):
+        if name not in parameters:
+            return {"exists": False, "value": None, "active": None}
+        return {
+            "exists": True,
+            "value": parameters[name],
+            "active": True,
+        }
+
+    try:
+        matching = [
+            parameter
+            for parameter in parameters
+            if str(getattr(parameter, "name", "")) == name
+        ]
+    except TypeError:
+        matching = []
+    if not matching:
+        return {"exists": False, "value": None, "active": None}
+    parameter = matching[-1]
+    return {
+        "exists": True,
+        "value": getattr(parameter, "value", None),
+        "active": bool(getattr(parameter, "active", True)),
+    }
+
+
+def _parameter_state_payload(state):
+    return {
+        "exists": bool(state["exists"]),
+        "value": _output_value(state["value"]) if state["exists"] else None,
+        "active": state["active"] if state["exists"] else None,
+    }
+
+
+def _parameter_states_match(actual, expected):
+    return _parameter_state_payload(actual) == _parameter_state_payload(expected)
+
+
+def _set_parameter_active(parameters, name, active):
+    if isinstance(parameters, dict) or active is None:
+        return
+    for parameter in parameters:
+        if str(getattr(parameter, "name", "")) == name:
+            try:
+                parameter.active = bool(active)
+            except Exception:
+                if bool(getattr(parameter, "active", True)) != bool(active):
+                    raise
+
+
+def _restore_parameter_state(parameters, name, state):
+    current = _raw_parameter_state(parameters, name)
+    if not state["exists"]:
+        if current["exists"]:
+            del parameters[name]
+        return
+    parameters[name] = state["value"]
+    _set_parameter_active(parameters, name, state["active"])
+
+
+def _custom_parameter_mutation_outcome(owner, source, changes, redraw):
+    parameters = owner.customParameters
+    originals = {
+        name: _raw_parameter_state(parameters, name)
+        for name in changes
+    }
+    written = []
+
+    try:
+        for name, value in changes.items():
+            if value is None:
+                if originals[name]["exists"]:
+                    del parameters[name]
+                    written.append(name)
+            else:
+                parameters[name] = value
+                written.append(name)
+
+        mismatches = []
+        for name, value in changes.items():
+            original = originals[name]
+            expected = (
+                {"exists": False, "value": None, "active": None}
+                if value is None
+                else {
+                    "exists": True,
+                    "value": value,
+                    "active": original["active"] if original["exists"] else True,
+                }
+            )
+            actual = _raw_parameter_state(parameters, name)
+            if not _parameter_states_match(actual, expected):
+                mismatches.append({
+                    "parameterName": name,
+                    "expected": _parameter_state_payload(expected),
+                    "actual": _parameter_state_payload(actual),
+                })
+        if mismatches:
+            raise RuntimeError(
+                "Custom-parameter verification failed: {}".format(
+                    json.dumps(mismatches, sort_keys=True)
+                )
+            )
+
+        if callable(redraw):
+            redraw()
+        return {
+            "ok": True,
+            "writtenParameterNames": written,
+            "verifiedParameterNames": list(changes),
+            "readback": [
+                record
+                for record in _parameter_records(owner, source)
+                if record["name"] in changes
+            ],
+            "rollback": None,
+        }
+    except Exception as exc:
+        rollback_errors = []
+        for name in reversed(list(changes)):
+            try:
+                _restore_parameter_state(parameters, name, originals[name])
+            except Exception as rollback_exc:
+                rollback_errors.append({
+                    "parameterName": name,
+                    "message": str(rollback_exc),
+                })
+
+        for name in changes:
+            try:
+                actual = _raw_parameter_state(parameters, name)
+            except Exception as verify_exc:
+                rollback_errors.append({
+                    "parameterName": name,
+                    "message": "Rollback read-back failed: {}".format(verify_exc),
+                })
+                continue
+            if not _parameter_states_match(actual, originals[name]):
+                rollback_errors.append({
+                    "parameterName": name,
+                    "expected": _parameter_state_payload(originals[name]),
+                    "actual": _parameter_state_payload(actual),
+                    "message": "Rollback verification mismatch.",
+                })
+
+        if callable(redraw):
+            try:
+                redraw()
+            except Exception as redraw_exc:
+                rollback_errors.append({
+                    "stage": "redraw",
+                    "message": str(redraw_exc),
+                })
+
+        return {
+            "ok": False,
+            "error": str(exc),
+            "writtenParameterNames": written,
+            "verifiedParameterNames": [],
+            "readback": [
+                record
+                for record in _parameter_records(owner, source)
+                if record["name"] in changes
+            ],
+            "rollback": {
+                "attempted": True,
+                "succeeded": not rollback_errors,
+                "errors": rollback_errors,
+            },
+        }
+
+
 @mcp.tool(annotations=WRITE_ANNOTATIONS)
 async def set_custom_parameters(
     font_index: int = 0,
@@ -323,30 +497,29 @@ async def set_custom_parameters(
             })
             return _safe_json(base_payload)
 
-        def mutate():
-            parameters = owner.customParameters
-            for name, value in normalized_changes.items():
-                if value is None:
-                    if by_name.get(name):
-                        del parameters[name]
-                else:
-                    parameters[name] = value
-            redraw = getattr(Glyphs, "redraw", None)
-            if callable(redraw):
-                redraw()
-            return True
-
-        _run_on_main_thread(mutate)
-        after = [
-            record for record in _parameter_records(owner, normalized_scope)
-            if record["name"] in normalized_changes
-        ]
+        redraw = getattr(Glyphs, "redraw", None)
+        outcome = _run_on_main_thread(
+            lambda: _custom_parameter_mutation_outcome(
+                owner,
+                normalized_scope,
+                normalized_changes,
+                redraw,
+            )
+        )
         base_payload.update({
-            "ok": True,
-            "applied": True,
-            "readback": after,
+            "ok": bool(outcome.get("ok")),
+            "applied": bool(outcome.get("ok")),
+            "readback": outcome.get("readback", []),
             "saved": False,
+            "writtenParameterNames": outcome.get("writtenParameterNames", []),
+            "verifiedParameterNames": outcome.get("verifiedParameterNames", []),
+            "rollback": outcome.get("rollback"),
         })
+        if not outcome.get("ok"):
+            base_payload["error"] = (
+                outcome.get("error")
+                or "Custom-parameter mutation failed."
+            )
         return _safe_json(base_payload)
     except Exception as error:
         return _safe_json({"ok": False, "error": str(error)})

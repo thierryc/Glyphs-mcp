@@ -299,7 +299,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     os.environ.pop("HOME", None)
                 else:
                     os.environ["HOME"] = old_home
-            self.assertEqual(versions, ["1.5.1"])
+            self.assertEqual(versions, ["1.5.3"])
 
     def test_installer_zip_validation_rejects_path_traversal(self) -> None:
         install_cli = _load_install_cli()
@@ -750,7 +750,9 @@ class InstallerSmokeTests(unittest.TestCase):
             self.assertEqual(set(installed), set(install_cli.MANAGED_SKILL_NAMES))
             for skill_name in installed:
                 self.assertIn(skill_name, install_cli.MANAGED_SKILL_NAMES)
-                self.assertTrue((Path(tmp) / ".codex" / "skills" / skill_name / "SKILL.md").is_file())
+                skill_path = Path(tmp) / ".codex" / "skills" / skill_name
+                self.assertTrue((skill_path / "SKILL.md").is_file())
+                self.assertTrue(install_cli._is_installer_owned_skill(skill_path, skill_name))
             self.assertTrue(
                 (
                     Path(tmp)
@@ -774,10 +776,12 @@ class InstallerSmokeTests(unittest.TestCase):
                 managed_dest = dest_root / "glyphs"
                 managed_dest.mkdir(parents=True, exist_ok=True)
                 (managed_dest / "SKILL.md").write_text("old managed skill\n", encoding="utf-8")
+                install_cli._write_skill_ownership_marker(managed_dest, "glyphs")
 
                 legacy_dest = dest_root / "glyphs-mcp-connect"
                 legacy_dest.mkdir(parents=True, exist_ok=True)
                 (legacy_dest / "SKILL.md").write_text("old connect skill\n", encoding="utf-8")
+                install_cli._write_skill_ownership_marker(legacy_dest, "glyphs-mcp-connect")
 
                 unrelated = dest_root / "another-skill"
                 unrelated.mkdir(parents=True, exist_ok=True)
@@ -795,6 +799,31 @@ class InstallerSmokeTests(unittest.TestCase):
             self.assertIn("name: glyphs", (managed_dest / "SKILL.md").read_text(encoding="utf-8"))
             self.assertFalse(legacy_dest.exists())
             self.assertEqual((unrelated / "SKILL.md").read_text(encoding="utf-8"), "keep me\n")
+
+    def test_install_skill_bundle_preserves_unmarked_same_named_skill(self) -> None:
+        install_cli = _load_install_cli()
+
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-installer-home.") as tmp:
+            dest_root = Path(tmp) / ".codex" / "skills"
+            unowned = dest_root / "glyphs"
+            unowned.mkdir(parents=True)
+            skill_file = unowned / "SKILL.md"
+            skill_file.write_text("# unrelated glyphs skill\n", encoding="utf-8")
+
+            installed, skipped = install_cli.install_skill_bundle(
+                dest_root,
+                overwrite_existing=True,
+            )
+
+            self.assertIn("glyphs", skipped)
+            self.assertNotIn("glyphs", installed)
+            self.assertEqual(
+                skill_file.read_text(encoding="utf-8"),
+                "# unrelated glyphs skill\n",
+            )
+            self.assertFalse(
+                (unowned / install_cli.SKILL_OWNERSHIP_MARKER).exists()
+            )
 
     def test_programmatic_skill_install_targets_codex_only(self) -> None:
         install_cli = _load_install_cli()
@@ -900,6 +929,7 @@ class InstallerSmokeTests(unittest.TestCase):
                 managed_dest = dest_root / "glyphs"
                 managed_dest.mkdir(parents=True, exist_ok=True)
                 (managed_dest / "SKILL.md").write_text("old managed skill\n", encoding="utf-8")
+                install_cli._write_skill_ownership_marker(managed_dest, "glyphs")
                 install_cli.install_skill_bundle_for_targets(
                     install_cli.skill_targets_from_option("codex"),
                     overwrite_existing=True,
@@ -1244,18 +1274,27 @@ class InstallerSmokeTests(unittest.TestCase):
             self.assertFalse(dest.exists())
             self.assertTrue(marker.exists())
 
-    def test_uninstaller_removes_only_explicit_managed_skill_names(self) -> None:
+    def test_uninstaller_removes_only_marker_owned_skills(self) -> None:
         install_cli = _load_install_cli()
         with tempfile.TemporaryDirectory(prefix="glyphs-mcp-uninstall-home.") as tmp:
             old_home = os.environ.get("HOME")
             os.environ["HOME"] = tmp
             try:
                 root = install_cli.codex_skills_dir()
-                managed = root / "glyphs"
+                unowned_same_name = root / "glyphs"
+                managed = root / "glyphs-mcp-spacing"
                 custom = root / "glyphs-mcp-private-notes"
                 unrelated = root / "another-skill"
-                for path in (managed, custom, unrelated):
+                for path in (unowned_same_name, managed, custom, unrelated):
                     path.mkdir(parents=True, exist_ok=True)
+                (unowned_same_name / "SKILL.md").write_text(
+                    "# unrelated glyphs skill\n",
+                    encoding="utf-8",
+                )
+                install_cli._write_skill_ownership_marker(
+                    managed,
+                    "glyphs-mcp-spacing",
+                )
                 plan = install_cli.build_uninstall_plan("4", frozenset({"skills"}))
                 outcomes = install_cli.execute_uninstall_plan(plan)
             finally:
@@ -1264,7 +1303,13 @@ class InstallerSmokeTests(unittest.TestCase):
                 else:
                     os.environ["HOME"] = old_home
 
-            self.assertEqual([outcome.candidate.location.name for outcome in outcomes], ["glyphs"])
+            self.assertEqual(
+                [outcome.candidate.location.name for outcome in outcomes],
+                ["glyphs", "glyphs-mcp-spacing"],
+            )
+            self.assertEqual(outcomes[0].status, "skipped")
+            self.assertEqual(outcomes[0].candidate.state, "preserved")
+            self.assertTrue(unowned_same_name.exists())
             self.assertFalse(managed.exists())
             self.assertTrue(custom.exists())
             self.assertTrue(unrelated.exists())
