@@ -154,9 +154,50 @@ python3 --version
 
 If you are on an unsupported version, install Python 3.14 from python.org and rerun the installer.
 
+## Installer stops at Check Python environment
+
+Starting with 1.5.4, both installers check the exact Python selected for each
+Glyphs target before running pip or changing the plug-in. The check prevents a
+false success when shared native packages were built for a different Python
+ABI. A typical example is Glyphs using Python 3.14 while
+`Scripts/site-packages` contains files such as:
+
+```text
+pydantic_core/_pydantic_core.cpython-311-darwin.so
+objc/_objc.cpython-311-darwin.so
+```
+
+Those files were built for CPython 3.11 and cannot be loaded by CPython 3.14.
+The installer stops before changing dependencies, plug-ins, or client settings.
+It does not delete, back up, reinstall, or move any shared package.
+
+Copy these details from the installer error and log:
+
+- the Glyphs target (3 or 4);
+- the exact Python executable and version;
+- `SOABI`, extension suffix, and architecture;
+- the inspected `Scripts/site-packages` path;
+- every issue code, module, and offending file.
+
+If more than one native build exists, the check accepts the environment when a
+compatible candidate imports successfully. `.abi3` extensions and compatible
+universal binaries are also accepted. If the result looks incorrect, attach
+the JSON diagnostic to a GitHub issue rather than deleting shared packages
+blindly.
+
+For now, resolve the Python/package mismatch deliberately—for example by
+selecting the Python version those packages were built for, or by rebuilding
+the environment after reviewing which other Glyphs scripts share it. Automatic
+repair and isolated dependency storage are intentionally deferred pending
+Glyphs team feedback.
+
 ## Missing dependencies
 
-If the plug-in starts but tool calls fail with `ImportError` or `ModuleNotFoundError`, dependencies may not be installed where Glyphs can load them.
+If the plug-in starts but tool calls fail with `ImportError` or
+`ModuleNotFoundError`, dependencies may not be installed where Glyphs can load
+them. A normal 1.5.4 installation treats missing modules as non-blocking during
+preflight, installs dependencies, and then requires every runtime import to
+pass before reporting completion.
 
 Common location:
 

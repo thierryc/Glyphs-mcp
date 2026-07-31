@@ -721,6 +721,34 @@ final class InstallerViewModel: ObservableObject {
 			log("Payload OK: \(payload.payloadDir.path)")
 		}
 
+		for target in options.targets.sorted(by: { $0.version < $1.version }) {
+			if Task.isCancelled { throw CancellationError() }
+			try await step(
+				"Check \(target.version.displayName) Python environment",
+				id: .environment(target.version)
+			) {
+				let sitePackages = InstallerPaths.glyphsScriptsSitePackages(
+					glyphsVersion: target.version
+				)
+				do {
+					_ = try await RuntimeProbeExecutor(runner: runner, log: log).check(
+						python: target.pythonSelection.pythonExecutable,
+						probe: payload.runtimeProbe,
+						sitePackages: sitePackages,
+						mode: .preinstall
+					)
+				} catch {
+					throw InstallerError.userFacing(
+						"""
+Python environment check failed for \(target.version.displayName).
+\(error.localizedDescription)
+Installation stopped before changing dependencies, plug-ins, or client settings. See the Glyphs MCP troubleshooting guide.
+"""
+					)
+				}
+			}
+		}
+
 		var completedDependencyKeys: Set<String> = []
 		var downloadedPluginBundle: URL?
 		for target in options.targets.sorted(by: { $0.version < $1.version }) {
@@ -734,6 +762,7 @@ final class InstallerViewModel: ObservableObject {
 					try await DepsInstaller(runner: runner, log: log).installAndVerify(
 						python: target.pythonSelection,
 						requirementsTxt: payload.requirementsTxt,
+						runtimeProbe: payload.runtimeProbe,
 						glyphsVersion: target.version
 					)
 				}
@@ -902,6 +931,7 @@ private struct ClientsOptions: Sendable {
 struct InstallStep: Identifiable, Equatable {
 	enum ID: Hashable, Sendable {
 		case payload
+		case environment(GlyphsMajorVersion)
 		case dependencies(GlyphsMajorVersion)
 		case plugin(GlyphsMajorVersion)
 		case done
@@ -948,6 +978,11 @@ struct InstallStep: Identifiable, Equatable {
 			.init(id: .payload, title: NSLocalizedString("Resolve payload", comment: "Install step title"), state: .pending),
 		]
 		for version in Array(Set(versions)).sorted() {
+			result.append(.init(
+				id: .environment(version),
+				title: String(format: NSLocalizedString("Check %@ Python environment", comment: "Install step title"), version.displayName),
+				state: .pending
+			))
 			result.append(.init(
 				id: .dependencies(version),
 				title: String(format: NSLocalizedString("Install %@ dependencies", comment: "Install step title"), version.displayName),

@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.5.4 — Installer ABI diagnostics
+
+_July 31, 2026_
+
+Glyphs MCP 1.5.4 prevents both supported installers from reporting success when
+Glyphs' active Python cannot import existing native dependencies. It addresses
+the Python 3.14 / `cpython-311` failure reported in issue #47 without changing
+or removing shared packages.
+
+### Detection before changes
+
+- Both installers run the same pure-standard-library JSON probe with the exact
+  Python selected for each Glyphs 3 or Glyphs 4 target.
+- The target's `Scripts/site-packages` is explicitly prioritized while checking
+  the complete runtime import set, including `pydantic_core`, `objc`,
+  `_cffi_backend`, and `rpds`.
+- Missing packages and pure-Python modules remain non-blocking before
+  dependency installation. Existing broken imports, incompatible CPython tags,
+  and incompatible Mach-O architectures block installation.
+- Compatible CPython extensions, `.abi3` modules, universal binaries, and mixed
+  directories with a successfully imported compatible candidate are accepted.
+- Every selected target passes preflight before pip, plug-in replacement, or
+  client configuration starts. Errors identify the interpreter and offending
+  files and remain available as structured JSON in the log.
+
+### Strict verification, limited scope
+
+- Post-install verification now uses the shared probe instead of duplicated
+  inline import snippets. Missing imports, nonzero exits, malformed output,
+  unexpected origins, timeouts, and stderr-only failures prevent completion.
+- Interactive and non-interactive terminal installs use the same checks and
+  retain exit code `2` for incompatible or unverifiable runtimes.
+- This release does not delete, back up, reinstall, or isolate shared packages.
+  Dependency isolation and automated repair remain a later milestone pending
+  feedback from the Glyphs team.
+- Signed-bundle bytecode-cache handling remains a separate packaging task and
+  is not changed by this diagnostic patch.
+
 ## 1.5.3 — Verified server readiness and startup diagnostics
 
 _July 29, 2026_

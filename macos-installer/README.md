@@ -32,6 +32,14 @@ Minimum requirements:
 - Glyphs 3 or Glyphs 4 beta
 - Python 3.11–3.14 (recommended: python.org 3.14)
 
+Version 1.5.4 adds a **Check Python environment** step for every selected
+Glyphs target. All selected targets are checked with their exact Python and
+version-specific `Scripts/site-packages` path before pip or plug-in installation
+begins. An incompatible existing native extension stops the run and is shown in
+the UI and full JSON log. Missing packages remain non-blocking until
+post-install verification. The installer does not automatically delete,
+reinstall, move, or isolate shared packages.
+
 Notes for Xcode builds:
 - Debug builds use **Apple Development** signing with Team `N9U29A4T8J` so the app can run locally from Xcode.
 - Release builds use **Developer ID Application** signing with Team `N9U29A4T8J` for distribution outside the Mac App Store.

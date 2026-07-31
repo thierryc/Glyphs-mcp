@@ -35,7 +35,7 @@ import zipfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import FrozenSet, List, Literal, Optional, Tuple
+from typing import Any, Dict, FrozenSet, List, Literal, Optional, Sequence, Tuple
 
 try:
     from rich import box
@@ -201,22 +201,6 @@ CODEX_SERVER_NAME = "glyphs-mcp-server"
 CLAUDE_DESKTOP_SERVER_NAME = "glyphs-mcp-server"
 CLAUDE_CODE_SERVER_NAME = "glyphs-mcp"
 UNINSTALL_COMPONENTS = frozenset({"plugin", "skills", "clients"})
-REQUIRED_RUNTIME_MODULES = [
-    "mcp",
-    "fastmcp",
-    "pydantic_core",
-    "starlette",
-    "uvicorn",
-    "httpx",
-    "sse_starlette",
-    "typing_extensions",
-    "pkg_resources",
-    "fontParts",
-    "fontTools",
-    "objc",
-    "Foundation",
-    "AppKit",
-]
 EXPECTED_DEVELOPER_TEAM = "N9U29A4T8J"
 EXPECTED_DEVELOPER_AUTHORITY = (
     "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)"
@@ -1003,56 +987,230 @@ def detect_python_candidates() -> List[PythonCandidate]:
     return cands
 
 
-def verify_runtime(python: Path, extra_site_packages: Optional[Path] = None) -> bool:
-    """Verify required packages import cleanly in the selected Python.
+RUNTIME_PROBE_SCHEMA_VERSION = 1
+RUNTIME_PROBE_TIMEOUT_SECONDS = 30
 
-    Returns True on success, False otherwise, and prints guidance.
-    """
-    console.print(Panel.fit(f"Verifying runtime imports in: {python}", title="Verify", border_style="white"))
-    code = (
-        "import sys;\n"
-        "import site;\n"
-        f"extra_site={str(extra_site_packages)!r};\n"
-        "if extra_site:\n"
-        "  site.addsitedir(extra_site)\n"
-        f"mods={REQUIRED_RUNTIME_MODULES!r};\n"
-        "missing=[];\n"
-        "import importlib;\n"
-        "\n"
-        "for m in mods:\n"
-        "  try:\n"
-        "    importlib.import_module(m)\n"
-        "  except Exception as e:\n"
-        "    missing.append((m,str(e)))\n"
-        "\n"
-        "# Sanity checks for common version-mismatch issues.\n"
-        "try:\n"
-        "  import mcp.types as _t\n"
-        "  if not hasattr(_t, 'AnyFunction'):\n"
-        "    missing.append(('mcp.types.AnyFunction', 'missing (upgrade mcp)'))\n"
-        "except Exception as e:\n"
-        "  missing.append(('mcp.types', str(e)))\n"
-        "\n"
-        "print('Python:', sys.executable);\n"
-        "print('Version:', sys.version.split()[0]);\n"
-        "print('OK' if not missing else 'MISSING:'+str(missing))\n"
+
+@dataclass(frozen=True)
+class RuntimeProbeResult:
+    payload: Dict[str, Any]
+    stdout: str
+
+    @property
+    def blocking(self) -> bool:
+        return self.payload["blocking"] is True
+
+    @property
+    def runtime(self) -> Dict[str, str]:
+        value = self.payload.get("runtime")
+        return value if isinstance(value, dict) else {}
+
+    @property
+    def issues(self) -> List[Dict[str, Any]]:
+        value = self.payload.get("issues")
+        return value if isinstance(value, list) else []
+
+
+class RuntimeProbeError(RuntimeError):
+    pass
+
+
+def runtime_probe_path() -> Path:
+    return (
+        repo_root()
+        / "src"
+        / "glyphs-mcp"
+        / "Glyphs MCP.glyphsPlugin"
+        / "Contents"
+        / "Resources"
+        / "runtime_probe.py"
+    )
+
+
+def run_runtime_probe(
+    python: Path,
+    site_packages: Path,
+    mode: Literal["preinstall", "postinstall"],
+    *,
+    allowed_origins: Sequence[Path] = (),
+    allow_user_site: bool = False,
+    allow_runtime_paths: bool = False,
+    timeout: int = RUNTIME_PROBE_TIMEOUT_SECONDS,
+) -> RuntimeProbeResult:
+    probe = runtime_probe_path()
+    if not probe.is_file():
+        raise RuntimeProbeError(f"Runtime probe is missing: {probe}")
+
+    command = [
+        str(python),
+        str(probe),
+        "--mode",
+        mode,
+        "--site-packages",
+        str(site_packages),
+    ]
+    for origin in allowed_origins:
+        command.extend(["--allow-origin", str(origin)])
+    if allow_user_site:
+        command.append("--allow-user-site")
+    if allow_runtime_paths:
+        command.append("--allow-runtime-paths")
+
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeProbeError(
+            f"Python environment check timed out after {timeout} seconds."
+        ) from exc
+    except OSError as exc:
+        raise RuntimeProbeError(
+            f"Could not run Python environment check with {python}: {exc}"
+        ) from exc
+
+    stdout = completed.stdout.strip()
+    stderr = completed.stderr.strip()
+    if stderr:
+        raise RuntimeProbeError(
+            "Python environment check wrote unexpected error output: " + stderr
+        )
+    try:
+        payload = json.loads(stdout)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise RuntimeProbeError(
+            "Python environment check returned malformed JSON."
+        ) from exc
+    if not isinstance(payload, dict):
+        raise RuntimeProbeError(
+            "Python environment check returned an unexpected JSON value."
+        )
+    if payload.get("schemaVersion") != RUNTIME_PROBE_SCHEMA_VERSION:
+        raise RuntimeProbeError(
+            "Python environment check returned an unsupported schema version."
+        )
+    if payload.get("mode") != mode or not isinstance(payload.get("blocking"), bool):
+        raise RuntimeProbeError(
+            "Python environment check returned an incomplete result."
+        )
+    status = payload.get("status")
+    if status not in {"ok", "incomplete", "incompatible", "error"}:
+        raise RuntimeProbeError(
+            "Python environment check returned an invalid overall status."
+        )
+    if payload["blocking"] != (status in {"incompatible", "error"}):
+        raise RuntimeProbeError(
+            "Python environment check returned an inconsistent status."
+        )
+    if mode == "postinstall" and status == "incomplete":
+        raise RuntimeProbeError(
+            "Post-install Python environment check was incomplete."
+        )
+    if not isinstance(payload.get("runtime"), dict) or not isinstance(
+        payload.get("issues"), list
+    ):
+        raise RuntimeProbeError(
+            "Python environment check omitted required diagnostic details."
+        )
+    blocking = payload["blocking"]
+    if completed.returncode not in ({2} if blocking else {0}):
+        raise RuntimeProbeError(
+            "Python environment check exited unexpectedly "
+            f"(status {completed.returncode})."
+        )
+    return RuntimeProbeResult(payload=payload, stdout=stdout)
+
+
+def _print_runtime_probe_log(result: RuntimeProbeResult) -> None:
+    console.print("[dim]Python environment diagnostic JSON:[/dim]")
+    console.print(Text(result.stdout))
+
+
+def _runtime_probe_failure_message(result: RuntimeProbeResult) -> str:
+    runtime = result.runtime
+    executable = runtime.get("executable", "unknown Python")
+    version = runtime.get("version", "unknown")
+    blocking_issues = [
+        issue for issue in result.issues if issue.get("blocking") is True
+    ]
+    details = "\n".join(
+        f"  • {issue.get('message', 'Unknown Python environment error')}"
+        + (f"\n    File: {issue['file']}" if issue.get("file") else "")
+        for issue in blocking_issues
+    )
+    return (
+        f"Glyphs uses Python {version} at {executable}, but its ABI does not "
+        "match one or more existing native packages, or the environment could "
+        "not be verified.\n"
+        f"{details or '  • The Python environment could not be verified.'}\n"
+        "Installation stopped before changing dependencies or the plug-in. "
+        "See the Glyphs MCP troubleshooting guide."
+    )
+
+
+def check_runtime_preinstall(python: Path, site_packages: Path) -> None:
+    console.print(
+        Panel.fit(
+            f"Python: {python}\nShared packages: {site_packages}",
+            title="Check Python environment",
+            border_style="white",
+        )
     )
     try:
-        out = subprocess.check_output([str(python), "-c", code], text=True)
-        console.print(Text(out))
-        if "MISSING:" in out:
-            console.print(
-                "[red]Some packages failed to import.\n"
-                "Try reinstalling with --no-cache-dir and force-reinstall:[/red]\n"
-                f"  {python} -m pip install --user --no-cache-dir --force-reinstall -r {repo_root()/ 'requirements.txt'}\n"
-                "If objc, Foundation, or AppKit are missing, PyObjC did not install into the Python selected in Glyphs. "
-                "Install the Glyphs Python module or run pip for the exact Python shown above."
-            )
-            return False
-        return True
-    except subprocess.CalledProcessError as e:
-        console.print(f"[red]Verification failed to run:[/red] {e}")
+        result = run_runtime_probe(python, site_packages, "preinstall")
+    except RuntimeProbeError as exc:
+        console.print(
+            "[red]The Python environment could not be verified. Installation "
+            "stopped before changing dependencies or the plug-in.[/red]"
+        )
+        console.print(f"[red]{exc}[/red]")
+        console.print("See the Glyphs MCP troubleshooting guide.")
+        raise SystemExit(2) from exc
+    _print_runtime_probe_log(result)
+    if result.blocking:
+        console.print(f"[red]{_runtime_probe_failure_message(result)}[/red]")
+        raise SystemExit(2)
+    console.print("[green]Python environment preflight passed.[/green]")
+
+
+def verify_runtime(
+    python: Path,
+    extra_site_packages: Optional[Path] = None,
+    *,
+    allow_user_site: bool = False,
+) -> bool:
+    """Verify the complete installed runtime with the shared probe."""
+    site_packages = extra_site_packages or glyphs_scripts_site_packages()
+    console.print(
+        Panel.fit(
+            f"Verifying runtime imports in: {python}",
+            title="Verify",
+            border_style="white",
+        )
+    )
+    try:
+        result = run_runtime_probe(
+            python,
+            site_packages,
+            "postinstall",
+            allowed_origins=[site_packages],
+            allow_user_site=allow_user_site,
+            allow_runtime_paths=True,
+        )
+    except RuntimeProbeError as exc:
+        console.print(f"[red]Runtime verification failed:[/red] {exc}")
         return False
+    _print_runtime_probe_log(result)
+    if result.blocking:
+        console.print(f"[red]{_runtime_probe_failure_message(result)}[/red]")
+        return False
+    console.print("[green]Python runtime verification passed.[/green]")
+    return True
 
 
 def run(
@@ -1072,7 +1230,9 @@ def run(
         raise SystemExit(2) from exc
 
 
-def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", "4"] = "4") -> None:
+def resolve_glyphs_python_runtime(
+    glyphs_version: Literal["3", "4"] = "4",
+) -> Tuple[List[str], Path, str]:
     selected_python = glyphs_selected_python_bin(glyphs_version)
     selected_version = python_version(selected_python) if selected_python else None
     if selected_python and selected_version:
@@ -1097,8 +1257,24 @@ def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", 
         console.print("[red]Glyphs Python not found.[/red]")
         console.print(f"Open Glyphs {glyphs_version} → Settings → Addons and install Python (GlyphsPythonPlugin), then re-run.")
         raise SystemExit(2)
+    return pip_cmd, verify_python, source
+
+
+def check_existing_glyphs_runtime(
+    glyphs_version: Literal["3", "4"] = "4",
+) -> None:
+    _, python, _ = resolve_glyphs_python_runtime(glyphs_version)
+    target = glyphs_scripts_site_packages(glyphs_version)
+    check_runtime_preinstall(python, target)
+    if not verify_runtime(python, target):
+        raise SystemExit(2)
+
+
+def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", "4"] = "4") -> None:
+    pip_cmd, verify_python, source = resolve_glyphs_python_runtime(glyphs_version)
 
     target = glyphs_scripts_site_packages(glyphs_version)
+    check_runtime_preinstall(verify_python, target)
     target.mkdir(parents=True, exist_ok=True)
     console.print(Panel.fit(f"{source}\nInstalling requirements into:\n{target}", title="Glyphs Python", border_style="green"))
     pip_environment = os.environ.copy()
@@ -1133,7 +1309,13 @@ def install_with_glyphs_python(requirements: Path, glyphs_version: Literal["3", 
         raise SystemExit(2)
 
 
-def install_with_custom_python(python: Path, requirements: Path) -> None:
+def install_with_custom_python(
+    python: Path,
+    requirements: Path,
+    glyphs_version: Literal["3", "4"] = "4",
+) -> None:
+    target = glyphs_scripts_site_packages(glyphs_version)
+    check_runtime_preinstall(python, target)
     console.print(Panel.fit(f"Installing requirements to user site for:\n{python}"
                            f"\n(version: {python_version(python) or 'unknown'})",
                            title="Custom Python", border_style="cyan"))
@@ -1159,7 +1341,7 @@ def install_with_custom_python(python: Path, requirements: Path) -> None:
         "-r",
         str(requirements),
     ])
-    if not verify_runtime(python):
+    if not verify_runtime(python, target, allow_user_site=True):
         raise SystemExit(2)
 
 
@@ -1533,6 +1715,7 @@ def resolve_python_selection_interactive(
 ) -> None:
     if skip_deps:
         console.print("[yellow]Skipping Python dependency installation.[/yellow]")
+        check_existing_glyphs_runtime(glyphs_version)
         return
 
     choice = choose_mode()
@@ -1554,12 +1737,17 @@ def resolve_python_selection_interactive(
         if not proceed:
             console.print(f"[red]Aborting. Please install Python {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}+ and re-run.[/red]")
             raise SystemExit(2)
-    install_with_custom_python(python_path, requirements)
+    install_with_custom_python(
+        python_path,
+        requirements,
+        glyphs_version=glyphs_version,
+    )
 
 
 def resolve_python_selection_non_interactive(options: InstallerOptions, requirements: Path) -> None:
     if options.skip_deps:
         console.print("[yellow]Skipping Python dependency installation.[/yellow]")
+        check_existing_glyphs_runtime(options.glyphs_version)
         return
 
     if options.python_mode == "glyphs":
@@ -1574,7 +1762,11 @@ def resolve_python_selection_non_interactive(options: InstallerOptions, requirem
         raise SystemExit(f"Python {ver} is not yet supported. Please use 3.11–3.14.")
     if vt < MIN_PY_VERSION:
         raise SystemExit(f"Selected Python {ver} is older than {MIN_PY_VERSION[0]}.{MIN_PY_VERSION[1]}.")
-    install_with_custom_python(options.python_path, requirements)
+    install_with_custom_python(
+        options.python_path,
+        requirements,
+        glyphs_version=options.glyphs_version,
+    )
 
 
 def choose_plugin_mode_interactive() -> str:

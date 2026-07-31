@@ -57,13 +57,25 @@ Glyphs 3 backward compatibility is kept for the shared MCP server code where pos
 
 ## What the installer does
 
-- Detects a supported Python environment.
+- Runs **Check Python environment** with the exact interpreter selected for
+  every Glyphs target before making persistent changes.
+- Prioritizes that target's shared `Scripts/site-packages` and stops if an
+  existing native package was built for a different Python ABI or Mac
+  architecture.
 - Detects installed Glyphs 3 and Glyphs 4 applications and lets you target either or both.
 - Installs Python dependencies for Glyphs.
 - Installs or links `Glyphs MCP.glyphsPlugin` into Glyphs' plug-ins folder.
 - Can link supported local MCP clients.
 - Can copy bundled Glyphs MCP skills into Codex or Claude Code skill directories.
-- Verifies imports and prints actionable errors when setup fails.
+- Verifies the complete runtime again after installation and prints the exact
+  interpreter and offending files when setup fails.
+
+Packages that are not installed yet are expected during the first check and do
+not block installation. If the check finds an existing package that the active
+Python cannot import, version 1.5.4 stops before pip, plug-in replacement, or
+client configuration. It does not delete, reinstall, or move shared packages.
+See [Troubleshooting](./troubleshooting.mdx#installer-stops-at-check-python-environment)
+for the diagnostic fields to include in a support request.
 
 ## Scripted install
 

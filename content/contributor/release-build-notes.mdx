@@ -13,11 +13,10 @@ Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish 
 
 ## Prepared version
 
-Version `1.5.3` (installer build `18`) adds verified server startup diagnostics
-and carries forward the 1.5.2 global-skill ownership and atomic
-custom-parameter safety fixes. It preserves the unified Glyphs 3.5/4 bundle,
-hardened plug-in delivery path, existing Cursivy default, and the opt-in
-deterministic `balanced` mode.
+Version `1.5.4` (installer build `19`) adds fail-closed Python ABI diagnostics
+to the macOS and terminal installers. It preserves the unified Glyphs 3.5/4
+bundle, hardened plug-in delivery path, 1.5.3 server-readiness behavior,
+existing Cursivy default, and the opt-in deterministic `balanced` mode.
 
 The feature is a design assistant for constructing a functional emphasis
 companion to a Roman. It does not create or replace a deliberately drawn
@@ -26,6 +25,18 @@ the designer's responsibility.
 
 Release highlights:
 
+- Run one shared pure-standard-library probe with the exact Python selected for
+  each Glyphs target and explicitly prioritize that target's shared
+  `Scripts/site-packages`.
+- Stop all selected targets before persistent changes when an existing native
+  package has an incompatible CPython ABI, incompatible Mach-O architecture, or
+  broken import.
+- Keep missing packages non-blocking before pip and make all post-install
+  missing imports, unexpected origins, malformed results, nonzero exits,
+  timeouts, and stderr-only failures fatal.
+- Preserve existing shared packages. Version 1.5.4 diagnoses only; isolated
+  dependency storage and automatic repair remain later work pending Glyphs
+  team feedback.
 - Write and verify a Glyphs MCP ownership marker for every globally installed
   Codex and Claude Code skill.
 - Preserve same-named unmarked skills during overwrite and uninstall instead of
@@ -139,16 +150,55 @@ Version 1.5.3 pre-publication verification on July 29, 2026:
 - Release metadata alignment, canonical/Plugin Manager bundle synchronization,
   verified server-lifecycle coverage, and tracked patch whitespace passed.
 
-The `v1.5.3` release boundary requires:
+Version 1.5.4 release-candidate verification on July 31, 2026:
+
+- `473` Python tests passed; `1` intentional skip.
+- `90` macOS installer tests passed, including JSON decoding, exact
+  interpreter/path, stderr-only failure, and capture-timeout coverage.
+- Shell syntax, tracked patch whitespace, and the unsigned Debug installer
+  build passed through `scripts/run_local_release_tests.sh`.
+- The Docusaurus production build completed successfully.
+- A pre-tag candidate built from the final implementation passed Developer ID
+  signing and Apple notarization for the exact plug-in payload, installer app,
+  and DMG. Stapler and Gatekeeper accepted the app and DMG.
+- `verify_release_artifacts.sh` passed the extracted payload signatures,
+  signature-preserving simulated installation, release metadata, byte-identical
+  latest/versioned DMGs, and SHA-256 checksum gates.
+- Read-only live probes passed Glyphs 3.5 with its selected Python 3.12 and
+  Glyphs 4 with its selected Python 3.14. Running Python 3.14 against the
+  older Glyphs 3 shared packages deterministically blocked their CPython 3.11
+  and 3.12 files, including when a compatible user-site fallback could import.
+- The ABI fixture matrix passed at the shared-probe, terminal-installer, and
+  Swift-executor levels. Live checks were deliberately read-only; no shared
+  Glyphs packages or installed plug-ins were changed during this diagnostic
+  release check.
+- The source and Plugin Manager bundles report version `1.5.4`; the installer
+  reports marketing version `1.5.4` and build `19`.
+
+The `v1.5.4` release boundary requires:
 
 - Run the required Glyphs 3.5 live compatibility pass from the
   [Release QA protocol](./release-qa-protocol.mdx).
+- Run the ABI diagnostic matrix on Glyphs 3.5/Python 3.14 and Glyphs 4 with
+  compatible and intentionally mismatched package fixtures.
 - Merge the reviewed release commit to `main` and create the exact signed
-  annotated `v1.5.3` tag.
+  annotated `v1.5.4` tag.
 - Rebuild the Developer ID-signed assets from the exact tagged commit and
   repeat the notarization, Gatekeeper, installed-copy, and checksum gates.
 - Upload only to an empty draft GitHub release, review its notes and assets, and
   publish separately.
+
+Publication was explicitly authorized on July 31, 2026. The signed-tag,
+exact-tag rebuild, empty-draft release, asset verification, and final release
+review gates still apply.
+
+## Separate known packaging task
+
+Signed-bundle bytecode-cache handling remains outside the 1.5.4 ABI diagnostic
+scope. Release builders must continue excluding `__pycache__`, `.pyc`, and
+`.pyo` files from tracked and signed payloads. Any future change to where
+runtime bytecode caches are written must be reviewed and released as its own
+packaging fix rather than folded into dependency diagnosis.
 
 ## Future cleanup targets
 

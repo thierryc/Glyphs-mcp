@@ -184,11 +184,61 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertFalse(VersionGate.isSupported(version: "3.15.0"))
 	}
 
-	func testInstallerVerificationRequiresPyObjCBridgeModules() {
-		XCTAssertTrue(requiredRuntimeModules.contains("objc"))
-		XCTAssertTrue(requiredRuntimeModules.contains("Foundation"))
-		XCTAssertTrue(requiredRuntimeModules.contains("AppKit"))
-		XCTAssertTrue(requiredRuntimeModules.contains("pkg_resources"))
+	func testRuntimeProbeDocumentDecodesABIDiagnostic() throws {
+		let json = """
+{
+  "schemaVersion": 1,
+  "mode": "preinstall",
+  "status": "incompatible",
+  "blocking": true,
+  "runtime": {
+    "executable": "/tmp/python3.14",
+    "version": "3.14.2",
+    "implementation": "CPython",
+    "soabi": "cpython-314-darwin",
+    "extensionSuffix": ".cpython-314-darwin.so",
+    "architecture": "arm64"
+  },
+  "sitePackages": "/tmp/site-packages",
+  "checks": [{
+    "module": "pydantic_core",
+    "present": true,
+    "imported": false,
+    "origin": null,
+    "error": "ImportError: incompatible",
+    "nativeFiles": [{
+      "file": "/tmp/site-packages/pydantic_core/_pydantic_core.cpython-311-darwin.so",
+      "abi": "cpython-311",
+      "abiCompatible": false,
+      "architectures": ["arm64"],
+      "architectureCompatible": true
+    }]
+  }],
+  "issues": [{
+    "code": "incompatible_abi",
+    "module": "pydantic_core",
+    "file": "/tmp/site-packages/pydantic_core/_pydantic_core.cpython-311-darwin.so",
+    "expected": "cpython-314 or abi3",
+    "detected": "cpython-311",
+    "message": "Native package was built for CPython 3.11.",
+    "blocking": true
+  }]
+}
+"""
+		let document = try JSONDecoder().decode(
+			RuntimeProbeDocument.self,
+			from: Data(json.utf8)
+		)
+		XCTAssertTrue(document.blocking)
+		XCTAssertEqual(document.runtime.executable, "/tmp/python3.14")
+		XCTAssertEqual(document.issues.first?.code, "incompatible_abi")
+		XCTAssertEqual(
+			document.checks.first?.nativeFiles.first?.abi,
+			"cpython-311"
+		)
+		let message = RuntimeProbeExecutor.failureMessage(document, mode: .preinstall)
+		XCTAssertTrue(message.contains("Installation stopped before changing dependencies or the plug-in."), message)
+		XCTAssertTrue(message.contains("_pydantic_core.cpython-311-darwin.so"), message)
 	}
 
 	func testGlyphsPreferencesUsesVersionSpecificDomains() {
@@ -1030,8 +1080,13 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		let payload = resources.appendingPathComponent("Payload", isDirectory: true)
 		let plugin = payload.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
 		let req = payload.appendingPathComponent("requirements.txt")
+		let runtimeProbe = plugin.appendingPathComponent("Contents/Resources/runtime_probe.py")
 
-		try FileManager.default.createDirectory(at: plugin, withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(
+			at: runtimeProbe.deletingLastPathComponent(),
+			withIntermediateDirectories: true,
+			attributes: nil
+		)
 		try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true, attributes: nil)
 
 		let infoPlist = contents.appendingPathComponent("Info.plist")
@@ -1052,6 +1107,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true, attributes: nil)
 		try plist.write(to: infoPlist, atomically: true, encoding: .utf8)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
+		try "# probe\n".write(to: runtimeProbe, atomically: true, encoding: .utf8)
 
 		let b = try XCTUnwrap(Bundle(url: bundleURL))
 		let resolved = try InstallerPayload.resolve(bundle: b)
@@ -1069,8 +1125,14 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		let payload = sourceRoot.appendingPathComponent("Payload", isDirectory: true)
 		let plugin = payload.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
 		let req = payload.appendingPathComponent("requirements.txt")
-		try FileManager.default.createDirectory(at: plugin, withIntermediateDirectories: true, attributes: nil)
+		let runtimeProbe = plugin.appendingPathComponent("Contents/Resources/runtime_probe.py")
+		try FileManager.default.createDirectory(
+			at: runtimeProbe.deletingLastPathComponent(),
+			withIntermediateDirectories: true,
+			attributes: nil
+		)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
+		try "# probe\n".write(to: runtimeProbe, atomically: true, encoding: .utf8)
 		try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true, attributes: nil)
 
 		let infoPlist = contents.appendingPathComponent("Info.plist")
@@ -1205,6 +1267,112 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 			}
 			XCTAssertTrue(installerError.localizedDescription.contains("timed out"), installerError.localizedDescription)
 			XCTAssertLessThan(Date().timeIntervalSince(startedAt), 2)
+		}
+	}
+
+	func testProcessRunnerRunCapturingTimesOut() async {
+		let runner = ProcessRunner()
+		let startedAt = Date()
+
+		do {
+			_ = try await runner.runCapturing(
+				executable: URL(fileURLWithPath: "/bin/sleep"),
+				args: ["5"],
+				timeout: 0.05
+			)
+			XCTFail("Expected runCapturing to time out.")
+		} catch {
+			XCTAssertTrue(error.localizedDescription.contains("timed out"), error.localizedDescription)
+			XCTAssertLessThan(Date().timeIntervalSince(startedAt), 2)
+		}
+	}
+
+	func testRuntimeProbeExecutorUsesExactPythonAndGlyphsTargetPath() async throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-probe-executor-\(UUID().uuidString)", isDirectory: true)
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+
+		let capture = root.appendingPathComponent("arguments.txt")
+		let python = root.appendingPathComponent("selected-python")
+		let probe = root.appendingPathComponent("runtime_probe.py")
+		let target = root.appendingPathComponent("Glyphs 4/Scripts/site-packages")
+		let json = """
+{"schemaVersion":1,"mode":"preinstall","status":"incomplete","blocking":false,"runtime":{"executable":"\(python.path)","version":"3.14.2","implementation":"CPython","soabi":"cpython-314-darwin","extensionSuffix":".cpython-314-darwin.so","architecture":"arm64"},"sitePackages":"\(target.path)","checks":[],"issues":[]}
+"""
+		let script = """
+#!/bin/sh
+printf '%s\\n' "$@" > "\(capture.path)"
+printf '%s\\n' '\(json)'
+exit 0
+"""
+		try script.write(to: python, atomically: true, encoding: .utf8)
+		try FileManager.default.setAttributes(
+			[.posixPermissions: 0o755],
+			ofItemAtPath: python.path
+		)
+		try "".write(to: probe, atomically: true, encoding: .utf8)
+
+		let document = try await RuntimeProbeExecutor(
+			runner: ProcessRunner(),
+			log: { _ in }
+		).check(
+			python: python,
+			probe: probe,
+			sitePackages: target,
+			mode: .preinstall
+		)
+		let arguments = try String(contentsOf: capture, encoding: .utf8)
+			.split(separator: "\n")
+			.map(String.init)
+		XCTAssertEqual(document.runtime.executable, python.path)
+		XCTAssertEqual(
+			arguments,
+			[
+				probe.path,
+				"--mode",
+				"preinstall",
+				"--site-packages",
+				target.path,
+			]
+		)
+	}
+
+	func testRuntimeProbeExecutorRejectsStderrOnlyFailure() async throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-probe-stderr-\(UUID().uuidString)", isDirectory: true)
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+
+		let python = root.appendingPathComponent("selected-python")
+		let script = """
+#!/bin/sh
+printf '%s\\n' 'loader warning' >&2
+printf '%s\\n' '{"schemaVersion":1,"mode":"postinstall","status":"ok","blocking":false,"runtime":{"executable":"\(python.path)","version":"3.14.2","implementation":"CPython","soabi":"cpython-314-darwin","extensionSuffix":".cpython-314-darwin.so","architecture":"arm64"},"sitePackages":"/tmp/site-packages","checks":[],"issues":[]}'
+exit 0
+"""
+		try script.write(to: python, atomically: true, encoding: .utf8)
+		try FileManager.default.setAttributes(
+			[.posixPermissions: 0o755],
+			ofItemAtPath: python.path
+		)
+
+		do {
+			_ = try await RuntimeProbeExecutor(
+				runner: ProcessRunner(),
+				log: { _ in }
+			).check(
+				python: python,
+				probe: root.appendingPathComponent("runtime_probe.py"),
+				sitePackages: URL(fileURLWithPath: "/tmp/site-packages"),
+				mode: .postinstall
+			)
+			XCTFail("Expected stderr-only probe output to fail.")
+		} catch {
+			XCTAssertTrue(
+				error.localizedDescription.contains("unexpected error output"),
+				error.localizedDescription
+			)
 		}
 	}
 

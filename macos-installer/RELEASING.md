@@ -156,6 +156,28 @@ The local test gate is mandatory before publishing. It can also be run independe
 ./scripts/run_local_release_tests.sh
 ```
 
+For 1.5.4 and later, also run the installer ABI matrix before signing:
+
+- Glyphs 3.5 with its exact selected Python and Glyphs 3
+  `Scripts/site-packages`.
+- Glyphs 4 with its exact selected Python and Glyphs 4
+  `Scripts/site-packages`.
+- A clean/incomplete fixture, which must pass preflight and continue to pip.
+- A Python 3.14 fixture containing `cpython-311` builds of
+  `pydantic_core` and `objc`, which must fail at **Check Python environment**.
+- Compatible CPython, `.abi3`, and universal-binary fixtures, which must pass.
+
+For every blocking fixture, capture the installer log and prove that pip,
+plug-in replacement, and client configuration did not run. Then prove a
+post-install missing import, malformed JSON, nonzero exit, timeout, unexpected
+origin, and stderr-only failure prevents the **Done** state. Repeat the
+preflight boundary in terminal interactive and non-interactive modes; terminal
+failures must exit with status `2`.
+
+Signed-bundle bytecode-cache handling is a separate known packaging task. Keep
+excluding `__pycache__` and `.pyc` artifacts from release payloads, but do not
+combine a cache-policy change with the 1.5.4 ABI diagnostic patch.
+
 To rebuild and verify locally without uploading:
 
 ```bash
