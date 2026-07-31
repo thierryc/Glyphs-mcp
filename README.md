@@ -9,37 +9,27 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-## What's new in 1.5.3
+## What's new in 1.5.4
 
-**Verified server startup diagnostics, plus the 1.5.2 safety fixes.**
+**Installer diagnostics for incompatible native Python packages.**
 
-- Report **Running** only after Uvicorn is ready, and preserve failed starts or
-  unexpected exits as a red **Error** with Macro Panel diagnostics and retry
-  guidance.
-- Preserve unrelated same-named Codex and Claude Code skills by requiring a
-  Glyphs MCP ownership marker before overwrite or uninstall.
-- Verify confirmed custom-parameter batches and restore their complete prior
-  state when an assignment, deletion, verification, or redraw fails.
-- Continue shipping the deterministic Balanced workflow through a GPG-signed
-  release tag and a Developer ID-signed, independently notarized plug-in
-  payload.
-- Generate Raw, Cursivy, or Balanced candidates from a Roman master with a
-  genuine detached-layer review before any apply.
-- Compare Raw, Cursivy, and Balanced; Balanced is the deterministic
-  path-geometry winner, with conservative straight-stem width compensation.
-- Preserve topology, live components, and origin-aware anchor placement while
-  reporting skipped or blocked cases.
-- Review Inter, Noto Sans, and IBM Plex Sans at 543, 543, and 391 shared
-  glyphs, including high-resolution contact and silhouette-difference sheets.
-- Use Balanced as the recommended experimental option. It blocks reflected,
-  rotated, non-uniformly scaled, cyclic, unreadable, and mismatched component
-  chains instead of silently applying an unsafe construction.
+- Check the exact Python selected for every Glyphs 3 and Glyphs 4 target before
+  pip, plug-in replacement, or client configuration changes.
+- Detect native packages built for a different CPython ABI or Mach-O
+  architecture, including the Python 3.14 / `cpython-311` mismatch reported in
+  issue #47.
+- Treat packages that are not installed yet as an ordinary pre-install state,
+  while stopping on existing packages that cannot import.
+- Use the same standard-library JSON probe in the macOS app and terminal
+  installer, including strict post-install import and module-origin checks.
+- Show the selected interpreter and offending files in the error and retain the
+  complete diagnostic result in the installer log.
+- Preserve all existing shared packages. This milestone diagnoses and stops; it
+  does not delete, reinstall, isolate, or automatically repair them.
+- Carry forward 1.5.3's verified Uvicorn readiness and persistent startup-error
+  diagnostics.
 
-The workflow aims to help construct a useful emphasis companion to the Roman.
-It does not replace the designer's optical drawing, rhythm, spacing, kerning,
-alternates, or final proofing.
-
-[Read the full 1.5.3 changelog →](CHANGELOG.md) ·
+[Read the full 1.5.4 changelog →](CHANGELOG.md) ·
 [Experimental italic guide](content/italic-first-pass.md) ·
 [Broad-Latin benchmark](content/contributor/italic-balanced-broad-latin-benchmark.md) ·
 [Full-resolution three-family sheet](content/contributor/images/italic-balanced-three-family-story.png)
@@ -230,8 +220,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.5.3)
-This table describes the tool surface exposed by the MCP server shipped in this repo (FastMCP `version="1.5.3"`).
+## Command Set (MCP server v1.5.4)
+This table describes the tool surface exposed by the MCP server shipped in this repo (version `1.5.4`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.

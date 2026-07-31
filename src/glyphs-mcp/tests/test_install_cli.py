@@ -59,11 +59,14 @@ class InstallerSmokeTests(unittest.TestCase):
 
     def test_runtime_verification_requires_pyobjc_bridge_modules(self) -> None:
         install_cli = _load_install_cli()
+        source = install_cli.runtime_probe_path().read_text(encoding="utf-8")
 
-        self.assertIn("objc", install_cli.REQUIRED_RUNTIME_MODULES)
-        self.assertIn("Foundation", install_cli.REQUIRED_RUNTIME_MODULES)
-        self.assertIn("AppKit", install_cli.REQUIRED_RUNTIME_MODULES)
-        self.assertIn("pkg_resources", install_cli.REQUIRED_RUNTIME_MODULES)
+        self.assertIn('"objc"', source)
+        self.assertIn('"Foundation"', source)
+        self.assertIn('"AppKit"', source)
+        self.assertIn('"pkg_resources"', source)
+        self.assertIn('"_cffi_backend"', source)
+        self.assertIn('"rpds"', source)
 
     def test_glyphs_preferences_domain_matches_major_version(self) -> None:
         install_cli = _load_install_cli()
@@ -299,7 +302,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     os.environ.pop("HOME", None)
                 else:
                     os.environ["HOME"] = old_home
-            self.assertEqual(versions, ["1.5.3"])
+            self.assertEqual(versions, ["1.5.4"])
 
     def test_installer_zip_validation_rejects_path_traversal(self) -> None:
         install_cli = _load_install_cli()
@@ -556,7 +559,11 @@ class InstallerSmokeTests(unittest.TestCase):
         def fake_python_version(_python: Path) -> str:
             return current_version
 
-        def fake_install_custom(python: Path, req: Path) -> None:
+        def fake_install_custom(
+            python: Path,
+            req: Path,
+            glyphs_version: str = "4",
+        ) -> None:
             installed.append((current_version, python, req))
 
         try:
@@ -656,10 +663,12 @@ class InstallerSmokeTests(unittest.TestCase):
             os.environ["HOME"] = tmp
             original_show_guidance = install_cli.show_client_guidance
             original_sign = install_cli.sign_plugin_executable
+            original_check_runtime = install_cli.check_existing_glyphs_runtime
             signed: list[Path] = []
             try:
                 install_cli.show_client_guidance = lambda: self.fail("client guidance should not run")
                 install_cli.sign_plugin_executable = lambda bundle: signed.append(bundle)
+                install_cli.check_existing_glyphs_runtime = lambda glyphs_version="4": None
                 options = install_cli.InstallerOptions(
                     non_interactive=True,
                     glyphs_version="4",
@@ -675,6 +684,7 @@ class InstallerSmokeTests(unittest.TestCase):
             finally:
                 install_cli.show_client_guidance = original_show_guidance
                 install_cli.sign_plugin_executable = original_sign
+                install_cli.check_existing_glyphs_runtime = original_check_runtime
                 if old_home is None:
                     os.environ.pop("HOME", None)
                 else:
@@ -1048,17 +1058,20 @@ class InstallerSmokeTests(unittest.TestCase):
             original_pip = install_cli.glyphs_python_pip
             original_selected_python = install_cli.glyphs_selected_python_bin
             original_verify = install_cli.verify_runtime
+            original_preflight = install_cli.check_runtime_preinstall
             try:
                 install_cli.run = lambda cmd, **kwargs: calls.append(cmd)
                 install_cli.glyphs_selected_python_bin = lambda glyphs_version="4": None
                 install_cli.glyphs_python_pip = lambda glyphs_version="4": fake_pip
                 install_cli.verify_runtime = lambda *args, **kwargs: True
+                install_cli.check_runtime_preinstall = lambda *args, **kwargs: None
                 install_cli.install_with_glyphs_python(_repo_root() / "requirements.txt")
             finally:
                 install_cli.run = original_run
                 install_cli.glyphs_python_pip = original_pip
                 install_cli.glyphs_selected_python_bin = original_selected_python
                 install_cli.verify_runtime = original_verify
+                install_cli.check_runtime_preinstall = original_preflight
                 if old_home is None:
                     os.environ.pop("HOME", None)
                 else:
@@ -1114,12 +1127,14 @@ class InstallerSmokeTests(unittest.TestCase):
             original_selected_python = install_cli.glyphs_selected_python_bin
             original_python_version = install_cli.python_version
             original_verify = install_cli.verify_runtime
+            original_preflight = install_cli.check_runtime_preinstall
             try:
                 install_cli.run = lambda cmd, **kwargs: calls.append(cmd)
                 install_cli.glyphs_python_pip = lambda glyphs_version="3": self.fail("Glyphs 4 selected Python should be preferred")
                 install_cli.glyphs_selected_python_bin = lambda glyphs_version="3": selected_python if glyphs_version == "4" else None
                 install_cli.python_version = lambda python: "3.14.0"
                 install_cli.verify_runtime = lambda python, target=None: verify_calls.append((python, target)) or True
+                install_cli.check_runtime_preinstall = lambda *args, **kwargs: None
                 install_cli.install_with_glyphs_python(_repo_root() / "requirements.txt", glyphs_version="4")
             finally:
                 install_cli.run = original_run
@@ -1127,6 +1142,7 @@ class InstallerSmokeTests(unittest.TestCase):
                 install_cli.glyphs_selected_python_bin = original_selected_python
                 install_cli.python_version = original_python_version
                 install_cli.verify_runtime = original_verify
+                install_cli.check_runtime_preinstall = original_preflight
                 if old_home is None:
                     os.environ.pop("HOME", None)
                 else:
@@ -1151,15 +1167,18 @@ class InstallerSmokeTests(unittest.TestCase):
         original_run = install_cli.run
         original_verify = install_cli.verify_runtime
         original_python_version = install_cli.python_version
+        original_preflight = install_cli.check_runtime_preinstall
         try:
             install_cli.run = lambda cmd, **kwargs: calls.append(cmd)
             install_cli.verify_runtime = lambda *args, **kwargs: True
             install_cli.python_version = lambda python: "3.12.9"
+            install_cli.check_runtime_preinstall = lambda *args, **kwargs: None
             install_cli.install_with_custom_python(Path("/tmp/python3.12"), _repo_root() / "requirements.txt")
         finally:
             install_cli.run = original_run
             install_cli.verify_runtime = original_verify
             install_cli.python_version = original_python_version
+            install_cli.check_runtime_preinstall = original_preflight
 
         self.assertEqual(
             calls[0],

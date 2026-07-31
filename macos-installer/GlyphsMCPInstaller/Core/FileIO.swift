@@ -108,7 +108,23 @@ public struct InstallerPayload {
 	public let payloadDir: URL
 	public let pluginBundle: URL
 	public let requirementsTxt: URL
+	public let runtimeProbe: URL
 	public let skillsDir: URL?
+
+	public init(
+		payloadDir: URL,
+		pluginBundle: URL,
+		requirementsTxt: URL,
+		runtimeProbe: URL? = nil,
+		skillsDir: URL?
+	) {
+		self.payloadDir = payloadDir
+		self.pluginBundle = pluginBundle
+		self.requirementsTxt = requirementsTxt
+		self.runtimeProbe = runtimeProbe
+			?? pluginBundle.appendingPathComponent("Contents/Resources/runtime_probe.py")
+		self.skillsDir = skillsDir
+	}
 
 	public func managedSkillDirectories() -> [URL] {
 		guard let skillsDir else { return [] }
@@ -148,6 +164,7 @@ public struct InstallerPayload {
 		}
 		let plugin = payloadDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
 		let req = payloadDir.appendingPathComponent("requirements.txt")
+		let runtimeProbe = plugin.appendingPathComponent("Contents/Resources/runtime_probe.py")
 		let skillsDir = payloadDir.appendingPathComponent("skills", isDirectory: true)
 		guard FileManager.default.fileExists(atPath: plugin.path) else {
 			throw InstallerError.userFacing("Missing payload plugin bundle: \(plugin.path)")
@@ -155,8 +172,17 @@ public struct InstallerPayload {
 		guard FileManager.default.fileExists(atPath: req.path) else {
 			throw InstallerError.userFacing("Missing payload requirements.txt: \(req.path)")
 		}
+		guard FileManager.default.fileExists(atPath: runtimeProbe.path) else {
+			throw InstallerError.userFacing("Missing payload Python runtime probe: \(runtimeProbe.path)")
+		}
 		let resolvedSkillsDir = FileManager.default.fileExists(atPath: skillsDir.path) ? skillsDir : nil
-		return InstallerPayload(payloadDir: payloadDir, pluginBundle: plugin, requirementsTxt: req, skillsDir: resolvedSkillsDir)
+		return InstallerPayload(
+			payloadDir: payloadDir,
+			pluginBundle: plugin,
+			requirementsTxt: req,
+			runtimeProbe: runtimeProbe,
+			skillsDir: resolvedSkillsDir
+		)
 	}
 
 	private static func extractPayloadArchive(_ archive: URL) throws -> URL {

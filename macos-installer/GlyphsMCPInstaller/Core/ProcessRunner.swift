@@ -39,6 +39,103 @@ public final class ProcessRunner {
 		return Result(exitCode: proc.terminationStatus, stdout: stdout, stderr: stderr)
 	}
 
+	public func runCapturing(
+		executable: URL,
+		args: [String],
+		environment: [String: String]? = nil,
+		timeout: TimeInterval
+	) async throws -> Result {
+		if Task.isCancelled { throw CancellationError() }
+
+		let proc = Process()
+		proc.executableURL = executable
+		proc.arguments = args
+		if let environment {
+			proc.environment = environment
+		}
+
+		let outPipe = Pipe()
+		let errPipe = Pipe()
+		proc.standardOutput = outPipe
+		proc.standardError = errPipe
+
+		let outTask = Task {
+			var lines: [String] = []
+			do {
+				for try await line in outPipe.fileHandleForReading.bytes.lines {
+					lines.append(String(line))
+				}
+			} catch {
+				// A launch or exit error is reported separately below.
+			}
+			return lines.joined(separator: "\n")
+		}
+		let errTask = Task {
+			var lines: [String] = []
+			do {
+				for try await line in errPipe.fileHandleForReading.bytes.lines {
+					lines.append(String(line))
+				}
+			} catch {
+				// A launch or exit error is reported separately below.
+			}
+			return lines.joined(separator: "\n")
+		}
+
+		let status: Int32
+		do {
+			status = try await withTaskCancellationHandler(operation: {
+				try await withThrowingTaskGroup(of: Int32.self) { group in
+					group.addTask {
+						try await withCheckedThrowingContinuation { continuation in
+							proc.terminationHandler = { process in
+								continuation.resume(returning: process.terminationStatus)
+							}
+							do {
+								try proc.run()
+								outPipe.fileHandleForWriting.closeFile()
+								errPipe.fileHandleForWriting.closeFile()
+							} catch {
+								outPipe.fileHandleForWriting.closeFile()
+								errPipe.fileHandleForWriting.closeFile()
+								continuation.resume(throwing: error)
+							}
+						}
+					}
+					group.addTask {
+						let nanoseconds = UInt64(max(0, timeout) * 1_000_000_000)
+						try await Task.sleep(nanoseconds: nanoseconds)
+						if proc.isRunning {
+							proc.terminate()
+						}
+						throw InstallerError.userFacing(
+							"Command timed out after \(Self.timeoutDescription(timeout)): \(executable.lastPathComponent)."
+						)
+					}
+					defer { group.cancelAll() }
+					guard let first = try await group.next() else {
+						throw InstallerError.userFacing("Command did not return a result: \(executable.lastPathComponent)")
+					}
+					return first
+				}
+			}, onCancel: {
+				if proc.isRunning {
+					proc.terminate()
+				}
+			})
+		} catch {
+			_ = await outTask.value
+			_ = await errTask.value
+			if Task.isCancelled { throw CancellationError() }
+			throw error
+		}
+
+		let stdout = await outTask.value
+		let stderr = await errTask.value
+		if Task.isCancelled { throw CancellationError() }
+		return Result(exitCode: status, stdout: stdout, stderr: stderr)
+	}
+
 	public func runStreaming(
 		executable: URL,
 		args: [String],

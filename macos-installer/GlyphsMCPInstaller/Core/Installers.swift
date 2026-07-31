@@ -1,22 +1,173 @@
 import AppKit
 import Foundation
 
-public let requiredRuntimeModules = [
-	"mcp",
-	"fastmcp",
-	"pydantic_core",
-	"starlette",
-	"uvicorn",
-	"httpx",
-	"sse_starlette",
-	"typing_extensions",
-	"pkg_resources",
-	"fontParts",
-	"fontTools",
-	"objc",
-	"Foundation",
-	"AppKit",
-]
+public struct RuntimeProbeDocument: Decodable, Equatable, Sendable {
+	public struct Runtime: Decodable, Equatable, Sendable {
+		public let executable: String
+		public let version: String
+		public let implementation: String
+		public let soabi: String
+		public let extensionSuffix: String
+		public let architecture: String
+	}
+
+	public struct NativeFile: Decodable, Equatable, Sendable {
+		public let file: String
+		public let abi: String
+		public let abiCompatible: Bool
+		public let architectures: [String]
+		public let architectureCompatible: Bool
+	}
+
+	public struct Check: Decodable, Equatable, Sendable {
+		public let module: String
+		public let present: Bool
+		public let imported: Bool
+		public let origin: String?
+		public let error: String?
+		public let nativeFiles: [NativeFile]
+	}
+
+	public struct Issue: Decodable, Equatable, Sendable {
+		public let code: String
+		public let module: String
+		public let file: String?
+		public let expected: String?
+		public let detected: String?
+		public let message: String
+		public let blocking: Bool
+	}
+
+	public let schemaVersion: Int
+	public let mode: String
+	public let status: String
+	public let blocking: Bool
+	public let runtime: Runtime
+	public let sitePackages: String
+	public let checks: [Check]
+	public let issues: [Issue]
+}
+
+public struct RuntimeProbeExecutor {
+	public enum Mode: String, Sendable {
+		case preinstall
+		case postinstall
+	}
+
+	public static let schemaVersion = 1
+	public static let timeout: TimeInterval = 30
+
+	let runner: ProcessRunner
+	let log: (String) -> Void
+
+	public init(runner: ProcessRunner, log: @escaping (String) -> Void) {
+		self.runner = runner
+		self.log = log
+	}
+
+	public func check(
+		python: URL,
+		probe: URL,
+		sitePackages: URL,
+		mode: Mode,
+		allowUserSite: Bool = false
+	) async throws -> RuntimeProbeDocument {
+		var args = [
+			probe.path,
+			"--mode", mode.rawValue,
+			"--site-packages", sitePackages.path,
+		]
+		if mode == .postinstall {
+			args += [
+				"--allow-origin", sitePackages.path,
+				"--allow-runtime-paths",
+			]
+			if allowUserSite {
+				args.append("--allow-user-site")
+			}
+		}
+
+		log("Python environment check: \(python.path)")
+		log("Prioritized site-packages: \(sitePackages.path)")
+		let result = try await runner.runCapturing(
+			executable: python,
+			args: args,
+			timeout: Self.timeout
+		)
+		let stderr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+		guard stderr.isEmpty else {
+			throw InstallerError.userFacing(
+				"Python environment check wrote unexpected error output: \(stderr)"
+			)
+		}
+
+		let stdout = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+		guard let data = stdout.data(using: .utf8) else {
+			throw InstallerError.userFacing("Python environment check returned unreadable output.")
+		}
+		let document: RuntimeProbeDocument
+		do {
+			document = try JSONDecoder().decode(RuntimeProbeDocument.self, from: data)
+		} catch {
+			throw InstallerError.userFacing(
+				"Python environment check returned malformed JSON: \(error.localizedDescription)"
+			)
+		}
+		log("Python environment diagnostic JSON:\n\(stdout)")
+
+		guard document.schemaVersion == Self.schemaVersion else {
+			throw InstallerError.userFacing(
+				"Python environment check returned unsupported schema \(document.schemaVersion)."
+			)
+		}
+		guard document.mode == mode.rawValue else {
+			throw InstallerError.userFacing("Python environment check returned the wrong mode.")
+		}
+		let validStatuses = Set(["ok", "incomplete", "incompatible", "error"])
+		guard validStatuses.contains(document.status) else {
+			throw InstallerError.userFacing("Python environment check returned an invalid overall status.")
+		}
+		guard document.blocking == ["incompatible", "error"].contains(document.status) else {
+			throw InstallerError.userFacing("Python environment check returned an inconsistent status.")
+		}
+		guard mode != .postinstall || document.status != "incomplete" else {
+			throw InstallerError.userFacing("Post-install Python environment check was incomplete.")
+		}
+		let expectedExitCodes: Set<Int32> = document.blocking ? [2] : [0]
+		guard expectedExitCodes.contains(result.exitCode) else {
+			throw InstallerError.userFacing(
+				"Python environment check exited unexpectedly (status \(result.exitCode))."
+			)
+		}
+		if document.blocking {
+			throw InstallerError.userFacing(Self.failureMessage(document, mode: mode))
+		}
+		return document
+	}
+
+	public static func failureMessage(
+		_ document: RuntimeProbeDocument,
+		mode: Mode
+	) -> String {
+		let details = document.issues
+			.filter(\.blocking)
+			.map { issue in
+				issue.file.map { "\(issue.message)\nFile: \($0)" } ?? issue.message
+			}
+			.joined(separator: "\n")
+		let summary = details.isEmpty
+			? "The Python environment could not be verified."
+			: details
+		let boundary = mode == .preinstall
+			? "Installation stopped before changing dependencies or the plug-in."
+			: "Post-install verification failed, so installation will not be reported as successful."
+		return """
+Glyphs uses Python \(document.runtime.version) at \(document.runtime.executable), but its ABI does not match one or more existing native packages, or the environment could not be verified.
+\(summary)
+\(boundary) See the Glyphs MCP troubleshooting guide.
+"""
+	}
+}
 
 public enum InstallerProgressText {
 	public static func detail(for line: String, limit: Int = 180) -> String? {
@@ -82,6 +233,7 @@ public struct DepsInstaller {
 	public func installAndVerify(
 		python: PythonSelection,
 		requirementsTxt: URL,
+		runtimeProbe: URL,
 		glyphsVersion: GlyphsMajorVersion = .installerDefault
 	) async throws {
 		switch python {
@@ -89,10 +241,11 @@ public struct DepsInstaller {
 			let target = InstallerPaths.glyphsScriptsSitePackages(glyphsVersion: glyphsVersion)
 			try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true, attributes: nil)
 			log("Installing into: \(target.path)")
-			if await canReuseInstalledDependencies(
+			if try await canReuseInstalledDependencies(
 				python: python3,
 				requirementsTxt: requirementsTxt,
-				extraSitePackages: target
+				extraSitePackages: target,
+				runtimeProbe: runtimeProbe
 			) {
 				return
 			}
@@ -105,13 +258,24 @@ public struct DepsInstaller {
 				onLine: log
 			)
 			log("Python dependencies are up to date.")
-			try await verify(python: python3, extraSitePackages: target)
+			try await verify(
+				python: python3,
+				runtimeProbe: runtimeProbe,
+				extraSitePackages: target
+			)
 		case .custom(let python3):
 			let ver = runner.runSync(executable: python3, args: ["-c", "import sys; print(sys.version.split()[0])"]).trimmingCharacters(in: .whitespacesAndNewlines)
 			if !VersionGate.isSupported(version: ver) {
 				throw InstallerError.userFacing("Selected Python \(ver) is not supported. Please use 3.11–3.14.")
 			}
-			if await canReuseInstalledDependencies(python: python3, requirementsTxt: requirementsTxt) {
+			let target = InstallerPaths.glyphsScriptsSitePackages(glyphsVersion: glyphsVersion)
+			if try await canReuseInstalledDependencies(
+				python: python3,
+				requirementsTxt: requirementsTxt,
+				extraSitePackages: target,
+				runtimeProbe: runtimeProbe,
+				allowUserSite: true
+			) {
 				return
 			}
 			log("Checking for missing or outdated Python dependencies…")
@@ -122,15 +286,22 @@ public struct DepsInstaller {
 				onLine: log
 			)
 			log("Python dependencies are up to date.")
-			try await verify(python: python3)
+			try await verify(
+				python: python3,
+				runtimeProbe: runtimeProbe,
+				extraSitePackages: target,
+				allowUserSite: true
+			)
 		}
 	}
 
 	private func canReuseInstalledDependencies(
 		python: URL,
 		requirementsTxt: URL,
-		extraSitePackages: URL? = nil
-	) async -> Bool {
+		extraSitePackages: URL,
+		runtimeProbe: URL,
+		allowUserSite: Bool = false
+	) async throws -> Bool {
 		guard requirementsAreSatisfied(
 			python: python,
 			requirementsTxt: requirementsTxt,
@@ -139,14 +310,14 @@ public struct DepsInstaller {
 			return false
 		}
 
-		do {
-			try await verify(python: python, extraSitePackages: extraSitePackages)
-			log("Python dependencies are already up to date; skipped installation.")
-			return true
-		} catch {
-			log("Installed Python dependencies need repair; reinstalling them.")
-			return false
-		}
+		try await verify(
+			python: python,
+			runtimeProbe: runtimeProbe,
+			extraSitePackages: extraSitePackages,
+			allowUserSite: allowUserSite
+		)
+		log("Python dependencies are already up to date; skipped installation.")
+		return true
 	}
 
 	func requirementsAreSatisfied(
@@ -225,47 +396,20 @@ print('SATISFIED' if not mismatches else 'MISMATCH:'+repr(mismatches))
 		return environment
 	}
 
-	private func verify(python: URL, extraSitePackages: URL? = nil) async throws {
+	private func verify(
+		python: URL,
+		runtimeProbe: URL,
+		extraSitePackages: URL,
+		allowUserSite: Bool = false
+	) async throws {
 		log("Verifying imports in: \(python.path)")
-		let code = """
-import sys
-import site
-extra_site=\(Self.pythonStringLiteral(extraSitePackages?.path ?? ""))
-if extra_site:
-  site.addsitedir(extra_site)
-  if extra_site in sys.path:
-    sys.path.remove(extra_site)
-  sys.path.insert(0, extra_site)
-mods=\(Self.pythonListLiteral(requiredRuntimeModules))
-missing=[]
-import importlib
-for m in mods:
-  try:
-    importlib.import_module(m)
-  except Exception as e:
-    missing.append((m,str(e)))
-try:
-  import mcp.types as _t
-  if not hasattr(_t, 'AnyFunction'):
-    missing.append(('mcp.types.AnyFunction', 'missing (upgrade mcp)'))
-except Exception as e:
-  missing.append(('mcp.types', str(e)))
-print('Python:', sys.executable)
-print('Version:', sys.version.split()[0])
-print('OK' if not missing else 'MISSING:'+str(missing))
-"""
-		let res = runner.runSyncWithStderr(executable: python, args: ["-c", code])
-		log(res.stdout.trimmingCharacters(in: .whitespacesAndNewlines))
-		if res.stdout.contains("MISSING:") {
-			throw InstallerError.userFacing("Some packages failed to import. If objc, Foundation, or AppKit are listed, PyObjC did not install into the Python selected in Glyphs. See log for details.")
-		}
-	}
-
-	private static func pythonListLiteral(_ values: [String]) -> String {
-		let quoted = values.map { value in
-			pythonStringLiteral(value)
-		}
-		return "[" + quoted.joined(separator: ",") + "]"
+		_ = try await RuntimeProbeExecutor(runner: runner, log: log).check(
+			python: python,
+			probe: runtimeProbe,
+			sitePackages: extraSitePackages,
+			mode: .postinstall,
+			allowUserSite: allowUserSite
+		)
 	}
 
 	private static func pythonStringLiteral(_ value: String) -> String {

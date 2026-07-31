@@ -18,6 +18,10 @@ A release is ready only when all required checks pass in both:
 
 Release blockers:
 
+- A selected Glyphs target's Python environment is not checked before any
+  dependency, plug-in, or client change.
+- An incompatible existing native extension is reported as an installation
+  success, or the diagnostic omits the exact Python or offending file.
 - Server cannot start, restart, or stop from **Edit -> Glyphs MCP Server**.
 - Client cannot connect to `http://127.0.0.1:9680/mcp/`.
 - `get_server_info`, `list_open_fonts`, or `get_selected_font_and_master` fails in normal use.
@@ -110,23 +114,26 @@ Use the same release artifact for both app versions whenever possible. If Glyphs
 For each app version:
 
 1. Quit all Glyphs versions.
-2. Install the release candidate plug-in and dependencies using the same path
+2. Run the release installer once with a compatible environment. Confirm
+   **Check Python environment** names the exact selected interpreter and the
+   matching Glyphs 3 or Glyphs 4 `Scripts/site-packages` path.
+3. Install the release candidate plug-in and dependencies using the same path
    users will use: signed installer app or terminal **Copy** mode. Test
    development **Link** mode separately when relevant, and label it as outside
    the signed-release guarantee. Do not use a raw manual source copy as a
    release-path test.
-3. Start only the app version under test.
-4. Open the matching large-font working copy.
-5. Start the server from **Edit -> Glyphs MCP Server**.
-6. Confirm the status panel shows the expected version, profile, endpoint, and docs URL.
-7. Connect the MCP client to:
+4. Start only the app version under test.
+5. Open the matching large-font working copy.
+6. Start the server from **Edit -> Glyphs MCP Server**.
+7. Confirm the status panel shows the expected version, profile, endpoint, and docs URL.
+8. Connect the MCP client to:
 
 ```text
 http://127.0.0.1:9680/mcp/
 ```
 
-8. Reconnect the MCP client after every profile change.
-9. Keep the Macro Panel visible during at least one pass and capture any repeated tracebacks.
+9. Reconnect the MCP client after every profile change.
+10. Keep the Macro Panel visible during at least one pass and capture any repeated tracebacks.
 
 Pass criteria:
 
@@ -135,6 +142,29 @@ Pass criteria:
 - Browser access to `/mcp/` returns discovery JSON or an expected MCP transport response.
 - MCP client can list tools.
 - The large font remains open and responsive.
+
+## Installer ABI diagnostic matrix
+
+Run this matrix before the normal live workflow in both Glyphs 3.5 and Glyphs
+4. Use disposable package fixtures; never alter the only copy of a shared
+environment.
+
+| Case | Fixture | Required result |
+| --- | --- | --- |
+| ABI-1 | Empty or partially missing dependencies | Preflight is non-blocking and pip begins. |
+| ABI-2 | Python 3.14 with only `cpython-311` `pydantic_core` and `objc` extensions | Preflight fails with the exact interpreter, ABI, and files. No persistent change occurs. |
+| ABI-3 | Matching CPython extensions | Preflight passes. |
+| ABI-4 | Compatible `.abi3` extension | Preflight passes. |
+| ABI-5 | Compatible universal Mach-O extension | Preflight passes. |
+| ABI-6 | Mixed stale and compatible files where the compatible module imports | Preflight passes; stale alternatives alone do not block. |
+| ABI-7 | Wrong-architecture or broken existing package | Preflight fails deterministically before pip. |
+| ABI-8 | Post-install missing import, nonzero exit, malformed JSON, timeout, unexpected origin, or stderr-only output | Installation never reaches success. |
+
+For ABI-2 and ABI-7, compare filesystem snapshots from before and after the
+attempt. The target `Scripts/site-packages`, installed plug-in, and client
+configuration must be unchanged. Save the full JSON-derived installer log.
+Repeat the boundary in terminal interactive and non-interactive modes and
+confirm status `2`.
 
 ## Transport and schema checks
 
