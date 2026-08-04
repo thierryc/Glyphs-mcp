@@ -608,7 +608,19 @@ async def _invoke_existing(tool: Any, arguments: Dict[str, Any]) -> Dict[str, An
 
 def _canonical_change_set(operation: str, response: Dict[str, Any]) -> Any:
     if operation == "spacing":
-        fields = ("glyphName", "masterId", "status", "reason", "current", "suggested", "delta")
+        fields = (
+            "glyphName",
+            "masterId",
+            "status",
+            "reason",
+            "current",
+            "proposed",
+            "suggested",
+            "delta",
+            "resolvedReferenceGlyph",
+            "negativeBearingAssessment",
+            "applicationAssessment",
+        )
         return [
             {key: item.get(key) for key in fields if key in item}
             for item in list(response.get("results", []) or [])
@@ -645,10 +657,13 @@ def _operation_tools(operation: str) -> Tuple[Any, str]:
 def _preview_counts(operation: str, response: Dict[str, Any]) -> Dict[str, int]:
     if operation == "spacing":
         summary = response.get("summary") or {}
+        changed = summary.get("eligibleCount")
+        if changed is None:
+            changed = summary.get("okCount", 0)
         return _counts(
             reviewed=int(summary.get("okCount", 0) or 0) + int(summary.get("skippedCount", 0) or 0) + int(summary.get("errorCount", 0) or 0),
-            changed=int(summary.get("okCount", 0) or 0),
-            skipped=int(summary.get("skippedCount", 0) or 0),
+            changed=int(changed or 0),
+            skipped=int(summary.get("skippedCount", 0) or 0) + int(summary.get("refusedCount", 0) or 0),
             failed=int(summary.get("errorCount", 0) or 0),
         )
     if operation == "kerning":
@@ -675,9 +690,11 @@ def _preview_items(operation: str, response: Dict[str, Any]) -> List[Dict[str, A
                 continue
             delta = item.get("delta") or {}
             changes = ", ".join("{} {:+g}".format(key.upper(), float(value)) for key, value in delta.items() if value is not None)
+            application = item.get("applicationAssessment") or {}
+            disposition = application.get("disposition") or item.get("status") or "ready"
             items.append({
                 "label": "{} · {}".format(item.get("glyphName") or "Glyph", item.get("masterName") or item.get("masterId") or "Master"),
-                "value": item.get("status") or "ready",
+                "value": disposition,
                 "detail": changes or item.get("reason") or "No metric delta",
             })
     elif operation == "kerning":
@@ -703,6 +720,9 @@ def _preview_warnings(response: Dict[str, Any]) -> List[str]:
     for item in list(response.get("results", []) or []):
         if isinstance(item, dict):
             warnings.extend(str(value) for value in list(item.get("warnings", []) or []) if value)
+            for issue in list(item.get("issues", []) or []):
+                if isinstance(issue, dict) and issue.get("severity") in ("warning", "blocked"):
+                    warnings.append(str(issue.get("message") or issue.get("code") or "Spacing issue"))
     return _unique(warnings)[:24]
 
 
@@ -787,6 +807,7 @@ async def preview_spacing_feedback(
     master_id: str = None,
     rules: list = None,
     defaults: dict = None,
+    guards: dict = None,
     clamp: dict = None,
 ) -> ToolResult:
     """Preview the exact spacing changes that may later be confirmed in the app."""
@@ -797,6 +818,7 @@ async def preview_spacing_feedback(
         "master_id": master_id,
         "rules": rules,
         "defaults": defaults,
+        "guards": guards,
         "clamp": clamp,
     })
 

@@ -63,6 +63,8 @@ def _score_match(
     score = 0.0
     if q == t:
         score = max(score, 10.0)
+    if t.startswith(f"{q} ("):
+        score = max(score, 9.0)
     if q in t:
         score = max(score, 8.0)
     if q in s:
@@ -72,6 +74,24 @@ def _score_match(
     if q in k:
         score = max(score, 4.0)
     return score
+
+
+def _score_token_fallback(
+    query: str, title: str, summary: str, path: str, keywords: str = ""
+) -> float:
+    """Score individual terms when no document matches the complete phrase."""
+    terms = [term for term in _normalize(query).split() if len(term) >= 2]
+    if len(terms) < 2:
+        return 0.0
+
+    # Later terms commonly name the specific member in queries such as
+    # ``GSLayer bounds``. Weight them modestly while still rewarding entries
+    # that contain multiple terms.
+    weights = list(range(1, len(terms) + 1))
+    return sum(
+        _score_match(term, title, summary, path, keywords) * weight
+        for term, weight in zip(terms, weights)
+    ) / sum(weights)
 
 
 def _resolve_doc_path(doc_path: str) -> Optional[Path]:
@@ -160,6 +180,33 @@ async def docs_search(query: str, max_results: int = 10) -> str:
                 "score": score,
             }
         )
+
+    if not matches:
+        for entry in docs:
+            doc_id = entry.get("id") or ""
+            path = entry.get("path") or ""
+            title = entry.get("title") or ""
+            summary = entry.get("summary") or ""
+
+            score = _score_token_fallback(
+                query, title, summary, path, entry.get("keywords") or ""
+            )
+            if score <= 0:
+                continue
+
+            matches.append(
+                {
+                    "id": doc_id,
+                    "title": title,
+                    "summary": summary,
+                    "path": path,
+                    "uri": f"{DOCS_URI_PREFIX}{path}" if path else None,
+                    "sourceKind": entry.get("sourceKind"),
+                    "formatVersion": entry.get("formatVersion"),
+                    "sourceUrl": entry.get("sourceUrl"),
+                    "score": score,
+                }
+            )
 
     matches.sort(key=lambda r: (r.get("score", 0), r.get("title", "")), reverse=True)
     if max_results < 1:

@@ -1,0 +1,21 @@
+{
+  "name": "glyphs-mcp",
+  "displayName": "Glyphs MCP",
+  "version": "1.6.0",
+  "description": "Inspect and safely control open Glyphs fonts through the local Glyphs MCP server.",
+  "author": {
+    "name": "Thierry Charbonnel",
+    "url": "https://github.com/thierryc"
+  },
+  "homepage": "https://ap.cx/gmcp",
+  "repository": "https://github.com/thierryc/Glyphs-mcp",
+  "license": "Apache-2.0",
+  "keywords": [
+    "Glyphs",
+    "fonts",
+    "typography",
+    "MCP"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

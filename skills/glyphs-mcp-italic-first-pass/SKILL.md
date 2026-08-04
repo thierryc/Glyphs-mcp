@@ -40,6 +40,9 @@ it does not create, replace, or claim optical completion of a designed italic.
 - Do not exclude glyphs by name or Unicode category. Use the reported outline
   and recursive component analysis. If the user explicitly approves a smaller
   safe scope, rerun with `skip_glyphs`.
+- Treat the symbol slant tiers below as Unicode-aware review prompts, never as
+  automatic exclusions or transformations. Report affected glyphs and ask the
+  designer whether to include, exclude, or defer them.
 - If Cursivy stems are missing, ask whether to set stems, measure suggestions, use raw slant, or stop.
 - Run `review_italic_first_pass` before `apply_italic_first_pass`.
 - Always run `apply_italic_first_pass` with `dry_run=true` before any mutating call.
@@ -57,30 +60,36 @@ it does not create, replace, or claim optical completion of a designed italic.
    - `selected_glyphs`
    - `glyph_names`
    - `all_glyphs`
-3. Resolve source roman and target italic masters.
-4. Verify target master italic angle:
+3. Resolve Unicode values for the scoped glyphs:
+   - use Unicode values already returned for selection-based scopes
+   - call `get_font_glyphs` when the scope needs a whole-font name-to-Unicode map
+   - report any glyphs covered by the symbol slant policy below
+   - ask whether to include, explicitly exclude, or defer each affected group
+4. Resolve source roman and target italic masters.
+5. Verify target master italic angle:
    - call `get_font_masters`
    - find the target master by `target_master_id`
    - compare its `italicAngle` to `+angle` within `0.01`
    - if different, call `set_master_italic_angle` with `dry_run=true`
    - summarize the before/after and wait for approval before calling `set_master_italic_angle` with `confirm=true`
-5. If using Cursivy:
+6. If using Cursivy:
    - call `review_master_stem_metrics`
    - if missing, call `set_master_stem_metrics` only after approval and with `dry_run=true` first
-6. Call `review_italic_first_pass`.
-7. Summarize:
+7. Call `review_italic_first_pass`.
+8. Summarize:
    - glyph count and blocked glyphs
    - missing stems
    - protected glyph warnings
+   - symbol slant advisories and the designer's chosen handling
    - compatibility mode and compatibility issues
    - live component preservation, component chain/matrix diagnostics, and any
      blocking reason
    - target glyphs that would be created
-8. If review blocks the batch, pause. Only after the designer explicitly
+9. If review blocks the batch, pause. Only after the designer explicitly
    chooses a smaller scope, rerun review with `skip_glyphs`.
-9. If the user approves, call `apply_italic_first_pass` with `dry_run=true`.
-10. After approval of the dry run, call `apply_italic_first_pass` with `confirm=true`.
-11. Re-read or summarize returned results and list glyphs that still need manual optical work.
+10. If the user approves, call `apply_italic_first_pass` with `dry_run=true`.
+11. After approval of the dry run, call `apply_italic_first_pass` with `confirm=true`.
+12. Re-read or summarize returned results and list glyphs that still need manual optical work.
 
 ## Defaults
 
@@ -105,6 +114,36 @@ Use these defaults unless the user says otherwise:
   "backup": true
 }
 ```
+
+## Symbol slant policy
+
+Use these tiers to prompt review before a mechanical slant. Match glyphs by
+Unicode value, not by Glyphs glyph name. Unicode identity is evidence for
+review, not a design verdict.
+
+- **Empirical upright candidates:** `U+00A4 ¤`, `U+00A9 ©`, `U+00AE ®`,
+  `U+00B0 °`, and `U+212E ℮`. The smaller-coverage sample also supports
+  `U+2190 ←`, `U+2191 ↑`, `U+2192 →`, `U+2193 ↓`, and `U+25A0 ■`.
+- **Traditionally upright mathematical operators:** `U+002B +`,
+  `U+003C–U+003E <=>`, `U+00AC ¬`, `U+00B1 ±`, `U+00D7 ×`, `U+00F7 ÷`,
+  `U+220F ∏`, `U+2211 ∑`, `U+2212 −`, `U+221A √`, `U+221E ∞`, `U+222B ∫`,
+  `U+2248 ≈`, `U+2260 ≠`, and `U+2264–U+2265 ≤≥`. Traditional math
+  typography favors upright operators, but most popular Google text-font
+  italics in the reviewed sample slant them.
+- **Design-dependent forms:** `U+0023 #`, `U+002A *`, `U+0040 @`, `U+007C |`,
+  `U+007E ~`, `U+2022 •`, and `U+2122 ™`. Inspect these visually. For `@`,
+  review the enclosure and the internal letter separately.
+
+For every matched glyph, show the tier and ask whether to:
+
+1. include it in the reviewed mechanical slant;
+2. exclude it explicitly from that pass; or
+3. defer it for manual drawing.
+
+Do not silently add listed glyphs to `skip_glyphs`, change
+`protected_glyphs`, preserve Roman outlines, or apply a zero-angle workaround.
+The italic master keeps its real `italicAngle`; any upright construction is a
+separate, designer-approved drawing decision.
 
 ## Component Position Handling
 
@@ -142,3 +181,9 @@ Kerning replacement is not part of this v1 skill. If the user wants kerning copi
 - [Broad-Latin benchmark](https://github.com/thierryc/Glyphs-mcp/blob/main/content/contributor/italic-balanced-broad-latin-benchmark.md)
 - [Glyphs Transformations docs](https://github.com/thierryc/Glyphs-mcp/blob/main/Documentations/Markdown/086_filters_filters_built-in_transformations.md)
 - [Stem metrics docs](https://github.com/thierryc/Glyphs-mcp/blob/main/Documentations/Markdown/041_font-info_masters.md)
+- [Google Fonts family metadata](https://fonts.google.com/metadata/fonts)
+- [Google Fonts static-font guidance](https://googlefonts.github.io/gf-guide/statics.html)
+- [Unicode support for mathematics](https://www.unicode.org/reports/tr25/)
+- [Microsoft Latin-1 math character design](https://learn.microsoft.com/en-us/typography/develop/character-design-standards/math)
+- [Microsoft OpenType MATH specification](https://learn.microsoft.com/en-us/typography/opentype/spec/math)
+- [fontTools StatisticsPen](https://fonttools.readthedocs.io/en/latest/pens/statisticsPen.html)

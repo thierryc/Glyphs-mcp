@@ -20,6 +20,7 @@ import types
 import unittest
 import zipfile
 from pathlib import Path
+from unittest import mock
 
 
 def _repo_root() -> Path:
@@ -46,6 +47,15 @@ class InstallerSmokeTests(unittest.TestCase):
                 install_cli.parse_cli_options(argv)
         self.assertEqual(ctx.exception.code, 2)
         self.assertIn(expected, stderr.getvalue())
+
+    def test_terminal_installer_notice_keeps_helper_install_app_only(self) -> None:
+        install_cli = _load_install_cli()
+        with mock.patch.object(install_cli.console, "print") as output:
+            install_cli.print_verified_updates_notice()
+        text = " ".join(str(call) for call in output.call_args_list)
+        self.assertIn("notifications", text)
+        self.assertIn("this Python installer does not add that feature", text)
+        self.assertIn("use the macOS installer", text)
 
     def test_sort_prefers_python_org_on_tie(self) -> None:
         install_cli = _load_install_cli()
@@ -302,7 +312,7 @@ class InstallerSmokeTests(unittest.TestCase):
                     os.environ.pop("HOME", None)
                 else:
                     os.environ["HOME"] = old_home
-            self.assertEqual(versions, ["1.5.4"])
+            self.assertEqual(versions, ["1.6.0"])
 
     def test_installer_zip_validation_rejects_path_traversal(self) -> None:
         install_cli = _load_install_cli()
@@ -1292,6 +1302,59 @@ class InstallerSmokeTests(unittest.TestCase):
             self.assertEqual(outcomes[0].status, "removed")
             self.assertFalse(dest.exists())
             self.assertTrue(marker.exists())
+
+    def test_uninstaller_removes_only_marker_owned_updater_data(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-uninstall-home.") as tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            try:
+                root = install_cli.updater_root()
+                root.mkdir(parents=True)
+                (root / install_cli.UPDATER_MANAGED_MARKER).write_text(
+                    install_cli.UPDATER_MANAGED_MARKER_VALUE,
+                    encoding="utf-8",
+                )
+                (root / "GlyphsMCPUpdater").write_text("fixture", encoding="utf-8")
+                (root / "Staged").mkdir()
+                plan = install_cli.build_uninstall_plan("4", frozenset({"updater"}))
+                outcomes = install_cli.execute_uninstall_plan(plan)
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            self.assertEqual(len(plan.candidates), 1)
+            self.assertEqual(plan.candidates[0].state, "removable")
+            self.assertEqual(outcomes[0].status, "removed")
+            self.assertFalse(root.exists())
+
+    def test_uninstaller_preserves_unmarked_or_unrecognized_updater_data(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-uninstall-home.") as tmp:
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmp
+            try:
+                root = install_cli.updater_root()
+                root.mkdir(parents=True)
+                (root / install_cli.UPDATER_MANAGED_MARKER).write_text(
+                    install_cli.UPDATER_MANAGED_MARKER_VALUE,
+                    encoding="utf-8",
+                )
+                custom = root / "personal-notes.txt"
+                custom.write_text("preserve", encoding="utf-8")
+                plan = install_cli.build_uninstall_plan("4", frozenset({"updater"}))
+                outcomes = install_cli.execute_uninstall_plan(plan)
+            finally:
+                if old_home is None:
+                    os.environ.pop("HOME", None)
+                else:
+                    os.environ["HOME"] = old_home
+
+            self.assertEqual(plan.candidates[0].state, "blocked")
+            self.assertEqual(outcomes[0].status, "skipped")
+            self.assertTrue(custom.exists())
 
     def test_uninstaller_removes_only_marker_owned_skills(self) -> None:
         install_cli = _load_install_cli()

@@ -30,6 +30,7 @@ Skills help agents:
 | `glyphs-mcp-spacing` | Spacing review, dry-run, and approved apply steps. |
 | `glyphs-mcp-outlines-docs` | Outline edits, selected nodes, components, anchors, and focused docs lookup. |
 | `glyphs-mcp-italic-first-pass` | Experimental Roman-to-italic construction drafts for designer review and refinement. |
+| `glyphs-mcp-release` | Version, documentation, package synchronization, release validation, signing, and publication gates. |
 
 The `glyphs` skill is a small general launcher. The remaining skills stay intentionally narrow and provide operating instructions for common focused workflows.
 
@@ -39,18 +40,25 @@ Authored skills live in `skills/`.
 
 The repo exposes them to clients through:
 
-- `.agents/skills` for Codex and Cursor
+- `.agents/skills` for Codex, Cursor, and GitHub Copilot CLI
 - `.claude/skills` for Claude Code
 
 The Codex and Claude Code installers can copy the same skill bundle into their
 global skill directories. Cursor can use the repo-local `.agents/skills`
 bridge, an explicit `.cursor/skills` project copy, or a manual
-`~/.cursor/skills` installation.
+`~/.cursor/skills` installation. GitHub Copilot CLI can use the same repo-local
+`.agents/skills` bridge when its optional plugin is not installed.
 
-The installed ChatGPT/Codex plugin carries its own synchronized `skills/`
-directory. `scripts/sync_codex_plugin_skills.sh` copies the eight canonical
-directories from `skills/` into `plugins/glyphs-mcp/skills/`; do not edit the
-packaged copies independently.
+The optional Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot plugins all
+carry the same synchronized `skills/` directory and `.mcp.json` connection.
+`scripts/sync_codex_plugin_skills.sh` keeps its historical filename, but now
+manages the shared agent package: it copies the nine canonical directories from
+`skills/` into `plugins/glyphs-mcp/skills/`. Use its `--check` mode in release
+validation, and do not edit packaged copies independently.
+
+Each host manifest shares the Glyphs MCP release version. Skills inherit that
+package version instead of maintaining nine independent version fields, while
+the running MCP server reports the native Glyphs MCP plug-in version.
 
 ## When to invoke a skill
 

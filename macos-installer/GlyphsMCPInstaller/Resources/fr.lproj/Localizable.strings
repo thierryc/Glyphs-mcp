@@ -224,4 +224,16 @@
 "Already absent." = "Déjà absent.";
 "Removed." = "Supprimé.";
 "The entry changed and was preserved." = "L’entrée a changé et a été conservée.";
-"Removed; configuration backup created." = "Supprimé ; une sauvegarde de la configuration a été créée.";
+"Removed; configuration backup created." = "Supprimé ; une sauvegarde de la configuration a été créée.";
+
+/* Mises à jour futures */
+"Make future updates easier" = "Simplifier les prochaines mises à jour";
+"When a new version is available, prepare it in Glyphs and install it when you’re ready." = "Lorsqu’une nouvelle version est disponible, préparez-la dans Glyphs et installez-la quand vous le souhaitez.";
+"Set up future updates" = "Configurer les prochaines mises à jour";
+"Verified update helper and staged updates" = "Assistant de mise à jour vérifiée et mises à jour préparées";
+"Verified update data" = "Données de mise à jour vérifiée";
+"The updater path is a symbolic link and will be preserved." = "Le chemin de l’assistant est un lien symbolique et sera conservé.";
+"The updater directory is not marked as managed and will be preserved." = "Le dossier de mise à jour n’est pas marqué comme géré et sera conservé.";
+"The updater directory could not be inspected and will be preserved." = "Le dossier de mise à jour n’a pas pu être inspecté et sera conservé.";
+"The updater directory contains unrecognized data and will be preserved." = "Le dossier de mise à jour contient des données non reconnues et sera conservé.";
+"Managed helper, authorization receipts, and staged update data." = "Assistant géré, reçus d’autorisation et données de mise à jour préparées.";

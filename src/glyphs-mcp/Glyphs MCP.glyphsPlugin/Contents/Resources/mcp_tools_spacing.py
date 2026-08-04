@@ -187,7 +187,7 @@ async def set_spacing_guides(
     master_scope: str = "current",
     master_id: str = None,
     mode: str = "add",
-    reference_glyph: str = "x",
+    reference_glyph: str = "auto",
     style: str = "model",
     dry_run: bool = False,
 ) -> str:
@@ -202,7 +202,8 @@ async def set_spacing_guides(
         master_scope: One of "current" (default), "all", or "master".
         master_id: Required when master_scope="master".
         mode: One of "add" (default) or "clear".
-        reference_glyph: Glyph name used to derive the vertical band (defaults to "x").
+        reference_glyph: Glyph name used to derive the vertical band (defaults to "auto").
+                         "auto" resolves by glyph class.
                          Special value "*" means “use the glyph itself”.
         style: One of "band", "model" (default), or "full".
                - "band": two horizontal guides for yMin/yMax
@@ -281,7 +282,7 @@ async def set_spacing_guides(
         if not names:
             return _safe_json({"ok": False, "error": "No glyph_names available"})
 
-        ref_name = (reference_glyph or "x").strip()
+        ref_name = (reference_glyph or "auto").strip()
         use_self_ref = ref_name == "*" or not ref_name
 
         merged_defaults = _merge_spacing_defaults(user_defaults=None, debug=None)
@@ -493,6 +494,8 @@ async def set_spacing_guides(
                     defaults=guide_defaults,
                     master_params=eff,
                 )
+                resolved_ref_name = model.get("resolvedReferenceGlyph") or ref_name
+                resolved_use_self = resolved_ref_name in ("*", getattr(glyph, "name", None))
 
                 # Preferred band source: engine reference band (already includes "over").
                 y_min = None
@@ -516,10 +519,10 @@ async def set_spacing_guides(
                     except Exception:
                         over_units = 0.0
 
-                    if use_self_ref:
+                    if resolved_use_self:
                         ref_layer = layer
                     else:
-                        ref_glyph = font.glyphs[ref_name]
+                        ref_glyph = font.glyphs[resolved_ref_name]
                         ref_layer = None
                         try:
                             if ref_glyph:
@@ -541,7 +544,8 @@ async def set_spacing_guides(
                             "masterName": getattr(master, "name", None),
                             "status": "skipped",
                             "reason": "reference_band_unavailable",
-                            "referenceGlyph": ref_name if not use_self_ref else "*",
+                            "referenceGlyph": resolved_ref_name if not resolved_use_self else "*",
+                            "referenceMode": model.get("referenceMode"),
                             "modelStatus": model.get("status"),
                             "modelReason": model.get("reason"),
                         }
@@ -558,7 +562,7 @@ async def set_spacing_guides(
                         ud = _ensure_user_data(g)
                         if ud is not None:
                             ud["kind"] = kind
-                            ud["referenceGlyph"] = ref_name if not use_self_ref else "*"
+                            ud["referenceGlyph"] = resolved_ref_name if not resolved_use_self else "*"
                             ud["y"] = float(y)
                     except Exception:
                         pass
@@ -575,7 +579,8 @@ async def set_spacing_guides(
                             "status": "ok",
                             "action": "added",
                             "style": style_norm,
-                            "referenceGlyph": ref_name if not use_self_ref else "*",
+                            "referenceGlyph": resolved_ref_name if not resolved_use_self else "*",
+                            "referenceMode": model.get("referenceMode"),
                             "band": {"yMin": float(y_min), "yMax": float(y_max)},
                             "modelStatus": model.get("status"),
                             "modelReason": model.get("reason"),
@@ -596,7 +601,8 @@ async def set_spacing_guides(
                             "status": "skipped",
                             "reason": "model_not_ok",
                             "style": style_norm,
-                            "referenceGlyph": ref_name if not use_self_ref else "*",
+                            "referenceGlyph": resolved_ref_name if not resolved_use_self else "*",
+                            "referenceMode": model.get("referenceMode"),
                             "band": {"yMin": float(y_min), "yMax": float(y_max)},
                             "modelStatus": model.get("status"),
                             "modelReason": model.get("reason"),
@@ -744,7 +750,8 @@ async def set_spacing_guides(
                         "status": "ok",
                         "action": "added",
                         "style": style_norm,
-                        "referenceGlyph": ref_name if not use_self_ref else "*",
+                        "referenceGlyph": resolved_ref_name if not resolved_use_self else "*",
+                        "referenceMode": model.get("referenceMode"),
                         "xHeight": x_height,
                         "band": {"yMin": float(y_min), "yMax": float(y_max)},
                         "modelStatus": model.get("status"),
@@ -783,11 +790,14 @@ async def review_spacing(
     master_id: str = None,
     rules: list = None,
     defaults: dict = None,
+    guards: dict = None,
     debug: dict = None,
 ) -> str:
     """Review spacing and suggest sidebearings/width using a clean-room area-based model.
 
-    This tool does not mutate the font.
+    Automatic references resolve by glyph class. ``guards`` accepts normalized
+    negative-bearing thresholds, exemptions, and current-metric trust. The
+    result includes raw proposals, provenance, assessments, and no mutation.
     """
     try:
         font, error = _resolve_font_payload(font_index)
@@ -889,6 +899,7 @@ async def review_spacing(
                         rules=rules,
                         defaults=merged_defaults,
                         master_params=master_params,
+                        guards=guards,
                     )
                 except Exception as exc:
                     results.append(
@@ -929,7 +940,9 @@ async def review_spacing(
                         "frequency": merged_defaults.get("frequency"),
                         "referenceGlyph": merged_defaults.get("referenceGlyph"),
                         "italicMode": merged_defaults.get("italicMode"),
+                        "tabularMode": merged_defaults.get("tabularMode"),
                     },
+                    "guards": spacing_engine.normalize_guards(guards),
                 },
                 "results": results,
             }
@@ -945,7 +958,9 @@ async def apply_spacing(
     master_id: str = None,
     rules: list = None,
     defaults: dict = None,
+    guards: dict = None,
     clamp: dict = None,
+    overrides: dict = None,
     confirm: bool = False,
     dry_run: bool = False,
 ) -> str:
@@ -954,6 +969,8 @@ async def apply_spacing(
     Safety:
     - Set confirm=true to mutate.
     - Use dry_run=true to preview.
+    - Guard-blocked and low-confidence results require named ``overrides``.
+    - ``clamp`` is a compatibility-only absolute font-unit constraint.
     """
     try:
         if not confirm and not dry_run:
@@ -971,7 +988,10 @@ async def apply_spacing(
         merged_defaults = _merge_spacing_defaults(defaults, debug=None)
         explicit_defaults = defaults if isinstance(defaults, dict) else {}
 
-        effective_clamp = clamp or {"maxDeltaLSB": 150, "maxDeltaRSB": 150, "minLSB": -200, "minRSB": -200}
+        effective_clamp = clamp if isinstance(clamp, dict) else None
+        overrides = overrides if isinstance(overrides, dict) else {}
+        blocked_override_names = set(str(value) for value in (overrides.get("blockedGlyphs") or []))
+        manual_override_names = set(str(value) for value in (overrides.get("manualReviewGlyphs") or []))
 
         if glyph_names:
             names = list(glyph_names)
@@ -1010,6 +1030,12 @@ async def apply_spacing(
         skipped_count = 0
         error_count = 0
         applied_count = 0
+        eligible_count = 0
+        blocked_count = 0
+        manual_review_count = 0
+        override_count = 0
+        refused_count = 0
+        used_overrides = []
 
         for name in names:
             glyph = font.glyphs[name]
@@ -1048,6 +1074,7 @@ async def apply_spacing(
                         rules=rules,
                         defaults=merged_defaults,
                         master_params=master_params,
+                        guards=guards,
                     )
                 except Exception as exc:
                     results.append(
@@ -1071,10 +1098,25 @@ async def apply_spacing(
                         error_count += 1
                     continue
 
-                # Clamp suggestion (relative to current).
+                # Low-level compatibility clamps are explicit and run only after
+                # the raw proposal has been assessed. They never erase provenance.
                 cur = r.get("current") or {}
                 sug = r.get("suggested") or {}
-                clamped, clamp_warnings = spacing_engine.clamp_suggestion(current=cur, suggested=sug, clamp=effective_clamp)
+                if effective_clamp is not None:
+                    clamped, clamp_warnings = spacing_engine.clamp_suggestion(
+                        current=cur,
+                        suggested=sug,
+                        clamp=effective_clamp,
+                    )
+                    r["clampAssessment"] = {
+                        "kind": "absolute_font_units",
+                        "requested": dict(effective_clamp),
+                        "applied": bool(clamp_warnings),
+                        "basedOnMetricsTrust": (r.get("metricsTrustAssessment") or {}).get("status"),
+                    }
+                else:
+                    clamped, clamp_warnings = dict(sug), []
+                    r["clampAssessment"] = None
                 if clamp_warnings:
                     r.setdefault("warnings", []).extend(clamp_warnings)
 
@@ -1119,7 +1161,56 @@ async def apply_spacing(
                 results.append(r)
                 ok_count += 1
 
+                application = r.setdefault(
+                    "applicationAssessment",
+                    {"disposition": "ready", "eligible": True, "requiredOverrides": [], "userOverride": None},
+                )
+                disposition = str(application.get("disposition") or "ready")
+                required_overrides = list(application.get("requiredOverrides") or [])
+                override_records = []
+                override_missing = False
+                if "blockedGlyphs" in required_overrides or disposition == "blocked":
+                    blocked_count += 1
+                    if glyph.name in blocked_override_names:
+                        override_records.append({
+                            "type": "blocked_outlier",
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                        })
+                    else:
+                        override_missing = True
+                if "manualReviewGlyphs" in required_overrides or disposition == "manual_review":
+                    manual_review_count += 1
+                    if glyph.name in manual_override_names:
+                        override_records.append({
+                            "type": "manual_review_approval",
+                            "glyphName": glyph.name,
+                            "masterId": mid,
+                        })
+                    else:
+                        override_missing = True
+
+                satisfied = True
+                if "blockedGlyphs" in required_overrides and glyph.name not in blocked_override_names:
+                    satisfied = False
+                if "manualReviewGlyphs" in required_overrides and glyph.name not in manual_override_names:
+                    satisfied = False
+                if required_overrides and override_missing:
+                    refused_count += 1
+                if required_overrides and satisfied:
+                    application["eligible"] = True
+                    application["disposition"] = "overridden"
+                    application["userOverride"] = list(override_records)
+                    used_overrides.extend(override_records)
+                    override_count += len(override_records)
+
+                if application.get("eligible"):
+                    eligible_count += 1
+
                 if dry_run or not confirm:
+                    continue
+
+                if not application.get("eligible"):
                     continue
 
                 before_w = layer.width
@@ -1174,10 +1265,22 @@ async def apply_spacing(
                     "skippedCount": skipped_count,
                     "errorCount": error_count,
                     "appliedCount": applied_count,
+                    "eligibleCount": eligible_count,
+                    "blockedCount": blocked_count,
+                    "manualReviewCount": manual_review_count,
+                    "overrideCount": override_count,
+                    "refusedCount": refused_count,
                     "dryRun": bool(dry_run),
                 },
                 "results": results,
                 "applied": applied,
+                "overrides": {
+                    "requested": {
+                        "blockedGlyphs": sorted(blocked_override_names),
+                        "manualReviewGlyphs": sorted(manual_override_names),
+                    },
+                    "used": used_overrides,
+                },
             }
         )
     except Exception as e:

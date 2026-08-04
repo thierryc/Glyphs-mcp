@@ -4,31 +4,41 @@
     "depth": 15,
     "over": 0,
     "frequency": 5,
-    "referenceGlyph": "x",
+    "referenceGlyph": "auto",
     "italicMode": "deslant",
     "includeComponents": true,
     "respectMetricsKeys": true,
     "skipAutoAligned": true,
     "minCoverageRatio": 0.7,
-    "tabularMode": false,
-    "tabularWidth": null
+    "tabularMode": "auto",
+    "tabularWidth": null,
+    "tabularToleranceEm": 0.005
+  },
+  "guards": {
+    "negativeBearingPolicy": "guarded",
+    "warnBelowEm": -0.05,
+    "blockBelowEm": -0.1,
+    "blockOnOutliers": true,
+    "allowGlyphs": [],
+    "allowItalicOverhangs": true,
+    "allowMarks": true,
+    "currentMetricsTrust": "auto",
+    "trustedMetricGlyphs": [],
+    "untrustedMetricGlyphs": []
   },
   "rules": [
     {
       "category": "Letter",
       "subCategory": "Lowercase",
-      "referenceGlyph": "n",
       "factor": 1.0
     },
     {
       "category": "Letter",
       "subCategory": "Uppercase",
-      "referenceGlyph": "H",
       "factor": 1.05
     },
     {
       "category": "Number",
-      "referenceGlyph": "zero",
       "factor": 1.0
     },
     {
@@ -38,9 +48,7 @@
     },
     {
       "category": "Punctuation",
-      "referenceGlyph": "n",
       "factor": 0.9
     }
   ]
 }
-

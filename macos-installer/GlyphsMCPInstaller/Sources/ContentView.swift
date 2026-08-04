@@ -31,6 +31,7 @@ struct ContentView: View {
 						wizardButtonTitle: model.wizardButtonTitle,
 						bindingForTarget: model.binding(for:),
 						replacementBindingForTarget: model.replacementBinding(for:),
+						verifiedUpdatesBindingForTarget: model.verifiedUpdatesBinding(for:),
 						onRunWizard: model.startWizard,
 						onCancel: model.cancelWizard,
 						onQuitGlyphs: model.quitSelectedGlyphsWithConfirmation
@@ -45,6 +46,7 @@ struct ContentView: View {
 						installButtonTitle: model.installButtonTitle,
 						bindingForTarget: model.binding(for:),
 						replacementBindingForTarget: model.replacementBinding(for:),
+						verifiedUpdatesBindingForTarget: model.verifiedUpdatesBinding(for:),
 						onInstall: model.startInstall,
 						onCancel: model.cancelInstall,
 						onQuitGlyphs: model.quitSelectedGlyphsWithConfirmation
@@ -126,6 +128,7 @@ private struct WizardTabView: View {
 	let wizardButtonTitle: String
 	let bindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
 	let replacementBindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
+	let verifiedUpdatesBindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
 	let onRunWizard: () -> Void
 	let onCancel: () -> Void
 	let onQuitGlyphs: () -> Void
@@ -165,7 +168,8 @@ private struct WizardTabView: View {
 					targets: targets,
 					isBusy: action.isBusy,
 					bindingForTarget: bindingForTarget,
-					replacementBindingForTarget: replacementBindingForTarget
+					replacementBindingForTarget: replacementBindingForTarget,
+					verifiedUpdatesBindingForTarget: verifiedUpdatesBindingForTarget
 				)
 
 				GroupBox("Setup") {
@@ -246,6 +250,7 @@ private struct InstallTabView: View {
 	let installButtonTitle: String
 	let bindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
 	let replacementBindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
+	let verifiedUpdatesBindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
 	let onInstall: () -> Void
 	let onCancel: () -> Void
 	let onQuitGlyphs: () -> Void
@@ -269,7 +274,8 @@ private struct InstallTabView: View {
 					targets: targets,
 					isBusy: action.isBusy,
 					bindingForTarget: bindingForTarget,
-					replacementBindingForTarget: replacementBindingForTarget
+					replacementBindingForTarget: replacementBindingForTarget,
+					verifiedUpdatesBindingForTarget: verifiedUpdatesBindingForTarget
 				)
 
 				HeroActionSection(
@@ -322,6 +328,7 @@ private struct GlyphsTargetSelectionGroup: View {
 	let isBusy: Bool
 	let bindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
 	let replacementBindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
+	let verifiedUpdatesBindingForTarget: (GlyphsMajorVersion) -> Binding<Bool>
 
 	var body: some View {
 		GroupBox("Install for") {
@@ -332,6 +339,7 @@ private struct GlyphsTargetSelectionGroup: View {
 						target: entry.element,
 						isSelected: bindingForTarget(entry.element.version),
 						replaceDevSymlink: replacementBindingForTarget(entry.element.version),
+						enableVerifiedUpdates: verifiedUpdatesBindingForTarget(entry.element.version),
 						isBusy: isBusy
 					)
 				}
@@ -345,6 +353,7 @@ private struct GlyphsTargetSelectionRow: View {
 	let target: GlyphsTargetStatusSnapshot
 	@Binding var isSelected: Bool
 	@Binding var replaceDevSymlink: Bool
+	@Binding var enableVerifiedUpdates: Bool
 	let isBusy: Bool
 
 	var body: some View {
@@ -383,6 +392,14 @@ private struct GlyphsTargetSelectionRow: View {
 				WarningBanner(title: "Development plug-in", message: warning)
 				Toggle("Replace \(target.version.displayName) symlink with latest GitHub plug-in", isOn: $replaceDevSymlink)
 					.disabled(isBusy)
+			}
+
+			if isSelected {
+				Toggle("Make future updates easier", isOn: $enableVerifiedUpdates)
+					.disabled(isBusy)
+				Text("When a new version is available, prepare it in Glyphs and install it when you’re ready.")
+					.font(.caption)
+					.foregroundStyle(.secondary)
 			}
 		}
 		.padding(.vertical, 2)
@@ -723,6 +740,7 @@ private struct UninstallReviewSheet: View {
 		case .plugin: return NSLocalizedString("Glyphs plug-ins", comment: "Uninstall component group")
 		case .skill: return NSLocalizedString("Managed skills", comment: "Uninstall component group")
 		case .client: return NSLocalizedString("Client configuration", comment: "Uninstall component group")
+		case .updater: return NSLocalizedString("Verified update data", comment: "Uninstall component group")
 		}
 	}
 }

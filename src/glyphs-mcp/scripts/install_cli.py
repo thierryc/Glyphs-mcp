@@ -190,6 +190,7 @@ MANAGED_SKILL_NAMES = (
     "glyphs-mcp-italic-first-pass",
     "glyphs-mcp-kerning",
     "glyphs-mcp-outlines-docs",
+    "glyphs-mcp-release",
     "glyphs-mcp-spacing",
 )
 LEGACY_MANAGED_SKILL_NAMES = ("glyphs-mcp-connect",)
@@ -200,7 +201,34 @@ MCP_ENDPOINT = "http://127.0.0.1:9680/mcp/"
 CODEX_SERVER_NAME = "glyphs-mcp-server"
 CLAUDE_DESKTOP_SERVER_NAME = "glyphs-mcp-server"
 CLAUDE_CODE_SERVER_NAME = "glyphs-mcp"
-UNINSTALL_COMPONENTS = frozenset({"plugin", "skills", "clients"})
+UNINSTALL_COMPONENTS = frozenset({"plugin", "skills", "clients", "updater"})
+UPDATER_MANAGED_MARKER = ".managed-by-glyphs-mcp"
+UPDATER_MANAGED_MARKER_VALUE = "cx.ap.glyphs-mcp-updater-v1"
+UPDATER_ALLOWED_TOP_LEVEL = frozenset({
+    "GlyphsMCPUpdater",
+    UPDATER_MANAGED_MARKER,
+    "InstallReceipt.json",
+    "Requests",
+    "Staged",
+    "Authorizations",
+    "Temporary",
+})
+REQUIRED_RUNTIME_MODULES = [
+    "mcp",
+    "fastmcp",
+    "pydantic_core",
+    "starlette",
+    "uvicorn",
+    "httpx",
+    "sse_starlette",
+    "typing_extensions",
+    "pkg_resources",
+    "fontParts",
+    "fontTools",
+    "objc",
+    "Foundation",
+    "AppKit",
+]
 EXPECTED_DEVELOPER_TEAM = "N9U29A4T8J"
 EXPECTED_DEVELOPER_AUTHORITY = (
     "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)"
@@ -605,7 +633,7 @@ class InstallerOptions:
 @dataclass(frozen=True)
 class UninstallCandidate:
     identifier: str
-    component: Literal["plugin", "skills", "clients"]
+    component: Literal["plugin", "skills", "clients", "updater"]
     label: str
     location: Path
     state: Literal["removable", "missing", "preserved", "blocked"]
@@ -645,6 +673,10 @@ def glyphs_plugins_dir(glyphs_version: Literal["3", "4"] = "4") -> Path:
 
 def glyphs_scripts_site_packages(glyphs_version: Literal["3", "4"] = "4") -> Path:
     return glyphs_base_dir(glyphs_version) / "Scripts" / "site-packages"
+
+
+def updater_root() -> Path:
+    return Path.home() / "Library" / "Application Support" / "Glyphs MCP" / "Updater"
 
 
 def codex_skills_dir() -> Path:
@@ -1812,6 +1844,43 @@ def _uninstall_versions(selection: Literal["3", "4", "both"]) -> Tuple[Literal["
     return (selection,)
 
 
+def inspect_updater_root(path: Optional[Path] = None) -> Tuple[Literal["removable", "missing", "blocked"], str]:
+    root = updater_root() if path is None else path
+    if not _path_exists(root):
+        return "missing", "Verified updater helper and staging data are not installed."
+    if root.is_symlink() or not root.is_dir():
+        return "blocked", "Updater root is not a regular managed directory and was preserved."
+
+    marker = root / UPDATER_MANAGED_MARKER
+    if marker.is_symlink() or not marker.is_file():
+        return "blocked", "Updater root has no valid Glyphs MCP ownership marker and was preserved."
+    try:
+        marker_value = marker.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return "blocked", "Updater ownership marker could not be verified and was preserved."
+    if marker_value != UPDATER_MANAGED_MARKER_VALUE:
+        return "blocked", "Updater ownership marker is invalid and was preserved."
+
+    try:
+        children = tuple(root.iterdir())
+    except OSError:
+        return "blocked", "Updater contents could not be inspected and were preserved."
+    unknown = sorted(
+        child.name
+        for child in children
+        if child.name not in UPDATER_ALLOWED_TOP_LEVEL
+        and not child.name.startswith(".helper-")
+    )
+    if unknown:
+        return "blocked", (
+            "Updater root contains unrecognized data and was preserved: "
+            + ", ".join(unknown)
+        )
+    if any(child.is_symlink() for child in children):
+        return "blocked", "Updater root contains a symbolic link and was preserved."
+    return "removable", "Verified updater helper and managed staging data."
+
+
 def _read_codex_server_block(toml: str) -> Optional[Tuple[int, int, Optional[str]]]:
     lines = toml.splitlines(keepends=True)
     header = f"[mcp_servers.{CODEX_SERVER_NAME}]"
@@ -2020,13 +2089,26 @@ def build_uninstall_plan(
                 client_kind=client_kind,
             ))
 
+    if "updater" in selected_components:
+        path = updater_root()
+        state, detail = inspect_updater_root(path)
+        candidates.append(UninstallCandidate(
+            identifier="verified-updater",
+            component="updater",
+            label="Verified update helper and staged updates",
+            location=path,
+            state=state,
+            detail=detail,
+        ))
+
     return GlyphsUninstallPlan(frozenset(selected_components), tuple(candidates))
 
 
 def print_uninstall_plan(plan: GlyphsUninstallPlan) -> None:
     console.rule("Glyphs MCP Uninstaller")
     console.print(Panel.fit(
-        "Only the exact selected plug-in bundles, managed skill folders, and matching MCP client entries can be removed.\n\n"
+        "Only the exact selected plug-in bundles, managed skill folders, matching MCP client entries, "
+        "and marker-owned updater data can be removed.\n\n"
         "PRESERVED: all Python packages and site-packages folders, Glyphs preferences, plug-in settings, "
         "font annotations and other user data, repositories, documents, and shared parent folders.",
         title="Important — review before continuing",
@@ -2096,6 +2178,12 @@ def execute_uninstall_plan(plan: GlyphsUninstallPlan) -> Tuple[UninstallOutcome,
                     outcomes.append(UninstallOutcome(candidate, "skipped", "Already absent."))
                     continue
                 _remove_existing_path(candidate.location)
+            elif candidate.component == "updater":
+                state, detail = inspect_updater_root(candidate.location)
+                if state != "removable":
+                    outcomes.append(UninstallOutcome(candidate, "skipped", detail))
+                    continue
+                _remove_existing_path(candidate.location)
             elif candidate.client_kind == "codex":
                 state, detail = inspect_codex_config(candidate.location)
                 if state != "removable" or not remove_codex_config_entry(candidate.location):
@@ -2128,6 +2216,7 @@ def run_uninstall(options: InstallerOptions) -> None:
             ("plugin", "Remove detected Glyphs MCP plug-in bundles?"),
             ("skills", "Remove detected managed Codex and Claude Code skills?"),
             ("clients", "Remove matching Glyphs MCP client configuration entries?"),
+            ("updater", "Remove the verified updater helper and managed staging data?"),
         )
         for component, prompt in prompts:
             if any(candidate.component == component and candidate.state == "removable" for candidate in plan.candidates):
@@ -2197,6 +2286,7 @@ def run_non_interactive(options: InstallerOptions, requirements: Path) -> None:
 
     console.rule("[green]Install complete[/green]")
     console.print("Open Glyphs and use [bold]Edit → Glyphs MCP Server[/bold].")
+    print_verified_updates_notice()
     if options.show_client_guidance:
         show_client_guidance()
 
@@ -2216,9 +2306,19 @@ def run_interactive(requirements: Path, options: Optional[InstallerOptions] = No
 
     console.rule("[green]Install complete[/green]")
     console.print("Open Glyphs and use [bold]Edit → Glyphs MCP Server[/bold].")
+    print_verified_updates_notice()
 
     if Confirm.ask("Show MCP client configuration instructions?", default=True):
         show_client_guidance()
+
+
+def print_verified_updates_notice() -> None:
+    """Explain the intentional capability difference without failing installation."""
+    console.print(
+        "[yellow]Update notifications are ready. To make future updates easier, "
+        "use the macOS installer and select “Make future updates easier”; this "
+        "Python installer does not add that feature.[/yellow]"
+    )
 
 
 def main(argv: Optional[List[str]] = None) -> None:

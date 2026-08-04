@@ -120,7 +120,7 @@ class FeedbackToolsTests(unittest.TestCase):
         font = _Font()
         glyphs = types.SimpleNamespace(fonts=[font] if fonts else [], versionNumber=glyphs_version, font=font if fonts else None)
         fake_mcp = _FakeMCP()
-        state = {"metric": 50, "raise_apply": False, "partial": False, "apply_calls": 0}
+        state = {"metric": 50, "raise_apply": False, "partial": False, "apply_calls": 0, "blocked": False}
 
         async def apply_spacing(**kwargs):
             current = state["metric"]
@@ -131,6 +131,9 @@ class FeedbackToolsTests(unittest.TestCase):
                     "skippedCount": 0,
                     "errorCount": 0,
                     "appliedCount": 0,
+                    "eligibleCount": 0 if state["blocked"] else 1,
+                    "blockedCount": 1 if state["blocked"] else 0,
+                    "refusedCount": 1 if state["blocked"] else 0,
                     "dryRun": bool(kwargs.get("dry_run")),
                 },
                 "results": [{
@@ -139,12 +142,26 @@ class FeedbackToolsTests(unittest.TestCase):
                     "masterName": "Regular",
                     "status": "ok",
                     "current": {"lsb": current, "rsb": current, "width": 600},
+                    "proposed": {"lsb": current + 10, "rsb": current + 10, "width": 600},
                     "suggested": {"lsb": current + 10, "rsb": current + 10, "width": 600},
                     "delta": {"lsb": 10, "rsb": 10, "width": 0},
+                    "negativeBearingAssessment": {
+                        "severity": "blocked" if state["blocked"] else "informational",
+                        "reason": "Synthetic blocked outlier" if state["blocked"] else "Safe",
+                    },
+                    "applicationAssessment": {
+                        "disposition": "blocked" if state["blocked"] else "ready",
+                        "eligible": not state["blocked"],
+                    },
+                    "issues": ([{
+                        "severity": "blocked",
+                        "code": "synthetic_block",
+                        "message": "Synthetic blocked outlier",
+                    }] if state["blocked"] else []),
                 }],
                 "applied": [],
             }
-            if kwargs.get("confirm") and not kwargs.get("dry_run"):
+            if kwargs.get("confirm") and not kwargs.get("dry_run") and not state["blocked"]:
                 state["apply_calls"] += 1
                 if state["raise_apply"]:
                     raise RuntimeError("uncertain transport")
@@ -321,6 +338,19 @@ class FeedbackToolsTests(unittest.TestCase):
         repeated = self._data(asyncio.run(module.apply_feedback_plan(plan_id, confirm=True)))
         self.assertEqual(repeated["error"]["code"], "plan_expired")
         self.assertEqual(state["apply_calls"], 1)
+
+    def test_blocked_spacing_preview_is_not_advertised_as_ready_to_apply(self) -> None:
+        module, font, state, _fake_mcp = self._load_module()
+        state["blocked"] = True
+
+        preview = self._data(asyncio.run(module.preview_spacing_feedback(glyph_names=["A"], guards={"blockOnOutliers": True})))
+
+        self.assertEqual(preview["progress"]["changed"], 0)
+        self.assertEqual(preview["items"][0]["value"], "blocked")
+        self.assertTrue(any("blocked outlier" in warning.lower() for warning in preview["warnings"]))
+        self.assertTrue(all(action["tool"] != "apply_feedback_plan" for action in preview["actions"]))
+        self.assertEqual(state["apply_calls"], 0)
+        self.assertEqual(font.save_calls, 0)
 
     def test_stale_expired_capacity_partial_and_uncertain_plans(self) -> None:
         module, font, state, _fake_mcp = self._load_module()

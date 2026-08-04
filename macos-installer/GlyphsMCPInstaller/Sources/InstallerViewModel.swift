@@ -93,6 +93,9 @@ final class InstallerViewModel: ObservableObject {
 	@Published var installClaudeCodeSkills: Bool = true
 	@Published var selectedGlyphsVersions: Set<GlyphsMajorVersion> = []
 	@Published var replaceDevSymlinkVersions: Set<GlyphsMajorVersion> = []
+	@Published var verifiedUpdatesEnabledVersions: Set<GlyphsMajorVersion> = Set(
+		GlyphsMajorVersion.allCases.filter { UpdateOptInStore.live.isEnabled($0) }
+	)
 	@Published var isShowingUninstallSheet = false
 	@Published private(set) var uninstallPlan = GlyphsUninstallPlan(candidates: [])
 	@Published var uninstallSelectedCandidateIDs: Set<String> = []
@@ -255,6 +258,19 @@ final class InstallerViewModel: ObservableObject {
 					self.replaceDevSymlinkVersions.insert(version)
 				} else {
 					self.replaceDevSymlinkVersions.remove(version)
+				}
+			}
+		)
+	}
+
+	func verifiedUpdatesBinding(for version: GlyphsMajorVersion) -> Binding<Bool> {
+		Binding(
+			get: { self.verifiedUpdatesEnabledVersions.contains(version) },
+			set: { enabled in
+				if enabled {
+					self.verifiedUpdatesEnabledVersions.insert(version)
+				} else {
+					self.verifiedUpdatesEnabledVersions.remove(version)
 				}
 			}
 		)
@@ -672,7 +688,8 @@ final class InstallerViewModel: ObservableObject {
 				version: target.version,
 				pythonSelection: pythonSelection,
 				pluginsDirectory: target.pluginsDirectory,
-				pluginInstallStrategy: strategy
+				pluginInstallStrategy: strategy,
+				enableVerifiedInAppUpdates: verifiedUpdatesEnabledVersions.contains(target.version)
 			))
 		}
 		return plans.isEmpty ? nil : plans
@@ -787,6 +804,27 @@ Installation stopped before changing dependencies, plug-ins, or client settings.
 					}
 					_ = try installer.installPluginBundle(from: downloadedPluginBundle, toPluginsDir: target.pluginsDirectory, allowReplace: true)
 				}
+			}
+		}
+
+		try await step("Set up future updates", id: .updater) {
+			let selections = Dictionary(
+				uniqueKeysWithValues: options.targets.map {
+					($0.version, $0.enableVerifiedInAppUpdates)
+				}
+			)
+			try UpdateHelperManager().configure(
+				embeddedExecutable: UpdateHelperManager.embeddedExecutable(),
+				selections: selections
+			)
+			let enabledNames = options.targets
+				.filter(\.enableVerifiedInAppUpdates)
+				.sorted { $0.version < $1.version }
+				.map { $0.version.displayName }
+			if enabledNames.isEmpty {
+				log("Future updates were not enabled for the selected Glyphs versions.")
+			} else {
+				log("Future updates enabled for \(enabledNames.joined(separator: " and ")).")
 			}
 		}
 	}
@@ -934,6 +972,7 @@ struct InstallStep: Identifiable, Equatable {
 		case environment(GlyphsMajorVersion)
 		case dependencies(GlyphsMajorVersion)
 		case plugin(GlyphsMajorVersion)
+		case updater
 		case done
 	}
 
@@ -994,6 +1033,11 @@ struct InstallStep: Identifiable, Equatable {
 				state: .pending
 			))
 		}
+		result.append(.init(
+			id: .updater,
+			title: NSLocalizedString("Set up future updates", comment: "Install step title"),
+			state: .pending
+		))
 		result.append(.init(id: .done, title: NSLocalizedString("Done", comment: "Install step title"), state: .pending))
 		return result
 	}

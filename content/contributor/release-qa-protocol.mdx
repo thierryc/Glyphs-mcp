@@ -241,7 +241,7 @@ Run in `Edit` profile only. Use 10-30 glyphs, including `H`, `O`, `n`, `o`, side
 | ID | Action | Expected result |
 | --- | --- | --- |
 | SP1 | Call `review_spacing` on the selected glyphs or explicit glyph names. | Returns suggestions, skipped items, measurement bands, and no mutation. |
-| SP2 | Call `apply_spacing` with `dry_run=true` and conservative clamps. | Returns proposed deltas and changed-count preview; font is not dirty because of the dry run. |
+| SP2 | Call `apply_spacing` with `dry_run=true` and normalized guards. | Returns raw proposals, guard/application assessments, and a changed-count preview; the font is not dirty because of the dry run. |
 | SP3 | Call `set_spacing_params` with a small test parameter change on the working copy. | Updates only the intended font/master custom parameters and does not save automatically. |
 | SP4 | Call `set_spacing_guides` to add guides to 2-3 test glyphs. | Guides appear in Glyphs and are scoped to target glyphs/layers. |
 | SP5 | Call `set_spacing_guides` again to clear the guides. | Test guides are removed without deleting unrelated guides. |
@@ -390,8 +390,67 @@ Run on a clean or near-clean macOS user account when possible.
 | P2 | Install into Glyphs 3 explicitly. | Plug-in lands in the Glyphs 3-compatible location and starts in Glyphs 3.5. |
 | P3 | Install into Glyphs 4 explicitly or by the terminal installer default. | Plug-in lands in the Glyphs 4-compatible location and starts in Glyphs 4. |
 | P4 | Re-run installer over an existing install. | Upgrade path is clear and does not duplicate plug-ins or client entries. |
-| P5 | Install skills for Codex and Claude where selected. | Skills appear after client reload and reference the expected MCP endpoint/workflows. |
-| P6 | Uninstall or overwrite manually if that path is documented for users. | Leaves no stale duplicate bundle that Glyphs can load accidentally. |
+| P5 | Install standalone skills for Codex and Claude where selected. | Skills appear after client reload and reference the expected MCP endpoint/workflows. |
+| P6 | Install the optional shared agent plugin in disposable Codex, Claude Code, Cursor, and GitHub Copilot CLI profiles where those hosts are available. | Each host resolves version `1.6.0`, the same nine skills, and the same localhost MCP endpoint. No installer-owned or `.github/copilot/settings.json` enablement appears. |
+| P7 | Uninstall or overwrite manually if that path is documented for users. | Leaves no stale duplicate bundle that Glyphs can load accidentally. |
+
+## Update notification checks
+
+Run the notification-only update flow in both Glyphs 3.5 and Glyphs 4. A
+running release candidate must be tested against a disposable later stable
+version: for example, test the 1.6.0 candidate with a temporary, locally signed
+1.6.1 fixture. Serve that fixture from a local HTTP server and launch the
+development copy of Glyphs with `GLYPHS_MCP_UPDATE_API_URL` pointing at the
+loopback release JSON. Never publish the disposable future-version fixture.
+The repository's `github_latest_release_1.6.0.json` remains a unit-test fixture
+for the 1.5.4-to-1.6.0 bootstrap path. Production builds use GitHub's stable
+`releases/latest` API when the override is absent.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| U1 | Launch with update checks enabled and the disposable later-release fixture. | Glyphs startup and MCP startup remain responsive; one notification, the status banner, and the menu indicator appear. |
+| U2 | Test without the signed helper and click **View Release**. | The exact trusted `github.com/thierryc/Glyphs-mcp/releases/tag/v<fixture-version>` page opens; the fixture's `html_url` is ignored. No release is downloaded or installed. |
+| U3 | Click **Disable Update Checks**, restart Glyphs, and observe the fixture server. | The disabled state persists, the stale banner is hidden, and no automatic request is made. |
+| U4 | Click **Enable Update Checks**. | A fresh background check runs and the button changes back to **Disable Update Checks**. |
+| U5 | Stop the fixture server and click **Check Now**. | A bounded error appears in the status window without affecting the MCP server. |
+| U6 | Relaunch offline after a successful check. | Cached update availability remains visible and startup is unaffected. |
+
+## Verified update staging checks
+
+Run these checks only with a Debug installer/helper and a loopback exact-tag
+fixture that contains a development-signed `GlyphsMCPInstaller.zip` plus its
+matching `SHA256SUMS`. Perform the complete pass in Glyphs 4 build 4000, then
+Glyphs 3.5 build 3530, with only one app running. The tester launches Glyphs;
+automation must not launch, quit, reload, or restart it.
+
+Before each pass, record the byte hash of the running development plug-in and
+the on-disk plug-in bundle. Preserve the two Glyphs update opt-in preferences
+and restore them after testing.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| V1 | Install with **Make future updates easier** unchecked for both targets. | No helper is installed, both per-target preferences remain false, notifications still work, and update discovery never starts preparation. |
+| V2 | Re-run the Debug installer with the option enabled for one target. | The fixed helper is copied atomically, has the expected Apple Development identity/team, hardened runtime, compatible probe, and only that target's preference is true. |
+| V3 | Open the server window with the exact disposable future-version fixture. | A discreet light-green banner says that a new version is available. The aligned **Prepare Update** button appears only after the fixed helper and opt-in are verified. Merely detecting the release creates no authorization or helper `prepare` process. |
+| V4 | Click **Prepare Update** once. | Exactly one request UUID authorizes the fixture version for the current Glyphs major. Inline states progress through Downloading, Verifying, and Preparing without a modal alert or MCP interruption. |
+| V5 | Inspect the fixture server and staging root. | The exact tag endpoint, one installer asset, and one checksum asset are requested. The receipt records protocol, tag/version, target, SHA-256, plug-in CDHash/team, helper version, and preparation time. |
+| V6 | Compare the live and on-disk plug-in hashes after success. | Both remain byte-identical to their pre-test values. The UI says the release is ready but not installed, and **View Release** remains available for installation. No code path replaces, removes, or edits the installed plug-in or development symlink. |
+| V7 | Click **Prepare Update** for the other opted-in Glyphs major after the stage exists. | The verified stage is reused without redownloading assets, while a separate per-target authorization receipt is written. |
+| V8 | Test cancellation during download and verification. | The owned helper receives cancellation, temporary request data is removed, no ready receipt is written, and retry remains available. |
+| V9 | Serve a bad checksum, malformed archive, wrong version, and wrong team/signature fixture in turn. | Every case fails closed with a bounded inline error and **View Release** fallback; the MCP server and installed plug-in remain untouched. |
+| V10 | Stop the fixture and retry, then relaunch offline after a verified success. | Offline preparation fails inline within its timeout; a previously verified matching stage is restored from receipts without network access. |
+| V11 | Disable update checks during the pass. | Update UI is hidden and no new helper invocation can start. An already verified stage is not mutated. |
+| V12 | Turn off one target in the installer, then the final target. | Per-target authorization is removed immediately. The helper remains while one target is opted in and the safely marked updater root is removed only after the final opt-out. |
+
+For V1–V12, capture the helper probe, request count, status-window states,
+per-target preferences, request/status receipts, staged plug-in signature and
+hash, MCP `get_server_info` before/during/after, and before/after plug-in hashes.
+
+The Debug loopback path intentionally permits Apple Development signatures and
+does not enforce production timestamp or notarization checks. Do not claim a
+missing-notarization live result from that path. Retain the automated trust
+verifier coverage for timestamp and notarization rejection, then exercise both
+checks again against the exact signed Release artifact before publication.
 
 ## Performance and resilience
 
@@ -488,7 +547,7 @@ Review spacing for my current selection.
 Rules: read first, never auto-save, and do not mutate without a dry run.
 
 1. Call review_spacing.
-2. Call apply_spacing with dry_run=true and conservative clamps.
+2. Call apply_spacing with dry_run=true and the same normalized guards.
 3. Summarize changed glyphs, largest deltas, and skipped items.
 4. Stop before confirm=true.
 ```

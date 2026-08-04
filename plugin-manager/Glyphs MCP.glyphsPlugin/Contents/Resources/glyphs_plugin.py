@@ -2,8 +2,10 @@
 
 from __future__ import division, print_function, unicode_literals
 import json
+import os
 import time
 import traceback
+import uuid
 import objc
 import AppKit
 import threading
@@ -61,6 +63,21 @@ from tool_profiles import (
     is_valid_profile_name,
     normalize_profile_name,
 )
+from update_checker import (
+    UpdatePreferences,
+    cached_update_result,
+    fetch_update,
+)
+from update_helper import (
+    OPT_IN_DEFAULTS_KEY as IN_APP_UPDATES_DEFAULTS_KEY,
+    UpdateHelperError,
+    cancel_prepare,
+    glyphs_major_from_version,
+    read_request_status,
+    start_prepare,
+    verified_stage_is_ready,
+    verify_installed_helper,
+)
 from utils import (
     get_known_tools,
     get_mcp_tool_registry,
@@ -80,6 +97,7 @@ PORT_DEFAULTS_INITIALIZED_KEY = "com.ap.cx.glyphs-mcp.portInitialized"
 DEFAULT_TOOL_PROFILE = PROFILE_EDIT
 DEFAULT_PORT = 9680
 PROJECT_URL = "https://ap.cx/tools/glyphs-mcp"
+AUTOMATIC_UPDATE_CHECK_DELAY_SECONDS = 5.0
 
 
 class McpActivityStatusMiddleware:
@@ -189,6 +207,23 @@ class MCPBridgePlugin(GeneralPlugin):
         self._stopping_server = False
         self._starting_timer = None
         self._port = None
+        self._update_preferences = UpdatePreferences(Glyphs.defaults)
+        self._update_check_timer = None
+        self._update_check_thread = None
+        self._update_check_generation = 0
+        self._update_state = "idle"
+        self._update_latest_version = None
+        self._update_release_url = None
+        self._update_status_text = ""
+        self._helper_probe = None
+        self._helper_state = "unknown"
+        self._helper_error = None
+        self._helper_probe_generation = 0
+        self._preparation_process = None
+        self._preparation_timer = None
+        self._preparation_request_id = None
+        self._preparation_version = None
+        self._preparation_glyphs_major = None
 
         # Localized menu titles (via Glyphs.localize in i18n.tr)
         self.name_menu = tr("menu.main")
@@ -201,6 +236,7 @@ class MCPBridgePlugin(GeneralPlugin):
             set_debug_event_logging_enabled(self._debug_logging_enabled())
         except Exception:
             pass
+        self._restore_cached_update_state()
 
     @objc.python_method
     def _configured_default_port(self):
@@ -367,6 +403,487 @@ class MCPBridgePlugin(GeneralPlugin):
             return
 
     @objc.python_method
+    def _update_checks_enabled(self):
+        try:
+            return bool(self._update_preferences.enabled)
+        except Exception:
+            return True
+
+    @objc.python_method
+    def _in_app_updates_opted_in(self):
+        try:
+            return bool(Glyphs.defaults[IN_APP_UPDATES_DEFAULTS_KEY])
+        except Exception:
+            return False
+
+    @objc.python_method
+    def _current_glyphs_major(self):
+        return glyphs_major_from_version(getattr(Glyphs, "versionNumber", 4))
+
+    @objc.python_method
+    def _allow_development_update_helper(self):
+        try:
+            override = str(os.environ.get("GLYPHS_MCP_UPDATE_API_URL") or "")
+            return (
+                "+" in str(get_plugin_version())
+                and (
+                    override.startswith("http://127.0.0.1")
+                    or override.startswith("http://localhost")
+                )
+            )
+        except Exception:
+            return False
+
+    @objc.python_method
+    def _cancel_preparation_timer(self):
+        timer = getattr(self, "_preparation_timer", None)
+        if timer is not None:
+            try:
+                timer.invalidate()
+            except Exception:
+                pass
+        self._preparation_timer = None
+
+    @objc.python_method
+    def _begin_helper_probe(self):
+        if (
+            not self._update_checks_enabled()
+            or getattr(self, "_update_state", None) != "available"
+            or not getattr(self, "_update_latest_version", None)
+        ):
+            return False
+        if not self._in_app_updates_opted_in():
+            self._helper_probe = None
+            self._helper_state = "not_opted_in"
+            self._helper_error = None
+            self._refresh_status_panel_if_visible()
+            return False
+
+        thread = getattr(self, "_helper_probe_thread", None)
+        if thread is not None and thread.is_alive():
+            return False
+        self._helper_probe_generation += 1
+        generation = self._helper_probe_generation
+        version = self._update_latest_version
+        glyphs_major = self._current_glyphs_major()
+        self._helper_state = "probing"
+        self._helper_error = None
+        self._refresh_status_panel_if_visible()
+
+        def run_probe():
+            probe = None
+            failure = None
+            ready = False
+            try:
+                probe = verify_installed_helper(
+                    allow_development_signature=self._allow_development_update_helper()
+                )
+                ready = verified_stage_is_ready(
+                    version,
+                    glyphs_major,
+                    allow_development_signature=self._allow_development_update_helper(),
+                )
+            except Exception as error:
+                failure = error
+
+            def finish():
+                if generation != getattr(self, "_helper_probe_generation", 0):
+                    return
+                self._helper_probe_thread = None
+                self._helper_probe = probe
+                self._helper_error = failure
+                self._helper_state = (
+                    "ready" if ready else ("compatible" if probe is not None else "unavailable")
+                )
+                self._refresh_status_panel_if_visible()
+
+            try:
+                NSOperationQueue.mainQueue().addOperationWithBlock_(finish)
+            except Exception:
+                pass
+
+        self._helper_probe_thread = threading.Thread(
+            target=run_probe,
+            name="GlyphsMCPUpdaterProbe",
+            daemon=True,
+        )
+        self._helper_probe_thread.start()
+        return True
+
+    @objc.python_method
+    def _begin_update_preparation(self):
+        if (
+            not self._update_checks_enabled()
+            or not self._in_app_updates_opted_in()
+            or getattr(self, "_helper_state", None)
+            not in ("compatible", "error")
+        ):
+            return False
+        version = getattr(self, "_update_latest_version", None)
+        if not version:
+            return False
+        request_id = str(uuid.uuid4())
+        glyphs_major = self._current_glyphs_major()
+        self._preparation_request_id = request_id
+        self._preparation_version = version
+        self._preparation_glyphs_major = glyphs_major
+        self._helper_state = "authorizing"
+        self._helper_error = None
+        self._refresh_status_panel_if_visible()
+
+        def verify_and_start():
+            process = None
+            failure = None
+            try:
+                probe = verify_installed_helper(
+                    allow_development_signature=self._allow_development_update_helper()
+                )
+                prior_probe = getattr(self, "_helper_probe", None)
+                if prior_probe is None or probe.cdhash != prior_probe.cdhash:
+                    raise UpdateHelperError("The updater helper changed after it was verified.")
+                process = start_prepare(version, glyphs_major, request_id, path=probe.path)
+            except Exception as error:
+                failure = error
+
+            def finish():
+                if request_id != getattr(self, "_preparation_request_id", None):
+                    if process is not None:
+                        try:
+                            cancel_prepare(process)
+                        except Exception:
+                            pass
+                    return
+                if failure is not None or process is None:
+                    self._preparation_process = None
+                    self._helper_state = "error"
+                    self._helper_error = failure or UpdateHelperError(
+                        "Could not start update preparation."
+                    )
+                    self._refresh_status_panel_if_visible()
+                    return
+                self._preparation_process = process
+                self._helper_state = "resolving"
+                self._cancel_preparation_timer()
+                self._preparation_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+                    0.25,
+                    self,
+                    self.UpdatePreparationPoll_,
+                    None,
+                    True,
+                )
+                self._refresh_status_panel_if_visible()
+
+            try:
+                NSOperationQueue.mainQueue().addOperationWithBlock_(finish)
+            except Exception:
+                if process is not None:
+                    try:
+                        cancel_prepare(process)
+                    except Exception:
+                        pass
+
+        threading.Thread(
+            target=verify_and_start,
+            name="GlyphsMCPUpdaterAuthorize",
+            daemon=True,
+        ).start()
+        return True
+
+    def UpdatePreparationPoll_(self, timer):
+        request_id = getattr(self, "_preparation_request_id", None)
+        version = getattr(self, "_preparation_version", None)
+        glyphs_major = getattr(self, "_preparation_glyphs_major", None)
+        process = getattr(self, "_preparation_process", None)
+        if not request_id or not version or glyphs_major not in (3, 4):
+            self._cancel_preparation_timer()
+            return
+        try:
+            status = read_request_status(request_id, version, glyphs_major)
+        except Exception as error:
+            status = None
+            if process is None or process.poll() is not None:
+                self._helper_state = "error"
+                self._helper_error = error
+        if status is not None:
+            phase = status.get("phase")
+            if phase in ("resolving", "downloading", "verifying", "preparing"):
+                self._helper_state = phase
+            elif phase == "ready":
+                self._cancel_preparation_timer()
+                self._preparation_process = None
+                if verified_stage_is_ready(
+                    version,
+                    glyphs_major,
+                    allow_development_signature=self._allow_development_update_helper(),
+                ):
+                    self._helper_state = "ready"
+                    self._helper_error = None
+                else:
+                    self._helper_state = "error"
+                    self._helper_error = UpdateHelperError(
+                        "The verified update receipt could not be validated."
+                    )
+            elif phase in ("failed", "cancelled"):
+                self._cancel_preparation_timer()
+                self._preparation_process = None
+                self._helper_state = "compatible" if phase == "cancelled" else "error"
+                self._helper_error = (
+                    None
+                    if phase == "cancelled"
+                    else UpdateHelperError(
+                        status.get("message") or "Update preparation failed."
+                    )
+                )
+        elif process is not None and process.poll() is not None:
+            self._cancel_preparation_timer()
+            try:
+                output = process.communicate()[0]
+            except Exception:
+                output = ""
+            self._preparation_process = None
+            self._helper_state = "error"
+            self._helper_error = UpdateHelperError(
+                str(output or "Update preparation ended unexpectedly.").strip()
+            )
+        self._refresh_status_panel_if_visible()
+
+    @objc.python_method
+    def _restore_cached_update_state(self):
+        self._update_latest_version = None
+        self._update_release_url = None
+        self._update_status_text = ""
+        if not self._update_checks_enabled():
+            self._update_state = "disabled"
+            return
+
+        latest = None
+        try:
+            latest = self._update_preferences.latest_version
+        except Exception:
+            latest = None
+        if not latest:
+            self._update_state = "idle"
+            return
+
+        try:
+            cached = cached_update_result(
+                get_plugin_version(),
+                latest,
+                checked_at=(
+                    self._update_preferences.last_checked_at
+                    if self._update_preferences.last_checked_at is not None
+                    else time.time()
+                ),
+            )
+        except Exception:
+            self._update_state = "idle"
+            return
+
+        if cached.update_available:
+            self._update_state = "available"
+            self._update_latest_version = cached.latest_version
+            self._update_release_url = cached.release_url
+            self._update_status_text = tr(
+                "update.available",
+                version=cached.latest_version,
+            )
+        else:
+            self._update_state = "up_to_date"
+
+    @objc.python_method
+    def _cancel_update_check_timer(self):
+        timer = getattr(self, "_update_check_timer", None)
+        if timer is not None:
+            try:
+                timer.invalidate()
+            except Exception:
+                pass
+        self._update_check_timer = None
+
+    @objc.python_method
+    def _schedule_automatic_update_check(self):
+        self._cancel_update_check_timer()
+        if not self._update_checks_enabled():
+            return
+        try:
+            if not self._update_preferences.check_is_due():
+                return
+        except Exception:
+            pass
+        self._update_check_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+            AUTOMATIC_UPDATE_CHECK_DELAY_SECONDS,
+            self,
+            "AutomaticUpdateCheck:",
+            None,
+            False,
+        )
+
+    def AutomaticUpdateCheck_(self, timer):
+        self._update_check_timer = None
+        self._begin_update_check(manual=False, force=False)
+
+    @objc.python_method
+    def _begin_update_check(self, manual=False, force=False):
+        if not self._update_checks_enabled():
+            return False
+        thread = getattr(self, "_update_check_thread", None)
+        if thread is not None:
+            try:
+                if thread.is_alive():
+                    return False
+            except Exception:
+                pass
+        if not manual and not force:
+            try:
+                if not self._update_preferences.check_is_due():
+                    return False
+            except Exception:
+                pass
+
+        self._cancel_update_check_timer()
+        self._update_check_generation += 1
+        generation = self._update_check_generation
+        self._update_state = "checking"
+        self._update_status_text = tr("update.checking")
+        try:
+            self._update_preferences.record_attempt()
+        except Exception:
+            pass
+        self._refresh_status_panel_if_visible()
+        self._refresh_update_menu_item()
+
+        def run_check():
+            result = None
+            failure = None
+            try:
+                result = fetch_update(get_plugin_version())
+            except Exception as error:
+                failure = error
+
+            def finish():
+                self._finish_update_check(
+                    generation,
+                    result,
+                    failure,
+                    bool(manual),
+                )
+
+            try:
+                NSOperationQueue.mainQueue().addOperationWithBlock_(finish)
+            except Exception:
+                try:
+                    print(
+                        "[Glyphs MCP][Updates] Could not deliver update result: {}".format(
+                            failure or "main queue unavailable"
+                        )
+                    )
+                except Exception:
+                    pass
+
+        self._update_check_thread = threading.Thread(
+            target=run_check,
+            name="GlyphsMCPUpdateCheck",
+            daemon=True,
+        )
+        self._update_check_thread.start()
+        return True
+
+    @objc.python_method
+    def _finish_update_check(self, generation, result, failure, manual):
+        if generation != getattr(self, "_update_check_generation", 0):
+            return
+        self._update_check_thread = None
+        if not self._update_checks_enabled():
+            return
+
+        if failure is not None or result is None:
+            if manual:
+                self._update_state = "error"
+                self._update_status_text = tr(
+                    "update.error",
+                    error=str(failure or "unknown error"),
+                )
+            else:
+                self._restore_cached_update_state()
+                try:
+                    print(
+                        "[Glyphs MCP][Updates] Background check failed: {}".format(
+                            failure or "unknown error"
+                        )
+                    )
+                except Exception:
+                    pass
+            self._refresh_status_panel_if_visible()
+            self._refresh_update_menu_item()
+            return
+
+        try:
+            self._update_preferences.record_result(result)
+        except Exception:
+            pass
+
+        prior_version = getattr(self, "_update_latest_version", None)
+        self._update_latest_version = result.latest_version
+        self._update_release_url = result.release_url
+        if result.update_available:
+            if prior_version and prior_version != result.latest_version:
+                self._helper_probe_generation += 1
+                self._helper_probe = None
+                self._helper_state = "unknown"
+                self._helper_error = None
+            self._update_state = "available"
+            self._update_status_text = tr(
+                "update.available",
+                version=result.latest_version,
+            )
+            try:
+                if self._update_preferences.should_notify(result.latest_version):
+                    try:
+                        Glyphs.showNotification(
+                            tr("update.notification.title"),
+                            tr(
+                                "update.notification.message",
+                                version=result.latest_version,
+                            ),
+                        )
+                    finally:
+                        self._update_preferences.mark_notified(
+                            result.latest_version
+                        )
+            except Exception:
+                pass
+        else:
+            self._update_state = "up_to_date"
+            self._update_release_url = None
+            self._update_status_text = tr("update.up_to_date") if manual else ""
+
+        self._refresh_status_panel_if_visible()
+        self._refresh_update_menu_item()
+        if result.update_available and prior_version != result.latest_version:
+            panel = getattr(self, "_status_panel", None)
+            try:
+                if panel is not None and panel.isVisible():
+                    self._begin_helper_probe()
+            except Exception:
+                pass
+
+    @objc.python_method
+    def _refresh_update_menu_item(self):
+        item = getattr(self, "menuItem", None)
+        if item is None:
+            return
+        title = self.name_menu
+        if (
+            self._update_checks_enabled()
+            and getattr(self, "_update_state", None) == "available"
+        ):
+            title = tr("menu.update_available", name=self.name_menu)
+        try:
+            item.setTitle_(title)
+        except Exception:
+            pass
+
+    @objc.python_method
     def _http_middleware(self):
         """Return security middleware for the embedded HTTP server."""
         middleware = [
@@ -396,6 +913,8 @@ class MCPBridgePlugin(GeneralPlugin):
         newMenuItem.setTarget_(self)
         newMenuItem.setAction_(self.ShowStatusWindow_)
         Glyphs.menu[EDIT_MENU].append(newMenuItem)
+        self._refresh_update_menu_item()
+        self._schedule_automatic_update_check()
 
         try:
             self._maybe_autostart_on_launch()
@@ -925,6 +1444,7 @@ class MCPBridgePlugin(GeneralPlugin):
             self._refresh_status_panel()
             self._status_panel.makeKeyAndOrderFront_(None)
             self._refresh_status_panel()
+            self._begin_helper_probe()
         except Exception as e:
             self._show_error(tr("error.open_status_window", error=e))
 
@@ -1158,8 +1678,8 @@ class MCPBridgePlugin(GeneralPlugin):
         if hasattr(self, "_status_panel") and self._status_panel is not None:
             return
 
-        width = 368
-        height = 300
+        width = 420
+        height = 380
         rect = ((0, 0), (width, height))
         style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow
         panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer_(
@@ -1196,8 +1716,79 @@ class MCPBridgePlugin(GeneralPlugin):
         )
         content.addSubview_(endpoint_copy_button)
 
+        update_banner_w = width - margin * 2
+        update_banner_h = 54
+        update_banner_y = height - 110
+        update_banner = NSView.alloc().initWithFrame_(
+            ((margin, update_banner_y), (update_banner_w, update_banner_h))
+        )
+        try:
+            update_banner.setWantsLayer_(True)
+            update_banner.layer().setCornerRadius_(9.0)
+            background = AppKit.NSColor.systemGreenColor().colorWithAlphaComponent_(0.10)
+            update_banner.layer().setBackgroundColor_(background.CGColor())
+        except Exception:
+            pass
+        update_banner.setHidden_(True)
+        content.addSubview_(update_banner)
+
+        update_y = 7
+        update_button_w = 106
+        update_status = self._quiet_text_field(
+            (
+                (12, update_y),
+                (update_banner_w - 24 - update_button_w - 8, 40),
+            ),
+            "",
+            selectable=True,
+            bold=True,
+            size=11,
+        )
+        try:
+            update_status.setUsesSingleLineMode_(False)
+            update_status.cell().setWraps_(True)
+            update_status.cell().setLineBreakMode_(
+                getattr(AppKit, "NSLineBreakByWordWrapping", 0)
+            )
+        except Exception:
+            pass
+        update_banner.addSubview_(update_status)
+
+        update_action_button = NSButton.alloc().initWithFrame_(
+            (
+                (update_banner_w - 12 - update_button_w, 13),
+                (update_button_w, 28),
+            )
+        )
+        update_action_button.setTitle_(tr("update.action"))
+        update_action_button.setToolTip_(tr("update.action_tooltip"))
+        update_action_button.setTarget_(self)
+        update_action_button.setAction_(self.UpdateAction_)
+        # This click is explicit consent for one exact displayed version.
+        try:
+            update_action_button.setBezelColor_(AppKit.NSColor.systemBlueColor())
+        except Exception:
+            pass
+        try:
+            update_action_button.setContentTintColor_(AppKit.NSColor.whiteColor())
+        except Exception:
+            pass
+        update_banner.addSubview_(update_action_button)
+
+        view_release_button = NSButton.alloc().initWithFrame_(
+            (
+                (update_banner_w - 12 - update_button_w, 13),
+                (update_button_w, 28),
+            )
+        )
+        view_release_button.setTitle_(tr("update.view_release"))
+        view_release_button.setToolTip_(tr("update.view_release_tooltip"))
+        view_release_button.setTarget_(self)
+        view_release_button.setAction_(self.OpenUpdateRelease_)
+        update_banner.addSubview_(view_release_button)
+
         dot_w = 24
-        dot_y = height - 114
+        dot_y = height - 142
         status_dot = self._quiet_text_field(
             ((center_x - dot_w / 2.0, dot_y), (dot_w, row_h + 4)),
             "●",
@@ -1220,7 +1811,7 @@ class MCPBridgePlugin(GeneralPlugin):
         server_button.setAction_(self.ToggleServer_)
         content.addSubview_(server_button)
 
-        controls_y = 74
+        controls_y = 126
         activity_y = controls_y + 38
         activity_w = width - margin * 2
         activity_value = self._quiet_text_field(
@@ -1294,7 +1885,7 @@ class MCPBridgePlugin(GeneralPlugin):
         profile_popup.setAction_(self.ChangeToolProfile_)
         content.addSubview_(profile_popup)
 
-        checkbox_y = 40
+        checkbox_y = 89
         debug_checkbox = NSButton.alloc().initWithFrame_(((margin + 110, checkbox_y), (150, 22)))
         debug_checkbox.setTitle_(tr("debug.short"))
         switch_type = getattr(AppKit, "NSSwitchButton", None) or getattr(AppKit, "NSButtonTypeSwitch", None)
@@ -1320,6 +1911,22 @@ class MCPBridgePlugin(GeneralPlugin):
         autostart_checkbox.setTarget_(self)
         autostart_checkbox.setAction_(self.ToggleAutostart_)
         content.addSubview_(autostart_checkbox)
+
+        update_controls_y = 49
+        check_updates_button = NSButton.alloc().initWithFrame_(
+            ((margin, update_controls_y), (112, 28))
+        )
+        check_updates_button.setTitle_(tr("update.check_now"))
+        check_updates_button.setTarget_(self)
+        check_updates_button.setAction_(self.CheckForUpdates_)
+        content.addSubview_(check_updates_button)
+
+        toggle_updates_button = NSButton.alloc().initWithFrame_(
+            ((margin + 120, update_controls_y), (width - margin * 2 - 120, 28))
+        )
+        toggle_updates_button.setTarget_(self)
+        toggle_updates_button.setAction_(self.ToggleUpdateChecks_)
+        content.addSubview_(toggle_updates_button)
 
         footer = self._quiet_text_field(
             ((margin, 13), (width - margin * 2, 18)),
@@ -1357,6 +1964,13 @@ class MCPBridgePlugin(GeneralPlugin):
         self._autostart_checkbox = autostart_checkbox
         self._tool_profile_popup = profile_popup
         self._debug_logging_checkbox = debug_checkbox
+        self._update_banner = update_banner
+        self._update_banner_width = update_banner_w
+        self._update_status_field = update_status
+        self._update_action_button = update_action_button
+        self._view_release_button = view_release_button
+        self._check_updates_button = check_updates_button
+        self._toggle_updates_button = toggle_updates_button
 
     @objc.python_method
     def _refresh_status_panel_if_visible(self):
@@ -1498,6 +2112,174 @@ class MCPBridgePlugin(GeneralPlugin):
                 checkbox.setState_(state_on if self._debug_logging_enabled() else state_off)
         except Exception:
             pass
+        try:
+            checks_enabled = self._update_checks_enabled()
+            checking = getattr(self, "_update_state", None) == "checking"
+            helper_state = getattr(self, "_helper_state", "unknown")
+            preparation_active = helper_state in (
+                "authorizing",
+                "resolving",
+                "downloading",
+                "verifying",
+                "preparing",
+                "cancelling",
+            )
+            check_button = getattr(self, "_check_updates_button", None)
+            if check_button is not None:
+                check_button.setEnabled_(
+                    bool(checks_enabled and not checking and not preparation_active)
+                )
+                check_button.setTitle_(
+                    tr("update.checking_short")
+                    if checking
+                    else tr("update.check_now")
+                )
+
+            toggle_button = getattr(self, "_toggle_updates_button", None)
+            if toggle_button is not None:
+                toggle_button.setTitle_(
+                    tr("update.disable_checks")
+                    if checks_enabled
+                    else tr("update.enable_checks")
+                )
+                toggle_button.setEnabled_(True)
+
+            update_text = (
+                getattr(self, "_update_status_text", "")
+                if checks_enabled
+                else tr("update.disabled")
+            )
+            if checks_enabled and getattr(self, "_update_state", None) == "available":
+                if helper_state in ("probing", "authorizing", "resolving"):
+                    update_text = tr("update.preparing")
+                elif helper_state == "downloading":
+                    update_text = tr("update.downloading")
+                elif helper_state == "verifying":
+                    update_text = tr("update.verifying")
+                elif helper_state == "preparing":
+                    update_text = tr("update.preparing")
+                elif helper_state == "cancelling":
+                    update_text = tr("update.cancelling")
+                elif helper_state == "ready":
+                    update_text = tr(
+                        "update.verified_not_installed",
+                        version=getattr(self, "_update_latest_version", ""),
+                    )
+                elif helper_state == "error":
+                    update_text = tr(
+                        "update.preparation_error",
+                        error=str(
+                            getattr(self, "_helper_error", None)
+                            or "unknown error"
+                        )[:400],
+                    )
+            update_field = getattr(self, "_update_status_field", None)
+            if update_field is not None:
+                update_field.setStringValue_(update_text)
+                update_field.setHidden_(not bool(update_text))
+                try:
+                    update_field.setToolTip_(update_text or None)
+                except Exception:
+                    pass
+                update_color_state = "error" if helper_state == "error" else "idle"
+                color = self._status_color(update_color_state)
+                if getattr(self, "_update_state", None) == "available" and helper_state != "error":
+                    try:
+                        color = AppKit.NSColor.labelColor()
+                    except Exception:
+                        color = self._status_color("running")
+                if color is not None:
+                    update_field.setTextColor_(color)
+
+            update_button = getattr(self, "_update_action_button", None)
+            update_available = bool(
+                checks_enabled
+                and getattr(self, "_update_state", None) == "available"
+                and getattr(self, "_update_release_url", None)
+            )
+            show_update = False
+            show_cancel = False
+            if update_button is not None:
+                show_update = bool(
+                    update_available
+                    and helper_state in ("compatible", "error")
+                    and self._in_app_updates_opted_in()
+                )
+                show_cancel = bool(
+                    update_available
+                    and helper_state
+                    in (
+                        "authorizing",
+                        "resolving",
+                        "downloading",
+                        "verifying",
+                        "preparing",
+                        "cancelling",
+                    )
+                )
+                update_button.setHidden_(not (show_update or show_cancel))
+                update_button.setEnabled_(show_update or (show_cancel and helper_state != "cancelling"))
+                update_button.setTitle_(
+                    tr("common.cancel")
+                    if show_cancel
+                    else (
+                        tr("update.retry")
+                        if helper_state == "error"
+                        else tr("update.action")
+                    )
+                )
+                update_button.setToolTip_(tr("update.action_tooltip"))
+            release_button = getattr(self, "_view_release_button", None)
+            show_release = False
+            if release_button is not None:
+                show_release = bool(
+                    update_available
+                    and helper_state in ("not_opted_in", "unavailable", "error", "ready")
+                )
+                release_button.setHidden_(not show_release)
+                release_button.setEnabled_(show_release)
+
+            banner = getattr(self, "_update_banner", None)
+            if banner is not None:
+                banner.setHidden_(not bool(update_text))
+                try:
+                    banner_color_name = (
+                        "systemRedColor"
+                        if helper_state == "error" or getattr(self, "_update_state", None) == "error"
+                        else (
+                            "systemGreenColor"
+                            if getattr(self, "_update_state", None) == "available"
+                            else "secondaryLabelColor"
+                        )
+                    )
+                    banner_color = getattr(AppKit.NSColor, banner_color_name)()
+                    banner_color = banner_color.colorWithAlphaComponent_(0.10)
+                    banner.layer().setBackgroundColor_(banner_color.CGColor())
+                except Exception:
+                    pass
+
+            banner_w = getattr(self, "_update_banner_width", 384)
+            button_w = 106
+            button_x = banner_w - 12 - button_w
+            label_w = banner_w - 24 - button_w - 8
+            if show_update and show_release:
+                release_x = button_x - 8 - button_w
+                label_w = max(80, release_x - 20)
+            else:
+                release_x = button_x
+                if not (show_update or show_cancel or show_release):
+                    label_w = banner_w - 24
+            try:
+                if update_field is not None:
+                    update_field.setFrame_(((12, 7), (label_w, 40)))
+                if update_button is not None:
+                    update_button.setFrame_(((button_x, 13), (button_w, 28)))
+                if release_button is not None:
+                    release_button.setFrame_(((release_x, 13), (button_w, 28)))
+            except Exception:
+                pass
+        except Exception:
+            pass
 
     def ChangeToolProfile_(self, sender):
         """Persist tool profile selection. Takes effect on next server start."""
@@ -1619,6 +2401,98 @@ class MCPBridgePlugin(GeneralPlugin):
             pass
 
         self._refresh_status_panel_if_visible()
+
+    def CheckForUpdates_(self, sender):
+        """Run a user-requested update metadata check."""
+        if not self._update_checks_enabled():
+            return
+        if getattr(self, "_helper_state", None) in (
+            "authorizing",
+            "resolving",
+            "downloading",
+            "verifying",
+            "preparing",
+            "cancelling",
+        ):
+            return
+        self._begin_update_check(manual=True, force=True)
+
+    def ToggleUpdateChecks_(self, sender):
+        """Enable or disable notification-only update checks."""
+        enabled = not self._update_checks_enabled()
+        try:
+            self._update_preferences.set_enabled(enabled)
+        except Exception:
+            return
+
+        self._cancel_update_check_timer()
+        self._update_check_generation += 1
+        self._update_check_thread = None
+        if enabled:
+            self._restore_cached_update_state()
+            self._begin_update_check(manual=False, force=True)
+        else:
+            process = getattr(self, "_preparation_process", None)
+            if process is not None:
+                try:
+                    cancel_prepare(process)
+                except Exception:
+                    pass
+            self._cancel_preparation_timer()
+            self._helper_probe_generation += 1
+            self._update_state = "disabled"
+            self._update_latest_version = None
+            self._update_release_url = None
+            self._update_status_text = ""
+            self._refresh_status_panel_if_visible()
+            self._refresh_update_menu_item()
+
+    def UpdateAction_(self, sender):
+        """Authorize or cancel preparation for the exact displayed release."""
+        state = getattr(self, "_helper_state", None)
+        if state in (
+            "authorizing",
+            "resolving",
+            "downloading",
+            "verifying",
+            "preparing",
+            "cancelling",
+        ):
+            if state == "cancelling":
+                return
+            process = getattr(self, "_preparation_process", None)
+            if process is not None:
+                try:
+                    cancel_prepare(process)
+                    self._helper_state = "cancelling"
+                except Exception as error:
+                    self._helper_state = "error"
+                    self._helper_error = error
+            else:
+                self._preparation_request_id = None
+                self._helper_state = "compatible"
+            self._refresh_status_panel_if_visible()
+            return
+        self._begin_update_preparation()
+
+    def OpenUpdateRelease_(self, sender):
+        """Open the exact trusted GitHub release page for the cached update."""
+        release_url = getattr(self, "_update_release_url", None)
+        if not release_url:
+            return
+        try:
+            nsurl = NSURL.URLWithString_(release_url)
+            if nsurl is None:
+                raise ValueError("Invalid URL")
+            NSWorkspace.sharedWorkspace().openURL_(nsurl)
+        except Exception as error:
+            self._show_error(
+                tr(
+                    "error.open_update",
+                    url=release_url,
+                    error=error,
+                )
+            )
 
     def CopyEndpoint_(self, sender):
         """Copy the current endpoint URL to the macOS clipboard."""

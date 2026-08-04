@@ -1,6 +1,6 @@
 ---
-title: Use skills
-description: Use the bundled Glyphs MCP skills in Codex, Claude Code, or Cursor.
+title: Use skills and optional plugins
+description: Use the shared Glyphs MCP package in Codex, Claude Code, Cursor, or GitHub Copilot CLI.
 ---
 
 Glyphs MCP ships a general launcher and focused workflow skills in `skills/`. They do not replace MCP tools; they teach an agent how to use those tools safely for Glyphs tasks.
@@ -8,7 +8,9 @@ Glyphs MCP ships a general launcher and focused workflow skills in `skills/`. Th
 Start with `glyphs` for a general task or context check. Use a focused skill
 when you already know the task is OpenType feature inspection, icon-font
 encoding, kerning, spacing, outline work, an italic first pass, or Glyphs
-script and plug-in development.
+script and plug-in development. Use `glyphs-mcp-release` for repository release
+preparation and publication gates; it does not require an open font except for
+an explicitly selected live QA pass.
 
 ## Before you use a skill
 
@@ -26,12 +28,13 @@ If the client is not connected yet, start with [Connect a client](./connect-clie
 | Codex and ChatGPT plugin hosts | Installed plugin bundle or `.agents/skills` | `~/.codex/skills` | Bundled plugin connection or Codex MCP config | Available on compatible MCP Apps hosts |
 | Claude Code | `.claude/skills` | `~/.claude/skills` | Claude CLI MCP config | Text and structured results |
 | Cursor | `.agents/skills` or explicit `.cursor/skills` fallback | `~/.cursor/skills` | `.cursor/mcp.json` | Text and structured results |
+| GitHub Copilot CLI | Installed plugin bundle or `.agents/skills` | Copilot skill install | Bundled plugin connection or Copilot MCP config | Text and structured results |
 
-The installer manages Codex and Claude Code skill targets. Cursor setup is
-manual: this repository's existing `.agents/skills` bridge is the shared
-repo-local source, while `.cursor/skills` is an explicit fallback if a Cursor
-version or configuration does not discover it. Confirm the skills in Cursor's
-settings before relying on automatic invocation.
+The Glyphs installer manages only the existing Codex and Claude Code standalone
+skill targets. Agent plugin installation is always host-owned. Cursor and
+GitHub Copilot setup remain manual unless you choose their plugin package.
+This repository's `.agents/skills` bridge is the shared repo-local source;
+`.cursor/skills` remains an explicit Cursor fallback.
 
 Claude Code loads project skills from `.claude/skills` and personal skills from
 `~/.claude/skills`; see
@@ -39,13 +42,124 @@ Claude Code loads project skills from `.claude/skills` and personal skills from
 The ordinary Claude App MCP connection provides tools, but does not imply that
 Claude Code filesystem skills are loaded into every Claude chat surface.
 
+## Optional multi-host plugin
+
+The package at `plugins/glyphs-mcp` carries native manifests for Codex, Claude
+Code, Cursor, and GitHub Copilot CLI. All four manifests use version `1.6.0`
+and load the same `skills/` directory and `.mcp.json`. Individual skills do not
+carry separate release numbers; they inherit the package version. The MCP
+server reports the aligned version of the native Glyphs MCP plug-in.
+
+Install the native Glyphs plug-in and start its server before enabling an agent
+plugin. The plugin is optional: skip this section if you prefer the repo-local
+or global standalone skills and manual MCP connection documented below.
+
+### Codex and compatible ChatGPT hosts
+
+```bash
+codex plugin marketplace add thierryc/Glyphs-mcp
+codex plugin add glyphs-mcp@glyphs-mcp
+```
+
+Start a new task after installation. Refresh or remove it with:
+
+```bash
+codex plugin marketplace upgrade glyphs-mcp
+codex plugin add glyphs-mcp@glyphs-mcp
+codex plugin remove glyphs-mcp@glyphs-mcp
+codex plugin marketplace remove glyphs-mcp
+```
+
+Use `$glyphs` for the general launcher. Compatible OpenAI hosts can also render
+the [embedded feedback UI](./codex-chatgpt-plugin-ui.mdx).
+
+### Claude Code
+
+```bash
+claude plugin marketplace add thierryc/Glyphs-mcp
+claude plugin install glyphs-mcp@glyphs-mcp
+```
+
+Update or remove it with:
+
+```bash
+claude plugin marketplace update glyphs-mcp
+claude plugin update glyphs-mcp@glyphs-mcp
+claude plugin uninstall glyphs-mcp@glyphs-mcp
+claude plugin marketplace remove glyphs-mcp
+```
+
+Claude namespaces plugin skills. The general launcher is
+`/glyphs-mcp:glyphs`. See Claude Code's
+[plugin documentation](https://code.claude.com/docs/en/plugins) for scope and
+workspace-trust behavior.
+
+### Cursor
+
+The repository includes `.cursor-plugin/marketplace.json`. When the Cursor
+agent CLI is installed, register that repository-hosted marketplace with:
+
+```bash
+cursor-agent plugin marketplace add https://github.com/thierryc/Glyphs-mcp
+```
+
+Run `cursor-agent`, open `/plugin`, choose the added marketplace, and install
+`glyphs-mcp`. Cursor currently completes repository-marketplace installation
+and lifecycle actions in the interactive `/plugin` or **Settings → Plugins**
+surface rather than a non-interactive install command. Use that surface to
+refresh or update, uninstall the plugin, and remove the custom marketplace.
+
+For a direct local installation that is easy to inspect and update, link the
+shared package into Cursor's local plugin directory:
+
+```bash
+mkdir -p ~/.cursor/plugins/local
+ln -s /absolute/path/to/Glyphs-mcp/plugins/glyphs-mcp ~/.cursor/plugins/local/glyphs-mcp
+```
+
+Pull updates in the checkout and restart Cursor to reload them. Remove only the
+local link with `unlink ~/.cursor/plugins/local/glyphs-mcp`. Cursor can discover
+the `glyphs` skill automatically; an explicit request such as `Use the glyphs
+skill` remains portable. Repository delivery here is separate from future
+submission to Cursor's public marketplace. See Cursor's
+[plugin documentation](https://cursor.com/docs/plugins).
+
+### GitHub Copilot CLI
+
+```bash
+copilot plugin marketplace add thierryc/Glyphs-mcp
+copilot plugin install glyphs-mcp@glyphs-mcp
+```
+
+Direct repository installation is also supported:
+
+```bash
+copilot plugin install thierryc/Glyphs-mcp:plugins/glyphs-mcp
+```
+
+Update or remove a marketplace installation with:
+
+```bash
+copilot plugin marketplace update glyphs-mcp
+copilot plugin update glyphs-mcp
+copilot plugin uninstall glyphs-mcp
+copilot plugin marketplace remove glyphs-mcp
+```
+
+Use `/glyphs-mcp/glyphs` for the plugin-qualified general skill. GitHub
+documents the complete [Copilot CLI plugin command and manifest
+reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference).
+Copilot cloud agents can opt into plugins through repository settings, but this
+repository deliberately does not add `.github/copilot/settings.json` or enable
+the plugin automatically.
+
 ## Repo-local skills
 
 The authored skill source lives in `skills/`.
 
 This repo exposes the same skill bundle through client-specific bridges:
 
-- Codex and Cursor: `.agents/skills`
+- Codex, Cursor, and GitHub Copilot CLI: `.agents/skills`
 - Claude Code: `.claude/skills`
 
 Open this repository in the client, trust or reload the workspace if needed, then invoke the skill by name.
@@ -68,6 +182,23 @@ Cursor example:
 Use the glyphs skill to inspect the current Glyphs context and help with my font task.
 ```
 
+GitHub Copilot CLI example:
+
+```text
+Use the glyphs skill to inspect the current Glyphs context and help with my font task.
+```
+
+For the standalone MCP path, keep the same localhost endpoint. Examples:
+
+```bash
+codex mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/
+claude mcp add --scope user --transport http glyphs-mcp http://127.0.0.1:9680/mcp/
+copilot mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/ --type http
+```
+
+Cursor uses `.cursor/mcp.json`; see [Connect a client](./connect-client.mdx) for
+the manual JSON configuration and transport checks.
+
 ## Global skills
 
 Use the installer when you want the bundled skills available without opening the repo:
@@ -83,7 +214,7 @@ Enable **Install Glyphs MCP agent skills** for Codex and/or Claude Code. The ins
 
 Reload or restart the client after installation.
 
-For a manual global Cursor install, copy the eight skill directories from
+For a manual global Cursor install, copy the nine skill directories from
 `skills/` into `~/.cursor/skills/`, preserving each directory's `SKILL.md` and
 supporting files.
 
@@ -99,6 +230,7 @@ supporting files.
 | `glyphs-mcp-spacing` | Spacing review and approved applies | `Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.` |
 | `glyphs-mcp-outlines-docs` | Outline edits, selected nodes, components, anchors, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes and fetch only the docs pages I need.` |
 | `glyphs-mcp-italic-first-pass` | Experimental Roman-to-italic construction drafts for designer refinement | `Use the glyphs-mcp-italic-first-pass skill to review selected glyphs in recommended Balanced mode before applying an italic first pass.` |
+| `glyphs-mcp-release` | Version, docs, packaging, validation, signing, and publication gates | `Use $glyphs-mcp-release to prepare version 1.6.0 and stop before external publication.` |
 
 ## Operating rules
 

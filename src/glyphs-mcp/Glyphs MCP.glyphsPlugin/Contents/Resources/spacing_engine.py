@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import math
 import re
+import statistics
+import unicodedata
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -23,8 +25,8 @@ DEFAULTS: Dict[str, Any] = {
     "frequency": 5.0,
     "factor": 1.0,
     # Reference glyph used to define the vertical measurement range.
-    # May be overridden per glyph by rules; "*" means "use glyph itself".
-    "referenceGlyph": "x",
+    # "auto" resolves by glyph class; "*" means "use glyph itself".
+    "referenceGlyph": "auto",
     # Geometry / behavior toggles.
     "italicMode": "deslant",  # "deslant" | "none"
     "includeComponents": True,
@@ -32,11 +34,62 @@ DEFAULTS: Dict[str, Any] = {
     "skipAutoAligned": True,
     "minCoverageRatio": 0.7,
     # Tabular handling.
-    "tabularMode": False,
+    "tabularMode": "auto",
     "tabularWidth": None,  # int|None
+    "tabularToleranceEm": 0.005,
     # Payload / debugging.
     "includeSamples": False,
 }
+
+DEFAULT_GUARDS: Dict[str, Any] = {
+    "negativeBearingPolicy": "guarded",  # guarded | advisory | off
+    "warnBelowEm": -0.05,
+    "blockBelowEm": -0.10,
+    "blockOnOutliers": True,
+    "allowGlyphs": [],
+    "allowItalicOverhangs": True,
+    "allowMarks": True,
+    "currentMetricsTrust": "auto",  # auto | trusted | untrusted
+    "trustedMetricGlyphs": [],
+    "untrustedMetricGlyphs": [],
+}
+
+DEFAULT_FIGURE_NAMES: Tuple[str, ...] = (
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+)
+
+NARROW_PUNCTUATION_NAMES = frozenset(
+    {
+        "period",
+        "comma",
+        "colon",
+        "semicolon",
+        "exclam",
+        "question",
+        "quotesingle",
+        "quotedbl",
+        "quoteleft",
+        "quoteright",
+        "quotedblleft",
+        "quotedblright",
+        "guilsinglleft",
+        "guilsinglright",
+        "guillemotleft",
+        "guillemotright",
+        "ellipsis",
+    }
+)
+
+OVERHANG_CANDIDATE_NAMES = frozenset({"J", "j", "f", "Q"})
 
 SPACING_PARAM_FIELDS: Tuple[str, ...] = ("area", "depth", "over", "frequency")
 
@@ -287,12 +340,216 @@ def select_rule(glyph: Any, rules: Optional[Sequence[Dict[str, Any]]]) -> Dict[s
     return best or {}
 
 
+def _font_glyph(font: Any, name: str) -> Any:
+    try:
+        return font.glyphs[name]
+    except Exception:
+        return None
+
+
+def _glyph_unicode_character(glyph: Any) -> Optional[str]:
+    raw = _safe_attr(glyph, "unicode", "")
+    if not raw:
+        info = _safe_attr(glyph, "glyphInfo")
+        raw = _safe_attr(info, "unicode", "") if info is not None else ""
+    text = str(raw or "").strip()
+    if not text:
+        return None
+    try:
+        return chr(int(text, 16))
+    except Exception:
+        return None
+
+
+def classify_glyph(glyph: Any, layer: Any = None) -> Dict[str, Any]:
+    """Classify a glyph without depending on Glyphs subCategory alone."""
+    name = str(_safe_attr(glyph, "name", "") or "")
+    base_name = name.split(".", 1)[0]
+    category = str(_safe_attr(glyph, "category", "") or "")
+    sub_category = str(_safe_attr(glyph, "subCategory", "") or "")
+    source = "glyph"
+
+    info = _safe_attr(glyph, "glyphInfo")
+    info_category = str(_safe_attr(info, "category", "") or "") if info is not None else ""
+    info_sub_category = str(_safe_attr(info, "subCategory", "") or "") if info is not None else ""
+    effective_category = category or info_category
+    effective_sub_category = sub_category or info_sub_category
+    if not category and info_category:
+        source = "glyphInfo"
+
+    width = _coerce_float(_safe_attr(layer, "width")) if layer is not None else None
+    if width is not None and abs(width) <= 1e-6:
+        return {
+            "glyphClass": "zeroWidth",
+            "source": "layerWidth",
+            "category": effective_category or None,
+            "subCategory": effective_sub_category or None,
+        }
+
+    cat_lower = effective_category.lower()
+    sub_lower = effective_sub_category.lower()
+    if cat_lower == "mark" or "nonspacing" in sub_lower or _detect_combining_mark(glyph):
+        return {
+            "glyphClass": "mark",
+            "source": source,
+            "category": effective_category or None,
+            "subCategory": effective_sub_category or None,
+        }
+    if cat_lower == "letter" and sub_lower == "uppercase":
+        glyph_class = "uppercase"
+    elif cat_lower == "letter" and sub_lower == "lowercase":
+        glyph_class = "lowercase"
+    elif cat_lower in ("number", "decimal digit") and sub_lower in ("decimal digit", "decimal", "digit"):
+        glyph_class = "decimalFigure"
+    else:
+        glyph_class = ""
+
+    char = _glyph_unicode_character(glyph)
+    unicode_category = None
+    if not glyph_class and char:
+        unicode_category = unicodedata.category(char)
+        if unicode_category == "Lu" or char.isupper():
+            glyph_class = "uppercase"
+            source = "unicode"
+        elif unicode_category == "Ll" or char.islower():
+            glyph_class = "lowercase"
+            source = "unicode"
+        elif unicode_category == "Nd":
+            glyph_class = "decimalFigure"
+            source = "unicode"
+        elif unicode_category.startswith("M"):
+            glyph_class = "mark"
+            source = "unicode"
+        elif unicode_category.startswith("P"):
+            glyph_class = "narrowPunctuation" if base_name in NARROW_PUNCTUATION_NAMES else "punctuation"
+            source = "unicode"
+
+    if not glyph_class:
+        if len(base_name) == 1 and "A" <= base_name <= "Z":
+            glyph_class = "uppercase"
+            source = "glyphName"
+        elif len(base_name) == 1 and "a" <= base_name <= "z":
+            glyph_class = "lowercase"
+            source = "glyphName"
+        elif base_name in DEFAULT_FIGURE_NAMES:
+            glyph_class = "decimalFigure"
+            source = "glyphName"
+        elif base_name in NARROW_PUNCTUATION_NAMES:
+            glyph_class = "narrowPunctuation"
+            source = "glyphName"
+        elif cat_lower == "punctuation":
+            glyph_class = "punctuation"
+            source = source
+        elif cat_lower == "number":
+            # Non-decimal numbers should not automatically inherit the decimal model.
+            glyph_class = "unclassified"
+        else:
+            glyph_class = "unclassified"
+
+    return {
+        "glyphClass": glyph_class,
+        "source": source,
+        "category": effective_category or None,
+        "subCategory": effective_sub_category or None,
+        "unicodeCategory": unicode_category,
+    }
+
+
+def resolve_reference(
+    *,
+    font: Any,
+    glyph: Any,
+    layer: Any,
+    rule: Dict[str, Any],
+    defaults: Dict[str, Any],
+    classification: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Resolve requested and effective spacing references with provenance."""
+    classification = classification or classify_glyph(glyph, layer)
+    glyph_class = classification.get("glyphClass") or "unclassified"
+
+    if "referenceGlyph" in rule or "reference" in rule:
+        requested = rule.get("referenceGlyph", rule.get("reference"))
+    else:
+        requested = defaults.get("referenceGlyph", "auto")
+    requested = str(requested if requested is not None else "auto").strip() or "auto"
+
+    if requested != "auto":
+        if requested == "*":
+            return {
+                "referenceMode": "self",
+                "requestedReferenceGlyph": "*",
+                "resolvedReferenceGlyph": str(_safe_attr(glyph, "name", "") or "*"),
+                "referenceFallback": None,
+                "referenceGlyph": glyph,
+            }
+        explicit = _font_glyph(font, requested)
+        return {
+            "referenceMode": "explicit",
+            "requestedReferenceGlyph": requested,
+            "resolvedReferenceGlyph": requested if explicit else None,
+            "referenceFallback": None,
+            "referenceGlyph": explicit,
+        }
+
+    candidates: List[str]
+    if glyph_class == "uppercase":
+        candidates = ["H", "x", "*"]
+    elif glyph_class == "lowercase":
+        candidates = ["x", "n", "o", "*"]
+    elif glyph_class == "decimalFigure":
+        candidates = ["one", "zero", "x", "*"]
+    elif glyph_class in ("mark", "zeroWidth", "narrowPunctuation"):
+        candidates = ["*"]
+    elif glyph_class == "punctuation":
+        candidates = ["*", "x"]
+    else:
+        candidates = ["x", "*"]
+
+    preferred = candidates[0]
+    for candidate in candidates:
+        if candidate == "*":
+            resolved_name = str(_safe_attr(glyph, "name", "") or "*")
+            ref_glyph = glyph
+        else:
+            resolved_name = candidate
+            ref_glyph = _font_glyph(font, candidate)
+        if ref_glyph:
+            fallback = None
+            if candidate != preferred:
+                fallback = {
+                    "preferredReferenceGlyph": preferred,
+                    "resolvedReferenceGlyph": resolved_name,
+                    "reason": "preferred_reference_missing",
+                }
+            return {
+                "referenceMode": "auto",
+                "requestedReferenceGlyph": "auto",
+                "resolvedReferenceGlyph": resolved_name,
+                "referenceFallback": fallback,
+                "referenceGlyph": ref_glyph,
+            }
+
+    return {
+        "referenceMode": "auto",
+        "requestedReferenceGlyph": "auto",
+        "resolvedReferenceGlyph": None,
+        "referenceFallback": {
+            "preferredReferenceGlyph": preferred,
+            "resolvedReferenceGlyph": None,
+            "reason": "no_reference_available",
+        },
+        "referenceGlyph": None,
+    }
+
+
 def resolve_reference_glyph_name(glyph: Any, rule: Dict[str, Any], defaults: Dict[str, Any]) -> str:
-    ref = rule.get("referenceGlyph") or rule.get("reference") or defaults.get("referenceGlyph") or "x"
-    ref = str(ref).strip()
-    if not ref or ref == "*":
-        return "*"
-    return ref
+    """Compatibility helper returning the requested reference token."""
+    if "referenceGlyph" in rule or "reference" in rule:
+        ref = rule.get("referenceGlyph", rule.get("reference"))
+    else:
+        ref = defaults.get("referenceGlyph", "auto")
+    return str(ref if ref is not None else "auto").strip() or "auto"
 
 
 def resolve_factor(rule: Dict[str, Any], defaults: Dict[str, Any]) -> float:
@@ -460,6 +717,12 @@ def _layer_has_metrics_keys(glyph: Any, layer: Any) -> Tuple[bool, bool]:
     return (bool(g_left or l_left), bool(g_right or l_right))
 
 
+def _layer_width_metrics_key(glyph: Any, layer: Any) -> str:
+    glyph_key = str(_safe_attr(glyph, "widthMetricsKey", "") or "").strip()
+    layer_key = str(_safe_attr(layer, "widthMetricsKey", "") or "").strip()
+    return layer_key or glyph_key
+
+
 def _layer_is_auto_aligned(layer: Any) -> bool:
     return bool(_safe_attr(layer, "isAligned", False))
 
@@ -469,6 +732,430 @@ def _get_layer_metrics(layer: Any) -> Tuple[Optional[float], Optional[float], Op
     lsb = _coerce_float(_safe_attr(layer, "leftSideBearing", _safe_attr(layer, "LSB")))
     rsb = _coerce_float(_safe_attr(layer, "rightSideBearing", _safe_attr(layer, "RSB")))
     return width, lsb, rsb
+
+
+def _custom_parameter_value(obj: Any, key: str) -> Any:
+    params = _safe_attr(obj, "customParameters")
+    if params is None:
+        return None
+    try:
+        return params[key]
+    except Exception:
+        pass
+    try:
+        return params.get(key)
+    except Exception:
+        return None
+
+
+def _master_layer(glyph: Any, master_id: str) -> Any:
+    if glyph is None:
+        return None
+    try:
+        return glyph.layers[master_id]
+    except Exception:
+        return None
+
+
+def assess_tabular_mode(
+    *,
+    font: Any,
+    glyph: Any,
+    layer: Any,
+    master: Any,
+    defaults: Dict[str, Any],
+    classification: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Determine whether a width should be preserved and why."""
+    mode = defaults.get("tabularMode", "auto")
+    if isinstance(mode, str):
+        mode_normalized: Any = mode.strip().lower() or "auto"
+    else:
+        mode_normalized = bool(mode)
+    name = str(_safe_attr(glyph, "name", "") or "")
+    current_width = _units_int(_safe_attr(layer, "width"))
+    explicit_width = _units_int(defaults.get("tabularWidth"))
+    upm = float(_safe_attr(font, "upm", 1000) or 1000)
+    tolerance_em = _coerce_float(defaults.get("tabularToleranceEm"))
+    if tolerance_em is None or tolerance_em < 0:
+        tolerance_em = float(DEFAULTS["tabularToleranceEm"])
+    tolerance_units = float(tolerance_em) * upm
+    master_id = str(_safe_attr(master, "id", "") or "")
+
+    result = {
+        "mode": mode_normalized,
+        "detected": False,
+        "reason": "automatic_tabular_evidence_not_found",
+        "preservedWidth": None,
+        "toleranceEm": float(tolerance_em),
+    }
+
+    if mode_normalized is True:
+        target = explicit_width if explicit_width is not None else current_width
+        result.update(
+            detected=target is not None,
+            reason="explicit_tabular_mode" if explicit_width is None else "explicit_tabular_width",
+            preservedWidth=target,
+        )
+        return result
+
+    suffix_detected = _is_tabular_name(name)
+    if mode_normalized is False:
+        if suffix_detected:
+            result.update(detected=current_width is not None, reason="tabular_glyph_name", preservedWidth=current_width)
+        else:
+            result["reason"] = "automatic_tabular_detection_disabled"
+        return result
+
+    if mode_normalized not in ("auto",):
+        result["reason"] = "invalid_tabular_mode"
+        return result
+
+    if explicit_width is not None:
+        result.update(detected=True, reason="explicit_tabular_width", preservedWidth=explicit_width)
+        return result
+    if suffix_detected:
+        result.update(detected=current_width is not None, reason="tabular_glyph_name", preservedWidth=current_width)
+        return result
+
+    fixed_pitch = _custom_parameter_value(font, "isFixedPitch")
+    if fixed_pitch is None:
+        fixed_pitch = _safe_attr(font, "isFixedPitch")
+    if bool(fixed_pitch):
+        representative_widths: List[int] = []
+        for candidate_name in DEFAULT_FIGURE_NAMES + ("H", "O", "n", "o", "space"):
+            candidate = _font_glyph(font, candidate_name)
+            candidate_layer = _master_layer(candidate, master_id)
+            value = _units_int(_safe_attr(candidate_layer, "width"))
+            if value is not None and value > 0:
+                representative_widths.append(value)
+        target = _round_half_away_from_zero(statistics.median(representative_widths)) if representative_widths else current_width
+        result.update(detected=target is not None, reason="font_fixed_pitch_metadata", preservedWidth=target)
+        return result
+
+    if classification.get("glyphClass") != "decimalFigure":
+        return result
+
+    figure_widths: List[int] = []
+    width_keys: List[str] = []
+    all_figures_present = True
+    for candidate_name in DEFAULT_FIGURE_NAMES:
+        candidate = _font_glyph(font, candidate_name)
+        candidate_layer = _master_layer(candidate, master_id)
+        if candidate is None or candidate_layer is None:
+            all_figures_present = False
+            break
+        value = _units_int(_safe_attr(candidate_layer, "width"))
+        if value is None:
+            all_figures_present = False
+            break
+        figure_widths.append(value)
+        key = _layer_width_metrics_key(candidate, candidate_layer)
+        if key:
+            width_keys.append(key)
+
+    if all_figures_present and len(figure_widths) == len(DEFAULT_FIGURE_NAMES):
+        median_width = _round_half_away_from_zero(statistics.median(figure_widths))
+        if max(figure_widths) - min(figure_widths) <= tolerance_units:
+            result.update(
+                detected=True,
+                reason="default_figures_equal_width",
+                preservedWidth=median_width,
+                observedWidths=list(figure_widths),
+            )
+            return result
+        if len(width_keys) == len(DEFAULT_FIGURE_NAMES) and len(set(width_keys)) == 1:
+            result.update(
+                detected=True,
+                reason="default_figures_share_width_metrics_key",
+                preservedWidth=median_width,
+                widthMetricsKey=width_keys[0],
+            )
+            return result
+    return result
+
+
+def normalize_guards(guards: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    out = dict(DEFAULT_GUARDS)
+    if isinstance(guards, dict):
+        for key, value in guards.items():
+            if value is not None:
+                out[key] = value
+    policy = str(out.get("negativeBearingPolicy") or "guarded").strip().lower()
+    if policy not in ("guarded", "advisory", "off"):
+        policy = "guarded"
+    out["negativeBearingPolicy"] = policy
+    warn = _coerce_float(out.get("warnBelowEm"))
+    block = _coerce_float(out.get("blockBelowEm"))
+    out["warnBelowEm"] = float(DEFAULT_GUARDS["warnBelowEm"] if warn is None else warn)
+    out["blockBelowEm"] = float(DEFAULT_GUARDS["blockBelowEm"] if block is None else block)
+    if out["blockBelowEm"] > out["warnBelowEm"]:
+        out["blockBelowEm"], out["warnBelowEm"] = out["warnBelowEm"], out["blockBelowEm"]
+    for key in ("allowGlyphs", "trustedMetricGlyphs", "untrustedMetricGlyphs"):
+        raw = out.get(key)
+        out[key] = [str(value) for value in raw] if isinstance(raw, (list, tuple, set)) else []
+    return out
+
+
+def assess_metrics_trust(
+    *,
+    glyph: Any,
+    layer: Any,
+    current: Dict[str, Any],
+    guards: Dict[str, Any],
+) -> Dict[str, Any]:
+    name = str(_safe_attr(glyph, "name", "") or "")
+    if name in guards.get("untrustedMetricGlyphs", []):
+        return {"status": "untrusted", "reason": "explicit_untrusted_glyph"}
+    if name in guards.get("trustedMetricGlyphs", []):
+        return {"status": "trusted", "reason": "explicit_trusted_glyph"}
+    mode = str(guards.get("currentMetricsTrust") or "auto").strip().lower()
+    if mode in ("trusted", "untrusted"):
+        return {"status": mode, "reason": "explicit_scope_setting"}
+    left_key, right_key = _layer_has_metrics_keys(glyph, layer)
+    width_key = _layer_width_metrics_key(glyph, layer)
+    if left_key or right_key or width_key:
+        return {
+            "status": "trusted",
+            "reason": "established_metrics_relationship",
+            "metricsKeys": {"left": left_key, "right": right_key, "width": width_key or None},
+        }
+    width = _coerce_float(current.get("width"))
+    lsb = _coerce_float(current.get("lsb"))
+    rsb = _coerce_float(current.get("rsb"))
+    if width is not None and width <= 0:
+        return {"status": "untrusted", "reason": "nonpositive_current_advance"}
+    if lsb is not None and rsb is not None and abs(lsb) <= 1e-6 and abs(rsb) <= 1e-6:
+        return {"status": "untrusted", "reason": "zero_sidebearing_placeholder_pattern"}
+    return {"status": "unknown", "reason": "no_reliable_trust_evidence"}
+
+
+def _normalized_metrics(metrics: Dict[str, Any], upm: float) -> Dict[str, Optional[float]]:
+    denom = float(upm or 1000.0)
+    return {
+        key: (_coerce_float(metrics.get(key)) / denom if _coerce_float(metrics.get(key)) is not None else None)
+        for key in ("width", "lsb", "rsb")
+    }
+
+
+def assess_spacing_suggestion(
+    *,
+    glyph: Any,
+    layer: Any,
+    current: Dict[str, Any],
+    proposed: Dict[str, Any],
+    measured: Dict[str, Any],
+    classification: Dict[str, Any],
+    upm: float,
+    italic_angle: float,
+    guards: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Assess raw spacing proposals without mutating or clamping them."""
+    effective = normalize_guards(guards)
+    name = str(_safe_attr(glyph, "name", "") or "")
+    glyph_class = classification.get("glyphClass") or "unclassified"
+    current_norm = _normalized_metrics(current, upm)
+    proposed_norm = _normalized_metrics(proposed, upm)
+    change_norm = {
+        key: (
+            proposed_norm[key] - current_norm[key]
+            if proposed_norm.get(key) is not None and current_norm.get(key) is not None
+            else None
+        )
+        for key in ("width", "lsb", "rsb")
+    }
+    trust = assess_metrics_trust(glyph=glyph, layer=layer, current=current, guards=effective)
+
+    issues: List[Dict[str, Any]] = []
+    exemptions: List[Dict[str, Any]] = []
+    side_results: Dict[str, Any] = {}
+    aggregate = "informational"
+    policy = effective["negativeBearingPolicy"]
+    ordinary_base = glyph_class in ("uppercase", "lowercase", "decimalFigure")
+    allowed_by_name = name in effective.get("allowGlyphs", [])
+    allow_mark = glyph_class in ("mark", "zeroWidth") and bool(effective.get("allowMarks"))
+
+    for side, metric_key, distance_key in (
+        ("left", "lsb", "distanceLeft"),
+        ("right", "rsb", "distanceRight"),
+    ):
+        value_em = proposed_norm.get(metric_key)
+        severity = "informational"
+        reason = "Bearing is non-negative or within the advisory range"
+        exempted = False
+        evidence = _coerce_float(measured.get(distance_key)) or 0.0
+        geometry_supports_overhang = evidence > max(1.0, float(upm) * 0.005)
+
+        if value_em is not None and value_em < 0:
+            if allowed_by_name:
+                severity = "exempted"
+                exempted = True
+                reason = "Glyph is explicitly allow-listed"
+            elif allow_mark:
+                severity = "exempted"
+                exempted = True
+                reason = "Mark or zero-width glyph is exempt from ordinary bearing guards"
+            elif name in OVERHANG_CANDIDATE_NAMES and geometry_supports_overhang:
+                severity = "warning" if value_em <= effective["warnBelowEm"] else "informational"
+                exempted = value_em <= effective["blockBelowEm"]
+                reason = "Known overhang candidate has side-specific geometric support"
+            elif (
+                abs(float(italic_angle or 0.0)) > 1e-6
+                and bool(effective.get("allowItalicOverhangs"))
+                and geometry_supports_overhang
+            ):
+                severity = "exempted" if value_em <= effective["blockBelowEm"] else "warning"
+                exempted = True
+                reason = "Italic overhang has side-specific geometric support"
+            elif policy != "off" and value_em <= effective["blockBelowEm"] and ordinary_base:
+                if policy == "guarded" and bool(effective.get("blockOnOutliers")):
+                    severity = "blocked"
+                    reason = "Extreme negative bearing on an ordinary upright base glyph"
+                else:
+                    severity = "warning"
+                    reason = "Extreme negative bearing reported in advisory mode"
+            elif policy != "off" and value_em <= effective["warnBelowEm"]:
+                severity = "warning"
+                reason = "Negative bearing is below the normalized warning threshold"
+            else:
+                reason = "Negative bearing is within the configured advisory range"
+
+        side_results[side] = {
+            "em": value_em,
+            "severity": severity,
+            "reason": reason,
+            "exempted": exempted,
+            "geometrySupportsOverhang": geometry_supports_overhang,
+        }
+        if exempted:
+            exemptions.append({"side": side, "reason": reason})
+        if severity in ("warning", "blocked"):
+            issues.append(
+                {
+                    "severity": severity,
+                    "code": "negative_{}_bearing".format(side),
+                    "message": reason,
+                    "side": side,
+                    "valueEm": value_em,
+                }
+            )
+        if severity == "blocked":
+            aggregate = "blocked"
+        elif severity == "warning" and aggregate != "blocked":
+            aggregate = "warning"
+        elif severity == "exempted" and aggregate == "informational":
+            aggregate = "exempted"
+
+    left_em = proposed_norm.get("lsb")
+    right_em = proposed_norm.get("rsb")
+    if (
+        policy != "off"
+        and not any(value.get("exempted") for value in side_results.values())
+        and ordinary_base
+        and left_em is not None
+        and right_em is not None
+        and left_em <= effective["blockBelowEm"]
+        and right_em <= effective["blockBelowEm"]
+        and not allowed_by_name
+    ):
+        aggregate = "blocked" if policy == "guarded" and effective.get("blockOnOutliers") else "warning"
+        issues.append(
+            {
+                "severity": aggregate,
+                "code": "extreme_negative_bearings_both_sides",
+                "message": "Large negative bearings on both sides of an ordinary base glyph",
+            }
+        )
+
+    negative_aggregate = aggregate
+
+    width_value = _coerce_float(proposed.get("width"))
+    shape_width = None
+    try:
+        shape_width = float(measured.get("rFullExtreme")) - float(measured.get("lFullExtreme"))
+    except Exception:
+        shape_width = None
+    width_severity = "informational"
+    width_reason = "Advance width is plausible"
+    if width_value is not None and width_value <= 0:
+        width_severity = "blocked"
+        width_reason = "Proposed advance width is nonpositive"
+    elif width_value is not None and shape_width is not None and width_value < shape_width:
+        width_severity = "warning"
+        width_reason = "Proposed advance is narrower than the measured ink span"
+    if width_severity in ("warning", "blocked"):
+        issues.append(
+            {
+                "severity": width_severity,
+                "code": "advance_width_collapse" if width_severity == "blocked" else "ink_exceeds_advance",
+                "message": width_reason,
+            }
+        )
+        if width_severity == "blocked":
+            aggregate = "blocked"
+        elif aggregate not in ("blocked",):
+            aggregate = "warning"
+
+    manual_review = glyph_class == "narrowPunctuation"
+    confidence = {
+        "level": "low" if manual_review else ("medium" if glyph_class in ("punctuation", "unclassified") else "high"),
+        "manualReviewRequired": manual_review,
+        "reason": (
+            "Narrow punctuation depends on design rhythm and trusted visual references"
+            if manual_review
+            else "Classification and geometry support the ordinary spacing model"
+        ),
+    }
+    if manual_review:
+        issues.append(
+            {
+                "severity": "warning",
+                "code": "narrow_punctuation_manual_review",
+                "message": confidence["reason"],
+            }
+        )
+
+    required_overrides: List[str] = []
+    if aggregate == "blocked":
+        required_overrides.append("blockedGlyphs")
+    if manual_review:
+        required_overrides.append("manualReviewGlyphs")
+    disposition = "blocked" if aggregate == "blocked" else ("manual_review" if manual_review else "ready")
+    return {
+        "guards": effective,
+        "normalizedMetrics": {"current": current_norm, "proposed": proposed_norm, "change": change_norm},
+        "metricsTrustAssessment": trust,
+        "negativeBearingAssessment": {
+            "leftEm": left_em,
+            "rightEm": right_em,
+            "severity": negative_aggregate,
+            "reason": next(
+                (
+                    value.get("reason")
+                    for value in side_results.values()
+                    if value.get("severity") == negative_aggregate
+                ),
+                "No suspicious negative bearing",
+            ),
+            "exempted": bool(exemptions),
+            "exemptions": exemptions,
+            "sides": side_results,
+        },
+        "widthAssessment": {
+            "severity": width_severity,
+            "reason": width_reason,
+            "proposedWidthEm": proposed_norm.get("width"),
+            "inkWidthEm": (shape_width / float(upm)) if shape_width is not None else None,
+        },
+        "confidence": confidence,
+        "applicationAssessment": {
+            "disposition": disposition,
+            "eligible": not required_overrides,
+            "requiredOverrides": required_overrides,
+            "userOverride": None,
+        },
+        "issues": issues,
+    }
 
 
 def _scale_params(
@@ -482,18 +1169,12 @@ def _scale_params(
 
 
 def _effective_default_reference(glyph: Any, font: Any) -> str:
-    # Conservative, generic fallback to keep the tool usable without a ruleset.
-    name = str(_safe_attr(glyph, "name", "") or "")
-    category = str(_safe_attr(glyph, "category", "") or "")
-    sub = str(_safe_attr(glyph, "subCategory", "") or "")
-
-    if category == "Letter" and sub == "Uppercase":
-        return "H" if _safe_attr(font.glyphs, "__getitem__", None) else "H"
-    if category == "Number":
+    glyph_class = classify_glyph(glyph).get("glyphClass")
+    if glyph_class == "uppercase":
+        return "H"
+    if glyph_class == "decimalFigure":
         return "one"
-    if category == "Mark":
-        return "*"
-    if _is_tabular_name(name):
+    if glyph_class in ("mark", "zeroWidth", "punctuation", "narrowPunctuation"):
         return "*"
     return "x"
 
@@ -507,15 +1188,60 @@ def compute_suggestion_for_layer(
     rules: Optional[Sequence[Dict[str, Any]]],
     defaults: Dict[str, Any],
     master_params: Dict[str, Any],
+    guards: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     glyph_name = str(_safe_attr(glyph, "name", "") or "")
     master_id = str(_safe_attr(master, "id", "") or "")
     master_name = str(_safe_attr(master, "name", "") or "")
 
     warnings: List[str] = []
+    issues: List[Dict[str, Any]] = []
 
     width, lsb, rsb = _get_layer_metrics(layer)
     current = {"width": _units_int(width), "lsb": _units_int(lsb), "rsb": _units_int(rsb)}
+    classification = classify_glyph(glyph, layer)
+    glyph_class = classification.get("glyphClass") or "unclassified"
+    upm = float(_safe_attr(font, "upm", 1000) or 1000)
+    italic_angle_early = float(master_params.get("italicAngle", _safe_attr(master, "italicAngle", 0.0) or 0.0))
+
+    if glyph_class in ("mark", "zeroWidth"):
+        proposed = dict(current)
+        assessment = assess_spacing_suggestion(
+            glyph=glyph,
+            layer=layer,
+            current=current,
+            proposed=proposed,
+            measured={},
+            classification=classification,
+            upm=upm,
+            italic_angle=italic_angle_early,
+            guards=guards,
+        )
+        return {
+            "glyphName": glyph_name,
+            "masterId": master_id,
+            "masterName": master_name,
+            "status": "skipped",
+            "reason": "mark" if glyph_class == "mark" else "zero_width_glyph",
+            "current": current,
+            "proposed": proposed,
+            "suggested": dict(proposed),
+            "delta": {"width": 0, "lsb": 0, "rsb": 0},
+            "glyphClass": glyph_class,
+            "classification": classification,
+            "referenceMode": "none",
+            "requestedReferenceGlyph": str(defaults.get("referenceGlyph", "auto")),
+            "resolvedReferenceGlyph": None,
+            "referenceFallback": None,
+            "tabularAssessment": {
+                "mode": defaults.get("tabularMode", "auto"),
+                "detected": False,
+                "reason": "not_applicable_to_mark_or_zero_width_glyph",
+                "preservedWidth": current.get("width"),
+            },
+            "warnings": warnings,
+            **assessment,
+        }
 
     bounds = _bounds_tuple(layer)
     if not bounds:
@@ -579,54 +1305,52 @@ def compute_suggestion_for_layer(
             "warnings": ["metrics_keys_left", "metrics_keys_right"],
         }
 
-    if _detect_combining_mark(glyph):
-        if width is not None and abs(width) > 1e-6:
-            warnings.append("combining_mark_width_nonzero")
-        return {
-            "glyphName": glyph_name,
-            "masterId": master_id,
-            "masterName": master_name,
-            "status": "skipped",
-            "reason": "combining_mark",
-            "current": current,
-            "warnings": warnings,
-        }
-
     rule = select_rule(glyph, rules)
     factor = resolve_factor(rule, defaults)
-    ref_name = resolve_reference_glyph_name(glyph, rule, defaults)
-    if ref_name == "*" and defaults.get("referenceGlyph") == "*":
-        ref_name = "*"
-    if ref_name == "*" and (defaults.get("referenceGlyph") in (None, "", "*")):
-        ref_name = "*"
-
-    if ref_name == "*":
-        ref_glyph = glyph
-    else:
-        try:
-            ref_glyph = font.glyphs[ref_name]
-        except Exception:
-            ref_glyph = None
-        if not ref_glyph:
-            # Fallback to a conservative reference if provided ref doesn't exist.
-            fallback = defaults.get("referenceGlyph") or _effective_default_reference(glyph, font)
-            if fallback and fallback != ref_name and fallback != "*":
-                try:
-                    ref_glyph = font.glyphs[str(fallback)]
-                    ref_name = str(fallback)
-                    warnings.append("reference_fallback_used")
-                except Exception:
-                    ref_glyph = None
+    reference_resolution = resolve_reference(
+        font=font,
+        glyph=glyph,
+        layer=layer,
+        rule=rule,
+        defaults=defaults,
+        classification=classification,
+    )
+    ref_glyph = reference_resolution.get("referenceGlyph")
+    ref_name = reference_resolution.get("resolvedReferenceGlyph")
+    reference_fallback = reference_resolution.get("referenceFallback")
+    if reference_fallback:
+        warnings.append("reference_fallback_used")
+        issues.append(
+            {
+                "severity": "warning",
+                "code": "reference_fallback_used",
+                "message": "Preferred automatic reference was unavailable",
+                "context": dict(reference_fallback),
+            }
+        )
+    reference_fields = {
+        "glyphClass": glyph_class,
+        "classification": classification,
+        "referenceMode": reference_resolution.get("referenceMode"),
+        "requestedReferenceGlyph": reference_resolution.get("requestedReferenceGlyph"),
+        "resolvedReferenceGlyph": reference_resolution.get("resolvedReferenceGlyph"),
+        "referenceFallback": reference_fallback,
+    }
 
     if not ref_glyph:
+        missing_reason = "explicit_reference_missing" if reference_resolution.get("referenceMode") == "explicit" else "reference_glyph_missing"
         return {
             "glyphName": glyph_name,
             "masterId": master_id,
             "masterName": master_name,
             "status": "skipped",
-            "reason": "reference_glyph_missing",
+            "reason": missing_reason,
             "current": current,
-            "reference": {"glyphName": ref_name},
+            "proposed": dict(current),
+            "suggested": dict(current),
+            **reference_fields,
+            "reference": {"glyphName": None},
+            "issues": issues,
             "warnings": warnings,
         }
 
@@ -644,6 +1368,7 @@ def compute_suggestion_for_layer(
             "reason": "reference_layer_missing",
             "current": current,
             "reference": {"glyphName": ref_name},
+            **reference_fields,
             "warnings": warnings,
         }
 
@@ -657,10 +1382,10 @@ def compute_suggestion_for_layer(
             "reason": "reference_bounds_missing",
             "current": current,
             "reference": {"glyphName": ref_name},
+            **reference_fields,
             "warnings": warnings,
         }
 
-    upm = float(_safe_attr(font, "upm", 1000) or 1000)
     x_height = _coerce_float(master_params.get("xHeight"))
     if x_height is None:
         x_height = _coerce_float(_safe_attr(master, "xHeight"))
@@ -689,6 +1414,7 @@ def compute_suggestion_for_layer(
             "reason": "invalid_reference_height",
             "current": current,
             "reference": {"glyphName": ref_name},
+            **reference_fields,
             "warnings": warnings,
         }
 
@@ -702,6 +1428,7 @@ def compute_suggestion_for_layer(
             "reason": "insufficient_vertical_coverage",
             "current": current,
             "reference": {"glyphName": ref_name, "yMin": y_min_ref, "yMax": y_max_ref, "coverageRatio": coverage},
+            **reference_fields,
             "warnings": warnings,
         }
 
@@ -723,6 +1450,7 @@ def compute_suggestion_for_layer(
             "reason": "measurement_failed",
             "current": current,
             "reference": {"glyphName": ref_name, "yMin": y_min_ref, "yMax": y_max_ref, "coverageRatio": coverage},
+            **reference_fields,
             "warnings": warnings,
         }
 
@@ -755,6 +1483,7 @@ def compute_suggestion_for_layer(
             "reason": "no_intersections_in_zone",
             "current": current,
             "reference": {"glyphName": ref_name, "yMin": y_min_ref, "yMax": y_max_ref, "coverageRatio": coverage},
+            **reference_fields,
             "warnings": warnings,
         }
 
@@ -770,6 +1499,7 @@ def compute_suggestion_for_layer(
             "reason": "no_intersections_full_bounds",
             "current": current,
             "reference": {"glyphName": ref_name, "yMin": y_min_ref, "yMax": y_max_ref, "coverageRatio": coverage},
+            **reference_fields,
             "warnings": warnings,
         }
 
@@ -830,12 +1560,17 @@ def compute_suggestion_for_layer(
     width_shape = float(r_full_extreme - l_full_extreme)
     suggested_width = width_shape + suggested_lsb + suggested_rsb
 
-    # Tabular: preserve/force width by distributing diff evenly.
-    tabular_mode = bool(defaults.get("tabularMode")) or _is_tabular_name(glyph_name)
-    tabular_width = defaults.get("tabularWidth")
-    if tabular_width is None:
-        tabular_width = width
-    if tabular_mode and tabular_width is not None:
+    # Tabular: preserve width only when explicitly requested or reliably detected.
+    tabular_assessment = assess_tabular_mode(
+        font=font,
+        glyph=glyph,
+        layer=layer,
+        master=master,
+        defaults=defaults,
+        classification=classification,
+    )
+    tabular_width = tabular_assessment.get("preservedWidth")
+    if tabular_assessment.get("detected") and tabular_width is not None:
         # Preserve width using integer arithmetic to avoid half-unit sidebearings.
         target_w_int = _units_int(tabular_width)
         if target_w_int is not None:
@@ -894,6 +1629,8 @@ def compute_suggestion_for_layer(
         "rExtreme": r_extreme,
         "lFullExtreme": l_full_extreme,
         "rFullExtreme": r_full_extreme,
+        "distanceLeft": distance_l,
+        "distanceRight": distance_r,
     }
 
     target = {
@@ -902,7 +1639,13 @@ def compute_suggestion_for_layer(
         "targetAvg": target_area / height,
     }
 
-    reference = {"glyphName": ref_name, "yMin": y_min_ref, "yMax": y_max_ref, "overUnits": overshoot, "coverageRatio": coverage}
+    reference = {
+        "glyphName": ref_name,
+        "yMin": y_min_ref,
+        "yMax": y_max_ref,
+        "overUnits": overshoot,
+        "coverageRatio": coverage,
+    }
     params = {
         "area": area,
         "depth": depth_pct,
@@ -918,6 +1661,19 @@ def compute_suggestion_for_layer(
     if clamped_right:
         warnings.append(f"depth_clamped_right_count={clamped_right}")
 
+    assessment = assess_spacing_suggestion(
+        glyph=glyph,
+        layer=layer,
+        current=current,
+        proposed=suggested_int,
+        measured=measured,
+        classification=classification,
+        upm=upm,
+        italic_angle=italic_angle,
+        guards=guards,
+    )
+    issues.extend(assessment.pop("issues", []))
+
     result: Dict[str, Any] = {
         "glyphName": glyph_name,
         "masterId": master_id,
@@ -925,13 +1681,23 @@ def compute_suggestion_for_layer(
         "status": "ok",
         "reason": None,
         "current": current,
+        "proposed": dict(suggested_int),
         "reference": reference,
+        "glyphClass": glyph_class,
+        "classification": classification,
+        "referenceMode": reference_resolution.get("referenceMode"),
+        "requestedReferenceGlyph": reference_resolution.get("requestedReferenceGlyph"),
+        "resolvedReferenceGlyph": reference_resolution.get("resolvedReferenceGlyph"),
+        "referenceFallback": reference_fallback,
+        "tabularAssessment": tabular_assessment,
         "params": params,
         "measured": measured,
         "target": target,
         "suggested": suggested_int,
         "delta": delta,
+        "issues": issues,
         "warnings": warnings,
+        **assessment,
     }
 
     if defaults.get("includeSamples"):

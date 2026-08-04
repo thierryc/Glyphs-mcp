@@ -13,10 +13,13 @@ Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish 
 
 ## Prepared version
 
-Version `1.5.4` (installer build `19`) adds fail-closed Python ABI diagnostics
-to the macOS and terminal installers. It preserves the unified Glyphs 3.5/4
-bundle, hardened plug-in delivery path, 1.5.3 server-readiness behavior,
-existing Cursivy default, and the opt-in deterministic `balanced` mode.
+Version `1.6.0` (installer build `20`) adds opt-in verified update staging,
+class-aware spacing references, em-normalized sidebearing safeguards, and the
+latest spacing and italic workflow skills. It also aligns the optional Codex,
+Claude Code, Cursor, and GitHub Copilot CLI plugin package with the native
+release version. It preserves 1.5.4's fail-closed Python ABI diagnostics, the
+unified Glyphs 3.5/4 bundle, the hardened plug-in delivery path, the existing
+Cursivy default, and the opt-in deterministic `balanced` mode.
 
 The feature is a design assistant for constructing a functional emphasis
 companion to a Roman. It does not create or replace a deliberately drawn
@@ -25,6 +28,48 @@ the designer's responsibility.
 
 Release highlights:
 
+- Check for stable GitHub releases in a bounded background task and derive the
+  release page from the validated exact tag instead of trusting remote URLs.
+- Keep release discovery notification-only. Download and verification require
+  a separate **Prepare Update** click, a per-Glyphs-major opt-in, and a verified
+  fixed helper installed by the signed installer.
+- Present the opt-in as **Make future updates easier** and show available
+  versions in a compact positive banner; keep signing and verification detail
+  in the release and security documentation.
+- Stage exact-tag installer assets only after checksum, archive, version,
+  Developer ID, notarization, permission, ownership, protocol, and receipt
+  checks. Never replace the running or installed plug-in during preparation.
+- Require 1.5.4 users to install 1.6.0 manually. After that bootstrap, 1.6.0 can
+  prepare later stable releases and keep **View Release** available for their
+  separately run signed installer.
+- Resolve automatic spacing references by glyph class and report full reference
+  provenance, classifications, normalized metrics, confidence, and structured
+  warnings or blocks.
+- Gate extreme negative bearings and low-confidence punctuation before mutation
+  while preserving geometry-supported overhangs, marks, italics, explicit allow
+  lists, and separately disclosed user overrides.
+- Preserve shared figure advances only from fixed-pitch, metrics-linking,
+  equal-width figure, suffix, or explicit evidence.
+- Ship one shared agent package with native host manifests and repository
+  marketplace catalogs for Codex/ChatGPT, Claude Code, Cursor, and GitHub
+  Copilot CLI. All four manifests identify version `1.6.0` and reference the
+  same nine skills and localhost MCP configuration.
+- Keep agent plugins optional and host-owned. Preserve repo-local and global
+  standalone skills plus manual MCP setup, and do not add automatic Copilot
+  enablement through `.github/copilot/settings.json`.
+- Extend the coordinated version helper to cover all four agent manifests and
+  provide a non-mutating dry run. Keep the historical skill-sync filename while
+  adding a cross-host synchronization check.
+- Synchronize the canonical and packaged spacing skill with its linked
+  negative-sidebearing reference, and refresh the italic skill with
+  Unicode-aware upright-symbol review tiers that remain advisory.
+- Add the project-hosted `glyphs-mcp-release` skill with a concise preparation,
+  validation, signing, upload, and publication workflow plus a linked release
+  gate reference. Package it with the shared agent plug-in and managed
+  standalone-skill installers.
+- Fall back to ranked individual documentation-search terms only when an exact
+  phrase has no result, preserving exact-query behavior while making canonical
+  class-and-member prompts such as `GSLayer bounds` useful.
 - Run one shared pure-standard-library probe with the exact Python selected for
   each Glyphs target and explicitly prioritize that target's shared
   `Scripts/site-packages`.
@@ -175,30 +220,70 @@ Version 1.5.4 release-candidate verification on July 31, 2026:
 - The source and Plugin Manager bundles report version `1.5.4`; the installer
   reports marketing version `1.5.4` and build `19`.
 
-The `v1.5.4` release boundary requires:
+Publication of 1.5.4 was explicitly authorized on July 31, 2026 and completed
+from the signed `v1.5.4` tag.
 
-- Run the required Glyphs 3.5 live compatibility pass from the
+Version 1.6.0 release-candidate preparation on August 3, 2026:
+
+- `555` Python tests passed; `2` intentional skips (the opt-in full Python
+  dependency matrix and the unavailable GitHub Copilot CLI smoke test).
+- `104` macOS installer tests passed, including verified-update discovery,
+  helper, staging, cancellation, receipt, trust, and no-install coverage.
+- Shell syntax, tracked patch whitespace, and the unsigned Debug installer
+  build passed through `scripts/run_local_release_tests.sh`.
+- The Docusaurus production build completed successfully.
+- All `9` canonical and `9` packaged Glyphs MCP skills passed
+  `quick_validate.py`; canonical and packaged copies are synchronized.
+- Codex and Claude Code passed isolated marketplace installation tests. Claude
+  also strict-validated both the shared package and repository marketplace;
+  Cursor passed its manifest and disposable local-install smoke tests. Copilot
+  manifest and marketplace discovery-path checks passed, while its isolated CLI
+  installation test skipped because `copilot` was unavailable.
+- All four host manifests resolve the same `glyphs-mcp` package at `1.6.0`, the
+  same nine skills, and the same localhost MCP endpoint. All four repository
+  marketplaces resolve `plugins/glyphs-mcp` without duplicating version data,
+  and no `.github/copilot/settings.json` file exists.
+- The cross-host skill synchronization check, coordinated version-bump dry run,
+  plugin package validator, and strict host schema checks passed.
+- Source and Plugin Manager runtime mirrors match, release metadata validates as
+  `1.6.0`, both plug-in bundles report `1.6.0`, and the installer reports
+  marketing version `1.6.0` with build `20`.
+- Read-only GEEGEE Regular and CGPRO Regular spacing acceptance confirmed `H`
+  and `one` class references, removed the old `V`, `W`, `Y`, and `seven`
+  negative outliers, preserved tabular widths only for CGPRO's equal-width
+  figures, and left both open fonts and their files unchanged.
+- A fresh read-only Glyphs 4.0 build 4000 smoke used Python 3.14.6 and MCP
+  `1.6.0` on the open Gee gee source. Server identity, font/master/instance
+  inspection, style-set links, `H`/`one` spacing review, and spacing dry-run
+  passed; the document was unedited before and after. This smoke found the
+  canonical `GSLayer bounds` documentation query returning no exact phrase,
+  so token fallback and a regression test were added before the full gate was
+  rerun. The smoke does not replace the required disposable large-font matrix.
+- No signed Release artifact, notarization submission, tag, draft release, or
+  upload was created during preparation.
+
+The `v1.6.0` release boundary requires:
+
+- Run the required Glyphs 3.5 and Glyphs 4 live compatibility pass from the
   [Release QA protocol](./release-qa-protocol.mdx).
-- Run the ABI diagnostic matrix on Glyphs 3.5/Python 3.14 and Glyphs 4 with
-  compatible and intentionally mismatched package fixtures.
+- Complete the notification-only update checks and verified staging checks
+  U1–U6 and V1–V12 with disposable local fixtures. Confirm the running and
+  installed plug-in hashes remain unchanged.
+- Repeat the ABI diagnostic matrix retained from 1.5.4 and the guarded spacing
+  smoke review in both supported Glyphs app lines.
 - Merge the reviewed release commit to `main` and create the exact signed
-  annotated `v1.5.4` tag.
+  annotated `v1.6.0` tag.
 - Rebuild the Developer ID-signed assets from the exact tagged commit and
   repeat the notarization, Gatekeeper, installed-copy, and checksum gates.
 - Upload only to an empty draft GitHub release, review its notes and assets, and
   publish separately.
 
-Publication was explicitly authorized on July 31, 2026. The signed-tag,
-exact-tag rebuild, empty-draft release, asset verification, and final release
-review gates still apply.
-
 ## Separate known packaging task
 
-Signed-bundle bytecode-cache handling remains outside the 1.5.4 ABI diagnostic
-scope. Release builders must continue excluding `__pycache__`, `.pyc`, and
-`.pyo` files from tracked and signed payloads. Any future change to where
-runtime bytecode caches are written must be reviewed and released as its own
-packaging fix rather than folded into dependency diagnosis.
+Release builders must continue excluding `__pycache__`, `.pyc`, and `.pyo`
+files from tracked and signed payloads. Any future change to where runtime
+bytecode caches are written must be reviewed and released as its own packaging
+fix rather than folded into dependency diagnosis or update staging.
 
 ## Future cleanup targets
 

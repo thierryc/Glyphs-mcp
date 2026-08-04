@@ -43,6 +43,7 @@ app="$repo_root/dist/installer-app/GlyphsMCPInstaller.app"
 app_plist="$app/Contents/Info.plist"
 payload_archive="$app/Contents/Resources/Payload.gmcparchive"
 core_framework="$app/Contents/Frameworks/GlyphsMCPInstallerCore.framework"
+updater_helper="$app/Contents/Resources/GlyphsMCPUpdater"
 zip="$repo_root/dist/installer-app/GlyphsMCPInstaller.zip"
 
 version="$(python3 "$repo_root/scripts/release_security.py" metadata --repo-root "$repo_root" --tag "$tag" --app-plist "$app_plist")"
@@ -50,7 +51,7 @@ dmg_versioned="$repo_root/dist/GlyphsMCPInstaller-$version.dmg"
 dmg_latest="$repo_root/dist/GlyphsMCPInstaller.dmg"
 checksum_file="$repo_root/dist/SHA256SUMS"
 
-for path in "$app" "$payload_archive" "$core_framework" "$zip" "$dmg_versioned" "$dmg_latest"; do
+for path in "$app" "$payload_archive" "$core_framework" "$updater_helper" "$zip" "$dmg_versioned" "$dmg_latest"; do
   if [[ ! -e "$path" ]]; then
     echo "error: missing release artifact: $path" >&2
     exit 1
@@ -132,6 +133,7 @@ verify_payload_executables() {
 
 verify_runtime_signature "$app" 1
 verify_runtime_signature "$core_framework" 0
+verify_runtime_signature "$updater_helper" 0
 verify_developer_id "$dmg_versioned" 0
 
 "$xcrun_bin" stapler validate "$app"
@@ -170,6 +172,16 @@ if [[ ! -d "$zipped_core_framework" ]]; then
   exit 1
 fi
 verify_runtime_signature "$zipped_core_framework" 0
+zipped_updater_helper="$zipped_app/Contents/Resources/GlyphsMCPUpdater"
+if [[ ! -f "$zipped_updater_helper" || -L "$zipped_updater_helper" ]]; then
+  echo "error: installer ZIP is missing its regular updater helper" >&2
+  exit 1
+fi
+verify_runtime_signature "$zipped_updater_helper" 0
+if ! cmp -s "$updater_helper" "$zipped_updater_helper"; then
+  echo "error: updater helper changed between the notarized app and release ZIP" >&2
+  exit 1
+fi
 "$xcrun_bin" stapler validate "$zipped_app"
 python3 "$repo_root/scripts/release_security.py" metadata \
   --repo-root "$repo_root" \

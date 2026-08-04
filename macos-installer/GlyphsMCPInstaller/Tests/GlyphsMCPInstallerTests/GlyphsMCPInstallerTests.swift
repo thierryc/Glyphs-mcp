@@ -3,6 +3,68 @@ import Foundation
 import CryptoKit
 @testable import GlyphsMCPInstallerCore
 
+private final class FakeUpdateHTTPClient: UpdateHTTPClienting, @unchecked Sendable {
+	private let queue = DispatchQueue(label: "FakeUpdateHTTPClient")
+	private let responses: [String: Data]
+	private var requests: [URL] = []
+
+	var requestedURLs: [URL] { queue.sync { requests } }
+
+	init(responses: [String: Data]) {
+		self.responses = responses
+	}
+
+	func data(from url: URL, timeout: TimeInterval, maximumBytes: Int) async throws -> Data {
+		_ = timeout
+		queue.sync { requests.append(url) }
+		guard let data = responses[url.absoluteString] else {
+			throw UpdateStagingError("network", "Missing fake response for \(url.absoluteString)")
+		}
+		guard data.count <= maximumBytes else {
+			throw UpdateStagingError("size_limit", "Fake response exceeded the requested limit.")
+		}
+		return data
+	}
+}
+
+private final class UpdateOptInBox: @unchecked Sendable {
+	private let lock = NSLock()
+	private var values: [GlyphsMajorVersion: Bool] = [:]
+
+	func get(_ version: GlyphsMajorVersion) -> Bool {
+		lock.lock()
+		defer { lock.unlock() }
+		return values[version] ?? false
+	}
+
+	func set(_ version: GlyphsMajorVersion, _ enabled: Bool) {
+		lock.lock()
+		values[version] = enabled
+		lock.unlock()
+	}
+}
+
+private struct ThrowingUpdateHTTPClient: UpdateHTTPClienting {
+	let error: Error
+
+	func data(from url: URL, timeout: TimeInterval, maximumBytes: Int) async throws -> Data {
+		_ = url
+		_ = timeout
+		_ = maximumBytes
+		throw error
+	}
+}
+
+private struct CancellableUpdateHTTPClient: UpdateHTTPClienting {
+	func data(from url: URL, timeout: TimeInterval, maximumBytes: Int) async throws -> Data {
+		_ = url
+		_ = timeout
+		_ = maximumBytes
+		try await Task.sleep(nanoseconds: 10_000_000_000)
+		return Data()
+	}
+}
+
 final class GlyphsMCPInstallerTests: XCTestCase {
 	private struct FakeHTTPClient: HTTPClienting {
 		let dataToReturn: Data
@@ -1965,7 +2027,564 @@ exit 0
 		XCTAssertEqual(try Data(contentsOf: locations.claudeCodeConfig), Data("{not-json".utf8))
 	}
 
-	private func makeUninstallLocations(root: URL) -> GlyphsUninstallLocations {
+	func testUpdatePrepareRequestAcceptsOnlyVersionedExactArguments() throws {
+		let identifier = UUID()
+		let request = try UpdatePrepareRequest.parse(arguments: [
+			"prepare",
+			"--protocol", "1",
+			"--version", "1.6.0",
+			"--glyphs-major", "4",
+			"--request-id", identifier.uuidString.lowercased(),
+		])
+		XCTAssertEqual(request.version, "1.6.0")
+		XCTAssertEqual(request.glyphsMajor, 4)
+		XCTAssertEqual(request.requestID, identifier)
+
+		for arguments in [
+			["prepare", "--protocol", "2", "--version", "1.6.0", "--glyphs-major", "4", "--request-id", identifier.uuidString],
+			["prepare", "--protocol", "1", "--version", "v1.6.0", "--glyphs-major", "4", "--request-id", identifier.uuidString],
+			["prepare", "--protocol", "1", "--version", "1.6.0", "--glyphs-major", "5", "--request-id", identifier.uuidString],
+			["prepare", "--protocol", "1", "--version", "1.6.0", "--glyphs-major", "4", "--destination", "/tmp"],
+			["prepare", "--protocol", "1", "--version", "1.6.0", "--glyphs-major", "4", "--request-id", "not-a-uuid"],
+		] {
+			XCTAssertThrowsError(try UpdatePrepareRequest.parse(arguments: arguments))
+		}
+	}
+
+	func testUpdatePublishedReleaseRequiresExactStableTrustedAssets() throws {
+		let valid = try updateReleaseJSON(
+			version: "1.6.0",
+			installerURL: "https://github.com/thierryc/Glyphs-mcp/releases/download/v1.6.0/GlyphsMCPInstaller.zip",
+			checksumURL: "https://github.com/thierryc/Glyphs-mcp/releases/download/v1.6.0/SHA256SUMS"
+		)
+		let release = try UpdatePublishedRelease.parse(valid, expectedVersion: "1.6.0")
+		XCTAssertEqual(release.tagName, "v1.6.0")
+
+		let hostile = try updateReleaseJSON(
+			version: "1.6.0",
+			installerURL: "https://attacker.example/GlyphsMCPInstaller.zip",
+			checksumURL: "https://github.com/thierryc/Glyphs-mcp/releases/download/v1.6.0/SHA256SUMS"
+		)
+		XCTAssertThrowsError(try UpdatePublishedRelease.parse(hostile, expectedVersion: "1.6.0"))
+
+		let duplicate = try updateReleaseJSON(
+			version: "1.6.0",
+			installerURL: "https://github.com/thierryc/Glyphs-mcp/releases/download/v1.6.0/GlyphsMCPInstaller.zip",
+			checksumURL: "https://github.com/thierryc/Glyphs-mcp/releases/download/v1.6.0/SHA256SUMS",
+			duplicateInstaller: true
+		)
+		XCTAssertThrowsError(try UpdatePublishedRelease.parse(duplicate, expectedVersion: "1.6.0"))
+	}
+
+	func testUpdateChecksumManifestRejectsCorruptDuplicateAndTraversalEntries() throws {
+		let data = Data("fixture".utf8)
+		let digest = UpdateChecksumManifest.sha256(data)
+		XCTAssertEqual(
+			try UpdateChecksumManifest.expectedSHA256(
+				Data("\(digest)  GlyphsMCPInstaller.zip\n".utf8),
+				assetName: "GlyphsMCPInstaller.zip"
+			),
+			digest
+		)
+		for manifest in [
+			"bad  GlyphsMCPInstaller.zip\n",
+			"\(digest)  ../GlyphsMCPInstaller.zip\n",
+			"\(digest)  one/GlyphsMCPInstaller.zip\n\(digest)  two/GlyphsMCPInstaller.zip\n",
+		] {
+			XCTAssertThrowsError(
+				try UpdateChecksumManifest.expectedSHA256(
+					Data(manifest.utf8),
+					assetName: "GlyphsMCPInstaller.zip"
+				)
+			)
+		}
+	}
+
+	func testUpdateStagingPreparesExactReleaseReusesStageAndNeverTouchesInstalledPlugin() async throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-stage-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let home = root.appendingPathComponent("home", isDirectory: true)
+		let paths = UpdateStagingPaths(home: home)
+		let installed = root.appendingPathComponent("installed/Glyphs MCP.glyphsPlugin", isDirectory: true)
+		try FileManager.default.createDirectory(at: installed, withIntermediateDirectories: true)
+		let installedMarker = installed.appendingPathComponent("untouched.txt")
+		try Data("live plug-in".utf8).write(to: installedMarker)
+		let before = try Data(contentsOf: installedMarker)
+
+		let releaseEndpoint = "http://127.0.0.1:8765/release"
+		let installerURL = "http://127.0.0.1:8765/GlyphsMCPInstaller.zip"
+		let checksumsURL = "http://127.0.0.1:8765/SHA256SUMS"
+		let archiveData = Data("fixture archive".utf8)
+		let digest = UpdateChecksumManifest.sha256(archiveData)
+		let releaseData = try updateReleaseJSON(
+			version: "1.6.0",
+			installerURL: installerURL,
+			checksumURL: checksumsURL
+		)
+		let client = FakeUpdateHTTPClient(responses: [
+			releaseEndpoint: releaseData,
+			installerURL: archiveData,
+			checksumsURL: Data("\(digest)  GlyphsMCPInstaller.zip\n".utf8),
+		])
+		let verifiedPlugin = root.appendingPathComponent("extracted/Glyphs MCP.glyphsPlugin", isDirectory: true)
+		let verifier = UpdateTrustVerifier(
+			verifyArchive: { _extractedRoot, version in
+				try FileManager.default.createDirectory(at: verifiedPlugin, withIntermediateDirectories: true)
+				try Data("signed fixture \(version)".utf8).write(
+					to: verifiedPlugin.appendingPathComponent("fixture.txt"),
+					options: .atomic
+				)
+				return UpdateVerifiedPlugin(
+					bundleURL: verifiedPlugin,
+					version: version,
+					cdHash: "fixture-cdhash",
+					teamIdentifier: UpdateHelperProtocol.expectedTeamIdentifier,
+					authority: "Apple Development: Fixture"
+				)
+			},
+			verifyPlugin: { plugin, version in
+				guard FileManager.default.fileExists(atPath: plugin.path) else {
+					throw UpdateStagingError("signature", "Missing fixture plug-in.")
+				}
+				return UpdateVerifiedPlugin(
+					bundleURL: plugin,
+					version: version,
+					cdHash: "fixture-cdhash",
+					teamIdentifier: UpdateHelperProtocol.expectedTeamIdentifier,
+					authority: "Apple Development: Fixture"
+				)
+			}
+		)
+		let service = UpdateStagingService(
+			paths: paths,
+			client: client,
+			runner: UpdateCommandRunner { _, _ in "" },
+			verifier: verifier,
+			environment: ["GLYPHS_MCP_UPDATE_API_URL": releaseEndpoint],
+			now: { Date(timeIntervalSince1970: 1_785_379_200) },
+			validateArchive: { _ in }
+		)
+		let first = try UpdatePrepareRequest(
+			protocolVersion: 1,
+			version: "1.6.0",
+			glyphsMajor: 4,
+			requestID: UUID()
+		)
+		let receipt = try await service.prepare(first)
+		XCTAssertEqual(receipt.assetSHA256, digest)
+		XCTAssertEqual(receipt.pluginCDHash, "fixture-cdhash")
+		XCTAssertTrue(FileManager.default.fileExists(atPath: paths.stagedPlugin("1.6.0").path))
+		XCTAssertTrue(FileManager.default.fileExists(atPath: paths.authorization(version: "1.6.0", glyphsMajor: 4).path))
+		XCTAssertEqual(try Data(contentsOf: installedMarker), before)
+		XCTAssertEqual(client.requestedURLs.count, 3)
+
+		let second = try UpdatePrepareRequest(
+			protocolVersion: 1,
+			version: "1.6.0",
+			glyphsMajor: 3,
+			requestID: UUID()
+		)
+		let reused = try await service.prepare(second)
+		XCTAssertEqual(reused, receipt)
+		XCTAssertEqual(client.requestedURLs.count, 3)
+		XCTAssertTrue(FileManager.default.fileExists(atPath: paths.authorization(version: "1.6.0", glyphsMajor: 3).path))
+		XCTAssertEqual(try Data(contentsOf: installedMarker), before)
+	}
+
+	func testUpdateStagingRejectsChecksumWithoutCreatingReadyStage() async throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-stage-bad-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let endpoint = "http://127.0.0.1:8765/release"
+		let installerURL = "http://127.0.0.1:8765/GlyphsMCPInstaller.zip"
+		let checksumsURL = "http://127.0.0.1:8765/SHA256SUMS"
+		let client = FakeUpdateHTTPClient(responses: [
+			endpoint: try updateReleaseJSON(version: "1.6.0", installerURL: installerURL, checksumURL: checksumsURL),
+			installerURL: Data("corrupt".utf8),
+			checksumsURL: Data("\(String(repeating: "0", count: 64))  GlyphsMCPInstaller.zip\n".utf8),
+		])
+		let paths = UpdateStagingPaths(home: root)
+		let service = UpdateStagingService(
+			paths: paths,
+			client: client,
+			runner: UpdateCommandRunner { _, _ in "" },
+			verifier: UpdateTrustVerifier(
+				verifyArchive: { _, _ in throw UpdateStagingError("unexpected", "Verifier should not run.") },
+				verifyPlugin: { _, _ in throw UpdateStagingError("unexpected", "Verifier should not run.") }
+			),
+			environment: ["GLYPHS_MCP_UPDATE_API_URL": endpoint]
+		)
+		let request = try UpdatePrepareRequest(
+			protocolVersion: 1,
+			version: "1.6.0",
+			glyphsMajor: 4,
+			requestID: UUID()
+		)
+		do {
+			_ = try await service.prepare(request)
+			XCTFail("Expected checksum rejection.")
+		} catch let error as UpdateStagingError {
+			XCTAssertEqual(error.code, "checksum")
+		}
+		XCTAssertFalse(FileManager.default.fileExists(atPath: paths.stagedVersion("1.6.0").path))
+		XCTAssertFalse(FileManager.default.fileExists(atPath: paths.authorization(version: "1.6.0", glyphsMajor: 4).path))
+	}
+
+	func testUpdateZipValidatorRejectsMalformedAndEscapingPaths() throws {
+		for path in [
+			"../GlyphsMCPInstaller.app/Contents/Info.plist",
+			"/GlyphsMCPInstaller.app/Contents/Info.plist",
+			"Other.app/Contents/Info.plist",
+			"GlyphsMCPInstaller.app/../escape",
+			"GlyphsMCPInstaller.app\\Contents\\Info.plist",
+		] {
+			XCTAssertThrowsError(try UpdateZipValidator.validateEntryName(path))
+		}
+		XCTAssertNoThrow(
+			try UpdateZipValidator.validateEntryName(
+				"GlyphsMCPInstaller.app/Contents/Info.plist"
+			)
+		)
+		XCTAssertThrowsError(try UpdateZipValidator.validate(Data("not a zip".utf8)))
+	}
+
+	func testExtractedTreeValidatorAllowsInternalLinksAndRejectsEscapingLinks() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-extracted-\(UUID().uuidString)", isDirectory: true)
+		let outside = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-outside-\(UUID().uuidString)", isDirectory: true)
+		defer {
+			try? FileManager.default.removeItem(at: root)
+			try? FileManager.default.removeItem(at: outside)
+		}
+		let versions = root.appendingPathComponent("GlyphsMCPInstaller.app/Contents/Frameworks/Test.framework/Versions", isDirectory: true)
+		let versionA = versions.appendingPathComponent("A", isDirectory: true)
+		try FileManager.default.createDirectory(at: versionA, withIntermediateDirectories: true)
+		let current = versions.appendingPathComponent("Current")
+		try FileManager.default.createSymbolicLink(at: current, withDestinationURL: versionA)
+		XCTAssertNoThrow(try UpdateExtractedTreeValidator.validate(root))
+
+		try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+		let escape = root.appendingPathComponent("GlyphsMCPInstaller.app/Contents/escape")
+		try FileManager.default.createSymbolicLink(at: escape, withDestinationURL: outside)
+		XCTAssertThrowsError(try UpdateExtractedTreeValidator.validate(root))
+	}
+
+	func testUpdateTrustVerifierRejectsWrongTeamRuntimeTimestampAndNotarization() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-trust-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let app = root.appendingPathComponent("GlyphsMCPInstaller.app", isDirectory: true)
+		let plugin = app.appendingPathComponent(
+			"Contents/Resources/Payload/Glyphs MCP.glyphsPlugin",
+			isDirectory: true
+		)
+		let pluginExecutable = plugin.appendingPathComponent("Contents/MacOS/plugin")
+		try FileManager.default.createDirectory(
+			at: pluginExecutable.deletingLastPathComponent(),
+			withIntermediateDirectories: true
+		)
+		try Data("signed fixture".utf8).write(to: pluginExecutable)
+		for (url, identifier) in [
+			(app, "cx.ap.GlyphsMCPInstaller"),
+			(plugin, "cx.ap.GlyphsMCP"),
+		] {
+			let info: [String: Any] = [
+				"CFBundleIdentifier": identifier,
+				"CFBundleShortVersionString": "1.6.0",
+				"CFBundleVersion": "1.6.0",
+			]
+			let data = try PropertyListSerialization.data(
+				fromPropertyList: info,
+				format: .xml,
+				options: 0
+			)
+			let destination = url.appendingPathComponent("Contents/Info.plist")
+			try FileManager.default.createDirectory(
+				at: destination.deletingLastPathComponent(),
+				withIntermediateDirectories: true
+			)
+			try data.write(to: destination)
+		}
+
+		func verifier(
+			team: String = UpdateHelperProtocol.expectedTeamIdentifier,
+			runtime: Bool = true,
+			timestamp: Bool = true,
+			notarized: Bool = true
+		) -> UpdateTrustVerifier {
+			let runner = UpdateCommandRunner { executable, arguments in
+				if executable.path == "/usr/bin/codesign", arguments.first == "-d" {
+					return [
+						"TeamIdentifier=\(team)",
+						"Authority=\(UpdateHelperProtocol.expectedDeveloperIDAuthority)",
+						"CDHash=fixture-cdhash",
+						runtime ? "flags=0x10000(runtime)" : "flags=0x0",
+						timestamp ? "Timestamp=Jul 30, 2026" : "",
+					].joined(separator: "\n")
+				}
+				if executable.path == "/usr/bin/xcrun",
+				   arguments.first == "stapler",
+				   !notarized {
+					throw UpdateStagingError("verification", "Missing notarization.")
+				}
+				return ""
+			}
+			return UpdateTrustVerifier.live(runner: runner)
+		}
+
+		let verified = try verifier().verifyArchive(root, "1.6.0")
+		XCTAssertEqual(verified.bundleURL, plugin)
+		XCTAssertEqual(verified.cdHash, "fixture-cdhash")
+		XCTAssertThrowsError(try verifier().verifyArchive(root, "1.6.1"))
+		for rejected in [
+			verifier(team: "ATTACKER"),
+			verifier(runtime: false),
+			verifier(timestamp: false),
+			verifier(notarized: false),
+		] {
+			XCTAssertThrowsError(try rejected.verifyArchive(root, "1.6.0"))
+		}
+	}
+
+	func testUpdateStagingRecordsBoundedNetworkFailureWithoutReadyArtifacts() async throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-stage-timeout-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let paths = UpdateStagingPaths(home: root)
+		let service = UpdateStagingService(
+			paths: paths,
+			client: ThrowingUpdateHTTPClient(
+				error: UpdateStagingError("network", "The request timed out.")
+			),
+			environment: [:]
+		)
+		let request = try UpdatePrepareRequest(
+			protocolVersion: 1,
+			version: "1.6.0",
+			glyphsMajor: 4,
+			requestID: UUID()
+		)
+		do {
+			_ = try await service.prepare(request)
+			XCTFail("Expected network failure.")
+		} catch let error as UpdateStagingError {
+			XCTAssertEqual(error.code, "network")
+		}
+		let decoder = JSONDecoder()
+		decoder.dateDecodingStrategy = .iso8601
+		let status = try decoder.decode(
+			UpdatePreparationStatus.self,
+			from: Data(contentsOf: paths.requestStatus(request.requestID))
+		)
+		XCTAssertEqual(status.phase, .failed)
+		XCTAssertEqual(status.errorCode, "network")
+		XCTAssertFalse(FileManager.default.fileExists(atPath: paths.stagedVersion("1.6.0").path))
+	}
+
+	func testUpdateStagingCancellationWritesCancelledStatusAndCleansTemporaryData() async throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-stage-cancel-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let paths = UpdateStagingPaths(home: root)
+		let service = UpdateStagingService(
+			paths: paths,
+			client: CancellableUpdateHTTPClient(),
+			environment: [:]
+		)
+		let request = try UpdatePrepareRequest(
+			protocolVersion: 1,
+			version: "1.6.0",
+			glyphsMajor: 3,
+			requestID: UUID()
+		)
+		let task = Task { try await service.prepare(request) }
+		try await Task.sleep(nanoseconds: 30_000_000)
+		task.cancel()
+		do {
+			_ = try await task.value
+			XCTFail("Expected cancellation.")
+		} catch let error as UpdateStagingError {
+			XCTAssertEqual(error.code, "cancelled")
+		}
+		let decoder = JSONDecoder()
+		decoder.dateDecodingStrategy = .iso8601
+		let status = try decoder.decode(
+			UpdatePreparationStatus.self,
+			from: Data(contentsOf: paths.requestStatus(request.requestID))
+		)
+		XCTAssertEqual(status.phase, .cancelled)
+		XCTAssertFalse(FileManager.default.fileExists(
+			atPath: paths.temporary.appendingPathComponent(request.requestID.uuidString.lowercased()).path
+		))
+	}
+
+	func testUpdateHelperManagerPersistsPerTargetOptInAndRemovesOnlyAfterLastTarget() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-helper-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let home = root.appendingPathComponent("home", isDirectory: true)
+		let source = root.appendingPathComponent("GlyphsMCPUpdater")
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+		try Data("signed helper".utf8).write(to: source)
+		let box = UpdateOptInBox()
+		let store = UpdateOptInStore(
+			isEnabled: { box.get($0) },
+			setEnabled: { box.set($0, $1) }
+		)
+		let verifier = UpdateHelperVerifier { url in
+			XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+			return VerifiedUpdateHelper(
+				executableURL: url,
+				probe: UpdateHelperProbe(build: "test"),
+				cdHash: "helper-cdhash",
+				teamIdentifier: UpdateHelperProtocol.expectedTeamIdentifier,
+				authority: "Apple Development: Fixture"
+			)
+		}
+		let manager = UpdateHelperManager(
+			paths: UpdateStagingPaths(home: home),
+			store: store,
+			verifier: verifier
+		)
+		try manager.configure(embeddedExecutable: source, selections: [.v3: true, .v4: true])
+		XCTAssertTrue(box.get(.v3))
+		XCTAssertTrue(box.get(.v4))
+		XCTAssertTrue(FileManager.default.fileExists(atPath: manager.paths.helperExecutable.path))
+		XCTAssertTrue(FileManager.default.fileExists(atPath: manager.paths.installReceipt.path))
+		let authorization3 = manager.paths.authorization(version: "1.6.0", glyphsMajor: 3)
+		let stagedMarker = manager.paths.stagedVersion("1.6.0").appendingPathComponent("keep.txt")
+		try FileManager.default.createDirectory(at: authorization3.deletingLastPathComponent(), withIntermediateDirectories: true)
+		try Data("authorized".utf8).write(to: authorization3)
+		try FileManager.default.createDirectory(at: stagedMarker.deletingLastPathComponent(), withIntermediateDirectories: true)
+		try Data("verified stage".utf8).write(to: stagedMarker)
+
+		try manager.configure(embeddedExecutable: source, selections: [.v3: false])
+		XCTAssertFalse(box.get(.v3))
+		XCTAssertTrue(box.get(.v4))
+		XCTAssertTrue(FileManager.default.fileExists(atPath: manager.paths.helperExecutable.path))
+		XCTAssertFalse(FileManager.default.fileExists(atPath: authorization3.path))
+		XCTAssertTrue(FileManager.default.fileExists(atPath: stagedMarker.path))
+
+		try manager.configure(embeddedExecutable: source, selections: [.v4: false])
+		XCTAssertFalse(box.get(.v4))
+		XCTAssertFalse(GlyphsUninstallScanner.itemExists(at: manager.paths.root))
+	}
+
+	func testUpdateHelperManagerDoesNotRecordOptInWhenVerificationFails() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-helper-fail-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+		let source = root.appendingPathComponent("GlyphsMCPUpdater")
+		try Data("untrusted".utf8).write(to: source)
+		let box = UpdateOptInBox()
+		let manager = UpdateHelperManager(
+			paths: UpdateStagingPaths(home: root.appendingPathComponent("home")),
+			store: UpdateOptInStore(
+				isEnabled: { box.get($0) },
+				setEnabled: { box.set($0, $1) }
+			),
+			verifier: UpdateHelperVerifier { _ in
+				throw UpdateStagingError("helper_signature", "Untrusted helper.")
+			}
+		)
+		XCTAssertThrowsError(
+			try manager.configure(embeddedExecutable: source, selections: [.v4: true])
+		)
+		XCTAssertFalse(box.get(.v4))
+		XCTAssertFalse(FileManager.default.fileExists(atPath: manager.paths.helperExecutable.path))
+	}
+
+	func testUpdateHelperManagerRollsBackHelperAndReceiptWhenFinalVerificationFails() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-helper-rollback-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+		let oldSource = root.appendingPathComponent("OldUpdater")
+		let newSource = root.appendingPathComponent("NewUpdater")
+		try Data("old helper".utf8).write(to: oldSource)
+		try Data("new helper".utf8).write(to: newSource)
+		let paths = UpdateStagingPaths(home: root.appendingPathComponent("home"))
+		let box = UpdateOptInBox()
+		let verifier = UpdateHelperVerifier { url in
+			let contents = try String(contentsOf: url, encoding: .utf8)
+			if url == paths.helperExecutable, contents == "new helper" {
+				throw UpdateStagingError("helper_signature", "Final helper verification failed.")
+			}
+			return VerifiedUpdateHelper(
+				executableURL: url,
+				probe: UpdateHelperProbe(build: "test"),
+				cdHash: contents == "old helper" ? "old-cdhash" : "new-cdhash",
+				teamIdentifier: UpdateHelperProtocol.expectedTeamIdentifier,
+				authority: "Apple Development: Fixture"
+			)
+		}
+		let manager = UpdateHelperManager(
+			paths: paths,
+			store: UpdateOptInStore(
+				isEnabled: { box.get($0) },
+				setEnabled: { box.set($0, $1) }
+			),
+			verifier: verifier
+		)
+		try manager.configure(embeddedExecutable: oldSource, selections: [.v4: true])
+		let originalReceipt = try Data(contentsOf: paths.installReceipt)
+
+		XCTAssertThrowsError(
+			try manager.configure(embeddedExecutable: newSource, selections: [.v4: true])
+		)
+		XCTAssertEqual(
+			try String(contentsOf: paths.helperExecutable, encoding: .utf8),
+			"old helper"
+		)
+		XCTAssertEqual(try Data(contentsOf: paths.installReceipt), originalReceipt)
+		XCTAssertTrue(box.get(.v4))
+	}
+
+	func testUpdaterUninstallCandidateRequiresMarkerAndRecognizedContents() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-updater-uninstall-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let locations = makeUninstallLocations(root: root, updaterRoot: root.appendingPathComponent("Updater", isDirectory: true))
+		let updater = try XCTUnwrap(locations.updaterRoot)
+		try FileManager.default.createDirectory(at: updater, withIntermediateDirectories: true)
+		try Data(UpdateHelperProtocol.managedMarker.utf8).write(
+			to: updater.appendingPathComponent(".managed-by-glyphs-mcp")
+		)
+		try Data("helper".utf8).write(to: updater.appendingPathComponent(UpdateHelperProtocol.executableName))
+		var plan = GlyphsUninstallScanner.scan(managedSkillNames: [], locations: locations)
+		XCTAssertEqual(plan.candidates.first(where: { $0.id == "updater" })?.safetyState, .removable)
+
+		try Data("private".utf8).write(to: updater.appendingPathComponent("unrecognized.txt"))
+		plan = GlyphsUninstallScanner.scan(managedSkillNames: [], locations: locations)
+		XCTAssertEqual(plan.candidates.first(where: { $0.id == "updater" })?.safetyState, .blocked)
+	}
+
+	private func updateReleaseJSON(
+		version: String,
+		installerURL: String,
+		checksumURL: String,
+		duplicateInstaller: Bool = false
+	) throws -> Data {
+		var assets: [[String: String]] = [
+			["name": "GlyphsMCPInstaller.zip", "browser_download_url": installerURL],
+			["name": "SHA256SUMS", "browser_download_url": checksumURL],
+		]
+		if duplicateInstaller {
+			assets.append(["name": "GlyphsMCPInstaller.zip", "browser_download_url": installerURL])
+		}
+		return try JSONSerialization.data(withJSONObject: [
+			"tag_name": "v\(version)",
+			"draft": false,
+			"prerelease": false,
+			"published_at": "2026-07-30T00:00:00Z",
+			"assets": assets,
+		], options: [.sortedKeys])
+	}
+
+	private func makeUninstallLocations(root: URL, updaterRoot: URL? = nil) -> GlyphsUninstallLocations {
 		GlyphsUninstallLocations(
 			pluginBundles: [
 				.v3: root.appendingPathComponent("Glyphs 3/Plugins/Glyphs MCP.glyphsPlugin", isDirectory: true),
@@ -1975,7 +2594,8 @@ exit 0
 			claudeCodeSkillsRoot: root.appendingPathComponent(".claude/skills", isDirectory: true),
 			codexConfig: root.appendingPathComponent(".codex/config.toml"),
 			claudeDesktopConfig: root.appendingPathComponent("Claude/claude_desktop_config.json"),
-			claudeCodeConfig: root.appendingPathComponent(".claude.json")
+			claudeCodeConfig: root.appendingPathComponent(".claude.json"),
+			updaterRoot: updaterRoot
 		)
 	}
 

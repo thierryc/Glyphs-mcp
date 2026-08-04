@@ -1,0 +1,16 @@
+{
+  "name": "glyphs-mcp",
+  "owner": {
+    "name": "Thierry Charbonnel"
+  },
+  "metadata": {
+    "description": "Glyphs MCP skills and localhost MCP connection for Cursor."
+  },
+  "plugins": [
+    {
+      "name": "glyphs-mcp",
+      "source": "./plugins/glyphs-mcp",
+      "description": "Inspect and safely control open Glyphs fonts through the local Glyphs MCP server."
+    }
+  ]
+}

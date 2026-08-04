@@ -2,6 +2,8 @@
 
 ## Result
 
+Remove this line first
+
 The clean-room Balanced prototype passed the planned geometry acceptance checks
 on the fixed 26-glyph Inter set:
 

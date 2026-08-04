@@ -185,7 +185,10 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         text = plugin_path.read_text(encoding="utf-8", errors="replace")
 
         self.assertIn("center_x = width / 2.0", text)
-        self.assertIn("dot_y = height - 114", text)
+        self.assertIn("update_banner_h = 54", text)
+        self.assertIn("update_banner_y = height - 110", text)
+        self.assertIn("update_banner.layer().setCornerRadius_(9.0)", text)
+        self.assertIn("dot_y = height - 142", text)
         self.assertIn("activity_y = controls_y + 38", text)
         self.assertIn("status_dot.setAlignment_", text)
         self.assertIn("activity_value.setAlignment_", text)

@@ -83,6 +83,20 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         missing = sorted([name for name in tool_names if name not in section])
         self.assertEqual(missing, [], f"README Command Set section is missing tool names: {missing}")
 
+    def test_italic_first_pass_docs_cite_primary_symbol_sources(self) -> None:
+        page = _repo_root() / "content" / "italic-first-pass.md"
+        text = page.read_text(encoding="utf-8", errors="replace")
+
+        self.assertIn("### Sources and interpretation", text)
+        for url in (
+            "https://learn.microsoft.com/en-us/typography/develop/character-design-standards/math",
+            "https://learn.microsoft.com/en-us/typography/opentype/spec/math",
+            "https://www.unicode.org/reports/tr25/",
+            "https://fonts.google.com/metadata/fonts",
+            "https://fonttools.readthedocs.io/en/latest/pens/statisticsPen.html",
+        ):
+            self.assertIn(url, text)
+
 
 if __name__ == "__main__":
     unittest.main()

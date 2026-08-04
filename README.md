@@ -9,27 +9,31 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-## What's new in 1.5.4
+## What's new in 1.6.0
 
-**Installer diagnostics for incompatible native Python packages.**
+**Easier future updates and safer automatic spacing.**
 
-- Check the exact Python selected for every Glyphs 3 and Glyphs 4 target before
-  pip, plug-in replacement, or client configuration changes.
-- Detect native packages built for a different CPython ABI or Mach-O
-  architecture, including the Python 3.14 / `cpython-311` mismatch reported in
-  issue #47.
-- Treat packages that are not installed yet as an ordinary pre-install state,
-  while stopping on existing packages that cannot import.
-- Use the same standard-library JSON probe in the macOS app and terminal
-  installer, including strict post-install import and module-origin checks.
-- Show the selected interpreter and offending files in the error and retain the
-  complete diagnostic result in the installer log.
-- Preserve all existing shared packages. This milestone diagnoses and stops; it
-  does not delete, reinstall, isolate, or automatically repair them.
-- Carry forward 1.5.3's verified Uvicorn readiness and persistent startup-error
-  diagnostics.
+- Add an optional **Make future updates easier** setting for Glyphs 3 and
+  Glyphs 4. A clear banner announces a new version, and nothing is downloaded
+  until the user clicks **Prepare Update**. Preparation never replaces the
+  running or installed plug-in.
+- Verify exact-tag installer and checksum assets, archive structure, version,
+  Developer ID, notarization, and staged receipts while keeping cancellation,
+  offline errors, and hostile metadata fail-closed.
+- Existing 1.5.4 users install 1.6.0 with the signed macOS installer. Once
+  1.6.0 is installed, it can prepare later stable releases; installation still
+  requires opening the trusted release and running its signed installer.
+- Resolve automatic spacing references by glyph class so capitals use `H`,
+  figures use `one`, and explicit references retain their exact meaning.
+- Assess negative sidebearings in em units, preserve legitimate overhangs, and
+  block unsafe mutation unless a glyph receives a named, auditable override.
+- Preserve tabular widths only from fixed-pitch, metrics, equal-figure, or
+  explicit evidence; send narrow punctuation to manual review.
+- Refresh the bundled spacing and italic skills with guarded proofing,
+  negative-sidebearing guidance, and Unicode-aware upright-symbol advisories.
+- Carry forward 1.5.4's fail-closed Python ABI and architecture diagnostics.
 
-[Read the full 1.5.4 changelog →](CHANGELOG.md) ·
+[Read the full 1.6.0 changelog →](CHANGELOG.md) ·
 [Experimental italic guide](content/italic-first-pass.md) ·
 [Broad-Latin benchmark](content/contributor/italic-balanced-broad-latin-benchmark.md) ·
 [Full-resolution three-family sheet](content/contributor/images/italic-balanced-three-family-story.png)
@@ -104,47 +108,53 @@ Minimum requirements:
 
 Glyphs 3 backward compatibility is maintained for the shared MCP server code where possible. The macOS app can target it directly; use `--glyphs-version 3` with the terminal installer.
 
-## Codex and ChatGPT marketplace plug-in
+## Optional agent plugins
 
-Codex and compatible ChatGPT plugin hosts can install the repository plug-in
-after the native Glyphs MCP plug-in is installed and its local server is
-running:
+Glyphs MCP 1.6.0 provides one shared plugin package for Codex/ChatGPT, Claude
+Code, Cursor, and GitHub Copilot CLI. Every host gets its own native manifest,
+but all four load the same nine skills and the same local MCP connection:
 
-```bash
-codex plugin marketplace add thierryc/Glyphs-mcp
-codex plugin add glyphs-mcp@glyphs-mcp
+```text
+http://127.0.0.1:9680/mcp/
 ```
 
-Start a new task after installation. The plugin bundles eight Glyphs MCP skills
-and connects to `http://127.0.0.1:9680/mcp/`. It also enables an embedded
-feedback panel for status, font and glyph information, OpenType feature
-reports, reviewed dry runs, explicit apply confirmation, simple progress,
-completion, and safe error feedback. Glyphs remains the only editor; the panel
-has no editable paths, metrics, coordinates, feature code, file navigation,
-arbitrary Python, or replacement canvas.
+Install the native Glyphs plug-in and start the server first. Then choose the
+agent-plugin path only if it suits your client:
 
-Existing global Codex MCP configuration remains supported as a legacy setup.
-Verify that the marketplace plug-in connects first. If Codex then shows a
-duplicate `glyphs-mcp-server` connection, you may remove only the legacy global
-entry:
+| Host | Optional plugin setup |
+| --- | --- |
+| Codex/ChatGPT | `codex plugin marketplace add thierryc/Glyphs-mcp` then `codex plugin add glyphs-mcp@glyphs-mcp` |
+| Claude Code | `claude plugin marketplace add thierryc/Glyphs-mcp` then `claude plugin install glyphs-mcp@glyphs-mcp` |
+| Cursor | Add the repository catalog with `cursor-agent plugin marketplace add https://github.com/thierryc/Glyphs-mcp` and finish in `/plugin`, or link/copy `plugins/glyphs-mcp` into `~/.cursor/plugins/local/glyphs-mcp`. |
+| GitHub Copilot CLI | `copilot plugin marketplace add thierryc/Glyphs-mcp` then `copilot plugin install glyphs-mcp@glyphs-mcp` |
+
+GitHub Copilot CLI can alternatively install the package directly:
 
 ```bash
-codex mcp remove glyphs-mcp-server
+copilot plugin install thierryc/Glyphs-mcp:plugins/glyphs-mcp
 ```
 
-The macOS and terminal installers do not install or remove this marketplace
-plug-in; Codex owns its installation lifecycle.
+Plugins are an option, not a requirement. Repo-local skills, global standalone
+skills, and manual MCP configuration remain supported. The macOS and terminal
+installers do not install, update, or remove these agent plugins; each host owns
+that lifecycle. The repository also does not enable GitHub Copilot plugins
+through `.github/copilot/settings.json`.
 
-See [Codex and ChatGPT plugin UI](content/getting-started/codex-chatgpt-plugin-ui.mdx)
-for screenshots, theme behavior, supported panel states, action routing, and
-non-UI fallbacks.
+All host manifests use version `1.6.0`. Skills inherit that package version,
+while the running MCP server reports the matching native Glyphs MCP version.
+See [Use agent skills and optional plugins](content/getting-started/use-agent-skills.mdx)
+for install, update, removal, fallback, and host-specific invocation details.
+The [Codex and ChatGPT plugin UI](content/getting-started/codex-chatgpt-plugin-ui.mdx)
+page documents the richer embedded feedback panel available on compatible
+OpenAI hosts; Claude, Cursor, Copilot, and other MCP clients keep the same text
+and structured-result fallbacks.
 
-## Repo skills for Codex, Claude Code, and Cursor
+## Repo skills for Codex, Claude Code, Cursor, and GitHub Copilot
 
-This repo ships eight workflow skills in `skills/` for common Glyphs MCP tasks.
+This repo ships nine workflow skills in `skills/` for common Glyphs MCP tasks.
 The same source of truth is exposed through client-specific discovery paths:
 
-- Codex and Cursor read them through `.agents/skills`
+- Codex, Cursor, and GitHub Copilot CLI read them through `.agents/skills`
 - Claude Code reads them through `.claude/skills`
 
 The supported usage patterns are:
@@ -153,7 +163,7 @@ The supported usage patterns are:
 
 Use this when you are developing in this repository or want the clients to discover the skills directly from the repo checkout.
 
-1. Open this repository in Codex, Claude Code, or Cursor so the repo-local bridges are visible.
+1. Open this repository in Codex, Claude Code, Cursor, or GitHub Copilot CLI so the repo-local bridges are visible.
 2. Connect Glyphs MCP:
 
 ```bash
@@ -168,8 +178,10 @@ claude mcp list
 4. In Claude Code, reload or restart if `.claude/skills` does not appear immediately.
 5. In Cursor, use the repo's `.agents/skills` bridge and add the local endpoint
    to `.cursor/mcp.json`; use `.cursor/skills` only as an explicit fallback.
-6. Start Glyphs, confirm the server is running in **Edit -> Glyphs MCP Server**, and keep the default `Edit` profile unless you only need read-only inspection.
-7. Start with the general Glyphs launcher, or invoke a focused skill when you already know the workflow:
+6. In GitHub Copilot CLI, use `.agents/skills` and add the endpoint manually
+   with `copilot mcp add glyphs-mcp-server --url http://127.0.0.1:9680/mcp/ --type http`.
+7. Start Glyphs, confirm the server is running in **Edit -> Glyphs MCP Server**, and keep the default `Edit` profile unless you only need read-only inspection.
+8. Start with the general Glyphs launcher, or invoke a focused skill when you already know the workflow:
 
 ```text
 Use $glyphs to inspect the current Glyphs context and help with my font task.
@@ -207,6 +219,7 @@ Current repo skills focus on:
 - guarded spacing reviews and applies
 - outlines, components, anchors, and docs lookup workflows
 - guarded roman-to-italic first-pass copy and slant workflows
+- version, documentation, packaging, validation, signing, and publication gates
 
 For exact per-client paths and a compatibility matrix, see
 [Use skills](content/getting-started/use-agent-skills.mdx).
@@ -220,8 +233,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.5.4)
-This table describes the tool surface exposed by the MCP server shipped in this repo (version `1.5.4`).
+## Command Set (MCP server v1.6.0)
+This table describes the tool surface exposed by the MCP server shipped in this repo (version `1.6.0`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
@@ -407,6 +420,10 @@ The installer installs the plug-in, installs Python dependencies, and links Glyp
 
 In the macOS app, choose Glyphs 3, Glyphs 4, or both. Missing versions remain visible but disabled, and a running unselected Glyphs version does not block the selected installation.
 
+Optional Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot CLI agent
+plugins are installed and managed separately by those hosts. Manual MCP and
+standalone-skill setup remain supported.
+
 Any MCP-compatible client can use this server. For now, the automatic installer covers only the apps above. Because this is a localhost MCP server, manual configuration in other clients is usually just the endpoint URL:
 
 ```text
@@ -532,25 +549,32 @@ Release flow (copy/paste):
 # Optional: do the release on a branch
 git switch -c lit/release-X.Y.Z
 
-# 1) Bump the plugin/server version everywhere it needs to be
+# 1) Preview, then bump the native, installer, docs, and agent-plugin versions
+python3 scripts/bump_version.py --dry-run X.Y.Z
 python3 scripts/bump_version.py X.Y.Z
 
-# 2) Build the Plugin Manager bundle from tracked files (no __pycache__, .pyc, etc.)
+# 2) Synchronize and verify the shared nine-skill agent package
+./scripts/sync_codex_plugin_skills.sh
+./scripts/sync_codex_plugin_skills.sh --check
+
+# 3) Build the Plugin Manager bundle from tracked files (no __pycache__, .pyc, etc.)
 # This creates a self-contained Plugin Manager bundle (includes vendored deps).
 ./scripts/build_plugin_manager_bundle.sh --vendor
 # If you already have deps installed into Glyphs' Scripts/site-packages and want an offline build:
 # ./scripts/build_plugin_manager_bundle.sh --vendor-from-installed --allow-missing-targets
 
-# 3) Run the full local release gate (Python, Xcode tests, unsigned Debug build)
+# 4) Run the full local release gate (Python, Xcode tests, unsigned Debug build)
 ./scripts/run_local_release_tests.sh
 
-# 4) Commit release artifacts
+# 5) Commit release artifacts
 git add README.md
 git add "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist"
 git add "plugin-manager/Glyphs MCP.glyphsPlugin"
+git add plugins/glyphs-mcp .agents/plugins/marketplace.json
+git add .claude-plugin .cursor-plugin .github/plugin
 git commit -m "Release X.Y.Z"
 
-# 5) Merge to main, then sign + push the exact reviewed tag
+# 6) Merge to main, then sign + push the exact reviewed tag
 git tag -s "vX.Y.Z" -m "vX.Y.Z"
 git push origin HEAD --tags
 ```

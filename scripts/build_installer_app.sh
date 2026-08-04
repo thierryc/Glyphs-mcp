@@ -60,6 +60,29 @@ fi
 rm -rf "$out_dir/$scheme.app"
 /usr/bin/ditto "$app_path" "$out_dir/$scheme.app"
 
+updater_helper="$out_dir/$scheme.app/Contents/Resources/GlyphsMCPUpdater"
+if [[ ! -f "$updater_helper" || -L "$updater_helper" ]]; then
+  echo "error: exported app is missing the regular GlyphsMCPUpdater helper" >&2
+  exit 1
+fi
+echo "Signing embedded updater helper from a clean signature slot…"
+/usr/bin/codesign --remove-signature "$updater_helper" 2>/dev/null || true
+/usr/bin/codesign --sign "$identity" --timestamp --options runtime "$updater_helper"
+/usr/bin/codesign --verify --strict --verbose=2 "$updater_helper"
+updater_signature_details="$(/usr/bin/codesign -d --verbose=4 "$updater_helper" 2>&1)"
+if ! grep -Fq "Authority=$identity" <<<"$updater_signature_details"; then
+  echo "error: updater helper is not signed by the requested Developer ID identity" >&2
+  exit 1
+fi
+if ! grep -Eq 'flags=.*\(runtime\)' <<<"$updater_signature_details"; then
+  echo "error: updater helper is missing hardened runtime" >&2
+  exit 1
+fi
+if ! grep -Eq '^Timestamp=' <<<"$updater_signature_details"; then
+  echo "error: updater helper is missing a secure timestamp" >&2
+  exit 1
+fi
+
 # Xcode/archive can leave code embedded in the payload with stale or ad-hoc
 # signatures after export. Remove those signatures before signing: replacing
 # them in place with codesign --force can leave a universal Mach-O with a
@@ -148,6 +171,7 @@ sleep 15
 
 echo "Verifying exported app signature…"
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$out_dir/$scheme.app"
+/usr/bin/codesign --verify --strict --verbose=2 "$updater_helper"
 
 signature_details="$(/usr/bin/codesign -d --verbose=4 "$out_dir/$scheme.app" 2>&1)"
 if ! grep -Fq "Authority=$identity" <<<"$signature_details"; then

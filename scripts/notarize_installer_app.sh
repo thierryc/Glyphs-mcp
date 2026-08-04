@@ -83,6 +83,12 @@ echo "Re-signing installer app with stapled plug-in payload…"
 /usr/bin/codesign --sign "$identity" --timestamp --options runtime "$app"
 sleep 15
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$app"
+updater_helper="$app/Contents/Resources/GlyphsMCPUpdater"
+if [[ ! -f "$updater_helper" || -L "$updater_helper" ]]; then
+  echo "error: signed updater helper is missing from the installer app" >&2
+  exit 1
+fi
+/usr/bin/codesign --verify --strict --verbose=2 "$updater_helper"
 
 echo "Zipping for notarization: $zip"
 ditto -c -k --keepParent "$app" "$zip"
@@ -101,6 +107,7 @@ xcrun stapler staple "$app"
 xcrun stapler validate "$app"
 /usr/bin/codesign --verify --deep --strict --verbose=2 "$app"
 xcrun stapler validate "$plugin"
+/usr/bin/codesign --verify --strict --verbose=2 "$updater_helper"
 
 # Recreate the ZIP after stapling so the uploaded archive contains the ticket.
 rm -f "$zip"

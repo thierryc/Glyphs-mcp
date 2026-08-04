@@ -473,11 +473,11 @@ TOOL_RELEASE_GATE = {
     },
     "review_spacing": {
         "coverage": LIVE_SMOKE_REQUIRED,
-        "tests": ("test_spacing_engine.py", "live Glyphs 4 smoke batch"),
+        "tests": ("test_spacing_engine.py", "test_mcp_tools_spacing.py", "live Glyphs 4 smoke batch"),
         "mutation": READ_ONLY,
         "undoRisk": "none",
         "undoNote": "Read-only spacing review.",
-        "smoke": "review_spacing on H/O/n/o.",
+        "smoke": "review_spacing on H/O/J/V/W/Y/n/o/one/seven; verify class-aware references and guards.",
     },
     "apply_spacing": {
         "coverage": UNIT_BEHAVIOR,
@@ -485,7 +485,7 @@ TOOL_RELEASE_GATE = {
         "mutation": EDITS_FONT,
         "undoRisk": "medium",
         "undoNote": "Updates sidebearings/width; release smoke should use dry_run or disposable glyph.",
-        "smoke": "apply_spacing dry_run=true.",
+        "smoke": "apply_spacing dry_run=true; verify blocked/manual results are ineligible without named overrides.",
     },
     "set_spacing_params": {
         "coverage": UNIT_BEHAVIOR,

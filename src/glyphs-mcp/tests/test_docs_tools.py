@@ -75,6 +75,14 @@ class DocsToolsTests(unittest.TestCase):
         self.assertIn("results", payload)
         self.assertTrue(any("GSApplication" in (r.get("title") or "") for r in payload["results"]))
 
+    def test_docs_search_falls_back_to_terms_for_class_attribute_query(self) -> None:
+        out = asyncio.run(self.module.docs_search(query="GSLayer bounds", max_results=5))
+        payload = json.loads(out)
+
+        self.assertTrue(payload["ok"])
+        self.assertGreater(payload["count"], 0)
+        self.assertEqual(payload["results"][0]["title"], "bounds (attribute)")
+
     def test_glyphs_4_format_searches_return_official_source_metadata(self) -> None:
         for query in (
             "file format version 4",

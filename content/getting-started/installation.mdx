@@ -14,12 +14,27 @@ skills.
 
 The macOS app detects Glyphs 3 and Glyphs 4 separately. If both are installed, both are selected initially, and you can choose either version or install for both. A missing version is shown as not detected and cannot be selected.
 
+For version 1.6.0 and later, choose **Make future updates easier** for each
+Glyphs version you use. When a new version is available, the server window
+shows a small green banner. **Prepare Update** downloads and safely prepares
+that version without replacing the running or installed plug-in. Use **View
+Release** to install it when you are ready. Users upgrading from 1.5.4 must
+install 1.6.0 manually because the earlier plug-in does not contain this
+feature.
+
 Supported automatic links:
 
 - Codex App
 - Codex CLI
 - Claude App
 - Claude CLI
+
+Agent plugins are a separate, optional setup. Version 1.6.0 includes one shared
+repository package for Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot
+CLI, but the installer does not add, update, enable, or remove those plugins.
+Each host owns its plugin lifecycle. Existing standalone skills and manual MCP
+configuration remain supported; see [Use skills and optional
+plugins](./use-agent-skills.mdx).
 
 Downloads:
 
@@ -67,6 +82,11 @@ Glyphs 3 backward compatibility is kept for the shared MCP server code where pos
 - Installs or links `Glyphs MCP.glyphsPlugin` into Glyphs' plug-ins folder.
 - Can link supported local MCP clients.
 - Can copy bundled Glyphs MCP skills into Codex or Claude Code skill directories.
+- Leaves optional Codex, Claude Code, Cursor, and GitHub Copilot agent plugins
+  to their host-specific installers.
+- Can enable the optional **Make future updates easier** feature. Its fixed
+  helper prepares a chosen version but never activates or replaces the
+  installed plug-in.
 - Verifies the complete runtime again after installation and prints the exact
   interpreter and offending files when setup fails.
 

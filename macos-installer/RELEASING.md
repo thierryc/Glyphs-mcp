@@ -50,15 +50,35 @@ Update:
 - `MARKETING_VERSION` → `X.Y.Z`
 - `CURRENT_PROJECT_VERSION` → increment build number (integer)
 
-3) **Docs/links** (if needed for the new tag):
+3) **Optional agent plugin manifests**:
+- `plugins/glyphs-mcp/.codex-plugin/plugin.json`
+- `plugins/glyphs-mcp/.claude-plugin/plugin.json`
+- `plugins/glyphs-mcp/.cursor-plugin/plugin.json`
+- `plugins/glyphs-mcp/.github/plugin/plugin.json`
+
+Set every manifest's `version` to `X.Y.Z`. Marketplace entries deliberately do
+not duplicate the package version. The nine skills inherit the package version,
+and `.mcp.json` stays shared across hosts.
+
+4) **Docs/links** (if needed for the new tag):
 - Root `README.md` and installer docs should reflect the current client matrix:
   - Codex
   - Claude Desktop (`~/Library/Application Support/Claude/claude_desktop_config.json`)
   - Claude Code (`~/.claude.json`)
+  - Cursor (optional host plugin or manual MCP)
+  - GitHub Copilot CLI (optional host plugin or manual MCP)
 - Root `README.md` download link should match the future release asset name:
   - `GlyphsMCPInstaller-X.Y.Z.dmg`
 
 ## Local release test gate
+
+Preview version alignment and verify the shared skill package before the full
+gate:
+
+```bash
+python3 scripts/bump_version.py --dry-run X.Y.Z
+./scripts/sync_codex_plugin_skills.sh --check
+```
 
 Run the same mandatory test gate used by the publisher:
 
@@ -147,6 +167,17 @@ accept the installer application and require Apple's stapler validator to
 accept the extracted plug-in ticket before staging it. `spctl --type execute`
 is not used on `.glyphsPlugin` because that assessment is defined for
 applications and rejects custom bundles as “does not seem to be an app.”
+
+### Verified update preparation contract
+
+Version 1.6.0 introduces staging, not automatic installation. The signed macOS
+installer can opt Glyphs 3 and Glyphs 4 into a fixed verified helper. In the
+plug-in, **Prepare Update** downloads and verifies one exact later release and
+stages its plug-in without editing the running or installed bundle. A ready
+stage must keep **View Release** available so the user can run the signed
+installer separately. Users on 1.5.4 install 1.6.0 manually because 1.5.4 does
+not contain this helper. Do not describe this workflow as automatic or in-app
+installation.
 
 ## QA
 

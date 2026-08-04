@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from '@docusaurus/Link';
 import clsx from 'clsx';
 import styles from './styles.module.css';
 
@@ -39,8 +40,9 @@ const FEATURES: FeatureItem[] = [
     title: 'Run typographic workflows',
     description: (
       <>
-        Follow focused docs for kerning, spacing, compensated tuning, style sets, outlines, and
-        UFO/designspace export.
+        Follow focused docs for kerning, spacing,{' '}
+        <Link to="/docs/italic-first-pass">italic construction and upright-symbol review</Link>,
+        compensated tuning, style sets, outlines, and UFO/designspace export.
       </>
     )
   },

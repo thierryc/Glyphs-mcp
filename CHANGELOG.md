@@ -1,5 +1,95 @@
 # Changelog
 
+## 1.6.0 — Verified update staging and safer spacing workflows
+
+_August 3, 2026_
+
+Glyphs MCP 1.6.0 adds opt-in, fail-closed update discovery and staging while
+making automatic spacing substantially safer for capitals, figures, tabular
+fonts, negative sidebearings, and low-confidence punctuation. It also refreshes
+the bundled italic workflow with Unicode-aware symbol review guidance.
+
+### Easier future updates
+
+- Background checks use GitHub's stable latest-release metadata, derive the
+  exact tag page locally, stay bounded and non-modal, and can be disabled.
+- The installer offers a plain-language **Make future updates easier** option
+  separately for Glyphs 3 and Glyphs 4. Opting in installs a fixed,
+  Developer ID-signed helper
+  with hardened runtime, timestamp, ownership, permission, team, and protocol
+  checks.
+- The server window presents available versions in a discreet positive banner
+  with a simple message and an aligned action. Signing and verification details
+  remain in the release documentation instead of the main status message.
+- Release discovery never downloads or changes the installed plug-in. A user
+  must click **Prepare Update** before the helper may fetch the exact versioned
+  installer and checksum assets.
+- Preparation verifies checksums, archive structure, version, Developer ID,
+  notarization, and the staged plug-in receipt. The running and installed
+  plug-ins remain untouched; 1.6.0 deliberately stages a verified candidate
+  rather than silently activating it.
+- Version 1.5.4 cannot bootstrap this new helper. Existing users install 1.6.0
+  with its signed installer; 1.6.0 can then prepare later stable releases and
+  direct the user to their signed installer for activation.
+- Cancellation, offline failure, malformed metadata, hostile URLs, bad
+  signatures, wrong versions, and unowned updater data fail closed without
+  interrupting the MCP server.
+
+### Class-aware spacing safeguards
+
+- Automatic references now resolve by glyph class: uppercase letters use `H`,
+  lowercase letters use the lowercase strategy, and decimal figures use `one`.
+  Explicit `x`, `H`, `one`, `*`, and arbitrary available glyph references keep
+  their prior meaning.
+- Review and apply results report glyph classification, requested and resolved
+  references, deterministic fallbacks, current/proposed metrics, normalized
+  changes, confidence, tabular evidence, and structured issues.
+- Optional em-normalized guards warn below `-0.05em` and block ordinary upright
+  base glyphs below `-0.10em` by default. Geometry-supported overhangs, marks,
+  italics, allow lists, and named user overrides remain explicit and auditable;
+  negative values are never silently changed to zero.
+- Mutating apply refuses blocked or manual-review results unless the glyph is
+  named in the matching override list. Review and dry-run apply share the same
+  assessments, and no spacing operation saves a document automatically.
+- Automatic tabular preservation now requires fixed-pitch metadata, equal
+  default-figure widths, metrics relationships, or explicit mode. Narrow
+  punctuation is treated as lower-confidence visual-review work.
+
+### Optional multi-host agent plugins
+
+- One shared versioned package now provides native manifests and repository
+  marketplace catalogs for Codex/ChatGPT, Claude Code, Cursor, and GitHub
+  Copilot CLI.
+- Every host manifest is aligned to Glyphs MCP `1.6.0` and loads the same nine
+  packaged skills and localhost MCP connection. Skills inherit the package
+  version, while the server continues to report the native plug-in version.
+- Agent plugins remain host-owned and optional. The native installers do not
+  add or remove them, and repo-local skills, global standalone skills, and
+  manual MCP configuration remain supported.
+- GitHub Copilot CLI supports both the repository marketplace and direct
+  subdirectory installation. The repository does not opt Copilot cloud agents
+  in automatically through `.github/copilot/settings.json`.
+
+### Bundled skills and guidance
+
+- New `glyphs-mcp-release` skill separates local candidate preparation, signed
+  artifact production, verified upload, and public publication, with linked
+  commands and explicit authorization gates for every external release action.
+- `glyphs-mcp-spacing` now documents the complete guarded review, comparison,
+  proofing, dry-run, override, verification, and no-save workflow, with a linked
+  negative-sidebearing reference.
+- `glyphs-mcp-italic-first-pass` now surfaces Unicode-aware review tiers for
+  symbols that may remain upright. These tiers are advisories only and never
+  silently exclude or transform glyphs.
+- Canonical skills, the shared multi-host package, runtime mirrors, prompts,
+  documentation, and release-gate coverage are synchronized.
+- The release-version helper updates all four agent-plugin manifests and
+  supports a non-mutating dry run while retaining support for current generic
+  server-version wording and older FastMCP-specific README wording.
+- Multi-word documentation searches fall back to ranked individual terms only
+  when the complete phrase has no match, so class-and-member queries such as
+  `GSLayer bounds` resolve to the bundled API reference.
+
 ## 1.5.4 — Installer ABI diagnostics
 
 _July 31, 2026_

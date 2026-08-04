@@ -44,6 +44,62 @@ candidate. The controls are independent. At `stem_compensation=1`, accepted
 stems converge to their Roman perpendicular width, so the final correction can
 make the intermediate `curve_strength` difference visually subtle.
 
+## Symbols that may stay upright
+
+Unicode identity can identify glyphs that deserve review, but it cannot decide
+their italic treatment. The workflow therefore reports the tiers below as
+advisories. It does not silently exclude glyphs, change `protected_glyphs`,
+preserve Roman outlines, or apply a zero-angle workaround.
+
+The evidence sample used the 20 highest-ranked families with Regular and Italic
+styles in the [Google Fonts family metadata](https://fonts.google.com/metadata/fonts)
+on July 30, 2026: Roboto, Open Sans, Google Sans, Inter, Montserrat, Poppins,
+Lato, Roboto Condensed, Arimo, Roboto Mono, Noto Sans, DM Sans, Raleway,
+Nunito, Nunito Sans, Playfair Display, Rubik, Ubuntu, Kanit, and Merriweather.
+We compared the filled-outline slant of each Roman and Italic glyph with
+[fontTools `StatisticsPen`](https://fonttools.readthedocs.io/en/latest/pens/statisticsPen.html),
+treated an absolute slant delta below `0.035` as upright, and visually reviewed
+the results.
+
+| Review tier | Unicode values | Evidence and recommended handling |
+| --- | --- | --- |
+| Empirical upright candidates | `U+00A4 ¤`, `U+00A9 ©`, `U+00AE ®`, `U+00B0 °`, `U+212E ℮` | `¤`, `©`, `®`, and `°` stayed upright in 12/20 families; `℮` did so in 11/18. Compare with the Roman before deciding. |
+| Empirical candidates with limited coverage | `U+2190 ←`, `U+2191 ↑`, `U+2192 →`, `U+2193 ↓`, `U+25A0 ■` | Each stayed upright in 7/8 supporting families. Treat the result as strong but smaller-sample evidence. |
+| Traditionally upright math operators | `U+002B +`, `U+003C–U+003E <=>`, `U+00AC ¬`, `U+00B1 ±`, `U+00D7 ×`, `U+00F7 ÷`, `U+220F ∏`, `U+2211 ∑`, `U+2212 −`, `U+221A √`, `U+221E ∞`, `U+222B ∫`, `U+2248 ≈`, `U+2260 ≠`, `U+2264–U+2265 ≤≥` | [Microsoft's character-design guidance](https://learn.microsoft.com/en-us/typography/develop/character-design-standards/math) describes math signs as traditionally upright, but popular text-font italics often slant them. Only 4/20 reviewed families kept `+` upright. Decide from the family's purpose and math support. |
+| Design-dependent forms | `U+0023 #`, `U+002A *`, `U+0040 @`, `U+007C \|`, `U+007E ~`, `U+2022 •`, `U+2122 ™` | Inspect each design. Only 7/20 reviewed families kept `@` statistically upright, and some kept its enclosure upright while italicizing the internal letter. |
+
+### Sources and interpretation
+
+- [Microsoft's Latin-1 math character-design standards](https://learn.microsoft.com/en-us/typography/develop/character-design-standards/math)
+  state the traditional upright convention and give design, alignment, width,
+  and spacing guidance for `+`, `−`, `=`, `≠`, `<`, `>`, `≤`, `≥`, `±`, `×`,
+  `~`, `¬`, and `≈`. This is design guidance, not a requirement that every
+  text italic preserve every operator unchanged.
+- The [Microsoft OpenType `MATH` table specification](https://learn.microsoft.com/en-us/typography/opentype/spec/math)
+  distinguishes slanted characters from straight operators or delimiters when
+  explaining italic correction. That model supports separate treatment, but
+  it describes mathematical layout rather than general-purpose text italics.
+- [Unicode Technical Report #25, *Unicode Support for Mathematics*](https://www.unicode.org/reports/tr25/)
+  separates operators, identifiers, delimiters, arrows, and geometric shapes.
+  It explicitly calls for an upright `U+220A ∊` and notes that integral slant
+  varies by typographic tradition, so Unicode does not justify a blanket
+  upright rule for every mathematical symbol.
+- [Google Fonts family metadata](https://fonts.google.com/metadata/fonts)
+  supplied the popularity order and available Regular/Italic styles for the
+  dated corpus. The [Google Fonts static-font guidance](https://googlefonts.github.io/gf-guide/statics.html)
+  documents its Italic style and negative exported `italicAngle` convention.
+  Popularity and font binaries can change after the snapshot date.
+- [fontTools `StatisticsPen`](https://fonttools.readthedocs.io/en/latest/pens/statisticsPen.html)
+  supplied the area-based glyph slant measurement. Its documentation warns
+  that self-intersecting outlines can affect statistics; visual review remains
+  part of the method.
+
+Before a mechanical pass, the agent resolves scoped glyphs through their
+Unicode values and shows every match. The designer then chooses whether to
+include it, explicitly exclude it from that pass, or defer it for manual
+drawing. An upright symbol remains a separate drawing decision; the italic
+master keeps its actual `italicAngle`.
+
 ## Broad-Latin evidence
 
 The benchmark covers 543 encoded glyphs in both pinned Inter and Noto Sans

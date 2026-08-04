@@ -76,3 +76,15 @@
 "Removed." = "Removed.";
 "The entry changed and was preserved." = "The entry changed and was preserved.";
 "Removed; configuration backup created." = "Removed; configuration backup created.";
+
+/* Future updates */
+"Make future updates easier" = "Make future updates easier";
+"When a new version is available, prepare it in Glyphs and install it when you’re ready." = "When a new version is available, prepare it in Glyphs and install it when you’re ready.";
+"Set up future updates" = "Set up future updates";
+"Verified update helper and staged updates" = "Verified update helper and staged updates";
+"Verified update data" = "Verified update data";
+"The updater path is a symbolic link and will be preserved." = "The updater path is a symbolic link and will be preserved.";
+"The updater directory is not marked as managed and will be preserved." = "The updater directory is not marked as managed and will be preserved.";
+"The updater directory could not be inspected and will be preserved." = "The updater directory could not be inspected and will be preserved.";
+"The updater directory contains unrecognized data and will be preserved." = "The updater directory contains unrecognized data and will be preserved.";
+"Managed helper, authorization receipts, and staged update data." = "Managed helper, authorization receipts, and staged update data.";

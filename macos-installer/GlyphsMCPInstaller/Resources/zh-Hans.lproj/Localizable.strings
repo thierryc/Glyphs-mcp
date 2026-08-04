@@ -225,3 +225,15 @@
 "Removed." = "已移除。";
 "The entry changed and was preserved." = "该条目已发生变化，因此予以保留。";
 "Removed; configuration backup created." = "已移除；已创建配置备份。";
+
+/* 后续更新 */
+"Make future updates easier" = "让后续更新更轻松";
+"When a new version is available, prepare it in Glyphs and install it when you’re ready." = "有新版本时，可在 Glyphs 中做好准备，并在方便时安装。";
+"Set up future updates" = "设置后续更新";
+"Verified update helper and staged updates" = "经验证的更新助手和暂存更新";
+"Verified update data" = "经验证的更新数据";
+"The updater path is a symbolic link and will be preserved." = "更新助手路径是符号链接，将予以保留。";
+"The updater directory is not marked as managed and will be preserved." = "更新助手目录未标记为受管理，将予以保留。";
+"The updater directory could not be inspected and will be preserved." = "无法检查更新助手目录，将予以保留。";
+"The updater directory contains unrecognized data and will be preserved." = "更新助手目录包含无法识别的数据，将予以保留。";
+"Managed helper, authorization receipts, and staged update data." = "受管理的助手、授权收据和暂存更新数据。";

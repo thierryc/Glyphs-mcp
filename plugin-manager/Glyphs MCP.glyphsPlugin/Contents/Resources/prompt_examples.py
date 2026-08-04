@@ -131,7 +131,7 @@ async def prompt_review_spacing():
     """Prompt describing how to run a spacing review on the selected glyphs."""
     return [
         Message(
-            "Call review_spacing for the currently selected glyphs and summarize the biggest suggested LSB/RSB changes.",
+            "Call review_spacing for the currently selected glyphs with class-aware automatic references and guarded normalized negative-bearing thresholds. Summarize resolved references, proposed LSB/RSB values, blocks, exemptions, and manual-review items.",
             role="user",
         )
     ]
@@ -147,7 +147,7 @@ async def prompt_apply_spacing():
     """Prompt describing how to apply spacing suggestions safely."""
     return [
         Message(
-            "Call apply_spacing with dry_run=true for the selected glyphs, then call it again with confirm=true to apply.",
+            "Call apply_spacing with dry_run=true for the selected glyphs using the exact reviewed defaults and guards. Apply only eligible results after approval, disclose named overrides separately, and never save the font automatically.",
             role="user",
         )
     ]
@@ -163,7 +163,7 @@ async def prompt_set_spacing_params():
     """Prompt describing how to set spacing parameters without using the UI."""
     return [
         Message(
-            "Call set_spacing_params with scope='font' to set area/depth/over/frequency (writes cx.ap.spacing* custom parameters by default), then call save_font to persist.",
+            "Call set_spacing_params with scope='font' to set area/depth/over/frequency (writes cx.ap.spacing* custom parameters by default). Report the change and do not save the font automatically.",
             role="user",
         )
     ]
@@ -179,7 +179,7 @@ async def prompt_set_spacing_guides():
     """Prompt describing how to visualize spacing settings with glyph-level guides."""
     return [
         Message(
-            "Call set_spacing_guides with style='model' (default) to add didactic guides (band + zone edges + depth clamp + measured/target average whitespace). If nothing is selected and glyph_names is omitted, it uses a small diagnostic set (n, H, zero, o, O, period, comma). Enable View → Show Guides to see them. Use mode='clear' to remove.",
+            "Call set_spacing_guides with reference_glyph='auto' and style='model' to add class-aware didactic guides (band + zone edges + depth clamp + measured/target average whitespace). Verify each resolved reference. Enable View → Show Guides to see them and use mode='clear' to remove.",
             role="user",
         )
     ]

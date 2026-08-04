@@ -1,45 +1,42 @@
 ---
 name: glyphs-mcp-spacing
-description: Use this skill when the task is to review spacing, inspect sidebearing or width suggestions, or apply approved spacing changes with a dry run first.
+description: Review, compare, and safely apply Glyphs spacing suggestions with class-aware references, normalized negative-bearing guards, tabular-width checks, dry runs, and visual proofing. Use for sidebearings, advance widths, spacing audits, reference-font comparisons, or approved spacing changes.
 ---
 
 # Glyphs MCP spacing
 
-Use this skill for guarded spacing review and apply workflows.
+Use class-aware review, normalized safeguards, and visual proofing. Negative sidebearings are legal; suspect them only when magnitude, class, geometry, or their effect across word spaces is implausible. Read [Negative sidebearings and spacing safeguards](references/negative-sidebearings.md) when a result is negative, blocked, exempted, or manually overridden.
 
-## Core rules
+## Safe workflow
 
-- Prefer the `Spacing` tool profile when spacing is the only focus.
-- Inspect current font, master, and selection before mutation.
-- Run `review_spacing` before any apply step.
-- Always run `apply_spacing` with `dry_run=true` before a mutating call.
-- Mention `set_spacing_params` and `set_spacing_guides` only as optional supporting tools.
-- Never auto-save the font.
+1. Connect to `glyphs-mcp-server` and call `list_open_fonts`.
+2. Identify the exact font index and master ID before calculating anything.
+3. Inspect UPM, x-height, cap height, italic angle, fixed-pitch status, current width and bearings, metrics keys, automatic alignment, whether current metrics are trusted or placeholders, and glyph category/Unicode data.
+4. Call `review_spacing` before mutation. Prefer omitted/`"auto"` `referenceGlyph`, then verify every `resolvedReferenceGlyph`, `referenceFallback`, and `glyphClass`.
+5. Inspect normalized metrics, negative-bearing warnings/blocks, width assessment, tabular provenance, confidence, and current-metric trust. Do not use a delta from untrusted placeholder metrics as proof that a proposal is wrong.
+6. Review representative glyphs before approving a set:
+   - Uppercase: `H O J T V W Y`
+   - Lowercase: `n o f j`
+   - Figures: `one seven` and all default figures
+   - Narrow punctuation, quotation marks, and any marks in scope
+7. Preserve width only when fixed-pitch metadata, equal default figures, width links, or explicit intent supports it. Do not infer monospacing from a family name or typewriter styling.
+8. Call `apply_spacing` with `dry_run=true` using the exact defaults, rules, guards, clamps, and intended overrides. Confirm its guard assessments match review.
+9. Require explicit authorization unless the user already clearly requested mutation. Apply only eligible results. Disclose `overrides.blockedGlyphs` and `overrides.manualReviewGlyphs` separately; an override does not make the original assessment safe.
+10. Re-read applied metrics and print a verification table. Never save the Glyphs document automatically.
 
-## Workflow
+## Comparison workflow
 
-1. Read the current context first:
-   - `get_selected_font_and_master`
-   - `get_selected_glyphs`
-   - `get_glyph_details` only if the review needs more shape or metrics context
-2. Run `review_spacing` and summarize:
-   - reviewed glyphs
-   - proposed sidebearing or width changes
-   - assumptions or outliers
-3. If the user wants to proceed, run `apply_spacing` with `dry_run=true`.
-4. Report the proposed changes in plain language before any mutation.
-5. Only after explicit approval, run the real apply call.
-6. Re-read the affected state or summarize returned changes, and call out any glyphs that still need manual review.
+When comparing another font:
 
-## Optional helpers
+- State the exact source font and master.
+- State the scaling method. Do not blindly multiply by UPM ratio when cap heights or x-heights differ.
+- Prefer cap-height scaling for capitals/figures and x-height scaling for lowercase where appropriate. Report UPM and design-height scaling when they materially disagree.
+- Treat reference metrics as evidence, not ground truth.
 
-- `set_spacing_params` for font or master-level spacing parameters
-- `set_spacing_guides` for visual measurement guides
+Print a table with: Glyph, Current LSB/RSB, Calculated LSB/RSB, Reference LSB/RSB, calculated-minus-reference differences, resolved reference, normalized calculated bearings, and warning/block state.
 
-Use them only when the user explicitly wants those supporting adjustments.
+## Proofing
 
-## Deeper references
+Recommend visual proofs: `HHHOHH`, `HOHOHO`, `AVAYAW`, `JHJOJ`, `nnnon`, `nonono`, `f` beside rounds/verticals/spaces, a complete repeated-figure proof, and narrow punctuation beside capitals, lowercase, figures, and spaces.
 
-- [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
-- [Project briefing](https://github.com/thierryc/Glyphs-mcp/blob/main/CODEX.md)
-- [Tool profiles](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/Glyphs%20MCP.glyphsPlugin/Contents/Resources/tool_profiles.py)
+Use `set_spacing_params` and `set_spacing_guides` only when requested. For the full tool surface, see the [command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx).

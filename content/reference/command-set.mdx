@@ -234,9 +234,10 @@ If you see an error, quote it verbatim.
 Review spacing for my current selection.
 Rules: read first, do not auto-save, and do not mutate without a dry run.
 
-1. Call review_spacing with {"font_index":0}
-2. Call apply_spacing with {"font_index":0,"dry_run":true,"clamp":{"maxDeltaLSB":80,"maxDeltaRSB":80,"minLSB":-50,"minRSB":-50}}
-3. Stop and wait for approval before using confirm=true.
+1. Call review_spacing with {"font_index":0,"defaults":{"referenceGlyph":"auto"},"guards":{"negativeBearingPolicy":"guarded","warnBelowEm":-0.05,"blockBelowEm":-0.10}}
+2. Verify resolved references and blocking/manual-review assessments.
+3. Call apply_spacing with the same arguments plus {"dry_run":true}.
+4. Stop and wait for approval before using confirm=true. Apply only eligible results and disclose any named override.
 ```
 
 ### Kerning collision review

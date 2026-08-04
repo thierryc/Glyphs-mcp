@@ -4,6 +4,7 @@ public enum UninstallComponentKind: String, CaseIterable, Sendable {
 	case plugin
 	case skill
 	case client
+	case updater
 }
 
 public enum UninstallSafetyState: Equatable, Sendable {
@@ -142,6 +143,7 @@ public struct GlyphsUninstallLocations: Sendable {
 	public let codexConfig: URL
 	public let claudeDesktopConfig: URL
 	public let claudeCodeConfig: URL
+	public let updaterRoot: URL?
 
 	public init(
 		pluginBundles: [GlyphsMajorVersion: URL],
@@ -149,7 +151,8 @@ public struct GlyphsUninstallLocations: Sendable {
 		claudeCodeSkillsRoot: URL,
 		codexConfig: URL,
 		claudeDesktopConfig: URL,
-		claudeCodeConfig: URL
+		claudeCodeConfig: URL,
+		updaterRoot: URL? = nil
 	) {
 		self.pluginBundles = pluginBundles
 		self.codexSkillsRoot = codexSkillsRoot
@@ -157,6 +160,7 @@ public struct GlyphsUninstallLocations: Sendable {
 		self.codexConfig = codexConfig
 		self.claudeDesktopConfig = claudeDesktopConfig
 		self.claudeCodeConfig = claudeCodeConfig
+		self.updaterRoot = updaterRoot
 	}
 
 	public static var live: GlyphsUninstallLocations {
@@ -168,7 +172,8 @@ public struct GlyphsUninstallLocations: Sendable {
 			claudeCodeSkillsRoot: InstallerPaths.claudeCodeSkillsDir,
 			codexConfig: InstallerPaths.codexConfig,
 			claudeDesktopConfig: InstallerPaths.claudeDesktopConfig,
-			claudeCodeConfig: InstallerPaths.claudeCodeConfig
+			claudeCodeConfig: InstallerPaths.claudeCodeConfig,
+			updaterRoot: UpdateStagingPaths().root
 		)
 	}
 }
@@ -360,7 +365,62 @@ public enum GlyphsUninstallScanner {
 			))
 		}
 
+		if let updaterRoot = locations.updaterRoot {
+			let inspection = inspectUpdaterRoot(updaterRoot, fileManager: fileManager)
+			candidates.append(UninstallCandidate(
+				id: "updater",
+				component: .updater,
+				title: NSLocalizedString("Verified update helper and staged updates", comment: "Uninstall updater title"),
+				location: updaterRoot,
+				safetyState: inspection.0,
+				detail: inspection.1
+			))
+		}
+
 		return GlyphsUninstallPlan(candidates: candidates)
+	}
+
+	private static func inspectUpdaterRoot(
+		_ root: URL,
+		fileManager: FileManager
+	) -> (UninstallSafetyState, String) {
+		guard itemExists(at: root, fileManager: fileManager) else {
+			return (.missing, NSLocalizedString("Not installed.", comment: "Uninstall missing item"))
+		}
+		if (try? root.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == true {
+			return (.blocked, NSLocalizedString("The updater path is a symbolic link and will be preserved.", comment: "Uninstall unsafe updater symlink"))
+		}
+		let marker = root.appendingPathComponent(".managed-by-glyphs-mcp")
+		guard let markerText = try? String(contentsOf: marker, encoding: .utf8),
+			  markerText == UpdateHelperProtocol.managedMarker else {
+			return (.blocked, NSLocalizedString("The updater directory is not marked as managed and will be preserved.", comment: "Uninstall unmanaged updater"))
+		}
+		let allowed = Set([
+			UpdateHelperProtocol.executableName,
+			".managed-by-glyphs-mcp",
+			"InstallReceipt.json",
+			"Requests",
+			"Staged",
+			"Authorizations",
+			"Temporary",
+		])
+		guard let contents = try? fileManager.contentsOfDirectory(
+			at: root,
+			includingPropertiesForKeys: nil,
+			options: []
+		) else {
+			return (.blocked, NSLocalizedString("The updater directory could not be inspected and will be preserved.", comment: "Uninstall unreadable updater"))
+		}
+		let unexpected = contents.map(\.lastPathComponent).filter {
+			!allowed.contains($0) && !$0.hasPrefix(".helper-")
+		}
+		guard unexpected.isEmpty else {
+			return (.blocked, NSLocalizedString("The updater directory contains unrecognized data and will be preserved.", comment: "Uninstall unexpected updater content"))
+		}
+		return (
+			.removable,
+			NSLocalizedString("Managed helper, authorization receipts, and staged update data.", comment: "Uninstall managed updater detail")
+		)
 	}
 
 	private static func inspectClient(kind: UninstallClientKind, path: URL, serverName: String, fileManager: FileManager) -> ConfigRemovalInspection {
@@ -386,10 +446,16 @@ public enum GlyphsUninstallScanner {
 
 public struct GlyphsUninstaller {
 	private let fileManager: FileManager
+	private let updateOptInStore: UpdateOptInStore
 	private let log: (String) -> Void
 
-	public init(fileManager: FileManager = .default, log: @escaping (String) -> Void) {
+	public init(
+		fileManager: FileManager = .default,
+		updateOptInStore: UpdateOptInStore = .live,
+		log: @escaping (String) -> Void
+	) {
 		self.fileManager = fileManager
+		self.updateOptInStore = updateOptInStore
 		self.log = log
 	}
 
@@ -403,6 +469,13 @@ public struct GlyphsUninstaller {
 					outcome = try removeFileCandidate(candidate)
 				case .client:
 					outcome = try removeClientCandidate(candidate)
+				case .updater:
+					outcome = try removeFileCandidate(candidate)
+					if outcome.status == .removed {
+						for version in GlyphsMajorVersion.allCases {
+							updateOptInStore.setEnabled(version, false)
+						}
+					}
 				}
 				outcomes.append(outcome)
 				log("\(outcome.status == .removed ? "Removed" : "Skipped"): \(candidate.location.path)")

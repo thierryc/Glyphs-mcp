@@ -288,6 +288,7 @@ public struct GlyphsInstallTargetPlan: Sendable {
 	public let pythonSelection: PythonSelection
 	public let pluginsDirectory: URL
 	public let pluginInstallStrategy: GlyphsPluginInstallStrategy
+	public let enableVerifiedInAppUpdates: Bool
 
 	public var dependencyInstallKey: String {
 		switch pythonSelection {
@@ -302,11 +303,13 @@ public struct GlyphsInstallTargetPlan: Sendable {
 		version: GlyphsMajorVersion,
 		pythonSelection: PythonSelection,
 		pluginsDirectory: URL,
-		pluginInstallStrategy: GlyphsPluginInstallStrategy
+		pluginInstallStrategy: GlyphsPluginInstallStrategy,
+		enableVerifiedInAppUpdates: Bool = false
 	) {
 		self.version = version
 		self.pythonSelection = pythonSelection
 		self.pluginsDirectory = pluginsDirectory
 		self.pluginInstallStrategy = pluginInstallStrategy
+		self.enableVerifiedInAppUpdates = enableVerifiedInAppUpdates
 	}
 }

@@ -10,7 +10,7 @@ These tools help you **review** and optionally **apply** consistent sidebearings
 
 The intent is to make spacing more systematic and repeatable, while keeping you in control through:
 1) clear per-glyph reporting, and  
-2) conservative safety defaults (skip rules + clamping).
+2) conservative safety defaults (skip rules + em-normalized guards).
 
 ---
 
@@ -20,7 +20,7 @@ Use the spacing tools when you want to:
 
 - review spacing across selected glyphs or named glyph sets,
 - compare sidebearing suggestions across masters,
-- keep spacing changes conservative with clamps,
+- keep spacing changes conservative with normalized guards,
 - configure repeatable spacing parameters,
 - visualize the measurement model with guides.
 
@@ -259,8 +259,9 @@ All values are optional; omitted fields fall back to internal defaults.
 - `frequency` (number, default `5`)
   - Sampling step in font units along the y-axis.
   - Smaller values are slower but can be more stable.
-- `referenceGlyph` (string, default `"x"`)
-  - Fallback reference when no rule overrides it.
+- `referenceGlyph` (string, default `"auto"`)
+  - Automatic mode resolves uppercase to `H`, lowercase to `x`, decimal figures to `one`, and marks/zero-width glyphs outside ordinary base-glyph spacing.
+  - Explicit names such as `"x"`, `"H"`, and `"one"` remain exact explicit choices.
   - Special value `"*"` means “use the glyph itself as reference”.
 - `factor` (number, default `1.0`)
   - Global multiplier applied to the target area (usually overridden by rules).
@@ -271,10 +272,13 @@ All values are optional; omitted fields fall back to internal defaults.
 - `respectMetricsKeys` (bool, default `true`)
 - `skipAutoAligned` (bool, default `true`)
 - `minCoverageRatio` (number `0..1`, default `0.7`)
-- `tabularMode` (bool, default `false`)
-  - If true, and if a width target is available, the tool will keep width fixed by distributing width adjustments across LSB/RSB.
+- `tabularMode` (`"auto"` or bool, default `"auto"`)
+  - Automatic mode preserves width only from fixed-pitch metadata, an equal default-figure set, established width links, or tabular glyph naming.
+  - `true` retains force/preserve behavior; `false` disables new font/group auto-detection.
 - `tabularWidth` (number or null, default `null`)
   - If set, becomes the fixed width target used by `tabularMode`.
+- `tabularToleranceEm` (number, default `0.005`)
+  - Maximum normalized width spread for automatic equal-figure detection.
 - `includeSamples` (bool, default `false`)
   - If true, `review_spacing` includes per-y sample arrays (larger payload).
 
@@ -313,6 +317,11 @@ Computes a per-glyph spacing report and suggestions.
   - If omitted, evaluates all masters.
 - `rules` (list, optional)
 - `defaults` (object, optional)
+- `guards` (object, optional)
+  - `negativeBearingPolicy`: `"guarded"` (default), `"advisory"`, or `"off"`
+  - `warnBelowEm` / `blockBelowEm`: defaults `-0.05` / `-0.10`
+  - `blockOnOutliers`, `allowGlyphs`, `allowItalicOverhangs`, `allowMarks`
+  - `currentMetricsTrust`: `"auto"`, `"trusted"`, or `"untrusted"`, with optional per-glyph trust lists
 - `debug` (object, optional)
   - Currently supports `includeSamples`.
 
@@ -323,6 +332,9 @@ Computes a per-glyph spacing report and suggestions.
   - `status`: `"ok" | "skipped" | "error"`
   - `reason` (when skipped/error)
   - `current` metrics
+  - raw `proposed` metrics and normalized current/proposed/change values
+  - current-metric trust, glyph-class, reference, and tabular provenance
+  - negative-bearing, width, confidence, and application assessments
   - `reference` band info
   - `measured` areas/extremes
   - `target` values
@@ -344,10 +356,11 @@ Applies the suggestions computed by the same engine.
 **Inputs**
 Same as `review_spacing`, plus:
 - `clamp` (object, optional)
-  - `maxDeltaLSB` (default `150`)
-  - `maxDeltaRSB` (default `150`)
-  - `minLSB` (default `-200`)
-  - `minRSB` (default `-200`)
+  - Compatibility-only absolute font-unit limits: `maxDeltaLSB`, `maxDeltaRSB`, `minLSB`, `minRSB`.
+  - No clamp is injected when omitted. Guards always assess the raw `proposed` values first.
+- `overrides` (object, optional)
+  - `blockedGlyphs`: glyph names explicitly authorized despite a blocking guard.
+  - `manualReviewGlyphs`: glyph names explicitly approved after low-confidence review.
 - `confirm` (bool, default `false`)
 - `dry_run` (bool, default `false`)
 
@@ -356,6 +369,7 @@ Same as `review_spacing`, plus:
 - `summary`
 - `results` (the same analysis results)
 - `applied` list (only when actually applied) with before/after metrics
+- blocked/manual/override counts and an audit of requested and used overrides
 
 ### `set_spacing_guides`
 
@@ -378,7 +392,8 @@ This is purely a visualization aid. It:
   - `"master"`: a specific master via `master_id`
 - `master_id` (string, required when `master_scope="master"`)
 - `mode` (`"add"` or `"clear"`, default `"add"`)
-- `reference_glyph` (string, default `"x"`)
+- `reference_glyph` (string, default `"auto"`)
+  - `"auto"` uses the same class-aware reference resolution as review/apply.
   - Special value `"*"` means “use the glyph itself”.
 - `style` (`"band" | "model" | "full"`, default `"model"`)
   - `"band"`: only the vertical measurement band (two horizontal guides).
@@ -431,11 +446,11 @@ This is purely a visualization aid. It:
 2) Run `review_spacing`:
    - Check skip reasons.
    - Look at the largest `delta` outliers.
-3) Tune `rules` and/or `defaults`:
-   - pick better reference glyphs for punctuation and symbols
+3) Verify `resolvedReferenceGlyph`, normalized guards, tabular evidence, and confidence. Tune `rules`/`defaults` only when design evidence supports it:
+   - use explicit trusted references for punctuation and symbols when available
    - adjust `factor` per class
-4) Run `apply_spacing(dry_run=true)` to confirm clamps and diffs.
-5) Run `apply_spacing(confirm=true)` to apply.
+4) Run `apply_spacing(dry_run=true)` with the exact intended arguments.
+5) Run `apply_spacing(confirm=true)` only for eligible results; disclose named overrides separately.
 6) Repeat: re-run `review_spacing` to confirm deltas are near zero.
 
 ---
@@ -456,21 +471,21 @@ Call:
   "font_index": 0,
   "glyph_names": ["H", "O", "n", "o", "period", "comma"],
   "defaults": {
-    "referenceGlyph": "n",
+    "referenceGlyph": "auto",
     "frequency": 5,
     "area": 420
   }
 }
 ```
 
-### Apply with a conservative clamp (two-step)
+### Apply with normalized guards (two-step)
 Dry run:
 ```json
 {
   "font_index": 0,
   "glyph_names": ["H", "O", "n", "o"],
   "dry_run": true,
-  "clamp": { "maxDeltaLSB": 80, "maxDeltaRSB": 80 }
+  "guards": { "negativeBearingPolicy": "guarded", "warnBelowEm": -0.05, "blockBelowEm": -0.10 }
 }
 ```
 
@@ -480,7 +495,7 @@ Apply:
   "font_index": 0,
   "glyph_names": ["H", "O", "n", "o"],
   "confirm": true,
-  "clamp": { "maxDeltaLSB": 80, "maxDeltaRSB": 80 }
+  "guards": { "negativeBearingPolicy": "guarded", "warnBelowEm": -0.05, "blockBelowEm": -0.10 }
 }
 ```
 
@@ -489,6 +504,9 @@ Apply:
 ## Limitations and notes
 
 - Measurements rely on `layer.intersectionsBetweenPoints(...)`, which behaves like the Glyphs measurement tool; unusual outlines, open paths, or complex overlaps can produce sparse or noisy intersections.
+- Negative sidebearings are legal and may be necessary for real overhangs. The normalized thresholds diagnose suspicious context; they are not universal typographic laws.
+- Narrow punctuation remains low confidence and requires separate manual-review approval before application. Do not tune the general letter model solely to fit punctuation.
+- Automatic non-Latin classification depends on Glyphs metadata and Unicode information; uncertain cases are reported for review.
 - Auto-spacing does not replace human review. Use text strings and proofing after applying.
 - If your font heavily uses metrics keys or auto-aligned component glyphs, many layers will be skipped by design.
 
@@ -522,7 +540,7 @@ Paste this into your LLM/client as a single prompt. It is designed to be safe, p
   "master_scope": "current",
   "mode": "add",
   "style": "model",
-  "reference_glyph": "x"
+  "reference_glyph": "auto"
 }
 ```
 
