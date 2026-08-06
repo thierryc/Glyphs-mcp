@@ -286,6 +286,10 @@ Version 1.6.0 final QA resumption on August 6, 2026:
   hides discovery and cleanup traffic from the status field, preserves it in
   debug logging, and continues to surface genuine MCP HTTP errors. Focused
   middleware and source/Plugin Manager synchronization tests passed.
+- A full Glyphs 4 restart loaded the final middleware and reproduced the stale
+  session path as a neutral **Client reconnecting** status while the panel
+  remained **Running**. `get_server_info` then returned MCP `1.6.0`, runtime
+  `1.6.0+9b7e2e97a7b9`, Glyphs 4.0, and Python 3.14.6 without a red HTTP error.
 
 The `v1.6.0` release boundary requires:
 
