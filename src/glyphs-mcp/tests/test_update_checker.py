@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import importlib.util
 import json
 from pathlib import Path
@@ -737,6 +738,125 @@ class UpdateCheckerTests(unittest.TestCase):
         plugin._helper_state = "compatible"
         plugin.UpdateAction_(None)
         self.assertEqual(preparations, [("1.6.0", 4)])
+
+
+class ActivityStatusMiddlewareTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.update_checker = _load_module()
+        cls.plugin_module, _glyphs, _notifications = _load_plugin_module(
+            cls.update_checker
+        )
+
+    def run_request(
+        self,
+        *,
+        method="POST",
+        path="/mcp/",
+        status=200,
+        headers=(),
+        body=b'{"jsonrpc":"2.0","method":"initialize"}',
+    ):
+        activity = []
+
+        async def app(_scope, receive, send):
+            if method == "POST":
+                while True:
+                    message = await receive()
+                    if not message.get("more_body", False):
+                        break
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": status,
+                    "headers": [],
+                }
+            )
+            await send({"type": "http.response.body", "body": b""})
+
+        request_sent = False
+
+        async def receive():
+            nonlocal request_sent
+            if request_sent:
+                return {"type": "http.disconnect"}
+            request_sent = True
+            return {
+                "type": "http.request",
+                "body": body,
+                "more_body": False,
+            }
+
+        async def send(_message):
+            return None
+
+        middleware = self.plugin_module.McpActivityStatusMiddleware(
+            app,
+            recorder=lambda message, state="ok": activity.append(
+                (message, state)
+            ),
+        )
+        scope = {
+            "type": "http",
+            "method": method,
+            "path": path,
+            "headers": list(headers),
+        }
+        asyncio.run(middleware(scope, receive, send))
+        return activity
+
+    def test_stale_session_404_is_a_neutral_reconnect(self):
+        activity = self.run_request(
+            status=404,
+            headers=((b"mcp-session-id", b"stale-session"),),
+        )
+
+        self.assertEqual(
+            activity,
+            [("initialize", "active"), ("Client reconnecting", "ok")],
+        )
+
+    def test_session_cleanup_and_discovery_requests_are_not_visible(self):
+        for method, path, headers in (
+            (
+                "DELETE",
+                "/mcp/",
+                ((b"mcp-session-id", b"stale-session"),),
+            ),
+            ("GET", "/.well-known/oauth-protected-resource", ()),
+            ("GET", "/mcp/.well-known/oauth-protected-resource", ()),
+            ("GET", "/mcp/", ((b"accept", b"text/html"),)),
+        ):
+            with self.subTest(method=method, path=path):
+                self.assertEqual(
+                    self.run_request(
+                        method=method,
+                        path=path,
+                        status=404,
+                        headers=headers,
+                    ),
+                    [],
+                )
+
+    def test_genuine_mcp_http_error_remains_visible(self):
+        activity = self.run_request(status=500)
+
+        self.assertEqual(
+            activity,
+            [("initialize", "active"), ("Error: HTTP 500", "error")],
+        )
+
+    def test_sse_request_remains_visible(self):
+        activity = self.run_request(
+            method="GET",
+            status=200,
+            headers=((b"accept", b"text/event-stream, application/json"),),
+        )
+
+        self.assertEqual(
+            activity,
+            [("GET /mcp/", "active"), ("GET /mcp/", "ok")],
+        )
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 
 ## 1.6.0 — Verified update staging and safer spacing workflows
 
-_August 3, 2026_
+_August 6, 2026_
 
 Glyphs MCP 1.6.0 adds opt-in, fail-closed update discovery and staging while
 making automatic spacing substantially safer for capitals, figures, tabular
@@ -34,6 +34,10 @@ the bundled italic workflow with Unicode-aware symbol review guidance.
 - Cancellation, offline failure, malformed metadata, hostile URLs, bad
   signatures, wrong versions, and unowned updater data fail closed without
   interrupting the MCP server.
+- Automatic client reconnection no longer leaves the server window showing a
+  false red HTTP 404 when a pre-restart session is rejected and cleaned up.
+  Expected transport retries remain available in the debug log, while genuine
+  MCP request failures still appear in the activity status.
 
 ### Class-aware spacing safeguards
 

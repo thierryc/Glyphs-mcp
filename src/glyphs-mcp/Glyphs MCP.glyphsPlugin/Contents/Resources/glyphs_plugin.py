@@ -115,6 +115,46 @@ class McpActivityStatusMiddleware:
         except Exception:
             pass
 
+    @staticmethod
+    def _header(scope, name):
+        expected = str(name).lower().encode("ascii")
+        for header_name, header_value in scope.get("headers") or ():
+            try:
+                if bytes(header_name).lower() == expected:
+                    return bytes(header_value).decode(
+                        "utf-8", errors="replace"
+                    ).strip()
+            except Exception:
+                continue
+        return ""
+
+    @classmethod
+    def _tracks_request(cls, scope):
+        """Return whether a request represents visible MCP activity."""
+        method = str(scope.get("method") or "").upper()
+        path = str(scope.get("path") or "")
+        if path.rstrip("/") != "/mcp":
+            return False
+        if method == "POST":
+            return True
+        if method == "GET":
+            return "text/event-stream" in cls._header(
+                scope, "accept"
+            ).lower()
+        return False
+
+    @classmethod
+    def _is_session_refresh(cls, scope, response_status):
+        """Recognize a stale client session that will be reinitialized."""
+        try:
+            status = int(response_status)
+        except (TypeError, ValueError):
+            return False
+        return (
+            status == 404
+            and bool(cls._header(scope, "mcp-session-id"))
+        )
+
     def _request_label(self, scope, body):
         method = scope.get("method") or "?"
         path = scope.get("path") or "?"
@@ -140,6 +180,10 @@ class McpActivityStatusMiddleware:
 
     async def __call__(self, scope, receive, send):
         if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        if not self._tracks_request(scope):
             await self.app(scope, receive, send)
             return
 
@@ -185,7 +229,13 @@ class McpActivityStatusMiddleware:
 
         try:
             if response_status is not None and int(response_status) >= 400:
-                self._record("Error: HTTP {}".format(int(response_status)), "error")
+                if self._is_session_refresh(scope, response_status):
+                    self._record("Client reconnecting", "ok")
+                else:
+                    self._record(
+                        "Error: HTTP {}".format(int(response_status)),
+                        "error",
+                    )
             else:
                 self._record(label, "ok")
         except Exception:

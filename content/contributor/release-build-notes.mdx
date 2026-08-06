@@ -36,6 +36,9 @@ Release highlights:
 - Present the opt-in as **Make future updates easier** and show available
   versions in a compact positive banner; keep signing and verification detail
   in the release and security documentation.
+- Keep expected stale-session reconnect and cleanup responses in the debug log
+  without leaving a false red HTTP 404 in the server window. Genuine MCP HTTP
+  failures remain visible.
 - Stage exact-tag installer assets only after checksum, archive, version,
   Developer ID, notarization, permission, ownership, protocol, and receipt
   checks. Never replace the running or installed plug-in during preparation.
@@ -261,6 +264,28 @@ Version 1.6.0 release-candidate preparation on August 3, 2026:
   rerun. The smoke does not replace the required disposable large-font matrix.
 - No signed Release artifact, notarization submission, tag, draft release, or
   upload was created during preparation.
+
+Version 1.6.0 final QA resumption on August 6, 2026:
+
+- `559` Python tests passed; `2` intentional skips (the opt-in full Python
+  dependency matrix and the unavailable GitHub Copilot CLI smoke test).
+- All `104` macOS installer tests passed. Shell syntax, tracked patch
+  whitespace, and the unsigned Debug installer build also passed through
+  `scripts/run_local_release_tests.sh` with normal Xcode system access.
+- The Docusaurus production build completed successfully.
+- A fresh disposable Playfair pass in Glyphs 4 covered `1,208` glyphs, `8`
+  masters, `7` instances, bounded glyph/path/component/style-set inspection,
+  spacing review and dry run, kerning review and dry run, the complete `16,306`
+  pair kerning read, and visual rendering. The document stayed unedited and
+  its file remained byte-identical.
+- Restart diagnostics showed an MCP client automatically retrying an expired
+  `mcp-session-id`, initializing a fresh session successfully, and cleaning up
+  the expired session. The correct transport-level `404` responses had been
+  overwriting the status window as a red error even though no user tool call
+  failed. Activity tracking now treats that sequence as a neutral reconnect,
+  hides discovery and cleanup traffic from the status field, preserves it in
+  debug logging, and continues to surface genuine MCP HTTP errors. Focused
+  middleware and source/Plugin Manager synchronization tests passed.
 
 The `v1.6.0` release boundary requires:
 
