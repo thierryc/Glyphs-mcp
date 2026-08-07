@@ -44,6 +44,7 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 ## Helper Resources
 - Guide: `glyphs://glyphs-mcp/guide`
 - Docs index: `glyphs://glyphs-mcp/docs/index.json`
+- Deferred beztrace integration gate: [`content/contributor/beztrace-integration-gate.mdx`](content/contributor/beztrace-integration-gate.mdx). Do not add the tool, binary, dependency manifest, or release integration until that standalone-product gate passes.
 
 Refer to `README.md` for the full command table and usage notes.
 

@@ -1,0 +1,89 @@
+---
+title: Deferred beztrace integration gate
+description: Conditions that the standalone beztrace product must satisfy before Glyphs MCP integration may be planned.
+---
+
+# Deferred beztrace integration gate
+
+Glyphs MCP does not currently include beztrace, an image-tracing MCP tool, a
+tracing executable, or related release machinery. The planned standalone
+beztrace project must prove that it is independently useful, reliable, fast,
+licensed, signed, and distributable before this repository may begin an
+integration.
+
+This page is a hold point, not an implementation specification or authorization
+to change the Glyphs MCP tool surface.
+
+## Standalone product boundary
+
+beztrace is planned as a separate Swift project consisting of a reusable
+`BezierTraceCore` library and a signed `beztrace` command-line executable. It
+must remain independent of Glyphs.app and Glyphs MCP while it is developed and
+validated.
+
+The initial implementation is expected to be a one-time derivative Swift port
+of img2bez commit
+`23073ca08ecdac61ad0e838bfae49a590bc2c7cc`, distributed under
+`Apache-2.0 OR MIT`. Its v1 focus is clean generated glyph images, neutral
+versioned JSON geometry, SVG, and caller-supplied placement.
+
+## Required viability evidence
+
+Do not plan or implement Glyphs MCP integration until all of the following are
+complete and reviewed:
+
+- A stable standalone JSON schema v1 and documented CLI interface.
+- Passing unit, differential, malformed-input, geometry-validity, and
+  determinism tests.
+- All 62 pinned upstream fixtures passing without structural regression from
+  the reported `0.964` reference score.
+- At least 100 retained clean generated-image fixtures, with 100% valid
+  geometry and at least 95% accepted without topology repair.
+- End-to-end p95 below one second for 1024x1024 input on a recorded Apple
+  Silicon benchmark machine.
+- A universal `arm64+x86_64` signed executable and signed/notarized installer.
+- Release checksums, complete licenses and provenance, third-party notices, and
+  an SBOM matching the artifacts.
+- At least one validated non-Glyphs workflow using only the released CLI.
+- Reviewed merge of `lit/initial-swift-port` into the standalone repository's
+  `main` branch.
+- A separately authorized, versioned standalone release suitable for pinning.
+
+A working local executable or visually plausible SVG does not satisfy this
+gate.
+
+## Changes prohibited before viability
+
+Until every requirement above passes, Glyphs MCP must not add:
+
+- A `trace_image_to_paths`, `img2bez`, `beztrace`, or equivalent MCP tool.
+- A beztrace artifact download, version pin, checksum, or dependency manifest.
+- A bundled tracing executable or Swift tracing source.
+- Tool-profile, command-reference, prompt, skill, or public feature entries for
+  image tracing.
+- Signing, notarization, installer, updater, or release-publishing behavior for
+  beztrace.
+- A workflow that writes generated paths into an open font.
+
+Do not create a dormant partial adapter in anticipation of the product. The
+integration begins only after a viable release exists.
+
+## Future integration contract
+
+After standalone viability, prepare a new plan and a separate Glyphs MCP
+integration branch. The future design must be reviewed against the then-current
+tool, release, Python-runtime, and Glyphs 3.5/4 contracts rather than copied
+blindly from this note.
+
+The expected safety boundary is:
+
+1. A read-only MCP tool accepts exactly one local image path or bounded base64
+   image and invokes a checksum-pinned signed executable.
+2. The tool returns validated neutral geometry compatible with
+   `pathDataVersion 2`; it does not edit a font.
+3. Applying the result remains a separate explicit `set_glyph_paths` call with
+   the existing validation, rollback, and read-back behavior.
+4. The Glyphs MCP runtime never downloads or updates beztrace dynamically.
+
+Meeting the viability gate permits planning and review. It does not itself
+authorize code changes, signing, publishing, or font mutation.
