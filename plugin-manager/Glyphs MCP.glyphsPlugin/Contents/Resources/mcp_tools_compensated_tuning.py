@@ -144,6 +144,11 @@ async def measure_stem_ratio(
     stem_source: str = "auto",
     mismatch_tolerance: float = 0.2,
 ) -> str:
+    """Measure a read-only stem ratio between two explicit masters.
+
+    Returns the ratio, measurement provenance, and bounded warnings without
+    changing or saving the font. Use the result to review compensated tuning.
+    """
     return _safe_json(
         _measure_stem_ratio_impl(
             font_index=font_index,
@@ -441,6 +446,12 @@ async def review_compensated_tuning(
     stem_ratio_b: float = None,
     stem_measure: dict = None,
 ) -> str:
+    """Build a detached compensated-tuning proposal for one explicit glyph.
+
+    Returns set_glyph_paths-compatible geometry plus computed parameters and
+    warnings. This review is read-only and never saves the font; use a candidate
+    preview when visual or multi-glyph review is needed.
+    """
     return _safe_json(
         _review_compensated_tuning_impl(
             font_index=font_index,
@@ -791,6 +802,12 @@ async def apply_compensated_tuning(
     backup_layer_name: str = "GMCP Backup: CompTune",
     ref_fallback: str = "error",
 ) -> str:
+    """Dry-run or apply compensated tuning to explicit compatible glyphs.
+
+    Review first, then use dry_run=true before confirm=true. A confirmed call
+    can replace paths and create backup layers, but never saves the font. Prefer
+    candidate sessions for multi-glyph visual review and promotion.
+    """
     return _safe_json(
         _apply_compensated_tuning_impl(
             font_index=font_index,

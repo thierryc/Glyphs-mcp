@@ -19,6 +19,8 @@ import mcp_show_routes  # noqa: F401
 import mcp_tools_annotations  # noqa: F401
 import mcp_tools_components  # noqa: F401
 import mcp_tools_compensated_tuning  # noqa: F401
+import mcp_tools_curve_geometry  # noqa: F401
+import mcp_tools_curve_overlay  # noqa: F401
 import mcp_tools_custom_parameters  # noqa: F401
 import mcp_tools_export  # noqa: F401
 import mcp_tools_features  # noqa: F401
@@ -35,5 +37,6 @@ import mcp_tools_selection  # noqa: F401
 import mcp_tools_smoothness  # noqa: F401
 import mcp_tools_spacing  # noqa: F401
 import mcp_tools_visual_review  # noqa: F401
+import mcp_tools_outline_candidates  # noqa: F401
 
 __all__ = ["mcp"]

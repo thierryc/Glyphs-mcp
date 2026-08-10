@@ -34,6 +34,7 @@ const sidebars: SidebarsConfig = {
         'spacing-tools',
         'italic-first-pass',
         'compensated-tuning-tools',
+        'workflows/ai-font-proofreading',
         'workflows/style-set-inspection',
         'workflows/outlines-selected-nodes',
         'workflows/visual-review',
@@ -56,6 +57,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'contributor/local-docs-development',
         'contributor/unicode-assignment-tools',
+        'contributor/ai-font-proofreading-plan',
         'contributor/italic-balanced-broad-latin-benchmark',
         'contributor/italic-deterministic-balanced-forum-draft',
         'contributor/release-qa-protocol',

@@ -109,12 +109,7 @@ def get_tool_info(mcp_instance, tool_name):
         str: Brief description of the tool
     """
     try:
-        # Try multiple possible attribute names for tools
-        tools = None
-        for attr_name in ["_tools", "tools", "_tool_registry", "tool_registry", "_handlers"]:
-            tools = getattr(mcp_instance, attr_name, None)
-            if tools:
-                break
+        tools = get_mcp_tool_registry(mcp_instance)
         
         if tools and tool_name in tools:
             tool = tools[tool_name]
@@ -128,15 +123,31 @@ def get_tool_info(mcp_instance, tool_name):
 
 def get_mcp_tool_registry(mcp_instance):
     """Return the internal FastMCP tool registry dict if discoverable."""
-    if not mcp_instance:
+    if mcp_instance is None:
         return None
-    for attr_name in ["_tools", "tools", "_tool_registry", "tool_registry", "_handlers"]:
+
+    # FastMCP has exposed the registry both directly on the server and through
+    # a ToolManager. Prefer the manager because it is the authoritative source
+    # for FastMCP 2.12 protocol list/call handling; keep direct layouts only as
+    # compatibility fallbacks for older runtimes.
+    containers = []
+    for manager_name in ["_tool_manager", "tool_manager"]:
         try:
-            candidate = getattr(mcp_instance, attr_name, None)
+            manager = getattr(mcp_instance, manager_name, None)
         except Exception:
-            candidate = None
-        if isinstance(candidate, dict):
-            return candidate
+            manager = None
+        if manager is not None and all(manager is not container for container in containers):
+            containers.append(manager)
+    containers.append(mcp_instance)
+
+    for container in containers:
+        for attr_name in ["_tools", "tools", "_tool_registry", "tool_registry", "_handlers"]:
+            try:
+                candidate = getattr(container, attr_name, None)
+            except Exception:
+                candidate = None
+            if isinstance(candidate, dict):
+                return candidate
     return None
 
 

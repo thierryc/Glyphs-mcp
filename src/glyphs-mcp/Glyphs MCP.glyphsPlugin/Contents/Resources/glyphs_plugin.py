@@ -100,6 +100,28 @@ PROJECT_URL = "https://ap.cx/tools/glyphs-mcp"
 AUTOMATIC_UPDATE_CHECK_DELAY_SECONDS = 5.0
 
 
+def _reset_sse_app_status_for_new_event_loop():
+    """Detach sse-starlette's process-global status from the prior loop.
+
+    ``sse-starlette`` 2.4 keeps its shutdown flag and AnyIO event on a class.
+    The event becomes bound to the Uvicorn thread's event loop after the first
+    streamed response, so reusing it after Stop -> Start fails on the new
+    thread/loop.  Newer or alternate layouts may not expose ``AppStatus``;
+    those runtimes need no compatibility reset here.
+    """
+    try:
+        from sse_starlette.sse import AppStatus
+    except (ImportError, AttributeError):
+        return False
+
+    try:
+        AppStatus.should_exit = False
+        AppStatus.should_exit_event = None
+    except Exception:
+        return False
+    return True
+
+
 class McpActivityStatusMiddleware:
     """Track the latest MCP HTTP/JSON-RPC activity for the status window."""
 
@@ -390,11 +412,12 @@ class MCPBridgePlugin(GeneralPlugin):
         return True
 
     @objc.python_method
-    def _apply_tool_profile_to_mcp_for_next_start(self):
+    def _apply_tool_profile_to_mcp_for_next_start(self, profile=None):
         if not self._ensure_full_tool_snapshot():
             return False
 
-        profile = self._selected_tool_profile_name()
+        if profile is None:
+            profile = self._selected_tool_profile_name()
         snapshot = getattr(self, "_tool_registry_snapshot", None) or {}
         registry = getattr(self, "_tool_registry_ref", None)
 
@@ -404,7 +427,8 @@ class MCPBridgePlugin(GeneralPlugin):
 
         try:
             replace_tool_registry_in_place(registry, filtered)
-            return True
+            live_registry = get_mcp_tool_registry(mcp)
+            return isinstance(live_registry, dict) and set(live_registry.keys()) == set(filtered.keys())
         except Exception:
             return False
 
@@ -977,16 +1001,45 @@ class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
     def _start_server_on_port(self, port, sender, notify=True):
+        # Resetting sse-starlette's process-global event while the previous
+        # Uvicorn loop is alive would disrupt active streams.  All public start
+        # paths already enforce this guard; keep it here as the final invariant
+        # immediately around the lifecycle-sensitive reset below.
+        if is_thread_running(getattr(self, "_server_thread", None)):
+            return False
+
         self._mark_server_starting()
         self._startup_notify = bool(notify)
         self._server_thread_error = None
         self._server_was_ready = False
         try:
-            self._apply_tool_profile_to_mcp_for_next_start()
+            selected_profile = self._selected_tool_profile_name()
         except Exception:
-            pass
+            selected_profile = PROFILE_EDIT
+
+        profile_applied = False
+        profile_error = None
+        try:
+            profile_applied = bool(
+                self._apply_tool_profile_to_mcp_for_next_start(selected_profile)
+            )
+        except Exception as error:
+            profile_error = error
+
+        if selected_profile != PROFILE_EDIT and not profile_applied:
+            if profile_error is None:
+                profile_error = RuntimeError(
+                    "Unable to apply the '{}' tool profile safely.".format(selected_profile)
+                )
+            self._handle_start_request_exception(
+                profile_error,
+                port,
+                show_alert=bool(notify),
+            )
+            return False
 
         try:
+            _reset_sse_app_status_for_new_event_loop()
             app = mcp.http_app(
                 path="/mcp/",
                 transport="http",

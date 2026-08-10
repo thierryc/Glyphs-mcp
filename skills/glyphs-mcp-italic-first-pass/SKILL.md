@@ -11,7 +11,9 @@ it does not create, replace, or claim optical completion of a designed italic.
 
 ## Core rules
 
-- Prefer the `Paths / Outlines` profile for review-only work, or `Editing` when applying.
+- Use Read-only for detached candidate preview. Switch to Edit only for
+  materializing or accepting a candidate, or for the legacy direct
+  review/apply workflow.
 - Read current font, master, and selection before mutation.
 - Default angle is `12.0` degrees unless the user specifies another value.
 - Interpret `angle` as a Glyphs source/Transformations angle: positive values lean Latin outlines to the right. In exported OpenType/UFO metadata, the corresponding `post.italicAngle` / `slnt` value is negative (`+12` in Glyphs source convention maps to about `-12` in exported font convention).
@@ -48,6 +50,11 @@ it does not create, replace, or claim optical completion of a designed italic.
 - Always run `apply_italic_first_pass` with `dry_run=true` before any mutating call.
 - Only mutate after explicit approval with `confirm=true`.
 - Never auto-save the font.
+- Use `preview_italic_first_pass_candidate` as the default for review and
+  require candidate sessions for multi-glyph work. Materialize only when the
+  user wants to edit the proposed layers manually. Re-review exact edits and
+  accept with the issued token; do not jump directly from preview to the legacy
+  apply tool for a batch.
 
 ## Workflow
 

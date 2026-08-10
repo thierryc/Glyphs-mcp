@@ -147,28 +147,6 @@ def _ensure_user_site_packages_on_path() -> None:
         _add(Path(os.path.expanduser(entry)))
 
 
-# --- Glyphs MCP Vendor Deps (Plugin Manager build) ---
-def _maybe_prefer_vendored_site_packages() -> None:
-    try:
-        import platform
-
-        py_tag = f"py{sys.version_info.major}{sys.version_info.minor}"
-        machine = (platform.machine() or "").lower()
-        if machine == "aarch64":
-            machine = "arm64"
-        vendor_root = Path(__file__).resolve().parent / "vendor"
-        candidate = vendor_root / f"{py_tag}-{machine}" / "site-packages"
-        if not candidate.is_dir():
-            return
-        cand = str(candidate)
-        # De-dupe and prefer vendored deps.
-        sys.path[:] = [p for p in sys.path if p != cand]
-        sys.path.insert(0, cand)
-    except Exception:
-        pass
-
-_maybe_prefer_vendored_site_packages()
-# --- End Glyphs MCP Vendor Deps ---
 _ensure_user_site_packages_on_path()
 
 
@@ -252,10 +230,17 @@ def _debug_startup_environment() -> None:
 
 
 STARTUP_IMPORT_ERROR = None
+GlyphsMCPCurvatureReporter = None
+GlyphsMCPCandidateReporter = None
 
 _debug_startup_environment()
 
 try:
+    # Export the native Reporter principal class before loading MCP runtime
+    # dependencies so Glyphs can discover both classes in this bundle.
+    from glyphs_curve_reporter import GlyphsMCPCurvatureReporter
+    from glyphs_candidate_reporter import GlyphsMCPCandidateReporter
+
     # Import MCP tools (this registers all the tools)
     from mcp_tools import mcp
 
@@ -284,10 +269,11 @@ except Exception as exc:  # pragma: no cover - requires broken local environment
 
     try:
         from GlyphsApp import Message  # type: ignore[import-not-found]
-        from GlyphsApp.plugins import GeneralPlugin  # type: ignore[import-not-found]
+        from GlyphsApp.plugins import GeneralPlugin, ReporterPlugin  # type: ignore[import-not-found]
     except Exception:
         Message = None
         GeneralPlugin = object
+        ReporterPlugin = object
 
     def _startup_error_message() -> str:
         err = repr(STARTUP_IMPORT_ERROR)
@@ -318,6 +304,28 @@ except Exception as exc:  # pragma: no cover - requires broken local environment
                     Message("Glyphs MCP failed to load", _startup_error_message(), "OK")
                 except Exception:
                     pass
+
+    if GlyphsMCPCurvatureReporter is None:
+        class GlyphsMCPCurvatureReporter(ReporterPlugin):  # type: ignore[misc,no-redef]
+            def settings(self):
+                try:
+                    self.menuName = "Glyphs MCP Curvature (unavailable)"
+                except Exception:
+                    pass
+
+            def foreground(self, layer):
+                return None
+
+    if GlyphsMCPCandidateReporter is None:
+        class GlyphsMCPCandidateReporter(ReporterPlugin):  # type: ignore[misc,no-redef]
+            def settings(self):
+                try:
+                    self.menuName = "Glyphs MCP Candidate (unavailable)"
+                except Exception:
+                    pass
+
+            def foreground(self, layer):
+                return None
 
 
 # ------------------------------------------------------------

@@ -6,6 +6,7 @@ GlyphsApp, which is not available in the normal unit test runner.
 
 from __future__ import annotations
 
+import plistlib
 import re
 import unittest
 from pathlib import Path
@@ -26,6 +27,52 @@ def _tool_module_paths() -> list[Path]:
 
 
 class McpToolRegistrationTextTests(unittest.TestCase):
+    def test_bundle_exports_server_and_both_reporter_principal_classes(self) -> None:
+        resources = _resources_dir()
+        with (resources.parent / "Info.plist").open("rb") as handle:
+            plist = plistlib.load(handle)
+
+        self.assertNotIn("NSPrincipalClass", plist)
+        self.assertEqual(
+            plist.get("Principal Classes"),
+            ["MCPBridgePlugin", "GlyphsMCPCurvatureReporter", "GlyphsMCPCandidateReporter"],
+        )
+        plugin_text = (resources / "plugin.py").read_text(encoding="utf-8", errors="replace")
+        self.assertIn("GlyphsMCPCurvatureReporter = None", plugin_text)
+        self.assertIn("from glyphs_curve_reporter import GlyphsMCPCurvatureReporter", plugin_text)
+        self.assertIn("if GlyphsMCPCurvatureReporter is None:", plugin_text)
+        self.assertIn("GlyphsMCPCandidateReporter = None", plugin_text)
+        self.assertIn("from glyphs_candidate_reporter import GlyphsMCPCandidateReporter", plugin_text)
+        self.assertIn("if GlyphsMCPCandidateReporter is None:", plugin_text)
+
+    def test_aggregator_imports_curve_geometry_module(self) -> None:
+        resources = _resources_dir()
+        aggregator_text = (resources / "mcp_tools.py").read_text(encoding="utf-8", errors="replace")
+
+        self.assertRegex(
+            aggregator_text,
+            r"(?m)^import\s+mcp_tools_curve_geometry\b",
+            "mcp_tools.py must import mcp_tools_curve_geometry for registration side effects.",
+        )
+
+    def test_aggregator_imports_every_decorated_tool_module(self) -> None:
+        resources = _resources_dir()
+        aggregator_text = (resources / "mcp_tools.py").read_text(encoding="utf-8", errors="replace")
+        imported_modules = set(
+            re.findall(r"^import\s+(mcp_tools_[A-Za-z0-9_]+)\b", aggregator_text, flags=re.MULTILINE)
+        )
+        decorated_modules = {
+            path.stem
+            for path in _tool_module_paths()
+            if "@mcp.tool()" in path.read_text(encoding="utf-8", errors="replace")
+        }
+
+        self.assertEqual(
+            sorted(decorated_modules - imported_modules),
+            [],
+            "Every module containing an MCP tool must be imported by mcp_tools.py for registration side effects.",
+        )
+
     def test_gscomponent_automatic_is_compat_safe(self) -> None:
         resources = _resources_dir()
         paths = [resources / "mcp_tool_helpers.py"] + _tool_module_paths()
@@ -336,6 +383,10 @@ class McpToolRegistrationTextTests(unittest.TestCase):
 
     def test_visual_review_tool_is_decorated(self) -> None:
         self._assert_async_tool_decorated("render_glyph_review_image")
+
+    def test_curve_overlay_tools_are_decorated(self) -> None:
+        self._assert_async_tool_decorated("set_curve_review_overlay")
+        self._assert_async_tool_decorated("get_curve_review_overlay_state")
 
     def test_annotation_tools_are_decorated(self) -> None:
         self._assert_async_tool_decorated("get_glyph_annotations")

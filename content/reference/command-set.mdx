@@ -21,7 +21,12 @@ Glyphs MCP supports both Glyphs 3 and Glyphs 4 from `main`. See [Glyphs 3 compat
 - `generate_kerning_tab`: open a kerning proof/worklist tab.
 - `review_kerning_bumper` / `apply_kerning_bumper`: audit and apply conservative collision fixes.
 - `review_italic_first_pass` / `apply_italic_first_pass`: preview and apply an experimental construction draft for a Roman's emphasis companion; the tools do not claim to produce a finished italic.
-- `render_glyph_review_image`: render a read-only PNG proof image for visual LLM review.
+- `set_curve_review_overlay` / `get_curve_review_overlay_state`: control and verify the native signed-curvature Reporter in Glyphs Edit View without changing the font.
+- `render_glyph_review_image`: render a legacy read-only PNG proof image; its curvature overlay is deprecated in favor of the native Reporter.
+- `review_tunni_geometry` / `apply_tunni_balance`: inspect and safely balance explicit cubic segments.
+- `review_curve_quality`: return bounded curvature metrics and conservative warnings.
+- `preview_tunni_balance_candidate` / `review_outline_candidate_session` / `accept_outline_candidate_session`: preview in Edit View, review the exact state, and promote a token-bound candidate.
+- `materialize_outline_candidate_session`: create editable native layers only when manual adjustment is wanted.
 - `add_glyph_annotation` / `clear_glyph_annotations`: place and remove MCP-managed native Glyphs annotations.
 - `docs_search` / `docs_get`: fetch focused Glyphs docs on demand.
 
@@ -50,8 +55,42 @@ Glyph and layer inspection responses may include Glyphs show links:
 | `get_glyph_paths` | Export `pathDataVersion: 2` JSON with raw node metadata, shape indices, non-path counts, and compatibility warnings. |
 | `get_glyph_annotations` | Inspect native Glyphs annotations for a layer, including MCP ownership metadata when available. |
 | `get_glyph_annotation_groups` | Inspect MCP-managed linked annotation groups on a layer. |
-| `render_glyph_review_image` | Render selected or named glyph layers to a PNG image with optional metrics, sidebearing, bounds, node, handle, anchor, and guide overlays. |
+| `set_curve_review_overlay` | Enable or disable **View > Show Glyphs MCP Curvature**. This changes only Reporter UI state, requests a redraw, verifies activation, and never changes or saves a font. |
+| `get_curve_review_overlay_state` | Report native Reporter availability/activation and its bounded last-draw glyph, layer, cubic, stroke, clamp, cap, cache, error, and component-omission data. |
+| `render_glyph_review_image` | Render selected or named glyph layers to a legacy PNG image with optional metric, sidebearing, bound, node, handle, anchor, and guide overlays. Its PNG curvature overlay remains temporarily for compatibility and returns a deprecation warning. |
 | `review_collinear_handles` | Review curve nodes that should be smooth based on handle collinearity. |
+| `review_tunni_geometry` | Review Tunni intersections, handle ratios, imbalance, and conservative balance proposals for one explicit glyph/master/path target. |
+| `review_curve_quality` | Review sampled signed curvature, inflections, degenerate tangents, exact maximum/median spike ratios, and smooth-join discontinuities without an artistic pass/fail verdict; raw-path component omissions are reported. |
+| `preview_tunni_balance_candidate` | Recompute explicit multi-master Tunni targets into a detached, grid-safe session and automatically show the native Candidate Reporter. |
+| `preview_collinear_handles_candidate` | Recompute explicit smooth-connection targets into a detached session. |
+| `preview_italic_first_pass_candidate` | Reuse the detached italic generator for existing compatible target layers and collect them in one candidate session. |
+| `preview_compensated_tuning_candidate` | Reuse compensated tuning for explicit decomposed glyphs and collect detached candidates in one session. |
+| `set_outline_candidate_overlay` | Toggle **View > Show Glyphs MCP Candidate**, select an active session, or clear ephemeral UI state without deleting layers. |
+| `get_outline_candidate_state` | Report bounded Reporter, ephemeral-session, and materialized-manifest state. |
+| `materialize_outline_candidate_session` | Create full editable `GSLayer.copy()` candidates with new IDs, associated masters, direct links, ownership metadata, and atomic rollback. |
+| `review_outline_candidate_session` | Compare source, generated proposal, and current materialized candidate; block stale/external changes and issue a five-minute one-time token. |
+| `accept_outline_candidate_session` | Recheck and promote only operation-approved fields, verify exact read-back, remove candidates after success, preserve required backups, and never save. |
+| `discard_outline_candidate_session` | Delete only session-owned materialized candidates after dry-run/confirmation; ephemeral clearing remains UI-only. |
+
+The native curvature Reporter uses teal (`#009E9E`) for positive signed
+curvature and pink (`#DB2E8C`) for negative curvature. Both signs are placed by
+curvature magnitude along the path right normal, so correct Glyphs winding
+sends outer-contour combs outward and counter combs into counter space. It
+draws teeth plus connected, sign-split envelope runs at `0.65` alpha; reversing
+a path reverses the placement side and signed color. The native defaults are 51 samples per
+cubic, a `0.010` length scale, and a `0.12em` normal clamp with a `0.25em` hard
+guard. Sampling reduces deterministically before the 2,000-stroke frame cap.
+Path-targeted reviews and the Reporter analyze raw editable paths only and
+report components omitted from the calculation.
+
+The Candidate Reporter leaves the normal Glyphs outline visible and draws only
+the source/candidate symmetric difference. Current proposals use warm golden
+yellow; stale proposals use coral red and show a `STALE` legend. Identical
+geometry produces no glyph-area drawing. Curvature stays in the independent
+Curvature Reporter. Detached previews are capped at 16 sessions, 256 entries,
+and 100,000 nodes; oversized previews fail instead of truncating.
+Materialization is optional and never uses backgrounds. Candidate-layer and
+font manifests allow materialized sessions to be recovered after restart.
 
 ## Codex and ChatGPT feedback panel
 
@@ -190,6 +229,13 @@ deterministic option. Omitted `slant_mode` calls remain Cursivy-compatible.
 | `add_corner_to_all_masters` | Add a `_corner.*` corner hint at selected nodes across all masters. |
 | `set_glyph_paths` | Accept legacy or version-2 path JSON; preserve metadata and mixed-shape order, reject unsafe raw-node rewrites before mutation, and roll back failed verification. |
 | `apply_collinear_handles_smooth` | Set smooth flags for reviewed collinear-handle curve nodes; supports `dry_run` and requires `confirm=true` to mutate. |
+| `apply_tunni_balance` | Balance only explicitly named eligible cubic segments; requires exactly one of `dry_run=true` or `confirm=true`, verifies read-back, rolls back failures, and never saves. |
+
+Curve-geometry tools require explicit `glyph_name`, `master_id`, and
+`path_index` values. Cubics are identified by their curve end-node index.
+Review can scan the whole path, but apply always requires a unique explicit
+segment list. See the [cleanroom geometry record](../contributor/curve-geometry-cleanroom.mdx)
+for formulas, conservative eligibility limits, and provenance.
 
 ## Docs helpers
 

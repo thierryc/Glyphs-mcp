@@ -1,0 +1,188 @@
+---
+title: Curve geometry cleanroom record
+description: Provenance and mathematical specification for the Glyphs MCP 1.7 cubic-geometry tools.
+---
+
+## Scope and provenance
+
+Glyphs MCP 1.7 implements Tunni review/balancing and cubic-curvature review as
+an independent Python implementation. SuperTool inspired the product use
+cases, but no SuperTool or SCGlyphsLib source was copied, translated, linked,
+or included. The implementation uses only standard cubic Bezier mathematics,
+the Python standard library, and the existing documented Glyphs Python API.
+
+This is an engineering cleanroom boundary rather than a strict two-team legal
+cleanroom process. No third-party runtime, model, native binary, network call,
+or additional license payload is introduced.
+
+Harmonization, callipers, path simplification, and ink coverage are explicitly
+outside this release. They require separate specifications and validation.
+
+## Plain-data boundary
+
+`outline_geometry_engine.py` accepts plain node records containing only
+coordinates, normalized node type, and the smooth flag. It imports neither
+GlyphsApp nor AppKit/PyObjC. Glyphs wrappers convert a path to these records and
+apply only verified coordinate proposals.
+
+`curve_overlay_model.py` is likewise host-independent. It consumes the same
+plain path records and engine samples, then returns bounded comb teeth and
+connected envelope polylines. Envelope runs split at segment boundaries,
+inflections/sign changes, zero curvature, and degenerate tangents. The native
+Reporter is only an AppKit drawing adapter over that plain model.
+
+A cubic identified by end-node index `e` is accepted only when:
+
+- `e` is a curve on-curve node;
+- the preceding two nodes are off-curves;
+- the preceding fourth node is an on-curve start; and
+- wrapping is used only for a closed path.
+
+## Tunni geometry
+
+For cubic points `P0`, `P1`, `P2`, `P3`, define the endpoint handle vectors:
+
+```text
+V0 = P1 - P0
+V1 = P2 - P3
+```
+
+The Tunni point `T` is the intersection of the infinite lines
+`P0 + s*V0` and `P3 + t*V1`. The implementation solves `s` and `t` with the
+two-dimensional cross product. Near-parallel lines are rejected with a
+relative determinant tolerance.
+
+The endpoint ratios are:
+
+```text
+r0 = length(P1 - P0) / length(T - P0)
+r1 = length(P2 - P3) / length(T - P3)
+```
+
+Relative imbalance is `abs(r0-r1) / max(abs(r0), abs(r1), epsilon)`. Balancing
+uses `r = (r0+r1)/2` and proposes:
+
+```text
+P1' = P0 + r*(T-P0)
+P2' = P3 + r*(T-P3)
+```
+
+This continuous construction is returned as `idealProposed`. With the default
+`grid_policy="font"`, the engine uses Glyphs' ready-calculated
+`font.gridLength` and searches a fixed deterministic neighborhood around both
+ideal handles. A candidate must remain on the original rays, move no more than
+`0.25em`, remain on-grid, keep post-grid imbalance inside the requested
+threshold, and drift no more than `0.25` degrees from either original tangent.
+Candidates are ranked by imbalance, tangent drift, distance from the ideal,
+then coordinate order. Integral grids serialize authoritative `proposed`
+coordinates as JSON integers. `grid_policy="continuous"` is an explicit opt-in;
+an unsatisfied lattice returns `no_safe_grid_candidate`.
+
+The proposal is ineligible when coordinates are nonfinite, a handle is shorter
+than `max(1.0, min_handle_length)`, intersection rays point behind an endpoint,
+the intersection is farther than `8em`, either ratio is outside `[0.01, 0.99]`,
+imbalance is below the requested threshold, or either handle would move more
+than `0.25em`. A caller cannot lower the one-unit safety floor. Nonfinite
+thresholds are rejected before geometry is analyzed.
+
+## Curvature geometry
+
+For cubic `B(t)`, the engine evaluates the standard Bernstein polynomial and
+its first and second derivatives. Signed curvature is:
+
+```text
+k(t) = cross(B'(t), B''(t)) / length(B'(t))^3
+```
+
+A zero or nonfinite derivative produces a `degenerate_tangent` warning rather
+than a fabricated curvature value. Curvature is sampled uniformly with an odd
+count clamped to 9-257. Normalized curvature is `k*UPM`.
+
+At a smooth join, relative discontinuity is:
+
+```text
+abs(k_in-k_out) / max(abs(k_in), abs(k_out), 1/UPM)
+```
+
+A segment spike ratio is exactly `max(abs(k)) / median(abs(k))`. An entirely
+straight cubic reports numeric ratio `0` with `spikeRatioInfinite: false`. If
+the median is zero while the maximum is positive, JSON reports
+`spikeRatio: null`, `spikeRatioInfinite: true`, and a matching
+`curvature_spike` warning; it never emits non-standard `Infinity` or `NaN`.
+These thresholds produce conservative warnings only; the tools never claim
+that an outline artistically passes or fails.
+
+## Curvature-comb legend
+
+The comb uses the right unit normal of the path direction,
+`R=(B'y/|B'|, -B'x/|B'|)`, and the nonnegative curvature magnitude
+`M=|k|`. Each endpoint is `P + R*L`, where `L` is the scaled and clamped
+`M`. With correct Glyphs winding this places outer-contour combs outside the
+black shape and counter combs inside the white counter. Positive signed
+curvature remains teal and negative signed curvature remains pink; sign still
+splits envelope runs but does not select the display side.
+The native Reporter uses `rgba(0, 0.62, 0.62, 0.65)` and
+`rgba(0.86, 0.18, 0.55, 0.65)` so the edited outline remains visible beneath
+the drawing. The deprecated PNG compatibility renderer retains alpha `0.72`.
+Reversing path direction reverses `R`, so the display side and signed color
+reverse while tooth lengths remain equal. Reflecting geometry reverses the
+curvature sign.
+
+The deprecated PNG compatibility comb retains its original display length:
+`R*clamp(|k|*UPM^2*0.02, 0, 0.25*UPM)`. It retains 51 uniformly
+spaced samples per cubic.
+
+The native Edit View Reporter uses
+`R*clamp(|k|*UPM^2*0.010, 0, 0.12*UPM)` and independently enforces a
+`0.25em` hard guard. It starts with 51 uniformly spaced samples per cubic,
+reduces to an odd count no lower than 9 when possible, and never draws more
+than 2,000 teeth in one frame. It adds a connected envelope for each same-sign
+run without altering signed curvature values. Components are not expanded;
+the Reporter state and path-targeted JSON diagnostics report the component
+count omitted from those calculations.
+
+The placement behavior was compared with SpeedPunk's Apache-2.0
+"outside of glyph" mode at
+[commit `9f557dcc`](https://github.com/yanone/speedpunk/commit/9f557dcc051f71bdbb0d41ee784ffd87e5826036).
+Glyphs MCP independently implements the standard right-normal and absolute-
+curvature formula above; no SpeedPunk source code was copied or translated.
+
+## Hybrid candidate review boundary
+
+Candidate sessions store independently generated plain geometry in a bounded
+process-local model. The Candidate Reporter is drawing-only. It renders
+only the source/candidate symmetric difference over the normal Glyphs outline:
+warm golden yellow for a current candidate and coral red for stale state. It
+does not draw a complete candidate, movement vectors, or curvature, and it
+never edits a live font. Curvature remains in its independent Reporter.
+Detached drawing copies may expand components only for display. Optional
+materialization uses `GSLayer.copy()` and namespaced identity metadata, never a
+background layer. Acceptance promotes only operation-approved fields after an
+exact source/candidate fingerprint review and one-time token. This workflow was
+specified and implemented from the documented Glyphs plug-in/layer APIs and
+ordinary snapshot/transaction techniques; no SuperTool or SCGlyphsLib code was
+copied, translated, linked, or consulted as implementation source.
+
+## Mutation contract
+
+Confirmed Tunni balancing requires explicit segment end-node indices. Target
+resolution, snapshot capture, proposal recomputation, eligibility checks,
+writes, read-back, and rollback all occur in one main-thread transaction. The
+wrapper snapshots every path-node coordinate and the topology/type/smooth
+signature, requires callable `layer.beginChanges()` and `layer.endChanges()`
+before the first write, mutates only intended handles, and reports verified
+actual before/after coordinates. Any failed write, read-back, or batch close
+restores all original coordinates and reports rollback status. The tool never
+calls glyph undo groups and never saves a font.
+
+## Validation evidence
+
+Pure fixtures cover balanced and imbalanced cubics, translation/scale/rotation
+invariance, reversal, reflection, closed wrapping and path-start rotation,
+de Casteljau subdivision invariance, open boundaries, malformed geometry,
+parallel/behind/distant intersections, ratio and movement limits, straight
+curves, circular arcs, inflections, degenerate tangents, exact spike boundaries,
+and continuous/discontinuous smooth joins. Wrapper fixtures cover dry-run and
+review immutability, strict finite/index validation, explicit multi-segment
+targeting, stale-dispatch recomputation, Glyphs 3/4 path access, required layer
+change batching, actual-coordinate read-back, and complete rollback.

@@ -9,31 +9,41 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-## What's new in 1.6.0
+## What's new in 1.7.0
 
-**Easier future updates and safer automatic spacing.**
+**Cleanroom cubic-curve engineering and native candidate review.**
 
-- Add an optional **Make future updates easier** setting for Glyphs 3 and
-  Glyphs 4. A clear banner announces a new version, and nothing is downloaded
-  until the user clicks **Prepare Update**. Preparation never replaces the
-  running or installed plug-in.
-- Verify exact-tag installer and checksum assets, archive structure, version,
-  Developer ID, notarization, and staged receipts while keeping cancellation,
-  offline errors, and hostile metadata fail-closed.
-- Existing 1.5.4 users install 1.6.0 with the signed macOS installer. Once
-  1.6.0 is installed, it can prepare later stable releases; installation still
-  requires opening the trusted release and running its signed installer.
-- Resolve automatic spacing references by glyph class so capitals use `H`,
-  figures use `one`, and explicit references retain their exact meaning.
-- Assess negative sidebearings in em units, preserve legitimate overhangs, and
-  block unsafe mutation unless a glyph receives a named, auditable override.
-- Preserve tabular widths only from fixed-pitch, metrics, equal-figure, or
-  explicit evidence; send narrow punctuation to manual review.
-- Refresh the bundled spacing and italic skills with guarded proofing,
-  negative-sidebearing guidance, and Unicode-aware upright-symbol advisories.
-- Carry forward 1.5.4's fail-closed Python ABI and architecture diagnostics.
+- Add an independent, pure-Python cubic Bezier engine with no Glyphs UI,
+  native binary, model, network, or new dependency requirement.
+- Review Tunni intersections, handle ratios, imbalance, and conservative
+  balance proposals for explicit glyph/master/path targets.
+- Apply Tunni balancing only to explicit segment end-node indices after a dry
+  run, with same-transaction recomputation, required main-thread change
+  batching, actual-coordinate read-back, rollback, and no automatic save.
+- Keep continuous Tunni mathematics as `idealProposed`, then select an
+  authoritative font-grid candidate from a bounded deterministic search.
+- Preview Tunni, collinear smoothing, italic-first-pass, and compensated-tuning
+  candidates directly in Edit View through **View > Show Glyphs MCP Candidate**.
+  The Reporter keeps the live outline unobscured and adds only a warm-yellow
+  source/candidate symmetric difference; stale differences turn coral red.
+  Materialize a full native layer only when manual editing is wanted, then
+  re-review and promote the exact token-bound state through operation-approved
+  fields.
+- Report sampled signed curvature, inflections, degenerate tangents, exact
+  maximum/median spike semantics, and smooth-join discontinuities as
+  measurements and warnings rather than an artistic pass/fail verdict.
+- Inspect a bounded signed curvature comb directly in Glyphs Edit View through
+  **View > Show Glyphs MCP Curvature**. The native Reporter draws live teeth
+  plus a connected envelope at `0.65` alpha, places curvature magnitude along
+  the path right normal so correctly wound counters draw inward, and starts at
+  51 samples per cubic with a `0.010` scale and `0.12em` normal clamp. It reports
+  last-draw/clamp/cap/component state over MCP, and replaces PNG curvature as
+  the recommended workflow.
+- Support the same schemas and safety boundary in Glyphs 3.5 and Glyphs 4 while
+  carrying forward 1.6.0's verified update staging and spacing safeguards.
 
-[Read the full 1.6.0 changelog →](CHANGELOG.md) ·
+[Read the full 1.7.0 changelog →](CHANGELOG.md) ·
+[Cleanroom geometry record](content/contributor/curve-geometry-cleanroom.mdx) ·
 [Experimental italic guide](content/italic-first-pass.md) ·
 [Broad-Latin benchmark](content/contributor/italic-balanced-broad-latin-benchmark.md) ·
 [Full-resolution three-family sheet](content/contributor/images/italic-balanced-three-family-story.png)
@@ -110,7 +120,7 @@ Glyphs 3 backward compatibility is maintained for the shared MCP server code whe
 
 ## Optional agent plugins
 
-Glyphs MCP 1.6.0 provides one shared plugin package for Codex/ChatGPT, Claude
+Glyphs MCP 1.7.0 provides one shared plugin package for Codex/ChatGPT, Claude
 Code, Cursor, and GitHub Copilot CLI. Every host gets its own native manifest,
 but all four load the same nine skills and the same local MCP connection:
 
@@ -140,7 +150,7 @@ installers do not install, update, or remove these agent plugins; each host owns
 that lifecycle. The repository also does not enable GitHub Copilot plugins
 through `.github/copilot/settings.json`.
 
-All host manifests use version `1.6.0`. Skills inherit that package version,
+All host manifests use version `1.7.0`. Skills inherit that package version,
 while the running MCP server reports the matching native Glyphs MCP version.
 See [Use agent skills and optional plugins](content/getting-started/use-agent-skills.mdx)
 for install, update, removal, fallback, and host-specific invocation details.
@@ -233,8 +243,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.6.0)
-This table describes the tool surface exposed by the MCP server shipped in this repo (version `1.6.0`).
+## Command Set (MCP server v1.7.0)
+This table describes the tool surface exposed by the MCP server shipped in this repo (version `1.7.0`).
 
 Glyph/layer inspection responses may include `showUrl`, `showHttpUrl`, and
 `showMarkdown` fields. `showUrl` keeps the native `glyphsapp://show/` URL.
@@ -302,9 +312,24 @@ instead because Glyphs requires an absolute file path.
 | `get_selected_nodes` | Detailed selected nodes with per‑master mapping for edits, plus links for the containing glyph/layer. |
 | `add_corner_to_all_masters` | Add a `_corner.*` corner hint at selected nodes (and intersection handles) across all masters (requires `_corner_name`; optional `_alignment`: `left`/`right`/`center` or `0`/`1`/`2`). |
 | `get_glyph_paths` | Export version-2 path JSON with raw node metadata, shape indices, grouping/styling diagnostics, non-path counts, and a Glyphs show link. |
-| `render_glyph_review_image` | Render selected or named glyph layers to a read-only PNG visual review image with optional metrics, bounds, nodes, anchors, and guide overlays. |
+| `set_curve_review_overlay` | Enable or disable the native **View > Show Glyphs MCP Curvature** Reporter without changing or saving the font. |
+| `get_curve_review_overlay_state` | Report Reporter availability/activation and bounded last-draw glyph, stroke, clamp, cap, cache, error, and omitted-component data. |
+| `render_glyph_review_image` | Render selected or named glyph layers to a legacy read-only PNG visual review image. PNG curvature remains temporarily available but is deprecated in favor of the native Reporter. |
 | `review_collinear_handles` | Review a single path for curve nodes that should be smooth based on handle collinearity (no mutation). |
 | `apply_collinear_handles_smooth` | Apply `smooth=True` for collinear-handle curve nodes in a single path (supports `dry_run`; requires `confirm=true` to mutate). |
+| `review_tunni_geometry` | Review Tunni intersections, handle ratios, imbalance, and conservative proposals for one explicit path (no mutation). |
+| `apply_tunni_balance` | Balance only explicit eligible cubic segments (requires exactly one of `dry_run=true` or `confirm=true`; verifies and rolls back failures; never saves). |
+| `review_curve_quality` | Review sampled signed curvature, inflections, degenerate tangents, exact maximum/median spike ratios, and smooth-join discontinuities for one explicit raw path, reporting omitted components (no mutation). |
+| `preview_tunni_balance_candidate` | Build a detached grid-safe Tunni session for explicit master/path/segment targets and show only its warm-yellow outline difference through the native Candidate Reporter without dirtying the font. |
+| `preview_collinear_handles_candidate` | Build a detached smooth-connection session for explicit master/path/node targets. |
+| `preview_italic_first_pass_candidate` | Build detached italic-first-pass candidates for existing compatible target layers; required by the skills for multi-glyph work. |
+| `preview_compensated_tuning_candidate` | Build detached compensated-tuning candidates for explicit decomposed glyph targets. |
+| `set_outline_candidate_overlay` | Toggle **View > Show Glyphs MCP Candidate**, switch sessions, or clear ephemeral UI state; clearing never deletes layers. |
+| `get_outline_candidate_state` | Inspect bounded ephemeral and restart-recoverable materialized candidate sessions. |
+| `materialize_outline_candidate_session` | Optionally create owned, editable full-layer copies with persistent manifests; requires exactly one safety mode. |
+| `review_outline_candidate_session` | Revalidate source/generated/current candidate state, report bounded manual diffs, and issue a short-lived fingerprint-bound token. |
+| `accept_outline_candidate_session` | Promote only operation-approved fields from the exact reviewed state, verify, clean up candidates, preserve required backups, and roll back failures. |
+| `discard_outline_candidate_session` | Delete only materialized layers owned by one session, with dry-run, confirmation, and rollback. |
 | `set_glyph_paths` | Accept legacy or version-2 path JSON and preserve path/node metadata plus interleaved non-path shape order; unsafe raw-node rewrites are rejected atomically. |
 | `ExportDesignspaceAndUFO` | Export designspace/UFO bundles with structured logs and errors. |
 | `execute_code` | Execute arbitrary Python in the Glyphs context. |

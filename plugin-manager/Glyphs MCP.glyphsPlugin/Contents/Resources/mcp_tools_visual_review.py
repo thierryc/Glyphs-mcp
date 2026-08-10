@@ -73,14 +73,49 @@ from mcp_tool_helpers import (
     _get_layer_id,
     _get_left_sidebearing,
     _get_right_sidebearing,
+    _layer_components,
     _layer_display_name,
+    _layer_paths,
+    _normalized_node_type,
     _resolve_font_by_index,
     _safe_json,
 )
 
+import outline_geometry_engine
+import curve_overlay_model
+
 
 DEFAULT_OVERLAYS = ["metrics", "sidebearings", "bounds"]
-SUPPORTED_OVERLAYS = set(["metrics", "sidebearings", "bounds", "nodes", "handles", "anchors", "guides"])
+SUPPORTED_OVERLAYS = set(
+    ["metrics", "sidebearings", "bounds", "nodes", "handles", "anchors", "guides", "curvature"]
+)
+CURVATURE_RENDER_SAMPLES = 51
+MIN_CURVATURE_RENDER_SAMPLES = 9
+MAX_CURVATURE_RENDER_STROKES = 20000
+CURVATURE_COMB_LENGTH_SCALE = 0.02
+CURVATURE_COMB_MAX_LENGTH_EM = 0.25
+CURVATURE_POSITIVE_RGBA = (0.00, 0.62, 0.62, 0.72)
+CURVATURE_NEGATIVE_RGBA = (0.86, 0.18, 0.55, 0.72)
+CURVATURE_COMB_LEGEND = {
+    "signedCurvatureFormula": "cross(B'(t), B''(t)) / |B'(t)|^3",
+    "normalConvention": "comb magnitude along right normal (dy, -dx) / |B'(t)|; sign controls color only",
+    "pathDirectionRule": "placement follows the path right normal; reversing path direction reverses the display side, so correctly wound counters draw into counter space",
+    "zeroCurvature": "not drawn",
+    "entries": [
+        {
+            "sign": "positive",
+            "direction": "right normal placement; teal sign color",
+            "color": "#009E9E",
+            "rgba": list(CURVATURE_POSITIVE_RGBA),
+        },
+        {
+            "sign": "negative",
+            "direction": "right normal placement; pink sign color",
+            "color": "#DB2E8C",
+            "rgba": list(CURVATURE_NEGATIVE_RGBA),
+        },
+    ],
+}
 _OBJC_BRIDGE_ABI = 1
 _OBJC_MAIN_THREAD_HELPER_CLASS_NAME = "GlyphsMCPVisualReviewMainThreadHelperV{}".format(_OBJC_BRIDGE_ABI)
 _OBJC_MAIN_THREAD_HELPER_CLASS = None
@@ -256,6 +291,30 @@ def _master_metrics(master):
     }
 
 
+def _font_upm(font):
+    value = _coerce_float(getattr(font, "upm", None), 1000.0)
+    if value is None or not math.isfinite(value) or value <= 0.0:
+        return 1000.0
+    return float(value)
+
+
+def _curvature_comb_legend():
+    """Return a JSON-safe copy of the signed comb legend."""
+
+    entries = []
+    for source in CURVATURE_COMB_LEGEND["entries"]:
+        entry = dict(source)
+        entry["rgba"] = list(source["rgba"])
+        entries.append(entry)
+    return {
+        "signedCurvatureFormula": CURVATURE_COMB_LEGEND["signedCurvatureFormula"],
+        "normalConvention": CURVATURE_COMB_LEGEND["normalConvention"],
+        "pathDirectionRule": CURVATURE_COMB_LEGEND["pathDirectionRule"],
+        "zeroCurvature": CURVATURE_COMB_LEGEND["zeroCurvature"],
+        "entries": entries,
+    }
+
+
 def _lookup_objc_class(name):
     if objc is None:
         return None
@@ -377,6 +436,7 @@ def _prepare_render_request(font_index, glyph_names, master_id, columns, image_w
 
     render_items = []
     warnings = []
+    curvature_requested = "curvature" in set(normalized_overlays)
     for name in names:
         glyph = _glyph_for_name(font, name)
         if glyph is None:
@@ -390,22 +450,35 @@ def _prepare_render_request(font_index, glyph_names, master_id, columns, image_w
         bounds = _layer_bounds(layer)
         width = _coerce_float(getattr(layer, "width", None), 0.0) or 0.0
         layer_name = _layer_display_name(font, layer, getattr(master, "id", None))
-        render_items.append(
-            {
-                "glyph": glyph,
-                "glyphName": str(getattr(glyph, "name", name)),
-                "layer": layer,
-                "layerId": _get_layer_id(layer),
-                "layerName": layer_name,
-                "width": width,
-                "leftSideBearing": _get_left_sidebearing(layer),
-                "rightSideBearing": _get_right_sidebearing(layer),
-                "bounds": bounds,
-            }
-        )
+        item = {
+            "glyph": glyph,
+            "glyphName": str(getattr(glyph, "name", name)),
+            "layer": layer,
+            "layerId": _get_layer_id(layer),
+            "layerName": layer_name,
+            "width": width,
+            "leftSideBearing": _get_left_sidebearing(layer),
+            "rightSideBearing": _get_right_sidebearing(layer),
+            "bounds": bounds,
+        }
+        if curvature_requested:
+            component_count = len(list(_layer_components(layer) or []))
+            item["curvatureComponentCountOmitted"] = int(component_count)
+        render_items.append(item)
 
     if not render_items:
         return {"ok": False, "error": "No renderable glyph layers found.", "warnings": warnings}
+
+    if curvature_requested:
+        omitted_count = sum(int(item.get("curvatureComponentCountOmitted") or 0) for item in render_items)
+        omitted_layer_count = sum(
+            1 for item in render_items if int(item.get("curvatureComponentCountOmitted") or 0) > 0
+        )
+        if omitted_count:
+            warnings.append(
+                "Curvature overlay omitted {} component(s) across {} glyph layer(s); "
+                "the comb analyzes raw editable paths only.".format(omitted_count, omitted_layer_count)
+            )
 
     return {
         "ok": True,
@@ -415,6 +488,7 @@ def _prepare_render_request(font_index, glyph_names, master_id, columns, image_w
         "master": master,
         "masterId": getattr(master, "id", None),
         "masterName": getattr(master, "name", None),
+        "upm": _font_upm(font),
         "glyphNames": [item["glyphName"] for item in render_items],
         "renderItems": render_items,
         "columns": columns_i,
@@ -537,6 +611,136 @@ def _draw_nodes_and_handles(layer, overlays, scale):
                 _fill_oval(xy[0], xy[1], radius)
 
 
+def _plain_path_nodes(path):
+    nodes = []
+    for node in list(getattr(path, "nodes", []) or []):
+        xy = _node_xy(node)
+        if not xy:
+            xy = (float("nan"), float("nan"))
+        nodes.append(
+            {
+                "x": float(xy[0]),
+                "y": float(xy[1]),
+                "type": _normalized_node_type(node),
+                "smooth": bool(getattr(node, "smooth", False)),
+            }
+        )
+    return nodes
+
+
+def _plain_path_direction(path):
+    try:
+        value = int(getattr(path, "direction"))
+    except Exception:
+        return None
+    return value if value in (-1, 1) else None
+
+
+def _curvature_segment_count(render_items):
+    count = 0
+    for item in list(render_items or []):
+        for path in list(_layer_paths(item["layer"])):
+            nodes = _plain_path_nodes(path)
+            count += len(
+                outline_geometry_engine.cubic_segment_end_indices(
+                    nodes,
+                    closed=bool(getattr(path, "closed", True)),
+                )
+            )
+    return count
+
+
+def _curvature_render_sample_count(render_items, overlays):
+    if "curvature" not in set(overlays or []):
+        return 0, None
+    segment_count = _curvature_segment_count(render_items)
+    if segment_count <= 0:
+        return CURVATURE_RENDER_SAMPLES, None
+    requested_strokes = segment_count * CURVATURE_RENDER_SAMPLES
+    if requested_strokes <= MAX_CURVATURE_RENDER_STROKES:
+        return CURVATURE_RENDER_SAMPLES, None
+    sample_count = max(MIN_CURVATURE_RENDER_SAMPLES, MAX_CURVATURE_RENDER_STROKES // segment_count)
+    if sample_count % 2 == 0:
+        sample_count -= 1
+    sample_count = max(MIN_CURVATURE_RENDER_SAMPLES, sample_count)
+    if segment_count * sample_count > MAX_CURVATURE_RENDER_STROKES:
+        warning = (
+            "Curvature overlay sampling was reduced from {} to {} points per cubic; "
+            "the hard {}-stroke render cap still applies."
+        ).format(CURVATURE_RENDER_SAMPLES, sample_count, MAX_CURVATURE_RENDER_STROKES)
+    else:
+        warning = (
+            "Curvature overlay sampling was reduced from {} to {} points per cubic "
+            "to keep the render below {} comb strokes."
+        ).format(CURVATURE_RENDER_SAMPLES, sample_count, MAX_CURVATURE_RENDER_STROKES)
+    return sample_count, warning
+
+
+def _new_curvature_stroke_state(limit=MAX_CURVATURE_RENDER_STROKES):
+    try:
+        limit_value = max(0, int(limit))
+    except Exception:
+        limit_value = int(MAX_CURVATURE_RENDER_STROKES)
+    return {
+        "limit": limit_value,
+        "remaining": limit_value,
+        "drawn": 0,
+        "capReached": False,
+    }
+
+
+def _curvature_render_warnings(sampling_warning, stroke_state):
+    warnings = []
+    if sampling_warning:
+        warnings.append(str(sampling_warning))
+    if stroke_state.get("capReached"):
+        warnings.append(
+            "Curvature overlay reached the hard {}-stroke render cap; no additional comb strokes were drawn.".format(
+                int(stroke_state.get("limit") or 0)
+            )
+        )
+    return warnings
+
+
+def _draw_curvature_comb(layer, upm, scale, sample_count, stroke_state):
+    if sample_count <= 0 or not stroke_state or int(stroke_state.get("remaining") or 0) <= 0:
+        return
+    line_width = max(0.85 / float(scale or 1.0), 0.35)
+    paths = []
+    for path in list(_layer_paths(layer)):
+        record = {
+            "nodes": _plain_path_nodes(path),
+            "closed": bool(getattr(path, "closed", True)),
+        }
+        direction = _plain_path_direction(path)
+        if direction is not None:
+            record["direction"] = direction
+        paths.append(record)
+    # Unit hosts can load the shared modules under isolated import contexts;
+    # keep both renderers bound to the exact engine object used by this tool.
+    curve_overlay_model.outline_geometry_engine = outline_geometry_engine
+    model = curve_overlay_model.build_curve_overlay(
+        paths,
+        upm=upm,
+        samples_per_curve=sample_count,
+        stroke_limit=int(stroke_state.get("remaining") or 0),
+        length_scale=CURVATURE_COMB_LENGTH_SCALE,
+        max_length_em=CURVATURE_COMB_MAX_LENGTH_EM,
+    )
+    for stroke in model.get("strokes") or []:
+        if stroke.get("sign") == "positive":
+            NSColor.colorWithDeviceRed_green_blue_alpha_(*CURVATURE_POSITIVE_RGBA).set()
+        else:
+            NSColor.colorWithDeviceRed_green_blue_alpha_(*CURVATURE_NEGATIVE_RGBA).set()
+        start = stroke["start"]
+        end = stroke["end"]
+        _stroke_line(start[0], start[1], end[0], end[1], line_width)
+        stroke_state["remaining"] = int(stroke_state.get("remaining") or 0) - 1
+        stroke_state["drawn"] = int(stroke_state.get("drawn") or 0) + 1
+    if model.get("strokeCapReached") or int(stroke_state.get("remaining") or 0) <= 0:
+        stroke_state["capReached"] = True
+
+
 def _point_xy(obj):
     pos = getattr(obj, "position", None)
     if pos is not None:
@@ -578,7 +782,19 @@ def _draw_guides(layer, x_min, x_max, y_min, y_max, scale):
         _stroke_line(xy[0] - dx, xy[1] - dy, xy[0] + dx, xy[1] + dy, line_width)
 
 
-def _draw_layer_in_cell(item, master_metrics, overlays, include_components, cell_x, cell_y, cell_w, cell_h):
+def _draw_layer_in_cell(
+    item,
+    master_metrics,
+    overlays,
+    include_components,
+    upm,
+    curvature_sample_count,
+    curvature_stroke_state,
+    cell_x,
+    cell_y,
+    cell_w,
+    cell_h,
+):
     label_h = 28.0
     pad = 18.0
     width = float(item.get("width") or 0.0)
@@ -647,6 +863,8 @@ def _draw_layer_in_cell(item, master_metrics, overlays, include_components, cell
             path.fill()
 
         _draw_nodes_and_handles(layer, overlays, scale)
+        if "curvature" in overlays:
+            _draw_curvature_comb(layer, upm, scale, curvature_sample_count, curvature_stroke_state)
         if "anchors" in overlays:
             _draw_anchors(layer, scale)
         if "guides" in overlays:
@@ -655,7 +873,7 @@ def _draw_layer_in_cell(item, master_metrics, overlays, include_components, cell
         context.restoreGraphicsState()
 
 
-def _render_contact_sheet_png(render_items, master, columns, image_width, include_components, overlays):
+def _render_contact_sheet_png(render_items, master, columns, image_width, include_components, overlays, upm):
     if NSImage is None or NSBitmapImageRep is None or NSGraphicsContext is None:
         raise RuntimeError("AppKit drawing APIs are unavailable in this runtime.")
 
@@ -670,6 +888,9 @@ def _render_contact_sheet_png(render_items, master, columns, image_width, includ
     cell_w = max(cell_w, 120.0)
     cell_h = cell_w * 1.12
     image_h = int(math.ceil(margin * 2.0 + cell_h * rows + gap * max(rows - 1, 0)))
+
+    curvature_sample_count, curvature_warning = _curvature_render_sample_count(render_items, overlays)
+    curvature_stroke_state = _new_curvature_stroke_state()
 
     image = NSImage.alloc().initWithSize_(NSMakeSize(float(image_width), float(image_h)))
     image.lockFocus()
@@ -691,14 +912,38 @@ def _render_contact_sheet_png(render_items, master, columns, image_width, includ
             border.setLineWidth_(1.0)
             border.stroke()
 
-            _draw_layer_in_cell(item, master_metrics, overlays, include_components, x, y, cell_w, cell_h)
+            _draw_layer_in_cell(
+                item,
+                master_metrics,
+                overlays,
+                include_components,
+                upm,
+                curvature_sample_count,
+                curvature_stroke_state,
+                x,
+                y,
+                cell_w,
+                cell_h,
+            )
     finally:
         image.unlockFocus()
 
     tiff = image.TIFFRepresentation()
     rep = NSBitmapImageRep.imageRepWithData_(tiff)
     data = rep.representationUsingType_properties_(_PNG_FILE_TYPE, {})
-    return bytes(data), {"imageWidth": int(image_width), "imageHeight": int(image_h), "rowCount": rows, "columnCount": columns}
+    image_info = {
+        "imageWidth": int(image_width),
+        "imageHeight": int(image_h),
+        "rowCount": rows,
+        "columnCount": columns,
+    }
+    if "curvature" in overlays:
+        image_info["curvatureSamplesPerCurve"] = curvature_sample_count
+        image_info["curvatureStrokeCount"] = int(curvature_stroke_state["drawn"])
+        image_info["curvatureStrokeLimit"] = int(curvature_stroke_state["limit"])
+        image_info["curvatureStrokeCapReached"] = bool(curvature_stroke_state["capReached"])
+        image_info["curvatureWarnings"] = _curvature_render_warnings(curvature_warning, curvature_stroke_state)
+    return bytes(data), image_info
 
 
 @mcp.tool()
@@ -712,7 +957,7 @@ async def render_glyph_review_image(
     overlays: list = None,
     include_base64: bool = False,
 ):
-    """Render selected or named Glyphs layers to a PNG visual review image.
+    """Render selected or named Glyphs layers to a legacy PNG review image.
 
     This tool is read-only. It does not write guides, edit glyphs, create files,
     or save the font.
@@ -724,11 +969,17 @@ async def render_glyph_review_image(
         columns: Number of contact-sheet columns.
         image_width: PNG width in pixels, clamped to a safe range.
         include_components: Use ``layer.completeBezierPath`` when true.
-        overlays: Any of metrics, sidebearings, bounds, nodes, handles, anchors, guides.
+        overlays: Any of metrics, sidebearings, bounds, nodes, handles, anchors, guides, curvature.
+            The PNG curvature overlay is deprecated; use
+            ``set_curve_review_overlay`` for the native Glyphs Edit View comb.
         include_base64: Include a data URI fallback in the JSON metadata.
 
     Returns:
         A list containing JSON metadata text and, on success, MCP image content.
+        The client or agent must display the returned MCP image content directly
+        in the chat. It must not replace the image with only metadata, a text
+        summary, or an ``Open in Glyphs`` link; Glyphs show links navigate to
+        glyphs and are not image previews.
     """
     try:
         request = _prepare_render_request(
@@ -751,22 +1002,49 @@ async def render_glyph_review_image(
                 request["imageWidth"],
                 request["includeComponents"],
                 request["overlays"],
+                request["upm"],
             )
         )
 
+        for warning in list(image_info.get("curvatureWarnings") or []):
+            request["warnings"].append(warning)
+
+        curvature_requested = "curvature" in set(request.get("overlays") or [])
+        if curvature_requested:
+            request["warnings"].append(
+                "The PNG curvature overlay is deprecated; use set_curve_review_overlay(enabled=true) "
+                "and inspect View > Show Glyphs MCP Curvature in Glyphs."
+            )
         glyphs_meta = []
         for item in request["renderItems"]:
-            glyphs_meta.append(
-                {
-                    "glyphName": item.get("glyphName"),
-                    "layerId": item.get("layerId"),
-                    "layerName": item.get("layerName"),
-                    "width": item.get("width"),
-                    "leftSideBearing": item.get("leftSideBearing"),
-                    "rightSideBearing": item.get("rightSideBearing"),
-                    "bounds": item.get("bounds"),
+            glyph_metadata = {
+                "glyphName": item.get("glyphName"),
+                "layerId": item.get("layerId"),
+                "layerName": item.get("layerName"),
+                "width": item.get("width"),
+                "leftSideBearing": item.get("leftSideBearing"),
+                "rightSideBearing": item.get("rightSideBearing"),
+                "bounds": item.get("bounds"),
+            }
+            if curvature_requested:
+                glyph_metadata["curvature"] = {
+                    "componentCountOmitted": int(item.get("curvatureComponentCountOmitted") or 0),
                 }
-            )
+            glyphs_meta.append(glyph_metadata)
+
+        image_metadata = {
+            "mimeType": "image/png",
+            "width": image_info.get("imageWidth"),
+            "height": image_info.get("imageHeight"),
+            "columns": image_info.get("columnCount"),
+            "rows": image_info.get("rowCount"),
+            "byteLength": len(png_bytes),
+        }
+        if curvature_requested:
+            image_metadata["curvatureSamplesPerCurve"] = image_info.get("curvatureSamplesPerCurve")
+            image_metadata["curvatureStrokeCount"] = image_info.get("curvatureStrokeCount")
+            image_metadata["curvatureStrokeLimit"] = image_info.get("curvatureStrokeLimit")
+            image_metadata["curvatureStrokeCapReached"] = image_info.get("curvatureStrokeCapReached")
 
         metadata = {
             "ok": True,
@@ -778,20 +1056,25 @@ async def render_glyph_review_image(
             "glyphs": glyphs_meta,
             "overlays": request.get("overlays"),
             "includeComponents": request.get("includeComponents"),
-            "image": {
-                "mimeType": "image/png",
-                "width": image_info.get("imageWidth"),
-                "height": image_info.get("imageHeight"),
-                "columns": image_info.get("columnCount"),
-                "rows": image_info.get("rowCount"),
-                "byteLength": len(png_bytes),
-            },
+            "image": image_metadata,
             "warnings": request.get("warnings") or [],
             "notes": [
                 "Read-only render; no guides, glyph data, files, or font state were changed.",
                 "This visual proof is intended for review assistance, not final typographic approval.",
+                "Display the returned MCP image content directly in the chat; do not replace it with only metadata or an Open in Glyphs link.",
             ],
         }
+
+        if curvature_requested:
+            metadata["curvature"] = {
+                "signed": True,
+                "combLengthClampEm": CURVATURE_COMB_MAX_LENGTH_EM,
+                "componentCountOmitted": sum(
+                    int(item.get("curvatureComponentCountOmitted") or 0) for item in request["renderItems"]
+                ),
+                "componentPolicy": "raw editable paths only; components are not expanded for curvature diagnostics",
+                "legend": _curvature_comb_legend(),
+            }
 
         if include_base64 or Image is None:
             metadata["dataUri"] = "data:image/png;base64," + base64.b64encode(png_bytes).decode("ascii")

@@ -220,6 +220,23 @@ class AgentPluginTests(unittest.TestCase):
                 frontmatter = text.split("---", 2)[1]
                 self.assertNotRegex(frontmatter, r"(?m)^version\s*:", f"{root / name} has its own version")
 
+    def test_canonical_skill_names_and_tool_profiles_stay_current(self) -> None:
+        combined = []
+        for name in SKILL_NAMES:
+            text = (CANONICAL_SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
+            frontmatter = text.split("---", 2)[1]
+            match = re.search(r"(?m)^name:\s*(\S+)\s*$", frontmatter)
+            self.assertIsNotNone(match, name)
+            self.assertEqual(match.group(1), name)
+            combined.append(text)
+
+        skill_text = "\n".join(combined)
+        self.assertNotIn("`Kerning` tool profile", skill_text)
+        self.assertNotIn("`Paths / Outlines` profile", skill_text)
+        self.assertNotIn("`Editing` when applying", skill_text)
+        self.assertIn("Use Edit for this specialized workflow", skill_text)
+        self.assertIn("Use Read-only for detached candidate preview", skill_text)
+
     def test_shared_skill_sync_check_mode(self) -> None:
         result = subprocess.run(
             [str(REPO / "scripts" / "sync_codex_plugin_skills.sh"), "--check"],

@@ -98,7 +98,7 @@ Use when the task is about:
 
 Core rules:
 
-- prefer the Kerning profile
+- use Edit for the specialized workflow; keep review calls non-mutating
 - read current state first
 - run `review_kerning_bumper` before any apply step
 - always run `apply_kerning_bumper` with `dry_run=true` first
@@ -115,7 +115,7 @@ Use when the task is about:
 
 Core rules:
 
-- prefer the Spacing profile
+- use Edit for the specialized workflow; keep review calls non-mutating
 - inspect current font/master/selection first
 - run `review_spacing` before any apply step
 - always run `apply_spacing` with `dry_run=true` first
@@ -150,7 +150,8 @@ Use when the task is about:
 
 Core rules:
 
-- prefer the Paths / Outlines profile for reviews and Editing for applies
+- use Read-only for detached candidate preview and Edit for materialization,
+  acceptance, or the legacy direct review/apply workflow
 - read current font/master/selection first
 - run `review_master_stem_metrics` before Cursivy
 - run `review_italic_first_pass` before any apply step

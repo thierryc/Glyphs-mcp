@@ -14,6 +14,36 @@ Glyphs MCP is designed for human-controlled font editing. The server gives agent
 - **No auto-save**: the plug-in does not save fonts unless `save_font` is called.
 - **Prefer dedicated tools**: use specific tools before free-form code.
 
+For Tunni balancing, review the exact glyph/master/path first, then pass only
+the approved curve end-node indices to `apply_tunni_balance`. The apply tool
+resolves the target, snapshots and recomputes current geometry in the same
+main-thread transaction, changes only eligible explicit handles, verifies the
+complete path signature plus actual coordinate read-back, and restores every
+original coordinate on failure. It refuses to write unless the layer exposes
+both callable change-batch methods. Curvature review is read-only and provides
+warnings rather than artistic approval. The native curvature Reporter changes
+only global Glyphs display state: activation/deactivation runs on the main
+thread, is verified through `Glyphs.activeReporters`, and requests a redraw.
+Its drawing callback reads detached coordinate snapshots, is bounded by a
+2,000-stroke frame cap, and never edits, dirties, or saves a font.
+Path-targeted curvature diagnostics measure raw editable paths and explicitly
+report components omitted from those segment measurements.
+
+For outline changes, the normal workflow is a detached candidate session.
+Preview tools automatically enable **View > Show Glyphs MCP Candidate** and do
+not dirty the font. The Reporter draws only the source/candidate symmetric
+difference in warm golden yellow, turns it coral red when stale, and never
+paints a complete outline over the live layer. Curvature remains a separate
+Reporter. Multi-master and multi-glyph batches must use sessions.
+Materialize only when standard Glyphs editing is needed; the copied layer is
+owned by a namespaced manifest and never uses a background. Re-review after any
+manual edit. Acceptance requires a short-lived one-time token bound to both the
+source and candidate fingerprints, rechecks them on the main thread, writes
+only operation-approved fields, verifies every read-back, and removes candidate
+layers only after complete success. Clearing the Reporter is UI-only; deleting
+materialized candidates requires the explicit discard tool. None of these tools
+saves a font.
+
 ## Safe prompt template
 
 Use this when you want the agent to review first and mutate only after approval:

@@ -15,6 +15,12 @@ Create workspace-first Glyphs scripts and plug-ins from pinned SDK templates.
 - Never install, execute, reload, restart Glyphs, or overwrite an existing artifact automatically.
 - Keep `Contents/MacOS/plugin` from the bundled SDK template unchanged and retain the bundled Apache 2.0 attribution.
 - Validate after scaffolding and after source edits.
+- When extending this repository's outline-candidate system, keep mathematics
+  and process-local state free of GlyphsApp/AppKit imports; keep MCP wrappers
+  responsible for snapshots and guarded mutation; keep Reporter callbacks
+  drawing-only. Register every new tool through `mcp_tools.py`, classify review
+  tools in Read-only and mutations in Edit, and export every Reporter principal
+  class through both `plugin.py` and `Info.plist`.
 
 ## Workflow
 

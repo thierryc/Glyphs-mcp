@@ -107,6 +107,7 @@ class CompensatedTuningToolWrapperTests(unittest.TestCase):
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
                 "mcp_tool_helpers": helpers_module,
                 "compensated_tuning_engine": engine_module,
+                "stem_metrics_helpers": types.SimpleNamespace(),
             },
         ):
             sys.modules.pop(module_name, None)

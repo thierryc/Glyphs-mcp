@@ -1,0 +1,232 @@
+---
+title: AI-assisted font proofreading
+description: A staged, evidence-led process for reviewing a live Glyphs source with an AI agent.
+---
+
+AI-assisted font proofreading is a guided review of the font that is open in
+Glyphs. The agent gathers evidence, helps prioritize it, opens useful review
+views, and proposes the next check. Glyphs remains the source of truth and the
+designer remains responsible for design decisions.
+
+The goal is not to generate a specimen or a report document. The useful output
+is a reviewed font, a traceable set of findings, and confidence that approved
+changes were checked again.
+
+:::info Project status
+
+Glyphs MCP already provides many of the focused tools used in this process,
+including font inspection, visual rendering, spacing review, kerning review,
+OpenType inspection, outline analysis, annotations, and guarded apply tools.
+
+A resumable end-to-end proofreading session and the remaining family-wide
+analyzers are planned. See the [implementation plan](../contributor/ai-font-proofreading-plan.mdx).
+
+:::
+
+## What the AI contributes
+
+An AI agent is useful when it acts as a review coordinator rather than an
+automatic type designer. It can:
+
+- establish the exact font, master, instance, selection, and intended coverage
+- run repeatable checks and distinguish failures from unusual-but-valid design
+- reduce large result sets to the cases most likely to deserve attention
+- create targeted Glyphs tabs and visual comparisons
+- relate symptoms that may share one cause, such as spacing and kerning findings
+- explain evidence in typographic language
+- propose bounded changes through dedicated tools
+- remember accepted risks and rerun checks affected by an approved change
+
+AI cannot infer the intended character set, language support, or design intent
+reliably from outlines alone. It also cannot decide whether an unusual form is
+a mistake. Those inputs must come from the designer.
+
+## Evidence model
+
+Every finding should identify its target and the kind of evidence behind it.
+
+| Evidence | Meaning | Appropriate conclusion |
+| --- | --- | --- |
+| Deterministic | A reproducible rule or computation failed. | Report an objective problem with exact targets. |
+| Statistical | A value differs materially from related glyphs or styles. | Request review; do not assume the outlier is wrong. |
+| Visual | The rendered result appears uneven, ambiguous, or inconsistent. | Record a design observation for human judgment. |
+
+Useful severities are `blocker`, `error`, `warning`, and `note`. Severity does
+not replace the evidence type: a visual concern remains a design note unless a
+separate reproducible failure supports it.
+
+## Before the review
+
+Tell the agent:
+
+- which open font to review
+- whether the target is a static font, family, or variable font
+- intended languages or a required glyph-set preset
+- required styles, instances, and OpenType features
+- whether a previous release should be used as a regression reference
+- whether the session is inspection-only or may propose confirmed changes
+
+If intended coverage is unknown, the agent can review existing glyphs but
+should mark character-set completeness as **not assessed**.
+
+## Recommended sequence
+
+### 1. Establish context
+
+The agent should begin with read-only context tools such as `list_open_fonts`,
+`get_selected_font_and_master`, `get_font_masters`, and `get_font_instances`.
+It should state the chosen font and master before interpreting results.
+
+A future proofreading session will also record a source fingerprint. If the
+font changes, findings based on the older state become stale rather than being
+silently treated as current.
+
+### 2. Review family structure
+
+Inspect masters, axes, instances, naming, vertical metrics, alignment settings,
+export flags, and custom parameters. The agent should separate contradictory or
+invalid configuration from optional production recommendations.
+
+Questions for the designer include:
+
+- Do axis extremes and defaults match the intended family?
+- Are all required instances present and exporting?
+- Are family and style names suitable for the intended distribution channel?
+- Are metrics and parameters intentionally shared or different between styles?
+
+### 3. Review coverage and glyph construction
+
+Check glyph names, Unicode assignments, export state, required layers,
+components, anchors, and outline structure. Review related glyphs together so
+that construction differences have context.
+
+Use `get_glyph_details`, path and component inspection tools, Unicode review,
+and focused Glyphs links. Large glyph sets should be split into meaningful
+groups rather than returned as one unbounded response.
+
+### 4. Review interpolation
+
+For multi-master and variable fonts, check compatibility before judging visual
+progression. Mechanical compatibility includes contour topology, node order,
+components, and anchors. Visual review then samples named instances, axis
+extremes, defaults, and selected intermediate locations.
+
+An incompatible outline is an objective finding. A weight or width progression
+that feels uneven is a visual finding for the designer.
+
+### 5. Review spacing
+
+Run spacing review before kerning. Start with representative control glyphs,
+then investigate exceptions across uppercase, lowercase, figures, punctuation,
+symbols, diacritics, and composites.
+
+Use `review_spacing` for measurements and proposals. Use
+`render_glyph_review_image` or Glyphs Edit tabs for visual rhythm. If a change is
+useful, run `apply_spacing` as a dry run and wait for explicit approval before
+using `confirm=true`.
+
+### 6. Review kerning
+
+Check group membership and group-level behavior before proposing glyph-glyph
+exceptions. Use `generate_kerning_tab` to create focused worklists and
+`review_kerning_bumper` to find collisions and near-misses.
+
+Every kerning finding should name the effective pair, master, group or
+exception source, measured gap, and a reproducible test string. See the
+[kerning workflow](../kerning-workflow.md).
+
+### 7. Review OpenType behavior
+
+Inspect feature code and the glyphs involved with `show_opentype_features`,
+`list_style_sets`, and related feature tools. A complete workflow also shapes
+representative text with relevant feature, language, direction, and variation
+settings.
+
+The review should cover features actually promised by the project. It should
+not treat the absence of an optional feature as an error.
+
+### 8. Conduct focused visual passes
+
+Use short, purposeful review rounds instead of one undifferentiated specimen:
+
+- lowercase texture and word rhythm
+- uppercase and mixed-case spacing
+- paragraphs at intended text sizes
+- tight and loose tracking
+- figures, currency, fractions, and punctuation
+- diacritics and composed/decomposed sequences
+- similar or easily confused characters
+- style and weight progression
+- axis extremes and intermediate variable-font locations
+- recently changed glyphs
+- the full exporting glyph set in manageable groups
+
+Use native reporters where available. The legacy `render_glyph_review_image`
+is useful when the AI client needs pixels with metrics, sidebearings, bounds,
+nodes, handles, anchors, or guides. See [visual glyph review](./visual-review.mdx).
+
+### 9. Inspect temporary binaries
+
+Source checks cannot prove that an exported font behaves correctly. A complete
+review therefore exports representative builds into an isolated temporary
+directory and inspects the actual binaries.
+
+The planned companion process can use:
+
+- [Fontspector](https://github.com/fonttools/fontspector) for general OpenType QA
+- [fontTools](https://github.com/fonttools/fonttools) for targeted table and variation inspection
+- [HarfBuzz](https://github.com/harfbuzz/harfbuzz) for deterministic shaping
+- [Diffenator3](https://github.com/googlefonts/diffenator3) for optional comparisons with a previous build
+
+Temporary fonts should never be installed as system fonts, and binary tools
+must not modify the Glyphs source.
+
+### 10. Triage, change, and verify
+
+Group findings by probable cause. For each proposed correction, the agent
+should show the evidence, exact targets, expected effect, and dry-run result.
+
+After approval:
+
+1. Use the narrowest dedicated mutation tool.
+2. Read back the changed state.
+3. Rerun checks affected by the change.
+4. Reopen the relevant visual comparison.
+5. Mark the finding verified only when its original evidence no longer reproduces.
+
+The agent must not save the font unless the designer explicitly requests it.
+
+## When the review is complete
+
+A review is complete when every required stage is recorded as passed, resolved,
+accepted risk, or skipped with a reason. There is no opaque overall score.
+
+Completion does not mean every visual note was changed. It means the designer
+has seen the relevant evidence and made an explicit decision.
+
+## Prompt template
+
+```text
+Use Glyphs MCP to conduct an evidence-led font review of the font currently open in Glyphs.
+
+Start read-only. Confirm the font, masters, instances, intended Latin language coverage, and required OpenType features.
+
+Review in this order:
+1. family structure
+2. glyph coverage and construction
+3. interpolation, if applicable
+4. spacing
+5. kerning
+6. OpenType behavior
+7. focused visual comparisons
+8. exported-binary QA, if the companion tools are available
+
+For every finding, distinguish deterministic, statistical, and visual evidence. Open the relevant glyph or review tab in Glyphs. Propose the smallest safe correction, but do not mutate until I approve a dry run. Verify approved changes and never save automatically.
+```
+
+## Related documentation
+
+- [Implementation plan](../contributor/ai-font-proofreading-plan.mdx)
+- [Safety model](../concepts/safety-model.mdx)
+- [Agent skills](../concepts/agent-skills.mdx)
+- [Command set](../reference/command-set.mdx)

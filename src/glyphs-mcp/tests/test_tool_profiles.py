@@ -107,6 +107,54 @@ class ToolProfilesTests(unittest.TestCase):
         self.assertIn(visual_tool, tool_profiles.enabled_tool_names(tool_profiles.PROFILE_READONLY, universe))
         self.assertIn(visual_tool, tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, universe))
 
+    def test_curve_geometry_reviews_are_readonly_but_apply_is_not(self) -> None:
+        read_tools = {"review_tunni_geometry", "review_curve_quality"}
+        apply_tool = "apply_tunni_balance"
+        universe = set(tool_profiles.CORE_READONLY_TOOLS) | {apply_tool}
+
+        readonly = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_READONLY, universe)
+        editing = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, universe)
+
+        self.assertTrue(read_tools.issubset(readonly))
+        self.assertNotIn(apply_tool, readonly)
+        self.assertTrue(read_tools.issubset(editing))
+        self.assertIn(apply_tool, editing)
+
+    def test_native_curve_overlay_controls_are_available_in_both_profiles(self) -> None:
+        overlay_tools = {"set_curve_review_overlay", "get_curve_review_overlay_state"}
+        universe = set(tool_profiles.CORE_READONLY_TOOLS) | overlay_tools
+
+        readonly = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_READONLY, universe)
+        editing = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, universe)
+
+        self.assertTrue(overlay_tools.issubset(readonly))
+        self.assertTrue(overlay_tools.issubset(editing))
+
+    def test_candidate_preview_and_review_are_readonly_but_layer_mutations_are_edit_only(self) -> None:
+        read_tools = {
+            "preview_tunni_balance_candidate",
+            "preview_collinear_handles_candidate",
+            "preview_italic_first_pass_candidate",
+            "preview_compensated_tuning_candidate",
+            "set_outline_candidate_overlay",
+            "get_outline_candidate_state",
+            "review_outline_candidate_session",
+        }
+        edit_tools = {
+            "materialize_outline_candidate_session",
+            "accept_outline_candidate_session",
+            "discard_outline_candidate_session",
+        }
+        universe = set(tool_profiles.CORE_READONLY_TOOLS) | edit_tools
+
+        readonly = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_READONLY, universe)
+        editing = tool_profiles.enabled_tool_names(tool_profiles.PROFILE_EDIT, universe)
+
+        self.assertTrue(read_tools.issubset(readonly))
+        self.assertTrue(edit_tools.isdisjoint(readonly))
+        self.assertTrue(read_tools.issubset(editing))
+        self.assertTrue(edit_tools.issubset(editing))
+
     def test_unicode_review_is_readonly_but_unicode_apply_is_not(self) -> None:
         read_tool = "review_unicode_assignments"
         apply_tool = "apply_unicode_assignments"

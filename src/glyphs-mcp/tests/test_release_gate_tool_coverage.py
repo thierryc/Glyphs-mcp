@@ -463,6 +463,148 @@ TOOL_RELEASE_GATE = {
         "undoNote": "Sets node smooth flags; release smoke should use dry_run or disposable glyph.",
         "smoke": "apply_collinear_handles_smooth dry_run=true.",
     },
+    "review_tunni_geometry": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": (
+            "test_outline_geometry_engine.py",
+            "test_mcp_tools_curve_geometry.py",
+            "live Glyphs 3.5 and Glyphs 4 smoke batch",
+        ),
+        "mutation": READ_ONLY,
+        "undoRisk": "none",
+        "undoNote": "Reads one explicit path and computes plain-data Tunni geometry only.",
+        "smoke": "review_tunni_geometry on one curved disposable glyph path.",
+    },
+    "apply_tunni_balance": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": (
+            "test_outline_geometry_engine.py",
+            "test_mcp_tools_curve_geometry.py",
+            "live Glyphs 3.5 and Glyphs 4 smoke batch",
+        ),
+        "mutation": EDITS_FONT,
+        "undoRisk": "medium",
+        "undoNote": "Moves two handles per explicit eligible segment in one verified layer change batch; dry-run is the default smoke.",
+        "smoke": "apply_tunni_balance dry_run=true for one explicit reviewed segment.",
+    },
+    "review_curve_quality": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": (
+            "test_outline_geometry_engine.py",
+            "test_mcp_tools_curve_geometry.py",
+            "live Glyphs 3.5 and Glyphs 4 smoke batch",
+        ),
+        "mutation": READ_ONLY,
+        "undoRisk": "none",
+        "undoNote": "Computes bounded cubic curvature metrics from a plain node snapshot only.",
+        "smoke": "review_curve_quality on one curved glyph path with include_samples=false.",
+    },
+    "get_curve_review_overlay_state": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": (
+            "test_curve_overlay_model.py",
+            "test_glyphs_curve_reporter.py",
+            "test_mcp_tools_curve_overlay.py",
+            "live Glyphs 3.5 and Glyphs 4 smoke batch",
+        ),
+        "mutation": READ_ONLY,
+        "undoRisk": "none",
+        "undoNote": "Reads Reporter availability, activation, and a bounded last-draw snapshot only.",
+        "smoke": "Enable the native overlay, inspect its last-draw counts, and verify the font remains clean.",
+    },
+    "set_curve_review_overlay": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": (
+            "test_curve_overlay_model.py",
+            "test_glyphs_curve_reporter.py",
+            "test_mcp_tools_curve_overlay.py",
+            "live Glyphs 3.5 and Glyphs 4 smoke batch",
+        ),
+        "mutation": OPENS_UI,
+        "undoRisk": "none",
+        "undoNote": "Changes only global Reporter display state, requests a redraw, and never edits or saves a font.",
+        "smoke": "Toggle on/off in Read-only, confirm View menu state and live comb drawing, and verify no dirty font state.",
+    },
+    "preview_tunni_balance_candidate": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": ("test_outline_candidate_state.py", "test_mcp_tools_outline_candidates.py", "live Glyphs 3.5 and Glyphs 4 smoke batch"),
+        "mutation": OPENS_UI,
+        "undoRisk": "none",
+        "undoNote": "Builds bounded detached state and enables a drawing-only Reporter; no font mutation.",
+        "smoke": "Preview one grid-safe Tunni target in two masters and switch active masters.",
+    },
+    "preview_collinear_handles_candidate": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": ("test_outline_candidate_state.py", "test_mcp_tools_outline_candidates.py", "live Glyphs 3.5 and Glyphs 4 smoke batch"),
+        "mutation": OPENS_UI,
+        "undoRisk": "none",
+        "undoNote": "Builds a detached smooth-flag candidate and enables the Reporter only.",
+        "smoke": "Preview one explicit collinear smooth target without dirtying the font.",
+    },
+    "preview_italic_first_pass_candidate": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": ("test_outline_candidate_state.py", "test_mcp_tools_outline_candidates.py", "live Glyphs 3.5 and Glyphs 4 smoke batch"),
+        "mutation": OPENS_UI,
+        "undoRisk": "none",
+        "undoNote": "Runs the established italic generator on detached copies and enables the Reporter only.",
+        "smoke": "Preview one existing compatible target glyph from a serialized disposable copy.",
+    },
+    "preview_compensated_tuning_candidate": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": ("test_outline_candidate_state.py", "test_mcp_tools_outline_candidates.py", "live Glyphs 3.5 and Glyphs 4 smoke batch"),
+        "mutation": OPENS_UI,
+        "undoRisk": "none",
+        "undoNote": "Runs compensated tuning into detached plain geometry and enables the Reporter only.",
+        "smoke": "Preview one compatible decomposed glyph without font mutation.",
+    },
+    "set_outline_candidate_overlay": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": ("test_outline_candidate_state.py", "test_glyphs_candidate_reporter.py", "live Glyphs 3.5 and Glyphs 4 smoke batch"),
+        "mutation": OPENS_UI,
+        "undoRisk": "none",
+        "undoNote": "Changes Reporter/process-local UI state only; clearing never deletes layers.",
+        "smoke": "Toggle the candidate Reporter and clear one ephemeral session.",
+    },
+    "get_outline_candidate_state": {
+        "coverage": UNIT_BEHAVIOR,
+        "tests": ("test_outline_candidate_state.py", "test_mcp_tools_outline_candidates.py"),
+        "mutation": READ_ONLY,
+        "undoRisk": "none",
+        "undoNote": "Reads bounded process-local state and namespaced manifests only.",
+        "smoke": "Inspect one ephemeral and one materialized session.",
+    },
+    "review_outline_candidate_session": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": ("test_outline_candidate_state.py", "test_mcp_tools_outline_candidates.py", "live Glyphs 3.5 and Glyphs 4 smoke batch"),
+        "mutation": READ_ONLY,
+        "undoRisk": "none",
+        "undoNote": "Reads fingerprints/diffs and issues a process-local token; no font mutation.",
+        "smoke": "Review generated and manually edited materialized candidates and exercise stale rejection.",
+    },
+    "materialize_outline_candidate_session": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": ("test_mcp_tools_outline_candidates.py", "live Glyphs 3.5 and Glyphs 4 smoke batch"),
+        "mutation": EDITS_FONT,
+        "undoRisk": "medium",
+        "undoNote": "Creates owned non-background GSLayer copies and a namespaced manifest after dry-run.",
+        "smoke": "Materialize a two-master session on a serialized disposable font and verify new layer IDs.",
+    },
+    "accept_outline_candidate_session": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": ("test_mcp_tools_outline_candidates.py", "live Glyphs 3.5 and Glyphs 4 smoke batch"),
+        "mutation": EDITS_FONT,
+        "undoRisk": "high",
+        "undoNote": "Atomically promotes only operation-approved fields, preserves required backups, cleans candidates, and rolls back failures.",
+        "smoke": "Dry-run then accept one reviewed disposable candidate; verify exact fields, cleanup, backup policy, and no save.",
+    },
+    "discard_outline_candidate_session": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": ("test_mcp_tools_outline_candidates.py", "live Glyphs 3.5 and Glyphs 4 smoke batch"),
+        "mutation": EDITS_FONT,
+        "undoRisk": "medium",
+        "undoNote": "Deletes only layers with matching candidate ownership metadata and rolls back partial cleanup.",
+        "smoke": "Dry-run then discard a materialized disposable session and verify sources/backgrounds remain.",
+    },
     "set_spacing_guides": {
         "coverage": UNIT_BEHAVIOR,
         "tests": ("test_mcp_tools_spacing.py",),
@@ -597,8 +739,8 @@ TOOL_RELEASE_GATE = {
 class ReleaseGateToolCoverageTests(unittest.TestCase):
     maxDiff = None
 
-    def _registered_tools(self):
-        tools = {}
+    def _registered_tool_records(self):
+        records = []
         for path in sorted(RESOURCES_DIR.glob("*.py")):
             try:
                 tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -607,14 +749,98 @@ class ReleaseGateToolCoverageTests(unittest.TestCase):
             for node in ast.walk(tree):
                 if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     continue
-                if any(ast.unparse(decorator).startswith("mcp.tool") for decorator in node.decorator_list):
-                    tools[node.name] = path.name
-        return tools
+                tool_decorators = []
+                for decorator in node.decorator_list:
+                    call = decorator if isinstance(decorator, ast.Call) else None
+                    target = call.func if call is not None else decorator
+                    if (
+                        isinstance(target, ast.Attribute)
+                        and isinstance(target.value, ast.Name)
+                        and target.value.id == "mcp"
+                        and target.attr == "tool"
+                    ):
+                        tool_decorators.append(call)
+                if not tool_decorators:
+                    continue
+
+                explicit_description = None
+                app_only = False
+                for decorator in tool_decorators:
+                    if decorator is None:
+                        continue
+                    for keyword in decorator.keywords:
+                        if (
+                            keyword.arg == "description"
+                            and isinstance(keyword.value, ast.Constant)
+                            and isinstance(keyword.value.value, str)
+                        ):
+                            explicit_description = keyword.value.value
+                        if keyword.arg != "meta" or not isinstance(keyword.value, ast.Call):
+                            continue
+                        for meta_keyword in keyword.value.keywords:
+                            if (
+                                meta_keyword.arg == "app_only"
+                                and isinstance(meta_keyword.value, ast.Constant)
+                                and meta_keyword.value.value is True
+                            ):
+                                app_only = True
+
+                records.append(
+                    {
+                        "name": node.name,
+                        "module": path.name,
+                        "appOnly": app_only,
+                        "description": explicit_description or ast.get_docstring(node) or "",
+                    }
+                )
+        return records
+
+    def _registered_tools(self):
+        return {record["name"]: record["module"] for record in self._registered_tool_records()}
+
+    def test_tool_surface_is_bounded_named_and_discoverable(self) -> None:
+        records = self._registered_tool_records()
+        names = [record["name"] for record in records]
+        app_only = {record["name"] for record in records if record["appOnly"]}
+
+        self.assertEqual(len(records), 83, "Tool-surface growth requires an explicit budget review.")
+        self.assertEqual(len(set(names)), len(names), "MCP tool names must be unique.")
+        self.assertEqual(app_only, {"apply_feedback_plan", "open_feedback_target"})
+        self.assertEqual(len(records) - len(app_only), 81)
+
+        for record in records:
+            with self.subTest(tool=record["name"]):
+                if record["name"] != "ExportDesignspaceAndUFO":
+                    self.assertRegex(record["name"], r"^[a-z][a-z0-9_]*$")
+                description = record["description"].strip()
+                self.assertTrue(description, "Every discoverable tool needs a useful description.")
+                self.assertLessEqual(len(description), 1800, "Tool descriptions must stay bounded.")
+                self.assertLessEqual(len(description.splitlines()[0]), 140)
 
     def test_every_registered_tool_has_release_gate_entry(self) -> None:
         registered = set(self._registered_tools())
         covered = set(TOOL_RELEASE_GATE)
         self.assertEqual(covered, registered)
+
+    def test_read_only_profile_contains_only_non_font_mutating_tools(self) -> None:
+        profile_tree = ast.parse((RESOURCES_DIR / "tool_profiles.py").read_text(encoding="utf-8"))
+        read_only_tools = None
+        for node in profile_tree.body:
+            if not isinstance(node, ast.Assign):
+                continue
+            if any(isinstance(target, ast.Name) and target.id == "CORE_READONLY_TOOLS" for target in node.targets):
+                read_only_tools = set(ast.literal_eval(node.value))
+                break
+
+        self.assertIsNotNone(read_only_tools)
+        assert read_only_tools is not None
+        self.assertLessEqual(read_only_tools, set(self._registered_tools()))
+        for tool_name in sorted(read_only_tools):
+            with self.subTest(tool=tool_name):
+                self.assertIn(
+                    TOOL_RELEASE_GATE[tool_name]["mutation"],
+                    {READ_ONLY, OPENS_UI, SERVER_DOCS},
+                )
 
     def test_each_tool_entry_has_test_owner_smoke_prompt_and_undo_risk(self) -> None:
         for tool_name, entry in sorted(TOOL_RELEASE_GATE.items()):
@@ -645,6 +871,19 @@ class ReleaseGateToolCoverageTests(unittest.TestCase):
             gaps,
             [],
         )
+
+    def test_curve_geometry_tools_require_both_host_live_smoke(self) -> None:
+        for tool_name in (
+            "review_tunni_geometry",
+            "apply_tunni_balance",
+            "review_curve_quality",
+            "get_curve_review_overlay_state",
+            "set_curve_review_overlay",
+        ):
+            with self.subTest(tool=tool_name):
+                entry = TOOL_RELEASE_GATE[tool_name]
+                self.assertEqual(entry["coverage"], LIVE_SMOKE_REQUIRED)
+                self.assertIn("live Glyphs 3.5 and Glyphs 4 smoke batch", entry["tests"])
 
     def test_no_executable_glyph_beginundo_or_endundo_calls(self) -> None:
         violations = []

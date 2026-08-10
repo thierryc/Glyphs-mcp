@@ -35,6 +35,52 @@ Choose tools in this order:
 
 Use `docs_search` and `docs_get` when API details are uncertain.
 
+## Native Curvature Review
+
+Use `review_curve_quality` for explicit JSON measurements, then call
+`set_curve_review_overlay(enabled=true)` and direct the user to **View > Show
+Glyphs MCP Curvature**. The native Reporter draws the signed comb directly in
+Glyphs at `0.65` alpha so the outline remains legible beneath it, and remains
+available when the MCP server is stopped. It starts with 51 samples per cubic,
+a `0.010` scale, and a `0.12em` normal clamp. Curvature magnitude follows the
+path right normal, so correctly wound counter combs point into the white
+counter; signed curvature still controls teal/pink colors. Call
+`get_curve_review_overlay_state` to verify the last glyph/layer, stroke and
+clamp/cap counts, errors, and components omitted from the raw-path calculation.
+The PNG curvature overlay is deprecated and is not the default curve-review
+workflow.
+
+## Native Candidate Review
+
+Use the typed `preview_*_candidate` tools as the default for Tunni, collinear
+smoothing, italic-first-pass, and compensated-tuning work. Candidate sessions
+are required for multi-master or multi-glyph batches. Preview automatically
+enables **View > Show Glyphs MCP Candidate**. The normal Glyphs outline remains
+the reference; only its symmetric difference from the candidate is added in
+warm golden yellow. A stale source turns the difference coral red and adds a
+`STALE` label. Curvature is intentionally separate under **View > Show Glyphs
+MCP Curvature** so candidate decisions stay readable.
+
+If the proposal needs no manual edit, call `review_outline_candidate_session`,
+dry-run `accept_outline_candidate_session`, stop for approval, then confirm with
+the exact issued token. If manual editing is wanted, materialize the session as
+native layers, let the user edit them normally, and re-review before accepting.
+Use `discard_outline_candidate_session` to delete owned candidate layers;
+`set_outline_candidate_overlay(clear_session=true)` clears UI state only.
+Never rely on conversational context as candidate ownership metadata and never
+save automatically.
+
+## Image Content Responses
+
+When `render_glyph_review_image` succeeds, its response contains JSON metadata
+and a separate MCP `image/png` content block. Display the returned MCP image
+content directly in the chat. Do not replace the image with only metadata, a
+text summary, or an `Open in Glyphs` link.
+
+Glyphs show links navigate to a glyph or layer inside Glyphs; they are not image
+previews. Use the optional base64 fallback only when the client cannot surface
+MCP image content directly.
+
 ## Glyphs 3 Compatibility
 
 Glyphs MCP supports Glyphs 3 and Glyphs 4 from `main`. When `get_server_info`

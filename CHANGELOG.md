@@ -1,5 +1,245 @@
 # Changelog
 
+## 1.7.0 — Cleanroom cubic curve geometry
+
+_August 10, 2026_
+
+Glyphs MCP 1.7.0 adds independently implemented cubic Bezier review and
+guarded handle balancing for Glyphs 3.5 and Glyphs 4. It introduces no model,
+network service, native binary, or additional dependency.
+
+Installer build 22 extends the same 1.7.0 candidate with a hybrid native
+candidate-review workflow and grid-safe Tunni proposals. It supersedes and
+invalidates every build-21 live QA result for final acceptance.
+
+### Hybrid candidate review
+
+- A second Reporter adds **View > Show Glyphs MCP Candidate**. It leaves the
+  normal Glyphs outline unobscured and draws only the source/candidate
+  symmetric difference: warm golden yellow for a current proposal and coral
+  red with a `STALE` legend after a source edit. Candidate curvature remains a
+  separate Reporter so visual decisions are not buried in overlay noise.
+- The difference compositor now builds AppKit-native, topology-paired contour
+  ribbons by tracing each source contour and its candidate in reverse and
+  filling one `NSBezierPath`, following Glyphs' documented Reporter drawing
+  pattern. Live Glyphs 4 inspection found that XOR, nested-clear groups, and a
+  direct CoreGraphics fill could report successful drawing while emitting no
+  visible pixels. The blend-free path retains `0.82` overlay alpha, changes no
+  destination pixels outside the paired ribbons, and fails closed before
+  drawing when display topology is incompatible.
+- Typed preview tools cover Tunni balancing, collinear smoothing, italic first
+  pass, and compensated tuning. They create bounded detached sessions and
+  automatically enable the Reporter without dirtying or saving the font.
+- Shared tools inspect/toggle sessions, optionally materialize complete native
+  layer copies for normal Glyphs editing, re-review bounded manual deltas,
+  accept a short-lived fingerprint-bound state, or discard only session-owned
+  layers. Materialized manifests survive plug-in restart; ephemeral previews do
+  not.
+- Manual promotion is operation-specific. Topology, path/shape order,
+  component identities and smart values, protected hints/guides/annotations,
+  and unrelated metadata remain blocked. Successful acceptance removes
+  candidate layers only after exact verification and preserves existing italic
+  and compensated-tuning backup behavior.
+- Rollback now repairs a Glyphs 4 identity edge case: reattaching a candidate
+  layer can assign it a new layer ID. The layer metadata, process-local
+  session, and persisted manifest are remapped together before rollback is
+  reported successful, so a recovered candidate never points at a stale ID.
+- Sessions are capped at 16 sessions, 256 entries, and 100,000 nodes. Oversized
+  requests fail instead of truncating. Preview/review tools are Read-only;
+  materialize/accept/discard remain Edit-only. No custom SelectTool is added.
+
+### Grid-safe Tunni
+
+- `review_tunni_geometry`, `apply_tunni_balance`, and candidate preview now
+  default to `grid_policy="font"` using the ready-calculated
+  `font.gridLength`; `continuous` remains explicit opt-in.
+- `idealProposed` preserves continuous arithmetic. The authoritative
+  `proposed` result comes from a deterministic bounded lattice search guarded
+  by ray direction, movement, imbalance, on-grid, and `0.25` degree tangent
+  limits. Integral grids return JSON integer coordinates and impossible cases
+  return `no_safe_grid_candidate`.
+
+### Curve engineering tools
+
+- `review_tunni_geometry` reports intersections, endpoint handle ratios,
+  relative imbalance, eligibility reasons, and conservative balance proposals
+  for one explicit glyph/master/path target.
+- `apply_tunni_balance` accepts only explicit curve end-node indices and
+  requires exactly one of dry run or confirmation. Confirmed changes run on the
+  main thread; target resolution, snapshot, recomputation, eligibility, writes,
+  and read-back share one transaction. It requires a callable layer change
+  batch, returns actual verified before/after coordinates, rolls back the
+  complete path coordinate snapshot on failure, and never saves the font.
+- `review_curve_quality` returns bounded sampled signed curvature, normalized
+  metrics, inflection sign changes, degenerate tangents, exact maximum/median
+  spike warnings with JSON-safe infinite-ratio markers, and smooth-join
+  discontinuity warnings without claiming artistic approval.
+- `render_glyph_review_image` accepts a `curvature` overlay with signed comb
+  colors, a returned teal-positive/pink-negative sign legend, UPM-aware
+  scaling, a `0.25em` length clamp, deterministic sampling reduction under a
+  hard stroke budget, and explicit raw-path component omissions. This PNG
+  curvature path is now a deprecated compatibility fallback.
+- A native `GlyphsMCPCurvatureReporter` adds **View > Show Glyphs MCP
+  Curvature**. It draws live signed comb teeth plus connected envelope runs in
+  Edit View at `0.65` alpha. Native defaults are now 51 samples per cubic, a
+  `0.010` scale, and a `0.12em` normal clamp with a `0.25em` hard guard.
+  Curvature magnitude is placed along the path right normal, so correct Glyphs
+  winding sends outer-contour combs outward and counter combs into counter
+  space. Signed curvature still controls teal/pink colors and inflection
+  behavior. Path direction participates in the bounded cache signature; the
+  frame cap remains 2,000 teeth. The deprecated PNG keeps 51 samples, `0.02`,
+  and `0.25em` while receiving the same outside-ink placement correction.
+- `set_curve_review_overlay` toggles that Reporter through Glyphs' documented
+  activation API, while `get_curve_review_overlay_state` returns availability,
+  activation, last-draw counts, clamp/cap state, errors, and omitted components.
+  Both tools are available in Read-only and Edit and never change or save a
+  font.
+
+### Cleanroom and compatibility boundary
+
+- The geometry engine accepts plain node records and imports neither
+  GlyphsApp nor AppKit/PyObjC. JSON review and visual rendering share the same
+  formulas and fixtures.
+- No SuperTool or SCGlyphsLib source is copied, translated, linked, or shipped.
+  The contributor cleanroom record documents formulas, rejection limits,
+  mutation safeguards, and deferred features.
+- The Read-only profile exposes both review tools and both native curvature
+  Reporter controls; Tunni mutation remains Edit-only. Tool schemas and path
+  access cover Glyphs 3.5 paths and Glyphs 4 mixed shapes.
+- Restricted profiles follow FastMCP's authoritative tool-manager registry,
+  verify the exact enabled tool set before HTTP exposure, and abort startup
+  rather than falling back to Edit tools when filtering cannot be proven.
+- Numeric thresholds must be finite, explicit segment indices must be genuine
+  integers, and the one-unit handle floor cannot be weakened by callers.
+- Harmonization, callipers, path simplification, and ink coverage remain
+  intentionally deferred pending separate specifications and validation.
+
+### Server restart compatibility and verification
+
+- A repeated Stop -> Start is refused while the prior Uvicorn thread is still
+  alive. After it has fully stopped, Glyphs MCP clears the guarded
+  `sse-starlette` 2.4.1 `AppStatus` shutdown flag and loop-bound event before
+  constructing the HTTP app for the next server event loop. Missing or changed
+  `AppStatus` layouts are tolerated without blocking startup.
+- An adversarial surface contract fixes the intentional budget at `83`
+  decorated tools: `81` protocol-visible and `2` app-only. It requires unique,
+  bounded descriptions, preserves snake_case except for the legacy
+  `ExportDesignspaceAndUFO` name, and proves the Read-only allowlist contains no
+  font mutation, execution, save, or file-writing tool. The three compensated-
+  tuning commands now expose concise descriptions, and packaged skills use only
+  the current Read-only/Edit profile language.
+- The build-22 local gate passes `723` Python tests with `4` intentional
+  environment-dependent skips, all `104` Xcode installer tests, the unsigned
+  Debug installer build, documentation/skill validation, source/Plugin Manager
+  parity, schema/profile coverage, and release-security metadata checks. The
+  corrected candidate module passes the complete HCR1-HCR8 matrix in both
+  Glyphs 4 and Glyphs 3.5.
+- A final Glyphs 4 restart loaded runtime `1.7.0+70b5bcb204b1`. Its
+  authoritative live tool registry contained all `83` registered entries with
+  zero blank descriptions, including the three compensated-tuning commands.
+  The already-open Codex task retained its pre-reconnect catalog text, so
+  clients still need to reconnect after a plug-in restart to refresh
+  `tools/list` descriptions.
+- On August 10, the corrected candidate module was reloaded from the canonical
+  checkout into Glyphs 4.0 / Python 3.14.6 and exercised on a serialized
+  `/private/tmp` Gee gee copy. Stale-source, topology, unrelated-node, permitted
+  manual-edit, changed-after-review, and consumed-token checks all failed or
+  passed as specified. Injected write, read-back, `endChanges`, and manifest
+  cleanup failures each restored the source, candidate, and manifest. Glyphs 4
+  assigned a new layer ID during cleanup rollback; the repaired manifest
+  followed it and the session immediately re-reviewed as ready. Reloading the
+  process-local state removed an ephemeral session while recovering the
+  materialized one from font/layer metadata; guarded discard then removed only
+  that candidate. The copy closed without save and retained its exact 412-file
+  hash `64bb9cdd82049885cb04cf09646d3a94d05e464c867357d0c4a7d93cb1396c11`.
+- On August 10, Glyphs 3.5 build 3530 / Python 3.12.3 loaded runtime
+  `1.7.0+ef4b95f03e4d` and completed the same adversarial candidate matrix on a
+  serialized 37-file SDK v3 fixture. Stale source, topology, unrelated-node,
+  permitted manual-edit, changed-after-review, and consumed-token cases all
+  behaved as specified. Injected write, read-back, `endChanges`, and manifest
+  cleanup failures restored complete state; cleanup rollback reassigned the
+  materialized layer from `0A16CF95-28A0-4F5C-90A6-3C54A2FEC703` to
+  `C1A668C5-CD99-4E8E-AC0F-4B830C82469C`, and the repaired manifest followed
+  that new ID. Reloading process-local state discarded an ephemeral-only
+  session while recovering the materialized session from metadata; guarded
+  discard removed only its owned layer. The fixture closed without save and
+  retained its exact tree hash
+  `b98c3e2aaa7f916a4c7fc7cc467a75a9ba1ad154f631da6ea85cc966a2284fd9`
+  and font hash
+  `86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`.
+- A final restarted Glyphs 4.0 / Python 3.14.6 pass loaded runtime
+  `1.7.0+dc567a3732de` and proved that the AppKit-native difference compositor
+  emits real localized pixels. An overlay-off/on comparison of Gee gee `G` at
+  the same 650-point viewport found 2,450 changed canvas pixels, including 511
+  yellow-shifted pixels, while the Reporter reported one changed path, 12
+  changed nodes, `8.27806` units maximum sampled outline displacement, and no
+  drawing error. The user reviewed and explicitly approved that proposal;
+  token-bound dry-run and confirmed acceptance then changed exactly the 12
+  reported off-curve handles, verified the read-back, removed the ephemeral
+  session, and reported `fontSaved:false`. The source document is intentionally
+  left changed in memory for the user to save or discard; Glyphs MCP did not
+  save it.
+- Live Glyphs 4.0 with Python 3.14.6 and runtime
+  `1.7.0+531bbc42f912` passed the all-master candidate preview, native
+  materialization, cosmetic rename plus one permitted manual edit, bounded
+  re-review, dry-run, confirmed promotion, overlay-only promotion, consumed
+  token rejection, metadata recovery after process-local state loss, and
+  owned-layer discard on a serialized `/private/tmp` copy of Gee gee. Five
+  source masters matched their complete expected post-acceptance snapshots;
+  candidate layers, manifests, backups, and ephemeral state were empty after
+  cleanup. The copy was closed with changes discarded, its 412-file tree hash
+  remained `a4fe531545c7ffb75fd686e94d23dbc687d1e7cd93ebc740904869ee1cbc76b2`,
+  and no font was saved.
+- A final restarted Glyphs 3.5 / Python 3.12.3 pass loaded runtime
+  `1.7.0+dc567a3732de` and visually confirmed both native Reporters on Inter
+  `G`, Regular. The candidate compositor emitted one localized golden ribbon
+  group for four eligible Tunni segments; an overlay-off/on capture at the same
+  650-point viewport found 19,171 changed pixels in the glyph crop, including
+  1,350 clearly yellow-shifted pixels. The separate curvature Reporter drew
+  408 bounded teeth across eight cubics: the teal outer comb pointed outside
+  the shape and the pink inner comb pointed into the white counter, with no
+  clamp, cap, degenerate sample, warning, or drawing error. Candidate review
+  and acceptance dry-run passed without changing or saving the already-edited
+  source document.
+- That live pass found and fixed a fail-closed integer/float representation
+  mismatch: the grid engine intentionally serializes integral coordinates as
+  JSON integers while Glyphs reads the same `NSPoint` values back as floats.
+  Review-token fingerprints remain strict; recomputation and write-back now
+  compare complete snapshots geometrically. The regression covers an
+  unchanged materialized candidate and rejects any real coordinate change.
+- Live Glyphs 3.5 build 3530 with Python 3.12.3 and the same fixed runtime
+  `1.7.0+531bbc42f912` passed a native all-master Reporter preview and a guarded
+  materialize, re-review, dry-run, and confirmed acceptance on Inter glyph
+  `a`. Five masters produced eligible grid-safe proposals and followed active
+  master switching; the Display master was correctly excluded because its
+  imbalance was already below threshold. Acceptance changed exactly the two
+  targeted Thin-master handles, matched the complete expected layer snapshot,
+  removed the candidate layer and manifest, and created no backup.
+- The Glyphs 3.5 mutation ran only on a serialized `/private/tmp` package copy.
+  It passed the fixed integer/float semantic comparison, was closed with
+  changes discarded, retained its exact 3022-file tree hash
+  `8da828278bf638edb0e47dfd8e6bb0ca399e30aa51f3649dffd8b3e6ba60ef58`,
+  and was deleted. The user's original Inter document received read-only
+  Reporter previews only; its exact source fingerprint, handles, manifest,
+  and on-disk tree remained unchanged. It was already document-edited before
+  QA, so it was left open and never saved by the test.
+- Live Glyphs 3.5 build 3530 with Python 3.12.3 and runtime
+  `1.7.0+dc6234a3dc21` passed CG1-CG6 on an untitled path-only disposable
+  font. The pass verified Tunni ratios and rejection reasons, signed curvature,
+  a real AppKit PNG comb, exact dry-run immutability, two-handle confirmed
+  writes with stale-state recomputation, and complete rollback for controlled
+  write, read-back, and `endChanges()` failures.
+- Profile restarts exposed exactly `29` Read-only tools and `71` Edit tools;
+  mutation and code execution were unavailable in Read-only. The active-thread
+  restart guard followed its expected wait path, and a subsequent restart after
+  full shutdown initialized successfully.
+- The Glyphs 3.5 pass used two open cubic paths and no components. Component
+  omission and mixed-shape ordering remain covered by automated tests and the
+  live Glyphs 4 pass. Synthetic mixed-component and visible serialized
+  temporary fixtures exposed Glyphs 3.5 host alignment and autosave hazards;
+  all temporary artifacts were removed, the disposable font was closed without
+  saving, and the user's remaining font stayed unedited.
+
 ## 1.6.0 — Verified update staging and safer spacing workflows
 
 _August 6, 2026_

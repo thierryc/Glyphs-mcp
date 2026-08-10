@@ -9,7 +9,8 @@ Use this skill for guarded kerning bumper workflows.
 
 ## Core rules
 
-- Prefer the `Kerning` tool profile when the task is only about kerning.
+- Use Edit for this specialized workflow; review calls remain non-mutating, and
+  confirmed apply calls remain approval-gated.
 - Read current state before mutation.
 - Run `review_kerning_bumper` before any apply step.
 - Always run `apply_kerning_bumper` with `dry_run=true` before a mutating call.

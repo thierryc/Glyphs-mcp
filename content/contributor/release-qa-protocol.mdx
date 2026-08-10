@@ -215,6 +215,285 @@ Run in both `Read-only` and `Edit` profiles. The font must not be marked dirty b
 | R12 | Call `docs_search` for `GSLayer bounds`, then `docs_get` for the best result. | Returns focused bundled docs without registering all pages. |
 | R13 | Call `resources/list` if the client exposes it. | Core resources are available without flooding the client with every docs page by default. |
 
+## Curve geometry workflow
+
+Run review cases in both profiles. Run confirmed mutation only in `Edit` on a
+disposable glyph or working copy. Record the explicit path and segment end-node
+indices so the Glyphs 3.5 and Glyphs 4 results can be compared.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| CG1 | Call `review_tunni_geometry` for one curved glyph/master/path, then repeat with one unsuitable explicit index. | Returns bounded ratios, eligibility, proposals, and stable rejected records with `eligible:false` and a reason code, without changing document state. |
+| CG2 | Call `review_curve_quality` for the same path with `include_samples=false`. | Returns bounded curvature metrics, exact maximum/median spike semantics, JSON-safe zero-median markers, component omissions, and warnings without an artistic pass/fail verdict or mutation. |
+| CG3 | Call `set_curve_review_overlay(enabled=true)`, inspect a correctly wound outer contour and counter plus reversed equivalent paths in **View > Show Glyphs MCP Curvature**, then call `get_curve_review_overlay_state`. | Live teal-positive/pink-negative teeth and connected envelope runs are visible; outer combs point into non-ink outside the shape, counter combs point into the white counter, and reversal preserves tooth lengths while reversing placement and signed color; native sampling is 51 per cubic with a `0.010` scale and `0.12em` normal clamp; last-draw glyph/layer, stroke, hard-clamp/cap, and component-omission data are bounded; the font remains clean. Toggle off and confirm the drawing disappears. |
+| CG4 | Call `apply_tunni_balance` with `dry_run=true` for one explicit eligible segment. | Proposed handle coordinates match review; node and document signatures remain byte-for-byte unchanged. |
+| CG5 | After approval, call the same target with `confirm=true` on the disposable glyph. | The applied record contains actual verified before/after coordinates, exactly its two reported handles move, topology/types/smooth flags remain stable, verification succeeds, and no save occurs. |
+| CG6 | Exercise controlled write, read-back, and `endChanges()` failures against a disposable fixture. | Every original coordinate is restored, rollback succeeds, and begin/end change calls are attempted as a paired batch. |
+
+## Hybrid candidate review workflow
+
+Run HCR1-HCR8 in both Glyphs 3.5 and Glyphs 4 using serialized disposable
+copies under `/private/tmp`. Run preview/review in both profiles; materialize,
+accept, and discard only in Edit. Record source and candidate fingerprints.
+
+| ID | Action | Expected result |
+| --- | --- | --- |
+| HCR1 | Preview grid-safe Tunni targets in every master and switch active masters. Capture at least one frame whose measured outline displacement is visibly large. | **View > Show Glyphs MCP Candidate** activates automatically; localized warm-yellow difference ribbons contain real non-background pixels over the untouched Glyphs outline, without dirtying the font. The Reporter reports `differenceCompositor="appkit_topology_paired_contour_ribbons"`; identical geometry draws no glyph-area overlay. A successful draw counter without visible difference pixels is a failure. |
+| HCR2 | Change one source handle after preview. | The recomputed difference turns coral red with `STALE`; review blocks with `stale_source` and issues no token. |
+| HCR3 | Materialize the session after a successful dry run. | Complete copies receive new layer IDs, source-master associations, plain names, direct links, and namespaced manifests; backgrounds remain untouched and partial failure rolls back all copies. |
+| HCR4 | Make one operation-permitted manual edit, rename the candidate, and re-review with diffs. | Cosmetic rename is ignored; exact bounded deltas are reported and a five-minute fingerprint-bound token is issued. |
+| HCR5 | Try topology, protected metadata, unrelated node, off-grid, or operation-external edits. | Review blocks with stable reasons and no token. |
+| HCR6 | Dry-run then confirm acceptance with the exact token. | Only approved fields move, every read-back verifies, candidates/manifests are removed after success, required italic/tuning backups remain, and no save occurs. |
+| HCR7 | Change source or candidate after review, reuse a consumed token, and exercise write/read-back/cleanup/end-change failures. | Tokens fail closed; complete source/candidate/manifest/backup state is restored on any transactional failure. |
+| HCR8 | Materialize, restart the plug-in, re-review, then discard a second session. | Materialized state recovers from metadata; discard deletes only owned candidates; ephemeral previews disappear on restart and can be regenerated. |
+
+Pass criteria:
+
+- Read-only profile exposes both review tools but not `apply_tunni_balance`.
+- Read-only and Edit expose both native Reporter control tools.
+- Glyphs 3.5 path order and Glyphs 4 path order within mixed shapes identify
+  equivalent paths and segment end-node indices.
+- Invalid, parallel, short-handle, distant-intersection, out-of-ratio, and
+  excessive-movement cases return stable reasons rather than mutating.
+- Boolean, fractional, and numeric-string segment indices are rejected. NaN
+  and infinite numeric thresholds are rejected before target mutation.
+- A change made after dispatch but before main-thread execution is observed by
+  the confirmed recomputation; a stale proposal is never written.
+- Confirmed apply triggers no undo recovery dialog and never saves the font.
+
+### Version 1.7.0 build-22 Glyphs 4 candidate-session record
+
+The August 9, 2026 initial pass used Glyphs 4.0, Python 3.14.6, and runtime
+`1.7.0+531bbc42f912` on a serialized `/private/tmp` copy of the five-master Gee
+gee package. The user's original package remained a separate untargeted open
+font.
+
+- HCR1/HCR3/HCR4/HCR6 passed for glyph `c`: all-master detached preview,
+  five-layer materialization, cosmetic rename, one allowed on-grid Regular
+  handle edit, bounded re-review, dry-run, and confirmed promotion.
+- The first acceptance dry-run failed closed because integer grid coordinates
+  and equivalent Glyphs float read-back values produced different raw
+  fingerprints. After the acceptance-only fix and full Glyphs restart, both
+  the materialized all-master flow and a separate overlay-only flow passed.
+  Review-token fingerprints remain type-sensitive; only recomputation and
+  read-back use complete geometric snapshot equality.
+- Confirmed all-master promotion returned five applied entries, removed all
+  five candidate layers and the manifest, created no Tunni backup, and reported
+  `fontSaved:false`. Every complete source snapshot matched the original plus
+  only approved handle coordinates. Consumed-token reuse failed closed.
+- HCR8's persistence boundary was first exercised by clearing the process-local
+  store after materialization. The final corrected-module pass below replaces
+  this supporting-only result.
+- The disposable document was closed with changes discarded. Its 412-file tree
+  hash remained
+  `a4fe531545c7ffb75fd686e94d23dbc687d1e7cd93ebc740904869ee1cbc76b2`,
+  and the temporary directory was deleted. No font was saved.
+- On August 10, the corrected candidate module was reloaded from the canonical
+  checkout. HCR2 rejected a one-unit source edit as `stale_source`; HCR5
+  rejected topology and unrelated-node edits while accepting one permitted
+  on-grid manual delta. Changed-after-review and consumed-token reuse both
+  failed closed.
+- One-shot live injection covered write, read-back, `endChanges`, and manifest
+  cleanup failures. Each restored complete source/candidate/manifest state and
+  re-reviewed as ready. Cleanup reproduced Glyphs 4 assigning a new ID to a
+  reattached candidate; the fixed rollback remapped layer metadata, ephemeral
+  state, and the persisted manifest to that ID before reporting success.
+- Reloading the candidate state/module boundary removed an ephemeral-only
+  session while the materialized session recovered from font/layer metadata.
+  Dry-run and confirmed discard deleted only the owned candidate. The
+  disposable copy then closed without save and retained its exact 412-file hash
+  `64bb9cdd82049885cb04cf09646d3a94d05e464c867357d0c4a7d93cb1396c11`.
+  This completes Glyphs 4 HCR1-HCR8 for build 22.
+
+#### Final AppKit difference-render and approved-promotion addendum
+
+After a full plug-in restart on August 9, Glyphs 4.0 / Python 3.14.6 loaded
+runtime `1.7.0+dc567a3732de` and exercised Gee gee glyph `G`, Regular.
+
+- The ephemeral Tunni proposal reported one changed path, 12 changed nodes,
+  `8.27806` units maximum sampled outline displacement,
+  `differenceCompositor="appkit_topology_paired_contour_ribbons"`, and no
+  drawing error.
+- A controlled overlay-off/on comparison at the same 650-point viewport found
+  2,450 changed canvas pixels, including 511 yellow-shifted pixels, bounded to
+  the glyph region. This satisfies the final-runtime Glyphs 4 HCR1 requirement
+  that the Reporter emit real localized non-background pixels rather than only
+  reporting a successful draw.
+- The user visually reviewed and explicitly approved the candidate. A fresh
+  review token and acceptance dry-run passed; confirmed acceptance changed
+  exactly the 12 reported off-curve handles, verified their read-back, removed
+  the ephemeral session, and returned `fontSaved:false`.
+- All six targeted cubics then measured below the requested imbalance
+  threshold, with worst relative imbalance `0.036210`. Five join-discontinuity
+  measurements remained warnings only; no segment spike or degenerate tangent
+  warning was introduced.
+- This acceptance targeted the user's open source document, not a disposable
+  copy. The approved outline change remains in memory for the user to save or
+  discard; Glyphs MCP did not save it. Therefore this row validates rendering,
+  review, token binding, exact promotion, and cleanup, but does not replace the
+  disposable-file persistence rows above.
+
+### Version 1.7.0 Glyphs 3.5 acceptance record
+
+#### Build-22 hybrid candidate-session record
+
+The August 9, 2026 build-22 pass used Glyphs 3.5 build 3530, Python 3.12.3,
+and runtime `1.7.0+531bbc42f912` with Inter glyph `a`.
+
+- A detached session previewed explicit path/node targets for Thin, Display
+  Thin, Regular, Black, and Display Black. The Reporter activated
+  automatically, selected the matching entry while active masters changed,
+  reported two changed nodes, and remained non-stale. The historical runtime
+  also drew 204 embedded candidate-curvature strokes per inspected master;
+  that appearance evidence is superseded by the difference-only Reporter and
+  must not be used for final visual acceptance. Display was already below the
+  imbalance threshold and was correctly excluded rather than forced.
+- Previewing the user's original open Inter document did not change its exact
+  source fingerprint, target coordinates, candidate manifest, or 3022-file
+  on-disk tree hash. The Reporter session was cleared and disabled afterward.
+  The document was already edited before QA and therefore remained open; the
+  test did not save it.
+- On a serialized `/private/tmp` copy, materialization created one Thin-master
+  candidate layer. Re-review returned `generated_unchanged` and a bound token;
+  dry-run and confirmed acceptance both passed. Confirmed promotion changed
+  only node `0` and node `1` of path `1` to `(282, 22)` and `(156, 141)`, with
+  the complete layer matching the original snapshot plus exactly those two
+  coordinates. It removed the owned candidate and manifest, created no backup,
+  and reported `fontSaved:false`.
+- The disposable document was immediately closed with changes discarded. Its
+  exact 3022-file tree hash remained
+  `8da828278bf638edb0e47dfd8e6bb0ca399e30aa51f3649dffd8b3e6ba60ef58`,
+  and its exact temporary directory was deleted. No user or repository font
+  was saved.
+- This is a core HCR1/HCR3/HCR6 pass, including automatic all-master entry
+  selection and the integer-grid/float-read-back regression. HCR2, HCR4/HCR5,
+  and HCR7/HCR8 are completed by the final corrected-module addendum below;
+  automated coverage is not substituted for those claimed live results.
+
+#### Final Reporter appearance addendum
+
+After a full restart on August 9, Glyphs 3.5 / Python 3.12.3 loaded runtime
+`1.7.0+dc567a3732de` and exercised Inter glyph `G`, Regular, without confirming
+a mutation.
+
+- Grid-safe review found four eligible explicit segments (`13`, `16`, `19`,
+  and `26`). Detached preview produced one topology-compatible difference
+  group, eight changed off-curve nodes, `30.016662` units maximum node
+  movement, `14.126624` units maximum sampled outline displacement, and no
+  Reporter error.
+- At the same 650-point viewport, a candidate overlay-off/on capture found
+  19,171 changed pixels in the glyph crop, including 2,277 material pixels and
+  1,350 clearly yellow-shifted pixels. This satisfies final-runtime HCR1 visual
+  output for Glyphs 3.5.
+- With the candidate overlay hidden, CG3 drew 408 curvature teeth across eight
+  cubics at 51 samples per curve. No tooth was clamped, capped, or degenerate;
+  the teal outer comb pointed outside the shape and the pink inner comb pointed
+  into the white counter. The Reporter returned no warning or drawing error.
+- Candidate re-review returned `sourceStatus="current"` and
+  `candidateStatus="generated_unchanged"`. Token-bound acceptance dry-run
+  planned the exact entry and returned `fontChanged:false` and
+  `fontSaved:false`; no confirmed apply was attempted.
+- The Inter source document was already marked edited before this pass. The
+  checks neither added to that document state nor saved it. Curvature was
+  disabled after inspection and the candidate overlay/session was restored for
+  the user's visual review.
+
+#### Final corrected-module adversarial addendum
+
+On August 10, Glyphs 3.5 build 3530 / Python 3.12.3 loaded runtime
+`1.7.0+ef4b95f03e4d` and exercised the remaining HCR cases on a serialized
+37-file SDK v3 fixture, glyph `A`, master `m01`.
+
+- HCR2 rejected a one-unit source-handle edit as `stale_source` and issued no
+  token. HCR5 rejected a closed/open topology edit and an unrelated on-curve
+  edit. HCR4 allowed one on-grid targeted handle edit, reported exactly one
+  bounded manual delta, and treated a plain candidate-layer rename as cosmetic.
+- Changing the candidate after review returned
+  `review_token_fingerprint_mismatch`; reusing that consumed token returned
+  `review_token_invalid_or_expired`.
+- HCR7 one-shot injections covered write, read-back, `endChanges`, and manifest
+  cleanup failures. Every transaction reported successful rollback and the
+  candidate immediately re-reviewed as ready. Cleanup rollback reproduced a
+  Glyphs 3.5 layer-ID reassignment from
+  `0A16CF95-28A0-4F5C-90A6-3C54A2FEC703` to
+  `C1A668C5-CD99-4E8E-AC0F-4B830C82469C`; the repaired layer metadata,
+  process-local entry, and persisted manifest all followed the new ID.
+- HCR8 reloaded the candidate state/module boundary. The ephemeral-only
+  session disappeared as specified; the materialized session recovered from
+  namespaced font/layer metadata and re-reviewed as ready. Guarded discard
+  removed only its owned candidate.
+- The document closed without save. The disposable tree remained 37 files with
+  exact SHA-256
+  `b98c3e2aaa7f916a4c7fc7cc467a75a9ba1ad154f631da6ea85cc966a2284fd9`;
+  the target font remained
+  `86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`.
+
+Together with the earlier HCR1/HCR3/HCR6 live pass, this completes HCR1-HCR8
+for Glyphs 3.5 build 3530 and installer build 22.
+
+#### Historical build-21 curve-geometry record
+
+> Historical evidence only. Installer build 22 adds grid-safe Tunni and the
+> hybrid Candidate Reporter/session workflow, so every prior 1.7 live result
+> below is not release acceptance evidence. The final build-22 records above
+> provide the required live CG/HCR acceptance in both supported hosts.
+
+The August 8, 2026 pass used Glyphs 3.5 build 3530, Python 3.12.3, and runtime
+`1.7.0+dc6234a3dc21`. The untitled disposable font contained two open cubic
+paths and no components: `font_index=0`, glyph `GMCP_curve_qa`, master `m01`,
+path indices `0` and `1`, and shape indices `0` and `1`.
+
+- CG1 returned endpoint ratios `0.2` and `0.4`, relative imbalance `0.5`, and
+  proposed handles `(30, 0)` and `(100, 70)`. Unsuitable segment index `2`
+  returned `eligible:false` with reason `open_path_boundary`.
+- CG2 reported signed curvature ranges from `+0.00387353758` through `+0.1`
+  and from `-0.1` through `-0.00387353758`, with spike ratio
+  `13.8954483341`.
+- CG3 returned a real `626665`-byte PNG with `102` comb strokes, the teal/pink
+  sign legend, no sampling-cap reduction, and recorded abbreviated SHA-256
+  `6757bd...30514`.
+- That acceptance record predates the native Reporter. The current candidate's
+  **View > Show Glyphs MCP Curvature** workflow must complete a new CG3 live
+  pass before release; the historical PNG result does not satisfy it.
+- CG4 left the exact path and document signatures unchanged. CG5 made exactly
+  two verified handle writes, paired the layer change calls, and returned
+  actual before/after records. The stale-state case recomputed
+  `(10, 300)` / `(100, 230)` as `(20, 300)` / `(100, 220)`.
+- CG6 injected write, read-back, and `endChanges()` failures within the live
+  Glyphs interpreter. All original positions were restored, with paired
+  begin/end attempts. Boolean, string, and fractional segment indices, and
+  `min_handle_length=0.5`, were rejected before mutation.
+- Read-only restarted with exactly `29` tools: both review tools and rendering
+  were present, while `apply_tunni_balance` and `execute_code` were unknown.
+  Edit restarted with exactly `71` tools. The active-thread guard took its
+  expected wait path before fresh initialization, and a subsequent restart
+  after full server shutdown succeeded.
+- The disposable font was closed without saving. `IconGrid Test Fixture` was
+  the only user font left open and its `documentEdited` state was false.
+
+This acceptance record is intentionally scoped to path behavior in Glyphs 3.5.
+Component omission and mixed path/component ordering remain covered by the
+automated wrapper/renderer suite and the live Glyphs 4 mixed-shape pass.
+
+### Glyphs 3.5 build 3530 disposable-fixture safety
+
+Two attempts to broaden the live Glyphs 3.5 fixture exposed host behavior that
+was separate from MCP tool execution:
+
+- Constructing a synthetic mixed-component font reached Glyphs private
+  `_lastComponentOperation` / `needsAlignment` code and crashed the host.
+- Opening a visible serialized temporary fixture caused an AppKit autosave hang
+  and created a separate `CurveQA (Autosaved).glyphs` file. The source-copy
+  hash remained exact.
+
+For build 3530 curve-failure injection, prefer an untitled, in-memory,
+path-only disposable fixture. Do not synthesize mixed components in the live
+interpreter or open a serialized visible temporary fixture solely to expand
+CG1-CG6 unless that fixture path has been vetted separately. Use the automated
+component/mixed-shape coverage and the live Glyphs 4 pass for those cases. The
+two temporary files and their directory from this pass were deleted; no
+repository or user font was saved.
+
 ## Unicode assignment workflow
 
 Run review cases in both profiles. Run mutation cases in `Edit` on a disposable
@@ -391,7 +670,7 @@ Run on a clean or near-clean macOS user account when possible.
 | P3 | Install into Glyphs 4 explicitly or by the terminal installer default. | Plug-in lands in the Glyphs 4-compatible location and starts in Glyphs 4. |
 | P4 | Re-run installer over an existing install. | Upgrade path is clear and does not duplicate plug-ins or client entries. |
 | P5 | Install standalone skills for Codex and Claude where selected. | Skills appear after client reload and reference the expected MCP endpoint/workflows. |
-| P6 | Install the optional shared agent plugin in disposable Codex, Claude Code, Cursor, and GitHub Copilot CLI profiles where those hosts are available. | Each host resolves version `1.6.0`, the same nine skills, and the same localhost MCP endpoint. No installer-owned or `.github/copilot/settings.json` enablement appears. |
+| P6 | Install the optional shared agent plugin in disposable Codex, Claude Code, Cursor, and GitHub Copilot CLI profiles where those hosts are available. | Each host resolves version `1.7.0`, the same nine skills, and the same localhost MCP endpoint. No installer-owned or `.github/copilot/settings.json` enablement appears. |
 | P7 | Uninstall or overwrite manually if that path is documented for users. | Leaves no stale duplicate bundle that Glyphs can load accidentally. |
 
 ## Update notification checks
@@ -464,6 +743,7 @@ Measure on the large font in both Glyphs 3.5 and Glyphs 4.
 | `get_font_glyphs` on large font | Less than 15 seconds, or documented if the font is unusually large. |
 | `get_font_kerning` on main master | Less than 20 seconds with bounded response size acceptable to the client. |
 | `render_glyph_review_image` for 12 glyphs | Less than 20 seconds and image is visible. |
+| Native curvature Reporter, up to 100 cubics | Cold geometry build under 20 ms and cached redraw under 5 ms on the release test Mac; never exceed 2,000 teeth. |
 | `review_kerning_bumper` with bounded limits | Completes without freezing Glyphs; record elapsed time. |
 | Repeated calls | 20 mixed read calls in a row do not leak obvious memory, crash, or progressively slow down. |
 
@@ -534,9 +814,11 @@ Do not mutate or save.
 ### Visual review
 
 ```text
-Render a visual review image for A, O, n, o, a composite glyph, and one punctuation glyph.
-Use metrics, sidebearings, bounds, nodes, handles, anchors, and guides overlays.
-Report concrete visual or data issues only.
+Review curve quality for A, O, n, o, a composite glyph, and one punctuation glyph.
+Enable the native curvature Reporter and inspect View > Show Glyphs MCP Curvature.
+Verify the bounded last-draw record with get_curve_review_overlay_state.
+Use the legacy PNG renderer only when a static non-curvature proof is still required.
+Report concrete measurements, warnings, or visual issues only.
 Do not mutate or save.
 ```
 
@@ -605,6 +887,7 @@ Copy this section into the release notes or QA issue for each candidate.
 | Spacing workflow | | | |
 | Kerning workflow | | | |
 | Outline and glyph editing | | | |
+| Curve geometry | | | |
 | Annotation workflow | | | |
 | Italic and compensated tuning | | | |
 | Export and save | | | |
