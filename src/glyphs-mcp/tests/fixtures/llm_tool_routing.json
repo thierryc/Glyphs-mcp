@@ -1,0 +1,70 @@
+[
+  {
+    "intent": "Review curvature and curve events on one explicit path",
+    "surface": "model",
+    "primary": "review_curve_quality",
+    "followups": ["set_curve_review_overlay"],
+    "forbidden": ["apply_tunni_balance", "render_glyph_review_image"]
+  },
+  {
+    "intent": "Compare curve quality across explicit compatible masters",
+    "surface": "model",
+    "primary": "review_curve_quality_across_masters",
+    "followups": ["set_curve_review_overlay"],
+    "forbidden": ["execute_code", "apply_tunni_balance"]
+  },
+  {
+    "intent": "Create an italic first pass across masters",
+    "surface": "model",
+    "primary": "preview_italic_first_pass_candidate",
+    "followups": ["review_outline_candidate_session", "accept_outline_candidate_session", "accept_outline_candidate_session"],
+    "modes": ["ui", "review", "dry_run", "confirmed"],
+    "forbidden": ["review_italic_first_pass", "apply_italic_first_pass"]
+  },
+  {
+    "intent": "Balance one explicit cubic using Tunni geometry",
+    "surface": "model",
+    "primary": "review_tunni_geometry",
+    "followups": ["apply_tunni_balance", "apply_tunni_balance"],
+    "modes": ["review", "dry_run", "confirmed"],
+    "forbidden": ["preview_italic_first_pass_candidate"]
+  },
+  {
+    "intent": "Balance multiple glyphs and masters with Tunni geometry",
+    "surface": "model",
+    "primary": "preview_tunni_balance_candidate",
+    "followups": ["review_outline_candidate_session", "accept_outline_candidate_session", "accept_outline_candidate_session"],
+    "modes": ["ui", "review", "dry_run", "confirmed"],
+    "forbidden": ["apply_tunni_balance"]
+  },
+  {
+    "intent": "Review and safely apply spacing",
+    "surface": "model",
+    "primary": "review_spacing",
+    "followups": ["apply_spacing", "apply_spacing"],
+    "modes": ["review", "dry_run", "confirmed"],
+    "forbidden": ["execute_code"]
+  },
+  {
+    "intent": "Review kerning collisions and safely apply exceptions",
+    "surface": "model",
+    "primary": "review_kerning_bumper",
+    "followups": ["apply_kerning_bumper", "apply_kerning_bumper"],
+    "modes": ["review", "dry_run", "confirmed"],
+    "forbidden": ["generate_kerning_tab", "execute_code"]
+  },
+  {
+    "intent": "Show the embedded Glyphs status panel",
+    "surface": "app",
+    "primary": "show_glyphs_status",
+    "followups": [],
+    "forbidden": ["execute_code"]
+  },
+  {
+    "intent": "Search official Glyphs API documentation",
+    "surface": "model",
+    "primary": "docs_search",
+    "followups": ["docs_get"],
+    "forbidden": ["docs_enable_page_resources", "execute_code"]
+  }
+]

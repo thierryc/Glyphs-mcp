@@ -7,6 +7,7 @@ import json
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _font_resolution_error,
     _glyphs_show_glyphs_link_fields,
@@ -29,7 +30,7 @@ def _unique_ordered(values):
     return out
 
 
-@mcp.tool()
+@glyphs_tool()
 async def list_style_sets(font_index: int = 0, include_inactive: bool = False) -> str:
     """List stylistic-set features with affected glyphs and clickable Glyphs links.
 

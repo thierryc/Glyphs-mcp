@@ -141,6 +141,7 @@ class McpToolsUnicodeAssignmentsTests(unittest.TestCase):
             {
                 "GlyphsApp": types.SimpleNamespace(Glyphs=glyphs_api),
                 "mcp_runtime": types.SimpleNamespace(mcp=fake_mcp),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
                 "mcp_tool_helpers": helpers,
             },
         ):
@@ -150,12 +151,13 @@ class McpToolsUnicodeAssignmentsTests(unittest.TestCase):
         return module, fake_mcp
 
     def test_tool_annotations_and_profile_intent_are_explicit(self) -> None:
-        module, fake_mcp = self._load_module(_Font([_Glyph("A")], ["A"]))
+        module, _fake_mcp = self._load_module(_Font([_Glyph("A")], ["A"]))
+        from tool_catalog import TOOL_CATALOG
 
-        self.assertTrue(fake_mcp.tools["review_unicode_assignments"]["annotations"]["readOnlyHint"])
-        self.assertFalse(fake_mcp.tools["review_unicode_assignments"]["annotations"]["destructiveHint"])
-        self.assertTrue(fake_mcp.tools["apply_unicode_assignments"]["annotations"]["destructiveHint"])
-        self.assertFalse(fake_mcp.tools["apply_unicode_assignments"]["annotations"]["readOnlyHint"])
+        self.assertTrue(TOOL_CATALOG["review_unicode_assignments"].annotations["readOnlyHint"])
+        self.assertFalse(TOOL_CATALOG["review_unicode_assignments"].annotations["destructiveHint"])
+        self.assertTrue(TOOL_CATALOG["apply_unicode_assignments"].annotations["destructiveHint"])
+        self.assertFalse(TOOL_CATALOG["apply_unicode_assignments"].annotations["readOnlyHint"])
         self.assertIsNotNone(module)
 
     def test_review_selected_allocates_after_untargeted_occupied_value(self) -> None:

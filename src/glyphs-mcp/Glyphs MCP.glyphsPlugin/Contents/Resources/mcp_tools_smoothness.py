@@ -5,12 +5,12 @@ from __future__ import division, print_function, unicode_literals
 from GlyphsApp import GSSMOOTH, Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import _font_resolution_error, _resolve_font_by_index, _safe_json
 
 import smoothness_engine
 
 
-@mcp.tool()
 async def review_collinear_handles(
     font_index: int = 0,
     glyph_name: str = None,
@@ -94,7 +94,7 @@ async def review_collinear_handles(
         return _safe_json({"ok": False, "error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def apply_collinear_handles_smooth(
     font_index: int = 0,
     glyph_name: str = None,

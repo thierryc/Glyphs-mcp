@@ -7,6 +7,7 @@ import json
 from GlyphsApp import Glyphs, GSGlyph  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _append_font_glyph,
     _delete_font_glyph,
@@ -40,7 +41,7 @@ def _metric_matches(requested, actual):
         return requested == actual
 
 
-@mcp.tool()
+@glyphs_tool()
 async def create_glyph(
     font_index: int = 0,
     glyph_name: str = None,
@@ -115,7 +116,7 @@ async def create_glyph(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def delete_glyph(font_index: int = 0, glyph_name: str = None) -> str:
     """Delete a glyph from the specified font.
 
@@ -160,7 +161,7 @@ async def delete_glyph(font_index: int = 0, glyph_name: str = None) -> str:
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def update_glyph_properties(
     font_index: int = 0,
     glyph_name: str = None,
@@ -234,7 +235,7 @@ async def update_glyph_properties(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def copy_glyph(
     font_index: int = 0,
     source_glyph: str = None,
@@ -324,7 +325,7 @@ async def copy_glyph(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def update_glyph_metrics(
     font_index: int = 0,
     glyph_name: str = None,
@@ -425,7 +426,7 @@ async def update_glyph_metrics(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def save_font(font_index: int = 0, path: str = None) -> str:
     """Save the font to disk.
 

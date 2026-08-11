@@ -124,6 +124,7 @@ class McpToolsKerningTests(unittest.TestCase):
                 "kerning_collision_engine": types.SimpleNamespace(),
                 "kerning_proof_engine": proof_module,
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
                 "mcp_tool_helpers": helpers_module,
             },
         ):

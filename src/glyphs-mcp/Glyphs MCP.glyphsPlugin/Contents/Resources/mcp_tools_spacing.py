@@ -8,6 +8,7 @@ import math
 from GlyphsApp import Glyphs, GSGuide  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _custom_parameter,
     _font_resolution_error,
@@ -180,7 +181,7 @@ def _clear_spacing_guides_from_layer(layer, *, dry_run: bool):
     return removed
 
 
-@mcp.tool()
+@glyphs_tool()
 async def set_spacing_guides(
     font_index: int = 0,
     glyph_names: list = None,
@@ -783,7 +784,7 @@ async def set_spacing_guides(
         return _safe_json({"ok": False, "error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def review_spacing(
     font_index: int = 0,
     glyph_names: list = None,
@@ -951,7 +952,7 @@ async def review_spacing(
         return _safe_json({"ok": False, "error": str(e), "results": []})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def apply_spacing(
     font_index: int = 0,
     glyph_names: list = None,
@@ -1287,7 +1288,7 @@ async def apply_spacing(
         return _safe_json({"ok": False, "error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def set_spacing_params(
     font_index: int = 0,
     master_id: str = None,

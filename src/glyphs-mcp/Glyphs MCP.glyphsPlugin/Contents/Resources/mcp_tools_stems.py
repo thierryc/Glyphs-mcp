@@ -5,6 +5,7 @@ from __future__ import division, print_function, unicode_literals
 from GlyphsApp import Glyphs, GSMetric  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import _coerce_numeric, _font_resolution_error, _resolve_font_by_index, _safe_json
 
 import stem_metrics_helpers
@@ -305,7 +306,7 @@ def _set_master_stem_metrics_impl(
         return {"ok": False, "error": str(exc)}
 
 
-@mcp.tool()
+@glyphs_tool()
 async def review_master_stem_metrics(
     font_index: int = 0,
     master_ids: list = None,
@@ -333,7 +334,7 @@ async def review_master_stem_metrics(
     )
 
 
-@mcp.tool()
+@glyphs_tool()
 async def set_master_stem_metrics(
     font_index: int = 0,
     master_id: str = None,

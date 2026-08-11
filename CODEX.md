@@ -61,5 +61,5 @@ Refer to `README.md` for the full command table and usage notes.
   bundle directly unless necessary.
 - Keep documentation ASCII-only unless the file already uses other characters.
 - When adding tooling, update both the README table and relevant agent guides (Claude/Codex).
-- When tool workflows, tool profiles, or safety rules change, update the matching skill in `skills/` and keep `.agents/skills` pointing at the same source of truth.
+- When tool workflows, catalog metadata, visibility, or safety rules change, update the matching skill in `skills/` and keep `.agents/skills` pointing at the same source of truth.
 - After changes that touch the plugin bundle, remind users to reinstall or resymlink it into the Glyphs plugins directory.

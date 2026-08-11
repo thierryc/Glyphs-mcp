@@ -29,6 +29,13 @@ class _FakeMCP:
         return decorator
 
 
+def _fake_glyphs_tool(*_args, **_kwargs):
+    def decorator(fn):
+        return fn
+
+    return decorator
+
+
 class _Point:
     def __init__(self, x, y):
         self.x = float(x)
@@ -228,6 +235,7 @@ class McpToolsCurveGeometryTests(unittest.TestCase):
             {
                 "GlyphsApp": types.SimpleNamespace(Glyphs=glyphs),
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=_fake_glyphs_tool),
                 "mcp_tool_helpers": helpers,
                 engine_name: engine,
             },
@@ -256,12 +264,13 @@ class McpToolsCurveGeometryTests(unittest.TestCase):
         self.assertIn("never saves the font", apply_description)
 
         quality = descriptions["review_curve_quality"]
-        self.assertIn("signed cubic curvature", quality)
+        self.assertIn("signed and UPM-normalized", quality)
         self.assertIn("UPM-normalized", quality)
         self.assertIn("JSON-safe", quality)
         self.assertIn("9–257", quality)
         self.assertIn("64 selected segments", quality)
-        self.assertIn("never an artistic score or pass/fail", quality)
+        self.assertIn("never an artistic score", quality)
+        self.assertIn("G0/G1/G2", quality)
 
     def test_review_requires_explicit_master_and_path(self) -> None:
         module, _font, _layer, _path, _nodes_value = self._load_module()
@@ -312,6 +321,85 @@ class McpToolsCurveGeometryTests(unittest.TestCase):
         self.assertAlmostEqual(proposed["handle2"]["x"], 100.0, places=12)
         self.assertAlmostEqual(proposed["handle2"]["y"], 70.0, places=12)
         self.assertEqual(_positions(nodes), before)
+
+    def test_sampled_v1_preserves_uniform_parameter_sampling(self) -> None:
+        module, _font, _layer, _path, _nodes_value = self._load_module()
+        payload = json.loads(
+            asyncio.run(
+                module.review_curve_quality(
+                    glyph_name="A",
+                    master_id="m1",
+                    path_index=0,
+                    include_samples=True,
+                    analysis_mode="sampled_v1",
+                )
+            )
+        )
+
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["geometryDataVersion"], 2)
+        self.assertEqual(payload["params"]["analysisMode"], "sampled_v1")
+        self.assertEqual(payload["segments"][0]["sampling"], "uniform_parameter")
+        self.assertNotIn("events", payload["segments"][0])
+
+    def test_curve_quality_across_compatible_masters_is_read_only(self) -> None:
+        module, font, _layer, _path, source_nodes = self._load_module()
+        second_nodes = [
+            _Node(0, 0, "line"),
+            _Node(25, 0, "offcurve"),
+            _Node(100, 50, "offcurve"),
+            _Node(100, 100, "curve", smooth=True),
+        ]
+        second_path = _Path(second_nodes)
+        second_layer = _Layer(second_path)
+        second_layer.associatedMasterId = "m2"
+        second_layer.layerId = "m2"
+        second_layer.name = "Bold"
+        font.glyphs["A"].layers["m2"] = second_layer
+        before = (_positions(source_nodes), _positions(second_nodes))
+
+        payload = json.loads(
+            asyncio.run(
+                module.review_curve_quality_across_masters(
+                    glyph_name="A",
+                    master_ids=["m1", "m2"],
+                    path_index=0,
+                    include_per_master=True,
+                )
+            )
+        )
+
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["compatible"])
+        self.assertEqual(payload["geometryDataVersion"], 2)
+        self.assertEqual(payload["summary"]["masterCount"], 2)
+        self.assertEqual(payload["masters"][1]["shapeIndex"], None)
+        comparison = payload["comparison"]["segments"][0]
+        self.assertGreater(comparison["tunniRatioDrift"]["start"]["range"], 0.0)
+        self.assertEqual((_positions(source_nodes), _positions(second_nodes)), before)
+
+    def test_curve_quality_across_masters_rejects_topology_mismatch(self) -> None:
+        module, font, _layer, _path, _source_nodes = self._load_module()
+        second_path = _Path(
+            [_Node(0, 0, "line"), _Node(100, 0, "line")],
+            closed=False,
+        )
+        second_layer = _Layer(second_path)
+        second_layer.associatedMasterId = "m2"
+        second_layer.layerId = "m2"
+        font.glyphs["A"].layers["m2"] = second_layer
+
+        payload = json.loads(
+            asyncio.run(
+                module.review_curve_quality_across_masters(
+                    glyph_name="A", master_ids=["m1", "m2"], path_index=0
+                )
+            )
+        )
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["reason"], "incompatible_master_paths")
+        self.assertEqual(payload["incompatibilities"][0]["reason"], "path_topology_mismatch")
 
     def test_tunni_defaults_to_font_grid_and_continuous_is_explicit(self) -> None:
         module, _font, _layer, _path, _nodes_value = self._load_module(
@@ -1023,7 +1111,9 @@ class McpToolsCurveGeometryTests(unittest.TestCase):
         )
 
         self.assertTrue(payload["ok"])
-        self.assertEqual(payload["geometryDataVersion"], 1)
+        self.assertEqual(payload["geometryDataVersion"], 2)
+        self.assertEqual(payload["params"]["analysisMode"], "adaptive")
+        self.assertIn("events", payload["segments"][0])
         self.assertEqual(payload["params"]["samplesPerCurve"], 51)
         self.assertEqual(len(payload["segments"][0]["samples"]), 51)
         self.assertEqual(_positions(nodes), before)

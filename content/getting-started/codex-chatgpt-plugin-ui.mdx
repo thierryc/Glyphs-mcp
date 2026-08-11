@@ -17,7 +17,7 @@ MCP server connections, and optional UI; see
 The underlying `plugins/glyphs-mcp` package also powers the optional Claude
 Code, Cursor, and GitHub Copilot CLI plugins. This page covers only the richer
 embedded UI available to compatible OpenAI hosts; every host shares the same
-nine skills, localhost MCP configuration, and `1.6.0` package version.
+nine skills, localhost MCP configuration, and `1.8.0` package version.
 
 ## Install the repository plugin
 
@@ -118,5 +118,5 @@ Continue with [Connect a client](./connect-client.mdx) and
   named Glyphs tool directly.
 - If the client shows duplicate Glyphs connections, keep the repository plugin
   connection and remove only the legacy global Codex MCP entry.
-- After changing the Glyphs MCP profile, reconnect the client so it refreshes
-  `tools/list`.
+- After upgrading Glyphs MCP, reconnect the client so it refreshes the
+  catalog-driven `tools/list` metadata.

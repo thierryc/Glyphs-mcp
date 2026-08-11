@@ -45,7 +45,7 @@ Claude Code filesystem skills are loaded into every Claude chat surface.
 ## Optional multi-host plugin
 
 The package at `plugins/glyphs-mcp` carries native manifests for Codex, Claude
-Code, Cursor, and GitHub Copilot CLI. All four manifests use version `1.7.0`
+Code, Cursor, and GitHub Copilot CLI. All four manifests use version `1.8.0`
 and load the same `skills/` directory and `.mcp.json`. Individual skills do not
 carry separate release numbers; they inherit the package version. The MCP
 server reports the aligned version of the native Glyphs MCP plug-in.
@@ -230,11 +230,11 @@ supporting files.
 | `glyphs-mcp-spacing` | Spacing review and approved applies | `Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.` |
 | `glyphs-mcp-outlines-docs` | Outline edits, selected nodes, components, anchors, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes and fetch only the docs pages I need.` |
 | `glyphs-mcp-italic-first-pass` | Experimental Roman-to-italic construction drafts for designer refinement | `Use the glyphs-mcp-italic-first-pass skill to review selected glyphs in recommended Balanced mode before applying an italic first pass.` |
-| `glyphs-mcp-release` | Version, docs, packaging, validation, signing, and publication gates | `Use $glyphs-mcp-release to prepare version 1.7.0 and stop before external publication.` |
+| `glyphs-mcp-release` | Version, docs, packaging, validation, signing, and publication gates | `Use $glyphs-mcp-release to prepare version 1.8.0 and stop before external publication.` |
 
 ## Operating rules
 
-- Use the `Read-only` profile for inspection-only sessions; use `Edit` when mutation tools are needed.
+- Begin with review tools; treat any tool annotated as an edit as a separate approval boundary.
 - Read current font, master, glyph, layer, or selection before changing anything.
 - Prefer dedicated tools over free-form code.
 - Use dry runs before apply steps.

@@ -51,6 +51,7 @@ class McpToolsFeaturesTests(unittest.TestCase):
             {
                 "GlyphsApp": glyphs_module,
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
             },
         ):
             sys.modules.pop(module_name, None)

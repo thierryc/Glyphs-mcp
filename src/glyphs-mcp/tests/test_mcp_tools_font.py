@@ -261,6 +261,7 @@ class McpToolsFontTests(unittest.TestCase):
             {
                 "GlyphsApp": glyphs_module,
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
                 "mcp_tool_helpers": helpers_module,
             },
         ):
@@ -300,6 +301,19 @@ class McpToolsFontTests(unittest.TestCase):
         self.assertEqual(italic["id"], "italic")
         self.assertEqual(italic["italicAngle"], 12.0)
         self.assertEqual(italic["slantAngle"], 3)
+
+    def test_get_font_masters_normalizes_undefined_metric_sentinels(self) -> None:
+        font = _font()
+        font.masters[0].capHeight = 2**63
+        font.masters[0].xHeight = 2**63 - 1
+        module = self._load_module(font)
+
+        payload = json.loads(asyncio.run(module.get_font_masters(0)))
+
+        self.assertIsNone(payload[0]["capHeight"])
+        self.assertIsNone(payload[0]["xHeight"])
+        self.assertEqual(payload[0]["ascender"], 800)
+        self.assertEqual(payload[0]["descender"], -200)
 
     def test_get_glyph_details_reads_component_transform_without_iteration(self) -> None:
         class HostileComponents:

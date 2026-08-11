@@ -672,6 +672,104 @@ class OutlineGeometryEngineTests(unittest.TestCase):
         self.assertNotIn("Infinity", encoded)
         self.assertNotIn("NaN", encoded)
 
+    def test_adaptive_arc_length_matches_line_and_quarter_circle(self) -> None:
+        line = ((0.0, 0.0), (100.0 / 3.0, 0.0), (200.0 / 3.0, 0.0), (100.0, 0.0))
+        kappa = 4.0 * (math.sqrt(2.0) - 1.0) / 3.0
+        circle = ((100.0, 0.0), (100.0, 100.0 * kappa), (100.0 * kappa, 100.0), (0.0, 100.0))
+
+        self.assertAlmostEqual(self.engine.cubic_arc_length(line), 100.0, places=10)
+        self.assertAlmostEqual(
+            self.engine.cubic_arc_length(circle),
+            math.pi * 50.0,
+            delta=0.03,
+        )
+
+    def test_adaptive_events_have_bounded_parameters_and_known_locations(self) -> None:
+        arch = ((0.0, 0.0), (0.0, 100.0), (100.0, 100.0), (100.0, 0.0))
+        inflection = ((0.0, 0.0), (100.0, 150.0), (100.0, -150.0), (200.0, 0.0))
+
+        arch_events = self.engine.analyze_curve_events(arch, upm=1000)
+        y_extremum = next(event for event in arch_events["extrema"] if event["axis"] == "y")
+        self.assertAlmostEqual(y_extremum["t"], 0.5, places=12)
+        self.assertAlmostEqual(y_extremum["point"]["y"], 75.0, places=10)
+
+        inflection_events = self.engine.analyze_curve_events(inflection, upm=1000)
+        self.assertEqual(len(inflection_events["inflections"]), 1)
+        self.assertAlmostEqual(inflection_events["inflections"][0]["t"], 0.5, places=12)
+        for collection in ("extrema", "inflections", "stationaryPoints", "cusps"):
+            self.assertTrue(
+                all(0.0 <= event["t"] <= 1.0 for event in inflection_events[collection])
+            )
+
+    def test_stationary_reversal_and_loop_self_intersection_are_reported(self) -> None:
+        stationary = ((0.0, 0.0), (100.0, 0.0), (-100.0, 0.0), (0.0, 0.0))
+        loop = ((0.0, 0.0), (200.0, 200.0), (-100.0, 200.0), (100.0, 0.0))
+
+        stationary_events = self.engine.analyze_curve_events(stationary, upm=1000)
+        loop_events = self.engine.analyze_curve_events(loop, upm=1000)
+
+        self.assertEqual(len(stationary_events["stationaryPoints"]), 2)
+        self.assertEqual(len(stationary_events["cusps"]), 2)
+        self.assertEqual(len(loop_events["selfIntersections"]), 1)
+        crossing = loop_events["selfIntersections"][0]
+        self.assertLess(crossing["t1"], crossing["t2"])
+        self.assertAlmostEqual(crossing["point"]["x"], 50.0, delta=0.1)
+
+    def test_adaptive_curve_line_join_reports_g0_g1_and_g2(self) -> None:
+        nodes = [
+            _node(0, 0, "line"),
+            _node(100.0 / 3.0, 0, "offcurve"),
+            _node(200.0 / 3.0, 0, "offcurve"),
+            _node(100, 0, "curve", smooth=True),
+            _node(200, 0, "line"),
+        ]
+
+        review = self.engine.analyze_curve_quality_path(
+            nodes, closed=False, upm=1000, analysis_mode="adaptive"
+        )
+
+        self.assertEqual(review["geometryDataVersion"], 2)
+        self.assertEqual(review["analysisMode"], "adaptive")
+        self.assertEqual(len(review["joins"]), 1)
+        join = review["joins"][0]
+        self.assertEqual(join["kind"], "curve_line")
+        self.assertTrue(join["g0Continuous"])
+        self.assertTrue(join["g1Continuous"])
+        self.assertTrue(join["g2Continuous"])
+        self.assertEqual(join["warnings"], [])
+
+    def test_declared_smooth_mismatch_is_a_warning_not_a_verdict(self) -> None:
+        nodes = [
+            _node(0, 0, "line"),
+            _node(30, 0, "offcurve"),
+            _node(70, 0, "offcurve"),
+            _node(100, 0, "curve", smooth=True),
+            _node(100, 100, "line"),
+        ]
+
+        review = self.engine.analyze_curve_quality_path(nodes, closed=False, upm=1000)
+        join = review["joins"][0]
+        self.assertFalse(join["g1Continuous"])
+        self.assertIn(
+            "declared_geometric_smooth_mismatch",
+            [warning["code"] for warning in join["warnings"]],
+        )
+
+    def test_adaptive_arc_length_is_translation_rotation_and_subdivision_invariant(self) -> None:
+        points = ((0.0, 0.0), (40.0, 120.0), (170.0, -80.0), (250.0, 30.0))
+        translated = tuple((x + 700.0, y - 300.0) for x, y in points)
+        rotated = tuple(_rotate_point(point, math.radians(41.0)) for point in points)
+        left, right = _split_cubic(points, 0.37)
+        length = self.engine.cubic_arc_length(points)
+
+        self.assertAlmostEqual(self.engine.cubic_arc_length(translated), length, places=8)
+        self.assertAlmostEqual(self.engine.cubic_arc_length(rotated), length, places=8)
+        self.assertAlmostEqual(
+            self.engine.cubic_arc_length(left) + self.engine.cubic_arc_length(right),
+            length,
+            places=6,
+        )
+
     def test_engine_has_no_glyphs_or_objc_imports(self) -> None:
         text = _module_path().read_text(encoding="utf-8")
         self.assertNotIn("import GlyphsApp", text)

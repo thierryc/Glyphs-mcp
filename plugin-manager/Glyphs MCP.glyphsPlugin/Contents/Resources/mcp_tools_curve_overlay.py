@@ -9,8 +9,12 @@ from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 from glyphs_curve_reporter import (
     REPORTER_CLASS_NAME,
     REPORTER_MENU_PATH,
+    SUPPORTED_OVERLAYS,
+    overlay_features,
+    set_overlay_features,
 )
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import _run_on_main_thread, _safe_json
 
 
@@ -80,6 +84,7 @@ def _state_on_main_thread():
         "menuPath": REPORTER_MENU_PATH,
         "lastDraw": snapshot.get("lastDraw"),
         "lastError": snapshot.get("lastError"),
+        "overlays": list(snapshot.get("overlays") or overlay_features()),
         "fontChanged": False,
         "fontSaved": False,
         "uiOnly": True,
@@ -87,7 +92,7 @@ def _state_on_main_thread():
     }
 
 
-def _set_state_on_main_thread(enabled):
+def _set_state_on_main_thread(enabled, overlays=None):
     before = _state_on_main_thread()
     reporter = _find_reporter()
     if reporter is None:
@@ -105,6 +110,8 @@ def _set_state_on_main_thread(enabled):
             "error": "The native curvature Reporter is not loaded. Restart Glyphs after installing this plug-in build.",
         }
 
+    if overlays is not None:
+        set_overlay_features(overlays)
     action_name = "activateReporter" if enabled else "deactivateReporter"
     action = getattr(Glyphs, action_name, None)
     if not callable(action):
@@ -138,6 +145,7 @@ def _set_state_on_main_thread(enabled):
         "menuPath": REPORTER_MENU_PATH,
         "lastDraw": after.get("lastDraw"),
         "lastError": after.get("lastError"),
+        "overlays": list(after.get("overlays") or []),
         "fontChanged": False,
         "fontSaved": False,
         "uiOnly": True,
@@ -152,16 +160,19 @@ def _set_state_on_main_thread(enabled):
     }
 
 
-@mcp.tool()
-async def set_curve_review_overlay(enabled: bool = True) -> str:
-    """Enable or disable the native signed-curvature overlay in Glyphs Edit View.
+@glyphs_tool()
+async def set_curve_review_overlay(enabled: bool = True, overlays: list = None) -> str:
+    """Control native curvature and curve-event overlays in Glyphs Edit View.
 
     This changes only Glyphs' Reporter display state. It never changes, dirties,
     or saves a font. The same toggle is available at View > Show Glyphs MCP
     Curvature. After enabling it, inspect the glyph directly in Glyphs; teal
     teeth show positive signed curvature and pink teeth show negative signed
-    curvature. Raw editable paths are analyzed and components are reported as
-    omitted. Use ``review_curve_quality`` for the corresponding JSON metrics.
+    curvature. Pass ``overlays=["curve_events"]`` for extrema, inflections,
+    cusps, and continuity warnings, or include both supported values. Omitting
+    ``overlays`` preserves the current selection and defaults to curvature.
+    Raw editable paths are analyzed and components are reported as omitted.
+    Use ``review_curve_quality`` for the corresponding JSON metrics.
     """
 
     if type(enabled) is not bool:
@@ -178,8 +189,30 @@ async def set_curve_review_overlay(enabled: bool = True) -> str:
                 "error": "enabled must be a boolean",
             }
         )
+    if overlays is not None:
+        if (
+            not isinstance(overlays, list)
+            or not overlays
+            or len(overlays) != len(set(overlays))
+            or any(not isinstance(value, str) or value not in SUPPORTED_OVERLAYS for value in overlays)
+        ):
+            return _safe_json(
+                {
+                    "ok": False,
+                    "overlayDataVersion": OVERLAY_DATA_VERSION,
+                    "available": None,
+                    "reporterClass": REPORTER_CLASS_NAME,
+                    "menuPath": REPORTER_MENU_PATH,
+                    "fontChanged": False,
+                    "fontSaved": False,
+                    "uiOnly": True,
+                    "error": "overlays must contain unique curvature and/or curve_events values",
+                }
+            )
     try:
-        return _safe_json(_run_on_main_thread(lambda: _set_state_on_main_thread(enabled)))
+        return _safe_json(
+            _run_on_main_thread(lambda: _set_state_on_main_thread(enabled, overlays))
+        )
     except Exception as error:
         return _safe_json(
             {
@@ -196,7 +229,7 @@ async def set_curve_review_overlay(enabled: bool = True) -> str:
         )
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_curve_review_overlay_state() -> str:
     """Return native curvature Reporter availability, state, and last-draw data.
 

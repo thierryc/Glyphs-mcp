@@ -13,10 +13,10 @@ In Glyphs 3.5 with the Inter test font, the following tool groups passed through
 
 - Font discovery and metadata: `list_open_fonts`, `get_server_info`, `get_font_masters`, `get_font_instances`, `get_font_glyphs`.
 - Read-only glyph inspection: `get_glyph_details`, `get_glyph_paths`, `get_glyph_components`, `list_style_sets`, `get_font_kerning`.
-- Review tools: `review_collinear_handles`, `review_spacing`, `review_kerning_bumper`, `review_master_stem_metrics`, `review_italic_first_pass`.
+- Review tools: `review_spacing`, `review_kerning_bumper`, `review_master_stem_metrics`, and candidate preview/review workflows.
 - Dry-run tools: `apply_spacing`, `apply_kerning_bumper`, `set_spacing_params`, `set_spacing_guides`.
 - Small scoped mutations on a disposable glyph: `create_glyph`, `set_glyph_paths`, `add_anchor_to_glyph`, `add_component_to_glyph`, `update_glyph_metrics` for width, `set_kerning_pair`, `delete_glyph`.
-- Rendering and docs: `render_glyph_review_image`, `docs_search`, `docs_get`.
+- Native Reporter controls and docs: `set_curve_review_overlay`, `get_curve_review_overlay_state`, `docs_search`, `docs_get`.
 - Code context setup: `execute_code_with_context`.
 
 No live test auto-saved the font.
@@ -37,7 +37,6 @@ Affected tools:
 
 - `get_glyph_paths`
 - `get_glyph_details`
-- `render_glyph_review_image`
 - `set_glyph_paths`
 - `update_glyph_metrics`
 - `apply_spacing`

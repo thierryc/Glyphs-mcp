@@ -20,6 +20,7 @@ OVERLAY_DATA_VERSION = 1
 DEFAULT_SAMPLES_PER_CURVE = 51
 MIN_SAMPLES_PER_CURVE = 9
 DEFAULT_STROKE_LIMIT = 2000
+DEFAULT_EVENT_MARKER_LIMIT = 512
 DEFAULT_LENGTH_SCALE = 0.010
 DEFAULT_MAX_LENGTH_EM = 0.12
 HARD_MAX_LENGTH_EM = 0.25
@@ -28,6 +29,13 @@ OVERLAY_ALPHA = 0.65
 
 POSITIVE_RGBA = (0.00, 0.62, 0.62, OVERLAY_ALPHA)
 NEGATIVE_RGBA = (0.86, 0.18, 0.55, OVERLAY_ALPHA)
+EVENT_RGBA = {
+    "extremum": (0.95, 0.60, 0.05, 0.88),
+    "inflection": (0.45, 0.32, 0.92, 0.88),
+    "stationary": (0.90, 0.27, 0.30, 0.92),
+    "cusp": (0.80, 0.08, 0.14, 0.96),
+    "continuity": (1.00, 0.36, 0.08, 0.92),
+}
 
 LEGEND = {
     "signedCurvatureFormula": "cross(B'(t), B''(t)) / |B'(t)|^3",
@@ -294,17 +302,148 @@ def build_curve_overlay(
     }
 
 
+def _marker(kind, event, path_index, segment_end_node_index, **extra):
+    point = event.get("point") or {}
+    result = {
+        "kind": str(kind),
+        "pathIndex": int(path_index),
+        "segmentEndNodeIndex": int(segment_end_node_index),
+        "point": (float(point["x"]), float(point["y"])),
+    }
+    if event.get("t") is not None:
+        result["t"] = float(event["t"])
+    result.update(extra)
+    return result
+
+
+def build_curve_events_overlay(
+    paths: Sequence[Dict[str, Any]],
+    *,
+    upm: float = 1000.0,
+    marker_limit: int = DEFAULT_EVENT_MARKER_LIMIT,
+) -> Dict[str, Any]:
+    """Build bounded markers for adaptive curve events and join warnings."""
+
+    path_values = list(paths or [])
+    upm_value = _finite_float(upm, 1000.0)
+    if upm_value <= 0.0:
+        upm_value = 1000.0
+    limit = _positive_int(marker_limit, DEFAULT_EVENT_MARKER_LIMIT)
+    markers: List[Dict[str, Any]] = []
+    segment_count = 0
+    cap_reached = False
+
+    def append(marker):
+        nonlocal cap_reached
+        if len(markers) >= limit:
+            cap_reached = True
+            return False
+        markers.append(marker)
+        return True
+
+    for path_index, path in enumerate(path_values):
+        nodes = list(path.get("nodes") or [])
+        closed = bool(path.get("closed", True))
+        segment_indices = outline_geometry_engine.cubic_segment_end_indices(nodes, closed=closed)
+        segment_count += len(segment_indices)
+        for end_index in segment_indices:
+            segment = outline_geometry_engine.extract_cubic_segment(nodes, end_index, closed=closed)
+            if not segment.get("ok"):
+                continue
+            events = outline_geometry_engine.analyze_curve_events(segment["points"], upm=upm_value)
+            cusp_parameters = {round(float(event["t"]), 10) for event in events.get("cusps") or []}
+            for event in events.get("extrema") or []:
+                if not append(_marker("extremum", event, path_index, end_index, axis=event.get("axis"))):
+                    break
+            if cap_reached:
+                break
+            for event in events.get("inflections") or []:
+                if not append(_marker("inflection", event, path_index, end_index)):
+                    break
+            if cap_reached:
+                break
+            for event in events.get("stationaryPoints") or []:
+                if round(float(event["t"]), 10) in cusp_parameters:
+                    continue
+                if not append(_marker("stationary", event, path_index, end_index)):
+                    break
+            if cap_reached:
+                break
+            for event in events.get("cusps") or []:
+                if not append(_marker("cusp", event, path_index, end_index)):
+                    break
+            if cap_reached:
+                break
+        if cap_reached:
+            break
+
+        review = outline_geometry_engine.analyze_curve_quality_path(
+            nodes,
+            closed=closed,
+            upm=upm_value,
+            segment_end_node_indices=segment_indices,
+            samples_per_curve=9,
+            include_samples=False,
+            analysis_mode="adaptive",
+        )
+        for join in review.get("joins") or []:
+            warnings = list(join.get("warnings") or [])
+            if not warnings:
+                continue
+            node_index = int(join["nodeIndex"])
+            if node_index < 0 or node_index >= len(nodes):
+                continue
+            node = nodes[node_index]
+            event = {"point": {"x": node.get("x"), "y": node.get("y")}}
+            if not append(
+                _marker(
+                    "continuity",
+                    event,
+                    path_index,
+                    join.get("outgoingSegmentEndNodeIndex", join.get("incomingSegmentEndNodeIndex", -1)),
+                    nodeIndex=node_index,
+                    warningCodes=[str(item.get("code")) for item in warnings if item.get("code")],
+                )
+            ):
+                break
+        if cap_reached:
+            break
+
+    warnings = []
+    if cap_reached:
+        warnings.append({"code": "event_marker_cap_reached", "markerLimit": int(limit)})
+    return {
+        "overlayDataVersion": OVERLAY_DATA_VERSION,
+        "markerCount": len(markers),
+        "markerLimit": int(limit),
+        "markerCapReached": bool(cap_reached),
+        "segmentCount": int(segment_count),
+        "markers": markers,
+        "legend": {
+            "extremum": "amber",
+            "inflection": "violet",
+            "stationary": "red",
+            "cusp": "deep red",
+            "continuity": "orange",
+        },
+        "warnings": warnings,
+    }
+
+
 __all__ = [
     "DEFAULT_LENGTH_SCALE",
+    "DEFAULT_EVENT_MARKER_LIMIT",
     "DEFAULT_MAX_LENGTH_EM",
     "DEFAULT_SAMPLES_PER_CURVE",
     "DEFAULT_STROKE_LIMIT",
     "HARD_MAX_LENGTH_EM",
+    "EVENT_RGBA",
     "LEGEND",
     "NEGATIVE_RGBA",
     "OVERLAY_ALPHA",
     "OVERLAY_DATA_VERSION",
     "POSITIVE_RGBA",
     "build_curve_overlay",
+    "build_curve_events_overlay",
     "choose_sample_count",
 ]

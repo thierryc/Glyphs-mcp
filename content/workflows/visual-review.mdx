@@ -1,14 +1,15 @@
 ---
 title: Visual glyph review
-description: Review curvature natively in Glyphs Edit View and use legacy PNG proofs for other overlays.
+description: Review adaptive curvature and curve events natively in Glyphs Edit View.
 ---
 
-Use this workflow when an agent needs visual evidence before judging outlines, curvature, spacing, sidebearings, anchors, guides, or component composition.
+Use this workflow when an agent needs visual evidence for cubic curvature,
+events, continuity, or a candidate outline difference.
 
 ## Native curvature overlay
 
 Curvature review now uses the Reporter built into the Glyphs MCP plug-in. Enable
-it with `set_curve_review_overlay(enabled=true)` or choose **View > Show Glyphs
+it with `set_curve_review_overlay(enabled=true, overlays=["curvature", "curve_events"])` or choose **View > Show Glyphs
 MCP Curvature**. It draws directly over the active Edit View glyph, updates when
 nodes move, and remains available while the MCP server is stopped.
 
@@ -24,6 +25,9 @@ nodes move, and remains available while the MCP server is stopped.
 - Display length uses a `0.010` linear scale, normally clamps to `0.12em`, and
   cannot exceed the `0.25em` hard guard.
 - Raw editable paths are analyzed. Components are not expanded.
+- Curve-event markers identify extrema, inflections, cusps, and continuity
+  warnings. Pass only `curvature` or only `curve_events` when a quieter view is
+  preferable.
 
 Call `get_curve_review_overlay_state` to confirm whether the Reporter is loaded
 and active and to inspect its bounded last-draw record: glyph/layer, cubic and
@@ -32,96 +36,19 @@ controls change only global UI display state; they never dirty or save a font.
 
 ```json
 {
-  "enabled": true
+  "enabled": true,
+  "overlays": ["curvature", "curve_events"]
 }
 ```
-
-The PNG `curvature` overlay is deprecated and is no longer the recommended
-curve-review path.
-
-## Legacy PNG proofs
-
-The `render_glyph_review_image` tool is read-only. It renders an in-memory PNG response through MCP image content and does not write files, add guides, edit glyph data, or save the font.
-
-After a successful render, the agent must display the returned MCP image content
-directly in the chat. JSON metadata, a text summary, and an `Open in Glyphs`
-link are not substitutes for the image. Glyphs show links only navigate to the
-glyph or layer inside Glyphs; they do not display the rendered PNG.
 
 ## When to use it
 
-- After an outline or spacing proposal, before calling a mutating tool.
-- After a dry run, to give a vision-capable model a reviewable proof image.
-- When numeric path JSON is not enough to judge visual balance.
-- When components, anchors, guides, or selected nodes need visible context.
+- Enable `curvature` while editing handles or comparing curvature magnitude.
+- Enable `curve_events` when locating extrema, inflections, cusps, or continuity warnings.
+- Enable both for a complete curve review, then disable one if the view becomes noisy.
+- Use **View > Show Glyphs MCP Candidate** separately for geometric proposal differences.
 
-## Inputs
-
-The tool uses the current selection when `glyph_names` is omitted. Pass names explicitly when reviewing a stable list.
-
-Common overlays:
-
-- `metrics`: baseline, x-height, cap height, ascender, and descender.
-- `sidebearings`: origin and advance-width lines.
-- `bounds`: layer bounds.
-- `nodes` and `handles`: outline point review.
-- `anchors`: anchor crosses.
-- `guides`: existing layer guides.
-- `curvature`: deprecated PNG compatibility overlay. Prefer the native Reporter.
-
-Curvature metadata reports its sign formula, normal convention, color entries,
-the right-normal outside-ink placement rule, `0.25em` comb-length clamp, stroke
-count/limit, and any deterministic uniform sample reduction under the hard
-stroke cap. The legacy PNG retains 51 samples per cubic, a `0.02` scale, and a
-`0.25em` clamp while applying the same right-normal placement correction.
-The 1.7 overlay does not use adaptive sampling; adaptive curve analysis is
-reserved for 1.8. Components can still appear in the filled black proof when
-`include_components=true`, but they are not expanded into curvature segments.
-Check the top-level and per-glyph `componentCountOmitted` values before using
-the comb to assess a composite glyph.
-
-## Sample tool calls
-
-Review the current Glyphs selection with default overlays:
-
-```json
-{
-  "font_index": 0
-}
-```
-
-Review named glyphs with outline details:
-
-```json
-{
-  "font_index": 0,
-  "glyph_names": ["A", "B", "O"],
-  "columns": 3,
-  "image_width": 1600,
-  "include_components": true,
-  "overlays": ["metrics", "sidebearings", "bounds", "nodes", "handles", "anchors", "guides"]
-}
-```
-
-Legacy PNG curvature compatibility call:
-
-```json
-{
-  "font_index": 0,
-  "glyph_names": ["S", "O"],
-  "overlays": ["nodes", "handles", "curvature"]
-}
-```
-
-Request a base64 fallback in metadata for clients that do not surface MCP image content:
-
-```json
-{
-  "font_index": 0,
-  "glyph_names": ["n", "o", "p"],
-  "include_base64": true
-}
-```
+Call `review_curve_quality` for the numeric evidence behind the Reporter. Use `review_curve_quality_across_masters` only after explicit compatible master targets are available. Neither Reporter changes or saves the font.
 
 ## Safe prompt template
 

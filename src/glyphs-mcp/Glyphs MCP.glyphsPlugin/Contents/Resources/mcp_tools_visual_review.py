@@ -68,6 +68,7 @@ except Exception:  # pragma: no cover - unit tests run without AppKit/Glyphs
     _PNG_FILE_TYPE = 4
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _font_resolution_error,
     _get_layer_id,
@@ -946,7 +947,6 @@ def _render_contact_sheet_png(render_items, master, columns, image_width, includ
     return bytes(data), image_info
 
 
-@mcp.tool()
 async def render_glyph_review_image(
     font_index: int = 0,
     glyph_names: list = None,

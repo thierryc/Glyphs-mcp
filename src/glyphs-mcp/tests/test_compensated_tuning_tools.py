@@ -105,6 +105,7 @@ class CompensatedTuningToolWrapperTests(unittest.TestCase):
             {
                 "GlyphsApp": glyphs_module,
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
                 "mcp_tool_helpers": helpers_module,
                 "compensated_tuning_engine": engine_module,
                 "stem_metrics_helpers": types.SimpleNamespace(),
@@ -127,7 +128,7 @@ class CompensatedTuningToolWrapperTests(unittest.TestCase):
         )
         module = self._load_module(font)
 
-        self.assertFalse(callable(module.review_compensated_tuning))
+        self.assertFalse(hasattr(module, "review_compensated_tuning"))
 
         review_calls = []
 

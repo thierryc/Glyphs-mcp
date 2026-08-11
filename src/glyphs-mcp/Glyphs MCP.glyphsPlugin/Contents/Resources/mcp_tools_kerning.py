@@ -7,6 +7,7 @@ import json
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _coerce_numeric,
     _font_resolution_error,
@@ -30,7 +31,7 @@ def _resolve_font_payload(font_index, ok_key=None):
     return font, None
 
 
-@mcp.tool()
+@glyphs_tool()
 async def set_kerning_pair(
     font_index: int = 0,
     master_id: str = None,
@@ -91,7 +92,7 @@ async def set_kerning_pair(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def generate_kerning_tab(
     font_index: int = 0,
     master_id: str = None,
@@ -678,7 +679,7 @@ def _kerning_bumper_analyze(
     }
 
 
-@mcp.tool()
+@glyphs_tool()
 async def review_kerning_bumper(
     font_index: int = 0,
     master_id: str = None,
@@ -876,7 +877,7 @@ async def review_kerning_bumper(
         return _safe_json({"ok": False, "error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def apply_kerning_bumper(
     font_index: int = 0,
     master_id: str = None,

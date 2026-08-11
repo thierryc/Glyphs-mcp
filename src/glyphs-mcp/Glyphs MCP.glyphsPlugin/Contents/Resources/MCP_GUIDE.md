@@ -38,17 +38,16 @@ Use `docs_search` and `docs_get` when API details are uncertain.
 ## Native Curvature Review
 
 Use `review_curve_quality` for explicit JSON measurements, then call
-`set_curve_review_overlay(enabled=true)` and direct the user to **View > Show
+`set_curve_review_overlay(enabled=true, overlays=["curvature", "curve_events"])` and direct the user to **View > Show
 Glyphs MCP Curvature**. The native Reporter draws the signed comb directly in
 Glyphs at `0.65` alpha so the outline remains legible beneath it, and remains
 available when the MCP server is stopped. It starts with 51 samples per cubic,
 a `0.010` scale, and a `0.12em` normal clamp. Curvature magnitude follows the
 path right normal, so correctly wound counter combs point into the white
 counter; signed curvature still controls teal/pink colors. Call
-`get_curve_review_overlay_state` to verify the last glyph/layer, stroke and
-clamp/cap counts, errors, and components omitted from the raw-path calculation.
-The PNG curvature overlay is deprecated and is not the default curve-review
-workflow.
+`get_curve_review_overlay_state` to verify the last glyph/layer, stroke/event
+caps, errors, and components omitted from the raw-path calculation. Adaptive
+event markers identify extrema, inflections, cusps, and continuity warnings.
 
 ## Native Candidate Review
 
@@ -69,17 +68,6 @@ Use `discard_outline_candidate_session` to delete owned candidate layers;
 `set_outline_candidate_overlay(clear_session=true)` clears UI state only.
 Never rely on conversational context as candidate ownership metadata and never
 save automatically.
-
-## Image Content Responses
-
-When `render_glyph_review_image` succeeds, its response contains JSON metadata
-and a separate MCP `image/png` content block. Display the returned MCP image
-content directly in the chat. Do not replace the image with only metadata, a
-text summary, or an `Open in Glyphs` link.
-
-Glyphs show links navigate to a glyph or layer inside Glyphs; they are not image
-previews. Use the optional base64 fallback only when the client cannot surface
-MCP image content directly.
 
 ## Glyphs 3 Compatibility
 
@@ -175,7 +163,7 @@ Resources are helpers.
 
 - First preference for docs: `docs_search` then `docs_get`.
 - Docs index resource: `glyphs://glyphs-mcp/docs/index.json`.
-- Per-page resource registration is optional and noisy; call `docs_enable_page_resources` only when explicitly needed.
+- Documentation stays lean: use `docs_search` and `docs_get` instead of registering every page as a resource.
 
 ## Response Style
 

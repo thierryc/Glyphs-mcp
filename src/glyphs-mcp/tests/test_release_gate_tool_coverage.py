@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+import sys
 import unittest
 
 
@@ -13,6 +14,10 @@ RESOURCES_DIR = (
     / "Contents"
     / "Resources"
 )
+if str(RESOURCES_DIR) not in sys.path:
+    sys.path.insert(0, str(RESOURCES_DIR))
+
+from tool_catalog import TOOL_CATALOG, active_entries, app_only_entries
 
 
 READ_ONLY = "read_only"
@@ -111,14 +116,6 @@ TOOL_RELEASE_GATE = {
         "undoNote": "Docs lookup only.",
         "smoke": "docs_get for a known section id.",
     },
-    "docs_enable_page_resources": {
-        "coverage": UNIT_BEHAVIOR,
-        "tests": ("test_docs_tools.py",),
-        "mutation": SERVER_DOCS,
-        "undoRisk": "none",
-        "undoNote": "Registers MCP resources only; no Glyphs state touched.",
-        "smoke": "docs_enable_page_resources and verify ok=true.",
-    },
     "get_glyph_annotations": {
         "coverage": UNIT_BEHAVIOR,
         "tests": ("test_mcp_tools_annotations.py",),
@@ -174,30 +171,6 @@ TOOL_RELEASE_GATE = {
         "undoRisk": "none",
         "undoNote": "Reads annotation metadata only.",
         "smoke": "get_glyph_annotation_groups on M.",
-    },
-    "measure_stem_ratio": {
-        "coverage": UNIT_INTERNAL,
-        "tests": ("test_compensated_tuning_engine.py",),
-        "mutation": READ_ONLY,
-        "undoRisk": "none",
-        "undoNote": "Read-only geometry measurement.",
-        "smoke": "measure_stem_ratio on one glyph and two masters.",
-    },
-    "review_compensated_tuning": {
-        "coverage": UNIT_INTERNAL,
-        "tests": ("test_compensated_tuning_engine.py", "test_compensated_tuning_tools.py"),
-        "mutation": READ_ONLY,
-        "undoRisk": "none",
-        "undoNote": "Preview only.",
-        "smoke": "review_compensated_tuning on one glyph, no apply.",
-    },
-    "apply_compensated_tuning": {
-        "coverage": UNIT_INTERNAL,
-        "tests": ("test_compensated_tuning_tools.py",),
-        "mutation": EDITS_FONT,
-        "undoRisk": "high",
-        "undoNote": "Can replace paths across glyphs; release smoke must use dry_run first or a disposable glyph.",
-        "smoke": "apply_compensated_tuning dry_run=true on one glyph.",
     },
     "get_glyph_components": {
         "coverage": UNIT_BEHAVIOR,
@@ -351,22 +324,6 @@ TOOL_RELEASE_GATE = {
         "undoNote": "Saves file; release smoke must save only a copy in /private/tmp.",
         "smoke": "save_font(path='/private/tmp/...copy.glyphs') on test file only.",
     },
-    "review_italic_first_pass": {
-        "coverage": UNIT_INTERNAL,
-        "tests": ("test_mcp_tools_italic.py",),
-        "mutation": READ_ONLY,
-        "undoRisk": "none",
-        "undoNote": "Preview only.",
-        "smoke": "review_italic_first_pass on one glyph.",
-    },
-    "apply_italic_first_pass": {
-        "coverage": UNIT_INTERNAL,
-        "tests": ("test_mcp_tools_italic.py",),
-        "mutation": EDITS_FONT,
-        "undoRisk": "high",
-        "undoNote": "Can copy and transform layer data; must use layer changes and disposable glyphs for live confirm.",
-        "smoke": "dry_run=true first; confirm only on disposable glyph.",
-    },
     "set_kerning_pair": {
         "coverage": UNIT_BEHAVIOR,
         "tests": ("test_mcp_tools_kerning.py",),
@@ -447,14 +404,6 @@ TOOL_RELEASE_GATE = {
         "undoNote": "Server health only.",
         "smoke": "get_server_info and verify version/runtime/python/Glyphs host fields.",
     },
-    "review_collinear_handles": {
-        "coverage": UNIT_BEHAVIOR,
-        "tests": ("test_mcp_tools_smoothness.py",),
-        "mutation": READ_ONLY,
-        "undoRisk": "none",
-        "undoNote": "Read-only smoothness review.",
-        "smoke": "review_collinear_handles on one path.",
-    },
     "apply_collinear_handles_smooth": {
         "coverage": UNIT_BEHAVIOR,
         "tests": ("test_mcp_tools_smoothness.py",),
@@ -523,7 +472,7 @@ TOOL_RELEASE_GATE = {
         "mutation": OPENS_UI,
         "undoRisk": "none",
         "undoNote": "Changes only global Reporter display state, requests a redraw, and never edits or saves a font.",
-        "smoke": "Toggle on/off in Read-only, confirm View menu state and live comb drawing, and verify no dirty font state.",
+        "smoke": "Toggle on/off, confirm View menu state and live comb drawing, and verify no dirty font state.",
     },
     "preview_tunni_balance_candidate": {
         "coverage": LIVE_SMOKE_REQUIRED,
@@ -653,14 +602,6 @@ TOOL_RELEASE_GATE = {
         "undoNote": "Writes master stem metrics; release smoke should use dry_run first.",
         "smoke": "set_master_stem_metrics dry_run=true.",
     },
-    "render_glyph_review_image": {
-        "coverage": UNIT_BEHAVIOR,
-        "tests": ("test_mcp_tools_visual_review.py",),
-        "mutation": READ_ONLY,
-        "undoRisk": "none",
-        "undoNote": "Read-only render.",
-        "smoke": "render_glyph_review_image on H/O/n/o.",
-    },
     "show_glyphs_status": {
         "coverage": UNIT_BEHAVIOR,
         "tests": ("test_mcp_tools_feedback.py", "test_mcp_app_ui.py"),
@@ -736,11 +677,25 @@ TOOL_RELEASE_GATE = {
 }
 
 
+TOOL_RELEASE_GATE["review_curve_quality_across_masters"] = {
+    "coverage": LIVE_SMOKE_REQUIRED,
+    "tests": (
+        "test_outline_geometry_engine.py",
+        "test_mcp_tools_curve_geometry.py",
+        "live Glyphs 3.5 and Glyphs 4 smoke batch",
+    ),
+    "mutation": READ_ONLY,
+    "undoRisk": "none",
+    "undoNote": "Compares detached compatible raw-path snapshots across explicit masters only.",
+    "smoke": "Compare one compatible curved path across at least two masters without per-master samples.",
+}
+
+
 class ReleaseGateToolCoverageTests(unittest.TestCase):
     maxDiff = None
 
     def _registered_tool_records(self):
-        records = []
+        modules = {}
         for path in sorted(RESOURCES_DIR.glob("*.py")):
             try:
                 tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -749,51 +704,23 @@ class ReleaseGateToolCoverageTests(unittest.TestCase):
             for node in ast.walk(tree):
                 if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     continue
-                tool_decorators = []
-                for decorator in node.decorator_list:
-                    call = decorator if isinstance(decorator, ast.Call) else None
-                    target = call.func if call is not None else decorator
-                    if (
-                        isinstance(target, ast.Attribute)
-                        and isinstance(target.value, ast.Name)
-                        and target.value.id == "mcp"
-                        and target.attr == "tool"
-                    ):
-                        tool_decorators.append(call)
-                if not tool_decorators:
-                    continue
-
-                explicit_description = None
-                app_only = False
-                for decorator in tool_decorators:
-                    if decorator is None:
-                        continue
-                    for keyword in decorator.keywords:
-                        if (
-                            keyword.arg == "description"
-                            and isinstance(keyword.value, ast.Constant)
-                            and isinstance(keyword.value.value, str)
-                        ):
-                            explicit_description = keyword.value.value
-                        if keyword.arg != "meta" or not isinstance(keyword.value, ast.Call):
-                            continue
-                        for meta_keyword in keyword.value.keywords:
-                            if (
-                                meta_keyword.arg == "app_only"
-                                and isinstance(meta_keyword.value, ast.Constant)
-                                and meta_keyword.value.value is True
-                            ):
-                                app_only = True
-
-                records.append(
-                    {
-                        "name": node.name,
-                        "module": path.name,
-                        "appOnly": app_only,
-                        "description": explicit_description or ast.get_docstring(node) or "",
-                    }
-                )
-        return records
+                if any(
+                    isinstance(decorator, ast.Call)
+                    and isinstance(decorator.func, ast.Name)
+                    and decorator.func.id == "glyphs_tool"
+                    for decorator in node.decorator_list
+                ):
+                    modules[node.name] = path.name
+        return [
+            {
+                "name": entry.name,
+                "module": modules.get(entry.name),
+                "appOnly": entry.visibility == "app-only",
+                "description": entry.description,
+            }
+            for entry in active_entries()
+            if entry.name in modules
+        ]
 
     def _registered_tools(self):
         return {record["name"]: record["module"] for record in self._registered_tool_records()}
@@ -803,10 +730,10 @@ class ReleaseGateToolCoverageTests(unittest.TestCase):
         names = [record["name"] for record in records]
         app_only = {record["name"] for record in records if record["appOnly"]}
 
-        self.assertEqual(len(records), 83, "Tool-surface growth requires an explicit budget review.")
+        self.assertEqual(len(records), 76, "Tool-surface growth requires an explicit budget review.")
         self.assertEqual(len(set(names)), len(names), "MCP tool names must be unique.")
-        self.assertEqual(app_only, {"apply_feedback_plan", "open_feedback_target"})
-        self.assertEqual(len(records) - len(app_only), 81)
+        self.assertEqual(app_only, {entry.name for entry in app_only_entries()})
+        self.assertEqual(len(records) - len(app_only), 65)
 
         for record in records:
             with self.subTest(tool=record["name"]):
@@ -814,33 +741,21 @@ class ReleaseGateToolCoverageTests(unittest.TestCase):
                     self.assertRegex(record["name"], r"^[a-z][a-z0-9_]*$")
                 description = record["description"].strip()
                 self.assertTrue(description, "Every discoverable tool needs a useful description.")
-                self.assertLessEqual(len(description), 1800, "Tool descriptions must stay bounded.")
-                self.assertLessEqual(len(description.splitlines()[0]), 140)
+                self.assertLessEqual(len(description), 220, "Catalog descriptions must stay bounded.")
 
     def test_every_registered_tool_has_release_gate_entry(self) -> None:
         registered = set(self._registered_tools())
         covered = set(TOOL_RELEASE_GATE)
         self.assertEqual(covered, registered)
 
-    def test_read_only_profile_contains_only_non_font_mutating_tools(self) -> None:
-        profile_tree = ast.parse((RESOURCES_DIR / "tool_profiles.py").read_text(encoding="utf-8"))
-        read_only_tools = None
-        for node in profile_tree.body:
-            if not isinstance(node, ast.Assign):
-                continue
-            if any(isinstance(target, ast.Name) and target.id == "CORE_READONLY_TOOLS" for target in node.targets):
-                read_only_tools = set(ast.literal_eval(node.value))
-                break
-
-        self.assertIsNotNone(read_only_tools)
-        assert read_only_tools is not None
-        self.assertLessEqual(read_only_tools, set(self._registered_tools()))
-        for tool_name in sorted(read_only_tools):
-            with self.subTest(tool=tool_name):
-                self.assertIn(
-                    TOOL_RELEASE_GATE[tool_name]["mutation"],
-                    {READ_ONLY, OPENS_UI, SERVER_DOCS},
-                )
+    def test_catalog_safety_annotations_match_release_mutation_classes(self) -> None:
+        for entry in active_entries():
+            with self.subTest(tool=entry.name):
+                mutation = TOOL_RELEASE_GATE[entry.name]["mutation"]
+                should_be_read_only = mutation in {READ_ONLY, SERVER_DOCS}
+                self.assertIs(entry.annotations["readOnlyHint"], should_be_read_only)
+                should_be_destructive = mutation in {EDITS_FONT, SAVES_FONT, WRITES_FILES, EXECUTES_CODE}
+                self.assertIs(entry.annotations["destructiveHint"], should_be_destructive)
 
     def test_each_tool_entry_has_test_owner_smoke_prompt_and_undo_risk(self) -> None:
         for tool_name, entry in sorted(TOOL_RELEASE_GATE.items()):
@@ -877,6 +792,7 @@ class ReleaseGateToolCoverageTests(unittest.TestCase):
             "review_tunni_geometry",
             "apply_tunni_balance",
             "review_curve_quality",
+            "review_curve_quality_across_masters",
             "get_curve_review_overlay_state",
             "set_curve_review_overlay",
         ):

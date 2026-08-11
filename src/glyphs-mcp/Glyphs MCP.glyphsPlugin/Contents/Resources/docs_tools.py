@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from mcp_tools import mcp
+from tool_registration import glyphs_tool
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +122,7 @@ def _slice_text(text: str, offset: int, max_chars: int) -> Tuple[str, bool]:
     return chunk, truncated
 
 
-@mcp.tool()
+@glyphs_tool()
 async def docs_search(query: str, max_results: int = 10) -> str:
     """Search bundled official Glyphs API, development, and file-format docs.
 
@@ -223,7 +224,7 @@ async def docs_search(query: str, max_results: int = 10) -> str:
     )
 
 
-@mcp.tool()
+@glyphs_tool()
 async def docs_get(
     doc_id: str = "",
     path: str = "",
@@ -308,7 +309,6 @@ async def docs_get(
     )
 
 
-@mcp.tool()
 async def docs_enable_page_resources() -> str:
     """Register each documentation page as its own MCP resource.
 

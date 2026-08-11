@@ -15,8 +15,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from fastmcp.tools.tool import ToolResult
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
-from mcp_app_ui import FEEDBACK_RESOURCE_URI
-from mcp_runtime import mcp
+from tool_registration import glyphs_tool
+from tool_result_schemas import FEEDBACK_OUTPUT_SCHEMA, FEEDBACK_SCHEMA_VERSION
 from mcp_tool_helpers import (
     _font_summary,
     _get_layer_id,
@@ -38,71 +38,9 @@ from versioning import get_runtime_info
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = FEEDBACK_SCHEMA_VERSION
 PLAN_TTL_SECONDS = 10 * 60
 PLAN_CAPACITY = 64
-
-FEEDBACK_OUTPUT_SCHEMA: Dict[str, Any] = {
-    "type": "object",
-    "required": [
-        "schemaVersion",
-        "kind",
-        "status",
-        "title",
-        "summary",
-        "target",
-        "items",
-        "warnings",
-        "actions",
-        "progress",
-        "result",
-    ],
-    "properties": {
-        "schemaVersion": {"type": "string", "const": SCHEMA_VERSION},
-        "kind": {"type": "string"},
-        "status": {"type": "string", "enum": ["ready", "warning", "working", "success", "partial", "error"]},
-        "title": {"type": "string"},
-        "summary": {"type": "string"},
-        "target": {"type": "object"},
-        "items": {"type": "array", "items": {"type": "object"}},
-        "warnings": {"type": "array", "items": {}},
-        "actions": {"type": "array", "items": {"type": "object"}, "maxItems": 2},
-        "progress": {"type": "object"},
-        "result": {"type": "object"},
-        "error": {"type": ["object", "null"]},
-    },
-    "additionalProperties": False,
-}
-
-
-def _tool_meta(*, app_only: bool = False) -> Dict[str, Any]:
-    return {
-        "ui": {
-            "resourceUri": FEEDBACK_RESOURCE_URI,
-            "visibility": ["app"] if app_only else ["model", "app"],
-        }
-    }
-
-
-READ_ONLY_ANNOTATIONS = {
-    "readOnlyHint": True,
-    "destructiveHint": False,
-    "idempotentHint": True,
-    "openWorldHint": False,
-}
-OPEN_ANNOTATIONS = {
-    "readOnlyHint": False,
-    "destructiveHint": False,
-    "idempotentHint": False,
-    "openWorldHint": False,
-}
-APPLY_ANNOTATIONS = {
-    "readOnlyHint": False,
-    "destructiveHint": True,
-    "idempotentHint": False,
-    "openWorldHint": False,
-}
-
 
 def _counts(reviewed: int = 0, changed: int = 0, skipped: int = 0, failed: int = 0) -> Dict[str, int]:
     return {
@@ -308,11 +246,7 @@ def _unique(values: Iterable[Any]) -> List[Any]:
     return result
 
 
-@mcp.tool(
-    output_schema=FEEDBACK_OUTPUT_SCHEMA,
-    annotations=READ_ONLY_ANNOTATIONS,
-    meta=_tool_meta(),
-)
+@glyphs_tool()
 async def show_glyphs_status() -> ToolResult:
     """Show server, Glyphs, and open-font status in the shared feedback panel."""
 
@@ -349,11 +283,7 @@ async def show_glyphs_status() -> ToolResult:
         )
 
 
-@mcp.tool(
-    output_schema=FEEDBACK_OUTPUT_SCHEMA,
-    annotations=READ_ONLY_ANNOTATIONS,
-    meta=_tool_meta(),
-)
+@glyphs_tool()
 async def show_font_feedback(font_index: int = 0) -> ToolResult:
     """Show read-only information about one currently open Glyphs font."""
 
@@ -399,11 +329,7 @@ async def show_font_feedback(font_index: int = 0) -> ToolResult:
         return _tool_result(_error_payload("validation_failed", "The open font could not be inspected.", retry=("show_font_feedback", arguments)))
 
 
-@mcp.tool(
-    output_schema=FEEDBACK_OUTPUT_SCHEMA,
-    annotations=READ_ONLY_ANNOTATIONS,
-    meta=_tool_meta(),
-)
+@glyphs_tool()
 async def show_glyph_feedback(font_index: int = 0, glyph_name: str = "") -> ToolResult:
     """Show read-only metadata for a named glyph or the active Glyphs selection."""
 
@@ -484,11 +410,7 @@ async def show_glyph_feedback(font_index: int = 0, glyph_name: str = "") -> Tool
         return _tool_result(_error_payload("validation_failed", "The glyph could not be inspected safely.", retry=("show_glyph_feedback", arguments)))
 
 
-@mcp.tool(
-    output_schema=FEEDBACK_OUTPUT_SCHEMA,
-    annotations=READ_ONLY_ANNOTATIONS,
-    meta=_tool_meta(),
-)
+@glyphs_tool()
 async def show_opentype_features(
     font_index: int = 0,
     include_inactive: bool = False,
@@ -796,11 +718,7 @@ async def _preview(operation: str, arguments: Dict[str, Any]) -> ToolResult:
     )
 
 
-@mcp.tool(
-    output_schema=FEEDBACK_OUTPUT_SCHEMA,
-    annotations=READ_ONLY_ANNOTATIONS,
-    meta=_tool_meta(),
-)
+@glyphs_tool()
 async def preview_spacing_feedback(
     font_index: int = 0,
     glyph_names: list = None,
@@ -823,11 +741,7 @@ async def preview_spacing_feedback(
     })
 
 
-@mcp.tool(
-    output_schema=FEEDBACK_OUTPUT_SCHEMA,
-    annotations=READ_ONLY_ANNOTATIONS,
-    meta=_tool_meta(),
-)
+@glyphs_tool()
 async def preview_kerning_feedback(
     font_index: int = 0,
     master_id: str = None,
@@ -874,11 +788,7 @@ async def preview_kerning_feedback(
     })
 
 
-@mcp.tool(
-    output_schema=FEEDBACK_OUTPUT_SCHEMA,
-    annotations=READ_ONLY_ANNOTATIONS,
-    meta=_tool_meta(),
-)
+@glyphs_tool()
 async def preview_handle_smoothing_feedback(
     font_index: int = 0,
     glyph_name: str = None,
@@ -901,11 +811,7 @@ async def preview_handle_smoothing_feedback(
     })
 
 
-@mcp.tool(
-    output_schema=FEEDBACK_OUTPUT_SCHEMA,
-    annotations=APPLY_ANNOTATIONS,
-    meta=_tool_meta(app_only=True),
-)
+@glyphs_tool()
 async def apply_feedback_plan(plan_id: str, confirm: bool = False) -> ToolResult:
     """Apply one reviewed, unexpired feedback plan from the embedded app only."""
 
@@ -1011,11 +917,7 @@ async def apply_feedback_plan(plan_id: str, confirm: bool = False) -> ToolResult
     )
 
 
-@mcp.tool(
-    output_schema=FEEDBACK_OUTPUT_SCHEMA,
-    annotations=OPEN_ANNOTATIONS,
-    meta=_tool_meta(app_only=True),
-)
+@glyphs_tool()
 async def open_feedback_target(
     font_index: int = 0,
     glyph_names: list = None,

@@ -22,10 +22,11 @@ Use:
 
 By default, individual docs pages are not registered as separate resources because that can flood `resources/list` in some clients.
 
-Only call `docs_enable_page_resources` when you explicitly need per-page resource registration.
+Use `docs_search` and `docs_get` for bounded, on-demand access. Per-page
+resource registration is not exposed as a public 1.8 tool.
 
 ## Related docs
 
 - [Command set](./command-set.mdx)
-- [Settings and tool profiles](./settings.mdx)
+- [Settings and discovery](./settings.mdx)
 - [How Glyphs MCP works](../concepts/how-glyphs-mcp-works.mdx)

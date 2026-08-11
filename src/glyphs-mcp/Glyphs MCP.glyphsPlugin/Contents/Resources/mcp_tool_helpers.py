@@ -2453,6 +2453,29 @@ def _open_tab_on_main_thread(font, tab_text):
     return _run_on_main_thread(lambda: font.newTab(tab_text))
 
 
+def _kerning_storage_key(font, value):
+    """Resolve a public glyph name to Glyphs' native kerning storage key.
+
+    Explicit glyph exceptions are stored by glyph ID in both Glyphs 3 and 4.
+    Class keys and already-resolved/unknown keys remain unchanged for backward
+    compatibility with callers that pass native ``@MMK_*`` identifiers.
+    """
+
+    key = str(value)
+    if key.startswith("@"):
+        return key
+
+    glyphs = getattr(font, "glyphs", None)
+    if glyphs is None:
+        return key
+    try:
+        glyph = glyphs[key]
+    except Exception:
+        glyph = None
+    glyph_id = getattr(glyph, "id", None) if glyph is not None else None
+    return str(glyph_id) if glyph_id else key
+
+
 def _set_kerning_pairs_on_main_thread(font, master_id, pairs):
     """Apply multiple glyph–glyph kerning exceptions safely on the Glyphs main thread.
 
@@ -2465,16 +2488,18 @@ def _set_kerning_pairs_on_main_thread(font, master_id, pairs):
 
         master_kerning = target_font.kerning[master_id]
         for left_name, right_name, value in target_pairs:
-            if left_name not in master_kerning:
-                master_kerning[left_name] = {}
+            left_key = _kerning_storage_key(target_font, left_name)
+            right_key = _kerning_storage_key(target_font, right_name)
+            if left_key not in master_kerning:
+                master_kerning[left_key] = {}
 
             if int(value) == 0:
-                if right_name in master_kerning[left_name]:
-                    del master_kerning[left_name][right_name]
-                if not master_kerning[left_name]:
-                    del master_kerning[left_name]
+                if right_key in master_kerning[left_key]:
+                    del master_kerning[left_key][right_key]
+                if not master_kerning[left_key]:
+                    del master_kerning[left_key]
             else:
-                master_kerning[left_name][right_name] = int(value)
+                master_kerning[left_key][right_key] = int(value)
 
     _run_on_main_thread(lambda: _apply_pairs(font, list(pairs or [])))
 

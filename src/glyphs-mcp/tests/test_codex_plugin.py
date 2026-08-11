@@ -220,7 +220,7 @@ class AgentPluginTests(unittest.TestCase):
                 frontmatter = text.split("---", 2)[1]
                 self.assertNotRegex(frontmatter, r"(?m)^version\s*:", f"{root / name} has its own version")
 
-    def test_canonical_skill_names_and_tool_profiles_stay_current(self) -> None:
+    def test_canonical_skill_names_and_catalog_routing_stay_current(self) -> None:
         combined = []
         for name in SKILL_NAMES:
             text = (CANONICAL_SKILLS / name / "SKILL.md").read_text(encoding="utf-8")
@@ -231,11 +231,14 @@ class AgentPluginTests(unittest.TestCase):
             combined.append(text)
 
         skill_text = "\n".join(combined)
-        self.assertNotIn("`Kerning` tool profile", skill_text)
-        self.assertNotIn("`Paths / Outlines` profile", skill_text)
-        self.assertNotIn("`Editing` when applying", skill_text)
-        self.assertIn("Use Edit for this specialized workflow", skill_text)
-        self.assertIn("Use Read-only for detached candidate preview", skill_text)
+        self.assertNotIn("tool profile", skill_text.lower())
+        self.assertNotIn("Use Edit for this specialized workflow", skill_text)
+        self.assertNotIn("Use Read-only for detached candidate preview", skill_text)
+        self.assertIn("TOOL_CATALOG", skill_text)
+        self.assertIn("preview_italic_first_pass_candidate", skill_text)
+        self.assertIn("accept_outline_candidate_session", skill_text)
+        self.assertIn("dry_run=true", skill_text)
+        self.assertIn("confirm=true", skill_text)
 
     def test_shared_skill_sync_check_mode(self) -> None:
         result = subprocess.run(

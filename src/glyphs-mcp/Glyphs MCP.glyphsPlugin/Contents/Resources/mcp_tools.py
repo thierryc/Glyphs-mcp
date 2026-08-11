@@ -9,7 +9,7 @@ This module preserves the public import contract:
     from mcp_tools import mcp
 
 Tool implementations live in `mcp_tools_*.py` modules and register themselves
-via `@mcp.tool()` decorators at import time.
+through the authoritative tool catalog at import time.
 """
 
 from mcp_runtime import mcp
@@ -36,7 +36,6 @@ import mcp_tools_server  # noqa: F401
 import mcp_tools_selection  # noqa: F401
 import mcp_tools_smoothness  # noqa: F401
 import mcp_tools_spacing  # noqa: F401
-import mcp_tools_visual_review  # noqa: F401
 import mcp_tools_outline_candidates  # noqa: F401
 
 __all__ = ["mcp"]

@@ -12,6 +12,7 @@ import time
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _font_resolution_error,
     _get_layer_id,
@@ -30,6 +31,7 @@ import mcp_tools_italic
 import outline_candidate_state
 import outline_geometry_engine
 import smoothness_engine
+from versioning import get_plugin_version
 
 
 CANDIDATE_DATA_VERSION = outline_candidate_state.CANDIDATE_DATA_VERSION
@@ -39,6 +41,7 @@ FONT_MANIFEST_KEY = "com.thierrycharbonnel.glyphs-mcp.outlineCandidates.v1"
 LAYER_METADATA_KEY = "com.thierrycharbonnel.glyphs-mcp.outlineCandidate.v1"
 MAX_DIFFS = 400
 POSITION_TOLERANCE = 1.0e-5
+TOOL_VERSION = get_plugin_version()
 
 
 def _point_values(value):
@@ -356,7 +359,7 @@ def _session_payload(font, font_index, glyph_name, operation, entries):
         "glyphName": str(glyph_name),
         "entries": entries,
         "expectedEntryCount": len(entries),
-        "toolVersion": "1.7.0",
+        "toolVersion": TOOL_VERSION,
         "createdAt": float(time.time()),
         "warnings": [],
     }
@@ -552,7 +555,7 @@ def _preview_tunni_impl(font_index, glyph_name, targets, imbalance_threshold, mi
     return session, summaries
 
 
-@mcp.tool()
+@glyphs_tool()
 async def preview_tunni_balance_candidate(
     font_index: int = 0,
     glyph_name: str = None,
@@ -642,7 +645,7 @@ def _preview_smooth_impl(font_index, glyph_name, targets, threshold_deg, min_han
     return _session_payload(font, font_index, glyph_name, "collinear", entries), summaries
 
 
-@mcp.tool()
+@glyphs_tool()
 async def preview_collinear_handles_candidate(
     font_index: int = 0,
     glyph_name: str = None,
@@ -725,7 +728,7 @@ def _comp_preview_impl(font_index, glyph_names, base_master_id, ref_master_id, o
     return _session_payload(font, font_index, ",".join(str(name) for name in glyph_names), "compensated_tuning", entries), summaries
 
 
-@mcp.tool()
+@glyphs_tool()
 async def preview_compensated_tuning_candidate(
     font_index: int = 0,
     glyph_names: list = None,
@@ -869,7 +872,7 @@ def _italic_preview_impl(font_index, params):
     )
 
 
-@mcp.tool()
+@glyphs_tool()
 async def preview_italic_first_pass_candidate(
     font_index: int = 0,
     source_font_index: int = None,
@@ -1049,7 +1052,7 @@ def _public_session(session, include_entries=False):
     return value
 
 
-@mcp.tool()
+@glyphs_tool()
 async def set_outline_candidate_overlay(
     enabled: bool = True,
     session_id: str = None,
@@ -1081,7 +1084,7 @@ async def set_outline_candidate_overlay(
         return _safe_json({"ok": False, "candidateDataVersion": CANDIDATE_DATA_VERSION, "error": str(error)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_outline_candidate_state(
     font_index: int = 0,
     session_id: str = None,
@@ -1411,7 +1414,7 @@ def _materialize_transaction(font_index, session_id, dry_run):
                 "operation": entry["operation"],
                 "entry": copy.deepcopy(entry),
                 "createdAt": float(time.time()),
-                "toolVersion": "1.7.0",
+                "toolVersion": TOOL_VERSION,
             }
             _layer_metadata_set(candidate_layer, metadata)
             glyph.layers.append(candidate_layer)
@@ -1436,7 +1439,7 @@ def _materialize_transaction(font_index, session_id, dry_run):
             ],
             "expectedEntryCount": len(plans),
             "createdAt": float(time.time()),
-            "toolVersion": "1.7.0",
+            "toolVersion": TOOL_VERSION,
         }
         _manifest_set(font, manifest)
         outline_candidate_state.STORE.update_session(session)
@@ -1473,7 +1476,7 @@ def _materialize_transaction(font_index, session_id, dry_run):
     }
 
 
-@mcp.tool()
+@glyphs_tool()
 async def materialize_outline_candidate_session(
     font_index: int = 0,
     session_id: str = None,
@@ -1744,7 +1747,7 @@ def _review_session_impl(font_index, session_id, include_diffs):
     return font, session, records, source_fingerprints, candidate_fingerprints, ready
 
 
-@mcp.tool()
+@glyphs_tool()
 async def review_outline_candidate_session(
     font_index: int = 0,
     session_id: str = None,
@@ -1955,7 +1958,7 @@ def _accept_transaction(font_index, session_id, token, dry_run):
     }
 
 
-@mcp.tool()
+@glyphs_tool()
 async def accept_outline_candidate_session(
     font_index: int = 0,
     session_id: str = None,
@@ -2087,7 +2090,7 @@ def _discard_transaction(font_index, session_id, dry_run):
     }
 
 
-@mcp.tool()
+@glyphs_tool()
 async def discard_outline_candidate_session(
     font_index: int = 0,
     session_id: str = None,

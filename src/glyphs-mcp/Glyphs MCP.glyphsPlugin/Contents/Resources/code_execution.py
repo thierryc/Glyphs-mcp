@@ -20,6 +20,7 @@ except Exception:  # pragma: no cover - depends on Glyphs runtime
 from GlyphsApp import Glyphs, GSAnchor, GSComponent, GSGlyph, GSLayer, GSNode, GSPath  # type: ignore[import-not-found]
 
 from mcp_tools import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import _font_context_source, _font_resolution_error, _resolve_font_by_index
 
 
@@ -622,7 +623,7 @@ def _resolve_context_objects(font_index: int, glyph_name: Optional[str]):
     return font, glyph, layer, context_info, None
 
 
-@mcp.tool()
+@glyphs_tool()
 async def execute_code(
     code: str,
     capture_output: bool = True,
@@ -704,7 +705,7 @@ async def execute_code(
         )
 
 
-@mcp.tool()
+@glyphs_tool()
 async def execute_code_with_context(
     code: str,
     font_index: int = 0,

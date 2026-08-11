@@ -163,13 +163,6 @@ def _load_plugin_module(update_checker):
             status_text=lambda running: "running" if running else "stopped",
         ),
         "i18n": types.SimpleNamespace(tr=tr),
-        "tool_profiles": types.SimpleNamespace(
-            PROFILE_EDIT="Edit",
-            PROFILE_ORDER=("Edit",),
-            enabled_tool_names=lambda _profile, names: names,
-            is_valid_profile_name=lambda name: name == "Edit",
-            normalize_profile_name=lambda name: name,
-        ),
         "update_checker": update_checker,
         "update_helper": types.SimpleNamespace(
             OPT_IN_DEFAULTS_KEY="com.ap.cx.glyphs-mcp.inAppUpdatesEnabled",

@@ -235,6 +235,46 @@ class GlyphsCurveReporterTests(unittest.TestCase):
         self.assertEqual(last_draw["componentCountOmitted"], 2)
         self.assertIn("components_omitted", [item["code"] for item in last_draw["warnings"]])
 
+    def test_curve_events_can_draw_without_curvature_comb(self) -> None:
+        module, _glyphs = self._load_module()
+        reporter = module.GlyphsMCPCurvatureReporter()
+        reporter.settings()
+        module.set_overlay_features(["curve_events"])
+        layer = self._layer()
+        for node, (x, y) in zip(
+            layer.paths[0].nodes,
+            [(0, 0), (100, 150), (100, -150), (200, 0)],
+        ):
+            node.position = _Point(x, y)
+
+        reporter.foreground(layer)
+        last_draw = reporter.overlayStateSnapshot()["lastDraw"]
+
+        self.assertEqual(last_draw["overlays"], ["curve_events"])
+        self.assertEqual(last_draw["strokeCount"], 0)
+        self.assertGreater(last_draw["curveEventMarkerCount"], 0)
+        self.assertTrue(any(path.did_stroke for path in _CapturedPath.created))
+
+    def test_overlay_selection_invalidates_reporter_cache(self) -> None:
+        module, _glyphs = self._load_module()
+        reporter = module.GlyphsMCPCurvatureReporter()
+        reporter.settings()
+        layer = self._layer()
+        for node, (x, y) in zip(
+            layer.paths[0].nodes,
+            [(0, 0), (100, 150), (100, -150), (200, 0)],
+        ):
+            node.position = _Point(x, y)
+
+        reporter.foreground(layer)
+        reporter.foreground(layer)
+        self.assertTrue(reporter.overlayStateSnapshot()["lastDraw"]["cacheHit"])
+        module.set_overlay_features(["curvature", "curve_events"])
+        reporter.foreground(layer)
+
+        self.assertFalse(reporter.overlayStateSnapshot()["lastDraw"]["cacheHit"])
+        self.assertGreater(reporter.overlayStateSnapshot()["lastDraw"]["curveEventMarkerCount"], 0)
+
     def test_drawing_failure_is_contained_and_reported(self) -> None:
         module, _glyphs = self._load_module()
         reporter = module.GlyphsMCPCurvatureReporter()

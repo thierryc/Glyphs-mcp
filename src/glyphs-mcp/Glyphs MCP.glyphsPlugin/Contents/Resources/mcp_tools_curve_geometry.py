@@ -10,6 +10,7 @@ import math
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _font_resolution_error,
     _get_layer_id,
@@ -28,6 +29,8 @@ import outline_geometry_engine
 MAX_REVIEW_SEGMENTS = 512
 POSITION_TOLERANCE = 1.0e-5
 GRID_POLICIES = ("font", "continuous")
+ANALYSIS_MODES = ("adaptive", "sampled_v1")
+MAX_CROSS_MASTER_COUNT = 32
 
 
 def _position_values(node):
@@ -90,6 +93,24 @@ def _normalize_grid_policy(value):
     if not isinstance(value, str) or value not in GRID_POLICIES:
         return None, "grid_policy must be one of: {}".format(", ".join(GRID_POLICIES))
     return value, None
+
+
+def _normalize_analysis_mode(value):
+    if not isinstance(value, str) or value not in ANALYSIS_MODES:
+        return None, "analysis_mode must be one of: {}".format(", ".join(ANALYSIS_MODES))
+    return value, None
+
+
+def _normalize_master_ids(value):
+    if not isinstance(value, list) or not value:
+        return None, "master_ids must be a nonempty list of unique strings"
+    if any(not isinstance(master_id, str) or not master_id for master_id in value):
+        return None, "master_ids must be a nonempty list of unique strings"
+    if len(value) != len(set(value)):
+        return None, "master_ids must not contain duplicates"
+    if len(value) > MAX_CROSS_MASTER_COUNT:
+        return None, "master_ids exceeds the {}-master limit".format(MAX_CROSS_MASTER_COUNT)
+    return list(value), None
 
 
 def _shape_index(layer, path):
@@ -241,7 +262,7 @@ def _bounded_segment_indices(target_data, requested_indices):
     return indices, None
 
 
-@mcp.tool()
+@glyphs_tool()
 async def review_tunni_geometry(
     font_index: int = 0,
     glyph_name: str = None,
@@ -721,7 +742,7 @@ def _confirmed_tunni_transaction(
     )
 
 
-@mcp.tool()
+@glyphs_tool()
 async def apply_tunni_balance(
     font_index: int = 0,
     glyph_name: str = None,
@@ -825,7 +846,7 @@ async def apply_tunni_balance(
         return _safe_json({"ok": False, "error": str(exc), "errorType": type(exc).__name__})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def review_curve_quality(
     font_index: int = 0,
     glyph_name: str = None,
@@ -836,8 +857,9 @@ async def review_curve_quality(
     discontinuity_threshold: float = 0.25,
     spike_ratio_threshold: float = 4.0,
     include_samples: bool = False,
+    analysis_mode: str = "adaptive",
 ) -> str:
-    """Review sampled signed cubic curvature for one explicit raw editable path.
+    """Review adaptive cubic geometry and curvature for one explicit raw path.
 
     This read-only tool reports per-segment minimum, maximum, and median
     absolute curvature; signed and UPM-normalized metrics; inflection or sign
@@ -846,17 +868,22 @@ async def review_curve_quality(
     infinite-ratio marker. Components omitted from path-targeted diagnostics
     are reported explicitly.
 
-    The odd sample count is clamped to 9–257. Detailed samples are limited to
-    64 selected segments, so narrow ``segment_end_node_indices`` when requesting
-    ``include_samples=true`` on a larger path. Results are measurements and
-    conservative threshold warnings, never an artistic score or pass/fail
-    verdict. The tool does not mutate or save the font.
+    ``analysis_mode="adaptive"`` adds extrema, inflections, stationary points,
+    cusps, turning angle, arc length, bounded self-intersections, curve-to-line
+    continuity, and G0/G1/G2 join measurements. Use ``sampled_v1`` only when a
+    reproducible 1.7 sampling baseline is required. The odd sample count is
+    clamped to 9–257. Detailed samples are limited to 64 selected segments.
+    Results are conservative measurements and warnings, never an artistic score
+    or pass/fail verdict. The tool does not mutate or save the font.
     """
 
     try:
         indices, index_error = _normalize_indices(segment_end_node_indices, required=False)
         if index_error:
             return _safe_json({"ok": False, "error": index_error})
+        analysis_mode_value, mode_error = _normalize_analysis_mode(analysis_mode)
+        if mode_error:
+            return _safe_json({"ok": False, "error": mode_error})
         sample_count_value, value_error = _finite_sample_count(samples_per_curve)
         if value_error:
             return _safe_json({"ok": False, "error": value_error})
@@ -899,6 +926,7 @@ async def review_curve_quality(
             discontinuity_threshold=discontinuity_value,
             spike_ratio_threshold=spike_value,
             include_samples=bool(include_samples),
+            analysis_mode=analysis_mode_value,
         )
         payload = {
             "ok": True,
@@ -909,6 +937,7 @@ async def review_curve_quality(
                 "discontinuityThreshold": discontinuity_value,
                 "spikeRatioThreshold": spike_value,
                 "includeSamples": bool(include_samples),
+                "analysisMode": review["analysisMode"],
                 "upm": float(target_data["upm"]),
             },
             "segments": review["segments"],
@@ -928,4 +957,303 @@ async def review_curve_quality(
         return _safe_json({"ok": False, "error": str(exc), "errorType": type(exc).__name__})
 
 
-__all__ = ["review_tunni_geometry", "apply_tunni_balance", "review_curve_quality"]
+def _cross_master_topology(target_data):
+    return {
+        "closed": bool(target_data["closed"]),
+        "nodeTypes": tuple(str(node.get("type")) for node in target_data["nodes"]),
+        "cubicSegmentEndNodeIndices": tuple(
+            outline_geometry_engine.cubic_segment_end_indices(
+                target_data["nodes"], closed=target_data["closed"]
+            )
+        ),
+    }
+
+
+def _finite_range(values):
+    finite = [float(value) for value in values if value is not None and math.isfinite(float(value))]
+    if not finite:
+        return {"minimum": None, "maximum": None, "range": None}
+    minimum = min(finite)
+    maximum = max(finite)
+    return {"minimum": minimum, "maximum": maximum, "range": maximum - minimum}
+
+
+def _event_counts(segment):
+    events = segment.get("events") or {}
+    return {
+        "extrema": len(events.get("extrema") or []),
+        "inflections": len(events.get("inflections") or []),
+        "stationaryPoints": len(events.get("stationaryPoints") or []),
+        "cusps": len(events.get("cusps") or []),
+        "selfIntersections": len(events.get("selfIntersections") or []),
+    }
+
+
+def _cross_master_comparison(master_reviews, segment_indices):
+    segments_by_master = {
+        item["masterId"]: {
+            int(segment["segmentEndNodeIndex"]): segment
+            for segment in item["quality"].get("segments", [])
+            if segment.get("ok") and segment.get("segmentEndNodeIndex") is not None
+        }
+        for item in master_reviews
+    }
+    tunni_by_master = {
+        item["masterId"]: {
+            int(segment["segmentEndNodeIndex"]): segment
+            for segment in item["tunni"]
+            if segment.get("ok") and segment.get("segmentEndNodeIndex") is not None
+        }
+        for item in master_reviews
+    }
+    segment_comparisons = []
+    for segment_index in segment_indices:
+        quality_segments = [
+            segments_by_master[item["masterId"]].get(segment_index) for item in master_reviews
+        ]
+        tunni_segments = [
+            tunni_by_master[item["masterId"]].get(segment_index) for item in master_reviews
+        ]
+        event_names = ("extrema", "inflections", "stationaryPoints", "cusps", "selfIntersections")
+        counts_by_master = {
+            item["masterId"]: _event_counts(segment or {})
+            for item, segment in zip(master_reviews, quality_segments)
+        }
+        segment_comparisons.append(
+            {
+                "segmentEndNodeIndex": int(segment_index),
+                "tunniRatioDrift": {
+                    "start": _finite_range(
+                        (segment.get("ratios") or {}).get("start") if segment else None
+                        for segment in tunni_segments
+                    ),
+                    "end": _finite_range(
+                        (segment.get("ratios") or {}).get("end") if segment else None
+                        for segment in tunni_segments
+                    ),
+                },
+                "normalizedCurvatureVariation": _finite_range(
+                    (segment.get("curvature") or {}).get("normalizedMaxAbs") if segment else None
+                    for segment in quality_segments
+                ),
+                "eventCounts": counts_by_master,
+                "eventCountDifferences": {
+                    name: _finite_range(counts[name] for counts in counts_by_master.values())
+                    for name in event_names
+                },
+            }
+        )
+
+    joins_by_node = {}
+    for item in master_reviews:
+        for join in item["quality"].get("joins", []):
+            joins_by_node.setdefault(int(join["nodeIndex"]), {})[item["masterId"]] = join
+    continuity = []
+    for node_index, by_master in sorted(joins_by_node.items()):
+        continuity.append(
+            {
+                "nodeIndex": node_index,
+                "g1AngleVariationDegrees": _finite_range(
+                    join.get("g1AngleDegrees") for join in by_master.values()
+                ),
+                "relativeCurvatureDiscontinuityVariation": _finite_range(
+                    join.get("relativeDiscontinuity") for join in by_master.values()
+                ),
+                "masterMeasurements": {
+                    master_id: {
+                        "kind": join.get("kind"),
+                        "g0Continuous": join.get("g0Continuous"),
+                        "g1Continuous": join.get("g1Continuous"),
+                        "g2Continuous": join.get("g2Continuous"),
+                    }
+                    for master_id, join in sorted(by_master.items())
+                },
+            }
+        )
+    return {"segments": segment_comparisons, "continuity": continuity}
+
+
+@glyphs_tool()
+async def review_curve_quality_across_masters(
+    font_index: int = 0,
+    glyph_name: str = None,
+    master_ids: list = None,
+    path_index: int = None,
+    segment_end_node_indices: list = None,
+    analysis_mode: str = "adaptive",
+    include_per_master: bool = False,
+) -> str:
+    """Compare compatible cubic geometry across explicit masters of one path.
+
+    This read-only tool checks topology and cubic mapping before comparing Tunni
+    ratio drift, normalized-curvature variation, event counts, and continuity.
+    ``include_per_master`` adds bounded per-master details. It analyzes raw
+    editable paths, reports omitted components, and never changes or saves the
+    font.
+    """
+
+    try:
+        masters, master_error = _normalize_master_ids(master_ids)
+        if master_error:
+            return _safe_json({"ok": False, "error": master_error})
+        indices, index_error = _normalize_indices(segment_end_node_indices, required=False)
+        if index_error:
+            return _safe_json({"ok": False, "error": index_error})
+        mode, mode_error = _normalize_analysis_mode(analysis_mode)
+        if mode_error:
+            return _safe_json({"ok": False, "error": mode_error})
+        if type(include_per_master) is not bool:
+            return _safe_json({"ok": False, "error": "include_per_master must be a boolean"})
+
+        def capture_targets():
+            captured = []
+            for requested_master_id in masters:
+                target_data, target_error = _resolve_target(
+                    font_index, glyph_name, requested_master_id, path_index
+                )
+                if target_error:
+                    return None, dict(
+                        target_error,
+                        masterId=requested_master_id,
+                        reason="master_target_unavailable",
+                    )
+                captured.append(target_data)
+            return captured, None
+
+        targets, target_error = _run_on_main_thread(capture_targets)
+        if target_error:
+            return _safe_json(target_error)
+        baseline_topology = _cross_master_topology(targets[0])
+        incompatibilities = []
+        for target_data in targets[1:]:
+            topology = _cross_master_topology(target_data)
+            if topology["closed"] != baseline_topology["closed"] or topology["nodeTypes"] != baseline_topology["nodeTypes"]:
+                incompatibilities.append(
+                    {
+                        "masterId": target_data["target"]["masterId"],
+                        "reason": "path_topology_mismatch",
+                    }
+                )
+            elif topology["cubicSegmentEndNodeIndices"] != baseline_topology["cubicSegmentEndNodeIndices"]:
+                incompatibilities.append(
+                    {
+                        "masterId": target_data["target"]["masterId"],
+                        "reason": "segment_mapping_mismatch",
+                    }
+                )
+        if incompatibilities:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "geometryDataVersion": outline_geometry_engine.CURVE_QUALITY_DATA_VERSION,
+                    "analysisMode": mode,
+                    "reason": "incompatible_master_paths",
+                    "target": {
+                        "fontIndex": int(font_index),
+                        "glyphName": glyph_name,
+                        "pathIndex": path_index,
+                    },
+                    "incompatibilities": incompatibilities,
+                }
+            )
+
+        available_indices = list(baseline_topology["cubicSegmentEndNodeIndices"])
+        selected_indices = available_indices if indices is None else indices
+        if len(selected_indices) > MAX_REVIEW_SEGMENTS:
+            return _safe_json({"ok": False, "error": "selected cubic segment count exceeds the review limit"})
+        unavailable = [index for index in selected_indices if index not in available_indices]
+        if unavailable:
+            return _safe_json(
+                {
+                    "ok": False,
+                    "error": "segment_end_node_indices contains indices not mapped in every master",
+                    "reason": "segment_mapping_mismatch",
+                    "unavailableSegmentEndNodeIndices": unavailable,
+                }
+            )
+
+        master_reviews = []
+        for target_data in targets:
+            quality = outline_geometry_engine.analyze_curve_quality_path(
+                target_data["nodes"],
+                closed=target_data["closed"],
+                upm=target_data["upm"],
+                segment_end_node_indices=selected_indices,
+                samples_per_curve=51,
+                discontinuity_threshold=0.25,
+                spike_ratio_threshold=4.0,
+                include_samples=False,
+                analysis_mode=mode,
+            )
+            tunni = outline_geometry_engine.analyze_tunni_path(
+                target_data["nodes"],
+                closed=target_data["closed"],
+                upm=target_data["upm"],
+                segment_end_node_indices=selected_indices,
+                imbalance_threshold=0.0,
+                min_handle_length=1.0,
+                grid_step=None,
+            )
+            master_reviews.append(
+                {
+                    "masterId": target_data["target"]["masterId"],
+                    "target": target_data["target"],
+                    "quality": quality,
+                    "tunni": tunni,
+                }
+            )
+
+        per_master = []
+        for item in master_reviews:
+            record = {
+                "masterId": item["masterId"],
+                "pathIndex": item["target"]["pathIndex"],
+                "shapeIndex": item["target"]["shapeIndex"],
+                "omittedComponentCount": item["target"]["omittedComponentCount"],
+                "summary": item["quality"]["summary"],
+            }
+            if include_per_master:
+                record["segments"] = item["quality"]["segments"]
+                record["joins"] = item["quality"]["joins"]
+                record["tunni"] = item["tunni"]
+            per_master.append(record)
+        comparison = _cross_master_comparison(master_reviews, selected_indices)
+        payload = {
+            "ok": True,
+            "geometryDataVersion": outline_geometry_engine.CURVE_QUALITY_DATA_VERSION,
+            "analysisMode": mode,
+            "target": {
+                "fontIndex": int(font_index),
+                "glyphName": str(glyph_name),
+                "pathIndex": int(path_index),
+                "masterIds": masters,
+            },
+            "compatible": True,
+            "segmentEndNodeIndices": selected_indices,
+            "masters": per_master,
+            "comparison": comparison,
+            "summary": {
+                "masterCount": len(master_reviews),
+                "segmentCount": len(selected_indices),
+                "continuityJoinCount": len(comparison["continuity"]),
+                "omittedComponentCount": sum(
+                    item["target"]["omittedComponentCount"] for item in master_reviews
+                ),
+            },
+            "notes": [
+                "Read-only cross-master measurements; no artistic score or automatic verdict.",
+                "Only raw editable paths are analyzed; components are not expanded.",
+            ],
+        }
+        payload.update(_result_links(targets[0]))
+        return _safe_json(payload)
+    except Exception as exc:
+        return _safe_json({"ok": False, "error": str(exc), "errorType": type(exc).__name__})
+
+
+__all__ = [
+    "review_tunni_geometry",
+    "apply_tunni_balance",
+    "review_curve_quality",
+    "review_curve_quality_across_masters",
+]

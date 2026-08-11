@@ -1517,7 +1517,12 @@ class McpToolHelpersTests(unittest.TestCase):
         self.assertFalse(helpers._is_style_set_tag("liga"))
 
     def test_set_kerning_pairs_on_main_thread_updates_kerning_dict(self) -> None:
-        font = type("Font", (), {"kerning": {}})()
+        glyphs = {
+            "A": type("Glyph", (), {"id": "id-A"})(),
+            "V": type("Glyph", (), {"id": "id-V"})(),
+            "Y": type("Glyph", (), {"id": "id-Y"})(),
+        }
+        font = type("Font", (), {"kerning": {}, "glyphs": glyphs})()
 
         helpers._set_kerning_pairs_on_main_thread(
             font,
@@ -1530,15 +1535,35 @@ class McpToolHelpersTests(unittest.TestCase):
         )
 
         self.assertIn("m1", font.kerning)
-        self.assertEqual(font.kerning["m1"]["A"]["Y"], -60)
-        self.assertNotIn("V", font.kerning["m1"]["A"])
+        self.assertEqual(font.kerning["m1"]["id-A"]["id-Y"], -60)
+        self.assertNotIn("id-V", font.kerning["m1"]["id-A"])
+        self.assertNotIn("A", font.kerning["m1"])
 
     def test_set_kerning_pairs_on_main_thread_removes_empty_left_key(self) -> None:
-        font = type("Font", (), {"kerning": {"m1": {"A": {"V": -80}}}})()
+        glyphs = {
+            "A": type("Glyph", (), {"id": "id-A"})(),
+            "V": type("Glyph", (), {"id": "id-V"})(),
+        }
+        font = type(
+            "Font",
+            (),
+            {"kerning": {"m1": {"id-A": {"id-V": -80}}}, "glyphs": glyphs},
+        )()
 
         helpers._set_kerning_pairs_on_main_thread(font, "m1", [("A", "V", 0)])
 
-        self.assertNotIn("A", font.kerning["m1"])
+        self.assertNotIn("id-A", font.kerning["m1"])
+
+    def test_set_kerning_pairs_preserves_native_class_keys(self) -> None:
+        font = type("Font", (), {"kerning": {}, "glyphs": {}})()
+
+        helpers._set_kerning_pairs_on_main_thread(
+            font,
+            "m1",
+            [("@MMK_L_A", "@MMK_R_V", -80)],
+        )
+
+        self.assertEqual(font.kerning["m1"]["@MMK_L_A"]["@MMK_R_V"], -80)
 
 
 if __name__ == "__main__":

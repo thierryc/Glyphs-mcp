@@ -9,6 +9,7 @@ from GlyphsApp import Glyphs, GSGlyph  # type: ignore[import-not-found]
 
 import italic_correction_engine
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _append_font_glyph,
     _clear_layer_paths,
@@ -1275,7 +1276,6 @@ def _review_italic_first_pass_impl(
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
 
-
 def _append_backup_layer(glyph, layer, target_master_id, backup_layer_name, angle):
     backup = layer.copy()
     backup.name = "{} angle={}".format(backup_layer_name, float(angle))
@@ -1466,123 +1466,3 @@ def _apply_italic_first_pass_impl(
         }
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
-
-
-@mcp.tool()
-async def review_italic_first_pass(
-    font_index: int = 0,
-    source_font_index: int = None,
-    target_font_index: int = None,
-    source_master_id: str = None,
-    target_master_id: str = None,
-    scope: str = "selected_glyphs",
-    glyph_names: list = None,
-    angle: float = 12.0,
-    slant_mode: str = "cursivy",
-    stem_policy: str = "require_existing",
-    compatibility_mode: str = "preserve_if_possible",
-    copy_options: dict = None,
-    protected_glyphs: list = None,
-    skip_glyphs: list = None,
-    origin: int = 3,
-    curve_strength: float = 0.75,
-    stem_compensation: float = 1.0,
-) -> str:
-    """Preview an experimental Roman-to-italic design-assistance first pass.
-
-    The result is a construction draft for a Roman's emphasis companion, not a
-    finished italic. Balanced uses a pure-Python deterministic Raw/partial-stem
-    pipeline and blocks component constructions whose linear transforms do not
-    commute with the requested shear. Omitted slant_mode calls remain
-    Cursivy-compatible. This review transforms detached layer copies and never
-    mutates the font. If a glyph is blocked, rerun explicitly with skip_glyphs
-    rather than silently applying a partial batch.
-
-    The angle uses Glyphs' source/Transformations convention: positive values
-    lean Latin outlines to the right. Default +12 maps to about -12 in exported
-    OpenType/UFO post.italicAngle or slnt metadata.
-    """
-    return _safe_json(
-        _review_italic_first_pass_impl(
-            font_index=font_index,
-            source_font_index=source_font_index,
-            target_font_index=target_font_index,
-            source_master_id=source_master_id,
-            target_master_id=target_master_id,
-            scope=scope,
-            glyph_names=glyph_names,
-            angle=angle,
-            slant_mode=slant_mode,
-            stem_policy=stem_policy,
-            compatibility_mode=compatibility_mode,
-            copy_options=copy_options,
-            protected_glyphs=protected_glyphs,
-            skip_glyphs=skip_glyphs,
-            origin=origin,
-            curve_strength=curve_strength,
-            stem_compensation=stem_compensation,
-        )
-    )
-
-
-@mcp.tool()
-async def apply_italic_first_pass(
-    font_index: int = 0,
-    source_font_index: int = None,
-    target_font_index: int = None,
-    source_master_id: str = None,
-    target_master_id: str = None,
-    scope: str = "selected_glyphs",
-    glyph_names: list = None,
-    angle: float = 12.0,
-    slant_mode: str = "cursivy",
-    stem_policy: str = "require_existing",
-    compatibility_mode: str = "preserve_if_possible",
-    copy_options: dict = None,
-    protected_glyphs: list = None,
-    skip_glyphs: list = None,
-    origin: int = 3,
-    curve_strength: float = 0.75,
-    stem_compensation: float = 1.0,
-    dry_run: bool = False,
-    confirm: bool = False,
-    backup: bool = True,
-    backup_layer_name: str = "GMCP Backup: Italic First Pass",
-) -> str:
-    """Apply an experimental italic construction draft after review and dry run.
-
-    The tool assists the designer with a starting point; it does not replace
-    optical drawing, spacing, kerning, alternates, or proofing. Balanced is
-    deterministic and refuses unsafe component constructions. It requires
-    explicit confirmation to mutate, applies only a fully ready reviewed
-    batch, and never saves the font.
-
-    The angle uses Glyphs' source/Transformations convention: positive values
-    lean Latin outlines to the right. Default +12 maps to about -12 in exported
-    OpenType/UFO post.italicAngle or slnt metadata.
-    """
-    return _safe_json(
-        _apply_italic_first_pass_impl(
-            font_index=font_index,
-            source_font_index=source_font_index,
-            target_font_index=target_font_index,
-            source_master_id=source_master_id,
-            target_master_id=target_master_id,
-            scope=scope,
-            glyph_names=glyph_names,
-            angle=angle,
-            slant_mode=slant_mode,
-            stem_policy=stem_policy,
-            compatibility_mode=compatibility_mode,
-            copy_options=copy_options,
-            protected_glyphs=protected_glyphs,
-            skip_glyphs=skip_glyphs,
-            origin=origin,
-            curve_strength=curve_strength,
-            stem_compensation=stem_compensation,
-            dry_run=dry_run,
-            confirm=confirm,
-            backup=backup,
-            backup_layer_name=backup_layer_name,
-        )
-    )

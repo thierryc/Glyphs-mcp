@@ -20,13 +20,13 @@ Treat preparation, signed artifact production, asset upload, and public release 
 2. Synchronize source and Plugin Manager runtime files using the repository packaging path appropriate to the change. Inspect the resulting diff; do not overwrite unrelated bundle work.
 3. Add every canonical skill to `scripts/sync_codex_plugin_skills.sh` and `MANAGED_SKILL_NAMES`, then run the synchronization script. Treat `skills/` as canonical and `plugins/glyphs-mcp/skills/` as generated.
 4. Update `CHANGELOG.md`, public setup/skill documentation, command/reference pages, and `content/contributor/release-build-notes.mdx`. Keep claims tied to tests actually run.
-5. Update schemas, profiles, prompts, fixtures, and release-surface tests whenever a public tool or result contract changed.
+5. Update the production tool catalog, schemas, prompts, routing fixtures, and release-surface tests whenever a public tool or result contract changed.
 
 ## Validate locally
 
 1. Run focused tests while iterating, then the complete local release gate with an accepted Python interpreter.
 2. Build the documentation website and validate every canonical and packaged skill with `quick_validate.py`.
-3. Run release metadata, documentation/profile, installer, plug-in mirror, and packaged-skill synchronization checks. Run `git diff --check` last.
+3. Run release metadata, catalog/documentation, installer, plug-in mirror, and packaged-skill synchronization checks. Run `git diff --check` last.
 4. Perform the applicable manual matrix from the release QA protocol on disposable copies. Use Glyphs 3.5 and Glyphs 4 when compatibility is in scope.
 5. Never save an open font automatically. Snapshot document/file state for live read-only checks and report whether it remained unchanged.
 6. For staging-only updater releases, require **Prepare Update** wording, an explicit not-installed state, a trusted release link, and proof that the installed plug-in remains unchanged.

@@ -1,859 +1,207 @@
 ---
 title: Release QA protocol
-description: Manual release test protocol for validating Glyphs MCP against Glyphs 3.5 and Glyphs 4 on a large real font.
+description: Manual release validation for the catalog-driven Glyphs MCP surface in Glyphs 3.5 and 4.
 ---
 
-This protocol is the pre-release manual QA pass for Glyphs MCP. Run it before publishing a new public version, especially after changes to the plug-in bundle, command registration, Glyphs API compatibility, installer, tool profiles, tool schemas, or mutation helpers.
+# Release QA protocol
 
-The goal is not to prove every implementation branch. Unit tests do that. The goal is to verify that the most common real workflows still work in realistic conditions: a large production `.glyphs` file, real Glyphs UI state, a real MCP client, the Streamable HTTP endpoint, and both supported app lines.
+Run this protocol on every public candidate after the complete automated gate.
+It verifies the real Glyphs host, MCP transport, catalog discovery, guarded
+editing, native Reporters, packaging, and cross-version behavior. Unit tests
+remain responsible for exhaustive implementation branches.
 
 ## Release gate
 
-A release is ready only when all required checks pass in both:
+Required hosts:
 
-| Runtime | Required result |
+| Host | Requirement |
 | --- | --- |
-| Glyphs 3.5.x | All required checks pass or have documented, accepted Glyphs-3-only limitations. |
-| Glyphs 4.x | All required checks pass or have documented, accepted Glyphs-4-only limitations. |
+| Glyphs 3.5.x | Required rows pass on a serialized disposable copy, or an accepted host-only limitation is recorded. |
+| Glyphs 4.x | Required rows pass on a serialized disposable copy, or an accepted host-only limitation is recorded. |
 
-Release blockers:
+A candidate is blocked when the server cannot start/restart/stop, the MCP
+client cannot connect, catalog discovery differs materially between hosts, a
+review dirties the font, a dry run mutates, confirmation changes an unintended
+target, rollback fails, output is unbounded, or Glyphs crashes/hangs.
 
-- A selected Glyphs target's Python environment is not checked before any
-  dependency, plug-in, or client change.
-- An incompatible existing native extension is reported as an installation
-  success, or the diagnostic omits the exact Python or offending file.
-- Server cannot start, restart, or stop from **Edit -> Glyphs MCP Server**.
-- Client cannot connect to `http://127.0.0.1:9680/mcp/`.
-- `get_server_info`, `list_open_fonts`, or `get_selected_font_and_master` fails in normal use.
-- The advertised version, code hash, runtime ID, tool profile, or resource path is clearly wrong.
-- A read-only tool mutates the font.
-- A mutation tool changes the font without `confirm=true` when it is expected to be confirm-gated.
-- A dry run mutates the font.
-- A common workflow crashes Glyphs, hangs the server, corrupts the font, or returns unbounded output.
-- Glyphs 3.5 and Glyphs 4 expose materially different tool schemas without a documented compatibility reason.
+## Automated prerequisites
 
-## Automated per-tool release gate
-
-Every public MCP tool must have an entry in `src/glyphs-mcp/tests/test_release_gate_tool_coverage.py`.
-
-That gate records:
-
-- The test owner or accepted live-smoke requirement.
-- Whether the tool is read-only, edits the font, runs code, writes files, opens UI, saves files, or exposes server docs.
-- The undo-risk level.
-- A short live smoke prompt that can be reused in Glyphs 3.5 and Glyphs 4.
-
-The automated gate must pass before any release candidate:
+Before live testing, require all of the following:
 
 ```bash
-python3 -m unittest src/glyphs-mcp/tests/test_release_gate_tool_coverage.py
 python3 -m unittest discover -s src/glyphs-mcp/tests
+PYTHON_BIN=/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 ./scripts/run_local_release_tests.sh
+cd website && npm run build
 ```
 
-Release blockers from this gate:
+The automated gate must prove:
 
-- A registered MCP tool is missing from the release-gate manifest.
-- A stale manifest entry names a tool that is no longer registered.
-- A tool entry has no owner test, no live smoke prompt, or no undo-risk classification.
-- An editing or code-execution tool is not classified for undo risk.
-- Any executable Python resource calls `glyph.beginUndo()` or `glyph.endUndo()`.
+- `TOOL_CATALOG` contains 76 active entries: 65 `model+app` and 11
+  `app-only`, plus exactly eight unregistered tombstones.
+- Every registered tool has one catalog entry, all four MCP safety hints,
+  concise metadata, a release classification, and a valid output schema.
+- No runtime module calls `mcp.tool` directly and no removed tool registers.
+- Model-visible `tools/list` metadata stays below 160 KiB.
+- Catalog-generated docs, routing fixtures, canonical skills, packaged skills,
+  and runtime mirrors agree.
+- Candidate, curve, spacing, and kerning results conform to the common envelope
+  while preserving legacy JSON text.
+- No executable resource uses glyph undo groups.
 
-The last rule is intentional. Live Glyphs 4 QA showed that MCP-driven batch edits can trigger Glyphs' "There was a problem with undo" recovery dialog when glyph undo groups are used around larger script edits. Mutation helpers should use documented layer/font update APIs and small scoped writes instead.
+## Fixtures and containment
 
-## Test assets
+Use serialized copies under `/private/tmp`; never test on the sole production
+file. Include a large multi-master font with components, counters, open and
+closed paths, kerning groups, features, annotations, and incompatible topology
+in at least one glyph. Record source/copy SHA-256 and mtime before opening.
 
-Use at least one large real font file. A good release candidate font has:
+For each host, record app build, Python runtime, plug-in version/build, runtime
+ID, font path/hash, client, and start/end dirty state. Never call `save_font`
+unless a row explicitly uses a disposable save-as target. Close test fonts with
+changes discarded and verify the source fixture stayed byte-identical.
 
-- 1,000+ glyphs.
-- 2+ masters, ideally with roman and italic or weight/width variation.
-- Multiple instances.
-- Real kerning groups and several thousand kerning pairs.
-- OpenType features, including at least one `ssXX` feature.
-- Components, anchors, annotations if available, guides, bracket layers if available, and non-exporting glyphs.
-- A mix of simple and complex outlines.
+## Startup and catalog discovery
 
-Never run destructive tests on the only copy of a production file.
+| ID | Action | Expected |
+| --- | --- | --- |
+| S1 | Start, stop, then start the server three times. | Every fresh client initializes; no stale event-loop state or duplicate thread remains. |
+| S2 | Call `get_server_info`, `list_open_fonts`, and `get_selected_font_and_master`. | Correct host/runtime/selection data; no mutation. |
+| S3 | Inspect raw `tools/list`. | Exactly 76 active tools register with catalog title, description, tags, annotations, metadata, and schemas. |
+| S4 | Inspect a client honoring Apps visibility. | 65 tools are model-visible; 11 UI wrappers remain app-only. |
+| S5 | Search for all eight tombstone names. | None registers; command reference gives one replacement for each. |
+| S6 | Reconnect after a plug-in restart. | Client receives the same catalog and no cached removed command. |
 
-Prepare these files:
+## Structured-result contract
 
-| File | Purpose |
-| --- | --- |
-| `LargeFont-release-baseline.glyphs` | Untouched reference copy. |
-| `LargeFont-release-glyphs35.glyphs` | Glyphs 3.5 working copy. |
-| `LargeFont-release-glyphs4.glyphs` | Glyphs 4 working copy. |
+For representative candidate, curve, spacing, and kerning calls, inspect both
+MCP content channels.
 
-For each working copy, record:
+| ID | Case | Expected |
+| --- | --- | --- |
+| SR1 | Successful review. | Legacy JSON text is unchanged; `structuredContent` has version 1, matching tool/mode/status/target/summary/data. |
+| SR2 | Validation failure. | `ok=false`, status `error`, normalized recoverable error, bounded details. |
+| SR3 | Dry run then confirmation. | Modes are `dry_run` and `confirmed`; no mutation occurs in the first call. |
+| SR4 | Warning/partial batch. | Warning objects have code/message/optional target; partial status is preserved. |
+| SR5 | Stale candidate and rollback fixture. | Stable error/rollback fields are present and legacy text stays parseable. |
 
-- File path.
-- File size.
-- Glyph count.
-- Master count and master names.
-- Instance count.
-- Kerning pair count for the main master.
-- Glyphs app version and build number.
-- Glyphs MCP version being tested.
-- Git commit or release tag.
+## Adaptive curve diagnostics
 
-## Environment matrix
+Use analytic fixtures plus one real multi-master glyph. Raw editable paths are
+the scope; record omitted component counts.
 
-Run the same test script against each row:
+| ID | Action | Expected |
+| --- | --- | --- |
+| CG1 | Call `review_curve_quality` with default arguments. | `analysis_mode=adaptive`, geometry version 2, extrema, inflections, stationary/cusp events, turning angle, adaptive arc length, bounded self-intersections, and continuity metrics. |
+| CG2 | Repeat with `analysis_mode="sampled_v1"`. | Reproducible 1.7 sampled measurements remain available in the version-2 envelope. |
+| CG3 | Review a smooth curve/curve join and a curve/line join. | G0/G1/G2 and declared/geometric smooth discrepancies use conservative warnings, never an artistic score. |
+| CG4 | Call `review_curve_quality_across_masters` on compatible masters. | Per-master path/shape indices plus Tunni drift, normalized-curvature variation, event-count and continuity variation. |
+| CG5 | Repeat on incompatible topology. | Stable incompatibility reasons; no misleading comparison or mutation. |
+| CG6 | Enable `curvature`, `curve_events`, and both through `set_curve_review_overlay`. | Native Reporter draws bounded combs/events and state reports selected overlays/caps. |
+| CG7 | Move a node and redraw. | Cache invalidates, events update, and the font changes only because of the explicit manual edit. |
 
-| Case | Glyphs app | Python mode | Tool profile | MCP client | Required |
-| --- | --- | --- | --- | --- | --- |
-| G35-edit | Glyphs 3.5.x | Glyphs Python or configured external runtime | `Edit` | Codex or Claude | Yes |
-| G35-readonly | Glyphs 3.5.x | Same as G35-edit | `Read-only` | Same client | Yes |
-| G4-edit | Glyphs 4.x | Glyphs Python or configured external runtime | `Edit` | Codex or Claude | Yes |
-| G4-readonly | Glyphs 4.x | Same as G4-edit | `Read-only` | Same client | Yes |
-| G35-secondary-client | Glyphs 3.5.x | Same as G35-edit | `Edit` | Other supported client | Recommended |
-| G4-secondary-client | Glyphs 4.x | Same as G4-edit | `Edit` | Other supported client | Recommended |
+Verify translation, rotation, reflection, reversal, proportional UPM scaling,
+path-start rotation, and de Casteljau subdivision fixtures in automated tests.
+Verify roots near endpoints, cusps, loops, huge/tiny coordinates, recursion
+caps, response bounds, and stroke caps adversarially.
 
-Use the same release artifact for both app versions whenever possible. If Glyphs 3.5 and Glyphs 4 require different install paths or artifacts, record the exact artifact used for each.
+## Candidate lifecycle
 
-## Preflight
+Test Tunni, collinear smoothing, italic first pass, and compensated tuning. Use
+multi-master scopes through sessions; retain the two documented single-target
+shortcuts only for their narrow cases.
 
-For each app version:
+| ID | Action | Expected |
+| --- | --- | --- |
+| C1 | Preview each candidate adapter. | Detached proposal, no dirty state, Reporter activates, structured session references returned. |
+| C2 | Switch glyphs and masters. | Matching entry is selected; only the golden-yellow geometric difference is drawn. |
+| C3 | Materialize one session. | Complete copied layers receive new IDs and persistent manifest metadata; backgrounds stay untouched. |
+| C4 | Make one permitted manual edit and review. | Exact bounded diff and one-time token bind source and candidate fingerprints. |
+| C5 | Make a forbidden topology/component/metadata edit. | Stable rejection; no source mutation. |
+| C6 | Dry-run acceptance. | Exact proposed targets and rollback plan, no source change. |
+| C7 | Change source or candidate after review. | Token is rejected as stale. |
+| C8 | Confirm a freshly reviewed session. | Only allowed fields change, read-back verifies, candidates/manifest clean up, no save. |
+| C9 | Simulate write/readback/end-change failure. | Source, candidate layers, manifests, and backups restore completely. |
+| C10 | Discard a materialized session. | Only session-owned candidate layers are removed after dry-run/confirmation. |
 
-1. Quit all Glyphs versions.
-2. Run the release installer once with a compatible environment. Confirm
-   **Check Python environment** names the exact selected interpreter and the
-   matching Glyphs 3 or Glyphs 4 `Scripts/site-packages` path.
-3. Install the release candidate plug-in and dependencies using the same path
-   users will use: signed installer app or terminal **Copy** mode. Test
-   development **Link** mode separately when relevant, and label it as outside
-   the signed-release guarantee. Do not use a raw manual source copy as a
-   release-path test.
-4. Start only the app version under test.
-5. Open the matching large-font working copy.
-6. Start the server from **Edit -> Glyphs MCP Server**.
-7. Confirm the status panel shows the expected version, profile, endpoint, and docs URL.
-8. Connect the MCP client to:
+For grid-safe Tunni, exercise font grid steps `1`, `0.5`, and `2`, including
+negative/half-grid coordinates, integer JSON serialization, impossible grid
+candidates, tangent/imbalance boundaries, and continuous opt-in.
+
+## Spacing and kerning
+
+| ID | Action | Expected |
+| --- | --- | --- |
+| SP1 | Review selection spacing. | Measurements and proposed values are bounded and non-mutating. |
+| SP2 | Dry-run the exact spacing proposal. | Same normalized targets; no width/sidebearing change. |
+| SP3 | Confirm an approved subset. | Only approved metrics change; legacy text and structured envelope agree. |
+| K1 | Read a bounded master kerning subset. | Groups/exceptions resolve consistently without unbounded output. |
+| K2 | Review collisions/near misses. | Conservative findings and bounded evidence. |
+| K3 | Dry-run then confirm one disposable pair. | One intended pair changes; unrelated pairs remain byte-for-byte equivalent. |
+
+## General edits, code, files, and UI
+
+- On disposable glyphs, smoke-test create/copy/property/metric/component/anchor,
+  path replacement, corner, annotation, and delete tools one mutation at a
+  time. Verify explicit targets and unchanged unrelated data.
+- Prefer dedicated tools. Test `execute_code` only for bounded read-only output,
+  context injection, snippet-only mode, invalid code, and process-exit refusal.
+- Test export in a unique temporary directory. Test save only as an explicitly
+  approved save-as to a disposable path.
+- Verify app-only feedback/status wrappers through an MCP Apps-capable client;
+  they must not enter the model-visible list.
+- Verify Reporter controls change UI state only and never save.
+
+## Security, packaging, and performance
+
+- Test unauthenticated localhost mode, bearer/header token mode, allowed-origin
+  restrictions, and loopback-only binding.
+- Install/upgrade both Glyphs targets with the release installer. Confirm
+  canonical and Plugin Manager runtimes, four host manifests, packaged skills,
+  and build number agree. Each host resolves version `1.8.0`, the same nine
+  skills, and the same localhost MCP endpoint (the version script updates this
+  sentence for the candidate).
+- Exercise update discovery and **Prepare Update** only with signed disposable
+  loopback fixtures. Detection never authorizes installation; cancellation,
+  checksum/signature/version failure, receipts, and unchanged installed bundle
+  must be verified.
+- Target server start under 10 seconds; common reads under 3 seconds; bounded
+  large-font reads under 20 seconds; cold Reporter geometry under 20 ms and
+  cached redraw under 5 ms on the recorded test Mac; no more than 2,000 comb
+  teeth per frame.
+- Run 20 mixed calls, cancel one request, reconnect the client, close the active
+  font, and retry valid calls. The server must recover without progressive
+  slowdown or poisoned state.
+
+## Cross-version acceptance
+
+Compare catalog names/schemas, common result envelopes, path/shape indices,
+curve events, candidate transitions, kerning/spacing outcomes, Reporter state,
+error codes, dirty-state behavior, and performance between Glyphs 3.5 and 4.
+Host build numbers and unavailable host-specific fields may differ. Request
+contracts, safety transitions, and mutation targets may not.
+
+## Deterministic agent-routing smoke prompts
+
+Run the repository routing fixtures plus these real-client prompts:
 
 ```text
-http://127.0.0.1:9680/mcp/
+Review adaptive curve quality for the explicit current path, compare compatible
+masters, and enable curvature plus curve-event overlays. Do not mutate or save.
 ```
-
-9. Reconnect the MCP client after every profile change.
-10. Keep the Macro Panel visible during at least one pass and capture any repeated tracebacks.
-
-Pass criteria:
-
-- Server starts without traceback.
-- Port `9680` is reachable locally.
-- Browser access to `/mcp/` returns discovery JSON or an expected MCP transport response.
-- MCP client can list tools.
-- The large font remains open and responsive.
-
-## Installer ABI diagnostic matrix
-
-Run this matrix before the normal live workflow in both Glyphs 3.5 and Glyphs
-4. Use disposable package fixtures; never alter the only copy of a shared
-environment.
-
-| Case | Fixture | Required result |
-| --- | --- | --- |
-| ABI-1 | Empty or partially missing dependencies | Preflight is non-blocking and pip begins. |
-| ABI-2 | Python 3.14 with only `cpython-311` `pydantic_core` and `objc` extensions | Preflight fails with the exact interpreter, ABI, and files. No persistent change occurs. |
-| ABI-3 | Matching CPython extensions | Preflight passes. |
-| ABI-4 | Compatible `.abi3` extension | Preflight passes. |
-| ABI-5 | Compatible universal Mach-O extension | Preflight passes. |
-| ABI-6 | Mixed stale and compatible files where the compatible module imports | Preflight passes; stale alternatives alone do not block. |
-| ABI-7 | Wrong-architecture or broken existing package | Preflight fails deterministically before pip. |
-| ABI-8 | Post-install missing import, nonzero exit, malformed JSON, timeout, unexpected origin, or stderr-only output | Installation never reaches success. |
-
-For ABI-2 and ABI-7, compare filesystem snapshots from before and after the
-attempt. The target `Scripts/site-packages`, installed plug-in, and client
-configuration must be unchanged. Save the full JSON-derived installer log.
-Repeat the boundary in terminal interactive and non-interactive modes and
-confirm status `2`.
-
-## Transport and schema checks
-
-Run once in each required matrix case before workflow testing.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| T1 | Connect a real MCP client to `/mcp/` using Streamable HTTP. | Client initializes without transport warnings. |
-| T2 | Inspect request/response headers if the client exposes them. | Session handling is stable; any returned `Mcp-Session-Id` is preserved by the client. |
-| T3 | Call `tools/list` or use the client's tool inventory view. | Tool names, descriptions, and schemas load without JSON schema errors. |
-| T4 | Compare `tools/list` in `Read-only` and `Edit` profiles. | `Read-only` hides mutation and execution tools; `Edit` exposes the full surface. |
-| T5 | Compare the observed `Edit` profile tool list with the current [command set](../reference/command-set.mdx). | Missing, renamed, or extra tools are intentional and documented. |
-| T6 | Call one tool with malformed JSON arguments. | Error is structured and bounded; server remains usable. |
-| T7 | Call one tool with a valid but semantically invalid argument, such as a bad `font_index`. | Error clearly identifies the invalid input. |
-
-## Smoke tests
-
-Run first in every matrix case.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| S1 | Call `get_server_info`. | Returns version, runtime ID, code hash, resource path, Glyphs reachability, open-font count, and no error. |
-| S2 | Call `list_open_fonts`. | Shows the large font with a stable `font_index`, family name, file path if saved, and expected glyph/master counts. |
-| S3 | Call `get_font_masters` for the large font. | Returns all masters with stable IDs, names, metrics, and no missing active master. |
-| S4 | Call `get_font_instances`. | Returns instances without crashing on interpolation data. |
-| S5 | Select 3-8 glyphs in Glyphs, then call `get_selected_font_and_master`. | Response matches the active font, active master, and current UI selection. |
-| S6 | Switch the active master in Glyphs and repeat S5. | Active master changes in the response. |
-| S7 | Stop and restart the server from Glyphs UI, then reconnect. | New calls succeed; stale client sessions fail gracefully or reconnect cleanly. |
-| S8 | Switch between `Read-only` and `Edit` profiles, reconnecting each time. | `tools/list` changes as expected; hidden mutation tools are unavailable in `Read-only`. |
-
-## Read-only inspection
-
-Run in both `Read-only` and `Edit` profiles. The font must not be marked dirty by these checks.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| R1 | Call `get_font_glyphs` with the large font. | Completes in acceptable time and returns glyph names, export flags, categories, and show links or unavailable reasons. |
-| R2 | Call `get_glyph_details` for `A`, `n`, `O`, one accented composite, and one non-exporting glyph. | Returns layers, components, anchors, paths, and metadata without schema errors. |
-| R3 | Call `get_glyph_components` for composite glyphs. | Component names, transforms, and target layers are understandable. |
-| R4 | Call `get_glyph_paths` for simple and complex glyphs. | Returns valid path JSON and bounded output. |
-| R5 | Select nodes in Glyphs and call `get_selected_nodes`. | Reports selected nodes with layer, path, node index, and per-master mapping when available. |
-| R6 | Call `get_selected_glyphs` after changing selection in Glyphs. | Response tracks the UI selection and includes show links where possible. |
-| R7 | Call `list_style_sets`. | Returns stylistic sets, source/replacement glyph groups, and group show links for alternates. |
-| R8 | Call `get_font_kerning` for the main master. | Returns kerning data without timeout, broken group names, or excessive client-side truncation. |
-| R9 | Call `review_collinear_handles` on one glyph with curves. | Returns findings or a clean result without mutation. |
-| R10 | Call `render_glyph_review_image` for 6-12 glyphs with metrics, sidebearings, bounds, nodes, handles, anchors, and guides overlays. | Client receives a visible image or base64 fallback; Glyphs does not become dirty. |
-| R11 | Click or open a returned `showHttpUrl` or `showMarkdown` link. | Glyphs focuses the expected glyph/layer, or the response explains why the link is unavailable. |
-| R12 | Call `docs_search` for `GSLayer bounds`, then `docs_get` for the best result. | Returns focused bundled docs without registering all pages. |
-| R13 | Call `resources/list` if the client exposes it. | Core resources are available without flooding the client with every docs page by default. |
-
-## Curve geometry workflow
-
-Run review cases in both profiles. Run confirmed mutation only in `Edit` on a
-disposable glyph or working copy. Record the explicit path and segment end-node
-indices so the Glyphs 3.5 and Glyphs 4 results can be compared.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| CG1 | Call `review_tunni_geometry` for one curved glyph/master/path, then repeat with one unsuitable explicit index. | Returns bounded ratios, eligibility, proposals, and stable rejected records with `eligible:false` and a reason code, without changing document state. |
-| CG2 | Call `review_curve_quality` for the same path with `include_samples=false`. | Returns bounded curvature metrics, exact maximum/median spike semantics, JSON-safe zero-median markers, component omissions, and warnings without an artistic pass/fail verdict or mutation. |
-| CG3 | Call `set_curve_review_overlay(enabled=true)`, inspect a correctly wound outer contour and counter plus reversed equivalent paths in **View > Show Glyphs MCP Curvature**, then call `get_curve_review_overlay_state`. | Live teal-positive/pink-negative teeth and connected envelope runs are visible; outer combs point into non-ink outside the shape, counter combs point into the white counter, and reversal preserves tooth lengths while reversing placement and signed color; native sampling is 51 per cubic with a `0.010` scale and `0.12em` normal clamp; last-draw glyph/layer, stroke, hard-clamp/cap, and component-omission data are bounded; the font remains clean. Toggle off and confirm the drawing disappears. |
-| CG4 | Call `apply_tunni_balance` with `dry_run=true` for one explicit eligible segment. | Proposed handle coordinates match review; node and document signatures remain byte-for-byte unchanged. |
-| CG5 | After approval, call the same target with `confirm=true` on the disposable glyph. | The applied record contains actual verified before/after coordinates, exactly its two reported handles move, topology/types/smooth flags remain stable, verification succeeds, and no save occurs. |
-| CG6 | Exercise controlled write, read-back, and `endChanges()` failures against a disposable fixture. | Every original coordinate is restored, rollback succeeds, and begin/end change calls are attempted as a paired batch. |
-
-## Hybrid candidate review workflow
-
-Run HCR1-HCR8 in both Glyphs 3.5 and Glyphs 4 using serialized disposable
-copies under `/private/tmp`. Run preview/review in both profiles; materialize,
-accept, and discard only in Edit. Record source and candidate fingerprints.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| HCR1 | Preview grid-safe Tunni targets in every master and switch active masters. Capture at least one frame whose measured outline displacement is visibly large. | **View > Show Glyphs MCP Candidate** activates automatically; localized warm-yellow difference ribbons contain real non-background pixels over the untouched Glyphs outline, without dirtying the font. The Reporter reports `differenceCompositor="appkit_topology_paired_contour_ribbons"`; identical geometry draws no glyph-area overlay. A successful draw counter without visible difference pixels is a failure. |
-| HCR2 | Change one source handle after preview. | The recomputed difference turns coral red with `STALE`; review blocks with `stale_source` and issues no token. |
-| HCR3 | Materialize the session after a successful dry run. | Complete copies receive new layer IDs, source-master associations, plain names, direct links, and namespaced manifests; backgrounds remain untouched and partial failure rolls back all copies. |
-| HCR4 | Make one operation-permitted manual edit, rename the candidate, and re-review with diffs. | Cosmetic rename is ignored; exact bounded deltas are reported and a five-minute fingerprint-bound token is issued. |
-| HCR5 | Try topology, protected metadata, unrelated node, off-grid, or operation-external edits. | Review blocks with stable reasons and no token. |
-| HCR6 | Dry-run then confirm acceptance with the exact token. | Only approved fields move, every read-back verifies, candidates/manifests are removed after success, required italic/tuning backups remain, and no save occurs. |
-| HCR7 | Change source or candidate after review, reuse a consumed token, and exercise write/read-back/cleanup/end-change failures. | Tokens fail closed; complete source/candidate/manifest/backup state is restored on any transactional failure. |
-| HCR8 | Materialize, restart the plug-in, re-review, then discard a second session. | Materialized state recovers from metadata; discard deletes only owned candidates; ephemeral previews disappear on restart and can be regenerated. |
-
-Pass criteria:
-
-- Read-only profile exposes both review tools but not `apply_tunni_balance`.
-- Read-only and Edit expose both native Reporter control tools.
-- Glyphs 3.5 path order and Glyphs 4 path order within mixed shapes identify
-  equivalent paths and segment end-node indices.
-- Invalid, parallel, short-handle, distant-intersection, out-of-ratio, and
-  excessive-movement cases return stable reasons rather than mutating.
-- Boolean, fractional, and numeric-string segment indices are rejected. NaN
-  and infinite numeric thresholds are rejected before target mutation.
-- A change made after dispatch but before main-thread execution is observed by
-  the confirmed recomputation; a stale proposal is never written.
-- Confirmed apply triggers no undo recovery dialog and never saves the font.
-
-### Version 1.7.0 build-22 Glyphs 4 candidate-session record
-
-The August 9, 2026 initial pass used Glyphs 4.0, Python 3.14.6, and runtime
-`1.7.0+531bbc42f912` on a serialized `/private/tmp` copy of the five-master Gee
-gee package. The user's original package remained a separate untargeted open
-font.
-
-- HCR1/HCR3/HCR4/HCR6 passed for glyph `c`: all-master detached preview,
-  five-layer materialization, cosmetic rename, one allowed on-grid Regular
-  handle edit, bounded re-review, dry-run, and confirmed promotion.
-- The first acceptance dry-run failed closed because integer grid coordinates
-  and equivalent Glyphs float read-back values produced different raw
-  fingerprints. After the acceptance-only fix and full Glyphs restart, both
-  the materialized all-master flow and a separate overlay-only flow passed.
-  Review-token fingerprints remain type-sensitive; only recomputation and
-  read-back use complete geometric snapshot equality.
-- Confirmed all-master promotion returned five applied entries, removed all
-  five candidate layers and the manifest, created no Tunni backup, and reported
-  `fontSaved:false`. Every complete source snapshot matched the original plus
-  only approved handle coordinates. Consumed-token reuse failed closed.
-- HCR8's persistence boundary was first exercised by clearing the process-local
-  store after materialization. The final corrected-module pass below replaces
-  this supporting-only result.
-- The disposable document was closed with changes discarded. Its 412-file tree
-  hash remained
-  `a4fe531545c7ffb75fd686e94d23dbc687d1e7cd93ebc740904869ee1cbc76b2`,
-  and the temporary directory was deleted. No font was saved.
-- On August 10, the corrected candidate module was reloaded from the canonical
-  checkout. HCR2 rejected a one-unit source edit as `stale_source`; HCR5
-  rejected topology and unrelated-node edits while accepting one permitted
-  on-grid manual delta. Changed-after-review and consumed-token reuse both
-  failed closed.
-- One-shot live injection covered write, read-back, `endChanges`, and manifest
-  cleanup failures. Each restored complete source/candidate/manifest state and
-  re-reviewed as ready. Cleanup reproduced Glyphs 4 assigning a new ID to a
-  reattached candidate; the fixed rollback remapped layer metadata, ephemeral
-  state, and the persisted manifest to that ID before reporting success.
-- Reloading the candidate state/module boundary removed an ephemeral-only
-  session while the materialized session recovered from font/layer metadata.
-  Dry-run and confirmed discard deleted only the owned candidate. The
-  disposable copy then closed without save and retained its exact 412-file hash
-  `64bb9cdd82049885cb04cf09646d3a94d05e464c867357d0c4a7d93cb1396c11`.
-  This completes Glyphs 4 HCR1-HCR8 for build 22.
-
-#### Final AppKit difference-render and approved-promotion addendum
-
-After a full plug-in restart on August 9, Glyphs 4.0 / Python 3.14.6 loaded
-runtime `1.7.0+dc567a3732de` and exercised Gee gee glyph `G`, Regular.
-
-- The ephemeral Tunni proposal reported one changed path, 12 changed nodes,
-  `8.27806` units maximum sampled outline displacement,
-  `differenceCompositor="appkit_topology_paired_contour_ribbons"`, and no
-  drawing error.
-- A controlled overlay-off/on comparison at the same 650-point viewport found
-  2,450 changed canvas pixels, including 511 yellow-shifted pixels, bounded to
-  the glyph region. This satisfies the final-runtime Glyphs 4 HCR1 requirement
-  that the Reporter emit real localized non-background pixels rather than only
-  reporting a successful draw.
-- The user visually reviewed and explicitly approved the candidate. A fresh
-  review token and acceptance dry-run passed; confirmed acceptance changed
-  exactly the 12 reported off-curve handles, verified their read-back, removed
-  the ephemeral session, and returned `fontSaved:false`.
-- All six targeted cubics then measured below the requested imbalance
-  threshold, with worst relative imbalance `0.036210`. Five join-discontinuity
-  measurements remained warnings only; no segment spike or degenerate tangent
-  warning was introduced.
-- This acceptance targeted the user's open source document, not a disposable
-  copy. The approved outline change remains in memory for the user to save or
-  discard; Glyphs MCP did not save it. Therefore this row validates rendering,
-  review, token binding, exact promotion, and cleanup, but does not replace the
-  disposable-file persistence rows above.
-
-### Version 1.7.0 Glyphs 3.5 acceptance record
-
-#### Build-22 hybrid candidate-session record
-
-The August 9, 2026 build-22 pass used Glyphs 3.5 build 3530, Python 3.12.3,
-and runtime `1.7.0+531bbc42f912` with Inter glyph `a`.
-
-- A detached session previewed explicit path/node targets for Thin, Display
-  Thin, Regular, Black, and Display Black. The Reporter activated
-  automatically, selected the matching entry while active masters changed,
-  reported two changed nodes, and remained non-stale. The historical runtime
-  also drew 204 embedded candidate-curvature strokes per inspected master;
-  that appearance evidence is superseded by the difference-only Reporter and
-  must not be used for final visual acceptance. Display was already below the
-  imbalance threshold and was correctly excluded rather than forced.
-- Previewing the user's original open Inter document did not change its exact
-  source fingerprint, target coordinates, candidate manifest, or 3022-file
-  on-disk tree hash. The Reporter session was cleared and disabled afterward.
-  The document was already edited before QA and therefore remained open; the
-  test did not save it.
-- On a serialized `/private/tmp` copy, materialization created one Thin-master
-  candidate layer. Re-review returned `generated_unchanged` and a bound token;
-  dry-run and confirmed acceptance both passed. Confirmed promotion changed
-  only node `0` and node `1` of path `1` to `(282, 22)` and `(156, 141)`, with
-  the complete layer matching the original snapshot plus exactly those two
-  coordinates. It removed the owned candidate and manifest, created no backup,
-  and reported `fontSaved:false`.
-- The disposable document was immediately closed with changes discarded. Its
-  exact 3022-file tree hash remained
-  `8da828278bf638edb0e47dfd8e6bb0ca399e30aa51f3649dffd8b3e6ba60ef58`,
-  and its exact temporary directory was deleted. No user or repository font
-  was saved.
-- This is a core HCR1/HCR3/HCR6 pass, including automatic all-master entry
-  selection and the integer-grid/float-read-back regression. HCR2, HCR4/HCR5,
-  and HCR7/HCR8 are completed by the final corrected-module addendum below;
-  automated coverage is not substituted for those claimed live results.
-
-#### Final Reporter appearance addendum
-
-After a full restart on August 9, Glyphs 3.5 / Python 3.12.3 loaded runtime
-`1.7.0+dc567a3732de` and exercised Inter glyph `G`, Regular, without confirming
-a mutation.
-
-- Grid-safe review found four eligible explicit segments (`13`, `16`, `19`,
-  and `26`). Detached preview produced one topology-compatible difference
-  group, eight changed off-curve nodes, `30.016662` units maximum node
-  movement, `14.126624` units maximum sampled outline displacement, and no
-  Reporter error.
-- At the same 650-point viewport, a candidate overlay-off/on capture found
-  19,171 changed pixels in the glyph crop, including 2,277 material pixels and
-  1,350 clearly yellow-shifted pixels. This satisfies final-runtime HCR1 visual
-  output for Glyphs 3.5.
-- With the candidate overlay hidden, CG3 drew 408 curvature teeth across eight
-  cubics at 51 samples per curve. No tooth was clamped, capped, or degenerate;
-  the teal outer comb pointed outside the shape and the pink inner comb pointed
-  into the white counter. The Reporter returned no warning or drawing error.
-- Candidate re-review returned `sourceStatus="current"` and
-  `candidateStatus="generated_unchanged"`. Token-bound acceptance dry-run
-  planned the exact entry and returned `fontChanged:false` and
-  `fontSaved:false`; no confirmed apply was attempted.
-- The Inter source document was already marked edited before this pass. The
-  checks neither added to that document state nor saved it. Curvature was
-  disabled after inspection and the candidate overlay/session was restored for
-  the user's visual review.
-
-#### Final corrected-module adversarial addendum
-
-On August 10, Glyphs 3.5 build 3530 / Python 3.12.3 loaded runtime
-`1.7.0+ef4b95f03e4d` and exercised the remaining HCR cases on a serialized
-37-file SDK v3 fixture, glyph `A`, master `m01`.
-
-- HCR2 rejected a one-unit source-handle edit as `stale_source` and issued no
-  token. HCR5 rejected a closed/open topology edit and an unrelated on-curve
-  edit. HCR4 allowed one on-grid targeted handle edit, reported exactly one
-  bounded manual delta, and treated a plain candidate-layer rename as cosmetic.
-- Changing the candidate after review returned
-  `review_token_fingerprint_mismatch`; reusing that consumed token returned
-  `review_token_invalid_or_expired`.
-- HCR7 one-shot injections covered write, read-back, `endChanges`, and manifest
-  cleanup failures. Every transaction reported successful rollback and the
-  candidate immediately re-reviewed as ready. Cleanup rollback reproduced a
-  Glyphs 3.5 layer-ID reassignment from
-  `0A16CF95-28A0-4F5C-90A6-3C54A2FEC703` to
-  `C1A668C5-CD99-4E8E-AC0F-4B830C82469C`; the repaired layer metadata,
-  process-local entry, and persisted manifest all followed the new ID.
-- HCR8 reloaded the candidate state/module boundary. The ephemeral-only
-  session disappeared as specified; the materialized session recovered from
-  namespaced font/layer metadata and re-reviewed as ready. Guarded discard
-  removed only its owned candidate.
-- The document closed without save. The disposable tree remained 37 files with
-  exact SHA-256
-  `b98c3e2aaa7f916a4c7fc7cc467a75a9ba1ad154f631da6ea85cc966a2284fd9`;
-  the target font remained
-  `86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`.
-
-Together with the earlier HCR1/HCR3/HCR6 live pass, this completes HCR1-HCR8
-for Glyphs 3.5 build 3530 and installer build 22.
-
-#### Historical build-21 curve-geometry record
-
-> Historical evidence only. Installer build 22 adds grid-safe Tunni and the
-> hybrid Candidate Reporter/session workflow, so every prior 1.7 live result
-> below is not release acceptance evidence. The final build-22 records above
-> provide the required live CG/HCR acceptance in both supported hosts.
-
-The August 8, 2026 pass used Glyphs 3.5 build 3530, Python 3.12.3, and runtime
-`1.7.0+dc6234a3dc21`. The untitled disposable font contained two open cubic
-paths and no components: `font_index=0`, glyph `GMCP_curve_qa`, master `m01`,
-path indices `0` and `1`, and shape indices `0` and `1`.
-
-- CG1 returned endpoint ratios `0.2` and `0.4`, relative imbalance `0.5`, and
-  proposed handles `(30, 0)` and `(100, 70)`. Unsuitable segment index `2`
-  returned `eligible:false` with reason `open_path_boundary`.
-- CG2 reported signed curvature ranges from `+0.00387353758` through `+0.1`
-  and from `-0.1` through `-0.00387353758`, with spike ratio
-  `13.8954483341`.
-- CG3 returned a real `626665`-byte PNG with `102` comb strokes, the teal/pink
-  sign legend, no sampling-cap reduction, and recorded abbreviated SHA-256
-  `6757bd...30514`.
-- That acceptance record predates the native Reporter. The current candidate's
-  **View > Show Glyphs MCP Curvature** workflow must complete a new CG3 live
-  pass before release; the historical PNG result does not satisfy it.
-- CG4 left the exact path and document signatures unchanged. CG5 made exactly
-  two verified handle writes, paired the layer change calls, and returned
-  actual before/after records. The stale-state case recomputed
-  `(10, 300)` / `(100, 230)` as `(20, 300)` / `(100, 220)`.
-- CG6 injected write, read-back, and `endChanges()` failures within the live
-  Glyphs interpreter. All original positions were restored, with paired
-  begin/end attempts. Boolean, string, and fractional segment indices, and
-  `min_handle_length=0.5`, were rejected before mutation.
-- Read-only restarted with exactly `29` tools: both review tools and rendering
-  were present, while `apply_tunni_balance` and `execute_code` were unknown.
-  Edit restarted with exactly `71` tools. The active-thread guard took its
-  expected wait path before fresh initialization, and a subsequent restart
-  after full server shutdown succeeded.
-- The disposable font was closed without saving. `IconGrid Test Fixture` was
-  the only user font left open and its `documentEdited` state was false.
-
-This acceptance record is intentionally scoped to path behavior in Glyphs 3.5.
-Component omission and mixed path/component ordering remain covered by the
-automated wrapper/renderer suite and the live Glyphs 4 mixed-shape pass.
-
-### Glyphs 3.5 build 3530 disposable-fixture safety
-
-Two attempts to broaden the live Glyphs 3.5 fixture exposed host behavior that
-was separate from MCP tool execution:
-
-- Constructing a synthetic mixed-component font reached Glyphs private
-  `_lastComponentOperation` / `needsAlignment` code and crashed the host.
-- Opening a visible serialized temporary fixture caused an AppKit autosave hang
-  and created a separate `CurveQA (Autosaved).glyphs` file. The source-copy
-  hash remained exact.
-
-For build 3530 curve-failure injection, prefer an untitled, in-memory,
-path-only disposable fixture. Do not synthesize mixed components in the live
-interpreter or open a serialized visible temporary fixture solely to expand
-CG1-CG6 unless that fixture path has been vetted separately. Use the automated
-component/mixed-shape coverage and the live Glyphs 4 pass for those cases. The
-two temporary files and their directory from this pass were deleted; no
-repository or user font was saved.
-
-## Unicode assignment workflow
-
-Run review cases in both profiles. Run mutation cases in `Edit` on a disposable
-working copy. Include a regular text font and an icon or symbol font.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| UA1 | Select encoded, unencoded, multiple-Unicode, and non-exporting glyphs; call `review_unicode_assignments`. | Reports normalized mappings and findings without changing the font. |
-| UA2 | Request BMP PUA allocation with one occupied and one reserved value. | Proposals are deterministic and skip both values. |
-| UA3 | Review with a previous map containing one removed glyph and one changed mapping. | Removed values stay reserved and the changed mapping is a breaking finding. |
-| UA4 | Use an explicit supplementary PUA range. | Proposals contain valid supplementary scalar values and no noncharacters. |
-| UA5 | Call `apply_unicode_assignments` with `dry_run=true`. | Exact before/after values are returned and the font remains unchanged. |
-| UA6 | Change one reviewed glyph manually, then apply the old batch with `confirm=true`. | The entire batch is rejected as stale before mutation. |
-| UA7 | Apply a fresh small batch with `confirm=true`. | Every changed glyph verifies, unrelated glyphs remain unchanged, and the font is not saved. |
-| UA8 | Exercise a controlled write failure with the adapter test fixture. | All original values are restored and rollback status is reported. |
-
-Do not treat alternate glyphs as private characters merely to make them directly
-addressable. Verify that OpenType alternates and components remain unencoded.
-
-## Spacing workflow
-
-Run in `Edit` profile only. Use 10-30 glyphs, including `H`, `O`, `n`, `o`, sidebearing-sensitive punctuation, and one composite.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| SP1 | Call `review_spacing` on the selected glyphs or explicit glyph names. | Returns suggestions, skipped items, measurement bands, and no mutation. |
-| SP2 | Call `apply_spacing` with `dry_run=true` and normalized guards. | Returns raw proposals, guard/application assessments, and a changed-count preview; the font is not dirty because of the dry run. |
-| SP3 | Call `set_spacing_params` with a small test parameter change on the working copy. | Updates only the intended font/master custom parameters and does not save automatically. |
-| SP4 | Call `set_spacing_guides` to add guides to 2-3 test glyphs. | Guides appear in Glyphs and are scoped to target glyphs/layers. |
-| SP5 | Call `set_spacing_guides` again to clear the guides. | Test guides are removed without deleting unrelated guides. |
-| SP6 | After explicit human approval, call `apply_spacing` with `confirm=true` on 1-3 expendable glyphs. | Only approved glyph/layer metrics change; changes are visible in Glyphs and undoable where Glyphs supports it. |
-
-Pass criteria:
-
-- Dry-run and review calls do not mutate.
-- Confirmed apply is scoped and predictable.
-- No auto-save occurs.
-- Glyphs 3.5 and Glyphs 4 produce equivalent results within expected API differences.
-
-## Kerning workflow
-
-Run in `Edit` profile. Use the main kerning master and a file with real kerning groups.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| K1 | Call `generate_kerning_tab` with a moderate limit. | Glyphs opens a proof tab with relevant strings; server response includes counts and skipped conditions. |
-| K2 | Call `review_kerning_bumper` with `include_existing=true`, `scan_mode="two_pass"`, and bounded limits. | Returns collisions/near-misses or a clean result without mutation. |
-| K3 | Call `apply_kerning_bumper` with `dry_run=true`. | Returns proposed glyph-glyph exceptions; no kerning changes are written. |
-| K4 | After explicit human approval, call `apply_kerning_bumper` with `confirm=true` on a small limited set. | Only approved kerning exceptions change. |
-| K5 | Call `set_kerning_pair` on one disposable pair, then call `get_font_kerning`. | Pair appears with the expected value. |
-| K6 | Remove or restore the disposable pair with `set_kerning_pair`. | Pair is removed/restored and no unrelated kerning changes occur. |
-
-Pass criteria:
-
-- Large kerning data does not hang the client.
-- Group and glyph exceptions resolve consistently.
-- Confirmed mutation does not affect unrelated pairs.
-
-## Outline and glyph editing workflow
-
-Run in `Edit` profile on disposable glyphs or a copied working file. In Glyphs 4, run each mutating row as a separate smoke step; do not chain create, path replacement, and delete into one batch. Pause after each mutation and stop immediately if Glyphs shows an undo recovery dialog.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| E1 | Call `create_glyph` for a test glyph such as `gmcp.test`. | Glyph appears in Glyphs with expected defaults. |
-| E2 | Call `update_glyph_properties` on `gmcp.test`. | Unicode/category/export/color or other targeted property changes correctly. |
-| E3 | Call `update_glyph_metrics` on `gmcp.test`. | Width and sidebearings update only on intended layers. |
-| E4 | Call `copy_glyph` from a simple source glyph to `gmcp.test`. | Outlines/components copy as requested. |
-| E5 | Call `add_component_to_glyph` on `gmcp.test`. | Component appears with expected transform. |
-| E6 | Call `add_anchor_to_glyph` on `gmcp.test`. | Anchor appears on the target layer. |
-| E7 | Call `get_glyph_paths`, modify a small path fixture, then call `set_glyph_paths` on `gmcp.test`. | Paths are replaced only on the target layer and remain valid in Glyphs. |
-| E8 | Select eligible nodes and call `add_corner_to_all_masters` with a known `_corner.*` name. | Corner hints are added across intended masters only, or the tool returns a clear precondition error. |
-| E9 | Call `apply_collinear_handles_smooth` with `dry_run=true`. | Reports proposed smooth flags and does not mutate. |
-| E10 | After explicit approval, call `apply_collinear_handles_smooth` with `confirm=true` on `gmcp.test`. | Smooth flags update only where reported. |
-| E11 | Call `delete_glyph` for `gmcp.test`. | Test glyph is removed and references are not left in a broken state. |
-
-Pass criteria:
-
-- All edit tools target the requested glyph/layer/master.
-- Error messages are clear for invalid glyph names, missing layers, bad path JSON, and incompatible selections.
-- The app remains responsive after path replacement and corner operations.
-
-## Annotation workflow
-
-Run in `Edit` profile on 1-2 disposable glyphs.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| A1 | Call `get_glyph_annotations`. | Existing annotations are listed or an empty list is returned. |
-| A2 | Call `add_glyph_annotation`. | Native Glyphs annotation appears and MCP ownership metadata is stored. |
-| A3 | Call `add_glyph_annotation_group` for a small linked note/shape group. | Group appears and is returned by `get_glyph_annotation_groups`. |
-| A4 | Call `update_glyph_annotation` on the created annotation. | Text, position, or style changes exactly as requested. |
-| A5 | Call `delete_glyph_annotation` on the created annotation. | Only that annotation is removed. |
-| A6 | Call `clear_glyph_annotations` with default MCP-managed scope. | MCP-managed test annotations are removed; unrelated manual annotations remain. |
-| A7 | On a copied file only, call `clear_glyph_annotations` with `scope="all"` for the test layer. | All annotations on that layer are removed and no other layer is affected. |
-
-## Italic and compensated tuning workflow
-
-Run only on copied working files. Prefer a multi-master font where roman/italic or weight masters are compatible enough for meaningful checks.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| I1 | Call `set_master_italic_angle` with `dry_run=true`. | Reports intended master and angle without changing Font Info. |
-| I2 | After approval, call `set_master_italic_angle` with `confirm=true` on the working copy. | Only the intended master's Metrics `italicAngle` changes. |
-| I3 | Call `review_italic_first_pass` for 3-5 glyphs in `balanced` mode. | Builds detached candidates, reports topology/stem/anchor/component diagnostics, skips unsafe glyphs, and does not mutate. |
-| I4 | Call `apply_italic_first_pass` with `dry_run=true`, including `curve_strength` and `stem_compensation`. | Returns the same generated candidate diagnostics without mutation. |
-| I5 | After approval, call `apply_italic_first_pass` with `confirm=true` on disposable glyphs/layers. | Creates expected backups if configured, updates only targets, and remains visually plausible. |
-| C1 | Call `review_master_stem_metrics`. | Reports existing or missing stem metrics for relevant masters. |
-| C2 | Call `set_master_stem_metrics` with `dry_run=true`. | Reports intended custom-parameter changes without mutation. |
-| C3 | Call `measure_stem_ratio` between two masters. | Returns numeric ratio or clear measurement failure. |
-| C4 | Call `review_compensated_tuning` on one compatible glyph. | Returns `set_glyph_paths`-compatible JSON and does not mutate. |
-| C5 | Call `apply_compensated_tuning` with `dry_run=true` on 1-3 glyphs. | Reports proposed transforms and backup behavior without mutation. |
-| C6 | After approval, call `apply_compensated_tuning` with `confirm=true` on disposable glyphs. | Only approved glyphs change; backups are created when requested. |
-
-Pass criteria:
-
-- Source angle convention is consistent in both app versions.
-- Tools reject incompatible layers with clear errors rather than producing broken outlines.
-- Balanced interpolation endpoints match Raw at `0` and Cursivy at `1`.
-- Balanced anchor movement matches the selected-origin shear within `0.01` units.
-- Confirmed changes are reviewable visually with `render_glyph_review_image`.
-
-## Export and save workflow
-
-Run on copied working files only.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| X1 | Call `ExportDesignspaceAndUFO` to a temporary output directory with `decompose_smart_components=false` and `decompose_smart_corners=false`. | Designspace and UFOs are written with structured logs and no silent failures. |
-| X2 | Inspect exported file count and error log. | All expected masters/instances are present or documented as skipped. |
-| X3 | Call `save_font` with no path after a small approved test mutation. | Active working copy is saved; no other open font is saved. |
-| X4 | Call `save_font` with a new temporary path. | Save-as path is created and the active document state is clear. |
-
-## Execute-code workflow
-
-Run in `Edit` profile. These checks verify real-world scripting without using it for tasks that have dedicated tools.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| EC1 | Call `execute_code` with a small read-only snippet that returns Glyphs version and active family name. | Captures stdout/stderr and returns the last expression as configured. |
-| EC2 | Call `execute_code` with `capture_output=false`. | Call completes and large output is not returned through MCP. |
-| EC3 | Call `execute_code` with `max_output_chars` and a deliberately long print. | Output is bounded and clearly truncated. |
-| EC4 | Call `execute_code_with_context` for a selected glyph/layer read-only snippet. | Injected `font`, `glyph`, and `layer` helpers point to the expected targets. |
-| EC5 | Call `execute_code` with `snippet_only=true`. | Returns a Macro Panel snippet without executing it. |
-| EC6 | Call an invalid snippet. | Error envelope is structured, bounded, and does not kill the server. |
-| EC7 | Attempt a snippet containing `exit()` or `sys.exit()` on a copied file. | Server returns an error or safe failure and remains usable afterward. |
-
-Pass criteria:
-
-- Execution tools do not leak unbounded output.
-- Errors stay structured and do not poison later calls.
-- Dedicated tools remain preferred in documentation and agent prompts.
-
-## Security and local access checks
-
-Run at least once per release candidate, preferably in Glyphs 4 unless auth/origin code changed.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| SEC1 | Start without `GLYPHS_MCP_AUTH_TOKEN`. | Local client connects normally. |
-| SEC2 | Start with `GLYPHS_MCP_AUTH_TOKEN` set. | Requests without token fail; requests with `Authorization: Bearer <token>` succeed. |
-| SEC3 | Test `mcp-auth-token` header if the client/tooling supports custom headers. | Valid token succeeds. |
-| SEC4 | Start with restrictive `GLYPHS_MCP_ALLOWED_ORIGINS`. | Allowed local origins work; disallowed origins fail when an `Origin` header is present. |
-| SEC5 | Confirm localhost binding. | Server is not unexpectedly exposed beyond local host. |
-
-## Installer and packaging checks
-
-Run on a clean or near-clean macOS user account when possible.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| P1 | Install with the signed installer app. | Plug-in, dependencies, client configs, and optional skills install without manual file edits. |
-| P2 | Install into Glyphs 3 explicitly. | Plug-in lands in the Glyphs 3-compatible location and starts in Glyphs 3.5. |
-| P3 | Install into Glyphs 4 explicitly or by the terminal installer default. | Plug-in lands in the Glyphs 4-compatible location and starts in Glyphs 4. |
-| P4 | Re-run installer over an existing install. | Upgrade path is clear and does not duplicate plug-ins or client entries. |
-| P5 | Install standalone skills for Codex and Claude where selected. | Skills appear after client reload and reference the expected MCP endpoint/workflows. |
-| P6 | Install the optional shared agent plugin in disposable Codex, Claude Code, Cursor, and GitHub Copilot CLI profiles where those hosts are available. | Each host resolves version `1.7.0`, the same nine skills, and the same localhost MCP endpoint. No installer-owned or `.github/copilot/settings.json` enablement appears. |
-| P7 | Uninstall or overwrite manually if that path is documented for users. | Leaves no stale duplicate bundle that Glyphs can load accidentally. |
-
-## Update notification checks
-
-Run the notification-only update flow in both Glyphs 3.5 and Glyphs 4. A
-running release candidate must be tested against a disposable later stable
-version: for example, test the 1.6.0 candidate with a temporary, locally signed
-1.6.1 fixture. Serve that fixture from a local HTTP server and launch the
-development copy of Glyphs with `GLYPHS_MCP_UPDATE_API_URL` pointing at the
-loopback release JSON. Never publish the disposable future-version fixture.
-The repository's `github_latest_release_1.6.0.json` remains a unit-test fixture
-for the 1.5.4-to-1.6.0 bootstrap path. Production builds use GitHub's stable
-`releases/latest` API when the override is absent.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| U1 | Launch with update checks enabled and the disposable later-release fixture. | Glyphs startup and MCP startup remain responsive; one notification, the status banner, and the menu indicator appear. |
-| U2 | Test without the signed helper and click **View Release**. | The exact trusted `github.com/thierryc/Glyphs-mcp/releases/tag/v<fixture-version>` page opens; the fixture's `html_url` is ignored. No release is downloaded or installed. |
-| U3 | Click **Disable Update Checks**, restart Glyphs, and observe the fixture server. | The disabled state persists, the stale banner is hidden, and no automatic request is made. |
-| U4 | Click **Enable Update Checks**. | A fresh background check runs and the button changes back to **Disable Update Checks**. |
-| U5 | Stop the fixture server and click **Check Now**. | A bounded error appears in the status window without affecting the MCP server. |
-| U6 | Relaunch offline after a successful check. | Cached update availability remains visible and startup is unaffected. |
-
-## Verified update staging checks
-
-Run these checks only with a Debug installer/helper and a loopback exact-tag
-fixture that contains a development-signed `GlyphsMCPInstaller.zip` plus its
-matching `SHA256SUMS`. Perform the complete pass in Glyphs 4 build 4000, then
-Glyphs 3.5 build 3530, with only one app running. The tester launches Glyphs;
-automation must not launch, quit, reload, or restart it.
-
-Before each pass, record the byte hash of the running development plug-in and
-the on-disk plug-in bundle. Preserve the two Glyphs update opt-in preferences
-and restore them after testing.
-
-| ID | Action | Expected result |
-| --- | --- | --- |
-| V1 | Install with **Make future updates easier** unchecked for both targets. | No helper is installed, both per-target preferences remain false, notifications still work, and update discovery never starts preparation. |
-| V2 | Re-run the Debug installer with the option enabled for one target. | The fixed helper is copied atomically, has the expected Apple Development identity/team, hardened runtime, compatible probe, and only that target's preference is true. |
-| V3 | Open the server window with the exact disposable future-version fixture. | A discreet light-green banner says that a new version is available. The aligned **Prepare Update** button appears only after the fixed helper and opt-in are verified. Merely detecting the release creates no authorization or helper `prepare` process. |
-| V4 | Click **Prepare Update** once. | Exactly one request UUID authorizes the fixture version for the current Glyphs major. Inline states progress through Downloading, Verifying, and Preparing without a modal alert or MCP interruption. |
-| V5 | Inspect the fixture server and staging root. | The exact tag endpoint, one installer asset, and one checksum asset are requested. The receipt records protocol, tag/version, target, SHA-256, plug-in CDHash/team, helper version, and preparation time. |
-| V6 | Compare the live and on-disk plug-in hashes after success. | Both remain byte-identical to their pre-test values. The UI says the release is ready but not installed, and **View Release** remains available for installation. No code path replaces, removes, or edits the installed plug-in or development symlink. |
-| V7 | Click **Prepare Update** for the other opted-in Glyphs major after the stage exists. | The verified stage is reused without redownloading assets, while a separate per-target authorization receipt is written. |
-| V8 | Test cancellation during download and verification. | The owned helper receives cancellation, temporary request data is removed, no ready receipt is written, and retry remains available. |
-| V9 | Serve a bad checksum, malformed archive, wrong version, and wrong team/signature fixture in turn. | Every case fails closed with a bounded inline error and **View Release** fallback; the MCP server and installed plug-in remain untouched. |
-| V10 | Stop the fixture and retry, then relaunch offline after a verified success. | Offline preparation fails inline within its timeout; a previously verified matching stage is restored from receipts without network access. |
-| V11 | Disable update checks during the pass. | Update UI is hidden and no new helper invocation can start. An already verified stage is not mutated. |
-| V12 | Turn off one target in the installer, then the final target. | Per-target authorization is removed immediately. The helper remains while one target is opted in and the safely marked updater root is removed only after the final opt-out. |
-
-For V1–V12, capture the helper probe, request count, status-window states,
-per-target preferences, request/status receipts, staged plug-in signature and
-hash, MCP `get_server_info` before/during/after, and before/after plug-in hashes.
-
-The Debug loopback path intentionally permits Apple Development signatures and
-does not enforce production timestamp or notarization checks. Do not claim a
-missing-notarization live result from that path. Retain the automated trust
-verifier coverage for timestamp and notarization rejection, then exercise both
-checks again against the exact signed Release artifact before publication.
-
-## Performance and resilience
-
-Measure on the large font in both Glyphs 3.5 and Glyphs 4.
-
-| Check | Target |
-| --- | --- |
-| Server start | Starts in less than 10 seconds on a normal development machine. |
-| `get_server_info` | Less than 2 seconds. |
-| `list_open_fonts` | Less than 3 seconds. |
-| `get_font_glyphs` on large font | Less than 15 seconds, or documented if the font is unusually large. |
-| `get_font_kerning` on main master | Less than 20 seconds with bounded response size acceptable to the client. |
-| `render_glyph_review_image` for 12 glyphs | Less than 20 seconds and image is visible. |
-| Native curvature Reporter, up to 100 cubics | Cold geometry build under 20 ms and cached redraw under 5 ms on the release test Mac; never exceed 2,000 teeth. |
-| `review_kerning_bumper` with bounded limits | Completes without freezing Glyphs; record elapsed time. |
-| Repeated calls | 20 mixed read calls in a row do not leak obvious memory, crash, or progressively slow down. |
-
-Resilience checks:
-
-- Close the active font and call `list_open_fonts`.
-- Call a glyph-specific tool with no open font.
-- Call a tool with an invalid `font_index`.
-- Call a tool with a missing glyph name.
-- Call a mutating tool in `Read-only` profile.
-- Interrupt or cancel a client request if the client supports cancellation.
-- Restart the MCP client while the Glyphs server remains running.
-
-Expected result: clear errors, no crash, and subsequent valid calls still work.
-
-## Cross-version comparison
-
-After the two required app passes, compare the result logs.
-
-Record differences in:
-
-- Tool list and schemas.
-- Server info fields.
-- Font, master, instance, glyph, path, component, and kerning response shapes.
-- Show-link availability.
-- Image rendering output.
-- Error messages.
-- Performance.
-- Dirty-state behavior.
-- Any Glyphs API compatibility warning in the Macro Panel.
-
-Acceptable differences:
-
-- Glyphs app build numbers.
-- Glyphs API fields that do not exist in one app version.
-- Different internal layer/master IDs for files resaved by different app versions.
-- Minor rendering differences that do not block visual review.
-
-Unacceptable differences:
-
-- Same tool call succeeds in one app version and crashes or hangs in the other.
-- Mutating calls affect different targets.
-- Dry runs mutate in either app.
-- Tool schemas are missing in one app version without intentional profile or compatibility reason.
-
-## Regression prompt pack
-
-Use these prompts in a real MCP client rather than calling only low-level test scripts. They verify the agent-facing experience and common user paths.
-
-### Connection
 
 ```text
-Use Glyphs MCP to verify the current setup.
-Call get_server_info, list_open_fonts, and get_selected_font_and_master.
-Tell me the app version, MCP version, active font, active master, selected glyphs, and whether this looks ready for editing.
-Do not mutate or save.
+Create an italic first-pass candidate for the explicit glyphs and masters.
+Review the session and dry-run acceptance, then stop before confirmation.
+Do not call removed direct italic tools.
 ```
-
-### Large-font inspection
 
 ```text
-Inspect the active large font with Glyphs MCP.
-Call get_font_glyphs, get_font_masters, get_font_instances, list_style_sets, and get_font_kerning for the active master.
-Summarize counts, feature coverage, and any errors.
-Do not mutate or save.
+Review spacing and kerning for my explicit selection. Use the dedicated review
+tools, dry-run any proposal, summarize warnings and skipped targets, and stop
+before confirmation.
 ```
 
-### Visual review
-
-```text
-Review curve quality for A, O, n, o, a composite glyph, and one punctuation glyph.
-Enable the native curvature Reporter and inspect View > Show Glyphs MCP Curvature.
-Verify the bounded last-draw record with get_curve_review_overlay_state.
-Use the legacy PNG renderer only when a static non-curvature proof is still required.
-Report concrete measurements, warnings, or visual issues only.
-Do not mutate or save.
-```
-
-### Spacing safe apply
-
-```text
-Review spacing for my current selection.
-Rules: read first, never auto-save, and do not mutate without a dry run.
-
-1. Call review_spacing.
-2. Call apply_spacing with dry_run=true and the same normalized guards.
-3. Summarize changed glyphs, largest deltas, and skipped items.
-4. Stop before confirm=true.
-```
-
-### Kerning safe apply
-
-```text
-Review kerning collisions and near-misses in the active font/master.
-Use bounded limits suitable for a large production font.
-Call review_kerning_bumper first, then apply_kerning_bumper with dry_run=true.
-Summarize the worst findings and proposed exceptions.
-Stop before confirm=true.
-```
-
-### Docs and scripting
-
-```text
-Search the bundled Glyphs docs for GSLayer bounds, fetch the best result, then run a small read-only execute_code snippet that returns the active Glyphs version and active family name.
-Keep output bounded and do not mutate or save.
-```
-
-## Test log template
-
-Copy this section into the release notes or QA issue for each candidate.
+## Test log
 
 ```md
 # Glyphs MCP release QA
@@ -861,62 +209,29 @@ Copy this section into the release notes or QA issue for each candidate.
 - Release candidate:
 - Git commit:
 - Artifact:
-- Tester:
-- Date:
-- Large font:
-- Baseline file:
-- Glyphs 3.5 working copy:
-- Glyphs 4 working copy:
+- Tester/date:
+- Fixture and pre-test SHA-256:
 
-## Matrix
-
-| Case | App build | Python runtime | Client | Profile | Result | Notes |
+| Host | Build | Python | Client | Runtime/catalog ID | Result | Dirty/file state |
 | --- | --- | --- | --- | --- | --- | --- |
-| G35-edit | | | | Edit | | |
-| G35-readonly | | | | Read-only | | |
-| G4-edit | | | | Edit | | |
-| G4-readonly | | | | Read-only | | |
-
-## Required sections
+| Glyphs 3.5 | | | | | | |
+| Glyphs 4 | | | | | | |
 
 | Section | Glyphs 3.5 | Glyphs 4 | Notes |
 | --- | --- | --- | --- |
-| Preflight | | | |
-| Smoke tests | | | |
-| Read-only inspection | | | |
-| Spacing workflow | | | |
-| Kerning workflow | | | |
-| Outline and glyph editing | | | |
-| Curve geometry | | | |
-| Annotation workflow | | | |
-| Italic and compensated tuning | | | |
-| Export and save | | | |
-| Execute-code | | | |
-| Security/local access | | | |
-| Installer/packaging | | | |
-| Performance/resilience | | | |
-| Cross-version comparison | | | |
+| Startup/catalog | | | |
+| Structured results | | | |
+| Adaptive curves/Reporter | | | |
+| Candidate lifecycle | | | |
+| Spacing/kerning | | | |
+| General edits/code/files/UI | | | |
+| Security/packaging/performance | | | |
 
-## Blockers
-
-- [ ] None
-
-## Accepted limitations
-
-- 
-
-## Final decision
-
-- [ ] Ready to publish
-- [ ] Not ready
+- Blockers:
+- Accepted limitations:
+- Final decision:
 ```
 
-## Cleanup
-
-After testing:
-
-1. Restore or delete all working copies.
-2. Remove temporary export directories.
-3. Remove test client config entries if they point to a development checkout.
-4. Reinstall the public stable version if the machine is used for normal production work.
-5. Archive the test log with the release artifacts.
+After testing, close with changes discarded, verify fixture hashes, remove only
+owned temporary copies/exports, restore test client settings, and archive the
+log. Publication remains a separate authorization boundary.

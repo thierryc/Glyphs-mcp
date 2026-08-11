@@ -149,6 +149,7 @@ class McpToolsCustomParametersTests(unittest.TestCase):
         modules = {
             "GlyphsApp": types.SimpleNamespace(Glyphs=glyphs_api),
             "mcp_runtime": types.SimpleNamespace(mcp=fake_mcp),
+            "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
             "mcp_tool_helpers": helpers,
         }
         module_name = "mcp_tools_custom_parameters_under_test"
@@ -159,10 +160,12 @@ class McpToolsCustomParametersTests(unittest.TestCase):
         return module, font, glyphs_api, fake_mcp
 
     def test_annotations_distinguish_read_and_write_tools(self):
-        module, _font, _glyphs, mcp = self._load_module(_Font())
-        self.assertTrue(mcp.tools["get_custom_parameters"]["annotations"]["readOnlyHint"])
-        self.assertFalse(mcp.tools["set_custom_parameters"]["annotations"]["readOnlyHint"])
-        self.assertTrue(mcp.tools["set_custom_parameters"]["annotations"]["idempotentHint"])
+        module, _font, _glyphs, _mcp = self._load_module(_Font())
+        from tool_catalog import TOOL_CATALOG
+
+        self.assertTrue(TOOL_CATALOG["get_custom_parameters"].annotations["readOnlyHint"])
+        self.assertFalse(TOOL_CATALOG["set_custom_parameters"].annotations["readOnlyHint"])
+        self.assertFalse(TOOL_CATALOG["set_custom_parameters"].annotations["idempotentHint"])
         self.assertIsNotNone(module)
 
     def test_get_font_parameters_filters_and_reports_duplicates(self):

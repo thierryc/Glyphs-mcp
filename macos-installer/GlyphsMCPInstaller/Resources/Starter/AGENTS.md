@@ -12,4 +12,4 @@ This project assumes the **Glyphs MCP** plug-in is installed and the server is r
 - If a task might change a font, first call `list_open_fonts` and any relevant read-only tools to collect context.
 - Prefer tools that support `dry_run` first; only mutate when explicitly requested and when the tool requires `confirm=true`.
 - If connection fails, instruct the user to open Glyphs and run **Edit → Glyphs MCP Server**, then retry.
-- If tokens/tool lists are large, select a narrower Tool Profile in **Edit → Glyphs MCP Server** before reconnecting the client.
+- Route with the catalog titles, descriptions, and safety annotations; use focused Glyphs MCP skills for multi-step workflows.

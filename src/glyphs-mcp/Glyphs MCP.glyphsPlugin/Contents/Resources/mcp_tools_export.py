@@ -9,6 +9,7 @@ from dataclasses import asdict
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import _font_resolution_error, _resolve_font_by_index
 
 from export_designspace_ufo import (
@@ -29,7 +30,7 @@ def _normalise_name_sequence(value):
         return []
 
 
-@mcp.tool()
+@glyphs_tool()
 async def ExportDesignspaceAndUFO(
     font_index: int = 0,
     include_variable: bool = True,

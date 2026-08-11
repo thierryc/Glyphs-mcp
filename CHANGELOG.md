@@ -1,5 +1,84 @@
 # Changelog
 
+## 1.8.0 — Lean catalog and adaptive curve review
+
+_August 10, 2026_
+
+Glyphs MCP 1.8.0 replaces the former profile-filtered registry with one
+catalog-driven MCP surface and extends the clean-room cubic engine with bounded
+adaptive diagnostics. Installer build 23 supports Glyphs 3.5 and Glyphs 4.
+
+### Lean, understandable discovery
+
+- `TOOL_CATALOG` is now the production source of truth for every active and
+  removed command: name, title, concise description, category/tags,
+  model/app visibility, effect, lifecycle/replacement, output schema, and all
+  four MCP safety hints.
+- One registration helper applies catalog metadata to FastMCP. Startup and
+  tests fail on a missing catalog entry, duplicate registration, invalid
+  schema, or attempted registration of a removed command.
+- The raw registry contains 76 active tools. MCP Apps metadata exposes 65 to
+  the model and reserves 11 feedback or host-UI wrappers for the app. Generated
+  metadata for the model surface stays below 160 KiB.
+- Eight commands are removed without aliases: `render_glyph_review_image`,
+  `docs_enable_page_resources`, `measure_stem_ratio`,
+  `review_collinear_handles`, both direct italic review/apply commands, and
+  both direct compensated-tuning review/apply commands. Catalog tombstones
+  document their replacements without registering them.
+- The old profile selector, saved profile preference, startup filtering,
+  aliases, and profile module are removed. Existing saved values are ignored.
+
+### Structured workflow results
+
+- All candidate-session tools, curve geometry/Reporter controls, four spacing
+  tools, and kerning read/set/review/apply tools now return an additive
+  `resultSchemaVersion: 1` structured envelope.
+- The envelope normalizes mode, status, targets, summaries, warnings, errors,
+  and workflow-specific data. Exact legacy JSON text remains available for
+  existing clients.
+- The existing MCP Apps feedback contract remains compatible while its
+  visibility, annotations, descriptions, and schema attachment move into the
+  catalog.
+
+### Adaptive curve quality
+
+- `review_curve_quality` defaults to `analysis_mode="adaptive"` and returns
+  `geometryDataVersion: 2`. `sampled_v1` preserves reproducible 1.7 sampling.
+- Bounded analysis adds parameterized extrema, inflections, stationary points
+  and cusps, adaptive arc length, turning angle, self-intersections, G0/G1/G2
+  joins, curve-to-line continuity, and declared-versus-geometric smoothness.
+- Stable analytic roots are used where appropriate; bounded de Casteljau root
+  isolation/subdivision and arc-length-aware sampling handle the remaining
+  cases. Results remain measurements and conservative warnings, never an
+  artistic score.
+- `review_curve_quality_across_masters` compares compatible explicit masters
+  and reports Tunni-ratio drift, normalized-curvature variation, event-count
+  changes, continuity variation, path/shape indices, and stable topology
+  incompatibility reasons.
+- The native curve Reporter accepts `curvature`, `curve_events`, or both.
+  Extrema, inflections, cusps, and continuity warnings are drawn with bounded
+  markers; candidate and curve Reporters stay independent.
+
+### Skills, tests, and compatibility
+
+- Italic and outline guidance now routes batch work through candidate preview,
+  session review, dry-run acceptance, explicit approval, and confirmed
+  acceptance. Removed, app-only, misspelled, or unsafe routing references fail
+  deterministic skill tests.
+- The command table and count/category summaries are generated from the
+  catalog; README keeps only the concise overview and link.
+- Undefined Glyphs 4 master metrics now serialize as JSON `null` instead of
+  leaking the Objective-C `2^63` sentinel value.
+- Explicit kerning exceptions now resolve public glyph names to Glyphs' native
+  glyph-ID keys in both host versions, while preserving `@MMK_*` class keys.
+  This prevents shadow name-key pairs from being created in Glyphs 3.5.
+- Analytic, metamorphic, adversarial, cross-master, Reporter, response-bound,
+  registration, structured-result, and deterministic routing fixtures extend
+  the suite. The combined Python feature suite passes 736 tests with 4
+  intentional environment-dependent skips before final release gates.
+- Mathematics remains standard-library based, local, deterministic, and
+  clean-room with no ML, cloud service, native binary, or new dependency.
+
 ## 1.7.0 — Cleanroom cubic curve geometry
 
 _August 10, 2026_

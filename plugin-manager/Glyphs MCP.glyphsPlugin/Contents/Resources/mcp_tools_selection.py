@@ -7,6 +7,7 @@ import json
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _active_font,
     _get_layer_id,
@@ -19,7 +20,7 @@ from mcp_tool_helpers import (
 )
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_selected_glyphs() -> str:
     """Get information about currently selected glyphs in the active font view.
 
@@ -67,7 +68,7 @@ async def get_selected_glyphs() -> str:
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_selected_font_and_master() -> str:
     """Get information about the currently selected font and master from the active font view.
     
@@ -150,7 +151,7 @@ async def get_selected_font_and_master() -> str:
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_selected_nodes(include_master_mapping: bool = True) -> str:
     """Return detailed information about the currently selected node(s) in the active edit view.
 

@@ -8,6 +8,7 @@ import math
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _coerce_numeric,
     _component_transform_values,
@@ -64,6 +65,20 @@ def _actual_italic_angle(master):
     return 0.0 if value is None else float(value)
 
 
+def _optional_master_metric(value):
+    """Normalize Glyphs' undefined NSInteger metric sentinel to JSON null."""
+
+    if isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    if not math.isfinite(number) or abs(number) >= float(2**62):
+        return None
+    return int(number) if number.is_integer() else number
+
+
 def _validate_italic_angle(value):
     angle = _coerce_numeric(value)
     if angle is None:
@@ -76,7 +91,7 @@ def _validate_italic_angle(value):
     return angle, None
 
 
-@mcp.tool()
+@glyphs_tool()
 async def list_open_fonts() -> str:
     """Return information about all fonts currently open in Glyphs.
 
@@ -114,7 +129,7 @@ async def list_open_fonts() -> str:
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_font_glyphs(font_index: int = 0) -> str:
     """Get all glyphs in a specific font.
 
@@ -155,7 +170,7 @@ async def get_font_glyphs(font_index: int = 0) -> str:
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_font_masters(font_index: int = 0) -> str:
     """Get master information for a specific font.
 
@@ -214,10 +229,10 @@ async def get_font_masters(font_index: int = 0) -> str:
                     "slantAngle": _custom_parameter(master, "postscriptSlantAngle", 0),
                     # GSFontMaster may not have `customName` in Glyphs 3; use safe access
                     "customName": getattr(master, "customName", None),
-                    "ascender": master.ascender,
-                    "capHeight": master.capHeight,
-                    "descender": master.descender,
-                    "xHeight": master.xHeight,
+                    "ascender": _optional_master_metric(getattr(master, "ascender", None)),
+                    "capHeight": _optional_master_metric(getattr(master, "capHeight", None)),
+                    "descender": _optional_master_metric(getattr(master, "descender", None)),
+                    "xHeight": _optional_master_metric(getattr(master, "xHeight", None)),
                 }
             )
         return json.dumps(masters_info)
@@ -225,7 +240,7 @@ async def get_font_masters(font_index: int = 0) -> str:
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def set_master_italic_angle(
     font_index: int = 0,
     master_id: str = "",
@@ -293,7 +308,7 @@ async def set_master_italic_angle(
         return _safe_json({"ok": False, "error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_font_instances(font_index: int = 0) -> str:
     """Get instance information for a specific font.
 
@@ -335,7 +350,7 @@ async def get_font_instances(font_index: int = 0) -> str:
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
     """Get detailed information about a specific glyph.
 
@@ -425,7 +440,7 @@ async def get_glyph_details(font_index: int = 0, glyph_name: str = "A") -> str:
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_font_kerning(font_index: int = 0, master_id: str = None) -> str:
     """Get kerning information for a specific font and master.
 

@@ -25,7 +25,7 @@ Use this skill for path editing, component or anchor work, selected-node workflo
    - `get_glyph_paths`
    - `review_tunni_geometry`
    - `review_curve_quality`
-   - `get_curve_review_overlay_state`
+   - `review_curve_quality_across_masters`
    - `get_outline_candidate_state`
    - `get_glyph_components`
    - `get_glyph_details`
@@ -33,13 +33,11 @@ Use this skill for path editing, component or anchor work, selected-node workflo
    - `set_glyph_paths`
    - `add_component_to_glyph`
    - `add_anchor_to_glyph`
-   - `review_collinear_handles`
    - `apply_collinear_handles_smooth`
    - `review_tunni_geometry`
    - `apply_tunni_balance`
    - `review_curve_quality`
    - `set_curve_review_overlay`
-   - `get_curve_review_overlay_state`
    - `preview_tunni_balance_candidate`
    - `preview_collinear_handles_candidate`
    - `preview_italic_first_pass_candidate`
@@ -50,9 +48,9 @@ Use this skill for path editing, component or anchor work, selected-node workflo
    - `review_outline_candidate_session`
    - `accept_outline_candidate_session`
    - `discard_outline_candidate_session`
-   - compensated-tuning tools only when that workflow is explicitly requested
+   - `preview_compensated_tuning_candidate` only when that workflow is explicitly requested
 3. Use candidate sessions as the default outline-change workflow and require them for every multi-master or multi-glyph batch. For Tunni work, pass explicit master/path/curve-end targets to `preview_tunni_balance_candidate`; keep `grid_policy="font"` unless the user explicitly requests continuous coordinates. Direct `apply_tunni_balance` remains compatible for one explicit target only.
-4. Enable the native Edit View comb with `set_curve_review_overlay(enabled=true)` after curve proposals and before mutation when visual judgment matters. Tell the user to inspect **View > Show Glyphs MCP Curvature** in Glyphs. Teal is positive signed curvature and pink is negative; curvature magnitude is placed along the path right normal, so correctly wound counters draw into their white interior. Native defaults are 51 samples per cubic, a `0.010` scale, and a `0.12em` normal clamp at `0.65` alpha. Use `get_curve_review_overlay_state` to confirm the last glyph/layer, stroke/clamp/cap counts, and omitted components. The native comb measures raw editable paths only. Do not use the deprecated PNG curvature overlay as the default curve-review workflow.
+4. Enable native Edit View review with `set_curve_review_overlay(enabled=true, overlays=["curvature", "curve_events"])` after curve proposals and before mutation when visual judgment matters. Tell the user to inspect **View > Show Glyphs MCP Curvature** in Glyphs. Teal is positive signed curvature and pink is negative; curvature magnitude is placed along the path right normal, so correctly wound counters draw into their white interior. Event markers show extrema, inflections, cusps, and continuity warnings. Native comb defaults are 51 samples per cubic, a `0.010` scale, and a `0.12em` normal clamp at `0.65` alpha. Use the control result to confirm activation; the Reporter measures raw editable paths only.
 5. Review the difference-only Candidate Reporter before mutation. It leaves the normal Glyphs outline unobscured, draws only warm-yellow source/candidate difference regions, and turns those regions coral red when stale. If no manual edit is needed, call `review_outline_candidate_session`, dry-run acceptance, stop for approval, then confirm with the exact one-time token. If manual editing is wanted, dry-run and confirm `materialize_outline_candidate_session`, let the user edit the native layer, then re-review it. Never rely on LLM context to identify or delete candidate layers; use the persisted session metadata and `discard_outline_candidate_session`.
 6. Only use `execute_code_with_context` when the edit spans several glyph-scoped steps and the dedicated tools would be less reliable or less clear.
 7. When docs are needed, search first with `docs_search`, then fetch only the relevant page with `docs_get`.
@@ -62,8 +60,8 @@ Use this skill for path editing, component or anchor work, selected-node workflo
 
 1. Resolve and report the exact `font_index`, `glyph_name`, `master_id`, and path-order `path_index`. Read the path first and preserve the reported Glyphs 4 `shapeIndex` only as additional context.
 2. Call `review_tunni_geometry` for the explicit target. Omit `segment_end_node_indices` only when intentionally scanning every cubic; otherwise pass genuine integer curve end-node indices.
-3. Call `review_curve_quality` for the same explicit target. Start with `include_samples=false`; request detailed samples only for a narrowed selection. Report signed and normalized curvature, inflections, degenerate tangents, spike warnings, join discontinuities, and omitted components without converting them into an artistic verdict.
-4. Call `set_curve_review_overlay(enabled=true)` when visual judgment matters, direct the user to **View > Show Glyphs MCP Curvature**, and explain the teal-positive/pink-negative sign convention plus right-normal outside-ink placement. Call `get_curve_review_overlay_state` after a draw when bounded verification is useful. The overlay remains available when the MCP server is stopped.
+3. Call `review_curve_quality` with its default `analysis_mode="adaptive"` for the same explicit target. Start with `include_samples=false`; request detailed samples only for a narrowed selection. Report signed and normalized curvature, parameterized events, arc length, turning angle, bounded self-intersections, G0/G1/G2 joins, warnings, and omitted components without converting them into an artistic verdict. Use `sampled_v1` only for a reproducible 1.7 comparison. For compatible multi-master work, call `review_curve_quality_across_masters` instead of looping and guessing segment mappings.
+4. Call `set_curve_review_overlay(enabled=true, overlays=["curvature", "curve_events"])` when visual judgment matters, direct the user to **View > Show Glyphs MCP Curvature**, and explain the independent comb and event markers. The overlay remains available when the MCP server is stopped.
 5. If balancing is requested, create a candidate with the approved integer indices. Report `idealProposed`, authoritative grid-aligned `proposed`, post-grid imbalance, tangent drift, and any `no_safe_grid_candidate` result. JSON integer coordinates are expected on integral font grids.
 6. Ask the user to inspect **View > Show Glyphs MCP Candidate**. Warm golden yellow marks only the symmetric difference; coral red plus `STALE` means the source changed. Identical geometry draws nothing over the glyph. Curvature is reviewed separately through **View > Show Glyphs MCP Curvature**. Materialize only when the user wants normal Glyphs editing.
 7. Call `review_outline_candidate_session`; stop if it reports stale, topology, off-grid, or operation-external changes. Dry-run `accept_outline_candidate_session` with the issued token, then stop for explicit approval before `confirm=true`.
@@ -77,4 +75,4 @@ never use that shortcut for multi-master or multi-glyph work.
 
 - [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
 - [Project briefing](https://github.com/thierryc/Glyphs-mcp/blob/main/CODEX.md)
-- [Tool profiles](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/Glyphs%20MCP.glyphsPlugin/Contents/Resources/tool_profiles.py)
+- [Tool catalog](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/Glyphs%20MCP.glyphsPlugin/Contents/Resources/tool_catalog.py)

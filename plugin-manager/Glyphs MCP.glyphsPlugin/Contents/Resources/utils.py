@@ -53,49 +53,11 @@ def notify_server_started(port, host="127.0.0.1"):
 
 
 def get_known_tools():
-    """Get a list of known MCP tools defined in the plugin.
-    
-    Returns:
-        list: List of tool names.
-    """
-    return [
-        "get_server_info",
-        "list_open_fonts",
-        "get_font_glyphs",
-        "get_font_masters",
-        "get_font_instances",
-        "get_glyph_details",
-        "review_unicode_assignments",
-        "apply_unicode_assignments",
-        "get_font_kerning",
-        "create_glyph",
-        "delete_glyph",
-        "update_glyph_properties",
-        "copy_glyph",
-        "update_glyph_metrics",
-        "get_glyph_components",
-        "add_component_to_glyph",
-        "add_anchor_to_glyph",
-        "set_kerning_pair",
-        "get_selected_glyphs",
-        "get_selected_font_and_master",
-        "get_selected_nodes",
-        "get_glyph_paths",
-        "render_glyph_review_image",
-        "review_collinear_handles",
-        "apply_collinear_handles_smooth",
-        "set_glyph_paths",
-        "execute_code",
-        "execute_code_with_context",
-        "save_font",
-        "review_spacing",
-        "apply_spacing",
-        "set_spacing_params",
-        "set_spacing_guides",
-        "ExportDesignspaceAndUFO",
-        "docs_search",
-        "docs_get",
-    ]
+    """Return active names from the authoritative production tool catalog."""
+
+    from tool_catalog import active_entries
+
+    return [entry.name for entry in active_entries()]
 
 
 def get_tool_info(mcp_instance, tool_name):

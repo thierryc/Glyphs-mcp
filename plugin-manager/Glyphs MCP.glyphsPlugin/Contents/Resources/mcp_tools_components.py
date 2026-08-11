@@ -17,6 +17,7 @@ from GlyphsApp import (  # type: ignore[import-not-found]
 )
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _active_font,
     _append_layer_anchor,
@@ -42,7 +43,7 @@ def _resolve_font_payload(font_index):
     return font, None
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_glyph_components(
     font_index: int = 0, glyph_name: str = None, master_id: str = None
 ) -> str:
@@ -151,7 +152,7 @@ async def get_glyph_components(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def add_component_to_glyph(
     font_index: int = 0,
     glyph_name: str = None,
@@ -248,7 +249,7 @@ async def add_component_to_glyph(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def add_anchor_to_glyph(
     font_index: int = 0,
     glyph_name: str = None,
@@ -316,7 +317,7 @@ async def add_anchor_to_glyph(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def add_corner_to_all_masters(
     _corner_name=None,
     _alignment=None,

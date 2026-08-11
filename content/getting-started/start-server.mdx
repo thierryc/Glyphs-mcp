@@ -31,18 +31,12 @@ If a client cannot connect, use this order:
 3. Start Glyphs MCP from the Edit menu.
 4. Reopen or reconnect the client.
 
-## Tool profiles
+## Tool discovery
 
-Many MCP clients include tool names and JSON Schemas in model context. Glyphs MCP can expose a smaller `tools/list` through **Tool Profile** in the status panel.
-
-Choose between read-only inspection and full edit access:
-
-| Profile | Use when |
-| --- | --- |
-| `Read-only` | You only need inspection, docs, visual review, and other non-mutating tools. |
-| `Edit` | You want the complete server surface, including editing and execution tools. This is the default. |
-
-After changing a profile, restart the server and reconnect the client so it fetches the new tool list.
+The server registers one catalog-driven surface. MCP Apps-aware clients route
+65 substantive tools to the model and keep 11 embedded-app or host-UI wrappers
+app-only. Safety is declared per tool. Restart and reconnect only after
+installing a build whose catalog changed.
 
 ## Auto-start
 

@@ -1,174 +1,53 @@
 ---
-title: Compensated tuning tools
-description: Preview and apply two-master compensated scaling transforms with safety gates and backups.
+title: Compensated tuning candidates
+description: Preview and safely accept two-master compensated scaling through a candidate session.
 ---
 
-These tools help you **preview** and optionally **apply** a compensated tuning transform to outlines across masters.
+# Compensated tuning candidates
 
-This is a **two-master compensated scaling** workflow:
-- it compares a **base** master and a **different reference** master with compatible outlines,
-- it computes interpolation factors from the geometric difference between those two masters, and
-- it applies those factors while scaling (`sx`, `sy`) to preserve stroke thickness approximately.
+Compensated tuning is a deterministic two-master scaling workflow. It compares
+compatible outlines in a base and reference master, derives interpolation
+factors from their geometric difference, and scales while approximately
+preserving stem thickness. It is not a generic “make this master lighter”
+command.
 
-This is **not** a generic "make this one master lighter/darker" tool.
+Glyphs MCP 1.8 exposes this workflow only through candidate sessions:
 
-- `review_compensated_tuning` computes tuned outlines for **one** glyph (no mutation).
-- `apply_compensated_tuning` applies the same transform across many glyphs (requires confirmation).
-- `measure_stem_ratio` is an optional helper that estimates the stem ratio `b` used for compensation.
+1. `preview_compensated_tuning_candidate`
+2. `review_outline_candidate_session`
+3. `accept_outline_candidate_session` with `dry_run=true`
+4. explicit designer approval
+5. `accept_outline_candidate_session` with `confirm=true`
 
-This workflow is meant for typographers and font engineers: it is deterministic, inspectable, and **safe by default** (dry-run and confirm gates, no auto-save).
+The old measurement, direct review, and direct batch-apply commands are removed.
+Their deterministic mathematics remains internal to the candidate adapter.
 
----
+## Preconditions
 
-## What the tools change (and what they don’t)
+- Use different base and reference masters with compatible path and node
+  topology.
+- Target explicit glyphs and masters. Components are blocked because this
+  operation promotes node coordinates, smooth flags, and width only.
+- Use finite scale and compensation values. `keep_stroke` matters only when a
+  real two-master geometric delta exists.
+- Never expect `base_master_id == ref_master_id` to create a weight change.
+- The tool never saves the font.
 
-### Changes (only when applied)
-- Replaces **paths** (outlines) in the target master layer.
-- Updates **layer width** for the target master layer.
-- Optionally adds a **backup layer** per glyph before applying.
+## Important parameters
 
-### Does not change
-- Kerning
-- Components or anchors (and components are not supported for tuning)
-- Any files on disk (no auto-save)
+- `base_master_id` is the source master being tuned.
+- `ref_master_id` supplies the compatible comparison geometry.
+- `output_master_id` identifies the destination source layer.
+- `sx` and `sy` are horizontal and vertical scale factors.
+- `keep_stroke` controls compensation when factors are derived automatically.
+- Explicit `q_x` and `q_y` override automatic compensation.
+- `extrapolation` is `clamp`, `allow`, or `error` when a computed factor falls
+  outside `[0, 1]`.
 
----
+## Safe workflow
 
-## Important constraints (read this first)
-
-1) **No components**  
-`review_compensated_tuning` and `apply_compensated_tuning` refuse glyph layers that contain components. Decompose first, tune, then rebuild components if needed.
-
-2) **Compatible outlines across masters**  
-The tool requires the base and reference master layers to have matching path/node structure (same path count, node count, node types).
-
-3) **Two different masters are required for a meaningful result**
-If `base_master_id == ref_master_id`, the current implementation has no geometric delta to interpolate from. In practice, that means the result is unchanged.
-
-4) **This is a scaling workflow, not a standalone thinning workflow**
-`keep_stroke` only matters when the tool is computing compensated interpolation from a real two-master setup. It is not a "lighten this master in place" knob.
-
-5) **Safety gates**
-`apply_compensated_tuning` follows the shared [safety model](./concepts/safety-model.mdx): preview with `dry_run=true`, then apply only after explicit approval with `confirm=true`.
-
----
-
-## When to use this tool
-
-Use it when you want to:
-- scale a master horizontally and/or vertically,
-- use a second master to preserve stroke behavior while scaling,
-- preview or apply the same compensated transform across many compatible glyphs.
-
-Typical example:
-- `base_master_id = Regular`
-- `ref_master_id = Bold`
-- `sx = 0.97` to condense slightly
-- `sy = 1.00` to keep height unchanged
-- `keep_stroke = 0.9` to preserve stroke thickness during that scaling
-
-## When not to use this tool
-
-Do **not** use it when you want to:
-- make one master slightly lighter or darker **without** using another master,
-- thin outlines in place with `base_master_id == ref_master_id`,
-- change weight while leaving `sx = 1` and `sy = 1` and expecting `keep_stroke` to do the work,
-- process component-based glyphs without decomposing them first.
-
-If your font only has one usable master for a glyph, or if the reference master is structurally incompatible, this tool is the wrong tool for that task.
-
----
-
-## Concepts (plain language)
-
-### Base vs reference vs output
-
-- `base_master_id`: the master you are tuning *toward* (often your “current” master).
-- `ref_master_id`: the master you are tuning *from* (often the next heavier master on the weight axis).
-- `output_master_id`: where the tuned outlines are written (defaults to `base_master_id`).
-
-### `b`, `q_x`, `q_y`
-
-- `b` is a **stem thickness ratio** (ref/base) used to compensate the interpolation.
-- If you don’t provide `q_x` / `q_y` (and masters differ), the tool can estimate `b` automatically via `measure_stem_ratio`-style measurements.
-- If you **do** provide `q_x` / `q_y`, those explicit values override the computed compensation. In that case, `keep_stroke` is no longer the control that determines `q`.
-- `extrapolation` controls what happens when computed `q` falls outside `[0..1]`:
-  - `"clamp"` (default): clamp and warn
-  - `"allow"`: allow extrapolation
-  - `"error"`: fail fast
-
-### Why two masters are needed
-
-The algorithm does not "invent" a lighter or heavier outline from one shape alone. It uses:
-- the base-master point positions,
-- the reference-master point positions,
-- and the stem-thickness ratio between those two masters
-
-to compute a compensated interpolation.
-
-With a single master, there is no geometric difference to interpolate from, so the current implementation has nothing to work with.
-
----
-
-## Recommended workflow (safe)
-
-### Step 0) Identify masters
-
-Use:
-- `list_open_fonts` → pick `font_index`
-- `get_font_masters` → get master IDs
-
-### Step 1) (Optional) Measure `b`
-
-If you want to inspect the measured ratio (or tune defaults), call:
-
-```json
-{
-  "font_index": 0,
-  "base_master_id": "BASE_MASTER_ID",
-  "ref_master_id": "REF_MASTER_ID",
-  "stem_source": "auto",
-  "reference_glyphs": ["H", "n", "I", "o", "E"]
-}
-```
-
-Tool: `measure_stem_ratio`  
-Look at `ok`, `b`, and `warnings`.
-
-Important:
-- use **different** base and reference masters for a meaningful ratio,
-- do not use `base_master_id == ref_master_id` unless you intentionally want a neutral baseline.
-
-### Step 2) Preview on one glyph (no mutation)
-
-Tool: `review_compensated_tuning`
-
-```json
-{
-  "font_index": 0,
-  "glyph_name": "A",
-  "base_master_id": "REGULAR_MASTER_ID",
-  "ref_master_id": "BOLD_MASTER_ID",
-  "sx": 0.97,
-  "sy": 1.0,
-  "keep_stroke": 0.9,
-  "extrapolation": "clamp",
-  "round_units": true
-}
-```
-
-The result is `set_glyph_paths`-compatible (`paths`, `width`) and includes a `gmcp` metadata block with:
-- computed `qX` / `qY` and `warnings`
-- `stem` info when `b` was measured automatically
-
-Read the result like this:
-- if `computed.qX` / `computed.qY` differ from `1`, the transform is doing real interpolation work,
-- if you used the same master for base and reference, expect the result to be unchanged,
-- if you supplied explicit `q_x` / `q_y`, those values are the real driver of the transform.
-
-### Step 3) Dry-run apply across a set
-
-Tool: `apply_compensated_tuning`
+First resolve the font and master IDs with `list_open_fonts` and
+`get_font_masters`. Preview a small explicit glyph set:
 
 ```json
 {
@@ -180,62 +59,37 @@ Tool: `apply_compensated_tuning`
   "sx": 0.97,
   "sy": 1.0,
   "keep_stroke": 0.9,
-  "extrapolation": "clamp",
-  "backup": true,
-  "dry_run": true
+  "extrapolation": "clamp"
 }
 ```
 
-Inspect:
-- `dryRun`
-- `summary.okCount / skippedCount / errorCount`
-- `results[]` per glyph (and why something was skipped)
-- `stem` if `b` was measured automatically
+Inspect the golden-yellow difference-only Candidate Reporter. The normal Glyphs
+outline remains visible; unchanged geometry receives no overlay drawing. If
+manual edits are needed, call `materialize_outline_candidate_session`, edit the
+native candidate layer, and review it again.
 
-Before applying, confirm that:
-- base and reference are different masters,
-- the glyphs you selected are outline-compatible across those masters,
-- the preview actually changed the geometry you care about.
+Next call `review_outline_candidate_session`. Confirm that topology is intact,
+components are absent, the source is not stale, and only allowed fields differ.
+The review returns a short-lived token bound to source and candidate
+fingerprints.
 
-### Step 4) Confirm apply (writes outlines)
-
-Re-run `apply_compensated_tuning` with the same args, but `confirm=true` (and `dry_run=false`).
-
-After applying, consider doing a visual proof pass in Glyphs and optionally calling `save_font` to persist.
-
----
-
-## Prompt templates
-
-Use the shared [safety model](./concepts/safety-model.mdx) for dry-run and confirm-gated editing rules. For compensated tuning, the essential prompt constraints are: read open fonts and masters first, never use the same base and reference master unless explicitly requested, preview one glyph before batch apply, and require `dry_run=true` before any confirmed mutation.
-
----
+Call `accept_outline_candidate_session` first with `dry_run=true` and the exact
+token. Show the designer the target count, skipped/error reasons, largest
+deltas, width changes, and rollback plan. Only after explicit approval, call it
+again with `confirm=true`. Acceptance consumes the token, rechecks both
+fingerprints on the main thread, promotes only allowed fields, verifies the
+read-back, removes session layers on complete success, and never saves.
 
 ## Common mistakes
 
-- **Using the same master for both `base_master_id` and `ref_master_id`**
-  This gives the algorithm no second shape to interpolate against. Expect no path change.
+- Using one master as both base and reference leaves no second shape to
+  interpolate against.
+- `keep_stroke` is not an in-place thinning control.
+- Explicit `q_x` or `q_y` supersede the corresponding automatic factor.
+- Incompatible topology or components are safety failures, not candidates for
+  automatic repair.
+- A stale source or candidate requires a new review and token.
 
-- **Expecting `keep_stroke` to lighten a master by itself**
-  `keep_stroke` controls compensation within a scaling workflow. It is not a standalone weight-editing parameter.
-
-- **Supplying `q_x` / `q_y` and then tuning `keep_stroke`**
-  Once `q_x` / `q_y` are explicit, they override the computed compensation.
-
-- **Using `measure_stem_ratio` with the same base and reference master and treating that as an active tuning setup**
-  That is only a neutral baseline.
-
----
-
-## Troubleshooting
-
-- **“Glyph layers contain components”**: Decompose components; the tuning transform expects point-level outlines.
-- **“Incompatible outlines between masters”**: Ensure the masters have matching node structure for that glyph (paths/nodes/types).
-- **No visible path change**: Check whether you used the same base/ref master, whether your preview reported `qX = qY = 1`, or whether you supplied explicit `q_x` / `q_y` that keep the shape nearly unchanged.
-- **Too many warnings about clamping**: Try `"extrapolation":"allow"` for exploration, or adjust `keep_stroke` / provide explicit `q_x` / `q_y`.
-
----
-
-## Reference
-
-- Full tool list: [Command set](./reference/command-set.mdx)
+See the [safety model](./concepts/safety-model.mdx) and
+[command set](./reference/command-set.mdx) for the common result envelope and
+candidate lifecycle contracts.

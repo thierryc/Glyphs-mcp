@@ -9,16 +9,19 @@ from __future__ import annotations
 
 import math
 import statistics
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 
 Point = Tuple[float, float]
 
 GEOMETRY_DATA_VERSION = 1
+CURVE_QUALITY_DATA_VERSION = 2
 DEFAULT_SAMPLES_PER_CURVE = 51
 MIN_SAMPLES_PER_CURVE = 9
 MAX_SAMPLES_PER_CURVE = 257
 MAX_SAMPLE_DETAIL_SEGMENTS = 64
+MAX_ADAPTIVE_RECURSION = 16
+MAX_SELF_INTERSECTIONS = 8
 
 _EPSILON = 1.0e-12
 _PARALLEL_RELATIVE_EPSILON = 1.0e-9
@@ -641,6 +644,281 @@ def curvature_comb_samples(points: Sequence[Point], *, sample_count: int = DEFAU
     return [cubic_sample(points, index / float(count - 1)) for index in range(count)]
 
 
+def _quadratic_roots(a: float, b: float, c: float) -> List[float]:
+    scale = max(abs(a), abs(b), abs(c), 1.0)
+    epsilon = _EPSILON * scale
+    if abs(a) <= epsilon:
+        if abs(b) <= epsilon:
+            return []
+        return [-c / b]
+    discriminant = b * b - 4.0 * a * c
+    if discriminant < -epsilon:
+        return []
+    if abs(discriminant) <= epsilon:
+        return [-b / (2.0 * a)]
+    root = math.sqrt(max(0.0, discriminant))
+    q = -0.5 * (b + math.copysign(root, b))
+    if abs(q) <= epsilon:
+        return [-b / (2.0 * a)]
+    return [q / a, c / q]
+
+
+def _unit_roots(values: Iterable[float], *, include_endpoints: bool = False) -> List[float]:
+    result: List[float] = []
+    lower = -1.0e-10 if include_endpoints else 1.0e-10
+    upper = 1.0 + 1.0e-10 if include_endpoints else 1.0 - 1.0e-10
+    for value in sorted(float(item) for item in values if math.isfinite(float(item))):
+        if value < lower or value > upper:
+            continue
+        value = max(0.0, min(1.0, value))
+        if not result or abs(value - result[-1]) > 1.0e-8:
+            result.append(value)
+    return result
+
+
+def _cubic_coefficients(points: Sequence[Point]) -> Tuple[Point, Point, Point, Point]:
+    p0, p1, p2, p3 = points
+    a = (
+        -p0[0] + 3.0 * p1[0] - 3.0 * p2[0] + p3[0],
+        -p0[1] + 3.0 * p1[1] - 3.0 * p2[1] + p3[1],
+    )
+    b = (
+        3.0 * p0[0] - 6.0 * p1[0] + 3.0 * p2[0],
+        3.0 * p0[1] - 6.0 * p1[1] + 3.0 * p2[1],
+    )
+    c = (3.0 * (p1[0] - p0[0]), 3.0 * (p1[1] - p0[1]))
+    return a, b, c, p0
+
+
+def _event_point(points: Sequence[Point], t: float, **extra: Any) -> Dict[str, Any]:
+    sample = cubic_sample(points, t)
+    payload: Dict[str, Any] = {
+        "t": float(t),
+        "point": _point_payload(sample["point"]),
+    }
+    payload.update(extra)
+    return payload
+
+
+def _adaptive_integral(function, start: float, end: float, tolerance: float, max_depth: int) -> float:
+    def simpson(a: float, b: float, fa: float, fm: float, fb: float) -> float:
+        return (b - a) * (fa + 4.0 * fm + fb) / 6.0
+
+    a = float(start)
+    b = float(end)
+    middle = (a + b) / 2.0
+    fa = float(function(a))
+    fm = float(function(middle))
+    fb = float(function(b))
+    whole = simpson(a, b, fa, fm, fb)
+
+    def recurse(left, right, f_left, f_middle, f_right, estimate, allowed, depth):
+        center = (left + right) / 2.0
+        left_middle = (left + center) / 2.0
+        right_middle = (center + right) / 2.0
+        f_left_middle = float(function(left_middle))
+        f_right_middle = float(function(right_middle))
+        left_estimate = simpson(left, center, f_left, f_left_middle, f_middle)
+        right_estimate = simpson(center, right, f_middle, f_right_middle, f_right)
+        delta = left_estimate + right_estimate - estimate
+        if depth <= 0 or abs(delta) <= 15.0 * allowed:
+            return left_estimate + right_estimate + delta / 15.0
+        return recurse(
+            left, center, f_left, f_left_middle, f_middle, left_estimate, allowed / 2.0, depth - 1
+        ) + recurse(
+            center, right, f_middle, f_right_middle, f_right, right_estimate, allowed / 2.0, depth - 1
+        )
+
+    return float(recurse(a, b, fa, fm, fb, whole, max(float(tolerance), 1.0e-12), int(max_depth)))
+
+
+def cubic_arc_length(points: Sequence[Point], *, tolerance: float = 1.0e-7) -> float:
+    control_length = sum(_length(_sub(points[index + 1], points[index])) for index in range(3))
+    absolute_tolerance = max(float(tolerance) * max(control_length, 1.0), 1.0e-10)
+    return _adaptive_integral(
+        lambda t: cubic_sample(points, t)["speed"],
+        0.0,
+        1.0,
+        absolute_tolerance,
+        MAX_ADAPTIVE_RECURSION,
+    )
+
+
+def _arc_length_parameters(points: Sequence[Point], sample_count: int) -> List[float]:
+    count = clamp_samples_per_curve(sample_count)
+    dense_count = min(2049, max(129, (count - 1) * 8 + 1))
+    dense_t = [index / float(dense_count - 1) for index in range(dense_count)]
+    dense_points = [cubic_sample(points, t)["point"] for t in dense_t]
+    cumulative = [0.0]
+    for index in range(1, dense_count):
+        cumulative.append(cumulative[-1] + _length(_sub(dense_points[index], dense_points[index - 1])))
+    total = cumulative[-1]
+    if total <= _EPSILON:
+        return [index / float(count - 1) for index in range(count)]
+    result = [0.0]
+    cursor = 1
+    for index in range(1, count - 1):
+        wanted = total * index / float(count - 1)
+        while cursor < len(cumulative) - 1 and cumulative[cursor] < wanted:
+            cursor += 1
+        before = cumulative[cursor - 1]
+        after = cumulative[cursor]
+        fraction = 0.0 if after <= before else (wanted - before) / (after - before)
+        result.append(dense_t[cursor - 1] + fraction * (dense_t[cursor] - dense_t[cursor - 1]))
+    result.append(1.0)
+    return result
+
+
+def _distance_to_line(point: Point, start: Point, end: Point) -> float:
+    chord = _sub(end, start)
+    length = _length(chord)
+    if length <= _EPSILON:
+        return _length(_sub(point, start))
+    return abs(_cross(_sub(point, start), chord)) / length
+
+
+def _split_cubic(points: Sequence[Point]) -> Tuple[Tuple[Point, ...], Tuple[Point, ...]]:
+    p0, p1, p2, p3 = points
+    p01 = _scale(_add(p0, p1), 0.5)
+    p12 = _scale(_add(p1, p2), 0.5)
+    p23 = _scale(_add(p2, p3), 0.5)
+    p012 = _scale(_add(p01, p12), 0.5)
+    p123 = _scale(_add(p12, p23), 0.5)
+    middle = _scale(_add(p012, p123), 0.5)
+    return (p0, p01, p012, middle), (middle, p123, p23, p3)
+
+
+def _flatten_cubic(points: Sequence[Point], tolerance: float) -> List[Tuple[float, Point]]:
+    output: List[Tuple[float, Point]] = [(0.0, points[0])]
+
+    def recurse(segment: Sequence[Point], t0: float, t1: float, depth: int) -> None:
+        flatness = max(
+            _distance_to_line(segment[1], segment[0], segment[3]),
+            _distance_to_line(segment[2], segment[0], segment[3]),
+        )
+        if depth <= 0 or flatness <= tolerance or len(output) >= 2048:
+            output.append((t1, segment[3]))
+            return
+        left, right = _split_cubic(segment)
+        middle = (t0 + t1) / 2.0
+        recurse(left, t0, middle, depth - 1)
+        recurse(right, middle, t1, depth - 1)
+
+    recurse(points, 0.0, 1.0, 12)
+    return output
+
+
+def _line_intersection(a0: Point, a1: Point, b0: Point, b1: Point) -> Optional[Tuple[float, float, Point]]:
+    r = _sub(a1, a0)
+    s = _sub(b1, b0)
+    determinant = _cross(r, s)
+    if abs(determinant) <= 1.0e-12 * max(_length(r) * _length(s), 1.0):
+        return None
+    delta = _sub(b0, a0)
+    u = _cross(delta, r) / determinant
+    t = _cross(delta, s) / determinant
+    if not (0.0 <= t <= 1.0 and 0.0 <= u <= 1.0):
+        return None
+    return t, u, _add(a0, _scale(r, t))
+
+
+def _self_intersections(points: Sequence[Point], upm: float) -> List[Dict[str, Any]]:
+    flattened = _flatten_cubic(points, max(float(upm) * 1.0e-5, 1.0e-6))
+    found: List[Dict[str, Any]] = []
+    segment_count = len(flattened) - 1
+    for first in range(segment_count):
+        for second in range(first + 2, segment_count):
+            if first == 0 and second == segment_count - 1:
+                continue
+            intersection = _line_intersection(
+                flattened[first][1], flattened[first + 1][1],
+                flattened[second][1], flattened[second + 1][1],
+            )
+            if intersection is None:
+                continue
+            local_first, local_second, point = intersection
+            t1 = flattened[first][0] + local_first * (flattened[first + 1][0] - flattened[first][0])
+            t2 = flattened[second][0] + local_second * (flattened[second + 1][0] - flattened[second][0])
+            if abs(t1 - t2) <= 1.0e-5:
+                continue
+            if any(abs(t1 - item["t1"]) < 1.0e-4 and abs(t2 - item["t2"]) < 1.0e-4 for item in found):
+                continue
+            found.append({"t1": float(t1), "t2": float(t2), "point": _point_payload(point)})
+            if len(found) >= MAX_SELF_INTERSECTIONS:
+                return found
+    return found
+
+
+def analyze_curve_events(points: Sequence[Point], *, upm: float) -> Dict[str, Any]:
+    """Return bounded analytic/adaptive events for one finite cubic."""
+
+    a, b, c, _d = _cubic_coefficients(points)
+    extrema: List[Dict[str, Any]] = []
+    for axis, coordinate in (("x", 0), ("y", 1)):
+        roots = _unit_roots(_quadratic_roots(3.0 * a[coordinate], 2.0 * b[coordinate], c[coordinate]))
+        extrema.extend(_event_point(points, t, axis=axis) for t in roots)
+    derivative_a = _scale(a, 3.0)
+    derivative_b = _scale(b, 2.0)
+    inflection_roots = _quadratic_roots(
+        -_cross(derivative_a, derivative_b),
+        2.0 * _cross(c, derivative_a),
+        _cross(c, derivative_b),
+    )
+    inflections = [_event_point(points, t) for t in _unit_roots(inflection_roots)]
+
+    candidates = set(_quadratic_roots(3.0 * a[0], 2.0 * b[0], c[0]))
+    candidates.update(_quadratic_roots(3.0 * a[1], 2.0 * b[1], c[1]))
+    candidates.update((0.0, 1.0))
+    control_length = sum(_length(_sub(points[index + 1], points[index])) for index in range(3))
+    stationary_limit = max(control_length, 1.0) * 1.0e-9
+    stationary = []
+    cusps = []
+    for t in _unit_roots(candidates, include_endpoints=True):
+        sample = cubic_sample(points, t)
+        if sample["speed"] > stationary_limit:
+            continue
+        event = _event_point(points, t)
+        stationary.append(event)
+        if _length(sample["secondDerivative"]) > stationary_limit:
+            cusps.append(dict(event))
+
+    length = cubic_arc_length(points)
+    turn_tolerance = 1.0e-8
+    signed_turn = _adaptive_integral(
+        lambda t: (
+            _cross(cubic_sample(points, t)["derivative"], cubic_sample(points, t)["secondDerivative"])
+            / max(cubic_sample(points, t)["speed"] ** 2, _EPSILON)
+        ),
+        0.0,
+        1.0,
+        turn_tolerance,
+        MAX_ADAPTIVE_RECURSION,
+    )
+    absolute_turn = _adaptive_integral(
+        lambda t: abs(
+            _cross(cubic_sample(points, t)["derivative"], cubic_sample(points, t)["secondDerivative"])
+            / max(cubic_sample(points, t)["speed"] ** 2, _EPSILON)
+        ),
+        0.0,
+        1.0,
+        turn_tolerance,
+        MAX_ADAPTIVE_RECURSION,
+    )
+    return {
+        "extrema": sorted(extrema, key=lambda item: (item["t"], item["axis"])),
+        "inflections": inflections,
+        "stationaryPoints": stationary,
+        "cusps": cusps,
+        "selfIntersections": _self_intersections(points, upm),
+        "arcLength": float(length),
+        "normalizedArcLength": float(length / max(float(upm), _EPSILON)),
+        "turningAngle": {
+            "signedDegrees": float(math.degrees(signed_turn)),
+            "absoluteDegrees": float(math.degrees(absolute_turn)),
+        },
+    }
+
+
 def _spike_ratio(max_abs: float, median_abs: float) -> Tuple[Optional[float], bool]:
     if max_abs <= 0.0:
         return 0.0, False
@@ -656,6 +934,7 @@ def analyze_curve_segment(
     samples_per_curve: int,
     spike_ratio_threshold: float,
     include_samples: bool,
+    analysis_mode: str = "sampled_v1",
 ) -> Dict[str, Any]:
     if not segment.get("ok"):
         return dict(segment)
@@ -675,7 +954,11 @@ def analyze_curve_segment(
             node_indices=segment.get("nodeIndices"),
         )
 
-    samples = curvature_comb_samples(segment["points"], sample_count=samples_per_curve)
+    if analysis_mode == "adaptive":
+        sample_parameters = _arc_length_parameters(segment["points"], samples_per_curve)
+        samples = [cubic_sample(segment["points"], t) for t in sample_parameters]
+    else:
+        samples = curvature_comb_samples(segment["points"], sample_count=samples_per_curve)
     valid = [float(sample["curvature"]) for sample in samples if sample.get("curvature") is not None]
     absolute = [abs(value) for value in valid]
     warnings: List[Dict[str, Any]] = []
@@ -719,6 +1002,7 @@ def analyze_curve_segment(
         "segmentEndNodeIndex": int(segment["segmentEndNodeIndex"]),
         "nodeIndices": dict(segment["nodeIndices"]),
         "sampleCount": len(samples),
+        "sampling": "arc_length" if analysis_mode == "adaptive" else "uniform_parameter",
         "curvature": {
             "signedMin": float(signed_min),
             "signedMax": float(signed_max),
@@ -737,6 +1021,8 @@ def analyze_curve_segment(
         },
         "warnings": warnings,
     }
+    if analysis_mode == "adaptive":
+        payload["events"] = analyze_curve_events(segment["points"], upm=upm_value)
     if include_samples:
         payload["samples"] = [
             {
@@ -753,6 +1039,129 @@ def analyze_curve_segment(
     return payload
 
 
+def _path_segments(nodes: Sequence[Any], closed: bool) -> List[Dict[str, Any]]:
+    count = len(nodes)
+    oncurve = [index for index in range(count) if _node_type(nodes[index]) != "offcurve"]
+    if len(oncurve) < 2:
+        return []
+    pairs: List[Tuple[int, int]] = []
+    if closed:
+        pairs = [(oncurve[index - 1], oncurve[index]) for index in range(len(oncurve))]
+    else:
+        pairs = [(oncurve[index - 1], oncurve[index]) for index in range(1, len(oncurve))]
+    output: List[Dict[str, Any]] = []
+    for start, end in pairs:
+        between: List[int] = []
+        cursor = (start + 1) % count
+        while cursor != end:
+            between.append(cursor)
+            cursor = (cursor + 1) % count
+            if len(between) > count:
+                break
+        if _node_type(nodes[end]) == "curve" and len(between) == 2 and all(
+            _node_type(nodes[index]) == "offcurve" for index in between
+        ):
+            extracted = extract_cubic_segment(nodes, end, closed=closed)
+            if extracted.get("ok"):
+                output.append({
+                    "kind": "curve",
+                    "startNodeIndex": start,
+                    "endNodeIndex": end,
+                    "segmentEndNodeIndex": end,
+                    "points": extracted["points"],
+                })
+        elif not between and _node_type(nodes[end]) != "offcurve":
+            try:
+                start_point = _node_point(nodes[start])
+                end_point = _node_point(nodes[end])
+            except (TypeError, ValueError, OverflowError):
+                continue
+            if _finite_point(start_point) and _finite_point(end_point):
+                output.append({
+                    "kind": "line",
+                    "startNodeIndex": start,
+                    "endNodeIndex": end,
+                    "segmentEndNodeIndex": end,
+                    "points": (start_point, end_point),
+                })
+    return output
+
+
+def _segment_endpoint_metrics(segment: Dict[str, Any], at_end: bool) -> Tuple[Point, Optional[float]]:
+    if segment["kind"] == "line":
+        return _sub(segment["points"][1], segment["points"][0]), 0.0
+    sample = cubic_sample(segment["points"], 1.0 if at_end else 0.0)
+    return sample["derivative"], sample.get("curvature")
+
+
+def _adaptive_joins(
+    nodes: Sequence[Any],
+    *,
+    closed: bool,
+    upm: float,
+    selected: set,
+    discontinuity_threshold: float,
+) -> List[Dict[str, Any]]:
+    segments = _path_segments(nodes, closed)
+    by_start = {int(segment["startNodeIndex"]): segment for segment in segments}
+    joins: List[Dict[str, Any]] = []
+    for incoming in segments:
+        join_index = int(incoming["endNodeIndex"])
+        outgoing = by_start.get(join_index)
+        if outgoing is None:
+            continue
+        incoming_end = int(incoming["segmentEndNodeIndex"])
+        outgoing_end = int(outgoing["segmentEndNodeIndex"])
+        if selected and incoming_end not in selected and outgoing_end not in selected:
+            continue
+        incoming_tangent, incoming_curvature = _segment_endpoint_metrics(incoming, True)
+        outgoing_tangent, outgoing_curvature = _segment_endpoint_metrics(outgoing, False)
+        tangent_angle = _angle_degrees(incoming_tangent, outgoing_tangent)
+        degenerate = not math.isfinite(tangent_angle)
+        declared_smooth = bool(_node_value(nodes[join_index], "smooth", False))
+        geometrically_smooth = not degenerate and tangent_angle <= 1.0
+        warnings: List[Dict[str, Any]] = []
+        if degenerate:
+            warnings.append({"code": "degenerate_join_tangent", "message": "A join tangent is degenerate."})
+        if declared_smooth != geometrically_smooth:
+            warnings.append({
+                "code": "declared_geometric_smooth_mismatch",
+                "message": "The declared smooth flag and measured tangent continuity disagree.",
+            })
+        relative = None
+        if incoming_curvature is not None and outgoing_curvature is not None:
+            relative = abs(float(incoming_curvature) - float(outgoing_curvature)) / max(
+                abs(float(incoming_curvature)), abs(float(outgoing_curvature)), 1.0 / upm
+            )
+            if geometrically_smooth and relative > discontinuity_threshold:
+                warnings.append({
+                    "code": "curvature_discontinuity",
+                    "message": "Endpoint curvature changes across a geometrically smooth join.",
+                    "ratio": float(relative),
+                })
+        kind = "{}_{}".format(incoming["kind"], outgoing["kind"])
+        payload: Dict[str, Any] = {
+            "nodeIndex": join_index,
+            "incomingSegmentEndNodeIndex": incoming_end,
+            "outgoingSegmentEndNodeIndex": outgoing_end,
+            "kind": kind,
+            "declaredSmooth": declared_smooth,
+            "geometricSmooth": geometrically_smooth,
+            "g0Distance": 0.0,
+            "g0Continuous": True,
+            "g1AngleDegrees": None if degenerate else float(tangent_angle),
+            "g1Continuous": geometrically_smooth,
+            "incomingCurvature": incoming_curvature,
+            "outgoingCurvature": outgoing_curvature,
+            "relativeDiscontinuity": relative,
+            "g2Continuous": bool(geometrically_smooth and relative is not None and relative <= discontinuity_threshold),
+            "warnings": warnings,
+            "warning": warnings[0] if warnings else None,
+        }
+        joins.append(payload)
+    return joins
+
+
 def analyze_curve_quality_path(
     nodes: Sequence[Any],
     *,
@@ -763,6 +1172,7 @@ def analyze_curve_quality_path(
     discontinuity_threshold: float = 0.25,
     spike_ratio_threshold: float = 4.0,
     include_samples: bool = False,
+    analysis_mode: str = "adaptive",
 ) -> Dict[str, Any]:
     if segment_end_node_indices is None:
         requested_indices: List[Any] = cubic_segment_end_indices(nodes, closed=bool(closed))
@@ -770,6 +1180,9 @@ def analyze_curve_quality_path(
         requested_indices = list(segment_end_node_indices)
     resolved_indices = [(raw_index, _segment_index_value(raw_index)) for raw_index in requested_indices]
     sample_count = clamp_samples_per_curve(samples_per_curve)
+    mode = str(analysis_mode or "adaptive").strip().lower()
+    if mode not in {"adaptive", "sampled_v1"}:
+        return _curve_quality_rejection("invalid_analysis_mode", sample_count, len(resolved_indices), mode)
     upm_value = _finite_float(upm)
     if upm_value is None or upm_value <= 0.0:
         return _curve_quality_rejection("invalid_upm", sample_count, len(resolved_indices))
@@ -792,6 +1205,7 @@ def analyze_curve_quality_path(
                 samples_per_curve=sample_count,
                 spike_ratio_threshold=spike_threshold_value,
                 include_samples=bool(include_samples),
+                analysis_mode=mode,
             )
         )
 
@@ -804,55 +1218,65 @@ def analyze_curve_quality_path(
         for segment in all_segments.values()
         if segment.get("ok")
     }
-    joins: List[Dict[str, Any]] = []
     selected = {resolved_index for _raw_index, resolved_index in resolved_indices if resolved_index is not None}
-    for end_index, incoming in sorted(all_segments.items()):
-        join_index = int(incoming["nodeIndices"]["end"])
-        if not bool(_node_value(nodes[join_index], "smooth", False)):
-            continue
-        outgoing = by_start.get(join_index)
-        if outgoing is None:
-            continue
-        outgoing_end = int(outgoing["segmentEndNodeIndex"])
-        if end_index not in selected and outgoing_end not in selected:
-            continue
-        incoming_value = cubic_sample(incoming["points"], 1.0).get("curvature")
-        outgoing_value = cubic_sample(outgoing["points"], 0.0).get("curvature")
-        if incoming_value is None or outgoing_value is None:
+    if mode == "adaptive":
+        joins = _adaptive_joins(
+            nodes,
+            closed=bool(closed),
+            upm=upm_value,
+            selected=selected,
+            discontinuity_threshold=discontinuity_value,
+        )
+    else:
+        joins: List[Dict[str, Any]] = []
+        for end_index, incoming in sorted(all_segments.items()):
+            join_index = int(incoming["nodeIndices"]["end"])
+            if not bool(_node_value(nodes[join_index], "smooth", False)):
+                continue
+            outgoing = by_start.get(join_index)
+            if outgoing is None:
+                continue
+            outgoing_end = int(outgoing["segmentEndNodeIndex"])
+            if end_index not in selected and outgoing_end not in selected:
+                continue
+            incoming_value = cubic_sample(incoming["points"], 1.0).get("curvature")
+            outgoing_value = cubic_sample(outgoing["points"], 0.0).get("curvature")
+            if incoming_value is None or outgoing_value is None:
+                joins.append(
+                    {
+                        "nodeIndex": join_index,
+                        "incomingSegmentEndNodeIndex": int(end_index),
+                        "outgoingSegmentEndNodeIndex": outgoing_end,
+                        "relativeDiscontinuity": None,
+                        "warning": {"code": "degenerate_join_tangent"},
+                    }
+                )
+                continue
+            relative = abs(float(incoming_value) - float(outgoing_value)) / max(
+                abs(float(incoming_value)), abs(float(outgoing_value)), 1.0 / upm_value
+            )
+            warning = None
+            if relative > discontinuity_value:
+                warning = {"code": "curvature_discontinuity", "ratio": float(relative)}
             joins.append(
                 {
                     "nodeIndex": join_index,
                     "incomingSegmentEndNodeIndex": int(end_index),
                     "outgoingSegmentEndNodeIndex": outgoing_end,
-                    "relativeDiscontinuity": None,
-                    "warning": {"code": "degenerate_join_tangent"},
+                    "incomingCurvature": float(incoming_value),
+                    "outgoingCurvature": float(outgoing_value),
+                    "relativeDiscontinuity": float(relative),
+                    "warning": warning,
                 }
             )
-            continue
-        relative = abs(float(incoming_value) - float(outgoing_value)) / max(
-            abs(float(incoming_value)), abs(float(outgoing_value)), 1.0 / upm_value
-        )
-        warning = None
-        if relative > discontinuity_value:
-            warning = {"code": "curvature_discontinuity", "ratio": float(relative)}
-        joins.append(
-            {
-                "nodeIndex": join_index,
-                "incomingSegmentEndNodeIndex": int(end_index),
-                "outgoingSegmentEndNodeIndex": outgoing_end,
-                "incomingCurvature": float(incoming_value),
-                "outgoingCurvature": float(outgoing_value),
-                "relativeDiscontinuity": float(relative),
-                "warning": warning,
-            }
-        )
 
     warning_count = sum(len(segment.get("warnings") or []) for segment in segments) + sum(
         1 for join in joins if join.get("warning")
     )
     return {
         "ok": True,
-        "geometryDataVersion": GEOMETRY_DATA_VERSION,
+        "geometryDataVersion": CURVE_QUALITY_DATA_VERSION,
+        "analysisMode": mode,
         "samplesPerCurve": sample_count,
         "segments": segments,
         "joins": joins,
@@ -865,10 +1289,16 @@ def analyze_curve_quality_path(
     }
 
 
-def _curve_quality_rejection(reason: str, sample_count: int, requested_count: int) -> Dict[str, Any]:
+def _curve_quality_rejection(
+    reason: str,
+    sample_count: int,
+    requested_count: int,
+    analysis_mode: str = "adaptive",
+) -> Dict[str, Any]:
     return {
         "ok": False,
-        "geometryDataVersion": GEOMETRY_DATA_VERSION,
+        "geometryDataVersion": CURVE_QUALITY_DATA_VERSION,
+        "analysisMode": str(analysis_mode),
         "samplesPerCurve": int(sample_count),
         "segments": [],
         "joins": [],
@@ -883,13 +1313,16 @@ def _curve_quality_rejection(reason: str, sample_count: int, requested_count: in
 
 
 __all__ = [
+    "CURVE_QUALITY_DATA_VERSION",
     "DEFAULT_SAMPLES_PER_CURVE",
     "GEOMETRY_DATA_VERSION",
     "MAX_SAMPLE_DETAIL_SEGMENTS",
+    "analyze_curve_events",
     "analyze_curve_quality_path",
     "analyze_tunni_path",
     "analyze_tunni_segment",
     "clamp_samples_per_curve",
+    "cubic_arc_length",
     "cubic_sample",
     "cubic_segment_end_indices",
     "curvature_comb_samples",

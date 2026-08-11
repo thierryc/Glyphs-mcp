@@ -7,6 +7,7 @@ import json
 from GlyphsApp import Glyphs, GSNode, GSPath  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _apply_path_specs_and_metrics,
     _font_format_metadata,
@@ -31,7 +32,7 @@ from mcp_tool_helpers import (
 )
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_glyph_paths(
     font_index: int = 0,
     glyph_name: str = None,
@@ -196,7 +197,7 @@ async def get_glyph_paths(
     except Exception as e:
         return json.dumps({"error": str(e)})
 
-@mcp.tool()
+@glyphs_tool()
 async def set_glyph_paths(
     font_index: int = 0,
     glyph_name: str = None,

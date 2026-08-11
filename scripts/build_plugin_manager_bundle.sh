@@ -195,6 +195,23 @@ while IFS= read -r -d '' file; do
   copied=$((copied + 1))
 done < <(git ls-files -z "$src_bundle")
 
+# Newly introduced catalog infrastructure must be mirrorable during the
+# documented build-before-stage workflow. Keep this allowlist narrow so the
+# tracked-file rule still excludes arbitrary local artifacts.
+for rel in \
+  "Contents/Resources/tool_catalog.py" \
+  "Contents/Resources/tool_registration.py" \
+  "Contents/Resources/tool_result_schemas.py"
+do
+  source_file="$src_bundle/$rel"
+  destination_file="$dst_bundle/$rel"
+  if [[ -f "$source_file" && ! -f "$destination_file" ]]; then
+    mkdir -p "$(dirname "$destination_file")"
+    cp -p "$source_file" "$destination_file"
+    copied=$((copied + 1))
+  fi
+done
+
 if [[ "$copied" -eq 0 ]]; then
   echo "error: no tracked files found under: $src_bundle" >&2
   exit 1

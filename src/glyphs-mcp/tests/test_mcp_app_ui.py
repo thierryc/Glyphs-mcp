@@ -50,6 +50,7 @@ class MCPAppResourceTests(unittest.TestCase):
             {
                 "fastmcp.resources": fastmcp_resources,
                 "mcp_runtime": types.SimpleNamespace(mcp=fake_mcp),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
             },
         ):
             sys.modules.pop(module_name, None)

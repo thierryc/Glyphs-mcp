@@ -7,6 +7,7 @@ import json
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _font_resolution_error,
     _is_active_font,
@@ -143,7 +144,7 @@ def _resolve_target_names(font, scope, glyph_names):
     return names, None
 
 
-@mcp.tool(annotations=READ_ONLY_ANNOTATIONS)
+@glyphs_tool()
 async def review_unicode_assignments(
     font_index: int = 0,
     scope: str = "selected",
@@ -276,7 +277,7 @@ def _mutation_outcome(font, actions):
         }
 
 
-@mcp.tool(annotations=APPLY_ANNOTATIONS)
+@glyphs_tool()
 async def apply_unicode_assignments(
     font_index: int = 0,
     assignments: list = None,

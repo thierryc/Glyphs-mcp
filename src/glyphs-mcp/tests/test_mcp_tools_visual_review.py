@@ -237,6 +237,7 @@ class McpToolsVisualReviewTests(unittest.TestCase):
                 "fastmcp.utilities": fastmcp_utilities_mod,
                 "fastmcp.utilities.types": fastmcp_types_mod,
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
                 "mcp_tool_helpers": helpers_module,
                 "outline_geometry_engine": engine,
                 "curve_overlay_model": model,

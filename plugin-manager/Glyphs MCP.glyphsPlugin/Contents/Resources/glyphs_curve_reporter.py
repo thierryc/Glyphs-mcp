@@ -24,6 +24,23 @@ from mcp_tool_helpers import (
 REPORTER_CLASS_NAME = "GlyphsMCPCurvatureReporter"
 REPORTER_MENU_NAME = "Glyphs MCP Curvature"
 REPORTER_MENU_PATH = "View > Show Glyphs MCP Curvature"
+SUPPORTED_OVERLAYS = ("curvature", "curve_events")
+_ACTIVE_OVERLAYS = ("curvature",)
+
+
+def set_overlay_features(overlays):
+    """Set validated Reporter features; called on Glyphs' main thread."""
+
+    global _ACTIVE_OVERLAYS
+    values = tuple(str(value) for value in overlays)
+    if not values or len(values) != len(set(values)) or any(value not in SUPPORTED_OVERLAYS for value in values):
+        raise ValueError("overlays must contain unique curvature and/or curve_events values")
+    _ACTIVE_OVERLAYS = tuple(value for value in SUPPORTED_OVERLAYS if value in values)
+    return _ACTIVE_OVERLAYS
+
+
+def overlay_features():
+    return tuple(_ACTIVE_OVERLAYS)
 
 
 def _point_values(node):
@@ -57,8 +74,9 @@ def _plain_paths(layer):
         for node in list(getattr(path, "nodes", None) or []):
             x, y = _point_values(node)
             node_type = _normalized_node_type(node)
-            nodes.append({"x": x, "y": y, "type": node_type})
-            node_signature.append((x, y, node_type))
+            smooth = bool(getattr(node, "smooth", False))
+            nodes.append({"x": x, "y": y, "type": node_type, "smooth": smooth})
+            node_signature.append((x, y, node_type, smooth))
         closed = bool(getattr(path, "closed", True))
         direction = _path_direction(path)
         record = {"nodes": nodes, "closed": closed}
@@ -116,6 +134,13 @@ def _set_color(sign):
     NSColor.colorWithDeviceRed_green_blue_alpha_(*rgba).set()
 
 
+def _set_event_color(kind):
+    rgba = curve_overlay_model.EVENT_RGBA.get(
+        str(kind), curve_overlay_model.EVENT_RGBA["continuity"]
+    )
+    NSColor.colorWithDeviceRed_green_blue_alpha_(*rgba).set()
+
+
 def draw_overlay_model(model, scale):
     """Draw a previously built pure overlay model into the current context."""
 
@@ -141,7 +166,41 @@ def draw_overlay_model(model, scale):
             _stroke_envelopes(envelopes, envelope_width)
 
 
-def _public_draw_snapshot(layer, model, *, cache_hit):
+def draw_event_overlay_model(model, scale):
+    """Draw compact screen-aware event markers without changing geometry."""
+
+    zoom = max(float(scale or 1.0), 1.0e-6)
+    radius = max(2.0, 5.0 * zoom ** -0.9)
+    line_width = max(0.55, 1.1 * zoom ** -0.9)
+    by_kind = {}
+    for marker in model.get("markers") or []:
+        by_kind.setdefault(str(marker.get("kind") or "continuity"), []).append(marker)
+    for kind, markers in sorted(by_kind.items()):
+        lines = []
+        for marker in markers:
+            x, y = marker["point"]
+            if kind in {"inflection", "cusp"}:
+                lines.extend(
+                    [
+                        ((x, y + radius), (x + radius, y)),
+                        ((x + radius, y), (x, y - radius)),
+                        ((x, y - radius), (x - radius, y)),
+                        ((x - radius, y), (x, y + radius)),
+                    ]
+                )
+            else:
+                lines.extend(
+                    [
+                        ((x - radius, y), (x + radius, y)),
+                        ((x, y - radius), (x, y + radius)),
+                    ]
+                )
+        if lines:
+            _set_event_color(kind)
+            _stroke_path(lines, line_width)
+
+
+def _public_draw_snapshot(layer, model, event_model, *, cache_hit, overlays):
     return {
         "overlayDataVersion": curve_overlay_model.OVERLAY_DATA_VERSION,
         "glyphName": _glyph_name(layer),
@@ -157,6 +216,11 @@ def _public_draw_snapshot(layer, model, *, cache_hit):
         "combLengthClampEm": float(model.get("combLengthClampEm") or 0.0),
         "cacheHit": bool(cache_hit),
         "warnings": list(model.get("warnings") or []),
+        "overlays": list(overlays),
+        "curveEventMarkerCount": int(event_model.get("markerCount") or 0),
+        "curveEventMarkerLimit": int(event_model.get("markerLimit") or 0),
+        "curveEventMarkerCapReached": bool(event_model.get("markerCapReached")),
+        "curveEventWarnings": list(event_model.get("warnings") or []),
     }
 
 
@@ -196,26 +260,56 @@ class GlyphsMCPCurvatureReporter(ReporterPlugin):
             paths, path_signature = _plain_paths(layer)
             upm = _font_upm(layer)
             component_count = len(list(_layer_components(layer)))
+            overlays = overlay_features()
             cache_key = (
                 id(layer),
                 float(upm),
                 int(component_count),
                 path_signature,
+                overlays,
             )
             cache_hit = cache_key == self._cache_key and self._cache_model is not None
             if cache_hit:
-                model = self._cache_model
+                model, event_model = self._cache_model
             else:
-                model = curve_overlay_model.build_curve_overlay(
-                    paths,
-                    upm=upm,
-                    component_count_omitted=component_count,
-                )
+                if "curvature" in overlays:
+                    model = curve_overlay_model.build_curve_overlay(
+                        paths,
+                        upm=upm,
+                        component_count_omitted=component_count,
+                    )
+                else:
+                    model = {
+                        "segmentCount": 0,
+                        "samplesPerCurve": 0,
+                        "strokeCount": 0,
+                        "strokeLimit": 0,
+                        "strokeCapReached": False,
+                        "clampedStrokeCount": 0,
+                        "degenerateSampleCount": 0,
+                        "componentCountOmitted": component_count,
+                        "combLengthClampEm": 0.0,
+                        "warnings": [],
+                    }
+                if "curve_events" in overlays:
+                    event_model = curve_overlay_model.build_curve_events_overlay(paths, upm=upm)
+                else:
+                    event_model = {
+                        "markerCount": 0,
+                        "markerLimit": curve_overlay_model.DEFAULT_EVENT_MARKER_LIMIT,
+                        "markerCapReached": False,
+                        "warnings": [],
+                    }
                 self._cache_key = cache_key
-                self._cache_model = model
+                self._cache_model = (model, event_model)
 
-            draw_overlay_model(model, self.getScale())
-            self._last_draw = _public_draw_snapshot(layer, model, cache_hit=cache_hit)
+            if "curvature" in overlays:
+                draw_overlay_model(model, self.getScale())
+            if "curve_events" in overlays:
+                draw_event_overlay_model(event_model, self.getScale())
+            self._last_draw = _public_draw_snapshot(
+                layer, model, event_model, cache_hit=cache_hit, overlays=overlays
+            )
             self._last_error = None
         except Exception as error:
             self._last_error = {
@@ -232,7 +326,10 @@ class GlyphsMCPCurvatureReporter(ReporterPlugin):
         """Draw a compact legend and bounded warnings in the Edit View."""
 
         snapshot = self._last_draw
-        if not snapshot or int(snapshot.get("cubicSegmentCount") or 0) <= 0:
+        if not snapshot or (
+            int(snapshot.get("cubicSegmentCount") or 0) <= 0
+            and int(snapshot.get("curveEventMarkerCount") or 0) <= 0
+        ):
             return
         try:
             font = getattr(Glyphs, "font", None)
@@ -243,7 +340,13 @@ class GlyphsMCPCurvatureReporter(ReporterPlugin):
             scale = max(float(getattr(tab, "scale", None) or self.getScale() or 1.0), 1.0e-6)
             origin = viewport.origin
             position = NSPoint(float(origin.x) + 12.0 * scale, float(origin.y) + 12.0 * scale)
-            parts = ["Curvature: + teal / - pink", "right-normal outside-ink placement", "raw paths only"]
+            overlays = list(snapshot.get("overlays") or ["curvature"])
+            parts = []
+            if "curvature" in overlays:
+                parts.extend(["Curvature: + teal / - pink", "right-normal outside-ink placement"])
+            if "curve_events" in overlays:
+                parts.append("Events: extrema / inflections / cusps / joins")
+            parts.append("raw paths only")
             omitted = int(snapshot.get("componentCountOmitted") or 0)
             if omitted:
                 parts.append("{} component{} omitted".format(omitted, "" if omitted == 1 else "s"))
@@ -252,6 +355,8 @@ class GlyphsMCPCurvatureReporter(ReporterPlugin):
             clamped = int(snapshot.get("clampedStrokeCount") or 0)
             if clamped:
                 parts.append("{} clamped".format(clamped))
+            if snapshot.get("curveEventMarkerCapReached"):
+                parts.append("event marker cap reached")
             color_factory = getattr(NSColor, "secondaryLabelColor", None)
             color = color_factory() if callable(color_factory) else NSColor.grayColor()
             self.drawTextAtPoint(
@@ -272,6 +377,7 @@ class GlyphsMCPCurvatureReporter(ReporterPlugin):
             "overlayDataVersion": curve_overlay_model.OVERLAY_DATA_VERSION,
             "reporterClass": REPORTER_CLASS_NAME,
             "menuPath": REPORTER_MENU_PATH,
+            "overlays": list(overlay_features()),
             "lastDraw": dict(self._last_draw) if self._last_draw else None,
             "lastError": dict(self._last_error) if self._last_error else None,
         }
@@ -287,5 +393,9 @@ __all__ = [
     "REPORTER_CLASS_NAME",
     "REPORTER_MENU_NAME",
     "REPORTER_MENU_PATH",
+    "SUPPORTED_OVERLAYS",
     "draw_overlay_model",
+    "draw_event_overlay_model",
+    "overlay_features",
+    "set_overlay_features",
 ]

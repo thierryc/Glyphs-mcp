@@ -1,6 +1,6 @@
 ---
-title: Settings and tool profiles
-description: Tool profiles and environment variables for configuring Glyphs MCP.
+title: Settings and discovery
+description: Tool discovery, visibility, and environment variables for configuring Glyphs MCP.
 ---
 
 Glyphs MCP has two configuration surfaces:
@@ -8,18 +8,13 @@ Glyphs MCP has two configuration surfaces:
 - **Glyphs UI**: **Edit -> Glyphs MCP Server**
 - **Environment variables**: optional security, docs, and debugging behavior
 
-## Tool profiles
+## Tool discovery
 
-Tool profiles reduce the tools exposed through `tools/list`. This matters because many MCP clients include tool names and JSON Schemas in model context.
-
-Choose between the read-only inspection surface and the full editing surface:
-
-| Profile | Use when |
-| --- | --- |
-| `Read-only` | Inspection, metadata, outlines, kerning data, docs, and visual review without mutation tools. |
-| `Edit` | The complete server surface, including edit and execution tools. This is the default. |
-
-After changing profiles, restart the server and reconnect the MCP client.
+Glyphs MCP exposes one catalog-driven registry. It contains 76 active tools:
+65 model-visible tools and 11 app-only wrappers. Clients that honor MCP Apps
+visibility omit app-only wrappers from model routing. Every tool carries four
+MCP safety hints plus effect and lifecycle metadata; there is no profile
+selector or saved profile state.
 
 ## Environment variables
 

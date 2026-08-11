@@ -146,6 +146,7 @@ class McpToolsStemsTests(unittest.TestCase):
             {
                 "GlyphsApp": glyphs_module,
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
                 "mcp_tool_helpers": helpers_module,
             },
         ):

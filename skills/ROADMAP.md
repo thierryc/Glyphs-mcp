@@ -154,8 +154,8 @@ Core rules:
   acceptance, or the legacy direct review/apply workflow
 - read current font/master/selection first
 - run `review_master_stem_metrics` before Cursivy
-- run `review_italic_first_pass` before any apply step
-- always run `apply_italic_first_pass` with `dry_run=true` first
+- start with `preview_italic_first_pass_candidate`
+- review the candidate session, dry-run acceptance, obtain approval, then confirm acceptance
 - only mutate with explicit approval and `confirm=true`
 - never auto-save the font
 

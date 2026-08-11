@@ -27,6 +27,10 @@ class _FakeMCP:
         return lambda fn: fn
 
 
+def _fake_glyphs_tool(*_args, **_kwargs):
+    return lambda fn: fn
+
+
 class _Reporter:
     def __init__(self) -> None:
         self.last_draw = {
@@ -44,6 +48,15 @@ class _Reporter:
 
 class McpToolsCurveOverlayTests(unittest.TestCase):
     def _load_module(self, *, include_reporter=True, expose_actions=True, update_active=True):
+        selected_overlays = ["curvature"]
+
+        def overlay_features():
+            return tuple(selected_overlays)
+
+        def set_overlay_features(values):
+            selected_overlays[:] = list(values)
+            return tuple(selected_overlays)
+
         reporter = _Reporter()
         glyphs = types.SimpleNamespace(
             reporters=[reporter] if include_reporter else [],
@@ -94,8 +107,12 @@ class McpToolsCurveOverlayTests(unittest.TestCase):
                 "glyphs_curve_reporter": types.SimpleNamespace(
                     REPORTER_CLASS_NAME="GlyphsMCPCurvatureReporter",
                     REPORTER_MENU_PATH="View > Show Glyphs MCP Curvature",
+                    SUPPORTED_OVERLAYS=("curvature", "curve_events"),
+                    overlay_features=overlay_features,
+                    set_overlay_features=set_overlay_features,
                 ),
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=_fake_glyphs_tool),
                 "mcp_tool_helpers": types.SimpleNamespace(
                     _run_on_main_thread=run_on_main_thread,
                     _safe_json=json.dumps,
@@ -133,6 +150,35 @@ class McpToolsCurveOverlayTests(unittest.TestCase):
         self.assertFalse(disabled["enabledAfter"])
         self.assertEqual(glyphs.redrawCount, 2)
         self.assertEqual(dispatch["value"], 2)
+
+    def test_overlay_selection_supports_events_or_both(self) -> None:
+        module, _glyphs, _reporter, dispatch = self._load_module()
+
+        events = json.loads(
+            asyncio.run(module.set_curve_review_overlay(True, overlays=["curve_events"]))
+        )
+        both = json.loads(
+            asyncio.run(
+                module.set_curve_review_overlay(
+                    True, overlays=["curvature", "curve_events"]
+                )
+            )
+        )
+
+        self.assertEqual(events["overlays"], ["curve_events"])
+        self.assertEqual(both["overlays"], ["curvature", "curve_events"])
+        self.assertEqual(dispatch["value"], 2)
+
+    def test_invalid_overlay_selection_is_rejected_before_dispatch(self) -> None:
+        module, _glyphs, _reporter, dispatch = self._load_module()
+
+        for invalid in ([], ["events"], ["curvature", "curvature"], "curvature"):
+            payload = json.loads(
+                asyncio.run(module.set_curve_review_overlay(True, overlays=invalid))
+            )
+            self.assertFalse(payload["ok"])
+            self.assertIn("overlays", payload["error"])
+        self.assertEqual(dispatch["value"], 0)
 
     def test_invalid_boolean_is_rejected_before_main_thread_dispatch(self) -> None:
         module, _glyphs, _reporter, dispatch = self._load_module()

@@ -6,8 +6,8 @@ in the normal unit test runner). Instead, we parse decorators from source.
 
 from __future__ import annotations
 
-import ast
 import re
+import sys
 import unittest
 from pathlib import Path
 
@@ -26,24 +26,14 @@ def _resources_dir() -> Path:
     )
 
 
-def _tool_source_paths() -> list[Path]:
-    resources = _resources_dir()
-    paths = sorted(resources.glob("mcp_tools_*.py"))
-    paths.append(resources / "code_execution.py")
-    paths.append(resources / "docs_tools.py")
-    return [p for p in paths if p.is_file()]
+if str(_resources_dir()) not in sys.path:
+    sys.path.insert(0, str(_resources_dir()))
+
+from tool_catalog import active_entries
 
 
-def _extract_tool_names(paths: list[Path]) -> set[str]:
-    tool_names: set[str] = set()
-    for path in paths:
-        tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"))
-        for node in ast.walk(tree):
-            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                continue
-            if any(ast.unparse(decorator).startswith("mcp.tool") for decorator in node.decorator_list):
-                tool_names.add(node.name)
-    return tool_names
+def _active_tool_names() -> set[str]:
+    return {entry.name for entry in active_entries()}
 
 
 def _read_readme_command_set_section(readme_text: str) -> str:
@@ -60,8 +50,31 @@ def _read_readme_command_set_section(readme_text: str) -> str:
 
 
 class DocsSurfaceSyncTests(unittest.TestCase):
+    def test_current_user_guidance_has_no_obsolete_tool_profiles(self) -> None:
+        current_surfaces = (
+            _repo_root() / "website" / "src" / "components" / "HomepageFeatures" / "index.tsx",
+            _repo_root()
+            / "macos-installer"
+            / "GlyphsMCPInstaller"
+            / "Core"
+            / "StarterProjectCreator.swift",
+            _repo_root()
+            / "macos-installer"
+            / "GlyphsMCPInstaller"
+            / "Resources"
+            / "Starter"
+            / "AGENTS.md",
+        )
+        obsolete_phrases = ("tool profile", "read-only profile", "edit profile")
+
+        for path in current_surfaces:
+            with self.subTest(path=path):
+                text = path.read_text(encoding="utf-8", errors="replace").lower()
+                for phrase in obsolete_phrases:
+                    self.assertNotIn(phrase, text)
+
     def test_command_set_mdx_mentions_all_tools(self) -> None:
-        tool_names = _extract_tool_names(_tool_source_paths())
+        tool_names = _active_tool_names()
         self.assertGreater(len(tool_names), 0, "Expected at least one tool name to be discovered.")
 
         command_set = _repo_root() / "content" / "reference" / "command-set.mdx"
@@ -72,16 +85,16 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         self.assertEqual(missing, [], f"command-set.mdx is missing tool names: {missing}")
 
     def test_readme_command_set_mentions_all_tools(self) -> None:
-        tool_names = _extract_tool_names(_tool_source_paths())
-        self.assertGreater(len(tool_names), 0, "Expected at least one tool name to be discovered.")
-
         readme = _repo_root() / "README.md"
         self.assertTrue(readme.is_file(), f"Missing README: {readme}")
         readme_text = readme.read_text(encoding="utf-8", errors="replace")
         section = _read_readme_command_set_section(readme_text)
 
-        missing = sorted([name for name in tool_names if name not in section])
-        self.assertEqual(missing, [], f"README Command Set section is missing tool names: {missing}")
+        self.assertIn("76 active tools", section)
+        self.assertIn("65 are model-visible", section)
+        self.assertIn("11 are app-only", section)
+        self.assertIn("authoritative list", section)
+        self.assertNotIn("| Tool |", section)
 
     def test_italic_first_pass_docs_cite_primary_symbol_sources(self) -> None:
         page = _repo_root() / "content" / "italic-first-pass.md"

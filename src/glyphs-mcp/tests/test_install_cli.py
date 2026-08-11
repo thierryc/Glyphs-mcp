@@ -12,6 +12,7 @@ import importlib.util
 import io
 import json
 import os
+import plistlib
 import shutil
 import sys
 import tarfile
@@ -312,7 +313,13 @@ class InstallerSmokeTests(unittest.TestCase):
                     os.environ.pop("HOME", None)
                 else:
                     os.environ["HOME"] = old_home
-            self.assertEqual(versions, ["1.7.0"])
+            plist_path = (
+                _repo_root()
+                / "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist"
+            )
+            with plist_path.open("rb") as handle:
+                expected_version = plistlib.load(handle)["CFBundleShortVersionString"]
+            self.assertEqual(versions, [expected_version])
 
     def test_installer_zip_validation_rejects_path_traversal(self) -> None:
         install_cli = _load_install_cli()

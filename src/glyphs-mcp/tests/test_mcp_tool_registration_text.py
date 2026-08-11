@@ -1,4 +1,4 @@
-"""Guards against shipping unregistered MCP tools.
+"""Guards against bypassing catalog-driven MCP registration.
 
 These tests are intentionally text-based because the MCP tool module imports
 GlyphsApp, which is not available in the normal unit test runner.
@@ -64,7 +64,7 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         decorated_modules = {
             path.stem
             for path in _tool_module_paths()
-            if "@mcp.tool()" in path.read_text(encoding="utf-8", errors="replace")
+            if "@glyphs_tool()" in path.read_text(encoding="utf-8", errors="replace")
         }
 
         self.assertEqual(
@@ -123,15 +123,15 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         i1, prev1 = prev_significant_line(found_index)
         self.assertEqual(
             prev1,
-            "@mcp.tool()",
-            f"{function_name} must be decorated with @mcp.tool() (found in {found_path.name})",
+            "@glyphs_tool()",
+            f"{function_name} must be decorated with @glyphs_tool() (found in {found_path.name})",
         )
 
         i2, prev2 = prev_significant_line(i1)  # type: ignore[arg-type]
         self.assertNotEqual(
             prev2,
-            "@mcp.tool()",
-            f"{function_name} must not be double-decorated with @mcp.tool() (found in {found_path.name})",
+            "@glyphs_tool()",
+            f"{function_name} must not be double-decorated with @glyphs_tool() (found in {found_path.name})",
         )
 
     def test_set_spacing_params_is_decorated(self) -> None:
@@ -365,10 +365,8 @@ class McpToolRegistrationTextTests(unittest.TestCase):
     def test_apply_kerning_bumper_is_decorated(self) -> None:
         self._assert_async_tool_decorated("apply_kerning_bumper")
 
-    def test_compensated_tuning_tools_are_decorated(self) -> None:
-        self._assert_async_tool_decorated("measure_stem_ratio")
-        self._assert_async_tool_decorated("review_compensated_tuning")
-        self._assert_async_tool_decorated("apply_compensated_tuning")
+    def test_compensated_tuning_candidate_is_decorated(self) -> None:
+        self._assert_async_tool_decorated("preview_compensated_tuning_candidate")
 
     def test_stem_metric_tools_are_decorated(self) -> None:
         self._assert_async_tool_decorated("review_master_stem_metrics")
@@ -377,16 +375,18 @@ class McpToolRegistrationTextTests(unittest.TestCase):
     def test_master_italic_angle_tool_is_decorated(self) -> None:
         self._assert_async_tool_decorated("set_master_italic_angle")
 
-    def test_italic_first_pass_tools_are_decorated(self) -> None:
-        self._assert_async_tool_decorated("review_italic_first_pass")
-        self._assert_async_tool_decorated("apply_italic_first_pass")
+    def test_italic_first_pass_candidate_is_decorated(self) -> None:
+        self._assert_async_tool_decorated("preview_italic_first_pass_candidate")
 
-    def test_visual_review_tool_is_decorated(self) -> None:
-        self._assert_async_tool_decorated("render_glyph_review_image")
+    def test_removed_visual_review_tool_is_not_decorated(self) -> None:
+        resources = _resources_dir()
+        text = (resources / "mcp_tools_visual_review.py").read_text(encoding="utf-8")
+        self.assertNotRegex(text, r"@glyphs_tool\(\)\s+async def render_glyph_review_image")
 
     def test_curve_overlay_tools_are_decorated(self) -> None:
         self._assert_async_tool_decorated("set_curve_review_overlay")
         self._assert_async_tool_decorated("get_curve_review_overlay_state")
+        self._assert_async_tool_decorated("review_curve_quality_across_masters")
 
     def test_annotation_tools_are_decorated(self) -> None:
         self._assert_async_tool_decorated("get_glyph_annotations")

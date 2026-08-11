@@ -9,8 +9,8 @@ Use this skill for guarded kerning bumper workflows.
 
 ## Core rules
 
-- Use Edit for this specialized workflow; review calls remain non-mutating, and
-  confirmed apply calls remain approval-gated.
+- Review calls remain non-mutating; confirmed apply calls remain explicitly
+  approval-gated font edits.
 - Read current state before mutation.
 - Run `review_kerning_bumper` before any apply step.
 - Always run `apply_kerning_bumper` with `dry_run=true` before a mutating call.
@@ -39,4 +39,4 @@ Use this skill for guarded kerning bumper workflows.
 
 - [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
 - [Project briefing](https://github.com/thierryc/Glyphs-mcp/blob/main/CODEX.md)
-- [Tool profiles](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/Glyphs%20MCP.glyphsPlugin/Contents/Resources/tool_profiles.py)
+- [Tool catalog](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/Glyphs%20MCP.glyphsPlugin/Contents/Resources/tool_catalog.py)

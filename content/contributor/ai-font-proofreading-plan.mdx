@@ -121,7 +121,8 @@ aggregate score.
 | `complete_font_review` | Validate explicit outcomes and return a structured checklist without generating a document. |
 
 All session tools except confirmed mutation dispatch are read-only with respect
-to the font. Register them in the `Read-only` profile where possible.
+to the font. Catalog them as non-mutating tools with explicit MCP safety
+annotations and `model+app` visibility where they serve a substantive workflow.
 
 ### New native analyzers
 

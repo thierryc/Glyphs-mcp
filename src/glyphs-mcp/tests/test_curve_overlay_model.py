@@ -206,6 +206,25 @@ class CurveOverlayModelTests(unittest.TestCase):
         self.assertEqual(result["strokeCount"], 0)
         self.assertEqual(result["warnings"], [])
 
+    def test_curve_events_report_extrema_inflection_and_join_warnings(self) -> None:
+        inflection = _path(((0, 0), (100, 150), (100, -150), (200, 0)))
+        result = self.model.build_curve_events_overlay([inflection], upm=1000)
+
+        kinds = {marker["kind"] for marker in result["markers"]}
+        self.assertIn("inflection", kinds)
+        self.assertIn("extremum", kinds)
+        self.assertLessEqual(result["markerCount"], result["markerLimit"])
+
+    def test_curve_event_marker_cap_is_deterministic(self) -> None:
+        paths = [_path(((0, 0), (100, 150), (100, -150), (200, 0))) for _ in range(5)]
+        first = self.model.build_curve_events_overlay(paths, marker_limit=3)
+        second = self.model.build_curve_events_overlay(paths, marker_limit=3)
+
+        self.assertEqual(first, second)
+        self.assertEqual(first["markerCount"], 3)
+        self.assertTrue(first["markerCapReached"])
+        self.assertEqual(first["warnings"][0]["code"], "event_marker_cap_reached")
+
 
 if __name__ == "__main__":
     unittest.main()

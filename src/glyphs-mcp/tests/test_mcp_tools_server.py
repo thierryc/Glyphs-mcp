@@ -70,6 +70,7 @@ class McpToolsServerTests(unittest.TestCase):
             {
                 "GlyphsApp": types.SimpleNamespace(Glyphs=glyphs),
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
                 "mcp_tool_helpers": helpers,
                 "versioning": versioning,
             },

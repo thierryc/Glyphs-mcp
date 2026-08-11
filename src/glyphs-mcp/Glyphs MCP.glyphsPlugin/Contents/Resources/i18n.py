@@ -83,7 +83,6 @@ STRINGS = {
         "zh-Hans": "请输入 1 到 65535 之间的有效端口号。",
     },
     "docs.label": {"en": "Docs:", "fr": "Docs :", "zh-Hans": "文档："},
-    "profile.label": {"en": "Profile:", "fr": "Profil :", "zh-Hans": "配置："},
     "debug.checkbox": {
         "en": "Log all events (debug, includes SSE)",
         "fr": "Journaliser tous les événements (debug, inclut SSE)",

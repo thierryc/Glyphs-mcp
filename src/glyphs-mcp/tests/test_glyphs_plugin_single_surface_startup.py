@@ -1,4 +1,4 @@
-"""Fail-closed startup tests for restricted Glyphs MCP tool profiles."""
+"""Single-surface startup and restart lifecycle tests for Glyphs MCP."""
 
 from __future__ import annotations
 
@@ -134,13 +134,6 @@ def _load_plugin_module(mcp):
             status_text=lambda running: "running" if running else "stopped",
         ),
         "i18n": types.SimpleNamespace(tr=lambda key, **_values: key),
-        "tool_profiles": types.SimpleNamespace(
-            PROFILE_EDIT="Edit",
-            PROFILE_ORDER=("Read-only", "Edit"),
-            enabled_tool_names=lambda _profile, names: set(names),
-            is_valid_profile_name=lambda name: name in {"Read-only", "Edit"},
-            normalize_profile_name=lambda name: name,
-        ),
         "update_checker": types.SimpleNamespace(
             UpdatePreferences=object,
             cached_update_result=lambda *_args, **_kwargs: None,
@@ -166,13 +159,13 @@ def _load_plugin_module(mcp):
         ),
         "versioning": types.SimpleNamespace(
             get_docs_url_latest=lambda: "https://example.test/docs",
-            get_plugin_version=lambda: "1.7.0",
+            get_plugin_version=lambda: "1.8.0",
             get_runtime_info=lambda: {},
-            get_runtime_label=lambda: "1.7.0+test",
+            get_runtime_label=lambda: "1.8.0+test",
         ),
     }
 
-    module_name = "glyphs_mcp_test_tool_profile_startup_{}".format(id(mcp))
+    module_name = "glyphs_mcp_test_single_surface_startup_{}".format(id(mcp))
     spec = importlib.util.spec_from_file_location(module_name, _module_path())
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
@@ -183,8 +176,8 @@ def _load_plugin_module(mcp):
     return module
 
 
-class ToolProfileStartupTests(unittest.TestCase):
-    def _start(self, profile, apply_result, *, notify=True):
+class ServerStartupTests(unittest.TestCase):
+    def _start(self, *, notify=True):
         events = []
         mcp = _FakeMCP(events)
         module = _load_plugin_module(mcp)
@@ -193,16 +186,6 @@ class ToolProfileStartupTests(unittest.TestCase):
         polls = []
 
         plugin._mark_server_starting = lambda: events.append("mark_starting")
-        plugin._selected_tool_profile_name = lambda: profile
-
-        def apply_profile(selected_profile):
-            events.append("apply_profile")
-            self.assertEqual(selected_profile, profile)
-            if isinstance(apply_result, Exception):
-                raise apply_result
-            return apply_result
-
-        plugin._apply_tool_profile_to_mcp_for_next_start = apply_profile
         plugin._http_middleware = lambda: []
         module._reset_sse_app_status_for_new_event_loop = (
             lambda: events.append("reset_sse") or True
@@ -216,129 +199,15 @@ class ToolProfileStartupTests(unittest.TestCase):
         result = plugin._start_server_on_port(9680, None, notify=notify)
         return result, plugin, mcp, events, failures, polls
 
-    def test_successful_restricted_filter_reaches_http_app(self):
-        result, plugin, mcp, events, failures, polls = self._start("Read-only", True)
+    def test_single_catalog_surface_reaches_http_app(self):
+        result, plugin, mcp, events, failures, polls = self._start()
 
         self.assertTrue(result)
         self.assertEqual(len(mcp.http_calls), 1)
-        self.assertLess(events.index("apply_profile"), events.index("http_app"))
         self.assertLess(events.index("reset_sse"), events.index("http_app"))
         self.assertEqual(failures, [])
         self.assertEqual(polls, [True])
         self.assertTrue(plugin._server_thread.started)
-
-    def test_failed_restricted_filter_aborts_before_http_app(self):
-        result, plugin, mcp, events, failures, polls = self._start("Read-only", False)
-
-        self.assertFalse(result)
-        self.assertEqual(mcp.http_calls, [])
-        self.assertNotIn("http_app", events)
-        self.assertIsNone(getattr(plugin, "_server_thread", None))
-        self.assertEqual(polls, [])
-        self.assertEqual(len(failures), 1)
-        self.assertIsInstance(failures[0][0], RuntimeError)
-        self.assertIn("Read-only", str(failures[0][0]))
-        self.assertEqual(failures[0][1:], (9680, True))
-
-    def test_exceptional_restricted_filter_aborts_before_http_app(self):
-        controlled_error = RuntimeError("controlled profile failure")
-        result, plugin, mcp, events, failures, polls = self._start(
-            "Read-only", controlled_error, notify=False
-        )
-
-        self.assertFalse(result)
-        self.assertEqual(mcp.http_calls, [])
-        self.assertNotIn("http_app", events)
-        self.assertIsNone(getattr(plugin, "_server_thread", None))
-        self.assertEqual(polls, [])
-        self.assertEqual(failures, [(controlled_error, 9680, False)])
-
-    def test_restricted_start_verifies_live_registry_before_http_app(self):
-        events = []
-        mcp = _FakeMCP(events)
-        module = _load_plugin_module(mcp)
-        registry = {"get_server_info": object(), "delete_glyph": object()}
-        module.get_mcp_tool_registry = lambda _mcp: registry
-        module.enabled_tool_names = lambda profile, _names: (
-            {"get_server_info"} if profile == "Read-only" else set(registry)
-        )
-        def replace_with_wrong_key(registry_value, _filtered):
-            retained = registry_value["delete_glyph"]
-            registry_value.clear()
-            registry_value["delete_glyph"] = retained
-
-        module.replace_tool_registry_in_place = replace_with_wrong_key
-
-        plugin = module.MCPBridgePlugin()
-        plugin._tool_registry_ref = None
-        plugin._tool_registry_snapshot = None
-        failures = []
-        plugin._mark_server_starting = lambda: events.append("mark_starting")
-        plugin._selected_tool_profile_name = lambda: "Read-only"
-        plugin._http_middleware = lambda: []
-        plugin._handle_start_request_exception = (
-            lambda error, port, show_alert=False: failures.append((error, port, show_alert))
-        )
-
-        result = plugin._start_server_on_port(9680, None)
-
-        self.assertFalse(result)
-        self.assertEqual(set(registry), {"delete_glyph"})
-        self.assertEqual(mcp.http_calls, [])
-        self.assertNotIn("http_app", events)
-        self.assertIsNone(getattr(plugin, "_server_thread", None))
-        self.assertEqual(len(failures), 1)
-
-    def test_verified_restricted_registry_reaches_http_app(self):
-        events = []
-        mcp = _FakeMCP(events)
-        module = _load_plugin_module(mcp)
-        registry = {"get_server_info": object(), "delete_glyph": object()}
-        module.get_mcp_tool_registry = lambda _mcp: registry
-        module.enabled_tool_names = lambda profile, _names: (
-            {"get_server_info"} if profile == "Read-only" else set(registry)
-        )
-
-        def replace_registry(registry_value, filtered):
-            registry_value.clear()
-            registry_value.update(filtered)
-
-        module.replace_tool_registry_in_place = replace_registry
-
-        plugin = module.MCPBridgePlugin()
-        plugin._tool_registry_ref = None
-        plugin._tool_registry_snapshot = None
-        failures = []
-        polls = []
-        plugin._mark_server_starting = lambda: events.append("mark_starting")
-        plugin._selected_tool_profile_name = lambda: "Read-only"
-        plugin._http_middleware = lambda: []
-        plugin._handle_start_request_exception = (
-            lambda error, port, show_alert=False: failures.append((error, port, show_alert))
-        )
-        plugin._begin_server_start_poll = lambda: polls.append(True)
-        plugin._refresh_status_panel_if_visible = lambda: events.append("refresh")
-
-        result = plugin._start_server_on_port(9680, None)
-
-        self.assertTrue(result)
-        self.assertEqual(set(registry), {"get_server_info"})
-        self.assertEqual(len(mcp.http_calls), 1)
-        self.assertEqual(failures, [])
-        self.assertEqual(polls, [True])
-        self.assertTrue(plugin._server_thread.started)
-
-    def test_edit_profile_remains_available_when_filtering_fails(self):
-        for apply_result in (False, RuntimeError("controlled profile failure")):
-            with self.subTest(apply_result=apply_result):
-                result, plugin, mcp, events, failures, polls = self._start("Edit", apply_result)
-
-                self.assertTrue(result)
-                self.assertEqual(len(mcp.http_calls), 1)
-                self.assertLess(events.index("apply_profile"), events.index("http_app"))
-                self.assertEqual(failures, [])
-                self.assertEqual(polls, [True])
-                self.assertTrue(plugin._server_thread.started)
 
     def test_live_prior_server_thread_blocks_reset_and_new_http_app(self):
         events = []

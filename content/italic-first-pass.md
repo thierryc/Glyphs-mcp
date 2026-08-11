@@ -143,8 +143,9 @@ The family-specific audit sheets remain available for closer inspection:
 
 ## Safety and diagnostics
 
-`review_italic_first_pass` runs the complete transformation on detached layer
-copies. It reports topology preservation, the effective backend and strengths,
+`preview_italic_first_pass_candidate` runs the complete transformation on
+detached layer copies and opens an ephemeral candidate session. It reports
+topology preservation, the effective backend and strengths,
 origin pivot, anchor shifts, component placement, component-master conflicts,
 candidate bounds and metrics, and detected/compensated/skipped stem pairs.
 
@@ -182,10 +183,19 @@ availability but does not silently edit Font Info; use
 2. For path-only or transform-safe constructions, compare Balanced with Raw
    and Cursivy; inspect blocked glyphs, components, anchors, topology, stems,
    bounds, and metrics.
-3. Run `apply_italic_first_pass` with `dry_run=true`.
-4. If the batch is blocked, decide whether to rebuild those components or
+3. Call `preview_italic_first_pass_candidate` for the explicit glyph/master
+   scope, then inspect the difference-only Candidate Reporter.
+4. Call `review_outline_candidate_session`; if the batch is blocked, decide
+   whether to rebuild those components or
    explicitly rerun with `skip_glyphs`.
-5. Apply only the approved scope with `confirm=true`.
-6. Redraw, space, kern, and proof the result as an italic design.
+5. Call `accept_outline_candidate_session` with `dry_run=true`, show the exact
+   reviewed changes, and stop for approval.
+6. Apply only the reviewed session and one-time token with `confirm=true`.
+7. Redraw, space, kern, and proof the result as an italic design.
+
+Materialize the session only when the designer wants to edit a normal Glyphs
+layer before re-review. Direct italic review/apply commands were removed in
+1.8; the session fingerprint and review token are the required batch safety
+boundary.
 
 The tool never saves the font.

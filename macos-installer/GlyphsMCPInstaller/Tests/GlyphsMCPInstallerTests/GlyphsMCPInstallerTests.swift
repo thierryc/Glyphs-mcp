@@ -1110,6 +1110,8 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertTrue(content.contains(InstallerConstants.endpointURL.absoluteString), content)
 		XCTAssertTrue(content.contains("tools/list"), content)
 		XCTAssertTrue(content.contains("Mcp-Session-Id"), content)
+		XCTAssertTrue(content.contains("catalog titles, descriptions, and safety annotations"), content)
+		XCTAssertFalse(content.localizedCaseInsensitiveContains("Tool Profile"), content)
 	}
 
 	func testFileIOWriteUTF8AtomicallyAddsTrailingNewline() throws {

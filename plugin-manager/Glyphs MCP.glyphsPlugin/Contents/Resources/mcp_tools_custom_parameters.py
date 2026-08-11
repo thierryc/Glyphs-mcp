@@ -10,6 +10,7 @@ import math
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _font_resolution_error,
     _resolve_font_by_index,
@@ -164,7 +165,7 @@ def _resolve_owner(font, scope, master_id):
     return normalized, master, master, None
 
 
-@mcp.tool(annotations=READ_ONLY_ANNOTATIONS)
+@glyphs_tool()
 async def get_custom_parameters(
     font_index: int = 0,
     scope: str = "font",
@@ -416,7 +417,7 @@ def _custom_parameter_mutation_outcome(owner, source, changes, redraw):
         }
 
 
-@mcp.tool(annotations=WRITE_ANNOTATIONS)
+@glyphs_tool()
 async def set_custom_parameters(
     font_index: int = 0,
     scope: str = "font",

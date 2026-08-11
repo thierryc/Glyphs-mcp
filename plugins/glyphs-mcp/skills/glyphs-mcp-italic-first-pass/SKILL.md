@@ -11,9 +11,9 @@ it does not create, replace, or claim optical completion of a designed italic.
 
 ## Core rules
 
-- Use Read-only for detached candidate preview. Switch to Edit only for
-  materializing or accepting a candidate, or for the legacy direct
-  review/apply workflow.
+- Use the typed candidate workflow for every italic first pass. Preview and
+  session review do not alter the font; materialization and acceptance require
+  dry run, exact targets, and explicit approval before confirmation.
 - Read current font, master, and selection before mutation.
 - Default angle is `12.0` degrees unless the user specifies another value.
 - Interpret `angle` as a Glyphs source/Transformations angle: positive values lean Latin outlines to the right. In exported OpenType/UFO metadata, the corresponding `post.italicAngle` / `slnt` value is negative (`+12` in Glyphs source convention maps to about `-12` in exported font convention).
@@ -46,15 +46,16 @@ it does not create, replace, or claim optical completion of a designed italic.
   automatic exclusions or transformations. Report affected glyphs and ask the
   designer whether to include, exclude, or defer them.
 - If Cursivy stems are missing, ask whether to set stems, measure suggestions, use raw slant, or stop.
-- Run `review_italic_first_pass` before `apply_italic_first_pass`.
-- Always run `apply_italic_first_pass` with `dry_run=true` before any mutating call.
-- Only mutate after explicit approval with `confirm=true`.
+- Call `preview_italic_first_pass_candidate` to generate detached proposals.
+- Call `review_outline_candidate_session`, then
+  `accept_outline_candidate_session` with `dry_run=true` and the exact review
+  token before any mutating call.
+- Only accept after explicit approval with `confirm=true` and the unexpired,
+  fingerprint-bound token.
 - Never auto-save the font.
-- Use `preview_italic_first_pass_candidate` as the default for review and
-  require candidate sessions for multi-glyph work. Materialize only when the
-  user wants to edit the proposed layers manually. Re-review exact edits and
-  accept with the issued token; do not jump directly from preview to the legacy
-  apply tool for a batch.
+- Materialize only when the user wants to edit the proposed layers manually.
+  Re-review exact edits and accept with the newly issued token. Never recreate
+  or delete candidate layers through arbitrary code or LLM memory.
 
 ## Workflow
 
@@ -82,8 +83,9 @@ it does not create, replace, or claim optical completion of a designed italic.
 6. If using Cursivy:
    - call `review_master_stem_metrics`
    - if missing, call `set_master_stem_metrics` only after approval and with `dry_run=true` first
-7. Call `review_italic_first_pass`.
-8. Summarize:
+7. Call `preview_italic_first_pass_candidate` with the resolved source/target
+   masters, scope, symbol-policy choices, and construction parameters.
+8. Summarize the returned candidate session:
    - glyph count and blocked glyphs
    - missing stems
    - protected glyph warnings
@@ -92,11 +94,19 @@ it does not create, replace, or claim optical completion of a designed italic.
    - live component preservation, component chain/matrix diagnostics, and any
      blocking reason
    - target glyphs that would be created
-9. If review blocks the batch, pause. Only after the designer explicitly
-   chooses a smaller scope, rerun review with `skip_glyphs`.
-10. If the user approves, call `apply_italic_first_pass` with `dry_run=true`.
-11. After approval of the dry run, call `apply_italic_first_pass` with `confirm=true`.
-12. Re-read or summarize returned results and list glyphs that still need manual optical work.
+9. If preview blocks the batch, pause. Only after the designer explicitly
+   chooses a smaller scope, regenerate the candidate with `skip_glyphs`.
+10. Ask the designer to inspect **View > Show Glyphs MCP Candidate**. If manual
+    editing is requested, dry-run and confirm
+    `materialize_outline_candidate_session`, then wait for those edits.
+11. Call `review_outline_candidate_session`. Stop on stale source, topology,
+    component, off-grid, or operation-external changes.
+12. Call `accept_outline_candidate_session` with the review token and
+    `dry_run=true`. Summarize exactly what would change and ask for approval.
+13. After approval, call `accept_outline_candidate_session` with the same valid
+    token and `confirm=true`.
+14. Re-read the target layers, verify candidate cleanup and backup preservation,
+    and list glyphs that still need manual optical work.
 
 ## Defaults
 

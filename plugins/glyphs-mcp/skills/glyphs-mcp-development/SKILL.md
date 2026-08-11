@@ -18,9 +18,18 @@ Create workspace-first Glyphs scripts and plug-ins from pinned SDK templates.
 - When extending this repository's outline-candidate system, keep mathematics
   and process-local state free of GlyphsApp/AppKit imports; keep MCP wrappers
   responsible for snapshots and guarded mutation; keep Reporter callbacks
-  drawing-only. Register every new tool through `mcp_tools.py`, classify review
-  tools in Read-only and mutations in Edit, and export every Reporter principal
-  class through both `plugin.py` and `Info.plist`.
+  drawing-only. Add every public tool to `TOOL_CATALOG`, then register it only
+  with `glyphs_tool`; direct `mcp.tool` decorators are forbidden. Give it all
+  four safety hints, one visibility/effect class, concise routing metadata, and
+  an output schema when it belongs to a structured workflow. Import its module
+  through `mcp_tools.py`, and export every Reporter principal class through both
+  `plugin.py` and `Info.plist`.
+- Keep the MCP surface lean. Prefer a dedicated typed tool over an opaque action
+  multiplexer, but do not add a wrapper when an existing candidate adapter or
+  lifecycle transition already expresses the same operation.
+- For candidate, curve, spacing, or kerning tools, preserve legacy JSON text and
+  add the validated structured-result envelope. Keep workflow details in typed
+  `data`; do not expand the common envelope with domain-specific fields.
 
 ## Workflow
 
@@ -29,8 +38,10 @@ Create workspace-first Glyphs scripts and plug-ins from pinned SDK templates.
 3. Search the bundled docs for the APIs and plug-in base class involved. Fetch the scripting or template guide plus only the API pages needed.
 4. Run `scripts/scaffold.py create` from this skill directory. It refuses existing outputs and live Glyphs installation folders by default.
 5. Edit the generated Python for the requested behavior. Prefer documented GlyphsApp APIs and keep Glyphs 3.5/4 compatibility explicit.
-6. Run `scripts/scaffold.py validate <artifact> --target both`. Treat static validation as necessary but not equivalent to running inside Glyphs.
-7. Report the created path, documentation consulted, validation result, compatibility notes, and any separate manual install or runtime test the user may choose.
+6. For this repository, run the catalog, registration, routing, structured-result,
+   single-surface startup, and mirror tests before broader release gates.
+7. Run `scripts/scaffold.py validate <artifact> --target both`. Treat static validation as necessary but not equivalent to running inside Glyphs.
+8. Report the created path, documentation consulted, validation result, compatibility notes, and any separate manual install or runtime test the user may choose.
 
 ## Scaffold helper
 
@@ -64,4 +75,5 @@ Use `--allow-live-install` only after the user explicitly asks to create directl
 
 - [Agent skills](https://github.com/thierryc/Glyphs-mcp/blob/main/content/concepts/agent-skills.mdx)
 - [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
+- [Tool catalog](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/Glyphs%20MCP.glyphsPlugin/Contents/Resources/tool_catalog.py)
 - [Scaffold helper](https://github.com/thierryc/Glyphs-mcp/blob/main/skills/glyphs-mcp-development/scripts/scaffold.py)

@@ -17,6 +17,7 @@ from GlyphsApp import (  # type: ignore[import-not-found]
 )
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _font_resolution_error,
     _get_layer_id,
@@ -676,7 +677,7 @@ def _validate_annotation_spec(spec):
     }, None
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_glyph_annotations(
     font_index: int = 0,
     glyph_name: str = None,
@@ -713,7 +714,7 @@ async def get_glyph_annotations(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def add_glyph_annotation(
     font_index: int = 0,
     glyph_name: str = None,
@@ -775,7 +776,7 @@ async def add_glyph_annotation(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def add_glyph_annotation_group(
     font_index: int = 0,
     glyph_name: str = None,
@@ -845,7 +846,7 @@ async def add_glyph_annotation_group(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def update_glyph_annotation(
     font_index: int = 0,
     glyph_name: str = None,
@@ -950,7 +951,7 @@ async def update_glyph_annotation(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def delete_glyph_annotation(
     font_index: int = 0,
     glyph_name: str = None,
@@ -1009,7 +1010,7 @@ async def delete_glyph_annotation(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def clear_glyph_annotations(
     font_index: int = 0,
     glyph_name: str = None,
@@ -1062,7 +1063,7 @@ async def clear_glyph_annotations(
         return json.dumps({"error": str(e)})
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_glyph_annotation_groups(
     font_index: int = 0,
     glyph_name: str = None,

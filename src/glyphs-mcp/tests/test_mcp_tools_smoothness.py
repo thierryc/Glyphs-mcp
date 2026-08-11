@@ -126,6 +126,7 @@ class McpToolsSmoothnessTests(unittest.TestCase):
             {
                 "GlyphsApp": glyphs_module,
                 "mcp_runtime": types.SimpleNamespace(mcp=_FakeMCP()),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
                 "mcp_tool_helpers": types.SimpleNamespace(
                     _font_resolution_error=_font_resolution_error,
                     _resolve_font_by_index=_resolve_font_by_index,

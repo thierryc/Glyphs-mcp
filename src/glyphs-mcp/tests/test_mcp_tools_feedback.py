@@ -227,6 +227,7 @@ class FeedbackToolsTests(unittest.TestCase):
             "GlyphsApp": types.SimpleNamespace(Glyphs=glyphs),
             "mcp_app_ui": types.SimpleNamespace(FEEDBACK_RESOURCE_URI="ui://glyphs-mcp/feedback-v1.html"),
             "mcp_runtime": types.SimpleNamespace(mcp=fake_mcp),
+            "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
             "mcp_tool_helpers": helpers,
             "mcp_tools_spacing": types.SimpleNamespace(apply_spacing=apply_spacing),
             "mcp_tools_kerning": types.SimpleNamespace(apply_kerning_bumper=apply_kerning_bumper),
@@ -244,16 +245,23 @@ class FeedbackToolsTests(unittest.TestCase):
         return result.structured_content
 
     def test_tool_metadata_links_every_tool_to_the_panel_with_safety_annotations(self) -> None:
-        _module, _font, _state, fake_mcp = self._load_module()
+        self._load_module()
+        from tool_catalog import TOOL_CATALOG
+        from tool_result_schemas import schema_for
 
-        self.assertEqual(len(fake_mcp.tools), 9)
-        for name, metadata in fake_mcp.tools.items():
-            self.assertEqual(metadata["meta"]["ui"]["resourceUri"], "ui://glyphs-mcp/feedback-v1.html")
-            self.assertIsInstance(metadata["output_schema"], dict)
-            self.assertIn("readOnlyHint", metadata["annotations"])
-        self.assertEqual(fake_mcp.tools["apply_feedback_plan"]["meta"]["ui"]["visibility"], ["app"])
-        self.assertTrue(fake_mcp.tools["apply_feedback_plan"]["annotations"]["destructiveHint"])
-        self.assertEqual(fake_mcp.tools["open_feedback_target"]["meta"]["ui"]["visibility"], ["app"])
+        names = {
+            "show_glyphs_status", "show_font_feedback", "show_glyph_feedback",
+            "show_opentype_features", "preview_spacing_feedback", "preview_kerning_feedback",
+            "preview_handle_smoothing_feedback", "apply_feedback_plan", "open_feedback_target",
+        }
+        self.assertEqual(len(names), 9)
+        for name in names:
+            entry = TOOL_CATALOG[name]
+            self.assertEqual(entry.resource_uri, "ui://glyphs-mcp/feedback-v1.html")
+            self.assertIsInstance(schema_for(entry.output_schema), dict)
+            self.assertIn("readOnlyHint", entry.annotations)
+            self.assertEqual(entry.visibility, "app-only")
+        self.assertTrue(TOOL_CATALOG["apply_feedback_plan"].annotations["destructiveHint"])
 
     def test_status_font_glyph_and_features_return_shared_schema_without_paths(self) -> None:
         module, _font, _state, _fake_mcp = self._load_module()

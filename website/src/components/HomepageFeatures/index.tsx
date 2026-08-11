@@ -47,11 +47,11 @@ const FEATURES: FeatureItem[] = [
     )
   },
   {
-    title: 'Pick smaller tool profiles',
+    title: 'Route through one lean catalog',
     description: (
       <>
-        Reduce client context by exposing only the tools needed for read-only, kerning, spacing,
-        outline, or editing work.
+        Discover concise, annotated tools from one catalog, with focused skills for safe kerning,
+        spacing, outline, and editing workflows.
       </>
     )
   },

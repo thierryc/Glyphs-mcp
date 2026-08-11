@@ -71,6 +71,7 @@ class OutlineCandidateWrapperContractTests(unittest.TestCase):
             {
                 "GlyphsApp": types.SimpleNamespace(Glyphs=types.SimpleNamespace()),
                 "mcp_runtime": types.SimpleNamespace(mcp=_MCP()),
+                "tool_registration": types.SimpleNamespace(glyphs_tool=lambda *_args, **_kwargs: (lambda fn: fn)),
                 "mcp_tool_helpers": helper_stub,
                 "mcp_tools_compensated_tuning": types.SimpleNamespace(),
                 "mcp_tools_curve_geometry": types.SimpleNamespace(_normalize_grid_policy=lambda value: (value, None)),

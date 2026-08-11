@@ -11,7 +11,75 @@ Do not duplicate release flow, command reference, or long installer notes across
 
 Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish compatibility pass across Glyphs 3.5 and Glyphs 4.
 
-## Prepared version
+## Prepared 1.8.0 candidate
+
+Version `1.8.0` (installer build `23`) introduces the production
+`TOOL_CATALOG`, one unfiltered registry with MCP Apps visibility metadata,
+additive structured results for candidate/curve/spacing/kerning workflows,
+adaptive curve-quality version 2, compatible cross-master comparison, and
+native curve-event markers.
+
+The active catalog contains 76 tools: 65 `model+app` and 11 `app-only`. Eight
+removed commands remain catalog tombstones only. The profile selector,
+preference, filtering path, aliases, and `tool_profiles.py` are absent. Public
+command tables and category summaries are generated from the catalog; skills
+are validated against active model-visible names and deterministic routing
+sequences.
+
+The complete local feature suite passes 736 Python tests with 4 intentional
+environment-dependent skips. All 104 macOS installer tests pass, and the
+unsigned Debug installer builds successfully with normal Xcode system access.
+The documentation production build, all 18 canonical and packaged skill
+validations, catalog/schema checks, canonical/Plugin Manager parity, and
+release metadata checks also pass.
+
+Live Glyphs 4.0 / Python 3.14.6 validation loaded runtime
+`1.8.0+7f57743bdc57`. Protocol discovery returned exactly 76 active tools: 65
+model-visible and 11 app-only, with all four safety annotations present, no
+removed command registered, and a 78,927-byte model-visible `tools/list`
+payload. Undefined master metrics returned JSON `null`. Adaptive and
+`sampled_v1` curve review, compatible cross-master review, the native
+curvature/event Reporter, detached candidate preview, and structured success
+and validation-error envelopes all passed without changing their source
+layers.
+
+A serialized disposable copy of the pinned Glyphs 3 fixture then completed the
+full Tunni candidate lifecycle: preview, materialization dry run and confirm,
+review-token issuance, acceptance dry run and confirm, exact read-back, and
+automatic candidate cleanup. Acceptance changed only the four selected
+off-curve handles in glyph `A`; no other node changed, rollback was not needed,
+and the tool reported `fontSaved:false`. After closing with changes discarded,
+the fixture retained its original SHA-256
+`86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`,
+mtime `1786410218`, and size `19425` bytes. The disposable directory was then
+removed.
+
+Live Glyphs 3.5 build 3531 / Python 3.12.3 then loaded the final corrected
+runtime `1.8.0+9f3835226979`. It exposed the same 76 active, 65 model-visible,
+and 11 app-only tools with complete annotations and a 79,702-byte model payload.
+Adaptive and sampled-v1 curve review, compatible two-master comparison, 102
+bounded curvature strokes, three curve-event markers, candidate preview,
+materialization, token review, dry-run/confirmed acceptance, spacing review and
+dry run, and kerning review/dry run all returned their expected structured
+contracts. Candidate acceptance again changed only nodes `1`, `2`, `4`, and `5`
+and cleaned its owned layer/session without saving.
+
+The adversarial kerning confirmation initially exposed a Glyphs 3.5 storage
+bug: public glyph names created shadow name-key pairs instead of updating native
+glyph-ID exceptions. The shared writer now resolves glyph names to IDs while
+preserving `@MMK_*` class keys, with canonical/Plugin Manager parity and a new
+regression fixture. After restart, live confirmation updated the existing
+`A/B` ID pair from `30` to `126` without changing pair count or creating a name
+key, restored it exactly, then created and removed a new `A.ss01/B` ID-based
+exception. A fresh MCP client reconnected to the same runtime. Closing with
+changes discarded left the disposable file byte-identical at SHA-256
+`86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`,
+mtime `1786413454`, and size `19425` bytes; the disposable directory was
+removed. Both required live hosts now pass the applicable 1.8 acceptance
+matrix. No commit, tag, push, signing, notarization, upload, or publication is
+authorized by this preparation.
+
+## Historical 1.7.0 candidate
 
 Version `1.7.0` (installer build `22`) adds independent cubic Bezier geometry
 review, grid-safe explicit-segment Tunni balancing, curvature diagnostics, the

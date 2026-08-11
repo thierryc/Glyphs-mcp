@@ -5,6 +5,7 @@ from __future__ import division, print_function, unicode_literals
 from GlyphsApp import Glyphs, GSNode, GSPath  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import (
     _coerce_numeric,
     _font_resolution_error,
@@ -128,43 +129,6 @@ def _measure_stem_ratio_impl(
         return payload
     except Exception as e:
         return {"ok": False, "error": str(e)}
-
-
-@mcp.tool()
-async def measure_stem_ratio(
-    font_index: int = 0,
-    base_master_id: str = None,
-    ref_master_id: str = None,
-    reference_glyphs: list = None,
-    samples: int = 9,
-    band: float = 0.2,
-    min_width: float = 5.0,
-    max_width: float = None,
-    include_components: bool = True,
-    stem_source: str = "auto",
-    mismatch_tolerance: float = 0.2,
-) -> str:
-    """Measure a read-only stem ratio between two explicit masters.
-
-    Returns the ratio, measurement provenance, and bounded warnings without
-    changing or saving the font. Use the result to review compensated tuning.
-    """
-    return _safe_json(
-        _measure_stem_ratio_impl(
-            font_index=font_index,
-            base_master_id=base_master_id,
-            ref_master_id=ref_master_id,
-            reference_glyphs=reference_glyphs,
-            samples=samples,
-            band=band,
-            min_width=min_width,
-            max_width=max_width,
-            include_components=include_components,
-            stem_source=stem_source,
-            mismatch_tolerance=mismatch_tolerance,
-        )
-    )
-
 
 def _layer_has_components(layer) -> bool:
     try:
@@ -424,55 +388,6 @@ def _review_compensated_tuning_impl(
         return out
     except Exception as e:
         return {"ok": False, "error": str(e)}
-
-
-@mcp.tool()
-async def review_compensated_tuning(
-    font_index: int = 0,
-    glyph_name: str = None,
-    base_master_id: str = None,
-    ref_master_id: str = None,
-    sx: float = 1.0,
-    sy: float = 1.0,
-    keep_stroke: float = 0.9,
-    stroke_exponent_a: float = None,
-    q_x: float = None,
-    q_y: float = None,
-    italic_angle: float = None,
-    translate_x: float = 0.0,
-    translate_y: float = 0.0,
-    extrapolation: str = "clamp",
-    round_units: bool = True,
-    stem_ratio_b: float = None,
-    stem_measure: dict = None,
-) -> str:
-    """Build a detached compensated-tuning proposal for one explicit glyph.
-
-    Returns set_glyph_paths-compatible geometry plus computed parameters and
-    warnings. This review is read-only and never saves the font; use a candidate
-    preview when visual or multi-glyph review is needed.
-    """
-    return _safe_json(
-        _review_compensated_tuning_impl(
-            font_index=font_index,
-            glyph_name=glyph_name,
-            base_master_id=base_master_id,
-            ref_master_id=ref_master_id,
-            sx=sx,
-            sy=sy,
-            keep_stroke=keep_stroke,
-            stroke_exponent_a=stroke_exponent_a,
-            q_x=q_x,
-            q_y=q_y,
-            italic_angle=italic_angle,
-            translate_x=translate_x,
-            translate_y=translate_y,
-            extrapolation=extrapolation,
-            round_units=round_units,
-            stem_ratio_b=stem_ratio_b,
-            stem_measure=stem_measure,
-        )
-    )
 
 
 def _master_weight_coord(font, master):
@@ -774,64 +689,3 @@ def _apply_compensated_tuning_impl(
         }
     except Exception as e:
         return {"ok": False, "error": str(e)}
-
-
-@mcp.tool()
-async def apply_compensated_tuning(
-    font_index: int = 0,
-    glyph_names: list = None,
-    base_master_id: str = None,
-    ref_master_id: str = None,
-    output_master_id: str = None,
-    sx: float = 1.0,
-    sy: float = 1.0,
-    keep_stroke: float = 0.9,
-    stroke_exponent_a: float = None,
-    q_x: float = None,
-    q_y: float = None,
-    italic_angle: float = None,
-    translate_x: float = 0.0,
-    translate_y: float = 0.0,
-    extrapolation: str = "clamp",
-    round_units: bool = True,
-    stem_ratio_b: float = None,
-    stem_measure: dict = None,
-    confirm: bool = False,
-    dry_run: bool = False,
-    backup: bool = True,
-    backup_layer_name: str = "GMCP Backup: CompTune",
-    ref_fallback: str = "error",
-) -> str:
-    """Dry-run or apply compensated tuning to explicit compatible glyphs.
-
-    Review first, then use dry_run=true before confirm=true. A confirmed call
-    can replace paths and create backup layers, but never saves the font. Prefer
-    candidate sessions for multi-glyph visual review and promotion.
-    """
-    return _safe_json(
-        _apply_compensated_tuning_impl(
-            font_index=font_index,
-            glyph_names=glyph_names,
-            base_master_id=base_master_id,
-            ref_master_id=ref_master_id,
-            output_master_id=output_master_id,
-            sx=sx,
-            sy=sy,
-            keep_stroke=keep_stroke,
-            stroke_exponent_a=stroke_exponent_a,
-            q_x=q_x,
-            q_y=q_y,
-            italic_angle=italic_angle,
-            translate_x=translate_x,
-            translate_y=translate_y,
-            extrapolation=extrapolation,
-            round_units=round_units,
-            stem_ratio_b=stem_ratio_b,
-            stem_measure=stem_measure,
-            confirm=confirm,
-            dry_run=dry_run,
-            backup=backup,
-            backup_layer_name=backup_layer_name,
-            ref_fallback=ref_fallback,
-        )
-    )

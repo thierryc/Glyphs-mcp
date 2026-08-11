@@ -68,13 +68,13 @@ creation, or upload unless the user explicitly expands the scope.
    - Compare source and Plugin Manager runtime files byte-for-byte where they
      are required mirrors.
    - Compare canonical and packaged skill trees byte-for-byte.
-   - Run documentation, profile, release-security, installer, marketplace, and
+   - Run documentation, catalog/registration, release-security, installer, marketplace, and
      Plugin Manager contract tests.
    - Run `git diff --check` after the final documentation edits.
    - Confirm no open font was mutated or saved.
 
 7. Complete applicable manual QA from the release protocol on disposable font
-   copies. Record app version, Python interpreter, font fixture, profile, tool
+   copies. Record app version, Python interpreter, font fixture, catalog/runtime ID, tool
    calls, result, logs, and whether document/file state changed. Update-related
    releases must exercise notification-only discovery, explicit staging,
    cancellation/failure paths, signature/receipt checks, and no automatic

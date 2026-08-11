@@ -5,11 +5,12 @@ from __future__ import division, print_function, unicode_literals
 from GlyphsApp import Glyphs  # type: ignore[import-not-found]
 
 from mcp_runtime import mcp
+from tool_registration import glyphs_tool
 from mcp_tool_helpers import _font_summary, _open_fonts_from_glyphs, _safe_json
 from versioning import get_runtime_info
 
 
-@mcp.tool()
+@glyphs_tool()
 async def get_server_info() -> str:
     """Return runtime identity and basic health details for this Glyphs MCP server."""
     payload = {"ok": True}
