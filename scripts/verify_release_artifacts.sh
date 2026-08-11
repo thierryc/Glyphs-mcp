@@ -219,12 +219,26 @@ fi
 echo "Verified signature-preserving simulated plug-in installation."
 
 checksum_assets=("$dmg_versioned" "$dmg_latest" "$zip")
+checksum_stage="$tmp_root/release-assets"
+mkdir -p "$checksum_stage"
+flat_checksum_assets=()
+for artifact in "${checksum_assets[@]}"; do
+  staged_artifact="$checksum_stage/$(basename "$artifact")"
+  if [[ -e "$staged_artifact" ]]; then
+    echo "error: duplicate flattened release asset name: $(basename "$artifact")" >&2
+    exit 1
+  fi
+  /bin/cp -p "$artifact" "$staged_artifact"
+  flat_checksum_assets+=("$staged_artifact")
+done
+staged_checksum_file="$checksum_stage/SHA256SUMS"
 
 if [[ "$write_checksum_file" == "1" ]]; then
   python3 "$repo_root/scripts/release_security.py" checksums \
-    --base-dir "$repo_root/dist" \
-    --output "$checksum_file" \
-    "${checksum_assets[@]}" >/dev/null
+    --base-dir "$checksum_stage" \
+    --output "$staged_checksum_file" \
+    "${flat_checksum_assets[@]}" >/dev/null
+  /bin/cp -p "$staged_checksum_file" "$checksum_file"
 fi
 
 if [[ ! -f "$checksum_file" ]]; then
@@ -232,14 +246,17 @@ if [[ ! -f "$checksum_file" ]]; then
   echo "Run this verifier with --write-checksums after artifacts pass all other gates." >&2
   exit 1
 fi
+if [[ "$write_checksum_file" != "1" ]]; then
+  /bin/cp -p "$checksum_file" "$staged_checksum_file"
+fi
 verify_checksum_args=()
-for artifact in "${checksum_assets[@]}"; do
+for artifact in "${flat_checksum_assets[@]}"; do
   verify_checksum_args+=(--expect "$artifact")
 done
 python3 "$repo_root/scripts/release_security.py" verify-checksums \
-  --base-dir "$repo_root/dist" \
+  --base-dir "$checksum_stage" \
   "${verify_checksum_args[@]}" \
-  "$checksum_file" >/dev/null
+  "$staged_checksum_file" >/dev/null
 
 echo "Release verification passed for $tag."
 echo "Checksums: $checksum_file"
