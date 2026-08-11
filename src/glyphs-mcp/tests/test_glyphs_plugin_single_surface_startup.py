@@ -59,6 +59,17 @@ class _FakeThread:
 
 
 def _load_plugin_module(mcp):
+    class _PanelControllerStub:
+        @classmethod
+        def alloc(cls):
+            return cls()
+
+        def initWithPlugin_(self, _plugin):
+            return self
+
+        def show(self):
+            return None
+
     class _GlyphsStub:
         defaults = {}
         menu = {1: []}
@@ -124,6 +135,9 @@ def _load_plugin_module(mcp):
             McpDebugEventLoggingMiddleware=object,
             set_enabled=lambda _enabled: None,
         ),
+        "document_changes_panel": types.SimpleNamespace(
+            DocumentChangesPanelController=_PanelControllerStub,
+        ),
         "status_panel_helpers": types.SimpleNamespace(
             endpoint_for=lambda port: "http://127.0.0.1:{}".format(port),
             is_thread_running=lambda _thread: False,
@@ -159,9 +173,9 @@ def _load_plugin_module(mcp):
         ),
         "versioning": types.SimpleNamespace(
             get_docs_url_latest=lambda: "https://example.test/docs",
-            get_plugin_version=lambda: "1.8.0",
+            get_plugin_version=lambda: "1.9.0",
             get_runtime_info=lambda: {},
-            get_runtime_label=lambda: "1.8.0+test",
+            get_runtime_label=lambda: "1.9.0+test",
         ),
     }
 

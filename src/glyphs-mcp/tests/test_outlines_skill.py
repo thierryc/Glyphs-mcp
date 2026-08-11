@@ -34,6 +34,13 @@ class OutlinesSkillTests(unittest.TestCase):
             "Curvature is reviewed separately through **View > Show Glyphs MCP Curvature**",
             "dry-run `apply_tunni_balance`",
             "Stop for explicit approval before `confirm=true`",
+            "position, type, connection",
+            "only explicitly targeted fields may change",
+            "update_glyph_node_positions",
+            'grid_policy="font"',
+            "complete verified read-back",
+            "never assign `None` to a Glyphs",
+            "Treat an unexpected",
             "font was not saved",
         ):
             with self.subTest(phrase=phrase):

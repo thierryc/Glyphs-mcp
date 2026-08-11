@@ -66,5 +66,13 @@
     "primary": "docs_search",
     "followups": ["docs_get"],
     "forbidden": ["docs_enable_page_resources", "execute_code"]
+  },
+  {
+    "intent": "Patch a few explicit node coordinates on one glyph layer",
+    "surface": "model",
+    "primary": "get_selected_nodes",
+    "followups": ["update_glyph_node_positions", "update_glyph_node_positions"],
+    "modes": ["review", "dry_run", "confirmed"],
+    "forbidden": ["set_glyph_paths", "execute_code"]
   }
 ]

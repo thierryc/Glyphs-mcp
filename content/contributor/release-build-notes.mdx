@@ -11,6 +11,63 @@ Do not duplicate release flow, command reference, or long installer notes across
 
 Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish compatibility pass across Glyphs 3.5 and Glyphs 4.
 
+## Prepared 1.9.0 candidate
+
+Version `1.9.0` (installer build `24`) adds one guarded coordinate-only edit
+tool, `update_glyph_node_positions`, plus the memory-only one-document MCP
+change overview and its native **Edit → Glyphs MCP Changes…** panel. The active
+catalog contains 78 tools: 67 `model+app` and 11 `app-only`.
+
+The node-position tool accepts explicit guarded targets across paths, follows
+the font grid by default, preserves continuous coordinates only when requested,
+verifies the complete protected outline state, and restores the full snapshot
+after write, read-back, or change-batch failure. Tunni application now uses the
+same transaction core. The outline skill routes coordinate micro-edits to this
+tool and reserves `set_glyph_paths` for topology or whole-path replacement.
+
+The document-change ledger records bounded attributable edit, save, and opaque
+code outcomes for one live document without saving or semantically diffing the
+font. Open-font indices are collected on Glyphs' main thread, and native PyObjC
+object identity keeps the tracked document stable when Python wrappers or font
+indices change.
+
+The complete local feature suite passes 798 Python tests with 4 intentional
+environment-dependent skips. All 104 macOS installer tests pass, and the
+unsigned Debug installer builds successfully with normal Xcode system access.
+The documentation production build, all 18 canonical and packaged skill
+validations, catalog/schema checks, canonical/Plugin Manager parity, and release
+metadata checks also pass.
+
+Live Glyphs 3.5 build 3531 / Python 3.12.3 loaded final runtime
+`1.9.0+094cca52cbe5`. Whole-unit half ties snapped deterministically, a
+continuous fractional request that Glyphs 3.5 could not preserve rolled back
+completely, and read-back restored the original node with `fontSaved:false`.
+The same disposable-font pass applied and restored two explicit nodes across
+two paths in one verified batch, retained JSON `null` node names, omitted a
+stale precondition failure from the audit, retained the started rollback
+failure, and followed the tracked font after a second document changed the
+indices. Closing without saving left both fixtures byte-identical at SHA-256
+`86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`.
+
+Live Glyphs 4.0.1 build 4004 / Python 3.14.6 loaded the same final runtime,
+`1.9.0+094cca52cbe5`. Its disposable-font pass covered whole-unit half ties,
+subdivision-aware `0.1` snapping with exact decimal read-back, and disabled-grid
+`0` behavior with continuous coordinates under the default font policy. It
+also applied and restored two nodes across two paths in one verified batch. An
+explicit continuous coordinate that Glyphs normalized was detected and rolled
+back completely; a stale precondition was omitted from the audit while the
+started rollback failure remained visible. The native change-overview panel
+reported the bounded records and **Open Target** navigated to the correct glyph
+and master. No font was saved, original grid metadata and outline state were
+restored, and closing with changes discarded left the fixture byte-identical at
+SHA-256
+`048ffb6f690b52ff1e4d1c8288bafef8aeeec53b28f47a815cb87c6e73c99610`.
+
+Both required Glyphs hosts now pass the applicable 1.9 live acceptance matrix.
+
+No commit, tag, push, signing, notarization, upload, or publication is
+authorized by this preparation.
+
 ## Prepared 1.8.0 candidate
 
 Version `1.8.0` (installer build `23`) introduces the production

@@ -99,7 +99,7 @@ def update_agent_plugin_doc(
         path.write_text(text, encoding="utf-8")
 
 
-_README_COMMAND_SET_HEADER_RE = re.compile(r"^(##\s+Command Set\s+\(MCP server v)([^)]+)(\))\s*$", re.M)
+_README_COMMAND_SET_HEADER_RE = re.compile(r"^(##\s+Command Set\s+\(MCP server v)([^)]+)(\))[ \t]*$", re.M)
 _FAST_MCP_VERSION_RE = re.compile(r"(FastMCP\s+`version=\")([^\"]+)(\"`)")
 _README_SERVER_VERSION_RE = re.compile(r"(shipped in this repo \(version `)(\d+\.\d+\.\d+)(`\))")
 _README_INSTALLER_URL_RE = re.compile(

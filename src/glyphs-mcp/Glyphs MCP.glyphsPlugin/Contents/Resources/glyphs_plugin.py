@@ -45,6 +45,7 @@ from debug_event_logging import (
     McpDebugEventLoggingMiddleware,
     set_enabled as set_debug_event_logging_enabled,
 )
+from document_changes_panel import DocumentChangesPanelController
 from status_panel_helpers import (
     endpoint_for,
     is_thread_running,
@@ -284,10 +285,12 @@ class MCPBridgePlugin(GeneralPlugin):
         self._preparation_request_id = None
         self._preparation_version = None
         self._preparation_glyphs_major = None
+        self._changes_controller = DocumentChangesPanelController.alloc().initWithPlugin_(self)
 
         # Localized menu titles (via Glyphs.localize in i18n.tr)
         self.name_menu = tr("menu.main")
         self.name_autostart = tr("menu.autostart")
+        self.name_changes = tr("menu.changes")
         self._activity_text = tr("activity.idle")
         self._activity_state = "idle"
         # Configuration
@@ -899,6 +902,12 @@ class MCPBridgePlugin(GeneralPlugin):
         newMenuItem.setTarget_(self)
         newMenuItem.setAction_(self.ShowStatusWindow_)
         Glyphs.menu[EDIT_MENU].append(newMenuItem)
+        changesMenuItem = NSMenuItem.new()
+        changesMenuItem.setTitle_(self.name_changes)
+        changesMenuItem.setTarget_(self)
+        changesMenuItem.setAction_(self.ShowChangesWindow_)
+        self.changesMenuItem = changesMenuItem
+        Glyphs.menu[EDIT_MENU].append(changesMenuItem)
         self._refresh_update_menu_item()
         self._schedule_automatic_update_check()
 
@@ -910,6 +919,13 @@ class MCPBridgePlugin(GeneralPlugin):
                 self.default_port,
                 show_alert=False,
             )
+
+    def ShowChangesWindow_(self, sender):
+        controller = getattr(self, "_changes_controller", None)
+        if controller is None:
+            controller = DocumentChangesPanelController.alloc().initWithPlugin_(self)
+            self._changes_controller = controller
+        controller.show()
 
     @objc.python_method
     def _start_server_on_port(self, port, sender, notify=True):

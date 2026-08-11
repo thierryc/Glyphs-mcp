@@ -35,9 +35,9 @@ class ToolCatalogTests(unittest.TestCase):
         cls.schemas = _load("tool_result_schemas")
 
     def test_exact_active_model_app_and_removed_counts(self) -> None:
-        self.assertEqual(len(self.catalog.TOOL_CATALOG), 84)
-        self.assertEqual(len(self.catalog.active_entries()), 76)
-        self.assertEqual(len(self.catalog.model_entries()), 65)
+        self.assertEqual(len(self.catalog.TOOL_CATALOG), 86)
+        self.assertEqual(len(self.catalog.active_entries()), 78)
+        self.assertEqual(len(self.catalog.model_entries()), 67)
         self.assertEqual(len(self.catalog.app_only_entries()), 11)
         self.assertEqual(
             {entry.name for entry in self.catalog.app_only_entries()},
@@ -150,6 +150,11 @@ class ToolCatalogTests(unittest.TestCase):
             with mock.patch.dict(sys.modules, {"mcp_runtime": types.SimpleNamespace(mcp=server)}):
                 spec.loader.exec_module(registration)
 
+            def broken_observer(**_kwargs):
+                raise RuntimeError("observer failed")
+
+            registration.register_tool_result_observer(broken_observer)
+
             @registration.glyphs_tool()
             async def review_curve_quality(glyph_name: str = "a"):
                 return json.dumps({"ok": True, "target": {"glyphName": "a"}, "summary": {"count": 1}})
@@ -161,7 +166,9 @@ class ToolCatalogTests(unittest.TestCase):
             self.assertEqual(tool.tags, set(entry.tags))
             self.assertEqual(tool.meta["ui"]["visibility"], ["model", "app"])
             self.assertIsNotNone(tool.output_schema)
-            result = asyncio.run(tool.run({}))
+            with mock.patch.object(registration.logger, "exception") as log_exception:
+                result = asyncio.run(tool.run({}))
+            log_exception.assert_called_once()
             self.assertEqual(result.structured_content["resultSchemaVersion"], 1)
             self.assertEqual(result.structured_content["tool"], "review_curve_quality")
             self.assertIn('"ok": true', result.content[0].text.lower())

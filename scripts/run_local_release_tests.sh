@@ -15,6 +15,7 @@ echo "Checking release scripts…"
   scripts/notarize_installer_app.sh \
   scripts/make_installer_dmg.sh \
   scripts/publish_release_assets.sh \
+  scripts/run_python_tests.sh \
   scripts/run_local_release_tests.sh \
   scripts/verify_release_artifacts.sh
 
@@ -22,7 +23,7 @@ echo "Checking tracked patch whitespace…"
 git diff --check HEAD
 
 echo "Running the complete Python test suite locally…"
-"$python_bin" -m unittest discover -s src/glyphs-mcp/tests
+PYTHON_BIN="$python_bin" scripts/run_python_tests.sh
 
 derived_data="$(mktemp -d "${TMPDIR:-/tmp}/gmcp-release-tests.XXXXXX")"
 cleanup() { rm -rf "$derived_data"; }

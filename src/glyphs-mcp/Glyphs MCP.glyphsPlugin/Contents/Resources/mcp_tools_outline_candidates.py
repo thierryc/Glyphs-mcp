@@ -494,7 +494,7 @@ def _preview_tunni_impl(font_index, glyph_name, targets, imbalance_threshold, mi
             segment_end_node_indices=target["segmentEndNodeIndices"],
             imbalance_threshold=imbalance,
             min_handle_length=minimum,
-            grid_step=(resolved["grid"]["gridLength"] if policy == "font" else None),
+            grid_step=mcp_tools_curve_geometry._grid_step(resolved, policy),
         )
         if any(not item.get("eligible") for item in segments):
             reasons = [item.get("reason") for item in segments if not item.get("eligible")]
@@ -541,7 +541,7 @@ def _preview_tunni_impl(font_index, glyph_name, targets, imbalance_threshold, mi
             "imbalanceThreshold": imbalance,
             "minHandleLength": minimum,
             "gridPolicy": policy,
-            "gridLength": float(getattr(font, "gridLength", 1.0) or 1.0),
+            "gridLength": float(getattr(font, "gridLength", 0.0)),
             "gridSubDivision": int(getattr(font, "gridSubDivision", 1) or 1),
             "upm": float(getattr(font, "upm", 1000.0) or 1000.0),
         }
@@ -1140,7 +1140,7 @@ def _recompute_entry(entry):
                 min_handle_length=float(arguments["minHandleLength"]),
                 grid_step=(
                     float(arguments["gridLength"])
-                    if arguments.get("gridPolicy") == "font"
+                    if arguments.get("gridPolicy") == "font" and float(arguments["gridLength"]) > 0.0
                     else None
                 ),
             )

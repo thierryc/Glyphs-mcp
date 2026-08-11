@@ -105,6 +105,7 @@ _FEEDBACK_URI = "ui://glyphs-mcp/feedback-v1.html"
 
 _ENTRIES = [
     _entry("get_server_info", "Read local server identity, runtime health, and open-font count without changing Glyphs.", "server"),
+    _entry("get_document_change_overview", "Read the bounded MCP mutation overview for one tracked open Glyphs document.", "document-audit", output_schema="document-audit"),
     _entry("execute_code", "Run bounded Python in Glyphs when no dedicated tool fits; this can change fonts or external state.", "automation", "code"),
     _entry("execute_code_with_context", "Run bounded Python with an explicit font and glyph context when dedicated tools are insufficient.", "automation", "code"),
     _entry("docs_search", "Search the bundled official Glyphs API, plug-in, and file-format documentation without changing state.", "documentation", "docs"),
@@ -120,6 +121,7 @@ _ENTRIES = [
     _entry("get_selected_font_and_master", "Read the active font, master, and selection context from Glyphs without changing it.", "selection"),
     _entry("get_selected_nodes", "Read selected Edit View nodes with glyph, layer, path, node, and master mapping.", "selection"),
     _entry("get_glyph_paths", "Read editable path data for one glyph and master in a bounded round-trip-safe format.", "outlines"),
+    _entry("update_glyph_node_positions", "Dry-run or atomically update explicit node coordinates on one glyph layer using the font grid by default.", "outlines", "edit", output_schema="outline"),
     _entry("set_glyph_paths", "Replace paths on one explicit glyph layer after validation; preserves surrounding shapes and never saves.", "outlines", "edit"),
     _entry("get_glyph_components", "Inspect component identities, transforms, smart values, and target layers for one glyph.", "components"),
     _entry("add_component_to_glyph", "Add one component to an explicit glyph layer after validating its target.", "components", "edit"),

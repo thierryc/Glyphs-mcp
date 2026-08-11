@@ -201,7 +201,14 @@ done < <(git ls-files -z "$src_bundle")
 for rel in \
   "Contents/Resources/tool_catalog.py" \
   "Contents/Resources/tool_registration.py" \
-  "Contents/Resources/tool_result_schemas.py"
+  "Contents/Resources/tool_result_schemas.py" \
+  "Contents/Resources/document_change_audit.py" \
+  "Contents/Resources/document_changes_panel.py" \
+  "Contents/Resources/document_changes_panel_model.py" \
+  "Contents/Resources/mcp_tools_document_changes.py" \
+  "Contents/Resources/mcp_tools_node_positions.py" \
+  "Contents/Resources/outline_node_patch_engine.py" \
+  "Contents/Resources/outline_node_transaction.py"
 do
   source_file="$src_bundle/$rel"
   destination_file="$dst_bundle/$rel"

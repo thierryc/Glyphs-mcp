@@ -146,6 +146,9 @@ class McpToolRegistrationTextTests(unittest.TestCase):
     def test_get_server_info_is_decorated(self) -> None:
         self._assert_async_tool_decorated("get_server_info")
 
+    def test_document_change_overview_is_decorated(self) -> None:
+        self._assert_async_tool_decorated("get_document_change_overview")
+
     def test_glyphs_show_bridge_route_is_registered(self) -> None:
         resources = _resources_dir()
         route_path = resources / "mcp_show_routes.py"
@@ -162,16 +165,20 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         self.assertIn('transport="http"', text)
         self.assertIn('path="/mcp/"', text)
 
-    def test_plugin_uses_single_menu_item_for_status_window(self) -> None:
+    def test_plugin_uses_status_and_document_changes_menu_items(self) -> None:
         resources = _resources_dir()
         plugin_path = resources / "glyphs_plugin.py"
         text = plugin_path.read_text(encoding="utf-8", errors="replace")
 
-        self.assertEqual(text.count("NSMenuItem.new()"), 1)
-        self.assertEqual(text.count("Glyphs.menu[EDIT_MENU].append("), 1)
+        self.assertEqual(text.count("NSMenuItem.new()"), 2)
+        self.assertEqual(text.count("Glyphs.menu[EDIT_MENU].append("), 2)
         self.assertIn("self.name_menu = tr(\"menu.main\")", text)
+        self.assertIn("self.name_changes = tr(\"menu.changes\")", text)
         self.assertIn("newMenuItem.setTitle_(self.name_menu)", text)
         self.assertIn("newMenuItem.setAction_(self.ShowStatusWindow_)", text)
+        self.assertIn("changesMenuItem.setTitle_(self.name_changes)", text)
+        self.assertIn("changesMenuItem.setAction_(self.ShowChangesWindow_)", text)
+        self.assertIn("DocumentChangesPanelController", text)
         self.assertNotIn("status_item = NSMenuItem.new()", text)
         self.assertNotIn("self.statusMenuItem", text)
         self.assertNotIn("newMenuItem.setAction_(self.StartStopServer_)", text)

@@ -14,7 +14,18 @@ Use this skill for path editing, component or anchor work, selected-node workflo
 - Keep any fallback script minimal, validate targets first, and bound output if needed.
 - Use `docs_search` and `docs_get` instead of broad docs loading.
 - Treat curve-quality results as measurements and conservative warnings, never as an artistic score or automatic pass/fail verdict.
-- Re-read affected glyph state after mutation.
+- Use `update_glyph_node_positions` for explicit coordinate-only micro-edits on
+  one glyph layer. Keep `grid_policy="font"` so the effective Glyphs grid,
+  including subdivision or disabled rounding, is authoritative; use
+  `continuous` only when the user explicitly requests off-grid precision.
+- Before and after a node mutation, compare position, type, connection,
+  smoothness, orientation, and name; only explicitly targeted fields may change.
+- Treat a missing node `name` in `set_glyph_paths` as preserve and JSON `null`
+  or `""` as unnamed. In fallback Python, never assign `None` to a Glyphs
+  string property such as `GSNode.name`; use `""` when clearing it.
+- The complete verified read-back from `update_glyph_node_positions` satisfies
+  post-mutation verification. For other tools, re-read affected glyph state
+  and stop if any non-target field changed.
 - Never auto-save the font.
 
 ## Workflow
@@ -30,6 +41,7 @@ Use this skill for path editing, component or anchor work, selected-node workflo
    - `get_glyph_components`
    - `get_glyph_details`
 2. Prefer dedicated tools for the actual change:
+   - `update_glyph_node_positions`
    - `set_glyph_paths`
    - `add_component_to_glyph`
    - `add_anchor_to_glyph`
@@ -54,7 +66,11 @@ Use this skill for path editing, component or anchor work, selected-node workflo
 5. Review the difference-only Candidate Reporter before mutation. It leaves the normal Glyphs outline unobscured, draws only warm-yellow source/candidate difference regions, and turns those regions coral red when stale. If no manual edit is needed, call `review_outline_candidate_session`, dry-run acceptance, stop for approval, then confirm with the exact one-time token. If manual editing is wanted, dry-run and confirm `materialize_outline_candidate_session`, let the user edit the native layer, then re-review it. Never rely on LLM context to identify or delete candidate layers; use the persisted session metadata and `discard_outline_candidate_session`.
 6. Only use `execute_code_with_context` when the edit spans several glyph-scoped steps and the dedicated tools would be less reliable or less clear.
 7. When docs are needed, search first with `docs_search`, then fetch only the relevant page with `docs_get`.
-8. After every mutation, re-read the affected glyph or layer state and report what changed.
+8. After every mutation, compare all node fields listed above against the
+   pre-mutation snapshot and report intended changes plus any unexpected
+   difference. Use the node-position tool's complete verified read-back;
+   otherwise re-read the affected glyph or layer. Treat an unexpected
+   difference as a failed mutation even when the tool otherwise reports success.
 
 ## Curve geometry workflow
 

@@ -190,6 +190,9 @@ class McpToolsPathsTests(unittest.TestCase):
                     node_obj.position = (node_spec["x"], node_spec["y"])
                     node_obj.type = node_spec.get("type", "line")
                     node_obj.smooth = bool(node_spec.get("smooth", False))
+                    if "name" in node_spec:
+                        value = node_spec.get("name")
+                        node_obj.name = "" if value is None else value
                     path_obj.nodes.append(node_obj)
                 paths.append(path_obj)
             layer_obj.paths = paths
@@ -279,6 +282,56 @@ class McpToolsPathsTests(unittest.TestCase):
         self.assertEqual(payload["paths"][0]["nodes"][0]["rawType"], 1)
         self.assertEqual(payload["paths"][0]["nodes"][0]["orientation"], "left")
         self.assertEqual(payload["paths"][0]["nodes"][0]["rawOrientation"], 0)
+        self.assertIsNone(payload["paths"][0]["nodes"][0]["name"])
+
+    def test_get_set_round_trip_keeps_unnamed_and_named_nodes_safe(self) -> None:
+        module, layer, _helper_calls = self._load_module()
+
+        unnamed = json.loads(
+            asyncio.run(
+                module.get_glyph_paths(
+                    font_index=0, glyph_name="A", master_id="m1"
+                )
+            )
+        )
+        unnamed["paths"][0]["nodes"][0]["x"] = 11
+        result = json.loads(
+            asyncio.run(
+                module.set_glyph_paths(
+                    font_index=0,
+                    glyph_name="A",
+                    master_id="m1",
+                    paths_data=json.dumps(unnamed),
+                )
+            )
+        )
+
+        self.assertTrue(result["success"])
+        self.assertEqual(layer.paths[0].nodes[0].name, "")
+        self.assertNotEqual(layer.paths[0].nodes[0].name, "None")
+
+        layer.paths[0].nodes[0].name = "corner"
+        named = json.loads(
+            asyncio.run(
+                module.get_glyph_paths(
+                    font_index=0, glyph_name="A", master_id="m1"
+                )
+            )
+        )
+        named["paths"][0]["nodes"][0]["x"] = 12
+        result = json.loads(
+            asyncio.run(
+                module.set_glyph_paths(
+                    font_index=0,
+                    glyph_name="A",
+                    master_id="m1",
+                    paths_data=json.dumps(named),
+                )
+            )
+        )
+
+        self.assertTrue(result["success"])
+        self.assertEqual(layer.paths[0].nodes[0].name, "corner")
 
     def test_set_glyph_paths_uses_sidebearing_helper_setter(self) -> None:
         module, layer, helper_calls = self._load_module()

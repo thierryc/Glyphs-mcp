@@ -48,6 +48,29 @@ class PythonRequirementsTests(unittest.TestCase):
         self.assertIn("pyobjc-framework-Cocoa==11.1", lines)
         self.assertNotIn("pyobjc==11.1", lines)
 
+    def test_development_requirements_extend_runtime_without_shipping_test_tools(self) -> None:
+        root = _repo_root()
+        development = {
+            line.strip()
+            for line in (root / "requirements-dev.txt").read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        }
+        runtime = (root / "requirements.txt").read_text(encoding="utf-8")
+
+        self.assertIn("-r requirements.txt", development)
+        self.assertIn("glyphsLib==6.10.1", development)
+        self.assertIn("pytest==8.4.2", development)
+        self.assertNotIn("glyphsLib", runtime)
+        self.assertNotIn("pytest", runtime)
+
+    def test_python_test_runner_preflights_and_isolates_optional_pytest(self) -> None:
+        runner = (_repo_root() / "scripts" / "run_python_tests.sh").read_text(encoding="utf-8")
+
+        self.assertIn("requirements-dev.txt", runner)
+        self.assertIn("Python 3.11-3.14", runner)
+        self.assertIn("PYTEST_DISABLE_PLUGIN_AUTOLOAD=1", runner)
+        self.assertIn("-m unittest discover", runner)
+
 
 @unittest.skipUnless(
     os.environ.get(FULL_MATRIX_ENV) == "1",

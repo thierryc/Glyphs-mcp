@@ -2,7 +2,7 @@
 
 This optional repository plugin connects Codex/ChatGPT, Claude Code, Cursor,
 and GitHub Copilot CLI to the Glyphs MCP server at
-`http://127.0.0.1:9680/mcp/`. Version 1.8.0 bundles the same general Glyphs
+`http://127.0.0.1:9680/mcp/`. Version 1.9.0 bundles the same general Glyphs
 launcher and eight focused workflows for every host.
 
 Host-native manifests live under `.codex-plugin/`, `.claude-plugin/`,

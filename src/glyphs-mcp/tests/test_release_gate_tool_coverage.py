@@ -364,6 +364,18 @@ TOOL_RELEASE_GATE = {
         "undoNote": "Reads path data only.",
         "smoke": "get_glyph_paths on M.",
     },
+    "update_glyph_node_positions": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": (
+            "test_outline_node_patch.py",
+            "test_mcp_tools_node_positions.py",
+            "live Glyphs 3.5 and Glyphs 4 smoke batch",
+        ),
+        "mutation": EDITS_FONT,
+        "undoRisk": "medium",
+        "undoNote": "Changes only explicit node coordinates in one guarded layer transaction and rolls back on any verification failure.",
+        "smoke": "On a disposable glyph, dry-run and confirm two explicit node positions using grid_policy='font', verify read-back, then close without saving.",
+    },
     "set_glyph_paths": {
         "coverage": UNIT_BEHAVIOR,
         "tests": ("test_mcp_tools_paths.py",),
@@ -690,6 +702,20 @@ TOOL_RELEASE_GATE["review_curve_quality_across_masters"] = {
     "smoke": "Compare one compatible curved path across at least two masters without per-master samples.",
 }
 
+TOOL_RELEASE_GATE["get_document_change_overview"] = {
+    "coverage": LIVE_SMOKE_REQUIRED,
+    "tests": (
+        "test_document_change_audit.py",
+        "test_mcp_tools_document_changes.py",
+        "test_document_changes_panel_model.py",
+        "live Glyphs 3.5 and Glyphs 4 smoke batch",
+    ),
+    "mutation": READ_ONLY,
+    "undoRisk": "none",
+    "undoNote": "Reads only the process-local bounded MCP activity ledger; it never changes or saves a font.",
+    "smoke": "Exercise DA1–DA10 in the release QA protocol with saved and unsaved disposable fonts.",
+}
+
 
 class ReleaseGateToolCoverageTests(unittest.TestCase):
     maxDiff = None
@@ -730,10 +756,10 @@ class ReleaseGateToolCoverageTests(unittest.TestCase):
         names = [record["name"] for record in records]
         app_only = {record["name"] for record in records if record["appOnly"]}
 
-        self.assertEqual(len(records), 76, "Tool-surface growth requires an explicit budget review.")
+        self.assertEqual(len(records), 78, "Tool-surface growth requires an explicit budget review.")
         self.assertEqual(len(set(names)), len(names), "MCP tool names must be unique.")
         self.assertEqual(app_only, {entry.name for entry in app_only_entries()})
-        self.assertEqual(len(records) - len(app_only), 65)
+        self.assertEqual(len(records) - len(app_only), 67)
 
         for record in records:
             with self.subTest(tool=record["name"]):

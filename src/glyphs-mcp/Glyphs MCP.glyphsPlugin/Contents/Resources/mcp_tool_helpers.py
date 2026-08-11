@@ -106,6 +106,19 @@ def _sequence_values(sequence):
         return []
 
 
+def _font_object_id(font):
+    """Return a stable native identity for a GSFont proxy when available."""
+    if font is None:
+        return None
+    try:
+        pyobjc_id = getattr(objc, "pyobjc_id", None) if objc is not None else None
+        if callable(pyobjc_id):
+            return int(pyobjc_id(font))
+    except Exception:
+        pass
+    return id(font)
+
+
 def _font_identity(font):
     if font is None:
         return None
@@ -115,7 +128,7 @@ def _font_identity(font):
         path = ""
     if path:
         return ("path", path)
-    return ("object", id(font))
+    return ("object", _font_object_id(font))
 
 
 def _add_open_font(fonts, seen, font):
@@ -162,7 +175,7 @@ def _is_active_font(Glyphs, font):
     return _font_identity(active) == _font_identity(font)
 
 
-def _open_fonts_from_glyphs(Glyphs):
+def _collect_open_fonts_from_glyphs(Glyphs):
     fonts = []
     seen = set()
 
@@ -203,6 +216,17 @@ def _open_fonts_from_glyphs(Glyphs):
 
     _add_open_font(fonts, seen, _active_font(Glyphs))
     return fonts
+
+
+def _open_fonts_from_glyphs(Glyphs):
+    """Return one authoritative open-font order from Glyphs' main thread.
+
+    Some Glyphs 4 proxy collections expose a different order when read from
+    the MCP server thread than when read by main-thread edit and script-runner
+    code. Resolve the collection on the main thread so a ``font_index`` from
+    ``list_open_fonts`` targets the same document in every tool.
+    """
+    return _run_on_main_thread(lambda: _collect_open_fonts_from_glyphs(Glyphs))
 
 
 def _font_summary(font, font_index=None):
@@ -1675,6 +1699,17 @@ def _validate_path_specs(paths, path_specs):
                 )
                 continue
 
+            if "name" in node_spec:
+                requested_name = node_spec.get("name")
+                if requested_name is not None and not isinstance(
+                    requested_name, str
+                ):
+                    errors.append(
+                        "Path {} node {} has invalid name; expected a string or null".format(
+                            path_index, node_index
+                        )
+                    )
+
             requested_type = str(node_spec.get("type", "line") or "line").lower()
             requested_raw = node_spec.get("rawType")
             old_node = old_nodes[node_index] if node_index < len(old_nodes) else None
@@ -1781,6 +1816,25 @@ def _validate_path_specs(paths, path_specs):
     return topology_matches, errors
 
 
+def _normalized_node_name(value):
+    """Return the string value expected by the GSNode.name API."""
+    return "" if value is None else str(value)
+
+
+def _node_name_value(node):
+    return _normalized_node_name(getattr(node, "name", None))
+
+
+def _set_node_name(node, value):
+    """Set a node name without allowing Python None to become literal 'None'."""
+    expected = _normalized_node_name(value)
+    try:
+        node.name = expected
+        return _node_name_value(node) == expected
+    except Exception:
+        return False
+
+
 def _apply_node_spec(node, spec, old_node=None):
     node.position = (float(spec.get("x", 0.0)), float(spec.get("y", 0.0)))
 
@@ -1810,10 +1864,8 @@ def _apply_node_spec(node, spec, old_node=None):
         except Exception:
             pass
     if "name" in spec:
-        try:
-            node.name = spec.get("name")
-        except Exception:
-            pass
+        if not _set_node_name(node, spec.get("name")):
+            raise RuntimeError("Unable to set node name")
 
 
 def _snapshot_existing_paths(paths):
@@ -1878,7 +1930,8 @@ def _restore_existing_paths(snapshot):
                         restored = False
                 elif orientation is not None:
                     node.orientation = orientation
-                node.name = node_state["name"]
+                if not _set_node_name(node, node_state["name"]):
+                    restored = False
             except Exception:
                 restored = False
     return restored
@@ -1937,11 +1990,11 @@ def _merge_paths_into_shape_order(original_shapes, new_paths):
     return merged
 
 
-def _verify_path_specs(layer, path_specs):
+def _verify_path_specs(layer, path_specs, original_node_names=None):
     paths = _layer_paths(layer)
     if len(paths) != len(path_specs):
         return False
-    for path, spec in zip(paths, path_specs):
+    for path_index, (path, spec) in enumerate(zip(paths, path_specs)):
         nodes = _sequence_values(getattr(path, "nodes", None))
         expected_nodes = spec.get("nodes") or []
         if len(nodes) != len(expected_nodes):
@@ -1952,7 +2005,7 @@ def _verify_path_specs(layer, path_specs):
             spec.get("locked")
         ):
             return False
-        for node, node_spec in zip(nodes, expected_nodes):
+        for node_index, (node, node_spec) in enumerate(zip(nodes, expected_nodes)):
             x, y = _point_values(getattr(node, "position", None))
             if abs(x - float(node_spec.get("x", 0.0))) > 0.001:
                 return False
@@ -1980,6 +2033,20 @@ def _verify_path_specs(layer, path_specs):
                         return False
                 except Exception:
                     return False
+            expected_name = None
+            verify_name = False
+            if "name" in node_spec:
+                expected_name = _normalized_node_name(node_spec.get("name"))
+                verify_name = True
+            elif (
+                original_node_names is not None
+                and path_index < len(original_node_names)
+                and node_index < len(original_node_names[path_index])
+            ):
+                expected_name = original_node_names[path_index][node_index]
+                verify_name = True
+            if verify_name and _node_name_value(node) != expected_name:
+                return False
     return True
 
 
@@ -2010,6 +2077,13 @@ def _apply_path_specs_and_metrics(
     has_shapes_surface = bool(original_shapes) or hasattr(layer, "shapes")
     original_non_paths = [shape for shape in original_shapes if not _is_path_shape(shape)]
     snapshot = _snapshot_existing_paths(existing_paths)
+    original_node_names = [
+        [
+            _node_name_value(node)
+            for node in _sequence_values(getattr(path, "nodes", None))
+        ]
+        for path in existing_paths
+    ]
     original_metrics = {
         "width": getattr(layer, "width", None),
         "left": _get_left_sidebearing(layer),
@@ -2115,7 +2189,9 @@ def _apply_path_specs_and_metrics(
             )
             if has_shapes_surface and not non_paths_preserved:
                 raise RuntimeError("Non-path shape order or identity changed")
-            if not _verify_path_specs(layer, path_specs):
+            if not _verify_path_specs(
+                layer, path_specs, original_node_names=original_node_names
+            ):
                 raise RuntimeError("Path write verification failed")
 
             summary = _layer_path_summary(layer)

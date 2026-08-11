@@ -23,6 +23,25 @@ def _resources_dir() -> Path:
 
 
 class McpToolHelpersTests(unittest.TestCase):
+    def test_set_node_name_normalizes_null_but_preserves_literal_string(self) -> None:
+        class Node:
+            def __init__(self):
+                self._name = None
+
+            @property
+            def name(self):
+                return self._name
+
+            @name.setter
+            def name(self, value):
+                self._name = str(value)
+
+        node = Node()
+        self.assertTrue(helpers._set_node_name(node, None))
+        self.assertEqual(node.name, "")
+        self.assertTrue(helpers._set_node_name(node, "None"))
+        self.assertEqual(node.name, "None")
+
     def test_node_orientation_uses_raw_objc_value(self) -> None:
         class InstanceMethods:
             @staticmethod
@@ -392,6 +411,26 @@ class McpToolHelpersTests(unittest.TestCase):
 
         self.assertEqual(fonts, [first, second, third])
 
+    def test_open_fonts_collects_authoritative_order_on_main_thread(self) -> None:
+        first = types.SimpleNamespace(familyName="First", filepath="/tmp/first.glyphs")
+        second = types.SimpleNamespace(familyName="Second", filepath="/tmp/second.glyphs")
+        glyphs = types.SimpleNamespace(fonts=[first, second])
+        calls = []
+        original_run_on_main_thread = helpers._run_on_main_thread
+
+        def run_on_main_thread(callback):
+            calls.append("main")
+            return callback()
+
+        try:
+            helpers._run_on_main_thread = run_on_main_thread
+            fonts = helpers._open_fonts_from_glyphs(glyphs)
+        finally:
+            helpers._run_on_main_thread = original_run_on_main_thread
+
+        self.assertEqual(calls, ["main"])
+        self.assertEqual(fonts, [first, second])
+
     def test_open_fonts_uses_current_document_and_active_font_without_documents(self) -> None:
         current = types.SimpleNamespace(familyName="Current", filepath="/tmp/current.glyphs")
         active = types.SimpleNamespace(familyName="Active", filepath="/tmp/active.glyphs")
@@ -427,6 +466,18 @@ class McpToolHelpersTests(unittest.TestCase):
         self.assertTrue(helpers._is_active_font(glyphs, active))
         self.assertTrue(helpers._is_active_font(glyphs, same_path))
         self.assertFalse(helpers._is_active_font(glyphs, other))
+
+    def test_font_object_id_uses_stable_pyobjc_identity_when_available(self) -> None:
+        first_proxy = types.SimpleNamespace(native_id=1234)
+        second_proxy = types.SimpleNamespace(native_id=1234)
+        original_objc = helpers.objc
+        try:
+            helpers.objc = types.SimpleNamespace(pyobjc_id=lambda value: value.native_id)
+            self.assertEqual(helpers._font_object_id(first_proxy), 1234)
+            self.assertEqual(helpers._font_object_id(second_proxy), 1234)
+            self.assertEqual(helpers._font_identity(first_proxy), helpers._font_identity(second_proxy))
+        finally:
+            helpers.objc = original_objc
 
     def test_get_component_automatic_prefers_present_flags(self) -> None:
         class HasAutomatic:
@@ -638,13 +689,13 @@ class McpToolHelpersTests(unittest.TestCase):
                 self.y = float(y)
 
         class Node:
-            def __init__(self, x=0, y=0, raw_type=1) -> None:
+            def __init__(self, x=0, y=0, raw_type=1, name=None) -> None:
                 self._position = Point(x, y)
                 self.rawType = raw_type
                 self.rawConnection = 0
                 self.smooth = False
                 self.orientation = 0
-                self.name = None
+                self._name = name
                 self.attributes = {"hoi": {"wght": {"linear": True}}}
                 self.userData = {"node": "metadata"}
 
@@ -675,9 +726,17 @@ class McpToolHelpersTests(unittest.TestCase):
             def connection(self, value):
                 self.rawConnection = int(value)
 
+            @property
+            def name(self):
+                return self._name
+
+            @name.setter
+            def name(self, value):
+                self._name = str(value)
+
         class Path:
             def __init__(self):
-                self.nodes = [Node(10, 20), Node(30, 40)]
+                self.nodes = [Node(10, 20), Node(30, 40, name="corner")]
                 self.closed = True
                 self.locked = True
                 self.attributes = {"gradient": {"type": "linear"}, "group": "g1"}
@@ -702,7 +761,13 @@ class McpToolHelpersTests(unittest.TestCase):
                 "closed": True,
                 "locked": True,
                 "nodes": [
-                    {"x": 11, "y": 21, "type": "line", "rawType": 1},
+                    {
+                        "x": 11,
+                        "y": 21,
+                        "type": "line",
+                        "rawType": 1,
+                        "name": None,
+                    },
                     {"x": 31, "y": 41, "type": "line", "rawType": 1},
                 ],
             }
@@ -719,6 +784,9 @@ class McpToolHelpersTests(unittest.TestCase):
         self.assertEqual(layer.paths[0].attributes["group"], "g1")
         self.assertIn("hoi", layer.paths[0].nodes[0].attributes)
         self.assertEqual(layer.width, 510)
+        self.assertEqual(layer.paths[0].nodes[0].name, "")
+        self.assertNotEqual(layer.paths[0].nodes[0].name, "None")
+        self.assertEqual(layer.paths[0].nodes[1].name, "corner")
 
     def test_apply_path_specs_topology_rewrite_preserves_shape_order_and_metadata(self) -> None:
         class Point:
@@ -727,13 +795,13 @@ class McpToolHelpersTests(unittest.TestCase):
                 self.y = float(y)
 
         class Node:
-            def __init__(self, x=0, y=0, raw_type=1) -> None:
+            def __init__(self, x=0, y=0, raw_type=1, name=None) -> None:
                 self._position = Point(x, y)
                 self.rawType = raw_type
                 self.rawConnection = 0
                 self.smooth = False
                 self.orientation = 0
-                self.name = None
+                self._name = name
                 self.attributes = {"hoi": {"wght": {"linear": True}}}
                 self.userData = {"node": "metadata"}
 
@@ -764,6 +832,14 @@ class McpToolHelpersTests(unittest.TestCase):
             def connection(self, value):
                 self.rawConnection = int(value)
 
+            @property
+            def name(self):
+                return self._name
+
+            @name.setter
+            def name(self, value):
+                self._name = str(value)
+
             def copy(self):
                 copied = Node(
                     self.position.x, self.position.y, raw_type=self.rawType
@@ -771,7 +847,7 @@ class McpToolHelpersTests(unittest.TestCase):
                 copied.rawConnection = self.rawConnection
                 copied.smooth = self.smooth
                 copied.orientation = self.orientation
-                copied.name = self.name
+                copied._name = self._name
                 copied.attributes = json.loads(json.dumps(self.attributes))
                 copied.userData = dict(self.userData)
                 return copied
@@ -814,7 +890,9 @@ class McpToolHelpersTests(unittest.TestCase):
 
         class Layer:
             def __init__(self):
-                self.first = Path([Node(0, 0), Node(100, 0)], token="first")
+                self.first = Path(
+                    [Node(0, 0), Node(100, 0, name="corner")], token="first"
+                )
                 self.second = Path([Node(0, 100), Node(100, 100)], token="second")
                 self.component = Component()
                 self.image = GSImage()
@@ -841,9 +919,9 @@ class McpToolHelpersTests(unittest.TestCase):
                 "closed": True,
                 "locked": True,
                 "nodes": [
-                    {"x": 1, "y": 2, "type": "line"},
+                    {"x": 1, "y": 2, "type": "line", "name": None},
                     {"x": 101, "y": 2, "type": "line"},
-                    {"x": 101, "y": 50, "type": "line"},
+                    {"x": 101, "y": 50, "type": "line", "name": None},
                 ],
             },
             {
@@ -872,6 +950,11 @@ class McpToolHelpersTests(unittest.TestCase):
         self.assertIn("gradient", layer.paths[0].attributes)
         self.assertIn("hoi", layer.paths[0].nodes[0].attributes)
         self.assertEqual(layer.paths[0].userData, {"path": "metadata"})
+        self.assertEqual(
+            [node.name for node in layer.paths[0].nodes],
+            ["", "corner", ""],
+        )
+        self.assertNotIn("None", [node.name for node in layer.paths[0].nodes])
 
         diagnostics = helpers._layer_shape_summary(layer)
         self.assertEqual(diagnostics["shapeTypeCounts"]["shapeGroup"], 1)
@@ -879,6 +962,65 @@ class McpToolHelpersTests(unittest.TestCase):
         self.assertEqual(diagnostics["groupedShapeCount"], 2)
         self.assertIn("gradient", diagnostics["shapeAttributeKeys"])
         self.assertTrue(diagnostics["compatibilityWarnings"])
+
+    def test_apply_path_specs_rejects_non_string_name_before_mutation(self) -> None:
+        class Layer:
+            def __init__(self):
+                self.shapes = []
+                self.width = 500
+                self.change_count = 0
+
+            @property
+            def paths(self):
+                return []
+
+            def beginChanges(self):
+                self.change_count += 1
+
+        layer = Layer()
+        result = helpers._apply_path_specs_and_metrics(
+            layer,
+            [
+                {
+                    "closed": True,
+                    "nodes": [
+                        {"x": 0, "y": 0, "type": "line", "name": 123}
+                    ],
+                }
+            ],
+            object,
+            object,
+        )
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"], "Unsafe path rewrite rejected")
+        self.assertIn("expected a string or null", result["details"][0])
+        self.assertEqual(layer.change_count, 0)
+
+    def test_verify_path_specs_checks_explicit_and_preserved_names(self) -> None:
+        node = types.SimpleNamespace(
+            position=types.SimpleNamespace(x=10, y=20),
+            type="line",
+            rawType=1,
+            rawConnection=0,
+            name="unexpected",
+        )
+        path = types.SimpleNamespace(nodes=[node], closed=True, locked=False)
+        layer = types.SimpleNamespace(paths=[path])
+        specs = [{"closed": True, "nodes": [{"x": 10, "y": 20, "type": "line"}]}]
+
+        self.assertFalse(
+            helpers._verify_path_specs(
+                layer, specs, original_node_names=[[""]]
+            )
+        )
+
+        node.name = ""
+        self.assertTrue(
+            helpers._verify_path_specs(
+                layer, specs, original_node_names=[[""]]
+            )
+        )
 
     def test_apply_path_specs_rejects_unknown_raw_type_before_mutation(self) -> None:
         class Point:
@@ -1067,6 +1209,96 @@ class McpToolHelpersTests(unittest.TestCase):
         self.assertIs(layer.shapes[0], layer.original_path)
         self.assertIs(layer.shapes[1], layer.component)
         self.assertEqual(layer.width, 500)
+
+    def test_in_place_rollback_keeps_unnamed_node_empty(self) -> None:
+        class Point:
+            def __init__(self, x=0, y=0) -> None:
+                self.x = float(x)
+                self.y = float(y)
+
+        class Node:
+            def __init__(self):
+                self._position = Point(0, 0)
+                self.rawType = 1
+                self.rawConnection = 0
+                self.smooth = False
+                self.orientation = 0
+                self._name = None
+
+            @property
+            def position(self):
+                return self._position
+
+            @position.setter
+            def position(self, value):
+                if tuple(value) == (10.0, 20.0):
+                    self._position = Point(999, 999)
+                else:
+                    self._position = Point(value[0], value[1])
+
+            @property
+            def type(self):
+                return "line"
+
+            @type.setter
+            def type(self, _value):
+                self.rawType = 1
+
+            @property
+            def connection(self):
+                return self.rawConnection
+
+            @connection.setter
+            def connection(self, value):
+                self.rawConnection = int(value)
+
+            @property
+            def name(self):
+                return self._name
+
+            @name.setter
+            def name(self, value):
+                self._name = str(value)
+
+        class Path:
+            def __init__(self):
+                self.nodes = [Node()]
+                self.closed = True
+                self.locked = False
+
+        class Layer:
+            def __init__(self):
+                self.shapes = [Path()]
+                self.width = 500
+                self.leftSideBearing = 40
+                self.rightSideBearing = 60
+
+            @property
+            def paths(self):
+                return self.shapes
+
+        layer = Layer()
+        node = layer.paths[0].nodes[0]
+        result = helpers._apply_path_specs_and_metrics(
+            layer,
+            [
+                {
+                    "closed": True,
+                    "nodes": [
+                        {"x": 10, "y": 20, "type": "line", "name": None}
+                    ],
+                }
+            ],
+            Path,
+            Node,
+        )
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"], "Path write verification failed")
+        self.assertTrue(result["rolledBack"])
+        self.assertEqual((node.position.x, node.position.y), (0.0, 0.0))
+        self.assertEqual(node.name, "")
+        self.assertNotEqual(node.name, "None")
 
     def test_append_layer_shape_prefers_shapes_for_components(self) -> None:
         class RejectingComponents(list):

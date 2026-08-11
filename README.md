@@ -9,35 +9,25 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-## What's new in 1.8.0
+## What's new in 1.9.0 (unreleased)
 
-**A lean catalog-driven MCP surface and adaptive curve review.**
+**A native, one-document overview of work performed through MCP.**
 
-- One authoritative `TOOL_CATALOG` defines names, concise descriptions,
-  categories, visibility, lifecycle, replacements, schemas, and all MCP safety
-  hints. The server exposes 76 active tools: 65 model-visible and 11 app-only.
-- Eight obsolete or overlapping commands are removed immediately. Candidate
-  sessions replace direct batch italic, compensated-tuning, and collinear
-  review workflows; native Reporters replace the PNG curvature renderer.
-- Candidate, curve, spacing, and kerning workflows add validated structured
-  results while preserving the existing JSON text for older clients.
-- `review_curve_quality` now defaults to bounded adaptive analysis with
-  parameterized extrema, inflections, stationary points/cusps, arc length,
-  turning angle, self-intersections, and G0/G1/G2 continuity. `sampled_v1`
-  remains available for reproducible 1.7 comparisons.
-- `review_curve_quality_across_masters` compares only compatible path topology
-  and reports Tunni, curvature, event, and continuity variation with stable
-  incompatibility reasons.
-- **View > Show Glyphs MCP Curvature** can display curvature, curve events, or
-  both. The separate Candidate Reporter continues to show only localized
-  golden-yellow geometry differences and coral stale differences.
-- Tool names used by canonical and packaged skills are checked against the
-  active model-visible catalog, and deterministic routing fixtures enforce
-  review → dry run → approval → confirmation sequences.
-- The implementation stays local, deterministic, dependency-neutral,
-  clean-room, and compatible with Glyphs 3.5 and Glyphs 4.
+- **Edit → Glyphs MCP Changes…** opens a native utility panel showing the
+  current run's attributable MCP edits, saves, failures, uncertain generic-code
+  calls, bounded targets, warnings, and aggregate counts for one live font.
+- `get_document_change_overview` returns the same versioned, read-only record
+  to agents and MCP Apps, with a concise text fallback for other clients.
+- All active edit and save tools pass through a fail-open audit adapter. The
+  ledger is memory-only, keeps at most 256 recent events, never stores code or
+  unrestricted outline arguments, and never modifies or saves a font.
+- Copy Summary exports bounded Markdown; Open Target navigates to captured
+  glyphs; Reset clears only the ledger. Tracking ends when the document closes
+  or Glyphs quits, while the panel remains viewable when the server is stopped.
+- The server exposes 78 active tools: 67 model-visible and 11 app-only.
 
-[Read the full 1.8.0 changelog →](CHANGELOG.md) ·
+[Read the 1.9 roadmap →](ROADMAP.md) ·
+[Read the changelog →](CHANGELOG.md) ·
 [Cleanroom geometry record](content/contributor/curve-geometry-cleanroom.mdx) ·
 [Experimental italic guide](content/italic-first-pass.md) ·
 [Broad-Latin benchmark](content/contributor/italic-balanced-broad-latin-benchmark.md) ·
@@ -115,7 +105,7 @@ Glyphs 3 backward compatibility is maintained for the shared MCP server code whe
 
 ## Optional agent plugins
 
-Glyphs MCP 1.8.0 provides one shared plugin package for Codex/ChatGPT, Claude
+Glyphs MCP 1.9.0 provides one shared plugin package for Codex/ChatGPT, Claude
 Code, Cursor, and GitHub Copilot CLI. Every host gets its own native manifest,
 but all four load the same nine skills and the same local MCP connection:
 
@@ -145,7 +135,7 @@ installers do not install, update, or remove these agent plugins; each host owns
 that lifecycle. The repository also does not enable GitHub Copilot plugins
 through `.github/copilot/settings.json`.
 
-All host manifests use version `1.8.0`. Skills inherit that package version,
+All host manifests use version `1.9.0`. Skills inherit that package version,
 while the running MCP server reports the matching native Glyphs MCP version.
 See [Use agent skills and optional plugins](content/getting-started/use-agent-skills.mdx)
 for install, update, removal, fallback, and host-specific invocation details.
@@ -238,19 +228,23 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.8.0)
+## Command Set (MCP server v1.9.0)
 
-Glyphs MCP exposes **76 active tools** through one catalog-driven surface:
-**65 are model-visible** and **11 are app-only**. Every tool has a concise
+Glyphs MCP exposes **78 active tools** through one catalog-driven surface:
+**67 are model-visible** and **11 are app-only**. Every tool has a concise
 title and description, four MCP safety hints, a category, visibility, effect
 class, lifecycle state, and optional structured-output schema.
 
 The generated [command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set)
 is the authoritative list. README intentionally does not duplicate the full
-table. This catalog is shipped in this repo (version `1.8.0`). Typical
+table. This catalog is shipped in this repo (version `1.9.0`). Typical
 workflows begin with `list_open_fonts`, resolve explicit glyph
 and master targets, review or preview a detached candidate, dry-run changes,
 and ask for approval before confirmation. No edit tool saves implicitly.
+
+Coordinate-only outline micro-edits use `update_glyph_node_positions` with the
+font grid policy by default; `set_glyph_paths` remains the whole-path and
+topology-replacement tool.
 
 Curve work normally uses `review_curve_quality`,
 `review_curve_quality_across_masters`, `set_curve_review_overlay`, and the
@@ -306,15 +300,16 @@ Do not copy the raw source bundle as an end-user installation. Its tracked
 files are intentionally mutable and therefore cannot retain a valid
 distribution signature. Use the signed installer app or terminal Copy mode.
 
-After installation, Glyphs MCP adds one menu item:
+After installation, Glyphs MCP adds two menu items:
 
 - **Edit → Glyphs MCP Server**
+- **Edit → Glyphs MCP Changes…**
 
 The server endpoint is `http://127.0.0.1:9680/mcp/`.
 
 ### Tool discovery
 
-Glyphs MCP exposes one catalog-driven surface. MCP Apps-aware clients show 65
+Glyphs MCP exposes one catalog-driven surface. MCP Apps-aware clients show 66
 substantive tools to the model and reserve 11 feedback or host-UI wrappers for
 the app. Per-tool safety annotations replace the former server profiles.
 
@@ -337,7 +332,7 @@ The guide defines the runtime execution contract for LLM agents:
 
 By default, per-page doc resources are not registered to avoid flooding clients.
 Use `docs_search` + `docs_get` for bounded, on-demand documentation. Per-page
-resource registration is no longer part of the public 1.8 tool surface.
+resource registration is not part of the public 1.9 tool surface.
 
 ## Installer Notes
 
@@ -396,6 +391,21 @@ This repo ships two plugin bundle locations:
 
 - Canonical source bundle: `src/glyphs-mcp/Glyphs MCP.glyphsPlugin`
 - Glyphs Plugin Manager bundle (repo‑relative `path=` target): `plugin-manager/Glyphs MCP.glyphsPlugin`
+
+Developer test environment:
+
+```bash
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.txt
+PYTHON_BIN=.venv/bin/python ./scripts/run_python_tests.sh
+```
+
+The runner checks Python 3.11–3.14 and required development-only modules before
+starting. For a focused pytest run, use
+`PYTHON_BIN=.venv/bin/python ./scripts/run_python_tests.sh --pytest <tests...>`;
+the wrapper disables unrelated globally installed pytest plug-ins so they
+cannot alter FastMCP/Pydantic import state. The release gate continues to use
+the canonical `unittest` suite.
 
 Release flow (copy/paste):
 

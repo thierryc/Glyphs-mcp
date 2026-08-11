@@ -1,5 +1,83 @@
 # Changelog
 
+## 1.9.0 — One-document MCP change overview
+
+_August 11, 2026_
+
+Glyphs MCP 1.9.0 adds an authoritative, memory-only overview of attributable
+MCP mutation activity for one live Glyphs document during the current Glyphs
+run. It does not edit, save, snapshot, or semantically diff the font.
+
+### Atomic outline micro-edits
+
+- `update_glyph_node_positions` adds a typed, coordinate-only alternative to
+  whole-path replacement and generic Python for one glyph/master layer. It
+  supports up to 256 explicit nodes across paths, stale-source checks, dry run
+  or direct guarded confirmation, full read-back verification, and complete
+  rollback without saving.
+- The default `font` grid policy uses the effective `font.gridLength`, including
+  subdivisions, snaps with deterministic half-away-from-zero rounding, and
+  preserves decimals when the font grid is disabled. Arbitrary continuous
+  coordinates remain an explicit opt-in and roll back if Glyphs cannot preserve
+  them.
+- Tunni application now shares the same atomic node transaction and treats a
+  disabled font grid as continuous while preserving its public response format.
+
+### Native change review
+
+- **Edit → Glyphs MCP Changes…** opens a separate AppKit utility panel from
+  the existing GeneralPlugin. It shows the tracked family and file state,
+  session start, retention notice, outcome counts, chronological activity,
+  bounded event details, and warnings.
+- Open Target navigates to captured glyph targets, Copy Summary writes bounded
+  Markdown, and Reset clears only the in-memory ledger after confirmation.
+  The panel remains available while the MCP server is stopped.
+- Milestone UI strings are localized for English, German, French, Spanish,
+  Portuguese, and Simplified Chinese.
+
+### Audit and MCP contract
+
+- A thread-safe process-local ledger binds to the first live font targeted by
+  an attributable edit, save, or code operation that indicates an action or
+  leaves its result uncertain. It keeps 256 recent events, preserves aggregate
+  counts, follows an unsaved document through its first save, and clears when
+  the tracked document closes or Glyphs quits.
+- Every active edit and save command is covered by a required fail-open result
+  observer. It normalizes results as `changed`, `no_change`, `succeeded`,
+  `saved`, `failed`, or `uncertain`, then retains only bounded targets and
+  summaries for review-relevant events. Generic code is always opaque and its
+  source is never retained.
+- `get_document_change_overview` adds a versioned structured result and concise
+  text fallback under the new `document-audit` category. The catalog now has
+  78 active tools: 67 model-visible and 11 app-only.
+- Read-only, UI-only, export, preview, dry-run, and unconfirmed planning calls
+  are excluded. Results that prove no mutation started are also omitted, while
+  failures that may follow a partial mutation, unattributed generic code, and
+  cross-document attempts remain visible as review warnings.
+- The overview now follows the tracked document when `font_index` is omitted;
+  explicitly requesting another open font still returns the stable mismatch
+  error.
+- Observer exceptions are logged and cannot alter the original MCP result.
+- Open-font indices are now enumerated on Glyphs' main thread, so reads,
+  guarded edits, and context-aware code resolve the same document when several
+  fonts are open. Native GSFont identity now comes from PyObjC rather than
+  transient Python proxy IDs, so the overview and panel keep following the
+  tracked document as wrappers and indices change. The audit also omits proved
+  precondition failures while retaining failures that entered a change batch
+  and rolled back.
+
+See [ROADMAP.md](ROADMAP.md) for the value/complexity-ranked work that follows;
+entries after the 1.9 milestone are directional rather than release commitments.
+
+### Developer testing
+
+- `requirements-dev.txt` now declares repository-only test dependencies,
+  including `glyphsLib`, separately from the packages installed into Glyphs.
+- `scripts/run_python_tests.sh` preflights Python 3.11–3.14 and missing modules
+  with an actionable setup command. Its optional pytest mode isolates the suite
+  from unrelated globally installed plug-ins that can disturb Pydantic import
+  state; the release gate continues to use `unittest`.
+
 ## 1.8.0 — Lean catalog and adaptive curve review
 
 _August 10, 2026_

@@ -24,11 +24,13 @@ from mcp_tool_helpers import (
 )
 
 import outline_geometry_engine
+import outline_node_patch_engine
+import outline_node_transaction
 
 
 MAX_REVIEW_SEGMENTS = 512
 POSITION_TOLERANCE = 1.0e-5
-GRID_POLICIES = ("font", "continuous")
+GRID_POLICIES = outline_node_patch_engine.GRID_POLICIES
 ANALYSIS_MODES = ("adaptive", "sampled_v1")
 MAX_CROSS_MASTER_COUNT = 32
 
@@ -74,25 +76,37 @@ def _upm(font):
 
 def _font_grid(font):
     try:
-        grid_length = float(getattr(font, "gridLength"))
-    except (AttributeError, TypeError, ValueError, OverflowError):
-        grid_length = 1.0
-    if not math.isfinite(grid_length) or grid_length <= 0.0:
-        return None, "font.gridLength must be a finite positive number"
+        grid_length = getattr(font, "gridLength")
+    except Exception:
+        grid_length = None
     try:
-        subdivision = int(getattr(font, "gridSubDivision", 1) or 1)
-    except (TypeError, ValueError, OverflowError):
+        subdivision = getattr(font, "gridSubDivision", 1)
+    except Exception:
         subdivision = 1
+    resolved, error = outline_node_patch_engine.resolve_grid_policy(
+        "font",
+        grid_length,
+        subdivision,
+    )
+    if error:
+        return None, error
     return {
-        "gridLength": grid_length,
-        "gridSubDivision": max(1, subdivision),
+        "gridLength": resolved["gridLength"],
+        "gridSubDivision": resolved["gridSubDivision"],
+        "effectivePolicy": resolved["effectivePolicy"],
+        "fontGridDisabled": resolved["fontGridDisabled"],
     }, None
 
 
 def _normalize_grid_policy(value):
-    if not isinstance(value, str) or value not in GRID_POLICIES:
-        return None, "grid_policy must be one of: {}".format(", ".join(GRID_POLICIES))
-    return value, None
+    return outline_node_patch_engine.normalize_grid_policy(value)
+
+
+def _grid_step(target_data, grid_policy):
+    if grid_policy != "font":
+        return None
+    value = float(target_data["grid"]["gridLength"])
+    return value if value > 0.0 else None
 
 
 def _normalize_analysis_mode(value):
@@ -323,7 +337,7 @@ async def review_tunni_geometry(
             segment_end_node_indices=indices,
             imbalance_threshold=imbalance_value,
             min_handle_length=min_handle_value,
-            grid_step=(target_data["grid"]["gridLength"] if grid_policy_value == "font" else None),
+            grid_step=_grid_step(target_data, grid_policy_value),
         )
         reasons = {}
         for segment in segments:
@@ -505,21 +519,6 @@ def _no_mutation_outcome():
 
 
 def _apply_tunni_plans(target_data, planned, snapshot):
-    path = target_data["path"]
-    layer = target_data["layer"]
-    begin_changes = getattr(layer, "beginChanges", None)
-    end_changes = getattr(layer, "endChanges", None)
-    if not callable(begin_changes) or not callable(end_changes):
-        return {
-            "ok": False,
-            "error": "Confirmed mutation requires callable layer.beginChanges() and layer.endChanges().",
-            "errorCode": "change_batch_unavailable",
-            "applied": [],
-            "verification": {"succeeded": False, "changedNodeCount": 0},
-            "rollback": {"attempted": False, "succeeded": True, "errors": []},
-            "changeBatch": {"available": False, "began": False, "ended": False},
-        }
-
     expected, proposal_error = _expected_handle_positions(planned, snapshot)
     if proposal_error:
         return {
@@ -531,109 +530,37 @@ def _apply_tunni_plans(target_data, planned, snapshot):
             "rollback": {"attempted": False, "succeeded": True, "errors": []},
             "changeBatch": {"available": True, "began": False, "ended": False},
         }
-
-    expected_positions = list(snapshot["positions"])
-    for node_index, position in expected.items():
-        expected_positions[node_index] = position
-
-    began_changes = False
-    ended_changes = False
-    mutation_error = None
-    verification_error = None
-    end_changes_error = None
-    rollback_attempted = False
-    rollback_errors = []
-    try:
-        begin_changes()
-        began_changes = True
-    except Exception as exc:
-        return {
-            "ok": False,
-            "error": "layer.beginChanges() failed: {}".format(exc),
-            "errorCode": "begin_changes_failed",
-            "applied": [],
-            "verification": {"succeeded": False, "changedNodeCount": 0},
-            "rollback": {"attempted": False, "succeeded": True, "errors": []},
-            "changeBatch": {"available": True, "began": False, "ended": False},
+    path_index = int(target_data["target"]["pathIndex"])
+    updates = [
+        {
+            "pathIndex": path_index,
+            "nodeIndex": int(node_index),
+            "proposed": {"x": float(position[0]), "y": float(position[1])},
         }
-
-    try:
-        try:
-            for node_index, position in sorted(expected.items()):
-                snapshot["nodes"][node_index].position = (float(position[0]), float(position[1]))
-            verification_error = _verify_path_state(path, snapshot, expected_positions)
-        except Exception as exc:
-            mutation_error = str(exc)
-
-        if mutation_error or verification_error:
-            rollback_attempted = True
-            rollback_errors = _restore_positions(path, snapshot)
-    finally:
-        try:
-            end_changes()
-            ended_changes = True
-        except Exception as exc:
-            end_changes_error = str(exc)
-
-    if not mutation_error and not verification_error and not end_changes_error:
-        verification_error = _verify_path_state(path, snapshot, expected_positions)
-
-    if end_changes_error or verification_error:
-        if not rollback_attempted:
-            rollback_attempted = True
-            rollback_errors = _restore_positions(path, snapshot)
-
-    if rollback_attempted:
-        rollback_verification_error = _verify_path_state(path, snapshot, snapshot["positions"])
-        if rollback_verification_error:
-            retry_errors = _restore_positions(path, snapshot)
-            if retry_errors:
-                rollback_errors.extend(retry_errors)
-
-    failure = mutation_error or verification_error or end_changes_error
-    if failure:
-        if mutation_error:
-            error_code = "mutation_failed"
-            error_message = mutation_error
-        elif end_changes_error:
-            error_code = "end_changes_failed"
-            error_message = "layer.endChanges() failed: {}".format(end_changes_error)
-        else:
-            error_code = "verification_failed"
-            error_message = verification_error
-        result = {
-            "ok": False,
-            "error": error_message,
-            "errorCode": error_code,
-            "applied": [],
-            "verification": {"succeeded": False, "changedNodeCount": 0},
-            "rollback": {
-                "attempted": bool(rollback_attempted),
-                "succeeded": bool(rollback_attempted) and not rollback_errors,
-                "errors": rollback_errors,
-            },
-            "changeBatch": {"available": True, "began": began_changes, "ended": ended_changes},
-        }
-        if end_changes_error:
-            result["endChangesError"] = end_changes_error
-        return result
-
-    changed_node_count = sum(
-        1
-        for node_index, position in expected.items()
-        if not _positions_match(snapshot["positions"][node_index], position)
+        for node_index, position in sorted(expected.items())
+    ]
+    outcome = outline_node_transaction.apply_position_updates(
+        target_data["layer"],
+        list(_layer_paths(target_data["layer"])),
+        updates,
+        node_type_getter=_normalized_node_type,
     )
+    if not outcome.get("ok"):
+        return {
+            **outcome,
+            "applied": [],
+        }
     return {
         "ok": True,
         "applied": _applied_segment_records(planned, snapshot),
         "verification": {
             "succeeded": True,
-            "changedNodeCount": changed_node_count,
+            "changedNodeCount": int(outcome["verification"]["changedNodeCount"]),
             "topologyPreserved": True,
             "untargetedNodesPreserved": True,
         },
-        "rollback": {"attempted": False, "succeeded": True, "errors": []},
-        "changeBatch": {"available": True, "began": began_changes, "ended": ended_changes},
+        "rollback": outcome["rollback"],
+        "changeBatch": outcome["changeBatch"],
     }
 
 
@@ -647,7 +574,7 @@ def _analyze_tunni_target(
         segment_end_node_indices=indices,
         imbalance_threshold=imbalance_threshold,
         min_handle_length=min_handle_length,
-        grid_step=(target_data["grid"]["gridLength"] if grid_policy == "font" else None),
+        grid_step=_grid_step(target_data, grid_policy),
     )
 
 

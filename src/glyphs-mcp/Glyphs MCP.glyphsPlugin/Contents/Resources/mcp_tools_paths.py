@@ -50,7 +50,9 @@ async def get_glyph_paths(
             pathDataVersion (int): Payload version. Version 2 includes raw node
                 types and additive compatibility metadata.
             paths (list): List of paths, each containing:
-                nodes (list): List of nodes with x, y, type, smooth properties
+                nodes (list): List of nodes with x, y, type, smooth, and name
+                    properties. Unnamed nodes are returned as null or an empty
+                    string.
                 closed (bool): Whether the path is closed
             width (int): Glyph width
             leftSideBearing (int): Left side bearing
@@ -211,6 +213,8 @@ async def set_glyph_paths(
         glyph_name (str): Name of the glyph. Required.
         master_id (str): Master ID. If None, uses the current selected master. Optional.
         paths_data (str): JSON string containing path data in the format returned by get_glyph_paths. Required.
+            For node names, an omitted name preserves an existing name, null or
+            an empty string means unnamed, and any other value must be a string.
     
     Returns:
         str: JSON-encoded result with success status.

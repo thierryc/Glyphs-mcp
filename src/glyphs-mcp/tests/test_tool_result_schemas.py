@@ -8,6 +8,8 @@ import sys
 import unittest
 from pathlib import Path
 
+from jsonschema import validate
+
 
 def _resources() -> Path:
     return Path(__file__).resolve().parent.parent / "Glyphs MCP.glyphsPlugin" / "Contents" / "Resources"
@@ -61,6 +63,29 @@ class ToolResultSchemaTests(unittest.TestCase):
         self._assert_envelope(dry_run, mode="dry_run", status="success", ok=True)
         self._assert_envelope(confirmed, mode="confirmed", status="success", ok=True)
 
+    def test_outline_node_update_uses_outline_envelope_and_legacy_text(self) -> None:
+        raw = json.dumps(
+            {
+                "ok": True,
+                "target": {"glyphName": "C", "masterId": "M1"},
+                "summary": {"changedNodeCount": 2, "verified": True},
+                "verification": {"succeeded": True},
+                "fontSaved": False,
+            }
+        )
+
+        result = self.module.workflow_tool_result(
+            "update_glyph_node_positions",
+            "edit",
+            raw,
+            {"dry_run": False, "confirm": True},
+        )
+
+        self._assert_envelope(result, mode="confirmed", status="success", ok=True)
+        self.assertEqual(self._text(result), raw)
+        validate(result.structured_content, self.module.schema_for("outline"))
+        self.assertTrue(result.structured_content["data"]["verification"]["succeeded"])
+
     def test_stale_candidate_partial_and_rollback_are_bounded(self) -> None:
         stale = self.module.workflow_tool_result(
             "review_outline_candidate_session",
@@ -98,6 +123,48 @@ class ToolResultSchemaTests(unittest.TestCase):
 
         self._assert_envelope(result, mode="ui", status="warning", ok=True)
         self.assertEqual(result.structured_content["warnings"][0]["code"], "stroke_cap")
+
+    def test_document_audit_schema_accepts_idle_active_and_error_results(self) -> None:
+        audit = importlib.import_module("document_change_audit")
+        schema = self.module.schema_for("document-audit")
+        ledger = audit.DocumentChangeLedger()
+        idle = ledger.snapshot()
+        validate(idle, schema)
+
+        ledger.record(
+            {
+                "objectId": 42,
+                "fontIndex": 0,
+                "familyName": "Audit Sans",
+                "filePath": None,
+                "fileState": "Unsaved",
+            },
+            {
+                "tool": "update_glyph_metrics",
+                "title": "Update Glyph Metrics",
+                "effect": "edit",
+                "outcome": "changed",
+                "target": {"glyphName": "a"},
+                "summary": "Changed one width.",
+            },
+        )
+        active = ledger.snapshot()
+        validate(active, schema)
+
+        error = dict(active)
+        error.update(
+            {
+                "ok": False,
+                "status": "error",
+                "entries": [],
+                "error": {
+                    "code": "tracked_document_mismatch",
+                    "message": "Requested font is not tracked.",
+                    "recoverable": True,
+                },
+            }
+        )
+        validate(error, schema)
 
 
 if __name__ == "__main__":

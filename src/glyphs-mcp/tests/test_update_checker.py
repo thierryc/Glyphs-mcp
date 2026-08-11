@@ -77,6 +77,17 @@ def _load_plugin_module(update_checker):
             opened_urls.append(url)
             return True
 
+    class PanelControllerStub:
+        @classmethod
+        def alloc(cls):
+            return cls()
+
+        def initWithPlugin_(self, _plugin):
+            return self
+
+        def show(self):
+            return None
+
     foundation = types.ModuleType("Foundation")
     foundation.NSNumberFormatter = object
     foundation.NSOperationQueue = types.SimpleNamespace(
@@ -152,6 +163,9 @@ def _load_plugin_module(update_checker):
         "debug_event_logging": types.SimpleNamespace(
             McpDebugEventLoggingMiddleware=object,
             set_enabled=lambda _enabled: None,
+        ),
+        "document_changes_panel": types.SimpleNamespace(
+            DocumentChangesPanelController=PanelControllerStub,
         ),
         "status_panel_helpers": types.SimpleNamespace(
             endpoint_for=lambda port: "http://127.0.0.1:{}".format(port),

@@ -1,0 +1,6 @@
+-r requirements.txt
+
+# Repository tests and deterministic source benchmarks. These are intentionally
+# separate from the dependencies installed into Glyphs for the MCP runtime.
+glyphsLib==6.10.1
+pytest==8.4.2

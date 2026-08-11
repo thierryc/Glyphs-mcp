@@ -138,6 +138,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
             "notarize_installer_app.sh",
             "make_installer_dmg.sh",
             "publish_release_assets.sh",
+            "run_python_tests.sh",
             "run_local_release_tests.sh",
             "verify_release_artifacts.sh",
         ]

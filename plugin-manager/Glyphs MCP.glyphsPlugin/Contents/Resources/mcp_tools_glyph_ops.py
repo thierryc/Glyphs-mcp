@@ -67,7 +67,15 @@ async def create_glyph(
             return json.dumps(error)
 
         if not glyph_name:
-            return json.dumps({"error": "Glyph name is required"})
+            return json.dumps(
+                {
+                    "success": False,
+                    "changed": False,
+                    "createdCount": 0,
+                    "error": "Glyph name is required",
+                    "fontIndex": font_index,
+                }
+            )
 
         # Check if glyph already exists
         if font.glyphs[glyph_name]:
@@ -133,12 +141,29 @@ async def delete_glyph(font_index: int = 0, glyph_name: str = None) -> str:
             return json.dumps(error)
 
         if not glyph_name:
-            return json.dumps({"error": "Glyph name is required"})
+            return json.dumps(
+                {
+                    "success": False,
+                    "changed": False,
+                    "deletedCount": 0,
+                    "error": "Glyph name is required",
+                    "fontIndex": font_index,
+                }
+            )
 
         glyph = font.glyphs[glyph_name]
 
         if not glyph:
-            return json.dumps({"error": "Glyph '{}' not found".format(glyph_name)})
+            return json.dumps(
+                {
+                    "success": False,
+                    "changed": False,
+                    "deletedCount": 0,
+                    "error": "Glyph '{}' not found".format(glyph_name),
+                    "glyphName": glyph_name,
+                    "fontIndex": font_index,
+                }
+            )
 
         if not _delete_font_glyph(font, glyph_name):
             return json.dumps(
@@ -156,7 +181,16 @@ async def delete_glyph(font_index: int = 0, glyph_name: str = None) -> str:
             "Glyph Deleted", "Deleted glyph '{}' from {}".format(glyph_name, font.familyName)
         )
 
-        return json.dumps({"success": True, "message": "Deleted glyph '{}'".format(glyph_name)})
+        return json.dumps(
+            {
+                "success": True,
+                "changed": True,
+                "deletedCount": 1,
+                "message": "Deleted glyph '{}'".format(glyph_name),
+                "glyphName": glyph_name,
+                "fontIndex": font_index,
+            }
+        )
     except Exception as e:
         return json.dumps({"error": str(e)})
 

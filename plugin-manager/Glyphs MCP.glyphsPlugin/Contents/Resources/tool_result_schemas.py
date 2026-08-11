@@ -106,12 +106,98 @@ FEEDBACK_OUTPUT_SCHEMA: Dict[str, Any] = {
 }
 
 
+DOCUMENT_AUDIT_OUTPUT_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "required": [
+        "documentAuditSchemaVersion",
+        "ok",
+        "status",
+        "sessionId",
+        "startedAt",
+        "target",
+        "counts",
+        "entries",
+        "omittedEntryCount",
+        "unattributedOperationCount",
+        "crossDocumentAttemptCount",
+        "lastSave",
+        "warnings",
+        "error",
+    ],
+    "properties": {
+        "documentAuditSchemaVersion": {"type": "integer", "const": 1},
+        "ok": {"type": "boolean"},
+        "status": {"type": "string", "enum": ["idle", "active", "error"]},
+        "sessionId": {"type": ["string", "null"]},
+        "startedAt": {"type": ["string", "null"]},
+        "target": {"type": "object"},
+        "counts": {
+            "type": "object",
+            "required": ["changed", "no_change", "succeeded", "saved", "failed", "uncertain"],
+            "properties": {
+                "changed": {"type": "integer", "minimum": 0},
+                "no_change": {"type": "integer", "minimum": 0},
+                "succeeded": {"type": "integer", "minimum": 0},
+                "saved": {"type": "integer", "minimum": 0},
+                "failed": {"type": "integer", "minimum": 0},
+                "uncertain": {"type": "integer", "minimum": 0},
+            },
+            "additionalProperties": False,
+        },
+        "entries": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+                "type": "object",
+                "required": [
+                    "eventId",
+                    "timestamp",
+                    "tool",
+                    "title",
+                    "effect",
+                    "outcome",
+                    "target",
+                    "summary",
+                    "warnings",
+                    "opaque",
+                ],
+                "properties": {
+                    "eventId": {"type": "string"},
+                    "timestamp": {"type": "string"},
+                    "tool": {"type": "string"},
+                    "title": {"type": "string"},
+                    "effect": {"type": "string", "enum": ["edit", "save", "code"]},
+                    "outcome": {
+                        "type": "string",
+                        "enum": ["changed", "no_change", "succeeded", "saved", "failed", "uncertain"],
+                    },
+                    "target": {"type": "object"},
+                    "summary": {"type": "string"},
+                    "warnings": {"type": "array", "items": {"type": "string"}, "maxItems": 8},
+                    "opaque": {"type": "boolean"},
+                },
+                "additionalProperties": False,
+            },
+        },
+        "omittedEntryCount": {"type": "integer", "minimum": 0},
+        "unattributedOperationCount": {"type": "integer", "minimum": 0},
+        "crossDocumentAttemptCount": {"type": "integer", "minimum": 0},
+        "lastSave": {"type": ["object", "null"]},
+        "warnings": {"type": "array", "items": {"type": "string"}},
+        "error": ERROR_SCHEMA,
+    },
+    "additionalProperties": False,
+}
+
+
 OUTPUT_SCHEMAS: Dict[str, Dict[str, Any]] = {
     "candidate": _workflow_schema("candidate session"),
     "curve": _workflow_schema("curve geometry"),
+    "outline": _workflow_schema("outline editing"),
     "spacing": _workflow_schema("spacing"),
     "kerning": _workflow_schema("kerning"),
     "feedback": FEEDBACK_OUTPUT_SCHEMA,
+    "document-audit": DOCUMENT_AUDIT_OUTPUT_SCHEMA,
 }
 
 
@@ -230,6 +316,7 @@ def workflow_tool_result(tool_name: str, effect: str, raw: Any, arguments: Dict[
 
 
 __all__ = [
+    "DOCUMENT_AUDIT_OUTPUT_SCHEMA",
     "FEEDBACK_OUTPUT_SCHEMA",
     "OUTPUT_SCHEMAS",
     "RESULT_SCHEMA_VERSION",

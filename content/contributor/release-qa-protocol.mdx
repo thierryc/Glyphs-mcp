@@ -29,14 +29,23 @@ target, rollback fails, output is unbounded, or Glyphs crashes/hangs.
 Before live testing, require all of the following:
 
 ```bash
-python3 -m unittest discover -s src/glyphs-mcp/tests
-PYTHON_BIN=/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 ./scripts/run_local_release_tests.sh
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements-dev.txt
+PYTHON_BIN=.venv/bin/python ./scripts/run_python_tests.sh
+PYTHON_BIN=.venv/bin/python ./scripts/run_local_release_tests.sh
 cd website && npm run build
 ```
 
+`requirements-dev.txt` extends the Glyphs runtime requirements with the
+repository-only `glyphsLib` benchmark dependency and pytest. The Python runner
+fails early with the exact missing modules and installation command. Its
+optional `--pytest` mode disables third-party plug-in autoloading; this keeps
+globally installed pytest integrations from changing FastMCP/Pydantic import
+state. The release gate itself remains on the canonical `unittest` path.
+
 The automated gate must prove:
 
-- `TOOL_CATALOG` contains 76 active entries: 65 `model+app` and 11
+- `TOOL_CATALOG` contains 78 active entries: 67 `model+app` and 11
   `app-only`, plus exactly eight unregistered tombstones.
 - Every registered tool has one catalog entry, all four MCP safety hints,
   concise metadata, a release classification, and a valid output schema.
@@ -44,8 +53,9 @@ The automated gate must prove:
 - Model-visible `tools/list` metadata stays below 160 KiB.
 - Catalog-generated docs, routing fixtures, canonical skills, packaged skills,
   and runtime mirrors agree.
-- Candidate, curve, spacing, and kerning results conform to the common envelope
-  while preserving legacy JSON text.
+- Document-audit results conform to their dedicated schema. Outline, candidate,
+  curve, spacing, and kerning results conform to the common envelope while
+  preserving legacy JSON text.
 - No executable resource uses glyph undo groups.
 
 ## Fixtures and containment
@@ -66,15 +76,35 @@ changes discarded and verify the source fixture stayed byte-identical.
 | --- | --- | --- |
 | S1 | Start, stop, then start the server three times. | Every fresh client initializes; no stale event-loop state or duplicate thread remains. |
 | S2 | Call `get_server_info`, `list_open_fonts`, and `get_selected_font_and_master`. | Correct host/runtime/selection data; no mutation. |
-| S3 | Inspect raw `tools/list`. | Exactly 76 active tools register with catalog title, description, tags, annotations, metadata, and schemas. |
-| S4 | Inspect a client honoring Apps visibility. | 65 tools are model-visible; 11 UI wrappers remain app-only. |
+| S3 | Inspect raw `tools/list`. | Exactly 78 active tools register with catalog title, description, tags, annotations, metadata, and schemas. |
+| S4 | Inspect a client honoring Apps visibility. | 67 tools are model-visible; 11 UI wrappers remain app-only. |
 | S5 | Search for all eight tombstone names. | None registers; command reference gives one replacement for each. |
 | S6 | Reconnect after a plug-in restart. | Client receives the same catalog and no cached removed command. |
 
+## Document change overview
+
+Run these rows in both Glyphs 3.5 and Glyphs 4. Use one saved disposable font
+and one newly created unsaved font; keep a second font open for attribution and
+mismatch checks.
+
+| ID | Action | Expected |
+| --- | --- | --- |
+| DA1 | Open **Edit → Glyphs MCP Changes…** before any mutation and with the server stopped. | Native empty state explains automatic first-mutation tracking; opening the panel does not dirty or save any font. |
+| DA2 | Start the server and make one direct dedicated edit, then one confirm-gated edit after its dry run. | The first real edit binds the session to its live font; dry run is absent; chronological rows and changed/succeeded counts reflect only proved outcomes. |
+| DA3 | Trigger one failed direct or confirmed mutation whose failure occurs after mutation may have started. | A bounded `failed` event is retained without replacing the original tool error; unrelated font data is unchanged. |
+| DA3a | Try to delete a glyph name that does not exist, then request the overview without `font_index`. | The tool reports the missing glyph, no event or count is added, an idle ledger remains idle, and an existing session is returned for its tracked document without a mismatch. |
+| DA4 | Run `execute_code_with_context` against the tracked font and `execute_code` while attribution is ambiguous. | The explicit call is an opaque `uncertain` event with no code retained; the ambiguous call increments the unattributed-operation warning. |
+| DA5 | Save the initially unsaved tracked document to a disposable path. | The same session survives the path transition, records `saved`, and reports timestamp and new path in `lastSave`; no implicit save occurs. |
+| DA6 | Select a captured glyph event and use **Open Target**, then **Copy Summary**. | Glyphs opens the bounded glyph target; the pasteboard contains bounded Markdown with counts, entries, omissions, and warnings. |
+| DA7 | Mutate the second open document, then request its overview. | The mutation proceeds, the original ledger remains bound, a cross-document warning increments, and the tool returns stable `tracked_document_mismatch`. |
+| DA8 | Confirm **Reset**. | Only the in-memory ledger clears; neither document is edited or saved. |
+| DA9 | Start a new session and close its tracked document without saving. | The close callback returns the panel and MCP overview to idle; no font data or custom data was added. |
+| DA10 | Accumulate more than 256 disposable events and request limits below and above the allowed range. | Aggregate counts remain complete, only the newest 256 are retained, omission counts are accurate, and result limits clamp to 1–100. |
+
 ## Structured-result contract
 
-For representative candidate, curve, spacing, and kerning calls, inspect both
-MCP content channels.
+For the document audit and representative outline, candidate, curve, spacing,
+and kerning calls, inspect both MCP content channels.
 
 | ID | Case | Expected |
 | --- | --- | --- |
@@ -83,6 +113,20 @@ MCP content channels.
 | SR3 | Dry run then confirmation. | Modes are `dry_run` and `confirmed`; no mutation occurs in the first call. |
 | SR4 | Warning/partial batch. | Warning objects have code/message/optional target; partial status is preserved. |
 | SR5 | Stale candidate and rollback fixture. | Stable error/rollback fields are present and legacy text stays parseable. |
+
+## Atomic node-position updates
+
+Use one disposable glyph with at least two paths. Record every node field,
+shape order, anchors, width, and save state before each row.
+
+| ID | Action | Expected |
+| --- | --- | --- |
+| NP1 | Dry-run two explicit updates with `grid_policy="font"` and grid length `1`. | Requested fractions are reported, authoritative coordinates use whole units, and the font remains unchanged. |
+| NP2 | Repeat with effective grid length `0.1`, then with disabled grid length `0`. | Subdivision coordinates snap to tenths; disabled-grid coordinates remain continuous. |
+| NP3 | Confirm two updates across paths without a prior dry run. | One change batch applies both or neither; exact read-back proves only coordinates changed; no save occurs. |
+| NP4 | Change one expected source coordinate or lock one path before confirmation. | Stable stale/locked rejection occurs before `beginChanges()` and no node changes. |
+| NP5 | Request `grid_policy="continuous"` in a fixture that normalizes coordinates. | Read-back mismatch returns `continuous_coordinate_not_preserved` and restores every original field. |
+| NP6 | Inject write, read-back, and `endChanges()` failures. | Complete rollback is verified and the document-audit result stays bounded. |
 
 ## Adaptive curve diagnostics
 
@@ -157,7 +201,7 @@ candidates, tangent/imbalance boundaries, and continuous opt-in.
   restrictions, and loopback-only binding.
 - Install/upgrade both Glyphs targets with the release installer. Confirm
   canonical and Plugin Manager runtimes, four host manifests, packaged skills,
-  and build number agree. Each host resolves version `1.8.0`, the same nine
+  and build number agree. Each host resolves version `1.9.0`, the same nine
   skills, and the same localhost MCP endpoint (the version script updates this
   sentence for the candidate).
 - Exercise update discovery and **Prepare Update** only with signed disposable

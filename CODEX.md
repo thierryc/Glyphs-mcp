@@ -31,7 +31,7 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 - Glyph inspection: `get_glyph_details`, `get_glyph_paths`, `get_glyph_components`, `get_selected_glyphs`, `get_selected_nodes`, `list_style_sets`.
 - Curve geometry: `review_tunni_geometry`, `review_curve_quality`, grid-safe `apply_tunni_balance`, and the native curvature Reporter.
 - Candidate review: typed `preview_*_candidate` tools, a difference-only golden-yellow Candidate Reporter with separate curvature review, optional materialization, exact re-review tokens, guarded acceptance, and owned-layer discard.
-- Editing: `create_glyph`, `delete_glyph`, `copy_glyph`, `add_component_to_glyph`, `add_anchor_to_glyph`, `set_glyph_paths`.
+- Editing: `create_glyph`, `delete_glyph`, `copy_glyph`, `add_component_to_glyph`, `add_anchor_to_glyph`, `update_glyph_node_positions`, `set_glyph_paths`.
 - Metrics & persistence: `update_glyph_metrics`, `update_glyph_properties`, `set_kerning_pair`, `save_font`.
 - Automation: `execute_code`, `execute_code_with_context`, `get_selected_font_and_master`.
 - Docs helpers: `docs_search`, `docs_get`.
@@ -54,7 +54,16 @@ Refer to `README.md` for the full command table and usage notes.
 - Read current state before mutation (`get_selected_font_and_master`, `get_selected_glyphs`, `get_glyph_details`/`get_glyph_paths` as needed).
 - Prefer dedicated mutation tools first; use `execute_code_with_context` or `execute_code` for multi-step workflows where one script is more reliable.
 - For `execute_code*`, keep scripts minimal, validate targets first, and bound output with `max_output_chars` / `max_error_chars` when needed.
-- After each mutation, re-read affected entities and report changed/skipped counts.
+- For node mutations, snapshot and compare position, type, connection,
+  smoothness, orientation, and name; only explicitly targeted fields may change.
+  Never assign Python `None` to a Glyphs string property such as `GSNode.name`;
+  use `""` for an intentionally empty value.
+- After each mutation, re-read affected entities, stop on any non-target change,
+  and report changed/skipped counts.
+- For explicit coordinate-only micro-edits, use `update_glyph_node_positions`
+  with the default font grid policy. Its complete transaction read-back
+  satisfies the re-read requirement; reserve `set_glyph_paths` for whole-path
+  or topology replacement.
 
 ## Agent Guidelines
 - Prefer `rg`/`fd` style tools for repo searches; avoid altering the plugin

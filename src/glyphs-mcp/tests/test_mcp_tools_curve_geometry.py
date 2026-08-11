@@ -17,6 +17,10 @@ def _resources_dir() -> Path:
     return Path(__file__).resolve().parent.parent / "Glyphs MCP.glyphsPlugin" / "Contents" / "Resources"
 
 
+if str(_resources_dir()) not in sys.path:
+    sys.path.insert(0, str(_resources_dir()))
+
+
 def _module_path() -> Path:
     return _resources_dir() / "mcp_tools_curve_geometry.py"
 
@@ -428,6 +432,26 @@ class McpToolsCurveGeometryTests(unittest.TestCase):
         self.assertIn("idealProposed", gridded["segments"][0])
         self.assertEqual(continuous["params"]["gridPolicy"], "continuous")
         self.assertEqual(continuous["segments"][0]["grid"]["policy"], "continuous")
+
+    def test_tunni_disabled_font_grid_preserves_continuous_coordinates(self) -> None:
+        module, _font, _layer, _path, _nodes_value = self._load_module(
+            grid_length=0,
+            grid_subdivision=1,
+        )
+
+        payload = json.loads(
+            asyncio.run(
+                module.review_tunni_geometry(
+                    glyph_name="A", master_id="m1", path_index=0
+                )
+            )
+        )
+
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["params"]["gridPolicy"], "font")
+        self.assertEqual(payload["params"]["gridLength"], 0.0)
+        self.assertEqual(payload["segments"][0]["grid"]["policy"], "continuous")
+        self.assertIsNone(payload["segments"][0]["grid"]["onGrid"])
 
     def test_tunni_rejects_unknown_grid_policy_before_mutation(self) -> None:
         module, _font, layer, _path, nodes = self._load_module()

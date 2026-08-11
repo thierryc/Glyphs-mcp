@@ -218,7 +218,11 @@ class McpToolsGlyphOpsTests(unittest.TestCase):
         missing_glyph = json.loads(asyncio.run(module.delete_glyph(font_index=0, glyph_name="A")))
 
         self.assertEqual(missing_name["error"], "Glyph name is required")
+        self.assertFalse(missing_name["changed"])
+        self.assertEqual(missing_name["deletedCount"], 0)
         self.assertEqual(missing_glyph["error"], "Glyph 'A' not found")
+        self.assertFalse(missing_glyph["changed"])
+        self.assertEqual(missing_glyph["deletedCount"], 0)
 
     def test_update_glyph_properties_mutates_requested_fields_only(self) -> None:
         glyph = _FakeGlyph("A", unicode="0041")
