@@ -74,7 +74,7 @@ adaptive diagnostics. Installer build 23 supports Glyphs 3.5 and Glyphs 4.
   This prevents shadow name-key pairs from being created in Glyphs 3.5.
 - Analytic, metamorphic, adversarial, cross-master, Reporter, response-bound,
   registration, structured-result, and deterministic routing fixtures extend
-  the suite. The combined Python feature suite passes 736 tests with 4
+  the suite. The combined Python feature suite passes 737 tests with 4
   intentional environment-dependent skips before final release gates.
 - Mathematics remains standard-library based, local, deterministic, and
   clean-room with no ML, cloud service, native binary, or new dependency.
