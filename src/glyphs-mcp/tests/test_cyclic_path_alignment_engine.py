@@ -74,7 +74,7 @@ class CyclicPathAlignmentEngineTests(unittest.TestCase):
         result = self.engine.plan_joint_alignment(
             [_path("M1", SQUARE), _path("M2", SQUARE)],
             reference_master_id="M1",
-            reference_node_index=0,
+            reference_node_index=3,
         )
         self.assertTrue(result["ok"])
         self.assertEqual(result["status"], "already_aligned")

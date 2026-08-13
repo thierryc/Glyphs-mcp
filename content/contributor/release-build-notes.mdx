@@ -31,15 +31,80 @@ canonical and Plugin Manager runtime and skill copies synchronized. The public
 command catalog generator now derives its release version from the canonical
 plug-in Info.plist instead of embedding a release number.
 
-The complete local release gate passes 866 Python tests with 2 intentional
+The complete local release gate passes 870 Python tests with 2 intentional
 environment-dependent skips. All 104 macOS installer tests pass, and the
 unsigned Debug installer builds successfully with normal Xcode system access.
 The documentation production build and all 20 canonical and packaged skill
 validations also pass. Catalog/schema checks, runtime mirror parity, and
 release metadata checks are included in the final candidate audit.
 
-Live Glyphs 3.5 and Glyphs 4 acceptance for the new start-node and
-LitSquare/IconGrid surfaces remains outstanding. No signed artifact, tag, push,
+Live Glyphs 4.0 build 4004 / Python 3.14.6 loaded final runtime
+`1.10.0+95a3a1b3fea2`, code hash
+`95a3a1b3fea261b9e94e7d8c564aea6dc83380e4b8d3282e81e099e5aedfd0b8`.
+On a fresh five-master disposable Gee gee package copy, review and
+exact-fingerprint dry run planned four rotations and one no-op. Confirmed
+application returned `appliedCount=4`, completed post-batch verification,
+required no rollback, and reported `fontSaved:false`. Independent read-back
+proved complete semantic node state, direction, path/shape order, components,
+anchors, layer metadata, and compatibility stayed exact. Glyphs changed native
+node identities on every rotated path while retaining the strict path,
+component, and anchor objects; the no-op master retained its original nodes.
+
+The final-hash Glyphs 4 pass also injected a semantically identical native node
+replacement into the no-op master during a real rotation. The replacement had
+no semantic-signature difference and a distinct PyObjC identity. Verification
+failed specifically at `layer.paths[0].nodes[0].identity`, rollback succeeded,
+and strict read-back proved that every original node, path, component, and
+anchor object was restored. Startup and representative LitSquare metadata and
+IconGrid reads matched their contracts on the same runtime without saving.
+Closing with changes discarded left the 412-file owned package copy
+byte-identical at tree hash
+`7d70f2f1f4404741306f9b3b1cd98f18cbd0fa08974ed1113fb7805b2de5e4fc`;
+its `fontinfo.plist` remained 27,820 bytes with mtime `1786641437`. The owned
+temporary directory was removed, and the older restored disposable source was
+left untouched.
+
+The exhaustive Glyphs 4 pass before the final no-op identity tightening loaded
+runtime `1.10.0+4a60225291ad`, code hash
+`4a60225291ade3cb9b3f86d2efde68241c2fbc837c0669c44c6ac633d82567a7`,
+and rejected unselected and off-curve references, open
+paths, incompatible topology, ambiguous landmarks, nonliteral booleans, and a
+stale fingerprint before mutation. Injected `makeNodeFirst()`, semantic
+read-back, and `endChanges()` failures returned the documented error or
+explicit rollback-failure state. The first two restored and strictly verified
+the original native node objects; the `endChanges()` case reported its injected
+close failure while independent strict read-back still matched after closing
+the real batch. Startup, selection, LitSquare metadata, path-role, and IconGrid
+reads then passed on that runtime without saving. Closing with changes
+discarded left the 413-file disposable package byte-identical at tree hash
+`3618adfea1d3a82c3b11377b3df61447edd3102709e8e7646514d7bbcf0def88`;
+its `fontinfo.plist` remained 27,820 bytes, the production font was never
+targeted, and the owned temporary directory was removed.
+
+Live Glyphs 3.5 build 3531 / Python 3.12.3 loaded the same runtime and code
+hash. A fresh five-master in-memory fixture on a serialized copy of the pinned
+Glyphs 3 file passed SN1-SN7: four rotations and one no-op were reviewed,
+dry-run, confirmed with `appliedCount=4`, and independently verified with no
+save or rollback. Glyphs 3.5 also recreated native nodes on the rotated paths;
+semantic node state and strict path/component/anchor identities stayed exact,
+while the no-op node objects remained unchanged. Validation, stale-plan,
+literal-boolean, injected mutation/read-back/change-batch failures, and
+representative LitSquare/IconGrid reads matched the Glyphs 4 contracts.
+After the final runtime restart, the five-master `appliedCount=4` success case
+was repeated with complete semantic read-back and strict path, component,
+anchor, and no-op node identities. A semantic-only replacement of one no-op
+node then failed specifically at `.identity`, rolled back successfully, and
+restored every original native object. Both final-hash calls reported
+`fontSaved:false`.
+Closing with changes discarded left both the source and disposable file at
+SHA-256 `86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`,
+mtime/size `1757966394`/19,425 for the source and
+`1786640639`/19,425 for the final-hash copy. The owned temporary directory was removed;
+an older restored disposable fixture was closed without saving and left
+untouched.
+
+Both required hosts now pass the applicable 1.10 start-node and
+LitSquare/IconGrid acceptance matrix. No signed artifact, tag, push,
 notarization, upload, or GitHub release has been performed by this preparation.
 
 ## Prepared 1.9.0 candidate

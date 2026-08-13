@@ -473,6 +473,8 @@ class McpToolHelpersTests(unittest.TestCase):
         original_objc = helpers.objc
         try:
             helpers.objc = types.SimpleNamespace(pyobjc_id=lambda value: value.native_id)
+            self.assertEqual(helpers._native_object_id(first_proxy), 1234)
+            self.assertEqual(helpers._native_object_id(second_proxy), 1234)
             self.assertEqual(helpers._font_object_id(first_proxy), 1234)
             self.assertEqual(helpers._font_object_id(second_proxy), 1234)
             self.assertEqual(helpers._font_identity(first_proxy), helpers._font_identity(second_proxy))

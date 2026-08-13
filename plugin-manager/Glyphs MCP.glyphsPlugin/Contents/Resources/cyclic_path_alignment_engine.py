@@ -451,12 +451,13 @@ def plan_joint_alignment(
             continue
         selected_index = int(semantic_candidates[0])
         descriptor = semantic_descriptor(nodes, selected_index)
+        rotation_offset = (selected_index + 1) % len(nodes)
         master_results.append(
             {
                 "masterId": master_id,
-                "currentStartNodeIndex": 0,
+                "currentStartNodeIndex": len(nodes) - 1,
                 "proposedStartNodeIndex": selected_index,
-                "rotationOffset": selected_index,
+                "rotationOffset": rotation_offset,
                 "nodeCount": len(nodes),
                 "topologyCandidateCount": len(topology_candidates),
                 "semanticEvidence": evidence.get(selected_index, {}),

@@ -106,17 +106,22 @@ def _sequence_values(sequence):
         return []
 
 
-def _font_object_id(font):
-    """Return a stable native identity for a GSFont proxy when available."""
-    if font is None:
+def _native_object_id(value):
+    """Return a stable native identity across fresh PyObjC proxy objects."""
+    if value is None:
         return None
     try:
         pyobjc_id = getattr(objc, "pyobjc_id", None) if objc is not None else None
         if callable(pyobjc_id):
-            return int(pyobjc_id(font))
+            return int(pyobjc_id(value))
     except Exception:
         pass
-    return id(font)
+    return id(value)
+
+
+def _font_object_id(font):
+    """Return a stable native identity for a GSFont proxy when available."""
+    return _native_object_id(font)
 
 
 def _font_identity(font):

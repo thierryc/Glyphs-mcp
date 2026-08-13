@@ -18,6 +18,7 @@ from mcp_tool_helpers import (
     _glyphs_show_layer_link_fields,
     _layer_display_name,
     _layer_paths,
+    _native_object_id,
     _node_orientation,
     _node_raw_connection,
     _node_raw_type,
@@ -71,16 +72,14 @@ def _mapping_value(owner, name):
 
 
 def _identity_token(value):
-    for candidate in (
-        getattr(value, "identityToken", None),
-        getattr(value, "identity", None),
-    ):
-        if candidate is not None:
-            return str(candidate)
-    try:
-        return "{}:{}".format(type(value).__name__, int(hash(value)))
-    except Exception:
-        return "{}:{}".format(type(value).__name__, id(value))
+    for attribute_name in ("identityToken", "identity"):
+        try:
+            candidate = getattr(value, attribute_name, None)
+        except Exception:
+            candidate = None
+        if candidate is not None and not callable(candidate):
+            return "declared:{}:{}".format(type(value).__name__, candidate)
+    return "native:{}:{}".format(type(value).__name__, _native_object_id(value))
 
 
 def _node_signature(node):
@@ -188,12 +187,25 @@ def _layer_signature(layer):
     }
 
 
+def _post_rotation_signature(signature, path_index):
+    """Ignore host-recreated node identity only on the rotated target path."""
+    verification = copy.deepcopy(signature)
+    for node in verification["paths"][path_index]["nodes"]:
+        node.pop("identity", None)
+    return verification
+
+
 def _expected_layer_signature(signature, path_index, rotation_offset):
     expected = copy.deepcopy(signature)
     nodes = list(expected["paths"][path_index]["nodes"])
     if nodes:
         offset = int(rotation_offset) % len(nodes)
+        # Glyphs stores a closed path's start node at nodes[-1]. The SDK's
+        # makeNodeFirst() contract therefore reports the left-rotation needed
+        # to move the chosen node to the end.
         expected["paths"][path_index]["nodes"] = nodes[offset:] + nodes[:offset]
+        if offset:
+            return _post_rotation_signature(expected, path_index)
     return expected
 
 
@@ -343,7 +355,7 @@ def _build_review_context(
         node_objects = list(getattr(path, "nodes", None) or [])
         if not node_objects:
             return None, _error("invalid_node_count", "Target paths must contain nodes", target=target)
-        if _normalized_node_type(node_objects[0]) == "offcurve":
+        if _normalized_node_type(node_objects[-1]) == "offcurve":
             return None, _error(
                 "current_start_not_oncurve",
                 "Every target path must currently start on an on-curve node for verified rollback.",
@@ -375,7 +387,7 @@ def _build_review_context(
                 "layer": layer,
                 "path": path,
                 "nodeObjects": node_objects,
-                "originalFirstNode": node_objects[0],
+                "originalStartNode": node_objects[-1],
                 "signature": layer_signature,
             }
         )
@@ -496,9 +508,9 @@ def _end_batches(begun):
 def _restore_context(context, path_index):
     errors = []
     path = context["path"]
-    original_first = context["originalFirstNode"]
+    original_start = context["originalStartNode"]
     try:
-        original_first.makeNodeFirst()
+        original_start.makeNodeFirst()
     except Exception as exc:
         if not _set_path_nodes(path, context["nodeObjects"]):
             errors.append({"masterId": context["masterId"], "message": str(exc)})
@@ -535,12 +547,14 @@ def _apply_context(review_context):
                     {
                         "masterId": context["masterId"],
                         "pathIndex": path_index,
-                        "sourceNodeIndex": rotation,
-                        "resultNodeIndex": 0,
+                        "sourceNodeIndex": int(context["plan"]["proposedStartNodeIndex"]),
+                        "resultNodeIndex": len(context["nodeObjects"]) - 1,
                     }
                 )
         for context in contexts:
             actual = _layer_signature(context["layer"])
+            if int(context["plan"]["rotationOffset"]):
+                actual = _post_rotation_signature(actual, path_index)
             difference = _first_difference(context["expectedSignature"], actual)
             if difference:
                 raise RuntimeError("verification_failed:{}:{}".format(context["masterId"], difference))
@@ -584,6 +598,8 @@ def _apply_context(review_context):
     # Verify again after every batch has closed.
     for context in contexts:
         actual = _layer_signature(context["layer"])
+        if int(context["plan"]["rotationOffset"]):
+            actual = _post_rotation_signature(actual, path_index)
         difference = _first_difference(context["expectedSignature"], actual)
         if difference:
             rollback_errors = []

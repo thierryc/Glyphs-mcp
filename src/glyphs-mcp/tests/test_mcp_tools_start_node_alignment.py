@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import importlib.util
 import json
 import sys
@@ -49,12 +50,43 @@ class Node:
         self.fail_make_first = False
         self.mutate_name_on_make_first = False
 
+    def recreated_copy(self):
+        clone = Node(self.position.x, self.position.y, selected=self.selected)
+        clone.type = self.type
+        clone.smooth = self.smooth
+        clone.rawType = self.rawType
+        clone.rawConnection = self.rawConnection
+        clone.orientation = self.orientation
+        clone.name = self.name
+        clone.attributes = copy.deepcopy(self.attributes)
+        clone.userData = copy.deepcopy(self.userData)
+        return clone
+
     def makeNodeFirst(self):
         if self.fail_make_first:
             raise RuntimeError("injected makeNodeFirst failure")
         nodes = self.parent.nodes
         index = nodes.index(self)
-        nodes[:] = nodes[index:] + nodes[:index]
+        split = index + 1
+        ordered = nodes[split:] + nodes[:split]
+        if self.parent.recreate_nodes_on_make_first:
+            ordered = [node.recreated_copy() for node in ordered]
+            mutation = self.parent.recreated_node_mutation
+            if mutation == "name":
+                ordered[-1].name = None
+            elif mutation == "attributes":
+                ordered[-1].attributes = {}
+            elif mutation == "userData":
+                ordered[-1].userData = {}
+            elif mutation == "coordinate":
+                ordered[-1].position.x += 1.0
+            elif mutation == "rawType":
+                ordered[-1].rawType = 99
+            self.parent.nodes = ordered
+            for node in ordered:
+                node.parent = self.parent
+        else:
+            nodes[:] = ordered
         if self.mutate_name_on_make_first:
             self.name = "unexpected-native-metadata-change"
 
@@ -76,6 +108,8 @@ class PathFixture:
         self.direction = 1
         self.attributes = {"role": "body"}
         self.userData = {"protected": True}
+        self.recreate_nodes_on_make_first = False
+        self.recreated_node_mutation = None
 
 
 class Layer:
@@ -136,6 +170,7 @@ class StartNodeAlignmentToolsTests(unittest.TestCase):
             _glyphs_show_layer_link_fields=lambda *args, **kwargs: {},
             _layer_display_name=lambda font_value, layer, master_id=None: layer.name,
             _layer_paths=lambda layer: list(layer.paths),
+            _native_object_id=lambda value: id(value),
             _node_orientation=lambda node: ("left", int(node.orientation)),
             _node_raw_connection=lambda node: int(node.rawConnection),
             _node_raw_type=lambda node: int(node.rawType),
@@ -182,7 +217,7 @@ class StartNodeAlignmentToolsTests(unittest.TestCase):
         review = self._review(module, ["M1", "M2"])
 
         self.assertTrue(review["ok"])
-        self.assertEqual(review["summary"]["rotationCount"], 1)
+        self.assertEqual(review["summary"]["rotationCount"], 2)
         self.assertEqual([[node.identityToken for node in path.nodes] for path in paths], original_orders)
 
         dry_run = json.loads(
@@ -218,8 +253,9 @@ class StartNodeAlignmentToolsTests(unittest.TestCase):
             )
         )
         self.assertTrue(applied["ok"])
-        self.assertEqual(applied["summary"]["appliedCount"], 1)
-        self.assertEqual((paths[1].nodes[0].position.x, paths[1].nodes[0].position.y), (0.0, 0.0))
+        self.assertEqual(applied["summary"]["appliedCount"], 2)
+        self.assertEqual((paths[1].nodes[-1].position.x, paths[1].nodes[-1].position.y), (0.0, 0.0))
+        self.assertEqual(applied["applied"][0]["resultNodeIndex"], len(paths[1].nodes) - 1)
         self.assertTrue(applied["verification"]["nodeFieldsPreserved"])
         self.assertFalse(applied["fontSaved"])
         self.assertEqual(layers["M1"].begin_count, 1)
@@ -249,13 +285,118 @@ class StartNodeAlignmentToolsTests(unittest.TestCase):
         self.assertEqual(stale["errorType"], "stale_plan")
         self.assertEqual([node.identityToken for node in paths[1].nodes], before)
 
+    def test_semantically_identical_node_replacement_still_stales_the_plan(self) -> None:
+        module, _font, _layers, paths = self._load_module()
+        review = self._review(module, ["M1", "M2"])
+        replacement = paths[1].nodes[1].recreated_copy()
+        nodes = list(paths[1].nodes)
+        nodes[1] = replacement
+        _set_path_nodes(paths[1], nodes)
+
+        stale = json.loads(
+            asyncio.run(
+                module.apply_start_node_alignment(
+                    font_index=0,
+                    glyph_name="A",
+                    reference_master_id="M1",
+                    path_index=0,
+                    reference_node_index=0,
+                    target_master_ids=["M1", "M2"],
+                    expected_plan_fingerprint=review["planFingerprint"],
+                    confirm=True,
+                )
+            )
+        )
+
+        self.assertFalse(stale["ok"])
+        self.assertEqual(stale["errorType"], "stale_plan")
+
+    def test_confirm_accepts_glyphs4_style_recreated_nodes_with_exact_semantics(self) -> None:
+        module, _font, _layers, paths = self._load_module()
+        paths[1].recreate_nodes_on_make_first = True
+        original_tokens = [node.identityToken for node in paths[1].nodes]
+        review = self._review(module, ["M1", "M2"])
+
+        applied = json.loads(
+            asyncio.run(
+                module.apply_start_node_alignment(
+                    font_index=0,
+                    glyph_name="A",
+                    reference_master_id="M1",
+                    path_index=0,
+                    reference_node_index=0,
+                    target_master_ids=["M1", "M2"],
+                    expected_plan_fingerprint=review["planFingerprint"],
+                    confirm=True,
+                )
+            )
+        )
+
+        self.assertTrue(applied["ok"])
+        self.assertEqual(applied["summary"]["appliedCount"], 2)
+        self.assertEqual((paths[1].nodes[-1].position.x, paths[1].nodes[-1].position.y), (0.0, 0.0))
+        self.assertTrue(applied["verification"]["nodeFieldsPreserved"])
+        self.assertTrue(set(original_tokens).isdisjoint(node.identityToken for node in paths[1].nodes))
+
+    def test_noop_expected_signature_keeps_strict_node_identity(self) -> None:
+        module, _font, layers, _paths = self._load_module()
+        signature = module._layer_signature(layers["M1"])
+
+        expected = module._expected_layer_signature(signature, 0, 0)
+
+        self.assertIn("identity", expected["paths"][0]["nodes"][0])
+
+    def test_recreated_nodes_with_lost_semantics_fail_and_restore_strict_snapshot(self) -> None:
+        cases = {
+            "name": lambda node: setattr(node, "name", "protected-name"),
+            "attributes": lambda node: setattr(node, "attributes", {"protected": "attribute"}),
+            "userData": lambda node: setattr(node, "userData", {"protected": "user-data"}),
+            "coordinate": lambda _node: None,
+            "rawType": lambda _node: None,
+        }
+        for mutation, prepare in cases.items():
+            with self.subTest(mutation=mutation):
+                module, _font, _layers, paths = self._load_module()
+                target_path = paths[1]
+                target_path.recreate_nodes_on_make_first = True
+                planned_target = target_path.nodes[2]
+                prepare(planned_target)
+                original_nodes = list(target_path.nodes)
+                original_signatures = [module._node_signature(node) for node in original_nodes]
+                review = self._review(module, ["M1", "M2"])
+                target_path.recreated_node_mutation = mutation
+
+                failed = json.loads(
+                    asyncio.run(
+                        module.apply_start_node_alignment(
+                            font_index=0,
+                            glyph_name="A",
+                            reference_master_id="M1",
+                            path_index=0,
+                            reference_node_index=0,
+                            target_master_ids=["M1", "M2"],
+                            expected_plan_fingerprint=review["planFingerprint"],
+                            confirm=True,
+                        )
+                    )
+                )
+
+                self.assertFalse(failed["ok"])
+                self.assertEqual(failed["errorType"], "verification_failed")
+                self.assertTrue(failed["rollback"]["succeeded"])
+                self.assertEqual(target_path.nodes, original_nodes)
+                self.assertEqual(
+                    [module._node_signature(node) for node in target_path.nodes],
+                    original_signatures,
+                )
+
     def test_mid_batch_failure_restores_every_master(self) -> None:
         module, _font, layers, paths = self._load_module(rotations=(0, 2, 1))
         review = self._review(module, ["M1", "M2", "M3"])
         original_orders = [[node.identityToken for node in path.nodes] for path in paths]
         planned_by_master = {item["masterId"]: item for item in review["masters"]}
-        failing_index = planned_by_master["M3"]["proposedStartNodeIndex"]
-        paths[2].nodes[failing_index].fail_make_first = True
+        failing_index = planned_by_master["M2"]["proposedStartNodeIndex"]
+        paths[1].nodes[failing_index].fail_make_first = True
 
         failed = json.loads(
             asyncio.run(
