@@ -28,10 +28,12 @@ import mcp_tools_features  # noqa: F401
 import mcp_tools_feedback  # noqa: F401
 import mcp_tools_font  # noqa: F401
 import mcp_tools_glyph_ops  # noqa: F401
+import mcp_tools_icon_grid  # noqa: F401
 import mcp_tools_stems  # noqa: F401
 import mcp_tools_unicode_assignments  # noqa: F401
 import mcp_tools_italic  # noqa: F401
 import mcp_tools_kerning  # noqa: F401
+import mcp_tools_litsquare  # noqa: F401
 import mcp_tools_node_positions  # noqa: F401
 import mcp_tools_paths  # noqa: F401
 import mcp_tools_server  # noqa: F401

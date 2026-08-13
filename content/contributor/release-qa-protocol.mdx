@@ -42,6 +42,10 @@ fails early with the exact missing modules and installation command. Its
 optional `--pytest` mode disables third-party plug-in autoloading; this keeps
 globally installed pytest integrations from changing FastMCP/Pydantic import
 state. The release gate itself remains on the canonical `unittest` path.
+It also creates temporary Python 3.12 and 3.14 environments, installs the
+pinned runtime requirements from the package index, and verifies every runtime
+import. Both interpreters and package-index access are therefore mandatory for
+the complete release gate.
 
 The automated gate must prove:
 

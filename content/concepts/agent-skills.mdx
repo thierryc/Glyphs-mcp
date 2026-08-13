@@ -27,6 +27,7 @@ Skills help agents:
 | `glyphs-mcp-features` | OpenType features and stylistic-set glyph groups. |
 | `glyphs-mcp-icon-font` | Stable Unicode and PUA assignment workflows for icon and symbol fonts. |
 | `glyphs-mcp-kerning` | Kerning bumper review and approved apply steps. |
+| `glyphs-mcp-litsquare-metadata` | LitSquare metadata inspection, inheritance, safe patches, semantic path roles, and fixed layer-specific IconGrid centering. |
 | `glyphs-mcp-spacing` | Spacing review, dry-run, and approved apply steps. |
 | `glyphs-mcp-outlines-docs` | Outline edits, selected nodes, components, anchors, and focused docs lookup. |
 | `glyphs-mcp-italic-first-pass` | Experimental Roman-to-italic construction drafts for designer review and refinement. |
@@ -52,12 +53,12 @@ bridge, an explicit `.cursor/skills` project copy, or a manual
 The optional Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot plugins all
 carry the same synchronized `skills/` directory and `.mcp.json` connection.
 `scripts/sync_codex_plugin_skills.sh` keeps its historical filename, but now
-manages the shared agent package: it copies the nine canonical directories from
+manages the shared agent package: it copies the ten canonical directories from
 `skills/` into `plugins/glyphs-mcp/skills/`. Use its `--check` mode in release
 validation, and do not edit packaged copies independently.
 
 Each host manifest shares the Glyphs MCP release version. Skills inherit that
-package version instead of maintaining nine independent version fields, while
+package version instead of maintaining ten independent version fields, while
 the running MCP server reports the native Glyphs MCP plug-in version.
 
 ## When to invoke a skill

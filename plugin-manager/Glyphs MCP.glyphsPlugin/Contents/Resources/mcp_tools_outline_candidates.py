@@ -44,6 +44,18 @@ POSITION_TOLERANCE = 1.0e-5
 TOOL_VERSION = get_plugin_version()
 
 
+class _TopologyMismatchError(ValueError):
+    def __init__(self, glyph_name, mismatch):
+        self.glyph_name = str(glyph_name or "")
+        self.mismatch = copy.deepcopy(mismatch or {"field": "topology"})
+        super().__init__(
+            "topology_change_blocked:{}:{}".format(
+                self.glyph_name,
+                self.mismatch.get("field") or "topology",
+            )
+        )
+
+
 def _point_values(value):
     try:
         return float(value.x), float(value.y)
@@ -219,6 +231,187 @@ def _topology(snapshot):
         "anchorNames": [item.get("name") for item in snapshot.get("anchors") or []],
         "protected": snapshot.get("protected") or {},
     }
+
+
+def _bounded_mismatch_value(value, depth=0):
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        return value if len(value) <= 160 else value[:157] + "..."
+    if depth >= 3:
+        return "<{}>".format(type(value).__name__)
+    if isinstance(value, dict):
+        keys = sorted(value, key=str)
+        result = {
+            str(key): _bounded_mismatch_value(value[key], depth + 1)
+            for key in keys[:8]
+        }
+        if len(keys) > 8:
+            result["__omittedKeyCount"] = len(keys) - 8
+        return result
+    if isinstance(value, (list, tuple)):
+        result = [_bounded_mismatch_value(item, depth + 1) for item in list(value)[:8]]
+        if len(value) > 8:
+            result.append({"__omittedItemCount": len(value) - 8})
+        return result
+    return _bounded_mismatch_value(str(value), depth + 1)
+
+
+def _mismatch(field, source, candidate):
+    return {
+        "field": str(field),
+        "source": _bounded_mismatch_value(source),
+        "candidate": _bounded_mismatch_value(candidate),
+    }
+
+
+def _first_value_mismatch(source, candidate, field):
+    if type(source) is not type(candidate):
+        return _mismatch(field, source, candidate)
+    if isinstance(source, dict):
+        source_keys = set(source)
+        candidate_keys = set(candidate)
+        if source_keys != candidate_keys:
+            missing = sorted(source_keys - candidate_keys, key=str)
+            extra = sorted(candidate_keys - source_keys, key=str)
+            key = missing[0] if missing else extra[0]
+            return _mismatch(
+                "{}.{}".format(field, key),
+                source.get(key, "<missing>"),
+                candidate.get(key, "<missing>"),
+            )
+        for key in sorted(source_keys, key=str):
+            different = _first_value_mismatch(
+                source[key],
+                candidate[key],
+                "{}.{}".format(field, key),
+            )
+            if different:
+                return different
+        return None
+    if isinstance(source, (list, tuple)):
+        if len(source) != len(candidate):
+            return _mismatch("{}.length".format(field), len(source), len(candidate))
+        for index, (source_item, candidate_item) in enumerate(zip(source, candidate)):
+            different = _first_value_mismatch(
+                source_item,
+                candidate_item,
+                "{}[{}]".format(field, index),
+            )
+            if different:
+                return different
+        return None
+    if source != candidate:
+        return _mismatch(field, source, candidate)
+    return None
+
+
+def _topology_mismatch(source, candidate):
+    source_topology = _topology(source)
+    candidate_topology = _topology(candidate)
+    source_paths = source_topology["paths"]
+    candidate_paths = candidate_topology["paths"]
+    if len(source_paths) != len(candidate_paths):
+        return _mismatch("paths.length", len(source_paths), len(candidate_paths))
+    for path_index, (source_path, candidate_path) in enumerate(zip(source_paths, candidate_paths)):
+        prefix = "paths[{}]".format(path_index)
+        if source_path["closed"] != candidate_path["closed"]:
+            return _mismatch(
+                "{}.closed".format(prefix),
+                source_path["closed"],
+                candidate_path["closed"],
+            )
+        if len(source_path["types"]) != len(candidate_path["types"]):
+            return _mismatch(
+                "{}.types.length".format(prefix),
+                len(source_path["types"]),
+                len(candidate_path["types"]),
+            )
+        different = _first_value_mismatch(
+            source_path["types"],
+            candidate_path["types"],
+            "{}.types".format(prefix),
+        )
+        if different:
+            return different
+        different = _first_value_mismatch(
+            source_path["nodeProtected"],
+            candidate_path["nodeProtected"],
+            "{}.nodeProtected".format(prefix),
+        )
+        if different:
+            return different
+        different = _first_value_mismatch(
+            source_path["pathProtected"],
+            candidate_path["pathProtected"],
+            "{}.pathProtected".format(prefix),
+        )
+        if different:
+            return different
+    for field in ("shapeOrder", "componentNames", "anchorNames", "protected"):
+        different = _first_value_mismatch(
+            source_topology[field],
+            candidate_topology[field],
+            field,
+        )
+        if different:
+            return different
+    return None
+
+
+def _duplicate_name(names):
+    seen = set()
+    for name in names:
+        if name in seen:
+            return name
+        seen.add(name)
+    return None
+
+
+def _align_italic_anchor_records(source, candidate):
+    source_anchors = list(source.get("anchors") or [])
+    candidate_anchors = list(candidate.get("anchors") or [])
+    source_names = [str(item.get("name") or "") for item in source_anchors]
+    candidate_names = [str(item.get("name") or "") for item in candidate_anchors]
+    if len(source_names) != len(candidate_names):
+        return candidate, _mismatch("anchorNames.length", len(source_names), len(candidate_names))
+    source_duplicate = _duplicate_name(source_names)
+    candidate_duplicate = _duplicate_name(candidate_names)
+    if source_duplicate is not None or candidate_duplicate is not None:
+        return candidate, _mismatch("anchorNames.unique", source_names, candidate_names)
+    if set(source_names) != set(candidate_names):
+        return candidate, _mismatch("anchorNames.identity", source_names, candidate_names)
+    by_name = {str(item.get("name") or ""): item for item in candidate_anchors}
+    aligned = copy.deepcopy(candidate)
+    aligned["anchors"] = [copy.deepcopy(by_name[name]) for name in source_names]
+    return aligned, None
+
+
+def _italic_topology_mismatch(source, candidate):
+    aligned, anchor_mismatch = _align_italic_anchor_records(source, candidate)
+    return aligned, anchor_mismatch or _topology_mismatch(source, aligned)
+
+
+def _raise_topology_mismatch(glyph_name, mismatch):
+    raise _TopologyMismatchError(glyph_name, mismatch)
+
+
+def _italic_preview_error_payload(error):
+    payload = {
+        "ok": False,
+        "candidateDataVersion": CANDIDATE_DATA_VERSION,
+        "error": str(error),
+    }
+    if isinstance(error, _TopologyMismatchError):
+        mismatch = error.mismatch
+        payload["errorType"] = "topology_change_blocked"
+        payload["topologyMismatch"] = {
+            "glyphName": error.glyph_name,
+            "field": mismatch.get("field") or "topology",
+            "source": _bounded_mismatch_value(mismatch.get("source")),
+            "candidate": _bounded_mismatch_value(mismatch.get("candidate")),
+        }
+    return payload
 
 
 def _fingerprint(snapshot):
@@ -814,8 +1007,9 @@ def _italic_preview_impl(font_index, params):
             raise ValueError("italic_candidate_failed:{}:{}".format(name, prepared.get("reason")))
         source = _layer_snapshot(target_layer)
         candidate = _layer_snapshot(prepared["candidateLayer"])
-        if _topology(source) != _topology(candidate):
-            raise ValueError("topology_change_blocked:{}".format(name))
+        candidate, mismatch = _italic_topology_mismatch(source, candidate)
+        if mismatch:
+            _raise_topology_mismatch(name, mismatch)
         arguments = {
             "review": {
                 "sourceFontIndex": review["sourceFontIndex"],
@@ -923,7 +1117,7 @@ async def preview_italic_first_pass_candidate(
         stored, reporter = _run_on_main_thread(lambda: _activate_and_store(session))
         return _safe_json(_preview_response(stored, reporter, summaries))
     except Exception as error:
-        return _safe_json({"ok": False, "candidateDataVersion": CANDIDATE_DATA_VERSION, "error": str(error)})
+        return _safe_json(_italic_preview_error_payload(error))
 
 
 def _manifest_get(font):
@@ -1225,8 +1419,9 @@ def _recompute_entry(entry):
         if not prepared.get("ok"):
             raise ValueError("italic_first_pass_recompute_failed")
         recomputed = _layer_snapshot(prepared["candidateLayer"])
-        if _topology(recomputed) != _topology(source):
-            raise ValueError("topology_changed")
+        recomputed, mismatch = _italic_topology_mismatch(source, recomputed)
+        if mismatch:
+            _raise_topology_mismatch(arguments["glyphName"], mismatch)
         return recomputed
     raise ValueError("unsupported_candidate_operation")
 
@@ -1306,10 +1501,20 @@ def _apply_allowed_snapshot(layer, desired, entry):
         layer.width = float(desired.get("width", 0.0))
         if operation == "italic_first_pass":
             anchors = list(getattr(layer, "anchors", None) or [])
-            for index, data in enumerate(desired.get("anchors") or []):
-                if index >= len(anchors):
-                    raise ValueError("anchor_topology_changed")
-                anchors[index].position = (float(data["x"]), float(data["y"]))
+            desired_anchors = list(desired.get("anchors") or [])
+            anchor_names = [str(getattr(anchor, "name", "") or "") for anchor in anchors]
+            desired_anchor_names = [str(data.get("name") or "") for data in desired_anchors]
+            if (
+                len(anchors) != len(desired_anchors)
+                or _duplicate_name(anchor_names) is not None
+                or _duplicate_name(desired_anchor_names) is not None
+                or set(anchor_names) != set(desired_anchor_names)
+            ):
+                raise ValueError("anchor_topology_changed")
+            anchors_by_name = {str(getattr(anchor, "name", "") or ""): anchor for anchor in anchors}
+            for data in desired_anchors:
+                anchor = anchors_by_name[str(data.get("name") or "")]
+                anchor.position = (float(data["x"]), float(data["y"]))
             components = list(_layer_components(layer))
             for index, data in enumerate(desired.get("components") or []):
                 if index >= len(components):
@@ -1502,8 +1707,12 @@ async def materialize_outline_candidate_session(
         return _safe_json({"ok": False, "candidateDataVersion": CANDIDATE_DATA_VERSION, "error": str(error)})
 
 
-def _snapshot_diffs(generated, current):
-    if _topology(generated) != _topology(current):
+def _snapshot_diffs(generated, current, align_italic_anchors=False):
+    if align_italic_anchors:
+        current, topology_mismatch = _italic_topology_mismatch(generated, current)
+    else:
+        topology_mismatch = _topology_mismatch(generated, current)
+    if topology_mismatch:
         return None, "topology_changed"
     diffs = []
     for path_index, generated_path in enumerate(generated.get("paths") or []):
@@ -1563,7 +1772,7 @@ def _snapshot_diffs(generated, current):
     return diffs, None
 
 
-def _snapshots_semantically_equal(expected, actual):
+def _snapshots_semantically_equal(expected, actual, align_italic_anchors=False):
     """Compare complete candidate snapshots without numeric JSON type noise.
 
     Glyphs reads integral point coordinates back as floats (for example,
@@ -1572,7 +1781,7 @@ def _snapshots_semantically_equal(expected, actual):
     type-sensitive for review-token binding, but recomputation and write-back
     verification need geometric snapshot equality instead.
     """
-    diffs, reason = _snapshot_diffs(expected, actual)
+    diffs, reason = _snapshot_diffs(expected, actual, align_italic_anchors=align_italic_anchors)
     return reason is None and not diffs
 
 
@@ -1642,10 +1851,14 @@ def _validate_tunni_geometry(entry, current):
 
 def _validate_candidate(entry, current, font):
     generated = entry["candidate"]
-    diffs, topology_error = _snapshot_diffs(generated, current)
+    operation = entry.get("operation")
+    diffs, topology_error = _snapshot_diffs(
+        generated,
+        current,
+        align_italic_anchors=operation == "italic_first_pass",
+    )
     if topology_error:
         return None, topology_error
-    operation = entry.get("operation")
     allowed_coordinates = {
         (int(item["pathIndex"]), int(item["nodeIndex"]))
         for item in entry.get("allowed", {}).get("nodeCoordinates") or []
@@ -1842,7 +2055,11 @@ def _accept_transaction(font_index, session_id, token, dry_run):
             raise ValueError(reason)
         if not diffs:
             recomputed = _recompute_entry(entry)
-            if not _snapshots_semantically_equal(recomputed, desired):
+            if not _snapshots_semantically_equal(
+                recomputed,
+                desired,
+                align_italic_anchors=entry.get("operation") == "italic_first_pass",
+            ):
                 raise ValueError("generated_candidate_recompute_mismatch")
         plans.append((entry, glyph, layer, source, desired, candidate_layer))
     if dry_run:
@@ -1886,7 +2103,11 @@ def _accept_transaction(font_index, session_id, token, dry_run):
                 backups.append((glyph, backup))
             _apply_allowed_snapshot(layer, desired, entry)
             actual = _layer_snapshot(layer)
-            if not _snapshots_semantically_equal(desired, actual):
+            if not _snapshots_semantically_equal(
+                desired,
+                actual,
+                align_italic_anchors=entry.get("operation") == "italic_first_pass",
+            ):
                 raise RuntimeError("source_readback_verification_failed")
             applied.append(entry["entryId"])
         _end_change_batches(begun)

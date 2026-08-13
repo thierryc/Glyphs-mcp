@@ -24,7 +24,15 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 - Copy Summary exports bounded Markdown; Open Target navigates to captured
   glyphs; Reset clears only the ledger. Tracking ends when the document closes
   or Glyphs quits, while the panel remains viewable when the server is stopped.
-- The server exposes 78 active tools: 67 model-visible and 11 app-only.
+- **Glyphs MCP Metadata Inspector** adds a document-bound Palette with editable
+  Font/Glyph/Layer LitSquare JSON, multi-selection replacement, and a compact
+  JSON Paths editor. Valid changes commit on focus loss; invalid JSON stays
+  visible without mutation. Four typed metadata tools and three typed IconGrid
+  horizontal-centering tools remain available through MCP.
+- The `glyphs-mcp-litsquare-metadata` skill keeps universal
+  `com.litsquare.role` semantics separate from the layer opt-in at
+  `com.litsquare.icongrid`. LitSquare and IconGrid writes never save.
+- The server exposes 85 active tools: 74 model-visible and 11 app-only.
 
 [Read the 1.9 roadmap →](ROADMAP.md) ·
 [Read the changelog →](CHANGELOG.md) ·
@@ -230,8 +238,8 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ## Command Set (MCP server v1.9.0)
 
-Glyphs MCP exposes **78 active tools** through one catalog-driven surface:
-**67 are model-visible** and **11 are app-only**. Every tool has a concise
+Glyphs MCP exposes **85 active tools** through one catalog-driven surface:
+**74 are model-visible** and **11 are app-only**. Every tool has a concise
 title and description, four MCP safety hints, a category, visibility, effect
 class, lifecycle state, and optional structured-output schema.
 
@@ -427,7 +435,8 @@ python3 scripts/bump_version.py X.Y.Z
 # If you already have deps installed into Glyphs' Scripts/site-packages and want an offline build:
 # ./scripts/build_plugin_manager_bundle.sh --vendor-from-installed --allow-missing-targets
 
-# 4) Run the full local release gate (Python, Xcode tests, unsigned Debug build)
+# 4) Run the full local release gate (Python 3.12/3.14 clean-install matrix,
+#    Python and Xcode tests, unsigned Debug build; package-index access required)
 ./scripts/run_local_release_tests.sh
 
 # 5) Commit release artifacts

@@ -86,6 +86,38 @@ class ToolResultSchemaTests(unittest.TestCase):
         validate(result.structured_content, self.module.schema_for("outline"))
         self.assertTrue(result.structured_content["data"]["verification"]["succeeded"])
 
+    def test_litsquare_schema_accepts_direct_scopes_and_confirmed_write_fields(self) -> None:
+        scope = {
+            "state": "valid",
+            "label": "Valid v1",
+            "schemaVersion": 1,
+            "updatedAt": "2026-08-11T18:30:00Z",
+            "value": {"schemaVersion": 1, "updatedAt": "2026-08-11T18:30:00Z"},
+            "errors": [],
+            "warnings": [],
+        }
+        raw = json.dumps(
+            {
+                "ok": True,
+                "target": {"fontIndex": 0, "glyphName": "A", "layerId": "M1"},
+                "summary": {"changed": True},
+                "scopes": {"font": scope, "glyph": scope, "layer": scope},
+                "effectiveSettings": {"values": {"grid": 24}, "provenance": {"grid": "font"}},
+                "fontSaved": False,
+                "undoGrouped": True,
+                "undoRegistered": True,
+            }
+        )
+        result = self.module.workflow_tool_result(
+            "patch_litsquare_metadata",
+            "edit",
+            raw,
+            {"dry_run": False, "confirm": True},
+        )
+        self._assert_envelope(result, mode="confirmed", status="success", ok=True)
+        validate(result.structured_content, self.module.schema_for("litsquare"))
+        self.assertFalse(result.structured_content["data"]["fontSaved"])
+
     def test_stale_candidate_partial_and_rollback_are_bounded(self) -> None:
         stale = self.module.workflow_tool_result(
             "review_outline_candidate_session",

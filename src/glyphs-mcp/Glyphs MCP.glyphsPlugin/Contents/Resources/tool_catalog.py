@@ -38,6 +38,7 @@ def _title(name: str) -> str:
         ("Mcp", "MCP"),
         ("Ufo", "UFO"),
         ("Opentype", "OpenType"),
+        ("Litsquare", "LitSquare"),
         ("Tunni", "Tunni"),
     ):
         value = value.replace(source, target)
@@ -120,6 +121,13 @@ _ENTRIES = [
     _entry("get_selected_glyphs", "Read the current Glyphs font-view selection and return exact glyph targets and links.", "selection"),
     _entry("get_selected_font_and_master", "Read the active font, master, and selection context from Glyphs without changing it.", "selection"),
     _entry("get_selected_nodes", "Read selected Edit View nodes with glyph, layer, path, node, and master mapping.", "selection"),
+    _entry("get_litsquare_metadata", "Read direct LitSquare metadata, validation states, provenance, and effective settings for an explicit target.", "litsquare", output_schema="litsquare"),
+    _entry("get_selected_litsquare_path_roles", "Read selected LitSquare path roles with stable targets, counts, descriptions, and individual bounds.", "litsquare", output_schema="litsquare"),
+    _entry("get_icon_grid_horizontal_center", "Read one layer's fixed IconGrid center plus advance and layer-content position candidates.", "litsquare", output_schema="litsquare"),
+    _entry("patch_litsquare_metadata", "Dry-run or confirm an RFC 7396 patch to one LitSquare metadata scope; preserves unknown data and never saves.", "litsquare", "edit", output_schema="litsquare"),
+    _entry("set_litsquare_path_roles", "Dry-run or atomically confirm open-string LitSquare roles on fingerprinted paths; preserves other attributes and never saves.", "litsquare", "edit", output_schema="litsquare"),
+    _entry("set_icon_grid_horizontal_center", "Dry-run or store one explicit fixed IconGrid x-coordinate on a layer; never edits artwork or saves.", "litsquare", "edit", output_schema="litsquare"),
+    _entry("reset_icon_grid_horizontal_center", "Dry-run or remove only one layer's namespaced IconGrid center policy while preserving unrelated data.", "litsquare", "edit", output_schema="litsquare"),
     _entry("get_glyph_paths", "Read editable path data for one glyph and master in a bounded round-trip-safe format.", "outlines"),
     _entry("update_glyph_node_positions", "Dry-run or atomically update explicit node coordinates on one glyph layer using the font grid by default.", "outlines", "edit", output_schema="outline"),
     _entry("set_glyph_paths", "Replace paths on one explicit glyph layer after validation; preserves surrounding shapes and never saves.", "outlines", "edit"),

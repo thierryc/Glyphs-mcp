@@ -27,7 +27,7 @@ def _tool_module_paths() -> list[Path]:
 
 
 class McpToolRegistrationTextTests(unittest.TestCase):
-    def test_bundle_exports_server_and_both_reporter_principal_classes(self) -> None:
+    def test_bundle_exports_server_reporters_and_litsquare_palette(self) -> None:
         resources = _resources_dir()
         with (resources.parent / "Info.plist").open("rb") as handle:
             plist = plistlib.load(handle)
@@ -35,7 +35,12 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         self.assertNotIn("NSPrincipalClass", plist)
         self.assertEqual(
             plist.get("Principal Classes"),
-            ["MCPBridgePlugin", "GlyphsMCPCurvatureReporter", "GlyphsMCPCandidateReporter"],
+            [
+                "MCPBridgePlugin",
+                "GlyphsMCPCurvatureReporter",
+                "GlyphsMCPCandidateReporter",
+                "GlyphsMCPLitSquareMetadataPalette",
+            ],
         )
         plugin_text = (resources / "plugin.py").read_text(encoding="utf-8", errors="replace")
         self.assertIn("GlyphsMCPCurvatureReporter = None", plugin_text)
@@ -44,6 +49,86 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         self.assertIn("GlyphsMCPCandidateReporter = None", plugin_text)
         self.assertIn("from glyphs_candidate_reporter import GlyphsMCPCandidateReporter", plugin_text)
         self.assertIn("if GlyphsMCPCandidateReporter is None:", plugin_text)
+        self.assertIn("GlyphsMCPLitSquareMetadataPalette = None", plugin_text)
+        self.assertIn(
+            "from glyphs_litsquare_palette import GlyphsMCPLitSquareMetadataPalette", plugin_text
+        )
+        self.assertIn("if GlyphsMCPLitSquareMetadataPalette is None:", plugin_text)
+
+    def test_litsquare_palette_is_document_bound_and_edits_only_litsquare_data(self) -> None:
+        text = (_resources_dir() / "glyphs_litsquare_palette.py").read_text(
+            encoding="utf-8", errors="replace"
+        )
+        self.assertIn("PALETTE_NAME = INSPECTOR_NAME", text)
+        self.assertIn('INSPECTOR_NAME = "Glyphs MCP Metadata Inspector"', (
+            _resources_dir() / "glyphs_litsquare_adapter.py"
+        ).read_text(encoding="utf-8", errors="replace"))
+        self.assertIn("self.windowController()", text)
+        self.assertNotIn("Glyphs.currentDocument", text)
+        self.assertNotIn("set_litsquare_path_roles", text)
+        self.assertNotIn("patch_litsquare_metadata", text)
+        self.assertNotIn("self.roleField", text)
+        self.assertIn("set_path_roles_transaction(", text)
+        self.assertIn("def textDidEndEditing_(self, notification):", text)
+        self.assertIn("self._commit_editor_text(self._editor_scope", text)
+        self.assertIn("self.scopeControl.setSelectedSegment_", text)
+        self.assertIn('str(command_selector) != "cancelOperation:"', text)
+        self.assertNotIn("self.applyButton", text)
+        self.assertNotIn("self.contextLabel", text)
+        self.assertNotIn("self.stateLabel", text)
+        self.assertIn("replace_metadata_selection_transaction(", text)
+        self.assertIn("metadata_selection_snapshot(scope, font=font)", text)
+        self.assertIn('_MIXED_VALUE = "mixedvalue"', text)
+        self.assertIn("parse_metadata_json", text)
+        self.assertIn("parse_path_role_json", text)
+        self.assertIn('canonical_json({"role": aggregation.get("sharedRole")})', text)
+        self.assertIn("font=self._font()", text)
+        self.assertIn("UPDATEINTERFACE", text)
+        self.assertIn("METADATA_CHANGED_NOTIFICATION", text)
+        self.assertNotIn("from icon_grid_centering import CHANGED_NOTIFICATION", text)
+        self.assertNotIn("icon_grid_snapshot", text)
+        self.assertNotIn("self.iconGridLabel", text)
+        self.assertNotIn("INSPECTOR_COLLAPSED_CHANGED_NOTIFICATION", text)
+        self.assertIn("NSOperationQueue.mainQueue().addOperationWithBlock_", text)
+        self.assertIn("Glyphs.removeCallback", text)
+        self.assertIn("removeObserver_name_object_", text)
+        self.assertIn("self.min = PALETTE_HEIGHT", text)
+        self.assertIn("self.max = PALETTE_HEIGHT", text)
+        self.assertIn("def minHeight(self):\n        return PALETTE_HEIGHT", text)
+        self.assertIn("def maxHeight(self):\n        return PALETTE_HEIGHT", text)
+        self.assertNotIn("def currentHeight(self):", text)
+        self.assertNotIn("def setCurrentHeight_", text)
+        self.assertNotIn("self.dialog.setHidden_", text)
+        self.assertIn('"doc.on.doc"', text)
+        self.assertIn('"arrow.clockwise"', text)
+        self.assertIn('"info.circle"', text)
+        self.assertIn('"text.magnifyingglass"', text)
+        self.assertIn("imageWithSystemSymbolName_accessibilityDescription_", text)
+        self.assertIn("button.setAccessibilityLabel_(label)", text)
+        self.assertIn("self.helpButton = _symbol_button(", text)
+        self.assertIn("def showHelp_(self, sender):", text)
+        self.assertIn("alert.setMessageText_(PALETTE_NAME)", text)
+        self.assertIn("alert.setInformativeText_(_HELP_TEXT)", text)
+        self.assertIn("alert.runModal()", text)
+        self.assertIn("self.inspectButton = _symbol_button(", text)
+        self.assertIn("def toggleAllMetadata_(self, sender):", text)
+        self.assertIn("full_metadata_selection_snapshot(scope, font=font)", text)
+        self.assertIn("def _render_all_metadata(self, font, scope):", text)
+        self.assertIn('canonical_json({"scope": scope, "targets": entries})', text)
+        self.assertIn('"enabled": False', text)
+        self.assertIn("self.inspectButton.setState_(1 if active else 0)", text)
+        self.assertIn('label = "Show LitSquare Metadata" if active else "Inspect All Metadata"', text)
+        self.assertIn("or self._inspect_all_metadata", text)
+        self.assertIn("This may ", text)
+        self.assertIn("Copy exports the visible ", text)
+        self.assertIn('userData[\\"com.litsquare\\"]', text)
+        self.assertIn('attributes[\\"com.litsquare.role\\"]', text)
+        self.assertIn("PALETTE_HEIGHT = 215", text)
+        self.assertNotIn("Copy JSON/Role Summary", text)
+        self.assertNotIn('"com.litsquare.role: {}".format(state)', text)
+        self.assertNotIn("canonical_json(snapshot)", text)
+        self.assertIn('self.infoLabel.setStringValue_(message)', text)
+        self.assertIn('self._set_info("Invalid JSON", error=True)', text)
 
     def test_aggregator_imports_curve_geometry_module(self) -> None:
         resources = _resources_dir()
@@ -385,10 +470,9 @@ class McpToolRegistrationTextTests(unittest.TestCase):
     def test_italic_first_pass_candidate_is_decorated(self) -> None:
         self._assert_async_tool_decorated("preview_italic_first_pass_candidate")
 
-    def test_removed_visual_review_tool_is_not_decorated(self) -> None:
+    def test_removed_visual_review_implementation_is_absent(self) -> None:
         resources = _resources_dir()
-        text = (resources / "mcp_tools_visual_review.py").read_text(encoding="utf-8")
-        self.assertNotRegex(text, r"@glyphs_tool\(\)\s+async def render_glyph_review_image")
+        self.assertFalse((resources / "mcp_tools_visual_review.py").exists())
 
     def test_curve_overlay_tools_are_decorated(self) -> None:
         self._assert_async_tool_decorated("set_curve_review_overlay")

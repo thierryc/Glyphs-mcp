@@ -90,8 +90,8 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         readme_text = readme.read_text(encoding="utf-8", errors="replace")
         section = _read_readme_command_set_section(readme_text)
 
-        self.assertIn("78 active tools", section)
-        self.assertIn("67 are model-visible", section)
+        self.assertIn("85 active tools", section)
+        self.assertIn("74 are model-visible", section)
         self.assertIn("11 are app-only", section)
         self.assertIn("authoritative list", section)
         self.assertNotIn("| Tool |", section)

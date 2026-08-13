@@ -190,12 +190,83 @@ DOCUMENT_AUDIT_OUTPUT_SCHEMA: Dict[str, Any] = {
 }
 
 
+LITSQUARE_OUTPUT_SCHEMA: Dict[str, Any] = _workflow_schema("LitSquare metadata")
+LITSQUARE_OUTPUT_SCHEMA["properties"]["data"] = {
+    "type": "object",
+    "properties": {
+        "fontSaved": {"type": "boolean", "const": False},
+        "selectedLayerCount": {"type": "integer", "minimum": 0},
+        "scopes": {
+            "type": "object",
+            "properties": {
+                scope: {
+                    "type": "object",
+                    "required": ["state", "label", "schemaVersion", "updatedAt", "value", "errors", "warnings"],
+                    "properties": {
+                        "state": {
+                            "type": "string",
+                            "enum": [
+                                "no_context",
+                                "missing",
+                                "empty",
+                                "valid",
+                                "valid_with_warnings",
+                                "unsupported_schema",
+                                "invalid",
+                            ],
+                        },
+                        "label": {"type": "string"},
+                        "schemaVersion": {"type": ["integer", "null"]},
+                        "updatedAt": {"type": ["string", "null"]},
+                        "value": {},
+                        "errors": {"type": "array", "items": {"type": "object"}},
+                        "warnings": {"type": "array", "items": {"type": "object"}},
+                    },
+                    "additionalProperties": False,
+                }
+                for scope in ("font", "glyph", "layer")
+            },
+            "additionalProperties": False,
+        },
+        "effectiveSettings": {
+            "type": "object",
+            "required": ["values", "provenance"],
+            "properties": {
+                "values": {"type": "object"},
+                "provenance": {
+                    "type": "object",
+                    "additionalProperties": {"type": "string", "enum": ["font", "glyph", "layer"]},
+                },
+            },
+            "additionalProperties": False,
+        },
+        "paths": {"type": "array", "items": {"type": "object"}},
+        "aggregation": {"type": "object"},
+        "policy": {"type": "object"},
+        "center": {"type": "object"},
+        "candidates": {"type": "object"},
+        "stateFingerprint": {"type": "string"},
+        "redrawn": {"type": "boolean"},
+        "before": {"type": "object"},
+        "proposed": {"type": "object"},
+        "after": {"type": "object"},
+        "applied": {"type": "boolean"},
+        "readback": {"type": "object"},
+        "replacements": {"type": "array", "items": {"type": "object"}},
+        "undoGrouped": {"type": "boolean"},
+        "undoRegistered": {"type": "boolean"},
+    },
+    "additionalProperties": True,
+}
+
+
 OUTPUT_SCHEMAS: Dict[str, Dict[str, Any]] = {
     "candidate": _workflow_schema("candidate session"),
     "curve": _workflow_schema("curve geometry"),
     "outline": _workflow_schema("outline editing"),
     "spacing": _workflow_schema("spacing"),
     "kerning": _workflow_schema("kerning"),
+    "litsquare": LITSQUARE_OUTPUT_SCHEMA,
     "feedback": FEEDBACK_OUTPUT_SCHEMA,
     "document-audit": DOCUMENT_AUDIT_OUTPUT_SCHEMA,
 }
@@ -318,6 +389,7 @@ def workflow_tool_result(tool_name: str, effect: str, raw: Any, arguments: Dict[
 __all__ = [
     "DOCUMENT_AUDIT_OUTPUT_SCHEMA",
     "FEEDBACK_OUTPUT_SCHEMA",
+    "LITSQUARE_OUTPUT_SCHEMA",
     "OUTPUT_SCHEMAS",
     "RESULT_SCHEMA_VERSION",
     "schema_for",

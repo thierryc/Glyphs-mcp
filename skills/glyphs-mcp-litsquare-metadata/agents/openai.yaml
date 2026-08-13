@@ -1,0 +1,4 @@
+interface:
+  display_name: "Glyphs MCP LitSquare Metadata"
+  short_description: "Edit LitSquare semantics and IconGrid policy"
+  default_prompt: "Use $glyphs-mcp-litsquare-metadata to inspect LitSquare metadata and semantic path roles, keep fixed IconGrid layer coordinates separate, preview changes, and leave the font unsaved."

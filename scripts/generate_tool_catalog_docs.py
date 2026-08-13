@@ -38,7 +38,7 @@ def render() -> str:
             len(active), len(model_entries()), len(app_only_entries())
         ),
         "",
-        "App-only tools support the embedded feedback interface or host UI and are hidden from model routing when the client honors MCP Apps visibility. Structured results cover document audit, outline editing, candidate, curve, spacing, and kerning workflows; concise text fallbacks remain available.",
+        "App-only tools support the embedded feedback interface or host UI and are hidden from model routing when the client honors MCP Apps visibility. Structured results cover document audit, outline editing, candidate, curve, spacing, kerning, and LitSquare metadata workflows; concise text fallbacks remain available.",
         "",
         "## Category summary",
         "",

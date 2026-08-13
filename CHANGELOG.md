@@ -48,8 +48,9 @@ run. It does not edit, save, snapshot, or semantically diff the font.
   summaries for review-relevant events. Generic code is always opaque and its
   source is never retained.
 - `get_document_change_overview` adds a versioned structured result and concise
-  text fallback under the new `document-audit` category. The catalog now has
-  78 active tools: 67 model-visible and 11 app-only.
+  text fallback under the new `document-audit` category. Together with the
+  LitSquare metadata and IconGrid centering surface, the catalog now has 85
+  active tools: 74 model-visible and 11 app-only.
 - Read-only, UI-only, export, preview, dry-run, and unconfirmed planning calls
   are excluded. Results that prove no mutation started are also omitted, while
   failures that may follow a partial mutation, unattributed generic code, and
@@ -65,6 +66,21 @@ run. It does not edit, save, snapshot, or semantically diff the font.
   tracked document as wrappers and indices change. The audit also omits proved
   precondition failures while retaining failures that entered a change batch
   and rolled back.
+
+### LitSquare semantic metadata and IconGrid centering
+
+- Adds typed read, merge-patch, selected-role, and atomic path-role tools for
+  native `com.litsquare` metadata and `com.litsquare.role` path attributes.
+- Extends the Metadata Inspector with editable Font/Glyph/Layer JSON and
+  explicit path-role editing while keeping IconGrid policy out of path semantics.
+- Adds `get_icon_grid_horizontal_center`,
+  `set_icon_grid_horizontal_center`, and
+  `reset_icon_grid_horizontal_center` for guarded fixed per-layer centering,
+  including advance and layer-content candidates.
+- Stores one finite coordinate under the versioned
+  `com.litsquare.icongrid` layer root, independently from path roles, rejects
+  stale or future-schema writes, preserves unrelated metadata, registers Undo,
+  redraws, publishes change notifications, and never saves automatically.
 
 See [ROADMAP.md](ROADMAP.md) for the value/complexity-ranked work that follows;
 entries after the 1.9 milestone are directional rather than release commitments.

@@ -23,6 +23,7 @@
 		<string>MCPBridgePlugin</string>
 		<string>GlyphsMCPCurvatureReporter</string>
 		<string>GlyphsMCPCandidateReporter</string>
+		<string>GlyphsMCPLitSquareMetadataPalette</string>
 	</array>
 	<key>PyMainFileNames</key>
 	<array>

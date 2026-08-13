@@ -229,17 +229,42 @@ def _debug_startup_environment() -> None:
             pass
 
 
+def _make_unavailable_litsquare_palette():
+    """Build a harmless Palette principal class without loading MCP modules."""
+    from AppKit import NSMakeRect, NSView  # type: ignore[import-not-found]
+    from GlyphsApp.plugins import PalettePlugin  # type: ignore[import-not-found]
+
+    class GlyphsMCPLitSquareMetadataPalette(PalettePlugin):
+        def settings(self):
+            self.name = "Glyphs MCP Metadata Inspector (unavailable)"
+            self.dialog = NSView.alloc().initWithFrame_(NSMakeRect(0, 0, 260, 80))
+
+        def minHeight(self):
+            return 80
+
+        def maxHeight(self):
+            return 80
+
+    return GlyphsMCPLitSquareMetadataPalette
+
+
 STARTUP_IMPORT_ERROR = None
 GlyphsMCPCurvatureReporter = None
 GlyphsMCPCandidateReporter = None
+GlyphsMCPLitSquareMetadataPalette = None
 
 _debug_startup_environment()
 
 try:
-    # Export the native Reporter principal class before loading MCP runtime
-    # dependencies so Glyphs can discover both classes in this bundle.
+    # Export native Reporter and Palette principal classes before loading MCP
+    # runtime dependencies so Glyphs can discover every class in this bundle.
     from glyphs_curve_reporter import GlyphsMCPCurvatureReporter
     from glyphs_candidate_reporter import GlyphsMCPCandidateReporter
+    try:
+        from glyphs_litsquare_palette import GlyphsMCPLitSquareMetadataPalette
+    except Exception as palette_error:
+        _console_log("[Glyphs MCP] LitSquare Palette unavailable: {}".format(repr(palette_error)))
+        GlyphsMCPLitSquareMetadataPalette = _make_unavailable_litsquare_palette()
 
     # Import MCP tools (this registers all the tools)
     from mcp_tools import mcp
@@ -326,6 +351,12 @@ except Exception as exc:  # pragma: no cover - requires broken local environment
 
             def foreground(self, layer):
                 return None
+
+    if GlyphsMCPLitSquareMetadataPalette is None:
+        try:
+            GlyphsMCPLitSquareMetadataPalette = _make_unavailable_litsquare_palette()
+        except Exception:
+            GlyphsMCPLitSquareMetadataPalette = object
 
 
 # ------------------------------------------------------------

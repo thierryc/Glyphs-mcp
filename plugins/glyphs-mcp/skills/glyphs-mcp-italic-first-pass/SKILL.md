@@ -1,6 +1,6 @@
 ---
 name: glyphs-mcp-italic-first-pass
-description: Use this skill for an experimental first-pass italic or oblique construction draft from Roman glyphs, selected glyphs, or one current glyph.
+description: Use this skill for a guarded experimental italic or oblique construction draft from Roman glyphs, including one glyph, a selection, a named scope, or corresponding masters across a family.
 ---
 
 # Glyphs MCP italic first pass
@@ -15,23 +15,28 @@ it does not create, replace, or claim optical completion of a designed italic.
   session review do not alter the font; materialization and acceptance require
   dry run, exact targets, and explicit approval before confirmation.
 - Read current font, master, and selection before mutation.
+- Resolve an explicit Roman-to-italic master pair for every requested master.
+  Do not interpret "all masters" as one source/target pair.
 - Default angle is `12.0` degrees unless the user specifies another value.
 - Interpret `angle` as a Glyphs source/Transformations angle: positive values lean Latin outlines to the right. In exported OpenType/UFO metadata, the corresponding `post.italicAngle` / `slnt` value is negative (`+12` in Glyphs source convention maps to about `-12` in exported font convention).
 - Before outline work, verify the target italic master's `italicAngle` from `get_font_masters` equals `+angle` within `0.01`; do not use `slantAngle`, which reports the separate `postscriptSlantAngle` custom parameter.
 - If the target master `italicAngle` differs, run `set_master_italic_angle` with `dry_run=true`, show the before/after, and only set it with `confirm=true` after explicit approval.
-- Copy roman paths into the italic master and skew only those copied paths.
+- Candidate acceptance preserves target topology. Before preview, every target
+  master layer must therefore be an untouched Roman-compatible bootstrap copy,
+  not an empty layer. The candidate may change approved coordinates, anchors,
+  component placement, and metrics; it must not create topology.
 - Copy components as live components, but do not skew component transforms or component outlines; component shapes should resolve from their own italic master layers.
 - Default `compatibility_mode` is `preserve_if_possible`; path compatibility is useful but not required.
 - Before `slant_mode="cursivy"`, run `review_master_stem_metrics` for the target italic master.
-- Prefer `slant_mode="balanced"` when the user wants the recommended
-  experimental reproducible option. Balanced builds Raw, applies the
+- Default to `slant_mode="balanced"`. Use Cursivy only when the designer
+  explicitly requests the legacy Transformations-backed construction or needs
+  comparison with an existing Cursivy workflow. Balanced builds Raw, applies the
   pure-Python conservative correction at partial strength, interpolates using
   `curve_strength`, and then applies the independent final
   `stem_compensation`. It never calls the Glyphs Transformations filter.
 - Balanced defaults to `curve_strength=0.75` and
-  `stem_compensation=1.0`. Full final compensation can neutralize visible
-  intermediate differences on accepted stems. Keep omitted `slant_mode` calls
-  defaulting to Cursivy for compatibility.
+  `stem_compensation=1.0`. Pass `slant_mode="balanced"` explicitly because the
+  tool's omitted-argument compatibility default remains Cursivy.
 - The Inter/Noto Sans/IBM Plex Sans validation preserved topology and source
   layers, accepted 135/102/102 stem pairs, and passed because every
   non-commuting component construction was blocked before application.
@@ -47,6 +52,9 @@ it does not create, replace, or claim optical completion of a designed italic.
   designer whether to include, exclude, or defer them.
 - If Cursivy stems are missing, ask whether to set stems, measure suggestions, use raw slant, or stop.
 - Call `preview_italic_first_pass_candidate` to generate detached proposals.
+- Diagnostic preview partitioning is read-only and does not require approval.
+  Approval is required only before mutation or before explicitly omitting a
+  diagnosed glyph from the final pass.
 - Call `review_outline_candidate_session`, then
   `accept_outline_candidate_session` with `dry_run=true` and the exact review
   token before any mutating call.
@@ -63,29 +71,55 @@ it does not create, replace, or claim optical completion of a designed italic.
    - `get_selected_font_and_master`
    - `get_font_masters`
    - `get_selected_glyphs` when scope may be selection-based
-2. Resolve scope:
+2. Resolve the master-pair plan:
+   - map every Roman source master to one target italic master
+   - verify matching non-italic axis coordinates and the intended italic-axis
+     coordinate
+   - if targets do not exist, show the exact creation/bootstrap plan and wait
+     for approval
+   - after approval, `execute_code_with_context` may create only the reviewed
+     target master shells and untouched copies of their corresponding Roman
+     layers; append a master before setting font-dependent properties
+   - never draw, slant, recreate candidate layers, or delete layers through
+     generic code
+   - re-read masters and representative target paths/components; stop if any
+     target is empty, mismatched, or not Roman-compatible
+3. Resolve scope:
    - `current_glyph`
    - `selected_glyphs`
    - `glyph_names`
    - `all_glyphs`
-3. Resolve Unicode values for the scoped glyphs:
+4. Resolve Unicode values for the scoped glyphs:
    - use Unicode values already returned for selection-based scopes
    - call `get_font_glyphs` when the scope needs a whole-font name-to-Unicode map
    - report any glyphs covered by the symbol slant policy below
    - ask whether to include, explicitly exclude, or defer each affected group
-4. Resolve source roman and target italic masters.
-5. Verify target master italic angle:
+5. Verify every target master italic angle:
    - call `get_font_masters`
-   - find the target master by `target_master_id`
-   - compare its `italicAngle` to `+angle` within `0.01`
-   - if different, call `set_master_italic_angle` with `dry_run=true`
-   - summarize the before/after and wait for approval before calling `set_master_italic_angle` with `confirm=true`
-6. If using Cursivy:
-   - call `review_master_stem_metrics`
+   - compare each target's `italicAngle` to `+angle` within `0.01`
+   - dry-run every required `set_master_italic_angle` change
+   - summarize all before/after values together and wait for one explicit
+     approval before confirming the exact batch
+6. If using Cursivy, call `review_master_stem_metrics` for all targets:
    - if missing, call `set_master_stem_metrics` only after approval and with `dry_run=true` first
-7. Call `preview_italic_first_pass_candidate` with the resolved source/target
-   masters, scope, symbol-policy choices, and construction parameters.
-8. Summarize the returned candidate session:
+7. Call `preview_italic_first_pass_candidate` once per resolved master pair,
+   always passing `slant_mode` explicitly and keeping construction parameters
+   identical unless the designer approved pair-specific differences.
+8. If a preview blocks without useful glyph details, diagnose with existing
+   tools instead of requesting a new public tool:
+   - rerun detached previews with deterministic halves of the same
+     `glyph_names` scope until each failing glyph is isolated
+   - do not add `skip_glyphs` during diagnosis
+   - clear disposable successful diagnostic sessions with
+     `set_outline_candidate_overlay`
+   - for an isolated glyph, compare `get_glyph_paths` and recursively inspect
+     `get_glyph_components` in the source and target masters
+   - report topology, component chain/matrix, master mismatch, or other known
+     evidence; never infer an unreported safety verdict
+   - if `topology_change_blocked:<glyph>` persists while source and target path
+     topology are identical, classify it as a candidate-adapter serialization
+     regression; stop and report it instead of skipping a valid glyph
+9. Summarize the returned candidate sessions and diagnosed blockers:
    - glyph count and blocked glyphs
    - missing stems
    - protected glyph warnings
@@ -94,19 +128,22 @@ it does not create, replace, or claim optical completion of a designed italic.
    - live component preservation, component chain/matrix diagnostics, and any
      blocking reason
    - target glyphs that would be created
-9. If preview blocks the batch, pause. Only after the designer explicitly
-   chooses a smaller scope, regenerate the candidate with `skip_glyphs`.
-10. Ask the designer to inspect **View > Show Glyphs MCP Candidate**. If manual
+10. If the final batch is blocked, ask whether to rebuild, explicitly exclude,
+    or defer each diagnosed glyph. Only after that decision, regenerate the
+    complete approved scope with the exact `skip_glyphs` list.
+11. Ask the designer to inspect **View > Show Glyphs MCP Candidate**. If manual
     editing is requested, dry-run and confirm
     `materialize_outline_candidate_session`, then wait for those edits.
-11. Call `review_outline_candidate_session`. Stop on stale source, topology,
-    component, off-grid, or operation-external changes.
-12. Call `accept_outline_candidate_session` with the review token and
-    `dry_run=true`. Summarize exactly what would change and ask for approval.
-13. After approval, call `accept_outline_candidate_session` with the same valid
-    token and `confirm=true`.
-14. Re-read the target layers, verify candidate cleanup and backup preservation,
-    and list glyphs that still need manual optical work.
+12. Call `review_outline_candidate_session` for every final session. Stop on
+    stale source, topology, component, off-grid, or operation-external changes.
+13. Call `accept_outline_candidate_session` with `dry_run=true` and each exact
+    review token. Summarize the complete master/session change set and ask for
+    approval.
+14. After approval, confirm the reviewed sessions sequentially with their same
+    valid tokens. This is not an atomic multi-master transaction; on any
+    failure, stop immediately and report which sessions were already accepted.
+15. Re-read every target master, verify candidate cleanup and backup
+    preservation, and list glyphs that still need manual optical work.
 
 ## Defaults
 
@@ -116,7 +153,7 @@ Use these defaults unless the user says otherwise:
 {
   "scope": "selected_glyphs",
   "angle": 12.0,
-  "slant_mode": "cursivy",
+  "slant_mode": "balanced",
   "curve_strength": 0.75,
   "stem_compensation": 1.0,
   "stem_policy": "require_existing",
@@ -127,8 +164,7 @@ Use these defaults unless the user says otherwise:
     "anchors": true,
     "metrics": true
   },
-  "origin": 3,
-  "backup": true
+  "origin": 3
 }
 ```
 

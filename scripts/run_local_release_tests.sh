@@ -23,7 +23,7 @@ echo "Checking tracked patch whitespace…"
 git diff --check HEAD
 
 echo "Running the complete Python test suite locally…"
-PYTHON_BIN="$python_bin" scripts/run_python_tests.sh
+GLYPHS_MCP_FULL_PYTHON_MATRIX=1 PYTHON_BIN="$python_bin" scripts/run_python_tests.sh
 
 derived_data="$(mktemp -d "${TMPDIR:-/tmp}/gmcp-release-tests.XXXXXX")"
 cleanup() { rm -rf "$derived_data"; }

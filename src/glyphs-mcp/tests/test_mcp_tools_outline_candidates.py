@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import copy
 import importlib.util
 import inspect
@@ -46,6 +47,92 @@ def _snapshot():
     }
 
 
+def _gee_gee_a_snapshot():
+    node_counts = [20, 4, 24, 24]
+    node_types = ["line", "offcurve", "offcurve", "curve"]
+    paths = []
+    for path_index, node_count in enumerate(node_counts):
+        nodes = []
+        for node_index in range(node_count):
+            node_type = node_types[(path_index + node_index) % len(node_types)]
+            nodes.append(
+                {
+                    "x": float(path_index * 300 + node_index * 10),
+                    "y": float((node_index % 5) * 100),
+                    "type": node_type,
+                    "smooth": node_type == "curve",
+                    "protected": {"name": None, "userData": {}},
+                }
+            )
+        paths.append(
+            {
+                "closed": True,
+                "nodes": nodes,
+                "protected": {"attributes": {}, "userData": {}},
+            }
+        )
+    return {
+        "paths": paths,
+        "components": [],
+        "anchors": [
+            {"name": "bottom", "x": 500.0, "y": 0.0},
+            {"name": "ogonek", "x": 120.0, "y": -80.0},
+            {"name": "top", "x": 520.0, "y": 1400.0},
+        ],
+        "shapeOrder": [{"kind": "path", "index": index} for index in range(4)],
+        "width": 1025.0,
+        "protected": {"hints": [], "guides": [], "annotations": [], "userData": {}},
+    }
+
+
+class _FixturePoint:
+    def __init__(self, x, y):
+        self.x = float(x)
+        self.y = float(y)
+
+
+class _FixtureNode:
+    def __init__(self, data):
+        self.position = _FixturePoint(data["x"], data["y"])
+        self.type = data["type"]
+        self.smooth = bool(data.get("smooth"))
+        protected = data.get("protected") or {}
+        self.name = protected.get("name")
+        self.userData = copy.deepcopy(protected.get("userData") or {})
+
+
+class _FixturePath:
+    def __init__(self, data):
+        self.closed = bool(data.get("closed"))
+        self.nodes = [_FixtureNode(item) for item in data.get("nodes") or []]
+        protected = data.get("protected") or {}
+        self.attributes = copy.deepcopy(protected.get("attributes") or {})
+        self.userData = copy.deepcopy(protected.get("userData") or {})
+
+
+class _FixtureAnchor:
+    def __init__(self, data):
+        self.name = data["name"]
+        self.position = _FixturePoint(data["x"], data["y"])
+
+
+class _FixtureLayer:
+    def __init__(self, snapshot, layer_id):
+        self.paths = [_FixturePath(item) for item in snapshot.get("paths") or []]
+        self.components = []
+        self.anchors = [_FixtureAnchor(item) for item in snapshot.get("anchors") or []]
+        self.shapes = list(self.paths)
+        self.hints = []
+        self.guides = []
+        self.annotations = []
+        self.userData = copy.deepcopy((snapshot.get("protected") or {}).get("userData") or {})
+        self.width = float(snapshot.get("width", 0.0))
+        self.layerId = layer_id
+        self.associatedMasterId = layer_id
+        self.name = layer_id
+        self.parent = None
+
+
 class OutlineCandidateWrapperContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -90,6 +177,58 @@ class OutlineCandidateWrapperContractTests(unittest.TestCase):
             "candidate": candidate,
             "allowed": {"nodeCoordinates": [{"pathIndex": 0, "nodeIndex": 1}]},
         }
+
+    def _italic_preview_with_candidate(self, candidate_snapshot):
+        source_snapshot = _gee_gee_a_snapshot()
+        source_layer = _FixtureLayer(source_snapshot, "roman")
+        target_layer = _FixtureLayer(source_snapshot, "italic")
+        candidate_layer = _FixtureLayer(candidate_snapshot, "candidate")
+        glyph = types.SimpleNamespace(
+            name="A",
+            layers={"roman": source_layer, "italic": target_layer},
+            parent=None,
+        )
+        source_layer.parent = glyph
+        target_layer.parent = glyph
+        candidate_layer.parent = glyph
+        font = types.SimpleNamespace(
+            filepath=None,
+            upm=2048,
+            glyphs={"A": glyph},
+            masters=[types.SimpleNamespace(id="italic", name="Thin Condensed Italic")],
+        )
+        glyph.parent = font
+        review = {
+            "ok": True,
+            "readyToApply": True,
+            "sourceFontIndex": 0,
+            "targetFontIndex": 0,
+            "sourceMasterId": "roman",
+            "targetMasterId": "italic",
+            "copyOptions": {"paths": True, "components": True, "anchors": True, "metrics": True},
+            "angle": 12.0,
+            "effectiveSlantMode": "balanced",
+            "origin": 3,
+            "curveStrength": 0.75,
+            "stemCompensation": 1.0,
+            "stemReview": None,
+            "results": [{"status": "ok", "glyphName": "A", "outcome": "balanced_applied", "warnings": []}],
+        }
+        italic = self.module.mcp_tools_italic
+        with mock.patch.multiple(
+            italic,
+            _review_italic_first_pass_impl=mock.Mock(return_value=review),
+            _get_font=mock.Mock(return_value=font),
+            _master_by_id=mock.Mock(return_value=font.masters[0]),
+            _stem_values=mock.Mock(return_value={}),
+            _glyph_lookup=mock.Mock(side_effect=lambda value, name: value.glyphs[name]),
+            _layer_for_glyph=mock.Mock(side_effect=lambda value, master_id: value.layers[master_id]),
+            _prepare_path_only_candidate=mock.Mock(
+                return_value={"ok": True, "candidateLayer": candidate_layer}
+            ),
+            create=True,
+        ):
+            return self.module._italic_preview_impl(0, {})
 
     def test_tunni_allows_only_targeted_grid_coordinates(self):
         entry = self._entry()
@@ -163,6 +302,159 @@ class OutlineCandidateWrapperContractTests(unittest.TestCase):
         changed["components"][0]["smartValues"]["x"] = 2
         _diffs, error = self.module._validate_candidate(entry, changed, types.SimpleNamespace(gridLength=1.0))
         self.assertEqual(error, "operation_external_change")
+
+    def test_gee_gee_a_balanced_coordinate_candidate_succeeds_after_anchor_reordering(self):
+        candidate = copy.deepcopy(_gee_gee_a_snapshot())
+        for path in candidate["paths"]:
+            for node in path["nodes"]:
+                node["x"] += 12.0
+        candidate["anchors"] = [candidate["anchors"][1], candidate["anchors"][0], candidate["anchors"][2]]
+
+        session, summaries = self._italic_preview_with_candidate(candidate)
+
+        self.assertEqual(session["operation"], "italic_first_pass")
+        self.assertEqual(session["expectedEntryCount"], 1)
+        self.assertEqual(summaries[0]["outcome"], "balanced_applied")
+        entry = session["entries"][0]
+        self.assertEqual([len(path["nodes"]) for path in entry["source"]["paths"]], [20, 4, 24, 24])
+        self.assertEqual([item["name"] for item in entry["source"]["anchors"]], ["bottom", "ogonek", "top"])
+        self.assertEqual([item["name"] for item in entry["candidate"]["anchors"]], ["bottom", "ogonek", "top"])
+        self.assertEqual(entry["candidate"]["paths"][0]["nodes"][0]["x"], 12.0)
+        self.assertEqual(entry["sourceTopologyFingerprint"], entry["generatedTopologyFingerprint"])
+
+    def test_first_topology_mismatch_covers_path_and_node_safety_fields(self):
+        source = _gee_gee_a_snapshot()
+
+        candidate = copy.deepcopy(source)
+        candidate["paths"].pop()
+        self.assertEqual(self.module._topology_mismatch(source, candidate)["field"], "paths.length")
+
+        candidate = copy.deepcopy(source)
+        candidate["paths"][0]["closed"] = False
+        self.assertEqual(self.module._topology_mismatch(source, candidate)["field"], "paths[0].closed")
+
+        candidate = copy.deepcopy(source)
+        candidate["paths"][0]["nodes"].pop()
+        self.assertEqual(self.module._topology_mismatch(source, candidate)["field"], "paths[0].types.length")
+
+        candidate = copy.deepcopy(source)
+        candidate["paths"][0]["nodes"][0]["type"] = "curve"
+        self.assertEqual(self.module._topology_mismatch(source, candidate)["field"], "paths[0].types[0]")
+
+        candidate = copy.deepcopy(source)
+        candidate["paths"][0]["nodes"][0], candidate["paths"][0]["nodes"][1] = (
+            candidate["paths"][0]["nodes"][1],
+            candidate["paths"][0]["nodes"][0],
+        )
+        self.assertEqual(self.module._topology_mismatch(source, candidate)["field"], "paths[0].types[0]")
+
+    def test_first_topology_mismatch_covers_components_and_shape_order(self):
+        source = _gee_gee_a_snapshot()
+        source["components"] = [
+            {"name": "acute", "transform": [1, 0, 0, 1, 0, 0], "smartValues": {}, "alignment": False},
+            {"name": "dotaccent", "transform": [1, 0, 0, 1, 0, 0], "smartValues": {}, "alignment": False},
+        ]
+        source["shapeOrder"] += [
+            {"kind": "component", "index": 0},
+            {"kind": "component", "index": 1},
+        ]
+
+        candidate = copy.deepcopy(source)
+        candidate["components"].reverse()
+        self.assertEqual(self.module._topology_mismatch(source, candidate)["field"], "componentNames[0]")
+
+        candidate = copy.deepcopy(source)
+        candidate["shapeOrder"][0], candidate["shapeOrder"][4] = (
+            candidate["shapeOrder"][4],
+            candidate["shapeOrder"][0],
+        )
+        self.assertEqual(self.module._topology_mismatch(source, candidate)["field"], "shapeOrder[0].kind")
+
+    def test_first_topology_mismatch_covers_all_protected_metadata_scopes(self):
+        source = _gee_gee_a_snapshot()
+
+        candidate = copy.deepcopy(source)
+        candidate["paths"][0]["nodes"][0]["protected"]["userData"]["role"] = "changed"
+        self.assertEqual(
+            self.module._topology_mismatch(source, candidate)["field"],
+            "paths[0].nodeProtected[0].userData.role",
+        )
+
+        candidate = copy.deepcopy(source)
+        candidate["paths"][0]["protected"]["attributes"]["group"] = "changed"
+        self.assertEqual(
+            self.module._topology_mismatch(source, candidate)["field"],
+            "paths[0].pathProtected.attributes.group",
+        )
+
+        candidate = copy.deepcopy(source)
+        candidate["protected"]["userData"]["owner"] = "changed"
+        self.assertEqual(
+            self.module._topology_mismatch(source, candidate)["field"],
+            "protected.userData.owner",
+        )
+
+    def test_italic_anchor_alignment_requires_unique_identical_names(self):
+        source = _gee_gee_a_snapshot()
+        reordered = copy.deepcopy(source)
+        reordered["anchors"] = [reordered["anchors"][1], reordered["anchors"][0], reordered["anchors"][2]]
+        aligned, mismatch = self.module._italic_topology_mismatch(source, reordered)
+        self.assertIsNone(mismatch)
+        self.assertEqual([item["name"] for item in aligned["anchors"]], ["bottom", "ogonek", "top"])
+
+        missing = copy.deepcopy(source)
+        missing["anchors"].pop()
+        _aligned, mismatch = self.module._italic_topology_mismatch(source, missing)
+        self.assertEqual(mismatch["field"], "anchorNames.length")
+
+        duplicate = copy.deepcopy(source)
+        duplicate["anchors"][2]["name"] = "ogonek"
+        _aligned, mismatch = self.module._italic_topology_mismatch(source, duplicate)
+        self.assertEqual(mismatch["field"], "anchorNames.unique")
+
+    def test_italic_failure_payload_names_glyph_and_first_differing_field(self):
+        source = _gee_gee_a_snapshot()
+        candidate = copy.deepcopy(source)
+        candidate["paths"][0]["nodes"].pop()
+        mismatch = self.module._topology_mismatch(source, candidate)
+        error = self.module._TopologyMismatchError("A", mismatch)
+
+        with mock.patch.object(self.module, "_italic_preview_impl", side_effect=error):
+            payload = json.loads(asyncio.run(self.module.preview_italic_first_pass_candidate(glyph_names=["A"])))
+
+        self.assertEqual(payload["error"], "topology_change_blocked:A:paths[0].types.length")
+        self.assertEqual(payload["errorType"], "topology_change_blocked")
+        self.assertEqual(payload["topologyMismatch"]["glyphName"], "A")
+        self.assertEqual(payload["topologyMismatch"]["field"], "paths[0].types.length")
+
+    def test_italic_anchor_promotion_matches_names_and_preserves_metadata(self):
+        desired = _gee_gee_a_snapshot()
+        desired["anchors"][0].update({"x": 101.0, "y": 1.0})
+        desired["anchors"][1].update({"x": 202.0, "y": 2.0})
+        desired["anchors"][2].update({"x": 303.0, "y": 3.0})
+        layer = _FixtureLayer(_gee_gee_a_snapshot(), "italic")
+        layer.anchors = [layer.anchors[1], layer.anchors[0], layer.anchors[2]]
+        layer.paths[0].nodes[0].name = "protected-node"
+        layer.paths[0].nodes[0].userData = {"node": "kept"}
+        layer.paths[0].attributes = {"group": "kept"}
+        layer.paths[0].userData = {"path": "kept"}
+        layer.userData = {"layer": "kept"}
+
+        self.module._apply_allowed_snapshot(
+            layer,
+            desired,
+            {"operation": "italic_first_pass", "allowed": {}},
+        )
+
+        positions = {anchor.name: self.module._point_values(anchor.position) for anchor in layer.anchors}
+        self.assertEqual(positions["bottom"], (101.0, 1.0))
+        self.assertEqual(positions["ogonek"], (202.0, 2.0))
+        self.assertEqual(positions["top"], (303.0, 3.0))
+        self.assertEqual(layer.paths[0].nodes[0].name, "protected-node")
+        self.assertEqual(layer.paths[0].nodes[0].userData, {"node": "kept"})
+        self.assertEqual(layer.paths[0].attributes, {"group": "kept"})
+        self.assertEqual(layer.paths[0].userData, {"path": "kept"})
+        self.assertEqual(layer.userData, {"layer": "kept"})
 
     def test_all_ten_public_tools_are_registered_and_safety_modes_are_strict(self):
         expected = {

@@ -12,6 +12,7 @@ SKILLS=(
   glyphs-mcp-icon-font
   glyphs-mcp-italic-first-pass
   glyphs-mcp-kerning
+  glyphs-mcp-litsquare-metadata
   glyphs-mcp-outlines-docs
   glyphs-mcp-release
   glyphs-mcp-spacing

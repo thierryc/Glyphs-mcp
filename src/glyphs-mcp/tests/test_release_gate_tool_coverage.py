@@ -716,6 +716,106 @@ TOOL_RELEASE_GATE["get_document_change_overview"] = {
     "smoke": "Exercise DA1–DA10 in the release QA protocol with saved and unsaved disposable fonts.",
 }
 
+TOOL_RELEASE_GATE.update(
+    {
+        "get_litsquare_metadata": {
+            "coverage": LIVE_SMOKE_REQUIRED,
+            "tests": (
+                "test_litsquare_metadata.py",
+                "test_glyphs_litsquare_adapter.py",
+                "test_mcp_tools_litsquare.py",
+                "live Glyphs 3.5 and Glyphs 4 smoke batch",
+            ),
+            "mutation": READ_ONLY,
+            "undoRisk": "none",
+            "undoNote": "Reads direct native userData scopes and detached inherited settings only.",
+            "smoke": "Read Font, Glyph, and Layer states in Glyphs 3.5 and 4 without saving.",
+        },
+        "get_selected_litsquare_path_roles": {
+            "coverage": LIVE_SMOKE_REQUIRED,
+            "tests": (
+                "test_litsquare_metadata.py",
+                "test_glyphs_litsquare_adapter.py",
+                "test_mcp_tools_litsquare.py",
+                "live Glyphs 3.5 and Glyphs 4 smoke batch",
+            ),
+            "mutation": READ_ONLY,
+            "undoRisk": "none",
+            "undoNote": "Reads selected paths, custom role attributes, fingerprints, and bounds only.",
+            "smoke": "Read node-selected and path-selected roles in both supported Glyphs versions.",
+        },
+        "patch_litsquare_metadata": {
+            "coverage": LIVE_SMOKE_REQUIRED,
+            "tests": (
+                "test_litsquare_metadata.py",
+                "test_glyphs_litsquare_adapter.py",
+                "test_mcp_tools_litsquare.py",
+                "test_mcp_tools_document_changes.py",
+                "live Glyphs 3.5 and Glyphs 4 smoke batch",
+            ),
+            "mutation": EDITS_FONT,
+            "undoRisk": "medium",
+            "undoNote": "Reassigns one namespaced native root with explicit document undo, rollback, and readback verification.",
+            "smoke": "Dry-run, confirm, Undo/Redo, save/reopen in flat and package formats, then verify unrelated userData.",
+        },
+        "set_litsquare_path_roles": {
+            "coverage": LIVE_SMOKE_REQUIRED,
+            "tests": (
+                "test_litsquare_metadata.py",
+                "test_glyphs_litsquare_adapter.py",
+                "test_mcp_tools_litsquare.py",
+                "test_mcp_tools_document_changes.py",
+                "live Glyphs 3.5 and Glyphs 4 smoke batch",
+            ),
+            "mutation": EDITS_FONT,
+            "undoRisk": "medium",
+            "undoNote": "Uses one document undo group and layer change blocks for atomic namespaced path-attribute writes.",
+            "smoke": "Dry-run, confirm, Undo/Redo, clear, save/reopen, and inspect custom attr in Glyphs 3 and 4 formats.",
+        },
+        "get_icon_grid_horizontal_center": {
+            "coverage": LIVE_SMOKE_REQUIRED,
+            "tests": (
+                "test_icon_grid_centering.py",
+                "test_glyphs_icon_grid_adapter.py",
+                "test_mcp_tools_icon_grid.py",
+                "live Glyphs 3.5 and Glyphs 4 smoke batch",
+            ),
+            "mutation": READ_ONLY,
+            "undoRisk": "none",
+            "undoNote": "Reads one direct namespaced layer policy plus detached advance and layer-content candidates.",
+            "smoke": "Read default, fixed, invalid, advance-candidate, and layer-content-candidate states in both supported Glyphs versions.",
+        },
+        "set_icon_grid_horizontal_center": {
+            "coverage": LIVE_SMOKE_REQUIRED,
+            "tests": (
+                "test_icon_grid_centering.py",
+                "test_glyphs_icon_grid_adapter.py",
+                "test_mcp_tools_icon_grid.py",
+                "test_mcp_tools_document_changes.py",
+                "live Glyphs 3.5 and Glyphs 4 smoke batch",
+            ),
+            "mutation": EDITS_FONT,
+            "undoRisk": "medium",
+            "undoNote": "Writes one reverse-domain layer policy with explicit undo, rollback, readback, redraw, and no role mutation.",
+            "smoke": "Dry-run an explicit x, confirm, Undo/Redo, save/reopen, and verify artwork plus unrelated userData in Glyphs 3 and 4.",
+        },
+        "reset_icon_grid_horizontal_center": {
+            "coverage": LIVE_SMOKE_REQUIRED,
+            "tests": (
+                "test_icon_grid_centering.py",
+                "test_glyphs_icon_grid_adapter.py",
+                "test_mcp_tools_icon_grid.py",
+                "test_mcp_tools_document_changes.py",
+                "live Glyphs 3.5 and Glyphs 4 smoke batch",
+            ),
+            "mutation": EDITS_FONT,
+            "undoRisk": "medium",
+            "undoNote": "Removes only centerX from the namespaced layer root and preserves unknown fields.",
+            "smoke": "Reset, Undo/Redo, save/reopen, and verify artwork plus unrelated domains in both Glyphs versions.",
+        },
+    }
+)
+
 
 class ReleaseGateToolCoverageTests(unittest.TestCase):
     maxDiff = None
@@ -756,10 +856,10 @@ class ReleaseGateToolCoverageTests(unittest.TestCase):
         names = [record["name"] for record in records]
         app_only = {record["name"] for record in records if record["appOnly"]}
 
-        self.assertEqual(len(records), 78, "Tool-surface growth requires an explicit budget review.")
+        self.assertEqual(len(records), 85, "Tool-surface growth requires an explicit budget review.")
         self.assertEqual(len(set(names)), len(names), "MCP tool names must be unique.")
         self.assertEqual(app_only, {entry.name for entry in app_only_entries()})
-        self.assertEqual(len(records) - len(app_only), 67)
+        self.assertEqual(len(records) - len(app_only), 74)
 
         for record in records:
             with self.subTest(tool=record["name"]):
