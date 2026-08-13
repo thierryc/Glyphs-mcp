@@ -40,6 +40,7 @@ import mcp_tools_server  # noqa: F401
 import mcp_tools_selection  # noqa: F401
 import mcp_tools_smoothness  # noqa: F401
 import mcp_tools_spacing  # noqa: F401
+import mcp_tools_start_node_alignment  # noqa: F401
 import mcp_tools_outline_candidates  # noqa: F401
 
 __all__ = ["mcp"]

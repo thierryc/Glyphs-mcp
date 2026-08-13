@@ -11,6 +11,37 @@ Do not duplicate release flow, command reference, or long installer notes across
 
 Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish compatibility pass across Glyphs 3.5 and Glyphs 4.
 
+## Prepared 1.10.0 candidate
+
+Version `1.10.0` (installer build `25`) expands the active catalog to 87
+tools: 76 `model+app` and 11 `app-only`. It adds four guarded LitSquare
+metadata tools and three IconGrid tools, together with the native Metadata
+Inspector and the tenth canonical and packaged skill,
+`glyphs-mcp-litsquare-metadata`.
+
+Two semantic start-node tools now review and apply compatible cyclic path
+rotations across masters. Their confirmation contract requires literal JSON
+booleans, binds writes to a review fingerprint, changes only the selected path
+start nodes with `makeNodeFirst`, verifies read-back, restores snapshots after
+failure, and never saves automatically. Candidate review also reports the first
+topology difference more precisely and aligns anchors by name before promotion.
+
+The release includes stricter development-skill scaffold validation and keeps
+canonical and Plugin Manager runtime and skill copies synchronized. The public
+command catalog generator now derives its release version from the canonical
+plug-in Info.plist instead of embedding a release number.
+
+The complete local release gate passes 866 Python tests with 2 intentional
+environment-dependent skips. All 104 macOS installer tests pass, and the
+unsigned Debug installer builds successfully with normal Xcode system access.
+The documentation production build and all 20 canonical and packaged skill
+validations also pass. Catalog/schema checks, runtime mirror parity, and
+release metadata checks are included in the final candidate audit.
+
+Live Glyphs 3.5 and Glyphs 4 acceptance for the new start-node and
+LitSquare/IconGrid surfaces remains outstanding. No signed artifact, tag, push,
+notarization, upload, or GitHub release has been performed by this preparation.
+
 ## Prepared 1.9.0 candidate
 
 Version `1.9.0` (installer build `24`) adds one guarded coordinate-only edit

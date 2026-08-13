@@ -7,6 +7,7 @@ in the normal unit test runner). Instead, we parse decorators from source.
 from __future__ import annotations
 
 import re
+import plistlib
 import sys
 import unittest
 from pathlib import Path
@@ -29,7 +30,7 @@ def _resources_dir() -> Path:
 if str(_resources_dir()) not in sys.path:
     sys.path.insert(0, str(_resources_dir()))
 
-from tool_catalog import active_entries
+from tool_catalog import active_entries, app_only_entries, model_entries
 
 
 def _active_tool_names() -> set[str]:
@@ -50,6 +51,19 @@ def _read_readme_command_set_section(readme_text: str) -> str:
 
 
 class DocsSurfaceSyncTests(unittest.TestCase):
+    @staticmethod
+    def _plugin_version() -> str:
+        path = (
+            _repo_root()
+            / "src"
+            / "glyphs-mcp"
+            / "Glyphs MCP.glyphsPlugin"
+            / "Contents"
+            / "Info.plist"
+        )
+        with path.open("rb") as handle:
+            return str(plistlib.load(handle)["CFBundleShortVersionString"])
+
     def test_current_user_guidance_has_no_obsolete_tool_profiles(self) -> None:
         current_surfaces = (
             _repo_root() / "website" / "src" / "components" / "HomepageFeatures" / "index.tsx",
@@ -83,6 +97,8 @@ class DocsSurfaceSyncTests(unittest.TestCase):
 
         missing = sorted([name for name in tool_names if name not in text])
         self.assertEqual(missing, [], f"command-set.mdx is missing tool names: {missing}")
+        version_series = ".".join(self._plugin_version().split(".")[:2])
+        self.assertIn("Glyphs MCP {} uses".format(version_series), text)
 
     def test_readme_command_set_mentions_all_tools(self) -> None:
         readme = _repo_root() / "README.md"
@@ -90,9 +106,11 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         readme_text = readme.read_text(encoding="utf-8", errors="replace")
         section = _read_readme_command_set_section(readme_text)
 
-        self.assertIn("85 active tools", section)
-        self.assertIn("74 are model-visible", section)
-        self.assertIn("11 are app-only", section)
+        self.assertIn("MCP server v{}".format(self._plugin_version()), readme_text)
+        self.assertIn("version `{}`".format(self._plugin_version()), section)
+        self.assertIn("{} active tools".format(len(active_entries())), section)
+        self.assertIn("{} are model-visible".format(len(model_entries())), section)
+        self.assertIn("{} are app-only".format(len(app_only_entries())), section)
         self.assertIn("authoritative list", section)
         self.assertNotIn("| Tool |", section)
 

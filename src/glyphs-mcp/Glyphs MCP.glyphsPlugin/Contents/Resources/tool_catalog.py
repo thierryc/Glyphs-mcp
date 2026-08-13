@@ -129,6 +129,8 @@ _ENTRIES = [
     _entry("set_icon_grid_horizontal_center", "Dry-run or store one explicit fixed IconGrid x-coordinate on a layer; never edits artwork or saves.", "litsquare", "edit", output_schema="litsquare"),
     _entry("reset_icon_grid_horizontal_center", "Dry-run or remove only one layer's namespaced IconGrid center policy while preserving unrelated data.", "litsquare", "edit", output_schema="litsquare"),
     _entry("get_glyph_paths", "Read editable path data for one glyph and master in a bounded round-trip-safe format.", "outlines"),
+    _entry("review_start_node_alignment", "Review one semantic start-node landmark as a joint cyclic phase across explicit compatible masters.", "outlines", output_schema="outline"),
+    _entry("apply_start_node_alignment", "Dry-run or atomically apply one fingerprint-bound joint start-node alignment after confirmation; never saves.", "outlines", "edit", output_schema="outline"),
     _entry("update_glyph_node_positions", "Dry-run or atomically update explicit node coordinates on one glyph layer using the font grid by default.", "outlines", "edit", output_schema="outline"),
     _entry("set_glyph_paths", "Replace paths on one explicit glyph layer after validation; preserves surrounding shapes and never saves.", "outlines", "edit"),
     _entry("get_glyph_components", "Inspect component identities, transforms, smart values, and target layers for one glyph.", "components"),

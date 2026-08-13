@@ -56,12 +56,14 @@ Use this skill for path editing, component or anchor work, selected-node workflo
    - `preview_compensated_tuning_candidate`
    - `set_outline_candidate_overlay`
    - `get_outline_candidate_state`
+   - `review_start_node_alignment`
+   - `apply_start_node_alignment`
    - `materialize_outline_candidate_session`
    - `review_outline_candidate_session`
    - `accept_outline_candidate_session`
    - `discard_outline_candidate_session`
    - `preview_compensated_tuning_candidate` only when that workflow is explicitly requested
-3. Use candidate sessions as the default outline-change workflow and require them for every multi-master or multi-glyph batch. For Tunni work, pass explicit master/path/curve-end targets to `preview_tunni_balance_candidate`; keep `grid_policy="font"` unless the user explicitly requests continuous coordinates. Direct `apply_tunni_balance` remains compatible for one explicit target only.
+3. Use candidate sessions for geometry-changing multi-master or multi-glyph batches. For start-node-only cyclic rotation, use the typed joint-alignment workflow below; never generate an `execute_code_with_context` rotation script. For Tunni work, pass explicit master/path/curve-end targets to `preview_tunni_balance_candidate`; keep `grid_policy="font"` unless the user explicitly requests continuous coordinates. Direct `apply_tunni_balance` remains compatible for one explicit target only.
 4. Enable native Edit View review with `set_curve_review_overlay(enabled=true, overlays=["curvature", "curve_events"])` after curve proposals and before mutation when visual judgment matters. Tell the user to inspect **View > Show Glyphs MCP Curvature** in Glyphs. Teal is positive signed curvature and pink is negative; curvature magnitude is placed along the path right normal, so correctly wound counters draw into their white interior. Event markers show extrema, inflections, cusps, and continuity warnings. Native comb defaults are 51 samples per cubic, a `0.010` scale, and a `0.12em` normal clamp at `0.65` alpha. Use the control result to confirm activation; the Reporter measures raw editable paths only.
 5. Review the difference-only Candidate Reporter before mutation. It leaves the normal Glyphs outline unobscured, draws only warm-yellow source/candidate difference regions, and turns those regions coral red when stale. If no manual edit is needed, call `review_outline_candidate_session`, dry-run acceptance, stop for approval, then confirm with the exact one-time token. If manual editing is wanted, dry-run and confirm `materialize_outline_candidate_session`, let the user edit the native layer, then re-review it. Never rely on LLM context to identify or delete candidate layers; use the persisted session metadata and `discard_outline_candidate_session`.
 6. Only use `execute_code_with_context` when the edit spans several glyph-scoped steps and the dedicated tools would be less reliable or less clear.
@@ -71,6 +73,43 @@ Use this skill for path editing, component or anchor work, selected-node workflo
    difference. Use the node-position tool's complete verified read-back;
    otherwise re-read the affected glyph or layer. Treat an unexpected
    difference as a failed mutation even when the tool otherwise reports success.
+
+## Start-node alignment
+
+Treat start-node placement across any number of compatible masters as one joint
+cyclic-alignment task.
+
+1. Process one corresponding closed-path set at a time. Never rotate open
+   paths. Snapshot each path's coordinates, node fields, contour direction,
+   path and shape order, open/closed state, and compatibility before planning.
+2. Establish one intended semantic landmark from an explicitly selected
+   on-curve node or an explicitly designated reference master with one
+   unambiguous on-curve landmark. Do not use `correctPathDirection()` as the
+   start-node oracle, and do not infer the landmark from `nodes[0]` or
+   `findStartNode()` alone.
+3. In every master, generate landmark candidates independently from geometric
+   meaning: extremum or corner class, normalized position, neighboring
+   segments, tangents, and curvature. Raw node indices and absolute coordinates
+   are not matching evidence.
+4. Resolve those candidates jointly. Anchor the canonical cyclic node-type
+   sequence to the intended landmark in the selected node or reference master.
+   Consider only rotations that preserve that complete sequence across every
+   compatible master, and choose one shared topology phase. Never accept
+   independent choices that produce different phases.
+5. Require exactly one unambiguous matching candidate in every master. Stop for
+   manual review if any master has no match, multiple matches, incompatible
+   topology, or a conflicting semantic result.
+6. Call `review_start_node_alignment` with the selected reference master, path,
+   node, and every explicit target master. Stop on any reported missing,
+   ambiguous, incompatible, or conflicting landmark. Retain the exact
+   `planFingerprint`.
+7. Call `apply_start_node_alignment` with `dry_run=true` and that fingerprint.
+   Stop if the live snapshot is stale. Present the exact joint rotation plan
+   and obtain explicit approval before mutation, then repeat the same call with
+   `confirm=true`. Never substitute generated code for either typed call.
+8. Re-read every affected master. Verify that coordinates, all node fields,
+   contour direction, path and shape order, open paths, and compatibility
+   remain unchanged, then report the resulting start in every master.
 
 ## Curve geometry workflow
 

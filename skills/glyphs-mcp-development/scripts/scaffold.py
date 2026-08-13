@@ -21,6 +21,12 @@ SKILL_ROOT = Path(__file__).resolve().parents[1]
 ASSETS_ROOT = SKILL_ROOT / "assets"
 TEMPLATES_ROOT = ASSETS_ROOT / "templates"
 PLACEHOLDER_RE = re.compile(r"____[A-Za-z][A-Za-z0-9]*____")
+_BUNDLED_DOCUMENTATION_RELATIVE = Path("Contents/Resources/MCP Documentation")
+_RELEASE_MANAGED_PLIST_PLACEHOLDER_KEYS = {
+    "UpdateFeedURL",
+    "productPageURL",
+    "productReleaseNotes",
+}
 CLASS_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 BUNDLE_VERSION_RE = re.compile(r"^\d+(?:\.\d+)?$")
 
@@ -308,6 +314,35 @@ def _unresolved_placeholders(root: Path) -> list[str]:
     return unresolved
 
 
+def _is_bundled_documentation(path: Path, bundle: Path) -> bool:
+    try:
+        relative = path.relative_to(bundle)
+    except ValueError:
+        return False
+    documentation_parts = _BUNDLED_DOCUMENTATION_RELATIVE.parts
+    return relative.parts[: len(documentation_parts)] == documentation_parts
+
+
+def _plugin_unresolved_placeholders(bundle: Path, plist_path: Path, plist: dict[str, Any]) -> list[str]:
+    unresolved = []
+    for value in _unresolved_placeholders(bundle):
+        path = Path(value)
+        if _is_bundled_documentation(path, bundle):
+            continue
+        if path == plist_path:
+            unexpected_keys = sorted(
+                str(key)
+                for key, item in plist.items()
+                if key not in _RELEASE_MANAGED_PLIST_PLACEHOLDER_KEYS
+                and PLACEHOLDER_RE.search(str(item))
+            )
+            if unexpected_keys:
+                unresolved.append("{} ({})".format(path, ", ".join(unexpected_keys)))
+            continue
+        unresolved.append(value)
+    return unresolved
+
+
 def _validate_script(path: Path, target: str) -> dict[str, Any]:
     ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     text = path.read_text(encoding="utf-8")
@@ -347,21 +382,40 @@ def _validate_plugin(bundle: Path, target: str) -> dict[str, Any]:
     except plistlib.InvalidFileException as exc:
         raise ScaffoldError(f"Invalid Info.plist: {exc}") from exc
     principal = plist.get("NSPrincipalClass")
+    if principal is not None:
+        principals = [principal]
+    else:
+        principals = plist.get("Principal Classes")
+        if not isinstance(principals, list) or not principals:
+            raise ScaffoldError(
+                "Info.plist must declare NSPrincipalClass or a nonempty Principal Classes list."
+            )
+    if any(not isinstance(item, str) or not item for item in principals):
+        raise ScaffoldError("Every declared principal class must be a nonempty string.")
+    if len(principals) != len(set(principals)):
+        raise ScaffoldError("Declared principal classes must be unique.")
     classes = _python_classes(source_path)
-    if principal not in classes:
+    missing_principals = [item for item in principals if item not in classes]
+    if missing_principals:
         raise ScaffoldError(
-            f"NSPrincipalClass {principal!r} does not match a class in plugin.py."
+            "Principal class(es) {} do not match classes in plugin.py.".format(
+                ", ".join(repr(item) for item in missing_principals)
+            )
         )
     if not plist.get("CFBundleIdentifier") or not plist.get("CFBundleName"):
         raise ScaffoldError("Info.plist is missing bundle identity metadata.")
     if not os.access(loader_path, os.X_OK):
         raise ScaffoldError("Bundled SDK plug-in loader is not executable.")
 
-    unresolved = _unresolved_placeholders(bundle)
+    unresolved = _plugin_unresolved_placeholders(bundle, plist_path, plist)
     if unresolved:
         raise ScaffoldError("Unresolved placeholders: " + ", ".join(unresolved))
 
-    python_files = sorted(bundle.rglob("*.py"))
+    python_files = [
+        path
+        for path in sorted(bundle.rglob("*.py"))
+        if not _is_bundled_documentation(path, bundle)
+    ]
     for python_file in python_files:
         ast.parse(python_file.read_text(encoding="utf-8"), filename=str(python_file))
 
@@ -371,6 +425,7 @@ def _validate_plugin(bundle: Path, target: str) -> dict[str, Any]:
         "kind": kind,
         "baseClass": spec["base"],
         "principalClass": principal,
+        "principalClasses": principals,
         "target": target,
         "checks": [
             "bundle-suffix",

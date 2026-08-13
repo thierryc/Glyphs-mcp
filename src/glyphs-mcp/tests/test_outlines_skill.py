@@ -1,4 +1,4 @@
-"""Contract tests for curve-geometry discovery in the outline skill."""
+"""Contract tests for the canonical outline skill."""
 
 from __future__ import annotations
 
@@ -45,6 +45,58 @@ class OutlinesSkillTests(unittest.TestCase):
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, text)
+
+    def test_skill_contains_joint_start_node_alignment_contract(self) -> None:
+        text = CANONICAL.read_text(encoding="utf-8")
+        self.assertEqual(text.count("## Start-node alignment"), 1)
+        section = text.split("## Start-node alignment", 1)[1].split("\n## ", 1)[0]
+        normalized = " ".join(section.split())
+
+        required_phrases = (
+            "one joint cyclic-alignment task",
+            "one corresponding closed-path set at a time",
+            "Never rotate open paths",
+            "explicitly selected on-curve node",
+            "explicitly designated reference master",
+            "Do not use `correctPathDirection()` as the start-node oracle",
+            "extremum or corner class",
+            "normalized position",
+            "neighboring segments",
+            "tangents, and curvature",
+            "Raw node indices and absolute coordinates are not matching evidence",
+            "canonical cyclic node-type sequence",
+            "choose one shared topology phase",
+            "exactly one unambiguous matching candidate in every master",
+            "no match, multiple matches, incompatible topology, or a conflicting semantic result",
+            "obtain explicit approval before mutation",
+            "Stop if the live snapshot is stale",
+            "coordinates, all node fields, contour direction, path and shape order, open paths, and compatibility remain unchanged",
+            "report the resulting start in every master",
+            "Call `review_start_node_alignment`",
+            "Call `apply_start_node_alignment` with `dry_run=true`",
+            "Retain the exact `planFingerprint`",
+            "Never substitute generated code",
+        )
+        for phrase in required_phrases:
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, normalized)
+
+        self.assertEqual(section.count("correctPathDirection()"), 1)
+        for obsolete_phrase in (
+            "run `correctPathDirection()` on a detached copy",
+            "oracle-selected start node",
+            "rerun the detached oracle",
+            "resolve every master independently",
+        ):
+            with self.subTest(obsolete_phrase=obsolete_phrase):
+                self.assertNotIn(obsolete_phrase, normalized)
+
+        self.assertNotIn("execute_code_with_context", normalized)
+        workflow = " ".join(text.split())
+        self.assertIn(
+            "use the typed joint-alignment workflow below",
+            workflow,
+        )
 
     def test_packaged_skill_matches_canonical(self) -> None:
         self.assertEqual(

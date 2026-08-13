@@ -29,6 +29,7 @@ AUDITED_EDIT_SAVE_TOOLS = {
     "apply_feedback_plan",
     "apply_kerning_bumper",
     "apply_spacing",
+    "apply_start_node_alignment",
     "apply_tunni_balance",
     "apply_unicode_assignments",
     "clear_glyph_annotations",
@@ -69,11 +70,14 @@ _TARGET_ARGUMENTS = {
     "master_ids": "masterIds",
     "node_indices": "nodeIndices",
     "path_index": "pathIndex",
+    "reference_master_id": "referenceMasterId",
+    "reference_node_index": "referenceNodeIndex",
     "right": "right",
     "session_id": "candidateSessionId",
     "source_glyph": "sourceGlyph",
     "scope": "scope",
     "target_glyph": "targetGlyph",
+    "target_master_ids": "targetMasterIds",
 }
 _PAYLOAD_TARGET_KEYS = set(_TARGET_ARGUMENTS.values()) | {
     "familyName",

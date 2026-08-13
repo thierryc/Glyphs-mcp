@@ -1,5 +1,55 @@
 # Changelog
 
+## 1.10.0 — LitSquare metadata and semantic start nodes
+
+_August 13, 2026_
+
+Glyphs MCP 1.10.0 adds a native LitSquare metadata surface, explicit IconGrid
+centering policy, and guarded joint start-node alignment across compatible
+masters. The catalog contains 87 active tools: 76 model-visible and 11
+app-only.
+
+### Semantic start-node alignment
+
+- `review_start_node_alignment` treats one explicitly selected on-curve
+  landmark across compatible masters as a joint cyclic-phase problem. The pure
+  engine uses normalized semantic evidence and complete cyclic node-type
+  sequences; missing, ambiguous, conflicting, open, or incompatible paths stop
+  for manual review.
+- `apply_start_node_alignment` requires the exact reviewed fingerprint and
+  exactly one literal-boolean dry-run or confirmation mode. Confirmed changes
+  rotate only closed paths with Glyphs' native `makeNodeFirst()`, verify the
+  complete affected layers, roll back every master on failure, and never save.
+
+### LitSquare metadata and IconGrid centering
+
+- Four typed tools read and merge-patch native `com.litsquare` metadata and
+  read or atomically set `com.litsquare.role` path attributes.
+- Three typed tools read, set, or reset one fixed horizontal center under the
+  versioned `com.litsquare.icongrid` layer root. The policy stays independent
+  from path roles and artwork geometry.
+- The Metadata Inspector adds editable Font/Glyph/Layer JSON,
+  multi-selection replacement, and explicit path-role editing. Invalid JSON
+  remains visible without mutation; valid writes preserve unrelated data,
+  register Undo, redraw, publish change notifications, and never save.
+- The new `glyphs-mcp-litsquare-metadata` skill documents the storage,
+  selection, dry-run, confirmation, and verification contracts. The shared
+  package now contains 10 synchronized skills.
+
+### Candidate and development safeguards
+
+- Italic candidates compare complete topology with bounded first-difference
+  diagnostics and align anchors by unique names instead of relying on native
+  collection order. Path, node, component, shape-order, anchor, and protected
+  metadata changes remain blocked.
+- Plug-in scaffolding validates either `NSPrincipalClass` or a unique
+  `Principal Classes` list, permits only the release-managed plist
+  placeholders, and excludes bundled documentation from executable Python
+  validation.
+- Catalog documentation now derives its displayed release series and exact
+  version from the canonical plug-in plist, preventing generated 1.9 labels
+  from surviving a future coordinated version bump.
+
 ## 1.9.0 — One-document MCP change overview
 
 _August 11, 2026_
@@ -48,9 +98,8 @@ run. It does not edit, save, snapshot, or semantically diff the font.
   summaries for review-relevant events. Generic code is always opaque and its
   source is never retained.
 - `get_document_change_overview` adds a versioned structured result and concise
-  text fallback under the new `document-audit` category. Together with the
-  LitSquare metadata and IconGrid centering surface, the catalog now has 85
-  active tools: 74 model-visible and 11 app-only.
+  text fallback under the new `document-audit` category. The catalog contains
+  78 active tools: 67 model-visible and 11 app-only.
 - Read-only, UI-only, export, preview, dry-run, and unconfirmed planning calls
   are excluded. Results that prove no mutation started are also omitted, while
   failures that may follow a partial mutation, unattributed generic code, and
@@ -66,21 +115,6 @@ run. It does not edit, save, snapshot, or semantically diff the font.
   tracked document as wrappers and indices change. The audit also omits proved
   precondition failures while retaining failures that entered a change batch
   and rolled back.
-
-### LitSquare semantic metadata and IconGrid centering
-
-- Adds typed read, merge-patch, selected-role, and atomic path-role tools for
-  native `com.litsquare` metadata and `com.litsquare.role` path attributes.
-- Extends the Metadata Inspector with editable Font/Glyph/Layer JSON and
-  explicit path-role editing while keeping IconGrid policy out of path semantics.
-- Adds `get_icon_grid_horizontal_center`,
-  `set_icon_grid_horizontal_center`, and
-  `reset_icon_grid_horizontal_center` for guarded fixed per-layer centering,
-  including advance and layer-content candidates.
-- Stores one finite coordinate under the versioned
-  `com.litsquare.icongrid` layer root, independently from path roles, rejects
-  stale or future-schema writes, preserves unrelated metadata, registers Undo,
-  redraws, publishes change notifications, and never saves automatically.
 
 See [ROADMAP.md](ROADMAP.md) for the value/complexity-ranked work that follows;
 entries after the 1.9 milestone are directional rather than release commitments.

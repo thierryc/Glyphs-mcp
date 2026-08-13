@@ -18,9 +18,9 @@ inside Glyphs. The native panel remains usable while the server is stopped.
 
 | Rank | Addition | Value | Relative complexity | Dependencies | Status |
 | ---: | --- | --- | --- | --- | --- |
-| 1 | Consistent mutation summaries | Very high | Low | Authoritative tool catalog; common result observer; bounded redaction and outcome rules | Implemented for 1.9.0 (unreleased) |
-| 2 | One-document change ledger | Very high | Low–medium | Consistent mutation summaries; stable live-document identity; document-close callback | Implemented for 1.9.0 (unreleased) |
-| 3 | Exportable work overview | High | Low | One-document ledger; structured result schema; bounded Markdown rendering | Implemented for 1.9.0 (unreleased) |
+| 1 | Consistent mutation summaries | Very high | Low | Authoritative tool catalog; common result observer; bounded redaction and outcome rules | Released in 1.9.0 |
+| 2 | One-document change ledger | Very high | Low–medium | Consistent mutation summaries; stable live-document identity; document-close callback | Released in 1.9.0 |
+| 3 | Exportable work overview | High | Low | One-document ledger; structured result schema; bounded Markdown rendering | Released in 1.9.0 |
 | 4 | Read-only hinting overview | High | Medium | Source hint/custom-parameter inventory; normalized PS and TT terminology | Directional |
 | 5 | Hinting configuration linter | High | Medium | Read-only hinting overview; versioned rules and explicit severity model | Directional |
 | 6 | Basic comparison of two open fonts | High | Medium | Stable document targeting; normalized high-level font, master, instance, glyph, feature, spacing, and kerning summaries | Directional |

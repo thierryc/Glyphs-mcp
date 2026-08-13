@@ -74,5 +74,13 @@
     "followups": ["update_glyph_node_positions", "update_glyph_node_positions"],
     "modes": ["review", "dry_run", "confirmed"],
     "forbidden": ["set_glyph_paths", "execute_code"]
+  },
+  {
+    "intent": "Align one semantic start-node landmark across compatible masters",
+    "surface": "model",
+    "primary": "review_start_node_alignment",
+    "followups": ["apply_start_node_alignment", "apply_start_node_alignment"],
+    "modes": ["review", "dry_run", "confirmed"],
+    "forbidden": ["execute_code", "execute_code_with_context", "set_glyph_paths"]
   }
 ]

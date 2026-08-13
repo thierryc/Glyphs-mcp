@@ -9,21 +9,14 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-## What's new in 1.9.0 (unreleased)
+## What's new in 1.10.0 (release candidate)
 
-**A native, one-document overview of work performed through MCP.**
+**Typed LitSquare metadata and guarded start-node alignment.**
 
-- **Edit → Glyphs MCP Changes…** opens a native utility panel showing the
-  current run's attributable MCP edits, saves, failures, uncertain generic-code
-  calls, bounded targets, warnings, and aggregate counts for one live font.
-- `get_document_change_overview` returns the same versioned, read-only record
-  to agents and MCP Apps, with a concise text fallback for other clients.
-- All active edit and save tools pass through a fail-open audit adapter. The
-  ledger is memory-only, keeps at most 256 recent events, never stores code or
-  unrestricted outline arguments, and never modifies or saves a font.
-- Copy Summary exports bounded Markdown; Open Target navigates to captured
-  glyphs; Reset clears only the ledger. Tracking ends when the document closes
-  or Glyphs quits, while the panel remains viewable when the server is stopped.
+- `review_start_node_alignment` and `apply_start_node_alignment` resolve one
+  explicitly selected semantic landmark across compatible masters, require an
+  exact plan fingerprint, rotate only closed paths, verify complete affected
+  layers, roll back on failure, and never save.
 - **Glyphs MCP Metadata Inspector** adds a document-bound Palette with editable
   Font/Glyph/Layer LitSquare JSON, multi-selection replacement, and a compact
   JSON Paths editor. Valid changes commit on focus loss; invalid JSON stays
@@ -32,7 +25,10 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 - The `glyphs-mcp-litsquare-metadata` skill keeps universal
   `com.litsquare.role` semantics separate from the layer opt-in at
   `com.litsquare.icongrid`. LitSquare and IconGrid writes never save.
-- The server exposes 85 active tools: 74 model-visible and 11 app-only.
+- Italic candidates now report the first bounded topology mismatch and match
+  anchors by unique names, so native collection reordering does not create a
+  false topology failure.
+- The server exposes 87 active tools: 76 model-visible and 11 app-only.
 
 [Read the 1.9 roadmap →](ROADMAP.md) ·
 [Read the changelog →](CHANGELOG.md) ·
@@ -113,9 +109,9 @@ Glyphs 3 backward compatibility is maintained for the shared MCP server code whe
 
 ## Optional agent plugins
 
-Glyphs MCP 1.9.0 provides one shared plugin package for Codex/ChatGPT, Claude
+Glyphs MCP 1.10.0 provides one shared plugin package for Codex/ChatGPT, Claude
 Code, Cursor, and GitHub Copilot CLI. Every host gets its own native manifest,
-but all four load the same nine skills and the same local MCP connection:
+but all four load the same 10 skills and the same local MCP connection:
 
 ```text
 http://127.0.0.1:9680/mcp/
@@ -143,7 +139,7 @@ installers do not install, update, or remove these agent plugins; each host owns
 that lifecycle. The repository also does not enable GitHub Copilot plugins
 through `.github/copilot/settings.json`.
 
-All host manifests use version `1.9.0`. Skills inherit that package version,
+All host manifests use version `1.10.0`. Skills inherit that package version,
 while the running MCP server reports the matching native Glyphs MCP version.
 See [Use agent skills and optional plugins](content/getting-started/use-agent-skills.mdx)
 for install, update, removal, fallback, and host-specific invocation details.
@@ -154,7 +150,7 @@ and structured-result fallbacks.
 
 ## Repo skills for Codex, Claude Code, Cursor, and GitHub Copilot
 
-This repo ships nine workflow skills in `skills/` for common Glyphs MCP tasks.
+This repo ships 10 workflow skills in `skills/` for common Glyphs MCP tasks.
 The same source of truth is exposed through client-specific discovery paths:
 
 - Codex, Cursor, and GitHub Copilot CLI read them through `.agents/skills`
@@ -236,16 +232,16 @@ A *Model Context Protocol* server is a lightweight process that:
 
 ---
 
-## Command Set (MCP server v1.9.0)
+## Command Set (MCP server v1.10.0)
 
-Glyphs MCP exposes **85 active tools** through one catalog-driven surface:
-**74 are model-visible** and **11 are app-only**. Every tool has a concise
+Glyphs MCP exposes **87 active tools** through one catalog-driven surface:
+**76 are model-visible** and **11 are app-only**. Every tool has a concise
 title and description, four MCP safety hints, a category, visibility, effect
 class, lifecycle state, and optional structured-output schema.
 
 The generated [command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set)
 is the authoritative list. README intentionally does not duplicate the full
-table. This catalog is shipped in this repo (version `1.9.0`). Typical
+table. This catalog is shipped in this repo (version `1.10.0`). Typical
 workflows begin with `list_open_fonts`, resolve explicit glyph
 and master targets, review or preview a detached candidate, dry-run changes,
 and ask for approval before confirmation. No edit tool saves implicitly.
@@ -425,7 +421,7 @@ git switch -c lit/release-X.Y.Z
 python3 scripts/bump_version.py --dry-run X.Y.Z
 python3 scripts/bump_version.py X.Y.Z
 
-# 2) Synchronize and verify the shared nine-skill agent package
+# 2) Synchronize and verify the shared 10-skill agent package
 ./scripts/sync_codex_plugin_skills.sh
 ./scripts/sync_codex_plugin_skills.sh --check
 

@@ -86,6 +86,37 @@ class ToolResultSchemaTests(unittest.TestCase):
         validate(result.structured_content, self.module.schema_for("outline"))
         self.assertTrue(result.structured_content["data"]["verification"]["succeeded"])
 
+    def test_start_node_alignment_preserves_text_and_outline_modes(self) -> None:
+        raw = json.dumps(
+            {
+                "ok": True,
+                "target": {"glyphName": "A", "targetMasterIds": ["M1", "M2"]},
+                "summary": {"rotationCount": 1},
+                "planFingerprint": "abc123",
+                "fontChanged": False,
+                "fontSaved": False,
+            }
+        )
+        review = self.module.workflow_tool_result("review_start_node_alignment", "read", raw, {})
+        dry_run = self.module.workflow_tool_result(
+            "apply_start_node_alignment",
+            "edit",
+            raw,
+            {"dry_run": True, "confirm": False},
+        )
+        confirmed = self.module.workflow_tool_result(
+            "apply_start_node_alignment",
+            "edit",
+            raw,
+            {"dry_run": False, "confirm": True},
+        )
+
+        self._assert_envelope(review, mode="review", status="success", ok=True)
+        self._assert_envelope(dry_run, mode="dry_run", status="success", ok=True)
+        self._assert_envelope(confirmed, mode="confirmed", status="success", ok=True)
+        self.assertEqual(self._text(review), raw)
+        validate(review.structured_content, self.module.schema_for("outline"))
+
     def test_litsquare_schema_accepts_direct_scopes_and_confirmed_write_fields(self) -> None:
         scope = {
             "state": "valid",

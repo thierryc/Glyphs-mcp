@@ -142,6 +142,90 @@ class DevelopmentSkillTests(unittest.TestCase):
             self.assertFalse((resources / "IBdialog.nib").exists())
             self.assertIn("from vanilla import", (resources / "plugin.py").read_text(encoding="utf-8"))
 
+    def test_validator_accepts_unique_multi_principal_plugin_bundles(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="glyphs-development-multi-principal.") as tmp:
+            code, payload = self._run(
+                [
+                    "create",
+                    "general",
+                    "--name",
+                    "Multi Principal",
+                    "--class-name",
+                    "PrimaryPlugin",
+                    "--developer",
+                    "Glyphs MCP Test",
+                    "--destination",
+                    tmp,
+                ]
+            )
+            self.assertEqual(code, 0, payload)
+            bundle = Path(payload["artifact"])
+            source = bundle / "Contents" / "Resources" / "plugin.py"
+            source.write_text(
+                source.read_text(encoding="utf-8")
+                + "\n\nclass SecondaryReporter(object):\n    pass\n",
+                encoding="utf-8",
+            )
+            plist_path = bundle / "Contents" / "Info.plist"
+            plist = plistlib.loads(plist_path.read_bytes())
+            del plist["NSPrincipalClass"]
+            plist["Principal Classes"] = ["PrimaryPlugin", "SecondaryReporter"]
+            plist_path.write_bytes(plistlib.dumps(plist, sort_keys=False))
+
+            validate_code, validated = self._run(
+                ["validate", str(bundle), "--target", "both"]
+            )
+
+            self.assertEqual(validate_code, 0, validated)
+            self.assertIsNone(validated["principalClass"])
+            self.assertEqual(
+                validated["principalClasses"],
+                ["PrimaryPlugin", "SecondaryReporter"],
+            )
+
+    def test_validator_scopes_placeholders_and_syntax_to_runtime_files(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="glyphs-development-validation-scope.") as tmp:
+            code, payload = self._run(
+                [
+                    "create",
+                    "general",
+                    "--name",
+                    "Validation Scope",
+                    "--class-name",
+                    "ValidationScopePlugin",
+                    "--developer",
+                    "Glyphs MCP Test",
+                    "--destination",
+                    tmp,
+                ]
+            )
+            self.assertEqual(code, 0, payload)
+            bundle = Path(payload["artifact"])
+            docs = bundle / "Contents" / "Resources" / "MCP Documentation" / "docs"
+            docs.mkdir(parents=True)
+            (docs / "template.py").write_text("____TemplateClass____ = (\n", encoding="utf-8")
+            plist_path = bundle / "Contents" / "Info.plist"
+            plist = plistlib.loads(plist_path.read_bytes())
+            plist["UpdateFeedURL"] = "____OnlineUrlToThisPlist____"
+            plist["productPageURL"] = "____ProductPageURL____"
+            plist_path.write_bytes(plistlib.dumps(plist, sort_keys=False))
+
+            validate_code, validated = self._run(
+                ["validate", str(bundle), "--target", "both"]
+            )
+            self.assertEqual(validate_code, 0, validated)
+
+            source = bundle / "Contents" / "Resources" / "plugin.py"
+            source.write_text(
+                source.read_text(encoding="utf-8") + "\n____RuntimePlaceholder____ = 1\n",
+                encoding="utf-8",
+            )
+            validate_code, invalid = self._run(
+                ["validate", str(bundle), "--target", "both"]
+            )
+            self.assertEqual(validate_code, 2)
+            self.assertIn("Unresolved placeholders", invalid["error"])
+
     def test_live_glyphs_destination_requires_explicit_override(self) -> None:
         live = (
             Path.home()

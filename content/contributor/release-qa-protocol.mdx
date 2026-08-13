@@ -49,7 +49,7 @@ the complete release gate.
 
 The automated gate must prove:
 
-- `TOOL_CATALOG` contains 78 active entries: 67 `model+app` and 11
+- `TOOL_CATALOG` contains 87 active entries: 76 `model+app` and 11
   `app-only`, plus exactly eight unregistered tombstones.
 - Every registered tool has one catalog entry, all four MCP safety hints,
   concise metadata, a release classification, and a valid output schema.
@@ -80,8 +80,8 @@ changes discarded and verify the source fixture stayed byte-identical.
 | --- | --- | --- |
 | S1 | Start, stop, then start the server three times. | Every fresh client initializes; no stale event-loop state or duplicate thread remains. |
 | S2 | Call `get_server_info`, `list_open_fonts`, and `get_selected_font_and_master`. | Correct host/runtime/selection data; no mutation. |
-| S3 | Inspect raw `tools/list`. | Exactly 78 active tools register with catalog title, description, tags, annotations, metadata, and schemas. |
-| S4 | Inspect a client honoring Apps visibility. | 67 tools are model-visible; 11 UI wrappers remain app-only. |
+| S3 | Inspect raw `tools/list`. | Exactly the active tools in the generated command set register with catalog title, description, tags, annotations, metadata, and schemas. |
+| S4 | Inspect a client honoring Apps visibility. | Exactly the generated model-visible set remains routable; the generated app-only set remains hidden. |
 | S5 | Search for all eight tombstone names. | None registers; command reference gives one replacement for each. |
 | S6 | Reconnect after a plug-in restart. | Client receives the same catalog and no cached removed command. |
 
@@ -108,7 +108,7 @@ mismatch checks.
 ## Structured-result contract
 
 For the document audit and representative outline, candidate, curve, spacing,
-and kerning calls, inspect both MCP content channels.
+kerning, and LitSquare calls, inspect both MCP content channels.
 
 | ID | Case | Expected |
 | --- | --- | --- |
@@ -131,6 +131,22 @@ shape order, anchors, width, and save state before each row.
 | NP4 | Change one expected source coordinate or lock one path before confirmation. | Stable stale/locked rejection occurs before `beginChanges()` and no node changes. |
 | NP5 | Request `grid_policy="continuous"` in a fixture that normalizes coordinates. | Read-back mismatch returns `continuous_coordinate_not_preserved` and restores every original field. |
 | NP6 | Inject write, read-back, and `endChanges()` failures. | Complete rollback is verified and the document-audit result stays bounded. |
+
+## Start-node alignment
+
+Use one disposable multi-master glyph with corresponding closed paths, plus
+open, ambiguous, stale, and incompatible fixtures. Record complete layer and
+file signatures before each row.
+
+| ID | Action | Expected |
+| --- | --- | --- |
+| SN1 | Select one on-curve landmark in the reference master and call `review_start_node_alignment` for every explicit compatible master. | One bounded joint plan and fingerprint are returned; no layer or file state changes. |
+| SN2 | Repeat with an unselected/off-curve reference, an open path, ambiguous geometry, and incompatible node types. | Stable manual-review or validation errors; no change batch starts. |
+| SN3 | Dry-run `apply_start_node_alignment` with the exact fingerprint. | Every proposed rotation is reported and the complete source state remains unchanged. |
+| SN4 | Change any fingerprinted source field before confirmation. | `stale_plan` is returned before mutation. |
+| SN5 | Confirm one current plan. | Only the intended closed-path node order rotates; coordinates, node fields, contour direction, path/shape order, components, anchors, metadata, compatibility, and save state remain unchanged. |
+| SN6 | Pass string or numeric values for `dry_run` or `confirm`. | Literal-boolean validation rejects the request before mutation. |
+| SN7 | Inject `makeNodeFirst()`, read-back, and `endChanges()` failures. | Every affected master rolls back or reports an explicit rollback failure; no save occurs. |
 
 ## Adaptive curve diagnostics
 
@@ -205,7 +221,7 @@ candidates, tangent/imbalance boundaries, and continuous opt-in.
   restrictions, and loopback-only binding.
 - Install/upgrade both Glyphs targets with the release installer. Confirm
   canonical and Plugin Manager runtimes, four host manifests, packaged skills,
-  and build number agree. Each host resolves version `1.9.0`, the same nine
+  and build number agree. Each host resolves version `1.10.0`, the same 10
   skills, and the same localhost MCP endpoint (the version script updates this
   sentence for the candidate).
 - Exercise update discovery and **Prepare Update** only with signed disposable
@@ -269,6 +285,8 @@ before confirmation.
 | --- | --- | --- | --- |
 | Startup/catalog | | | |
 | Structured results | | | |
+| Start-node alignment | | | |
+| LitSquare/IconGrid | | | |
 | Adaptive curves/Reporter | | | |
 | Candidate lifecycle | | | |
 | Spacing/kerning | | | |

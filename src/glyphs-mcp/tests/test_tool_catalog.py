@@ -35,9 +35,9 @@ class ToolCatalogTests(unittest.TestCase):
         cls.schemas = _load("tool_result_schemas")
 
     def test_exact_active_model_app_and_removed_counts(self) -> None:
-        self.assertEqual(len(self.catalog.TOOL_CATALOG), 93)
-        self.assertEqual(len(self.catalog.active_entries()), 85)
-        self.assertEqual(len(self.catalog.model_entries()), 74)
+        self.assertEqual(len(self.catalog.TOOL_CATALOG), 95)
+        self.assertEqual(len(self.catalog.active_entries()), 87)
+        self.assertEqual(len(self.catalog.model_entries()), 76)
         self.assertEqual(len(self.catalog.app_only_entries()), 11)
         self.assertEqual(
             {entry.name for entry in self.catalog.app_only_entries()},

@@ -364,6 +364,30 @@ TOOL_RELEASE_GATE = {
         "undoNote": "Reads path data only.",
         "smoke": "get_glyph_paths on M.",
     },
+    "review_start_node_alignment": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": (
+            "test_cyclic_path_alignment_engine.py",
+            "test_mcp_tools_start_node_alignment.py",
+            "live Glyphs 3.5 and Glyphs 4 smoke batch",
+        ),
+        "mutation": READ_ONLY,
+        "undoRisk": "none",
+        "undoNote": "Snapshots explicit compatible paths and computes one joint cyclic phase without mutation.",
+        "smoke": "Review one selected on-curve landmark across two disposable compatible masters and verify no state changed.",
+    },
+    "apply_start_node_alignment": {
+        "coverage": LIVE_SMOKE_REQUIRED,
+        "tests": (
+            "test_cyclic_path_alignment_engine.py",
+            "test_mcp_tools_start_node_alignment.py",
+            "live Glyphs 3.5 and Glyphs 4 smoke batch",
+        ),
+        "mutation": EDITS_FONT,
+        "undoRisk": "medium",
+        "undoNote": "Rotates existing closed-path node collections across explicit masters in one fingerprint-bound verified transaction with rollback.",
+        "smoke": "Dry-run one reviewed plan; confirm only on a disposable multi-master glyph, verify every invariant, then close without saving.",
+    },
     "update_glyph_node_positions": {
         "coverage": LIVE_SMOKE_REQUIRED,
         "tests": (
@@ -856,10 +880,10 @@ class ReleaseGateToolCoverageTests(unittest.TestCase):
         names = [record["name"] for record in records]
         app_only = {record["name"] for record in records if record["appOnly"]}
 
-        self.assertEqual(len(records), 85, "Tool-surface growth requires an explicit budget review.")
+        self.assertEqual(len(records), 87, "Tool-surface growth requires an explicit budget review.")
         self.assertEqual(len(set(names)), len(names), "MCP tool names must be unique.")
         self.assertEqual(app_only, {entry.name for entry in app_only_entries()})
-        self.assertEqual(len(records) - len(app_only), 74)
+        self.assertEqual(len(records) - len(app_only), 76)
 
         for record in records:
             with self.subTest(tool=record["name"]):

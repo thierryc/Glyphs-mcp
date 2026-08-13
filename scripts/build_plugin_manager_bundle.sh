@@ -205,6 +205,7 @@ for rel in \
   "Contents/Resources/document_change_audit.py" \
   "Contents/Resources/document_changes_panel.py" \
   "Contents/Resources/document_changes_panel_model.py" \
+  "Contents/Resources/cyclic_path_alignment_engine.py" \
   "Contents/Resources/glyphs_litsquare_adapter.py" \
   "Contents/Resources/glyphs_litsquare_palette.py" \
   "Contents/Resources/glyphs_icon_grid_adapter.py" \
@@ -214,6 +215,7 @@ for rel in \
   "Contents/Resources/mcp_tools_litsquare.py" \
   "Contents/Resources/mcp_tools_icon_grid.py" \
   "Contents/Resources/mcp_tools_node_positions.py" \
+  "Contents/Resources/mcp_tools_start_node_alignment.py" \
   "Contents/Resources/outline_node_patch_engine.py" \
   "Contents/Resources/outline_node_transaction.py"
 do
