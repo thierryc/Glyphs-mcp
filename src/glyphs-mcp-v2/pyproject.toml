@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "glyphs-mcp-v2"
+version = "2.0.0.dev1"
+description = "Typed Glyphs MCP 2.0 runtime foundation"
+requires-python = ">=3.11,<3.15"
+dependencies = [
+  "fastmcp==2.12.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["glyphs_mcp_v2*"]

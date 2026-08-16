@@ -21,6 +21,7 @@ Refer to `README.md` for the complete table of supported tools and descriptions.
 
 ## Repository Layout Highlights
 - `src/glyphs-mcp/` — MCP implementation, plugin bundle, and helper scripts.
+- `src/glyphs-mcp-v2/` — Isolated, unreleased 2.0 typed runtime foundation on `lit/v2`.
 - `Documentations/` — Generated ObjectWrapper docs that get copied into the plugin.
 - `glyphs-build-env/` — Optional local virtual environment for development tooling.
 - `README.md` — High-level overview, tool catalog, and IDE configuration snippets.
@@ -37,6 +38,18 @@ After regenerating ObjectWrapper documentation, update the bundled copy with:
 ```
 python src/glyphs-mcp/scripts/copy_documentation.py
 ```
+
+The v2 foundation remains separate from the installed 1.x plug-in. Run its
+tests through the repository suite and assemble its two deterministic payload
+layouts without installing them:
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 PYTHON_BIN=python3.12 ./scripts/run_python_tests.sh
+python3.12 scripts/build_v2_runtime_payload.py
+```
+
+Keep v2 environments and generated state inside `.venv-v2/`, `.cache/v2/`,
+`build/`, and `dist/` in this worktree.
 
 ## Security & Transport Notes
 - The server binds locally starting at port 9680; keep it on loopback during development.

@@ -1,0 +1,75 @@
+---
+title: Glyphs MCP 2.0 foundation
+description: Architecture, compatibility, and milestone record for the isolated 2.0 runtime.
+---
+
+# Glyphs MCP 2.0 foundation
+
+Glyphs MCP 2.0 is a contract and architecture reset. Its first implementation
+milestone proves a read-only path from MCP discovery through typed application
+services to immutable Glyphs 3.5/4 snapshots. It does not replace, load, or
+modify the installed 1.x plug-in.
+
+## Invariants
+
+- `/mcp/` remains the canonical local endpoint.
+- The server advertises API major 2 independently from its package version.
+- Structured content is normative; text is a concise human fallback.
+- `documentId` is the durable process-local font target. `legacyIndex` is
+  informational during migration and must not become a stored identity.
+- Contracts and application services never import GlyphsApp, AppKit,
+  Foundation, FastMCP, or Uvicorn.
+- The Glyphs adapter captures complete immutable values on the main thread;
+  native objects never cross into application or transport layers.
+- Public MCP registration derives only from the typed v2 catalog.
+- No v2 operation edits or saves a font until the transaction milestone lands.
+
+## First vertical slice
+
+The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
+
+- versioned result, warning, and error contracts;
+- stable document identity binding across fresh PyObjC proxies and first save;
+- immutable host and font snapshots;
+- a recoverable main-thread execution port;
+- Glyphs 3.5/4 collection fallbacks;
+- catalog-generated schemas and safety annotations;
+- `get_server_info` and `list_open_fonts` FastMCP registration;
+- restart-safe Streamable HTTP application construction;
+- deterministic source and Plugin Manager payload assembly.
+
+The payload builder writes to `build/v2-runtime/` by default and rejects any
+output path outside this worktree. It does not create a live Glyphs link.
+
+## Compatibility and migration
+
+The v2 runtime preserves sound capability names but does not claim exact 1.x
+wire compatibility. Migration will replace transient index targeting, legacy
+JSON result strings, inconsistent confirmation flags, and unstructured errors.
+Removed or redesigned capabilities receive documentation tombstones rather
+than ambiguous registered aliases.
+
+`lit/next-1.x` remains eligible for critical defects, security and packaging
+hardening, Glyphs host compatibility, pure font engines, deterministic
+fixtures, SDK documentation, and contract-neutral Reporter models. V2 request
+and result contracts, stable IDs, registration, application services, and
+breaking catalog changes do not flow back to 1.x.
+
+## Milestone order
+
+1. Read-only v2 spine: server identity, stable document listing, transport,
+   restart, containment, and assembly.
+2. Selection, master, glyph, outline, component, feature, and documentation
+   snapshots.
+3. Shared preview/apply transaction kernel with fingerprints, complete
+   read-back, rollback, and audit events.
+4. Curve, spacing, kerning, italic, and candidate workflows.
+5. Native Reporters, Palette, MCP Apps feedback, and privileged code/save/file
+   operations.
+6. Migration completeness, performance, installer integration, beta, and the
+   Glyphs 3.5/4 release-candidate matrix.
+
+Every milestone must pass focused tests, the complete Python suite, catalog
+and schema gates, deterministic payload assembly, and `git diff --check`.
+Live Glyphs checks use disposable fonts and remain separate from ordinary
+source implementation.

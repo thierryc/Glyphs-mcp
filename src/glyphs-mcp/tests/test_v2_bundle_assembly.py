@@ -1,0 +1,70 @@
+"""Deterministic, worktree-contained v2 runtime payload assembly tests."""
+
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+
+REPO = Path(__file__).resolve().parents[3]
+BUILDER = REPO / "scripts" / "build_v2_runtime_payload.py"
+PACKAGE_RELATIVE = Path("Glyphs MCP.glyphsPlugin/Contents/Resources/glyphs_mcp_v2")
+
+
+def _file_map(root: Path) -> dict[str, bytes]:
+    return {
+        path.relative_to(root).as_posix(): path.read_bytes()
+        for path in root.rglob("*")
+        if path.is_file()
+    }
+
+
+class V2BundleAssemblyTests(unittest.TestCase):
+    def test_builder_assembles_identical_payloads_inside_the_worktree(self) -> None:
+        temporary_root = REPO / ".tmp"
+        temporary_root.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="v2-payload-test-", dir=temporary_root) as tmp:
+            output = Path(tmp) / "payload"
+            env = os.environ.copy()
+            env["PYTHONDONTWRITEBYTECODE"] = "1"
+            result = subprocess.run(
+                [sys.executable, str(BUILDER), "--output-root", str(output)],
+                cwd=REPO,
+                env=env,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=30,
+            )
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+            source = output / "source" / PACKAGE_RELATIVE
+            plugin_manager = output / "plugin-manager" / PACKAGE_RELATIVE
+            self.assertEqual(_file_map(source), _file_map(plugin_manager))
+            self.assertNotIn("__pycache__", {part for path in source.rglob("*") for part in path.parts})
+
+            manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["fileCount"], len(_file_map(source)))
+            self.assertEqual(set(manifest["files"]), set(_file_map(source)))
+
+    def test_builder_rejects_output_outside_the_worktree(self) -> None:
+        result = subprocess.run(
+            [sys.executable, str(BUILDER), "--output-root", "/private/tmp/glyphs-mcp-v2-escape"],
+            cwd=REPO,
+            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=30,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must remain inside", result.stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()

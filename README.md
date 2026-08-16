@@ -33,6 +33,18 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 [Broad-Latin benchmark](content/contributor/italic-balanced-broad-latin-benchmark.md) ·
 [Full-resolution three-family sheet](content/contributor/images/italic-balanced-three-family-story.png)
 
+## Glyphs MCP 2.0 development
+
+The `lit/v2` branch contains an isolated, unreleased 2.0 runtime foundation at
+[`src/glyphs-mcp-v2`](src/glyphs-mcp-v2). Its first vertical slice exposes
+typed `get_server_info` and `list_open_fonts` application contracts with stable
+process-local document IDs, an explicit main-thread Glyphs adapter, and a
+catalog-driven FastMCP transport. It is not loaded by the installed 1.x
+plug-in, and its builder writes only to `build/v2-runtime/`.
+
+See the [2.0 foundation record](content/contributor/glyphs-mcp-2-foundation.mdx)
+for boundaries, migration policy, milestone order, and acceptance gates.
+
 ## macOS Installer app (recommended)
 
 The signed and notarized Installer app is the supported end-user path. It

@@ -12,6 +12,7 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 
 ## Repository Map
 - `src/glyphs-mcp/` — Core plugin code, MCP tool implementations, and build scripts.
+- `src/glyphs-mcp-v2/` — Isolated, unreleased 2.0 typed runtime foundation on `lit/v2`.
 - `Documentations/` — Generated docs copied into the plugin by `copy_documentation.py`.
 - `glyphs-build-env/` — Optional local virtual environment for development tooling.
 - `skills/` — Repo-owned Codex skills for repeatable Glyphs MCP workflows.
@@ -24,6 +25,10 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
   - `src/glyphs-mcp/scripts/install_deps_glyphs_python.sh` (Glyphs’ Python → installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`)
   - `src/glyphs-mcp/scripts/install_deps_external_python.sh` (external Python → installs into that Python’s user site-packages)
 - Sync ObjectWrapper docs into the plugin: `python src/glyphs-mcp/scripts/copy_documentation.py`.
+- Run the complete 1.x + 2.0 Python suite without bytecode artifacts:
+  `PYTHONDONTWRITEBYTECODE=1 PYTHON_BIN=python3.12 ./scripts/run_python_tests.sh`.
+- Assemble both v2 runtime payload layouts inside the worktree:
+  `python3.12 scripts/build_v2_runtime_payload.py`.
 - Start the server from Glyphs: restart the app, then **Edit → Start Glyphs MCP Server** (or enable auto-start in **Edit → Glyphs MCP Server Status…**).
 
 ## MCP Tool Surface (selected)
@@ -72,3 +77,6 @@ Refer to `README.md` for the full command table and usage notes.
 - When adding tooling, update both the README table and relevant agent guides (Claude/Codex).
 - When tool workflows, catalog metadata, visibility, or safety rules change, update the matching skill in `skills/` and keep `.agents/skills` pointing at the same source of truth.
 - After changes that touch the plugin bundle, remind users to reinstall or resymlink it into the Glyphs plugins directory.
+- Keep v2 environments, dependency caches, generated payloads, and distribution
+  artifacts under `.venv-v2/`, `.cache/v2/`, `build/`, and `dist/` in this
+  worktree. The v2 payload builder rejects output outside the repository.
