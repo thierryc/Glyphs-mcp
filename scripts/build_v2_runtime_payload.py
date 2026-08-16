@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
+import plistlib
 import shutil
 from pathlib import Path
 from typing import Dict
@@ -13,8 +15,33 @@ from typing import Dict
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SOURCE_PACKAGE = REPO_ROOT / "src" / "glyphs-mcp-v2" / "glyphs_mcp_v2"
+SOURCE_BUNDLE = REPO_ROOT / "src" / "glyphs-mcp" / "Glyphs MCP.glyphsPlugin"
+PLUGIN_MANAGER_BUNDLE = REPO_ROOT / "plugin-manager" / "Glyphs MCP.glyphsPlugin"
 DEFAULT_OUTPUT_ROOT = REPO_ROOT / "build" / "v2-runtime"
-BUNDLE_RELATIVE_PACKAGE = Path("Glyphs MCP.glyphsPlugin/Contents/Resources/glyphs_mcp_v2")
+BUNDLE_NAME = "Glyphs MCP.glyphsPlugin"
+PACKAGE_RELATIVE_TO_BUNDLE = Path("Contents/Resources/glyphs_mcp_v2")
+
+V2_MCP_TOOLS = '''# encoding: utf-8
+
+"""Glyphs MCP 2.0 development runtime bridge.
+
+This generated bridge deliberately registers only the isolated v2 catalog.
+"""
+
+from glyphs_mcp_v2.runtime import create_glyphs_server
+
+
+mcp = create_glyphs_server()
+
+__all__ = ["mcp"]
+'''
+
+LEGACY_IMPORT_BLOCK_START = "    # Import MCP tools (this registers all the tools)\n"
+LEGACY_IMPORT_BLOCK_END = "    import kerning_resources  # noqa: F401\n"
+V2_IMPORT_BLOCK = '''    # Load only the isolated v2 catalog. The generated mcp_tools bridge
+    # constructs the Glyphs-backed v2 application and FastMCP server.
+    from mcp_tools import mcp  # noqa: F401
+'''
 
 
 def _assert_output_is_contained(output_root: Path) -> Path:
@@ -28,15 +55,57 @@ def _assert_output_is_contained(output_root: Path) -> Path:
     return resolved
 
 
-def _copy_package(destination: Path) -> None:
-    def ignore(_directory: str, names: list[str]) -> set[str]:
-        return {
-            name
-            for name in names
-            if name == "__pycache__" or name.endswith((".pyc", ".pyo"))
-        }
+def _ignore_generated(_directory: str, names: list[str]) -> set[str]:
+    return {
+        name
+        for name in names
+        if name == "__pycache__" or name.endswith((".pyc", ".pyo"))
+    }
 
-    shutil.copytree(SOURCE_PACKAGE, destination, ignore=ignore)
+
+def _v2_version() -> str:
+    versions_path = SOURCE_PACKAGE / "versions.py"
+    tree = ast.parse(versions_path.read_text(encoding="utf-8"), filename=str(versions_path))
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "SERVER_VERSION":
+                    value = ast.literal_eval(node.value)
+                    if isinstance(value, str) and value:
+                        return value
+    raise RuntimeError("glyphs_mcp_v2.versions does not define a static SERVER_VERSION")
+
+
+def _activate_v2_bundle(bundle: Path) -> Path:
+    resources = bundle / "Contents" / "Resources"
+    package_destination = bundle / PACKAGE_RELATIVE_TO_BUNDLE
+    if package_destination.exists():
+        shutil.rmtree(package_destination)
+    shutil.copytree(SOURCE_PACKAGE, package_destination, ignore=_ignore_generated)
+
+    (resources / "mcp_tools.py").write_text(V2_MCP_TOOLS, encoding="utf-8")
+
+    plugin_path = resources / "plugin.py"
+    plugin_text = plugin_path.read_text(encoding="utf-8")
+    start = plugin_text.find(LEGACY_IMPORT_BLOCK_START)
+    end = plugin_text.find(LEGACY_IMPORT_BLOCK_END, start)
+    if start < 0 or end < 0:
+        raise RuntimeError("could not locate the legacy registration block in plugin.py")
+    end += len(LEGACY_IMPORT_BLOCK_END)
+    plugin_path.write_text(
+        plugin_text[:start] + V2_IMPORT_BLOCK + plugin_text[end:],
+        encoding="utf-8",
+    )
+
+    plist_path = bundle / "Contents" / "Info.plist"
+    with plist_path.open("rb") as plist_file:
+        info = plistlib.load(plist_file)
+    version = _v2_version()
+    info["CFBundleShortVersionString"] = version
+    info["CFBundleVersion"] = version
+    with plist_path.open("wb") as plist_file:
+        plistlib.dump(info, plist_file, sort_keys=True)
+    return package_destination
 
 
 def _manifest(package_root: Path) -> Dict[str, str]:
@@ -52,18 +121,27 @@ def _manifest(package_root: Path) -> Dict[str, str]:
 def build(output_root: Path) -> Dict[str, object]:
     if not SOURCE_PACKAGE.is_dir():
         raise FileNotFoundError("canonical v2 package is missing: {}".format(SOURCE_PACKAGE))
+    for bundle in (SOURCE_BUNDLE, PLUGIN_MANAGER_BUNDLE):
+        if not bundle.is_dir():
+            raise FileNotFoundError("base plug-in bundle is missing: {}".format(bundle))
     output = _assert_output_is_contained(output_root)
     if output.exists():
         shutil.rmtree(output)
     output.mkdir(parents=True)
 
-    destinations = {
-        "source": output / "source" / BUNDLE_RELATIVE_PACKAGE,
-        "pluginManager": output / "plugin-manager" / BUNDLE_RELATIVE_PACKAGE,
+    sources = {
+        "source": SOURCE_BUNDLE,
+        "pluginManager": PLUGIN_MANAGER_BUNDLE,
     }
-    for destination in destinations.values():
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        _copy_package(destination)
+    destinations: Dict[str, Path] = {}
+    bundle_paths: Dict[str, Path] = {}
+    for name, source_bundle in sources.items():
+        layout = "plugin-manager" if name == "pluginManager" else "source"
+        destination_bundle = output / layout / BUNDLE_NAME
+        destination_bundle.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(source_bundle, destination_bundle, ignore=_ignore_generated)
+        bundle_paths[name] = destination_bundle
+        destinations[name] = _activate_v2_bundle(destination_bundle)
 
     manifests = {name: _manifest(path) for name, path in destinations.items()}
     if manifests["source"] != manifests["pluginManager"]:
@@ -73,6 +151,8 @@ def build(output_root: Path) -> Dict[str, object]:
         "schemaVersion": 1,
         "sourcePackage": str(SOURCE_PACKAGE),
         "outputRoot": str(output),
+        "version": _v2_version(),
+        "installableBundle": str(bundle_paths["source"]),
         "fileCount": len(manifests["source"]),
         "files": manifests["source"],
     }
