@@ -42,6 +42,7 @@ class FontSnapshot:
     legacy_index: int
     family_name: str
     file_path: Optional[str]
+    has_unsaved_changes: Optional[bool]
     active: bool
     master_count: int
     instance_count: int
@@ -52,13 +53,18 @@ class FontSnapshot:
     format_version: Optional[int]
     last_saved_app_version: Optional[str]
 
+    @property
+    def has_file_path(self) -> bool:
+        return bool(self.file_path)
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "documentId": self.document_id,
             "legacyIndex": self.legacy_index,
             "familyName": self.family_name,
             "filePath": self.file_path,
-            "saved": bool(self.file_path),
+            "hasFilePath": self.has_file_path,
+            "hasUnsavedChanges": self.has_unsaved_changes,
             "active": self.active,
             "masterCount": self.master_count,
             "instanceCount": self.instance_count,

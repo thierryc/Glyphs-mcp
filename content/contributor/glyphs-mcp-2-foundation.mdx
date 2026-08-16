@@ -5,10 +5,11 @@ description: Architecture, compatibility, and milestone record for the isolated 
 
 # Glyphs MCP 2.0 foundation
 
-Glyphs MCP 2.0 is a contract and architecture reset. Its first implementation
-milestone proves a read-only path from MCP discovery through typed application
-services to immutable Glyphs 3.5/4 snapshots. It does not replace, load, or
-modify the installed 1.x plug-in.
+Glyphs MCP 2.0 is a contract and architecture reset, rebased on signed release
+`v1.11.0`. The isolated runtime now covers typed discovery, bounded analysis,
+reviewed production mutations, staged export, model-visible Python fallback,
+and document rollback. It does not replace, load, or modify the installed 1.x
+plug-in during source development.
 
 ## Invariants
 
@@ -22,19 +23,27 @@ modify the installed 1.x plug-in.
 - The Glyphs adapter captures complete immutable values on the main thread;
   native objects never cross into application or transport layers.
 - Public MCP registration derives only from the typed v2 catalog.
-- No v2 operation edits or saves a font until the transaction milestone lands.
+- Every typed mutation uses one shared prevalidate/snapshot/apply/read-back/
+  verify kernel, never saves implicitly, and emits one apply audit receipt.
 
-## First vertical slice
+## Implemented v2 surface
 
 The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
 
 - versioned result, warning, and error contracts;
 - stable document identity binding across fresh PyObjC proxies and first save;
-- immutable host and font snapshots;
+- immutable host and canonical document snapshots;
 - a recoverable main-thread execution port;
 - Glyphs 3.5/4 collection fallbacks;
 - catalog-generated schemas and safety annotations;
-- `get_server_info` and `list_open_fonts` FastMCP registration;
+- 28 catalog-driven FastMCP operations;
+- paginated glyph, instance, kerning, audit, review, and Python-diff results;
+- reviewed glyph, anchor, kerning, spacing, metrics, and compatibility batches;
+- compatibility, metrics-inheritance, anchor, spacing, kerning-coverage, and
+  export analysis;
+- staged export with destination fingerprints and macOS atomic directory swap;
+- detached `GSFont.copy()` Python review, exact confirmation without rerunning
+  code, live open-world recovery, and inverse-patch rollback;
 - restart-safe Streamable HTTP application construction;
 - deterministic source and Plugin Manager payload assembly.
 
@@ -49,6 +58,38 @@ JSON result strings, inconsistent confirmation flags, and unstructured errors.
 Removed or redesigned capabilities receive documentation tombstones rather
 than ambiguous registered aliases.
 
+The v2 tombstones are:
+
+| 1.x name | v2 replacement |
+| --- | --- |
+| `ExportDesignspaceAndUFO` | `review_export`, then `export_source_bundle` |
+| `get_font_glyphs` | `list_glyphs` |
+| `get_font_kerning` | `list_kerning_pairs` |
+| `get_font_instances` | `list_instances` |
+| `glyphs-mcp-features` | `glyphs-mcp-opentype-features` |
+
+None of the old names is registered as a v2 alias. The 1.11 runtime retains its
+own tools until an installed runtime is explicitly upgraded and Glyphs is
+restarted.
+
+## Python execution and rollback
+
+Read-intent Python reports document and scope violations. Document edits default
+to a detached clone and return a deterministic paginated semantic diff. Exact
+confirmation applies the stored patch through the transaction kernel without
+rerunning Python. Unsupported staged fields are refused.
+
+`live_open_world` remains available for global Glyphs APIs, UI state, unsupported
+objects, files, processes, and networking. It uses exact preview, a full clone,
+and a private serialized checkpoint, but reports external effects as
+unverifiable and timeout enforcement as cooperative. Automatic rollback is
+available only for a complete supported observed document diff. Otherwise a
+separate recovery document can be opened. Later edits are never overwritten.
+
+Git protects source history; it is not used for runtime rollback because it
+cannot represent unsaved live documents, multiple open fonts, or external
+effects.
+
 `lit/next-1.x` remains eligible for critical defects, security and packaging
 hardening, Glyphs host compatibility, pure font engines, deterministic
 fixtures, SDK documentation, and contract-neutral Reporter models. V2 request
@@ -57,19 +98,17 @@ breaking catalog changes do not flow back to 1.x.
 
 ## Milestone order
 
-1. Read-only v2 spine: server identity, stable document listing, transport,
-   restart, containment, and assembly.
-2. Selection, master, glyph, outline, component, feature, and documentation
-   snapshots.
-3. Shared preview/apply transaction kernel with fingerprints, complete
-   read-back, rollback, and audit events.
-4. Curve, spacing, kerning, italic, and candidate workflows.
-5. Native Reporters, Palette, MCP Apps feedback, and privileged code/save/file
-   operations.
-6. Migration completeness, performance, installer integration, beta, and the
-   Glyphs 3.5/4 release-candidate matrix.
+1. Complete: stable IDs, contracts, transport, containment, and assembly.
+2. Complete for the production canonical model: snapshots, pagination,
+   fingerprints, semantic diffs, transactions, audit, Python, and rollback.
+3. Complete for the current production milestone: compatibility, metrics,
+   anchors, spacing, kerning, instances, export, and synchronized skills.
+4. Remaining release gate: disposable live-host verification on Glyphs 3.5 and
+   4, installer integration, and the release-candidate matrix.
 
 Every milestone must pass focused tests, the complete Python suite, catalog
 and schema gates, deterministic payload assembly, and `git diff --check`.
 Live Glyphs checks use disposable fonts and remain separate from ordinary
-source implementation.
+source implementation. The guarded
+`glyphs_mcp_v2.live_gates.verify_copy_and_make_copy` helper refuses fonts that
+do not use the `Glyphs MCP V2 Disposable` family-name prefix.

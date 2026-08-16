@@ -22,7 +22,7 @@ Use this skill for guarded kerning bumper workflows.
 1. Read current state with the smallest useful set of tools:
    - `get_selected_font_and_master`
    - `get_selected_glyphs`
-   - `get_font_kerning` or `get_glyph_details` only if the review needs extra context
+   - `list_kerning_pairs` or `get_glyph_details` only if the review needs extra context
 2. Run `review_kerning_bumper` and summarize:
    - affected glyphs or pairs
    - collision or near-miss findings

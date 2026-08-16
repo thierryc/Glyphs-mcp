@@ -1,0 +1,6 @@
+interface:
+  display_name: "Glyphs MCP Maintainer Feedback"
+  short_description: "Prepare redacted, reproducible Glyphs MCP feedback."
+  default_prompt: "Use $glyphs-mcp-maintainer-feedback to turn this problem into a maintainer-ready report."
+policy:
+  allow_implicit_invocation: true

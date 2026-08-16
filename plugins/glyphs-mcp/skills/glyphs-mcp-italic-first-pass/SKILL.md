@@ -91,7 +91,7 @@ it does not create, replace, or claim optical completion of a designed italic.
    - `all_glyphs`
 4. Resolve Unicode values for the scoped glyphs:
    - use Unicode values already returned for selection-based scopes
-   - call `get_font_glyphs` when the scope needs a whole-font name-to-Unicode map
+   - call `list_glyphs` when the scope needs a paginated whole-font name-to-Unicode map
    - report any glyphs covered by the symbol slant policy below
    - ask whether to include, explicitly exclude, or defer each affected group
 5. Verify every target master italic angle:

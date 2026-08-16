@@ -1,0 +1,6 @@
+interface:
+  display_name: "Glyphs MCP OpenType Features"
+  short_description: "Inspect Glyphs OpenType features and stylistic sets."
+  default_prompt: "Use $glyphs-mcp-opentype-features to inspect OpenType features in one explicit Glyphs document."
+policy:
+  allow_implicit_invocation: true

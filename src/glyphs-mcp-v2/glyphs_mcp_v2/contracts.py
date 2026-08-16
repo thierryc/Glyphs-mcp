@@ -1,15 +1,50 @@
-"""Transport-neutral Glyphs MCP 2.0 result contracts."""
+"""Transport-neutral Glyphs MCP 2.0 operation and result contracts."""
 
 from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any, Dict, Mapping, Optional, Sequence, Tuple
+from uuid import uuid4
 
 
 API_MAJOR = 2
 API_VERSION = "2.0"
 RESULT_SCHEMA_VERSION = "2.0"
+EFFECTS = ("read", "ui", "edit", "save", "files", "code")
+STATUSES = ("success", "warning", "review_required", "partial", "skipped", "error")
+
+
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _iso(value: datetime) -> str:
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+@dataclass(frozen=True)
+class OperationMetadata:
+    request_id: str
+    run_id: str
+    operation_id: str
+    started_at: str
+    completed_at: str
+    duration_ms: int
+
+    @classmethod
+    def create(cls) -> "OperationMetadata":
+        started = _utc_now()
+        completed = _utc_now()
+        return cls(
+            request_id="req_{}".format(uuid4().hex),
+            run_id="run_{}".format(uuid4().hex),
+            operation_id="op_{}".format(uuid4().hex),
+            started_at=_iso(started),
+            completed_at=_iso(completed),
+            duration_ms=max(0, int((completed - started).total_seconds() * 1000)),
+        )
 
 
 @dataclass(frozen=True)
@@ -19,10 +54,7 @@ class ToolWarning:
     target: Optional[Mapping[str, Any]] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        value: Dict[str, Any] = {
-            "code": self.code,
-            "message": self.message,
-        }
+        value: Dict[str, Any] = {"code": self.code, "message": self.message}
         if self.target is not None:
             value["target"] = dict(self.target)
         return value
@@ -55,16 +87,24 @@ class ToolResponse:
     data: Mapping[str, Any] = field(default_factory=dict)
     warnings: Tuple[ToolWarning, ...] = ()
     error: Optional[ToolError] = None
+    status: str = "success"
+    metadata: OperationMetadata = field(default_factory=OperationMetadata.create)
+    page: Optional[Mapping[str, Any]] = None
+    audit_receipt: Optional[Mapping[str, Any]] = None
 
     def __post_init__(self) -> None:
         if not self.tool:
             raise ValueError("tool is required")
-        if self.effect not in {"read", "ui", "edit", "save", "files", "code"}:
+        if self.effect not in EFFECTS:
             raise ValueError("unsupported effect: {}".format(self.effect))
+        if self.status not in STATUSES:
+            raise ValueError("unsupported status: {}".format(self.status))
         if self.ok and self.error is not None:
             raise ValueError("successful responses cannot contain an error")
         if not self.ok and self.error is None:
             raise ValueError("failed responses require an error")
+        if not self.ok and self.status != "error":
+            raise ValueError("failed responses must use error status")
 
     @classmethod
     def success(
@@ -75,6 +115,10 @@ class ToolResponse:
         summary: str,
         data: Mapping[str, Any],
         warnings: Sequence[ToolWarning] = (),
+        status: str = "success",
+        metadata: Optional[OperationMetadata] = None,
+        page: Optional[Mapping[str, Any]] = None,
+        audit_receipt: Optional[Mapping[str, Any]] = None,
     ) -> "ToolResponse":
         return cls(
             tool=tool,
@@ -84,6 +128,10 @@ class ToolResponse:
             data=dict(data),
             warnings=tuple(warnings),
             error=None,
+            status=status,
+            metadata=metadata or OperationMetadata.create(),
+            page=dict(page) if page is not None else None,
+            audit_receipt=dict(audit_receipt) if audit_receipt is not None else None,
         )
 
     @classmethod
@@ -96,6 +144,9 @@ class ToolResponse:
         error: ToolError,
         data: Optional[Mapping[str, Any]] = None,
         warnings: Sequence[ToolWarning] = (),
+        metadata: Optional[OperationMetadata] = None,
+        page: Optional[Mapping[str, Any]] = None,
+        audit_receipt: Optional[Mapping[str, Any]] = None,
     ) -> "ToolResponse":
         return cls(
             tool=tool,
@@ -105,19 +156,32 @@ class ToolResponse:
             data=dict(data or {}),
             warnings=tuple(warnings),
             error=error,
+            status="error",
+            metadata=metadata or OperationMetadata.create(),
+            page=dict(page) if page is not None else None,
+            audit_receipt=dict(audit_receipt) if audit_receipt is not None else None,
         )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "resultSchemaVersion": RESULT_SCHEMA_VERSION,
             "apiVersion": API_VERSION,
+            "requestId": self.metadata.request_id,
+            "runId": self.metadata.run_id,
+            "operationId": self.metadata.operation_id,
+            "startedAt": self.metadata.started_at,
+            "completedAt": self.metadata.completed_at,
+            "durationMs": self.metadata.duration_ms,
             "ok": self.ok,
+            "status": self.status,
             "tool": self.tool,
             "effect": self.effect,
             "summary": self.summary,
             "data": dict(self.data),
+            "page": dict(self.page) if self.page is not None else None,
             "warnings": [warning.to_dict() for warning in self.warnings],
             "error": self.error.to_dict() if self.error is not None else None,
+            "auditReceipt": dict(self.audit_receipt) if self.audit_receipt is not None else None,
         }
 
 
@@ -149,64 +213,81 @@ ERROR_SCHEMA: Dict[str, Any] = {
     ]
 }
 
+PAGE_SCHEMA: Dict[str, Any] = {
+    "oneOf": [
+        {"type": "null"},
+        {
+            "type": "object",
+            "required": ["pageSize", "totalItems", "returnedItems", "offset", "nextCursor", "sourceFingerprint"],
+            "properties": {
+                "pageSize": {"type": "integer", "minimum": 1, "maximum": 500},
+                "totalItems": {"type": "integer", "minimum": 0},
+                "returnedItems": {"type": "integer", "minimum": 0, "maximum": 500},
+                "offset": {"type": "integer", "minimum": 0},
+                "nextCursor": {"type": ["string", "null"]},
+                "sourceFingerprint": {"type": "string", "minLength": 1},
+            },
+            "additionalProperties": False,
+        },
+    ]
+}
+
+AUDIT_RECEIPT_SCHEMA: Dict[str, Any] = {
+    "oneOf": [
+        {"type": "null"},
+        {
+            "type": "object",
+            "required": ["auditId", "timestamp"],
+            "properties": {
+                "auditId": {"type": "string", "minLength": 1},
+                "timestamp": {"type": "string", "minLength": 1},
+            },
+            "additionalProperties": False,
+        },
+    ]
+}
+
 
 def result_schema(data_schema: Mapping[str, Any]) -> Dict[str, Any]:
     """Return the normative v2 result envelope for one tool's data."""
     schema = {
         "type": "object",
         "required": [
-            "resultSchemaVersion",
-            "apiVersion",
-            "ok",
-            "tool",
-            "effect",
-            "summary",
-            "data",
-            "warnings",
-            "error",
+            "resultSchemaVersion", "apiVersion", "requestId", "runId", "operationId",
+            "startedAt", "completedAt", "durationMs", "ok", "status", "tool", "effect",
+            "summary", "data", "page", "warnings", "error", "auditReceipt",
         ],
         "properties": {
-            "resultSchemaVersion": {
-                "type": "string",
-                "const": RESULT_SCHEMA_VERSION,
-            },
+            "resultSchemaVersion": {"type": "string", "const": RESULT_SCHEMA_VERSION},
             "apiVersion": {"type": "string", "const": API_VERSION},
+            "requestId": {"type": "string", "pattern": "^req_"},
+            "runId": {"type": "string", "pattern": "^run_"},
+            "operationId": {"type": "string", "pattern": "^(op|review|exec)_"},
+            "startedAt": {"type": "string"},
+            "completedAt": {"type": "string"},
+            "durationMs": {"type": "integer", "minimum": 0},
             "ok": {"type": "boolean"},
+            "status": {"type": "string", "enum": list(STATUSES)},
             "tool": {"type": "string", "minLength": 1},
-            "effect": {
-                "type": "string",
-                "enum": ["read", "ui", "edit", "save", "files", "code"],
-            },
+            "effect": {"type": "string", "enum": list(EFFECTS)},
             "summary": {"type": "string"},
             "data": {"type": "object"},
-            "warnings": {
-                "type": "array",
-                "items": deepcopy(WARNING_SCHEMA),
-                "maxItems": 64,
-            },
+            "page": deepcopy(PAGE_SCHEMA),
+            "warnings": {"type": "array", "items": deepcopy(WARNING_SCHEMA), "maxItems": 64},
             "error": deepcopy(ERROR_SCHEMA),
+            "auditReceipt": deepcopy(AUDIT_RECEIPT_SCHEMA),
         },
         "additionalProperties": False,
     }
     schema["allOf"] = [
         {
-            "if": {
-                "properties": {"ok": {"const": True}},
-                "required": ["ok"],
-            },
-            "then": {
-                "properties": {
-                    "data": deepcopy(dict(data_schema)),
-                    "error": {"type": "null"},
-                }
-            },
+            "if": {"properties": {"ok": {"const": True}}, "required": ["ok"]},
+            "then": {"properties": {"data": deepcopy(dict(data_schema)), "error": {"type": "null"}}},
             "else": {
                 "properties": {
                     "data": {"type": "object"},
-                    "error": {
-                        "type": "object",
-                        "required": ["code", "message", "recoverable"],
-                    },
+                    "status": {"const": "error"},
+                    "error": {"type": "object", "required": ["code", "message", "recoverable"]},
                 }
             },
         }
@@ -215,13 +296,7 @@ def result_schema(data_schema: Mapping[str, Any]) -> Dict[str, Any]:
 
 
 __all__ = [
-    "API_MAJOR",
-    "API_VERSION",
-    "ERROR_SCHEMA",
-    "RESULT_SCHEMA_VERSION",
-    "ToolError",
-    "ToolResponse",
-    "ToolWarning",
-    "WARNING_SCHEMA",
-    "result_schema",
+    "API_MAJOR", "API_VERSION", "AUDIT_RECEIPT_SCHEMA", "EFFECTS", "ERROR_SCHEMA",
+    "OperationMetadata", "PAGE_SCHEMA", "RESULT_SCHEMA_VERSION", "STATUSES", "ToolError",
+    "ToolResponse", "ToolWarning", "WARNING_SCHEMA", "result_schema",
 ]

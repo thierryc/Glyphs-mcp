@@ -35,12 +35,18 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ## Glyphs MCP 2.0 development
 
-The `lit/v2` branch contains an isolated, unreleased 2.0 runtime foundation at
-[`src/glyphs-mcp-v2`](src/glyphs-mcp-v2). Its first vertical slice exposes
-typed `get_server_info` and `list_open_fonts` application contracts with stable
-process-local document IDs, an explicit main-thread Glyphs adapter, and a
-catalog-driven FastMCP transport. It is not loaded by the installed 1.x
-plug-in, and its builder writes only to `build/v2-runtime/`.
+The `lit/v2` branch contains an isolated, unreleased 2.0 runtime at
+[`src/glyphs-mcp-v2`](src/glyphs-mcp-v2). Its catalog now exposes 28 typed
+operations for bounded reads, production reviews, reviewed batch mutations,
+staged export, model-visible Python fallback, and verified document rollback.
+Stable process-local document IDs, fingerprint-bound pagination, one shared
+transaction kernel, redacted audit receipts, and the main-thread Glyphs 3.5/4
+adapter are implemented without loading the runtime into the installed 1.x
+plug-in. The builder writes only to `build/v2-runtime/`.
+
+The v2 skill package contains 13 synchronized skills. It renames the broad
+`glyphs-mcp-features` workflow to `glyphs-mcp-opentype-features` and adds
+production-audit and maintainer-feedback workflows.
 
 See the [2.0 foundation record](content/contributor/glyphs-mcp-2-foundation.mdx)
 for boundaries, migration policy, milestone order, and acceptance gates.
@@ -119,7 +125,7 @@ Glyphs 3 backward compatibility is maintained for the shared MCP server code whe
 
 Glyphs MCP 1.11.0 provides one shared plugin package for Codex/ChatGPT, Claude
 Code, Cursor, and GitHub Copilot CLI. Every host gets its own native manifest,
-but all four load the same 11 skills and the same local MCP connection:
+but all four load the same synchronized skill package and local MCP connection:
 
 ```text
 http://127.0.0.1:9680/mcp/

@@ -48,8 +48,14 @@ class V2TransportTests(unittest.TestCase):
                 self.assertEqual(set(tools), set(TOOL_CATALOG))
                 for name, tool in tools.items():
                     self.assertEqual(tool.outputSchema, TOOL_CATALOG[name].output_schema)
-                    self.assertTrue(tool.annotations.readOnlyHint)
-                    self.assertFalse(tool.annotations.destructiveHint)
+                    self.assertEqual(
+                        tool.annotations.readOnlyHint,
+                        TOOL_CATALOG[name].annotations["readOnlyHint"],
+                    )
+                    self.assertEqual(
+                        tool.annotations.destructiveHint,
+                        TOOL_CATALOG[name].annotations["destructiveHint"],
+                    )
 
                 result = await client.call_tool("list_open_fonts", {})
                 self.assertFalse(result.is_error)

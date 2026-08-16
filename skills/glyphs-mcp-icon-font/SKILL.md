@@ -22,7 +22,7 @@ Use this skill for stable icon-font encoding, not icon drawing or general PUA wo
 
 ## Workflow
 
-1. Call `list_open_fonts`, then inspect the target with `get_font_glyphs`.
+1. Call `list_open_fonts`, then inspect the target with paginated `list_glyphs`.
 2. Establish whether the font is unreleased or already released. Obtain the previous map for a released font.
 3. Call `review_unicode_assignments` with `allocate_unencoded=false`.
 4. Summarize collisions, invalid values, export-state warnings, multiple assignments, previous-map changes, and range capacity.

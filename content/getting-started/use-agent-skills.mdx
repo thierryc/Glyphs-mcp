@@ -216,7 +216,7 @@ Enable **Install Glyphs MCP agent skills** for Codex and/or Claude Code. The ins
 
 Reload or restart the client after installation.
 
-For a manual global Cursor install, copy the 11 skill directories from
+For a manual global Cursor install, copy the 13 skill directories from
 `skills/` into `~/.cursor/skills/`, preserving each directory's `SKILL.md` and
 supporting files.
 
@@ -228,8 +228,10 @@ supporting files.
 | `glyphs-mcp-development` | Reusable, documentation-grounded Glyphs Python scripts and six plug-in scaffolds | `Use $glyphs-mcp-development to create a reporter plug-in in this workspace.` |
 | `glyphs-mcp-outlines-docs` | Outline edits and their specialized live-code fallback, plus selected nodes, components, anchors, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes and fetch only the docs pages I need.` |
 | `glyphs-mcp-italic-first-pass` | Experimental Roman-to-italic construction drafts with a narrowly guarded Python fallback | `Use the glyphs-mcp-italic-first-pass skill to review selected glyphs in recommended Balanced mode before applying an italic first pass.` |
-| `glyphs-mcp-scripting` | Safe live vibe coding, Macro Panel snippets, read-only probes, and iterative script debugging | `Use $glyphs-mcp-scripting to run a read-only script that reports the current font and selected layers.` |
-| `glyphs-mcp-features` | OpenType features and stylistic-set glyph groups with Glyphs links | `Use the glyphs-mcp-features skill to list glyphs by style set with group links.` |
+| `glyphs-mcp-scripting` | Staged document Python, reviewed open-world fallback, and verified rollback | `Use $glyphs-mcp-scripting because the typed tools do not fit this document edit.` |
+| `glyphs-mcp-opentype-features` | Focused OpenType feature and stylistic-set inspection | `Use $glyphs-mcp-opentype-features to inspect the stylistic sets in this document.` |
+| `glyphs-mcp-production-audit` | Read-first compatibility, metrics, anchor, spacing, kerning, and export review | `Use $glyphs-mcp-production-audit to review this source without changing it.` |
+| `glyphs-mcp-maintainer-feedback` | Redacted reproducible reports for maintainers | `Use $glyphs-mcp-maintainer-feedback to prepare an issue-quality report.` |
 | `glyphs-mcp-icon-font` | Stable icon-font Unicode and PUA assignment workflows | `Use the glyphs-mcp-icon-font skill to audit this icon font and preserve its existing mappings.` |
 | `glyphs-mcp-kerning` | Kerning bumper review and approved applies | `Use the glyphs-mcp-kerning skill to review kerning collisions and do a dry run first.` |
 | `glyphs-mcp-litsquare-metadata` | LitSquare metadata, semantic path roles, and layer-specific IconGrid centering | `Use $glyphs-mcp-litsquare-metadata to inspect inherited LitSquare metadata without changing it.` |
@@ -241,8 +243,8 @@ supporting files.
 - Begin with review tools; treat any tool annotated as an edit as a separate approval boundary.
 - Read current font, master, glyph, layer, or selection before changing anything.
 - Prefer dedicated tools over free-form code.
-- For live scripting mutations, review the exact `snippet_only` code and target,
-  then approve only unchanged execution; revised code requires new approval.
+- For Python document edits, review the staged semantic diff and confirm its
+  exact stored request; use `live_open_world` only for effects staging cannot cover.
 - Use dry runs before apply steps.
 - Require explicit approval before confirm-gated mutations.
 - Never auto-save the font unless a human explicitly asks for it.

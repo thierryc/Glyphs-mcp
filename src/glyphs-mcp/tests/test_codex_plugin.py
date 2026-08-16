@@ -19,7 +19,9 @@ CANONICAL_SKILLS = REPO / "skills"
 SKILL_NAMES = (
     "glyphs",
     "glyphs-mcp-development",
-    "glyphs-mcp-features",
+    "glyphs-mcp-maintainer-feedback",
+    "glyphs-mcp-opentype-features",
+    "glyphs-mcp-production-audit",
     "glyphs-mcp-icon-font",
     "glyphs-mcp-italic-first-pass",
     "glyphs-mcp-kerning",
@@ -210,7 +212,7 @@ class AgentPluginTests(unittest.TestCase):
             self.assertTrue((installed / manifest["mcpServers"]).is_file())
 
     def test_plugin_skill_copies_match_the_canonical_sources(self) -> None:
-        self.assertEqual(len(SKILL_NAMES), 11)
+        self.assertEqual(len(SKILL_NAMES), 13)
         plugin_names = tuple(sorted(path.name for path in (PLUGIN / "skills").iterdir() if path.is_dir()))
         self.assertEqual(plugin_names, tuple(sorted(SKILL_NAMES)))
         for name in SKILL_NAMES:
@@ -280,6 +282,7 @@ class AgentPluginTests(unittest.TestCase):
         self.assertIn("glyphs-mcp-kerning", skill_text)
         self.assertIn("glyphs-mcp-development", skill_text)
         self.assertIn("glyphs-mcp-scripting", skill_text)
+        self.assertIn("glyphs-mcp-production-audit", skill_text)
         self.assertIn("Generic Python with no Glyphs app or font target", skill_text)
         self.assertIn('display_name: "Glyphs MCP"', metadata_text)
         self.assertIn("$glyphs", metadata_text)
@@ -315,24 +318,23 @@ class AgentPluginTests(unittest.TestCase):
         for required in (
             "docs_search",
             "docs_get",
-            "execute_code",
-            "execute_code_with_context",
-            "snippet_only=true",
-            "get_document_change_overview",
+            "execute_python",
+            "staged_document",
+            "live_open_world",
+            "rollback_python_execution",
+            "document_inverse",
+            "open_recovery_copy",
             "glyphs-mcp-development",
-            "glyphs-mcp-outlines-docs",
-            "glyphs-mcp-italic-first-pass",
             "layer.beginChanges()",
             "layer.endChanges()",
-            "explicit approval",
+            "confirm=true",
         ):
             self.assertIn(required, skill_text)
         self.assertIn("Never call `exit()`, `quit()`, or `sys.exit()`", skill_text)
-        self.assertIn("execute only that unchanged reviewed request", skill_text)
-        self.assertIn("Bind approval to the exact execution tool", skill_text)
-        self.assertIn("Macro Panel snippet separately", skill_text)
+        self.assertIn("applies the stored patch without rerunning Python", skill_text)
+        self.assertIn("correctness boundary, not a hostile-code sandbox", skill_text)
         self.assertIn('display_name: "Glyphs MCP Scripting"', metadata_text)
-        self.assertIn('short_description: "Vibe-code live Glyphs Python scripts safely."', metadata_text)
+        self.assertIn('short_description: "Run staged or open-world Glyphs Python with rollback."', metadata_text)
         self.assertIn("$glyphs-mcp-scripting", metadata_text)
         self.assertIn("allow_implicit_invocation: true", metadata_text)
 
@@ -350,16 +352,15 @@ class AgentPluginTests(unittest.TestCase):
 
         # Live read-only code routes to scripting and may run with bounded output.
         self.assertIn("Live Python runs", router)
-        self.assertIn("For clearly read-only code that the user asked to run", scripting)
+        self.assertIn("Read-only code may execute directly", scripting)
         # Mutating code stops after an exact snippet until the user approves it.
-        self.assertIn("snippet_only=true", scripting)
-        self.assertIn("then stop for explicit approval", scripting)
+        self.assertIn("execute_python(reviewId=..., confirm=true)", scripting)
+        self.assertIn("stored patch without rerunning Python", scripting)
         # Reusable scripts and every supported plug-in type remain development artifacts.
         self.assertIn("Reusable Python scripts and plug-in development", router)
         self.assertIn("standalone script", development)
         self.assertIn("reporter", development)
         # Outline fallback stays with the existing domain skill.
-        self.assertIn("outline-specific fallback code", scripting)
         self.assertIn("execute_code_with_context", outlines)
         # Generic Python must not claim a Glyphs workflow.
         self.assertIn("Generic Python with no Glyphs app or font target", router)
@@ -389,7 +390,7 @@ class AgentPluginTests(unittest.TestCase):
         )
 
         self.assertIn("## Symbol slant policy", text)
-        self.assertIn("get_font_glyphs", text)
+        self.assertIn("list_glyphs", text)
         for codepoint in ("U+002B", "U+0040", "U+00A9", "U+2192"):
             self.assertIn(codepoint, text)
         self.assertIn("Do not silently add listed glyphs to `skip_glyphs`", text)

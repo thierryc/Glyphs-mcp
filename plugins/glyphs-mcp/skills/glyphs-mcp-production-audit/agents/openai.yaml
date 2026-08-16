@@ -1,0 +1,6 @@
+interface:
+  display_name: "Glyphs MCP Production Audit"
+  short_description: "Audit source readiness with bounded, evidence-backed reviews."
+  default_prompt: "Use $glyphs-mcp-production-audit to review one Glyphs source without changing or saving it."
+policy:
+  allow_implicit_invocation: true

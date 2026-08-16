@@ -129,11 +129,21 @@ class GlyphsHostAdapter:
         file_path_value = _safe_getattr(font, "filepath")
         file_path = str(file_path_value) if file_path_value else None
         last_saved = _safe_getattr(font, "appVersion")
+        document = _maybe_call(_safe_getattr(font, "parent"))
+        edited = _safe_getattr(document, "isDocumentEdited") if document is not None else None
+        if edited is None:
+            has_unsaved_changes: Optional[bool] = None
+        else:
+            try:
+                has_unsaved_changes = bool(_maybe_call(edited))
+            except Exception:
+                has_unsaved_changes = None
         return FontSnapshot(
             document_id=self._identities.resolve(native_key),
             legacy_index=legacy_index,
             family_name=str(_safe_getattr(font, "familyName") or ""),
             file_path=file_path,
+            has_unsaved_changes=has_unsaved_changes,
             active=self._is_active(font),
             master_count=len(_sequence_values(_safe_getattr(font, "masters"))),
             instance_count=len(_sequence_values(_safe_getattr(font, "instances"))),

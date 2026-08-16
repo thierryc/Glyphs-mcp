@@ -1,37 +1,42 @@
-# Glyphs MCP 2.0 runtime foundation
+# Glyphs MCP 2.0 runtime
 
-This directory is the canonical source for the in-progress Glyphs MCP 2.0
-runtime. It is deliberately separate from the shipped 1.x plug-in resources
-while the 2.0 contracts and host boundaries are being established.
+This is the isolated, unreleased Glyphs MCP 2.0 package. It is based on signed
+release `v1.11.0` but does not change the shipped 1.x wire contracts.
 
-The first vertical slice contains two read-only tools:
+The catalog contains 28 operations across:
 
-- `get_server_info`
-- `list_open_fonts`
+- stable document status and bounded glyph, instance, kerning, audit, and operation pages;
+- compatibility, metrics, anchors, spacing, kerning, and export reviews;
+- one-time reviewed batch applies through a shared verified transaction kernel;
+- staged, destination-fingerprint-bound source-bundle publication;
+- `execute_python` staged-document and live-open-world modes;
+- fingerprint-bound `rollback_python_execution` and separate recovery copies.
 
-The package has five enforced layers:
+All result envelopes carry request, run, and operation IDs, typed effect and
+status, timestamps, warnings/errors, optional page metadata, fingerprints, and
+audit receipts. Pages default to 100 items, cap at 500, and are also bounded by
+serialized size.
 
-- contracts and identities: host- and transport-independent values;
-- application: read-only use cases and normalized failures;
-- ports: immutable host snapshots and execution protocols;
-- adapters: Glyphs 3.5/4 access isolated on the main thread;
-- transport: catalog-driven FastMCP registration.
-
-`contracts.py`, `identity.py`, `ports.py`, `catalog.py`, and `application.py`
-must not import GlyphsApp, AppKit, Foundation, FastMCP, or Uvicorn.
+The five enforced layers are contracts, application services, ports, native
+adapters, and catalog-driven transport. Core and application modules do not
+import GlyphsApp, AppKit, Foundation, FastMCP, or Uvicorn. Native Glyphs objects
+remain inside the main-thread adapter.
 
 ## Worktree-contained development
 
 From the repository root:
 
 ```bash
-python3.12 -m venv .venv-v2
-PIP_CACHE_DIR="$PWD/.cache/v2/pip" \
-  .venv-v2/bin/python -m pip install -r requirements-dev.txt
-PYTHONDONTWRITEBYTECODE=1 PYTHON_BIN=.venv-v2/bin/python \
-  ./scripts/run_python_tests.sh
+python3.12 -m pytest -q src/glyphs-mcp/tests
 python3.12 scripts/build_v2_runtime_payload.py
+git diff --check
 ```
 
-The builder writes only to `build/v2-runtime/` by default. It does not install,
-link, reload, or execute the plug-in in Glyphs.
+The builder writes only to `build/v2-runtime/`. It does not install, link,
+reload, or execute the plug-in in Glyphs. Live gates require disposable copies
+on Glyphs 3.5 and 4 and must not use the production source.
+
+Inside each supported host, `glyphs_mcp_v2.live_gates.verify_copy_and_make_copy`
+accepts only a font whose family name starts with `Glyphs MCP V2 Disposable`.
+It verifies canonical and serialized clone equality plus `save(makeCopy=True)`
+path/dirty-state invariants, writing only to a new explicit output path.

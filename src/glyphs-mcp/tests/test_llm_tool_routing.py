@@ -14,12 +14,18 @@ RESOURCES = REPO_ROOT / "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resourc
 if str(RESOURCES) not in sys.path:
     sys.path.insert(0, str(RESOURCES))
 
-from tool_catalog import ACTIVE, APP_ONLY, MODEL_AND_APP, TOOL_CATALOG
+from tool_catalog import ACTIVE, APP_ONLY, MODEL_AND_APP, TOOL_CATALOG as V1_TOOL_CATALOG
+
+V2_SOURCE = REPO_ROOT / "src/glyphs-mcp-v2"
+if str(V2_SOURCE) not in sys.path:
+    sys.path.insert(0, str(V2_SOURCE))
+
+from glyphs_mcp_v2.catalog import TOOL_CATALOG as V2_TOOL_CATALOG  # noqa: E402
 
 
 TOOLISH = re.compile(
     r"^(?:accept|add|apply|clear|copy|create|delete|discard|docs|get|list|"
-    r"materialize|open|preview|review|save|set|show|update|execute|export)_"
+    r"materialize|open|preview|review|rollback|save|set|show|update|execute|export)_"
 )
 BACKTICK_IDENTIFIER = re.compile(r"`([A-Za-z_][A-Za-z0-9_]*)`")
 SKILL_ROUTING_FIELDS = {
@@ -29,7 +35,7 @@ SKILL_ROUTING_FIELDS = {
     "expected_action",
     "expected_tools",
     "approval",
-    "snippet_only",
+    "review_required",
     "expected_result",
     "forbidden_skills",
     "forbidden_tools",
@@ -55,6 +61,13 @@ SKILL_ROUTING_APPROVALS = {
 
 
 class LLMToolRoutingTests(unittest.TestCase):
+    @staticmethod
+    def _is_model_tool(name: str) -> bool:
+        if name in V2_TOOL_CATALOG:
+            return True
+        entry = V1_TOOL_CATALOG.get(name)
+        return bool(entry and entry.state == ACTIVE and entry.visibility == MODEL_AND_APP)
+
     def test_routing_fixtures_use_catalog_visibility_and_safe_sequences(self) -> None:
         path = Path(__file__).resolve().parent / "fixtures/llm_tool_routing.json"
         fixtures = json.loads(path.read_text(encoding="utf-8"))
@@ -64,12 +77,12 @@ class LLMToolRoutingTests(unittest.TestCase):
                 route = [fixture["primary"], *fixture.get("followups", [])]
                 surface = fixture["surface"]
                 for name in route:
-                    entry = TOOL_CATALOG[name]
+                    entry = V1_TOOL_CATALOG[name]
                     self.assertEqual(entry.state, ACTIVE)
                     expected_visibility = APP_ONLY if surface == "app" else MODEL_AND_APP
                     self.assertEqual(entry.visibility, expected_visibility)
                 for name in fixture.get("forbidden", []):
-                    entry = TOOL_CATALOG.get(name)
+                    entry = V1_TOOL_CATALOG.get(name)
                     self.assertTrue(
                         entry is None
                         or entry.state != ACTIVE
@@ -126,9 +139,7 @@ class LLMToolRoutingTests(unittest.TestCase):
                     set(),
                 )
                 for name in [*fixture["expected_tools"], *fixture["forbidden_tools"]]:
-                    entry = TOOL_CATALOG[name]
-                    self.assertEqual(entry.state, ACTIVE)
-                    self.assertEqual(entry.visibility, MODEL_AND_APP)
+                    self.assertTrue(self._is_model_tool(name), name)
 
     def test_skill_routing_prompts_enforce_scripting_and_domain_boundaries(self) -> None:
         path = Path(__file__).resolve().parent / "fixtures/llm_skill_routing.json"
@@ -163,23 +174,21 @@ class LLMToolRoutingTests(unittest.TestCase):
             with self.subTest(case=fixture["id"]):
                 if action in live_actions:
                     self.assertEqual(fixture["expected_skill"], "glyphs-mcp-scripting")
-                    self.assertTrue(
-                        {"execute_code", "execute_code_with_context"}
-                        & set(fixture["expected_tools"])
-                    )
+                    if action != "return_snippet":
+                        self.assertIn("execute_python", fixture["expected_tools"])
                 if action in {"preview_mutation", "preview_external_effect"}:
-                    self.assertTrue(fixture["snippet_only"])
+                    self.assertTrue(fixture["review_required"])
                     self.assertEqual(fixture["approval"], "stop_before_execution")
-                    self.assertIn("without", fixture["expected_result"].lower())
+                    self.assertIn("review id", fixture["expected_result"].lower())
                 if action in {"execute_read_only", "debug_live_script"}:
-                    self.assertFalse(fixture["snippet_only"])
+                    self.assertFalse(fixture["review_required"])
                     self.assertEqual(fixture["approval"], "not_required")
                 if action == "return_snippet":
-                    self.assertTrue(fixture["snippet_only"])
-                    self.assertIn("do not execute", fixture["expected_result"].lower())
+                    self.assertFalse(fixture["review_required"])
+                    self.assertIn("do not call execute_python", fixture["expected_result"].lower())
                 if action in {"create_workspace_script", "create_workspace_plugin"}:
                     self.assertEqual(fixture["expected_skill"], "glyphs-mcp-development")
-                    self.assertIsNone(fixture["snippet_only"])
+                    self.assertIsNone(fixture["review_required"])
                     self.assertFalse(
                         {"execute_code", "execute_code_with_context"}
                         & set(fixture["expected_tools"])
@@ -190,16 +199,16 @@ class LLMToolRoutingTests(unittest.TestCase):
                 if action == "no_glyphs_skill":
                     self.assertIsNone(fixture["expected_skill"])
                     self.assertEqual(fixture["expected_tools"], [])
-                    self.assertIsNone(fixture["snippet_only"])
+                    self.assertIsNone(fixture["review_required"])
 
         router = (REPO_ROOT / "skills/glyphs/SKILL.md").read_text(encoding="utf-8")
         scripting = (
             REPO_ROOT / "skills/glyphs-mcp-scripting/SKILL.md"
         ).read_text(encoding="utf-8")
         self.assertIn("Generic Python with no Glyphs app or font target", router)
-        self.assertIn("snippet_only=true", scripting)
-        self.assertIn("then stop for explicit approval", scripting)
-        self.assertIn("execute only that unchanged reviewed request", scripting)
+        self.assertIn("staged_document", scripting)
+        self.assertIn("execute_python(reviewId=..., confirm=true)", scripting)
+        self.assertIn("stored patch without rerunning Python", scripting)
 
     def test_canonical_and_packaged_skills_route_only_to_model_tools(self) -> None:
         roots = [REPO_ROOT / "skills", REPO_ROOT / "plugins/glyphs-mcp/skills"]
@@ -212,8 +221,7 @@ class LLMToolRoutingTests(unittest.TestCase):
                 for name in BACKTICK_IDENTIFIER.findall(text):
                     if not TOOLISH.match(name):
                         continue
-                    entry = TOOL_CATALOG.get(name)
-                    if entry is None or entry.state != ACTIVE or entry.visibility != MODEL_AND_APP:
+                    if not self._is_model_tool(name):
                         violations.append((str(path.relative_to(REPO_ROOT)), name))
         self.assertGreaterEqual(checked, 18)
         self.assertEqual(violations, [])
@@ -221,7 +229,7 @@ class LLMToolRoutingTests(unittest.TestCase):
     def test_removed_and_app_only_names_never_appear_in_skills(self) -> None:
         forbidden = {
             name
-            for name, entry in TOOL_CATALOG.items()
+            for name, entry in V1_TOOL_CATALOG.items()
             if entry.state != ACTIVE or entry.visibility == APP_ONLY
         }
         violations = []

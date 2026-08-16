@@ -8,7 +8,9 @@ MODE="sync"
 SKILLS=(
   glyphs
   glyphs-mcp-development
-  glyphs-mcp-features
+  glyphs-mcp-maintainer-feedback
+  glyphs-mcp-opentype-features
+  glyphs-mcp-production-audit
   glyphs-mcp-icon-font
   glyphs-mcp-italic-first-pass
   glyphs-mcp-kerning

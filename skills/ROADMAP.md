@@ -198,10 +198,11 @@ Core rules:
 - never overwrite, install, execute, reload, or restart automatically
 - target Glyphs 3.5 and Glyphs 4 unless the user requests one version
 
-### 8. `glyphs-mcp-features`
+### 8. `glyphs-mcp-opentype-features`
 
-Use for OpenType feature inspection and stylistic-set glyph groups with Glyphs
-links. Keep it focused on the existing typed feature tools.
+Use for narrowly scoped OpenType feature and stylistic-set inspection. Prefer a
+typed feature operation and use bounded read-intent Python only when the typed
+surface does not cover the question.
 
 ### 9. `glyphs-mcp-litsquare-metadata`
 
@@ -227,11 +228,11 @@ Core rules:
 
 - inspect live context and prefer dedicated tools or domain skills first
 - ground unfamiliar APIs with `docs_search` followed by focused `docs_get`
-- use `execute_code_with_context` for glyph/layer work and `execute_code` for
-  broader scripts
-- preview mutations and external side effects with `snippet_only=true`, show
-  the exact code and target, and stop for approval
-- execute only unchanged approved code and verify through dedicated reads
+- use `execute_python` only when typed operations do not fit
+- default document edits to `staged_document`, review their semantic diff, and
+  confirm only the exact stored request
+- use `live_open_world` for unsupported or external effects and keep its
+  recovery-only limits explicit
 - never save, install, reload, restart, access files or the network, or launch
   subprocesses without separate authorization
 - hand reusable artifacts to `glyphs-mcp-development`

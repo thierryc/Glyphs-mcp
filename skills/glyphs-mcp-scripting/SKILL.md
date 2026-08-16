@@ -1,78 +1,42 @@
 ---
 name: glyphs-mcp-scripting
-description: Use this skill to vibe-code, preview, run, or debug focused Python scripts inside the live Glyphs app through Glyphs MCP, including Macro Panel snippets and experiments that may later become reusable scripts or plug-ins. Ground unfamiliar GlyphsApp APIs in the bundled documentation and gate every mutation or external side effect.
+description: Use execute_python as the model-visible Glyphs fallback when typed v2 tools cannot express a focused read, document edit, UI task, or external operation; default document edits to detached staged execution and use explicit recovery rules for open-world code.
 ---
 
 # Glyphs MCP scripting
 
-Turn a natural-language idea into the smallest verifiable Python script for the
-running Glyphs app.
+Use the smallest verified Python fallback that covers the request.
 
 ## Core rules
 
-- Prefer an existing dedicated MCP tool or domain skill when it already covers
-  the task. Keep outline-specific fallback code in `glyphs-mcp-outlines-docs`
-  and guarded italic fallback code in `glyphs-mcp-italic-first-pass`.
-- Read the live server, font, master, glyph, layer, and selection context needed
-  for the request before writing code.
-- Search with `docs_search`, then fetch only the relevant pages with `docs_get`
-  before using an unfamiliar GlyphsApp API. Target Glyphs 3.5 and Glyphs 4
-  unless the user requests one version.
-- Use `execute_code_with_context` for glyph- or layer-scoped work. Use
-  `execute_code` only when injected font, glyph, and layer context is not useful.
-- Keep code focused, validate every target, make repeat runs safe when
-  practical, and bound returned output with `max_output_chars` and
-  `max_error_chars`.
-- Never call `exit()`, `quit()`, or `sys.exit()`. Do not install or reload
-  scripts or plug-ins, restart Glyphs, save a font, access files or the network,
-  or launch subprocesses without separate explicit authorization.
-- Never treat printed output as mutation proof. Re-read affected state with
-  dedicated MCP tools and optionally inspect `get_document_change_overview`.
+- Prefer a typed tool or domain skill when it fits. Use `execute_python` because the defaults do not fit, not as a shortcut around reviewed APIs.
+- Resolve stable `documentId` context and the current document fingerprint before mutation.
+- Ground unfamiliar GlyphsApp APIs with `docs_search` and focused `docs_get` pages. Target Glyphs 3.5 and 4 unless the user narrows the host.
+- Supply a concise `reason`, `intendedEffect`, explicit context, and bounded output. Never claim arbitrary PyObjC code can be safely killed; timeout enforcement is cooperative.
+- Never call `exit()`, `quit()`, or `sys.exit()`. Never save, close, install, reload, restart Glyphs, use files or networking, or launch processes unless those effects are explicitly requested and reviewed in `live_open_world` mode.
+- Printed output is not mutation proof. Use fingerprints, semantic diffs, read-back verification, audit receipts, and focused post-read tools.
 
-## Workflow
+## Execution workflow
 
-1. Form a compact brief from the request:
-   - exact target and scope
-   - expected behavior
-   - permitted effects
-   - observable success condition
-2. Resolve missing live context with `get_server_info`, `list_open_fonts`,
-   `get_selected_font_and_master`, and the smallest relevant selection or
-   inspection tools. Ask only when a consequential target or scope remains
-   ambiguous.
-3. Search and fetch the focused API documentation needed for the script.
-4. Write the smallest working vertical slice. Validate object existence before
-   reading or changing it, and summarize outcomes as changed, skipped, and
-   failed counts when processing a batch.
-5. Classify the exact code before execution:
-   - For clearly read-only code that the user asked to run, execute it and
-     inspect the bounded result.
-   - For any font mutation or external side effect, first call the matching
-     execution tool with `snippet_only=true`. Show the exact code, targets, and
-     expected changes, then stop for explicit approval.
-6. Treat the submitted `code` argument as the reviewed executable. Label the
-   returned Macro Panel snippet separately because it wraps that code for manual
-   use. Bind approval to the exact execution tool, code, font/glyph context,
-   remaining arguments, targets, and side-effect scope.
-7. After approval, execute only that unchanged reviewed request. If any bound
-   field changes, generate a new snippet and request approval again.
-8. For larger layer edits, pair `layer.beginChanges()` and
-   `layer.endChanges()` in `try/finally`. Avoid MCP-driven
-   `glyph.beginUndo()`/`glyph.endUndo()` because live Glyphs 4 testing found
-   that those groups can trigger the undo recovery dialog.
-9. Re-read the affected state, compare it with the brief's success condition,
-   and report what ran, what changed, what was skipped, errors, and whether the
-   font remains unsaved.
-10. On a traceback, reduce to a minimal reproducer and retry once. Stop after a
-   repeated failure and report any state that may already have changed.
+1. Call `get_server_info`, `list_open_fonts`, and `get_document_status` as needed, then classify the request as `read`, `document_edit`, or `files_or_external`.
+2. Read-only code may execute directly. Inspect `observedDocumentChange` and `scopeViolations`; a read-intent violation is a safety finding.
+3. For document edits, call `execute_python` in the default `staged_document` mode with one explicit document and its expected fingerprint.
+4. Review the deterministic paginated semantic diff. Staged code runs against `GSFont.copy()` without the live `Glyphs` singleton; this is a correctness boundary, not a hostile-code sandbox.
+5. Confirm only with `execute_python(reviewId=..., confirm=true)`. The runtime consumes the exact stored code, arguments, context, and code hash and applies the stored patch without rerunning Python.
+6. Use `live_open_world` only for UI state, global Glyphs APIs, unsupported native objects, files, processes, or networking. It requires exact preview and confirmation, creates a private recovery copy, and never claims external effects are transactional.
+7. Keep the returned execution ID, after-fingerprint, rollback coverage, and expiry. Do not infer automatic rollback from native undo grouping.
+
+## Rollback workflow
+
+- For `document_inverse` coverage, call `rollback_python_execution` with the execution ID, exact after-fingerprint, `strategy=auto`, and `confirm=true`.
+- Later edits, document replacement, restart, expiry, or fingerprint mismatch make automatic rollback stale; never overwrite them.
+- For `recovery_only`, use `strategy=open_recovery_copy`. It opens a separate serialized document and never closes or replaces the working document.
+- Rollback covers Glyphs document state only. Files, network calls, processes, preferences, saves, and opened or closed documents require compensation or recovery.
+- Do not use `glyph.beginUndo()` or `glyph.endUndo()` to determine rollback availability. `layer.beginChanges()`/`layer.endChanges()` may still be paired in `try/finally` for large native layer edits.
 
 ## Reusable artifacts
 
-When the result should become a Script-menu command or a plug-in, route to
-`glyphs-mcp-development`. Create the reusable `.py` file or plug-in bundle in
-the workspace, retain `# MenuTitle` and `__doc__` for scripts, validate it
-statically, and leave live installation or runtime testing as a separate
-request.
+Route Script-menu commands and plug-ins to `glyphs-mcp-development`. Keep live installation and runtime testing as separate, explicit requests.
 
 ## Deeper references
 

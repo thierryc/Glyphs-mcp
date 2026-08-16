@@ -17,7 +17,10 @@ from glyphs_mcp_v2.workflows import (  # noqa: E402
     list_kerning_pairs,
     review_anchor_consistency,
     review_export,
+    review_compatibility_updates,
+    review_kerning_coverage,
     review_master_compatibility,
+    review_metrics_updates,
     simulate_spacing,
 )
 
@@ -71,6 +74,27 @@ class V2WorkflowTests(unittest.TestCase):
         self.assertEqual(item["reason"], "zero_width_mark")
         self.assertNotIn("blocked", repr(item))
 
+    def test_spacing_revalidates_dependencies_in_a_bounded_fixed_point(self) -> None:
+        result = simulate_spacing(
+            [
+                {"glyphName": "A", "masterId": "m1", "width": 500, "targetWidth": 600},
+                {
+                    "glyphName": "Aacute",
+                    "masterId": "m1",
+                    "width": 500,
+                    "referenceGlyphName": "A",
+                    "offset": 10,
+                },
+            ],
+            max_iterations=5,
+            tolerance=1,
+        )
+        by_name = {item["glyphName"]: item for item in result["items"]}
+        self.assertTrue(result["converged"])
+        self.assertLessEqual(result["completedIterations"], 5)
+        self.assertEqual(by_name["Aacute"]["proposedWidth"], 610)
+        self.assertEqual(result["dependencyCount"], 1)
+
     def test_kerning_keys_and_instance_axes_are_typed(self) -> None:
         model = {
             "kerning": [
@@ -98,6 +122,12 @@ class V2WorkflowTests(unittest.TestCase):
         instances = list_instances(model)
         self.assertEqual(instances[0]["axes"][0]["external"], 90)
         self.assertFalse(instances[0]["interpolationSupported"])
+        coverage = review_kerning_coverage(model, mode="glyph_expansion")
+        self.assertEqual(coverage["eligibleCount"], 1)
+        self.assertEqual(coverage["measuredCount"], 0)
+        self.assertEqual(coverage["untestedCount"], 1)
+        self.assertTrue(coverage["accountingComplete"])
+        self.assertFalse(coverage["complete"])
 
     def test_export_blocks_hard_findings_and_nonempty_destinations(self) -> None:
         compatibility = {"hasHardFailures": True, "findings": [{"id": "f1"}]}
@@ -109,6 +139,44 @@ class V2WorkflowTests(unittest.TestCase):
         self.assertFalse(blocked["ready"])
         self.assertIn("destination_not_empty", blocked["blockingCodes"])
         self.assertIn("hard_compatibility_failure", blocked["blockingCodes"])
+
+    def test_metrics_and_compatibility_batches_are_explicit_semantic_patches(self) -> None:
+        model = {
+            "glyphs": {
+                "A": {
+                    "layers": {
+                        "m1": {
+                            "leftMetricsKey": None,
+                            "rightMetricsKey": None,
+                            "widthMetricsKey": None,
+                            "paths": [],
+                            "components": [],
+                            "pathSignature": [],
+                        }
+                    }
+                }
+            }
+        }
+        metrics = review_metrics_updates(
+            model,
+            [{"glyphName": "A", "masterId": "m1", "leftMetricsKey": "=H"}],
+        )
+        self.assertEqual(metrics.apply(model)["glyphs"]["A"]["layers"]["m1"]["leftMetricsKey"], "=H")
+
+        compatibility = review_compatibility_updates(
+            model,
+            [
+                {
+                    "glyphName": "A",
+                    "masterId": "m1",
+                    "components": [{"name": "A.base", "transform": [1, 0, 0, 1, 0, 0]}],
+                }
+            ],
+        )
+        self.assertEqual(
+            compatibility.apply(model)["glyphs"]["A"]["layers"]["m1"]["components"][0]["name"],
+            "A.base",
+        )
 
 
 if __name__ == "__main__":

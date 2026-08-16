@@ -185,7 +185,9 @@ MAX_PY_VERSION_EXCLUSIVE = (3, 15, 0)  # Disallow 3.15+ until tested
 MANAGED_SKILL_NAMES = (
     "glyphs",
     "glyphs-mcp-development",
-    "glyphs-mcp-features",
+    "glyphs-mcp-maintainer-feedback",
+    "glyphs-mcp-opentype-features",
+    "glyphs-mcp-production-audit",
     "glyphs-mcp-icon-font",
     "glyphs-mcp-italic-first-pass",
     "glyphs-mcp-kerning",
@@ -195,7 +197,7 @@ MANAGED_SKILL_NAMES = (
     "glyphs-mcp-scripting",
     "glyphs-mcp-spacing",
 )
-LEGACY_MANAGED_SKILL_NAMES = ("glyphs-mcp-connect",)
+LEGACY_MANAGED_SKILL_NAMES = ("glyphs-mcp-connect", "glyphs-mcp-features")
 SKILL_OWNERSHIP_MARKER = ".glyphs-mcp-owner.json"
 SKILL_OWNERSHIP_SCHEMA_VERSION = 1
 SKILL_OWNERSHIP_REPOSITORY = "thierryc/Glyphs-mcp"

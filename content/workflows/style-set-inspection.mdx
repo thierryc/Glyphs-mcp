@@ -5,7 +5,7 @@ description: Inspect OpenType features and stylistic-set glyph groups with Glyph
 
 Use this workflow when you want an agent to inspect OpenType feature code, list stylistic sets, or produce reviewable glyph groups from the font currently open in Glyphs.
 
-The safest starting point is the `glyphs-mcp-features` skill. It teaches the agent to prefer read-only inspection first, use `list_style_sets` for `ss01` through `ss20`, and include Glyphs links only where they help you review the result.
+The safest starting point is the `glyphs-mcp-opentype-features` skill. It keeps the workflow narrowly focused on read-only OpenType inspection and uses bounded read-intent fallback only when no typed inspection operation is available.
 
 ## When to use it
 
@@ -16,7 +16,8 @@ The safest starting point is the `glyphs-mcp-features` skill. It teaches the age
 
 ## What changes
 
-Nothing changes when you only use `list_style_sets`, `get_font_glyphs`, or `get_glyph_details`. This is primarily a read-only workflow.
+Nothing changes when you only use a typed feature inspection operation,
+`list_glyphs`, or bounded read-intent fallback. This is a read-only workflow.
 
 If you later ask an agent to edit feature code through `execute_code` or `execute_code_with_context`, require a specific proposed diff first and keep the mutation confirm-gated.
 
@@ -31,7 +32,7 @@ If you later ask an agent to edit feature code through `execute_code` or `execut
 ## Safe prompt template
 
 ```text
-Use the glyphs-mcp-features skill.
+Use the glyphs-mcp-opentype-features skill.
 
 Task: Inspect the OpenType stylistic sets in my active Glyphs font.
 
