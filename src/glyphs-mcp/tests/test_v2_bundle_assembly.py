@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import plistlib
 import subprocess
 import sys
 import tempfile
@@ -14,6 +15,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 BUILDER = REPO / "scripts" / "build_v2_runtime_payload.py"
 PACKAGE_RELATIVE = Path("Glyphs MCP.glyphsPlugin/Contents/Resources/glyphs_mcp_v2")
+BUNDLE_RELATIVE = Path("Glyphs MCP.glyphsPlugin")
 
 
 def _file_map(root: Path) -> dict[str, bytes]:
@@ -47,6 +49,28 @@ class V2BundleAssemblyTests(unittest.TestCase):
             plugin_manager = output / "plugin-manager" / PACKAGE_RELATIVE
             self.assertEqual(_file_map(source), _file_map(plugin_manager))
             self.assertNotIn("__pycache__", {part for path in source.rglob("*") for part in path.parts})
+
+            for layout in ("source", "plugin-manager"):
+                bundle = output / layout / BUNDLE_RELATIVE
+                resources = bundle / "Contents" / "Resources"
+                self.assertTrue((bundle / "Contents" / "MacOS" / "plugin").is_file())
+                with (bundle / "Contents" / "Info.plist").open("rb") as plist_file:
+                    info = plistlib.load(plist_file)
+                self.assertEqual(info["CFBundleShortVersionString"], "2.0.0.dev1")
+                self.assertEqual(info["CFBundleVersion"], "2.0.0.dev1")
+
+                runtime_bridge = (resources / "mcp_tools.py").read_text(encoding="utf-8")
+                self.assertIn(
+                    "from glyphs_mcp_v2.runtime import create_glyphs_server",
+                    runtime_bridge,
+                )
+                self.assertNotIn("mcp_tools_annotations", runtime_bridge)
+
+                plugin_entry = (resources / "plugin.py").read_text(encoding="utf-8")
+                self.assertIn("from mcp_tools import mcp", plugin_entry)
+                self.assertNotIn("import code_execution", plugin_entry)
+                self.assertNotIn("import documentation_resources", plugin_entry)
+                self.assertNotIn("import kerning_resources", plugin_entry)
 
             manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["fileCount"], len(_file_map(source)))
