@@ -29,7 +29,12 @@ class _Clock:
 class V2CommonRuntimeTests(unittest.TestCase):
     def test_pagination_is_fingerprint_bound_and_capped(self) -> None:
         values = [{"name": "g{:03d}".format(index)} for index in range(225)]
-        first = paginate(values, source_fingerprint="font_a", page_size=100)
+        first = paginate(
+            values,
+            source_fingerprint="font_a",
+            cursor_scope="list_glyphs:doc_alpha",
+            page_size=100,
+        )
 
         self.assertEqual(len(first.items), 100)
         self.assertEqual(first.page.page_size, 100)
@@ -39,6 +44,7 @@ class V2CommonRuntimeTests(unittest.TestCase):
         second = paginate(
             values,
             source_fingerprint="font_a",
+            cursor_scope="list_glyphs:doc_alpha",
             page_size=900,
             cursor=first.page.next_cursor,
         )
@@ -49,6 +55,16 @@ class V2CommonRuntimeTests(unittest.TestCase):
             paginate(
                 values,
                 source_fingerprint="font_changed",
+                cursor_scope="list_glyphs:doc_alpha",
+                page_size=100,
+                cursor=first.page.next_cursor,
+            )
+
+        with self.assertRaises(CursorError):
+            paginate(
+                values,
+                source_fingerprint="font_a",
+                cursor_scope="list_kerning_pairs:doc_alpha",
                 page_size=100,
                 cursor=first.page.next_cursor,
             )
