@@ -1,0 +1,6 @@
+interface:
+  display_name: "Glyphs MCP Scripting"
+  short_description: "Vibe-code live Glyphs Python scripts safely."
+  default_prompt: "Use $glyphs-mcp-scripting to build and safely run a documentation-grounded Python script in the live Glyphs app."
+policy:
+  allow_implicit_invocation: true

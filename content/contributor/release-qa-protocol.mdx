@@ -221,7 +221,7 @@ candidates, tangent/imbalance boundaries, and continuous opt-in.
   restrictions, and loopback-only binding.
 - Install/upgrade both Glyphs targets with the release installer. Confirm
   canonical and Plugin Manager runtimes, four host manifests, packaged skills,
-  and build number agree. Each host resolves version `1.10.0`, the same 10
+  and build number agree. Each host resolves version `1.11.0`, the same 11
   skills, and the same localhost MCP endpoint (the version script updates this
   sentence for the candidate).
 - Exercise update discovery and **Prepare Update** only with signed disposable
@@ -246,7 +246,24 @@ contracts, safety transitions, and mutation targets may not.
 
 ## Deterministic agent-routing smoke prompts
 
-Run the repository routing fixtures plus these real-client prompts:
+Run every case in the
+[skill-routing prompt fixture](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/tests/fixtures/llm_skill_routing.json)
+as a fresh prompt without exposing its expected fields to the agent. Compare
+the observed result with all of these fields before marking the case passed:
+
+- `expected_skill`, including the explicit no-Glyphs-skill negative case
+- `expected_action` and `expected_tools`
+- `approval` and `snippet_only`
+- the human-readable `expected_result`
+- every entry in `forbidden_skills` and `forbidden_tools`
+
+Record the host, client/model version, chosen skill, tool sequence, whether any
+code executed, whether approval was requested, and the final pass/fail result.
+A model judging its own response is useful iteration evidence but does not
+replace a fresh-host or independent-model pass.
+
+Then run the repository tool-routing fixture plus these broader real-client
+prompts:
 
 ```text
 Review adaptive curve quality for the explicit current path, compare compatible

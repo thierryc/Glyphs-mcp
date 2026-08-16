@@ -8,7 +8,9 @@ Glyphs MCP ships a general launcher and focused workflow skills in `skills/`. Th
 Start with `glyphs` for a general task or context check. Use a focused skill
 when you already know the task is OpenType feature inspection, icon-font
 encoding, kerning, spacing, outline work, an italic first pass, or Glyphs
-script and plug-in development. Use `glyphs-mcp-release` for repository release
+script and plug-in development. Use `glyphs-mcp-scripting` for live runs,
+Macro Panel snippets, and iterative debugging; use `glyphs-mcp-development`
+for reusable workspace artifacts. Use `glyphs-mcp-release` for repository release
 preparation and publication gates; it does not require an open font except for
 an explicitly selected live QA pass.
 
@@ -45,7 +47,7 @@ Claude Code filesystem skills are loaded into every Claude chat surface.
 ## Optional multi-host plugin
 
 The package at `plugins/glyphs-mcp` carries native manifests for Codex, Claude
-Code, Cursor, and GitHub Copilot CLI. All four manifests use version `1.10.0`
+Code, Cursor, and GitHub Copilot CLI. All four manifests use version `1.11.0`
 and load the same `skills/` directory and `.mcp.json`. Individual skills do not
 carry separate release numbers; they inherit the package version. The MCP
 server reports the aligned version of the native Glyphs MCP plug-in.
@@ -214,7 +216,7 @@ Enable **Install Glyphs MCP agent skills** for Codex and/or Claude Code. The ins
 
 Reload or restart the client after installation.
 
-For a manual global Cursor install, copy the 10 skill directories from
+For a manual global Cursor install, copy the 11 skill directories from
 `skills/` into `~/.cursor/skills/`, preserving each directory's `SKILL.md` and
 supporting files.
 
@@ -223,25 +225,29 @@ supporting files.
 | Skill | Use it for | Example prompt |
 | --- | --- | --- |
 | `glyphs` | General tasks, connection and context checks, and workflow routing | `Use $glyphs to inspect my current Glyphs context and help with this font task.` |
-| `glyphs-mcp-development` | Documentation-grounded Glyphs Python scripts and plug-in scaffolds | `Use $glyphs-mcp-development to create a reporter plug-in in this workspace.` |
+| `glyphs-mcp-development` | Reusable, documentation-grounded Glyphs Python scripts and six plug-in scaffolds | `Use $glyphs-mcp-development to create a reporter plug-in in this workspace.` |
+| `glyphs-mcp-outlines-docs` | Outline edits and their specialized live-code fallback, plus selected nodes, components, anchors, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes and fetch only the docs pages I need.` |
+| `glyphs-mcp-italic-first-pass` | Experimental Roman-to-italic construction drafts with a narrowly guarded Python fallback | `Use the glyphs-mcp-italic-first-pass skill to review selected glyphs in recommended Balanced mode before applying an italic first pass.` |
+| `glyphs-mcp-scripting` | Safe live vibe coding, Macro Panel snippets, read-only probes, and iterative script debugging | `Use $glyphs-mcp-scripting to run a read-only script that reports the current font and selected layers.` |
 | `glyphs-mcp-features` | OpenType features and stylistic-set glyph groups with Glyphs links | `Use the glyphs-mcp-features skill to list glyphs by style set with group links.` |
 | `glyphs-mcp-icon-font` | Stable icon-font Unicode and PUA assignment workflows | `Use the glyphs-mcp-icon-font skill to audit this icon font and preserve its existing mappings.` |
 | `glyphs-mcp-kerning` | Kerning bumper review and approved applies | `Use the glyphs-mcp-kerning skill to review kerning collisions and do a dry run first.` |
+| `glyphs-mcp-litsquare-metadata` | LitSquare metadata, semantic path roles, and layer-specific IconGrid centering | `Use $glyphs-mcp-litsquare-metadata to inspect inherited LitSquare metadata without changing it.` |
 | `glyphs-mcp-spacing` | Spacing review and approved applies | `Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.` |
-| `glyphs-mcp-outlines-docs` | Outline edits, selected nodes, components, anchors, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes and fetch only the docs pages I need.` |
-| `glyphs-mcp-italic-first-pass` | Experimental Roman-to-italic construction drafts for designer refinement | `Use the glyphs-mcp-italic-first-pass skill to review selected glyphs in recommended Balanced mode before applying an italic first pass.` |
-| `glyphs-mcp-release` | Version, docs, packaging, validation, signing, and publication gates | `Use $glyphs-mcp-release to prepare version 1.10.0 and stop before external publication.` |
+| `glyphs-mcp-release` | Version, docs, packaging, validation, signing, and publication gates | `Use $glyphs-mcp-release to prepare version 1.11.0 and stop before external publication.` |
 
 ## Operating rules
 
 - Begin with review tools; treat any tool annotated as an edit as a separate approval boundary.
 - Read current font, master, glyph, layer, or selection before changing anything.
 - Prefer dedicated tools over free-form code.
+- For live scripting mutations, review the exact `snippet_only` code and target,
+  then approve only unchanged execution; revised code requires new approval.
 - Use dry runs before apply steps.
 - Require explicit approval before confirm-gated mutations.
 - Never auto-save the font unless a human explicitly asks for it.
 - Use `docs_search` and `docs_get` instead of loading broad documentation into context.
-- Create scripts and plug-ins in the workspace; install or run them only after a separate explicit request.
+- Create reusable scripts and plug-ins in the workspace; install or run them only after a separate explicit request.
 
 ## Related docs
 

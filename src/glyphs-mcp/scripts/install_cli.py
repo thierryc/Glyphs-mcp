@@ -192,6 +192,7 @@ MANAGED_SKILL_NAMES = (
     "glyphs-mcp-litsquare-metadata",
     "glyphs-mcp-outlines-docs",
     "glyphs-mcp-release",
+    "glyphs-mcp-scripting",
     "glyphs-mcp-spacing",
 )
 LEGACY_MANAGED_SKILL_NAMES = ("glyphs-mcp-connect",)
