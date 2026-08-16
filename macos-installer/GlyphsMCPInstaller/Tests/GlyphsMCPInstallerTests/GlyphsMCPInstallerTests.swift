@@ -740,6 +740,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try FileManager.default.createDirectory(at: plugin, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-development", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-scripting", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 		try FileManager.default.createDirectory(at: codexSkill, withIntermediateDirectories: true, attributes: nil)
@@ -1239,13 +1240,14 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try FileManager.default.createDirectory(at: plugin, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-development", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-scripting", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("other-skill", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 
 		let payload = InstallerPayload(payloadDir: payloadDir, pluginBundle: plugin, requirementsTxt: req, skillsDir: skillsDir)
 		let managed = payload.managedSkillDirectories().map(\.lastPathComponent)
-		XCTAssertEqual(managed, ["glyphs", "glyphs-mcp-development", "glyphs-mcp-spacing"])
+		XCTAssertEqual(managed, ["glyphs", "glyphs-mcp-development", "glyphs-mcp-scripting", "glyphs-mcp-spacing"])
 	}
 
 	func testAgentSkillBundleInstallerOverwritesManagedSkillsOnlyWhenRequested() throws {
@@ -1255,6 +1257,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		let req = payloadDir.appendingPathComponent("requirements.txt")
 		let skillsDir = payloadDir.appendingPathComponent("skills", isDirectory: true)
 		let glyphs = skillsDir.appendingPathComponent("glyphs", isDirectory: true)
+		let scripting = skillsDir.appendingPathComponent("glyphs-mcp-scripting", isDirectory: true)
 		let spacing = skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true)
 		let destRoot = tmp.appendingPathComponent("dest", isDirectory: true)
 		let installedGeneric = destRoot.appendingPathComponent("glyphs", isDirectory: true)
@@ -1263,11 +1266,13 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 
 		try FileManager.default.createDirectory(at: plugin, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: glyphs, withIntermediateDirectories: true, attributes: nil)
+		try FileManager.default.createDirectory(at: scripting, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: spacing, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: legacyConnect, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: unrelated, withIntermediateDirectories: true, attributes: nil)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 		try "new managed\n".write(to: glyphs.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+		try "new scripting\n".write(to: scripting.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
 		try "new spacing\n".write(to: spacing.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
 		try "old connect\n".write(to: legacyConnect.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
 		try "keep me\n".write(to: unrelated.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
@@ -1278,6 +1283,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 
 		XCTAssertEqual(try String(contentsOf: installedGeneric.appendingPathComponent("SKILL.md"), encoding: .utf8), "new managed\n")
 		XCTAssertFalse(FileManager.default.fileExists(atPath: legacyConnect.path))
+		XCTAssertEqual(try String(contentsOf: destRoot.appendingPathComponent("glyphs-mcp-scripting/SKILL.md"), encoding: .utf8), "new scripting\n")
 		XCTAssertEqual(try String(contentsOf: destRoot.appendingPathComponent("glyphs-mcp-spacing/SKILL.md"), encoding: .utf8), "new spacing\n")
 		XCTAssertEqual(try String(contentsOf: unrelated.appendingPathComponent("SKILL.md"), encoding: .utf8), "keep me\n")
 	}

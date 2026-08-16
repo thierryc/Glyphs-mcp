@@ -15,6 +15,7 @@ SKILLS=(
   glyphs-mcp-litsquare-metadata
   glyphs-mcp-outlines-docs
   glyphs-mcp-release
+  glyphs-mcp-scripting
   glyphs-mcp-spacing
 )
 

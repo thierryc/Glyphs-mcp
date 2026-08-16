@@ -18,13 +18,15 @@ Use this skill as the general launcher for Glyphs MCP tasks.
 ## Route focused work
 
 - OpenType features and stylistic sets: follow `glyphs-mcp-features`.
-- Glyphs Python scripts and plug-in development: follow `glyphs-mcp-development`.
+- Live Python runs, Macro Panel snippets, and iterative script debugging: follow `glyphs-mcp-scripting`.
+- Reusable Python scripts and plug-in development: follow `glyphs-mcp-development`.
 - Icon-font Unicode or PUA assignments: follow `glyphs-mcp-icon-font`.
 - Kerning collision review and bumper changes: follow `glyphs-mcp-kerning`.
 - LitSquare metadata, inherited settings, or semantic path roles: follow `glyphs-mcp-litsquare-metadata`.
 - Spacing, sidebearings, and width review: follow `glyphs-mcp-spacing`.
 - Outlines, components, anchors, selected nodes, or bundled docs: follow `glyphs-mcp-outlines-docs`.
 - Roman-to-italic or oblique first passes: follow `glyphs-mcp-italic-first-pass`.
+- Generic Python with no Glyphs app or font target does not use a Glyphs skill.
 - For other tasks, use the smallest relevant Glyphs MCP tool set and keep the same review-first safety rules.
 
 ## Connection and context workflow

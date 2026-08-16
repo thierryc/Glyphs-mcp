@@ -11,6 +11,50 @@ Do not duplicate release flow, command reference, or long installer notes across
 
 Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish compatibility pass across Glyphs 3.5 and Glyphs 4.
 
+## Prepared 1.11.0 candidate
+
+Version `1.11.0` (installer build `26`) preserves the 87-tool MCP runtime and
+adds `glyphs-mcp-scripting` as the eleventh canonical and packaged skill. The
+new workflow covers documentation-grounded read-only probes, Macro Panel
+snippets, and iterative live debugging while requiring an exact
+`snippet_only=true` preview and explicit approval before any mutation or
+external side effect.
+
+Existing coding ownership remains stable: `glyphs-mcp-development` creates
+reusable workspace scripts and all six plug-in types;
+`glyphs-mcp-outlines-docs` and `glyphs-mcp-italic-first-pass` keep their narrow
+fallback code. The `glyphs` launcher routes live runs separately from reusable
+artifacts and excludes generic non-Glyphs Python.
+
+The same 11-skill directory is synchronized into the Codex/ChatGPT, Claude
+Code, Cursor, and GitHub Copilot CLI package. The terminal installer managed
+set and the macOS install/update/uninstall payload tests include the new skill.
+Signing, notarization, tagging, pushing, and publication remain separate release
+actions.
+
+The complete local release gate passes 874 Python tests with 2 intentional
+environment-dependent skips. All 104 macOS installer tests pass, and the
+unsigned Debug installer builds successfully. The documentation production
+build, release metadata and version checks, synchronization check, and all 22
+canonical and packaged skill validations also pass.
+
+The machine-readable skill-routing matrix contains 13 realistic prompts with
+an expected owning skill, action, tool family, approval state, `snippet_only`
+state, human-readable result, and forbidden routes. Deterministic contracts
+validate the matrix against active model-visible tools and canonical skill
+instructions. A prompt-only Codex self-evaluation matched all 13 expected
+routes and safety boundaries. This is model-as-judge evidence, not an
+independent cross-model evaluation; the release QA protocol retains a fresh
+real-client pass for every supported host.
+
+Forward testing against Glyphs 4.0.1 confirmed a bounded read-only script could
+report the active `Gee gee` font and selected `Regular` layer with zero saves.
+A width-change prompt returned `executed:false`, preserved the live width at
+`1084`, and stopped on an exact `1084 -> 600` snippet for approval. A reusable
+Script-menu request routed to `glyphs-mcp-development`, produced a temporary
+`Report Selection.py`, and passed static Glyphs 3.5/4 validation; the disposable
+workspace was then removed. No live mutation QA was performed.
+
 ## Prepared 1.10.0 candidate
 
 Version `1.10.0` (installer build `25`) expands the active catalog to 87

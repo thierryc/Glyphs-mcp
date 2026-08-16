@@ -6,7 +6,8 @@ This document is the long-run implementation and maintenance plan for repo-local
 
 Ship a small, high-signal set of repo-owned skills that make common Glyphs MCP workflows safer, easier to discover, and more consistent across agents.
 
-The initial target is Codex and Claude Code, but the structure should stay compatible with the broader agent-skills model used by OpenAI and Anthropic.
+The shared package targets Codex/ChatGPT, Claude Code, Cursor, and GitHub
+Copilot CLI through one canonical skill source.
 
 ## Research summary
 
@@ -41,6 +42,21 @@ The local structural starting point is the `figma-use` skill bundled with the Fi
 - explicit trigger language
 
 The Glyphs skills should stay much smaller than `figma-use` until real usage justifies more depth.
+
+## Existing vibe-coding skills to preserve
+
+These capabilities predate the general live-scripting workflow and remain
+authoritative in their own scope:
+
+1. `glyphs-mcp-development` creates reusable workspace scripts and all six
+   supported Python plug-in types from pinned templates.
+2. `glyphs-mcp-outlines-docs` owns documentation-grounded live fallback code
+   for outline work when dedicated tools are insufficient.
+3. `glyphs` routes general Glyphs work and distinguishes focused workflows.
+4. `glyphs-mcp-italic-first-pass` retains its narrowly guarded generated-Python
+   fallback inside the italic construction workflow.
+
+`glyphs-mcp-scripting` complements these skills; it does not replace them.
 
 ## Architecture decision
 
@@ -182,6 +198,44 @@ Core rules:
 - never overwrite, install, execute, reload, or restart automatically
 - target Glyphs 3.5 and Glyphs 4 unless the user requests one version
 
+### 8. `glyphs-mcp-features`
+
+Use for OpenType feature inspection and stylistic-set glyph groups with Glyphs
+links. Keep it focused on the existing typed feature tools.
+
+### 9. `glyphs-mcp-litsquare-metadata`
+
+Use for LitSquare metadata, inherited settings, semantic path roles, and
+layer-specific IconGrid centering. Keep its guarded patch and verification
+contracts intact.
+
+### 10. `glyphs-mcp-release`
+
+Use for coordinated versioning, documentation, packaging, release validation,
+signing, notarization, and publication gates. External release actions remain
+separate approvals.
+
+### 11. `glyphs-mcp-scripting`
+
+Use when the task is about:
+
+- vibe coding or debugging a focused Python idea in the running Glyphs app
+- Macro Panel snippets and read-only live probes
+- testing an idea before turning it into a reusable script or plug-in
+
+Core rules:
+
+- inspect live context and prefer dedicated tools or domain skills first
+- ground unfamiliar APIs with `docs_search` followed by focused `docs_get`
+- use `execute_code_with_context` for glyph/layer work and `execute_code` for
+  broader scripts
+- preview mutations and external side effects with `snippet_only=true`, show
+  the exact code and target, and stop for approval
+- execute only unchanged approved code and verify through dedicated reads
+- never save, install, reload, restart, access files or the network, or launch
+  subprocesses without separate authorization
+- hand reusable artifacts to `glyphs-mcp-development`
+
 ## Phase 2 candidates
 
 These should only be added after repeated demand:
@@ -217,18 +271,27 @@ These should only be added after repeated demand:
 
 Use these prompts as smoke tests:
 
+The executable prompt/expected-result matrix lives in
+`src/glyphs-mcp/tests/fixtures/llm_skill_routing.json`; keep these roadmap
+examples aligned with that canonical evaluation fixture.
+
 - "Help me connect Codex to Glyphs MCP and verify it works."
 - "Review kerning collisions and only apply approved bumper fixes."
 - "Review spacing for the selected glyphs and do a dry run first."
 - "Create a documented Glyphs reporter plug-in in this workspace."
 - "Inspect selected nodes, edit outlines safely, and look up the relevant Glyphs docs."
 - "Create a first-pass italic for selected glyphs, checking Cursivy stems and doing a dry run first."
+- "Run a read-only live script that reports the selected Glyphs layers."
+- "Preview a script that changes the selected layer width, but do not run it until I approve the exact code."
+- "Create a reusable Glyphs Script-menu Python file in this workspace."
+- "Create a Glyphs Reporter plug-in in this workspace."
 
 ### Negative checks
 
 Make sure these do not over-trigger unrelated skills:
 
 - generic Python packaging questions
+- generic Python requests with no Glyphs app or font target
 - release engineering tasks
 - installer-only tasks
 - broad docs-site edits
@@ -236,7 +299,7 @@ Make sure these do not over-trigger unrelated skills:
 ### Regression checks
 
 - No MCP tool changes
-- No installer behavior changes
+- Installer behavior remains the same apart from managing the eleventh skill
 - No packaged plug-in runtime changes
 - Repo diff stays limited to `skills/`, `.agents/skills`, `.claude/skills`, docs-site content, docs navigation, `README.md`, `CODEX.md`, and ignore rules
 
@@ -255,6 +318,6 @@ This roadmap already includes enough external guidance to ship v1.
 
 Do more internet research only when one of these becomes true:
 
-- the repo starts distributing skills as a plugin rather than as repo-local assets
+- a host changes its plug-in or skill distribution contract
 - Claude-native distribution constraints matter directly
 - the skill set expands enough that shared references or scripts need their own architecture

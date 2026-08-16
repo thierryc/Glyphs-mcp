@@ -1,5 +1,50 @@
 # Changelog
 
+## 1.11.0 — Safe live Glyphs scripting
+
+_August 16, 2026_
+
+Glyphs MCP 1.11.0 adds a complementary `glyphs-mcp-scripting` skill for
+natural-language, iterative Python work in the running Glyphs app. The MCP
+runtime remains unchanged at 87 active tools: 76 model-visible and 11 app-only.
+
+### Live scripting workflow
+
+- Read-only probes inspect live context, ground unfamiliar APIs through
+  `docs_search` and `docs_get`, select the appropriate execution context, and
+  return bounded output.
+- Font mutations and external side effects first return the exact code through
+  `snippet_only=true`, explain the target and expected change, and stop for
+  explicit approval. Execution is limited to the unchanged reviewed code;
+  revisions require renewed approval.
+- Verification re-reads affected state through dedicated MCP tools and may use
+  `get_document_change_overview`; printed output alone is not accepted as proof.
+- Larger layer changes pair `beginChanges()` and `endChanges()` in
+  `try/finally`, avoid MCP-driven glyph undo groups, and never auto-save.
+
+### Existing coding skills preserved
+
+- `glyphs-mcp-development` remains the workspace-first workflow for reusable
+  scripts and general, reporter, filter, palette, select-tool, and file-format
+  plug-ins.
+- `glyphs-mcp-outlines-docs` and `glyphs-mcp-italic-first-pass` retain their
+  specialized generated-Python fallbacks.
+- The `glyphs` router now sends live runs and Macro Panel debugging to
+  `glyphs-mcp-scripting`, reusable artifacts to `glyphs-mcp-development`, and
+  generic non-Glyphs Python to no Glyphs skill.
+
+### Packaging and validation
+
+- The canonical and synchronized package contract now contains exactly 11
+  skills for Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot CLI.
+- The terminal installer and macOS installer payload discover, install, update,
+  and uninstall the new managed skill alongside the existing ten.
+- Routing, approval-stop, synchronization, installer, and unchanged scaffold
+  contracts cover the additive workflow.
+- Thirteen prompt/expected-result cases exercise live read-only runs, mutation
+  and external-effect previews, Macro Panel output, debugging, reusable scripts,
+  Reporter plug-ins, domain precedence, outline fallback, and non-Glyphs Python.
+
 ## 1.10.0 — LitSquare metadata and semantic start nodes
 
 _August 13, 2026_

@@ -1,6 +1,6 @@
 ---
 name: glyphs-mcp-development
-description: Use this skill to create, extend, or review Glyphs Python scripts and Python plug-ins, including general, reporter, filter, palette, select-tool, and file-format plug-ins, while grounding API and template choices in the bundled Glyphs documentation.
+description: Use this skill to create, extend, or review reusable workspace-first Glyphs Python scripts and Python plug-ins, including general, reporter, filter, palette, select-tool, and file-format plug-ins, while grounding API and template choices in the bundled Glyphs documentation.
 ---
 
 # Glyphs MCP development
@@ -10,6 +10,9 @@ Create workspace-first Glyphs scripts and plug-ins from pinned SDK templates.
 ## Core rules
 
 - Search with `docs_search`, then fetch only the relevant pages with `docs_get` before using unfamiliar Glyphs APIs or plug-in lifecycle methods.
+- Use `glyphs-mcp-scripting` instead when the request is to preview, run, or
+  debug a one-off script inside the live Glyphs app. Bring verified behavior
+  back here when it should become a reusable script or plug-in.
 - Target Glyphs 3.5 and Glyphs 4 unless the user explicitly requests one version.
 - Create files in the current workspace. Never write to a live Glyphs Scripts or Plugins folder without a separate explicit request.
 - Never install, execute, reload, restart Glyphs, or overwrite an existing artifact automatically.

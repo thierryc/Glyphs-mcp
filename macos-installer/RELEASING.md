@@ -57,7 +57,7 @@ Update:
 - `plugins/glyphs-mcp/.github/plugin/plugin.json`
 
 Set every manifest's `version` to `X.Y.Z`. Marketplace entries deliberately do
-not duplicate the package version. The 10 skills inherit the package version,
+not duplicate the package version. The 11 skills inherit the package version,
 and `.mcp.json` stays shared across hosts.
 
 4) **Docs/links** (if needed for the new tag):

@@ -790,6 +790,9 @@ class InstallerSmokeTests(unittest.TestCase):
                     / "scaffold.py"
                 ).is_file()
             )
+            scripting_path = Path(tmp) / ".codex" / "skills" / "glyphs-mcp-scripting"
+            self.assertTrue((scripting_path / "SKILL.md").is_file())
+            self.assertTrue((scripting_path / "agents" / "openai.yaml").is_file())
             self.assertTrue((Path(tmp) / ".codex" / "skills" / "third-party-skill" / "SKILL.md").is_file())
 
     def test_install_skill_bundle_overwrites_managed_skills_only_when_requested(self) -> None:
@@ -1372,9 +1375,10 @@ class InstallerSmokeTests(unittest.TestCase):
                 root = install_cli.codex_skills_dir()
                 unowned_same_name = root / "glyphs"
                 managed = root / "glyphs-mcp-spacing"
+                managed_scripting = root / "glyphs-mcp-scripting"
                 custom = root / "glyphs-mcp-private-notes"
                 unrelated = root / "another-skill"
-                for path in (unowned_same_name, managed, custom, unrelated):
+                for path in (unowned_same_name, managed, managed_scripting, custom, unrelated):
                     path.mkdir(parents=True, exist_ok=True)
                 (unowned_same_name / "SKILL.md").write_text(
                     "# unrelated glyphs skill\n",
@@ -1383,6 +1387,10 @@ class InstallerSmokeTests(unittest.TestCase):
                 install_cli._write_skill_ownership_marker(
                     managed,
                     "glyphs-mcp-spacing",
+                )
+                install_cli._write_skill_ownership_marker(
+                    managed_scripting,
+                    "glyphs-mcp-scripting",
                 )
                 plan = install_cli.build_uninstall_plan("4", frozenset({"skills"}))
                 outcomes = install_cli.execute_uninstall_plan(plan)
@@ -1394,12 +1402,13 @@ class InstallerSmokeTests(unittest.TestCase):
 
             self.assertEqual(
                 [outcome.candidate.location.name for outcome in outcomes],
-                ["glyphs", "glyphs-mcp-spacing"],
+                ["glyphs", "glyphs-mcp-scripting", "glyphs-mcp-spacing"],
             )
             self.assertEqual(outcomes[0].status, "skipped")
             self.assertEqual(outcomes[0].candidate.state, "preserved")
             self.assertTrue(unowned_same_name.exists())
             self.assertFalse(managed.exists())
+            self.assertFalse(managed_scripting.exists())
             self.assertTrue(custom.exists())
             self.assertTrue(unrelated.exists())
 
