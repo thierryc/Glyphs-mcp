@@ -144,6 +144,38 @@ class V2ScaleTests(unittest.TestCase):
         self.assertEqual(spacing["data"]["simulation"]["maxIterations"], 5)
         self.assertLess(self._bytes(spacing), 64 * 1024)
 
+    def test_document_cursor_cannot_cross_operation_or_projection_scope(self) -> None:
+        self.host.model["kerning"] = [
+            {
+                "masterId": "m0",
+                "left": {"kind": "glyph", "id": "id_g000", "name": "g000"},
+                "right": {"kind": "glyph", "id": "id_g001", "name": "g001"},
+                "value": -20,
+            }
+            for _index in range(10)
+        ]
+        glyph_page = self.app.invoke(
+            "list_glyphs", {"documentId": "doc_scale", "pageSize": 1}
+        ).to_dict()
+        cursor = glyph_page["page"]["nextCursor"]
+
+        crossed_operation = self.app.invoke(
+            "list_kerning_pairs",
+            {"documentId": "doc_scale", "pageSize": 1, "cursor": cursor},
+        ).to_dict()
+        crossed_projection = self.app.invoke(
+            "list_glyphs",
+            {
+                "documentId": "doc_scale",
+                "pageSize": 1,
+                "fields": ["name", "unicode"],
+                "cursor": cursor,
+            },
+        ).to_dict()
+
+        self.assertEqual(crossed_operation["error"]["code"], "invalid_cursor")
+        self.assertEqual(crossed_projection["error"]["code"], "invalid_cursor")
+
     def test_full_mcp_discovery_payload_is_below_96_kib(self) -> None:
         server = create_server(self.app)
 

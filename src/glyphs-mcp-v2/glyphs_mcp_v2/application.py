@@ -267,7 +267,12 @@ class GlyphsMCPApplication:
                 "metadata": dict(metadata or {}),
             },
         )
-        first = paginate(values, source_fingerprint=source_fingerprint, page_size=100)
+        first = paginate(
+            values,
+            source_fingerprint=source_fingerprint,
+            cursor_scope=operation.operation_id,
+            page_size=100,
+        )
         public = {**dict(metadata or {}), item_key: list(first.items)}
         return operation, public, first.page.to_dict()
 
@@ -447,6 +452,7 @@ class GlyphsMCPApplication:
             page = paginate(
                 list(payload.get("items") or []),
                 source_fingerprint=source_fingerprint,
+                cursor_scope=record.operation_id,
                 page_size=int(_value(arguments, "page_size", "pageSize", 100)),
                 cursor=_value(arguments, "cursor"),
             )
@@ -483,9 +489,13 @@ class GlyphsMCPApplication:
         model = self._document_model(document_id)
         source_fingerprint = fingerprint_model(model)
         items = list(producer(model))
+        cursor_scope = fingerprint_model(
+            {"tool": tool, "documentId": document_id, "items": items}
+        )
         page = paginate(
             items,
             source_fingerprint=source_fingerprint,
+            cursor_scope=cursor_scope,
             page_size=int(_value(arguments, "page_size", "pageSize", 100)),
             cursor=_value(arguments, "cursor"),
         )
@@ -888,6 +898,7 @@ class GlyphsMCPApplication:
         page = paginate(
             events,
             source_fingerprint=source_fingerprint,
+            cursor_scope="list_audit_events:{}".format(document_id or "*"),
             page_size=int(_value(arguments, "page_size", "pageSize", 100)),
             cursor=_value(arguments, "cursor"),
         )

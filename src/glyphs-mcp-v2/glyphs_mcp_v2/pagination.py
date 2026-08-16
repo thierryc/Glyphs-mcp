@@ -22,9 +22,9 @@ class CursorError(ValueError):
     """A malformed, stale, or source-mismatched result cursor."""
 
 
-def _encode_cursor(offset: int, fingerprint: str) -> str:
+def _encode_cursor(offset: int, fingerprint: str, cursor_scope: str) -> str:
     payload = json.dumps(
-        {"offset": offset, "fingerprint": fingerprint},
+        {"offset": offset, "fingerprint": fingerprint, "scope": cursor_scope},
         sort_keys=True,
         separators=(",", ":"),
     ).encode("utf-8")
@@ -32,7 +32,7 @@ def _encode_cursor(offset: int, fingerprint: str) -> str:
     return base64.urlsafe_b64encode(signature + payload).decode("ascii").rstrip("=")
 
 
-def _decode_cursor(cursor: str, fingerprint: str) -> int:
+def _decode_cursor(cursor: str, fingerprint: str, cursor_scope: str) -> int:
     try:
         padded = cursor + "=" * (-len(cursor) % 4)
         raw = base64.urlsafe_b64decode(padded.encode("ascii"))
@@ -43,6 +43,8 @@ def _decode_cursor(cursor: str, fingerprint: str) -> int:
         value = json.loads(payload.decode("utf-8"))
         if value.get("fingerprint") != fingerprint:
             raise CursorError("cursor source fingerprint is stale")
+        if value.get("scope") != cursor_scope:
+            raise CursorError("cursor operation scope does not match")
         offset = int(value["offset"])
         if offset < 0:
             raise CursorError("cursor offset is invalid")
@@ -83,15 +85,18 @@ def paginate(
     items: Sequence[T],
     *,
     source_fingerprint: str,
+    cursor_scope: str,
     page_size: int = DEFAULT_PAGE_SIZE,
     cursor: Optional[str] = None,
     max_page_bytes: int = MAX_PAGE_BYTES,
 ) -> Page[T]:
     if not source_fingerprint:
         raise ValueError("source_fingerprint is required")
+    if not cursor_scope:
+        raise ValueError("cursor_scope is required")
     requested = int(page_size)
     bounded = max(1, min(requested, MAX_PAGE_SIZE))
-    offset = _decode_cursor(cursor, source_fingerprint) if cursor else 0
+    offset = _decode_cursor(cursor, source_fingerprint, cursor_scope) if cursor else 0
     total = len(items)
     if offset > total:
         raise CursorError("cursor offset is outside the result")
@@ -110,7 +115,11 @@ def paginate(
         encoded_bytes += separator_bytes + item_bytes
     selected = tuple(selected_values)
     next_offset = offset + len(selected)
-    next_cursor = _encode_cursor(next_offset, source_fingerprint) if next_offset < total else None
+    next_cursor = (
+        _encode_cursor(next_offset, source_fingerprint, cursor_scope)
+        if next_offset < total
+        else None
+    )
     return Page(
         items=selected,
         page=PageInfo(

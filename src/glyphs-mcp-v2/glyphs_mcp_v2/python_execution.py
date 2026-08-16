@@ -225,7 +225,12 @@ class PythonExecutionService:
                 },
             },
         )
-        first = paginate(items, source_fingerprint=changes.after_fingerprint, page_size=100)
+        first = paginate(
+            items,
+            source_fingerprint=changes.after_fingerprint,
+            cursor_scope=operation.operation_id,
+            page_size=100,
+        )
         return operation, {
             **dict(operation.payload["metadata"]),
             "changes": list(first.items),
