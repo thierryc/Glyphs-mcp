@@ -37,6 +37,7 @@ class _Font:
         self.versionMinor = 2
         self.formatVersion = 3
         self.appVersion = "3400"
+        self.parent = None
 
 
 class _Document:
@@ -74,6 +75,8 @@ class V2GlyphsAdapterTests(unittest.TestCase):
         self.assertEqual(documents[0].family_name, "Alpha")
         self.assertTrue(documents[0].active)
         self.assertEqual(documents[0].legacy_index, 0)
+        self.assertTrue(documents[0].has_file_path)
+        self.assertIsNone(documents[0].has_unsaved_changes)
 
     def test_fresh_proxy_objects_keep_the_same_document_id(self) -> None:
         first_proxy = _Font(77, "Unsaved")

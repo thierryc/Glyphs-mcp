@@ -54,7 +54,8 @@ class V2TransportTests(unittest.TestCase):
                 result = await client.call_tool("list_open_fonts", {})
                 self.assertFalse(result.is_error)
                 self.assertEqual(result.structured_content["apiVersion"], "2.0")
-                self.assertEqual(result.structured_content["data"], {"count": 0, "documents": []})
+                self.assertEqual(result.structured_content["data"]["count"], 0)
+                self.assertEqual(result.structured_content["data"]["documents"], [])
                 validate(
                     result.structured_content,
                     TOOL_CATALOG["list_open_fonts"].output_schema,
@@ -68,7 +69,7 @@ class V2TransportTests(unittest.TestCase):
         async def connect_once() -> None:
             async with Client(server) as client:
                 tools = await client.list_tools()
-                self.assertEqual(len(tools), 2)
+                self.assertEqual(len(tools), len(TOOL_CATALOG))
                 result = await client.call_tool("get_server_info", {})
                 self.assertFalse(result.is_error)
                 self.assertEqual(result.structured_content["data"]["apiMajor"], 2)

@@ -22,11 +22,36 @@ from glyphs_mcp_v2.identity import DocumentIdRegistry  # noqa: E402
 
 class V2ContractTests(unittest.TestCase):
     def test_catalog_is_the_complete_typed_milestone_surface(self) -> None:
+        expected = {
+            "get_server_info",
+            "list_open_fonts",
+            "get_document_status",
+            "get_operation",
+            "list_glyphs",
+            "list_instances",
+            "list_kerning_pairs",
+            "review_master_compatibility",
+            "review_metrics_inheritance",
+            "review_anchor_consistency",
+            "review_anchor_updates",
+            "apply_anchor_updates",
+            "review_glyph_updates",
+            "apply_glyph_updates",
+            "review_kerning_updates",
+            "apply_kerning_updates",
+            "review_spacing",
+            "apply_spacing",
+            "review_export",
+            "export_source_bundle",
+            "list_audit_events",
+            "execute_python",
+            "rollback_python_execution",
+        }
+        self.assertEqual(set(TOOL_CATALOG), expected)
         self.assertEqual(
             tuple(definition.name for definition in TOOL_DEFINITIONS),
-            ("get_server_info", "list_open_fonts"),
+            tuple(TOOL_CATALOG),
         )
-        self.assertEqual(set(TOOL_CATALOG), {"get_server_info", "list_open_fonts"})
         for definition in TOOL_DEFINITIONS:
             self.assertEqual(
                 set(definition.annotations),
@@ -38,10 +63,12 @@ class V2ContractTests(unittest.TestCase):
                     "openWorldHint",
                 },
             )
-            self.assertTrue(definition.annotations["readOnlyHint"])
-            self.assertFalse(definition.annotations["destructiveHint"])
-            self.assertTrue(definition.annotations["idempotentHint"])
-            self.assertFalse(definition.annotations["openWorldHint"])
+            if definition.effect == "read":
+                self.assertTrue(definition.annotations["readOnlyHint"])
+            if definition.name in {"execute_python", "rollback_python_execution"}:
+                self.assertTrue(definition.annotations["destructiveHint"])
+            if definition.name == "execute_python":
+                self.assertTrue(definition.annotations["openWorldHint"])
 
     def test_success_and_failure_share_one_valid_versioned_envelope(self) -> None:
         definition = TOOL_CATALOG["list_open_fonts"]
@@ -66,6 +93,18 @@ class V2ContractTests(unittest.TestCase):
         validate(failure.to_dict(), definition.output_schema)
         self.assertEqual(success.to_dict()["resultSchemaVersion"], "2.0")
         self.assertEqual(success.to_dict()["apiVersion"], "2.0")
+        for field in (
+            "requestId",
+            "runId",
+            "operationId",
+            "startedAt",
+            "completedAt",
+            "durationMs",
+            "status",
+            "page",
+            "auditReceipt",
+        ):
+            self.assertIn(field, success.to_dict())
 
     def test_document_ids_are_stable_distinct_and_opaque(self) -> None:
         values = iter(("doc_first", "doc_second"))

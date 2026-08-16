@@ -31,6 +31,7 @@ class _FakeHost:
                 legacy_index=0,
                 family_name="Alpha",
                 file_path="/tmp/Alpha.glyphs",
+                has_unsaved_changes=False,
                 active=True,
                 master_count=2,
                 instance_count=3,
@@ -74,7 +75,9 @@ class V2ApplicationTests(unittest.TestCase):
 
         self.assertEqual(document["documentId"], "doc_alpha")
         self.assertEqual(document["legacyIndex"], 0)
-        self.assertTrue(document["saved"])
+        self.assertTrue(document["hasFilePath"])
+        self.assertFalse(document["hasUnsavedChanges"])
+        self.assertNotIn("saved", document)
         self.assertTrue(document["active"])
         validate(payload, TOOL_CATALOG["list_open_fonts"].output_schema)
 
