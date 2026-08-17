@@ -85,29 +85,33 @@ class V2ScaleTests(unittest.TestCase):
         return len(json.dumps(response, separators=(",", ":")).encode("utf-8"))
 
     def test_200_glyph_and_178_pair_batches_each_apply_once(self) -> None:
-        glyph_review = self.app.invoke(
-            "review_glyph_updates",
+        before_glyphs = fingerprint_model(self.host.model)
+        glyph_apply = self.app.invoke(
+            "apply_glyph_updates",
             {
                 "documentId": "doc_scale",
+                "expectedDocumentFingerprint": before_glyphs,
+                "reason": "Scale-test direct glyph batch",
                 "updates": [
                     {"glyphName": "g{:03d}".format(index), "export": False}
                     for index in range(200)
                 ],
             },
         ).to_dict()
-        self.assertEqual(glyph_review["data"]["changeSet"]["changeCount"], 200)
-        glyph_apply = self.app.invoke(
-            "apply_glyph_updates",
-            {"reviewId": glyph_review["data"]["reviewId"], "confirm": True},
-        ).to_dict()
         self.assertTrue(glyph_apply["ok"])
+        self.assertNotIn("reviewId", glyph_apply["data"])
+        self.assertEqual(glyph_apply["data"]["changeCount"], 200)
         self.assertEqual(glyph_apply["data"]["transactionCount"], 1)
+        self.assertEqual(glyph_apply["operationId"], glyph_apply["data"]["operationId"])
         self.assertEqual(self.host.apply_calls, 1)
 
-        kerning_review = self.app.invoke(
-            "review_kerning_updates",
+        before_kerning = fingerprint_model(self.host.model)
+        kerning_apply = self.app.invoke(
+            "apply_kerning_updates",
             {
                 "documentId": "doc_scale",
+                "expectedDocumentFingerprint": before_kerning,
+                "reason": "Scale-test direct kerning batch",
                 "updates": [
                     {
                         "masterId": "m0",
@@ -119,14 +123,34 @@ class V2ScaleTests(unittest.TestCase):
                 ],
             },
         ).to_dict()
-        self.assertEqual(kerning_review["data"]["changeSet"]["changeCount"], 178)
-        kerning_apply = self.app.invoke(
-            "apply_kerning_updates",
-            {"reviewId": kerning_review["data"]["reviewId"], "confirm": True},
-        ).to_dict()
         self.assertTrue(kerning_apply["ok"])
+        self.assertNotIn("reviewId", kerning_apply["data"])
+        self.assertEqual(kerning_apply["data"]["changeCount"], 178)
         self.assertEqual(kerning_apply["data"]["transactionCount"], 1)
+        self.assertEqual(kerning_apply["operationId"], kerning_apply["data"]["operationId"])
         self.assertEqual(self.host.apply_calls, 2)
+
+        operation = self.app.invoke(
+            "get_operation",
+            {"operationId": kerning_apply["operationId"], "pageSize": 100},
+        ).to_dict()
+        self.assertTrue(operation["ok"])
+        self.assertEqual(operation["data"]["operationId"], kerning_apply["operationId"])
+        self.assertEqual(operation["data"]["payload"]["status"], "applied")
+
+    def test_direct_apply_rejects_a_stale_fingerprint_without_mutating(self) -> None:
+        response = self.app.invoke(
+            "apply_glyph_updates",
+            {
+                "documentId": "doc_scale",
+                "expectedDocumentFingerprint": "stale",
+                "updates": [{"glyphName": "g000", "export": False}],
+            },
+        ).to_dict()
+
+        self.assertFalse(response["ok"])
+        self.assertEqual(response["error"]["code"], "stale_document")
+        self.assertEqual(self.host.apply_calls, 0)
 
     def test_spacing_and_list_pages_remain_bounded(self) -> None:
         glyphs = self.app.invoke(

@@ -58,6 +58,8 @@ class V2BundleAssemblyTests(unittest.TestCase):
                     info = plistlib.load(plist_file)
                 self.assertEqual(info["CFBundleShortVersionString"], "2.0.0.dev1")
                 self.assertEqual(info["CFBundleVersion"], "2.0.0.dev1")
+                self.assertIn("GlyphsMCPChangeReviewReporter", info["Principal Classes"])
+                self.assertNotIn("GlyphsMCPCandidateReporter", info["Principal Classes"])
 
                 runtime_bridge = (resources / "mcp_tools.py").read_text(encoding="utf-8")
                 self.assertIn(
@@ -68,9 +70,24 @@ class V2BundleAssemblyTests(unittest.TestCase):
 
                 plugin_entry = (resources / "plugin.py").read_text(encoding="utf-8")
                 self.assertIn("from mcp_tools import mcp", plugin_entry)
+                self.assertIn(
+                    "from glyphs_mcp_v2.change_review_reporter import GlyphsMCPChangeReviewReporter",
+                    plugin_entry,
+                )
+                self.assertNotIn("GlyphsMCPCandidateReporter", plugin_entry)
                 self.assertNotIn("import code_execution", plugin_entry)
                 self.assertNotIn("import documentation_resources", plugin_entry)
                 self.assertNotIn("import kerning_resources", plugin_entry)
+                panel_bridge = (resources / "document_changes_panel.py").read_text(encoding="utf-8")
+                self.assertIn(
+                    "from glyphs_mcp_v2.change_review_panel import DocumentChangesPanelController",
+                    panel_bridge,
+                )
+                reporter_source = (resources / "glyphs_mcp_v2" / "change_review_reporter.py").read_text(
+                    encoding="utf-8"
+                )
+                self.assertNotIn("drawForegroundForLayer", reporter_source)
+                self.assertNotIn("drawBackgroundForLayer", reporter_source)
 
             manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["fileCount"], len(_file_map(source)))
