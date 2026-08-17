@@ -148,8 +148,12 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(source["instances"][0]["id"], "instance_0")
 
     def test_serialized_fingerprint_normalizes_clone_generated_instance_ids(self) -> None:
-        source = _ArchiveInstanceFont("SOURCE-UUID", "source-pointer")
-        clone = _ArchiveInstanceFont("CLONE-UUID", "clone-pointer")
+        source = _ArchiveInstanceFont(
+            "11111111-1111-4111-8111-111111111111", "source-pointer"
+        )
+        clone = _ArchiveInstanceFont(
+            "22222222-2222-4222-8222-222222222222", "clone-pointer"
+        )
 
         self.assertEqual(
             document_adapter._serialized_font_fingerprint(source),
@@ -158,10 +162,14 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
     def test_serialized_fingerprint_keeps_other_native_fields_significant(self) -> None:
         source = _ArchiveInstanceFont(
-            "SOURCE-UUID", "source-pointer", unsupported_native_value="before"
+            "11111111-1111-4111-8111-111111111111",
+            "source-pointer",
+            unsupported_native_value="before",
         )
         clone = _ArchiveInstanceFont(
-            "CLONE-UUID", "clone-pointer", unsupported_native_value="after"
+            "22222222-2222-4222-8222-222222222222",
+            "clone-pointer",
+            unsupported_native_value="after",
         )
 
         self.assertNotEqual(

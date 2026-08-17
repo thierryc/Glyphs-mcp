@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import time
 import tempfile
 from pathlib import Path
@@ -23,6 +24,9 @@ from .glyphs import GlyphsHostAdapter, _maybe_call, _safe_getattr, _sequence_val
 _FONT_SCALARS = ("familyName", "upm", "versionMajor", "versionMinor", "note", "grid", "gridSubDivision")
 _GLYPH_SCALARS = ("category", "subCategory", "unicode", "export", "leftKerningGroup", "rightKerningGroup")
 _LAYER_SCALARS = ("width", "LSB", "RSB", "leftMetricsKey", "rightMetricsKey", "widthMetricsKey")
+_UUID_PATTERN = re.compile(
+    r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"
+)
 
 
 def _plain_scalar(value: Any) -> Any:
@@ -624,7 +628,18 @@ def _serialized_font_fingerprint(font: Any) -> str:
     with tempfile.TemporaryDirectory(prefix="glyphs-mcp-v2-archive-") as root:
         path = Path(root) / "checkpoint.glyphs"
         _save_font_copy(font, path)
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        archive = path.read_bytes()
+        # GSFont.copy() in Glyphs 4 assigns fresh UUIDs to GSInstance objects.
+        # Replace only those exact native UUID values, by ordered instance, so
+        # archive comparison still detects every other non-canonical field.
+        for index, instance in enumerate(_sequence_values(_safe_getattr(font, "instances"))):
+            identifier = str(_plain_scalar(_safe_getattr(instance, "id")) or "").strip()
+            if not _UUID_PATTERN.fullmatch(identifier):
+                continue
+            replacement = "__GLYPHS_MCP_INSTANCE_{:04d}__".format(index).encode("ascii")
+            for spelling in (identifier, identifier.upper(), identifier.lower()):
+                archive = archive.replace(spelling.encode("ascii"), replacement)
+        digest = hashlib.sha256(archive).hexdigest()
     return "sha256:{}".format(digest)
 
 
