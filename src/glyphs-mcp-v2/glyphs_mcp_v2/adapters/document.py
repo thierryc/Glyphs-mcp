@@ -814,7 +814,6 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         document = _maybe_call(_safe_getattr(font, "parent"))
         updater = _safe_getattr(document, "updateChangeCount_") if document is not None else None
-        update_succeeded = False
         change_count_action = None
         if restoring_reversal:
             change_count_action = _NS_CHANGE_DONE
@@ -827,25 +826,19 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 # Balance only the MCP transaction's change-count contribution;
                 # never clear the document's complete native dirty history.
                 updater(change_count_action)
-                update_succeeded = True
             except Exception:
-                update_succeeded = False
+                pass
 
         overrides = getattr(self, "_document_dirty_overrides", {})
         if restoring_reversal:
             stack.append(pending)
             pending_reversals.pop(document_id, None)
-            if update_succeeded:
-                overrides.pop(document_id, None)
-            else:
-                overrides[document_id] = True
+            overrides[document_id] = True
         elif reversal:
             transition = stack.pop()
             if not restoring:
                 pending_reversals[document_id] = transition
-            if update_succeeded:
-                overrides.pop(document_id, None)
-            elif stack:
+            if stack:
                 overrides[document_id] = True
             else:
                 overrides[document_id] = transition["nativeDirtyBefore"]
@@ -861,12 +854,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "nativeDirtyBefore": native_dirty_before,
                 }
             )
-            if update_succeeded:
-                overrides.pop(document_id, None)
-            else:
-                # Even if the host cannot update its window dirty indicator,
-                # this process knows the verified document model is unsaved.
-                overrides[document_id] = True
+            # The transaction kernel knows it changed the document without
+            # saving, even when Glyphs' native dirty APIs lag or disagree.
+            overrides[document_id] = True
         self._document_dirty_transitions = transitions
         self._document_dirty_pending_reversals = pending_reversals
         self._document_dirty_overrides = overrides
