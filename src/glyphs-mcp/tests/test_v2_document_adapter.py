@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from unittest import mock
 
 
@@ -222,6 +222,49 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_new_path_does_not_coerce_unnamed_nodes_to_literal_none(self) -> None:
+        glyphs_app = ModuleType("GlyphsApp")
+        glyphs_app.CURVE = "curve"
+        glyphs_app.LINE = "line"
+        glyphs_app.OFFCURVE = "offcurve"
+        glyphs_app.QCURVE = "qcurve"
+
+        class Node:
+            def __init__(self, position=(0, 0), node_type="line"):
+                self.position = position
+                self.type = node_type
+                self.smooth = False
+                self._name = None
+
+            @property
+            def name(self):
+                return self._name
+
+            @name.setter
+            def name(self, value):
+                self._name = "None" if value is None else value
+
+        class PathValue:
+            def __init__(self):
+                self.nodes = []
+                self.closed = True
+
+        glyphs_app.GSNode = Node
+        glyphs_app.GSPath = PathValue
+        spec = {
+            "closed": True,
+            "nodes": [
+                {"x": 10, "y": 20, "type": "line", "name": None},
+                {"x": 30, "y": 40, "type": "line", "name": "corner"},
+            ],
+        }
+
+        with mock.patch.dict(sys.modules, {"GlyphsApp": glyphs_app}):
+            path = document_adapter._new_path(spec)
+
+        self.assertIsNone(path.nodes[0].name)
+        self.assertEqual(path.nodes[1].name, "corner")
+
     def test_path_replacement_writes_shapes_and_preserves_components(self) -> None:
         layer = _ShapeLayer()
         replacement = _PathShape("new-path")
