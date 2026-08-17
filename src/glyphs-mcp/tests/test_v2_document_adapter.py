@@ -14,7 +14,10 @@ V2_SOURCE = REPO / "src" / "glyphs-mcp-v2"
 if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
-from glyphs_mcp_v2.adapters.document import GlyphsDocumentHost  # noqa: E402
+from glyphs_mcp_v2.adapters.document import (  # noqa: E402
+    GlyphsDocumentHost,
+    native_font_to_model,
+)
 
 
 class _Immediate:
@@ -40,6 +43,41 @@ class _Font:
         return clone
 
 
+class _NativeSelector:
+    def __init__(self, value, owner):
+        self.value = value
+        self.owner = owner
+
+    def __call__(self):
+        return self.value
+
+    def __str__(self):
+        return "<native-selector id of {}>".format(self.owner)
+
+
+class _Instance:
+    def __init__(self, native_id, owner):
+        self.id = _NativeSelector(native_id, owner)
+        self.name = "Regular"
+        self.type = 0
+        self.active = True
+        self.axes = [400]
+        self.externalAxes = []
+
+
+class _InstanceFont(_Font):
+    def __init__(self, native_id, owner):
+        super().__init__()
+        self.axes = []
+        self.masters = []
+        self.instances = [_Instance(native_id, owner)]
+        self.glyphs = []
+        self.kerning = {}
+        self.features = []
+        self.classes = []
+        self.featurePrefixes = []
+
+
 class _App:
     def __init__(self, font) -> None:
         self.font = font
@@ -61,6 +99,13 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_clone_generated_instance_ids_do_not_change_the_canonical_model(self) -> None:
+        source = native_font_to_model(_InstanceFont("source-uuid", "source-pointer"))
+        clone = native_font_to_model(_InstanceFont("clone-uuid", "clone-pointer"))
+
+        self.assertEqual(source, clone)
+        self.assertEqual(source["instances"][0]["id"], "instance_0")
+
     def test_recovery_copy_is_private_bounded_and_does_not_change_live_path(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             font = _Font()
