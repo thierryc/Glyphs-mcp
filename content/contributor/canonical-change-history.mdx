@@ -1,0 +1,89 @@
+---
+title: Canonical change history
+description: Git-like unsaved-session history, rollback, Change Log, and visual diff architecture for Glyphs MCP 2.0.
+---
+
+# Canonical change history
+
+Glyphs MCP 2.0 records each document-scoped MCP tool call as an immutable action
+commit. This borrows Git's useful data model—content-addressed objects, parented
+commits, a working-tree head, semantic diffs, and conflict-aware revert—without
+running Git or treating an unsaved Glyphs document as a filesystem repository.
+
+The history has one lifetime: the current unsaved editing session. A successful
+normal save clears that document's commits, overlay reference, and unreachable
+objects. Saving a copy or a failed save does not clear it. Long-term comparison
+against a saved file, Time Machine, or a repository commit is a separate future
+adapter that can feed the same canonical tree and diff engine.
+
+## One source, two independent projections
+
+The **Glyphs MCP Change Log** is a passive tool-call ledger. It lists command,
+result, timestamp, changed glyphs or document roots, and semantic before/after
+values. Selecting a row changes only the panel text. It never opens a tab,
+changes a master or selection, activates a Reporter, or modifies editor state.
+
+The **Glyphs MCP Changes** Reporter is a drawing-only Edit View projection of
+the latest contiguous agent session. It reads a cached net semantic diff rather
+than the selected Change Log row. The applied Glyphs outline stays normal; the
+recorded prior outline is drawn in red. If a user later changes one of the exact
+fields written by the agent, the recorded target is added as a dashed neutral
+outline. Unrelated later edits do not make the overlay stale.
+
+Both views are projections of the same `ActionCommit` and `CanonicalFontTree`
+data, but neither owns or drives the other.
+
+## CanonicalFontTree storage
+
+The native adapter first detaches Glyphs objects into JSON-safe canonical data
+on the main thread. Everything after that boundary operates on plain Python
+values away from Glyphs UI objects.
+
+Snapshots use SHA-256 content addressing. Glyph and kerning roots are sharded;
+each glyph is stored independently, then referenced by a small map object and a
+font-tree root. A one-glyph edit therefore reuses every unchanged glyph object
+instead of copying the complete font for every tool call. Identical values are
+inserted once.
+
+The live runtime uses a thread-safe in-memory object store because history is
+ephemeral until save. This avoids filesystem traffic while Glyphs is editing.
+A private compressed SQLite backend exists for tests and future persistence;
+it uses a single short batch per snapshot, `0700` parent permissions, and a
+`0600` database.
+
+Verified typed transactions pass their existing before/after snapshots and
+`ChangeSet` directly to history. There is no second native font capture and no
+second full semantic diff. The latest-session diff is cached when commits are
+recorded, so Reporter redraws perform only affected-glyph and affected-layer
+lookups. Reporter callbacks never hash, snapshot, diff, write, or prune a font.
+
+## Revert semantics
+
+`list_change_commits` exposes bounded commit summaries. `get_operation` accepts
+a commit ID to page through its semantic diff. `revert_change` creates a new
+verified action commit; it does not delete or rewrite history.
+
+Revert checks every changed path against the value originally written by the
+commit. Unrelated later edits are preserved. If any affected path was changed
+afterward, the revert fails with explicit conflicts and applies nothing. The
+result still uses the shared one-shot main-thread transaction, read-back,
+verification, rollback-on-failure, and audit kernel.
+
+## Performance and safety gates
+
+- A 383-glyph, five-master one-glyph edit reuses 382 glyph objects and inserts
+  no more than four new content objects.
+- A detached 1,000-glyph, five-master snapshot must complete within the bounded
+  scale test without touching native Glyphs objects.
+- Repeated Reporter reads reuse the cached session diff and perform no full-tree
+  diff.
+- The Change Log has no polling timer and refreshes only from history or document
+  lifecycle callbacks.
+- Closing a document removes only its process-local history. Saving clears only
+  the exact saved document.
+- Files, subprocesses, network effects, preferences, and other open-world side
+  effects are never represented as reversible document commits.
+
+This architecture deliberately does not implement branch, merge, or rebase UI.
+Those operations can be built later over the same immutable objects after their
+font-specific conflict rules are specified and tested.

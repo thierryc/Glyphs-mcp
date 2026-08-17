@@ -36,7 +36,7 @@ The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
 - a recoverable main-thread execution port;
 - Glyphs 3.5/4 collection fallbacks;
 - catalog-generated schemas and safety annotations;
-- 28 catalog-driven FastMCP operations;
+- 30 catalog-driven FastMCP operations;
 - paginated glyph, instance, kerning, audit, review, and Python-diff results;
 - reviewed glyph, anchor, kerning, spacing, metrics, and compatibility batches;
 - compatibility, metrics-inheritance, anchor, spacing, kerning-coverage, and
@@ -44,6 +44,9 @@ The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
 - staged export with destination fingerprints and macOS atomic directory swap;
 - detached `GSFont.copy()` Python review, exact confirmation without rerunning
   code, live open-world recovery, and inverse-patch rollback;
+- Git-like content-addressed unsaved-session action history, bounded commit
+  discovery, conflict-aware semantic revert, a passive Change Log, and an
+  independent drawing-only Edit View diff;
 - restart-safe Streamable HTTP application construction;
 - deterministic source and Plugin Manager payload assembly.
 
@@ -89,6 +92,10 @@ separate recovery document can be opened. Later edits are never overwritten.
 Git protects source history; it is not used for runtime rollback because it
 cannot represent unsaved live documents, multiple open fonts, or external
 effects.
+
+Runtime action history follows Git's immutable-object and revert concepts but
+does not invoke Git. See [Canonical change history](./canonical-change-history)
+for its save lifetime, storage model, UI separation, and performance gates.
 
 `lit/next-1.x` remains eligible for critical defects, security and packaging
 hardening, Glyphs host compatibility, pure font engines, deterministic

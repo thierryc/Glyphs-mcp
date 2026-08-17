@@ -165,6 +165,12 @@ def _layer_model(layer: Any) -> dict[str, Any]:
     return values
 
 
+def native_layer_to_model(layer: Any) -> dict[str, Any]:
+    """Return one detached canonical layer for drawing-only consumers."""
+
+    return _layer_model(layer)
+
+
 def _glyph_model(glyph: Any) -> dict[str, Any]:
     name = str(_safe_getattr(glyph, "name") or "")
     layers: dict[str, Any] = {}
@@ -669,6 +675,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 return font
         raise HostAccessError("The Glyphs document is no longer open: {}".format(document_id))
 
+    def document_id_for_font(self, font: Any) -> str:
+        return self._identities.resolve(self._native_identity(font))
+
+    def native_font(self, document_id: str) -> Any:
+        return self._font_for_document(document_id)
+
     def capture_model(self, document_id: str) -> Mapping[str, Any]:
         return self._executor.run(lambda: native_font_to_model(self._font_for_document(document_id)))
 
@@ -1081,4 +1093,4 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             return None
 
 
-__all__ = ["GlyphsDocumentHost", "native_font_to_model"]
+__all__ = ["GlyphsDocumentHost", "native_font_to_model", "native_layer_to_model"]

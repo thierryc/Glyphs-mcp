@@ -182,6 +182,21 @@ class ToolHandlers:
     ) -> ToolResult:
         return self._invoke("list_audit_events", locals())
 
+    async def list_change_commits(
+        self,
+        documentId: str,
+        pageSize: int = 100,
+    ) -> ToolResult:
+        return self._invoke("list_change_commits", locals())
+
+    async def revert_change(
+        self,
+        documentId: str,
+        commitId: str,
+        expectedDocumentFingerprint: str,
+    ) -> ToolResult:
+        return self._invoke("revert_change", locals())
+
     async def execute_python(
         self,
         reason: Optional[str] = None,

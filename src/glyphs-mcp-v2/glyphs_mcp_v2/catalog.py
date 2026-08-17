@@ -182,6 +182,20 @@ TOOL_DEFINITIONS: Tuple[ToolDefinition, ...] = (
     _definition("review_export", "Review Export", "Review compatibility, instances, exclusions, and destination replacement policy.", "export", open_world=True),
     _definition("export_source_bundle", "Export Source Bundle", "Stage and atomically publish a reviewed designspace/UFO source bundle.", "export", "files", open_world=True, idempotent=False),
     _definition("list_audit_events", "List Audit Events", "List bounded redacted process-local v2 audit events.", "audit"),
+    _definition(
+        "list_change_commits",
+        "List Change Commits",
+        "List bounded Git-like MCP action commits recorded for one document since its last save.",
+        "audit",
+    ),
+    _definition(
+        "revert_change",
+        "Revert Change",
+        "Create a verified inverse of one current unsaved-session change commit without overwriting later edits.",
+        "audit",
+        "edit",
+        idempotent=False,
+    ),
     _definition("execute_python", "Execute Python", "Run bounded staged-document or explicitly approved open-world Python when typed tools do not fit.", "automation", "code", open_world=True, idempotent=False),
     _definition("rollback_python_execution", "Rollback Python Execution", "Apply a verified inverse document patch or open a separate recovery copy.", "automation", "edit", open_world=True, idempotent=False),
 )

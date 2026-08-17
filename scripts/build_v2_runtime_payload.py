@@ -36,6 +36,15 @@ mcp = create_glyphs_server()
 __all__ = ["mcp"]
 '''
 
+V2_CHANGES_PANEL = '''# encoding: utf-8
+
+"""Generated bridge to the passive v2 Change Log panel."""
+
+from glyphs_mcp_v2.change_log_panel import DocumentChangesPanelController
+
+__all__ = ["DocumentChangesPanelController"]
+'''
+
 LEGACY_IMPORT_BLOCK_START = "    # Import MCP tools (this registers all the tools)\n"
 LEGACY_IMPORT_BLOCK_END = "    import kerning_resources  # noqa: F401\n"
 V2_IMPORT_BLOCK = '''    # Load only the isolated v2 catalog. The generated mcp_tools bridge
@@ -84,6 +93,7 @@ def _activate_v2_bundle(bundle: Path) -> Path:
     shutil.copytree(SOURCE_PACKAGE, package_destination, ignore=_ignore_generated)
 
     (resources / "mcp_tools.py").write_text(V2_MCP_TOOLS, encoding="utf-8")
+    (resources / "document_changes_panel.py").write_text(V2_CHANGES_PANEL, encoding="utf-8")
 
     plugin_path = resources / "plugin.py"
     plugin_text = plugin_path.read_text(encoding="utf-8")
@@ -92,10 +102,23 @@ def _activate_v2_bundle(bundle: Path) -> Path:
     if start < 0 or end < 0:
         raise RuntimeError("could not locate the legacy registration block in plugin.py")
     end += len(LEGACY_IMPORT_BLOCK_END)
-    plugin_path.write_text(
-        plugin_text[:start] + V2_IMPORT_BLOCK + plugin_text[end:],
-        encoding="utf-8",
+    plugin_text = plugin_text[:start] + V2_IMPORT_BLOCK + plugin_text[end:]
+    plugin_text = plugin_text.replace(
+        "from glyphs_candidate_reporter import GlyphsMCPCandidateReporter",
+        "from glyphs_mcp_v2.change_diff_reporter import GlyphsMCPChangeDiffReporter",
     )
+    plugin_text = plugin_text.replace("GlyphsMCPCandidateReporter", "GlyphsMCPChangeDiffReporter")
+    plugin_text = plugin_text.replace("Glyphs MCP Candidate (unavailable)", "Glyphs MCP Changes (unavailable)")
+    plugin_path.write_text(plugin_text, encoding="utf-8")
+
+    for legacy_name in (
+        "glyphs_candidate_reporter.py",
+        "outline_candidate_state.py",
+        "mcp_tools_outline_candidates.py",
+    ):
+        legacy_path = resources / legacy_name
+        if legacy_path.exists():
+            legacy_path.unlink()
 
     plist_path = bundle / "Contents" / "Info.plist"
     with plist_path.open("rb") as plist_file:
@@ -103,6 +126,10 @@ def _activate_v2_bundle(bundle: Path) -> Path:
     version = _v2_version()
     info["CFBundleShortVersionString"] = version
     info["CFBundleVersion"] = version
+    info["Principal Classes"] = [
+        "GlyphsMCPChangeDiffReporter" if value == "GlyphsMCPCandidateReporter" else value
+        for value in info.get("Principal Classes", [])
+    ]
     with plist_path.open("wb") as plist_file:
         plistlib.dump(info, plist_file, sort_keys=True)
     return package_destination

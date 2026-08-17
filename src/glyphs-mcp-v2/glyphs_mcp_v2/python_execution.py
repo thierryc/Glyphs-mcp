@@ -6,7 +6,7 @@ import ast
 import hashlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Mapping, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Protocol
 
 from .audit import AuditLog
 from .contracts import ToolError, ToolResponse, ToolWarning
@@ -14,6 +14,9 @@ from .operations import OperationRecord, OperationStore
 from .pagination import paginate
 from .semantic import ChangeSet, diff_models, fingerprint_model
 from .transactions import StaleDocumentError, TransactionKernel, TransactionVerificationError
+
+if TYPE_CHECKING:
+    from .change_trace import ActionTraceCoordinator
 
 
 REVIEW_TTL_SECONDS = 15 * 60
@@ -200,6 +203,7 @@ class PythonExecutionService:
         checkpoints: OperationStore,
         audit: AuditLog,
         operations: Optional[OperationStore] = None,
+        trace: Optional["ActionTraceCoordinator"] = None,
     ) -> None:
         self._host = host
         self._transactions = transactions
@@ -207,6 +211,7 @@ class PythonExecutionService:
         self._checkpoints = checkpoints
         self._audit = audit
         self._operations = operations or OperationStore(max_records=512)
+        self._trace = trace
 
     def _store_diff(self, changes: ChangeSet) -> tuple[OperationRecord, Mapping[str, Any]]:
         items = [change.to_dict() for change in changes.changes]
@@ -257,6 +262,8 @@ class PythonExecutionService:
         )
 
     def execute(self, request: PythonExecutionRequest) -> ToolResponse:
+        if self._trace is not None and request.document_id:
+            self._trace.bind_document(request.document_id)
         if request.review_id:
             if not request.confirm:
                 return self._failure("confirmation_required", "confirm=true is required to consume a Python review.")
@@ -264,6 +271,8 @@ class PythonExecutionService:
             if record is None or record.kind != "python_review":
                 return self._failure("review_unavailable", "The Python review is missing, expired, or already consumed.")
             stored = PythonExecutionRequest.from_stored_dict(record.payload["request"])
+            if self._trace is not None and stored.document_id:
+                self._trace.bind_document(stored.document_id)
             if stored.execution_mode == "staged_document":
                 return self._confirm_staged(stored, record.payload)
             return self._confirm_live(stored, record.payload, review_id=record.operation_id)
@@ -299,12 +308,26 @@ class PythonExecutionService:
         before = None
         if request.document_id:
             before = dict(self._host.capture_model(request.document_id))
-        result = self._host.run_live_python(request)
+        try:
+            result = self._host.run_live_python(request)
+        except Exception:
+            if request.document_id and before is not None and self._trace is not None:
+                try:
+                    self._trace.observe_transition(
+                        request.document_id,
+                        before,
+                        dict(self._host.capture_model(request.document_id)),
+                    )
+                except Exception:
+                    pass
+            raise
         after = None
         violated = False
         if request.document_id:
             after = dict(self._host.capture_model(request.document_id))
             violated = fingerprint_model(before) != fingerprint_model(after)
+            if self._trace is not None:
+                self._trace.observe_transition(request.document_id, before, after)
         scope_violations = sorted(set(result.get("scopeViolations") or []))
         if request.document_id and violated and request.document_id not in scope_violations:
             scope_violations.append(request.document_id)
@@ -368,6 +391,8 @@ class PythonExecutionService:
         except PythonPolicyError as exc:
             return self._failure("staged_policy_violation", str(exc), recoverable=True)
         before = dict(self._host.capture_model(request.document_id or ""))
+        if self._trace is not None and request.document_id:
+            self._trace.observe_model(request.document_id, before)
         before_fingerprint = fingerprint_model(before)
         if before_fingerprint != request.expected_document_fingerprint:
             return self._failure("stale_document", "The document changed before staged execution.")
@@ -456,6 +481,8 @@ class PythonExecutionService:
 
     def _preview_live(self, request: PythonExecutionRequest) -> ToolResponse:
         current = self._host.capture_model(request.document_id or "")
+        if self._trace is not None and request.document_id:
+            self._trace.observe_model(request.document_id, current)
         if fingerprint_model(current) != request.expected_document_fingerprint:
             return self._failure("stale_document", "The document changed before Python review.")
         review = self._reviews.create(
@@ -590,6 +617,8 @@ class PythonExecutionService:
         review_id: str,
     ) -> ToolResponse:
         before = dict(self._host.capture_model(request.document_id or ""))
+        if self._trace is not None and request.document_id:
+            self._trace.observe_model(request.document_id, before)
         before_fingerprint = fingerprint_model(before)
         if before_fingerprint != request.expected_document_fingerprint:
             return self._failure("stale_document", "The document changed after Python review.")
@@ -606,6 +635,8 @@ class PythonExecutionService:
             after = dict(result.get("afterModel") or self._host.capture_model(request.document_id or ""))
         except Exception as exc:
             after = dict(self._host.capture_model(request.document_id or ""))
+            if self._trace is not None and request.document_id:
+                self._trace.observe_transition(request.document_id, before, after)
             after_fingerprint = fingerprint_model(after)
             checkpoint = self._checkpoints.create(
                 kind="python_checkpoint",
@@ -653,6 +684,13 @@ class PythonExecutionService:
                 receipt=receipt.to_dict(),
             )
         changes = diff_models(before, after)
+        if self._trace is not None and request.document_id:
+            self._trace.observe_transition(
+                request.document_id,
+                before,
+                after,
+                change_set=changes,
+            )
         supports = getattr(self._host, "supports_change_set", None)
         host_supported = bool(supports(changes)) if callable(supports) else True
         complete_coverage = getattr(self._host, "complete_observed_diff_covered", None)
@@ -821,6 +859,8 @@ class PythonExecutionService:
         else:
             payload = checkpoint.payload
         document_id = str(payload.get("documentId") or "")
+        if self._trace is not None and document_id:
+            self._trace.bind_document(document_id)
         if expected_after_fingerprint != payload.get("afterFingerprint"):
             return self._rollback_failure(
                 code="stale_document",
@@ -839,6 +879,11 @@ class PythonExecutionService:
                     recoverable=False,
                 )
             try:
+                if self._trace is not None:
+                    try:
+                        self._trace.observe_model(document_id, self._host.capture_model(document_id))
+                    except Exception:
+                        pass
                 self._host.open_recovery_copy(str(path))
             except Exception:
                 return self._rollback_failure(
@@ -879,6 +924,8 @@ class PythonExecutionService:
                 execution_id=execution_id,
                 document_id=document_id,
             )
+        if self._trace is not None:
+            self._trace.observe_model(document_id, current)
         if fingerprint_model(current) != expected_after_fingerprint:
             return self._rollback_failure(
                 code="stale_document",

@@ -96,22 +96,40 @@ def _change_from_mapping(value: Mapping[str, Any]) -> SemanticChange:
 def _value_at(model: Any, path: Sequence[str]) -> Any:
     current = model
     for part in path:
-        if not isinstance(current, Mapping) or part not in current:
+        if isinstance(current, Mapping):
+            if part not in current:
+                return MISSING
+            current = current[part]
+        elif isinstance(current, (list, tuple)):
+            try:
+                current = current[int(part)]
+            except (ValueError, IndexError):
+                return MISSING
+        else:
             return MISSING
-        current = current[part]
     return current
 
 
 def _set_at(model: dict[str, Any], path: Sequence[str], value: Any, present: bool) -> None:
-    current: dict[str, Any] = model
+    current: Any = model
     for part in path[:-1]:
-        child = current.get(part)
-        if not isinstance(child, dict):
-            child = {}
-            current[part] = child
-        current = child
+        if isinstance(current, dict):
+            child = current.get(part)
+            if not isinstance(child, (dict, list)):
+                child = {}
+                current[part] = child
+            current = child
+        elif isinstance(current, list):
+            current = current[int(part)]
+        else:
+            raise ValueError("change path traverses a scalar: {}".format("/".join(path)))
     leaf = path[-1]
-    if present:
+    if isinstance(current, list):
+        index = int(leaf)
+        if not present:
+            raise ValueError("list entries cannot be removed by an indexed semantic change")
+        current[index] = copy.deepcopy(value)
+    elif present:
         current[leaf] = copy.deepcopy(value)
     else:
         current.pop(leaf, None)
@@ -222,6 +240,19 @@ def _diff(before: Any, after: Any, path: Tuple[str, ...]) -> list[SemanticChange
             else:
                 changes.extend(_diff(before[key], after[key], path + (key_text,)))
         return changes
+    if isinstance(before, (list, tuple)) and isinstance(after, (list, tuple)):
+        if len(before) != len(after):
+            return [
+                SemanticChange(
+                    path=path,
+                    before=copy.deepcopy(list(before)),
+                    after=copy.deepcopy(list(after)),
+                )
+            ]
+        changes = []
+        for index, (before_item, after_item) in enumerate(zip(before, after)):
+            changes.extend(_diff(before_item, after_item, path + (str(index),)))
+        return changes
     if before != after:
         return [
             SemanticChange(
@@ -243,6 +274,34 @@ def diff_models(before: Mapping[str, Any], after: Mapping[str, Any]) -> ChangeSe
     )
 
 
+def revert_change_set_onto(
+    current: Mapping[str, Any],
+    original: ChangeSet,
+) -> tuple[ChangeSet | None, tuple[Tuple[str, ...], ...]]:
+    """Build a non-overwriting inverse of ``original`` on ``current``.
+
+    A path is safe only while it still contains the value written by the
+    original change. Unrelated later fields are preserved; overlapping later
+    edits are returned as conflicts and no partial patch is produced.
+    """
+
+    current_plain = _plain(current)
+    conflicts: list[Tuple[str, ...]] = []
+    for change in original.changes:
+        value = _value_at(current_plain, change.path)
+        if change.after_present:
+            if value is MISSING or value != change.after:
+                conflicts.append(change.path)
+        elif value is not MISSING:
+            conflicts.append(change.path)
+    if conflicts:
+        return None, tuple(conflicts)
+    target = copy.deepcopy(current_plain)
+    for change in original.changes:
+        _set_at(target, change.path, change.before, change.before_present)
+    return diff_models(current_plain, target), ()
+
+
 __all__ = [
     "ChangeSet",
     "SUPPORTED_DOCUMENT_ROOTS",
@@ -250,4 +309,5 @@ __all__ = [
     "canonical_json",
     "diff_models",
     "fingerprint_model",
+    "revert_change_set_onto",
 ]

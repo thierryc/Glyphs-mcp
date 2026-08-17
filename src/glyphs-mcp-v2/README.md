@@ -3,7 +3,7 @@
 This is the isolated, unreleased Glyphs MCP 2.0 package. It is based on signed
 release `v1.11.0` but does not change the shipped 1.x wire contracts.
 
-The catalog contains 28 operations across:
+The catalog contains 30 operations across:
 
 - stable document status and bounded glyph, instance, kerning, audit, and operation pages;
 - compatibility, metrics, anchors, spacing, kerning, and export reviews;
@@ -11,6 +11,9 @@ The catalog contains 28 operations across:
 - staged, destination-fingerprint-bound source-bundle publication;
 - `execute_python` staged-document and live-open-world modes;
 - fingerprint-bound `rollback_python_execution` and separate recovery copies.
+- content-addressed unsaved-session action commits, bounded change discovery,
+  conflict-aware `revert_change`, a passive Change Log, and a drawing-only diff
+  Reporter.
 
 All result envelopes carry request, run, and operation IDs, typed effect and
 status, timestamps, warnings/errors, optional page metadata, fingerprints, and

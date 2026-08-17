@@ -7,14 +7,17 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence
 
 from .audit import AuditLog
+from .canonical_tree import CanonicalFontTree, MemoryObjectStore
 from .catalog import TOOL_CATALOG
+from .change_history import ActionCommit, ChangeHistory
+from .change_trace import ActionTraceCoordinator
 from .contracts import API_MAJOR, API_VERSION, ToolError, ToolResponse, ToolWarning
 from .exporting import ExportPublicationError, destination_matches
 from .operations import OperationRecord, OperationStore
 from .pagination import CursorError, paginate
 from .ports import HostAccessError, ReadOnlyHost
 from .python_execution import PythonExecutionRequest, PythonExecutionService
-from .semantic import ChangeSet, diff_models, fingerprint_model
+from .semantic import ChangeSet, diff_models, fingerprint_model, revert_change_set_onto
 from .transactions import StaleDocumentError, TransactionKernel, TransactionVerificationError
 from .versions import SERVER_NAME, SERVER_VERSION
 from .workflows import (
@@ -76,6 +79,32 @@ def _public_payload(value: Any) -> Any:
     return str(value)
 
 
+def _change_commit_summary(commit: ActionCommit) -> dict[str, Any]:
+    glyphs = commit.changed_glyphs
+    roots: list[str] = []
+    for change in commit.change_set.changes:
+        if change.path and change.path[0] not in roots:
+            roots.append(change.path[0])
+    return {
+        "commitId": commit.commit_id,
+        "parentId": commit.parent_id,
+        "operationId": commit.operation_id,
+        "tool": commit.tool,
+        "effect": commit.effect,
+        "status": commit.status,
+        "createdAt": _iso_timestamp(commit.created_at),
+        "reason": commit.reason,
+        "changed": commit.changed,
+        "changeCount": len(commit.change_set.changes),
+        "changedRoots": roots,
+        "changedGlyphCount": len(glyphs),
+        "changedGlyphsPreview": list(glyphs[:20]),
+        "changedGlyphsTruncated": len(glyphs) > 20,
+        "beforeFingerprint": commit.change_set.before_fingerprint,
+        "afterFingerprint": commit.change_set.after_fingerprint,
+    }
+
+
 class GlyphsMCPApplication:
     def __init__(
         self,
@@ -83,13 +112,20 @@ class GlyphsMCPApplication:
         *,
         operations: Optional[OperationStore] = None,
         audit: Optional[AuditLog] = None,
+        history: Optional[ChangeHistory] = None,
     ) -> None:
         self._host = host
         self._operations = operations or OperationStore()
         self._reviews = OperationStore()
         self._checkpoints = OperationStore(max_records=512)
         self._audit = audit or AuditLog()
-        self._transactions = TransactionKernel(host) if hasattr(host, "capture_model") else None
+        self.history = history or ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        self._trace = ActionTraceCoordinator(self.history)
+        self._transactions = (
+            TransactionKernel(host, observer=self._trace)
+            if hasattr(host, "capture_model")
+            else None
+        )
         self._python = (
             PythonExecutionService(
                 host=host,
@@ -98,6 +134,7 @@ class GlyphsMCPApplication:
                 checkpoints=self._checkpoints,
                 audit=self._audit,
                 operations=self._operations,
+                trace=self._trace,
             )
             if self._transactions is not None
             and hasattr(host, "preview_python")
@@ -111,6 +148,35 @@ class GlyphsMCPApplication:
         }
 
     def invoke(
+        self,
+        handler_name: str,
+        arguments: Optional[Mapping[str, Any]] = None,
+    ) -> ToolResponse:
+        values = dict(arguments or {})
+        definition = TOOL_CATALOG.get(handler_name)
+        scope = self._trace.start_action(
+            handler_name or "unknown",
+            definition.effect if definition is not None else "read",
+            values,
+        )
+        response = self._invoke_untraced(handler_name, values)
+        if (
+            self._trace.needs_initial_observation(scope)
+            and self.history.head_tree_hash(scope.document_id or "") is None
+        ):
+            capture = getattr(self._host, "capture_model", None)
+            if callable(capture):
+                try:
+                    self._trace.observe_model(
+                        scope.document_id or "",
+                        copy.deepcopy(dict(capture(scope.document_id or ""))),
+                    )
+                except Exception:
+                    pass
+        self._trace.finish_action(scope, response)
+        return response
+
+    def _invoke_untraced(
         self,
         handler_name: str,
         arguments: Optional[Mapping[str, Any]] = None,
@@ -174,7 +240,9 @@ class GlyphsMCPApplication:
         capture = getattr(self._host, "capture_model", None)
         if not callable(capture):
             raise HostAccessError("This host adapter does not expose document snapshots.")
-        return copy.deepcopy(dict(capture(document_id)))
+        model = copy.deepcopy(dict(capture(document_id)))
+        self._trace.observe_model(document_id, model)
+        return model
 
     def _review_record(
         self,
@@ -312,6 +380,7 @@ class GlyphsMCPApplication:
         change_set = review.payload.get("changeSet")
         if not isinstance(change_set, ChangeSet):
             raise ValueError("stored review has no valid change set")
+        self._trace.bind_document(str(review.payload["documentId"]))
         try:
             result = self._transactions.apply(
                 document_id=str(review.payload["documentId"]),
@@ -393,6 +462,7 @@ class GlyphsMCPApplication:
                     "staged_python",
                     "python_rollback",
                     "production_reviews",
+                    "canonical_change_history",
                 ],
                 "host": runtime.to_dict(),
             },
@@ -438,13 +508,47 @@ class GlyphsMCPApplication:
         operation_id = str(_value(arguments, "operation_id", "operationId", "") or "")
         record = self._operations.get(operation_id) or self._reviews.get(operation_id) or self._checkpoints.get(operation_id)
         if record is None:
-            return ToolResponse.failure(
+            commit = self.history.get_commit(operation_id)
+            if commit is None:
+                return ToolResponse.failure(
+                    tool="get_operation",
+                    effect="read",
+                    summary="The operation is missing or expired.",
+                    error=ToolError(code="operation_unavailable", message="The operation is unavailable.", recoverable=False),
+                )
+            self._trace.bind_document(commit.document_id)
+            changes = [change.to_dict() for change in commit.change_set.changes]
+            page = paginate(
+                changes,
+                source_fingerprint=commit.change_set.after_fingerprint,
+                cursor_scope=commit.commit_id,
+                page_size=int(_value(arguments, "page_size", "pageSize", 100)),
+                cursor=_value(arguments, "cursor"),
+            )
+            return ToolResponse.success(
                 tool="get_operation",
                 effect="read",
-                summary="The operation is missing or expired.",
-                error=ToolError(code="operation_unavailable", message="The operation is unavailable.", recoverable=False),
+                summary="Read the bounded semantic diff for one unsaved-session change commit.",
+                data={
+                    "operationId": commit.commit_id,
+                    "kind": "change_commit",
+                    "createdAt": _iso_timestamp(commit.created_at),
+                    "expiresAt": None,
+                    "payload": {
+                        **_change_commit_summary(commit),
+                        "changes": list(page.items),
+                    },
+                },
+                page=page.page.to_dict(),
             )
         payload = record.payload
+        stored_document_id = str(
+            payload.get("documentId")
+            or (payload.get("metadata") or {}).get("documentId")
+            or ""
+        )
+        if stored_document_id:
+            self._trace.bind_document(stored_document_id)
         page_data = None
         public_payload: Any
         if isinstance(payload.get("items"), Sequence) and not isinstance(payload.get("items"), (str, bytes)):
@@ -908,6 +1012,172 @@ class GlyphsMCPApplication:
             summary="Returned {} of {} audit event(s).".format(len(page.items), len(events)),
             page=page.page.to_dict(),
             data={"count": len(events), "events": list(page.items)},
+        )
+
+    def list_change_commits(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        self._document_model(document_id)
+        items = [
+            _change_commit_summary(commit)
+            for commit in self.history.list_commits(document_id)
+        ]
+        source_fingerprint = fingerprint_model({"documentId": document_id, "commits": items})
+        operation = self._operations.create(
+            kind="change_log",
+            ttl_seconds=RESULT_TTL_SECONDS,
+            payload={
+                "items": items,
+                "itemKey": "commits",
+                "sourceFingerprint": source_fingerprint,
+                "metadata": {"documentId": document_id, "count": len(items)},
+            },
+        )
+        page = paginate(
+            items,
+            source_fingerprint=source_fingerprint,
+            cursor_scope=operation.operation_id,
+            page_size=int(_value(arguments, "page_size", "pageSize", 100)),
+        )
+        return ToolResponse.success(
+            tool="list_change_commits",
+            effect="read",
+            summary="Returned {} of {} MCP action commit(s) since the last save.".format(
+                len(page.items), len(items)
+            ),
+            data={
+                "documentId": document_id,
+                "count": len(items),
+                "operationId": operation.operation_id,
+                "commits": list(page.items),
+            },
+            page=page.page.to_dict(),
+        )
+
+    def revert_change(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        if self._transactions is None:
+            raise HostAccessError("This host adapter does not support document transactions.")
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        commit_id = str(_value(arguments, "commit_id", "commitId", "") or "")
+        expected = str(
+            _value(
+                arguments,
+                "expected_document_fingerprint",
+                "expectedDocumentFingerprint",
+                "",
+            )
+            or ""
+        )
+        if not document_id or not commit_id or not expected:
+            raise ValueError("documentId, commitId, and expectedDocumentFingerprint are required")
+        original = self.history.get_commit(commit_id)
+        if original is None or original.document_id != document_id or original.source != "agent":
+            return ToolResponse.failure(
+                tool="revert_change",
+                effect="edit",
+                summary="The requested change commit is unavailable for this document.",
+                error=ToolError(
+                    code="change_commit_unavailable",
+                    message="Choose a current unsaved-session change commit.",
+                    recoverable=True,
+                ),
+            )
+        if not original.changed:
+            return ToolResponse.failure(
+                tool="revert_change",
+                effect="edit",
+                summary="The selected tool call made no document change.",
+                error=ToolError(
+                    code="change_commit_empty",
+                    message="There is no document delta to revert.",
+                    recoverable=True,
+                ),
+            )
+        current = self._document_model(document_id)
+        current_fingerprint = fingerprint_model(current)
+        if current_fingerprint != expected:
+            return ToolResponse.failure(
+                tool="revert_change",
+                effect="edit",
+                summary="The document fingerprint changed before revert.",
+                error=ToolError(
+                    code="stale_document",
+                    message="Read the current document fingerprint and try again.",
+                    recoverable=True,
+                ),
+            )
+        inverse, conflicts = revert_change_set_onto(current, original.change_set)
+        if inverse is None:
+            return ToolResponse.failure(
+                tool="revert_change",
+                effect="edit",
+                summary="Later edits overlap the selected change; nothing was reverted.",
+                error=ToolError(
+                    code="revert_conflict",
+                    message="Resolve or explicitly replace the conflicting fields first.",
+                    recoverable=True,
+                    details={"conflictPaths": [list(path) for path in conflicts[:100]]},
+                ),
+                data={"commitId": commit_id, "conflictCount": len(conflicts)},
+            )
+        self._trace.bind_document(document_id)
+        try:
+            result = self._transactions.apply(
+                document_id=document_id,
+                expected_fingerprint=current_fingerprint,
+                change_set=inverse,
+            )
+        except StaleDocumentError:
+            return ToolResponse.failure(
+                tool="revert_change",
+                effect="edit",
+                summary="The document changed before revert; nothing was applied.",
+                error=ToolError(code="stale_document", message="The document changed.", recoverable=True),
+            )
+        except TransactionVerificationError as exc:
+            receipt = self._audit.record(
+                tool="revert_change",
+                effect="edit",
+                status="error",
+                document_id=document_id,
+                details={
+                    "commitId": commit_id,
+                    "rollbackAttempted": True,
+                    "rollbackSucceeded": exc.rollback_succeeded,
+                },
+            )
+            return ToolResponse.failure(
+                tool="revert_change",
+                effect="edit",
+                summary="The revert failed verification.",
+                error=ToolError(code="transaction_failed", message="The revert was not verified.", recoverable=True),
+                audit_receipt=receipt.to_dict(),
+            )
+        receipt = self._audit.record(
+            tool="revert_change",
+            effect="edit",
+            status="success",
+            document_id=document_id,
+            details={
+                "revertedCommitId": commit_id,
+                "beforeFingerprint": result.before_fingerprint,
+                "afterFingerprint": result.after_fingerprint,
+                "changeCount": result.change_count,
+            },
+        )
+        return ToolResponse.success(
+            tool="revert_change",
+            effect="edit",
+            summary="Reverted the selected change without overwriting unrelated later edits.",
+            audit_receipt=receipt.to_dict(),
+            data={
+                "revertedCommitId": commit_id,
+                "documentId": document_id,
+                "beforeFingerprint": result.before_fingerprint,
+                "afterFingerprint": result.after_fingerprint,
+                "changeCount": result.change_count,
+                "fontSaved": False,
+                "transactionCount": 1,
+            },
         )
 
     def execute_python(self, arguments: Mapping[str, Any]) -> ToolResponse:
