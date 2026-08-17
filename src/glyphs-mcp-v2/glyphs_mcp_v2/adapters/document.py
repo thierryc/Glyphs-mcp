@@ -556,15 +556,74 @@ _STAGED_BUILTINS = {
 }
 
 
-def _serialized_font_fingerprint(font: Any) -> str:
+def _save_font_copy(font: Any, destination: Path) -> None:
+    """Save a copy without changing the live document path or leaked tempData.
+
+    Glyphs 4.0.1's Python wrapper calls the removed
+    ``saveToURL_type_format_error_`` selector. Fall back to the current native
+    selector while restoring the transient filePath value on every exit path.
+    """
+
+    path = Path(destination)
     saver = _safe_getattr(font, "save")
     if not callable(saver):
         raise HostAccessError("Glyphs did not provide GSFont.save(makeCopy=True)")
+    try:
+        format_version = int(_plain_scalar(_safe_getattr(font, "formatVersion")) or 3)
+    except (TypeError, ValueError):
+        format_version = 3
+    temp_data = _safe_getattr(font, "tempData")
+    previous_temp_path = _mapping_get(temp_data, "filePath") if temp_data is not None else None
+
+    def restore_temp_path() -> None:
+        if temp_data is None:
+            return
+        try:
+            temp_data["filePath"] = previous_temp_path
+        except Exception:
+            pass
+
+    try:
+        try:
+            saver(str(path), formatVersion=format_version, makeCopy=True)
+        except AttributeError as wrapper_error:
+            restore_temp_path()
+            native_saver = _safe_getattr(font, "saveToURL_type_format_context_error_")
+            if not callable(native_saver):
+                raise HostAccessError(
+                    "Glyphs make-copy wrapper and native fallback are unavailable"
+                ) from wrapper_error
+            try:
+                from Foundation import NSURL  # type: ignore[import-not-found]
+            except Exception as exc:
+                raise HostAccessError("Glyphs file URL support is unavailable") from exc
+            suffix = path.suffix.lower()
+            if suffix == ".glyphs":
+                type_id = 1  # GSPackageFlatFile
+            elif suffix == ".glyphspackage":
+                type_id = 2  # GSPackageBundle
+            else:
+                raise HostAccessError("Recovery copies require .glyphs or .glyphspackage")
+            if temp_data is not None:
+                temp_data["filePath"] = str(path)
+            native_saver(
+                NSURL.fileURLWithPath_(str(path)),
+                type_id,
+                format_version,
+                None,
+                None,
+            )
+    finally:
+        restore_temp_path()
+
+    if not path.is_file():
+        raise HostAccessError("Glyphs did not create the requested copy")
+
+
+def _serialized_font_fingerprint(font: Any) -> str:
     with tempfile.TemporaryDirectory(prefix="glyphs-mcp-v2-archive-") as root:
         path = Path(root) / "checkpoint.glyphs"
-        saver(str(path), formatVersion=3, makeCopy=True)
-        if not path.is_file():
-            raise HostAccessError("Glyphs did not serialize the detached verification copy")
+        _save_font_copy(font, path)
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
     return "sha256:{}".format(digest)
 
@@ -805,18 +864,13 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 pass
             safe_execution = "".join(character for character in execution_id if character.isalnum() or character in "_-")
             path = root / "{}-{}.glyphs".format(document_id, safe_execution)
-            saver = _safe_getattr(font, "save")
-            if not callable(saver):
-                raise HostAccessError("Glyphs did not provide GSFont.save(makeCopy=True)")
             copier = _safe_getattr(font, "copy")
             if not callable(copier):
                 raise HostAccessError("Glyphs did not provide GSFont.copy()")
             clone = copier()
             if clone is None:
                 raise HostAccessError("Glyphs returned no full document clone")
-            saver(str(path), formatVersion=3, makeCopy=True)
-            if not path.is_file():
-                raise HostAccessError("Glyphs did not create the recovery copy")
+            _save_font_copy(font, path)
             os.chmod(path, 0o600)
             clones = getattr(self, "_live_recovery_clones", {})
             clones[str(path)] = {"createdAt": time.time(), "documentId": document_id, "font": clone}

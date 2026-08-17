@@ -6,7 +6,11 @@ import os
 from pathlib import Path
 from typing import Any, Mapping
 
-from .adapters.document import _serialized_font_fingerprint, native_font_to_model
+from .adapters.document import (
+    _save_font_copy,
+    _serialized_font_fingerprint,
+    native_font_to_model,
+)
 from .semantic import fingerprint_model
 
 
@@ -45,9 +49,7 @@ def verify_copy_and_make_copy(font: Any, output_path: str) -> Mapping[str, Any]:
     if _serialized_font_fingerprint(clone) != _serialized_font_fingerprint(font):
         raise AssertionError("GSFont.copy() changed the serialized document archive")
 
-    font.save(str(destination), formatVersion=3, makeCopy=True)
-    if not destination.is_file():
-        raise AssertionError("GSFont.save(makeCopy=True) did not create the requested copy")
+    _save_font_copy(font, destination)
     os.chmod(destination, 0o600)
 
     after_path = getattr(font, "filepath", None)
