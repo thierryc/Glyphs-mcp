@@ -406,6 +406,54 @@ def _new_path(spec: Mapping[str, Any]) -> Any:
     return path
 
 
+def _update_paths_in_place(
+    layer: Any,
+    current_specs: Sequence[Mapping[str, Any]],
+    target_specs: Sequence[Mapping[str, Any]],
+) -> bool:
+    """Apply topology-compatible node changes without replacing native shapes."""
+
+    native_paths = _layer_paths(layer)
+    if len(native_paths) != len(current_specs) or len(current_specs) != len(target_specs):
+        return False
+
+    updates: list[tuple[Any, Mapping[str, Any], Mapping[str, Any]]] = []
+    for native_path, current_path, target_path in zip(native_paths, current_specs, target_specs):
+        if bool(current_path.get("closed", True)) != bool(target_path.get("closed", True)):
+            return False
+        if bool(_safe_getattr(native_path, "closed", True)) != bool(current_path.get("closed", True)):
+            return False
+        native_nodes = _sequence_values(_safe_getattr(native_path, "nodes"))
+        current_nodes = current_path.get("nodes", [])
+        target_nodes = target_path.get("nodes", [])
+        if len(native_nodes) != len(current_nodes) or len(current_nodes) != len(target_nodes):
+            return False
+        for native_node, current_node, target_node in zip(native_nodes, current_nodes, target_nodes):
+            current_type = str(current_node.get("type") or "line").lower()
+            target_type = str(target_node.get("type") or "line").lower()
+            native_type = str(_safe_getattr(native_node, "type") or "line").lower()
+            if current_type != target_type or native_type != current_type:
+                return False
+            updates.append((native_node, current_node, target_node))
+
+    for native_node, current_node, target_node in updates:
+        current_position = (
+            float(current_node.get("x", 0)),
+            float(current_node.get("y", 0)),
+        )
+        target_position = (
+            float(target_node.get("x", 0)),
+            float(target_node.get("y", 0)),
+        )
+        if current_position != target_position:
+            native_node.position = target_position
+        if bool(current_node.get("smooth", False)) != bool(target_node.get("smooth", False)):
+            native_node.smooth = bool(target_node.get("smooth", False))
+        if current_node.get("name") != target_node.get("name"):
+            native_node.name = str(target_node.get("name") or "")
+    return True
+
+
 def _replace_paths(layer: Any, specs: Sequence[Mapping[str, Any]]) -> None:
     paths = [_new_path(spec) for spec in specs]
     collection = _safe_getattr(layer, "paths")
@@ -548,7 +596,10 @@ def _apply_target_model(font: Any, current: Mapping[str, Any], target: Mapping[s
                     if current_layers[layer_key].get("anchors") != target_layers[layer_key].get("anchors"):
                         _replace_anchors(layer, target_layers[layer_key].get("anchors", {}))
                     if current_layers[layer_key].get("paths") != target_layers[layer_key].get("paths"):
-                        _replace_paths(layer, target_layers[layer_key].get("paths", []))
+                        current_paths = current_layers[layer_key].get("paths", [])
+                        target_paths = target_layers[layer_key].get("paths", [])
+                        if not _update_paths_in_place(layer, current_paths, target_paths):
+                            _replace_paths(layer, target_paths)
                     if current_layers[layer_key].get("components") != target_layers[layer_key].get("components"):
                         _replace_components(layer, target_layers[layer_key].get("components", []))
                 finally:
