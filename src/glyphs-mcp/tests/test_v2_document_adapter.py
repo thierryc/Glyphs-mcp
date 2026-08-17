@@ -181,6 +181,50 @@ class _TransactionalFont:
         self.featurePrefixes = []
 
 
+class _OutlineNode:
+    def __init__(self, x, y, *, node_type="line", smooth=False, name=None):
+        self._position = SimpleNamespace(x=float(x), y=float(y))
+        self.type = node_type
+        self.smooth = smooth
+        self.name = name
+
+    @property
+    def position(self):
+        return self._position
+
+    @position.setter
+    def position(self, value):
+        self._position = SimpleNamespace(x=float(value[0]), y=float(value[1]))
+
+
+class _OutlinePath:
+    def __init__(self, nodes):
+        self.nodes = nodes
+        self.closed = True
+
+
+class _OutlineComponent:
+    def __init__(self, name):
+        self.componentName = name
+        self.transform = (1, 0, 0, 1, 0, 0)
+
+
+class _OutlineLayer:
+    def __init__(self, path, component):
+        self.layerId = "master-regular"
+        self.associatedMasterId = "master-regular"
+        self.paths = (path,)
+        self.shapes = [component, path]
+        self.begin_count = 0
+        self.end_count = 0
+
+    def beginChanges(self):
+        self.begin_count += 1
+
+    def endChanges(self):
+        self.end_count += 1
+
+
 class _RecoveryHost(GlyphsDocumentHost):
     def __init__(self, app, root):
         super().__init__(app, executor=_Immediate())
@@ -191,6 +235,38 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_topology_compatible_outline_delta_updates_native_nodes_in_place(self) -> None:
+        first_node = _OutlineNode(0, 0)
+        second_node = _OutlineNode(100, 0)
+        path = _OutlinePath([first_node, second_node])
+        component = _OutlineComponent("acute")
+        layer = _OutlineLayer(path, component)
+        glyph = SimpleNamespace(name="A", layers={"master-regular": layer})
+        font = SimpleNamespace(glyphs={"A": glyph})
+        before_paths = [
+            {
+                "closed": True,
+                "nodes": [
+                    {"x": 0.0, "y": 0.0, "type": "line", "smooth": False, "name": None},
+                    {"x": 100.0, "y": 0.0, "type": "line", "smooth": False, "name": None},
+                ],
+            }
+        ]
+        after_paths = copy.deepcopy(before_paths)
+        after_paths[0]["nodes"][0]["x"] = 24.0
+        current = {"glyphs": {"A": {"layers": {"master-regular": {"paths": before_paths}}}}}
+        target = {"glyphs": {"A": {"layers": {"master-regular": {"paths": after_paths}}}}}
+
+        document_adapter._apply_target_model(font, current, target, diff_models(current, target))
+
+        self.assertIs(layer.paths[0], path)
+        self.assertIs(path.nodes[0], first_node)
+        self.assertIs(path.nodes[1], second_node)
+        self.assertEqual(layer.shapes, [component, path])
+        self.assertEqual((first_node.position.x, first_node.position.y), (24.0, 0.0))
+        self.assertEqual((second_node.position.x, second_node.position.y), (100.0, 0.0))
+        self.assertEqual((layer.begin_count, layer.end_count), (1, 1))
+
     def test_clone_generated_instance_ids_do_not_change_the_canonical_model(self) -> None:
         source = native_font_to_model(_InstanceFont("source-uuid", "source-pointer"))
         clone = native_font_to_model(_InstanceFont("clone-uuid", "clone-pointer"))
