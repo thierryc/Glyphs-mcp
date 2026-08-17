@@ -51,6 +51,27 @@ class _Glyphs:
 
 
 class V2GlyphsAdapterTests(unittest.TestCase):
+    def test_unsaved_state_prefers_content_changes_over_editor_registration(self) -> None:
+        font = _Font(12, "Editor State", "/tmp/EditorState.glyphs")
+        document = _Document(font)
+        document.isDocumentEdited = True
+        document.hasUnautosavedChanges = False
+        font.parent = document
+        app = _Glyphs()
+        app.fonts = [font]
+        app.documents = [document]
+        app.currentDocument = document
+        app.font = font
+        adapter = GlyphsHostAdapter(
+            app,
+            executor=_RecordingExecutor(),
+            native_identity=lambda value: ("native", value.native_id),
+        )
+
+        snapshot = adapter.list_documents()[0]
+
+        self.assertFalse(snapshot.has_unsaved_changes)
+
     def test_snapshots_are_captured_through_the_main_thread_port(self) -> None:
         font = _Font(1, "Alpha", "/tmp/Alpha.glyphs")
         app = _Glyphs()
