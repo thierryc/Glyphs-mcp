@@ -391,7 +391,9 @@ def _new_path(spec: Mapping[str, Any]) -> Any:
             node.type = node_type
         try:
             node.smooth = bool(node_spec.get("smooth", False))
-            node.name = node_spec.get("name")
+            node_name = node_spec.get("name")
+            if node_name is not None:
+                node.name = node_name
         except Exception:
             pass
         nodes.append(node)
