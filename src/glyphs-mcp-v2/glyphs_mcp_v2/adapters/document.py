@@ -18,7 +18,13 @@ from ..exporting import inspect_destination, publish_staged_directory
 from ..ports import HostAccessError
 from ..python_execution import PythonExecutionRequest
 from ..semantic import ChangeSet, diff_models, fingerprint_model
-from .glyphs import GlyphsHostAdapter, _maybe_call, _safe_getattr, _sequence_values
+from .glyphs import (
+    GlyphsHostAdapter,
+    _maybe_call,
+    _native_unsaved_changes,
+    _safe_getattr,
+    _sequence_values,
+)
 
 
 _FONT_SCALARS = ("familyName", "upm", "versionMajor", "versionMinor", "note", "grid", "gridSubDivision")
@@ -647,13 +653,7 @@ def _serialized_font_fingerprint(font: Any) -> str:
 
 def _document_edited_state(font: Any) -> Optional[bool]:
     document = _maybe_call(_safe_getattr(font, "parent"))
-    edited = _safe_getattr(document, "isDocumentEdited") if document is not None else None
-    if edited is None:
-        return None
-    try:
-        return bool(_maybe_call(edited))
-    except Exception:
-        return None
+    return _native_unsaved_changes(document)
 
 
 class GlyphsDocumentHost(GlyphsHostAdapter):

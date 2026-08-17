@@ -57,6 +57,23 @@ def _safe_optional_int(value: Any) -> Optional[int]:
         return None
 
 
+def _native_unsaved_changes(document: Any) -> Optional[bool]:
+    if document is None:
+        return None
+    # isDocumentEdited may be true solely because a Cocoa binding editor is
+    # registered. hasUnautosavedChanges reflects document-content changes and
+    # therefore matches the public v2 field's meaning more closely.
+    for name in ("hasUnautosavedChanges", "isDocumentEdited"):
+        value = _safe_getattr(document, name)
+        if value is None:
+            continue
+        try:
+            return bool(_maybe_call(value))
+        except Exception:
+            continue
+    return None
+
+
 class GlyphsHostAdapter:
     def __init__(
         self,
@@ -131,14 +148,7 @@ class GlyphsHostAdapter:
         file_path = str(file_path_value) if file_path_value else None
         last_saved = _safe_getattr(font, "appVersion")
         document = _maybe_call(_safe_getattr(font, "parent"))
-        edited = _safe_getattr(document, "isDocumentEdited") if document is not None else None
-        if edited is None:
-            has_unsaved_changes: Optional[bool] = None
-        else:
-            try:
-                has_unsaved_changes = bool(_maybe_call(edited))
-            except Exception:
-                has_unsaved_changes = None
+        has_unsaved_changes = _native_unsaved_changes(document)
         overrides = getattr(self, "_document_dirty_overrides", {})
         if document_id in overrides:
             has_unsaved_changes = overrides[document_id]
