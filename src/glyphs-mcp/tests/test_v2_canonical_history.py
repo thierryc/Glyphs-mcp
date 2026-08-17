@@ -1,0 +1,210 @@
+"""Git-like canonical font trees and per-save action history contracts."""
+
+from __future__ import annotations
+
+import copy
+import sys
+import time
+import unittest
+from pathlib import Path
+
+
+REPO = Path(__file__).resolve().parents[3]
+V2_SOURCE = REPO / "src" / "glyphs-mcp-v2"
+if str(V2_SOURCE) not in sys.path:
+    sys.path.insert(0, str(V2_SOURCE))
+
+from glyphs_mcp_v2.canonical_tree import CanonicalFontTree, MemoryObjectStore  # noqa: E402
+from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
+
+
+def _layer(master_id: str, x: float = 0.0) -> dict:
+    return {
+        "id": master_id,
+        "masterId": master_id,
+        "name": master_id,
+        "isMasterLayer": True,
+        "isSpecialLayer": False,
+        "width": 500,
+        "LSB": 40,
+        "RSB": 40,
+        "leftMetricsKey": None,
+        "rightMetricsKey": None,
+        "widthMetricsKey": None,
+        "anchors": {"top": [250, 700]},
+        "paths": [
+            {
+                "closed": True,
+                "nodes": [
+                    {"x": x, "y": 0, "type": "line", "smooth": False, "name": None},
+                    {"x": 250, "y": 700, "type": "line", "smooth": False, "name": None},
+                    {"x": 500, "y": 0, "type": "line", "smooth": False, "name": None},
+                ],
+            }
+        ],
+        "components": [],
+        "pathSignature": [3],
+    }
+
+
+def _model(glyph_count: int = 3, master_count: int = 2) -> dict:
+    masters = [{"id": "m{}".format(index), "name": "M{}".format(index)} for index in range(master_count)]
+    glyphs = {}
+    for index in range(glyph_count):
+        name = "g{:04d}".format(index)
+        glyphs[name] = {
+            "name": name,
+            "id": "id_{}".format(name),
+            "category": "Letter",
+            "subCategory": "Uppercase",
+            "unicode": "{:04X}".format(0xE000 + index),
+            "export": True,
+            "leftKerningGroup": None,
+            "rightKerningGroup": None,
+            "mastersCompatible": True,
+            "layers": {master["id"]: _layer(master["id"]) for master in masters},
+        }
+    return {
+        "font": {"familyName": "Canonical Test", "upm": 1000},
+        "masters": masters,
+        "instances": [],
+        "glyphs": glyphs,
+        "kerning": {},
+        "features": [],
+        "classes": [],
+        "featurePrefixes": [],
+    }
+
+
+class CanonicalFontTreeTests(unittest.TestCase):
+    def test_tree_hash_is_deterministic_and_mapping_order_independent(self) -> None:
+        store = MemoryObjectStore()
+        trees = CanonicalFontTree(store)
+        model = _model()
+        reordered = {key: model[key] for key in reversed(list(model))}
+
+        first = trees.store_model(model)
+        second = trees.store_model(reordered)
+
+        self.assertEqual(first.tree_hash, second.tree_hash)
+        self.assertEqual(first.model_fingerprint, second.model_fingerprint)
+        self.assertEqual(second.inserted_object_count, 0)
+        self.assertEqual(trees.load_model(first.tree_hash), model)
+
+    def test_one_glyph_edit_reuses_every_unchanged_glyph_object(self) -> None:
+        store = MemoryObjectStore()
+        trees = CanonicalFontTree(store)
+        before = _model(glyph_count=383, master_count=5)
+        first = trees.store_model(before)
+        after = copy.deepcopy(before)
+        after["glyphs"]["g0191"]["layers"]["m3"]["paths"][0]["nodes"][0]["x"] = 12
+        second = trees.store_model(after)
+
+        self.assertGreater(first.inserted_object_count, 383)
+        self.assertLessEqual(second.inserted_object_count, 4)
+        self.assertEqual(second.reused_glyph_count, 382)
+        changes = trees.diff(first.tree_hash, second.tree_hash)
+        self.assertEqual(len(changes.changes), 1)
+        self.assertEqual(
+            changes.changes[0].path,
+            ("glyphs", "g0191", "layers", "m3", "paths", "0", "nodes", "0", "x"),
+        )
+
+    def test_scale_snapshot_hashing_stays_off_the_ui_budget(self) -> None:
+        # This measures detached Python data only. Native Glyphs capture is
+        # already required by the transaction kernel and must not be repeated.
+        trees = CanonicalFontTree(MemoryObjectStore())
+        model = _model(glyph_count=1000, master_count=5)
+        started = time.perf_counter()
+        snapshot = trees.store_model(model)
+        elapsed = time.perf_counter() - started
+
+        self.assertEqual(snapshot.glyph_count, 1000)
+        self.assertLess(elapsed, 2.0)
+
+
+class ChangeHistoryTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.trees = CanonicalFontTree(MemoryObjectStore())
+        self.history = ChangeHistory(self.trees, id_factory=iter(("c1", "c2", "c3", "c4", "c5")).__next__)
+        self.before = _model()
+        self.after = copy.deepcopy(self.before)
+        self.after["glyphs"]["g0000"]["layers"]["m0"]["width"] = 520
+
+    def test_every_tool_call_is_a_commit_but_only_mutations_change_tree(self) -> None:
+        changed = self.history.record_action(
+            document_id="doc_a",
+            tool="apply_spacing",
+            effect="edit",
+            status="success",
+            run_id="run_1",
+            before_model=self.before,
+            after_model=self.after,
+        )
+        read = self.history.record_action(
+            document_id="doc_a",
+            tool="get_document_status",
+            effect="read",
+            status="success",
+            run_id="run_1",
+        )
+
+        self.assertEqual(changed.commit_id, "c1")
+        self.assertEqual(read.commit_id, "c2")
+        self.assertNotEqual(changed.before_tree_hash, changed.after_tree_hash)
+        self.assertEqual(read.before_tree_hash, read.after_tree_hash)
+        self.assertEqual([item.tool for item in self.history.list_commits("doc_a")], ["apply_spacing", "get_document_status"])
+
+    def test_latest_session_diff_collapses_tool_calls_to_one_net_comparison(self) -> None:
+        middle = copy.deepcopy(self.after)
+        middle["glyphs"]["g0001"]["export"] = False
+        final = copy.deepcopy(middle)
+        final["glyphs"]["g0000"]["layers"]["m0"]["width"] = 500
+        self.history.record_action(
+            document_id="doc_a", tool="first", effect="edit", status="success", run_id="run_1",
+            before_model=self.before, after_model=middle,
+        )
+        self.history.record_action(
+            document_id="doc_a", tool="second", effect="edit", status="success", run_id="run_1",
+            before_model=middle, after_model=final,
+        )
+
+        session = self.history.latest_session_diff("doc_a")
+        self.assertIsNotNone(session)
+        self.assertEqual(session.run_id, "run_1")
+        self.assertEqual(len(session.change_set.changes), 1)
+        self.assertEqual(session.change_set.changes[0].path[:3], ("glyphs", "g0001", "export"))
+
+    def test_save_resets_visible_history_and_overlay_ref(self) -> None:
+        self.history.record_action(
+            document_id="doc_a", tool="edit", effect="edit", status="success", run_id="run_1",
+            before_model=self.before, after_model=self.after,
+        )
+        self.history.reset_after_save("doc_a")
+
+        self.assertEqual(self.history.list_commits("doc_a"), ())
+        self.assertIsNone(self.history.latest_session_diff("doc_a"))
+        self.assertIsNone(self.history.head_tree_hash("doc_a"))
+
+    def test_manual_working_tree_gap_is_preserved_as_hidden_boundary(self) -> None:
+        manual = copy.deepcopy(self.after)
+        manual["font"]["note"] = "manual"
+        final = copy.deepcopy(manual)
+        final["glyphs"]["g0002"]["export"] = False
+        self.history.record_action(
+            document_id="doc_a", tool="agent_one", effect="edit", status="success", run_id="run_1",
+            before_model=self.before, after_model=self.after,
+        )
+        self.history.record_action(
+            document_id="doc_a", tool="agent_two", effect="edit", status="success", run_id="run_2",
+            before_model=manual, after_model=final,
+        )
+
+        self.assertEqual(len(self.history.list_commits("doc_a")), 2)
+        all_commits = self.history.list_commits("doc_a", include_external=True)
+        self.assertEqual(len(all_commits), 3)
+        self.assertEqual(all_commits[1].source, "external")
+
+
+if __name__ == "__main__":
+    unittest.main()

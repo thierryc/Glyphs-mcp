@@ -109,6 +109,38 @@ class V2TransactionTests(unittest.TestCase):
                 ],
             )
 
+    def test_observer_reuses_transaction_snapshots_without_extra_capture(self) -> None:
+        class Observer:
+            def __init__(self):
+                self.prepared = []
+                self.committed = []
+
+            def prepare_transaction(self, document_id, before):
+                self.prepared.append((document_id, copy.deepcopy(before)))
+                return "trace_token"
+
+            def commit_transaction(self, token, document_id, before, after, change_set):
+                self.committed.append((token, document_id, copy.deepcopy(before), copy.deepcopy(after), change_set))
+
+            def abort_transaction(self, token):
+                raise AssertionError("successful transaction must not abort its trace")
+
+        adapter = _DocumentAdapter(self.before)
+        observer = Observer()
+        kernel = TransactionKernel(adapter, observer=observer)
+        result = kernel.apply(
+            document_id="doc_alpha",
+            expected_fingerprint=fingerprint_model(self.before),
+            change_set=diff_models(self.before, self.after),
+        )
+
+        self.assertEqual(result.after_fingerprint, fingerprint_model(self.after))
+        self.assertEqual(len(observer.prepared), 1)
+        self.assertEqual(len(observer.committed), 1)
+        self.assertEqual(observer.committed[0][2], self.before)
+        self.assertEqual(observer.committed[0][3], self.after)
+        self.assertEqual(adapter.apply_calls, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

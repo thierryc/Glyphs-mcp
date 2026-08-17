@@ -68,9 +68,18 @@ class V2BundleAssemblyTests(unittest.TestCase):
 
                 plugin_entry = (resources / "plugin.py").read_text(encoding="utf-8")
                 self.assertIn("from mcp_tools import mcp", plugin_entry)
+                self.assertIn("GlyphsMCPChangeDiffReporter", plugin_entry)
+                self.assertNotIn("GlyphsMCPCandidateReporter", plugin_entry)
                 self.assertNotIn("import code_execution", plugin_entry)
                 self.assertNotIn("import documentation_resources", plugin_entry)
                 self.assertNotIn("import kerning_resources", plugin_entry)
+
+                changes_bridge = (resources / "document_changes_panel.py").read_text(encoding="utf-8")
+                self.assertIn("glyphs_mcp_v2.change_log_panel", changes_bridge)
+                self.assertTrue((resources / "glyphs_mcp_v2" / "change_diff_reporter.py").is_file())
+
+                self.assertIn("GlyphsMCPChangeDiffReporter", info["Principal Classes"])
+                self.assertNotIn("GlyphsMCPCandidateReporter", info["Principal Classes"])
 
             manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["fileCount"], len(_file_map(source)))
