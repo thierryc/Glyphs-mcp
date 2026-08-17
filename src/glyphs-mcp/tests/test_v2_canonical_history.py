@@ -197,6 +197,38 @@ class ChangeHistoryTests(unittest.TestCase):
         self.assertEqual(len(session.change_set.changes), 1)
         self.assertEqual(session.change_set.changes[0].path[:3], ("glyphs", "g0001", "export"))
 
+    def test_latest_agent_session_spans_distinct_tool_run_ids_until_an_external_boundary(self) -> None:
+        middle = copy.deepcopy(self.before)
+        middle["glyphs"]["g0000"]["export"] = False
+        final = copy.deepcopy(middle)
+        final["glyphs"]["g0001"]["export"] = False
+        self.history.record_action(
+            document_id="doc_a", tool="first", effect="edit", status="success", run_id="run_1",
+            before_model=self.before, after_model=middle,
+        )
+        self.history.record_action(
+            document_id="doc_a", tool="second", effect="edit", status="success", run_id="run_2",
+            before_model=middle, after_model=final,
+        )
+
+        session = self.history.latest_session_diff("doc_a")
+        self.assertIsNotNone(session)
+        self.assertEqual(session.commit_ids, ("c1", "c2"))
+        self.assertEqual(len(session.change_set.changes), 2)
+
+        manual = copy.deepcopy(final)
+        manual["font"]["note"] = "manual"
+        after_manual = copy.deepcopy(manual)
+        after_manual["glyphs"]["g0002"]["export"] = False
+        self.history.record_action(
+            document_id="doc_a", tool="third", effect="edit", status="success", run_id="run_3",
+            before_model=manual, after_model=after_manual,
+        )
+        session = self.history.latest_session_diff("doc_a")
+        self.assertIsNotNone(session)
+        self.assertEqual(session.commit_ids, ("c4",))
+        self.assertEqual(session.change_set.changes[0].path[:3], ("glyphs", "g0002", "export"))
+
     def test_save_resets_visible_history_and_overlay_ref(self) -> None:
         self.history.record_action(
             document_id="doc_a", tool="edit", effect="edit", status="success", run_id="run_1",

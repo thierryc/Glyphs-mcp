@@ -49,6 +49,8 @@ class V2ContractTests(unittest.TestCase):
             "review_export",
             "export_source_bundle",
             "list_audit_events",
+            "list_change_commits",
+            "revert_change",
             "execute_python",
             "rollback_python_execution",
         }
@@ -70,7 +72,7 @@ class V2ContractTests(unittest.TestCase):
             )
             if definition.effect == "read":
                 self.assertTrue(definition.annotations["readOnlyHint"])
-            if definition.name in {"execute_python", "rollback_python_execution"}:
+            if definition.name in {"execute_python", "rollback_python_execution", "revert_change"}:
                 self.assertTrue(definition.annotations["destructiveHint"])
             if definition.name == "execute_python":
                 self.assertTrue(definition.annotations["openWorldHint"])

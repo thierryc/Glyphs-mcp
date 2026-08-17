@@ -47,6 +47,29 @@ class _Host:
         self.restore_calls += 1
         self.model = copy.deepcopy(model)
 
+    def preview_python(self, request, before_model):
+        return {"afterModel": copy.deepcopy(before_model), "stdout": "", "stderr": ""}
+
+    def run_live_python(self, request):
+        before = copy.deepcopy(self.model)
+        self.model["font"]["pythonTouched"] = True
+        return {
+            "beforeModel": before,
+            "afterModel": copy.deepcopy(self.model),
+            "stdout": "",
+            "stderr": "",
+            "scopeViolations": [],
+        }
+
+    def create_recovery_copy(self, document_id, execution_id):
+        return "/private/recovery/{}.glyphs".format(execution_id)
+
+    def register_recovery_checkpoint(self, execution_id, document_id, recovery_path, after_fingerprint):
+        return None
+
+    def open_recovery_copy(self, path):
+        return None
+
 
 class ChangeHistoryApplicationTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -132,6 +155,63 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         lifecycle.document_was_saved("doc_history", make_copy=True, succeeded=True)
         lifecycle.document_was_saved("doc_history", make_copy=False, succeeded=False)
         self.assertEqual(len(self.history.list_commits("doc_history")), 2)
+
+    def test_confirmed_open_world_python_rebinds_document_and_records_exact_transition(self) -> None:
+        preview = self.app.invoke(
+            "execute_python",
+            {
+                "documentId": "doc_history",
+                "code": "font.userData['touched'] = True",
+                "reason": "exercise live tracing",
+                "intendedEffect": "files_or_external",
+                "executionMode": "live_open_world",
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+            },
+        ).to_dict()
+        confirmed = self.app.invoke(
+            "execute_python", {"reviewId": preview["data"]["reviewId"], "confirm": True}
+        ).to_dict()
+
+        self.assertTrue(confirmed["ok"])
+        commits = self.history.list_commits("doc_history")
+        self.assertEqual([commit.tool for commit in commits], ["execute_python", "execute_python"])
+        self.assertFalse(commits[0].changed)
+        self.assertTrue(commits[1].changed)
+        self.assertEqual(commits[1].after_tree_hash, self.history.head_tree_hash("doc_history"))
+
+    def test_read_intent_python_mutation_is_stored_as_a_changed_action_commit(self) -> None:
+        response = self.app.invoke(
+            "execute_python",
+            {
+                "documentId": "doc_history",
+                "code": "print('read')",
+                "reason": "detect an incorrectly declared mutation",
+                "intendedEffect": "read",
+            },
+        ).to_dict()
+
+        self.assertTrue(response["ok"])
+        commit = self.history.list_commits("doc_history")[-1]
+        self.assertEqual(commit.tool, "execute_python")
+        self.assertTrue(commit.changed)
+
+    def test_change_commits_are_model_visible_and_commit_diff_uses_get_operation(self) -> None:
+        self._apply_export_toggle()
+        changed = [item for item in self.history.list_commits("doc_history") if item.changed][0]
+
+        listed = self.app.invoke(
+            "list_change_commits", {"documentId": "doc_history", "pageSize": 100}
+        ).to_dict()
+        inspected = self.app.invoke(
+            "get_operation", {"operationId": changed.commit_id, "pageSize": 100}
+        ).to_dict()
+
+        self.assertTrue(listed["ok"])
+        self.assertIn(changed.commit_id, [item["commitId"] for item in listed["data"]["commits"]])
+        self.assertTrue(inspected["ok"])
+        self.assertEqual(inspected["data"]["kind"], "change_commit")
+        self.assertEqual(inspected["data"]["payload"]["commitId"], changed.commit_id)
+        self.assertGreater(inspected["data"]["payload"]["changeCount"], 0)
 
 
 if __name__ == "__main__":

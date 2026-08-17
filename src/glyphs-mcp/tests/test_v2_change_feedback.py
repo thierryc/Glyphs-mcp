@@ -95,6 +95,19 @@ class ChangeFeedbackTests(unittest.TestCase):
         self.assertTrue(overlay.visible)
         self.assertTrue(overlay.stale)
 
+    def test_later_unrelated_layer_edit_does_not_mark_overlay_stale(self) -> None:
+        live = copy.deepcopy(self.after["glyphs"]["A"]["layers"]["m0"])
+        live["name"] = "User label unrelated to the recorded node move"
+        overlay = overlay_for_layer(
+            trees=self.trees,
+            session=self.history.latest_session_diff("doc_feedback"),
+            glyph_name="A",
+            layer_key="m0",
+            live_layer=live,
+        )
+        self.assertTrue(overlay.visible)
+        self.assertFalse(overlay.stale)
+
     def test_unrelated_layer_draws_nothing(self) -> None:
         overlay = overlay_for_layer(
             trees=self.trees,
