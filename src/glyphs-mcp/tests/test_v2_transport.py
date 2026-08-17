@@ -57,6 +57,28 @@ class V2TransportTests(unittest.TestCase):
                         TOOL_CATALOG[name].annotations["destructiveHint"],
                     )
 
+                for name in (
+                    "apply_metrics_updates",
+                    "apply_compatibility_updates",
+                    "apply_anchor_updates",
+                    "apply_glyph_updates",
+                    "apply_kerning_updates",
+                    "apply_spacing",
+                ):
+                    properties = tools[name].inputSchema["properties"]
+                    required = set(tools[name].inputSchema["required"])
+                    self.assertIn("documentId", required)
+                    self.assertIn("expectedDocumentFingerprint", required)
+                    self.assertNotIn("reviewId", properties)
+                    self.assertNotIn("confirm", properties)
+
+                rollback = tools["rollback_change_operation"].inputSchema
+                self.assertEqual(
+                    set(rollback["required"]),
+                    {"operationId", "expectedDocumentFingerprint"},
+                )
+                self.assertNotIn("confirm", rollback["properties"])
+
                 result = await client.call_tool("list_open_fonts", {})
                 self.assertFalse(result.is_error)
                 self.assertEqual(result.structured_content["apiVersion"], "2.0")
