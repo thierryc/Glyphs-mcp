@@ -34,13 +34,13 @@ class OperationMetadata:
     duration_ms: int
 
     @classmethod
-    def create(cls, *, operation_id: Optional[str] = None) -> "OperationMetadata":
+    def create(cls) -> "OperationMetadata":
         started = _utc_now()
         completed = _utc_now()
         return cls(
             request_id="req_{}".format(uuid4().hex),
             run_id="run_{}".format(uuid4().hex),
-            operation_id=str(operation_id or "op_{}".format(uuid4().hex)),
+            operation_id="op_{}".format(uuid4().hex),
             started_at=_iso(started),
             completed_at=_iso(completed),
             duration_ms=max(0, int((completed - started).total_seconds() * 1000)),

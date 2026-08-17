@@ -93,62 +93,59 @@ class ToolHandlers:
     async def review_metrics_inheritance(self, documentId: str) -> ToolResult:
         return self._invoke("review_metrics_inheritance", locals())
 
-    async def apply_metrics_updates(
+    async def review_metrics_updates(
         self,
         documentId: str,
-        expectedDocumentFingerprint: str,
         updates: List[Dict[str, Any]],
-        reason: Optional[str] = None,
     ) -> ToolResult:
+        return self._invoke("review_metrics_updates", locals())
+
+    async def apply_metrics_updates(self, reviewId: str, confirm: bool = False) -> ToolResult:
         return self._invoke("apply_metrics_updates", locals())
 
     async def review_anchor_consistency(self, documentId: str) -> ToolResult:
         return self._invoke("review_anchor_consistency", locals())
 
-    async def apply_compatibility_updates(
+    async def review_compatibility_updates(
         self,
         documentId: str,
-        expectedDocumentFingerprint: str,
         updates: List[Dict[str, Any]],
-        reason: Optional[str] = None,
     ) -> ToolResult:
+        return self._invoke("review_compatibility_updates", locals())
+
+    async def apply_compatibility_updates(self, reviewId: str, confirm: bool = False) -> ToolResult:
         return self._invoke("apply_compatibility_updates", locals())
 
-    async def apply_anchor_updates(
+    async def review_anchor_updates(
         self,
         documentId: str,
-        expectedDocumentFingerprint: str,
         updates: List[Dict[str, Any]],
-        reason: Optional[str] = None,
     ) -> ToolResult:
+        return self._invoke("review_anchor_updates", locals())
+
+    async def apply_anchor_updates(self, reviewId: str, confirm: bool = False) -> ToolResult:
         return self._invoke("apply_anchor_updates", locals())
 
-    async def apply_glyph_updates(
+    async def review_glyph_updates(
         self,
         documentId: str,
-        expectedDocumentFingerprint: str,
         updates: List[Dict[str, Any]],
-        reason: Optional[str] = None,
     ) -> ToolResult:
+        return self._invoke("review_glyph_updates", locals())
+
+    async def apply_glyph_updates(self, reviewId: str, confirm: bool = False) -> ToolResult:
         return self._invoke("apply_glyph_updates", locals())
 
-    async def apply_kerning_updates(
+    async def review_kerning_updates(
         self,
         documentId: str,
-        expectedDocumentFingerprint: str,
         updates: List[Dict[str, Any]],
         coverageMode: str = "class_representatives",
-        reason: Optional[str] = None,
     ) -> ToolResult:
-        return self._invoke("apply_kerning_updates", locals())
+        return self._invoke("review_kerning_updates", locals())
 
-    async def rollback_change_operation(
-        self,
-        operationId: str,
-        expectedDocumentFingerprint: str,
-        reason: Optional[str] = None,
-    ) -> ToolResult:
-        return self._invoke("rollback_change_operation", locals())
+    async def apply_kerning_updates(self, reviewId: str, confirm: bool = False) -> ToolResult:
+        return self._invoke("apply_kerning_updates", locals())
 
     async def review_spacing(
         self,
@@ -160,16 +157,7 @@ class ToolHandlers:
     ) -> ToolResult:
         return self._invoke("review_spacing", locals())
 
-    async def apply_spacing(
-        self,
-        documentId: str,
-        expectedDocumentFingerprint: str,
-        glyphNames: Optional[List[str]] = None,
-        items: Optional[List[Dict[str, Any]]] = None,
-        maxIterations: int = 5,
-        tolerance: float = 1.0,
-        reason: Optional[str] = None,
-    ) -> ToolResult:
+    async def apply_spacing(self, reviewId: str, confirm: bool = False) -> ToolResult:
         return self._invoke("apply_spacing", locals())
 
     async def review_export(

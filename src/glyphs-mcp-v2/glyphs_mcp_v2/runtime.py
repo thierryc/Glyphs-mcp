@@ -9,19 +9,10 @@ from .application import GlyphsMCPApplication
 from .transport.fastmcp import create_server
 
 
-_ACTIVE_HOST: GlyphsDocumentHost | None = None
-
-
-def active_host() -> GlyphsDocumentHost | None:
-    return _ACTIVE_HOST
-
-
 def create_glyphs_server() -> FastMCP:
-    global _ACTIVE_HOST
     host = GlyphsDocumentHost.from_running_glyphs()
-    _ACTIVE_HOST = host
     application = GlyphsMCPApplication(host)
     return create_server(application)
 
 
-__all__ = ["active_host", "create_glyphs_server"]
+__all__ = ["create_glyphs_server"]

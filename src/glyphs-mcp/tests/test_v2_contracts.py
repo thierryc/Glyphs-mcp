@@ -33,13 +33,17 @@ class V2ContractTests(unittest.TestCase):
             "review_kerning_coverage",
             "review_master_compatibility",
             "review_metrics_inheritance",
+            "review_metrics_updates",
             "apply_metrics_updates",
             "review_anchor_consistency",
+            "review_compatibility_updates",
             "apply_compatibility_updates",
+            "review_anchor_updates",
             "apply_anchor_updates",
+            "review_glyph_updates",
             "apply_glyph_updates",
+            "review_kerning_updates",
             "apply_kerning_updates",
-            "rollback_change_operation",
             "review_spacing",
             "apply_spacing",
             "review_export",
@@ -66,11 +70,7 @@ class V2ContractTests(unittest.TestCase):
             )
             if definition.effect == "read":
                 self.assertTrue(definition.annotations["readOnlyHint"])
-            if definition.name in {
-                "execute_python",
-                "rollback_change_operation",
-                "rollback_python_execution",
-            }:
+            if definition.name in {"execute_python", "rollback_python_execution"}:
                 self.assertTrue(definition.annotations["destructiveHint"])
             if definition.name == "execute_python":
                 self.assertTrue(definition.annotations["openWorldHint"])
@@ -155,19 +155,6 @@ class V2ContractTests(unittest.TestCase):
             if ".tool(" in text:
                 callers.append(path.relative_to(package).as_posix())
         self.assertEqual(callers, ["transport/fastmcp.py"])
-
-    def test_removed_mutation_review_and_candidate_apis_have_no_registered_aliases(self) -> None:
-        removed = {
-            "review_metrics_updates",
-            "review_compatibility_updates",
-            "review_anchor_updates",
-            "review_glyph_updates",
-            "review_kerning_updates",
-            "create_outline_candidate",
-            "materialize_outline_candidate",
-            "set_outline_candidate_overlay",
-        }
-        self.assertFalse(removed & set(TOOL_CATALOG))
 
 
 if __name__ == "__main__":
