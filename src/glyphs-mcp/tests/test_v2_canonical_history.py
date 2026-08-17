@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import copy
+import os
+import stat
 import sys
+import tempfile
 import time
 import unittest
 from pathlib import Path
@@ -14,7 +17,11 @@ V2_SOURCE = REPO / "src" / "glyphs-mcp-v2"
 if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
-from glyphs_mcp_v2.canonical_tree import CanonicalFontTree, MemoryObjectStore  # noqa: E402
+from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
+    CanonicalFontTree,
+    MemoryObjectStore,
+    SQLiteObjectStore,
+)
 from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
 
 
@@ -121,6 +128,21 @@ class CanonicalFontTreeTests(unittest.TestCase):
 
         self.assertEqual(snapshot.glyph_count, 1000)
         self.assertLess(elapsed, 2.0)
+
+    def test_sqlite_store_is_private_compressed_and_deduplicated(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "private" / "objects.sqlite3"
+            store = SQLiteObjectStore(path)
+            trees = CanonicalFontTree(store)
+            first = trees.store_model(_model(glyph_count=20, master_count=2))
+            second = trees.store_model(_model(glyph_count=20, master_count=2))
+            store.close()
+
+            self.assertEqual(first.tree_hash, second.tree_hash)
+            self.assertEqual(second.inserted_object_count, 0)
+            self.assertEqual(stat.S_IMODE(path.parent.stat().st_mode), 0o700)
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+            self.assertLess(path.stat().st_size, first.inserted_byte_count * 2)
 
 
 class ChangeHistoryTests(unittest.TestCase):
