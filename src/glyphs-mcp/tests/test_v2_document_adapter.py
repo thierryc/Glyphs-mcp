@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import stat
 import sys
 import tempfile
@@ -21,6 +22,7 @@ from glyphs_mcp_v2.adapters.document import (  # noqa: E402
     native_font_to_model,
 )
 from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
+from glyphs_mcp_v2.semantic import diff_models  # noqa: E402
 
 
 class _Immediate:
@@ -130,6 +132,37 @@ class _App:
         self.opened.append((path, showInterface))
 
 
+class _EditableDocument:
+    def __init__(self, *, edited=False):
+        self.isDocumentEdited = edited
+        self.change_counts = []
+
+    def updateChangeCount_(self, change):
+        self.change_counts.append(change)
+        self.isDocumentEdited = False if change == 2 else True
+
+
+class _TransactionalFont:
+    def __init__(self, *, edited=False):
+        self.familyName = "Transaction Test"
+        self.filepath = "/fonts/transaction.glyphs"
+        self.parent = _EditableDocument(edited=edited)
+        self.upm = 1000
+        self.versionMajor = 1
+        self.versionMinor = 0
+        self.note = None
+        self.grid = 1
+        self.gridSubDivision = 1
+        self.axes = []
+        self.masters = []
+        self.instances = []
+        self.glyphs = []
+        self.kerning = {}
+        self.features = []
+        self.classes = []
+        self.featurePrefixes = []
+
+
 class _RecoveryHost(GlyphsDocumentHost):
     def __init__(self, app, root):
         super().__init__(app, executor=_Immediate())
@@ -176,6 +209,41 @@ class V2DocumentAdapterTests(unittest.TestCase):
             document_adapter._serialized_font_fingerprint(source),
             document_adapter._serialized_font_fingerprint(clone),
         )
+
+    def test_verified_transaction_marks_clean_document_dirty_and_inverse_clears_it(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        after = copy.deepcopy(before)
+        after["font"]["note"] = "reviewed edit"
+        change_set = diff_models(before, after)
+
+        host.apply_change_set(document_id, change_set)
+
+        self.assertTrue(font.parent.isDocumentEdited)
+        self.assertTrue(host.list_documents()[0].has_unsaved_changes)
+
+        host.apply_change_set(document_id, change_set.inverse())
+
+        self.assertFalse(font.parent.isDocumentEdited)
+        self.assertFalse(host.list_documents()[0].has_unsaved_changes)
+        self.assertEqual(font.parent.change_counts, [0, 2])
+
+    def test_inverse_preserves_dirty_state_that_predated_transaction(self) -> None:
+        font = _TransactionalFont(edited=True)
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        after = copy.deepcopy(before)
+        after["font"]["note"] = "reviewed edit"
+        change_set = diff_models(before, after)
+
+        host.apply_change_set(document_id, change_set)
+        host.apply_change_set(document_id, change_set.inverse())
+
+        self.assertTrue(font.parent.isDocumentEdited)
+        self.assertNotIn(2, font.parent.change_counts)
 
     def test_glyphs4_make_copy_fallback_restores_temp_data_and_native_format(self) -> None:
         with tempfile.TemporaryDirectory() as root:
