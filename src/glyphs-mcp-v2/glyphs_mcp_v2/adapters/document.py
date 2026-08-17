@@ -221,7 +221,10 @@ def _instance_models(font: Any) -> list[dict[str, Any]]:
             included_value = _safe_getattr(instance, "exports", True)
         result.append(
             {
-                "id": str(_safe_getattr(instance, "id") or "instance_{}".format(index)),
+                # Glyphs 4 regenerates native GSInstance UUIDs in GSFont.copy().
+                # Use the ordered collection identity in the canonical model so
+                # a detached clone does not manufacture a semantic change.
+                "id": "instance_{}".format(index),
                 "name": str(_safe_getattr(instance, "name") or ""),
                 "type": "variable" if is_variable else "static",
                 "included": bool(_maybe_call(included_value)),
