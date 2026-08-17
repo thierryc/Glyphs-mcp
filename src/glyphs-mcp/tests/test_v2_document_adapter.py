@@ -181,6 +181,37 @@ class _TransactionalFont:
         self.featurePrefixes = []
 
 
+class _ReadOnlyShapeProxy(list):
+    def __setitem__(self, key, value):
+        raise TypeError("helper proxy is read-only")
+
+    def __delitem__(self, key):
+        raise TypeError("helper proxy is read-only")
+
+    def append(self, value):
+        raise TypeError("helper proxy is read-only")
+
+
+class _PathShape:
+    def __init__(self, name):
+        self.name = name
+        self.nodes = []
+
+
+class _ComponentShape:
+    def __init__(self, name):
+        self.componentName = name
+
+
+class _ShapeLayer:
+    def __init__(self):
+        self.old_path = _PathShape("old-path")
+        self.old_component = _ComponentShape("old-component")
+        self.shapes = [self.old_path, self.old_component]
+        self.paths = _ReadOnlyShapeProxy([self.old_path])
+        self.components = _ReadOnlyShapeProxy([self.old_component])
+
+
 class _RecoveryHost(GlyphsDocumentHost):
     def __init__(self, app, root):
         super().__init__(app, executor=_Immediate())
@@ -191,6 +222,26 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_path_replacement_writes_shapes_and_preserves_components(self) -> None:
+        layer = _ShapeLayer()
+        replacement = _PathShape("new-path")
+
+        with mock.patch.object(document_adapter, "_new_path", return_value=replacement):
+            document_adapter._replace_paths(layer, [{"nodes": []}])
+
+        self.assertEqual(layer.shapes, [replacement, layer.old_component])
+        self.assertEqual(list(layer.paths), [layer.old_path])
+
+    def test_component_replacement_writes_shapes_and_preserves_paths(self) -> None:
+        layer = _ShapeLayer()
+        replacement = _ComponentShape("new-component")
+
+        with mock.patch.object(document_adapter, "_new_component", return_value=replacement):
+            document_adapter._replace_components(layer, [{"name": "new-component"}])
+
+        self.assertEqual(layer.shapes, [layer.old_path, replacement])
+        self.assertEqual(list(layer.components), [layer.old_component])
+
     def test_clone_generated_instance_ids_do_not_change_the_canonical_model(self) -> None:
         source = native_font_to_model(_InstanceFont("source-uuid", "source-pointer"))
         clone = native_font_to_model(_InstanceFont("clone-uuid", "clone-pointer"))
