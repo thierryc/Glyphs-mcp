@@ -1016,7 +1016,9 @@ class GlyphsMCPApplication:
 
     def list_change_commits(self, arguments: Mapping[str, Any]) -> ToolResponse:
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        self._document_model(document_id)
+        if not document_id:
+            raise ValueError("documentId is required")
+        self._trace.bind_document(document_id)
         items = [
             _change_commit_summary(commit)
             for commit in self.history.list_commits(document_id)
