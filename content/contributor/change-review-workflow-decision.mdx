@@ -1,0 +1,132 @@
+---
+title: Agent change feedback decision
+description: Apply first, then review verified Glyphs MCP 2.0 changes without persistent document noise.
+---
+
+# Agent change feedback decision
+
+Status: **Accepted for Glyphs MCP 2.0**
+
+## Decision
+
+Glyphs MCP 2.0 has one typed-mutation workflow:
+
+1. Prevalidate the request against an expected document fingerprint.
+2. Apply it once through the verified main-thread transaction kernel.
+3. Record one canonical `ChangeOperation`, audit receipt, and inverse patch.
+4. Offer optional post-apply review and rollback.
+
+Review never gates a typed mutation. There is no public Candidate mode,
+candidate layer, prepared visual state, or accept transition. Exact confirmation
+remains only where it is a safety boundary: `execute_python`, exports, and
+external effects.
+
+## One index and one overlay
+
+The **Glyphs MCP Changes** panel is the only persistent operation index. Do not
+add Font View rails, dots, badges, colors, tags, notes, filters, backgrounds,
+special layers, or private List View columns.
+
+This avoids duplicating state already shown by the panel and avoids competing
+with Glyphs' native compatibility, metrics, note, export, and dirty indicators.
+The native gray dirty cue remains corroborating evidence only: it does not
+identify the author, operation, semantic fields, rollback token, or coverage.
+
+The panel behavior is deliberately small:
+
+- Single-click selects an operation and shows its bounded semantic details.
+- Double-click and **Open Changed Glyphs** invoke the same navigation action.
+- One tagged Edit tab is reused per document instead of accumulating tabs.
+- Glyph targets are deduplicated in operation order; the first affected layer
+  is used for each glyph, including mixed-master operations.
+- One tab supports at most 500 unique glyphs. Larger requests fail explicitly
+  rather than opening an incomplete review.
+- Document resolution uses the stable v2 document ID only. It never falls back
+  to a matching family name or path.
+
+The **Glyphs MCP Changes** Reporter is the only extra visual marker. It draws in
+Edit View only and reads the panel's selected operation:
+
+- the normal live outline is the applied/current result;
+- a warm solid difference region shows a verified topology-compatible outline
+  delta;
+- a neutral dashed delta plus `STALE` means the relevant fields changed later;
+- unrelated, nonvisual, unsupported, rolled-back, or expired items draw
+  nothing.
+
+The Reporter is drawing-only. It does not navigate, snapshot, mutate, save,
+audit, or determine rollback eligibility. Hiding it changes no operation state.
+
+## Semantic routing
+
+The overlay is not expected to explain every change:
+
+| Change | Review surface |
+| --- | --- |
+| Topology-compatible paths | Edit View difference overlay |
+| Components, anchors, width, metrics keys | Edit View, Info box, and textual before/applied values |
+| Spacing | Native proof tab and metrics values |
+| Kerning | Native proof text or Kerning view |
+| Compatibility | Compatibility display and interpolation slider |
+| Glyph properties and groups | Font/List properties plus semantic details |
+| Features, classes, prefixes | Feature editor, compiler result, and shaping proof |
+| Instances and axes | Font Info and interpolation controls |
+| Font metadata | Font Info and bounded textual diff |
+| Files or external effects | Effect receipt only; never a reversible glyph claim |
+
+## Operation and rollback contract
+
+The same `operationId` identifies the mutation response, `get_operation`
+pagination, Changes panel row, Reporter selection, audit record, and rollback
+metadata. Operation states are `applied`, `partially_rolled_back`,
+`rolled_back`, `stale`, `expired`, and `recovery_only`.
+
+Rollback remains semantic. Each covered item retains its before value,
+verified applied value, stable target, atomic field group, and inverse patch.
+Later edits are never overwritten merely to make a visual marker disappear.
+
+`rollback_change_operation` consumes that inverse through the same verified
+transaction kernel. It requires the canonical operation ID and exact current
+document fingerprint; calling it is the rollback request, so it adds no
+confirmation or second visual-review mode.
+
+## Breaking v2 API decision
+
+The following preparation tools are removed without registered aliases:
+
+- `review_glyph_updates`
+- `review_anchor_updates`
+- `review_kerning_updates`
+- `review_metrics_updates`
+- `review_compatibility_updates`
+
+Their `apply_*` replacements accept `documentId`,
+`expectedDocumentFingerprint`, direct update inputs, and an optional `reason`.
+Analytical reviews remain read-only and produce no apply token.
+
+The v2 bundle also removes the Candidate Reporter principal class and Candidate
+lifecycle modules. It reuses only the proven pure difference mathematics. The
+signed v1.11 Glyphs 3.5 installation remains unchanged.
+
+## Acceptance
+
+- One typed apply produces one main-thread transaction, one canonical
+  operation, and one audit receipt.
+- Failed verification publishes no applied operation.
+- Single-click does not navigate; double-click and the button share one action.
+- Repeated review reuses and focuses one Edit tab per document.
+- Navigation and Reporter drawing do not change content, path, dirty state,
+  active master, or document fingerprint.
+- The generated v2 bundle exports `GlyphsMCPChangeReviewReporter`, not
+  `GlyphsMCPCandidateReporter`, and implements no Font View drawing callback.
+- Synthetic 200-glyph, 178-pair, and 225-glyph batches remain one transaction;
+  operation pages stay below 64 KiB and discovery stays below 96 KiB.
+- Disposable Glyphs 3.5 and Glyphs 4 gates verify tab reuse, mixed-master
+  layers, Reporter activation, redraw after apply/rollback, closure safety, and
+  absence of Font View decoration without saving the production font.
+
+## Documentation evidence
+
+- [Viewing Glyphs — built-in Font View indicators](https://handbook.glyphsapp.com/viewing-glyphs/)
+- [Glyph Properties — color labels and Last Changed](https://handbook.glyphsapp.com/glyph/)
+- [Glyphs SDK — Reporter plug-ins](https://github.com/schriftgestalt/GlyphsSDK)

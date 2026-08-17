@@ -261,6 +261,23 @@ class ChangeReviewNavigationTests(unittest.TestCase):
         self.assertEqual(result["missingGlyphCount"], 1)
         self.assertEqual(result["missingGlyphNames"], ["missing"])
 
+    def test_missing_explicit_layer_is_skipped_instead_of_using_another_master(self) -> None:
+        from glyphs_mcp_v2.change_review import ChangeOperation
+        from glyphs_mcp_v2.change_review_navigation import open_changed_glyphs
+
+        font = _Font([_Glyph("a", [_Layer("a.m1", "m1")])])
+        operation = ChangeOperation.from_mapping(
+            _operation(
+                [{"glyphName": "a", "masterId": "m2", "layerId": "a.m2"}]
+            )
+        )
+
+        result = open_changed_glyphs(font, operation)
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["errorCode"], "review_targets_unavailable")
+        self.assertEqual(font.new_tab_calls, 0)
+
 
 class ChangeReviewUISourceTests(unittest.TestCase):
     def test_panel_double_click_and_button_share_one_handler(self) -> None:

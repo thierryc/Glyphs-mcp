@@ -64,6 +64,7 @@ class _ScaleHost:
         self.model = _scale_model()
         self.apply_calls = 0
         self.restore_calls = 0
+        self.fail_next_apply = False
 
     def capture_model(self, document_id):
         return copy.deepcopy(self.model)
@@ -71,6 +72,10 @@ class _ScaleHost:
     def apply_change_set(self, document_id, change_set):
         self.apply_calls += 1
         self.model = change_set.apply(self.model)
+        if self.fail_next_apply:
+            self.fail_next_apply = False
+            self.model["font"]["familyName"] = "Corrupted readback"
+            raise RuntimeError("synthetic apply failure")
 
     def restore_model(self, document_id, model):
         self.restore_calls += 1
@@ -315,6 +320,37 @@ class V2ScaleTests(unittest.TestCase):
             "get_operation", {"operationId": applied["operationId"]}
         ).to_dict()
         self.assertEqual(public["data"]["payload"]["status"], "stale")
+        self.assertEqual(len(self.audit.list_events(document_id="doc_scale")), 2)
+
+    def test_failed_change_operation_rollback_restores_pre_rollback_state(self) -> None:
+        applied = self.app.invoke(
+            "apply_glyph_updates",
+            {
+                "documentId": "doc_scale",
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+                "updates": [{"glyphName": "g000", "export": False}],
+            },
+        ).to_dict()
+        verified_after = copy.deepcopy(self.host.model)
+        self.host.fail_next_apply = True
+
+        failed = self.app.invoke(
+            "rollback_change_operation",
+            {
+                "operationId": applied["operationId"],
+                "expectedDocumentFingerprint": applied["data"]["afterFingerprint"],
+            },
+        ).to_dict()
+
+        self.assertFalse(failed["ok"])
+        self.assertEqual(failed["error"]["code"], "rollback_failed")
+        self.assertTrue(failed["data"]["preRollbackStateRestored"])
+        self.assertEqual(self.host.model, verified_after)
+        self.assertEqual(self.host.restore_calls, 1)
+        self.assertEqual(
+            self.app._change_reviews.get(applied["operationId"]).status,
+            "applied",
+        )
         self.assertEqual(len(self.audit.list_events(document_id="doc_scale")), 2)
 
     def test_225_glyph_five_master_spacing_batch_applies_once_and_converges(self) -> None:

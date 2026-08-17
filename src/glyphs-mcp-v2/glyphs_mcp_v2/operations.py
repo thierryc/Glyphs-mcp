@@ -57,6 +57,7 @@ class OperationStore:
         kind: str,
         payload: Mapping[str, Any],
         ttl_seconds: float,
+        operation_id: Optional[str] = None,
     ) -> OperationRecord:
         if not kind:
             raise ValueError("kind is required")
@@ -65,18 +66,18 @@ class OperationStore:
             raise ValueError("ttl_seconds must be positive")
         with self._lock:
             self._purge_locked()
-            operation_id = str(self._id_factory(self._prefix(kind)))
-            if operation_id in self._records:
+            resolved_id = str(operation_id or self._id_factory(self._prefix(kind)))
+            if resolved_id in self._records:
                 raise RuntimeError("operation ID factory returned a duplicate")
             created = self._clock()
             record = OperationRecord(
-                operation_id=operation_id,
+                operation_id=resolved_id,
                 kind=kind,
                 payload=copy.deepcopy(dict(payload)),
                 created_at=created,
                 expires_at=created + ttl,
             )
-            self._records[operation_id] = record
+            self._records[resolved_id] = record
             self._purge_locked()
             return record
 
@@ -92,6 +93,33 @@ class OperationStore:
                 payload=copy.deepcopy(dict(record.payload)),
                 created_at=record.created_at,
                 expires_at=record.expires_at,
+            )
+
+    def update_payload(
+        self,
+        operation_id: str,
+        payload: Mapping[str, Any],
+    ) -> Optional[OperationRecord]:
+        """Replace one live record's payload without extending its lifetime."""
+        with self._lock:
+            self._purge_locked()
+            current = self._records.get(str(operation_id))
+            if current is None:
+                return None
+            updated = OperationRecord(
+                operation_id=current.operation_id,
+                kind=current.kind,
+                payload=copy.deepcopy(dict(payload)),
+                created_at=current.created_at,
+                expires_at=current.expires_at,
+            )
+            self._records[current.operation_id] = updated
+            return OperationRecord(
+                operation_id=updated.operation_id,
+                kind=updated.kind,
+                payload=copy.deepcopy(dict(updated.payload)),
+                created_at=updated.created_at,
+                expires_at=updated.expires_at,
             )
 
     def consume(self, operation_id: str) -> Optional[OperationRecord]:

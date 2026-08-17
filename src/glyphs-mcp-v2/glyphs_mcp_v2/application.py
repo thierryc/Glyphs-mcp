@@ -8,7 +8,8 @@ from typing import Any, Callable, Dict, Mapping, Optional, Sequence
 
 from .audit import AuditLog
 from .catalog import TOOL_CATALOG
-from .contracts import API_MAJOR, API_VERSION, ToolError, ToolResponse, ToolWarning
+from .change_review import CHANGE_REVIEW_STORE, ChangeOperation, ChangeReviewStore
+from .contracts import API_MAJOR, API_VERSION, OperationMetadata, ToolError, ToolResponse, ToolWarning
 from .exporting import ExportPublicationError, destination_matches
 from .operations import OperationRecord, OperationStore
 from .pagination import CursorError, paginate
@@ -83,12 +84,14 @@ class GlyphsMCPApplication:
         *,
         operations: Optional[OperationStore] = None,
         audit: Optional[AuditLog] = None,
+        change_reviews: Optional[ChangeReviewStore] = None,
     ) -> None:
         self._host = host
         self._operations = operations or OperationStore()
         self._reviews = OperationStore()
         self._checkpoints = OperationStore(max_records=512)
         self._audit = audit or AuditLog()
+        self._change_reviews = change_reviews or CHANGE_REVIEW_STORE
         self._transactions = TransactionKernel(host) if hasattr(host, "capture_model") else None
         self._python = (
             PythonExecutionService(
@@ -176,77 +179,6 @@ class GlyphsMCPApplication:
             raise HostAccessError("This host adapter does not expose document snapshots.")
         return copy.deepcopy(dict(capture(document_id)))
 
-    def _review_record(
-        self,
-        *,
-        kind: str,
-        tool: str,
-        document_id: str,
-        change_set: ChangeSet,
-        extra: Optional[Mapping[str, Any]] = None,
-    ) -> OperationRecord:
-        payload = {
-            "tool": tool,
-            "documentId": document_id,
-            "changeSet": change_set,
-            "beforeFingerprint": change_set.before_fingerprint,
-            "afterFingerprint": change_set.after_fingerprint,
-        }
-        payload.update(dict(extra or {}))
-        return self._reviews.create(kind=kind, payload=payload, ttl_seconds=REVIEW_TTL_SECONDS)
-
-    def _review_response(
-        self,
-        *,
-        tool: str,
-        document_id: str,
-        change_set: ChangeSet,
-        review: OperationRecord,
-        data: Optional[Mapping[str, Any]] = None,
-    ) -> ToolResponse:
-        receipt = self._audit.record(
-            tool=tool,
-            effect="read",
-            status="review_required",
-            document_id=document_id,
-            details={
-                "reviewId": review.operation_id,
-                "beforeFingerprint": change_set.before_fingerprint,
-                "afterFingerprint": change_set.after_fingerprint,
-                "changeCount": len(change_set.changes),
-            },
-        )
-        items = [change.to_dict() for change in change_set.changes]
-        operation, public_change_set, page = self._page_items(
-            kind="mutation_diff",
-            items=items,
-            item_key="changes",
-            source_fingerprint=change_set.after_fingerprint,
-            metadata={
-                "beforeFingerprint": change_set.before_fingerprint,
-                "afterFingerprint": change_set.after_fingerprint,
-                "changeCount": len(items),
-                "supported": change_set.supported,
-            },
-        )
-        values = {
-            "reviewId": review.operation_id,
-            "expiresAt": _iso_timestamp(review.expires_at),
-            "documentId": document_id,
-            "operationId": operation.operation_id,
-            "changeSet": public_change_set,
-        }
-        values.update(dict(data or {}))
-        return ToolResponse.success(
-            tool=tool,
-            effect="read",
-            status="review_required",
-            summary="Created a fingerprint-bound review; the document is unchanged.",
-            data=values,
-            audit_receipt=receipt.to_dict(),
-            page=page,
-        )
-
     def _page_items(
         self,
         *,
@@ -295,44 +227,168 @@ class GlyphsMCPApplication:
         public["operationId"] = operation.operation_id
         return public, page
 
-    def _apply_review(self, arguments: Mapping[str, Any], *, expected_tool: str, apply_tool: str) -> ToolResponse:
+    @staticmethod
+    def _layer_snapshot(model: Mapping[str, Any], glyph_name: str, layer_key: str) -> Optional[Mapping[str, Any]]:
+        glyph = (model.get("glyphs") or {}).get(glyph_name)
+        if not isinstance(glyph, Mapping):
+            return None
+        layer = (glyph.get("layers") or {}).get(layer_key)
+        return layer if isinstance(layer, Mapping) else None
+
+    def _change_items(
+        self,
+        *,
+        before: Mapping[str, Any],
+        after: Mapping[str, Any],
+        change_set: ChangeSet,
+    ) -> list[dict[str, Any]]:
+        items: list[dict[str, Any]] = []
+        display_pairs: set[tuple[str, str]] = set()
+        for change in change_set.changes:
+            path = list(change.path)
+            item = change.to_dict()
+            item["semanticFieldGroup"] = path[0] if path else "document"
+            if len(path) >= 2 and path[0] == "glyphs":
+                glyph_name = path[1]
+                item["glyphName"] = glyph_name
+                glyph = (before.get("glyphs") or {}).get(glyph_name) or (after.get("glyphs") or {}).get(glyph_name) or {}
+                if isinstance(glyph, Mapping) and glyph.get("id"):
+                    item["glyphId"] = glyph.get("id")
+                if len(path) >= 4 and path[2] == "layers":
+                    layer_key = path[3]
+                    before_layer = self._layer_snapshot(before, glyph_name, layer_key)
+                    after_layer = self._layer_snapshot(after, glyph_name, layer_key)
+                    layer = before_layer or after_layer or {}
+                    item["masterId"] = layer.get("masterId") or layer_key
+                    item["layerId"] = layer.get("id") or layer_key
+                    item["semanticFieldGroup"] = path[4] if len(path) >= 5 else "layer"
+                    pair = (glyph_name, layer_key)
+                    if pair not in display_pairs and before_layer is not None and after_layer is not None:
+                        before_paths = copy.deepcopy(list(before_layer.get("paths") or []))
+                        after_paths = copy.deepcopy(list(after_layer.get("paths") or []))
+                        before_signature = [len(item.get("nodes") or []) for item in before_paths]
+                        after_signature = [len(item.get("nodes") or []) for item in after_paths]
+                        if before_paths != after_paths and before_signature == after_signature:
+                            item["displayBefore"] = before_paths
+                            item["displayApplied"] = after_paths
+                            item["displayAppliedFingerprint"] = fingerprint_model(after_paths)
+                            display_pairs.add(pair)
+            items.append(item)
+        return items
+
+    @staticmethod
+    def _order_change_items(
+        items: Sequence[Mapping[str, Any]],
+        requested: Sequence[Mapping[str, Any]],
+    ) -> list[dict[str, Any]]:
+        ranks: dict[tuple[str, Optional[str]], int] = {}
+        for index, target in enumerate(requested):
+            glyph_name = str(target.get("glyphName") or "")
+            if not glyph_name:
+                continue
+            layer_key = str(target.get("layerId") or target.get("masterId") or "") or None
+            ranks.setdefault((glyph_name, layer_key), index)
+            ranks.setdefault((glyph_name, None), index)
+        fallback = len(requested)
+        indexed = list(enumerate(items))
+
+        def rank(value: tuple[int, Mapping[str, Any]]) -> tuple[int, int]:
+            original_index, item = value
+            glyph_name = str(item.get("glyphName") or "")
+            layer_key = str(item.get("layerId") or item.get("masterId") or "") or None
+            return (
+                ranks.get((glyph_name, layer_key), ranks.get((glyph_name, None), fallback + original_index)),
+                original_index,
+            )
+
+        return [copy.deepcopy(dict(item)) for _index, item in sorted(indexed, key=rank)]
+
+    def _apply_direct(
+        self,
+        arguments: Mapping[str, Any],
+        *,
+        apply_tool: str,
+        builder: Callable[[Mapping[str, Any], Sequence[Mapping[str, Any]]], ChangeSet],
+        extra_data: Optional[Callable[[Mapping[str, Any]], Mapping[str, Any]]] = None,
+    ) -> ToolResponse:
         if self._transactions is None:
             raise HostAccessError("This host adapter does not support document transactions.")
-        review_id = str(_value(arguments, "review_id", "reviewId", "") or "")
-        if not bool(arguments.get("confirm")):
-            raise ValueError("confirm=true is required")
-        review = self._reviews.consume(review_id)
-        if review is None or review.kind != "mutation_review" or review.payload.get("tool") != expected_tool:
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        expected = str(
+            _value(
+                arguments,
+                "expected_document_fingerprint",
+                "expectedDocumentFingerprint",
+                "",
+            )
+            or ""
+        )
+        if not expected:
+            raise ValueError("expectedDocumentFingerprint is required")
+        reason_value = _value(arguments, "reason")
+        reason = str(reason_value) if reason_value is not None else None
+        before = self._document_model(document_id)
+        if fingerprint_model(before) != expected:
+            receipt = self._audit.record(
+                tool=apply_tool,
+                effect="edit",
+                status="error",
+                document_id=document_id,
+                details={"errorCode": "stale_document", "expectedDocumentFingerprint": expected},
+            )
             return ToolResponse.failure(
                 tool=apply_tool,
                 effect="edit",
-                summary="The review is missing, expired, consumed, or belongs to another tool.",
-                error=ToolError(code="review_unavailable", message="The review cannot be applied.", recoverable=True),
+                summary="The document changed before the mutation; no mutation was attempted.",
+                error=ToolError(code="stale_document", message="Document fingerprint is stale.", recoverable=True),
+                audit_receipt=receipt.to_dict(),
             )
-        change_set = review.payload.get("changeSet")
-        if not isinstance(change_set, ChangeSet):
-            raise ValueError("stored review has no valid change set")
+        updates = list(arguments.get("updates") or [])
+        try:
+            change_set = builder(before, updates)
+        except (ValueError, TypeError) as exc:
+            receipt = self._audit.record(
+                tool=apply_tool,
+                effect="edit",
+                status="error",
+                document_id=document_id,
+                details={"errorCode": "invalid_request", "reason": reason},
+            )
+            return ToolResponse.failure(
+                tool=apply_tool,
+                effect="edit",
+                summary="The mutation request is invalid; the document is unchanged.",
+                error=ToolError(code="invalid_request", message=str(exc), recoverable=True),
+                audit_receipt=receipt.to_dict(),
+            )
         try:
             result = self._transactions.apply(
-                document_id=str(review.payload["documentId"]),
-                expected_fingerprint=str(review.payload["beforeFingerprint"]),
+                document_id=document_id,
+                expected_fingerprint=expected,
                 change_set=change_set,
             )
         except StaleDocumentError:
+            receipt = self._audit.record(
+                tool=apply_tool,
+                effect="edit",
+                status="error",
+                document_id=document_id,
+                details={"errorCode": "stale_document", "expectedDocumentFingerprint": expected},
+            )
             return ToolResponse.failure(
                 tool=apply_tool,
                 effect="edit",
-                summary="The document changed after review; no mutation was attempted.",
-                error=ToolError(code="stale_document", message="Review fingerprint is stale.", recoverable=True),
+                summary="The document changed before the transaction; no mutation was attempted.",
+                error=ToolError(code="stale_document", message="Document fingerprint is stale.", recoverable=True),
+                audit_receipt=receipt.to_dict(),
             )
         except TransactionVerificationError as exc:
             receipt = self._audit.record(
                 tool=apply_tool,
                 effect="edit",
                 status="error",
-                document_id=str(review.payload["documentId"]),
+                document_id=document_id,
                 details={
-                    "reviewId": review_id,
                     "errorCode": "transaction_failed",
                     "rollbackAttempted": True,
                     "rollbackSucceeded": exc.rollback_succeeded,
@@ -346,32 +402,259 @@ class GlyphsMCPApplication:
                 data={"rollbackAttempted": True, "rollbackSucceeded": exc.rollback_succeeded},
                 audit_receipt=receipt.to_dict(),
             )
+
+        after = change_set.apply(before)
+        internal_items = self._change_items(before=before, after=after, change_set=change_set)
+        requested_order = list(arguments.get("updates") or arguments.get("items") or [])
+        internal_items = self._order_change_items(internal_items, requested_order)
+        public_items = [
+            {key: copy.deepcopy(value) for key, value in item.items() if not key.startswith("display")}
+            for item in internal_items
+        ]
+        metadata = OperationMetadata.create()
         receipt = self._audit.record(
             tool=apply_tool,
             effect="edit",
             status="success",
             document_id=result.document_id,
             details={
-                "reviewId": review_id,
+                "operationId": metadata.operation_id,
+                "reason": reason,
                 "beforeFingerprint": result.before_fingerprint,
                 "afterFingerprint": result.after_fingerprint,
                 "changeCount": result.change_count,
             },
         )
+        operation_metadata = {
+            "operationId": metadata.operation_id,
+            "documentId": result.document_id,
+            "tool": apply_tool,
+            "reason": reason,
+            "status": "applied",
+            "beforeFingerprint": result.before_fingerprint,
+            "afterFingerprint": result.after_fingerprint,
+            "changeCount": result.change_count,
+            "affectedGlyphCount": len({item.get("glyphName") for item in internal_items if item.get("glyphName")}),
+            "visualizableGlyphCount": len({item.get("glyphName") for item in internal_items if item.get("displayBefore")}),
+            "rollbackCoverage": "complete",
+            "rollbackToken": "rollback_{}".format(metadata.operation_id),
+            "auditReceipt": receipt.to_dict(),
+        }
+        record = self._operations.create(
+            kind="change_operation",
+            ttl_seconds=RESULT_TTL_SECONDS,
+            operation_id=metadata.operation_id,
+            payload={
+                "items": public_items,
+                "itemKey": "changes",
+                "sourceFingerprint": result.after_fingerprint,
+                "metadata": operation_metadata,
+                "inverse": result.inverse,
+            },
+        )
+        review_mapping = {
+            **operation_metadata,
+            "items": internal_items,
+            "createdAt": record.created_at,
+            "expiresAt": record.expires_at,
+        }
+        self._change_reviews.register(ChangeOperation.from_mapping(review_mapping))
+        data = {
+            **operation_metadata,
+            "fontSaved": False,
+            "transactionCount": 1,
+        }
+        if extra_data is not None:
+            data.update(dict(extra_data(before)))
         return ToolResponse.success(
             tool=apply_tool,
             effect="edit",
-            summary="Applied one reviewed batch in a verified transaction; the font was not saved.",
+            summary="Applied one batch in a verified transaction; the font was not saved.",
+            data=data,
             audit_receipt=receipt.to_dict(),
-            data={
-                "reviewId": review_id,
-                "documentId": result.document_id,
+            metadata=metadata,
+        )
+
+    def _set_change_operation_status(
+        self,
+        operation_id: str,
+        status: str,
+        *,
+        rollback_receipt: Optional[Mapping[str, Any]] = None,
+    ) -> None:
+        record = self._operations.get(operation_id)
+        if record is not None and record.kind == "change_operation":
+            payload = copy.deepcopy(dict(record.payload))
+            metadata = copy.deepcopy(dict(payload.get("metadata") or {}))
+            metadata["status"] = status
+            if rollback_receipt is not None:
+                metadata["rollbackAuditReceipt"] = copy.deepcopy(dict(rollback_receipt))
+                metadata["rolledBackAt"] = rollback_receipt.get("timestamp")
+            payload["metadata"] = metadata
+            self._operations.update_payload(operation_id, payload)
+        self._change_reviews.update_status(operation_id, status)
+
+    def rollback_change_operation(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        tool = "rollback_change_operation"
+        operation_id = str(_value(arguments, "operation_id", "operationId", "") or "")
+        expected = str(
+            _value(
+                arguments,
+                "expected_document_fingerprint",
+                "expectedDocumentFingerprint",
+                "",
+            )
+            or ""
+        )
+        if not operation_id:
+            raise ValueError("operationId is required")
+        if not expected:
+            raise ValueError("expectedDocumentFingerprint is required")
+        record = self._operations.get(operation_id)
+        operation = self._change_reviews.get(operation_id)
+        metadata = dict(record.payload.get("metadata") or {}) if record is not None else {}
+        document_id = str(
+            (operation.document_id if operation is not None else None)
+            or metadata.get("documentId")
+            or ""
+        )
+
+        def failure(
+            code: str,
+            message: str,
+            *,
+            summary: str,
+            recoverable: bool = True,
+            details: Optional[Mapping[str, Any]] = None,
+        ) -> ToolResponse:
+            receipt = self._audit.record(
+                tool=tool,
+                effect="edit",
+                status="error",
+                document_id=document_id or None,
+                details={"operationId": operation_id, "errorCode": code, **dict(details or {})},
+            )
+            return ToolResponse.failure(
+                tool=tool,
+                effect="edit",
+                summary=summary,
+                error=ToolError(code=code, message=message, recoverable=recoverable),
+                data={"operationId": operation_id, **dict(details or {})},
+                audit_receipt=receipt.to_dict(),
+                metadata=OperationMetadata.create(operation_id=operation_id),
+            )
+
+        if record is None or record.kind != "change_operation" or operation is None:
+            return failure(
+                "operation_unavailable",
+                "The typed change operation is missing or expired.",
+                summary="The change operation cannot be rolled back.",
+                recoverable=False,
+            )
+        if operation.status != "applied":
+            return failure(
+                "operation_not_rollbackable",
+                "Only an applied, current change operation can be rolled back.",
+                summary="The change operation is not rollbackable in its current state.",
+                recoverable=False,
+                details={"status": operation.status},
+            )
+        if expected != operation.after_fingerprint:
+            return failure(
+                "fingerprint_mismatch",
+                "The supplied fingerprint is not this operation's verified after-state.",
+                summary="The rollback fingerprint does not match the stored operation.",
+            )
+        inverse = record.payload.get("inverse")
+        if not isinstance(inverse, ChangeSet):
+            return failure(
+                "rollback_unavailable",
+                "The operation has no complete stored inverse patch.",
+                summary="Automatic rollback is unavailable for this operation.",
+                recoverable=False,
+            )
+        try:
+            current = self._document_model(document_id)
+        except HostAccessError as exc:
+            return failure(
+                "host_unavailable",
+                str(exc) or "The document is not open.",
+                summary="The document is unavailable; no rollback was attempted.",
+            )
+        current_fingerprint = fingerprint_model(current)
+        if current_fingerprint != expected:
+            self._set_change_operation_status(operation_id, "stale")
+            return failure(
+                "stale_document",
+                "The document changed after this operation; later edits were preserved.",
+                summary="The rollback is stale and was not attempted.",
+                details={"actualDocumentFingerprint": current_fingerprint},
+            )
+        if self._transactions is None:
+            return failure(
+                "host_unavailable",
+                "This host adapter does not support document transactions.",
+                summary="The host cannot apply a verified rollback.",
+            )
+        try:
+            result = self._transactions.apply(
+                document_id=document_id,
+                expected_fingerprint=expected,
+                change_set=inverse,
+            )
+        except StaleDocumentError:
+            self._set_change_operation_status(operation_id, "stale")
+            return failure(
+                "stale_document",
+                "The document changed before rollback; later edits were preserved.",
+                summary="The rollback became stale and was not applied.",
+            )
+        except TransactionVerificationError as exc:
+            return failure(
+                "rollback_failed",
+                "Rollback verification failed; the pre-rollback state was restored.",
+                summary="The rollback failed safely.",
+                details={
+                    "rollbackAttempted": True,
+                    "preRollbackStateRestored": exc.rollback_succeeded,
+                },
+            )
+
+        reason_value = _value(arguments, "reason")
+        receipt = self._audit.record(
+            tool=tool,
+            effect="edit",
+            status="success",
+            document_id=document_id,
+            details={
+                "operationId": operation_id,
+                "reason": str(reason_value) if reason_value is not None else None,
                 "beforeFingerprint": result.before_fingerprint,
                 "afterFingerprint": result.after_fingerprint,
                 "changeCount": result.change_count,
-                "fontSaved": False,
-                "transactionCount": 1,
             },
+        )
+        self._set_change_operation_status(
+            operation_id,
+            "rolled_back",
+            rollback_receipt=receipt.to_dict(),
+        )
+        return ToolResponse.success(
+            tool=tool,
+            effect="edit",
+            summary="Rolled back the typed change in one verified transaction; the font was not saved.",
+            data={
+                "operationId": operation_id,
+                "documentId": document_id,
+                "status": "rolled_back",
+                "beforeFingerprint": result.before_fingerprint,
+                "afterFingerprint": result.after_fingerprint,
+                "changeCount": result.change_count,
+                "transactionCount": 1,
+                "fontSaved": False,
+            },
+            audit_receipt=receipt.to_dict(),
+            metadata=OperationMetadata.create(operation_id=operation_id),
         )
 
     def get_server_info(self, arguments: Mapping[str, Any]) -> ToolResponse:
@@ -467,6 +750,7 @@ class GlyphsMCPApplication:
             tool="get_operation",
             effect="read",
             summary="Read the bounded operation record.",
+            metadata=OperationMetadata.create(operation_id=record.operation_id),
             data={
                 "operationId": record.operation_id,
                 "kind": record.kind,
@@ -626,100 +910,48 @@ class GlyphsMCPApplication:
             page=page,
         )
 
-    def review_compatibility_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        changes = build_compatibility_updates(
-            self._document_model(document_id), list(arguments.get("updates") or [])
-        )
-        review = self._review_record(
-            kind="mutation_review",
-            tool="review_compatibility_updates",
-            document_id=document_id,
-            change_set=changes,
-        )
-        return self._review_response(
-            tool="review_compatibility_updates",
-            document_id=document_id,
-            change_set=changes,
-            review=review,
-        )
-
     def apply_compatibility_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._apply_review(
+        return self._apply_direct(
             arguments,
-            expected_tool="review_compatibility_updates",
             apply_tool="apply_compatibility_updates",
-        )
-
-    def review_metrics_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        changes = build_metrics_updates(
-            self._document_model(document_id), list(arguments.get("updates") or [])
-        )
-        review = self._review_record(
-            kind="mutation_review",
-            tool="review_metrics_updates",
-            document_id=document_id,
-            change_set=changes,
-        )
-        return self._review_response(
-            tool="review_metrics_updates",
-            document_id=document_id,
-            change_set=changes,
-            review=review,
+            builder=build_compatibility_updates,
         )
 
     def apply_metrics_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._apply_review(
+        return self._apply_direct(
             arguments,
-            expected_tool="review_metrics_updates",
             apply_tool="apply_metrics_updates",
+            builder=build_metrics_updates,
         )
-
-    def review_anchor_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        changes = build_anchor_updates(self._document_model(document_id), list(arguments.get("updates") or []))
-        review = self._review_record(kind="mutation_review", tool="review_anchor_updates", document_id=document_id, change_set=changes)
-        return self._review_response(tool="review_anchor_updates", document_id=document_id, change_set=changes, review=review)
 
     def apply_anchor_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._apply_review(arguments, expected_tool="review_anchor_updates", apply_tool="apply_anchor_updates")
-
-    def review_glyph_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        changes = build_glyph_updates(self._document_model(document_id), list(arguments.get("updates") or []))
-        review = self._review_record(kind="mutation_review", tool="review_glyph_updates", document_id=document_id, change_set=changes)
-        return self._review_response(tool="review_glyph_updates", document_id=document_id, change_set=changes, review=review)
+        return self._apply_direct(
+            arguments,
+            apply_tool="apply_anchor_updates",
+            builder=build_anchor_updates,
+        )
 
     def apply_glyph_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._apply_review(arguments, expected_tool="review_glyph_updates", apply_tool="apply_glyph_updates")
-
-    def review_kerning_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        model = self._document_model(document_id)
-        changes = build_kerning_updates(model, list(arguments.get("updates") or []))
-        coverage = review_kerning_coverage(model, mode=str(_value(arguments, "coverage_mode", "coverageMode", "class_representatives")))
-        review = self._review_record(
-            kind="mutation_review",
-            tool="review_kerning_updates",
-            document_id=document_id,
-            change_set=changes,
-            extra={"coverage": coverage},
-        )
-        return self._review_response(
-            tool="review_kerning_updates",
-            document_id=document_id,
-            change_set=changes,
-            review=review,
-            data={"coverage": coverage},
+        return self._apply_direct(
+            arguments,
+            apply_tool="apply_glyph_updates",
+            builder=build_glyph_updates,
         )
 
     def apply_kerning_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._apply_review(arguments, expected_tool="review_kerning_updates", apply_tool="apply_kerning_updates")
+        mode = str(_value(arguments, "coverage_mode", "coverageMode", "class_representatives"))
+        return self._apply_direct(
+            arguments,
+            apply_tool="apply_kerning_updates",
+            builder=build_kerning_updates,
+            extra_data=lambda model: {"coverage": review_kerning_coverage(model, mode=mode)},
+        )
 
-    def review_spacing(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        model = self._document_model(document_id)
+    def _spacing_change_set(
+        self,
+        model: Mapping[str, Any],
+        arguments: Mapping[str, Any],
+    ) -> tuple[ChangeSet, Mapping[str, Any]]:
         requested_items = list(arguments.get("items") or [])
         if not requested_items:
             names = set(_value(arguments, "glyph_names", "glyphNames", []) or [])
@@ -749,18 +981,55 @@ class GlyphsMCPApplication:
             layer = glyph.get("layers", {}).get(item.get("masterId")) if isinstance(glyph, Mapping) else None
             if isinstance(layer, dict):
                 layer["width"] = item["proposedWidth"]
-        changes = diff_models(model, after)
+        return diff_models(model, after), simulation
+
+    def review_spacing(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        model = self._document_model(document_id)
+        changes, simulation = self._spacing_change_set(model, arguments)
         simulation_public, _simulation_page = self._paged_analysis(
             kind="spacing_analysis",
             result=simulation,
             item_key="items",
             source_fingerprint=fingerprint_model({"document": model, "spacing": simulation}),
         )
-        review = self._review_record(kind="mutation_review", tool="review_spacing", document_id=document_id, change_set=changes, extra={"simulation": simulation})
-        return self._review_response(tool="review_spacing", document_id=document_id, change_set=changes, review=review, data={"simulation": simulation_public})
+        return ToolResponse.success(
+            tool="review_spacing",
+            effect="read",
+            summary="Simulated spacing without changing the document.",
+            data={
+                "documentId": document_id,
+                "documentFingerprint": changes.before_fingerprint,
+                "proposedAfterFingerprint": changes.after_fingerprint,
+                "changeCount": len(changes.changes),
+                "simulation": simulation_public,
+            },
+        )
 
     def apply_spacing(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._apply_review(arguments, expected_tool="review_spacing", apply_tool="apply_spacing")
+        state: dict[str, Mapping[str, Any]] = {}
+
+        def build(model: Mapping[str, Any], _updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
+            changes, simulation = self._spacing_change_set(model, arguments)
+            state["simulation"] = simulation
+            return changes
+
+        def extra(_model: Mapping[str, Any]) -> Mapping[str, Any]:
+            simulation = state.get("simulation") or {}
+            return {
+                "simulation": {
+                    key: copy.deepcopy(value)
+                    for key, value in simulation.items()
+                    if key != "items"
+                }
+            }
+
+        return self._apply_direct(
+            arguments,
+            apply_tool="apply_spacing",
+            builder=build,
+            extra_data=extra,
+        )
 
     def review_export(self, arguments: Mapping[str, Any]) -> ToolResponse:
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")

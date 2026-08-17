@@ -669,6 +669,21 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 return font
         raise HostAccessError("The Glyphs document is no longer open: {}".format(document_id))
 
+    def native_font(self, document_id: str) -> Any:
+        """Resolve one open native font strictly by its stable v2 document ID."""
+        return self._executor.run(lambda: self._font_for_document(document_id))
+
+    def document_id_for_font(self, font: Any) -> str:
+        """Return the stable v2 ID only when ``font`` is currently open."""
+        def resolve() -> str:
+            native_key = self._native_identity(font)
+            for candidate in self._collect_fonts():
+                if self._native_identity(candidate) == native_key:
+                    return self._identities.resolve(native_key)
+            raise HostAccessError("The Glyphs document is no longer open")
+
+        return self._executor.run(resolve)
+
     def capture_model(self, document_id: str) -> Mapping[str, Any]:
         return self._executor.run(lambda: native_font_to_model(self._font_for_document(document_id)))
 
