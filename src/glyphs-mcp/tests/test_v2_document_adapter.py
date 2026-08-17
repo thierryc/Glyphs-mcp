@@ -134,12 +134,21 @@ class _App:
 
 class _EditableDocument:
     def __init__(self, *, edited=False):
+        self._preexisting_edits = 1 if edited else 0
+        self._mcp_edits = 0
         self.isDocumentEdited = edited
         self.change_counts = []
 
     def updateChangeCount_(self, change):
         self.change_counts.append(change)
-        self.isDocumentEdited = False if change == 2 else True
+        if change == 0:
+            self._mcp_edits += 1
+        elif change == 1:
+            self._mcp_edits = max(0, self._mcp_edits - 1)
+        elif change == 2:
+            self._mcp_edits = 0
+            self._preexisting_edits = 0
+        self.isDocumentEdited = bool(self._preexisting_edits or self._mcp_edits)
 
 
 class _TransactionalFont:
@@ -228,7 +237,8 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertFalse(font.parent.isDocumentEdited)
         self.assertFalse(host.list_documents()[0].has_unsaved_changes)
-        self.assertEqual(font.parent.change_counts, [0, 2])
+        self.assertEqual(font.parent.change_counts, [0, 1])
+        self.assertNotIn(2, font.parent.change_counts)
 
     def test_inverse_preserves_dirty_state_that_predated_transaction(self) -> None:
         font = _TransactionalFont(edited=True)
@@ -244,6 +254,23 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertTrue(font.parent.isDocumentEdited)
         self.assertNotIn(2, font.parent.change_counts)
+
+    def test_failed_transaction_restoration_balances_dirty_state_after_divergence(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        after = copy.deepcopy(before)
+        after["font"]["note"] = "reviewed edit"
+        change_set = diff_models(before, after)
+
+        host.apply_change_set(document_id, change_set)
+        font.note = "divergent readback"
+        host.restore_model(document_id, before)
+
+        self.assertIsNone(font.note)
+        self.assertFalse(font.parent.isDocumentEdited)
+        self.assertEqual(font.parent.change_counts, [0, 1])
 
     def test_glyphs4_make_copy_fallback_restores_temp_data_and_native_format(self) -> None:
         with tempfile.TemporaryDirectory() as root:
