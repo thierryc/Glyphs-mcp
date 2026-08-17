@@ -133,10 +133,12 @@ class _App:
 
 
 class _EditableDocument:
-    def __init__(self, *, edited=False):
+    def __init__(self, *, edited=False, stale_unsaved_signal=False):
         self._preexisting_edits = 1 if edited else 0
         self._mcp_edits = 0
+        self._stale_unsaved_signal = stale_unsaved_signal
         self.isDocumentEdited = edited
+        self.hasUnautosavedChanges = edited and not stale_unsaved_signal
         self.change_counts = []
 
     def updateChangeCount_(self, change):
@@ -149,13 +151,20 @@ class _EditableDocument:
             self._mcp_edits = 0
             self._preexisting_edits = 0
         self.isDocumentEdited = bool(self._preexisting_edits or self._mcp_edits)
+        self.hasUnautosavedChanges = (
+            False
+            if self._stale_unsaved_signal
+            else bool(self._preexisting_edits or self._mcp_edits)
+        )
 
 
 class _TransactionalFont:
-    def __init__(self, *, edited=False):
+    def __init__(self, *, edited=False, stale_unsaved_signal=False):
         self.familyName = "Transaction Test"
         self.filepath = "/fonts/transaction.glyphs"
-        self.parent = _EditableDocument(edited=edited)
+        self.parent = _EditableDocument(
+            edited=edited, stale_unsaved_signal=stale_unsaved_signal
+        )
         self.upm = 1000
         self.versionMajor = 1
         self.versionMinor = 0
@@ -239,6 +248,24 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertFalse(host.list_documents()[0].has_unsaved_changes)
         self.assertEqual(font.parent.change_counts, [0, 1])
         self.assertNotIn(2, font.parent.change_counts)
+
+    def test_verified_transaction_overrides_stale_native_unsaved_signal(self) -> None:
+        font = _TransactionalFont(stale_unsaved_signal=True)
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        after = copy.deepcopy(before)
+        after["font"]["note"] = "reviewed edit"
+        change_set = diff_models(before, after)
+
+        host.apply_change_set(document_id, change_set)
+
+        self.assertFalse(font.parent.hasUnautosavedChanges)
+        self.assertTrue(host.list_documents()[0].has_unsaved_changes)
+
+        host.apply_change_set(document_id, change_set.inverse())
+
+        self.assertFalse(host.list_documents()[0].has_unsaved_changes)
 
     def test_inverse_preserves_dirty_state_that_predated_transaction(self) -> None:
         font = _TransactionalFont(edited=True)
