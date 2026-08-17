@@ -18,7 +18,7 @@ DISPOSABLE_FAMILY_PREFIX = "Glyphs MCP V2 Disposable"
 
 
 def verify_copy_and_make_copy(font: Any, output_path: str) -> Mapping[str, Any]:
-    """Verify clone/archive invariants without saving the working document."""
+    """Verify canonical clone and detached-archive invariants without saving."""
 
     family_name = str(getattr(font, "familyName", "") or "")
     if not family_name.startswith(DISPOSABLE_FAMILY_PREFIX):
@@ -46,8 +46,17 @@ def verify_copy_and_make_copy(font: Any, output_path: str) -> Mapping[str, Any]:
     clone_fingerprint = fingerprint_model(native_font_to_model(clone))
     if clone_fingerprint != before_fingerprint:
         raise AssertionError("GSFont.copy() changed the canonical document model")
-    if _serialized_font_fingerprint(clone) != _serialized_font_fingerprint(font):
-        raise AssertionError("GSFont.copy() changed the serialized document archive")
+
+    second_clone = font.copy()
+    if second_clone is None or second_clone is font or second_clone is clone:
+        raise AssertionError("GSFont.copy() did not return independent detached clones")
+    second_clone_fingerprint = fingerprint_model(native_font_to_model(second_clone))
+    if second_clone_fingerprint != before_fingerprint:
+        raise AssertionError("GSFont.copy() changed the canonical document model")
+
+    clone_archive_fingerprint = _serialized_font_fingerprint(clone)
+    if clone_archive_fingerprint != _serialized_font_fingerprint(second_clone):
+        raise AssertionError("GSFont.copy() did not produce deterministic detached archives")
 
     _save_font_copy(font, destination)
     os.chmod(destination, 0o600)
@@ -64,6 +73,9 @@ def verify_copy_and_make_copy(font: Any, output_path: str) -> Mapping[str, Any]:
         "familyName": family_name,
         "documentFingerprint": before_fingerprint,
         "copyFingerprint": clone_fingerprint,
+        "detachedArchiveFingerprint": clone_archive_fingerprint,
+        "serializedCloneDeterministic": True,
+        "archiveComparisonScope": "detached_clone",
         "outputPath": str(destination),
         "outputMode": "0600",
         "workingPathUnchanged": True,

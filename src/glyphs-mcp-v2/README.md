@@ -63,5 +63,9 @@ on Glyphs 3.5 and 4 and must not use the production source.
 
 Inside each supported host, `glyphs_mcp_v2.live_gates.verify_copy_and_make_copy`
 accepts only a font whose family name starts with `Glyphs MCP V2 Disposable`.
-It verifies canonical and serialized clone equality plus `save(makeCopy=True)`
-path/dirty-state invariants, writing only to a new explicit output path.
+It verifies canonical equality with the live font, deterministic serialized
+equality between two independent detached clones, and `save(makeCopy=True)`
+path/dirty-state invariants, writing only to a new explicit output path. The
+serialized archive is not compared directly with the live font: Glyphs 4
+intentionally omits presentation state such as open Edit tabs from
+`GSFont.copy()`, and that state is outside the staged mutation model.
