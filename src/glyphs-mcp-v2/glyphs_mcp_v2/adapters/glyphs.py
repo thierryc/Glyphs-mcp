@@ -126,6 +126,7 @@ class GlyphsHostAdapter:
 
     def _font_snapshot(self, font: Any, legacy_index: int) -> FontSnapshot:
         native_key = self._native_identity(font)
+        document_id = self._identities.resolve(native_key)
         file_path_value = _safe_getattr(font, "filepath")
         file_path = str(file_path_value) if file_path_value else None
         last_saved = _safe_getattr(font, "appVersion")
@@ -138,8 +139,11 @@ class GlyphsHostAdapter:
                 has_unsaved_changes = bool(_maybe_call(edited))
             except Exception:
                 has_unsaved_changes = None
+        overrides = getattr(self, "_document_dirty_overrides", {})
+        if document_id in overrides:
+            has_unsaved_changes = overrides[document_id]
         return FontSnapshot(
-            document_id=self._identities.resolve(native_key),
+            document_id=document_id,
             legacy_index=legacy_index,
             family_name=str(_safe_getattr(font, "familyName") or ""),
             file_path=file_path,

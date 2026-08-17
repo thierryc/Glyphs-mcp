@@ -27,6 +27,8 @@ _LAYER_SCALARS = ("width", "LSB", "RSB", "leftMetricsKey", "rightMetricsKey", "w
 _UUID_PATTERN = re.compile(
     r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"
 )
+_NS_CHANGE_DONE = 0
+_NS_CHANGE_UNDONE = 1
 
 
 def _plain_scalar(value: Any) -> Any:
@@ -643,6 +645,17 @@ def _serialized_font_fingerprint(font: Any) -> str:
     return "sha256:{}".format(digest)
 
 
+def _document_edited_state(font: Any) -> Optional[bool]:
+    document = _maybe_call(_safe_getattr(font, "parent"))
+    edited = _safe_getattr(document, "isDocumentEdited") if document is not None else None
+    if edited is None:
+        return None
+    try:
+        return bool(_maybe_call(edited))
+    except Exception:
+        return None
+
+
 class GlyphsDocumentHost(GlyphsHostAdapter):
     """Complete v2 host port; native objects remain inside this adapter."""
 
@@ -763,13 +776,111 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             }
         return self._executor.run(run)
 
+    def _apply_and_track_dirty_state(
+        self,
+        document_id: str,
+        font: Any,
+        current: Mapping[str, Any],
+        target: Mapping[str, Any],
+        change_set: ChangeSet,
+        *,
+        restoring: bool = False,
+    ) -> None:
+        current_fingerprint = fingerprint_model(current)
+        target_fingerprint = fingerprint_model(target)
+        transitions = getattr(self, "_document_dirty_transitions", {})
+        stack = transitions.setdefault(document_id, [])
+        pending_reversals = getattr(self, "_document_dirty_pending_reversals", {})
+        pending = pending_reversals.get(document_id) if restoring else None
+        if not restoring:
+            # A successful reversal remains pending only long enough for the
+            # transaction kernel to restore its pre-attempt state on failure.
+            pending_reversals.pop(document_id, None)
+        restoring_reversal = bool(
+            pending and pending["afterFingerprint"] == target_fingerprint
+        )
+        reversal = bool(
+            stack
+            and stack[-1]["beforeFingerprint"] == target_fingerprint
+            and (
+                stack[-1]["afterFingerprint"] == current_fingerprint
+                or restoring
+            )
+        )
+        native_dirty_before = _document_edited_state(font)
+        _apply_target_model(font, current, target, change_set)
+        if not change_set.changes:
+            return
+
+        document = _maybe_call(_safe_getattr(font, "parent"))
+        updater = _safe_getattr(document, "updateChangeCount_") if document is not None else None
+        update_succeeded = False
+        change_count_action = None
+        if restoring_reversal:
+            change_count_action = _NS_CHANGE_DONE
+        elif reversal:
+            change_count_action = _NS_CHANGE_UNDONE
+        elif not restoring:
+            change_count_action = _NS_CHANGE_DONE
+        if callable(updater) and change_count_action is not None:
+            try:
+                # Balance only the MCP transaction's change-count contribution;
+                # never clear the document's complete native dirty history.
+                updater(change_count_action)
+                update_succeeded = True
+            except Exception:
+                update_succeeded = False
+
+        overrides = getattr(self, "_document_dirty_overrides", {})
+        if restoring_reversal:
+            stack.append(pending)
+            pending_reversals.pop(document_id, None)
+            if update_succeeded:
+                overrides.pop(document_id, None)
+            else:
+                overrides[document_id] = True
+        elif reversal:
+            transition = stack.pop()
+            if not restoring:
+                pending_reversals[document_id] = transition
+            if update_succeeded:
+                overrides.pop(document_id, None)
+            elif stack:
+                overrides[document_id] = True
+            else:
+                overrides[document_id] = transition["nativeDirtyBefore"]
+        elif restoring:
+            # No MCP change-count contribution was recorded for a partial
+            # application failure, so restoration must not invent one.
+            pass
+        else:
+            stack.append(
+                {
+                    "beforeFingerprint": current_fingerprint,
+                    "afterFingerprint": target_fingerprint,
+                    "nativeDirtyBefore": native_dirty_before,
+                }
+            )
+            if update_succeeded:
+                overrides.pop(document_id, None)
+            else:
+                # Even if the host cannot update its window dirty indicator,
+                # this process knows the verified document model is unsaved.
+                overrides[document_id] = True
+        self._document_dirty_transitions = transitions
+        self._document_dirty_pending_reversals = pending_reversals
+        self._document_dirty_overrides = overrides
+
     def apply_change_set(self, document_id: str, change_set: ChangeSet) -> None:
         if not self.supports_change_set(change_set):
             raise HostAccessError("The change set contains unsupported native write paths")
         def apply() -> None:
             font = self._font_for_document(document_id)
             current = native_font_to_model(font)
-            _apply_target_model(font, current, change_set.apply(current), change_set)
+            target = change_set.apply(current)
+            self._apply_and_track_dirty_state(
+                document_id, font, current, target, change_set
+            )
         self._executor.run(apply)
 
     def complete_observed_diff_covered(
@@ -787,7 +898,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             change_set = diff_models(current, model)
             if not self.supports_change_set(change_set):
                 raise HostAccessError("The rollback model contains unsupported native write paths")
-            _apply_target_model(font, current, model, change_set)
+            self._apply_and_track_dirty_state(
+                document_id, font, current, model, change_set, restoring=True
+            )
         self._executor.run(restore)
 
     def inspect_export_destination(self, destination: str) -> Mapping[str, Any]:

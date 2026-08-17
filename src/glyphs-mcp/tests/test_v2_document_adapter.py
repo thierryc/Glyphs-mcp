@@ -272,6 +272,27 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertFalse(font.parent.isDocumentEdited)
         self.assertEqual(font.parent.change_counts, [0, 1])
 
+    def test_failed_rollback_restoration_reinstates_dirty_contribution(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        after = copy.deepcopy(before)
+        after["font"]["note"] = "reviewed edit"
+        change_set = diff_models(before, after)
+
+        host.apply_change_set(document_id, change_set)
+        host.apply_change_set(document_id, change_set.inverse())
+        host.restore_model(document_id, after)
+
+        self.assertEqual(font.note, "reviewed edit")
+        self.assertTrue(font.parent.isDocumentEdited)
+        self.assertEqual(font.parent.change_counts, [0, 1, 0])
+
+        host.apply_change_set(document_id, change_set.inverse())
+        self.assertFalse(font.parent.isDocumentEdited)
+        self.assertEqual(font.parent.change_counts, [0, 1, 0, 1])
+
     def test_glyphs4_make_copy_fallback_restores_temp_data_and_native_format(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             destination = Path(root) / "checkpoint.glyphs"
