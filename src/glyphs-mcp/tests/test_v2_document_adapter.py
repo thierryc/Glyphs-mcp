@@ -7,6 +7,8 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -18,6 +20,7 @@ from glyphs_mcp_v2.adapters.document import (  # noqa: E402
     GlyphsDocumentHost,
     native_font_to_model,
 )
+from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
 
 
 class _Immediate:
@@ -78,6 +81,30 @@ class _InstanceFont(_Font):
         self.featurePrefixes = []
 
 
+class _Glyphs4SaveFont(_Font):
+    def __init__(self, *, native_failure=False):
+        super().__init__()
+        self.formatVersion = 4
+        self.tempData = {"filePath": "original-temp-path"}
+        self.native_failure = native_failure
+        self.native_calls = []
+
+    def save(self, path, formatVersion=None, makeCopy=False):
+        # Reproduce Glyphs 4.0.1: its Python wrapper sets tempData before
+        # calling the removed saveToURL_type_format_error_ selector.
+        self.tempData["filePath"] = path
+        raise AttributeError("saveToURL_type_format_error_")
+
+    def saveToURL_type_format_context_error_(
+        self, url, type_id, format_version, context, error
+    ):
+        self.native_calls.append((url, type_id, format_version, context, error))
+        if self.native_failure:
+            raise RuntimeError("native save failed")
+        Path(url).write_text("glyphs 4 recovery", encoding="utf-8")
+        return True
+
+
 class _App:
     def __init__(self, font) -> None:
         self.font = font
@@ -105,6 +132,36 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(source, clone)
         self.assertEqual(source["instances"][0]["id"], "instance_0")
+
+    def test_glyphs4_make_copy_fallback_restores_temp_data_and_native_format(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            destination = Path(root) / "checkpoint.glyphs"
+            font = _Glyphs4SaveFont()
+            foundation = SimpleNamespace(
+                NSURL=SimpleNamespace(fileURLWithPath_=lambda value: value)
+            )
+            with mock.patch.dict(sys.modules, {"Foundation": foundation}):
+                document_adapter._save_font_copy(font, destination)
+
+            self.assertTrue(destination.is_file())
+            self.assertEqual(font.tempData["filePath"], "original-temp-path")
+            self.assertEqual(
+                font.native_calls,
+                [(str(destination), 1, 4, None, None)],
+            )
+
+    def test_glyphs4_make_copy_fallback_restores_temp_data_after_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            destination = Path(root) / "checkpoint.glyphs"
+            font = _Glyphs4SaveFont(native_failure=True)
+            foundation = SimpleNamespace(
+                NSURL=SimpleNamespace(fileURLWithPath_=lambda value: value)
+            )
+            with mock.patch.dict(sys.modules, {"Foundation": foundation}):
+                with self.assertRaises(RuntimeError):
+                    document_adapter._save_font_copy(font, destination)
+
+            self.assertEqual(font.tempData["filePath"], "original-temp-path")
 
     def test_recovery_copy_is_private_bounded_and_does_not_change_live_path(self) -> None:
         with tempfile.TemporaryDirectory() as root:
