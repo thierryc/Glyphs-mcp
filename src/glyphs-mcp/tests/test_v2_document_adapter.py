@@ -81,6 +81,20 @@ class _InstanceFont(_Font):
         self.featurePrefixes = []
 
 
+class _ArchiveInstanceFont(_InstanceFont):
+    def __init__(self, native_id, owner, *, unsupported_native_value="same"):
+        super().__init__(native_id, owner)
+        self.unsupported_native_value = unsupported_native_value
+
+    def save(self, path, formatVersion=3, makeCopy=False):
+        instance_id = self.instances[0].id()
+        Path(path).write_text(
+            "instances = (\n{id = \"%s\";}\n);\nunsupportedNativeValue = %s;\n"
+            % (instance_id, self.unsupported_native_value),
+            encoding="utf-8",
+        )
+
+
 class _Glyphs4SaveFont(_Font):
     def __init__(self, *, native_failure=False):
         super().__init__()
@@ -132,6 +146,28 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(source, clone)
         self.assertEqual(source["instances"][0]["id"], "instance_0")
+
+    def test_serialized_fingerprint_normalizes_clone_generated_instance_ids(self) -> None:
+        source = _ArchiveInstanceFont("SOURCE-UUID", "source-pointer")
+        clone = _ArchiveInstanceFont("CLONE-UUID", "clone-pointer")
+
+        self.assertEqual(
+            document_adapter._serialized_font_fingerprint(source),
+            document_adapter._serialized_font_fingerprint(clone),
+        )
+
+    def test_serialized_fingerprint_keeps_other_native_fields_significant(self) -> None:
+        source = _ArchiveInstanceFont(
+            "SOURCE-UUID", "source-pointer", unsupported_native_value="before"
+        )
+        clone = _ArchiveInstanceFont(
+            "CLONE-UUID", "clone-pointer", unsupported_native_value="after"
+        )
+
+        self.assertNotEqual(
+            document_adapter._serialized_font_fingerprint(source),
+            document_adapter._serialized_font_fingerprint(clone),
+        )
 
     def test_glyphs4_make_copy_fallback_restores_temp_data_and_native_format(self) -> None:
         with tempfile.TemporaryDirectory() as root:
