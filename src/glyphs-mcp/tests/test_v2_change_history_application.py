@@ -33,10 +33,12 @@ def _model() -> dict:
 class _Host:
     def __init__(self) -> None:
         self.model = _model()
+        self.capture_calls = 0
         self.apply_calls = 0
         self.restore_calls = 0
 
     def capture_model(self, document_id):
+        self.capture_calls += 1
         return copy.deepcopy(self.model)
 
     def apply_change_set(self, document_id, change_set):
@@ -212,6 +214,17 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertEqual(inspected["data"]["kind"], "change_commit")
         self.assertEqual(inspected["data"]["payload"]["commitId"], changed.commit_id)
         self.assertGreater(inspected["data"]["payload"]["changeCount"], 0)
+
+    def test_listing_existing_change_commits_does_not_recapture_the_font(self) -> None:
+        self._apply_export_toggle()
+        captures_before = self.host.capture_calls
+
+        result = self.app.invoke(
+            "list_change_commits", {"documentId": "doc_history", "pageSize": 100}
+        ).to_dict()
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(self.host.capture_calls, captures_before)
 
 
 if __name__ == "__main__":
