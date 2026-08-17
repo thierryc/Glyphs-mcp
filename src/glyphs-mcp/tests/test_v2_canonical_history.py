@@ -23,6 +23,7 @@ from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
     SQLiteObjectStore,
 )
 from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
+from glyphs_mcp_v2.semantic import diff_models  # noqa: E402
 
 
 def _layer(master_id: str, x: float = 0.0) -> dict:
@@ -258,6 +259,36 @@ class ChangeHistoryTests(unittest.TestCase):
         all_commits = self.history.list_commits("doc_a", include_external=True)
         self.assertEqual(len(all_commits), 3)
         self.assertEqual(all_commits[1].source, "external")
+
+    def test_verified_change_set_is_reused_and_reporter_reads_a_cached_session_diff(self) -> None:
+        class CountingTree(CanonicalFontTree):
+            def __init__(self):
+                super().__init__(MemoryObjectStore())
+                self.diff_calls = 0
+
+            def diff(self, before_tree_hash, after_tree_hash):
+                self.diff_calls += 1
+                return super().diff(before_tree_hash, after_tree_hash)
+
+        trees = CountingTree()
+        history = ChangeHistory(trees)
+        verified = diff_models(self.before, self.after)
+        history.record_action(
+            document_id="doc_fast",
+            tool="apply_spacing",
+            effect="edit",
+            status="success",
+            run_id="run_fast",
+            before_model=self.before,
+            after_model=self.after,
+            change_set=verified,
+        )
+
+        first = history.latest_session_diff("doc_fast")
+        second = history.latest_session_diff("doc_fast")
+        self.assertIs(first, second)
+        self.assertEqual(first.change_set, verified)
+        self.assertEqual(trees.diff_calls, 0)
 
 
 if __name__ == "__main__":
