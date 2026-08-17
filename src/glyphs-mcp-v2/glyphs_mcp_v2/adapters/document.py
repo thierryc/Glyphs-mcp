@@ -402,12 +402,22 @@ def _new_path(spec: Mapping[str, Any]) -> Any:
 
 def _replace_paths(layer: Any, specs: Sequence[Mapping[str, Any]]) -> None:
     paths = [_new_path(spec) for spec in specs]
-    collection = _safe_getattr(layer, "paths")
-    if collection is not None:
-        _replace_collection(collection, paths)
-        return
     shapes = _sequence_values(_safe_getattr(layer, "shapes"))
-    setattr(layer, "shapes", paths + [shape for shape in shapes if not _is_path(shape)])
+    replacement_index = 0
+    replaced = []
+    insertion_index = None
+    for shape in shapes:
+        if _is_path(shape):
+            if replacement_index < len(paths):
+                replaced.append(paths[replacement_index])
+                replacement_index += 1
+                insertion_index = len(replaced)
+            continue
+        replaced.append(shape)
+    if replacement_index < len(paths):
+        insertion_index = insertion_index if insertion_index is not None else len(replaced)
+        replaced[insertion_index:insertion_index] = paths[replacement_index:]
+    setattr(layer, "shapes", replaced)
 
 
 def _new_component(spec: Mapping[str, Any]) -> Any:
@@ -429,12 +439,22 @@ def _new_component(spec: Mapping[str, Any]) -> Any:
 
 def _replace_components(layer: Any, specs: Sequence[Mapping[str, Any]]) -> None:
     components = [_new_component(spec) for spec in specs]
-    collection = _safe_getattr(layer, "components")
-    if collection is not None:
-        _replace_collection(collection, components)
-        return
     shapes = _sequence_values(_safe_getattr(layer, "shapes"))
-    setattr(layer, "shapes", [shape for shape in shapes if not _is_component(shape)] + components)
+    replacement_index = 0
+    replaced = []
+    insertion_index = None
+    for shape in shapes:
+        if _is_component(shape):
+            if replacement_index < len(components):
+                replaced.append(components[replacement_index])
+                replacement_index += 1
+                insertion_index = len(replaced)
+            continue
+        replaced.append(shape)
+    if replacement_index < len(components):
+        insertion_index = insertion_index if insertion_index is not None else len(replaced)
+        replaced[insertion_index:insertion_index] = components[replacement_index:]
+    setattr(layer, "shapes", replaced)
 
 
 def _kerning_key(value: Any) -> str:
