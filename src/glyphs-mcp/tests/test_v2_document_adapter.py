@@ -203,6 +203,46 @@ class _TransactionalFont:
         self.featurePrefixes = []
 
 
+class _ObjectiveCBooleanFeature:
+    """Reproduce a PyObjC Boolean property with is/set selectors.
+
+    Glyphs 4 exposes ``disabled`` as Objective-C ``isDisabled`` and
+    ``setDisabled:``. Attribute lookup can therefore yield a truthy selector
+    object while direct assignment is read-only.
+    """
+
+    __slots__ = ("name", "code", "_automatic", "_disabled")
+
+    def __init__(self, *, name="ss02", code="sub a by a.ss02;"):
+        self.name = name
+        self.code = code
+        self._automatic = False
+        self._disabled = False
+
+    @property
+    def automatic(self):
+        return self._automatic
+
+    @automatic.setter
+    def automatic(self, value):
+        self._automatic = bool(value)
+
+    def isAutomatic(self):
+        return self._automatic
+
+    def setAutomatic_(self, value):
+        self._automatic = bool(value)
+
+    def disabled(self):
+        return True
+
+    def isDisabled(self):
+        return self._disabled
+
+    def setDisabled_(self, value):
+        self._disabled = bool(value)
+
+
 class _OutlineNode:
     def __init__(self, x, y, *, node_type="line", smooth=False, name=None):
         self._position = SimpleNamespace(x=float(x), y=float(y))
@@ -385,6 +425,22 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_opentype_boolean_properties_use_objc_getter_and_setter_selectors(self) -> None:
+        feature = _ObjectiveCBooleanFeature()
+        font = _TransactionalFont()
+        font.features = [feature]
+        before = native_font_to_model(font)
+
+        self.assertFalse(before["features"][0]["disabled"])
+        after = copy.deepcopy(before)
+        after["features"][0]["disabled"] = True
+        changes = diff_models(before, after)
+
+        document_adapter._apply_target_model(font, before, after, changes)
+
+        self.assertTrue(feature.isDisabled())
+        self.assertTrue(native_font_to_model(font)["features"][0]["disabled"])
+
     def test_opentype_code_fields_apply_in_place_without_collection_replacement(self) -> None:
         feature = SimpleNamespace(
             name="liga", code="sub f i by fi;", automatic=False, disabled=False
