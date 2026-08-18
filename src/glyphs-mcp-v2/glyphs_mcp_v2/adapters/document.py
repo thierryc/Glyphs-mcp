@@ -443,9 +443,17 @@ def _new_path(spec: Mapping[str, Any]) -> Any:
             node.type = node_type
         try:
             node.smooth = bool(node_spec.get("smooth", False))
-            node.name = node_spec.get("name")
         except Exception:
             pass
+        # GSNode.name is not a normal nullable NSString bridge: assigning
+        # Python None stores the literal text "None". Preserve the native
+        # unnamed default and assign only a real canonical name.
+        node_name = _optional_text(node_spec.get("name"))
+        if node_name is not None:
+            try:
+                node.name = node_name
+            except Exception:
+                pass
         nodes.append(node)
     _replace_collection(path.nodes, nodes)
     path.closed = bool(spec.get("closed", True))
