@@ -235,6 +235,7 @@ class _OutlineLayer:
         self.layerId = "master-regular"
         self.associatedMasterId = "master-regular"
         self.paths = (path,)
+        self.components = (component,)
         self.shapes = [component, path]
         self.begin_count = 0
         self.end_count = 0
@@ -343,6 +344,47 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(layer.leftMetricsKey, "=H")
         self.assertEqual(layer.sync_count, 1)
         self.assertEqual(layer.LSB, 73)
+        self.assertEqual((layer.begin_count, layer.end_count), (1, 1))
+
+    def test_topology_compatible_component_delta_updates_transform_in_place(self) -> None:
+        path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
+        component = _OutlineComponent("acute")
+        layer = _OutlineLayer(path, component)
+        glyph = SimpleNamespace(name="Aacute", layers={"master-regular": layer})
+        font = SimpleNamespace(glyphs={"Aacute": glyph})
+        before_component = {
+            "name": "acute",
+            "transform": [1, 0, 0, 1, 12, 20],
+        }
+        component.transform = tuple(before_component["transform"])
+        after_component = copy.deepcopy(before_component)
+        after_component["transform"][4] = 37
+        current = {
+            "glyphs": {
+                "Aacute": {
+                    "layers": {
+                        "master-regular": {"components": [before_component]}
+                    }
+                }
+            }
+        }
+        target = {
+            "glyphs": {
+                "Aacute": {
+                    "layers": {
+                        "master-regular": {"components": [after_component]}
+                    }
+                }
+            }
+        }
+
+        document_adapter._apply_target_model(
+            font, current, target, diff_models(current, target)
+        )
+
+        self.assertIs(layer.components[0], component)
+        self.assertEqual(component.componentName, "acute")
+        self.assertEqual(tuple(component.transform), (1, 0, 0, 1, 37, 20))
         self.assertEqual((layer.begin_count, layer.end_count), (1, 1))
 
     def test_clone_generated_instance_ids_do_not_change_the_canonical_model(self) -> None:
