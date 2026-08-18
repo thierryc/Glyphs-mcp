@@ -25,9 +25,11 @@ from ..semantic import ChangeSet, diff_models, fingerprint_model
 from .glyphs import (
     GlyphsHostAdapter,
     _maybe_call,
+    _native_property,
     _native_unsaved_changes,
     _safe_getattr,
     _sequence_values,
+    _set_native_property,
 )
 
 
@@ -293,8 +295,12 @@ def _code_collection(font: Any, attribute: str) -> list[dict[str, Any]]:
             "id": str(_safe_getattr(value, "name") or "{}_{}".format(attribute, index)),
             "name": str(_safe_getattr(value, "name") or ""),
             "code": str(_safe_getattr(value, "code") or ""),
-            "automatic": bool(_safe_getattr(value, "automatic", False)),
-            "disabled": bool(_safe_getattr(value, "disabled", False)),
+            "automatic": bool(
+                _native_property(value, "automatic", False, objc_boolean=True)
+            ),
+            "disabled": bool(
+                _native_property(value, "disabled", False, objc_boolean=True)
+            ),
         }
         for index, value in enumerate(_sequence_values(_safe_getattr(font, attribute)))
     ]
@@ -785,11 +791,11 @@ def _apply_code_collection(
         # Automatic mode is applied first. Custom code is legal only in the
         # resulting manual state, as enforced by the pure request builder.
         if before.get("automatic") != after.get("automatic"):
-            setattr(native, "automatic", bool(after.get("automatic")))
+            _set_native_property(native, "automatic", bool(after.get("automatic")))
         if before.get("code") != after.get("code"):
-            setattr(native, "code", str(after.get("code") or ""))
+            _set_native_property(native, "code", str(after.get("code") or ""))
         if before.get("disabled") != after.get("disabled"):
-            setattr(native, "disabled", bool(after.get("disabled")))
+            _set_native_property(native, "disabled", bool(after.get("disabled")))
 
 
 def _canonical_replacement_roots(

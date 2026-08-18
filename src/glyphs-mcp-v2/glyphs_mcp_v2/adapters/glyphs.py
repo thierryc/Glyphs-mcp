@@ -26,6 +26,49 @@ def _safe_getattr(value: Any, name: str, default: Any = None) -> Any:
         return default
 
 
+def _native_property(
+    value: Any,
+    name: str,
+    default: Any = None,
+    *,
+    objc_boolean: bool = False,
+) -> Any:
+    """Read one Python or Objective-C property without leaking selectors.
+
+    PyObjC does not expose every Objective-C Boolean property as a normal
+    assignable Python attribute. A property declared with an ``isFoo`` getter
+    can make ``object.foo`` resolve to a selector object instead of its value.
+    Prefer the declared Boolean getter when requested, then normalize ordinary
+    callable/property wrappers through the same path.
+    """
+
+    if objc_boolean:
+        getter_name = "is{}{}".format(name[:1].upper(), name[1:])
+        getter = _safe_getattr(value, getter_name)
+        if getter is not None:
+            resolved = _maybe_call(getter)
+            if resolved is not None:
+                return resolved
+    resolved = _maybe_call(_safe_getattr(value, name, default))
+    return default if resolved is None else resolved
+
+
+def _set_native_property(value: Any, name: str, new_value: Any) -> None:
+    """Write one Python or Objective-C property through its native contract.
+
+    Prefer the explicit Objective-C ``setFoo:`` bridge when present. This
+    avoids read-only or selector-shaped Python attributes while remaining
+    compatible with plain Python fakes and older Glyphs wrappers.
+    """
+
+    setter_name = "set{}{}_".format(name[:1].upper(), name[1:])
+    setter = _safe_getattr(value, setter_name)
+    if callable(setter):
+        setter(new_value)
+        return
+    setattr(value, name, new_value)
+
+
 def _sequence_values(value: Any) -> List[Any]:
     if value is None:
         return []
