@@ -25,6 +25,7 @@ from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
 )
 from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
 from glyphs_mcp_v2.change_trace import ActionTraceCoordinator  # noqa: E402
+from glyphs_mcp_v2.contracts import ToolResponse  # noqa: E402
 from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
 
 
@@ -376,6 +377,15 @@ class ChangeHistoryTests(unittest.TestCase):
             self.before,
             self.after,
             changes,
+        )
+        trace.finish_action(
+            scope,
+            ToolResponse.success(
+                tool="apply_spacing",
+                effect="edit",
+                summary="Applied spacing.",
+                data={},
+            ),
         )
 
         self.assertEqual(observed, baseline.tree_hash)
