@@ -950,7 +950,13 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             except Exception:
                 pass
 
-    def _refresh_verified_dirty_override(self, document_id: str, font: Any) -> None:
+    def _refresh_verified_dirty_override(
+        self,
+        document_id: str,
+        font: Any,
+        *,
+        current_fingerprint: Optional[str] = None,
+    ) -> None:
         contributions = getattr(self, "_document_mcp_contributions", {})
         active = contributions.get(document_id, {})
         overrides = getattr(self, "_document_dirty_overrides", {})
@@ -959,8 +965,49 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         else:
             native = _document_edited_state(font)
             baseline = getattr(self, "_document_mcp_baseline_dirty", {}).get(document_id)
-            overrides[document_id] = native if native is not None else baseline
+            baseline_fingerprint = getattr(
+                self, "_document_mcp_baseline_fingerprints", {}
+            ).get(document_id)
+            if (
+                baseline_fingerprint
+                and current_fingerprint == baseline_fingerprint
+            ):
+                # Reversing native setters may leave Glyphs' edited bit sticky.
+                # Canonical equivalence proves the MCP-owned document delta is
+                # gone, so expose the pre-MCP dirty state without clearing the
+                # document's native history.
+                overrides[document_id] = baseline
+            else:
+                overrides[document_id] = native if native is not None else True
         self._document_dirty_overrides = overrides
+
+    def resolve_verified_dirty_state(
+        self,
+        document_id: str,
+        font: Any,
+        native_state: Optional[bool],
+    ) -> Optional[bool]:
+        """Revalidate a clean override before it can hide a later user edit."""
+
+        overrides = getattr(self, "_document_dirty_overrides", {})
+        if document_id not in overrides:
+            return native_state
+        override = overrides[document_id]
+        if override is not False or native_state is False:
+            return override
+        baseline_fingerprint = getattr(
+            self, "_document_mcp_baseline_fingerprints", {}
+        ).get(document_id)
+        if not baseline_fingerprint:
+            return native_state
+        current_fingerprint = fingerprint_model(native_font_to_model(font))
+        if current_fingerprint == baseline_fingerprint:
+            return False
+        # The document diverged after the verified clean equivalence. Stop
+        # overriding Glyphs so a later manual edit remains visibly dirty.
+        overrides[document_id] = True
+        self._document_dirty_overrides = overrides
+        return True
 
     def apply_verified_change_set(
         self,
@@ -984,6 +1031,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             contributions = getattr(self, "_document_mcp_contributions", {})
             active = contributions.setdefault(document_id, {})
             baselines = getattr(self, "_document_mcp_baseline_dirty", {})
+            baseline_fingerprints = getattr(
+                self, "_document_mcp_baseline_fingerprints", {}
+            )
             pending = getattr(self, "_document_mcp_pending_reverts", {})
             if operation_id in active or operation_id in pending:
                 raise HostAccessError("The MCP operation already owns a dirty contribution")
@@ -1003,12 +1053,20 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 else:
                     if not active:
                         baselines[document_id] = native_before
+                        baseline_fingerprints[document_id] = (
+                            change_set.before_fingerprint
+                        )
                     active[operation_id] = {"nativeDirtyBefore": native_before}
                     self._native_change_count(font, _NS_CHANGE_DONE)
             self._document_mcp_contributions = contributions
             self._document_mcp_baseline_dirty = baselines
+            self._document_mcp_baseline_fingerprints = baseline_fingerprints
             self._document_mcp_pending_reverts = pending
-            self._refresh_verified_dirty_override(document_id, font)
+            self._refresh_verified_dirty_override(
+                document_id,
+                font,
+                current_fingerprint=change_set.after_fingerprint,
+            )
 
         self._executor.run(apply)
 
@@ -1044,7 +1102,11 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 self._native_change_count(font, _NS_CHANGE_UNDONE)
             self._document_mcp_contributions = contributions
             self._document_mcp_pending_reverts = pending
-            self._refresh_verified_dirty_override(document_id, font)
+            self._refresh_verified_dirty_override(
+                document_id,
+                font,
+                current_fingerprint=fingerprint_model(model),
+            )
 
         self._executor.run(restore)
 
@@ -1052,6 +1114,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         for attribute in (
             "_document_mcp_contributions",
             "_document_mcp_baseline_dirty",
+            "_document_mcp_baseline_fingerprints",
         ):
             values = getattr(self, attribute, {})
             values.pop(document_id, None)

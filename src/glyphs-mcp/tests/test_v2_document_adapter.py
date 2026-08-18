@@ -133,10 +133,17 @@ class _App:
 
 
 class _EditableDocument:
-    def __init__(self, *, edited=False, stale_unsaved_signal=False):
+    def __init__(
+        self,
+        *,
+        edited=False,
+        stale_unsaved_signal=False,
+        sticky_after_undo=False,
+    ):
         self._preexisting_edits = 1 if edited else 0
         self._mcp_edits = 0
         self._stale_unsaved_signal = stale_unsaved_signal
+        self._sticky_after_undo = sticky_after_undo
         self.isDocumentEdited = edited
         self.hasUnautosavedChanges = edited and not stale_unsaved_signal
         self.change_counts = []
@@ -156,14 +163,28 @@ class _EditableDocument:
             if self._stale_unsaved_signal
             else bool(self._preexisting_edits or self._mcp_edits)
         )
+        if change == 1 and self._sticky_after_undo:
+            # Glyphs 4 native setters may register the inverse write itself as
+            # another edit even though the canonical content is back at the
+            # verified pre-MCP baseline.
+            self.isDocumentEdited = True
+            self.hasUnautosavedChanges = True
 
 
 class _TransactionalFont:
-    def __init__(self, *, edited=False, stale_unsaved_signal=False):
+    def __init__(
+        self,
+        *,
+        edited=False,
+        stale_unsaved_signal=False,
+        sticky_after_undo=False,
+    ):
         self.familyName = "Transaction Test"
         self.filepath = "/fonts/transaction.glyphs"
         self.parent = _EditableDocument(
-            edited=edited, stale_unsaved_signal=stale_unsaved_signal
+            edited=edited,
+            stale_unsaved_signal=stale_unsaved_signal,
+            sticky_after_undo=sticky_after_undo,
         )
         self.upm = 1000
         self.versionMajor = 1
@@ -378,6 +399,31 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertTrue(font.parent.isDocumentEdited)
         self.assertNotIn(2, font.parent.change_counts)
+
+    def test_exact_revert_overrides_sticky_native_dirty_without_hiding_later_manual_edits(self) -> None:
+        font = _TransactionalFont(sticky_after_undo=True)
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        baseline = host.capture_model(document_id)
+        after = copy.deepcopy(baseline)
+        after["font"]["note"] = "verified edit"
+        change_set = diff_models(baseline, after)
+
+        host.apply_verified_change_set(
+            document_id, change_set, operation_id="op_forward"
+        )
+        host.apply_verified_change_set(
+            document_id,
+            change_set.inverse(),
+            operation_id="op_revert",
+            removes_contribution_id="op_forward",
+        )
+
+        self.assertTrue(font.parent.isDocumentEdited)
+        self.assertFalse(host.list_documents()[0].has_unsaved_changes)
+
+        font.note = "manual later edit"
+        self.assertTrue(host.list_documents()[0].has_unsaved_changes)
 
     def test_failed_transaction_restoration_balances_dirty_state_after_divergence(self) -> None:
         font = _TransactionalFont()

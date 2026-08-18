@@ -149,9 +149,15 @@ class GlyphsHostAdapter:
         last_saved = _safe_getattr(font, "appVersion")
         document = _maybe_call(_safe_getattr(font, "parent"))
         has_unsaved_changes = _native_unsaved_changes(document)
-        overrides = getattr(self, "_document_dirty_overrides", {})
-        if document_id in overrides:
-            has_unsaved_changes = overrides[document_id]
+        resolver = getattr(self, "resolve_verified_dirty_state", None)
+        if callable(resolver):
+            has_unsaved_changes = resolver(
+                document_id, font, has_unsaved_changes
+            )
+        else:
+            overrides = getattr(self, "_document_dirty_overrides", {})
+            if document_id in overrides:
+                has_unsaved_changes = overrides[document_id]
         return FontSnapshot(
             document_id=document_id,
             legacy_index=legacy_index,
