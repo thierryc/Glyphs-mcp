@@ -131,7 +131,12 @@ def _layer_components(layer: Any) -> list[Any]:
 def _path_model(path: Any) -> dict[str, Any]:
     nodes = []
     for node in _sequence_values(_safe_getattr(path, "nodes")):
-        position = _point(_safe_getattr(node, "position"))
+        precise_position = _maybe_call(_safe_getattr(node, "positionPrecise"))
+        position = _point(
+            precise_position
+            if precise_position is not None
+            else _safe_getattr(node, "position")
+        )
         nodes.append(
             {
                 "x": position[0],
