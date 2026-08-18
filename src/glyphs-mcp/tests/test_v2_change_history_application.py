@@ -107,6 +107,28 @@ class _NormalizingMetricsHost(_Host):
         self.model = self._normalize(change_set.apply(self.model))
 
 
+class _DriftingMetricsHost(_NormalizingMetricsHost):
+    """A host whose writable inverse cannot recreate the intended baseline."""
+
+    def _apply_with_host_effects(self, change_set):
+        was_linked = (
+            self.model["glyphs"]["A"]["layers"]["m0"].get("leftMetricsKey")
+            == "==H"
+        )
+        target = self._normalize(change_set.apply(self.model))
+        layer = target["glyphs"]["A"]["layers"]["m0"]
+        if was_linked and layer.get("leftMetricsKey") is None:
+            layer["LSB"] = 41
+        return target
+
+    def simulate_change_set(self, document_id, change_set):
+        return self._apply_with_host_effects(change_set)
+
+    def apply_change_set(self, document_id, change_set):
+        self.apply_calls += 1
+        self.model = self._apply_with_host_effects(change_set)
+
+
 class ChangeHistoryApplicationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.host = _Host()
@@ -215,6 +237,40 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
             host.model["glyphs"]["A"]["layers"]["m0"]["leftMetricsKey"]
         )
         self.assertEqual(host.model["glyphs"]["A"]["layers"]["m0"]["LSB"], 40)
+
+    def test_revert_refuses_when_detached_inverse_cannot_reproduce_target(self) -> None:
+        host = _DriftingMetricsHost()
+        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        app = GlyphsMCPApplication(host, history=history)
+        applied = app.invoke(
+            "apply_metrics_updates",
+            {
+                "documentId": "doc_history",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "updates": [
+                    {
+                        "glyphName": "A",
+                        "masterId": "m0",
+                        "leftMetricsKey": "=H",
+                    }
+                ],
+            },
+        ).to_dict()
+        after_apply = copy.deepcopy(host.model)
+
+        reverted = app.invoke(
+            "revert_change",
+            {
+                "documentId": "doc_history",
+                "operationId": applied["operationId"],
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+            },
+        ).to_dict()
+
+        self.assertFalse(reverted["ok"])
+        self.assertEqual(reverted["error"]["code"], "revert_not_exact")
+        self.assertEqual(host.model, after_apply)
+        self.assertEqual(host.apply_calls, 1)
 
     def test_invalid_direct_mutation_still_emits_exactly_one_audit_receipt(self) -> None:
         response = self.app.invoke(

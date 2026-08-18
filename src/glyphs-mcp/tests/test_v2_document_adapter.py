@@ -274,6 +274,37 @@ class _MetricsLayer:
         self.LSB = 73
 
 
+class _LoggedNode(_OutlineNode):
+    def __init__(self, x, y, log):
+        self.log = log
+        super().__init__(x, y)
+
+    @_OutlineNode.position.setter
+    def position(self, value):
+        self.log.append("path")
+        self._position = SimpleNamespace(x=float(value[0]), y=float(value[1]))
+
+
+class _LoggedMetricsLayer(_MetricsLayer):
+    def __init__(self, log, path):
+        self.log = log
+        self._width = 529
+        super().__init__()
+        self._width = 529
+        self.paths = (path,)
+        self.shapes = [path]
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        if hasattr(self, "log"):
+            self.log.append("width")
+        self._width = value
+
+
 class _RecoveryHost(GlyphsDocumentHost):
     def __init__(self, app, root):
         super().__init__(app, executor=_Immediate())
@@ -386,6 +417,50 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(component.componentName, "acute")
         self.assertEqual(tuple(component.transform), (1, 0, 0, 1, 37, 20))
         self.assertEqual((layer.begin_count, layer.end_count), (1, 1))
+
+    def test_width_is_finalized_after_topology_compatible_outline_replay(self) -> None:
+        log = []
+        path = _OutlinePath([_LoggedNode(29, 0, log), _LoggedNode(129, 0, log)])
+        layer = _LoggedMetricsLayer(log, path)
+        glyph = SimpleNamespace(name="A", layers={"master-regular": layer})
+        font = SimpleNamespace(glyphs={"A": glyph})
+        before_paths = [
+            {
+                "closed": True,
+                "nodes": [
+                    {"x": 29, "y": 0, "type": "line", "smooth": False, "name": None},
+                    {"x": 129, "y": 0, "type": "line", "smooth": False, "name": None},
+                ],
+            }
+        ]
+        target_paths = copy.deepcopy(before_paths)
+        target_paths[0]["nodes"][0]["x"] = 0
+        target_paths[0]["nodes"][1]["x"] = 100
+        current_layer = {
+            "width": 529,
+            "LSB": 69,
+            "RSB": 60,
+            "leftMetricsKey": None,
+            "rightMetricsKey": None,
+            "widthMetricsKey": None,
+            "paths": before_paths,
+            "components": [],
+            "anchors": {},
+        }
+        target_layer = copy.deepcopy(current_layer)
+        target_layer.update({"width": 500, "LSB": 40, "paths": target_paths})
+        current = {"glyphs": {"A": {"layers": {"master-regular": current_layer}}}}
+        target = {"glyphs": {"A": {"layers": {"master-regular": target_layer}}}}
+
+        log.clear()
+        document_adapter._apply_target_model(
+            font, current, target, diff_models(current, target)
+        )
+
+        self.assertEqual(log[-1], "width")
+        self.assertEqual(layer.width, 500)
+        self.assertEqual(path.nodes[0].position.x, 0)
+        self.assertEqual(path.nodes[1].position.x, 100)
 
     def test_clone_generated_instance_ids_do_not_change_the_canonical_model(self) -> None:
         source = native_font_to_model(_InstanceFont("source-uuid", "source-pointer"))
