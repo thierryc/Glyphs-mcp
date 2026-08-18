@@ -605,32 +605,16 @@ def _canonical_replacement_roots(
     """
 
     remaining = diff_models(observed, target)
-    affected_layers = {
-        change.path[:4]
+    del before  # The replay decision is entirely the remaining target diff.
+    replacements = {
+        change.path[:5]
         for change in remaining.changes
         if len(change.path) >= 5
         and change.path[0] == "glyphs"
         and change.path[2] == "layers"
+        and change.path[4] in {"paths", "components"}
     }
-    replacements: list[tuple[str, ...]] = []
-    for layer_root in sorted(affected_layers):
-        _, glyph_name, _, layer_key = layer_root
-        before_layer = (
-            before.get("glyphs", {})
-            .get(glyph_name, {})
-            .get("layers", {})
-            .get(layer_key, {})
-        )
-        target_layer = (
-            target.get("glyphs", {})
-            .get(glyph_name, {})
-            .get("layers", {})
-            .get(layer_key, {})
-        )
-        for collection in ("paths", "components"):
-            if before_layer.get(collection) != target_layer.get(collection):
-                replacements.append(layer_root + (collection,))
-    return tuple(replacements)
+    return tuple(sorted(replacements))
 
 
 def _apply_target_model(
@@ -1303,15 +1287,21 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             font = self._font_for_document(document_id)
             current = native_font_to_model(font)
             restoration = diff_models(current, model)
-            _apply_target_model(
-                font,
-                current,
-                model,
-                restoration,
-                replay_replacements=_canonical_replacement_roots(
-                    current, model, current
-                ),
-            )
+            _apply_target_model(font, current, model, restoration)
+            preferred = native_font_to_model(font)
+            if fingerprint_model(preferred) != fingerprint_model(model):
+                replacements = _canonical_replacement_roots(
+                    current, model, preferred
+                )
+                if replacements:
+                    residual = diff_models(preferred, model)
+                    _apply_target_model(
+                        font,
+                        preferred,
+                        model,
+                        residual,
+                        replay_replacements=replacements,
+                    )
             contributions = getattr(self, "_document_mcp_contributions", {})
             active = contributions.setdefault(document_id, {})
             pending = getattr(self, "_document_mcp_pending_reverts", {})
