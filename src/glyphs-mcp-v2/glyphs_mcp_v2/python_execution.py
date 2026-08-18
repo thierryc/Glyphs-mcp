@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Protocol
 
@@ -269,6 +269,48 @@ class PythonExecutionService:
         )
 
     def execute(self, request: PythonExecutionRequest) -> ToolResponse:
+        """Execute one request and guarantee one audit receipt for every result.
+
+        Individual execution paths may emit a richer receipt when they know the
+        complete observed state.  This boundary supplies the redacted fallback
+        for every other returned failure so new refusal paths cannot silently
+        bypass the audit ledger.
+        """
+        response = self._execute(request)
+        if response.ok or response.audit_receipt is not None:
+            return response
+        details: dict[str, Any] = {
+            "errorCode": response.error.code if response.error is not None else "unknown_error",
+            "reason": request.reason,
+            "declaredEffect": request.intended_effect,
+            "executionMode": request.execution_mode,
+            "context": _context_details(request),
+            "expectedDocumentFingerprint": request.expected_document_fingerprint,
+            "reviewId": request.review_id,
+            "stateMayHaveChanged": bool(response.data.get("stateMayHaveChanged", False)),
+        }
+        if request.code:
+            details["codeHash"] = _code_hash(request.code)
+        if "documentIds" in response.data:
+            details["scopeViolations"] = list(response.data.get("documentIds") or [])
+        if "unsupportedCount" in response.data:
+            details["unsupportedCount"] = int(response.data.get("unsupportedCount") or 0)
+        archive_mismatch = response.data.get("nativeArchiveMismatch")
+        if isinstance(archive_mismatch, Mapping):
+            details["nativeArchiveMismatch"] = {
+                "mismatchCount": int(archive_mismatch.get("mismatchCount") or 0),
+                "truncated": bool(archive_mismatch.get("truncated")),
+            }
+        receipt = self._audit.record(
+            tool="execute_python",
+            effect="code",
+            status="error",
+            document_id=request.document_id,
+            details=details,
+        )
+        return replace(response, audit_receipt=receipt.to_dict())
+
+    def _execute(self, request: PythonExecutionRequest) -> ToolResponse:
         if self._trace is not None and request.document_id:
             self._trace.bind_document(request.document_id)
         if request.review_id:
