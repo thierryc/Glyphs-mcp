@@ -41,6 +41,7 @@ class V2ContractTests(unittest.TestCase):
             "apply_anchor_updates",
             "apply_glyph_updates",
             "apply_kerning_updates",
+            "apply_opentype_updates",
             "review_spacing",
             "apply_spacing",
             "review_export",
@@ -162,6 +163,7 @@ class V2ContractTests(unittest.TestCase):
             "apply_kerning_updates": "updates",
             "apply_metrics_updates": "updates",
             "apply_compatibility_updates": "updates",
+            "apply_opentype_updates": "updates",
             "apply_spacing": "items",
         }
         for name, items_parameter in mutation_tools.items():

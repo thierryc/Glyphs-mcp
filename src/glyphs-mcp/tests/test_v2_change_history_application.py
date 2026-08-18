@@ -189,6 +189,55 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertEqual(commits[0].operation_id, applied["operationId"])
         self.assertEqual(self.host.apply_calls, 1)
 
+    def test_opentype_apply_and_revert_use_one_verified_operation_each(self) -> None:
+        self.host.model["features"] = [
+            {
+                "id": "liga",
+                "name": "liga",
+                "code": "sub f i by fi;",
+                "automatic": False,
+                "disabled": False,
+            }
+        ]
+        baseline = copy.deepcopy(self.host.model)
+        applied = self.app.invoke(
+            "apply_opentype_updates",
+            {
+                "documentId": "doc_history",
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+                "updates": [
+                    {
+                        "kind": "feature",
+                        "name": "liga",
+                        "code": "sub f f i by ffi;",
+                    }
+                ],
+                "reason": "test verified feature code",
+            },
+        ).to_dict()
+
+        self.assertTrue(applied["ok"])
+        self.assertEqual(applied["data"]["requestedChangeCount"], 1)
+        self.assertEqual(applied["data"]["transactionCount"], 1)
+        self.assertEqual(self.host.model["features"][0]["code"], "sub f f i by ffi;")
+
+        reverted = self.app.invoke(
+            "revert_change",
+            {
+                "documentId": "doc_history",
+                "operationId": applied["operationId"],
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+            },
+        ).to_dict()
+
+        self.assertTrue(reverted["ok"])
+        self.assertEqual(self.host.model, baseline)
+        self.assertEqual(self.host.apply_calls, 2)
+        self.assertEqual(
+            [event.tool for event in self.app._audit.list_events(document_id="doc_history")],
+            ["apply_opentype_updates", "revert_change"],
+        )
+
     def test_generic_revert_preserves_unrelated_later_fields(self) -> None:
         self._apply_export_toggle()
         changed = [item for item in self.history.list_commits("doc_history") if item.changed][0]

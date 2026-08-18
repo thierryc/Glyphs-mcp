@@ -21,11 +21,64 @@ from glyphs_mcp_v2.workflows import (  # noqa: E402
     review_kerning_coverage,
     review_master_compatibility,
     review_metrics_updates,
+    build_opentype_updates,
     simulate_spacing,
 )
 
 
 class V2WorkflowTests(unittest.TestCase):
+    def test_opentype_updates_share_one_existing_collection_contract(self) -> None:
+        model = {
+            "features": [
+                {
+                    "id": "liga",
+                    "name": "liga",
+                    "code": "sub f i by fi;",
+                    "automatic": False,
+                    "disabled": False,
+                }
+            ],
+            "classes": [
+                {
+                    "id": "Uppercase",
+                    "name": "Uppercase",
+                    "code": "A B",
+                    "automatic": False,
+                    "disabled": False,
+                }
+            ],
+            "featurePrefixes": [
+                {
+                    "id": "Languagesystems",
+                    "name": "Languagesystems",
+                    "code": "languagesystem DFLT dflt;",
+                    "automatic": False,
+                    "disabled": False,
+                }
+            ],
+        }
+
+        changes = build_opentype_updates(
+            model,
+            [
+                {"kind": "feature", "name": "liga", "code": "sub f f i by ffi;"},
+                {"kind": "class", "name": "Uppercase", "disabled": True},
+                {"kind": "prefix", "name": "Languagesystems", "automatic": True},
+            ],
+        )
+        after = changes.apply(model)
+
+        self.assertEqual(after["features"][0]["code"], "sub f f i by ffi;")
+        self.assertTrue(after["classes"][0]["disabled"])
+        self.assertTrue(after["featurePrefixes"][0]["automatic"])
+        self.assertEqual(len(changes.changes), 3)
+
+        with self.assertRaisesRegex(ValueError, "automatic false"):
+            build_opentype_updates(
+                model,
+                [{"kind": "feature", "name": "liga", "automatic": True, "code": "sub a by b;"}],
+            )
+
     def test_compatibility_explains_host_and_component_mismatches(self) -> None:
         model = {
             "masters": [{"id": "m1"}, {"id": "m2"}],

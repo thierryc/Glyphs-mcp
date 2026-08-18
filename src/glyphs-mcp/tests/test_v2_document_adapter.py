@@ -385,6 +385,26 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_opentype_code_fields_apply_in_place_without_collection_replacement(self) -> None:
+        feature = SimpleNamespace(
+            name="liga", code="sub f i by fi;", automatic=False, disabled=False
+        )
+        font = _TransactionalFont()
+        font.features = [feature]
+        before = native_font_to_model(font)
+        after = copy.deepcopy(before)
+        after["features"][0]["code"] = "sub f f i by ffi;"
+        after["features"][0]["disabled"] = True
+        changes = diff_models(before, after)
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+
+        self.assertTrue(host.supports_change_set(changes))
+        document_adapter._apply_target_model(font, before, after, changes)
+
+        self.assertIs(font.features[0], feature)
+        self.assertEqual(feature.code, "sub f f i by ffi;")
+        self.assertTrue(feature.disabled)
+
     def test_live_capture_reuses_only_unchanged_revision_bound_glyph_models(self) -> None:
         font = _TransactionalFont()
 
