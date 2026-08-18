@@ -51,6 +51,16 @@ class OperationStore:
             for record in ordered[: len(self._records) - self._max_records]:
                 self._records.pop(record.operation_id, None)
 
+    @staticmethod
+    def _copy(record: OperationRecord) -> OperationRecord:
+        return OperationRecord(
+            operation_id=record.operation_id,
+            kind=record.kind,
+            payload=copy.deepcopy(dict(record.payload)),
+            created_at=record.created_at,
+            expires_at=record.expires_at,
+        )
+
     def create(
         self,
         *,
@@ -87,13 +97,7 @@ class OperationStore:
             record = self._records.get(operation_id)
             if record is None:
                 return None
-            return OperationRecord(
-                operation_id=record.operation_id,
-                kind=record.kind,
-                payload=copy.deepcopy(dict(record.payload)),
-                created_at=record.created_at,
-                expires_at=record.expires_at,
-            )
+            return self._copy(record)
 
     def consume(self, operation_id: str) -> Optional[OperationRecord]:
         with self._lock:
@@ -101,13 +105,7 @@ class OperationStore:
             record = self._records.pop(operation_id, None)
             if record is None:
                 return None
-            return OperationRecord(
-                operation_id=record.operation_id,
-                kind=record.kind,
-                payload=copy.deepcopy(dict(record.payload)),
-                created_at=record.created_at,
-                expires_at=record.expires_at,
-            )
+            return self._copy(record)
 
     def discard(self, operation_id: str) -> bool:
         with self._lock:
@@ -121,16 +119,7 @@ class OperationStore:
                 for record in sorted(self._records.values(), key=lambda item: item.created_at)
                 if kind is None or record.kind == kind
             )
-        return tuple(
-            OperationRecord(
-                operation_id=record.operation_id,
-                kind=record.kind,
-                payload=copy.deepcopy(dict(record.payload)),
-                created_at=record.created_at,
-                expires_at=record.expires_at,
-            )
-            for record in values
-        )
+        return tuple(self._copy(record) for record in values)
 
 
 __all__ = ["OperationRecord", "OperationStore"]

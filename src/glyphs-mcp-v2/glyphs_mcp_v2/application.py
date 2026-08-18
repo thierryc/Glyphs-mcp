@@ -17,7 +17,7 @@ from .canonical_tree import (
 from .catalog import TOOL_CATALOG
 from .change_history import ActionCommit, ChangeHistory
 from .change_trace import ActionTraceCoordinator
-from .contracts import API_MAJOR, API_VERSION, OperationMetadata, ToolError, ToolResponse, ToolWarning
+from .contracts import API_MAJOR, API_VERSION, OperationMetadata, ToolResponse, ToolWarning
 from .exporting import ExportPublicationError, destination_matches
 from .operations import OperationRecord, OperationStore
 from .mutation import (
@@ -228,11 +228,9 @@ class GlyphsMCPApplication:
                 tool=handler_name or "unknown",
                 effect=definition.effect if definition is not None else "read",
                 summary="Unknown Glyphs MCP 2.0 operation.",
-                error=ToolError(
-                    code="unknown_tool",
-                    message="The requested operation is not part of this runtime.",
-                    recoverable=False,
-                ),
+                code="unknown_tool",
+                message="The requested operation is not part of this runtime.",
+                recoverable=False,
             )
         try:
             return handler(dict(arguments or {}))
@@ -241,37 +239,33 @@ class GlyphsMCPApplication:
                 tool=handler_name,
                 effect=definition.effect,
                 summary="The result cursor is invalid or stale.",
-                error=ToolError(code="invalid_cursor", message=str(exc), recoverable=True),
+                code="invalid_cursor",
+                message=str(exc),
             )
         except HostAccessError as exc:
             return ToolResponse.failure(
                 tool=handler_name,
                 effect=definition.effect,
                 summary="Glyphs host state is temporarily unavailable.",
-                error=ToolError(
-                    code="host_unavailable",
-                    message=str(exc) or "Glyphs host state is unavailable.",
-                    recoverable=True,
-                ),
+                code="host_unavailable",
+                message=str(exc) or "Glyphs host state is unavailable.",
             )
         except (ValueError, TypeError) as exc:
             return ToolResponse.failure(
                 tool=handler_name,
                 effect=definition.effect,
                 summary="The request is invalid.",
-                error=ToolError(code="invalid_request", message=str(exc), recoverable=True),
+                code="invalid_request",
+                message=str(exc),
             )
         except Exception as exc:
             return ToolResponse.failure(
                 tool=handler_name,
                 effect=definition.effect,
                 summary="The operation failed safely.",
-                error=ToolError(
-                    code="internal_error",
-                    message="The operation failed before returning verified state.",
-                    recoverable=True,
-                    details={"exceptionType": type(exc).__name__},
-                ),
+                code="internal_error",
+                message="The operation failed before returning verified state.",
+                details={"exceptionType": type(exc).__name__},
             )
 
     def _document_model(self, document_id: str) -> dict[str, Any]:
@@ -284,6 +278,43 @@ class GlyphsMCPApplication:
         self._trace.observe_model(document_id, model)
         return model
 
+    def _audited_edit_failure(
+        self,
+        *,
+        tool: str,
+        document_id: str,
+        summary: str,
+        code: str,
+        message: str,
+        metadata: Optional[OperationMetadata] = None,
+        audit_details: Optional[Mapping[str, Any]] = None,
+        error_details: Optional[Mapping[str, Any]] = None,
+        data: Optional[Mapping[str, Any]] = None,
+    ) -> ToolResponse:
+        resolved_metadata = metadata or OperationMetadata.create()
+        receipt = self._audit.record(
+            tool=tool,
+            effect="edit",
+            status="error",
+            document_id=document_id,
+            details={
+                "operationId": resolved_metadata.operation_id,
+                "errorCode": code,
+                **dict(audit_details or {}),
+            },
+        )
+        return ToolResponse.failure(
+            tool=tool,
+            effect="edit",
+            summary=summary,
+            code=code,
+            message=message,
+            details=error_details,
+            data=data,
+            metadata=resolved_metadata,
+            audit_receipt=receipt.to_dict(),
+        )
+
     def _page_items(
         self,
         *,
@@ -292,6 +323,7 @@ class GlyphsMCPApplication:
         item_key: str,
         source_fingerprint: str,
         metadata: Optional[Mapping[str, Any]] = None,
+        page_size: int = 100,
     ) -> tuple[OperationRecord, dict[str, Any], Mapping[str, Any]]:
         values = [copy.deepcopy(dict(item)) for item in items]
         operation = self._operations.create(
@@ -308,7 +340,7 @@ class GlyphsMCPApplication:
             values,
             source_fingerprint=source_fingerprint,
             cursor_scope=operation.operation_id,
-            page_size=100,
+            page_size=page_size,
         )
         public = {**dict(metadata or {}), item_key: list(first.items)}
         return operation, public, first.page.to_dict()
@@ -360,51 +392,26 @@ class GlyphsMCPApplication:
             raise ValueError("{} requires at least one explicit item".format(tool))
         before = self._document_model(document_id)
         if fingerprint_model(before) != expected:
-            receipt = self._audit.record(
+            return self._audited_edit_failure(
                 tool=tool,
-                effect="edit",
-                status="error",
                 document_id=document_id,
-                details={"operationId": metadata.operation_id, "errorCode": "stale_document"},
-            )
-            return ToolResponse.failure(
-                tool=tool,
-                effect="edit",
                 summary="The document changed before detached mutation planning.",
-                error=ToolError(
-                    code="stale_document",
-                    message="Read the current document fingerprint and try again.",
-                    recoverable=True,
-                ),
+                code="stale_document",
+                message="Read the current document fingerprint and try again.",
                 metadata=metadata,
-                audit_receipt=receipt.to_dict(),
             )
         requested_model_diff = builder(before, items)
         diagnostics = unsupported_change_diagnostics(requested_model_diff, limit=100)
         if diagnostics["unsupportedCount"]:
-            receipt = self._audit.record(
+            return self._audited_edit_failure(
                 tool=tool,
-                effect="edit",
-                status="error",
                 document_id=document_id,
-                details={
-                    "operationId": metadata.operation_id,
-                    "errorCode": "unsupported_change",
-                    **diagnostics,
-                },
-            )
-            return ToolResponse.failure(
-                tool=tool,
-                effect="edit",
                 summary="The requested batch contains fields outside this mutation milestone.",
-                error=ToolError(
-                    code="unsupported_change",
-                    message="Structural and unsupported fields were not mutated.",
-                    recoverable=True,
-                    details=diagnostics,
-                ),
+                code="unsupported_change",
+                message="Structural and unsupported fields were not mutated.",
                 metadata=metadata,
-                audit_receipt=receipt.to_dict(),
+                audit_details=diagnostics,
+                error_details=diagnostics,
             )
         requested = writable_subset(before, requested_model_diff)
         self._trace.bind_document(document_id)
@@ -418,42 +425,28 @@ class GlyphsMCPApplication:
             )
             result = self._transactions.apply_plan(plan)
         except StaleDocumentError:
-            receipt = self._audit.record(
+            return self._audited_edit_failure(
                 tool=tool,
-                effect="edit",
-                status="error",
                 document_id=document_id,
-                details={"operationId": metadata.operation_id, "errorCode": "stale_document"},
-            )
-            return ToolResponse.failure(
-                tool=tool,
-                effect="edit",
                 summary="The document changed before the verified transaction.",
-                error=ToolError(code="stale_document", message="The document changed.", recoverable=True),
+                code="stale_document",
+                message="The document changed.",
                 metadata=metadata,
-                audit_receipt=receipt.to_dict(),
             )
         except TransactionVerificationError as exc:
-            receipt = self._audit.record(
+            failure_data = {
+                "rollbackAttempted": True,
+                "rollbackSucceeded": exc.rollback_succeeded,
+            }
+            return self._audited_edit_failure(
                 tool=tool,
-                effect="edit",
-                status="error",
                 document_id=document_id,
-                details={
-                    "operationId": metadata.operation_id,
-                    "errorCode": "transaction_failed",
-                    "rollbackAttempted": True,
-                    "rollbackSucceeded": exc.rollback_succeeded,
-                },
-            )
-            return ToolResponse.failure(
-                tool=tool,
-                effect="edit",
                 summary="The mutation failed complete read-back verification.",
-                error=ToolError(code="transaction_failed", message="The mutation was not verified.", recoverable=True),
-                data={"rollbackAttempted": True, "rollbackSucceeded": exc.rollback_succeeded},
+                code="transaction_failed",
+                message="The mutation was not verified.",
                 metadata=metadata,
-                audit_receipt=receipt.to_dict(),
+                audit_details=failure_data,
+                data=failure_data,
             )
 
         observed_items = [change.to_dict() for change in plan.observed_change_set.changes]
@@ -601,7 +594,9 @@ class GlyphsMCPApplication:
                     tool="get_operation",
                     effect="read",
                     summary="The operation is missing or expired.",
-                    error=ToolError(code="operation_unavailable", message="The operation is unavailable.", recoverable=False),
+                    code="operation_unavailable",
+                    message="The operation is unavailable.",
+                    recoverable=False,
                 )
             self._trace.bind_document(commit.document_id)
             changes = [change.to_dict() for change in commit.change_set.changes]
@@ -818,46 +813,22 @@ class GlyphsMCPApplication:
         )
 
     def apply_compatibility_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(
-            arguments,
-            tool="apply_compatibility_updates",
-            builder=build_compatibility_updates,
-        )
+        return self._direct_apply(arguments, tool="apply_compatibility_updates", builder=build_compatibility_updates)
 
     def apply_metrics_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(
-            arguments,
-            tool="apply_metrics_updates",
-            builder=build_metrics_updates,
-        )
+        return self._direct_apply(arguments, tool="apply_metrics_updates", builder=build_metrics_updates)
 
     def apply_anchor_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(
-            arguments,
-            tool="apply_anchor_updates",
-            builder=build_anchor_updates,
-        )
+        return self._direct_apply(arguments, tool="apply_anchor_updates", builder=build_anchor_updates)
 
     def apply_glyph_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(
-            arguments,
-            tool="apply_glyph_updates",
-            builder=build_glyph_updates,
-        )
+        return self._direct_apply(arguments, tool="apply_glyph_updates", builder=build_glyph_updates)
 
     def apply_kerning_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(
-            arguments,
-            tool="apply_kerning_updates",
-            builder=build_kerning_updates,
-        )
+        return self._direct_apply(arguments, tool="apply_kerning_updates", builder=build_kerning_updates)
 
     def apply_opentype_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(
-            arguments,
-            tool="apply_opentype_updates",
-            builder=build_opentype_updates,
-        )
+        return self._direct_apply(arguments, tool="apply_opentype_updates", builder=build_opentype_updates)
 
     def review_spacing(self, arguments: Mapping[str, Any]) -> ToolResponse:
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
@@ -1032,7 +1003,8 @@ class GlyphsMCPApplication:
                 tool="export_source_bundle",
                 effect="files",
                 summary="The export review is missing, expired, or consumed.",
-                error=ToolError(code="review_unavailable", message="Export review unavailable.", recoverable=True),
+                code="review_unavailable",
+                message="Export review unavailable.",
             )
         payload = review.payload
         if not payload.get("review", {}).get("ready"):
@@ -1040,7 +1012,8 @@ class GlyphsMCPApplication:
                 tool="export_source_bundle",
                 effect="files",
                 summary="The reviewed export still has blocking conditions.",
-                error=ToolError(code="export_blocked", message="Resolve the reviewed blockers first.", recoverable=True),
+                code="export_blocked",
+                message="Resolve the reviewed blockers first.",
             )
         current = self._document_model(str(payload["documentId"]))
         if fingerprint_model(current) != payload.get("documentFingerprint"):
@@ -1048,7 +1021,8 @@ class GlyphsMCPApplication:
                 tool="export_source_bundle",
                 effect="files",
                 summary="The document changed after export review.",
-                error=ToolError(code="stale_document", message="Export review is stale.", recoverable=True),
+                code="stale_document",
+                message="Export review is stale.",
             )
         inspector = getattr(self._host, "inspect_export_destination", None)
         if not callable(inspector):
@@ -1059,11 +1033,8 @@ class GlyphsMCPApplication:
                 tool="export_source_bundle",
                 effect="files",
                 summary="The destination changed after export review; nothing was published.",
-                error=ToolError(
-                    code="destination_changed",
-                    message="Create a new export review for the current destination fingerprint.",
-                    recoverable=True,
-                ),
+                code="destination_changed",
+                message="Create a new export review for the current destination fingerprint.",
             )
         exporter = getattr(self._host, "export_source_bundle", None)
         if not callable(exporter):
@@ -1075,7 +1046,8 @@ class GlyphsMCPApplication:
                 tool="export_source_bundle",
                 effect="files",
                 summary="The staged bundle was not published.",
-                error=ToolError(code="publication_refused", message=str(exc), recoverable=True),
+                code="publication_refused",
+                message=str(exc),
             )
         receipt = self._audit.record(
             tool="export_source_bundle",
@@ -1121,35 +1093,23 @@ class GlyphsMCPApplication:
             for commit in self.history.list_commits(document_id)
         ]
         source_fingerprint = fingerprint_model({"documentId": document_id, "commits": items})
-        operation = self._operations.create(
+        operation, public, page = self._page_items(
             kind="change_log",
-            ttl_seconds=RESULT_TTL_SECONDS,
-            payload={
-                "items": items,
-                "itemKey": "commits",
-                "sourceFingerprint": source_fingerprint,
-                "metadata": {"documentId": document_id, "count": len(items)},
-            },
-        )
-        page = paginate(
-            items,
+            items=items,
+            item_key="commits",
             source_fingerprint=source_fingerprint,
-            cursor_scope=operation.operation_id,
+            metadata={"documentId": document_id, "count": len(items)},
             page_size=int(_value(arguments, "page_size", "pageSize", 100)),
         )
+        public["operationId"] = operation.operation_id
         return ToolResponse.success(
             tool="list_change_commits",
             effect="read",
             summary="Returned {} of {} MCP action commit(s) since the last save.".format(
-                len(page.items), len(items)
+                len(public["commits"]), len(items)
             ),
-            data={
-                "documentId": document_id,
-                "count": len(items),
-                "operationId": operation.operation_id,
-                "commits": list(page.items),
-            },
-            page=page.page.to_dict(),
+            data=public,
+            page=page,
         )
 
     def revert_change(self, arguments: Mapping[str, Any]) -> ToolResponse:
@@ -1174,22 +1134,16 @@ class GlyphsMCPApplication:
                 tool="revert_change",
                 effect="edit",
                 summary="The requested change commit is unavailable for this document.",
-                error=ToolError(
-                    code="change_commit_unavailable",
-                    message="Choose a current unsaved-session change commit.",
-                    recoverable=True,
-                ),
+                code="change_commit_unavailable",
+                message="Choose a current unsaved-session change commit.",
             )
         if not original.changed:
             return ToolResponse.failure(
                 tool="revert_change",
                 effect="edit",
                 summary="The selected tool call made no document change.",
-                error=ToolError(
-                    code="change_commit_empty",
-                    message="There is no document delta to revert.",
-                    recoverable=True,
-                ),
+                code="change_commit_empty",
+                message="There is no document delta to revert.",
             )
         current = self._document_model(document_id)
         current_fingerprint = fingerprint_model(current)
@@ -1198,11 +1152,8 @@ class GlyphsMCPApplication:
                 tool="revert_change",
                 effect="edit",
                 summary="The document fingerprint changed before revert.",
-                error=ToolError(
-                    code="stale_document",
-                    message="Read the current document fingerprint and try again.",
-                    recoverable=True,
-                ),
+                code="stale_document",
+                message="Read the current document fingerprint and try again.",
             )
         inverse, conflicts = revert_change_set_onto(current, original.change_set)
         if inverse is None:
@@ -1210,12 +1161,9 @@ class GlyphsMCPApplication:
                 tool="revert_change",
                 effect="edit",
                 summary="Later edits overlap the selected change; nothing was reverted.",
-                error=ToolError(
-                    code="revert_conflict",
-                    message="Resolve or explicitly replace the conflicting fields first.",
-                    recoverable=True,
-                    details={"conflictPaths": [list(path) for path in conflicts[:100]]},
-                ),
+                code="revert_conflict",
+                message="Resolve or explicitly replace the conflicting fields first.",
+                details={"conflictPaths": [list(path) for path in conflicts[:100]]},
                 data={"operationId": operation_id, "conflictCount": len(conflicts)},
             )
         # The complete observed inverse defines the intended canonical tree.
@@ -1241,22 +1189,15 @@ class GlyphsMCPApplication:
                 tool="revert_change",
                 effect="edit",
                 summary="The detached inverse could not reproduce the intended rebased state; nothing was reverted.",
-                error=ToolError(
-                    code="revert_not_exact",
-                    message="Glyphs derived additional state while simulating the inverse patch.",
-                    recoverable=True,
-                    details={
-                        "intendedAfterFingerprint": inverse.after_fingerprint,
-                        "observedAfterFingerprint": fingerprint_model(
-                            exc.observed_after_model
-                        ),
-                        "mismatchCount": len(mismatch.changes),
-                        "mismatchPaths": [
-                            list(change.path) for change in mismatch.changes[:100]
-                        ],
-                        "mismatchPathsTruncated": len(mismatch.changes) > 100,
-                    },
-                ),
+                code="revert_not_exact",
+                message="Glyphs derived additional state while simulating the inverse patch.",
+                details={
+                    "intendedAfterFingerprint": inverse.after_fingerprint,
+                    "observedAfterFingerprint": fingerprint_model(exc.observed_after_model),
+                    "mismatchCount": len(mismatch.changes),
+                    "mismatchPaths": [list(change.path) for change in mismatch.changes[:100]],
+                    "mismatchPathsTruncated": len(mismatch.changes) > 100,
+                },
                 data={
                     "operationId": operation_id,
                     "intendedAfterFingerprint": inverse.after_fingerprint,
@@ -1273,26 +1214,21 @@ class GlyphsMCPApplication:
                 tool="revert_change",
                 effect="edit",
                 summary="The document changed before revert; nothing was applied.",
-                error=ToolError(code="stale_document", message="The document changed.", recoverable=True),
+                code="stale_document",
+                message="The document changed.",
             )
         except TransactionVerificationError as exc:
-            receipt = self._audit.record(
+            return self._audited_edit_failure(
                 tool="revert_change",
-                effect="edit",
-                status="error",
                 document_id=document_id,
-                details={
+                summary="The revert failed verification.",
+                code="transaction_failed",
+                message="The revert was not verified.",
+                audit_details={
                     "operationId": operation_id,
                     "rollbackAttempted": True,
                     "rollbackSucceeded": exc.rollback_succeeded,
                 },
-            )
-            return ToolResponse.failure(
-                tool="revert_change",
-                effect="edit",
-                summary="The revert failed verification.",
-                error=ToolError(code="transaction_failed", message="The revert was not verified.", recoverable=True),
-                audit_receipt=receipt.to_dict(),
             )
         receipt = self._audit.record(
             tool="revert_change",

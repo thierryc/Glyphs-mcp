@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Protocol
 
 from .audit import AuditLog
-from .contracts import ToolError, ToolResponse, ToolWarning
+from .contracts import ToolResponse, ToolWarning
 from .operations import OperationRecord, OperationStore
 from .pagination import paginate
 from .mutation import (
@@ -263,7 +263,9 @@ class PythonExecutionService:
             tool="execute_python",
             effect="code",
             summary=message,
-            error=ToolError(code=code, message=message, recoverable=recoverable),
+            code=code,
+            message=message,
+            recoverable=recoverable,
             data=data,
             audit_receipt=receipt,
         )
@@ -924,7 +926,9 @@ class PythonExecutionService:
             tool="rollback_python_execution",
             effect="edit",
             summary=summary,
-            error=ToolError(code=code, message=summary, recoverable=recoverable),
+            code=code,
+            message=summary,
+            recoverable=recoverable,
             data=data,
             audit_receipt=receipt.to_dict(),
         )
@@ -942,7 +946,8 @@ class PythonExecutionService:
                 tool="rollback_python_execution",
                 effect="edit",
                 summary="confirm=true is required for rollback.",
-                error=ToolError(code="confirmation_required", message="Rollback was not confirmed.", recoverable=True),
+                code="confirmation_required",
+                message="Rollback was not confirmed.",
             )
         if strategy not in {"auto", "open_recovery_copy"}:
             return self._rollback_failure(

@@ -141,13 +141,23 @@ class ToolResponse:
         tool: str,
         effect: str,
         summary: str,
-        error: ToolError,
+        error: Optional[ToolError] = None,
+        code: Optional[str] = None,
+        message: Optional[str] = None,
+        recoverable: bool = True,
+        details: Optional[Mapping[str, Any]] = None,
         data: Optional[Mapping[str, Any]] = None,
         warnings: Sequence[ToolWarning] = (),
         metadata: Optional[OperationMetadata] = None,
         page: Optional[Mapping[str, Any]] = None,
         audit_receipt: Optional[Mapping[str, Any]] = None,
     ) -> "ToolResponse":
+        if error is not None and any(value is not None for value in (code, message, details)):
+            raise ValueError("failure accepts either error or scalar error fields")
+        if error is None:
+            if not code or message is None:
+                raise ValueError("failure requires error or code and message")
+            error = ToolError(code, message, bool(recoverable), details)
         return cls(
             tool=tool,
             effect=effect,
