@@ -37,6 +37,7 @@ class _PythonHost:
         self.scope_violations = []
         self.stdout = "live"
         self.preview_scope_violations = []
+        self.preview_context_violations = None
         self.corrupt_apply = False
         self.raise_live = False
         self.recovery_registry = {}
@@ -64,7 +65,7 @@ class _PythonHost:
             }
         if "featureEdit" in request.code:
             after["features"][0]["code"] = "sub f f i by ffi;"
-        return {
+        result = {
             "afterModel": after,
             "stdout": "previewed",
             "stderr": "",
@@ -73,6 +74,11 @@ class _PythonHost:
                 self.native_archive_comparison
             ),
         }
+        if self.preview_context_violations is not None:
+            result["contextViolations"] = copy.deepcopy(
+                self.preview_context_violations
+            )
+        return result
 
     def run_live_python(self, request):
         self.live_calls += 1
@@ -515,6 +521,33 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
         self.assertEqual(unsupported["error"]["code"], "unsupported_staged_change")
+
+    def test_staged_explicit_context_escape_is_refused_before_review(self) -> None:
+        service, host = self.service()
+        host.preview_context_violations = {
+            "count": 2,
+            "paths": [
+                ["glyphs", "B", "layers", "m0", "paths"],
+                ["font", "note"],
+            ],
+            "truncated": False,
+        }
+
+        result = service.execute(
+            PythonExecutionRequest(
+                code="layer.width = 500",
+                reason="context boundary test",
+                intended_effect="document_edit",
+                document_id="doc_alpha",
+                glyph_name="A",
+                layer_id="m0",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+
+        self.assertEqual(result["error"]["code"], "staged_context_violation")
+        self.assertEqual(result["data"]["violationCount"], 2)
+        self.assertEqual(host.model["font"]["familyName"], "Alpha")
 
     def test_native_archive_refusal_returns_structured_bounded_mismatch_locations(self) -> None:
         service, host = self.service()

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import time
 from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence
@@ -172,6 +173,8 @@ class GlyphsMCPApplication:
         handler_name: str,
         arguments: Optional[Mapping[str, Any]] = None,
     ) -> ToolResponse:
+        started_at = datetime.now(timezone.utc)
+        started_clock = time.perf_counter_ns()
         values = dict(arguments or {})
         definition = TOOL_CATALOG.get(handler_name)
         scope = self._trace.start_action(
@@ -213,6 +216,15 @@ class GlyphsMCPApplication:
                     )
                 except Exception:
                     pass
+        completed_at = datetime.now(timezone.utc)
+        response = replace(
+            response,
+            metadata=response.metadata.with_timing(
+                started_at=started_at,
+                completed_at=completed_at,
+                duration_ms=(time.perf_counter_ns() - started_clock) // 1_000_000,
+            ),
+        )
         self._trace.finish_action(scope, response)
         return response
 

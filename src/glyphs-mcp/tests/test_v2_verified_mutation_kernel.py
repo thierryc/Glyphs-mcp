@@ -13,7 +13,11 @@ V2_SOURCE = REPO / "src" / "glyphs-mcp-v2"
 if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
-from glyphs_mcp_v2.mutation import MutationPlanner, VerifiedMutationPlan  # noqa: E402
+from glyphs_mcp_v2.mutation import (  # noqa: E402
+    MutationPlanner,
+    VerifiedMutationPlan,
+    mutation_scope,
+)
 from glyphs_mcp_v2.semantic import (  # noqa: E402
     canonical_json,
     diff_models,
@@ -145,6 +149,36 @@ class _LateSettlingHost(_DerivedHost):
 
 
 class VerifiedMutationKernelTests(unittest.TestCase):
+    def test_mutation_scope_resolves_transitive_component_and_metrics_dependencies(self) -> None:
+        before = _model()
+        before["glyphs"].update(
+            {
+                "Aacute": {
+                    "name": "Aacute",
+                    "layers": {
+                        "m0": {
+                            "components": [{"name": "A"}],
+                            "leftMetricsKey": "=A+10",
+                        }
+                    },
+                },
+                "Aacute.sc": {
+                    "name": "Aacute.sc",
+                    "layers": {
+                        "m0": {"components": [{"name": "Aacute"}]}
+                    },
+                },
+                "B": {"name": "B", "layers": {"m0": {}}},
+            }
+        )
+        after = copy.deepcopy(before)
+        after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
+
+        scope = mutation_scope(before, diff_models(before, after))
+
+        self.assertEqual(scope.roots, ("glyphs",))
+        self.assertEqual(scope.glyph_names, ("A", "Aacute", "Aacute.sc"))
+
     def test_canonical_numbers_normalize_negative_zero_and_integral_floats(self) -> None:
         integer = {"font": {"value": 0, "other": 12}}
         floating = {"font": {"value": -0.0, "other": 12.0}}

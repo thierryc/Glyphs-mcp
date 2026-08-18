@@ -46,6 +46,22 @@ class OperationMetadata:
             duration_ms=max(0, int((completed - started).total_seconds() * 1000)),
         )
 
+    def with_timing(
+        self,
+        *,
+        started_at: datetime,
+        completed_at: datetime,
+        duration_ms: int,
+    ) -> "OperationMetadata":
+        return OperationMetadata(
+            request_id=self.request_id,
+            run_id=self.run_id,
+            operation_id=self.operation_id,
+            started_at=_iso(started_at),
+            completed_at=_iso(completed_at),
+            duration_ms=max(0, int(duration_ms)),
+        )
+
 
 @dataclass(frozen=True)
 class ToolWarning:

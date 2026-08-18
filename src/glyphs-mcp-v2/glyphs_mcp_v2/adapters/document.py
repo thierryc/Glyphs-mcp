@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import builtins
 import copy
 import contextlib
@@ -20,7 +21,7 @@ from typing import Any, Mapping, Optional, Sequence
 from ..exporting import inspect_destination, publish_staged_directory
 from ..ports import HostAccessError
 from ..python_execution import PythonExecutionRequest
-from ..mutation import writable_subset
+from ..mutation import MutationScope, mutation_scope, writable_subset
 from ..semantic import ChangeSet, diff_models, fingerprint_model
 from .glyphs import (
     GlyphsHostAdapter,
@@ -349,6 +350,35 @@ def native_font_to_model(font: Any) -> dict[str, Any]:
     return _font_model_with_glyphs(font, glyphs)
 
 
+def _glyph_layer_structure(glyph: Any) -> tuple[tuple[str, str], ...]:
+    return tuple(
+        (
+            str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""),
+            str(_safe_getattr(layer, "associatedMasterId") or ""),
+        )
+        for layer in _sequence_values(_safe_getattr(glyph, "layers"))
+    )
+
+
+def _glyph_revision_token(glyph: Any) -> tuple[Any, ...]:
+    return (
+        str(_safe_getattr(glyph, "name") or ""),
+        str(_safe_getattr(glyph, "id") or ""),
+        str(_plain_scalar(_safe_getattr(glyph, "lastChange")) or ""),
+        _plain_scalar(_maybe_call(_safe_getattr(glyph, "changeCount"))),
+        _glyph_layer_structure(glyph),
+    )
+
+
+def _glyph_revision_index(font: Any) -> dict[str, tuple[Any, ...]]:
+    result: dict[str, tuple[Any, ...]] = {}
+    for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
+        token = _glyph_revision_token(glyph)
+        if token[0]:
+            result[str(token[0])] = token
+    return result
+
+
 class _RevisionBoundGlyphModelCache:
     """Reuse detached glyph trees only while native revision evidence agrees.
 
@@ -363,29 +393,20 @@ class _RevisionBoundGlyphModelCache:
         self._documents: dict[str, dict[str, Any]] = {}
         self._lock = RLock()
 
-    @staticmethod
-    def _layer_structure(glyph: Any) -> tuple[tuple[str, str], ...]:
-        return tuple(
-            (
-                str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""),
-                str(_safe_getattr(layer, "associatedMasterId") or ""),
-            )
-            for layer in _sequence_values(_safe_getattr(glyph, "layers"))
-        )
-
-    @classmethod
-    def _glyph_token(cls, glyph: Any) -> tuple[Any, ...]:
-        return (
-            str(_safe_getattr(glyph, "name") or ""),
-            str(_safe_getattr(glyph, "id") or ""),
-            str(_plain_scalar(_safe_getattr(glyph, "lastChange")) or ""),
-            _plain_scalar(_maybe_call(_safe_getattr(glyph, "changeCount"))),
-            cls._layer_structure(glyph),
-        )
-
     def invalidate(self, document_id: str) -> None:
         with self._lock:
             self._documents.pop(document_id, None)
+
+    def invalidate_glyphs(
+        self, document_id: str, glyph_names: Sequence[str]
+    ) -> None:
+        with self._lock:
+            document = self._documents.get(document_id)
+            if document is None:
+                return
+            glyphs = document.get("glyphs", {})
+            for name in glyph_names:
+                glyphs.pop(str(name), None)
 
     def capture(self, document_id: str, font: Any) -> dict[str, Any]:
         masters = _master_models(font)
@@ -401,7 +422,7 @@ class _RevisionBoundGlyphModelCache:
             current_glyphs: dict[str, dict[str, Any]] = {}
             result_glyphs: dict[str, Any] = {}
             for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
-                token = self._glyph_token(glyph)
+                token = _glyph_revision_token(glyph)
                 name = str(token[0])
                 if not name:
                     continue
@@ -441,6 +462,111 @@ def _lookup_layer(glyph: Any, key: str) -> Any:
         if key in {str(_safe_getattr(layer, "layerId") or ""), str(_safe_getattr(layer, "associatedMasterId") or "")}:
             return layer
     return None
+
+
+def _scoped_font_model(
+    font: Any,
+    base_model: Mapping[str, Any],
+    scope: MutationScope,
+    *,
+    extra_glyph_names: Sequence[str] = (),
+) -> dict[str, Any]:
+    """Refresh one canonical tree from native state without rebuilding every glyph."""
+
+    result = copy.deepcopy(dict(base_model))
+    non_glyph = _font_model_with_glyphs(font, {})
+    for root, value in non_glyph.items():
+        if root != "glyphs":
+            result[root] = value
+
+    base_glyphs = result.get("glyphs", {})
+    if not isinstance(base_glyphs, dict):
+        raise HostAccessError("The canonical glyph model is not keyed by name")
+    native_index = {
+        str(_safe_getattr(glyph, "name") or ""): glyph
+        for glyph in _sequence_values(_safe_getattr(font, "glyphs"))
+        if str(_safe_getattr(glyph, "name") or "")
+    }
+    if set(native_index) != set(base_glyphs):
+        raise HostAccessError(
+            "Scoped verification detected a structural glyph collection change"
+        )
+    for name in sorted(set(scope.glyph_names) | {str(value) for value in extra_glyph_names}):
+        glyph = native_index.get(name)
+        if glyph is None:
+            raise HostAccessError("The scoped glyph no longer exists: {}".format(name))
+        base_glyphs[name] = _glyph_model(glyph)
+    return result
+
+
+def _changed_revision_glyphs(
+    before: Mapping[str, tuple[Any, ...]],
+    after: Mapping[str, tuple[Any, ...]],
+) -> tuple[str, ...]:
+    if set(before) != set(after):
+        raise HostAccessError(
+            "Scoped verification detected a structural glyph collection change"
+        )
+    return tuple(
+        name for name in sorted(before) if before.get(name) != after.get(name)
+    )
+
+
+def _staged_context_violations(
+    request: PythonExecutionRequest,
+    changes: ChangeSet,
+    *,
+    model: Optional[Mapping[str, Any]] = None,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """Bound changes that escaped an explicitly injected glyph/layer context."""
+
+    if not request.glyph_name:
+        return {"count": 0, "paths": [], "truncated": False}
+
+    allowed_layers = {
+        value for value in (request.layer_id, request.master_id) if value
+    }
+    glyphs = model.get("glyphs", {}) if isinstance(model, Mapping) else {}
+    glyph = glyphs.get(request.glyph_name, {}) if isinstance(glyphs, Mapping) else {}
+    layers = glyph.get("layers", {}) if isinstance(glyph, Mapping) else {}
+    if isinstance(layers, Mapping):
+        for key, layer in layers.items():
+            if not isinstance(layer, Mapping):
+                continue
+            identities = {
+                str(key),
+                str(layer.get("id") or ""),
+                str(layer.get("masterId") or ""),
+            }
+            if identities & allowed_layers:
+                allowed_layers.add(str(key))
+    violations: list[tuple[str, ...]] = []
+    for change in changes.changes:
+        path = change.path
+        allowed = (
+            len(path) >= 2
+            and path[0] == "glyphs"
+            and path[1] == request.glyph_name
+        )
+        if allowed and allowed_layers:
+            # mastersCompatible is a host-derived consequence of a layer edit.
+            allowed = (
+                len(path) == 3 and path[2] == "mastersCompatible"
+            ) or (
+                len(path) >= 4
+                and path[2] == "layers"
+                and path[3] in allowed_layers
+            )
+        if not allowed:
+            violations.append(path)
+
+    bounded_limit = max(0, min(100, int(limit)))
+    return {
+        "count": len(violations),
+        "paths": [list(path) for path in violations[:bounded_limit]],
+        "truncated": len(violations) > bounded_limit,
+    }
 
 
 def _replace_collection(collection: Any, values: Sequence[Any]) -> None:
@@ -1061,6 +1187,45 @@ def _serialized_font_archive(font: Any) -> bytes:
     return archive
 
 
+def _serialized_review_scope(
+    font: Any, request: PythonExecutionRequest
+) -> bytes:
+    """Archive a safe declared native scope, retaining a full-font fallback."""
+
+    target = font
+    if request.glyph_name:
+        glyph = _lookup_by_name(_safe_getattr(font, "glyphs"), request.glyph_name)
+        if glyph is None:
+            raise HostAccessError(
+                "The staged archive glyph no longer exists: {}".format(
+                    request.glyph_name
+                )
+            )
+        target = glyph
+        try:
+            tree = ast.parse(request.code or "", mode="exec")
+        except SyntaxError as exc:
+            raise HostAccessError("The staged Python source is invalid") from exc
+        broad_names = {"font", "master"}
+        if any(
+            (isinstance(node, ast.Name) and node.id in broad_names)
+            or (isinstance(node, ast.Attribute) and node.attr in {"font", "parent"})
+            for node in ast.walk(tree)
+        ):
+            target = font
+    if target is font:
+        return _serialized_font_archive(font)
+    try:
+        from Foundation import NSKeyedArchiver  # type: ignore[import-not-found]
+
+        data = NSKeyedArchiver.archivedDataWithRootObject_(target)
+        return bytes(data)
+    except Exception as exc:
+        raise HostAccessError(
+            "Glyphs could not archive the declared staged review scope"
+        ) from exc
+
+
 def _serialized_font_fingerprint(font: Any) -> str:
     digest = hashlib.sha256(_serialized_font_archive(font)).hexdigest()
     return "sha256:{}".format(digest)
@@ -1148,6 +1313,15 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
     def native_font(self, document_id: str) -> Any:
         return self._font_for_document(document_id)
 
+    def _cached_open_models(self) -> dict[str, dict[str, Any]]:
+        return {
+            document_id: self._canonical_model_cache.capture(document_id, font)
+            for font in self._collect_fonts()
+            for document_id in (
+                self._identities.resolve(self._native_identity(font)),
+            )
+        }
+
     def capture_model(self, document_id: str) -> Mapping[str, Any]:
         return self._executor.run(
             lambda: self._canonical_model_cache.capture(
@@ -1183,6 +1357,19 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
     ) -> Mapping[str, Any]:
         """Apply writable intent to one detached font and recapture host effects."""
 
+        before = self.capture_model(document_id)
+        return self.simulate_change_set_from_model(
+            document_id, change_set, before
+        )
+
+    def simulate_change_set_from_model(
+        self,
+        document_id: str,
+        change_set: ChangeSet,
+        before_model: Mapping[str, Any],
+    ) -> Mapping[str, Any]:
+        """Simulate one patch while recapturing only its semantic dependency scope."""
+
         def simulate() -> Mapping[str, Any]:
             if not self.supports_change_set(change_set):
                 raise HostAccessError("The change set contains unsupported native write paths")
@@ -1191,12 +1378,24 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             if not callable(copier):
                 raise HostAccessError("Glyphs did not provide GSFont.copy()")
             clone = copier()
-            clone_before = native_font_to_model(clone)
+            source = copy.deepcopy(dict(before_model))
+            scope = mutation_scope(source, change_set)
+            revisions_before = _glyph_revision_index(clone)
+            clone_before = _scoped_font_model(clone, source, scope)
             if fingerprint_model(clone_before) != change_set.before_fingerprint:
                 raise HostAccessError("Detached GSFont.copy() did not reproduce the canonical source")
             requested_target = change_set.apply(clone_before)
             _apply_target_model(clone, clone_before, requested_target, change_set)
-            return native_font_to_model(clone)
+            revisions_after = _glyph_revision_index(clone)
+            changed_glyphs = _changed_revision_glyphs(
+                revisions_before, revisions_after
+            )
+            return _scoped_font_model(
+                clone,
+                source,
+                scope,
+                extra_glyph_names=changed_glyphs,
+            )
 
         return self._executor.run(simulate)
 
@@ -1301,22 +1500,46 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
     def preview_python(self, request: PythonExecutionRequest, before_model: Mapping[str, Any]) -> Mapping[str, Any]:
         def run() -> Mapping[str, Any]:
-            live_before = {self._identities.resolve(self._native_identity(font)): fingerprint_model(native_font_to_model(font)) for font in self._collect_fonts()}
+            live_before_models = self._cached_open_models()
+            live_before = {
+                document_id: fingerprint_model(model)
+                for document_id, model in live_before_models.items()
+            }
             font = self._font_for_document(request.document_id or "")
             copier = _safe_getattr(font, "copy")
             if not callable(copier):
                 raise HostAccessError("Glyphs did not provide GSFont.copy()")
             clone = copier()
             verifier = copier()
-            direct_before_archive = _serialized_font_archive(clone)
-            replay_before_archive = _serialized_font_archive(verifier)
+            direct_before_archive = _serialized_review_scope(clone, request)
+            replay_before_archive = _serialized_review_scope(verifier, request)
+            clone_revisions_before = _glyph_revision_index(clone)
             namespace = self._context(clone, request)
             namespace["__builtins__"] = _STAGED_BUILTINS
             stdout, stderr = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 exec(compile(request.code or "", "<glyphs-mcp-staged>", "exec"), namespace, namespace)
-            after_model = native_font_to_model(clone)
+            if request.glyph_name:
+                clone_revisions_after = _glyph_revision_index(clone)
+                after_model = _scoped_font_model(
+                    clone,
+                    before_model,
+                    MutationScope(("glyphs",), (request.glyph_name,)),
+                    extra_glyph_names=_changed_revision_glyphs(
+                        clone_revisions_before,
+                        clone_revisions_after,
+                    ),
+                )
+            else:
+                # Open-world staged requests retain the conservative full-tree
+                # fallback because no smaller correctness boundary was declared.
+                after_model = native_font_to_model(clone)
             changes = diff_models(before_model, after_model)
+            context_violations = _staged_context_violations(
+                request,
+                changes,
+                model=before_model,
+            )
             writable_changes = writable_subset(before_model, changes)
             archive_comparison = {
                 "equivalent": True,
@@ -1336,39 +1559,58 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 )
                 archive_comparison = _compare_native_archive_deltas(
                     direct_before_archive,
-                    _serialized_font_archive(clone),
+                    _serialized_review_scope(clone, request),
                     replay_before_archive,
-                    _serialized_font_archive(verifier),
+                    _serialized_review_scope(verifier, request),
                     limit=100,
                 )
-            live_after = {self._identities.resolve(self._native_identity(font)): fingerprint_model(native_font_to_model(font)) for font in self._collect_fonts()}
+            live_after_models = self._cached_open_models()
+            live_after = {
+                document_id: fingerprint_model(model)
+                for document_id, model in live_after_models.items()
+            }
             violations = [document_id for document_id in sorted(set(live_before) | set(live_after)) if live_before.get(document_id) != live_after.get(document_id)]
             return {
                 "afterModel": after_model,
                 "stdout": stdout.getvalue(),
                 "stderr": stderr.getvalue(),
                 "scopeViolations": violations,
+                "contextViolations": context_violations,
                 "nativeArchiveComparison": archive_comparison,
             }
         return self._executor.run(run)
 
     def run_live_python(self, request: PythonExecutionRequest) -> Mapping[str, Any]:
         def run() -> Mapping[str, Any]:
+            live_before_models = self._cached_open_models()
             live_before = {
-                self._identities.resolve(self._native_identity(item)): fingerprint_model(native_font_to_model(item))
-                for item in self._collect_fonts()
+                document_id: fingerprint_model(model)
+                for document_id, model in live_before_models.items()
             }
             font = self._font_for_document(request.document_id) if request.document_id else _safe_getattr(self._app, "font")
-            before = native_font_to_model(font) if font is not None else {}
+            active_document_id = (
+                request.document_id
+                or (
+                    self._identities.resolve(self._native_identity(font))
+                    if font is not None
+                    else None
+                )
+            )
+            before = copy.deepcopy(
+                live_before_models.get(active_document_id or "", {})
+            )
             namespace = self._context(font, request) if font is not None else {"font": None, "glyph": None, "master": None, "layer": None, "selectedLayers": []}
             namespace.update({"Glyphs": self._app, "__builtins__": builtins.__dict__})
             stdout, stderr = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 exec(compile(request.code or "", "<glyphs-mcp-live>", "exec"), namespace, namespace)
-            after = native_font_to_model(font) if font is not None else {}
+            live_after_models = self._cached_open_models()
+            after = copy.deepcopy(
+                live_after_models.get(active_document_id or "", {})
+            )
             live_after = {
-                self._identities.resolve(self._native_identity(item)): fingerprint_model(native_font_to_model(item))
-                for item in self._collect_fonts()
+                document_id: fingerprint_model(model)
+                for document_id, model in live_after_models.items()
             }
             changed_documents = [
                 document_id
@@ -1447,7 +1689,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         ).get(document_id)
         if not baseline_fingerprint:
             return native_state
-        current_fingerprint = fingerprint_model(native_font_to_model(font))
+        current_fingerprint = fingerprint_model(
+            self._canonical_model_cache.capture(document_id, font)
+        )
         if current_fingerprint == baseline_fingerprint:
             return False
         # The document diverged after the verified clean equivalence. Stop
@@ -1473,10 +1717,10 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             raise HostAccessError("The change set contains unsupported native write paths")
 
         def apply() -> None:
-            self._canonical_model_cache.invalidate(document_id)
             font = self._font_for_document(document_id)
-            current = native_font_to_model(font)
+            current = self._canonical_model_cache.capture(document_id, font)
             target = change_set.apply(current)
+            scope = mutation_scope(current, change_set)
             contributions = getattr(self, "_document_mcp_contributions", {})
             active = contributions.setdefault(document_id, {})
             baselines = getattr(self, "_document_mcp_baseline_dirty", {})
@@ -1489,6 +1733,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             if removes_contribution_id and removes_contribution_id not in active:
                 raise HostAccessError("The reverted MCP dirty contribution is unavailable")
             native_before = _document_edited_state(font)
+            self._canonical_model_cache.invalidate_glyphs(
+                document_id, scope.glyph_names
+            )
             _apply_target_model(
                 font,
                 current,
@@ -1541,18 +1788,25 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         """Restore a failed attempt's content and its exact dirty contribution."""
 
         def restore() -> None:
-            self._canonical_model_cache.invalidate(document_id)
             font = self._font_for_document(document_id)
-            current = native_font_to_model(font)
+            current = self._canonical_model_cache.capture(document_id, font)
             restoration = diff_models(current, model)
+            restoration_scope = mutation_scope(current, restoration)
+            self._canonical_model_cache.invalidate_glyphs(
+                document_id, restoration_scope.glyph_names
+            )
             _apply_target_model(font, current, model, restoration)
-            preferred = native_font_to_model(font)
+            preferred = self._canonical_model_cache.capture(document_id, font)
             if fingerprint_model(preferred) != fingerprint_model(model):
                 replacements = _canonical_replacement_roots(
                     current, model, preferred
                 )
                 if replacements:
                     residual = diff_models(preferred, model)
+                    residual_scope = mutation_scope(preferred, residual)
+                    self._canonical_model_cache.invalidate_glyphs(
+                        document_id, residual_scope.glyph_names
+                    )
                     _apply_target_model(
                         font,
                         preferred,

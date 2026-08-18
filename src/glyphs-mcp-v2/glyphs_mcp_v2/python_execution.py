@@ -465,6 +465,20 @@ class PythonExecutionService:
                 "Staged Python changed one or more live documents; confirmation is refused.",
                 data={"documentIds": scope_violations},
             )
+        context_violations = preview.get("contextViolations")
+        if (
+            isinstance(context_violations, Mapping)
+            and int(context_violations.get("count") or 0) > 0
+        ):
+            return self._failure(
+                "staged_context_violation",
+                "Staged Python changed fields outside its explicit glyph/layer context; confirmation is refused.",
+                data={
+                    "violationCount": int(context_violations.get("count") or 0),
+                    "violationPaths": list(context_violations.get("paths") or [])[:100],
+                    "truncated": bool(context_violations.get("truncated")),
+                },
+            )
         archive_comparison = preview.get("nativeArchiveComparison")
         archive_mismatch = (
             isinstance(archive_comparison, Mapping)

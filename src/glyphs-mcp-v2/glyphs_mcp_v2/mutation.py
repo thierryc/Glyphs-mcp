@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import re
 from dataclasses import dataclass
 from typing import Any, Mapping, Protocol
 
@@ -108,6 +109,80 @@ class CanonicalTargetMismatchError(ValueError):
 
 
 @dataclass(frozen=True)
+class MutationScope:
+    """Canonical roots and glyph dependency closure touched by one patch."""
+
+    roots: tuple[str, ...]
+    glyph_names: tuple[str, ...]
+
+
+def mutation_scope(
+    model: Mapping[str, Any], change_set: ChangeSet
+) -> MutationScope:
+    """Resolve one conservative semantic scope without native Glyphs objects."""
+
+    roots = {change.path[0] for change in change_set.changes if change.path}
+    glyphs = model.get("glyphs", {})
+    glyph_map = glyphs if isinstance(glyphs, Mapping) else {}
+    known_names = {str(name) for name in glyph_map}
+    direct = {
+        change.path[1]
+        for change in change_set.changes
+        if len(change.path) >= 2 and change.path[0] == "glyphs"
+    }
+    if "glyphs" in roots and not direct:
+        direct = set(known_names)
+
+    reverse_dependencies: dict[str, set[str]] = {}
+    for dependent_name, glyph in glyph_map.items():
+        if not isinstance(glyph, Mapping):
+            continue
+        references: set[str] = set()
+        layers = glyph.get("layers", {})
+        layer_values = layers.values() if isinstance(layers, Mapping) else ()
+        for layer in layer_values:
+            if not isinstance(layer, Mapping):
+                continue
+            components = layer.get("components", ())
+            if isinstance(components, (list, tuple)):
+                for component in components:
+                    if isinstance(component, Mapping):
+                        name = str(
+                            component.get("name")
+                            or component.get("componentName")
+                            or ""
+                        )
+                        if name in known_names:
+                            references.add(name)
+            for field in (
+                "leftMetricsKey",
+                "rightMetricsKey",
+                "widthMetricsKey",
+            ):
+                value = layer.get(field)
+                if value:
+                    references.update(
+                        token
+                        for token in re.findall(r"[\w.-]+", str(value))
+                        if token in known_names
+                    )
+        for reference in references:
+            reverse_dependencies.setdefault(reference, set()).add(
+                str(dependent_name)
+            )
+
+    resolved = set(str(name) for name in direct)
+    pending = list(resolved)
+    while pending:
+        source = pending.pop()
+        for dependent in reverse_dependencies.get(source, ()):
+            if dependent not in resolved:
+                resolved.add(dependent)
+                pending.append(dependent)
+    return MutationScope(tuple(sorted(roots)), tuple(sorted(resolved)))
+
+
+@dataclass(frozen=True)
 class VerifiedMutationPlan:
     """Writable intent plus the complete clone-observed result it must cause."""
 
@@ -189,12 +264,24 @@ class MutationPlanner:
                 for path in simulation.get("replayReplacements", ())
             )
         else:
-            simulator = getattr(self._host, "simulate_change_set", None)
-            expected_after = (
-                copy.deepcopy(dict(simulator(document_id, requested_change_set)))
-                if callable(simulator)
-                else requested_change_set.apply(before)
+            scoped_simulator = getattr(
+                self._host, "simulate_change_set_from_model", None
             )
+            simulator = getattr(self._host, "simulate_change_set", None)
+            if callable(scoped_simulator):
+                expected_after = copy.deepcopy(
+                    dict(
+                        scoped_simulator(
+                            document_id, requested_change_set, before
+                        )
+                    )
+                )
+            elif callable(simulator):
+                expected_after = copy.deepcopy(
+                    dict(simulator(document_id, requested_change_set))
+                )
+            else:
+                expected_after = requested_change_set.apply(before)
         if (
             required_after_model is not None
             and fingerprint_model(expected_after)
@@ -221,10 +308,12 @@ class MutationPlanner:
 
 __all__ = [
     "CanonicalTargetMismatchError",
+    "MutationScope",
     "MutationPlanner",
     "MutationPlanningHost",
     "VerifiedMutationPlan",
     "classify_change_path",
+    "mutation_scope",
     "unsupported_change_diagnostics",
     "writable_subset",
 ]
