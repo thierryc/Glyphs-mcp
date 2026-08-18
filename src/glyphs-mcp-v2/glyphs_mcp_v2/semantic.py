@@ -26,10 +26,6 @@ SUPPORTED_DOCUMENT_ROOTS = frozenset(
 
 
 def _plain(value: Any) -> Any:
-    if isinstance(value, Mapping):
-        return {str(key): _plain(value[key]) for key in sorted(value, key=str)}
-    if isinstance(value, (list, tuple)):
-        return [_plain(item) for item in value]
     if value is None or isinstance(value, (bool, int, str)):
         return value
     if isinstance(value, float):
@@ -41,6 +37,16 @@ def _plain(value: Any) -> Any:
         if value == 0 or value.is_integer():
             return int(value)
         return value
+    # Native capture emits built-in JSON containers. Keep their recursive hot
+    # path on CPython's direct type checks; a collections.abc Mapping check for
+    # every scalar and node is disproportionately expensive in Glyphs' Python
+    # 3.14/PyObjC runtime. Retain the abstract fallback for external adapters.
+    if isinstance(value, dict):
+        return {str(key): _plain(value[key]) for key in sorted(value, key=str)}
+    if isinstance(value, (list, tuple)):
+        return [_plain(item) for item in value]
+    if isinstance(value, Mapping):
+        return {str(key): _plain(value[key]) for key in sorted(value, key=str)}
     raise TypeError("document models must contain JSON-safe detached values")
 
 

@@ -1595,6 +1595,8 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             violations = [document_id for document_id in sorted(set(live_before) | set(live_after)) if live_before.get(document_id) != live_after.get(document_id)]
             return {
                 "afterModel": after_model,
+                "changeSet": changes,
+                "writableChangeSet": writable_changes,
                 "stdout": stdout.getvalue(),
                 "stderr": stderr.getvalue(),
                 "scopeViolations": violations,

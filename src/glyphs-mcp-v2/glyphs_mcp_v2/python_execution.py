@@ -452,7 +452,17 @@ class PythonExecutionService:
         try:
             preview = self._host.preview_python(request, before)
             after = dict(preview["afterModel"])
-            changes = diff_models(before, after)
+            after_fingerprint = fingerprint_model(after)
+            provided_changes = preview.get("changeSet")
+            if isinstance(provided_changes, ChangeSet):
+                if (
+                    provided_changes.before_fingerprint != before_fingerprint
+                    or provided_changes.after_fingerprint != after_fingerprint
+                ):
+                    raise ValueError("host staged change set does not match its models")
+                changes = provided_changes
+            else:
+                changes = diff_models(before, after)
         except Exception as exc:
             return self._failure(
                 "python_preview_failed",
@@ -509,7 +519,28 @@ class PythonExecutionService:
                 data={"unsupportedPaths": [], "nativeArchiveMismatch": bounded_comparison},
             )
         diagnostics = unsupported_change_diagnostics(changes, limit=100)
-        writable_changes = writable_subset(before, changes)
+        provided_writable = preview.get("writableChangeSet")
+        if isinstance(provided_writable, ChangeSet):
+            if provided_writable.before_fingerprint != before_fingerprint:
+                return self._failure(
+                    "python_preview_failed",
+                    "Detached Python preview returned a stale writable change set.",
+                )
+            try:
+                writable_after = provided_writable.apply(before)
+            except (KeyError, ValueError):
+                return self._failure(
+                    "python_preview_failed",
+                    "Detached Python preview returned an invalid writable change set.",
+                )
+            if fingerprint_model(writable_after) != provided_writable.after_fingerprint:
+                return self._failure(
+                    "python_preview_failed",
+                    "Detached Python preview returned an unreproducible writable change set.",
+                )
+            writable_changes = provided_writable
+        else:
+            writable_changes = writable_subset(before, changes)
         supports = getattr(self._host, "supports_change_set", None)
         host_supported = bool(supports(writable_changes)) if callable(supports) else True
         if diagnostics["unsupportedCount"] or not host_supported:

@@ -8,7 +8,7 @@ from typing import Any, Mapping, Optional
 
 from .change_history import ActionCommit, ChangeHistory
 from .contracts import ToolResponse
-from .semantic import ChangeSet, diff_models
+from .semantic import ChangeSet, diff_models, fingerprint_model
 
 
 @dataclass
@@ -54,13 +54,46 @@ class ActionTraceCoordinator:
         if scope is not None and document_id:
             scope.document_id = document_id
 
+    def _matching_tree_hash(
+        self,
+        model: Mapping[str, Any],
+        *candidates: Optional[str],
+    ) -> Optional[str]:
+        expected = fingerprint_model(model)
+        seen = set()
+        for tree_hash in candidates:
+            if not tree_hash or tree_hash in seen:
+                continue
+            seen.add(tree_hash)
+            try:
+                descriptor = self.history.trees.descriptor(tree_hash)
+            except (KeyError, ValueError):
+                continue
+            if str(descriptor.get("modelFingerprint") or "") == expected:
+                return tree_hash
+        return None
+
+    def _store_or_reuse(
+        self,
+        document_id: str,
+        model: Mapping[str, Any],
+        *candidates: Optional[str],
+    ) -> str:
+        values = candidates + (self.history.head_tree_hash(document_id),)
+        if not any(values):
+            return self.history.trees.store_model(model).tree_hash
+        matched = self._matching_tree_hash(model, *values)
+        if matched:
+            return matched
+        return self.history.trees.store_model(model).tree_hash
+
     def observe_model(self, document_id: str, model: Mapping[str, Any]) -> str:
-        snapshot = self.history.trees.store_model(model)
+        tree_hash = self._store_or_reuse(document_id, model)
         scope = _ACTIVE_SCOPE.get()
         if scope is not None:
             scope.document_id = document_id
-            scope.observed_tree_hash = snapshot.tree_hash
-        return snapshot.tree_hash
+            scope.observed_tree_hash = tree_hash
+        return tree_hash
 
     def observe_transition(
         self,
@@ -71,16 +104,25 @@ class ActionTraceCoordinator:
     ) -> tuple[str, str]:
         """Record a detached before/after pair captured outside the mutation kernel."""
 
-        before_snapshot = self.history.trees.store_model(before)
-        after_snapshot = self.history.trees.store_model(after)
         scope = _ACTIVE_SCOPE.get()
+        before_tree_hash = self._store_or_reuse(
+            document_id,
+            before,
+            scope.observed_tree_hash if scope is not None else None,
+        )
+        resolved_changes = change_set or diff_models(before, after)
+        after_snapshot = self.history.trees.store_verified_transition(
+            before_tree_hash,
+            after,
+            resolved_changes,
+        )
         if scope is not None:
             scope.document_id = document_id
-            scope.before_tree_hash = before_snapshot.tree_hash
+            scope.before_tree_hash = before_tree_hash
             scope.after_tree_hash = after_snapshot.tree_hash
-            scope.change_set = change_set or diff_models(before, after)
+            scope.change_set = resolved_changes
             scope.transaction_completed = True
-        return before_snapshot.tree_hash, after_snapshot.tree_hash
+        return before_tree_hash, after_snapshot.tree_hash
 
     @staticmethod
     def needs_initial_observation(scope: _ActionScope) -> bool:
@@ -94,8 +136,12 @@ class ActionTraceCoordinator:
         scope = _ACTIVE_SCOPE.get()
         if scope is not None:
             scope.document_id = document_id
-        before_snapshot = self.history.trees.store_model(before)
-        return _TransactionTrace(scope=scope, before_tree_hash=before_snapshot.tree_hash)
+        before_tree_hash = self._store_or_reuse(
+            document_id,
+            before,
+            scope.observed_tree_hash if scope is not None else None,
+        )
+        return _TransactionTrace(scope=scope, before_tree_hash=before_tree_hash)
 
     def commit_transaction(
         self,
@@ -107,7 +153,11 @@ class ActionTraceCoordinator:
         writable_change_set: Optional[ChangeSet] = None,
     ) -> None:
         del before
-        after_snapshot = self.history.trees.store_model(after)
+        after_snapshot = self.history.trees.store_verified_transition(
+            token.before_tree_hash,
+            after,
+            change_set,
+        )
         if token.scope is not None:
             token.scope.document_id = document_id
             token.scope.before_tree_hash = token.before_tree_hash

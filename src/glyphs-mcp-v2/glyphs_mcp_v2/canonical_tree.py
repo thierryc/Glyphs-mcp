@@ -217,7 +217,9 @@ class CanonicalFontTree:
 
     def _store_model(self, model: Mapping[str, Any]) -> TreeSnapshot:
         # canonical_json performs the authoritative JSON-safe normalization.
-        plain = __import__("json").loads(canonical_json(model))
+        encoded = canonical_json(model)
+        plain = __import__("json").loads(encoded)
+        model_fingerprint = _object_hash(encoded.encode("utf-8"))
         roots: dict[str, Any] = {}
         inserted_count = 0
         inserted_bytes = 0
@@ -255,7 +257,7 @@ class CanonicalFontTree:
             "schemaVersion": TREE_SCHEMA_VERSION,
             "modelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
             "reversibilityCoverage": REVERSIBILITY_COVERAGE,
-            "modelFingerprint": fingerprint_model(plain),
+            "modelFingerprint": model_fingerprint,
             "roots": roots,
         }
         tree_hash, inserted, byte_count = self._put_descriptor(root_descriptor)
@@ -264,6 +266,133 @@ class CanonicalFontTree:
         return TreeSnapshot(
             tree_hash=tree_hash,
             model_fingerprint=root_descriptor["modelFingerprint"],
+            inserted_object_count=inserted_count,
+            inserted_byte_count=inserted_bytes,
+            glyph_count=glyph_count,
+            reused_glyph_count=reused_glyphs,
+        )
+
+    def store_verified_transition(
+        self,
+        before_tree_hash: str,
+        after_model: Mapping[str, Any],
+        change_set: ChangeSet,
+    ) -> TreeSnapshot:
+        """Store one verified transition by rewriting changed canonical shards.
+
+        The transaction kernel has already proved the complete after
+        fingerprint. Reusing the before descriptor lets action history hash and
+        persist only roots named by that semantic diff instead of serializing
+        every unchanged glyph again.
+        """
+
+        before_descriptor = self.descriptor(before_tree_hash)
+        if (
+            str(before_descriptor.get("modelFingerprint") or "")
+            != change_set.before_fingerprint
+        ):
+            raise ValueError("verified transition does not start at the supplied tree")
+        glyphs = after_model.get("glyphs", {})
+        glyph_count = len(glyphs) if isinstance(glyphs, Mapping) else 0
+        if not change_set.changes:
+            if change_set.before_fingerprint != change_set.after_fingerprint:
+                raise ValueError("an empty verified transition cannot change fingerprints")
+            return TreeSnapshot(
+                tree_hash=before_tree_hash,
+                model_fingerprint=change_set.after_fingerprint,
+                inserted_object_count=0,
+                inserted_byte_count=0,
+                glyph_count=glyph_count,
+                reused_glyph_count=glyph_count,
+            )
+
+        roots = copy.deepcopy(dict(before_descriptor.get("roots") or {}))
+        changes_by_root: dict[str, list[Any]] = {}
+        for change in change_set.changes:
+            changes_by_root.setdefault(change.path[0], []).append(change)
+        inserted_count = 0
+        inserted_bytes = 0
+        reused_glyphs = glyph_count
+
+        batch = getattr(self._store, "batch", None)
+        context = batch() if callable(batch) else contextlib.nullcontext()
+        with context:
+            for root_name, changes in sorted(changes_by_root.items()):
+                root_value = after_model.get(root_name)
+                if root_name in SHARDED_MAPPING_ROOTS and isinstance(
+                    root_value, Mapping
+                ):
+                    previous_ref = roots.get(root_name)
+                    if not isinstance(previous_ref, Mapping):
+                        raise ValueError(
+                            "verified transition is missing root {}".format(root_name)
+                        )
+                    previous_map = self._decode(str(previous_ref["hash"]))
+                    entries = dict(previous_map.get("entries") or {})
+                    changed_keys = {
+                        change.path[1]
+                        for change in changes
+                        if len(change.path) >= 2
+                    }
+                    if any(len(change.path) < 2 for change in changes):
+                        changed_keys = set(entries) | {
+                            str(key) for key in root_value
+                        }
+                    expected_membership_delta = set(entries) ^ {
+                        str(key) for key in root_value
+                    }
+                    if not expected_membership_delta.issubset(changed_keys):
+                        raise ValueError(
+                            "verified transition omitted a changed {} entry".format(
+                                root_name
+                            )
+                        )
+                    if root_name == "glyphs":
+                        reused_glyphs = max(0, glyph_count - len(changed_keys))
+                    for key in sorted(changed_keys):
+                        if key not in root_value:
+                            entries.pop(key, None)
+                            continue
+                        value_hash, inserted, byte_count = self._put_value(
+                            root_value[key]
+                        )
+                        entries[str(key)] = value_hash
+                        inserted_count += int(inserted)
+                        inserted_bytes += byte_count
+                        if root_name == "glyphs" and not inserted:
+                            reused_glyphs += 1
+                    map_descriptor = {
+                        "kind": "map",
+                        "schemaVersion": TREE_SCHEMA_VERSION,
+                        "entries": entries,
+                    }
+                    map_hash, inserted, byte_count = self._put_descriptor(
+                        map_descriptor
+                    )
+                    inserted_count += int(inserted)
+                    inserted_bytes += byte_count
+                    roots[root_name] = {"kind": "map", "hash": map_hash}
+                else:
+                    value_hash, inserted, byte_count = self._put_value(root_value)
+                    inserted_count += int(inserted)
+                    inserted_bytes += byte_count
+                    roots[root_name] = {"kind": "value", "hash": value_hash}
+
+            root_descriptor = {
+                "kind": "fontTree",
+                "schemaVersion": TREE_SCHEMA_VERSION,
+                "modelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
+                "reversibilityCoverage": REVERSIBILITY_COVERAGE,
+                "modelFingerprint": change_set.after_fingerprint,
+                "roots": roots,
+            }
+            tree_hash, inserted, byte_count = self._put_descriptor(root_descriptor)
+            inserted_count += int(inserted)
+            inserted_bytes += byte_count
+
+        return TreeSnapshot(
+            tree_hash=tree_hash,
+            model_fingerprint=change_set.after_fingerprint,
             inserted_object_count=inserted_count,
             inserted_byte_count=inserted_bytes,
             glyph_count=glyph_count,
