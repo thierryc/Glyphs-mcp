@@ -111,6 +111,31 @@ class V2ContractTests(unittest.TestCase):
         ):
             self.assertIn(field, success.to_dict())
 
+    def test_failure_factory_builds_the_common_error_contract_from_scalars(self) -> None:
+        failure = ToolResponse.failure(
+            tool="get_document_status",
+            effect="read",
+            summary="Document unavailable.",
+            code="document_unavailable",
+            message="The document is closed.",
+            recoverable=True,
+            details={"closed": True},
+        )
+
+        self.assertEqual(failure.error.code, "document_unavailable")
+        self.assertEqual(failure.error.message, "The document is closed.")
+        self.assertTrue(failure.error.recoverable)
+        self.assertEqual(failure.error.details, {"closed": True})
+        with self.assertRaises(ValueError):
+            ToolResponse.failure(
+                tool="get_document_status",
+                effect="read",
+                summary="Invalid mixed construction.",
+                error=ToolError("explicit", "Explicit error.", True),
+                code="duplicate",
+                message="Duplicate error.",
+            )
+
     def test_document_ids_are_stable_distinct_and_opaque(self) -> None:
         values = iter(("doc_first", "doc_second"))
         registry = DocumentIdRegistry(id_factory=lambda: next(values))
