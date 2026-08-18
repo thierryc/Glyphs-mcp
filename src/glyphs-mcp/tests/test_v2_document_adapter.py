@@ -219,6 +219,22 @@ class _OutlineNode:
         self._position = SimpleNamespace(x=float(value[0]), y=float(value[1]))
 
 
+class _GlyphsOptionalNameNode(_OutlineNode):
+    """Glyphs stringifies None when it is assigned to GSNode.name."""
+
+    def __init__(self, position=(0, 0), node_type="line"):
+        super().__init__(position[0], position[1], node_type=node_type)
+        self._native_name = None
+
+    @property
+    def name(self):
+        return self._native_name
+
+    @name.setter
+    def name(self, value):
+        self._native_name = "None" if value is None else str(value)
+
+
 class _OutlinePath:
     def __init__(self, nodes):
         self.nodes = nodes
@@ -632,6 +648,29 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(absent_model, empty_model)
         self.assertIsNone(absent_model["paths"][0]["nodes"][0]["name"])
+
+    def test_new_path_preserves_native_absence_instead_of_writing_none_sentinel(self) -> None:
+        glyphs_module = SimpleNamespace(
+            CURVE="curve",
+            LINE="line",
+            OFFCURVE="offcurve",
+            QCURVE="qcurve",
+            GSNode=_GlyphsOptionalNameNode,
+            GSPath=lambda: _OutlinePath([]),
+        )
+        spec = {
+            "closed": True,
+            "nodes": [
+                {"x": 0, "y": 0, "type": "line", "smooth": False, "name": None},
+                {"x": 100, "y": 0, "type": "line", "smooth": False, "name": "corner"},
+            ],
+        }
+
+        with mock.patch.dict(sys.modules, {"GlyphsApp": glyphs_module}):
+            path = document_adapter._new_path(spec)
+
+        self.assertIsNone(path.nodes[0].name)
+        self.assertEqual(path.nodes[1].name, "corner")
 
     def test_remaining_tree_diff_selects_only_the_collection_that_still_differs(self) -> None:
         before = {
