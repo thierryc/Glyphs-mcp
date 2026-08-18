@@ -479,6 +479,7 @@ class V2PythonExecutionTests(unittest.TestCase):
 
     def test_native_archive_refusal_returns_structured_bounded_mismatch_locations(self) -> None:
         service, host = self.service()
+        source_marker = "audit-secret-source-marker"
         host.native_archive_comparison = {
             "equivalent": False,
             "mismatchCount": 142,
@@ -494,7 +495,7 @@ class V2PythonExecutionTests(unittest.TestCase):
 
         result = service.execute(
             PythonExecutionRequest(
-                code="font.familyName = 'Beta'",
+                code="font.familyName = 'Beta'  # {}".format(source_marker),
                 reason="archive mismatch diagnostics",
                 intended_effect="document_edit",
                 document_id="doc_alpha",
@@ -508,6 +509,19 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertEqual(len(comparison["mismatchLocations"]), 100)
         self.assertTrue(comparison["truncated"])
         self.assertEqual(host.model["font"]["familyName"], "Alpha")
+
+        self.assertIsNotNone(result["auditReceipt"])
+        events = service._audit.list_events(document_id="doc_alpha")
+        self.assertEqual(len(events), 1)
+        event = events[0].to_dict()
+        self.assertEqual(event["status"], "error")
+        self.assertEqual(event["details"]["errorCode"], "unsupported_staged_change")
+        self.assertEqual(event["details"]["reason"], "archive mismatch diagnostics")
+        self.assertEqual(event["details"]["declaredEffect"], "document_edit")
+        self.assertEqual(event["details"]["executionMode"], "staged_document")
+        self.assertTrue(event["details"]["codeHash"].startswith("sha256:"))
+        self.assertNotIn(source_marker, repr(event))
+        self.assertNotIn(source_marker, repr(result["auditReceipt"]))
 
     def test_read_intent_mutation_scope_and_output_truncation_are_reported(self) -> None:
         service, host = self.service()
