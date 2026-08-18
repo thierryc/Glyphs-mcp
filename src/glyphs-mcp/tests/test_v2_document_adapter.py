@@ -385,6 +385,60 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_live_capture_reuses_only_unchanged_revision_bound_glyph_models(self) -> None:
+        font = _TransactionalFont()
+
+        def glyph(name, marker, *, export=True):
+            return SimpleNamespace(
+                name=name,
+                id="id-{}".format(name),
+                lastChange=marker,
+                changeCount=lambda: 0,
+                mastersCompatible=True,
+                layers=[],
+                category="Letter",
+                subCategory="Uppercase",
+                unicode=None,
+                export=export,
+                leftKerningGroup=None,
+                rightKerningGroup=None,
+            )
+
+        first_glyph = glyph("A", "revision-1")
+        second_glyph = glyph("B", "revision-1")
+        font.glyphs = [first_glyph, second_glyph]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+
+        with mock.patch.object(
+            document_adapter,
+            "_glyph_model",
+            wraps=document_adapter._glyph_model,
+        ) as capture_glyph:
+            first = host.capture_model(document_id)
+            first["glyphs"]["A"]["export"] = False
+            second = host.capture_model(document_id)
+
+            self.assertEqual(capture_glyph.call_count, 2)
+            self.assertTrue(second["glyphs"]["A"]["export"])
+
+            first_glyph.export = False
+            first_glyph.lastChange = "revision-2"
+            changed = host.capture_model(document_id)
+            self.assertEqual(capture_glyph.call_count, 3)
+            self.assertFalse(changed["glyphs"]["A"]["export"])
+
+            font.masters.append(
+                SimpleNamespace(
+                    id="master-new",
+                    name="New Master",
+                    italicAngle=0,
+                    axes=[],
+                )
+            )
+            host.capture_model(document_id)
+            self.assertEqual(capture_glyph.call_count, 5)
+
     def test_canonical_layer_records_native_width_ownership(self) -> None:
         path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
         component = _OutlineComponent("jdotless")
