@@ -269,6 +269,11 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
 
         self.assertFalse(reverted["ok"])
         self.assertEqual(reverted["error"]["code"], "revert_not_exact")
+        self.assertEqual(reverted["error"]["details"]["mismatchCount"], 1)
+        self.assertEqual(
+            reverted["error"]["details"]["mismatchPaths"],
+            [["glyphs", "A", "layers", "m0", "LSB"]],
+        )
         self.assertEqual(host.model, after_apply)
         self.assertEqual(host.apply_calls, 1)
 

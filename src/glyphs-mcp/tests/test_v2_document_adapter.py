@@ -289,8 +289,12 @@ class _LoggedMetricsLayer(_MetricsLayer):
     def __init__(self, log, path):
         self.log = log
         self._width = 529
+        self._lsb = 69
+        self._rsb = 60
         super().__init__()
         self._width = 529
+        self._lsb = 69
+        self._rsb = 60
         self.paths = (path,)
         self.shapes = [path]
 
@@ -303,6 +307,26 @@ class _LoggedMetricsLayer(_MetricsLayer):
         if hasattr(self, "log"):
             self.log.append("width")
         self._width = value
+
+    @property
+    def LSB(self):
+        return self._lsb
+
+    @LSB.setter
+    def LSB(self, value):
+        if hasattr(self, "log"):
+            self.log.append("LSB")
+        self._lsb = value
+
+    @property
+    def RSB(self):
+        return self._rsb
+
+    @RSB.setter
+    def RSB(self, value):
+        if hasattr(self, "log"):
+            self.log.append("RSB")
+        self._rsb = value
 
 
 class _RecoveryHost(GlyphsDocumentHost):
@@ -458,6 +482,8 @@ class V2DocumentAdapterTests(unittest.TestCase):
         )
 
         self.assertEqual(log[-1], "width")
+        self.assertNotIn("LSB", log)
+        self.assertNotIn("RSB", log)
         self.assertEqual(layer.width, 500)
         self.assertEqual(path.nodes[0].position.x, 0)
         self.assertEqual(path.nodes[1].position.x, 100)
