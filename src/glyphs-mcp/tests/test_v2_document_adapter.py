@@ -247,6 +247,33 @@ class _OutlineLayer:
         self.end_count += 1
 
 
+class _ReadOnlyShapeProxyLayer:
+    """Match Glyphs 4: paths/components iterate, shapes owns mutation."""
+
+    def __init__(self, shapes):
+        self.layerId = "master-regular"
+        self.associatedMasterId = "master-regular"
+        self.shapes = list(shapes)
+        self.begin_count = 0
+        self.end_count = 0
+
+    @property
+    def paths(self):
+        return tuple(shape for shape in self.shapes if hasattr(shape, "nodes"))
+
+    @property
+    def components(self):
+        return tuple(
+            shape for shape in self.shapes if hasattr(shape, "componentName")
+        )
+
+    def beginChanges(self):
+        self.begin_count += 1
+
+    def endChanges(self):
+        self.end_count += 1
+
+
 class _MetricsLayer:
     def __init__(self):
         self.layerId = "master-regular"
@@ -537,6 +564,61 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertIs(layer.paths[0], replacement)
         self.assertIsNot(layer.paths[0], path)
+
+    def test_canonical_collection_replay_uses_ordered_shapes_not_read_only_proxies(self) -> None:
+        original_component = _OutlineComponent("acute")
+        original_path = _OutlinePath([_OutlineNode(29, 0), _OutlineNode(129, 0)])
+        layer = _ReadOnlyShapeProxyLayer([original_component, original_path])
+        glyph = SimpleNamespace(name="L", layers={"master-regular": layer})
+        font = SimpleNamespace(glyphs={"L": glyph})
+        current_layer = {
+            "width": None,
+            "LSB": None,
+            "RSB": None,
+            "leftMetricsKey": None,
+            "rightMetricsKey": None,
+            "widthMetricsKey": None,
+            "anchors": {},
+            "paths": [
+                {
+                    "closed": True,
+                    "nodes": [
+                        {"x": 29, "y": 0, "type": "line", "smooth": False, "name": None},
+                        {"x": 129, "y": 0, "type": "line", "smooth": False, "name": None},
+                    ],
+                }
+            ],
+            "components": [
+                {"name": "acute", "transform": [1, 0, 0, 1, 0, 0]}
+            ],
+        }
+        target_layer = copy.deepcopy(current_layer)
+        target_layer["paths"][0]["nodes"][0]["x"] = 0
+        target_layer["paths"][0]["nodes"][1]["x"] = 100
+        target_layer["components"][0]["transform"][4] = 20
+        current = {"glyphs": {"L": {"layers": {"master-regular": current_layer}}}}
+        target = {"glyphs": {"L": {"layers": {"master-regular": target_layer}}}}
+        replacement_path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
+        replacement_component = _OutlineComponent("acute")
+        replacement_component.transform = (1, 0, 0, 1, 20, 0)
+
+        with mock.patch.object(document_adapter, "_new_path", return_value=replacement_path), mock.patch.object(
+            document_adapter, "_new_component", return_value=replacement_component
+        ):
+            document_adapter._apply_target_model(
+                font,
+                current,
+                target,
+                diff_models(current, target),
+                replay_replacements=(
+                    ("glyphs", "L", "layers", "master-regular", "paths"),
+                    ("glyphs", "L", "layers", "master-regular", "components"),
+                ),
+            )
+
+        self.assertEqual(layer.shapes, [replacement_component, replacement_path])
+        self.assertEqual(layer.components, (replacement_component,))
+        self.assertEqual(layer.paths, (replacement_path,))
 
     def test_remaining_tree_diff_selects_only_the_collection_that_still_differs(self) -> None:
         before = {
