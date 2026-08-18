@@ -704,6 +704,21 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertTrue(model["hasAlignedWidth"])
         self.assertTrue(model["components"][0]["automaticAlignment"])
 
+    def test_canonical_paths_preserve_glyphs_precise_node_coordinates(self) -> None:
+        node = _OutlineNode(383, 62)
+        node.positionPrecise = lambda: SimpleNamespace(
+            x=383.1785068235414,
+            y=62.0,
+        )
+        layer = _OutlineLayer(_OutlinePath([node]), _OutlineComponent("acute"))
+
+        model = native_layer_to_model(layer)
+
+        self.assertEqual(
+            model["paths"][0]["nodes"][0]["x"],
+            383.1785068235414,
+        )
+
     def test_topology_compatible_outline_delta_updates_native_nodes_in_place(self) -> None:
         first_node = _OutlineNode(0, 0)
         second_node = _OutlineNode(100, 0)
