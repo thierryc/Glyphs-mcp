@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import time
 import unittest
 from pathlib import Path
 
@@ -16,6 +17,7 @@ if str(V2_SOURCE) not in sys.path:
 
 from glyphs_mcp_v2.application import ReadOnlyApplication  # noqa: E402
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
+from glyphs_mcp_v2.contracts import ToolResponse  # noqa: E402
 from glyphs_mcp_v2.ports import (  # noqa: E402
     FontSnapshot,
     HostAccessError,
@@ -58,6 +60,24 @@ class _FakeHost:
 
 
 class V2ApplicationTests(unittest.TestCase):
+    def test_invoke_reports_the_complete_handler_wall_time(self) -> None:
+        app = ReadOnlyApplication(_FakeHost())
+
+        def slow_handler(_arguments):
+            time.sleep(0.02)
+            return ToolResponse.success(
+                tool="get_server_info",
+                effect="read",
+                summary="Measured.",
+                data={},
+            )
+
+        app._handlers["get_server_info"] = slow_handler
+        payload = app.invoke("get_server_info").to_dict()
+
+        self.assertGreaterEqual(payload["durationMs"], 15)
+        self.assertNotEqual(payload["startedAt"], payload["completedAt"])
+
     def test_server_info_is_typed_and_declares_v2(self) -> None:
         response = ReadOnlyApplication(_FakeHost()).invoke("get_server_info")
         payload = response.to_dict()

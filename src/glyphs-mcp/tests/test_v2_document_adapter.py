@@ -23,6 +23,7 @@ from glyphs_mcp_v2.adapters.document import (  # noqa: E402
     native_layer_to_model,
 )
 from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
+from glyphs_mcp_v2.python_execution import PythonExecutionRequest  # noqa: E402
 from glyphs_mcp_v2.semantic import diff_models  # noqa: E402
 
 
@@ -515,36 +516,107 @@ class V2DocumentAdapterTests(unittest.TestCase):
             host.capture_model(document_id)
             self.assertEqual(capture_glyph.call_count, 5)
 
-    def test_verified_write_invalidates_revision_cache_before_readback(self) -> None:
+    def test_verified_write_refreshes_only_the_affected_cached_glyph(self) -> None:
         font = _TransactionalFont()
-        glyph = SimpleNamespace(
-            name="A",
-            id="id-A",
-            lastChange="unchanged-test-marker",
-            changeCount=lambda: 0,
-            mastersCompatible=True,
-            layers=[],
-            category="Letter",
-            subCategory="Uppercase",
-            unicode=None,
-            export=True,
-            leftKerningGroup=None,
-            rightKerningGroup=None,
-        )
-        font.glyphs = [glyph]
+
+        def glyph(name):
+            return SimpleNamespace(
+                name=name,
+                id="id-{}".format(name),
+                lastChange="unchanged-test-marker",
+                changeCount=lambda: 0,
+                mastersCompatible=True,
+                layers=[],
+                category="Letter",
+                subCategory="Uppercase",
+                unicode=None,
+                export=True,
+                leftKerningGroup=None,
+                rightKerningGroup=None,
+            )
+
+        font.glyphs = [glyph("A"), glyph("B")]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+
+        with mock.patch.object(
+            document_adapter,
+            "_glyph_model",
+            wraps=document_adapter._glyph_model,
+        ) as capture_glyph:
+            before = host.capture_model(document_id)
+            after = copy.deepcopy(before)
+            after["glyphs"]["A"]["export"] = False
+
+            host.apply_verified_change_set(
+                document_id,
+                diff_models(before, after),
+                operation_id="op_cached_write",
+            )
+            captured = host.capture_model(document_id)
+
+        self.assertFalse(captured["glyphs"]["A"]["export"])
+        self.assertEqual(capture_glyph.call_count, 3)
+
+    def test_detached_simulation_recaptures_only_the_change_scope(self) -> None:
+        font = _TransactionalFont()
+
+        def glyph(name):
+            return SimpleNamespace(
+                name=name,
+                id="id-{}".format(name),
+                lastChange="revision-1",
+                changeCount=lambda: 0,
+                mastersCompatible=True,
+                layers=[],
+                category="Letter",
+                subCategory="Uppercase",
+                unicode=None,
+                export=True,
+                leftKerningGroup=None,
+                rightKerningGroup=None,
+            )
+
+        font.glyphs = [glyph("A"), glyph("B")]
+        font.copy = lambda: copy.deepcopy(font)
         host = GlyphsDocumentHost(_App(font), executor=_Immediate())
         document_id = host.list_documents()[0].document_id
         before = host.capture_model(document_id)
-        after = copy.deepcopy(before)
-        after["glyphs"]["A"]["export"] = False
+        target = copy.deepcopy(before)
+        target["glyphs"]["A"]["export"] = False
+        changes = diff_models(before, target)
 
-        host.apply_verified_change_set(
-            document_id,
-            diff_models(before, after),
-            operation_id="op_cached_write",
+        with mock.patch.object(
+            document_adapter,
+            "_glyph_model",
+            wraps=document_adapter._glyph_model,
+        ) as capture_glyph:
+            simulated = host.simulate_change_set(document_id, changes)
+
+        self.assertEqual(simulated, target)
+        self.assertLessEqual(capture_glyph.call_count, 2)
+
+    def test_read_python_reuses_canonical_capture_instead_of_full_native_models(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        host.capture_model(document_id)
+        request = PythonExecutionRequest(
+            code="print(font.familyName)",
+            reason="bounded read",
+            intended_effect="read",
+            document_id=document_id,
         )
 
-        self.assertFalse(host.capture_model(document_id)["glyphs"]["A"]["export"])
+        with mock.patch.object(
+            document_adapter,
+            "native_font_to_model",
+            wraps=document_adapter.native_font_to_model,
+        ) as full_capture:
+            result = host.run_live_python(request)
+
+        self.assertIn("Transaction Test", result["stdout"])
+        self.assertEqual(full_capture.call_count, 0)
 
     def test_canonical_layer_records_native_width_ownership(self) -> None:
         path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
