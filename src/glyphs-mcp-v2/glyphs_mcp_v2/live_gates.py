@@ -1,4 +1,4 @@
-"""Explicit disposable-font gates to run inside Glyphs 3.5 and Glyphs 4."""
+"""Explicit disposable-font gates for this milestone's Glyphs 4 live run."""
 
 from __future__ import annotations
 

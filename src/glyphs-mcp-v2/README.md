@@ -3,11 +3,12 @@
 This is the isolated, unreleased Glyphs MCP 2.0 package. It is based on signed
 release `v1.11.0` but does not change the shipped 1.x wire contracts.
 
-The catalog contains 30 operations across:
+The catalog contains 25 operations across:
 
 - stable document status and bounded glyph, instance, kerning, audit, and operation pages;
 - compatibility, metrics, anchors, spacing, kerning, and export reviews;
-- one-time reviewed batch applies through a shared verified transaction kernel;
+- direct apply-first typed mutations through detached simulation and one shared
+  verified transaction kernel;
 - staged, destination-fingerprint-bound source-bundle publication;
 - `execute_python` staged-document and live-open-world modes;
 - fingerprint-bound `rollback_python_execution` and separate recovery copies.
@@ -25,6 +26,13 @@ adapters, and catalog-driven transport. Core and application modules do not
 import GlyphsApp, AppKit, Foundation, FastMCP, or Uvicorn. Native Glyphs objects
 remain inside the main-thread adapter.
 
+Typed mutation tools take `documentId`, `expectedDocumentFingerprint`, explicit
+items, and an optional reason. They allocate one operation ID, simulate the
+writable patch on `GSFont.copy()`, capture every derived effect, apply once to
+the live font, and verify the complete observed result. Preparation tools and
+typed apply tokens are intentionally absent. Confirmation remains only for
+Python and export/open-world effects.
+
 ## Worktree-contained development
 
 From the repository root:
@@ -36,8 +44,9 @@ git diff --check
 ```
 
 The builder writes only to `build/v2-runtime/`. It does not install, link,
-reload, or execute the plug-in in Glyphs. Live gates require disposable copies
-on Glyphs 3.5 and 4 and must not use the production source.
+reload, or execute the plug-in in Glyphs. This correctness milestone runs live
+gates only in Glyphs 4 with disposable copies and never the production source;
+Glyphs 3.5 remains on signed v1.11 and is covered by source-level adapter tests.
 
 Inside each supported host, `glyphs_mcp_v2.live_gates.verify_copy_and_make_copy`
 accepts only a font whose family name starts with `Glyphs MCP V2 Disposable`.

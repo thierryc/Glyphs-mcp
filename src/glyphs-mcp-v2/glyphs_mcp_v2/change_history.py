@@ -29,6 +29,7 @@ class ActionCommit:
     reason: Optional[str]
     operation_id: Optional[str]
     change_set: ChangeSet
+    writable_change_set: Optional[ChangeSet] = None
 
     @property
     def changed(self) -> bool:
@@ -118,6 +119,8 @@ class ChangeHistory:
         reason: Optional[str],
         operation_id: Optional[str],
         change_set: Optional[ChangeSet] = None,
+        writable_change_set: Optional[ChangeSet] = None,
+        commit_id: Optional[str] = None,
     ) -> ActionCommit:
         before_fingerprint = str(self.trees.descriptor(before_tree_hash)["modelFingerprint"])
         after_fingerprint = str(self.trees.descriptor(after_tree_hash)["modelFingerprint"])
@@ -136,7 +139,7 @@ class ChangeHistory:
         else:
             change_set = self.trees.diff(before_tree_hash, after_tree_hash)
         commit = ActionCommit(
-            commit_id=str(self._id_factory()),
+            commit_id=str(commit_id or operation_id or self._id_factory()),
             parent_id=state.commits[-1].commit_id if state.commits else None,
             document_id=document_id,
             tool=tool,
@@ -150,6 +153,7 @@ class ChangeHistory:
             reason=reason,
             operation_id=operation_id,
             change_set=change_set,
+            writable_change_set=writable_change_set or change_set,
         )
         state.commits.append(commit)
         state.head_tree_hash = after_tree_hash
@@ -195,6 +199,8 @@ class ChangeHistory:
         operation_id: Optional[str] = None,
         source: str = "agent",
         change_set: Optional[ChangeSet] = None,
+        writable_change_set: Optional[ChangeSet] = None,
+        commit_id: Optional[str] = None,
     ) -> ActionCommit:
         if not document_id:
             raise ValueError("document_id is required")
@@ -240,6 +246,8 @@ class ChangeHistory:
                 reason=reason,
                 operation_id=operation_id,
                 change_set=change_set,
+                writable_change_set=writable_change_set,
+                commit_id=commit_id,
             )
         self._notify(document_id)
         return commit

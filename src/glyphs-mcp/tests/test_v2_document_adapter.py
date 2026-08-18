@@ -313,12 +313,19 @@ class V2DocumentAdapterTests(unittest.TestCase):
         after["font"]["note"] = "reviewed edit"
         change_set = diff_models(before, after)
 
-        host.apply_change_set(document_id, change_set)
+        host.apply_verified_change_set(
+            document_id, change_set, operation_id="op_forward"
+        )
 
         self.assertTrue(font.parent.isDocumentEdited)
         self.assertTrue(host.list_documents()[0].has_unsaved_changes)
 
-        host.apply_change_set(document_id, change_set.inverse())
+        host.apply_verified_change_set(
+            document_id,
+            change_set.inverse(),
+            operation_id="op_revert",
+            removes_contribution_id="op_forward",
+        )
 
         self.assertFalse(font.parent.isDocumentEdited)
         self.assertFalse(host.list_documents()[0].has_unsaved_changes)
@@ -334,12 +341,19 @@ class V2DocumentAdapterTests(unittest.TestCase):
         after["font"]["note"] = "reviewed edit"
         change_set = diff_models(before, after)
 
-        host.apply_change_set(document_id, change_set)
+        host.apply_verified_change_set(
+            document_id, change_set, operation_id="op_forward"
+        )
 
         self.assertFalse(font.parent.hasUnautosavedChanges)
         self.assertTrue(host.list_documents()[0].has_unsaved_changes)
 
-        host.apply_change_set(document_id, change_set.inverse())
+        host.apply_verified_change_set(
+            document_id,
+            change_set.inverse(),
+            operation_id="op_revert",
+            removes_contribution_id="op_forward",
+        )
 
         self.assertFalse(host.list_documents()[0].has_unsaved_changes)
 
@@ -352,8 +366,15 @@ class V2DocumentAdapterTests(unittest.TestCase):
         after["font"]["note"] = "reviewed edit"
         change_set = diff_models(before, after)
 
-        host.apply_change_set(document_id, change_set)
-        host.apply_change_set(document_id, change_set.inverse())
+        host.apply_verified_change_set(
+            document_id, change_set, operation_id="op_forward"
+        )
+        host.apply_verified_change_set(
+            document_id,
+            change_set.inverse(),
+            operation_id="op_revert",
+            removes_contribution_id="op_forward",
+        )
 
         self.assertTrue(font.parent.isDocumentEdited)
         self.assertNotIn(2, font.parent.change_counts)
@@ -367,9 +388,13 @@ class V2DocumentAdapterTests(unittest.TestCase):
         after["font"]["note"] = "reviewed edit"
         change_set = diff_models(before, after)
 
-        host.apply_change_set(document_id, change_set)
+        host.apply_verified_change_set(
+            document_id, change_set, operation_id="op_forward"
+        )
         font.note = "divergent readback"
-        host.restore_model(document_id, before)
+        host.restore_verified_attempt(
+            document_id, before, operation_id="op_forward"
+        )
 
         self.assertIsNone(font.note)
         self.assertFalse(font.parent.isDocumentEdited)
@@ -384,15 +409,32 @@ class V2DocumentAdapterTests(unittest.TestCase):
         after["font"]["note"] = "reviewed edit"
         change_set = diff_models(before, after)
 
-        host.apply_change_set(document_id, change_set)
-        host.apply_change_set(document_id, change_set.inverse())
-        host.restore_model(document_id, after)
+        host.apply_verified_change_set(
+            document_id, change_set, operation_id="op_forward"
+        )
+        host.apply_verified_change_set(
+            document_id,
+            change_set.inverse(),
+            operation_id="op_revert_1",
+            removes_contribution_id="op_forward",
+        )
+        host.restore_verified_attempt(
+            document_id,
+            after,
+            operation_id="op_revert_1",
+            removes_contribution_id="op_forward",
+        )
 
         self.assertEqual(font.note, "reviewed edit")
         self.assertTrue(font.parent.isDocumentEdited)
         self.assertEqual(font.parent.change_counts, [0, 1, 0])
 
-        host.apply_change_set(document_id, change_set.inverse())
+        host.apply_verified_change_set(
+            document_id,
+            change_set.inverse(),
+            operation_id="op_revert_2",
+            removes_contribution_id="op_forward",
+        )
         self.assertFalse(font.parent.isDocumentEdited)
         self.assertEqual(font.parent.change_counts, [0, 1, 0, 1])
 

@@ -21,6 +21,7 @@ class _ActionScope:
     before_tree_hash: Optional[str] = None
     after_tree_hash: Optional[str] = None
     change_set: Optional[ChangeSet] = None
+    writable_change_set: Optional[ChangeSet] = None
     transaction_completed: bool = False
     commit: Optional[ActionCommit] = None
     context_token: Optional[Token] = None
@@ -103,6 +104,7 @@ class ActionTraceCoordinator:
         before: Mapping[str, Any],
         after: Mapping[str, Any],
         change_set: ChangeSet,
+        writable_change_set: Optional[ChangeSet] = None,
     ) -> None:
         del before
         after_snapshot = self.history.trees.store_model(after)
@@ -111,6 +113,7 @@ class ActionTraceCoordinator:
             token.scope.before_tree_hash = token.before_tree_hash
             token.scope.after_tree_hash = after_snapshot.tree_hash
             token.scope.change_set = change_set
+            token.scope.writable_change_set = writable_change_set or change_set
             token.scope.transaction_completed = True
 
     def abort_transaction(self, token: _TransactionTrace) -> None:
@@ -118,6 +121,7 @@ class ActionTraceCoordinator:
             token.scope.before_tree_hash = None
             token.scope.after_tree_hash = None
             token.scope.change_set = None
+            token.scope.writable_change_set = None
             token.scope.transaction_completed = False
 
     def finish_action(self, scope: _ActionScope, response: ToolResponse) -> Optional[ActionCommit]:
@@ -147,6 +151,8 @@ class ActionTraceCoordinator:
                 reason=scope.reason,
                 operation_id=response.metadata.operation_id,
                 change_set=scope.change_set,
+                writable_change_set=scope.writable_change_set,
+                commit_id=response.metadata.operation_id,
             )
             return scope.commit
         finally:

@@ -24,7 +24,8 @@ class SpacingSkillTests(unittest.TestCase):
             "review_spacing",
             "resolvedReferenceGlyph",
             "apply_spacing",
-            "dry_run=true",
+            "current expected fingerprint",
+            "no review token or confirmation flag",
             "current metrics are trusted or placeholders",
             "Current LSB/RSB",
             "calculated-minus-reference",
@@ -34,6 +35,8 @@ class SpacingSkillTests(unittest.TestCase):
             "nonono",
         ):
             self.assertIn(required, text)
+        self.assertNotIn("dry_run=true", text)
+        self.assertNotIn("reviewId", text)
         self.assertLessEqual(len(text.splitlines()), 90)
 
     def test_direct_reference_link_resolves_inside_skill_package(self) -> None:

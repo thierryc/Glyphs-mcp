@@ -12,6 +12,12 @@ from .audit import AuditLog
 from .contracts import ToolError, ToolResponse, ToolWarning
 from .operations import OperationRecord, OperationStore
 from .pagination import paginate
+from .mutation import (
+    MutationPlanner,
+    VerifiedMutationPlan,
+    unsupported_change_diagnostics,
+    writable_subset,
+)
 from .semantic import ChangeSet, diff_models, fingerprint_model
 from .transactions import StaleDocumentError, TransactionKernel, TransactionVerificationError
 
@@ -274,7 +280,9 @@ class PythonExecutionService:
             if self._trace is not None and stored.document_id:
                 self._trace.bind_document(stored.document_id)
             if stored.execution_mode == "staged_document":
-                return self._confirm_staged(stored, record.payload)
+                return self._confirm_staged(
+                    stored, record.payload, review_id=record.operation_id
+                )
             return self._confirm_live(stored, record.payload, review_id=record.operation_id)
 
         if not request.code or not request.reason:
@@ -412,22 +420,55 @@ class PythonExecutionService:
                 "Staged Python changed one or more live documents; confirmation is refused.",
                 data={"documentIds": scope_violations},
             )
-        if bool(preview.get("unsupportedNativeChange")):
+        archive_comparison = preview.get("nativeArchiveComparison")
+        archive_mismatch = (
+            isinstance(archive_comparison, Mapping)
+            and not bool(archive_comparison.get("equivalent"))
+        )
+        if archive_mismatch or bool(preview.get("unsupportedNativeChange")):
+            bounded_comparison = (
+                {
+                    "equivalent": False,
+                    "mismatchCount": int(archive_comparison.get("mismatchCount") or 0),
+                    "mismatchLocations": list(archive_comparison.get("mismatchLocations") or [])[:100],
+                    "truncated": bool(archive_comparison.get("truncated"))
+                    or len(list(archive_comparison.get("mismatchLocations") or [])) > 100,
+                    "directDeltaCount": int(archive_comparison.get("directDeltaCount") or 0),
+                    "replayDeltaCount": int(archive_comparison.get("replayDeltaCount") or 0),
+                }
+                if isinstance(archive_comparison, Mapping)
+                else {
+                    "equivalent": False,
+                    "mismatchCount": 1,
+                    "mismatchLocations": [],
+                    "truncated": False,
+                }
+            )
             return self._failure(
                 "unsupported_staged_change",
                 "The detached script changed native fields outside the canonical semantic model.",
-                data={"unsupportedPaths": [], "nativeArchiveMismatch": True},
+                data={"unsupportedPaths": [], "nativeArchiveMismatch": bounded_comparison},
             )
+        diagnostics = unsupported_change_diagnostics(changes, limit=100)
+        writable_changes = writable_subset(before, changes)
         supports = getattr(self._host, "supports_change_set", None)
-        host_supported = bool(supports(changes)) if callable(supports) else True
-        if not changes.supported or not host_supported:
-            unsupported_paths = [list(path) for path in changes.unsupported_paths]
-            if not unsupported_paths and not host_supported:
-                unsupported_paths = [list(change.path) for change in changes.changes]
+        host_supported = bool(supports(writable_changes)) if callable(supports) else True
+        if diagnostics["unsupportedCount"] or not host_supported:
+            if not diagnostics["unsupportedCount"] and not host_supported:
+                diagnostics = {
+                    "unsupportedCount": len(writable_changes.changes),
+                    "changedRoots": list(
+                        dict.fromkeys(change.path[0] for change in writable_changes.changes)
+                    ),
+                    "unsupportedPaths": [
+                        list(change.path) for change in writable_changes.changes[:100]
+                    ],
+                    "truncated": len(writable_changes.changes) > 100,
+                }
             return self._failure(
                 "unsupported_staged_change",
                 "The staged script changed document fields outside the supported semantic model.",
-                data={"unsupportedPaths": unsupported_paths},
+                data=diagnostics,
             )
         diff_operation, public_change_set = self._store_diff(changes)
         review = self._reviews.create(
@@ -437,6 +478,8 @@ class PythonExecutionService:
                 "request": request.to_stored_dict(),
                 "codeHash": _code_hash(request.code or ""),
                 "changeSet": changes,
+                "writableChangeSet": writable_changes,
+                "expectedAfterModel": after,
                 "stdout": _bounded(preview.get("stdout"), min(request.max_output_chars, MAX_OUTPUT_CHARS)),
                 "stderr": _bounded(preview.get("stderr"), min(request.max_error_chars, MAX_OUTPUT_CHARS)),
                 "scopeViolations": list(preview.get("scopeViolations") or []),
@@ -523,16 +566,33 @@ class PythonExecutionService:
             },
         )
 
-    def _confirm_staged(self, request: PythonExecutionRequest, payload: Mapping[str, Any]) -> ToolResponse:
+    def _confirm_staged(
+        self,
+        request: PythonExecutionRequest,
+        payload: Mapping[str, Any],
+        *,
+        review_id: str,
+    ) -> ToolResponse:
         changes = payload.get("changeSet")
-        if not isinstance(changes, ChangeSet):
+        writable = payload.get("writableChangeSet") or changes
+        expected_after = payload.get("expectedAfterModel")
+        if (
+            not isinstance(changes, ChangeSet)
+            or not isinstance(writable, ChangeSet)
+            or not isinstance(expected_after, Mapping)
+        ):
             return self._failure("review_corrupt", "The stored staged review is incomplete.", recoverable=False)
+        before = dict(self._host.capture_model(request.document_id or ""))
+        plan = VerifiedMutationPlan(
+            document_id=request.document_id or "",
+            operation_id=review_id,
+            before_model=before,
+            expected_after_model=dict(expected_after),
+            writable_change_set=writable,
+            observed_change_set=changes,
+        )
         try:
-            transaction = self._transactions.apply(
-                document_id=request.document_id or "",
-                expected_fingerprint=request.expected_document_fingerprint or "",
-                change_set=changes,
-            )
+            transaction = self._transactions.apply_plan(plan)
         except StaleDocumentError:
             return self._failure("stale_document", "The document changed after Python review.")
         except TransactionVerificationError as exc:
@@ -566,6 +626,7 @@ class PythonExecutionService:
                 "beforeFingerprint": transaction.before_fingerprint,
                 "afterFingerprint": transaction.after_fingerprint,
                 "inverse": transaction.inverse,
+                "contributionId": review_id,
                 "coverage": "document_inverse",
                 "recoveryPath": None,
             },
@@ -934,11 +995,16 @@ class PythonExecutionService:
                 document_id=document_id,
             )
         try:
-            result = self._transactions.apply(
+            plan = MutationPlanner(self._host).plan(
                 document_id=document_id,
-                expected_fingerprint=expected_after_fingerprint,
-                change_set=inverse,
+                expected_document_fingerprint=expected_after_fingerprint,
+                requested_change_set=inverse,
+                operation_id="rollback_{}".format(execution_id),
+                before_model=current,
+                dirty_state_intent="rollback",
+                removes_contribution_id=str(payload.get("contributionId") or "") or None,
             )
+            result = self._transactions.apply_plan(plan)
         except (StaleDocumentError, TransactionVerificationError) as exc:
             return self._rollback_failure(
                 code="rollback_failed",

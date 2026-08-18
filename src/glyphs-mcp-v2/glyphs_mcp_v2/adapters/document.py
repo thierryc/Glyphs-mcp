@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import builtins
 import contextlib
+import difflib
 import hashlib
 import io
 import json
@@ -17,6 +18,7 @@ from typing import Any, Mapping, Optional, Sequence
 from ..exporting import inspect_destination, publish_staged_directory
 from ..ports import HostAccessError
 from ..python_execution import PythonExecutionRequest
+from ..mutation import writable_subset
 from ..semantic import ChangeSet, diff_models, fingerprint_model
 from .glyphs import (
     GlyphsHostAdapter,
@@ -689,7 +691,7 @@ def _save_font_copy(font: Any, destination: Path) -> None:
         raise HostAccessError("Glyphs did not create the requested copy")
 
 
-def _serialized_font_fingerprint(font: Any) -> str:
+def _serialized_font_archive(font: Any) -> bytes:
     with tempfile.TemporaryDirectory(prefix="glyphs-mcp-v2-archive-") as root:
         path = Path(root) / "checkpoint.glyphs"
         _save_font_copy(font, path)
@@ -704,8 +706,66 @@ def _serialized_font_fingerprint(font: Any) -> str:
             replacement = "__GLYPHS_MCP_INSTANCE_{:04d}__".format(index).encode("ascii")
             for spelling in (identifier, identifier.upper(), identifier.lower()):
                 archive = archive.replace(spelling.encode("ascii"), replacement)
-        digest = hashlib.sha256(archive).hexdigest()
+    return archive
+
+
+def _serialized_font_fingerprint(font: Any) -> str:
+    digest = hashlib.sha256(_serialized_font_archive(font)).hexdigest()
     return "sha256:{}".format(digest)
+
+
+def _archive_delta(before: bytes, after: bytes) -> list[dict[str, Any]]:
+    before_lines = before.splitlines()
+    after_lines = after.splitlines()
+    result: list[dict[str, Any]] = []
+    matcher = difflib.SequenceMatcher(a=before_lines, b=after_lines, autojunk=False)
+    for tag, before_start, before_end, after_start, after_end in matcher.get_opcodes():
+        if tag == "equal":
+            continue
+        before_block = b"\n".join(before_lines[before_start:before_end])
+        after_block = b"\n".join(after_lines[after_start:after_end])
+        result.append(
+            {
+                "tag": tag,
+                "beforeStart": before_start,
+                "beforeEnd": before_end,
+                "afterStart": after_start,
+                "afterEnd": after_end,
+                "beforeHash": hashlib.sha256(before_block).hexdigest(),
+                "afterHash": hashlib.sha256(after_block).hexdigest(),
+            }
+        )
+    return result
+
+
+def _compare_native_archive_deltas(
+    direct_before: bytes,
+    direct_after: bytes,
+    replay_before: bytes,
+    replay_after: bytes,
+    *,
+    limit: int = 100,
+) -> dict[str, Any]:
+    """Compare native archive effects, not unrelated identities of two clones."""
+
+    direct = _archive_delta(direct_before, direct_after)
+    replay = _archive_delta(replay_before, replay_after)
+    count = max(len(direct), len(replay))
+    mismatches: list[dict[str, Any]] = []
+    for index in range(count):
+        direct_item = direct[index] if index < len(direct) else None
+        replay_item = replay[index] if index < len(replay) else None
+        if direct_item != replay_item:
+            mismatches.append({"direct": direct_item, "replay": replay_item})
+    bounded = mismatches[: max(0, min(100, int(limit)))]
+    return {
+        "equivalent": not mismatches,
+        "mismatchCount": len(mismatches),
+        "mismatchLocations": bounded,
+        "truncated": len(mismatches) > len(bounded),
+        "directDeltaCount": len(direct),
+        "replayDeltaCount": len(replay),
+    }
 
 
 def _document_edited_state(font: Any) -> Optional[bool]:
@@ -734,6 +794,28 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
     def capture_model(self, document_id: str) -> Mapping[str, Any]:
         return self._executor.run(lambda: native_font_to_model(self._font_for_document(document_id)))
+
+    def simulate_change_set(
+        self, document_id: str, change_set: ChangeSet
+    ) -> Mapping[str, Any]:
+        """Apply writable intent to one detached font and recapture host effects."""
+
+        def simulate() -> Mapping[str, Any]:
+            if not self.supports_change_set(change_set):
+                raise HostAccessError("The change set contains unsupported native write paths")
+            font = self._font_for_document(document_id)
+            copier = _safe_getattr(font, "copy")
+            if not callable(copier):
+                raise HostAccessError("Glyphs did not provide GSFont.copy()")
+            clone = copier()
+            clone_before = native_font_to_model(clone)
+            if fingerprint_model(clone_before) != change_set.before_fingerprint:
+                raise HostAccessError("Detached GSFont.copy() did not reproduce the canonical source")
+            requested_target = change_set.apply(clone_before)
+            _apply_target_model(clone, clone_before, requested_target, change_set)
+            return native_font_to_model(clone)
+
+        return self._executor.run(simulate)
 
     def supports_change_set(self, change_set: ChangeSet) -> bool:
         for change in change_set.changes:
@@ -778,6 +860,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             if not callable(copier):
                 raise HostAccessError("Glyphs did not provide GSFont.copy()")
             clone = copier()
+            verifier = copier()
+            direct_before_archive = _serialized_font_archive(clone)
+            replay_before_archive = _serialized_font_archive(verifier)
             namespace = self._context(clone, request)
             namespace["__builtins__"] = _STAGED_BUILTINS
             stdout, stderr = io.StringIO(), io.StringIO()
@@ -785,13 +870,29 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 exec(compile(request.code or "", "<glyphs-mcp-staged>", "exec"), namespace, namespace)
             after_model = native_font_to_model(clone)
             changes = diff_models(before_model, after_model)
-            unsupported_native_change = False
-            if self.supports_change_set(changes):
-                verifier = copier()
-                _apply_target_model(verifier, before_model, after_model, changes)
-                unsupported_native_change = (
-                    _serialized_font_fingerprint(verifier)
-                    != _serialized_font_fingerprint(clone)
+            writable_changes = writable_subset(before_model, changes)
+            archive_comparison = {
+                "equivalent": True,
+                "mismatchCount": 0,
+                "mismatchLocations": [],
+                "truncated": False,
+                "directDeltaCount": 0,
+                "replayDeltaCount": 0,
+            }
+            if self.supports_change_set(writable_changes):
+                writable_target = writable_changes.apply(before_model)
+                _apply_target_model(
+                    verifier,
+                    before_model,
+                    writable_target,
+                    writable_changes,
+                )
+                archive_comparison = _compare_native_archive_deltas(
+                    direct_before_archive,
+                    _serialized_font_archive(clone),
+                    replay_before_archive,
+                    _serialized_font_archive(verifier),
+                    limit=100,
                 )
             live_after = {self._identities.resolve(self._native_identity(font)): fingerprint_model(native_font_to_model(font)) for font in self._collect_fonts()}
             violations = [document_id for document_id in sorted(set(live_before) | set(live_after)) if live_before.get(document_id) != live_after.get(document_id)]
@@ -800,7 +901,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 "stdout": stdout.getvalue(),
                 "stderr": stderr.getvalue(),
                 "scopeViolations": violations,
-                "unsupportedNativeChange": unsupported_native_change,
+                "nativeArchiveComparison": archive_comparison,
             }
         return self._executor.run(run)
 
@@ -839,102 +940,131 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             }
         return self._executor.run(run)
 
-    def _apply_and_track_dirty_state(
-        self,
-        document_id: str,
-        font: Any,
-        current: Mapping[str, Any],
-        target: Mapping[str, Any],
-        change_set: ChangeSet,
-        *,
-        restoring: bool = False,
-    ) -> None:
-        current_fingerprint = fingerprint_model(current)
-        target_fingerprint = fingerprint_model(target)
-        transitions = getattr(self, "_document_dirty_transitions", {})
-        stack = transitions.setdefault(document_id, [])
-        pending_reversals = getattr(self, "_document_dirty_pending_reversals", {})
-        pending = pending_reversals.get(document_id) if restoring else None
-        if not restoring:
-            # A successful reversal remains pending only long enough for the
-            # transaction kernel to restore its pre-attempt state on failure.
-            pending_reversals.pop(document_id, None)
-        restoring_reversal = bool(
-            pending and pending["afterFingerprint"] == target_fingerprint
-        )
-        reversal = bool(
-            stack
-            and stack[-1]["beforeFingerprint"] == target_fingerprint
-            and (
-                stack[-1]["afterFingerprint"] == current_fingerprint
-                or restoring
-            )
-        )
-        native_dirty_before = _document_edited_state(font)
-        _apply_target_model(font, current, target, change_set)
-        if not change_set.changes:
-            return
-
+    @staticmethod
+    def _native_change_count(font: Any, action: int) -> None:
         document = _maybe_call(_safe_getattr(font, "parent"))
         updater = _safe_getattr(document, "updateChangeCount_") if document is not None else None
-        change_count_action = None
-        if restoring_reversal:
-            change_count_action = _NS_CHANGE_DONE
-        elif reversal:
-            change_count_action = _NS_CHANGE_UNDONE
-        elif not restoring:
-            change_count_action = _NS_CHANGE_DONE
-        if callable(updater) and change_count_action is not None:
+        if callable(updater):
             try:
-                # Balance only the MCP transaction's change-count contribution;
-                # never clear the document's complete native dirty history.
-                updater(change_count_action)
+                updater(action)
             except Exception:
                 pass
 
+    def _refresh_verified_dirty_override(self, document_id: str, font: Any) -> None:
+        contributions = getattr(self, "_document_mcp_contributions", {})
+        active = contributions.get(document_id, {})
         overrides = getattr(self, "_document_dirty_overrides", {})
-        if restoring_reversal:
-            stack.append(pending)
-            pending_reversals.pop(document_id, None)
+        if active:
             overrides[document_id] = True
-        elif reversal:
-            transition = stack.pop()
-            if not restoring:
-                pending_reversals[document_id] = transition
-            if stack:
-                overrides[document_id] = True
-            else:
-                overrides[document_id] = transition["nativeDirtyBefore"]
-        elif restoring:
-            # No MCP change-count contribution was recorded for a partial
-            # application failure, so restoration must not invent one.
-            pass
         else:
-            stack.append(
-                {
-                    "beforeFingerprint": current_fingerprint,
-                    "afterFingerprint": target_fingerprint,
-                    "nativeDirtyBefore": native_dirty_before,
-                }
-            )
-            # The transaction kernel knows it changed the document without
-            # saving, even when Glyphs' native dirty APIs lag or disagree.
-            overrides[document_id] = True
-        self._document_dirty_transitions = transitions
-        self._document_dirty_pending_reversals = pending_reversals
+            native = _document_edited_state(font)
+            baseline = getattr(self, "_document_mcp_baseline_dirty", {}).get(document_id)
+            overrides[document_id] = native if native is not None else baseline
         self._document_dirty_overrides = overrides
 
-    def apply_change_set(self, document_id: str, change_set: ChangeSet) -> None:
+    def apply_verified_change_set(
+        self,
+        document_id: str,
+        change_set: ChangeSet,
+        *,
+        operation_id: str,
+        removes_contribution_id: Optional[str] = None,
+    ) -> None:
+        """Apply content and one operation-owned native dirty contribution."""
+
+        if not operation_id:
+            raise ValueError("operation_id is required")
         if not self.supports_change_set(change_set):
             raise HostAccessError("The change set contains unsupported native write paths")
+
         def apply() -> None:
             font = self._font_for_document(document_id)
             current = native_font_to_model(font)
             target = change_set.apply(current)
-            self._apply_and_track_dirty_state(
-                document_id, font, current, target, change_set
-            )
+            contributions = getattr(self, "_document_mcp_contributions", {})
+            active = contributions.setdefault(document_id, {})
+            baselines = getattr(self, "_document_mcp_baseline_dirty", {})
+            pending = getattr(self, "_document_mcp_pending_reverts", {})
+            if operation_id in active or operation_id in pending:
+                raise HostAccessError("The MCP operation already owns a dirty contribution")
+            if removes_contribution_id and removes_contribution_id not in active:
+                raise HostAccessError("The reverted MCP dirty contribution is unavailable")
+            native_before = _document_edited_state(font)
+            _apply_target_model(font, current, target, change_set)
+            if change_set.changes:
+                if removes_contribution_id:
+                    removed = active.pop(removes_contribution_id)
+                    pending[operation_id] = {
+                        "documentId": document_id,
+                        "removedId": removes_contribution_id,
+                        "record": removed,
+                    }
+                    self._native_change_count(font, _NS_CHANGE_UNDONE)
+                else:
+                    if not active:
+                        baselines[document_id] = native_before
+                    active[operation_id] = {"nativeDirtyBefore": native_before}
+                    self._native_change_count(font, _NS_CHANGE_DONE)
+            self._document_mcp_contributions = contributions
+            self._document_mcp_baseline_dirty = baselines
+            self._document_mcp_pending_reverts = pending
+            self._refresh_verified_dirty_override(document_id, font)
+
         self._executor.run(apply)
+
+    def commit_verified_change(self, operation_id: str) -> None:
+        pending = getattr(self, "_document_mcp_pending_reverts", {})
+        pending.pop(operation_id, None)
+        self._document_mcp_pending_reverts = pending
+
+    def restore_verified_attempt(
+        self,
+        document_id: str,
+        model: Mapping[str, Any],
+        *,
+        operation_id: str,
+        removes_contribution_id: Optional[str] = None,
+    ) -> None:
+        """Restore a failed attempt's content and its exact dirty contribution."""
+
+        def restore() -> None:
+            font = self._font_for_document(document_id)
+            current = native_font_to_model(font)
+            restoration = diff_models(current, model)
+            _apply_target_model(font, current, model, restoration)
+            contributions = getattr(self, "_document_mcp_contributions", {})
+            active = contributions.setdefault(document_id, {})
+            pending = getattr(self, "_document_mcp_pending_reverts", {})
+            pending_revert = pending.pop(operation_id, None)
+            if pending_revert is not None:
+                active[pending_revert["removedId"]] = pending_revert["record"]
+                self._native_change_count(font, _NS_CHANGE_DONE)
+            elif operation_id in active:
+                active.pop(operation_id, None)
+                self._native_change_count(font, _NS_CHANGE_UNDONE)
+            self._document_mcp_contributions = contributions
+            self._document_mcp_pending_reverts = pending
+            self._refresh_verified_dirty_override(document_id, font)
+
+        self._executor.run(restore)
+
+    def reset_verified_change_tracking(self, document_id: str) -> None:
+        for attribute in (
+            "_document_mcp_contributions",
+            "_document_mcp_baseline_dirty",
+        ):
+            values = getattr(self, attribute, {})
+            values.pop(document_id, None)
+            setattr(self, attribute, values)
+        pending = getattr(self, "_document_mcp_pending_reverts", {})
+        self._document_mcp_pending_reverts = {
+            key: value
+            for key, value in pending.items()
+            if value.get("documentId") != document_id
+        }
+        overrides = getattr(self, "_document_dirty_overrides", {})
+        overrides.pop(document_id, None)
+        self._document_dirty_overrides = overrides
 
     def complete_observed_diff_covered(
         self, change_set: ChangeSet, execution_result: Mapping[str, Any]
@@ -943,18 +1073,6 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         # application state. Live execution is therefore recovery-only until a
         # complete native archive comparison proves otherwise.
         return False
-
-    def restore_model(self, document_id: str, model: Mapping[str, Any]) -> None:
-        def restore() -> None:
-            font = self._font_for_document(document_id)
-            current = native_font_to_model(font)
-            change_set = diff_models(current, model)
-            if not self.supports_change_set(change_set):
-                raise HostAccessError("The rollback model contains unsupported native write paths")
-            self._apply_and_track_dirty_state(
-                document_id, font, current, model, change_set, restoring=True
-            )
-        self._executor.run(restore)
 
     def inspect_export_destination(self, destination: str) -> Mapping[str, Any]:
         return inspect_destination(destination)

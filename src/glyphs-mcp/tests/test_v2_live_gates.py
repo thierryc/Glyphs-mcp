@@ -1,4 +1,4 @@
-"""Static disposable-host guard tests for the manual Glyphs 3.5/4 gate."""
+"""Static disposable-host guards for the Glyphs 4 live gate."""
 
 from __future__ import annotations
 

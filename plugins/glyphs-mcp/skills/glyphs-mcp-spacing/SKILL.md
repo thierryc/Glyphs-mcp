@@ -10,7 +10,8 @@ Use class-aware review, normalized safeguards, and visual proofing. Negative sid
 ## Safe workflow
 
 1. Connect to `glyphs-mcp-server` and call `list_open_fonts`.
-2. Identify the exact font index and master ID before calculating anything.
+2. Resolve the exact stable `documentId`, current document fingerprint, and
+   master ID before calculating anything.
 3. Inspect UPM, x-height, cap height, italic angle, fixed-pitch status, current width and bearings, metrics keys, automatic alignment, whether current metrics are trusted or placeholders, and glyph category/Unicode data.
 4. Call `review_spacing` before mutation. Prefer omitted/`"auto"` `referenceGlyph`, then verify every `resolvedReferenceGlyph`, `referenceFallback`, and `glyphClass`.
 5. Inspect normalized metrics, negative-bearing warnings/blocks, width assessment, tabular provenance, confidence, and current-metric trust. Do not use a delta from untrusted placeholder metrics as proof that a proposal is wrong.
@@ -20,8 +21,13 @@ Use class-aware review, normalized safeguards, and visual proofing. Negative sid
    - Figures: `one seven` and all default figures
    - Narrow punctuation, quotation marks, and any marks in scope
 7. Preserve width only when fixed-pitch metadata, equal default figures, width links, or explicit intent supports it. Do not infer monospacing from a family name or typewriter styling.
-8. Call `apply_spacing` with `dry_run=true` using the exact defaults, rules, guards, clamps, and intended overrides. Confirm its guard assessments match review.
-9. Require explicit authorization unless the user already clearly requested mutation. Apply only eligible results. Disclose `overrides.blockedGlyphs` and `overrides.manualReviewGlyphs` separately; an override does not make the original assessment safe.
+8. Require explicit authorization unless the user already clearly requested
+   mutation. Call direct `apply_spacing` once with explicit target/dependency
+   items, the stable document ID, and the current expected fingerprint. It has
+   no review token or confirmation flag. Apply only eligible results.
+9. Inspect requested and observed counts, derived widths/sidebearings, the one
+   transaction and audit receipt, and revert availability. Disclose blocked and
+   manual-review glyphs separately; an override does not make an assessment safe.
 10. Re-read applied metrics and print a verification table. Never save the Glyphs document automatically.
 
 ## Comparison workflow

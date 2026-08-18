@@ -137,6 +137,25 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertFalse(reverted["ok"])
         self.assertEqual(reverted["error"]["code"], "revert_conflict")
         self.assertEqual(self.host.apply_calls, 1)
+        self.assertIsNotNone(reverted["auditReceipt"])
+        events = self.app._audit.list_events(document_id="doc_history")
+        self.assertEqual([event.tool for event in events], ["apply_glyph_updates", "revert_change"])
+
+    def test_invalid_direct_mutation_still_emits_exactly_one_audit_receipt(self) -> None:
+        response = self.app.invoke(
+            "apply_glyph_updates",
+            {
+                "documentId": "doc_history",
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+                "updates": [],
+            },
+        ).to_dict()
+
+        self.assertFalse(response["ok"])
+        self.assertIsNotNone(response["auditReceipt"])
+        events = self.app._audit.list_events(document_id="doc_history")
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0].tool, "apply_glyph_updates")
 
     def test_verified_save_event_resets_only_its_document_history(self) -> None:
         self._apply_export_toggle()
@@ -214,9 +233,9 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertIn(changed.operation_id, [item["operationId"] for item in listed["data"]["commits"]])
         self.assertNotIn("commitId", listed["data"]["commits"][0])
         self.assertTrue(inspected["ok"])
-        self.assertEqual(inspected["data"]["kind"], "change_commit")
+        self.assertEqual(inspected["data"]["kind"], "mutation_diff")
         self.assertEqual(inspected["data"]["payload"]["operationId"], changed.operation_id)
-        self.assertGreater(inspected["data"]["payload"]["changeCount"], 0)
+        self.assertGreater(inspected["data"]["payload"]["observedChangeCount"], 0)
 
     def test_listing_existing_change_commits_does_not_recapture_the_font(self) -> None:
         self._apply_export_toggle()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Sequence, Tuple
 
@@ -29,7 +30,16 @@ def _plain(value: Any) -> Any:
         return {str(key): _plain(value[key]) for key in sorted(value, key=str)}
     if isinstance(value, (list, tuple)):
         return [_plain(item) for item in value]
-    if value is None or isinstance(value, (bool, int, float, str)):
+    if value is None or isinstance(value, (bool, int, str)):
+        return value
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("document model numbers must be finite")
+        # Glyphs and PyObjC routinely alternate between NSNumber integers and
+        # floats. Integral floats and signed zero therefore have one canonical
+        # representation, so a generated patch can always reproduce its hash.
+        if value == 0 or value.is_integer():
+            return int(value)
         return value
     raise TypeError("document models must contain JSON-safe detached values")
 
@@ -188,7 +198,7 @@ class ChangeSet:
     def apply(self, model: Mapping[str, Any], *, verify_before: bool = True) -> dict[str, Any]:
         if verify_before and fingerprint_model(model) != self.before_fingerprint:
             raise ValueError("change set does not match the supplied before state")
-        result = copy.deepcopy(dict(model))
+        result = copy.deepcopy(_plain(model))
         for change in self.changes:
             current = _value_at(result, change.path)
             if verify_before:
@@ -267,11 +277,36 @@ def _diff(before: Any, after: Any, path: Tuple[str, ...]) -> list[SemanticChange
 def diff_models(before: Mapping[str, Any], after: Mapping[str, Any]) -> ChangeSet:
     before_plain = _plain(before)
     after_plain = _plain(after)
-    return ChangeSet.from_changes(
+    change_set = ChangeSet.from_changes(
         before_fingerprint=fingerprint_model(before_plain),
         after_fingerprint=fingerprint_model(after_plain),
         changes=_diff(before_plain, after_plain, ()),
     )
+    reproduced = change_set.apply(before_plain)
+    if fingerprint_model(reproduced) != change_set.after_fingerprint:
+        raise ValueError("generated semantic diff does not reproduce its after fingerprint")
+    return change_set
+
+
+def subset_change_set(
+    before: Mapping[str, Any],
+    source: ChangeSet,
+    predicate: Any,
+) -> ChangeSet:
+    """Project a verified change set while preserving a reproducible target."""
+
+    before_plain = _plain(before)
+    if fingerprint_model(before_plain) != source.before_fingerprint:
+        raise ValueError("source change set does not match the supplied before state")
+    target = copy.deepcopy(before_plain)
+    for change in source.changes:
+        if not predicate(change):
+            continue
+        current = _value_at(target, change.path)
+        if change.before_present and current != change.before:
+            raise ValueError("projected change path has stale content: {}".format("/".join(change.path)))
+        _set_at(target, change.path, change.after, change.after_present)
+    return diff_models(before_plain, target)
 
 
 def revert_change_set_onto(
@@ -310,4 +345,5 @@ __all__ = [
     "diff_models",
     "fingerprint_model",
     "revert_change_set_onto",
+    "subset_change_set",
 ]

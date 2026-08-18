@@ -88,7 +88,7 @@ class ChangeLogModel:
             return "Select a tool call to inspect its document changes."
         lines = [
             "{} · {}".format(_title(commit.tool), _title(commit.status)),
-            "Commit: {}".format(commit.commit_id),
+            "Operation: {}".format(commit.operation_id or commit.commit_id),
             "Changes: {}".format(len(commit.change_set.changes)),
         ]
         if commit.reason:

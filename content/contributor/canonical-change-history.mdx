@@ -37,7 +37,7 @@ Topology-compatible paths are paired exactly by path, segment, and node order.
 If later editing changes that topology, the Reporter draws no approximate band;
 the complete semantic change remains available in the Change Log.
 
-Both views are projections of the same `ActionCommit` and `CanonicalFontTree`
+Both views are projections of the same operation and `CanonicalFontTree`
 data, but neither owns or drives the other.
 
 ## CanonicalFontTree storage
@@ -58,25 +58,30 @@ A private compressed SQLite backend exists for tests and future persistence;
 it uses a single short batch per snapshot, `0700` parent permissions, and a
 `0600` database.
 
-Verified typed transactions pass their existing before/after snapshots and
-`ChangeSet` directly to history. There is no second native font capture and no
-second full semantic diff. The latest-session diff is cached when commits are
-recorded, so Reporter redraws perform only affected-glyph and affected-layer
-lookups plus one detached capture of the layer currently being drawn. Reporter
-callbacks never hash or capture the full font, write, prune, or mutate a Glyphs
-object.
+Verified typed transactions retain two patches: the requested writable patch
+and the complete clone-observed semantic diff. Only the writable patch is sent
+to Glyphs; history, pagination, and the Reporter use the observed diff. There is
+no second full semantic diff. The latest-session diff is cached when operations
+are recorded, so Reporter redraws perform only affected-glyph and
+affected-layer lookups plus one detached capture of the layer currently being
+drawn. Reporter callbacks never hash or capture the full font, write, prune, or
+mutate a Glyphs object.
 
 ## Revert semantics
 
-`list_change_commits` exposes bounded commit summaries. `get_operation` accepts
-a commit ID to page through its semantic diff. `revert_change` creates a new
-verified action commit; it does not delete or rewrite history.
+`list_change_commits` exposes bounded operation summaries. `get_operation`
+accepts the same operation ID returned by the mutation to page through its
+semantic diff. `revert_change` takes that operation ID and creates another
+verified operation; it does not delete or rewrite history.
 
 Revert checks every changed path against the value originally written by the
 commit. Unrelated later edits are preserved. If any affected path was changed
 afterward, the revert fails with explicit conflicts and applies nothing. The
-result still uses the shared one-shot main-thread transaction, read-back,
-verification, rollback-on-failure, and audit kernel.
+result still uses detached simulation plus the shared one-shot main-thread
+transaction, read-back, verification, rollback-on-failure, and audit kernel.
+Each active MCP mutation owns one native change-count contribution. A verified
+selective revert removes its corresponding contribution regardless of order;
+native user history is never globally cleared.
 
 ## Performance and safety gates
 

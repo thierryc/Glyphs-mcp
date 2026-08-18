@@ -126,7 +126,11 @@ class DocumentChangesPanelController(NSObject):
         history = active_history()
         if font is not None and host is not None and history is not None:
             try:
-                history.reset_after_save(host.document_id_for_font(font))
+                document_id = host.document_id_for_font(font)
+                history.reset_after_save(document_id)
+                reset_tracking = getattr(host, "reset_verified_change_tracking", None)
+                if callable(reset_tracking):
+                    reset_tracking(document_id)
             except Exception:
                 pass
         self.refresh()
@@ -140,7 +144,12 @@ class DocumentChangesPanelController(NSObject):
             document_id = host.document_id_for_font(font)
         except Exception:
             return
-        self._lifecycle.document_was_saved(document_id, make_copy=False, succeeded=True)
+        if self._lifecycle.document_was_saved(
+            document_id, make_copy=False, succeeded=True
+        ):
+            reset_tracking = getattr(host, "reset_verified_change_tracking", None)
+            if callable(reset_tracking):
+                reset_tracking(document_id)
 
     @objc.python_method
     def _history_changed(self, document_id):

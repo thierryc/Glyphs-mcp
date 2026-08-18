@@ -7,7 +7,7 @@ description: Architecture, compatibility, and milestone record for the isolated 
 
 Glyphs MCP 2.0 is a contract and architecture reset, rebased on signed release
 `v1.11.0`. The isolated runtime now covers typed discovery, bounded analysis,
-reviewed production mutations, staged export, model-visible Python fallback,
+apply-first verified production mutations, staged export, model-visible Python fallback,
 and document rollback. It does not replace, load, or modify the installed 1.x
 plug-in during source development.
 
@@ -36,9 +36,10 @@ The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
 - a recoverable main-thread execution port;
 - Glyphs 3.5/4 collection fallbacks;
 - catalog-generated schemas and safety annotations;
-- 30 catalog-driven FastMCP operations;
+- 25 catalog-driven FastMCP operations;
 - paginated glyph, instance, kerning, audit, review, and Python-diff results;
-- reviewed glyph, anchor, kerning, spacing, metrics, and compatibility batches;
+- direct glyph, anchor, kerning, spacing, metrics, and compatibility batches
+  with detached derived-effect simulation;
 - compatibility, metrics-inheritance, anchor, spacing, kerning-coverage, and
   export analysis;
 - staged export with destination fingerprints and macOS atomic directory swap;
@@ -70,6 +71,7 @@ The v2 tombstones are:
 | `get_font_kerning` | `list_kerning_pairs` |
 | `get_font_instances` | `list_instances` |
 | `glyphs-mcp-features` | `glyphs-mcp-opentype-features` |
+| mutation `review_*_updates` tools | direct `apply_*` with an expected document fingerprint |
 
 None of the old names is registered as a v2 alias. The 1.11 runtime retains its
 own tools until an installed runtime is explicitly upgraded and Glyphs is
@@ -78,9 +80,11 @@ restarted.
 ## Python execution and rollback
 
 Read-intent Python reports document and scope violations. Document edits default
-to a detached clone and return a deterministic paginated semantic diff. Exact
-confirmation applies the stored patch through the transaction kernel without
-rerunning Python. Unsupported staged fields are refused.
+to a detached clone and return a deterministic paginated semantic diff. Native
+archive deltas from direct execution and independent canonical replay must be
+equivalent. Exact confirmation applies only the stored writable patch, verifies
+the complete observed result, and never reruns Python. Unsupported staged
+fields return bounded roots, counts, and paths.
 
 `live_open_world` remains available for global Glyphs APIs, UI state, unsupported
 objects, files, processes, and networking. It uses exact preview, a full clone,
@@ -110,8 +114,11 @@ breaking catalog changes do not flow back to 1.x.
    fingerprints, semantic diffs, transactions, audit, Python, and rollback.
 3. Complete for the current production milestone: compatibility, metrics,
    anchors, spacing, kerning, instances, export, and synchronized skills.
-4. Remaining release gate: disposable live-host verification on Glyphs 3.5 and
-   4, installer integration, and the release-candidate matrix.
+4. In progress: Glyphs 4 disposable verification of the verified apply-first
+   kernel. Glyphs 3.5 remains on signed v1.11 until a later authorized live gate.
+5. Deferred: feature/class/prefix writes, glyph/layer membership changes,
+   master duplication, instance mutation, installer integration, and the
+   release-candidate matrix.
 
 Every milestone must pass focused tests, the complete Python suite, catalog
 and schema gates, deterministic payload assembly, and `git diff --check`.

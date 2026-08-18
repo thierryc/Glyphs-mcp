@@ -18,18 +18,18 @@ Create workspace-first Glyphs scripts and plug-ins from pinned SDK templates.
 - Never install, execute, reload, restart Glyphs, or overwrite an existing artifact automatically.
 - Keep `Contents/MacOS/plugin` from the bundled SDK template unchanged and retain the bundled Apache 2.0 attribution.
 - Validate after scaffolding and after source edits.
-- When extending this repository's outline-candidate system, keep mathematics
-  and process-local state free of GlyphsApp/AppKit imports; keep MCP wrappers
-  responsible for snapshots and guarded mutation; keep Reporter callbacks
-  drawing-only. Add every public tool to `TOOL_CATALOG`, then register it only
+- When extending the v2 canonical change system, keep semantic diff mathematics
+  and process-local state free of GlyphsApp/AppKit imports; keep the native
+  adapter responsible for detached simulation and guarded mutation; keep
+  Reporter callbacks drawing-only. Add every public tool to `TOOL_CATALOG`, then register it only
   with `glyphs_tool`; direct `mcp.tool` decorators are forbidden. Give it all
   four safety hints, one visibility/effect class, concise routing metadata, and
   an output schema when it belongs to a structured workflow. Import its module
   through `mcp_tools.py`, and export every Reporter principal class through both
   `plugin.py` and `Info.plist`.
 - Keep the MCP surface lean. Prefer a dedicated typed tool over an opaque action
-  multiplexer, but do not add a wrapper when an existing candidate adapter or
-  lifecycle transition already expresses the same operation.
+  multiplexer, but do not add a wrapper when the canonical mutation or history
+  lifecycle already expresses the same operation.
 - For candidate, curve, spacing, or kerning tools, preserve legacy JSON text and
   add the validated structured-result envelope. Keep workflow details in typed
   `data`; do not expand the common envelope with domain-specific fields.

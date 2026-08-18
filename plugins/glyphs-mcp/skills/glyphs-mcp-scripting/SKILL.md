@@ -9,7 +9,9 @@ Use the smallest verified Python fallback that covers the request.
 
 ## Core rules
 
-- Prefer a typed tool or domain skill when it fits. Use `execute_python` because the defaults do not fit, not as a shortcut around reviewed APIs.
+- Prefer a direct typed apply tool or domain skill when it fits. Typed document
+  mutations apply first through detached simulation; they do not use review IDs
+  or confirmation tokens. Use `execute_python` because those contracts do not fit.
 - Resolve stable `documentId` context and the current document fingerprint before mutation.
 - Ground unfamiliar GlyphsApp APIs with `docs_search` and focused `docs_get` pages. Target Glyphs 3.5 and 4 unless the user narrows the host.
 - Supply a concise `reason`, `intendedEffect`, explicit context, and bounded output. Never claim arbitrary PyObjC code can be safely killed; timeout enforcement is cooperative.
@@ -21,7 +23,10 @@ Use the smallest verified Python fallback that covers the request.
 1. Call `get_server_info`, `list_open_fonts`, and `get_document_status` as needed, then classify the request as `read`, `document_edit`, or `files_or_external`.
 2. Read-only code may execute directly. Inspect `observedDocumentChange` and `scopeViolations`; a read-intent violation is a safety finding.
 3. For document edits, call `execute_python` in the default `staged_document` mode with one explicit document and its expected fingerprint.
-4. Review the deterministic paginated semantic diff. Staged code runs against `GSFont.copy()` without the live `Glyphs` singleton; this is a correctness boundary, not a hostile-code sandbox.
+4. Review the deterministic paginated semantic diff. Staged code runs against
+   `GSFont.copy()` without the live `Glyphs` singleton, and its native archive
+   delta must match an independent clone receiving the extracted writable
+   patch. This is a correctness boundary, not a hostile-code sandbox.
 5. Confirm only with `execute_python(reviewId=..., confirm=true)`. The runtime consumes the exact stored code, arguments, context, and code hash and applies the stored patch without rerunning Python.
 6. Use `live_open_world` only for UI state, global Glyphs APIs, unsupported native objects, files, processes, or networking. It requires exact preview and confirmation, creates a private recovery copy, and never claims external effects are transactional.
 7. Keep the returned execution ID, after-fingerprint, rollback coverage, and expiry. Do not infer automatic rollback from native undo grouping.

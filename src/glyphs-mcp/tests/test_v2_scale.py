@@ -38,9 +38,25 @@ def _scale_model():
             "layers": {
                 master["id"]: {
                     "width": 500,
+                    "LSB": 40,
+                    "RSB": 60,
+                    "leftMetricsKey": None,
+                    "rightMetricsKey": None,
+                    "widthMetricsKey": None,
                     "anchors": {},
                     "components": [],
                     "pathSignature": [4],
+                    "paths": [
+                        {
+                            "closed": True,
+                            "nodes": [
+                                {"x": 0, "y": 0, "type": "line", "smooth": False, "name": None},
+                                {"x": 0, "y": 700, "type": "line", "smooth": False, "name": None},
+                                {"x": 400, "y": 700, "type": "line", "smooth": False, "name": None},
+                                {"x": 400, "y": 0, "type": "line", "smooth": False, "name": None},
+                            ],
+                        }
+                    ],
                 }
                 for master in masters
             },
@@ -139,6 +155,107 @@ class V2ScaleTests(unittest.TestCase):
         self.assertEqual(spacing["data"]["simulation"]["actionableCount"], 0)
         self.assertEqual(spacing["data"]["simulation"]["maxIterations"], 5)
         self.assertLess(self._bytes(spacing), 64 * 1024)
+
+    def test_metrics_spacing_and_five_master_path_batches_each_apply_once(self) -> None:
+        metrics = self.app.invoke(
+            "apply_metrics_updates",
+            {
+                "documentId": "doc_scale",
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+                "updates": [
+                    {
+                        "glyphName": "g{:03d}".format(glyph_index),
+                        "masterId": "m{}".format(master_index),
+                        "leftMetricsKey": "=H",
+                    }
+                    for glyph_index in range(40)
+                    for master_index in range(5)
+                ],
+            },
+        ).to_dict()
+        self.assertTrue(metrics["ok"])
+        self.assertEqual(metrics["data"]["requestedChangeCount"], 200)
+        self.assertEqual(metrics["data"]["transactionCount"], 1)
+        self.assertEqual(self.host.apply_calls, 1)
+
+        spacing = self.app.invoke(
+            "apply_spacing",
+            {
+                "documentId": "doc_scale",
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+                "items": [
+                    {
+                        "glyphName": "g{:03d}".format(index),
+                        "masterId": "m0",
+                        "width": 500,
+                        "targetWidth": 520,
+                        "category": "Letter",
+                    }
+                    for index in range(225)
+                ],
+            },
+        ).to_dict()
+        self.assertTrue(spacing["ok"])
+        self.assertEqual(spacing["data"]["requestedChangeCount"], 225)
+        self.assertEqual(spacing["data"]["transactionCount"], 1)
+        self.assertEqual(self.host.apply_calls, 2)
+
+        path_updates = []
+        for glyph_index in range(40):
+            name = "g{:03d}".format(glyph_index)
+            for master_index in range(5):
+                paths = copy.deepcopy(
+                    self.host.model["glyphs"][name]["layers"]["m{}".format(master_index)]["paths"]
+                )
+                paths[0]["nodes"][0]["x"] = 12 + master_index
+                path_updates.append(
+                    {
+                        "glyphName": name,
+                        "masterId": "m{}".format(master_index),
+                        "paths": paths,
+                    }
+                )
+        before_paths = fingerprint_model(self.host.model)
+        paths = self.app.invoke(
+            "apply_compatibility_updates",
+            {
+                "documentId": "doc_scale",
+                "expectedDocumentFingerprint": before_paths,
+                "updates": path_updates,
+            },
+        ).to_dict()
+        self.assertTrue(paths["ok"])
+        self.assertEqual(paths["data"]["affectedGlyphCount"], 40)
+        self.assertEqual(paths["data"]["transactionCount"], 1)
+        self.assertEqual(self.host.apply_calls, 3)
+        self.assertLess(self._bytes(paths), 64 * 1024)
+
+        reverted = self.app.invoke(
+            "revert_change",
+            {
+                "documentId": "doc_scale",
+                "operationId": paths["operationId"],
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+            },
+        ).to_dict()
+        self.assertTrue(reverted["ok"])
+        self.assertEqual(reverted["data"]["afterFingerprint"], before_paths)
+        self.assertEqual(self.host.apply_calls, 4)
+
+        successful_audits = [
+            event
+            for event in self.app._audit.list_events(document_id="doc_scale")
+            if event.status == "success"
+        ]
+        self.assertEqual(
+            [event.tool for event in successful_audits],
+            [
+                "apply_metrics_updates",
+                "apply_spacing",
+                "apply_compatibility_updates",
+                "revert_change",
+            ],
+        )
 
     def test_document_cursor_cannot_cross_operation_or_projection_scope(self) -> None:
         self.host.model["kerning"] = [
