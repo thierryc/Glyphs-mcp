@@ -7,6 +7,7 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -122,6 +123,15 @@ class _PythonHost:
 
     def find_recovery_checkpoint(self, execution_id):
         return self.recovery_registry.get(execution_id)
+
+
+class _PrecomputedPreviewHost(_PythonHost):
+    def preview_python(self, request, before_model):
+        result = super().preview_python(request, before_model)
+        changes = diff_models(before_model, result["afterModel"])
+        result["changeSet"] = changes
+        result["writableChangeSet"] = changes
+        return result
 
 
 class _DriftingRollbackPythonHost(_PythonHost):
@@ -240,6 +250,37 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertEqual(host.model["font"]["familyName"], "Beta")
         self.assertEqual(host.preview_calls, 1)
         self.assertEqual(confirmed["data"]["rollback"]["coverage"], "document_inverse")
+
+    def test_staged_preview_reuses_the_host_verified_change_sets(self) -> None:
+        host = _PrecomputedPreviewHost()
+        service = PythonExecutionService(
+            host=host,
+            transactions=TransactionKernel(host),
+            reviews=OperationStore(),
+            checkpoints=OperationStore(),
+            audit=AuditLog(),
+        )
+
+        with mock.patch(
+            "glyphs_mcp_v2.python_execution.diff_models",
+            side_effect=AssertionError("service recomputed host semantic diff"),
+        ), mock.patch(
+            "glyphs_mcp_v2.python_execution.writable_subset",
+            side_effect=AssertionError("service recomputed host writable diff"),
+        ):
+            preview = service.execute(
+                PythonExecutionRequest(
+                    code="font.familyName = 'Beta'",
+                    reason="reuse the host's verified staged plan",
+                    intended_effect="document_edit",
+                    execution_mode="staged_document",
+                    document_id="doc_alpha",
+                    expected_document_fingerprint=fingerprint_model(host.model),
+                )
+            ).to_dict()
+
+        self.assertEqual(preview["status"], "review_required")
+        self.assertEqual(host.preview_calls, 1)
 
     def test_staged_existing_feature_code_is_confirmable_and_reversible(self) -> None:
         service, host = self.service()

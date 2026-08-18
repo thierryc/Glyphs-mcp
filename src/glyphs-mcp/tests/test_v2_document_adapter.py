@@ -742,6 +742,14 @@ class V2DocumentAdapterTests(unittest.TestCase):
             25,
         )
         self.assertTrue(preview["nativeArchiveComparison"]["equivalent"])
+        self.assertEqual(
+            preview["changeSet"].after_fingerprint,
+            document_adapter.fingerprint_model(preview["afterModel"]),
+        )
+        self.assertEqual(
+            preview["writableChangeSet"].after_fingerprint,
+            document_adapter.fingerprint_model(preview["afterModel"]),
+        )
         self.assertEqual(full_archive.call_count, 0)
 
     def test_canonical_layer_records_native_width_ownership(self) -> None:
