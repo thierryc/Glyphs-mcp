@@ -10,6 +10,7 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -217,6 +218,17 @@ class ChangeHistoryTests(unittest.TestCase):
         self.assertNotEqual(changed.before_tree_hash, changed.after_tree_hash)
         self.assertEqual(read.before_tree_hash, read.after_tree_hash)
         self.assertEqual([item.tool for item in self.history.list_commits("doc_a")], ["apply_spacing", "get_document_status"])
+
+    def test_initial_observation_stores_without_a_redundant_match_fingerprint(self) -> None:
+        trace = ActionTraceCoordinator(ChangeHistory(CanonicalFontTree(MemoryObjectStore())))
+
+        with mock.patch(
+            "glyphs_mcp_v2.change_trace.fingerprint_model",
+            side_effect=AssertionError("cold observation attempted a tree match"),
+        ):
+            tree_hash = trace.observe_model("doc_cold", self.before)
+
+        self.assertTrue(tree_hash.startswith("sha256:"))
 
     def test_latest_session_diff_collapses_tool_calls_to_one_net_comparison(self) -> None:
         middle = copy.deepcopy(self.after)
