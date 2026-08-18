@@ -1375,6 +1375,29 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
     ) -> Mapping[str, Any]:
         """Simulate one patch while recapturing only its semantic dependency scope."""
 
+        return self._simulate_canonical_change(
+            document_id,
+            change_set,
+            before_model,
+        )["afterModel"]
+
+    def _simulate_canonical_change(
+        self,
+        document_id: str,
+        change_set: ChangeSet,
+        before_model: Mapping[str, Any],
+        *,
+        required_after_model: Optional[Mapping[str, Any]] = None,
+    ) -> Mapping[str, Any]:
+        """Replay one canonical patch on a clone using one bounded verifier.
+
+        Forward planning and inverse reconciliation share this path. A complete
+        result tree is assembled from the already-verified source plus fresh
+        native captures for the semantic dependency closure and every glyph
+        whose revision evidence changed unexpectedly. This preserves exact
+        document fingerprints without rebuilding all unchanged glyph trees.
+        """
+
         def simulate() -> Mapping[str, Any]:
             if not self.supports_change_set(change_set):
                 raise HostAccessError("The change set contains unsupported native write paths")
@@ -1382,25 +1405,60 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             copier = _safe_getattr(font, "copy")
             if not callable(copier):
                 raise HostAccessError("Glyphs did not provide GSFont.copy()")
-            clone = copier()
             source = copy.deepcopy(dict(before_model))
             scope = mutation_scope(source, change_set)
-            revisions_before = _glyph_revision_index(clone)
-            clone_before = _scoped_font_model(clone, source, scope)
-            if fingerprint_model(clone_before) != change_set.before_fingerprint:
-                raise HostAccessError("Detached GSFont.copy() did not reproduce the canonical source")
-            requested_target = change_set.apply(clone_before)
-            _apply_target_model(clone, clone_before, requested_target, change_set)
-            revisions_after = _glyph_revision_index(clone)
-            changed_glyphs = _changed_revision_glyphs(
-                revisions_before, revisions_after
+            required = (
+                copy.deepcopy(dict(required_after_model))
+                if required_after_model is not None
+                else None
             )
-            return _scoped_font_model(
-                clone,
+
+            def attempt(replacements: Sequence[Sequence[str]]) -> Mapping[str, Any]:
+                clone = copier()
+                revisions_before = _glyph_revision_index(clone)
+                clone_before = _scoped_font_model(clone, source, scope)
+                if fingerprint_model(clone_before) != change_set.before_fingerprint:
+                    raise HostAccessError(
+                        "Detached GSFont.copy() did not reproduce the canonical source"
+                    )
+                requested_target = change_set.apply(clone_before)
+                target = required if required is not None else requested_target
+                _apply_target_model(
+                    clone,
+                    clone_before,
+                    target,
+                    change_set,
+                    replay_replacements=replacements,
+                )
+                revisions_after = _glyph_revision_index(clone)
+                changed_glyphs = _changed_revision_glyphs(
+                    revisions_before, revisions_after
+                )
+                return _scoped_font_model(
+                    clone,
+                    source,
+                    scope,
+                    extra_glyph_names=changed_glyphs,
+                )
+
+            preferred = attempt(())
+            if required is None or fingerprint_model(preferred) == fingerprint_model(
+                required
+            ):
+                return {"afterModel": preferred, "replayReplacements": []}
+
+            replacements = _canonical_replacement_roots(
                 source,
-                scope,
-                extra_glyph_names=changed_glyphs,
+                required,
+                preferred,
             )
+            if not replacements:
+                return {"afterModel": preferred, "replayReplacements": []}
+            canonical = attempt(replacements)
+            return {
+                "afterModel": canonical,
+                "replayReplacements": [list(path) for path in replacements],
+            }
 
         return self._executor.run(simulate)
 
@@ -1413,52 +1471,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
     ) -> Mapping[str, Any]:
         """Select a cause-independent replay that reproduces a canonical tree."""
 
-        def simulate() -> Mapping[str, Any]:
-            if not self.supports_change_set(change_set):
-                raise HostAccessError("The change set contains unsupported native write paths")
-            font = self._font_for_document(document_id)
-            copier = _safe_getattr(font, "copy")
-            if not callable(copier):
-                raise HostAccessError("Glyphs did not provide GSFont.copy()")
-            required = copy.deepcopy(dict(required_after_model))
-            source_before = copy.deepcopy(dict(before_model))
-
-            def attempt(replacements: Sequence[Sequence[str]]) -> Mapping[str, Any]:
-                clone = copier()
-                clone_before = native_font_to_model(clone)
-                if fingerprint_model(clone_before) != change_set.before_fingerprint:
-                    raise HostAccessError(
-                        "Detached GSFont.copy() did not reproduce the canonical source"
-                    )
-                # Applying the patch validates its stale values. Reconciliation
-                # then uses the complete intended tree as the authority; the
-                # change set only bounds which document roots may be written.
-                change_set.apply(clone_before)
-                _apply_target_model(
-                    clone,
-                    clone_before,
-                    required,
-                    change_set,
-                    replay_replacements=replacements,
-                )
-                return native_font_to_model(clone)
-
-            preferred = attempt(())
-            if fingerprint_model(preferred) == fingerprint_model(required):
-                return {"afterModel": preferred, "replayReplacements": []}
-
-            replacements = _canonical_replacement_roots(
-                source_before, required, preferred
-            )
-            if not replacements:
-                return {"afterModel": preferred, "replayReplacements": []}
-            canonical = attempt(replacements)
-            return {
-                "afterModel": canonical,
-                "replayReplacements": [list(path) for path in replacements],
-            }
-
-        return self._executor.run(simulate)
+        return self._simulate_canonical_change(
+            document_id,
+            change_set,
+            before_model,
+            required_after_model=required_after_model,
+        )
 
     def supports_change_set(self, change_set: ChangeSet) -> bool:
         for change in change_set.changes:
