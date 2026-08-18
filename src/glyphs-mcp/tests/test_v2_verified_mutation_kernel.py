@@ -21,6 +21,7 @@ from glyphs_mcp_v2.semantic import (  # noqa: E402
 )
 from glyphs_mcp_v2.transactions import TransactionKernel  # noqa: E402
 from glyphs_mcp_v2.transactions import StaleDocumentError  # noqa: E402
+from glyphs_mcp_v2.transactions import TransactionVerificationError  # noqa: E402
 
 
 def _model() -> dict:
@@ -121,6 +122,28 @@ class _DriftingCanonicalReconciliationHost(_CanonicalReconciliationHost):
         return {"afterModel": drifted, "replayReplacements": []}
 
 
+class _LateSettlingHost(_DerivedHost):
+    """A host whose first readback precedes an asynchronous derived update."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._late_width = None
+
+    def apply_change_set(self, document_id, change_set):
+        super().apply_change_set(document_id, change_set)
+        self._late_width = 500
+
+    def capture_stable_model(self, document_id):
+        immediate = self.capture_model(document_id)
+        if self._late_width is not None:
+            self.model["glyphs"]["A"]["layers"]["m0"]["width"] = self._late_width
+            self.model = self._derive(self.model)
+            self._late_width = None
+        settled = self.capture_model(document_id)
+        self.asserted_immediate_model = immediate
+        return settled
+
+
 class VerifiedMutationKernelTests(unittest.TestCase):
     def test_canonical_numbers_normalize_negative_zero_and_integral_floats(self) -> None:
         integer = {"font": {"value": 0, "other": 12}}
@@ -199,6 +222,26 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         self.assertEqual(fingerprint_model(host.model), plan.after_fingerprint)
         self.assertEqual(result.inverse.before_fingerprint, plan.after_fingerprint)
         self.assertEqual(result.inverse.apply(host.model), before)
+
+    def test_transaction_verifies_the_settled_host_state_not_the_first_readback(self) -> None:
+        host = _LateSettlingHost()
+        before = host.capture_model("doc_kernel")
+        requested_after = copy.deepcopy(before)
+        requested_after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
+        plan = MutationPlanner(host).plan(
+            document_id="doc_kernel",
+            expected_document_fingerprint=fingerprint_model(before),
+            requested_change_set=diff_models(before, requested_after),
+            operation_id="op_late_settle",
+        )
+
+        with self.assertRaises(TransactionVerificationError) as raised:
+            TransactionKernel(host).apply_plan(plan)
+
+        self.assertTrue(raised.exception.rollback_succeeded)
+        self.assertEqual(host.model, before)
+        self.assertEqual(host.apply_calls, 1)
+        self.assertEqual(host.restore_calls, 1)
 
     def test_required_canonical_target_selects_and_replays_one_detached_strategy(self) -> None:
         host = _CanonicalReconciliationHost()
