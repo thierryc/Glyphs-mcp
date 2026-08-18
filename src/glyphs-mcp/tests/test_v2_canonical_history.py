@@ -24,7 +24,8 @@ from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
     SQLiteObjectStore,
 )
 from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
-from glyphs_mcp_v2.semantic import diff_models  # noqa: E402
+from glyphs_mcp_v2.change_trace import ActionTraceCoordinator  # noqa: E402
+from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
 
 
 def _layer(master_id: str, x: float = 0.0) -> dict:
@@ -126,6 +127,35 @@ class CanonicalFontTreeTests(unittest.TestCase):
             changes.changes[0].path,
             ("glyphs", "g0191", "layers", "m3", "paths", "0", "nodes", "0", "x"),
         )
+
+    def test_verified_transition_hashes_only_changed_shards(self) -> None:
+        class CountingTree(CanonicalFontTree):
+            def __init__(self):
+                super().__init__(MemoryObjectStore())
+                self.value_writes = 0
+
+            def _put_value(self, value):
+                self.value_writes += 1
+                return super()._put_value(value)
+
+        trees = CountingTree()
+        before = _model(glyph_count=383, master_count=5)
+        baseline = trees.store_model(before)
+        after = copy.deepcopy(before)
+        after["glyphs"]["g0191"]["layers"]["m3"]["paths"][0]["nodes"][0]["x"] = 12
+        changes = diff_models(before, after)
+        trees.value_writes = 0
+
+        transition = trees.store_verified_transition(
+            baseline.tree_hash,
+            after,
+            changes,
+        )
+
+        self.assertEqual(trees.value_writes, 1)
+        self.assertEqual(transition.model_fingerprint, fingerprint_model(after))
+        self.assertEqual(transition.reused_glyph_count, 382)
+        self.assertEqual(trees.load_model(transition.tree_hash), after)
 
     def test_scale_snapshot_hashing_stays_off_the_ui_budget(self) -> None:
         # This measures detached Python data only. Native Glyphs capture is
@@ -298,6 +328,61 @@ class ChangeHistoryTests(unittest.TestCase):
         self.assertIs(first, second)
         self.assertEqual(first.change_set, verified)
         self.assertEqual(trees.diff_calls, 0)
+
+    def test_action_trace_reuses_head_and_stores_only_verified_transition(self) -> None:
+        class CountingTree(CanonicalFontTree):
+            def __init__(self):
+                super().__init__(MemoryObjectStore())
+                self.full_store_calls = 0
+                self.transition_store_calls = 0
+
+            def store_model(self, model):
+                self.full_store_calls += 1
+                return super().store_model(model)
+
+            def store_verified_transition(self, before_tree_hash, after_model, change_set):
+                self.transition_store_calls += 1
+                return super().store_verified_transition(
+                    before_tree_hash,
+                    after_model,
+                    change_set,
+                )
+
+        trees = CountingTree()
+        history = ChangeHistory(trees)
+        baseline = trees.store_model(self.before)
+        history.record_action(
+            document_id="doc_trace",
+            tool="baseline",
+            effect="read",
+            status="success",
+            run_id="run_baseline",
+            before_tree_hash=baseline.tree_hash,
+            after_tree_hash=baseline.tree_hash,
+        )
+        trees.full_store_calls = 0
+        trace = ActionTraceCoordinator(history)
+        scope = trace.start_action(
+            "apply_spacing",
+            "edit",
+            {"documentId": "doc_trace"},
+        )
+        observed = trace.observe_model("doc_trace", self.before)
+        token = trace.prepare_transaction("doc_trace", self.before)
+        changes = diff_models(self.before, self.after)
+        trace.commit_transaction(
+            token,
+            "doc_trace",
+            self.before,
+            self.after,
+            changes,
+        )
+
+        self.assertEqual(observed, baseline.tree_hash)
+        self.assertEqual(token.before_tree_hash, baseline.tree_hash)
+        self.assertEqual(trees.full_store_calls, 0)
+        self.assertEqual(trees.transition_store_calls, 1)
+        self.assertTrue(scope.transaction_completed)
 
 
 if __name__ == "__main__":
