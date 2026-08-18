@@ -9,117 +9,100 @@ from AppKit import NSBezierPath, NSColor, NSGraphicsContext, NSPoint
 from GlyphsApp.plugins import ReporterPlugin  # type: ignore[import-not-found]
 
 from .adapters.document import native_layer_to_model
+from .diff_geometry import DifferenceTopologyError, difference_bands
 from .diff_overlay import overlay_for_layer
 from .runtime import active_history, active_host
 
 
-BEFORE_RGBA = (0.95, 0.24, 0.16, 0.82)
-TARGET_STALE_RGBA = (0.35, 0.38, 0.44, 0.74)
-METRIC_RGBA = (0.95, 0.48, 0.12, 0.72)
+DIFFERENCE_RGBA = (1.0, 0.58, 0.08, 0.46)
+METRIC_RGBA = (1.0, 0.58, 0.08, 0.34)
 
 
 def _point(value):
     return NSPoint(float(value[0]), float(value[1]))
 
 
-def _segments(path_data):
-    nodes = list(path_data.get("nodes") or [])
-    if not nodes:
-        return []
-    oncurve = [index for index, node in enumerate(nodes) if str(node.get("type")) != "offcurve"]
-    if not oncurve:
-        return []
-    start_index = oncurve[0]
-    current = nodes[start_index]
-    sequence = (
-        [nodes[(start_index + offset) % len(nodes)] for offset in range(1, len(nodes) + 1)]
-        if path_data.get("closed")
-        else nodes[start_index + 1 :]
-    )
-    result = []
-    handles = []
-    for node in sequence:
-        if str(node.get("type")) == "offcurve":
-            handles.append(node)
-            continue
-        start = (float(current.get("x", 0)), float(current.get("y", 0)))
-        end = (float(node.get("x", 0)), float(node.get("y", 0)))
-        if str(node.get("type")) == "curve" and len(handles) >= 2:
-            result.append(
-                (
-                    "curve",
-                    start,
-                    (float(handles[-2].get("x", 0)), float(handles[-2].get("y", 0))),
-                    (float(handles[-1].get("x", 0)), float(handles[-1].get("y", 0))),
-                    end,
-                )
-            )
-        else:
-            result.append(("line", start, end))
-        current = node
-        handles = []
-    return result
-
-
-def _bezier(paths):
-    result = NSBezierPath.bezierPath()
-    changed = 0
-    for path_data in paths:
-        segments = _segments(path_data)
-        if not segments:
-            continue
-        result.moveToPoint_(_point(segments[0][1]))
-        for segment in segments:
-            if segment[0] == "curve":
-                result.curveToPoint_controlPoint1_controlPoint2_(
-                    _point(segment[4]), _point(segment[2]), _point(segment[3])
-                )
-            else:
-                result.lineToPoint_(_point(segment[2]))
-        if path_data.get("closed"):
-            result.closePath()
-        changed += 1
-    return result if changed else None
-
-
 def _set_color(rgba):
     NSColor.colorWithDeviceRed_green_blue_alpha_(*rgba).set()
 
 
-def _stroke_paths(paths, rgba, width, dashed=False):
-    path = _bezier(paths)
-    if path is None:
-        return False
-    _set_color(rgba)
-    path.setLineWidth_(width)
-    if dashed:
-        try:
-            path.setLineDash_count_phase_([7.0, 4.0], 2, 0.0)
-        except Exception:
-            pass
+def _append_segments(path, segments, *, reverse=False, move=True):
+    start = segments[-1].points[-1] if reverse else segments[0].points[0]
+    if move:
+        path.moveToPoint_(_point(start))
+    ordered = reversed(segments) if reverse else segments
+    for segment in ordered:
+        if segment.kind == "cubic":
+            start_point, control1, control2, end = segment.points
+            if reverse:
+                path.curveToPoint_controlPoint1_controlPoint2_(
+                    _point(start_point), _point(control2), _point(control1)
+                )
+            else:
+                path.curveToPoint_controlPoint1_controlPoint2_(
+                    _point(end), _point(control1), _point(control2)
+                )
+        else:
+            end = segment.points[0] if reverse else segment.points[-1]
+            path.lineToPoint_(_point(end))
+
+
+def _draw_difference(baseline_paths, current_paths):
+    bands = difference_bands(baseline_paths, current_paths)
+    if not bands:
+        return 0
+    difference_path = NSBezierPath.bezierPath()
+    for band in bands:
+        _append_segments(difference_path, band.baseline_segments)
+        if band.closed:
+            difference_path.closePath()
+            _append_segments(difference_path, band.current_segments, reverse=True)
+        else:
+            difference_path.lineToPoint_(_point(band.current_segments[-1].points[-1]))
+            _append_segments(
+                difference_path,
+                band.current_segments,
+                reverse=True,
+                move=False,
+            )
+        difference_path.closePath()
+    _set_color(DIFFERENCE_RGBA)
+    difference_path.fill()
+    return len(bands)
+
+
+def _draw_anchor_delta(baseline, current, radius):
+    _set_color(DIFFERENCE_RGBA)
+    path = NSBezierPath.bezierPath()
+    path.moveToPoint_(_point(baseline))
+    path.lineToPoint_(_point(current))
+    path.setLineWidth_(max(radius, 1.0))
     path.stroke()
-    return True
 
 
-def _stroke_anchor(position, rgba, radius):
-    _set_color(rgba)
-    x, y = float(position[0]), float(position[1])
-    marker = NSBezierPath.bezierPathWithOvalInRect_(((x - radius, y - radius), (radius * 2, radius * 2)))
-    marker.setLineWidth_(max(0.8, radius / 2.5))
-    marker.stroke()
+def _fill_metric_delta(baseline, current):
+    left, right = sorted((float(baseline), float(current)))
+    if left == right:
+        return
+    _set_color(METRIC_RGBA)
+    band = NSBezierPath.bezierPath()
+    band.moveToPoint_(NSPoint(left, -80.0))
+    band.lineToPoint_(NSPoint(right, -80.0))
+    band.lineToPoint_(NSPoint(right, 820.0))
+    band.lineToPoint_(NSPoint(left, 820.0))
+    band.closePath()
+    band.fill()
 
 
 class GlyphsMCPChangeDiffReporter(ReporterPlugin):
-    """Render the recorded before state; never mutate or navigate Glyphs."""
+    """Fill the live geometric delta from the pre-agent baseline."""
 
     @objc.python_method
     def settings(self):
         self.menuName = "Glyphs MCP Changes"
-        self._stale = False
 
     @objc.python_method
     def foreground(self, layer):
-        self._stale = False
         if NSGraphicsContext.currentContext() is None or layer is None:
             return
         history = active_history()
@@ -159,31 +142,21 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
             scale = float(self.getScale() or 1.0)
         except Exception:
             scale = 1.0
-        width = max(1.2 / max(scale, 0.01), 0.5)
-        _stroke_paths(overlay.before_paths, BEFORE_RGBA, width * 1.8, dashed=False)
-        if overlay.stale:
-            _stroke_paths(overlay.target_paths, TARGET_STALE_RGBA, width * 1.4, dashed=True)
-        radius = max(4.0 / max(scale, 0.01), 2.0)
-        for name, position in overlay.before_anchors.items():
-            if overlay.target_anchors.get(name) != position:
-                _stroke_anchor(position, BEFORE_RGBA, radius)
-        if overlay.before_width != overlay.target_width and overlay.before_width is not None:
-            _set_color(METRIC_RGBA)
-            metric = NSBezierPath.bezierPath()
-            metric.moveToPoint_(NSPoint(float(overlay.before_width), -80.0))
-            metric.lineToPoint_(NSPoint(float(overlay.before_width), 820.0))
-            metric.setLineWidth_(width)
-            metric.stroke()
-        self._stale = bool(overlay.stale)
-
-    @objc.python_method
-    def foregroundInViewCoords(self):
-        if not self._stale:
-            return
         try:
-            self.drawTextAtPoint("MCP target edited afterward", NSPoint(18, 22), 10)
-        except Exception:
-            pass
+            _draw_difference(overlay.baseline_paths, overlay.current_paths)
+        except DifferenceTopologyError:
+            return
+        radius = max(2.4 / max(scale, 0.01), 1.0)
+        for name, position in overlay.baseline_anchors.items():
+            current = overlay.current_anchors.get(name)
+            if current is not None and current != position:
+                _draw_anchor_delta(position, current, radius)
+        if (
+            overlay.baseline_width is not None
+            and overlay.current_width is not None
+            and overlay.baseline_width != overlay.current_width
+        ):
+            _fill_metric_delta(overlay.baseline_width, overlay.current_width)
 
     @objc.python_method
     def __file__(self):

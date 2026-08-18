@@ -13,7 +13,7 @@ The catalog contains 30 operations across:
 - fingerprint-bound `rollback_python_execution` and separate recovery copies.
 - content-addressed unsaved-session action commits, bounded change discovery,
   conflict-aware `revert_change`, a passive Change Log, and a drawing-only diff
-  Reporter.
+  Reporter that fills the live geometric band from the pre-agent baseline.
 
 All result envelopes carry request, run, and operation IDs, typed effect and
 status, timestamps, warnings/errors, optional page metadata, fingerprints, and

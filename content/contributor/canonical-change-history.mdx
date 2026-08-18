@@ -26,9 +26,16 @@ changes a master or selection, activates a Reporter, or modifies editor state.
 The **Glyphs MCP Changes** Reporter is a drawing-only Edit View projection of
 the latest contiguous agent session. It reads a cached net semantic diff rather
 than the selected Change Log row. The applied Glyphs outline stays normal; the
-recorded prior outline is drawn in red. If a user later changes one of the exact
-fields written by the agent, the recorded target is added as a dashed neutral
-outline. Unrelated later edits do not make the overlay stale.
+pre-agent outline is the fixed baseline and the current native layer is the
+live comparison. The Reporter fills only the warm translucent geometric band
+between those two shapes; it never traces or recolors the complete outline. If
+the user moves another node afterward, the band updates on the next Glyphs
+redraw to include that movement relative to the same baseline. Reverting the
+layer to the baseline naturally leaves no visible band.
+
+Topology-compatible paths are paired exactly by path, segment, and node order.
+If later editing changes that topology, the Reporter draws no approximate band;
+the complete semantic change remains available in the Change Log.
 
 Both views are projections of the same `ActionCommit` and `CanonicalFontTree`
 data, but neither owns or drives the other.
@@ -55,7 +62,9 @@ Verified typed transactions pass their existing before/after snapshots and
 `ChangeSet` directly to history. There is no second native font capture and no
 second full semantic diff. The latest-session diff is cached when commits are
 recorded, so Reporter redraws perform only affected-glyph and affected-layer
-lookups. Reporter callbacks never hash, snapshot, diff, write, or prune a font.
+lookups plus one detached capture of the layer currently being drawn. Reporter
+callbacks never hash or capture the full font, write, prune, or mutate a Glyphs
+object.
 
 ## Revert semantics
 
