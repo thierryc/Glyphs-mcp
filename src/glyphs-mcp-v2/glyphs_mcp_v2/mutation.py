@@ -94,6 +94,7 @@ class VerifiedMutationPlan:
     observed_change_set: ChangeSet
     dirty_state_intent: str = "forward"
     removes_contribution_id: str | None = None
+    replay_replacements: tuple[tuple[str, ...], ...] = ()
 
     @property
     def before_fingerprint(self) -> str:
@@ -118,6 +119,7 @@ class MutationPlanner:
         before_model: Mapping[str, Any] | None = None,
         dirty_state_intent: str = "forward",
         removes_contribution_id: str | None = None,
+        required_after_model: Mapping[str, Any] | None = None,
     ) -> VerifiedMutationPlan:
         if not document_id:
             raise ValueError("document_id is required")
@@ -143,12 +145,31 @@ class MutationPlanner:
         # Validate the writable patch independently before asking Glyphs to
         # clone anything. This also rejects duplicate/stale paths deterministically.
         requested_change_set.apply(before)
-        simulator = getattr(self._host, "simulate_change_set", None)
-        expected_after = (
-            copy.deepcopy(dict(simulator(document_id, requested_change_set)))
-            if callable(simulator)
-            else requested_change_set.apply(before)
-        )
+        replay_replacements: tuple[tuple[str, ...], ...] = ()
+        reconciler = getattr(self._host, "simulate_reconciliation", None)
+        if required_after_model is not None and callable(reconciler):
+            simulation = reconciler(
+                document_id,
+                requested_change_set,
+                copy.deepcopy(dict(required_after_model)),
+                copy.deepcopy(before),
+            )
+            if not isinstance(simulation, Mapping) or not isinstance(
+                simulation.get("afterModel"), Mapping
+            ):
+                raise ValueError("canonical reconciliation returned an invalid simulation")
+            expected_after = copy.deepcopy(dict(simulation["afterModel"]))
+            replay_replacements = tuple(
+                tuple(str(part) for part in path)
+                for path in simulation.get("replayReplacements", ())
+            )
+        else:
+            simulator = getattr(self._host, "simulate_change_set", None)
+            expected_after = (
+                copy.deepcopy(dict(simulator(document_id, requested_change_set)))
+                if callable(simulator)
+                else requested_change_set.apply(before)
+            )
         observed = diff_models(before, expected_after)
         observed.apply(before)
         return VerifiedMutationPlan(
@@ -160,6 +181,7 @@ class MutationPlanner:
             observed_change_set=observed,
             dirty_state_intent=dirty_state_intent,
             removes_contribution_id=removes_contribution_id,
+            replay_replacements=replay_replacements,
         )
 
 

@@ -136,7 +136,9 @@ class _CanonicalReconciliationMetricsHost(_DriftingMetricsHost):
         super().__init__()
         self.required_after = None
 
-    def simulate_reconciliation(self, document_id, change_set, required_after_model):
+    def simulate_reconciliation(
+        self, document_id, change_set, required_after_model, before_model
+    ):
         self.required_after = copy.deepcopy(required_after_model)
         return {
             "afterModel": copy.deepcopy(required_after_model),

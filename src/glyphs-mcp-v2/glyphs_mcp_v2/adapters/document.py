@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import builtins
+import copy
 import contextlib
 import difflib
 import hashlib
@@ -592,7 +593,55 @@ def _replace_kerning(font: Any, target_pairs: Any) -> None:
             )
 
 
-def _apply_target_model(font: Any, current: Mapping[str, Any], target: Mapping[str, Any], change_set: ChangeSet) -> None:
+def _canonical_replacement_roots(
+    before: Mapping[str, Any],
+    target: Mapping[str, Any],
+    observed: Mapping[str, Any],
+) -> tuple[tuple[str, ...], ...]:
+    """Return changed canonical collections that can resolve a remaining diff.
+
+    The decision is based only on the three canonical trees. It deliberately
+    has no knowledge of the originating tool or setter that caused the drift.
+    """
+
+    remaining = diff_models(observed, target)
+    affected_layers = {
+        change.path[:4]
+        for change in remaining.changes
+        if len(change.path) >= 5
+        and change.path[0] == "glyphs"
+        and change.path[2] == "layers"
+    }
+    replacements: list[tuple[str, ...]] = []
+    for layer_root in sorted(affected_layers):
+        _, glyph_name, _, layer_key = layer_root
+        before_layer = (
+            before.get("glyphs", {})
+            .get(glyph_name, {})
+            .get("layers", {})
+            .get(layer_key, {})
+        )
+        target_layer = (
+            target.get("glyphs", {})
+            .get(glyph_name, {})
+            .get("layers", {})
+            .get(layer_key, {})
+        )
+        for collection in ("paths", "components"):
+            if before_layer.get(collection) != target_layer.get(collection):
+                replacements.append(layer_root + (collection,))
+    return tuple(replacements)
+
+
+def _apply_target_model(
+    font: Any,
+    current: Mapping[str, Any],
+    target: Mapping[str, Any],
+    change_set: ChangeSet,
+    *,
+    replay_replacements: Sequence[Sequence[str]] = (),
+) -> None:
+    replacement_roots = {tuple(str(part) for part in path) for path in replay_replacements}
     changed_roots = {change.path[0] for change in change_set.changes}
     if "font" in changed_roots:
         for name in _FONT_SCALARS:
@@ -670,18 +719,30 @@ def _apply_target_model(font: Any, current: Mapping[str, Any], target: Mapping[s
                     if current_layers[layer_key].get("paths") != target_layers[layer_key].get("paths"):
                         current_paths = current_layers[layer_key].get("paths", [])
                         target_paths = target_layers[layer_key].get("paths", [])
-                        if metrics_key_changed:
-                            # Glyphs can rotate the start node of closed paths
-                            # while synchronizing linked metrics. Rebuild these
-                            # derived geometry changes from canonical order so
-                            # an inverse replay restores the exact fingerprint.
+                        collection_root = (
+                            "glyphs",
+                            name,
+                            "layers",
+                            layer_key,
+                            "paths",
+                        )
+                        if collection_root in replacement_roots:
                             _replace_paths(layer, target_paths)
                         elif not _update_paths_in_place(layer, current_paths, target_paths):
                             _replace_paths(layer, target_paths)
                     if current_layers[layer_key].get("components") != target_layers[layer_key].get("components"):
                         current_components = current_layers[layer_key].get("components", [])
                         target_components = target_layers[layer_key].get("components", [])
-                        if not _update_components_in_place(
+                        collection_root = (
+                            "glyphs",
+                            name,
+                            "layers",
+                            layer_key,
+                            "components",
+                        )
+                        if collection_root in replacement_roots:
+                            _replace_components(layer, target_components)
+                        elif not _update_components_in_place(
                             layer, current_components, target_components
                         ):
                             _replace_components(layer, target_components)
@@ -907,6 +968,62 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         return self._executor.run(simulate)
 
+    def simulate_reconciliation(
+        self,
+        document_id: str,
+        change_set: ChangeSet,
+        required_after_model: Mapping[str, Any],
+        before_model: Mapping[str, Any],
+    ) -> Mapping[str, Any]:
+        """Select a cause-independent replay that reproduces a canonical tree."""
+
+        def simulate() -> Mapping[str, Any]:
+            if not self.supports_change_set(change_set):
+                raise HostAccessError("The change set contains unsupported native write paths")
+            font = self._font_for_document(document_id)
+            copier = _safe_getattr(font, "copy")
+            if not callable(copier):
+                raise HostAccessError("Glyphs did not provide GSFont.copy()")
+            required = copy.deepcopy(dict(required_after_model))
+            source_before = copy.deepcopy(dict(before_model))
+
+            def attempt(replacements: Sequence[Sequence[str]]) -> Mapping[str, Any]:
+                clone = copier()
+                clone_before = native_font_to_model(clone)
+                if fingerprint_model(clone_before) != change_set.before_fingerprint:
+                    raise HostAccessError(
+                        "Detached GSFont.copy() did not reproduce the canonical source"
+                    )
+                # Applying the patch validates its stale values. Reconciliation
+                # then uses the complete intended tree as the authority; the
+                # change set only bounds which document roots may be written.
+                change_set.apply(clone_before)
+                _apply_target_model(
+                    clone,
+                    clone_before,
+                    required,
+                    change_set,
+                    replay_replacements=replacements,
+                )
+                return native_font_to_model(clone)
+
+            preferred = attempt(())
+            if fingerprint_model(preferred) == fingerprint_model(required):
+                return {"afterModel": preferred, "replayReplacements": []}
+
+            replacements = _canonical_replacement_roots(
+                source_before, required, preferred
+            )
+            if not replacements:
+                return {"afterModel": preferred, "replayReplacements": []}
+            canonical = attempt(replacements)
+            return {
+                "afterModel": canonical,
+                "replayReplacements": [list(path) for path in replacements],
+            }
+
+        return self._executor.run(simulate)
+
     def supports_change_set(self, change_set: ChangeSet) -> bool:
         for change in change_set.changes:
             path = change.path
@@ -1106,6 +1223,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         *,
         operation_id: str,
         removes_contribution_id: Optional[str] = None,
+        replay_replacements: Sequence[Sequence[str]] = (),
     ) -> None:
         """Apply content and one operation-owned native dirty contribution."""
 
@@ -1130,7 +1248,13 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             if removes_contribution_id and removes_contribution_id not in active:
                 raise HostAccessError("The reverted MCP dirty contribution is unavailable")
             native_before = _document_edited_state(font)
-            _apply_target_model(font, current, target, change_set)
+            _apply_target_model(
+                font,
+                current,
+                target,
+                change_set,
+                replay_replacements=replay_replacements,
+            )
             if change_set.changes:
                 if removes_contribution_id:
                     removed = active.pop(removes_contribution_id)
@@ -1179,7 +1303,15 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             font = self._font_for_document(document_id)
             current = native_font_to_model(font)
             restoration = diff_models(current, model)
-            _apply_target_model(font, current, model, restoration)
+            _apply_target_model(
+                font,
+                current,
+                model,
+                restoration,
+                replay_replacements=_canonical_replacement_roots(
+                    current, model, current
+                ),
+            )
             contributions = getattr(self, "_document_mcp_contributions", {})
             active = contributions.setdefault(document_id, {})
             pending = getattr(self, "_document_mcp_pending_reverts", {})

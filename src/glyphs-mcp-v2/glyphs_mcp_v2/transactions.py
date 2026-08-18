@@ -119,6 +119,7 @@ class TransactionKernel:
                     plan.writable_change_set,
                     operation_id=plan.operation_id,
                     removes_contribution_id=plan.removes_contribution_id,
+                    replay_replacements=plan.replay_replacements,
                 )
             else:
                 self._adapter.apply_change_set(document_id, plan.writable_change_set)

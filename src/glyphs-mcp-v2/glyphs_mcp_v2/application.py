@@ -8,7 +8,12 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence
 
 from .audit import AuditLog
-from .canonical_tree import CanonicalFontTree, MemoryObjectStore
+from .canonical_tree import (
+    CANONICAL_MODEL_SCHEMA_VERSION,
+    REVERSIBILITY_COVERAGE,
+    CanonicalFontTree,
+    MemoryObjectStore,
+)
 from .catalog import TOOL_CATALOG
 from .change_history import ActionCommit, ChangeHistory
 from .change_trace import ActionTraceCoordinator
@@ -575,6 +580,8 @@ class GlyphsMCPApplication:
             data={
                 "document": snapshot.to_dict(),
                 "documentFingerprint": fingerprint_model(model),
+                "canonicalModelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
+                "reversibilityCoverage": REVERSIBILITY_COVERAGE,
             },
         )
 
@@ -1168,13 +1175,10 @@ class GlyphsMCPApplication:
                 ),
                 data={"operationId": operation_id, "conflictCount": len(conflicts)},
             )
-        # Conflict detection must use the complete value Glyphs actually
-        # produced, not the caller's pre-host writable value. Glyphs may
-        # canonicalize a write (for example a per-layer metrics key) and may
-        # derive additional writable fields such as sidebearings. Project the
-        # verified observed inverse back to writable paths so the compensating
-        # patch is both non-overwriting and capable of restoring the exact
-        # before fingerprint.
+        # The complete observed inverse defines the intended canonical tree.
+        # Writable paths bound what the host may touch; detached reconciliation
+        # selects a cause-independent replay that must reproduce the tree.
+        intended_after = inverse.apply(current)
         writable_inverse = writable_subset(current, inverse)
         metadata = OperationMetadata.create()
         plan = self._mutation_planner.plan(
@@ -1185,9 +1189,9 @@ class GlyphsMCPApplication:
             before_model=current,
             dirty_state_intent="revert",
             removes_contribution_id=operation_id,
+            required_after_model=intended_after,
         )
         if plan.after_fingerprint != inverse.after_fingerprint:
-            intended_after = inverse.apply(current)
             mismatch = diff_models(intended_after, plan.expected_after_model)
             return ToolResponse.failure(
                 tool="revert_change",

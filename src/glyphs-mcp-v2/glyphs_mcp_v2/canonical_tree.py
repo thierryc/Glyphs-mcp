@@ -21,6 +21,8 @@ from .semantic import ChangeSet, canonical_json, diff_models, fingerprint_model
 
 
 TREE_SCHEMA_VERSION = 1
+CANONICAL_MODEL_SCHEMA_VERSION = 1
+REVERSIBILITY_COVERAGE = "modeled_fields_only"
 SHARDED_MAPPING_ROOTS = frozenset({"glyphs", "kerning"})
 
 
@@ -251,6 +253,8 @@ class CanonicalFontTree:
         root_descriptor = {
             "kind": "fontTree",
             "schemaVersion": TREE_SCHEMA_VERSION,
+            "modelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
+            "reversibilityCoverage": REVERSIBILITY_COVERAGE,
             "modelFingerprint": fingerprint_model(plain),
             "roots": roots,
         }
@@ -347,9 +351,11 @@ class CanonicalFontTree:
 
 
 __all__ = [
+    "CANONICAL_MODEL_SCHEMA_VERSION",
     "CanonicalFontTree",
     "MemoryObjectStore",
     "ObjectStore",
+    "REVERSIBILITY_COVERAGE",
     "SQLiteObjectStore",
     "SHARDED_MAPPING_ROOTS",
     "TREE_SCHEMA_VERSION",

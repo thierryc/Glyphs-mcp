@@ -58,14 +58,43 @@ A private compressed SQLite backend exists for tests and future persistence;
 it uses a single short batch per snapshot, `0700` parent permissions, and a
 `0600` database.
 
-Verified typed transactions retain two patches: the requested writable patch
-and the complete clone-observed semantic diff. Only the writable patch is sent
-to Glyphs; history, pagination, and the Reporter use the observed diff. There is
-no second full semantic diff. The latest-session diff is cached when operations
-are recorded, so Reporter redraws perform only affected-glyph and
-affected-layer lookups plus one detached capture of the layer currently being
-drawn. Reporter callbacks never hash or capture the full font, write, prune, or
-mutate a Glyphs object.
+The tree descriptor carries two independent versions. `schemaVersion` describes
+the content-addressed storage layout. `modelSchemaVersion` describes the
+semantic font projection. They must never be treated as interchangeable. The
+descriptor also declares `reversibilityCoverage: modeled_fields_only` because
+the v1 canonical model does not claim to contain every private Glyphs or PyObjC
+field. A model fingerprint is therefore an exact identity for that versioned
+projection, not a byte-for-byte identity for an arbitrary native document.
+
+Canonical fields have explicit roles:
+
+- **writable source fields** can participate in an automatic semantic replay;
+- **derived fields** such as compatibility verdicts are observed and verified
+  but are never assigned as if they were source data;
+- **read-only modeled fields** support analysis but not write-back;
+- **unmodeled native fields** are outside automatic rollback coverage.
+
+Adding a field, changing identity rules, or moving a field between these roles
+requires a model-schema revision plus clone, serialization, and live-host gates.
+Open-world Python remains recovery-only whenever its complete native effect is
+not proven representable by the current model.
+
+Verified typed transactions retain the requested writable patch, the complete
+clone-observed semantic diff, the intended canonical target, and a small replay
+strategy. Reconciliation first uses identity-preserving native edits on a
+detached copy. It recaptures that copy and compares it with the intended tree.
+If a changed canonical collection still differs, the remaining tree diff—not
+the tool name or mutation type—selects deterministic replacement for that
+collection. A fresh detached copy must then reproduce the target exactly. The
+selected strategy is reused once in the live transaction and verified by
+read-back. No metrics-, spacing-, or glyph-specific rollback rule participates
+in this decision.
+
+History, pagination, and the Reporter use the observed diff. The latest-session
+diff is cached when operations are recorded, so Reporter redraws perform only
+affected-glyph and affected-layer lookups plus one detached capture of the layer
+currently being drawn. Reporter callbacks never hash or capture the full font,
+write, prune, or mutate a Glyphs object.
 
 ## Revert semantics
 
@@ -77,8 +106,11 @@ verified operation; it does not delete or rewrite history.
 Revert checks every changed path against the value originally written by the
 commit. Unrelated later edits are preserved. If any affected path was changed
 afterward, the revert fails with explicit conflicts and applies nothing. The
-result still uses detached simulation plus the shared one-shot main-thread
-transaction, read-back, verification, rollback-on-failure, and audit kernel.
+rebased inverse is an intended canonical tree, not a sequence of inverse
+setters. The result still uses detached reconciliation plus the shared one-shot
+main-thread transaction, read-back, verification, rollback-on-failure, and audit
+kernel. If the current model cannot be reconciled exactly, the operation is
+refused before the live document is touched.
 Each active MCP mutation owns one native change-count contribution. A verified
 selective revert removes its corresponding contribution regardless of order;
 native user history is never globally cleared.

@@ -84,7 +84,9 @@ class _CanonicalReconciliationHost(_DerivedHost):
         self.required_after = None
         self.received_replacements = None
 
-    def simulate_reconciliation(self, document_id, change_set, required_after_model):
+    def simulate_reconciliation(
+        self, document_id, change_set, required_after_model, before_model
+    ):
         self.reconciliation_calls += 1
         self.required_after = copy.deepcopy(required_after_model)
         return {

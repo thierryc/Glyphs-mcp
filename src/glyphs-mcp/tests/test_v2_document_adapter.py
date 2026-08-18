@@ -538,6 +538,34 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertIs(layer.paths[0], replacement)
         self.assertIsNot(layer.paths[0], path)
 
+    def test_remaining_tree_diff_selects_changed_collections_without_tool_rules(self) -> None:
+        before = {
+            "glyphs": {
+                "L": {
+                    "layers": {
+                        "m0": {
+                            "paths": [{"closed": True, "nodes": [{"x": 0, "y": 0}]}],
+                            "components": [],
+                            "width": 500,
+                        }
+                    }
+                }
+            }
+        }
+        target = copy.deepcopy(before)
+        target["glyphs"]["L"]["layers"]["m0"]["paths"][0]["nodes"][0]["x"] = 20
+        observed = copy.deepcopy(target)
+        observed["glyphs"]["L"]["layers"]["m0"]["width"] = 501
+
+        roots = document_adapter._canonical_replacement_roots(
+            before, target, observed
+        )
+
+        self.assertEqual(
+            roots,
+            (("glyphs", "L", "layers", "m0", "paths"),),
+        )
+
     def test_clone_generated_instance_ids_do_not_change_the_canonical_model(self) -> None:
         source = native_font_to_model(_InstanceFont("source-uuid", "source-pointer"))
         clone = native_font_to_model(_InstanceFont("clone-uuid", "clone-pointer"))
