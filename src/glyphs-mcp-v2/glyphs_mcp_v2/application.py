@@ -33,6 +33,7 @@ from .semantic import ChangeSet, diff_models, fingerprint_model, revert_change_s
 from .transactions import StaleDocumentError, TransactionKernel, TransactionVerificationError
 from .versions import SERVER_NAME, SERVER_VERSION
 from .workflows import (
+    build_opentype_updates,
     list_glyphs as model_list_glyphs,
     list_instances as model_list_instances,
     list_kerning_pairs as model_list_kerning_pairs,
@@ -849,6 +850,13 @@ class GlyphsMCPApplication:
             arguments,
             tool="apply_kerning_updates",
             builder=build_kerning_updates,
+        )
+
+    def apply_opentype_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        return self._direct_apply(
+            arguments,
+            tool="apply_opentype_updates",
+            builder=build_opentype_updates,
         )
 
     def review_spacing(self, arguments: Mapping[str, Any]) -> ToolResponse:

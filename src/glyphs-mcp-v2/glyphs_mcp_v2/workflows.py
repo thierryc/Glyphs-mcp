@@ -614,6 +614,60 @@ def review_glyph_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str
     return diff_models(model, after)
 
 
+def build_opentype_updates(
+    model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]
+) -> ChangeSet:
+    """Update existing feature, class, and prefix code through one contract."""
+
+    after = copy.deepcopy(dict(model))
+    roots = {
+        "feature": "features",
+        "class": "classes",
+        "prefix": "featurePrefixes",
+    }
+    allowed = {"code", "automatic", "disabled"}
+    seen: set[tuple[str, str]] = set()
+    for update in updates:
+        kind = str(update.get("kind") or "")
+        root = roots.get(kind)
+        name = str(update.get("name") or "")
+        target = (kind, name)
+        if root is None:
+            raise ValueError("OpenType update kind must be feature, class, or prefix")
+        if not name or target in seen:
+            raise ValueError("OpenType updates require unique existing kind/name targets")
+        seen.add(target)
+        collection = after.get(root)
+        if not isinstance(collection, list):
+            raise ValueError("{} must be an ordered canonical collection".format(root))
+        matches = [
+            item
+            for item in collection
+            if isinstance(item, dict)
+            and name in {str(item.get("id") or ""), str(item.get("name") or "")}
+        ]
+        if len(matches) != 1:
+            raise ValueError("unknown or ambiguous OpenType target: {}/{}".format(kind, name))
+        item = matches[0]
+        supplied = allowed.intersection(update)
+        if not supplied:
+            raise ValueError("OpenType updates require code, automatic, or disabled")
+        resulting_automatic = bool(
+            update.get("automatic")
+            if "automatic" in update
+            else item.get("automatic", False)
+        )
+        if "code" in supplied and resulting_automatic:
+            raise ValueError("code updates require the resulting automatic false")
+        if "automatic" in supplied:
+            item["automatic"] = bool(update.get("automatic"))
+        if "code" in supplied:
+            item["code"] = str(update.get("code") or "")
+        if "disabled" in supplied:
+            item["disabled"] = bool(update.get("disabled"))
+    return diff_models(model, after)
+
+
 def review_anchor_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
     after = copy.deepcopy(dict(model))
     glyphs = after.setdefault("glyphs", {})
@@ -758,6 +812,7 @@ def review_compatibility_updates(model: Mapping[str, Any], updates: Sequence[Map
 
 
 __all__ = [
+    "build_opentype_updates",
     "list_glyphs",
     "list_instances",
     "list_kerning_pairs",

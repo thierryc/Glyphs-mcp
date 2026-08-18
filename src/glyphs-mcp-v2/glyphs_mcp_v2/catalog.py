@@ -172,6 +172,7 @@ TOOL_DEFINITIONS: Tuple[ToolDefinition, ...] = (
     _definition("apply_anchor_updates", "Apply Anchor Updates", "Apply explicit anchor updates through detached simulation and one verified transaction.", "anchors", "edit", idempotent=False),
     _definition("apply_glyph_updates", "Apply Glyph Updates", "Apply explicit glyph-property updates through detached simulation and one verified transaction.", "glyphs", "edit", idempotent=False),
     _definition("apply_kerning_updates", "Apply Kerning Updates", "Apply explicit typed kerning updates through detached simulation and one verified transaction.", "kerning", "edit", idempotent=False),
+    _definition("apply_opentype_updates", "Apply OpenType Updates", "Apply code or state updates to existing features, classes, and prefixes through one verified transaction.", "features", "edit", idempotent=False),
     _definition("review_spacing", "Review Spacing", "Run bounded detached fixed-point spacing simulation with dependency revalidation.", "spacing"),
     _definition("apply_spacing", "Apply Spacing", "Apply explicit spacing targets through detached simulation and one verified transaction.", "spacing", "edit", idempotent=False),
     _definition("review_export", "Review Export", "Review compatibility, instances, exclusions, and destination replacement policy.", "export", open_world=True),

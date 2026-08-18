@@ -28,6 +28,8 @@ _LAYER_WRITABLE = frozenset(
         "components",
     }
 )
+_OPENTYPE_ROOTS = frozenset({"features", "classes", "featurePrefixes"})
+_OPENTYPE_WRITABLE = frozenset({"code", "automatic", "disabled"})
 
 
 def classify_change_path(path: tuple[str, ...]) -> str:
@@ -36,6 +38,12 @@ def classify_change_path(path: tuple[str, ...]) -> str:
     if path[0] == "font" and len(path) == 2 and path[1] in _FONT_WRITABLE:
         return "writable"
     if path[0] == "kerning":
+        return "writable"
+    if (
+        path[0] in _OPENTYPE_ROOTS
+        and len(path) == 3
+        and path[2] in _OPENTYPE_WRITABLE
+    ):
         return "writable"
     if path[0] == "glyphs" and len(path) >= 3:
         if len(path) == 3 and path[2] == "mastersCompatible":

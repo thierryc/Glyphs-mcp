@@ -111,6 +111,9 @@ class ToolHandlers:
     async def apply_kerning_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
         return self._invoke("apply_kerning_updates", locals())
 
+    async def apply_opentype_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
+        return self._invoke("apply_opentype_updates", locals())
+
     async def review_spacing(
         self,
         documentId: str,

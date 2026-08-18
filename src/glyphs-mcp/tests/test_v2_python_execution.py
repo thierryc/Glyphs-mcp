@@ -62,6 +62,8 @@ class _PythonHost:
                 "g{:03d}".format(index): {"export": False}
                 for index in range(225)
             }
+        if "featureEdit" in request.code:
+            after["features"][0]["code"] = "sub f f i by ffi;"
         return {
             "afterModel": after,
             "stdout": "previewed",
@@ -232,6 +234,43 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertEqual(host.model["font"]["familyName"], "Beta")
         self.assertEqual(host.preview_calls, 1)
         self.assertEqual(confirmed["data"]["rollback"]["coverage"], "document_inverse")
+
+    def test_staged_existing_feature_code_is_confirmable_and_reversible(self) -> None:
+        service, host = self.service()
+        host.model["features"] = [
+            {
+                "id": "liga",
+                "name": "liga",
+                "code": "sub f i by fi;",
+                "automatic": False,
+                "disabled": False,
+            }
+        ]
+        baseline = copy.deepcopy(host.model)
+        preview = service.execute(
+            PythonExecutionRequest(
+                code="# featureEdit",
+                reason="update existing liga code",
+                intended_effect="document_edit",
+                document_id="doc_alpha",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+
+        self.assertEqual(preview["status"], "review_required")
+        confirmed = service.execute(
+            PythonExecutionRequest(review_id=preview["data"]["reviewId"], confirm=True)
+        ).to_dict()
+        self.assertTrue(confirmed["ok"])
+        self.assertEqual(host.model["features"][0]["code"], "sub f f i by ffi;")
+
+        rolled_back = service.rollback(
+            execution_id=confirmed["data"]["executionId"],
+            expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
+            confirm=True,
+        ).to_dict()
+        self.assertTrue(rolled_back["ok"])
+        self.assertEqual(host.model, baseline)
 
     def test_rollback_is_fingerprint_bound_and_one_shot(self) -> None:
         service, host = self.service()

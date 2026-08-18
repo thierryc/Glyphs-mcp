@@ -751,6 +751,47 @@ def _replace_kerning(font: Any, target_pairs: Any) -> None:
             )
 
 
+def _apply_code_collection(
+    font: Any,
+    attribute: str,
+    current: Sequence[Mapping[str, Any]],
+    target: Sequence[Mapping[str, Any]],
+) -> None:
+    """Apply scalar code fields without replacing ordered native objects."""
+
+    native_values = _sequence_values(_safe_getattr(font, attribute))
+    if len(native_values) != len(current) or len(current) != len(target):
+        raise HostAccessError(
+            "OpenType collection membership changes are not supported in this milestone"
+        )
+    for index, (native, before, after) in enumerate(
+        zip(native_values, current, target)
+    ):
+        before_identity = (
+            str(before.get("id") or ""),
+            str(before.get("name") or ""),
+        )
+        after_identity = (
+            str(after.get("id") or ""),
+            str(after.get("name") or ""),
+        )
+        native_name = str(_safe_getattr(native, "name") or "")
+        if before_identity != after_identity or native_name != before_identity[1]:
+            raise HostAccessError(
+                "OpenType collection identity changed at {}[{}]".format(
+                    attribute, index
+                )
+            )
+        # Automatic mode is applied first. Custom code is legal only in the
+        # resulting manual state, as enforced by the pure request builder.
+        if before.get("automatic") != after.get("automatic"):
+            setattr(native, "automatic", bool(after.get("automatic")))
+        if before.get("code") != after.get("code"):
+            setattr(native, "code", str(after.get("code") or ""))
+        if before.get("disabled") != after.get("disabled"):
+            setattr(native, "disabled", bool(after.get("disabled")))
+
+
 def _canonical_replacement_roots(
     before: Mapping[str, Any],
     target: Mapping[str, Any],
@@ -902,6 +943,18 @@ def _apply_target_model(
                         end()
     if "kerning" in changed_roots:
         _replace_kerning(font, target.get("kerning", []))
+    for root, attribute in (
+        ("features", "features"),
+        ("classes", "classes"),
+        ("featurePrefixes", "featurePrefixes"),
+    ):
+        if root in changed_roots:
+            _apply_code_collection(
+                font,
+                attribute,
+                current.get(root, []),
+                target.get(root, []),
+            )
 
 
 def _safe_import(name: str, globals_value: Any = None, locals_value: Any = None, fromlist: Any = (), level: int = 0) -> Any:
@@ -1203,6 +1256,14 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             if path[0] == "font" and len(path) == 2 and path[1] in _FONT_SCALARS:
                 continue
             if path[0] == "kerning":
+                continue
+            if (
+                path[0] in {"features", "classes", "featurePrefixes"}
+                and len(path) == 3
+                and path[2] in {"code", "automatic", "disabled"}
+            ):
+                if not change.before_present or not change.after_present:
+                    return False
                 continue
             if path[0] == "glyphs" and len(path) >= 3:
                 if len(path) == 3 and path[2] in _GLYPH_SCALARS:
