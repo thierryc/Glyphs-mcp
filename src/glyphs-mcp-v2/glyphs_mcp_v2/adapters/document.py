@@ -627,18 +627,25 @@ def _apply_target_model(font: Any, current: Mapping[str, Any], target: Mapping[s
                 if callable(begin):
                     begin()
                 try:
+                    current_layer = current_layers[layer_key]
+                    target_layer = target_layers[layer_key]
                     metrics_key_changed = any(
-                        current_layers[layer_key].get(field)
-                        != target_layers[layer_key].get(field)
+                        current_layer.get(field) != target_layer.get(field)
                         for field in (
                             "leftMetricsKey",
                             "rightMetricsKey",
                             "widthMetricsKey",
                         )
                     )
-                    for scalar in _LAYER_SCALARS:
-                        if current_layers[layer_key].get(scalar) != target_layers[layer_key].get(scalar):
-                            setattr(layer, scalar, target_layers[layer_key].get(scalar))
+                    # Metrics links must be established or cleared before any
+                    # dependent geometry is replayed.
+                    for scalar in (
+                        "leftMetricsKey",
+                        "rightMetricsKey",
+                        "widthMetricsKey",
+                    ):
+                        if current_layer.get(scalar) != target_layer.get(scalar):
+                            setattr(layer, scalar, target_layer.get(scalar))
                     if metrics_key_changed:
                         sync_metrics = _safe_getattr(layer, "syncMetrics")
                         if not callable(sync_metrics):
@@ -646,6 +653,18 @@ def _apply_target_model(font: Any, current: Mapping[str, Any], target: Mapping[s
                                 "Glyphs did not expose GSLayer.syncMetrics for a metrics-key update"
                             )
                         sync_metrics()
+                    shape_geometry_changed = any(
+                        current_layer.get(field) != target_layer.get(field)
+                        for field in ("paths", "components")
+                    )
+                    # LSB/RSB setters move or resize native geometry. When the
+                    # semantic patch already carries explicit shape geometry,
+                    # that geometry is authoritative and naturally determines
+                    # the bearings after the final width assignment.
+                    if not shape_geometry_changed:
+                        for scalar in ("LSB", "RSB"):
+                            if current_layer.get(scalar) != target_layer.get(scalar):
+                                setattr(layer, scalar, target_layer.get(scalar))
                     if current_layers[layer_key].get("anchors") != target_layers[layer_key].get("anchors"):
                         _replace_anchors(layer, target_layers[layer_key].get("anchors", {}))
                     if current_layers[layer_key].get("paths") != target_layers[layer_key].get("paths"):

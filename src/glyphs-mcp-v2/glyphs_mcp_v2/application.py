@@ -1187,6 +1187,8 @@ class GlyphsMCPApplication:
             removes_contribution_id=operation_id,
         )
         if plan.after_fingerprint != inverse.after_fingerprint:
+            intended_after = inverse.apply(current)
+            mismatch = diff_models(intended_after, plan.expected_after_model)
             return ToolResponse.failure(
                 tool="revert_change",
                 effect="edit",
@@ -1198,6 +1200,11 @@ class GlyphsMCPApplication:
                     details={
                         "intendedAfterFingerprint": inverse.after_fingerprint,
                         "observedAfterFingerprint": plan.after_fingerprint,
+                        "mismatchCount": len(mismatch.changes),
+                        "mismatchPaths": [
+                            list(change.path) for change in mismatch.changes[:100]
+                        ],
+                        "mismatchPathsTruncated": len(mismatch.changes) > 100,
                     },
                 ),
                 data={
