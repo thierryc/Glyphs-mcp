@@ -178,6 +178,8 @@ class TransactionKernel:
                 str(exc) or "document transaction verification failed",
                 rollback_succeeded=rollback_succeeded,
             ) from exc
+        from .mutation import writable_subset
+
         return TransactionResult(
             document_id=document_id,
             operation_id=plan.operation_id,
@@ -185,7 +187,13 @@ class TransactionKernel:
             after_fingerprint=plan.after_fingerprint,
             requested_change_count=len(plan.writable_change_set.changes),
             observed_change_count=len(plan.observed_change_set.changes),
-            inverse=plan.writable_change_set.inverse(),
+            # A rollback patch must start at the complete observed after-state,
+            # not the writable-only intermediate target. Otherwise any Glyphs-
+            # derived effect makes the inverse stale before it is ever used.
+            inverse=writable_subset(
+                actual_after,
+                plan.observed_change_set.inverse(),
+            ),
         )
 
 

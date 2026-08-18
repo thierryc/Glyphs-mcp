@@ -82,6 +82,23 @@ class MutationPlanningHost(Protocol):
         ...
 
 
+class CanonicalTargetMismatchError(ValueError):
+    """Detached replay could not reproduce the required canonical tree."""
+
+    def __init__(
+        self,
+        required_after_model: Mapping[str, Any],
+        observed_after_model: Mapping[str, Any],
+    ) -> None:
+        self.required_after_model = copy.deepcopy(dict(required_after_model))
+        self.observed_after_model = copy.deepcopy(dict(observed_after_model))
+        self.mismatch = diff_models(
+            self.required_after_model,
+            self.observed_after_model,
+        )
+        super().__init__("detached replay did not reproduce the canonical target")
+
+
 @dataclass(frozen=True)
 class VerifiedMutationPlan:
     """Writable intent plus the complete clone-observed result it must cause."""
@@ -170,6 +187,15 @@ class MutationPlanner:
                 if callable(simulator)
                 else requested_change_set.apply(before)
             )
+        if (
+            required_after_model is not None
+            and fingerprint_model(expected_after)
+            != fingerprint_model(required_after_model)
+        ):
+            raise CanonicalTargetMismatchError(
+                required_after_model,
+                expected_after,
+            )
         observed = diff_models(before, expected_after)
         observed.apply(before)
         return VerifiedMutationPlan(
@@ -186,6 +212,7 @@ class MutationPlanner:
 
 
 __all__ = [
+    "CanonicalTargetMismatchError",
     "MutationPlanner",
     "MutationPlanningHost",
     "VerifiedMutationPlan",

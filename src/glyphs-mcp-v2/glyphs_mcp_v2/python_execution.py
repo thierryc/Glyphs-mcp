@@ -13,6 +13,7 @@ from .contracts import ToolError, ToolResponse, ToolWarning
 from .operations import OperationRecord, OperationStore
 from .pagination import paginate
 from .mutation import (
+    CanonicalTargetMismatchError,
     MutationPlanner,
     VerifiedMutationPlan,
     unsupported_change_diagnostics,
@@ -625,6 +626,7 @@ class PythonExecutionService:
                 "codeHash": payload.get("codeHash"),
                 "beforeFingerprint": transaction.before_fingerprint,
                 "afterFingerprint": transaction.after_fingerprint,
+                "beforeModel": before,
                 "inverse": transaction.inverse,
                 "contributionId": review_id,
                 "coverage": "document_inverse",
@@ -768,7 +770,12 @@ class PythonExecutionService:
             "codeHash": payload.get("codeHash"),
             "beforeFingerprint": before_fingerprint,
             "afterFingerprint": changes.after_fingerprint,
-            "inverse": changes.inverse() if coverage == "document_inverse" else None,
+            "beforeModel": before,
+            "inverse": (
+                writable_subset(after, changes.inverse())
+                if coverage == "document_inverse"
+                else None
+            ),
             "coverage": coverage,
             "recoveryPath": recovery_path,
         }
@@ -968,13 +975,22 @@ class PythonExecutionService:
                 data={"executionId": execution_id, "strategy": strategy, "workingDocumentReplaced": False},
             )
         inverse = payload.get("inverse")
-        if not isinstance(inverse, ChangeSet):
+        required_before = payload.get("beforeModel")
+        if not isinstance(inverse, ChangeSet) or not isinstance(required_before, Mapping):
             return self._rollback_failure(
                 code="automatic_rollback_unavailable",
                 summary="Automatic rollback is not covered; use open_recovery_copy instead.",
                 execution_id=execution_id,
                 document_id=document_id,
                 data={"coverage": payload.get("coverage")},
+            )
+        if fingerprint_model(required_before) != payload.get("beforeFingerprint"):
+            return self._rollback_failure(
+                code="checkpoint_corrupt",
+                summary="The rollback checkpoint does not reproduce its declared baseline.",
+                execution_id=execution_id,
+                document_id=document_id,
+                recoverable=False,
             )
         try:
             current = self._host.capture_model(document_id)
@@ -1003,8 +1019,28 @@ class PythonExecutionService:
                 before_model=current,
                 dirty_state_intent="rollback",
                 removes_contribution_id=str(payload.get("contributionId") or "") or None,
+                required_after_model=required_before,
             )
             result = self._transactions.apply_plan(plan)
+        except CanonicalTargetMismatchError as exc:
+            mismatch = exc.mismatch
+            return self._rollback_failure(
+                code="rollback_not_exact",
+                summary="The detached inverse could not reproduce the checkpoint baseline; nothing was rolled back.",
+                execution_id=execution_id,
+                document_id=document_id,
+                data={
+                    "intendedAfterFingerprint": payload.get("beforeFingerprint"),
+                    "observedAfterFingerprint": fingerprint_model(
+                        exc.observed_after_model
+                    ),
+                    "mismatchCount": len(mismatch.changes),
+                    "mismatchPaths": [
+                        list(change.path) for change in mismatch.changes[:100]
+                    ],
+                    "mismatchPathsTruncated": len(mismatch.changes) > 100,
+                },
+            )
         except (StaleDocumentError, TransactionVerificationError) as exc:
             return self._rollback_failure(
                 code="rollback_failed",
@@ -1016,6 +1052,14 @@ class PythonExecutionService:
                         isinstance(exc, TransactionVerificationError) and exc.rollback_succeeded
                     )
                 },
+            )
+        if result.after_fingerprint != payload.get("beforeFingerprint"):
+            return self._rollback_failure(
+                code="rollback_not_exact",
+                summary="The verified rollback did not restore the checkpoint baseline.",
+                execution_id=execution_id,
+                document_id=document_id,
+                recoverable=False,
             )
         self._checkpoints.discard(execution_id)
         receipt = self._audit.record(

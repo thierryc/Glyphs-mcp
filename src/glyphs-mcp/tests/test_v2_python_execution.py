@@ -154,6 +154,37 @@ class _DriftingRollbackPythonHost(_PythonHost):
         self.model = self._derive(change_set.apply(self.model))
 
 
+class _ReconcilingRollbackPythonHost(_DriftingRollbackPythonHost):
+    def __init__(self) -> None:
+        super().__init__()
+        self.required_after = None
+        self.reconciliation_calls = 0
+
+    def simulate_reconciliation(
+        self, document_id, change_set, required_after_model, before_model
+    ):
+        self.reconciliation_calls += 1
+        self.required_after = copy.deepcopy(required_after_model)
+        return {
+            "afterModel": copy.deepcopy(required_after_model),
+            "replayReplacements": [],
+        }
+
+    def apply_verified_change_set(
+        self,
+        document_id,
+        change_set,
+        *,
+        operation_id,
+        removes_contribution_id=None,
+        replay_replacements=(),
+    ):
+        if operation_id.startswith("rollback_") and self.required_after is not None:
+            self.model = copy.deepcopy(self.required_after)
+            return
+        self.model = self._derive(change_set.apply(self.model))
+
+
 class _Clock:
     def __init__(self):
         self.value = 1_700_000_000.0
@@ -269,6 +300,45 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertEqual(rolled_back["error"]["code"], "rollback_not_exact")
         self.assertEqual(host.model, after)
         self.assertNotEqual(fingerprint_model(host.model), fingerprint_model(baseline))
+
+    def test_rollback_uses_the_same_canonical_reconciler_as_typed_revert(self) -> None:
+        host = _ReconcilingRollbackPythonHost()
+        service = PythonExecutionService(
+            host=host,
+            transactions=TransactionKernel(host),
+            reviews=OperationStore(),
+            checkpoints=OperationStore(),
+            audit=AuditLog(),
+        )
+        baseline = copy.deepcopy(host.model)
+        preview = service.execute(
+            PythonExecutionRequest(
+                code="font.familyName = 'Beta'",
+                reason="exercise shared rollback reconciliation",
+                intended_effect="document_edit",
+                document_id="doc_alpha",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+        confirmed = service.execute(
+            PythonExecutionRequest(
+                review_id=preview["data"]["reviewId"], confirm=True
+            )
+        ).to_dict()
+
+        rolled_back = service.rollback(
+            execution_id=confirmed["data"]["executionId"],
+            expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
+            confirm=True,
+        ).to_dict()
+
+        self.assertTrue(rolled_back["ok"])
+        self.assertEqual(host.model, baseline)
+        self.assertEqual(
+            rolled_back["data"]["afterFingerprint"],
+            fingerprint_model(baseline),
+        )
+        self.assertEqual(host.reconciliation_calls, 1)
 
     def test_later_edits_make_rollback_stale(self) -> None:
         service, host = self.service()

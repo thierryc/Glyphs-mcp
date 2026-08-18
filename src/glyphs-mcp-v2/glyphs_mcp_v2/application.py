@@ -20,7 +20,12 @@ from .change_trace import ActionTraceCoordinator
 from .contracts import API_MAJOR, API_VERSION, OperationMetadata, ToolError, ToolResponse, ToolWarning
 from .exporting import ExportPublicationError, destination_matches
 from .operations import OperationRecord, OperationStore
-from .mutation import MutationPlanner, unsupported_change_diagnostics, writable_subset
+from .mutation import (
+    CanonicalTargetMismatchError,
+    MutationPlanner,
+    unsupported_change_diagnostics,
+    writable_subset,
+)
 from .pagination import CursorError, paginate
 from .ports import HostAccessError, ReadOnlyHost
 from .python_execution import PythonExecutionRequest, PythonExecutionService
@@ -1181,18 +1186,19 @@ class GlyphsMCPApplication:
         intended_after = inverse.apply(current)
         writable_inverse = writable_subset(current, inverse)
         metadata = OperationMetadata.create()
-        plan = self._mutation_planner.plan(
-            document_id=document_id,
-            expected_document_fingerprint=current_fingerprint,
-            requested_change_set=writable_inverse,
-            operation_id=metadata.operation_id,
-            before_model=current,
-            dirty_state_intent="revert",
-            removes_contribution_id=operation_id,
-            required_after_model=intended_after,
-        )
-        if plan.after_fingerprint != inverse.after_fingerprint:
-            mismatch = diff_models(intended_after, plan.expected_after_model)
+        try:
+            plan = self._mutation_planner.plan(
+                document_id=document_id,
+                expected_document_fingerprint=current_fingerprint,
+                requested_change_set=writable_inverse,
+                operation_id=metadata.operation_id,
+                before_model=current,
+                dirty_state_intent="revert",
+                removes_contribution_id=operation_id,
+                required_after_model=intended_after,
+            )
+        except CanonicalTargetMismatchError as exc:
+            mismatch = exc.mismatch
             return ToolResponse.failure(
                 tool="revert_change",
                 effect="edit",
@@ -1203,7 +1209,9 @@ class GlyphsMCPApplication:
                     recoverable=True,
                     details={
                         "intendedAfterFingerprint": inverse.after_fingerprint,
-                        "observedAfterFingerprint": plan.after_fingerprint,
+                        "observedAfterFingerprint": fingerprint_model(
+                            exc.observed_after_model
+                        ),
                         "mismatchCount": len(mismatch.changes),
                         "mismatchPaths": [
                             list(change.path) for change in mismatch.changes[:100]
@@ -1214,7 +1222,9 @@ class GlyphsMCPApplication:
                 data={
                     "operationId": operation_id,
                     "intendedAfterFingerprint": inverse.after_fingerprint,
-                    "observedAfterFingerprint": plan.after_fingerprint,
+                    "observedAfterFingerprint": fingerprint_model(
+                        exc.observed_after_model
+                    ),
                 },
             )
         self._trace.bind_document(document_id)

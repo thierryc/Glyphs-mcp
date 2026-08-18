@@ -47,6 +47,15 @@ def _plain_scalar(value: Any) -> Any:
     return str(value)
 
 
+def _optional_text(value: Any) -> Optional[str]:
+    """Canonicalize native absent-string spellings to one semantic value."""
+
+    plain = _plain_scalar(value)
+    if plain is None or plain == "":
+        return None
+    return str(plain)
+
+
 def _point(value: Any) -> list[float]:
     try:
         return [float(value.x), float(value.y)]
@@ -125,7 +134,7 @@ def _path_model(path: Any) -> dict[str, Any]:
                 "y": position[1],
                 "type": str(_safe_getattr(node, "type") or "line").lower(),
                 "smooth": bool(_safe_getattr(node, "smooth", False)),
-                "name": _plain_scalar(_safe_getattr(node, "name")),
+                "name": _optional_text(_safe_getattr(node, "name")),
             }
         )
     return {"closed": bool(_safe_getattr(path, "closed", True)), "nodes": nodes}

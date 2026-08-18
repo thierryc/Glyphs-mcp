@@ -197,6 +197,8 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         self.assertEqual(result.observed_change_count, 2)
         self.assertEqual(result.operation_id, "op_direct")
         self.assertEqual(fingerprint_model(host.model), plan.after_fingerprint)
+        self.assertEqual(result.inverse.before_fingerprint, plan.after_fingerprint)
+        self.assertEqual(result.inverse.apply(host.model), before)
 
     def test_required_canonical_target_selects_and_replays_one_detached_strategy(self) -> None:
         host = _CanonicalReconciliationHost()
