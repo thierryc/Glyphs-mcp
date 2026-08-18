@@ -670,7 +670,13 @@ def _apply_target_model(font: Any, current: Mapping[str, Any], target: Mapping[s
                     if current_layers[layer_key].get("paths") != target_layers[layer_key].get("paths"):
                         current_paths = current_layers[layer_key].get("paths", [])
                         target_paths = target_layers[layer_key].get("paths", [])
-                        if not _update_paths_in_place(layer, current_paths, target_paths):
+                        if metrics_key_changed:
+                            # Glyphs can rotate the start node of closed paths
+                            # while synchronizing linked metrics. Rebuild these
+                            # derived geometry changes from canonical order so
+                            # an inverse replay restores the exact fingerprint.
+                            _replace_paths(layer, target_paths)
+                        elif not _update_paths_in_place(layer, current_paths, target_paths):
                             _replace_paths(layer, target_paths)
                     if current_layers[layer_key].get("components") != target_layers[layer_key].get("components"):
                         current_components = current_layers[layer_key].get("components", [])
