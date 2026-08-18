@@ -6,6 +6,7 @@ import copy
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -23,6 +24,7 @@ from glyphs_mcp_v2.semantic import (  # noqa: E402
     diff_models,
     fingerprint_model,
 )
+from glyphs_mcp_v2 import semantic as semantic_module  # noqa: E402
 from glyphs_mcp_v2.transactions import TransactionKernel  # noqa: E402
 from glyphs_mcp_v2.transactions import StaleDocumentError  # noqa: E402
 from glyphs_mcp_v2.transactions import TransactionVerificationError  # noqa: E402
@@ -186,6 +188,28 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         self.assertEqual(canonical_json(integer), canonical_json(floating))
         self.assertEqual(fingerprint_model(integer), fingerprint_model(floating))
         self.assertEqual(diff_models(integer, floating).changes, ())
+
+    def test_builtin_canonical_values_do_not_pay_abstract_mapping_checks(self) -> None:
+        class ExplodingMappingMeta(type):
+            def __instancecheck__(cls, instance):
+                raise AssertionError(
+                    "built-in canonical values must bypass Mapping ABC checks"
+                )
+
+        class ExplodingMapping(metaclass=ExplodingMappingMeta):
+            pass
+
+        value = {
+            "font": {"upm": 1000, "note": None},
+            "glyphs": {"A": {"paths": [[0, 1.0, -0.0, True, "line"]]}},
+        }
+        with mock.patch.object(semantic_module, "Mapping", ExplodingMapping):
+            encoded = canonical_json(value)
+
+        self.assertEqual(
+            encoded,
+            '{"font":{"note":null,"upm":1000},"glyphs":{"A":{"paths":[[0,1,0,true,"line"]]}}}',
+        )
 
     def test_diff_models_self_verifies_type_sensitive_scalar_changes(self) -> None:
         before = {"font": {"value": 1.25}}
