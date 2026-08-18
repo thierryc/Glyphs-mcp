@@ -981,6 +981,29 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
     def capture_model(self, document_id: str) -> Mapping[str, Any]:
         return self._executor.run(lambda: native_font_to_model(self._font_for_document(document_id)))
 
+    def capture_stable_model(self, document_id: str) -> Mapping[str, Any]:
+        """Capture a canonical tree only after two host readbacks agree.
+
+        Glyphs may resolve metrics and other derived layer state on a later
+        application-loop turn after a setter returns. The pause happens on the
+        MCP worker, never inside Reporter drawing or the main-thread callback.
+        A transaction must fail rather than publish an unstable fingerprint.
+        """
+
+        previous = copy.deepcopy(dict(self.capture_model(document_id)))
+        previous_fingerprint = fingerprint_model(previous)
+        for _ in range(3):
+            time.sleep(0.02)
+            current = copy.deepcopy(dict(self.capture_model(document_id)))
+            current_fingerprint = fingerprint_model(current)
+            if current_fingerprint == previous_fingerprint:
+                return current
+            previous = current
+            previous_fingerprint = current_fingerprint
+        raise HostAccessError(
+            "Glyphs canonical state did not settle across bounded readbacks"
+        )
+
     def simulate_change_set(
         self, document_id: str, change_set: ChangeSet
     ) -> Mapping[str, Any]:

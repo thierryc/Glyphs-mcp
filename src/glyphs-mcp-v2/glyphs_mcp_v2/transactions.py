@@ -71,6 +71,19 @@ class TransactionKernel:
         self._adapter = adapter
         self._observer = observer
 
+    def _capture_verified_state(self, document_id: str) -> Mapping[str, Any]:
+        """Capture after Glyphs has had a chance to settle derived state.
+
+        Host adapters that schedule derived updates after a native setter may
+        provide ``capture_stable_model``. Pure/in-memory adapters retain the
+        single-capture path.
+        """
+
+        stable_capture = getattr(self._adapter, "capture_stable_model", None)
+        if callable(stable_capture):
+            return stable_capture(document_id)
+        return self._adapter.capture_model(document_id)
+
     def apply(
         self,
         *,
@@ -123,7 +136,7 @@ class TransactionKernel:
                 )
             else:
                 self._adapter.apply_change_set(document_id, plan.writable_change_set)
-            actual_after = copy.deepcopy(dict(self._adapter.capture_model(document_id)))
+            actual_after = copy.deepcopy(dict(self._capture_verified_state(document_id)))
             actual_fingerprint = fingerprint_model(actual_after)
             if (
                 actual_fingerprint != plan.after_fingerprint
@@ -165,7 +178,7 @@ class TransactionKernel:
                     )
                 else:
                     self._adapter.restore_model(document_id, before)
-                restored = self._adapter.capture_model(document_id)
+                restored = self._capture_verified_state(document_id)
                 rollback_succeeded = fingerprint_model(restored) == current_fingerprint
             except Exception:
                 rollback_succeeded = False
