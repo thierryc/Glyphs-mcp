@@ -25,7 +25,21 @@ def _model() -> dict:
         "font": {"familyName": "History App", "upm": 1000},
         "masters": [{"id": "m0", "name": "Regular"}],
         "instances": [],
-        "glyphs": {"A": {"name": "A", "id": "id_A", "export": True, "layers": {}}},
+        "glyphs": {
+            "A": {
+                "name": "A",
+                "id": "id_A",
+                "export": True,
+                "layers": {
+                    "m0": {
+                        "width": 500,
+                        "LSB": 40,
+                        "RSB": 60,
+                        "leftMetricsKey": None,
+                    }
+                },
+            }
+        },
         "kerning": {}, "features": [], "classes": [], "featurePrefixes": [],
     }
 
@@ -71,6 +85,26 @@ class _Host:
 
     def open_recovery_copy(self, path):
         return None
+
+
+class _NormalizingMetricsHost(_Host):
+    """Reproduce Glyphs canonicalizing a layer metrics key after assignment."""
+
+    @staticmethod
+    def _normalize(model):
+        normalized = copy.deepcopy(model)
+        layer = normalized["glyphs"]["A"]["layers"]["m0"]
+        if layer.get("leftMetricsKey") == "=H":
+            layer["leftMetricsKey"] = "==H"
+            layer["LSB"] = 73
+        return normalized
+
+    def simulate_change_set(self, document_id, change_set):
+        return self._normalize(change_set.apply(self.model))
+
+    def apply_change_set(self, document_id, change_set):
+        self.apply_calls += 1
+        self.model = self._normalize(change_set.apply(self.model))
 
 
 class ChangeHistoryApplicationTests(unittest.TestCase):
@@ -140,6 +174,47 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertIsNotNone(reverted["auditReceipt"])
         events = self.app._audit.list_events(document_id="doc_history")
         self.assertEqual([event.tool for event in events], ["apply_glyph_updates", "revert_change"])
+
+    def test_revert_uses_observed_canonical_values_after_host_normalization(self) -> None:
+        host = _NormalizingMetricsHost()
+        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        app = GlyphsMCPApplication(host, history=history)
+        applied = app.invoke(
+            "apply_metrics_updates",
+            {
+                "documentId": "doc_history",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "updates": [
+                    {
+                        "glyphName": "A",
+                        "masterId": "m0",
+                        "leftMetricsKey": "=H",
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertTrue(applied["ok"])
+        self.assertEqual(
+            host.model["glyphs"]["A"]["layers"]["m0"]["leftMetricsKey"],
+            "==H",
+        )
+        self.assertEqual(host.model["glyphs"]["A"]["layers"]["m0"]["LSB"], 73)
+
+        reverted = app.invoke(
+            "revert_change",
+            {
+                "documentId": "doc_history",
+                "operationId": applied["operationId"],
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+            },
+        ).to_dict()
+
+        self.assertTrue(reverted["ok"])
+        self.assertIsNone(
+            host.model["glyphs"]["A"]["layers"]["m0"]["leftMetricsKey"]
+        )
+        self.assertEqual(host.model["glyphs"]["A"]["layers"]["m0"]["LSB"], 40)
 
     def test_invalid_direct_mutation_still_emits_exactly_one_audit_receipt(self) -> None:
         response = self.app.invoke(

@@ -246,6 +246,33 @@ class _OutlineLayer:
         self.end_count += 1
 
 
+class _MetricsLayer:
+    def __init__(self):
+        self.layerId = "master-regular"
+        self.associatedMasterId = "master-regular"
+        self.leftMetricsKey = None
+        self.rightMetricsKey = None
+        self.widthMetricsKey = None
+        self.width = 500
+        self.LSB = 40
+        self.RSB = 60
+        self.paths = ()
+        self.shapes = []
+        self.begin_count = 0
+        self.end_count = 0
+        self.sync_count = 0
+
+    def beginChanges(self):
+        self.begin_count += 1
+
+    def endChanges(self):
+        self.end_count += 1
+
+    def syncMetrics(self):
+        self.sync_count += 1
+        self.LSB = 73
+
+
 class _RecoveryHost(GlyphsDocumentHost):
     def __init__(self, app, root):
         super().__init__(app, executor=_Immediate())
@@ -286,6 +313,36 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(layer.shapes, [component, path])
         self.assertEqual((first_node.position.x, first_node.position.y), (24.0, 0.0))
         self.assertEqual((second_node.position.x, second_node.position.y), (100.0, 0.0))
+        self.assertEqual((layer.begin_count, layer.end_count), (1, 1))
+
+    def test_metrics_key_write_synchronizes_derived_native_metrics(self) -> None:
+        layer = _MetricsLayer()
+        glyph = SimpleNamespace(name="A", layers={"master-regular": layer})
+        font = SimpleNamespace(glyphs={"A": glyph})
+        before_layer = {
+            "width": 500,
+            "LSB": 40,
+            "RSB": 60,
+            "leftMetricsKey": None,
+            "rightMetricsKey": None,
+            "widthMetricsKey": None,
+        }
+        after_layer = copy.deepcopy(before_layer)
+        after_layer["leftMetricsKey"] = "=H"
+        current = {
+            "glyphs": {"A": {"layers": {"master-regular": before_layer}}}
+        }
+        target = {
+            "glyphs": {"A": {"layers": {"master-regular": after_layer}}}
+        }
+
+        document_adapter._apply_target_model(
+            font, current, target, diff_models(current, target)
+        )
+
+        self.assertEqual(layer.leftMetricsKey, "=H")
+        self.assertEqual(layer.sync_count, 1)
+        self.assertEqual(layer.LSB, 73)
         self.assertEqual((layer.begin_count, layer.end_count), (1, 1))
 
     def test_clone_generated_instance_ids_do_not_change_the_canonical_model(self) -> None:
