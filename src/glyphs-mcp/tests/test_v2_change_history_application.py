@@ -229,6 +229,41 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         events = self.app._audit.list_events(document_id="doc_history")
         self.assertEqual([event.tool for event in events], ["apply_glyph_updates", "revert_change"])
 
+    def test_generic_revert_accepts_fields_already_at_the_original_value(self) -> None:
+        applied = self.app.invoke(
+            "apply_glyph_updates",
+            {
+                "documentId": "doc_history",
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+                "updates": [
+                    {
+                        "glyphName": "A",
+                        "export": False,
+                        "category": "Symbol",
+                    }
+                ],
+            },
+        ).to_dict()
+        self.assertTrue(applied["ok"])
+
+        # Glyphs may settle one derived field back to its pre-operation value
+        # after the first verified readback. That field is already reverted,
+        # not a conflicting third value.
+        self.host.model["glyphs"]["A"]["export"] = True
+
+        reverted = self.app.invoke(
+            "revert_change",
+            {
+                "documentId": "doc_history",
+                "operationId": applied["operationId"],
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+            },
+        ).to_dict()
+
+        self.assertTrue(reverted["ok"])
+        self.assertTrue(self.host.model["glyphs"]["A"]["export"])
+        self.assertNotIn("category", self.host.model["glyphs"]["A"])
+
     def test_revert_uses_observed_canonical_values_after_host_normalization(self) -> None:
         host = _NormalizingMetricsHost()
         history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
