@@ -868,8 +868,19 @@ class GlyphsMCPApplication:
                             "width": layer.get("width") or 0,
                             "category": glyph.get("category"),
                             "targetWidth": layer.get("width") or 0,
+                            "hostOwnsWidth": bool(layer.get("hasAlignedWidth")),
                         }
                     )
+        else:
+            for item in requested_items:
+                glyph = model.get("glyphs", {}).get(item.get("glyphName"))
+                layer = (
+                    glyph.get("layers", {}).get(item.get("masterId"))
+                    if isinstance(glyph, Mapping)
+                    else None
+                )
+                if isinstance(layer, Mapping):
+                    item["hostOwnsWidth"] = bool(layer.get("hasAlignedWidth"))
         simulation = simulate_spacing(
             requested_items,
             max_iterations=int(_value(arguments, "max_iterations", "maxIterations", 5)),
@@ -898,6 +909,25 @@ class GlyphsMCPApplication:
             model: Mapping[str, Any],
             items: Sequence[Mapping[str, Any]],
         ) -> ChangeSet:
+            for source in items:
+                glyph = model.get("glyphs", {}).get(source.get("glyphName"))
+                layer = (
+                    glyph.get("layers", {}).get(source.get("masterId"))
+                    if isinstance(glyph, Mapping)
+                    else None
+                )
+                if not isinstance(layer, Mapping):
+                    raise ValueError(
+                        "unknown spacing target: {}/{}".format(
+                            source.get("glyphName"), source.get("masterId")
+                        )
+                    )
+                if bool(layer.get("hasAlignedWidth")):
+                    raise ValueError(
+                        "spacing target has a Glyphs-owned automatically aligned width: {}/{}".format(
+                            source.get("glyphName"), source.get("masterId")
+                        )
+                    )
             simulation = simulate_spacing(
                 items,
                 max_iterations=int(_value(arguments, "max_iterations", "maxIterations", 5)),

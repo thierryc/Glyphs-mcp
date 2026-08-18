@@ -447,6 +447,9 @@ def simulate_spacing(
         if item["beforeWidth"] == 0 and str(item.get("category") or "").lower() == "mark":
             skipped[key] = "zero_width_mark"
             continue
+        if bool(item.get("hostOwnsWidth")):
+            skipped[key] = "automatic_alignment"
+            continue
         reference_name = item.get("referenceGlyphName")
         if reference_name:
             reference = (

@@ -164,10 +164,21 @@ def _layer_model(layer: Any) -> dict[str, Any]:
         "name": str(_safe_getattr(layer, "name") or ""),
         "isMasterLayer": bool(_maybe_call(_safe_getattr(layer, "isMasterLayer", False))),
         "isSpecialLayer": bool(_maybe_call(_safe_getattr(layer, "isSpecialLayer", False))),
+        "hasAlignedWidth": bool(
+            _maybe_call(_safe_getattr(layer, "hasAlignedWidth", False))
+        ),
         "anchors": _anchor_model(layer),
         "paths": [_path_model(path) for path in _layer_paths(layer)],
         "components": [
-            {"name": str(_safe_getattr(component, "componentName") or ""), "transform": _component_transform(component)}
+            {
+                "name": str(_safe_getattr(component, "componentName") or ""),
+                "transform": _component_transform(component),
+                "automaticAlignment": bool(
+                    _maybe_call(
+                        _safe_getattr(component, "automaticAlignment", False)
+                    )
+                ),
+            }
             for component in _layer_components(layer)
         ],
     }
@@ -532,6 +543,8 @@ def _new_component(spec: Mapping[str, Any]) -> Any:
     transform = spec.get("transform")
     if isinstance(transform, Sequence) and len(transform) == 6:
         component.transform = tuple(float(value) for value in transform)
+    if "automaticAlignment" in spec:
+        component.automaticAlignment = bool(spec.get("automaticAlignment"))
     return component
 
 
@@ -548,7 +561,7 @@ def _update_components_in_place(
         or len(current_specs) != len(target_specs)
     ):
         return False
-    updates: list[tuple[Any, tuple[float, ...]]] = []
+    updates: list[tuple[Any, tuple[float, ...], Optional[bool]]] = []
     for native, current, target in zip(
         native_components, current_specs, target_specs
     ):
@@ -561,12 +574,23 @@ def _update_components_in_place(
         if not isinstance(transform, Sequence) or len(transform) != 6:
             return False
         try:
-            updates.append((native, tuple(float(value) for value in transform)))
+            alignment = (
+                bool(target.get("automaticAlignment"))
+                if "automaticAlignment" in target
+                else None
+            )
+            updates.append(
+                (native, tuple(float(value) for value in transform), alignment)
+            )
         except (TypeError, ValueError):
             return False
-    for native, transform in updates:
+    for native, transform, alignment in updates:
         if tuple(_component_transform(native)) != transform:
             native.transform = transform
+        if alignment is not None and bool(
+            _maybe_call(_safe_getattr(native, "automaticAlignment", False))
+        ) != alignment:
+            native.automaticAlignment = alignment
     return True
 
 
