@@ -14,6 +14,7 @@ import re
 import time
 import tempfile
 from pathlib import Path
+from threading import RLock
 from typing import Any, Mapping, Optional, Sequence
 
 from ..exporting import inspect_destination, publish_staged_directory
@@ -315,22 +316,104 @@ def _kerning_model(font: Any) -> dict[str, dict[str, dict[str, float]]]:
     return result
 
 
+def _font_model_with_glyphs(
+    font: Any,
+    glyphs: Mapping[str, Any],
+    *,
+    masters: Optional[Sequence[Mapping[str, Any]]] = None,
+) -> dict[str, Any]:
+    return {
+        "font": {name: _plain_scalar(_safe_getattr(font, name)) for name in _FONT_SCALARS},
+        "masters": list(masters) if masters is not None else _master_models(font),
+        "instances": _instance_models(font),
+        "glyphs": dict(glyphs),
+        "kerning": _kerning_model(font),
+        "features": _code_collection(font, "features"),
+        "classes": _code_collection(font, "classes"),
+        "featurePrefixes": _code_collection(font, "featurePrefixes"),
+    }
+
+
 def native_font_to_model(font: Any) -> dict[str, Any]:
     glyphs = {}
     for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
         model = _glyph_model(glyph)
         if model["name"]:
             glyphs[model["name"]] = model
-    return {
-        "font": {name: _plain_scalar(_safe_getattr(font, name)) for name in _FONT_SCALARS},
-        "masters": _master_models(font),
-        "instances": _instance_models(font),
-        "glyphs": glyphs,
-        "kerning": _kerning_model(font),
-        "features": _code_collection(font, "features"),
-        "classes": _code_collection(font, "classes"),
-        "featurePrefixes": _code_collection(font, "featurePrefixes"),
-    }
+    return _font_model_with_glyphs(font, glyphs)
+
+
+class _RevisionBoundGlyphModelCache:
+    """Reuse detached glyph trees only while native revision evidence agrees.
+
+    Paths and components dominate live canonical capture cost. Glyphs updates a
+    glyph's ``lastChange`` when its own layers or derived metrics change; layer
+    membership and the ordered master identity are included independently so a
+    structural collection change cannot reuse an incompatible glyph tree.
+    Agent-owned writes invalidate the document explicitly before verification.
+    """
+
+    def __init__(self) -> None:
+        self._documents: dict[str, dict[str, Any]] = {}
+        self._lock = RLock()
+
+    @staticmethod
+    def _layer_structure(glyph: Any) -> tuple[tuple[str, str], ...]:
+        return tuple(
+            (
+                str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""),
+                str(_safe_getattr(layer, "associatedMasterId") or ""),
+            )
+            for layer in _sequence_values(_safe_getattr(glyph, "layers"))
+        )
+
+    @classmethod
+    def _glyph_token(cls, glyph: Any) -> tuple[Any, ...]:
+        return (
+            str(_safe_getattr(glyph, "name") or ""),
+            str(_safe_getattr(glyph, "id") or ""),
+            str(_plain_scalar(_safe_getattr(glyph, "lastChange")) or ""),
+            _plain_scalar(_maybe_call(_safe_getattr(glyph, "changeCount"))),
+            cls._layer_structure(glyph),
+        )
+
+    def invalidate(self, document_id: str) -> None:
+        with self._lock:
+            self._documents.pop(document_id, None)
+
+    def capture(self, document_id: str, font: Any) -> dict[str, Any]:
+        masters = _master_models(font)
+        master_structure = tuple(str(master.get("id") or "") for master in masters)
+        with self._lock:
+            previous = self._documents.get(document_id)
+            previous_glyphs = (
+                previous.get("glyphs", {})
+                if previous is not None
+                and previous.get("masterStructure") == master_structure
+                else {}
+            )
+            current_glyphs: dict[str, dict[str, Any]] = {}
+            result_glyphs: dict[str, Any] = {}
+            for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
+                token = self._glyph_token(glyph)
+                name = str(token[0])
+                if not name:
+                    continue
+                cached = previous_glyphs.get(name)
+                if cached is not None and cached.get("token") == token:
+                    model = copy.deepcopy(cached["model"])
+                else:
+                    model = _glyph_model(glyph)
+                result_glyphs[name] = model
+                current_glyphs[name] = {
+                    "token": token,
+                    "model": copy.deepcopy(model),
+                }
+            self._documents[document_id] = {
+                "masterStructure": master_structure,
+                "glyphs": current_glyphs,
+            }
+        return _font_model_with_glyphs(font, result_glyphs, masters=masters)
 
 
 def _lookup_by_name(collection: Any, name: str) -> Any:
@@ -986,6 +1069,10 @@ def _document_edited_state(font: Any) -> Optional[bool]:
 class GlyphsDocumentHost(GlyphsHostAdapter):
     """Complete v2 host port; native objects remain inside this adapter."""
 
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._canonical_model_cache = _RevisionBoundGlyphModelCache()
+
     def runtime_snapshot(self):
         self._cleanup_all_recovery()
         return super().runtime_snapshot()
@@ -1003,7 +1090,11 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         return self._font_for_document(document_id)
 
     def capture_model(self, document_id: str) -> Mapping[str, Any]:
-        return self._executor.run(lambda: native_font_to_model(self._font_for_document(document_id)))
+        return self._executor.run(
+            lambda: self._canonical_model_cache.capture(
+                document_id, self._font_for_document(document_id)
+            )
+        )
 
     def capture_stable_model(self, document_id: str) -> Mapping[str, Any]:
         """Capture a canonical tree only after two host readbacks agree.
@@ -1315,6 +1406,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             raise HostAccessError("The change set contains unsupported native write paths")
 
         def apply() -> None:
+            self._canonical_model_cache.invalidate(document_id)
             font = self._font_for_document(document_id)
             current = native_font_to_model(font)
             target = change_set.apply(current)
@@ -1382,6 +1474,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         """Restore a failed attempt's content and its exact dirty contribution."""
 
         def restore() -> None:
+            self._canonical_model_cache.invalidate(document_id)
             font = self._font_for_document(document_id)
             current = native_font_to_model(font)
             restoration = diff_models(current, model)

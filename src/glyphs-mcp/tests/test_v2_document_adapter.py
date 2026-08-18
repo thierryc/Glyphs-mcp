@@ -439,6 +439,37 @@ class V2DocumentAdapterTests(unittest.TestCase):
             host.capture_model(document_id)
             self.assertEqual(capture_glyph.call_count, 5)
 
+    def test_verified_write_invalidates_revision_cache_before_readback(self) -> None:
+        font = _TransactionalFont()
+        glyph = SimpleNamespace(
+            name="A",
+            id="id-A",
+            lastChange="unchanged-test-marker",
+            changeCount=lambda: 0,
+            mastersCompatible=True,
+            layers=[],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        font.glyphs = [glyph]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        after = copy.deepcopy(before)
+        after["glyphs"]["A"]["export"] = False
+
+        host.apply_verified_change_set(
+            document_id,
+            diff_models(before, after),
+            operation_id="op_cached_write",
+        )
+
+        self.assertFalse(host.capture_model(document_id)["glyphs"]["A"]["export"])
+
     def test_canonical_layer_records_native_width_ownership(self) -> None:
         path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
         component = _OutlineComponent("jdotless")
