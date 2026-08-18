@@ -85,29 +85,29 @@ class V2ScaleTests(unittest.TestCase):
         return len(json.dumps(response, separators=(",", ":")).encode("utf-8"))
 
     def test_200_glyph_and_178_pair_batches_each_apply_once(self) -> None:
-        glyph_review = self.app.invoke(
-            "review_glyph_updates",
+        glyph_apply = self.app.invoke(
+            "apply_glyph_updates",
             {
                 "documentId": "doc_scale",
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
                 "updates": [
                     {"glyphName": "g{:03d}".format(index), "export": False}
                     for index in range(200)
                 ],
             },
         ).to_dict()
-        self.assertEqual(glyph_review["data"]["changeSet"]["changeCount"], 200)
-        glyph_apply = self.app.invoke(
-            "apply_glyph_updates",
-            {"reviewId": glyph_review["data"]["reviewId"], "confirm": True},
-        ).to_dict()
         self.assertTrue(glyph_apply["ok"])
+        self.assertEqual(glyph_apply["data"]["requestedChangeCount"], 200)
+        self.assertEqual(glyph_apply["data"]["observedChangeCount"], 200)
+        self.assertEqual(glyph_apply["data"]["affectedGlyphCount"], 200)
         self.assertEqual(glyph_apply["data"]["transactionCount"], 1)
         self.assertEqual(self.host.apply_calls, 1)
 
-        kerning_review = self.app.invoke(
-            "review_kerning_updates",
+        kerning_apply = self.app.invoke(
+            "apply_kerning_updates",
             {
                 "documentId": "doc_scale",
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
                 "updates": [
                     {
                         "masterId": "m0",
@@ -119,12 +119,8 @@ class V2ScaleTests(unittest.TestCase):
                 ],
             },
         ).to_dict()
-        self.assertEqual(kerning_review["data"]["changeSet"]["changeCount"], 178)
-        kerning_apply = self.app.invoke(
-            "apply_kerning_updates",
-            {"reviewId": kerning_review["data"]["reviewId"], "confirm": True},
-        ).to_dict()
         self.assertTrue(kerning_apply["ok"])
+        self.assertEqual(kerning_apply["data"]["requestedChangeCount"], 178)
         self.assertEqual(kerning_apply["data"]["transactionCount"], 1)
         self.assertEqual(self.host.apply_calls, 2)
 

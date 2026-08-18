@@ -40,6 +40,12 @@ class _PythonHost:
         self.corrupt_apply = False
         self.raise_live = False
         self.recovery_registry = {}
+        self.native_archive_comparison = {
+            "equivalent": True,
+            "mismatchCount": 0,
+            "mismatchLocations": [],
+            "truncated": False,
+        }
 
     def capture_model(self, document_id):
         return copy.deepcopy(self.model)
@@ -61,6 +67,9 @@ class _PythonHost:
             "stdout": "previewed",
             "stderr": "",
             "scopeViolations": list(self.preview_scope_violations),
+            "nativeArchiveComparison": copy.deepcopy(
+                self.native_archive_comparison
+            ),
         }
 
     def run_live_python(self, request):
@@ -322,6 +331,38 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
         self.assertEqual(unsupported["error"]["code"], "unsupported_staged_change")
+
+    def test_native_archive_refusal_returns_structured_bounded_mismatch_locations(self) -> None:
+        service, host = self.service()
+        host.native_archive_comparison = {
+            "equivalent": False,
+            "mismatchCount": 142,
+            "mismatchLocations": [
+                {
+                    "direct": {"beforeStart": index, "afterStart": index},
+                    "replay": {"beforeStart": index, "afterStart": index + 1},
+                }
+                for index in range(100)
+            ],
+            "truncated": True,
+        }
+
+        result = service.execute(
+            PythonExecutionRequest(
+                code="font.familyName = 'Beta'",
+                reason="archive mismatch diagnostics",
+                intended_effect="document_edit",
+                document_id="doc_alpha",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+
+        self.assertEqual(result["error"]["code"], "unsupported_staged_change")
+        comparison = result["data"]["nativeArchiveMismatch"]
+        self.assertEqual(comparison["mismatchCount"], 142)
+        self.assertEqual(len(comparison["mismatchLocations"]), 100)
+        self.assertTrue(comparison["truncated"])
+        self.assertEqual(host.model["font"]["familyName"], "Alpha")
 
     def test_read_intent_mutation_scope_and_output_truncation_are_reported(self) -> None:
         service, host = self.service()

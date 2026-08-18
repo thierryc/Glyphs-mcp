@@ -396,6 +396,70 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertFalse(font.parent.isDocumentEdited)
         self.assertEqual(font.parent.change_counts, [0, 1, 0, 1])
 
+    def test_non_linear_verified_reverts_remove_their_own_dirty_contributions(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        baseline = host.capture_model(document_id)
+
+        after_a = copy.deepcopy(baseline)
+        after_a["font"]["note"] = "A"
+        change_a = diff_models(baseline, after_a)
+        host.apply_verified_change_set(
+            document_id, change_a, operation_id="op_A"
+        )
+
+        before_b = host.capture_model(document_id)
+        after_b = copy.deepcopy(before_b)
+        after_b["font"]["grid"] = 2
+        change_b = diff_models(before_b, after_b)
+        host.apply_verified_change_set(
+            document_id, change_b, operation_id="op_B"
+        )
+
+        current = host.capture_model(document_id)
+        target_without_a = copy.deepcopy(current)
+        target_without_a["font"]["note"] = None
+        host.apply_verified_change_set(
+            document_id,
+            diff_models(current, target_without_a),
+            operation_id="op_revert_A",
+            removes_contribution_id="op_A",
+        )
+        self.assertEqual(font.grid, 2)
+        self.assertTrue(host.list_documents()[0].has_unsaved_changes)
+
+        current = host.capture_model(document_id)
+        host.apply_verified_change_set(
+            document_id,
+            diff_models(current, baseline),
+            operation_id="op_revert_B",
+            removes_contribution_id="op_B",
+        )
+        self.assertEqual(host.capture_model(document_id), baseline)
+        self.assertFalse(host.list_documents()[0].has_unsaved_changes)
+        self.assertEqual(font.parent.change_counts, [0, 0, 1, 1])
+
+    def test_structured_native_archive_delta_reports_bounded_locations(self) -> None:
+        direct_before = b"font = {\nvalue = 1;\nother = 2;\n};\n"
+        direct_after = b"font = {\nvalue = 3;\nother = 2;\n};\n"
+        replay_before = b"font = {\nvalue = 1;\nother = 2;\n};\n"
+        replay_after = b"font = {\nvalue = 4;\nother = 2;\n};\n"
+
+        result = document_adapter._compare_native_archive_deltas(
+            direct_before,
+            direct_after,
+            replay_before,
+            replay_after,
+            limit=100,
+        )
+
+        self.assertFalse(result["equivalent"])
+        self.assertGreater(result["mismatchCount"], 0)
+        self.assertLessEqual(len(result["mismatchLocations"]), 100)
+        self.assertIn("direct", result["mismatchLocations"][0])
+        self.assertIn("replay", result["mismatchLocations"][0])
+
     def test_glyphs4_make_copy_fallback_restores_temp_data_and_native_format(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             destination = Path(root) / "checkpoint.glyphs"

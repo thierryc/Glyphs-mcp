@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ast
+import inspect
 import sys
 import unittest
 from pathlib import Path
@@ -18,6 +19,7 @@ if str(V2_SOURCE) not in sys.path:
 from glyphs_mcp_v2.catalog import TOOL_CATALOG, TOOL_DEFINITIONS  # noqa: E402
 from glyphs_mcp_v2.contracts import ToolError, ToolResponse  # noqa: E402
 from glyphs_mcp_v2.identity import DocumentIdRegistry  # noqa: E402
+from glyphs_mcp_v2.transport.fastmcp import ToolHandlers  # noqa: E402
 
 
 class V2ContractTests(unittest.TestCase):
@@ -33,16 +35,11 @@ class V2ContractTests(unittest.TestCase):
             "review_kerning_coverage",
             "review_master_compatibility",
             "review_metrics_inheritance",
-            "review_metrics_updates",
             "apply_metrics_updates",
             "review_anchor_consistency",
-            "review_compatibility_updates",
             "apply_compatibility_updates",
-            "review_anchor_updates",
             "apply_anchor_updates",
-            "review_glyph_updates",
             "apply_glyph_updates",
-            "review_kerning_updates",
             "apply_kerning_updates",
             "review_spacing",
             "apply_spacing",
@@ -157,6 +154,34 @@ class V2ContractTests(unittest.TestCase):
             if ".tool(" in text:
                 callers.append(path.relative_to(package).as_posix())
         self.assertEqual(callers, ["transport/fastmcp.py"])
+
+    def test_typed_mutations_are_direct_apply_first_contracts(self) -> None:
+        mutation_tools = {
+            "apply_glyph_updates": "updates",
+            "apply_anchor_updates": "updates",
+            "apply_kerning_updates": "updates",
+            "apply_metrics_updates": "updates",
+            "apply_compatibility_updates": "updates",
+            "apply_spacing": "items",
+        }
+        for name, items_parameter in mutation_tools.items():
+            with self.subTest(tool=name):
+                parameters = inspect.signature(getattr(ToolHandlers, name)).parameters
+                self.assertIn("documentId", parameters)
+                self.assertIn("expectedDocumentFingerprint", parameters)
+                self.assertIn(items_parameter, parameters)
+                self.assertIn("reason", parameters)
+                self.assertNotIn("reviewId", parameters)
+                self.assertNotIn("confirm", parameters)
+
+        for removed in (
+            "review_glyph_updates",
+            "review_anchor_updates",
+            "review_kerning_updates",
+            "review_metrics_updates",
+            "review_compatibility_updates",
+        ):
+            self.assertNotIn(removed, TOOL_CATALOG)
 
 
 if __name__ == "__main__":

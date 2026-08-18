@@ -80,23 +80,25 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.app = GlyphsMCPApplication(self.host, history=self.history)
 
     def _apply_export_toggle(self) -> dict:
-        review = self.app.invoke(
-            "review_glyph_updates",
-            {"documentId": "doc_history", "updates": [{"glyphName": "A", "export": False}]},
-        ).to_dict()
         return self.app.invoke(
-            "apply_glyph_updates", {"reviewId": review["data"]["reviewId"], "confirm": True}
+            "apply_glyph_updates",
+            {
+                "documentId": "doc_history",
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+                "updates": [{"glyphName": "A", "export": False}],
+                "reason": "test direct apply",
+            },
         ).to_dict()
 
-    def test_review_and_apply_each_emit_one_linked_tool_call_commit(self) -> None:
+    def test_direct_apply_emits_one_operation_linked_tool_call_commit(self) -> None:
         applied = self._apply_export_toggle()
         commits = self.history.list_commits("doc_history")
 
         self.assertTrue(applied["ok"])
-        self.assertEqual([item.tool for item in commits], ["review_glyph_updates", "apply_glyph_updates"])
-        self.assertFalse(commits[0].changed)
-        self.assertTrue(commits[1].changed)
-        self.assertEqual(commits[1].operation_id, applied["operationId"])
+        self.assertEqual([item.tool for item in commits], ["apply_glyph_updates"])
+        self.assertTrue(commits[0].changed)
+        self.assertEqual(commits[0].commit_id, applied["operationId"])
+        self.assertEqual(commits[0].operation_id, applied["operationId"])
         self.assertEqual(self.host.apply_calls, 1)
 
     def test_generic_revert_preserves_unrelated_later_fields(self) -> None:
@@ -108,7 +110,7 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
             "revert_change",
             {
                 "documentId": "doc_history",
-                "commitId": changed.commit_id,
+                "operationId": changed.operation_id,
                 "expectedDocumentFingerprint": fingerprint_model(self.host.model),
             },
         ).to_dict()
@@ -127,7 +129,7 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
             "revert_change",
             {
                 "documentId": "doc_history",
-                "commitId": changed.commit_id,
+                "operationId": changed.operation_id,
                 "expectedDocumentFingerprint": fingerprint_model(self.host.model),
             },
         ).to_dict()
@@ -156,7 +158,7 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         lifecycle = DocumentHistoryLifecycle(self.history)
         lifecycle.document_was_saved("doc_history", make_copy=True, succeeded=True)
         lifecycle.document_was_saved("doc_history", make_copy=False, succeeded=False)
-        self.assertEqual(len(self.history.list_commits("doc_history")), 2)
+        self.assertEqual(len(self.history.list_commits("doc_history")), 1)
 
     def test_confirmed_open_world_python_rebinds_document_and_records_exact_transition(self) -> None:
         preview = self.app.invoke(
@@ -209,10 +211,11 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         ).to_dict()
 
         self.assertTrue(listed["ok"])
-        self.assertIn(changed.commit_id, [item["commitId"] for item in listed["data"]["commits"]])
+        self.assertIn(changed.operation_id, [item["operationId"] for item in listed["data"]["commits"]])
+        self.assertNotIn("commitId", listed["data"]["commits"][0])
         self.assertTrue(inspected["ok"])
         self.assertEqual(inspected["data"]["kind"], "change_commit")
-        self.assertEqual(inspected["data"]["payload"]["commitId"], changed.commit_id)
+        self.assertEqual(inspected["data"]["payload"]["operationId"], changed.operation_id)
         self.assertGreater(inspected["data"]["payload"]["changeCount"], 0)
 
     def test_listing_existing_change_commits_does_not_recapture_the_font(self) -> None:
