@@ -483,6 +483,41 @@ def _new_component(spec: Mapping[str, Any]) -> Any:
     return component
 
 
+def _update_components_in_place(
+    layer: Any,
+    current_specs: Sequence[Mapping[str, Any]],
+    target_specs: Sequence[Mapping[str, Any]],
+) -> bool:
+    """Update topology-compatible components without replacing Glyphs proxies."""
+
+    native_components = _layer_components(layer)
+    if (
+        len(native_components) != len(current_specs)
+        or len(current_specs) != len(target_specs)
+    ):
+        return False
+    updates: list[tuple[Any, tuple[float, ...]]] = []
+    for native, current, target in zip(
+        native_components, current_specs, target_specs
+    ):
+        current_name = str(current.get("name") or "")
+        target_name = str(target.get("name") or "")
+        native_name = str(_safe_getattr(native, "componentName") or "")
+        if current_name != target_name or native_name != current_name:
+            return False
+        transform = target.get("transform")
+        if not isinstance(transform, Sequence) or len(transform) != 6:
+            return False
+        try:
+            updates.append((native, tuple(float(value) for value in transform)))
+        except (TypeError, ValueError):
+            return False
+    for native, transform in updates:
+        if tuple(_component_transform(native)) != transform:
+            native.transform = transform
+    return True
+
+
 def _replace_components(layer: Any, specs: Sequence[Mapping[str, Any]]) -> None:
     components = [_new_component(spec) for spec in specs]
     collection = _safe_getattr(layer, "components")
@@ -619,7 +654,12 @@ def _apply_target_model(font: Any, current: Mapping[str, Any], target: Mapping[s
                         if not _update_paths_in_place(layer, current_paths, target_paths):
                             _replace_paths(layer, target_paths)
                     if current_layers[layer_key].get("components") != target_layers[layer_key].get("components"):
-                        _replace_components(layer, target_layers[layer_key].get("components", []))
+                        current_components = current_layers[layer_key].get("components", [])
+                        target_components = target_layers[layer_key].get("components", [])
+                        if not _update_components_in_place(
+                            layer, current_components, target_components
+                        ):
+                            _replace_components(layer, target_components)
                 finally:
                     if callable(end):
                         end()
