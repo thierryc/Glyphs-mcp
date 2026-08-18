@@ -315,24 +315,35 @@ def revert_change_set_onto(
 ) -> tuple[ChangeSet | None, tuple[Tuple[str, ...], ...]]:
     """Build a non-overwriting inverse of ``original`` on ``current``.
 
-    A path is safe only while it still contains the value written by the
-    original change. Unrelated later fields are preserved; overlapping later
-    edits are returned as conflicts and no partial patch is produced.
+    A path is safe while it contains either the value written by the original
+    change or the original value. The latter is already reverted and needs no
+    write. Unrelated later fields are preserved; a third value is an
+    overlapping edit and no partial patch is produced.
     """
 
     current_plain = _plain(current)
     conflicts: list[Tuple[str, ...]] = []
+    pending: list[SemanticChange] = []
     for change in original.changes:
         value = _value_at(current_plain, change.path)
-        if change.after_present:
-            if value is MISSING or value != change.after:
-                conflicts.append(change.path)
-        elif value is not MISSING:
+        matches_after = (
+            value is not MISSING and value == change.after
+            if change.after_present
+            else value is MISSING
+        )
+        matches_before = (
+            value is not MISSING and value == change.before
+            if change.before_present
+            else value is MISSING
+        )
+        if matches_after:
+            pending.append(change)
+        elif not matches_before:
             conflicts.append(change.path)
     if conflicts:
         return None, tuple(conflicts)
     target = copy.deepcopy(current_plain)
-    for change in original.changes:
+    for change in pending:
         _set_at(target, change.path, change.before, change.before_present)
     return diff_models(current_plain, target), ()
 
