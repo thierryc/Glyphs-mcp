@@ -517,9 +517,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
     def test_canonical_replay_hint_rebuilds_changed_paths_independent_of_cause(self) -> None:
         path = _OutlinePath([_OutlineNode(29, 0), _OutlineNode(129, 0)])
-        layer = _MetricsLayer()
-        layer.paths = [path]
-        layer.shapes = [path]
+        layer = _ReadOnlyShapeProxyLayer([path])
         glyph = SimpleNamespace(name="L", layers={"master-regular": layer})
         font = SimpleNamespace(glyphs={"L": glyph})
         current_paths = [

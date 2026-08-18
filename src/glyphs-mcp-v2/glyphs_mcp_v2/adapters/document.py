@@ -349,6 +349,40 @@ def _replace_collection(collection: Any, values: Sequence[Any]) -> None:
         raise HostAccessError("Glyphs rejected collection replacement") from exc
 
 
+def _replace_layer_shape_kind(
+    layer: Any,
+    values: Sequence[Any],
+    *,
+    matches: Any,
+    kind: str,
+) -> None:
+    """Replace one canonical shape kind through GSLayer.shapes.
+
+    Glyphs 3/4 exposes ``paths`` and ``components`` as read-only iteration
+    proxies. ``shapes`` is the authoritative ordered mutable collection. The
+    current canonical schema records the order inside each kind, but not a new
+    cross-kind order, so collection replay may replace existing slots only.
+    """
+
+    collection = _safe_getattr(layer, "shapes")
+    if collection is None:
+        raise HostAccessError("Glyphs did not expose the writable layer.shapes store")
+    shapes = _sequence_values(collection)
+    indices = [index for index, shape in enumerate(shapes) if matches(shape)]
+    if len(indices) != len(values):
+        raise HostAccessError(
+            "Canonical {} replay cannot change shape membership without an ordered shape model".format(
+                kind
+            )
+        )
+    for index, value in zip(indices, values):
+        shapes[index] = value
+    try:
+        setattr(layer, "shapes", list(shapes))
+    except Exception:
+        _replace_collection(collection, shapes)
+
+
 def _new_anchor(name: str, position: Sequence[float]) -> Any:
     try:
         from GlyphsApp import GSAnchor  # type: ignore[import-not-found]
@@ -459,12 +493,12 @@ def _update_paths_in_place(
 
 def _replace_paths(layer: Any, specs: Sequence[Mapping[str, Any]]) -> None:
     paths = [_new_path(spec) for spec in specs]
-    collection = _safe_getattr(layer, "paths")
-    if collection is not None:
-        _replace_collection(collection, paths)
-        return
-    shapes = _sequence_values(_safe_getattr(layer, "shapes"))
-    setattr(layer, "shapes", paths + [shape for shape in shapes if not _is_path(shape)])
+    _replace_layer_shape_kind(
+        layer,
+        paths,
+        matches=_is_path,
+        kind="path",
+    )
 
 
 def _new_component(spec: Mapping[str, Any]) -> Any:
@@ -521,12 +555,12 @@ def _update_components_in_place(
 
 def _replace_components(layer: Any, specs: Sequence[Mapping[str, Any]]) -> None:
     components = [_new_component(spec) for spec in specs]
-    collection = _safe_getattr(layer, "components")
-    if collection is not None:
-        _replace_collection(collection, components)
-        return
-    shapes = _sequence_values(_safe_getattr(layer, "shapes"))
-    setattr(layer, "shapes", [shape for shape in shapes if not _is_component(shape)] + components)
+    _replace_layer_shape_kind(
+        layer,
+        components,
+        matches=_is_component,
+        kind="component",
+    )
 
 
 def _kerning_key(value: Any) -> str:
