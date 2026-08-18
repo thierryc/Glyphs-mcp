@@ -660,6 +660,15 @@ def _apply_target_model(font: Any, current: Mapping[str, Any], target: Mapping[s
                             layer, current_components, target_components
                         ):
                             _replace_components(layer, target_components)
+                    # LSB/RSB setters and absolute outline replay can both
+                    # invalidate an earlier width assignment. Width is the
+                    # stable final scalar: assigning it after geometry fixes
+                    # the right sidebearing without moving the restored shape.
+                    if (
+                        current_layers[layer_key].get("width")
+                        != target_layers[layer_key].get("width")
+                    ):
+                        setattr(layer, "width", target_layers[layer_key].get("width"))
                 finally:
                     if callable(end):
                         end()

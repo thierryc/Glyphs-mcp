@@ -1186,6 +1186,26 @@ class GlyphsMCPApplication:
             dirty_state_intent="revert",
             removes_contribution_id=operation_id,
         )
+        if plan.after_fingerprint != inverse.after_fingerprint:
+            return ToolResponse.failure(
+                tool="revert_change",
+                effect="edit",
+                summary="The detached inverse could not reproduce the intended rebased state; nothing was reverted.",
+                error=ToolError(
+                    code="revert_not_exact",
+                    message="Glyphs derived additional state while simulating the inverse patch.",
+                    recoverable=True,
+                    details={
+                        "intendedAfterFingerprint": inverse.after_fingerprint,
+                        "observedAfterFingerprint": plan.after_fingerprint,
+                    },
+                ),
+                data={
+                    "operationId": operation_id,
+                    "intendedAfterFingerprint": inverse.after_fingerprint,
+                    "observedAfterFingerprint": plan.after_fingerprint,
+                },
+            )
         self._trace.bind_document(document_id)
         try:
             result = self._transactions.apply_plan(plan)
