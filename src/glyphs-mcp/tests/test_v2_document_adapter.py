@@ -618,6 +618,82 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertIn("Transaction Test", result["stdout"])
         self.assertEqual(full_capture.call_count, 0)
 
+    def test_staged_layer_python_compares_only_the_declared_native_scope(self) -> None:
+        node = _OutlineNode(0, 0)
+        path = _OutlinePath([node])
+        layer = _ReadOnlyShapeProxyLayer([path])
+        layer.name = "Regular"
+        layer.isMasterLayer = True
+        layer.isSpecialLayer = False
+        glyph = SimpleNamespace(
+            name="A",
+            id="id-A",
+            lastChange="revision-1",
+            changeCount=lambda: 0,
+            mastersCompatible=True,
+            layers=[layer],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode="0041",
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        font = _TransactionalFont()
+        font.masters = [
+            SimpleNamespace(
+                id="master-regular",
+                name="Regular",
+                italicAngle=0,
+                axes=[],
+            )
+        ]
+        font.glyphs = [glyph]
+        font.copy = lambda: copy.deepcopy(font)
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        request = PythonExecutionRequest(
+            code="layer.paths[0].nodes[0].position = (25, 0)",
+            reason="scoped staged path test",
+            intended_effect="document_edit",
+            execution_mode="staged_document",
+            document_id=document_id,
+            glyph_name="A",
+            master_id="master-regular",
+            layer_id="master-regular",
+            expected_document_fingerprint=document_adapter.fingerprint_model(before),
+        )
+
+        def scoped_archive(candidate, scoped_request):
+            candidate_glyph = document_adapter._lookup_by_name(
+                candidate.glyphs, scoped_request.glyph_name
+            )
+            candidate_layer = document_adapter._lookup_layer(
+                candidate_glyph, scoped_request.layer_id
+            )
+            return repr(native_layer_to_model(candidate_layer)).encode("utf-8")
+
+        with mock.patch.object(
+            document_adapter,
+            "_serialized_font_archive",
+            return_value=b"full-font-archive",
+        ) as full_archive, mock.patch.object(
+            document_adapter,
+            "_serialized_review_scope",
+            side_effect=scoped_archive,
+            create=True,
+        ):
+            preview = host.preview_python(request, before)
+
+        self.assertEqual(
+            preview["afterModel"]["glyphs"]["A"]["layers"]["master-regular"]
+            ["paths"][0]["nodes"][0]["x"],
+            25,
+        )
+        self.assertTrue(preview["nativeArchiveComparison"]["equivalent"])
+        self.assertEqual(full_archive.call_count, 0)
+
     def test_canonical_layer_records_native_width_ownership(self) -> None:
         path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
         component = _OutlineComponent("jdotless")
