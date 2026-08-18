@@ -538,7 +538,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertIs(layer.paths[0], replacement)
         self.assertIsNot(layer.paths[0], path)
 
-    def test_remaining_tree_diff_selects_changed_collections_without_tool_rules(self) -> None:
+    def test_remaining_tree_diff_selects_only_the_collection_that_still_differs(self) -> None:
         before = {
             "glyphs": {
                 "L": {
@@ -555,7 +555,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         target = copy.deepcopy(before)
         target["glyphs"]["L"]["layers"]["m0"]["paths"][0]["nodes"][0]["x"] = 20
         observed = copy.deepcopy(target)
-        observed["glyphs"]["L"]["layers"]["m0"]["width"] = 501
+        observed["glyphs"]["L"]["layers"]["m0"]["paths"][0]["nodes"][0]["x"] = 19
 
         roots = document_adapter._canonical_replacement_roots(
             before, target, observed
@@ -564,6 +564,31 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(
             roots,
             (("glyphs", "L", "layers", "m0", "paths"),),
+        )
+
+    def test_scalar_residue_does_not_guess_at_unrelated_collection_replacement(self) -> None:
+        before = {
+            "glyphs": {
+                "L": {
+                    "layers": {
+                        "m0": {
+                            "paths": [{"closed": True, "nodes": [{"x": 0, "y": 0}]}],
+                            "components": [{"name": "acute", "transform": [1, 0, 0, 1, 0, 0]}],
+                            "width": 500,
+                        }
+                    }
+                }
+            }
+        }
+        target = copy.deepcopy(before)
+        target["glyphs"]["L"]["layers"]["m0"]["paths"][0]["nodes"][0]["x"] = 20
+        target["glyphs"]["L"]["layers"]["m0"]["components"][0]["transform"][4] = 20
+        observed = copy.deepcopy(target)
+        observed["glyphs"]["L"]["layers"]["m0"]["width"] = 501
+
+        self.assertEqual(
+            document_adapter._canonical_replacement_roots(before, target, observed),
+            (),
         )
 
     def test_clone_generated_instance_ids_do_not_change_the_canonical_model(self) -> None:
