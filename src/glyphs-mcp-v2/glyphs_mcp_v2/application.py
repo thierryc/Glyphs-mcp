@@ -1168,23 +1168,14 @@ class GlyphsMCPApplication:
                 ),
                 data={"operationId": operation_id, "conflictCount": len(conflicts)},
             )
-        writable_original = original.writable_change_set or original.change_set
-        writable_inverse, writable_conflicts = revert_change_set_onto(
-            current, writable_original
-        )
-        if writable_inverse is None:
-            return ToolResponse.failure(
-                tool="revert_change",
-                effect="edit",
-                summary="Later edits overlap the selected writable fields; nothing was reverted.",
-                error=ToolError(
-                    code="revert_conflict",
-                    message="Resolve or explicitly replace the conflicting fields first.",
-                    recoverable=True,
-                    details={"conflictPaths": [list(path) for path in writable_conflicts[:100]]},
-                ),
-                data={"operationId": operation_id, "conflictCount": len(writable_conflicts)},
-            )
+        # Conflict detection must use the complete value Glyphs actually
+        # produced, not the caller's pre-host writable value. Glyphs may
+        # canonicalize a write (for example a per-layer metrics key) and may
+        # derive additional writable fields such as sidebearings. Project the
+        # verified observed inverse back to writable paths so the compensating
+        # patch is both non-overwriting and capable of restoring the exact
+        # before fingerprint.
+        writable_inverse = writable_subset(current, inverse)
         metadata = OperationMetadata.create()
         plan = self._mutation_planner.plan(
             document_id=document_id,

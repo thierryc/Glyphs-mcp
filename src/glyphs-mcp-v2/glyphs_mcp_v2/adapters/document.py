@@ -592,9 +592,25 @@ def _apply_target_model(font: Any, current: Mapping[str, Any], target: Mapping[s
                 if callable(begin):
                     begin()
                 try:
+                    metrics_key_changed = any(
+                        current_layers[layer_key].get(field)
+                        != target_layers[layer_key].get(field)
+                        for field in (
+                            "leftMetricsKey",
+                            "rightMetricsKey",
+                            "widthMetricsKey",
+                        )
+                    )
                     for scalar in _LAYER_SCALARS:
                         if current_layers[layer_key].get(scalar) != target_layers[layer_key].get(scalar):
                             setattr(layer, scalar, target_layers[layer_key].get(scalar))
+                    if metrics_key_changed:
+                        sync_metrics = _safe_getattr(layer, "syncMetrics")
+                        if not callable(sync_metrics):
+                            raise HostAccessError(
+                                "Glyphs did not expose GSLayer.syncMetrics for a metrics-key update"
+                            )
+                        sync_metrics()
                     if current_layers[layer_key].get("anchors") != target_layers[layer_key].get("anchors"):
                         _replace_anchors(layer, target_layers[layer_key].get("anchors", {}))
                     if current_layers[layer_key].get("paths") != target_layers[layer_key].get("paths"):
