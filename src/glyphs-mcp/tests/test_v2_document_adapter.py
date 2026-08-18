@@ -20,6 +20,7 @@ if str(V2_SOURCE) not in sys.path:
 from glyphs_mcp_v2.adapters.document import (  # noqa: E402
     GlyphsDocumentHost,
     native_font_to_model,
+    native_layer_to_model,
 )
 from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
 from glyphs_mcp_v2.semantic import diff_models  # noqa: E402
@@ -617,6 +618,20 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(layer.shapes, [replacement_component, replacement_path])
         self.assertEqual(layer.components, (replacement_component,))
         self.assertEqual(layer.paths, (replacement_path,))
+
+    def test_canonical_node_names_normalize_absent_and_empty_native_values(self) -> None:
+        absent = _ReadOnlyShapeProxyLayer(
+            [_OutlinePath([_OutlineNode(0, 0, name=None)])]
+        )
+        empty = _ReadOnlyShapeProxyLayer(
+            [_OutlinePath([_OutlineNode(0, 0, name="")])]
+        )
+
+        absent_model = native_layer_to_model(absent)
+        empty_model = native_layer_to_model(empty)
+
+        self.assertEqual(absent_model, empty_model)
+        self.assertIsNone(absent_model["paths"][0]["nodes"][0]["name"])
 
     def test_remaining_tree_diff_selects_only_the_collection_that_still_differs(self) -> None:
         before = {

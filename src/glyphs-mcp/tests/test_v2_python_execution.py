@@ -116,6 +116,44 @@ class _PythonHost:
         return self.recovery_registry.get(execution_id)
 
 
+class _DriftingRollbackPythonHost(_PythonHost):
+    """A writable inverse derives a state different from its checkpoint."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.model["glyphs"] = {"A": {"mastersCompatible": False}}
+
+    def preview_python(self, request, before_model):
+        self.preview_calls += 1
+        after = copy.deepcopy(before_model)
+        after["font"]["familyName"] = "Beta"
+        after["glyphs"]["A"]["mastersCompatible"] = True
+        return {
+            "afterModel": after,
+            "stdout": "previewed",
+            "stderr": "",
+            "scopeViolations": [],
+            "nativeArchiveComparison": copy.deepcopy(
+                self.native_archive_comparison
+            ),
+        }
+
+    @staticmethod
+    def _derive(model):
+        result = copy.deepcopy(model)
+        family = result["font"]["familyName"]
+        result["glyphs"]["A"]["mastersCompatible"] = (
+            True if family == "Beta" else None
+        )
+        return result
+
+    def simulate_change_set(self, document_id, change_set):
+        return self._derive(change_set.apply(self.model))
+
+    def apply_change_set(self, document_id, change_set):
+        self.model = self._derive(change_set.apply(self.model))
+
+
 class _Clock:
     def __init__(self):
         self.value = 1_700_000_000.0
@@ -194,6 +232,43 @@ class V2PythonExecutionTests(unittest.TestCase):
         ).to_dict()
         self.assertFalse(repeated["ok"])
         self.assertEqual(repeated["error"]["code"], "checkpoint_unavailable")
+
+    def test_rollback_refuses_a_derived_state_that_misses_the_checkpoint_target(self) -> None:
+        host = _DriftingRollbackPythonHost()
+        service = PythonExecutionService(
+            host=host,
+            transactions=TransactionKernel(host),
+            reviews=OperationStore(),
+            checkpoints=OperationStore(),
+            audit=AuditLog(),
+        )
+        baseline = copy.deepcopy(host.model)
+        preview = service.execute(
+            PythonExecutionRequest(
+                code="font.familyName = 'Beta'",
+                reason="exercise exact rollback planning",
+                intended_effect="document_edit",
+                document_id="doc_alpha",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+        confirmed = service.execute(
+            PythonExecutionRequest(
+                review_id=preview["data"]["reviewId"], confirm=True
+            )
+        ).to_dict()
+        after = copy.deepcopy(host.model)
+
+        rolled_back = service.rollback(
+            execution_id=confirmed["data"]["executionId"],
+            expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
+            confirm=True,
+        ).to_dict()
+
+        self.assertFalse(rolled_back["ok"])
+        self.assertEqual(rolled_back["error"]["code"], "rollback_not_exact")
+        self.assertEqual(host.model, after)
+        self.assertNotEqual(fingerprint_model(host.model), fingerprint_model(baseline))
 
     def test_later_edits_make_rollback_stale(self) -> None:
         service, host = self.service()

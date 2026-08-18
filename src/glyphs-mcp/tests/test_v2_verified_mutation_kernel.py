@@ -110,6 +110,17 @@ class _CanonicalReconciliationHost(_DerivedHost):
         self.model = copy.deepcopy(self.required_after)
 
 
+class _DriftingCanonicalReconciliationHost(_CanonicalReconciliationHost):
+    def simulate_reconciliation(
+        self, document_id, change_set, required_after_model, before_model
+    ):
+        self.reconciliation_calls += 1
+        self.required_after = copy.deepcopy(required_after_model)
+        drifted = copy.deepcopy(required_after_model)
+        drifted["glyphs"]["A"]["layers"]["m0"]["RSB"] += 1
+        return {"afterModel": drifted, "replayReplacements": []}
+
+
 class VerifiedMutationKernelTests(unittest.TestCase):
     def test_canonical_numbers_normalize_negative_zero_and_integral_floats(self) -> None:
         integer = {"font": {"value": 0, "other": 12}}
@@ -208,6 +219,24 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         self.assertEqual(plan.replay_replacements, expected_hint)
         self.assertEqual(host.received_replacements, expected_hint)
         self.assertEqual(result.after_fingerprint, fingerprint_model(required_after))
+
+    def test_required_canonical_target_is_an_invariant_not_a_planner_hint(self) -> None:
+        host = _DriftingCanonicalReconciliationHost()
+        before = host.capture_model("doc_kernel")
+        required_after = copy.deepcopy(before)
+        required_after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
+        requested = diff_models(before, required_after)
+
+        with self.assertRaisesRegex(ValueError, "canonical target"):
+            MutationPlanner(host).plan(
+                document_id="doc_kernel",
+                expected_document_fingerprint=fingerprint_model(before),
+                requested_change_set=requested,
+                operation_id="op_reconcile_drift",
+                required_after_model=required_after,
+            )
+
+        self.assertEqual(host.apply_calls, 0)
 
 
 if __name__ == "__main__":
