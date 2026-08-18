@@ -596,6 +596,56 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(simulated, target)
         self.assertLessEqual(capture_glyph.call_count, 2)
 
+    def test_detached_reconciliation_recaptures_only_the_change_scope(self) -> None:
+        font = _TransactionalFont()
+
+        def glyph(index):
+            name = "glyph{:04d}".format(index)
+            return SimpleNamespace(
+                name=name,
+                id="id-{}".format(name),
+                lastChange="revision-1",
+                changeCount=lambda: 0,
+                mastersCompatible=True,
+                layers=[],
+                category="Letter",
+                subCategory="Uppercase",
+                unicode=None,
+                export=True,
+                leftKerningGroup=None,
+                rightKerningGroup=None,
+            )
+
+        font.glyphs = [glyph(index) for index in range(1000)]
+        font.copy = lambda: copy.deepcopy(font)
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        target = copy.deepcopy(before)
+        target["glyphs"]["glyph0000"]["export"] = False
+        changes = diff_models(before, target)
+
+        with mock.patch.object(
+            document_adapter,
+            "_glyph_model",
+            wraps=document_adapter._glyph_model,
+        ) as capture_glyph, mock.patch.object(
+            document_adapter,
+            "native_font_to_model",
+            wraps=document_adapter.native_font_to_model,
+        ) as full_capture:
+            reconciled = host.simulate_reconciliation(
+                document_id,
+                changes,
+                target,
+                before,
+            )
+
+        self.assertEqual(reconciled["afterModel"], target)
+        self.assertEqual(reconciled["replayReplacements"], [])
+        self.assertEqual(full_capture.call_count, 0)
+        self.assertLessEqual(capture_glyph.call_count, 2)
+
     def test_read_python_reuses_canonical_capture_instead_of_full_native_models(self) -> None:
         font = _TransactionalFont()
         host = GlyphsDocumentHost(_App(font), executor=_Immediate())
