@@ -74,6 +74,26 @@ class V2WorkflowTests(unittest.TestCase):
         self.assertEqual(item["reason"], "zero_width_mark")
         self.assertNotIn("blocked", repr(item))
 
+    def test_automatically_aligned_width_is_a_host_owned_spacing_skip(self) -> None:
+        result = simulate_spacing(
+            [
+                {
+                    "glyphName": "j",
+                    "masterId": "m1",
+                    "width": 265,
+                    "targetWidth": 267,
+                    "hostOwnsWidth": True,
+                }
+            ],
+            max_iterations=5,
+            tolerance=1,
+        )
+
+        item = result["items"][0]
+        self.assertEqual(item["status"], "skipped")
+        self.assertEqual(item["reason"], "automatic_alignment")
+        self.assertEqual(result["actionableCount"], 0)
+
     def test_spacing_revalidates_dependencies_in_a_bounded_fixed_point(self) -> None:
         result = simulate_spacing(
             [

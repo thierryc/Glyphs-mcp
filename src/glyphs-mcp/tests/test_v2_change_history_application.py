@@ -392,6 +392,31 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertEqual(len(events), 1)
         self.assertEqual(events[0].tool, "apply_glyph_updates")
 
+    def test_spacing_refuses_a_native_aligned_width_before_live_apply(self) -> None:
+        layer = self.host.model["glyphs"]["A"]["layers"]["m0"]
+        layer["hasAlignedWidth"] = True
+        before = copy.deepcopy(self.host.model)
+
+        response = self.app.invoke(
+            "apply_spacing",
+            {
+                "documentId": "doc_history",
+                "expectedDocumentFingerprint": fingerprint_model(before),
+                "items": [
+                    {
+                        "glyphName": "A",
+                        "masterId": "m0",
+                        "width": 500,
+                        "targetWidth": 520,
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertFalse(response["ok"])
+        self.assertEqual(self.host.apply_calls, 0)
+        self.assertEqual(self.host.model, before)
+
     def test_verified_save_event_resets_only_its_document_history(self) -> None:
         self._apply_export_toggle()
         other_before = _model()

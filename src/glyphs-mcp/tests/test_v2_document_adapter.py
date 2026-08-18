@@ -245,6 +245,7 @@ class _OutlineComponent:
     def __init__(self, name):
         self.componentName = name
         self.transform = (1, 0, 0, 1, 0, 0)
+        self.automaticAlignment = True
 
 
 class _OutlineLayer:
@@ -254,6 +255,7 @@ class _OutlineLayer:
         self.paths = (path,)
         self.components = (component,)
         self.shapes = [component, path]
+        self.hasAlignedWidth = True
         self.begin_count = 0
         self.end_count = 0
 
@@ -383,6 +385,16 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_canonical_layer_records_native_width_ownership(self) -> None:
+        path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
+        component = _OutlineComponent("jdotless")
+        layer = _OutlineLayer(path, component)
+
+        model = native_layer_to_model(layer)
+
+        self.assertTrue(model["hasAlignedWidth"])
+        self.assertTrue(model["components"][0]["automaticAlignment"])
+
     def test_topology_compatible_outline_delta_updates_native_nodes_in_place(self) -> None:
         first_node = _OutlineNode(0, 0)
         second_node = _OutlineNode(100, 0)
