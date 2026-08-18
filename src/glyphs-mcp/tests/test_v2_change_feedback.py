@@ -16,6 +16,10 @@ if str(V2_SOURCE) not in sys.path:
 from glyphs_mcp_v2.canonical_tree import CanonicalFontTree, MemoryObjectStore  # noqa: E402
 from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
 from glyphs_mcp_v2.change_log_model import ChangeLogModel  # noqa: E402
+from glyphs_mcp_v2.diff_geometry import (  # noqa: E402
+    DifferenceTopologyError,
+    difference_bands,
+)
 from glyphs_mcp_v2.diff_overlay import overlay_for_layer  # noqa: E402
 
 
@@ -78,11 +82,11 @@ class ChangeFeedbackTests(unittest.TestCase):
         )
 
         self.assertTrue(overlay.visible)
-        self.assertFalse(overlay.stale)
-        self.assertEqual(overlay.before_paths[0]["nodes"][0]["x"], 0)
-        self.assertEqual(overlay.target_paths[0]["nodes"][0]["x"], 20)
+        self.assertFalse(overlay.includes_later_edits)
+        self.assertEqual(overlay.baseline_paths[0]["nodes"][0]["x"], 0)
+        self.assertEqual(overlay.current_paths[0]["nodes"][0]["x"], 20)
 
-    def test_later_relevant_edit_marks_overlay_stale(self) -> None:
+    def test_later_relevant_edit_updates_live_delta_from_original_baseline(self) -> None:
         live = copy.deepcopy(self.after["glyphs"]["A"]["layers"]["m0"])
         live["paths"][0]["nodes"][0]["x"] = 35
         overlay = overlay_for_layer(
@@ -93,7 +97,9 @@ class ChangeFeedbackTests(unittest.TestCase):
             live_layer=live,
         )
         self.assertTrue(overlay.visible)
-        self.assertTrue(overlay.stale)
+        self.assertTrue(overlay.includes_later_edits)
+        self.assertEqual(overlay.baseline_paths[0]["nodes"][0]["x"], 0)
+        self.assertEqual(overlay.current_paths[0]["nodes"][0]["x"], 35)
 
     def test_later_unrelated_layer_edit_does_not_mark_overlay_stale(self) -> None:
         live = copy.deepcopy(self.after["glyphs"]["A"]["layers"]["m0"])
@@ -106,7 +112,28 @@ class ChangeFeedbackTests(unittest.TestCase):
             live_layer=live,
         )
         self.assertTrue(overlay.visible)
-        self.assertFalse(overlay.stale)
+        self.assertFalse(overlay.includes_later_edits)
+
+    def test_difference_geometry_builds_only_the_gap_between_old_and_live_paths(self) -> None:
+        baseline = self.before["glyphs"]["A"]["layers"]["m0"]["paths"]
+        live = copy.deepcopy(self.after["glyphs"]["A"]["layers"]["m0"]["paths"])
+        live[0]["nodes"][0]["x"] = 35
+
+        bands = difference_bands(baseline, live)
+
+        self.assertEqual(len(bands), 1)
+        self.assertTrue(bands[0].closed)
+        self.assertEqual(bands[0].baseline_segments[0].points[0], (0.0, 0.0))
+        self.assertEqual(bands[0].current_segments[0].points[0], (35.0, 0.0))
+        self.assertEqual(difference_bands(baseline, baseline), ())
+
+    def test_difference_geometry_refuses_an_ambiguous_topology_mapping(self) -> None:
+        baseline = self.before["glyphs"]["A"]["layers"]["m0"]["paths"]
+        incompatible = copy.deepcopy(baseline)
+        incompatible[0]["nodes"].pop()
+
+        with self.assertRaises(DifferenceTopologyError):
+            difference_bands(baseline, incompatible)
 
     def test_unrelated_layer_draws_nothing(self) -> None:
         overlay = overlay_for_layer(
@@ -125,6 +152,10 @@ class ChangeFeedbackTests(unittest.TestCase):
             self.assertNotIn(forbidden, panel_source)
         for forbidden in ("drawForegroundForLayer", "drawBackgroundForLayer", "fontView"):
             self.assertNotIn(forbidden, reporter_source)
+        self.assertIn("_draw_difference", reporter_source)
+        self.assertIn(".fill()", reporter_source)
+        self.assertNotIn("_stroke_paths", reporter_source)
+        self.assertNotIn("TARGET_STALE_RGBA", reporter_source)
 
 
 if __name__ == "__main__":
