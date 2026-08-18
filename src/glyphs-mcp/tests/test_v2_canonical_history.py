@@ -18,6 +18,7 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
+    CANONICAL_MODEL_SCHEMA_VERSION,
     CanonicalFontTree,
     MemoryObjectStore,
     SQLiteObjectStore,
@@ -98,6 +99,14 @@ class CanonicalFontTreeTests(unittest.TestCase):
         self.assertEqual(first.model_fingerprint, second.model_fingerprint)
         self.assertEqual(second.inserted_object_count, 0)
         self.assertEqual(trees.load_model(first.tree_hash), model)
+        self.assertEqual(
+            trees.descriptor(first.tree_hash)["modelSchemaVersion"],
+            CANONICAL_MODEL_SCHEMA_VERSION,
+        )
+        self.assertEqual(
+            trees.descriptor(first.tree_hash)["reversibilityCoverage"],
+            "modeled_fields_only",
+        )
 
     def test_one_glyph_edit_reuses_every_unchanged_glyph_object(self) -> None:
         store = MemoryObjectStore()

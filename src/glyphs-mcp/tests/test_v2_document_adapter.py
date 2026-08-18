@@ -488,10 +488,9 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(path.nodes[0].position.x, 0)
         self.assertEqual(path.nodes[1].position.x, 100)
 
-    def test_metrics_key_inverse_rebuilds_changed_paths_in_canonical_order(self) -> None:
+    def test_canonical_replay_hint_rebuilds_changed_paths_independent_of_cause(self) -> None:
         path = _OutlinePath([_OutlineNode(29, 0), _OutlineNode(129, 0)])
         layer = _MetricsLayer()
-        layer.leftMetricsKey = "==H"
         layer.paths = [path]
         layer.shapes = [path]
         glyph = SimpleNamespace(name="L", layers={"master-regular": layer})
@@ -512,7 +511,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
             "width": 529,
             "LSB": 69,
             "RSB": 60,
-            "leftMetricsKey": "==H",
+            "leftMetricsKey": None,
             "rightMetricsKey": None,
             "widthMetricsKey": None,
             "paths": current_paths,
@@ -520,16 +519,20 @@ class V2DocumentAdapterTests(unittest.TestCase):
             "anchors": {},
         }
         target_layer = copy.deepcopy(current_layer)
-        target_layer.update(
-            {"width": 500, "LSB": 40, "leftMetricsKey": None, "paths": target_paths}
-        )
+        target_layer.update({"width": 500, "LSB": 40, "paths": target_paths})
         current = {"glyphs": {"L": {"layers": {"master-regular": current_layer}}}}
         target = {"glyphs": {"L": {"layers": {"master-regular": target_layer}}}}
         replacement = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
 
         with mock.patch.object(document_adapter, "_new_path", return_value=replacement):
             document_adapter._apply_target_model(
-                font, current, target, diff_models(current, target)
+                font,
+                current,
+                target,
+                diff_models(current, target),
+                replay_replacements=(
+                    ("glyphs", "L", "layers", "master-regular", "paths"),
+                ),
             )
 
         self.assertIs(layer.paths[0], replacement)

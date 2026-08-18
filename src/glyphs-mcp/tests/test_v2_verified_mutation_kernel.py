@@ -77,6 +77,37 @@ class _DerivedHost:
         self.model = copy.deepcopy(model)
 
 
+class _CanonicalReconciliationHost(_DerivedHost):
+    def __init__(self) -> None:
+        super().__init__()
+        self.reconciliation_calls = 0
+        self.required_after = None
+        self.received_replacements = None
+
+    def simulate_reconciliation(self, document_id, change_set, required_after_model):
+        self.reconciliation_calls += 1
+        self.required_after = copy.deepcopy(required_after_model)
+        return {
+            "afterModel": copy.deepcopy(required_after_model),
+            "replayReplacements": [
+                ["glyphs", "A", "layers", "m0", "paths"]
+            ],
+        }
+
+    def apply_verified_change_set(
+        self,
+        document_id,
+        change_set,
+        *,
+        operation_id,
+        removes_contribution_id=None,
+        replay_replacements=(),
+    ):
+        self.apply_calls += 1
+        self.received_replacements = tuple(tuple(path) for path in replay_replacements)
+        self.model = copy.deepcopy(self.required_after)
+
+
 class VerifiedMutationKernelTests(unittest.TestCase):
     def test_canonical_numbers_normalize_negative_zero_and_integral_floats(self) -> None:
         integer = {"font": {"value": 0, "other": 12}}
@@ -153,6 +184,28 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         self.assertEqual(result.observed_change_count, 2)
         self.assertEqual(result.operation_id, "op_direct")
         self.assertEqual(fingerprint_model(host.model), plan.after_fingerprint)
+
+    def test_required_canonical_target_selects_and_replays_one_detached_strategy(self) -> None:
+        host = _CanonicalReconciliationHost()
+        before = host.capture_model("doc_kernel")
+        required_after = copy.deepcopy(before)
+        required_after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
+        requested = diff_models(before, required_after)
+
+        plan = MutationPlanner(host).plan(
+            document_id="doc_kernel",
+            expected_document_fingerprint=fingerprint_model(before),
+            requested_change_set=requested,
+            operation_id="op_reconcile",
+            required_after_model=required_after,
+        )
+        result = TransactionKernel(host).apply_plan(plan)
+
+        expected_hint = (("glyphs", "A", "layers", "m0", "paths"),)
+        self.assertEqual(host.reconciliation_calls, 1)
+        self.assertEqual(plan.replay_replacements, expected_hint)
+        self.assertEqual(host.received_replacements, expected_hint)
+        self.assertEqual(result.after_fingerprint, fingerprint_model(required_after))
 
 
 if __name__ == "__main__":

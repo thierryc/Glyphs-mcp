@@ -129,6 +129,36 @@ class _DriftingMetricsHost(_NormalizingMetricsHost):
         self.model = self._apply_with_host_effects(change_set)
 
 
+class _CanonicalReconciliationMetricsHost(_DriftingMetricsHost):
+    """A host that can reconcile an intended canonical target generically."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.required_after = None
+
+    def simulate_reconciliation(self, document_id, change_set, required_after_model):
+        self.required_after = copy.deepcopy(required_after_model)
+        return {
+            "afterModel": copy.deepcopy(required_after_model),
+            "replayReplacements": [],
+        }
+
+    def apply_verified_change_set(
+        self,
+        document_id,
+        change_set,
+        *,
+        operation_id,
+        removes_contribution_id=None,
+        replay_replacements=(),
+    ):
+        self.apply_calls += 1
+        if self.required_after is None:
+            self.model = self._apply_with_host_effects(change_set)
+        else:
+            self.model = copy.deepcopy(self.required_after)
+
+
 class ChangeHistoryApplicationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.host = _Host()
@@ -276,6 +306,38 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         )
         self.assertEqual(host.model, after_apply)
         self.assertEqual(host.apply_calls, 1)
+
+    def test_revert_delegates_the_intended_tree_to_generic_canonical_reconciliation(self) -> None:
+        host = _CanonicalReconciliationMetricsHost()
+        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        app = GlyphsMCPApplication(host, history=history)
+        baseline = copy.deepcopy(host.model)
+        applied = app.invoke(
+            "apply_metrics_updates",
+            {
+                "documentId": "doc_history",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "updates": [
+                    {
+                        "glyphName": "A",
+                        "masterId": "m0",
+                        "leftMetricsKey": "=H",
+                    }
+                ],
+            },
+        ).to_dict()
+
+        reverted = app.invoke(
+            "revert_change",
+            {
+                "documentId": "doc_history",
+                "operationId": applied["operationId"],
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+            },
+        ).to_dict()
+
+        self.assertTrue(reverted["ok"])
+        self.assertEqual(host.model, baseline)
 
     def test_invalid_direct_mutation_still_emits_exactly_one_audit_receipt(self) -> None:
         response = self.app.invoke(
