@@ -533,9 +533,12 @@ def _scoped_font_model(
     for name in sorted(set(scope.glyph_names) | {str(value) for value in extra_glyph_names}):
         glyph = native_index.get(name)
         if glyph is None:
-            if name in removed:
-                continue
-            raise HostAccessError("The scoped glyph no longer exists: {}".format(name))
+            # A collection insertion scopes the future identity before it
+            # exists in either the canonical source or the detached clone.
+            # Existing identities that disappeared are represented by
+            # ``removed``. Request validation owns missing update/delete
+            # targets; capture only reflects the native collection it sees.
+            continue
         base_glyphs[name] = _glyph_model(glyph)
     return result
 

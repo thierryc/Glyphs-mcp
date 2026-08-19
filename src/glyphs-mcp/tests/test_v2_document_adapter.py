@@ -24,6 +24,7 @@ from glyphs_mcp_v2.adapters.document import (  # noqa: E402
 )
 from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
 from glyphs_mcp_v2.python_execution import PythonExecutionRequest  # noqa: E402
+from glyphs_mcp_v2.mutation import MutationScope  # noqa: E402
 from glyphs_mcp_v2.semantic import diff_models  # noqa: E402
 
 
@@ -426,6 +427,34 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_future_collection_identity_is_not_required_in_source_capture(self) -> None:
+        font = _TransactionalFont()
+        font.glyphs = [
+            SimpleNamespace(
+                name="A",
+                id="id-A",
+                lastChange="revision-1",
+                changeCount=lambda: 0,
+                mastersCompatible=True,
+                layers=[],
+                category="Letter",
+                subCategory="Uppercase",
+                unicode=None,
+                export=True,
+                leftKerningGroup=None,
+                rightKerningGroup=None,
+            )
+        ]
+        source = native_font_to_model(font)
+
+        captured = document_adapter._scoped_font_model(
+            font,
+            source,
+            MutationScope(("glyphs",), ("FutureGlyph",)),
+        )
+
+        self.assertEqual(captured, source)
+
     def test_opentype_boolean_properties_use_objc_getter_and_setter_selectors(self) -> None:
         feature = _ObjectiveCBooleanFeature()
         font = _TransactionalFont()
