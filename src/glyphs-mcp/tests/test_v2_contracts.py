@@ -42,6 +42,7 @@ class V2ContractTests(unittest.TestCase):
             "apply_glyph_updates",
             "apply_kerning_updates",
             "apply_opentype_updates",
+            "apply_instance_updates",
             "review_spacing",
             "apply_spacing",
             "review_export",

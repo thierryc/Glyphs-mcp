@@ -462,6 +462,123 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(feature.code, "sub f f i by ffi;")
         self.assertTrue(feature.disabled)
 
+    def test_structural_opentype_replay_preserves_entities_and_order(self) -> None:
+        liga = SimpleNamespace(
+            name="liga", code="sub f i by fi;", automatic=False, disabled=False
+        )
+        font = _TransactionalFont()
+        font.features = [liga]
+        before = native_font_to_model(font)
+        after = copy.deepcopy(before)
+        after["features"].append(
+            {
+                "id": "kern",
+                "name": "kern",
+                "code": "pos A V -80;",
+                "automatic": False,
+                "disabled": False,
+            }
+        )
+        after["features"] = list(reversed(after["features"]))
+        changes = diff_models(before, after)
+
+        def construct(kind, name=""):
+            self.assertEqual(kind, "features")
+            return SimpleNamespace(
+                name=name, code="", automatic=False, disabled=False
+            )
+
+        with mock.patch.object(
+            document_adapter, "_construct_native_entity", side_effect=construct
+        ):
+            document_adapter._apply_target_model(font, before, after, changes)
+
+        self.assertEqual([value.name for value in font.features], ["kern", "liga"])
+        self.assertEqual(font.features[0].code, "pos A V -80;")
+        self.assertIs(font.features[1], liga)
+
+    def test_structural_instance_replay_uses_canonical_identity_order(self) -> None:
+        font = _TransactionalFont()
+        existing = SimpleNamespace(
+            id=lambda: "native-regular",
+            name="Regular",
+            type=0,
+            active=True,
+            axes=[],
+            externalAxes=[],
+        )
+        font.instances = [existing]
+        before = native_font_to_model(font)
+        after = copy.deepcopy(before)
+        after["instances"].append(
+            {
+                "id": "instance_bold",
+                "name": "Bold",
+                "type": "static",
+                "included": True,
+                "inclusionReason": None,
+                "interpolationSupported": True,
+                "axes": [],
+            }
+        )
+        changes = diff_models(before, after)
+
+        with mock.patch.object(
+            document_adapter,
+            "_construct_native_entity",
+            return_value=SimpleNamespace(
+                id=lambda: "native-bold",
+                name="",
+                type=0,
+                active=True,
+                axes=[],
+                externalAxes=[],
+            ),
+        ):
+            document_adapter._apply_target_model(font, before, after, changes)
+
+        self.assertEqual([value.name for value in font.instances], ["Regular", "Bold"])
+
+    def test_structural_glyph_replay_adds_and_removes_through_one_boundary(self) -> None:
+        font = _TransactionalFont()
+        before = native_font_to_model(font)
+        after = copy.deepcopy(before)
+        after["glyphs"]["B"] = {
+            "id": "glyph_B",
+            "name": "B",
+            "category": "Letter",
+            "subCategory": "Uppercase",
+            "unicode": "0042",
+            "export": True,
+            "leftKerningGroup": None,
+            "rightKerningGroup": None,
+            "mastersCompatible": True,
+            "layers": {},
+        }
+        changes = diff_models(before, after)
+        created = SimpleNamespace(
+            name="",
+            id="",
+            category=None,
+            subCategory=None,
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+            mastersCompatible=True,
+            layers=[],
+        )
+        with mock.patch.object(
+            document_adapter, "_construct_native_entity", return_value=created
+        ):
+            document_adapter._apply_target_model(font, before, after, changes)
+
+        self.assertEqual([value.name for value in font.glyphs], ["B"])
+        restored = native_font_to_model(font)
+        removal = diff_models(restored, before)
+        document_adapter._apply_target_model(font, restored, before, removal)
+        self.assertEqual(font.glyphs, [])
+
     def test_live_capture_reuses_only_unchanged_revision_bound_glyph_models(self) -> None:
         font = _TransactionalFont()
 
@@ -1125,6 +1242,18 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(source, clone)
         self.assertEqual(source["instances"][0]["id"], "instance_0")
+
+    def test_document_host_keeps_process_local_instance_identity_after_reorder(self) -> None:
+        font = _InstanceFont("native-uuid", "native-pointer")
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+
+        first = host.capture_model(document_id)
+        host._bind_instance_ids(document_id, font, ["instance_regular"])
+        second = host.capture_model(document_id)
+
+        self.assertEqual(first["instances"][0]["id"], "instance_0")
+        self.assertEqual(second["instances"][0]["id"], "instance_regular")
 
     def test_serialized_fingerprint_normalizes_clone_generated_instance_ids(self) -> None:
         source = _ArchiveInstanceFont(

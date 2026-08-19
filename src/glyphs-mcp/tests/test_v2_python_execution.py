@@ -64,6 +64,8 @@ class _PythonHost:
                 "g{:03d}".format(index): {"export": False}
                 for index in range(225)
             }
+        if "structuralAdd" in request.code:
+            after["glyphs"]["B"] = {"id": "glyph_B", "name": "B", "layers": {}}
         if "featureEdit" in request.code:
             after["features"][0]["code"] = "sub f f i by ffi;"
         result = {
@@ -497,6 +499,10 @@ class V2PythonExecutionTests(unittest.TestCase):
 
     def test_confirmation_ignores_substitute_code_and_large_diff_is_paginated(self) -> None:
         service, host = self.service()
+        host.model["glyphs"] = {
+            "g{:03d}".format(index): {"export": True}
+            for index in range(225)
+        }
         preview = service.execute(
             PythonExecutionRequest(
                 code="# bulk",
@@ -562,6 +568,22 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
         self.assertEqual(unsupported["error"]["code"], "unsupported_staged_change")
+
+    def test_staged_structural_replay_is_deferred_to_typed_tools(self) -> None:
+        service, host = self.service()
+        result = service.execute(
+            PythonExecutionRequest(
+                code="# structuralAdd",
+                reason="structural boundary test",
+                intended_effect="document_edit",
+                document_id="doc_alpha",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+
+        self.assertEqual(result["error"]["code"], "unsupported_staged_change")
+        self.assertEqual(result["data"]["changedRoots"], ["glyphs"])
+        self.assertEqual(host.model["glyphs"], {})
 
     def test_staged_explicit_context_escape_is_refused_before_review(self) -> None:
         service, host = self.service()
