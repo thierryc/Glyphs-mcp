@@ -1,6 +1,6 @@
 ---
 name: glyphs-mcp-opentype-features
-description: Inspect OpenType feature code, stylistic sets, character variants, prefixes, and classes in Glyphs; when explicitly requested, update existing code entries through the verified apply-first v2 mutation contract.
+description: Inspect OpenType feature code, stylistic sets, character variants, prefixes, and classes in Glyphs; when explicitly requested, change their ordered collections through the verified apply-first v2 mutation contract.
 ---
 
 # Glyphs MCP OpenType features
@@ -16,9 +16,10 @@ Use this focused workflow for OpenType feature inspection and stylistic-set repo
 - Report feature tags, disabled/automatic state, source classes or prefixes, substitutions, contextual rules, and unsupported constructs separately.
 - Do not mutate feature code, compile features, export, or save the font during inspection.
 - When the user explicitly requests an edit, use `apply_opentype_updates` with
-  one stable document ID, the current fingerprint, unique existing kind/name
-  targets, and a reason. The tool updates only `code`, `automatic`, and
-  `disabled`; it does not add, remove, or rename collection entries.
+  one stable document ID, the current fingerprint, explicit `create`, `update`,
+  `move`, or `delete` actions, unique kind/name targets, and a reason. Creation
+  and move may include an explicit collection index. Rename remains an explicit
+  delete/create operation so entity identity is never changed implicitly.
 - Custom code requires the resulting `automatic` state to be false. The typed
   mutation applies immediately, verifies detached and live canonical state,
   records one audit/change operation, never compiles, and never saves.

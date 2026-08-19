@@ -62,9 +62,16 @@ The tree descriptor carries two independent versions. `schemaVersion` describes
 the content-addressed storage layout. `modelSchemaVersion` describes the
 semantic font projection. They must never be treated as interchangeable. The
 descriptor also declares `reversibilityCoverage: modeled_fields_only` because
-the v1 canonical model does not claim to contain every private Glyphs or PyObjC
+the canonical model does not claim to contain every private Glyphs or PyObjC
 field. A model fingerprint is therefore an exact identity for that versioned
 projection, not a byte-for-byte identity for an arbitrary native document.
+
+Model schema v3 keeps ordered collections as plain detached JSON lists while
+addressing masters, instances, features, classes, and prefixes by stable entity
+ID. Membership and scalar patches are independent from a minimal `$order`
+patch, so create/delete/update/reorder, selective revert, storage, and audit all
+share one semantic representation. Glyph membership uses the same whole-entity
+principle on its name-keyed map.
 
 Canonical fields have explicit roles:
 

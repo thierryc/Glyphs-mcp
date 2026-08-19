@@ -3,12 +3,14 @@
 This is the isolated, unreleased Glyphs MCP 2.0 package. It is based on signed
 release `v1.11.0` but does not change the shipped 1.x wire contracts.
 
-The catalog contains 25 operations across:
+The catalog contains 27 operations across:
 
 - stable document status and bounded glyph, instance, kerning, audit, and operation pages;
 - compatibility, metrics, anchors, spacing, kerning, and export reviews;
 - direct apply-first typed mutations through detached simulation and one shared
   verified transaction kernel;
+- schema-v3 identity-aware glyph, instance, feature, class, and prefix
+  membership/order patches with conflict-aware semantic revert;
 - staged, destination-fingerprint-bound source-bundle publication;
 - `execute_python` staged-document and live-open-world modes;
 - fingerprint-bound `rollback_python_execution` and separate recovery copies.
@@ -32,6 +34,13 @@ writable patch on `GSFont.copy()`, capture every derived effect, apply once to
 the live font, and verify the complete observed result. Preparation tools and
 typed apply tokens are intentionally absent. Confirmation remains only for
 Python and export/open-world effects.
+
+Ordered canonical collections remain ordinary detached JSON lists, but schema
+v3 addresses their entities by stable IDs and represents order independently.
+`apply_glyph_updates`, `apply_opentype_updates`, and
+`apply_instance_updates` all use that one semantic collection abstraction.
+Master duplication, layer membership changes, and staged-Python structural
+replay remain explicit later boundaries.
 
 ## Worktree-contained development
 

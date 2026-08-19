@@ -17,9 +17,10 @@ from .mutation import (
     MutationPlanner,
     VerifiedMutationPlan,
     unsupported_change_diagnostics,
+    is_structural_change_path,
     writable_subset,
 )
-from .semantic import ChangeSet, diff_models, fingerprint_model
+from .semantic import ChangeSet, diff_models, fingerprint_model, public_change_dict
 from .transactions import StaleDocumentError, TransactionKernel, TransactionVerificationError
 
 if TYPE_CHECKING:
@@ -221,7 +222,7 @@ class PythonExecutionService:
         self._trace = trace
 
     def _store_diff(self, changes: ChangeSet) -> tuple[OperationRecord, Mapping[str, Any]]:
-        items = [change.to_dict() for change in changes.changes]
+        items = [public_change_dict(change) for change in changes.changes]
         operation = self._operations.create(
             kind="python_diff",
             ttl_seconds=DIFF_TTL_SECONDS,
@@ -519,6 +520,24 @@ class PythonExecutionService:
                 data={"unsupportedPaths": [], "nativeArchiveMismatch": bounded_comparison},
             )
         diagnostics = unsupported_change_diagnostics(changes, limit=100)
+        structural_paths = [
+            change.path
+            for change in changes.changes
+            if is_structural_change_path(change.path)
+        ]
+        if structural_paths:
+            return self._failure(
+                "unsupported_staged_change",
+                "Staged Python structural replay is deferred; use the typed structural tools.",
+                data={
+                    "unsupportedCount": len(structural_paths),
+                    "changedRoots": list(
+                        dict.fromkeys(path[0] for path in structural_paths)
+                    ),
+                    "unsupportedPaths": [list(path) for path in structural_paths[:100]],
+                    "truncated": len(structural_paths) > 100,
+                },
+            )
         provided_writable = preview.get("writableChangeSet")
         if isinstance(provided_writable, ChangeSet):
             if provided_writable.before_fingerprint != before_fingerprint:

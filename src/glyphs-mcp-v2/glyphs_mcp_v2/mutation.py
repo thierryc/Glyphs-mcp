@@ -30,7 +30,8 @@ _LAYER_WRITABLE = frozenset(
     }
 )
 _OPENTYPE_ROOTS = frozenset({"features", "classes", "featurePrefixes"})
-_OPENTYPE_WRITABLE = frozenset({"code", "automatic", "disabled"})
+_OPENTYPE_WRITABLE = frozenset({"name", "code", "automatic", "disabled"})
+_INSTANCE_WRITABLE = frozenset({"name", "type", "included", "axes"})
 
 
 def classify_change_path(path: tuple[str, ...]) -> str:
@@ -42,10 +43,22 @@ def classify_change_path(path: tuple[str, ...]) -> str:
         return "writable"
     if (
         path[0] in _OPENTYPE_ROOTS
-        and len(path) == 3
-        and path[2] in _OPENTYPE_WRITABLE
+        and (
+            len(path) == 2
+            or (len(path) == 3 and path[2] in _OPENTYPE_WRITABLE)
+        )
     ):
         return "writable"
+    if path[0] == "instances":
+        if len(path) == 2:
+            return "writable"
+        if len(path) >= 3 and path[2] in _INSTANCE_WRITABLE:
+            return "writable"
+        if len(path) == 3 and path[2] in {
+            "inclusionReason",
+            "interpolationSupported",
+        }:
+            return "derived"
     if path[0] == "glyphs" and len(path) >= 3:
         if len(path) == 3 and path[2] == "mastersCompatible":
             return "derived"
@@ -56,7 +69,22 @@ def classify_change_path(path: tuple[str, ...]) -> str:
                 return "derived"
             if path[4] in _LAYER_WRITABLE:
                 return "writable"
+    if path[0] == "glyphs" and len(path) == 2:
+        return "writable"
     return "unsupported"
+
+
+def is_structural_change_path(path: tuple[str, ...]) -> bool:
+    """Return whether a patch changes canonical collection membership/order."""
+
+    return len(path) == 2 and path[0] in {
+        "glyphs",
+        "masters",
+        "instances",
+        "features",
+        "classes",
+        "featurePrefixes",
+    }
 
 
 def writable_subset(before: Mapping[str, Any], observed: ChangeSet) -> ChangeSet:
@@ -313,6 +341,7 @@ __all__ = [
     "MutationPlanningHost",
     "VerifiedMutationPlan",
     "classify_change_path",
+    "is_structural_change_path",
     "mutation_scope",
     "unsupported_change_diagnostics",
     "writable_subset",

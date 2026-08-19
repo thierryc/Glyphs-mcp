@@ -9,6 +9,17 @@ import math
 from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Sequence, Tuple
 
+from .canonical_collections import (
+    IDENTITY_COLLECTION_ROOTS,
+    ORDER_TOKEN,
+    collection_order,
+    entity_id,
+    find_entity_index,
+    indexed_entities,
+    reorder_entities,
+    replace_entity,
+)
+
 
 MISSING = object()
 SUPPORTED_DOCUMENT_ROOTS = frozenset(
@@ -109,6 +120,52 @@ def _change_from_mapping(value: Mapping[str, Any]) -> SemanticChange:
     )
 
 
+def _public_change_value(path: Sequence[str], value: Any) -> Any:
+    if (
+        len(path) == 2
+        and path[0]
+        in {"glyphs", "masters", "instances", "features", "classes", "featurePrefixes"}
+        and isinstance(value, Mapping)
+    ):
+        identity = str(value.get("id") or path[1])
+        summary = {
+            key: copy.deepcopy(value[key])
+            for key in ("name", "type", "category", "subCategory", "unicode", "export")
+            if key in value
+        }
+        return {
+            "kind": "canonical_entity",
+            "id": identity,
+            "fieldCount": len(value),
+            "fingerprint": fingerprint_model(value),
+            **summary,
+        }
+    if path and path[-1] == ORDER_TOKEN and isinstance(value, (list, tuple)):
+        bounded = [str(identity) for identity in value[:100]]
+        return {
+            "kind": "entity_order",
+            "count": len(value),
+            "ids": bounded,
+            "truncated": len(value) > len(bounded),
+        }
+    return copy.deepcopy(value)
+
+
+def public_change_dict(change: SemanticChange) -> dict[str, Any]:
+    """Return a bounded display/result form without weakening stored rollback."""
+
+    value: dict[str, Any] = {
+        "path": list(change.path),
+        "beforePresent": change.before_present,
+        "afterPresent": change.after_present,
+    }
+    if change.before_present:
+        value["before"] = _public_change_value(change.path, change.before)
+    if change.after_present:
+        value["after"] = _public_change_value(change.path, change.after)
+    return value
+
+
 def _value_at(model: Any, path: Sequence[str]) -> Any:
     current = model
     for part in path:
@@ -117,10 +174,20 @@ def _value_at(model: Any, path: Sequence[str]) -> Any:
                 return MISSING
             current = current[part]
         elif isinstance(current, (list, tuple)):
-            try:
-                current = current[int(part)]
-            except (ValueError, IndexError):
-                return MISSING
+            if part == ORDER_TOKEN:
+                try:
+                    current = collection_order(current)
+                except ValueError:
+                    return MISSING
+            else:
+                index = find_entity_index(current, part)
+                if index is not None:
+                    current = current[index]
+                else:
+                    try:
+                        current = current[int(part)]
+                    except (ValueError, IndexError):
+                        return MISSING
         else:
             return MISSING
     return current
@@ -136,15 +203,38 @@ def _set_at(model: dict[str, Any], path: Sequence[str], value: Any, present: boo
                 current[part] = child
             current = child
         elif isinstance(current, list):
-            current = current[int(part)]
+            index = find_entity_index(current, part)
+            if index is not None:
+                current = current[index]
+            else:
+                try:
+                    current = current[int(part)]
+                except (ValueError, IndexError):
+                    raise ValueError(
+                        "change path is missing: {}".format("/".join(path))
+                    )
         else:
             raise ValueError("change path traverses a scalar: {}".format("/".join(path)))
     leaf = path[-1]
     if isinstance(current, list):
-        index = int(leaf)
-        if not present:
-            raise ValueError("list entries cannot be removed by an indexed semantic change")
-        current[index] = copy.deepcopy(value)
+        if leaf == ORDER_TOKEN:
+            if not present:
+                raise ValueError("canonical collection order cannot be removed")
+            reorder_entities(current, value)
+        else:
+            identity_index = find_entity_index(current, leaf)
+            is_entity_value = present and entity_id(value) == leaf
+            if identity_index is not None or is_entity_value:
+                replace_entity(current, leaf, value, present=present)
+            else:
+                try:
+                    index = int(leaf)
+                except ValueError:
+                    replace_entity(current, leaf, value, present=present)
+                    return
+                if not present:
+                    raise ValueError("list entries cannot be removed by an indexed semantic change")
+                current[index] = copy.deepcopy(value)
     elif present:
         current[leaf] = copy.deepcopy(value)
     else:
@@ -205,14 +295,38 @@ class ChangeSet:
         if verify_before and fingerprint_model(model) != self.before_fingerprint:
             raise ValueError("change set does not match the supplied before state")
         result = copy.deepcopy(_plain(model))
-        for change in self.changes:
+        # Membership and field changes must exist before the independent order
+        # projection is applied.  Keeping this rule in one place lets every
+        # identity-aware domain use the same patch representation.
+        ordered_changes = sorted(
+            self.changes,
+            key=lambda change: (change.path[-1] == ORDER_TOKEN, change.path),
+        )
+        for change in ordered_changes:
             current = _value_at(result, change.path)
             if verify_before:
                 if change.before_present and current is MISSING:
                     raise ValueError("change path is missing: {}".format("/".join(change.path)))
                 if not change.before_present and current is not MISSING:
                     raise ValueError("change path unexpectedly exists: {}".format("/".join(change.path)))
-                if change.before_present and current != change.before:
+                if (
+                    change.path[-1] == ORDER_TOKEN
+                    and change.after_present
+                    and (
+                        not isinstance(current, (list, tuple))
+                        or set(current) != set(change.after)
+                    )
+                ):
+                    raise ValueError(
+                        "canonical collection membership is stale: {}".format(
+                            "/".join(change.path)
+                        )
+                    )
+                if (
+                    change.path[-1] != ORDER_TOKEN
+                    and change.before_present
+                    and current != change.before
+                ):
                     raise ValueError("change path has stale content: {}".format("/".join(change.path)))
             _set_at(result, change.path, change.after, change.after_present)
         if fingerprint_model(result) != self.after_fingerprint:
@@ -244,7 +358,16 @@ def _diff(before: Any, after: Any, path: Tuple[str, ...]) -> list[SemanticChange
             before_present = key in before
             after_present = key in after
             if not before_present:
-                changes.extend(_missing_changes(after[key], path + (key_text,), addition=True))
+                if path == ("glyphs",):
+                    changes.append(
+                        SemanticChange(
+                            path=path + (key_text,),
+                            after=copy.deepcopy(after[key]),
+                            before_present=False,
+                        )
+                    )
+                else:
+                    changes.extend(_missing_changes(after[key], path + (key_text,), addition=True))
             elif not after_present:
                 changes.append(
                     SemanticChange(
@@ -257,6 +380,56 @@ def _diff(before: Any, after: Any, path: Tuple[str, ...]) -> list[SemanticChange
                 changes.extend(_diff(before[key], after[key], path + (key_text,)))
         return changes
     if isinstance(before, (list, tuple)) and isinstance(after, (list, tuple)):
+        if len(path) == 1 and path[0] in IDENTITY_COLLECTION_ROOTS:
+            before_indexed = indexed_entities(before)
+            after_indexed = indexed_entities(after)
+            if before_indexed is not None and after_indexed is not None:
+                before_order, before_entities = before_indexed
+                after_order, after_entities = after_indexed
+                changes: list[SemanticChange] = []
+                for identity in before_order:
+                    if identity not in after_entities:
+                        changes.append(
+                            SemanticChange(
+                                path=path + (identity,),
+                                before=copy.deepcopy(before_entities[identity]),
+                                after_present=False,
+                            )
+                        )
+                for identity in after_order:
+                    if identity not in before_entities:
+                        changes.append(
+                            SemanticChange(
+                                path=path + (identity,),
+                                after=copy.deepcopy(after_entities[identity]),
+                                before_present=False,
+                            )
+                        )
+                    else:
+                        changes.extend(
+                            _diff(
+                                before_entities[identity],
+                                after_entities[identity],
+                                path + (identity,),
+                            )
+                        )
+                # Removal naturally preserves survivor order and additions are
+                # appended in after-order.  Emit an order patch only when that
+                # minimal membership replay cannot reproduce the target.
+                replayed_order = [
+                    identity for identity in before_order if identity in after_entities
+                ] + [
+                    identity for identity in after_order if identity not in before_entities
+                ]
+                if replayed_order != after_order:
+                    changes.append(
+                        SemanticChange(
+                            path=path + (ORDER_TOKEN,),
+                            before=before_order,
+                            after=after_order,
+                        )
+                    )
+                return changes
         if len(before) != len(after):
             return [
                 SemanticChange(
@@ -305,11 +478,28 @@ def subset_change_set(
     if fingerprint_model(before_plain) != source.before_fingerprint:
         raise ValueError("source change set does not match the supplied before state")
     target = copy.deepcopy(before_plain)
-    for change in source.changes:
-        if not predicate(change):
-            continue
+    selected = [change for change in source.changes if predicate(change)]
+    selected.sort(key=lambda change: (change.path[-1] == ORDER_TOKEN, change.path))
+    for change in selected:
         current = _value_at(target, change.path)
-        if change.before_present and current != change.before:
+        if (
+            change.path[-1] == ORDER_TOKEN
+            and change.after_present
+            and (
+                not isinstance(current, (list, tuple))
+                or set(current) != set(change.after)
+            )
+        ):
+            raise ValueError(
+                "projected collection membership is stale: {}".format(
+                    "/".join(change.path)
+                )
+            )
+        if (
+            change.path[-1] != ORDER_TOKEN
+            and change.before_present
+            and current != change.before
+        ):
             raise ValueError("projected change path has stale content: {}".format("/".join(change.path)))
         _set_at(target, change.path, change.after, change.after_present)
     return diff_models(before_plain, target)
@@ -330,7 +520,11 @@ def revert_change_set_onto(
     current_plain = _plain(current)
     conflicts: list[Tuple[str, ...]] = []
     pending: list[SemanticChange] = []
+    order_changes: list[SemanticChange] = []
     for change in original.changes:
+        if change.path[-1] == ORDER_TOKEN:
+            order_changes.append(change)
+            continue
         value = _value_at(current_plain, change.path)
         matches_after = (
             value is not MISSING and value == change.after
@@ -351,6 +545,40 @@ def revert_change_set_onto(
     target = copy.deepcopy(current_plain)
     for change in pending:
         _set_at(target, change.path, change.before, change.before_present)
+    for change in order_changes:
+        value = _value_at(target, change.path)
+        if value is MISSING:
+            conflicts.append(change.path)
+            continue
+        current_order = [str(identity) for identity in value]
+        before_order = [str(identity) for identity in change.before]
+        after_order = [str(identity) for identity in change.after]
+        universe = set(before_order) | set(after_order)
+        surviving = {identity for identity in universe if identity in current_order}
+        projected_current = [identity for identity in current_order if identity in surviving]
+        projected_before = [identity for identity in before_order if identity in surviving]
+        if projected_current == projected_before:
+            continue
+        replayed_inverse = [
+            identity
+            for identity in after_order
+            if identity in surviving and identity in before_order
+        ] + [
+            identity
+            for identity in before_order
+            if identity in surviving and identity not in after_order
+        ]
+        if projected_current != replayed_inverse:
+            conflicts.append(change.path)
+            continue
+        replacement = iter(projected_before)
+        rebased_order = [
+            next(replacement) if identity in surviving else identity
+            for identity in current_order
+        ]
+        _set_at(target, change.path, rebased_order, True)
+    if conflicts:
+        return None, tuple(conflicts)
     return diff_models(current_plain, target), ()
 
 
@@ -361,6 +589,7 @@ __all__ = [
     "canonical_json",
     "diff_models",
     "fingerprint_model",
+    "public_change_dict",
     "revert_change_set_onto",
     "subset_change_set",
 ]

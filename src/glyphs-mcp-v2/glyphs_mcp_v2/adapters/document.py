@@ -18,6 +18,10 @@ from pathlib import Path
 from threading import RLock
 from typing import Any, Mapping, Optional, Sequence
 
+from ..canonical_collections import (
+    collection_order,
+    require_indexed_entities,
+)
 from ..exporting import inspect_destination, publish_staged_directory
 from ..ports import HostAccessError
 from ..python_execution import PythonExecutionRequest
@@ -254,14 +258,25 @@ def _master_models(font: Any) -> list[dict[str, Any]]:
     return result
 
 
-def _instance_models(font: Any) -> list[dict[str, Any]]:
+def _instance_models(
+    font: Any, *, instance_ids: Optional[Sequence[str]] = None
+) -> list[dict[str, Any]]:
     axes = _axis_models(font)
     result = []
-    for index, instance in enumerate(_sequence_values(_safe_getattr(font, "instances"))):
+    native_instances = _sequence_values(_safe_getattr(font, "instances"))
+    if instance_ids is not None and len(instance_ids) != len(native_instances):
+        raise HostAccessError("canonical instance identity count does not match Glyphs")
+    for index, instance in enumerate(native_instances):
         raw_type = _plain_scalar(_safe_getattr(instance, "type"))
         is_variable = str(raw_type).lower() in {"variable", "1", "gsinstancetypevariable"}
-        positions = _sequence_values(_safe_getattr(instance, "axes"))
-        external_positions = _sequence_values(_safe_getattr(instance, "externalAxes"))
+        positions = _sequence_values(_safe_getattr(instance, "internalAxesValues"))
+        if not positions:
+            positions = _sequence_values(_safe_getattr(instance, "axes"))
+        external_positions = _sequence_values(
+            _safe_getattr(instance, "externalAxesValues")
+        )
+        if not external_positions:
+            external_positions = _sequence_values(_safe_getattr(instance, "externalAxes"))
         if not external_positions:
             external_positions = _sequence_values(
                 _safe_getattr(instance, "externalAxisCoordinates")
@@ -274,7 +289,9 @@ def _instance_models(font: Any) -> list[dict[str, Any]]:
                 # Glyphs 4 regenerates native GSInstance UUIDs in GSFont.copy().
                 # Use the ordered collection identity in the canonical model so
                 # a detached clone does not manufacture a semantic change.
-                "id": "instance_{}".format(index),
+                "id": str(instance_ids[index])
+                if instance_ids is not None
+                else "instance_{}".format(index),
                 "name": str(_safe_getattr(instance, "name") or ""),
                 "type": "variable" if is_variable else "static",
                 "included": bool(_maybe_call(included_value)),
@@ -333,11 +350,12 @@ def _font_model_with_glyphs(
     glyphs: Mapping[str, Any],
     *,
     masters: Optional[Sequence[Mapping[str, Any]]] = None,
+    instance_ids: Optional[Sequence[str]] = None,
 ) -> dict[str, Any]:
     return {
         "font": {name: _plain_scalar(_safe_getattr(font, name)) for name in _FONT_SCALARS},
         "masters": list(masters) if masters is not None else _master_models(font),
-        "instances": _instance_models(font),
+        "instances": _instance_models(font, instance_ids=instance_ids),
         "glyphs": dict(glyphs),
         "kerning": _kerning_model(font),
         "features": _code_collection(font, "features"),
@@ -346,13 +364,15 @@ def _font_model_with_glyphs(
     }
 
 
-def native_font_to_model(font: Any) -> dict[str, Any]:
+def native_font_to_model(
+    font: Any, *, instance_ids: Optional[Sequence[str]] = None
+) -> dict[str, Any]:
     glyphs = {}
     for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
         model = _glyph_model(glyph)
         if model["name"]:
             glyphs[model["name"]] = model
-    return _font_model_with_glyphs(font, glyphs)
+    return _font_model_with_glyphs(font, glyphs, instance_ids=instance_ids)
 
 
 def _glyph_layer_structure(glyph: Any) -> tuple[tuple[str, str], ...]:
@@ -413,7 +433,13 @@ class _RevisionBoundGlyphModelCache:
             for name in glyph_names:
                 glyphs.pop(str(name), None)
 
-    def capture(self, document_id: str, font: Any) -> dict[str, Any]:
+    def capture(
+        self,
+        document_id: str,
+        font: Any,
+        *,
+        instance_ids: Optional[Sequence[str]] = None,
+    ) -> dict[str, Any]:
         masters = _master_models(font)
         master_structure = tuple(str(master.get("id") or "") for master in masters)
         with self._lock:
@@ -445,7 +471,12 @@ class _RevisionBoundGlyphModelCache:
                 "masterStructure": master_structure,
                 "glyphs": current_glyphs,
             }
-        return _font_model_with_glyphs(font, result_glyphs, masters=masters)
+        return _font_model_with_glyphs(
+            font,
+            result_glyphs,
+            masters=masters,
+            instance_ids=instance_ids,
+        )
 
 
 def _lookup_by_name(collection: Any, name: str) -> Any:
@@ -475,11 +506,12 @@ def _scoped_font_model(
     scope: MutationScope,
     *,
     extra_glyph_names: Sequence[str] = (),
+    instance_ids: Optional[Sequence[str]] = None,
 ) -> dict[str, Any]:
     """Refresh one canonical tree from native state without rebuilding every glyph."""
 
     result = copy.deepcopy(dict(base_model))
-    non_glyph = _font_model_with_glyphs(font, {})
+    non_glyph = _font_model_with_glyphs(font, {}, instance_ids=instance_ids)
     for root, value in non_glyph.items():
         if root != "glyphs":
             result[root] = value
@@ -492,13 +524,17 @@ def _scoped_font_model(
         for glyph in _sequence_values(_safe_getattr(font, "glyphs"))
         if str(_safe_getattr(glyph, "name") or "")
     }
-    if set(native_index) != set(base_glyphs):
-        raise HostAccessError(
-            "Scoped verification detected a structural glyph collection change"
-        )
+    removed = set(base_glyphs) - set(native_index)
+    added = set(native_index) - set(base_glyphs)
+    for name in removed:
+        base_glyphs.pop(name, None)
+    for name in added:
+        base_glyphs[name] = _glyph_model(native_index[name])
     for name in sorted(set(scope.glyph_names) | {str(value) for value in extra_glyph_names}):
         glyph = native_index.get(name)
         if glyph is None:
+            if name in removed:
+                continue
             raise HostAccessError("The scoped glyph no longer exists: {}".format(name))
         base_glyphs[name] = _glyph_model(glyph)
     return result
@@ -508,12 +544,10 @@ def _changed_revision_glyphs(
     before: Mapping[str, tuple[Any, ...]],
     after: Mapping[str, tuple[Any, ...]],
 ) -> tuple[str, ...]:
-    if set(before) != set(after):
-        raise HostAccessError(
-            "Scoped verification detected a structural glyph collection change"
-        )
     return tuple(
-        name for name in sorted(before) if before.get(name) != after.get(name)
+        name
+        for name in sorted(set(before) | set(after))
+        if before.get(name) != after.get(name)
     )
 
 
@@ -888,37 +922,159 @@ def _replace_kerning(font: Any, target_pairs: Any) -> None:
             )
 
 
+def _remove_native_collection_item(collection: Any, index: int, value: Any) -> None:
+    try:
+        del collection[index]
+        return
+    except Exception:
+        pass
+    remover = _safe_getattr(collection, "removeObjectAtIndex_")
+    if callable(remover):
+        remover(index)
+        return
+    remover = _safe_getattr(collection, "remove")
+    if callable(remover):
+        remover(value)
+        return
+    raise HostAccessError("Glyphs collection does not support removal")
+
+
+def _append_native_collection_item(collection: Any, value: Any) -> None:
+    appender = _safe_getattr(collection, "append")
+    if callable(appender):
+        appender(value)
+        return
+    appender = _safe_getattr(collection, "addObject_")
+    if callable(appender):
+        appender(value)
+        return
+    raise HostAccessError("Glyphs collection does not support append")
+
+
+def _replace_native_collection_order(collection: Any, values: Sequence[Any]) -> None:
+    desired = list(values)
+    try:
+        collection[:] = desired
+        return
+    except Exception:
+        pass
+    current = _sequence_values(collection)
+    for index in reversed(range(len(current))):
+        _remove_native_collection_item(collection, index, current[index])
+    for value in desired:
+        _append_native_collection_item(collection, value)
+
+
+def _construct_native_entity(kind: str, name: str = "") -> Any:
+    """Create one native entity behind a single testable SDK boundary."""
+
+    try:
+        from GlyphsApp import (  # type: ignore[import-not-found]
+            GSClass,
+            GSFeature,
+            GSFeaturePrefix,
+            GSGlyph,
+            GSInstance,
+        )
+    except Exception as exc:
+        raise HostAccessError("Glyphs native entity classes are unavailable") from exc
+    classes = {
+        "glyph": GSGlyph,
+        "instance": GSInstance,
+        "features": GSFeature,
+        "classes": GSClass,
+        "featurePrefixes": GSFeaturePrefix,
+    }
+    constructor = classes.get(kind)
+    if constructor is None:
+        raise HostAccessError("unsupported native entity kind: {}".format(kind))
+    for arguments in ((name,), ()):
+        try:
+            value = constructor(*arguments)
+            break
+        except Exception:
+            value = None
+    if value is None:
+        raise HostAccessError("Glyphs could not create a native {}".format(kind))
+    if name and str(_safe_getattr(value, "name") or "") != name:
+        setattr(value, "name", name)
+    return value
+
+
+def _set_native_identity(value: Any, identity: str) -> None:
+    current = str(_maybe_call(_safe_getattr(value, "id")) or "")
+    if not identity or current == identity:
+        return
+    setter = _safe_getattr(value, "setId_")
+    if callable(setter):
+        setter(identity)
+        return
+    try:
+        setattr(value, "id", identity)
+    except Exception:
+        # Some Glyphs identities are host-owned. Forward creation can accept a
+        # derived ID; an exact inverse will fail verification rather than lie.
+        pass
+
+
+def _sync_native_entities(
+    collection: Any,
+    current: Sequence[Mapping[str, Any]],
+    target: Sequence[Mapping[str, Any]],
+    *,
+    kind: str,
+) -> dict[str, Any]:
+    current_order, _ = require_indexed_entities(current, kind)
+    target_order, target_entities = require_indexed_entities(target, kind)
+    native_values = _sequence_values(collection)
+    if len(native_values) != len(current_order):
+        raise HostAccessError("Glyphs {} collection diverged before mutation".format(kind))
+    native_by_id = {
+        identity: native_values[index]
+        for index, identity in enumerate(current_order)
+    }
+    for identity in reversed(current_order):
+        if identity in target_entities:
+            continue
+        value = native_by_id.pop(identity)
+        index = _sequence_values(collection).index(value)
+        _remove_native_collection_item(collection, index, value)
+    for identity in target_order:
+        if identity in native_by_id:
+            continue
+        entity = target_entities[identity]
+        entity_name = str(entity.get("name") or identity)
+        value = _construct_native_entity(kind, entity_name)
+        if str(_safe_getattr(value, "name") or "") != entity_name:
+            setattr(value, "name", entity_name)
+        native_by_id[identity] = value
+        _append_native_collection_item(collection, value)
+    _replace_native_collection_order(
+        collection, [native_by_id[identity] for identity in target_order]
+    )
+    return native_by_id
+
+
 def _apply_code_collection(
     font: Any,
     attribute: str,
     current: Sequence[Mapping[str, Any]],
     target: Sequence[Mapping[str, Any]],
 ) -> None:
-    """Apply scalar code fields without replacing ordered native objects."""
+    """Apply membership, order, and scalar fields through one collection path."""
 
-    native_values = _sequence_values(_safe_getattr(font, attribute))
-    if len(native_values) != len(current) or len(current) != len(target):
-        raise HostAccessError(
-            "OpenType collection membership changes are not supported in this milestone"
-        )
-    for index, (native, before, after) in enumerate(
-        zip(native_values, current, target)
-    ):
-        before_identity = (
-            str(before.get("id") or ""),
-            str(before.get("name") or ""),
-        )
-        after_identity = (
-            str(after.get("id") or ""),
-            str(after.get("name") or ""),
-        )
-        native_name = str(_safe_getattr(native, "name") or "")
-        if before_identity != after_identity or native_name != before_identity[1]:
-            raise HostAccessError(
-                "OpenType collection identity changed at {}[{}]".format(
-                    attribute, index
-                )
-            )
+    collection = _safe_getattr(font, attribute)
+    native_by_id = _sync_native_entities(
+        collection, current, target, kind=attribute
+    )
+    _, current_entities = require_indexed_entities(current, attribute)
+    target_order, target_entities = require_indexed_entities(target, attribute)
+    for identity in target_order:
+        native = native_by_id[identity]
+        before = current_entities.get(identity, {})
+        after = target_entities[identity]
+        if str(_safe_getattr(native, "name") or "") != str(after.get("name") or ""):
+            setattr(native, "name", str(after.get("name") or ""))
         # Automatic mode is applied first. Custom code is legal only in the
         # resulting manual state, as enforced by the pure request builder.
         if before.get("automatic") != after.get("automatic"):
@@ -927,6 +1083,84 @@ def _apply_code_collection(
             _set_native_property(native, "code", str(after.get("code") or ""))
         if before.get("disabled") != after.get("disabled"):
             _set_native_property(native, "disabled", bool(after.get("disabled")))
+
+
+def _apply_instance_collection(
+    font: Any,
+    current: Sequence[Mapping[str, Any]],
+    target: Sequence[Mapping[str, Any]],
+) -> None:
+    collection = _safe_getattr(font, "instances")
+    native_by_id = _sync_native_entities(
+        collection, current, target, kind="instance"
+    )
+    _, current_entities = require_indexed_entities(current, "instances")
+    target_order, target_entities = require_indexed_entities(target, "instances")
+    try:
+        from GlyphsApp import INSTANCETYPEVARIABLE  # type: ignore[import-not-found]
+    except Exception:
+        INSTANCETYPEVARIABLE = 1
+    for identity in target_order:
+        native = native_by_id[identity]
+        before = current_entities.get(identity, {})
+        after = target_entities[identity]
+        if before.get("name") != after.get("name"):
+            setattr(native, "name", str(after.get("name") or ""))
+        if before.get("type") != after.get("type"):
+            setattr(
+                native,
+                "type",
+                INSTANCETYPEVARIABLE if after.get("type") == "variable" else 0,
+            )
+        if before.get("included") != after.get("included"):
+            if _safe_getattr(native, "active") is not None:
+                setattr(native, "active", bool(after.get("included")))
+            else:
+                setattr(native, "exports", bool(after.get("included")))
+        if before.get("axes") != after.get("axes"):
+            axes = list(after.get("axes") or [])
+            internal = [axis.get("internal") for axis in axes]
+            if _safe_getattr(native, "internalAxesValues") is not None:
+                _set_native_property(native, "internalAxesValues", internal)
+            else:
+                _set_native_property(native, "axes", internal)
+            external = [axis.get("external") for axis in axes]
+            if any(value is not None for value in external):
+                if _safe_getattr(native, "externalAxesValues") is not None:
+                    _set_native_property(native, "externalAxesValues", external)
+                elif _safe_getattr(native, "externalAxes") is not None:
+                    _set_native_property(native, "externalAxes", external)
+                elif _safe_getattr(native, "externalAxisCoordinates") is not None:
+                    _set_native_property(native, "externalAxisCoordinates", external)
+
+
+def _apply_glyph_membership(
+    font: Any,
+    current: Mapping[str, Mapping[str, Any]],
+    target: Mapping[str, Mapping[str, Any]],
+) -> None:
+    collection = _safe_getattr(font, "glyphs")
+    native_by_name = {
+        str(_safe_getattr(value, "name") or ""): value
+        for value in _sequence_values(collection)
+        if str(_safe_getattr(value, "name") or "")
+    }
+    if set(native_by_name) != set(current):
+        raise HostAccessError("Glyphs glyph collection diverged before mutation")
+    for name in sorted(set(current) - set(target), reverse=True):
+        value = native_by_name.pop(name)
+        try:
+            del collection[name]
+        except Exception:
+            index = _sequence_values(collection).index(value)
+            _remove_native_collection_item(collection, index, value)
+    for name in sorted(set(target) - set(current)):
+        value = _construct_native_entity("glyph", name)
+        if str(_safe_getattr(value, "name") or "") != name:
+            setattr(value, "name", name)
+        _set_native_identity(value, str(target[name].get("id") or ""))
+        _append_native_collection_item(collection, value)
+        native_by_name[name] = value
 
 
 def _canonical_replacement_roots(
@@ -970,21 +1204,39 @@ def _apply_target_model(
     if "glyphs" in changed_roots:
         current_glyphs = current.get("glyphs", {})
         target_glyphs = target.get("glyphs", {})
+        if not isinstance(current_glyphs, Mapping) or not isinstance(
+            target_glyphs, Mapping
+        ):
+            raise HostAccessError("canonical glyph collections must be keyed by name")
         if set(current_glyphs) != set(target_glyphs):
-            raise HostAccessError("staged Python cannot add or delete glyphs in this v2 milestone")
+            _apply_glyph_membership(font, current_glyphs, target_glyphs)
         for name in sorted(target_glyphs):
             if current_glyphs.get(name) == target_glyphs.get(name):
                 continue
             glyph = _lookup_by_name(_safe_getattr(font, "glyphs"), name)
             if glyph is None:
                 raise HostAccessError("Glyphs could not resolve glyph {}".format(name))
+            current_glyph = current_glyphs.get(name)
+            if not isinstance(current_glyph, Mapping):
+                # A new glyph can gain host-created master layers when it is
+                # inserted into the font. Capture those derived values before
+                # applying any explicitly modeled content.
+                current_glyph = _glyph_model(glyph)
             for scalar in _GLYPH_SCALARS:
-                if current_glyphs[name].get(scalar) != target_glyphs[name].get(scalar):
+                if current_glyph.get(scalar) != target_glyphs[name].get(scalar):
                     setattr(glyph, scalar, target_glyphs[name].get(scalar))
-            current_layers = current_glyphs[name].get("layers", {})
+            current_layers = current_glyph.get("layers", {})
             target_layers = target_glyphs[name].get("layers", {})
             if set(current_layers) != set(target_layers):
-                raise HostAccessError("staged Python cannot add or delete layers in this v2 milestone")
+                # Layer collection mutation remains a separate structural
+                # boundary. Empty requested layers on a newly created glyph
+                # mean "accept Glyphs' derived master layers".
+                if name not in current_glyphs and not target_layers:
+                    target_layers = current_layers
+                else:
+                    raise HostAccessError(
+                        "canonical layer collection membership changes are not supported"
+                    )
             for layer_key in sorted(target_layers):
                 if current_layers.get(layer_key) == target_layers.get(layer_key):
                     continue
@@ -1080,6 +1332,12 @@ def _apply_target_model(
                         end()
     if "kerning" in changed_roots:
         _replace_kerning(font, target.get("kerning", []))
+    if "instances" in changed_roots:
+        _apply_instance_collection(
+            font,
+            current.get("instances", []),
+            target.get("instances", []),
+        )
     for root, attribute in (
         ("features", "features"),
         ("classes", "classes"),
@@ -1301,6 +1559,8 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self._canonical_model_cache = _RevisionBoundGlyphModelCache()
+        self._instance_identity_maps: dict[str, dict[str, str]] = {}
+        self._instance_identity_counters: dict[str, int] = {}
 
     def runtime_snapshot(self):
         self._cleanup_all_recovery()
@@ -1318,9 +1578,58 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
     def native_font(self, document_id: str) -> Any:
         return self._font_for_document(document_id)
 
+    @staticmethod
+    def _native_instance_key(instance: Any) -> str:
+        identity = str(_maybe_call(_safe_getattr(instance, "id")) or "")
+        return identity or "native:{}".format(id(instance))
+
+    def _instance_ids_for_font(self, document_id: str, font: Any) -> list[str]:
+        mapping = self._instance_identity_maps.setdefault(document_id, {})
+        counter = self._instance_identity_counters.get(document_id, 0)
+        used = set(mapping.values())
+        result: list[str] = []
+        for instance in _sequence_values(_safe_getattr(font, "instances")):
+            key = self._native_instance_key(instance)
+            identity = mapping.get(key)
+            if identity is None:
+                while "instance_{}".format(counter) in used:
+                    counter += 1
+                identity = "instance_{}".format(counter)
+                counter += 1
+                mapping[key] = identity
+                used.add(identity)
+            result.append(identity)
+        live_keys = {
+            self._native_instance_key(instance)
+            for instance in _sequence_values(_safe_getattr(font, "instances"))
+        }
+        self._instance_identity_maps[document_id] = {
+            key: value for key, value in mapping.items() if key in live_keys
+        }
+        self._instance_identity_counters[document_id] = counter
+        return result
+
+    def _bind_instance_ids(
+        self, document_id: str, font: Any, identities: Sequence[str]
+    ) -> None:
+        native = _sequence_values(_safe_getattr(font, "instances"))
+        if len(native) != len(identities):
+            raise HostAccessError("Glyphs instance membership did not match the canonical target")
+        self._instance_identity_maps[document_id] = {
+            self._native_instance_key(instance): str(identities[index])
+            for index, instance in enumerate(native)
+        }
+
+    def _capture_cached_model(self, document_id: str, font: Any) -> dict[str, Any]:
+        return self._canonical_model_cache.capture(
+            document_id,
+            font,
+            instance_ids=self._instance_ids_for_font(document_id, font),
+        )
+
     def _cached_open_models(self) -> dict[str, dict[str, Any]]:
         return {
-            document_id: self._canonical_model_cache.capture(document_id, font)
+            document_id: self._capture_cached_model(document_id, font)
             for font in self._collect_fonts()
             for document_id in (
                 self._identities.resolve(self._native_identity(font)),
@@ -1329,7 +1638,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
     def capture_model(self, document_id: str) -> Mapping[str, Any]:
         return self._executor.run(
-            lambda: self._canonical_model_cache.capture(
+            lambda: self._capture_cached_model(
                 document_id, self._font_for_document(document_id)
             )
         )
@@ -1412,11 +1721,17 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 if required_after_model is not None
                 else None
             )
+            source_instance_ids = collection_order(source.get("instances", []))
 
             def attempt(replacements: Sequence[Sequence[str]]) -> Mapping[str, Any]:
                 clone = copier()
                 revisions_before = _glyph_revision_index(clone)
-                clone_before = _scoped_font_model(clone, source, scope)
+                clone_before = _scoped_font_model(
+                    clone,
+                    source,
+                    scope,
+                    instance_ids=source_instance_ids,
+                )
                 if fingerprint_model(clone_before) != change_set.before_fingerprint:
                     raise HostAccessError(
                         "Detached GSFont.copy() did not reproduce the canonical source"
@@ -1439,6 +1754,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     source,
                     scope,
                     extra_glyph_names=changed_glyphs,
+                    instance_ids=collection_order(target.get("instances", [])),
                 )
 
             preferred = attempt(())
@@ -1487,11 +1803,27 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 continue
             if (
                 path[0] in {"features", "classes", "featurePrefixes"}
-                and len(path) == 3
-                and path[2] in {"code", "automatic", "disabled"}
+                and (
+                    len(path) == 2
+                    or (
+                        len(path) == 3
+                        and path[2] in {"name", "code", "automatic", "disabled"}
+                    )
+                )
             ):
-                if not change.before_present or not change.after_present:
-                    return False
+                continue
+            if path[0] == "instances":
+                if len(path) == 2:
+                    continue
+                if len(path) >= 3 and path[2] in {
+                    "name",
+                    "type",
+                    "included",
+                    "axes",
+                }:
+                    continue
+                return False
+            if path[0] == "glyphs" and len(path) == 2:
                 continue
             if path[0] == "glyphs" and len(path) >= 3:
                 if len(path) == 3 and path[2] in _GLYPH_SCALARS:
@@ -1552,11 +1884,15 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         clone_revisions_before,
                         clone_revisions_after,
                     ),
+                    instance_ids=collection_order(before_model.get("instances", [])),
                 )
             else:
                 # Open-world staged requests retain the conservative full-tree
                 # fallback because no smaller correctness boundary was declared.
-                after_model = native_font_to_model(clone)
+                after_model = native_font_to_model(
+                    clone,
+                    instance_ids=collection_order(before_model.get("instances", [])),
+                )
             changes = diff_models(before_model, after_model)
             context_violations = _staged_context_violations(
                 request,
@@ -1715,7 +2051,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         if not baseline_fingerprint:
             return native_state
         current_fingerprint = fingerprint_model(
-            self._canonical_model_cache.capture(document_id, font)
+            self._capture_cached_model(document_id, font)
         )
         if current_fingerprint == baseline_fingerprint:
             return False
@@ -1743,7 +2079,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         def apply() -> None:
             font = self._font_for_document(document_id)
-            current = self._canonical_model_cache.capture(document_id, font)
+            current = self._capture_cached_model(document_id, font)
             target = change_set.apply(current)
             scope = mutation_scope(current, change_set)
             contributions = getattr(self, "_document_mcp_contributions", {})
@@ -1768,6 +2104,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 change_set,
                 replay_replacements=replay_replacements,
             )
+            if any(change.path[0] == "instances" for change in change_set.changes):
+                self._bind_instance_ids(
+                    document_id,
+                    font,
+                    collection_order(target.get("instances", [])),
+                )
             if change_set.changes:
                 if removes_contribution_id:
                     removed = active.pop(removes_contribution_id)
@@ -1814,14 +2156,20 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         def restore() -> None:
             font = self._font_for_document(document_id)
-            current = self._canonical_model_cache.capture(document_id, font)
+            current = self._capture_cached_model(document_id, font)
             restoration = diff_models(current, model)
             restoration_scope = mutation_scope(current, restoration)
             self._canonical_model_cache.invalidate_glyphs(
                 document_id, restoration_scope.glyph_names
             )
             _apply_target_model(font, current, model, restoration)
-            preferred = self._canonical_model_cache.capture(document_id, font)
+            if any(change.path[0] == "instances" for change in restoration.changes):
+                self._bind_instance_ids(
+                    document_id,
+                    font,
+                    collection_order(model.get("instances", [])),
+                )
+            preferred = self._capture_cached_model(document_id, font)
             if fingerprint_model(preferred) != fingerprint_model(model):
                 replacements = _canonical_replacement_roots(
                     current, model, preferred
@@ -1839,6 +2187,14 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         residual,
                         replay_replacements=replacements,
                     )
+                    if any(
+                        change.path[0] == "instances" for change in residual.changes
+                    ):
+                        self._bind_instance_ids(
+                            document_id,
+                            font,
+                            collection_order(model.get("instances", [])),
+                        )
             contributions = getattr(self, "_document_mcp_contributions", {})
             active = contributions.setdefault(document_id, {})
             pending = getattr(self, "_document_mcp_pending_reverts", {})

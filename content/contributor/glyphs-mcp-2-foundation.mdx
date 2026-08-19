@@ -36,10 +36,12 @@ The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
 - a recoverable main-thread execution port;
 - Glyphs 3.5/4 collection fallbacks;
 - catalog-generated schemas and safety annotations;
-- 25 catalog-driven FastMCP operations;
+- 27 catalog-driven FastMCP operations;
 - paginated glyph, instance, kerning, audit, review, and Python-diff results;
 - direct glyph, anchor, kerning, spacing, metrics, and compatibility batches
   with detached derived-effect simulation;
+- schema-v3 identity-aware glyph, instance, feature, class, and prefix
+  collection membership/order changes through the same verified kernel;
 - compatibility, metrics-inheritance, anchor, spacing, kerning-coverage, and
   export analysis;
 - staged export with destination fingerprints and macOS atomic directory swap;
@@ -116,10 +118,12 @@ breaking catalog changes do not flow back to 1.x.
    anchors, spacing, kerning, instances, export, and synchronized skills.
 4. In progress: Glyphs 4 disposable verification of the verified apply-first
    kernel. Glyphs 3.5 remains on signed v1.11 until a later authorized live gate.
-5. In progress: updates to existing feature/class/prefix code entries now use
-   the verified apply-first kernel. Collection membership changes, master
-   duplication, instance mutation, installer integration, and the
-   release-candidate matrix remain deferred.
+5. Complete: canonical schema v3 represents ordered entity membership, scalar
+   updates, deletion, insertion, and reorder as identity-aware semantic
+   patches. Glyph collection, OpenType collection, and instance mutations use
+   the verified apply-first kernel and the same conflict-aware revert logic.
+6. Deferred: master duplication, layer membership mutation, staged-Python
+   structural replay, installer integration, and the release-candidate matrix.
 
 Every milestone must pass focused tests, the complete Python suite, catalog
 and schema gates, deterministic payload assembly, and `git diff --check`.

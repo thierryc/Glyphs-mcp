@@ -20,6 +20,11 @@ def _value_text(value: Any, present: bool) -> str:
         return "null"
     if isinstance(value, bool):
         return "true" if value else "false"
+    if isinstance(value, dict):
+        identity = value.get("id") or value.get("name")
+        return "entity {} ({} fields)".format(identity or "value", len(value))
+    if isinstance(value, (list, tuple)) and len(value) > 12:
+        return "{} items".format(len(value))
     return str(value)
 
 

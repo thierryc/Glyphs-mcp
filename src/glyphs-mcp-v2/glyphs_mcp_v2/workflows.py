@@ -7,6 +7,7 @@ import hashlib
 import json
 from typing import Any, Iterable, Mapping, Optional, Sequence
 
+from .canonical_collections import find_entity_index, move_entity, require_indexed_entities
 from .semantic import ChangeSet, diff_models
 
 
@@ -594,30 +595,64 @@ def review_export(
     }
 
 
-def review_glyph_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
+def build_glyph_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
+    """Build property and membership changes for the canonical glyph map."""
+
     after = copy.deepcopy(dict(model))
     glyphs = after.setdefault("glyphs", {})
     if not isinstance(glyphs, dict):
         raise ValueError("glyph model must be keyed by name for batch updates")
-    seen = set()
+    seen: set[tuple[str, str]] = set()
     allowed = {"category", "subCategory", "unicode", "export", "leftKerningGroup", "rightKerningGroup"}
     for update in updates:
         name = str(update.get("glyphName") or "")
-        if not name or name in seen:
-            raise ValueError("glyph updates require unique explicit glyph names")
-        seen.add(name)
+        action = str(update.get("action") or "update").lower()
+        target = (action, name)
+        if not name or target in seen:
+            raise ValueError("glyph updates require unique explicit action/name targets")
+        seen.add(target)
+        if action == "create":
+            if name in glyphs:
+                raise ValueError("glyph already exists: {}".format(name))
+            glyphs[name] = {
+                "id": str(update.get("glyphId") or "glyph_{}".format(name)),
+                "name": name,
+                "category": update.get("category"),
+                "subCategory": update.get("subCategory"),
+                "unicode": update.get("unicode"),
+                "export": bool(update.get("export", True)),
+                "leftKerningGroup": update.get("leftKerningGroup"),
+                "rightKerningGroup": update.get("rightKerningGroup"),
+                "layers": {},
+            }
+            continue
+        if action == "delete":
+            if name not in glyphs:
+                raise ValueError("unknown glyph: {}".format(name))
+            del glyphs[name]
+            continue
+        if action != "update":
+            raise ValueError("glyph action must be create, update, or delete")
         if name not in glyphs or not isinstance(glyphs[name], dict):
             raise ValueError("unknown glyph: {}".format(name))
+        supplied = allowed.intersection(update)
+        if not supplied:
+            raise ValueError("glyph updates require at least one writable property")
         for key, value in update.items():
             if key in allowed:
                 glyphs[name][key] = copy.deepcopy(value)
     return diff_models(model, after)
 
 
+# Internal compatibility name for existing pure callers. It is not a public
+# MCP review token or registered capability.
+review_glyph_updates = build_glyph_updates
+
+
 def build_opentype_updates(
     model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]
 ) -> ChangeSet:
-    """Update existing feature, class, and prefix code through one contract."""
+    """Build feature, class, and prefix membership/state changes."""
 
     after = copy.deepcopy(dict(model))
     roots = {
@@ -626,29 +661,55 @@ def build_opentype_updates(
         "prefix": "featurePrefixes",
     }
     allowed = {"code", "automatic", "disabled"}
-    seen: set[tuple[str, str]] = set()
+    seen: set[tuple[str, str, str]] = set()
     for update in updates:
         kind = str(update.get("kind") or "")
         root = roots.get(kind)
         name = str(update.get("name") or "")
-        target = (kind, name)
+        action = str(update.get("action") or "update").lower()
+        target = (action, kind, name)
         if root is None:
             raise ValueError("OpenType update kind must be feature, class, or prefix")
         if not name or target in seen:
-            raise ValueError("OpenType updates require unique existing kind/name targets")
+            raise ValueError("OpenType updates require unique action/kind/name targets")
         seen.add(target)
         collection = after.get(root)
         if not isinstance(collection, list):
             raise ValueError("{} must be an ordered canonical collection".format(root))
-        matches = [
-            item
-            for item in collection
-            if isinstance(item, dict)
-            and name in {str(item.get("id") or ""), str(item.get("name") or "")}
-        ]
-        if len(matches) != 1:
-            raise ValueError("unknown or ambiguous OpenType target: {}/{}".format(kind, name))
-        item = matches[0]
+        require_indexed_entities(collection, root)
+        index = find_entity_index(collection, name)
+        if action == "create":
+            if index is not None:
+                raise ValueError("OpenType target already exists: {}/{}".format(kind, name))
+            automatic = bool(update.get("automatic", False))
+            code = str(update.get("code") or "")
+            if automatic and code:
+                raise ValueError("code updates require the resulting automatic false")
+            collection.append(
+                {
+                    "id": name,
+                    "name": name,
+                    "code": code,
+                    "automatic": automatic,
+                    "disabled": bool(update.get("disabled", False)),
+                }
+            )
+            if "index" in update:
+                move_entity(collection, name, int(update["index"]))
+            continue
+        if index is None:
+            raise ValueError("unknown OpenType target: {}/{}".format(kind, name))
+        if action == "delete":
+            del collection[index]
+            continue
+        if action == "move":
+            if "index" not in update:
+                raise ValueError("OpenType move requires index")
+            move_entity(collection, name, int(update["index"]))
+            continue
+        if action != "update":
+            raise ValueError("OpenType action must be create, update, move, or delete")
+        item = collection[index]
         supplied = allowed.intersection(update)
         if not supplied:
             raise ValueError("OpenType updates require code, automatic, or disabled")
@@ -665,6 +726,82 @@ def build_opentype_updates(
             item["code"] = str(update.get("code") or "")
         if "disabled" in supplied:
             item["disabled"] = bool(update.get("disabled"))
+    return diff_models(model, after)
+
+
+def build_instance_updates(
+    model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]
+) -> ChangeSet:
+    """Build ordered instance membership and property changes."""
+
+    after = copy.deepcopy(dict(model))
+    collection = after.setdefault("instances", [])
+    if not isinstance(collection, list):
+        raise ValueError("instances must be an ordered canonical collection")
+    require_indexed_entities(collection, "instances")
+    seen: set[tuple[str, str]] = set()
+    writable = {"name", "type", "included", "axes"}
+    for update in updates:
+        action = str(update.get("action") or "update").lower()
+        identity = str(update.get("instanceId") or "")
+        target = (action, identity)
+        if not identity or target in seen:
+            raise ValueError("instance updates require unique action/instanceId targets")
+        seen.add(target)
+        index = find_entity_index(collection, identity)
+        if action == "create":
+            if index is not None:
+                raise ValueError("instance already exists: {}".format(identity))
+            kind = str(update.get("type") or "static").lower()
+            if kind not in {"static", "variable"}:
+                raise ValueError("instance type must be static or variable")
+            if not str(update.get("name") or ""):
+                raise ValueError("instance creation requires name")
+            collection.append(
+                {
+                    "id": identity,
+                    "name": str(update.get("name")),
+                    "type": kind,
+                    "included": bool(update.get("included", True)),
+                    "inclusionReason": None,
+                    "interpolationSupported": kind != "variable",
+                    "axes": copy.deepcopy(list(update.get("axes") or [])),
+                }
+            )
+            if "index" in update:
+                move_entity(collection, identity, int(update["index"]))
+            continue
+        if index is None:
+            raise ValueError("unknown instance: {}".format(identity))
+        if action == "delete":
+            del collection[index]
+            continue
+        if action == "move":
+            if "index" not in update:
+                raise ValueError("instance move requires index")
+            move_entity(collection, identity, int(update["index"]))
+            continue
+        if action != "update":
+            raise ValueError("instance action must be create, update, move, or delete")
+        supplied = writable.intersection(update)
+        if not supplied:
+            raise ValueError("instance updates require a writable property")
+        item = collection[index]
+        if "name" in supplied:
+            name = str(update.get("name") or "")
+            if not name:
+                raise ValueError("instance name cannot be empty")
+            item["name"] = name
+        if "type" in supplied:
+            kind = str(update.get("type") or "").lower()
+            if kind not in {"static", "variable"}:
+                raise ValueError("instance type must be static or variable")
+            item["type"] = kind
+            item["interpolationSupported"] = kind != "variable"
+        if "included" in supplied:
+            item["included"] = bool(update.get("included"))
+        if "axes" in supplied:
+            item["axes"] = copy.deepcopy(list(update.get("axes") or []))
     return diff_models(model, after)
 
 

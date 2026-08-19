@@ -30,10 +30,18 @@ from .mutation import (
 from .pagination import CursorError, paginate
 from .ports import HostAccessError, ReadOnlyHost
 from .python_execution import PythonExecutionRequest, PythonExecutionService
-from .semantic import ChangeSet, diff_models, fingerprint_model, revert_change_set_onto
+from .semantic import (
+    ChangeSet,
+    diff_models,
+    fingerprint_model,
+    public_change_dict,
+    revert_change_set_onto,
+)
 from .transactions import StaleDocumentError, TransactionKernel, TransactionVerificationError
 from .versions import SERVER_NAME, SERVER_VERSION
 from .workflows import (
+    build_glyph_updates,
+    build_instance_updates,
     build_opentype_updates,
     list_glyphs as model_list_glyphs,
     list_instances as model_list_instances,
@@ -42,7 +50,6 @@ from .workflows import (
     review_anchor_updates as build_anchor_updates,
     review_compatibility_updates as build_compatibility_updates,
     review_export as model_review_export,
-    review_glyph_updates as build_glyph_updates,
     review_kerning_coverage,
     review_kerning_updates as build_kerning_updates,
     review_master_compatibility as model_review_master_compatibility,
@@ -461,7 +468,9 @@ class GlyphsMCPApplication:
                 data=failure_data,
             )
 
-        observed_items = [change.to_dict() for change in plan.observed_change_set.changes]
+        observed_items = [
+            public_change_dict(change) for change in plan.observed_change_set.changes
+        ]
         changed_glyphs: list[str] = []
         for change in plan.observed_change_set.changes:
             if len(change.path) >= 2 and change.path[0] == "glyphs" and change.path[1] not in changed_glyphs:
@@ -553,6 +562,7 @@ class GlyphsMCPApplication:
                     "python_rollback",
                     "production_reviews",
                     "canonical_change_history",
+                    "identity_structural_changes",
                 ],
                 "host": runtime.to_dict(),
             },
@@ -611,7 +621,7 @@ class GlyphsMCPApplication:
                     recoverable=False,
                 )
             self._trace.bind_document(commit.document_id)
-            changes = [change.to_dict() for change in commit.change_set.changes]
+            changes = [public_change_dict(change) for change in commit.change_set.changes]
             page = paginate(
                 changes,
                 source_fingerprint=commit.change_set.after_fingerprint,
@@ -841,6 +851,9 @@ class GlyphsMCPApplication:
 
     def apply_opentype_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
         return self._direct_apply(arguments, tool="apply_opentype_updates", builder=build_opentype_updates)
+
+    def apply_instance_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        return self._direct_apply(arguments, tool="apply_instance_updates", builder=build_instance_updates)
 
     def review_spacing(self, arguments: Mapping[str, Any]) -> ToolResponse:
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
