@@ -1284,6 +1284,50 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(first["instances"][0]["id"], "instance_0")
         self.assertEqual(second["instances"][0]["id"], "instance_regular")
 
+    def test_document_host_does_not_use_unstable_native_instance_ids(self) -> None:
+        class InstanceWithoutPureId:
+            def __init__(self, pointer, name):
+                self.pointer = pointer
+                self.name = name
+                self.type = 0
+                self.active = True
+                self.axes = [400]
+                self.externalAxes = []
+
+            @property
+            def id(self):
+                raise AssertionError("GSInstance.id is not a stable identity read")
+
+        class FreshInstanceCollection:
+            def __init__(self):
+                self.items = [(101, "First"), (202, "Second")]
+
+            def __iter__(self):
+                return iter(
+                    [InstanceWithoutPureId(pointer, name) for pointer, name in self.items]
+                )
+
+        instances = FreshInstanceCollection()
+        font = _InstanceFont("unused", "unused")
+        font.instances = instances
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        objc = SimpleNamespace(pyobjc_id=lambda value: value.pointer)
+
+        with mock.patch.dict(sys.modules, {"objc": objc}):
+            before = host.capture_model(document_id)
+            instances.items.reverse()
+            after = host.capture_model(document_id)
+
+        self.assertEqual(
+            [item["id"] for item in before["instances"]],
+            ["instance_0", "instance_1"],
+        )
+        self.assertEqual(
+            [item["id"] for item in after["instances"]],
+            ["instance_1", "instance_0"],
+        )
+
     def test_serialized_fingerprint_normalizes_clone_generated_instance_ids(self) -> None:
         source = _ArchiveInstanceFont(
             "11111111-1111-4111-8111-111111111111", "source-pointer"

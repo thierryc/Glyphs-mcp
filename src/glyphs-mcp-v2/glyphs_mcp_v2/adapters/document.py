@@ -1583,8 +1583,19 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
     @staticmethod
     def _native_instance_key(instance: Any) -> str:
-        identity = str(_maybe_call(_safe_getattr(instance, "id")) or "")
-        return identity or "native:{}".format(id(instance))
+        # ``GSInstance.id`` is not a stable identity read in Glyphs 4: a fresh
+        # collection proxy can expose a newly allocated UUID. PyObjC's native
+        # object pointer identifies the live member without consulting font
+        # data and remains stable across fresh Python proxies.
+        try:
+            import objc  # type: ignore[import-not-found]
+
+            native_pointer = objc.pyobjc_id(instance)
+            if native_pointer:
+                return "objc:{}".format(native_pointer)
+        except Exception:
+            pass
+        return "native:{}".format(id(instance))
 
     def _instance_ids_for_font(self, document_id: str, font: Any) -> list[str]:
         mapping = self._instance_identity_maps.setdefault(document_id, {})
