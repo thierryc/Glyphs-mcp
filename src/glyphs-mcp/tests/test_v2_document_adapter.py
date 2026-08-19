@@ -995,6 +995,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 initial,
                 target,
                 layer_root=("glyphs", "A", "layers", "master_text"),
+                max_passes=3,
             )
 
         self.assertEqual((layer.LSB, layer.RSB), (30, 30))

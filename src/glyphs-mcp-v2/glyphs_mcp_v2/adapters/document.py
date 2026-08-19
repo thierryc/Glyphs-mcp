@@ -1202,7 +1202,7 @@ def _set_glyph_master_layer(glyph: Any, master_id: str, layer: Any) -> None:
     raise HostAccessError("Glyphs could not assign a master layer")
 
 
-def _reconcile_layer_to_canonical_target(
+def _apply_layer_canonical_pass(
     layer: Any,
     current_layer: Mapping[str, Any],
     target_layer: Mapping[str, Any],
@@ -1210,13 +1210,6 @@ def _reconcile_layer_to_canonical_target(
     layer_root: Sequence[str],
     replacement_roots: Sequence[Sequence[str]] = (),
 ) -> None:
-    """Reconcile one attached native layer through the shared layer boundary.
-
-    Glyphs may derive metrics while a copied layer is attached to a master.
-    Structural creation and ordinary field updates therefore converge through
-    the same canonical writer instead of maintaining master-specific fixes.
-    """
-
     replacement_set = {
         tuple(str(part) for part in path) for path in replacement_roots
     }
@@ -1284,6 +1277,46 @@ def _reconcile_layer_to_canonical_target(
     finally:
         if callable(end):
             end()
+
+
+def _reconcile_layer_to_canonical_target(
+    layer: Any,
+    current_layer: Mapping[str, Any],
+    target_layer: Mapping[str, Any],
+    *,
+    layer_root: Sequence[str],
+    replacement_roots: Sequence[Sequence[str]] = (),
+    max_passes: int = 1,
+) -> None:
+    """Converge one native layer through a bounded canonical fixed point.
+
+    Glyphs may derive metrics after geometry or attachment changes. Structural
+    creation and ordinary field updates therefore share the same local
+    read/apply boundary. The outer document transaction remains responsible
+    for rejecting any layer that does not converge to its complete target.
+    """
+
+    state = copy.deepcopy(dict(current_layer))
+    target = copy.deepcopy(dict(target_layer))
+    seen: set[str] = set()
+    for _ in range(max(1, min(3, int(max_passes)))):
+        if state == target:
+            return
+        state_fingerprint = fingerprint_model(state)
+        if state_fingerprint in seen:
+            return
+        seen.add(state_fingerprint)
+        _apply_layer_canonical_pass(
+            layer,
+            state,
+            target,
+            layer_root=layer_root,
+            replacement_roots=replacement_roots,
+        )
+        updated = _layer_model(layer)
+        if updated == state:
+            return
+        state = updated
 
 
 def _apply_master_collection(
@@ -1447,6 +1480,7 @@ def _apply_master_collection(
                     current_layer,
                     target_layer,
                     layer_root=("glyphs", glyph_name, "layers", identity),
+                    max_passes=3,
                 )
 
 
