@@ -22,6 +22,10 @@ plug-in during source development.
   Foundation, FastMCP, or Uvicorn.
 - The Glyphs adapter captures complete immutable values on the main thread;
   native objects never cross into application or transport layers.
+- Canonical state contains independently replayable authoritative values.
+  `LSB` and `RSB` remain useful native projections at workflow boundaries but
+  are not fingerprinted layer leaves: their setters mutate outline/width state,
+  and their getters may be recomputed from metrics and italic-master context.
 - Public MCP registration derives only from the typed v2 catalog.
 - Every typed mutation uses one shared prevalidate/snapshot/apply/read-back/
   verify kernel, never saves implicitly, and emits one apply audit receipt.

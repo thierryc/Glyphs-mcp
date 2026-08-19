@@ -25,8 +25,6 @@ _GLYPH_WRITABLE = frozenset(
 _LAYER_WRITABLE = frozenset(
     {
         "width",
-        "LSB",
-        "RSB",
         "leftMetricsKey",
         "rightMetricsKey",
         "widthMetricsKey",
@@ -145,6 +143,13 @@ def classify_change_path(path: tuple[str, ...]) -> str:
             return "writable"
         if len(path) >= 5 and path[2] == "layers":
             if path[4] == "pathSignature":
+                return "derived"
+            # Sidebearings are host projections of authoritative outline,
+            # width, metrics-key, and master state. Their native setters are
+            # mutation commands because they move geometry or resize width;
+            # the projected getter values are not independently replayable
+            # canonical leaves.
+            if path[4] in {"LSB", "RSB"}:
                 return "derived"
             if path[4] in _LAYER_WRITABLE:
                 return "writable"

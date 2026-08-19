@@ -46,7 +46,12 @@ from .glyphs import (
 
 _FONT_SCALARS = ("familyName", "upm", "versionMajor", "versionMinor", "note", "grid", "gridSubDivision")
 _GLYPH_SCALARS = ("category", "subCategory", "unicode", "export", "leftKerningGroup", "rightKerningGroup")
-_LAYER_SCALARS = ("width", "LSB", "RSB", "leftMetricsKey", "rightMetricsKey", "widthMetricsKey")
+_LAYER_SCALARS = (
+    "width",
+    "leftMetricsKey",
+    "rightMetricsKey",
+    "widthMetricsKey",
+)
 _UUID_PATTERN = re.compile(
     r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$"
 )
@@ -1255,16 +1260,6 @@ def _apply_layer_canonical_pass(
                     "Glyphs did not expose GSLayer.syncMetrics for a metrics-key update"
                 )
             sync_metrics()
-        shape_geometry_changed = any(
-            current_layer.get(field) != target_layer.get(field)
-            for field in ("paths", "components")
-        )
-        # LSB/RSB setters move or resize native geometry. When the semantic
-        # patch carries explicit shapes, those shapes remain authoritative.
-        if not shape_geometry_changed:
-            for scalar in ("LSB", "RSB"):
-                if current_layer.get(scalar) != target_layer.get(scalar):
-                    _set_native_property(layer, scalar, target_layer.get(scalar))
         if current_layer.get("anchors") != target_layer.get("anchors"):
             _replace_anchors(layer, target_layer.get("anchors", {}))
         if current_layer.get("paths") != target_layer.get("paths"):

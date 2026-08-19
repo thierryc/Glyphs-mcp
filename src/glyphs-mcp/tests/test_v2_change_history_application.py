@@ -33,8 +33,6 @@ def _model() -> dict:
                 "layers": {
                     "m0": {
                         "width": 500,
-                        "LSB": 40,
-                        "RSB": 60,
                         "leftMetricsKey": None,
                     }
                 },
@@ -96,7 +94,9 @@ class _NormalizingMetricsHost(_Host):
         layer = normalized["glyphs"]["A"]["layers"]["m0"]
         if layer.get("leftMetricsKey") == "=H":
             layer["leftMetricsKey"] = "==H"
-            layer["LSB"] = 73
+            layer["width"] = 520
+        elif layer.get("leftMetricsKey") is None:
+            layer["width"] = 500
         return normalized
 
     def simulate_change_set(self, document_id, change_set):
@@ -118,7 +118,7 @@ class _DriftingMetricsHost(_NormalizingMetricsHost):
         target = self._normalize(change_set.apply(self.model))
         layer = target["glyphs"]["A"]["layers"]["m0"]
         if was_linked and layer.get("leftMetricsKey") is None:
-            layer["LSB"] = 41
+            layer["width"] = 501
         return target
 
     def simulate_change_set(self, document_id, change_set):
@@ -337,7 +337,7 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
             host.model["glyphs"]["A"]["layers"]["m0"]["leftMetricsKey"],
             "==H",
         )
-        self.assertEqual(host.model["glyphs"]["A"]["layers"]["m0"]["LSB"], 73)
+        self.assertEqual(host.model["glyphs"]["A"]["layers"]["m0"]["width"], 520)
 
         reverted = app.invoke(
             "revert_change",
@@ -352,7 +352,7 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertIsNone(
             host.model["glyphs"]["A"]["layers"]["m0"]["leftMetricsKey"]
         )
-        self.assertEqual(host.model["glyphs"]["A"]["layers"]["m0"]["LSB"], 40)
+        self.assertEqual(host.model["glyphs"]["A"]["layers"]["m0"]["width"], 500)
 
     def test_revert_refuses_when_detached_inverse_cannot_reproduce_target(self) -> None:
         host = _DriftingMetricsHost()
@@ -388,7 +388,7 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertEqual(reverted["error"]["details"]["mismatchCount"], 1)
         self.assertEqual(
             reverted["error"]["details"]["mismatchPaths"],
-            [["glyphs", "A", "layers", "m0", "LSB"]],
+            [["glyphs", "A", "layers", "m0", "width"]],
         )
         self.assertEqual(host.model, after_apply)
         self.assertEqual(host.apply_calls, 1)

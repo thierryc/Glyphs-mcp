@@ -312,7 +312,9 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         self.assertEqual(result.operation_id, "op_direct")
         self.assertEqual(fingerprint_model(host.model), plan.after_fingerprint)
         self.assertEqual(result.inverse.before_fingerprint, plan.after_fingerprint)
-        self.assertEqual(result.inverse.apply(host.model), before)
+        # The inverse contains authoritative writes only. The host recomputes
+        # projected fields while applying it, just as Glyphs does natively.
+        self.assertEqual(host._derive(result.inverse.apply(host.model)), before)
 
     def test_transaction_verifies_the_settled_host_state_not_the_first_readback(self) -> None:
         host = _LateSettlingHost()

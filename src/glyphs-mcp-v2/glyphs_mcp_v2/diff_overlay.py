@@ -71,11 +71,11 @@ def overlay_for_layer(
         return _empty()
     recorded_visual_changed = any(
         before.get(field) != target.get(field)
-        for field in ("paths", "anchors", "components", "width", "LSB", "RSB")
+        for field in ("paths", "anchors", "components", "width")
     )
     if not recorded_visual_changed:
         return _empty()
-    visual_fields = ("paths", "anchors", "components", "width", "LSB", "RSB")
+    visual_fields = ("paths", "anchors", "components", "width")
     live_visual_changed = any(before.get(field) != live_layer.get(field) for field in visual_fields)
     if not live_visual_changed:
         return _empty()

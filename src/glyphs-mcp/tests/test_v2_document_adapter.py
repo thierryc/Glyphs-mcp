@@ -957,11 +957,9 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(native_font_to_model(font), after)
 
-    def test_layer_reconciliation_converges_after_geometry_derived_state(self) -> None:
+    def test_layer_reconciliation_does_not_chase_projected_sidebearings(self) -> None:
         target = {
             "width": 1062,
-            "LSB": 30,
-            "RSB": 30,
             "leftMetricsKey": None,
             "rightMetricsKey": None,
             "widthMetricsKey": None,
@@ -971,12 +969,8 @@ class V2DocumentAdapterTests(unittest.TestCase):
         }
         initial = copy.deepcopy(target)
         initial.update(
-            LSB=38,
-            RSB=22,
             paths=[{"closed": False, "nodes": []}],
         )
-        after_geometry = copy.deepcopy(target)
-        after_geometry.update(LSB=38, RSB=22)
         layer = SimpleNamespace(
             width=1062,
             LSB=38,
@@ -993,7 +987,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         ), mock.patch.object(
             document_adapter,
             "_layer_model",
-            side_effect=[after_geometry, target],
+            return_value=target,
         ) as capture:
             document_adapter._reconcile_layer_to_canonical_target(
                 layer,
@@ -1003,8 +997,8 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 max_passes=3,
             )
 
-        self.assertEqual((layer.LSB, layer.RSB), (30, 30))
-        self.assertEqual(capture.call_count, 2)
+        self.assertEqual((layer.LSB, layer.RSB), (38, 22))
+        self.assertEqual(capture.call_count, 1)
 
     def test_master_tombstone_reuses_exact_detached_native_objects(self) -> None:
         font = _master_lifecycle_font()

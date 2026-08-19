@@ -30,10 +30,20 @@ remain inside the main-thread adapter.
 
 Typed mutation tools take `documentId`, `expectedDocumentFingerprint`, explicit
 items, and an optional reason. They allocate one operation ID, simulate the
-writable patch on `GSFont.copy()`, capture every derived effect, apply once to
+writable patch on `GSFont.copy()`, capture every canonical effect, apply once to
 the live font, and verify the complete observed result. Preparation tools and
 typed apply tokens are intentionally absent. Confirmation remains only for
 Python and export/open-world effects.
+
+The canonical layer tree stores authoritative state: outline/component
+geometry, anchors, advance width, metrics keys, and layer identity/state.
+Glyphs' `LSB` and `RSB` getters are intentionally not canonical leaves because
+they are projections of geometry, width, metrics inheritance, and master
+italic state, while assigning them is a command that moves geometry or changes
+width. Excluding those volatile projections prevents impossible replay targets
+and avoids two native getter calls per captured layer. Spacing may still be
+expressed and inspected as sidebearings at the workflow boundary; verification
+records the authoritative geometry and width effects caused by that command.
 
 Ordered canonical collections remain ordinary detached JSON lists, but schema
 v4 addresses their entities by stable IDs and represents order independently.
