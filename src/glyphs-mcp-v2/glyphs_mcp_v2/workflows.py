@@ -7,7 +7,12 @@ import hashlib
 import json
 from typing import Any, Iterable, Mapping, Optional, Sequence
 
-from .canonical_collections import find_entity_index, move_entity, require_indexed_entities
+from .canonical_collections import (
+    canonical_glyph_id,
+    find_entity_index,
+    move_entity,
+    require_indexed_entities,
+)
 from .semantic import ChangeSet, diff_models
 
 
@@ -615,7 +620,7 @@ def build_glyph_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str,
             if name in glyphs:
                 raise ValueError("glyph already exists: {}".format(name))
             glyphs[name] = {
-                "id": str(update.get("glyphId") or "glyph_{}".format(name)),
+                "id": canonical_glyph_id(name),
                 "name": name,
                 "category": update.get("category"),
                 "subCategory": update.get("subCategory"),

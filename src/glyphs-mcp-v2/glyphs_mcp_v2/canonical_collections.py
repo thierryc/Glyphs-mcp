@@ -19,6 +19,12 @@ IDENTITY_COLLECTION_ROOTS = frozenset(
 ORDER_TOKEN = "$order"
 
 
+def canonical_glyph_id(name: str) -> str:
+    """Return the stable semantic ID for one name-keyed glyph entity."""
+
+    return "glyph_{}".format(str(name))
+
+
 def entity_id(value: Any) -> str:
     if not isinstance(value, Mapping):
         return ""
@@ -100,6 +106,7 @@ def move_entity(collection: MutableSequence[Any], identity: str, index: int) -> 
 __all__ = [
     "IDENTITY_COLLECTION_ROOTS",
     "ORDER_TOKEN",
+    "canonical_glyph_id",
     "collection_order",
     "entity_id",
     "find_entity_index",

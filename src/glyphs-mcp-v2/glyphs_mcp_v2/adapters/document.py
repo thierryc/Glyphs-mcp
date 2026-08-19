@@ -19,6 +19,7 @@ from threading import RLock
 from typing import Any, Mapping, Optional, Sequence
 
 from ..canonical_collections import (
+    canonical_glyph_id,
     collection_order,
     require_indexed_entities,
 )
@@ -219,7 +220,9 @@ def _glyph_model(glyph: Any) -> dict[str, Any]:
             layers[key] = model
     result = {
         "name": name,
-        "id": str(_safe_getattr(glyph, "id") or ""),
+        # Native glyph UUIDs can be regenerated after deletion. The glyph map
+        # is already name-keyed, so its canonical identity must be semantic.
+        "id": canonical_glyph_id(name),
         "mastersCompatible": bool(_maybe_call(_safe_getattr(glyph, "mastersCompatible", False))),
         "layers": layers,
     }
@@ -331,6 +334,16 @@ def _code_collection(font: Any, attribute: str) -> list[dict[str, Any]]:
 
 def _kerning_model(font: Any) -> dict[str, dict[str, dict[str, float]]]:
     result: dict[str, dict[str, dict[str, float]]] = {}
+    canonical_keys: dict[str, str] = {}
+    for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
+        name = str(_safe_getattr(glyph, "name") or "")
+        if not name:
+            continue
+        canonical = canonical_glyph_id(name)
+        canonical_keys[name] = canonical
+        native_id = str(_maybe_call(_safe_getattr(glyph, "id")) or "")
+        if native_id:
+            canonical_keys[native_id] = canonical
     kerning = _safe_getattr(font, "kerning")
     for master_id in _mapping_keys(kerning):
         lefts = _mapping_get(kerning, master_id)
@@ -341,7 +354,11 @@ def _kerning_model(font: Any) -> dict[str, dict[str, dict[str, float]]]:
                     numeric = float(_mapping_get(rights, right))
                 except Exception:
                     continue
-                result.setdefault(master_id, {}).setdefault(left, {})[right] = numeric
+                canonical_left = canonical_keys.get(left, left)
+                canonical_right = canonical_keys.get(right, right)
+                result.setdefault(master_id, {}).setdefault(canonical_left, {})[
+                    canonical_right
+                ] = numeric
     return result
 
 
@@ -875,10 +892,10 @@ def _native_kerning_key(font: Any, value: str) -> str:
     if by_name is not None:
         return value
     for glyph in _sequence_values(glyphs):
-        if str(_safe_getattr(glyph, "id") or "") == value:
-            name = str(_safe_getattr(glyph, "name") or "")
-            if name:
-                return name
+        name = str(_safe_getattr(glyph, "name") or "")
+        native_id = str(_maybe_call(_safe_getattr(glyph, "id")) or "")
+        if name and value in {canonical_glyph_id(name), native_id}:
+            return name
     raise HostAccessError("Kerning key could not be resolved to a glyph name: {}".format(value))
 
 
@@ -1002,22 +1019,6 @@ def _construct_native_entity(kind: str, name: str = "") -> Any:
     if name and str(_safe_getattr(value, "name") or "") != name:
         setattr(value, "name", name)
     return value
-
-
-def _set_native_identity(value: Any, identity: str) -> None:
-    current = str(_maybe_call(_safe_getattr(value, "id")) or "")
-    if not identity or current == identity:
-        return
-    setter = _safe_getattr(value, "setId_")
-    if callable(setter):
-        setter(identity)
-        return
-    try:
-        setattr(value, "id", identity)
-    except Exception:
-        # Some Glyphs identities are host-owned. Forward creation can accept a
-        # derived ID; an exact inverse will fail verification rather than lie.
-        pass
 
 
 def _sync_native_entities(
@@ -1161,7 +1162,6 @@ def _apply_glyph_membership(
         value = _construct_native_entity("glyph", name)
         if str(_safe_getattr(value, "name") or "") != name:
             setattr(value, "name", name)
-        _set_native_identity(value, str(target[name].get("id") or ""))
         _append_native_collection_item(collection, value)
         native_by_name[name] = value
 

@@ -455,6 +455,67 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(captured, source)
 
+    def test_glyph_and_kerning_identity_is_semantic_not_native(self) -> None:
+        def glyph(name, native_id):
+            return SimpleNamespace(
+                name=name,
+                id=native_id,
+                lastChange="revision-1",
+                changeCount=lambda: 0,
+                mastersCompatible=True,
+                layers=[],
+                category="Letter",
+                subCategory="Uppercase",
+                unicode=None,
+                export=True,
+                leftKerningGroup=None,
+                rightKerningGroup=None,
+            )
+
+        font = _TransactionalFont()
+        font.glyphs = [glyph("A", "native-A"), glyph("V", "native-V")]
+        font.kerning = {"master-1": {"native-A": {"native-V": -80}}}
+
+        model = native_font_to_model(font)
+
+        self.assertEqual(model["glyphs"]["A"]["id"], "glyph_A")
+        self.assertEqual(model["glyphs"]["V"]["id"], "glyph_V")
+        self.assertEqual(
+            model["kerning"],
+            {"master-1": {"glyph_A": {"glyph_V": -80.0}}},
+        )
+        self.assertEqual(document_adapter._native_kerning_key(font, "glyph_A"), "A")
+
+    def test_recreated_native_glyph_id_does_not_change_canonical_model(self) -> None:
+        def model(native_prefix):
+            font = _TransactionalFont()
+            font.glyphs = []
+            for name in ("A", "V"):
+                font.glyphs.append(SimpleNamespace(
+                    name=name,
+                    id="{}-{}".format(native_prefix, name),
+                    lastChange="revision-1",
+                    changeCount=lambda: 0,
+                    mastersCompatible=True,
+                    layers=[],
+                    category="Letter",
+                    subCategory="Uppercase",
+                    unicode=None,
+                    export=True,
+                    leftKerningGroup=None,
+                    rightKerningGroup=None,
+                ))
+            font.kerning = {
+                "master-1": {
+                    "{}-A".format(native_prefix): {
+                        "{}-V".format(native_prefix): -80
+                    }
+                }
+            }
+            return native_font_to_model(font)
+
+        self.assertEqual(model("native-before"), model("native-after"))
+
     def test_opentype_boolean_properties_use_objc_getter_and_setter_selectors(self) -> None:
         feature = _ObjectiveCBooleanFeature()
         font = _TransactionalFont()
