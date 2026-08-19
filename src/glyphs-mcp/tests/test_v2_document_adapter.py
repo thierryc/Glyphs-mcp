@@ -1060,6 +1060,42 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 templates["master_text"]["nativeLayers"][glyph.name],
             )
 
+    def test_master_attachment_does_not_rewrite_equal_native_identities(self) -> None:
+        class IdentitySensitiveLayer(_MasterLifecycleLayer):
+            def __init__(self, master_id, name, *, native_only):
+                self.equal_identity_writes = 0
+                super().__init__(
+                    master_id,
+                    name,
+                    native_only=native_only,
+                )
+
+            def __setattr__(self, name, value):
+                if (
+                    name in {"associatedMasterId", "layerId"}
+                    and name in self.__dict__
+                    and self.__dict__[name] == value
+                    and "LSB" in self.__dict__
+                ):
+                    self.equal_identity_writes += 1
+                    self.LSB += 8
+                    self.RSB -= 8
+                super().__setattr__(name, value)
+
+        layer = IdentitySensitiveLayer(
+            "master_text",
+            "Text",
+            native_only="layer-secret-A",
+        )
+        glyph = _MasterLifecycleGlyph("A", [layer])
+        glyph.layers.preserved_native_objects.add(id(layer))
+
+        document_adapter._set_glyph_master_layer(glyph, "master_text", layer)
+
+        self.assertEqual(layer.equal_identity_writes, 0)
+        self.assertEqual((layer.LSB, layer.RSB), (50, 50))
+        self.assertIs(glyph.layers["master_text"], layer)
+
     def test_master_lifecycle_paths_require_the_explicit_capability(self) -> None:
         font = _master_lifecycle_font()
         before = native_font_to_model(font)
