@@ -27,8 +27,9 @@ from glyphs_mcp_v2.python_execution import PythonExecutionRequest  # noqa: E402
 from glyphs_mcp_v2.mutation import (  # noqa: E402
     MASTER_LIFECYCLE_CAPABILITY,
     MutationScope,
+    classify_change_path,
 )
-from glyphs_mcp_v2.semantic import diff_models  # noqa: E402
+from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
 from glyphs_mcp_v2.workflows import build_master_updates  # noqa: E402
 
 
@@ -1546,6 +1547,42 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertTrue(model["hasAlignedWidth"])
         self.assertTrue(model["components"][0]["automaticAlignment"])
+
+    def test_canonical_layer_excludes_projected_native_sidebearings(self) -> None:
+        layer = _MasterLifecycleLayer(
+            "master-regular",
+            "Regular",
+            native_only="layer-secret-A",
+        )
+
+        before = native_layer_to_model(layer)
+        layer.LSB += 8
+        layer.RSB -= 8
+        after_projection_drift = native_layer_to_model(layer)
+
+        self.assertNotIn("LSB", before)
+        self.assertNotIn("RSB", before)
+        self.assertEqual(after_projection_drift, before)
+        self.assertEqual(
+            fingerprint_model(after_projection_drift),
+            fingerprint_model(before),
+        )
+
+        layer.width += 10
+        after_authoritative_change = native_layer_to_model(layer)
+        self.assertNotEqual(
+            fingerprint_model(after_authoritative_change),
+            fingerprint_model(before),
+        )
+
+    def test_legacy_sidebearing_paths_are_derived_not_writable_state(self) -> None:
+        for field in ("LSB", "RSB"):
+            self.assertEqual(
+                classify_change_path(
+                    ("glyphs", "A", "layers", "master-regular", field)
+                ),
+                "derived",
+            )
 
     def test_canonical_paths_preserve_glyphs_precise_node_coordinates(self) -> None:
         node = _OutlineNode(383, 62)
