@@ -20,7 +20,7 @@ from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
     CANONICAL_MODEL_SCHEMA_VERSION,
 )
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
-from glyphs_mcp_v2.mutation import mutation_scope  # noqa: E402
+from glyphs_mcp_v2.mutation import CanonicalImpact, mutation_scope  # noqa: E402
 from glyphs_mcp_v2.semantic import fingerprint_model  # noqa: E402
 from glyphs_mcp_v2.workflows import (  # noqa: E402
     build_master_updates,
@@ -224,7 +224,7 @@ class MasterLifecycleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "special layer"):
             build_master_updates(special, [{"action": "delete", "masterId": "master_regular"}])
 
-    def test_master_scope_is_the_whole_glyph_collection(self) -> None:
+    def test_master_duplicate_impacts_one_layer_entity_per_glyph(self) -> None:
         before = _model(40)
         build = build_master_updates(
             before,
@@ -239,8 +239,42 @@ class MasterLifecycleTests(unittest.TestCase):
         )
 
         scope = mutation_scope(before, build.change_set)
+        impact = CanonicalImpact.from_change_set(before, build.change_set)
         self.assertEqual(scope.roots, ("glyphs", "kerning", "masters"))
         self.assertEqual(len(scope.glyph_names), 40)
+        self.assertEqual(len(impact.glyph_names), 40)
+        self.assertTrue(
+            all(impact.layer_ids(name) == ("master_text",) for name in impact.glyph_names)
+        )
+        self.assertTrue(
+            all(not impact.requires_complete_glyph(name) for name in impact.glyph_names)
+        )
+
+    def test_master_move_and_scalar_update_materialize_no_glyphs(self) -> None:
+        before = _model(40)
+        moved = build_master_updates(
+            before, [{"action": "move", "masterId": "master_bold", "index": 0}]
+        )
+        updated = build_master_updates(
+            before,
+            [
+                {
+                    "action": "update",
+                    "masterId": "master_bold",
+                    "italicAngle": 12,
+                    "axes": [{"tag": "wght", "internal": 240}],
+                }
+            ],
+        )
+
+        self.assertEqual(
+            CanonicalImpact.from_change_set(before, moved.change_set).glyph_names,
+            (),
+        )
+        self.assertEqual(
+            CanonicalImpact.from_change_set(before, updated.change_set).glyph_names,
+            (),
+        )
 
     def test_direct_apply_and_revert_use_one_transaction_each(self) -> None:
         baseline = _model()

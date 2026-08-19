@@ -20,6 +20,7 @@ if str(V2_SOURCE) not in sys.path:
 
 from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
     CANONICAL_MODEL_SCHEMA_VERSION,
+    CanonicalSnapshot,
     CanonicalFontTree,
     MemoryObjectStore,
     SQLiteObjectStore,
@@ -89,6 +90,45 @@ def _model(glyph_count: int = 3, master_count: int = 2) -> dict:
 
 
 class CanonicalFontTreeTests(unittest.TestCase):
+    def test_snapshot_caches_exact_fingerprint_and_immutable_shards(self) -> None:
+        model = _model(glyph_count=383, master_count=5)
+        snapshot = CanonicalSnapshot.from_model(
+            model,
+            native_revision_evidence={"glyphs": {"g0000": ("revision-1",)}},
+        )
+
+        self.assertEqual(snapshot.model_schema_version, CANONICAL_MODEL_SCHEMA_VERSION)
+        self.assertEqual(snapshot.document_fingerprint, fingerprint_model(model))
+        self.assertEqual(fingerprint_model(snapshot), snapshot.document_fingerprint)
+        self.assertTrue(snapshot.content_tree_hash.startswith("sha256:"))
+        self.assertEqual(snapshot.native_revision_evidence["glyphs"]["g0000"], ("revision-1",))
+        self.assertEqual(snapshot.materialize(), model)
+
+    def test_verified_snapshot_transition_reuses_unchanged_glyph_shards_without_full_hash(self) -> None:
+        before = _model(glyph_count=383, master_count=5)
+        baseline = CanonicalSnapshot.from_model(before)
+        after = copy.deepcopy(before)
+        after["glyphs"]["g0191"]["layers"]["m3"]["paths"][0]["nodes"][0]["x"] = 12
+        changes = diff_models(before, after)
+
+        with mock.patch(
+            "glyphs_mcp_v2.canonical_tree.fingerprint_model",
+            side_effect=AssertionError("verified transition rehashed the complete model"),
+        ):
+            transitioned = baseline.store_verified_transition(after, changes)
+
+        self.assertEqual(transitioned.document_fingerprint, changes.after_fingerprint)
+        self.assertEqual(transitioned.materialize(), after)
+        self.assertIs(
+            transitioned.glyph_shards["g0190"],
+            baseline.glyph_shards["g0190"],
+        )
+        self.assertIsNot(
+            transitioned.glyph_shards["g0191"],
+            baseline.glyph_shards["g0191"],
+        )
+        self.assertEqual(transitioned.reused_glyph_count, 382)
+
     def test_tree_hash_is_deterministic_and_mapping_order_independent(self) -> None:
         store = MemoryObjectStore()
         trees = CanonicalFontTree(store)

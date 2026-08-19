@@ -1294,7 +1294,10 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 )
             )
             host.capture_model(document_id)
-            self.assertEqual(capture_glyph.call_count, 5)
+            # Master order/identity is captured independently. A glyph is
+            # reconstructed only when its own layer membership/revision token
+            # changes, so adding a bare master cannot flush every glyph shard.
+            self.assertEqual(capture_glyph.call_count, 3)
 
     def test_verified_write_refreshes_only_the_affected_cached_glyph(self) -> None:
         font = _TransactionalFont()

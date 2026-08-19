@@ -15,6 +15,7 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.mutation import (  # noqa: E402
+    CanonicalImpact,
     MutationPlanner,
     VerifiedMutationPlan,
     mutation_scope,
@@ -184,6 +185,34 @@ class _NonConvergingPostSettleHost(_PostSettleReconciliationHost):
 
 
 class VerifiedMutationKernelTests(unittest.TestCase):
+    def test_canonical_impact_is_derived_from_paths_not_root_names(self) -> None:
+        before = _model()
+        before["masters"].append({"id": "m1", "name": "Bold", "italicAngle": 0, "axes": []})
+        after = copy.deepcopy(before)
+        after["masters"] = [after["masters"][1], after["masters"][0]]
+        move = diff_models(before, after)
+
+        impact = CanonicalImpact.from_change_set(before, move)
+
+        self.assertEqual(impact.roots, ("masters",))
+        self.assertEqual(impact.glyph_names, ())
+        self.assertEqual(impact.paths, (("masters", "$order"),))
+
+    def test_canonical_impact_tracks_one_layer_fragment_without_materializing_the_glyph(self) -> None:
+        before = _model()
+        after = copy.deepcopy(before)
+        after["glyphs"]["A"]["layers"]["m1"] = copy.deepcopy(
+            after["glyphs"]["A"]["layers"]["m0"]
+        )
+        after["glyphs"]["A"]["layers"]["m1"]["id"] = "m1"
+        after["glyphs"]["A"]["layers"]["m1"]["masterId"] = "m1"
+
+        impact = CanonicalImpact.from_change_set(before, diff_models(before, after))
+
+        self.assertEqual(impact.glyph_names, ("A",))
+        self.assertEqual(impact.layer_ids("A"), ("m1",))
+        self.assertFalse(impact.requires_complete_glyph("A"))
+
     def test_mutation_scope_resolves_transitive_component_and_metrics_dependencies(self) -> None:
         before = _model()
         before["glyphs"].update(
@@ -315,6 +344,19 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         # The inverse contains authoritative writes only. The host recomputes
         # projected fields while applying it, just as Glyphs does natively.
         self.assertEqual(host._derive(result.inverse.apply(host.model)), before)
+        self.assertEqual(
+            set(TransactionKernel(host).stage_timing_names),
+            {
+                "initial_capture",
+                "clone",
+                "detached_apply",
+                "verification",
+                "live_apply",
+                "settled_verification",
+                "history",
+                "total",
+            },
+        )
 
     def test_transaction_verifies_the_settled_host_state_not_the_first_readback(self) -> None:
         host = _LateSettlingHost()
