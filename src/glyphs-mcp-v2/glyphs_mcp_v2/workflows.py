@@ -13,6 +13,11 @@ from .canonical_collections import (
     move_entity,
     require_indexed_entities,
 )
+from .mutation import (
+    MASTER_LIFECYCLE_CAPABILITY,
+    MutationBuild,
+    master_lifecycle_diff,
+)
 from .semantic import ChangeSet, diff_models
 
 
@@ -106,6 +111,27 @@ def list_instances(model: Mapping[str, Any]) -> list[dict[str, Any]]:
             }
         )
     return result
+
+
+def list_masters(model: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Return ordered, bounded canonical master metadata."""
+
+    masters = _items(model.get("masters", []))
+    return [
+        {
+            "id": str(master.get("id") or ""),
+            "name": str(master.get("name") or ""),
+            "italicAngle": master.get("italicAngle"),
+            "axes": [
+                {
+                    "tag": str(axis.get("tag") or ""),
+                    "internal": axis.get("internal"),
+                }
+                for axis in _items(master.get("axes", []), key_name="tag")
+            ],
+        }
+        for master in masters
+    ]
 
 
 def _kerning_key(value: Any, id_to_name: Optional[Mapping[str, str]] = None) -> dict[str, Any]:
@@ -810,6 +836,170 @@ def build_instance_updates(
     return diff_models(model, after)
 
 
+def _master_axes(value: Any, *, expected_tags: Sequence[str]) -> list[dict[str, Any]]:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
+        raise ValueError("master axes must be an explicit sequence")
+    axes = [copy.deepcopy(dict(axis)) for axis in value if isinstance(axis, Mapping)]
+    tags = [str(axis.get("tag") or "") for axis in axes]
+    if len(axes) != len(value) or not all(tags) or len(tags) != len(set(tags)):
+        raise ValueError("master axes require unique non-empty tags")
+    if tuple(tags) != tuple(expected_tags):
+        raise ValueError("master axes must preserve the font axis tag order")
+    for axis in axes:
+        if axis.get("internal") is None:
+            raise ValueError("master axis coordinates require internal values")
+        axis["internal"] = float(axis["internal"])
+    return axes
+
+
+def build_master_updates(
+    model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]
+) -> MutationBuild:
+    """Build one canonical master lifecycle patch.
+
+    Duplicating or deleting a master owns the corresponding master layer in
+    every glyph and the master's kerning partition. The canonical target is
+    complete; the small execution context tells the native adapter which
+    source master to copy so state outside the canonical schema is retained.
+    """
+
+    after = copy.deepcopy(dict(model))
+    masters = after.setdefault("masters", [])
+    if not isinstance(masters, list):
+        raise ValueError("masters must be an ordered canonical collection")
+    require_indexed_entities(masters, "masters")
+    glyphs = after.get("glyphs", {})
+    if not isinstance(glyphs, dict):
+        raise ValueError("glyphs must be keyed by name")
+    kerning = after.setdefault("kerning", {})
+    if not isinstance(kerning, dict):
+        raise ValueError("kerning must be keyed by master ID")
+    source_map: dict[str, str] = {}
+    seen: set[tuple[str, str]] = set()
+
+    for update in updates:
+        action = str(update.get("action") or "update").lower()
+        master_id = str(update.get("masterId") or "")
+        target = (action, master_id)
+        if not master_id or master_id == "$order" or target in seen:
+            raise ValueError("master updates require unique explicit action/masterId targets")
+        seen.add(target)
+        index = find_entity_index(masters, master_id)
+
+        if action == "duplicate":
+            source_id = str(update.get("sourceMasterId") or "")
+            source_index = find_entity_index(masters, source_id)
+            if not source_id or source_index is None:
+                raise ValueError("master duplication requires a known sourceMasterId")
+            if source_id in source_map:
+                raise ValueError(
+                    "master duplication sources must predate the current batch"
+                )
+            if index is not None:
+                raise ValueError("master already exists: {}".format(master_id))
+            source = copy.deepcopy(masters[source_index])
+            source["id"] = master_id
+            source["name"] = str(update.get("name") or source.get("name") or "")
+            if not source["name"]:
+                raise ValueError("duplicated master name cannot be empty")
+            if "italicAngle" in update:
+                source["italicAngle"] = float(update["italicAngle"])
+            if "axes" in update:
+                expected_tags = [str(axis.get("tag") or "") for axis in source.get("axes", [])]
+                source["axes"] = _master_axes(update["axes"], expected_tags=expected_tags)
+            masters.append(source)
+            if "index" in update:
+                move_entity(masters, master_id, int(update["index"]))
+            source_map[master_id] = source_id
+
+            for glyph_name, glyph in glyphs.items():
+                layers = glyph.get("layers") if isinstance(glyph, Mapping) else None
+                source_layer = layers.get(source_id) if isinstance(layers, dict) else None
+                if not isinstance(source_layer, Mapping) or not bool(
+                    source_layer.get("isMasterLayer", True)
+                ):
+                    raise ValueError(
+                        "glyph {} has no canonical source master layer {}".format(
+                            glyph_name, source_id
+                        )
+                    )
+                if master_id in layers:
+                    raise ValueError(
+                        "glyph {} already has layer {}".format(glyph_name, master_id)
+                    )
+                layer = copy.deepcopy(dict(source_layer))
+                layer["id"] = master_id
+                layer["masterId"] = master_id
+                layer["name"] = source["name"]
+                layer["isMasterLayer"] = True
+                layer["isSpecialLayer"] = False
+                layers[master_id] = layer
+            if source_id in kerning:
+                kerning[master_id] = copy.deepcopy(kerning[source_id])
+            continue
+
+        if index is None:
+            raise ValueError("unknown master: {}".format(master_id))
+        if action == "delete":
+            if len(masters) <= 1:
+                raise ValueError("the final master cannot be deleted")
+            for glyph_name, glyph in glyphs.items():
+                layers = glyph.get("layers") if isinstance(glyph, Mapping) else None
+                if not isinstance(layers, dict) or master_id not in layers:
+                    raise ValueError(
+                        "glyph {} has no canonical master layer {}".format(
+                            glyph_name, master_id
+                        )
+                    )
+                for key, layer in layers.items():
+                    if (
+                        key != master_id
+                        and isinstance(layer, Mapping)
+                        and str(layer.get("masterId") or "") == master_id
+                        and bool(layer.get("isSpecialLayer"))
+                    ):
+                        raise ValueError(
+                            "master {} has a dependent special layer in glyph {}".format(
+                                master_id, glyph_name
+                            )
+                        )
+                del layers[master_id]
+            del masters[index]
+            kerning.pop(master_id, None)
+            continue
+        if action == "move":
+            if "index" not in update:
+                raise ValueError("master move requires index")
+            move_entity(masters, master_id, int(update["index"]))
+            continue
+        if action != "update":
+            raise ValueError("master action must be duplicate, update, move, or delete")
+
+        item = masters[index]
+        supplied = {"name", "italicAngle", "axes"}.intersection(update)
+        if not supplied:
+            raise ValueError("master updates require name, italicAngle, or axes")
+        if "name" in supplied:
+            name = str(update.get("name") or "")
+            if not name:
+                raise ValueError("master name cannot be empty")
+            item["name"] = name
+        if "italicAngle" in supplied:
+            item["italicAngle"] = float(update["italicAngle"])
+        if "axes" in supplied:
+            expected_tags = [str(axis.get("tag") or "") for axis in item.get("axes", [])]
+            item["axes"] = _master_axes(update["axes"], expected_tags=expected_tags)
+
+    changes = master_lifecycle_diff(model, after)
+    if not changes.changes:
+        raise ValueError("master updates must produce a document change")
+    return MutationBuild(
+        change_set=changes,
+        capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+        execution_context={"masterSources": source_map},
+    )
+
+
 def review_anchor_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
     after = copy.deepcopy(dict(model))
     glyphs = after.setdefault("glyphs", {})
@@ -954,9 +1144,11 @@ def review_compatibility_updates(model: Mapping[str, Any], updates: Sequence[Map
 
 
 __all__ = [
+    "build_master_updates",
     "build_opentype_updates",
     "list_glyphs",
     "list_instances",
+    "list_masters",
     "list_kerning_pairs",
     "review_anchor_consistency",
     "review_anchor_updates",

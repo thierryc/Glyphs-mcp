@@ -127,12 +127,20 @@ class TransactionKernel:
         try:
             verified_apply = getattr(self._adapter, "apply_verified_change_set", None)
             if callable(verified_apply):
+                apply_options = {
+                    "operation_id": plan.operation_id,
+                    "removes_contribution_id": plan.removes_contribution_id,
+                    "replay_replacements": plan.replay_replacements,
+                }
+                if plan.capabilities or plan.execution_context:
+                    apply_options.update(
+                        capabilities=plan.capabilities,
+                        execution_context=plan.execution_context,
+                    )
                 verified_apply(
                     document_id,
                     plan.writable_change_set,
-                    operation_id=plan.operation_id,
-                    removes_contribution_id=plan.removes_contribution_id,
-                    replay_replacements=plan.replay_replacements,
+                    **apply_options,
                 )
             else:
                 self._adapter.apply_change_set(document_id, plan.writable_change_set)
@@ -170,11 +178,19 @@ class TransactionKernel:
             try:
                 verified_restore = getattr(self._adapter, "restore_verified_attempt", None)
                 if callable(verified_restore):
+                    restore_options = {
+                        "operation_id": plan.operation_id,
+                        "removes_contribution_id": plan.removes_contribution_id,
+                    }
+                    if plan.capabilities or plan.execution_context:
+                        restore_options.update(
+                            capabilities=plan.capabilities,
+                            execution_context=plan.execution_context,
+                        )
                     verified_restore(
                         document_id,
                         before,
-                        operation_id=plan.operation_id,
-                        removes_contribution_id=plan.removes_contribution_id,
+                        **restore_options,
                     )
                 else:
                     self._adapter.restore_model(document_id, before)
@@ -206,6 +222,7 @@ class TransactionKernel:
             inverse=writable_subset(
                 actual_after,
                 plan.observed_change_set.inverse(),
+                capabilities=plan.capabilities,
             ),
         )
 

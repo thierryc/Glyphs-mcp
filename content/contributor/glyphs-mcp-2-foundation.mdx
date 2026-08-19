@@ -36,11 +36,11 @@ The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
 - a recoverable main-thread execution port;
 - Glyphs 3.5/4 collection fallbacks;
 - catalog-generated schemas and safety annotations;
-- 27 catalog-driven FastMCP operations;
+- 29 catalog-driven FastMCP operations;
 - paginated glyph, instance, kerning, audit, review, and Python-diff results;
 - direct glyph, anchor, kerning, spacing, metrics, and compatibility batches
   with detached derived-effect simulation;
-- schema-v3 identity-aware glyph, instance, feature, class, and prefix
+- schema-v4 identity-aware glyph, master, instance, feature, class, and prefix
   collection membership/order changes through the same verified kernel;
 - compatibility, metrics-inheritance, anchor, spacing, kerning-coverage, and
   export analysis;
@@ -116,16 +116,20 @@ breaking catalog changes do not flow back to 1.x.
    fingerprints, semantic diffs, transactions, audit, Python, and rollback.
 3. Complete for the current production milestone: compatibility, metrics,
    anchors, spacing, kerning, instances, export, and synchronized skills.
-4. Implemented, pending explicit live execution: the Glyphs 4 disposable
-   qualification matrix exercises glyph, OpenType, and instance structure,
-   non-linear selective revert, atomic refusal, and exact baseline cleanup
-   through the public apply-first kernel. Glyphs 3.5 remains on signed v1.11
-   until a later authorized live gate.
+4. Complete: the Glyphs 4 disposable qualification matrix exercises glyph,
+   OpenType, and instance structure, non-linear selective revert, atomic
+   refusal, and exact baseline cleanup through the public apply-first kernel.
+   Glyphs 3.5 remains on signed v1.11 until a later authorized live gate.
 5. Complete: canonical schema v3 represents ordered entity membership, scalar
    updates, deletion, insertion, and reorder as identity-aware semantic
    patches. Glyph collection, OpenType collection, and instance mutations use
    the verified apply-first kernel and the same conflict-aware revert logic.
-6. Deferred: master duplication, layer membership mutation, staged-Python
+6. Implemented, pending explicit Glyphs 4 live execution: canonical schema v4
+   adds `list_masters` and one composite `apply_master_updates` lifecycle for
+   duplicate, update, move, and delete. Master-owned layers and kerning share
+   the same operation, while process-local native tombstones preserve fields
+   outside the canonical projection until revert or save.
+7. Deferred: arbitrary special/intermediate layer membership, staged-Python
    structural replay, installer integration, and the release-candidate matrix.
 
 Every milestone must pass focused tests, the complete Python suite, catalog

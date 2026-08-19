@@ -66,12 +66,22 @@ the canonical model does not claim to contain every private Glyphs or PyObjC
 field. A model fingerprint is therefore an exact identity for that versioned
 projection, not a byte-for-byte identity for an arbitrary native document.
 
-Model schema v3 keeps ordered collections as plain detached JSON lists while
+Model schema v4 keeps ordered collections as plain detached JSON lists while
 addressing masters, instances, features, classes, and prefixes by stable entity
 ID. Membership and scalar patches are independent from a minimal `$order`
 patch, so create/delete/update/reorder, selective revert, storage, and audit all
 share one semantic representation. Glyph membership uses the same whole-entity
-principle on its name-keyed map.
+principle on its name-keyed map. Master-owned layer membership is one bounded
+layer-entity change per glyph, and a duplicated master's kerning is one atomic
+partition; ordinary kerning batches remain one semantic change per pair.
+
+Master lifecycle replay also carries a small process-local execution context
+that identifies the native copy source. It is not font data and is never stored
+in the canonical tree, public diff, or audit ledger. When a master is removed,
+the adapter retains native copies of that master and its owned layers only for
+the unsaved operation lifetime. This preserves custom parameters, guides,
+hints, backgrounds, and other native fields that model schema v4 does not yet
+project. The tombstone is released after verified revert or successful save.
 
 Canonical fields have explicit roles:
 

@@ -24,8 +24,12 @@ from glyphs_mcp_v2.adapters.document import (  # noqa: E402
 )
 from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
 from glyphs_mcp_v2.python_execution import PythonExecutionRequest  # noqa: E402
-from glyphs_mcp_v2.mutation import MutationScope  # noqa: E402
+from glyphs_mcp_v2.mutation import (  # noqa: E402
+    MASTER_LIFECYCLE_CAPABILITY,
+    MutationScope,
+)
 from glyphs_mcp_v2.semantic import diff_models  # noqa: E402
+from glyphs_mcp_v2.workflows import build_master_updates  # noqa: E402
 
 
 class _Immediate:
@@ -289,6 +293,101 @@ class _AtomicCollectionProxy:
     def setter(self, values):
         self.atomic_assignment_count += 1
         self.values = list(values)
+
+
+class _MasterLifecycleMaster:
+    def __init__(self, master_id, name, coordinate, *, native_only):
+        self.id = master_id
+        self.name = name
+        self.italicAngle = 0
+        self.axes = [coordinate]
+        self.native_only = native_only
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+
+class _MasterLifecycleLayer:
+    def __init__(self, master_id, name, *, native_only):
+        self.layerId = master_id
+        self.associatedMasterId = master_id
+        self.name = name
+        self.isMasterLayer = True
+        self.isSpecialLayer = False
+        self.hasAlignedWidth = False
+        self.width = 600
+        self.LSB = 50
+        self.RSB = 50
+        self.leftMetricsKey = None
+        self.rightMetricsKey = None
+        self.widthMetricsKey = None
+        self.anchors = {}
+        self.paths = []
+        self.components = []
+        self.shapes = []
+        self.native_only = native_only
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+
+class _MasterLayerCollection:
+    def __init__(self, layers):
+        self._values = {layer.layerId: layer for layer in layers}
+
+    def __len__(self):
+        return len(self._values)
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return list(self._values.values())[key]
+        return self._values[key]
+
+    def __setitem__(self, key, value):
+        self._values[str(key)] = value
+
+    def values(self):
+        return list(self._values.values())
+
+
+class _MasterLifecycleGlyph:
+    def __init__(self, name, layers):
+        self.name = name
+        self.id = "native-{}".format(name)
+        self.lastChange = "revision"
+        self.changeCount = lambda: 0
+        self.mastersCompatible = True
+        self.category = "Letter"
+        self.subCategory = None
+        self.unicode = None
+        self.export = True
+        self.leftKerningGroup = None
+        self.rightKerningGroup = None
+        self.layers = _MasterLayerCollection(layers)
+
+
+def _master_lifecycle_font():
+    regular = _MasterLifecycleMaster(
+        "master_regular", "Regular", 100, native_only="master-secret"
+    )
+    glyphs = [
+        _MasterLifecycleGlyph(
+            name,
+            [
+                _MasterLifecycleLayer(
+                    "master_regular",
+                    "Regular",
+                    native_only="layer-secret-{}".format(name),
+                )
+            ],
+        )
+        for name in ("A", "B")
+    ]
+    font = _TransactionalFont()
+    font.axes = [SimpleNamespace(axisId="axis-weight", name="Weight", axisTag="wght")]
+    font.masters = [regular]
+    font.glyphs = glyphs
+    return font
 
 
 class _OutlineNode:
@@ -715,6 +814,119 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(collection.values, [second, first])
         self.assertEqual(collection.atomic_assignment_count, 1)
         self.assertEqual(collection.slice_assignment_count, 0)
+
+    def test_master_lifecycle_replay_preserves_native_only_master_and_layer_state(self) -> None:
+        font = _master_lifecycle_font()
+        before = native_font_to_model(font)
+        build = build_master_updates(
+            before,
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": "master_regular",
+                    "masterId": "master_text",
+                    "name": "Text",
+                    "axes": [{"tag": "wght", "internal": 125}],
+                }
+            ],
+        )
+        after = build.change_set.apply(before)
+
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=build.capabilities,
+            execution_context=build.execution_context,
+        )
+
+        copied_master = document_adapter._master_by_id(font, "master_text")
+        self.assertEqual(copied_master.native_only, "master-secret")
+        self.assertEqual(copied_master.name, "Text")
+        self.assertEqual(copied_master.axes, [125.0])
+        for glyph in font.glyphs:
+            copied_layer = glyph.layers["master_text"]
+            self.assertEqual(
+                copied_layer.native_only,
+                "layer-secret-{}".format(glyph.name),
+            )
+            self.assertEqual(copied_layer.layerId, "master_text")
+            self.assertEqual(copied_layer.associatedMasterId, "master_text")
+            self.assertEqual(copied_layer.name, "Text")
+
+        templates = {
+            "master_text": {
+                "master": copied_master.copy(),
+                "layers": {
+                    glyph.name: glyph.layers["master_text"].copy()
+                    for glyph in font.glyphs
+                },
+            }
+        }
+        deletion = build.change_set.inverse()
+        document_adapter._apply_target_model(
+            font,
+            after,
+            before,
+            deletion,
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+        )
+        self.assertIsNone(document_adapter._master_by_id(font, "master_text"))
+
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+            master_restore_templates=templates,
+        )
+        restored_master = document_adapter._master_by_id(font, "master_text")
+        self.assertEqual(restored_master.native_only, "master-secret")
+        self.assertTrue(
+            all(
+                glyph.layers["master_text"].native_only
+                == "layer-secret-{}".format(glyph.name)
+                for glyph in font.glyphs
+            )
+        )
+
+    def test_master_lifecycle_paths_require_the_explicit_capability(self) -> None:
+        font = _master_lifecycle_font()
+        before = native_font_to_model(font)
+        build = build_master_updates(
+            before,
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": "master_regular",
+                    "masterId": "master_text",
+                    "name": "Text",
+                }
+            ],
+        )
+        host = object.__new__(GlyphsDocumentHost)
+
+        self.assertFalse(host.supports_change_set(build.change_set))
+        self.assertTrue(
+            host.supports_change_set(
+                build.change_set,
+                capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+            )
+        )
+
+    def test_save_reset_releases_only_that_documents_master_tombstones(self) -> None:
+        host = object.__new__(GlyphsDocumentHost)
+        host._master_lifecycle_tombstones = {
+            "op_a": {"documentId": "doc_a", "templates": {"m0": {}}},
+            "op_b": {"documentId": "doc_b", "templates": {"m1": {}}},
+        }
+
+        host.reset_verified_change_tracking("doc_a")
+
+        self.assertNotIn("op_a", host._master_lifecycle_tombstones)
+        self.assertIn("op_b", host._master_lifecycle_tombstones)
 
     def test_structural_glyph_replay_adds_and_removes_through_one_boundary(self) -> None:
         font = _TransactionalFont()

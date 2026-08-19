@@ -64,6 +64,14 @@ class ToolHandlers:
     ) -> ToolResult:
         return self._invoke("list_instances", locals())
 
+    async def list_masters(
+        self,
+        documentId: str,
+        pageSize: int = 100,
+        cursor: Optional[str] = None,
+    ) -> ToolResult:
+        return self._invoke("list_masters", locals())
+
     async def list_kerning_pairs(
         self,
         documentId: str,
@@ -116,6 +124,9 @@ class ToolHandlers:
 
     async def apply_instance_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
         return self._invoke("apply_instance_updates", locals())
+
+    async def apply_master_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
+        return self._invoke("apply_master_updates", locals())
 
     async def review_spacing(
         self,

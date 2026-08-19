@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import json
 import sys
+import time
 import unittest
 from pathlib import Path
 
@@ -279,6 +280,68 @@ class MasterLifecycleTests(unittest.TestCase):
         self.assertEqual(host.apply_calls, 2)
         self.assertEqual(host.model, baseline)
 
+    def test_master_revert_preserves_unrelated_edits_and_refuses_overlap(self) -> None:
+        host = _Host(_model())
+        app = GlyphsMCPApplication(host)
+        response = app.invoke(
+            "apply_master_updates",
+            {
+                "documentId": "doc_master",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "updates": [
+                    {
+                        "action": "duplicate",
+                        "sourceMasterId": "master_regular",
+                        "masterId": "master_text",
+                        "name": "Text",
+                    }
+                ],
+            },
+        ).to_dict()
+        host.model["font"]["note"] = "later unrelated edit"
+        reverted = app.invoke(
+            "revert_change",
+            {
+                "documentId": "doc_master",
+                "operationId": response["operationId"],
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+            },
+        ).to_dict()
+        self.assertTrue(reverted["ok"], reverted)
+        self.assertEqual(host.model["font"]["note"], "later unrelated edit")
+        self.assertNotIn("master_text", [item["id"] for item in host.model["masters"]])
+
+        conflicting_host = _Host(_model())
+        conflicting_app = GlyphsMCPApplication(conflicting_host)
+        created = conflicting_app.invoke(
+            "apply_master_updates",
+            {
+                "documentId": "doc_master_conflict",
+                "expectedDocumentFingerprint": fingerprint_model(conflicting_host.model),
+                "updates": [
+                    {
+                        "action": "duplicate",
+                        "sourceMasterId": "master_regular",
+                        "masterId": "master_text",
+                        "name": "Text",
+                    }
+                ],
+            },
+        ).to_dict()
+        conflicting_host.model["masters"][-1]["name"] = "Manual Edit"
+        before_conflict = copy.deepcopy(conflicting_host.model)
+        refused = conflicting_app.invoke(
+            "revert_change",
+            {
+                "documentId": "doc_master_conflict",
+                "operationId": created["operationId"],
+                "expectedDocumentFingerprint": fingerprint_model(conflicting_host.model),
+            },
+        ).to_dict()
+        self.assertFalse(refused["ok"])
+        self.assertEqual(refused["error"]["code"], "revert_conflict")
+        self.assertEqual(conflicting_host.model, before_conflict)
+
     def test_scale_build_is_linear_and_public_response_is_bounded(self) -> None:
         before = _model(383)
         build = build_master_updates(
@@ -295,6 +358,49 @@ class MasterLifecycleTests(unittest.TestCase):
         after = build.change_set.apply(before)
 
         self.assertEqual(len(after["glyphs"]), 383)
+        self.assertEqual(build.change_set.inverse().apply(after), before)
+
+        host = _Host(before)
+        response = GlyphsMCPApplication(host).invoke(
+            "apply_master_updates",
+            {
+                "documentId": "doc_master_scale",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "updates": [
+                    {
+                        "action": "duplicate",
+                        "sourceMasterId": "master_regular",
+                        "masterId": "master_text",
+                        "name": "Text",
+                    }
+                ],
+            },
+        ).to_dict()
+        self.assertTrue(response["ok"], response)
+        self.assertEqual(response["data"]["affectedGlyphCount"], 383)
+        self.assertEqual(response["data"]["transactionCount"], 1)
+        self.assertEqual(host.apply_calls, 1)
+        self.assertLess(len(json.dumps(response).encode("utf-8")), 64 * 1024)
+
+    def test_1000_glyph_master_plan_stays_inside_snapshot_budget(self) -> None:
+        before = _model(1000)
+        started = time.perf_counter()
+        build = build_master_updates(
+            before,
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": "master_regular",
+                    "masterId": "master_text",
+                    "name": "Text",
+                }
+            ],
+        )
+        elapsed = time.perf_counter() - started
+        after = build.change_set.apply(before)
+
+        self.assertLess(elapsed, 2.0)
+        self.assertEqual(len(build.change_set.changes), 1002)
         self.assertEqual(build.change_set.inverse().apply(after), before)
 
 

@@ -75,8 +75,8 @@ def _model() -> dict:
 
 
 class StructuralKernelTests(unittest.TestCase):
-    def test_schema_v3_is_explicit(self) -> None:
-        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 3)
+    def test_schema_v4_is_explicit(self) -> None:
+        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 4)
 
     def test_identity_collection_diff_is_entity_based_and_reproducible(self) -> None:
         before = _model()

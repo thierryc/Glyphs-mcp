@@ -21,7 +21,7 @@ from .semantic import ChangeSet, canonical_json, diff_models, fingerprint_model
 
 
 TREE_SCHEMA_VERSION = 1
-CANONICAL_MODEL_SCHEMA_VERSION = 3
+CANONICAL_MODEL_SCHEMA_VERSION = 4
 REVERSIBILITY_COVERAGE = "modeled_fields_only"
 SHARDED_MAPPING_ROOTS = frozenset({"glyphs", "kerning"})
 

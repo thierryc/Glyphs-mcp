@@ -23,7 +23,9 @@ from .exporting import ExportPublicationError, destination_matches
 from .operations import OperationRecord, OperationStore
 from .mutation import (
     CanonicalTargetMismatchError,
+    MASTER_LIFECYCLE_CAPABILITY,
     MutationPlanner,
+    normalize_mutation_build,
     unsupported_change_diagnostics,
     writable_subset,
 )
@@ -42,9 +44,11 @@ from .versions import SERVER_NAME, SERVER_VERSION
 from .workflows import (
     build_glyph_updates,
     build_instance_updates,
+    build_master_updates,
     build_opentype_updates,
     list_glyphs as model_list_glyphs,
     list_instances as model_list_instances,
+    list_masters as model_list_masters,
     list_kerning_pairs as model_list_kerning_pairs,
     review_anchor_consistency as model_review_anchor_consistency,
     review_anchor_updates as build_anchor_updates,
@@ -388,7 +392,7 @@ class GlyphsMCPApplication:
         arguments: Mapping[str, Any],
         *,
         tool: str,
-        builder: Callable[[Mapping[str, Any], Sequence[Mapping[str, Any]]], ChangeSet],
+        builder: Callable[[Mapping[str, Any], Sequence[Mapping[str, Any]]], Any],
         item_key: str = "updates",
     ) -> ToolResponse:
         if self._transactions is None or self._mutation_planner is None:
@@ -419,8 +423,13 @@ class GlyphsMCPApplication:
                 message="Read the current document fingerprint and try again.",
                 metadata=metadata,
             )
-        requested_model_diff = builder(before, items)
-        diagnostics = unsupported_change_diagnostics(requested_model_diff, limit=100)
+        build = normalize_mutation_build(builder(before, items))
+        requested_model_diff = build.change_set
+        diagnostics = unsupported_change_diagnostics(
+            requested_model_diff,
+            limit=100,
+            capabilities=build.capabilities,
+        )
         if diagnostics["unsupportedCount"]:
             return self._audited_edit_failure(
                 tool=tool,
@@ -432,7 +441,11 @@ class GlyphsMCPApplication:
                 audit_details=diagnostics,
                 error_details=diagnostics,
             )
-        requested = writable_subset(before, requested_model_diff)
+        requested = writable_subset(
+            before,
+            requested_model_diff,
+            capabilities=build.capabilities,
+        )
         self._trace.bind_document(document_id)
         try:
             plan = self._mutation_planner.plan(
@@ -441,6 +454,8 @@ class GlyphsMCPApplication:
                 requested_change_set=requested,
                 operation_id=metadata.operation_id,
                 before_model=before,
+                capabilities=build.capabilities,
+                execution_context=build.execution_context,
             )
             result = self._transactions.apply_plan(plan)
         except StaleDocumentError:
@@ -563,6 +578,7 @@ class GlyphsMCPApplication:
                     "production_reviews",
                     "canonical_change_history",
                     "identity_structural_changes",
+                    "master_lifecycle",
                 ],
                 "host": runtime.to_dict(),
             },
@@ -730,6 +746,14 @@ class GlyphsMCPApplication:
     def list_instances(self, arguments: Mapping[str, Any]) -> ToolResponse:
         return self._list_model_items(tool="list_instances", arguments=arguments, producer=model_list_instances, item_key="instances")
 
+    def list_masters(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        return self._list_model_items(
+            tool="list_masters",
+            arguments=arguments,
+            producer=model_list_masters,
+            item_key="masters",
+        )
+
     def list_kerning_pairs(self, arguments: Mapping[str, Any]) -> ToolResponse:
         return self._list_model_items(tool="list_kerning_pairs", arguments=arguments, producer=model_list_kerning_pairs, item_key="pairs")
 
@@ -854,6 +878,13 @@ class GlyphsMCPApplication:
 
     def apply_instance_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
         return self._direct_apply(arguments, tool="apply_instance_updates", builder=build_instance_updates)
+
+    def apply_master_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        return self._direct_apply(
+            arguments,
+            tool="apply_master_updates",
+            builder=build_master_updates,
+        )
 
     def review_spacing(self, arguments: Mapping[str, Any]) -> ToolResponse:
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
@@ -1195,7 +1226,19 @@ class GlyphsMCPApplication:
         # Writable paths bound what the host may touch; detached reconciliation
         # selects a cause-independent replay that must reproduce the tree.
         intended_after = inverse.apply(current)
-        writable_inverse = writable_subset(current, inverse)
+        revert_capabilities = (
+            (MASTER_LIFECYCLE_CAPABILITY,)
+            if any(
+                change.path and change.path[0] == "masters"
+                for change in original.change_set.changes
+            )
+            else ()
+        )
+        writable_inverse = writable_subset(
+            current,
+            inverse,
+            capabilities=revert_capabilities,
+        )
         metadata = OperationMetadata.create()
         try:
             plan = self._mutation_planner.plan(
@@ -1207,6 +1250,7 @@ class GlyphsMCPApplication:
                 dirty_state_intent="revert",
                 removes_contribution_id=operation_id,
                 required_after_model=intended_after,
+                capabilities=revert_capabilities,
             )
         except CanonicalTargetMismatchError as exc:
             mismatch = exc.mismatch

@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
+from uuid import uuid4
 
 from .adapters.document import (
     _save_font_copy,
@@ -118,7 +119,7 @@ class _StructuralGateSession:
                 "documentId": self.document_id,
                 "expectedDocumentFingerprint": self.fingerprint(),
                 "updates": [dict(item) for item in updates],
-                "reason": "Glyphs MCP v2 schema-v3 live qualification",
+                "reason": "Glyphs MCP v2 verified structural live qualification",
             },
         )
         data = self._success(tool, response)
@@ -182,7 +183,7 @@ class _StructuralGateSession:
                 "documentId": self.document_id,
                 "expectedDocumentFingerprint": "sha256:stale" if stale else before,
                 "updates": [dict(item) for item in updates],
-                "reason": "Glyphs MCP v2 schema-v3 atomic refusal gate",
+                "reason": "Glyphs MCP v2 verified structural atomic refusal gate",
             },
         )
         code = str((response.get("error") or {}).get("code") or "")
@@ -490,8 +491,172 @@ def verify_schema_v3_structural_kernel(
     }
 
 
+def verify_schema_v4_master_lifecycle(
+    font: Any,
+    *,
+    application: Any = None,
+    host: Any = None,
+) -> Mapping[str, Any]:
+    """Duplicate, edit, reorder, delete, and exactly revert one master."""
+
+    family_name = str(getattr(font, "familyName", "") or "")
+    if not family_name.startswith(DISPOSABLE_FAMILY_PREFIX):
+        raise ValueError(
+            "live v2 gates require a disposable font whose family name starts with {!r}".format(
+                DISPOSABLE_FAMILY_PREFIX
+            )
+        )
+    application, host = _resolve_live_runtime(application, host)
+    document_id_for_font = getattr(host, "document_id_for_font", None)
+    capture_model = getattr(host, "capture_model", None)
+    if not callable(document_id_for_font) or not callable(capture_model):
+        raise RuntimeError("the active host does not expose the master live-gate boundary")
+    document_id = str(document_id_for_font(font) or "")
+    baseline = dict(capture_model(document_id))
+    baseline_fingerprint = fingerprint_model(baseline)
+    masters = [
+        master
+        for master in baseline.get("masters", [])
+        if isinstance(master, Mapping)
+    ]
+    if not masters:
+        raise ValueError("the schema-v4 master gate requires one existing master")
+    source = masters[0]
+    source_id = str(source.get("id") or "")
+    if not source_id:
+        raise ValueError("the schema-v4 master gate requires stable master IDs")
+    before_path = _plain_attribute(font, "filepath")
+    before_master = _plain_attribute(font, "selectedFontMaster")
+    before_master_id = str(_plain_attribute(before_master, "id") or "")
+    before_dirty = _reported_dirty_state(host, document_id)
+    new_id = str(uuid4()).upper()
+    session = _StructuralGateSession(application, host, document_id)
+
+    try:
+        duplicate = session.apply(
+            "apply_master_updates",
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": source_id,
+                    "masterId": new_id,
+                    "name": "MCP V2 Gate Master",
+                    "index": min(1, len(masters)),
+                }
+            ],
+        )
+        duplicated = session.model()
+        if len(duplicated.get("masters", [])) != len(masters) + 1:
+            raise AssertionError("master duplication did not add exactly one master")
+        if any(
+            new_id not in (glyph.get("layers") or {})
+            for glyph in (duplicated.get("glyphs") or {}).values()
+            if isinstance(glyph, Mapping)
+        ):
+            raise AssertionError("master duplication did not add every owned glyph layer")
+
+        updated = session.apply(
+            "apply_master_updates",
+            [
+                {
+                    "action": "update",
+                    "masterId": new_id,
+                    "name": "MCP V2 Gate Master Updated",
+                    "italicAngle": float(source.get("italicAngle") or 0) + 1,
+                }
+            ],
+        )
+        moved = session.apply(
+            "apply_master_updates",
+            [{"action": "move", "masterId": new_id, "index": 0}],
+        )
+        deleted = session.apply(
+            "apply_master_updates",
+            [{"action": "delete", "masterId": new_id}],
+        )
+        if any(
+            str(master.get("id") or "") == new_id
+            for master in session.model().get("masters", [])
+            if isinstance(master, Mapping)
+        ):
+            raise AssertionError("master deletion left the target in the collection")
+
+        for operation_id in (deleted, moved, updated, duplicate):
+            session.revert(operation_id)
+
+        session.refuse(
+            "apply_master_updates",
+            "stale_document",
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": source_id,
+                    "masterId": str(uuid4()).upper(),
+                    "name": "Stale Gate Master",
+                }
+            ],
+            stale=True,
+        )
+        session.refuse(
+            "apply_master_updates",
+            "invalid_request",
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": source_id,
+                    "masterId": source_id,
+                    "name": "Duplicate ID",
+                }
+            ],
+        )
+    except BaseException:
+        cleanup_failures = session.cleanup()
+        final = session.fingerprint()
+        if cleanup_failures or final != baseline_fingerprint:
+            raise RuntimeError(
+                "schema-v4 master gate cleanup failed for {} operation(s); final fingerprint {}".format(
+                    len(cleanup_failures), final
+                )
+            )
+        raise
+
+    final_fingerprint = session.fingerprint()
+    after_path = _plain_attribute(font, "filepath")
+    after_master = _plain_attribute(font, "selectedFontMaster")
+    after_master_id = str(_plain_attribute(after_master, "id") or "")
+    after_dirty = _reported_dirty_state(host, document_id)
+    if final_fingerprint != baseline_fingerprint:
+        raise AssertionError("schema-v4 master gate did not restore the canonical baseline")
+    if after_path != before_path:
+        raise AssertionError("schema-v4 master gate changed the working document path")
+    if after_master_id != before_master_id:
+        raise AssertionError("schema-v4 master gate changed the active master")
+    if before_dirty is not None and after_dirty != before_dirty:
+        raise AssertionError("schema-v4 master gate changed the reported dirty state")
+    return {
+        "documentId": document_id,
+        "familyName": family_name,
+        "baselineFingerprint": baseline_fingerprint,
+        "finalFingerprint": final_fingerprint,
+        "qualifiedDomains": ["master_lifecycle", "atomic_refusal"],
+        "successfulTransactionCount": len(session.successful),
+        "operationIds": session.successful,
+        "refusalCount": len(session.refusals),
+        "refusalCodes": session.refusals,
+        "exactBaselineRestored": True,
+        "workingPathUnchanged": True,
+        "activeMasterUnchanged": True,
+        "reportedDirtyStateUnchanged": before_dirty is None
+        or after_dirty == before_dirty,
+        "singleTransactionResponses": session.single_transactions,
+        "auditReceiptsPresent": session.audit_receipts,
+        "changeLogCommitsPresent": session.change_log_commits,
+    }
+
+
 __all__ = [
     "DISPOSABLE_FAMILY_PREFIX",
     "verify_copy_and_make_copy",
     "verify_schema_v3_structural_kernel",
+    "verify_schema_v4_master_lifecycle",
 ]

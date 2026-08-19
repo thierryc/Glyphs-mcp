@@ -18,6 +18,7 @@ from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.live_gates import (  # noqa: E402
     verify_copy_and_make_copy,
     verify_schema_v3_structural_kernel,
+    verify_schema_v4_master_lifecycle,
 )
 from glyphs_mcp_v2.semantic import fingerprint_model  # noqa: E402
 
@@ -57,7 +58,14 @@ class _Font:
 def _structural_model():
     return {
         "font": {"familyName": "Glyphs MCP V2 Disposable Gate", "upm": 1000},
-        "masters": [{"id": "m0", "name": "Regular"}],
+        "masters": [
+            {
+                "id": "m0",
+                "name": "Regular",
+                "italicAngle": 0,
+                "axes": [],
+            }
+        ],
         "instances": [
             {
                 "id": "instance_regular",
@@ -79,7 +87,27 @@ def _structural_model():
                 "export": True,
                 "leftKerningGroup": "A",
                 "rightKerningGroup": "A",
-                "layers": {},
+                "mastersCompatible": True,
+                "layers": {
+                    "m0": {
+                        "id": "m0",
+                        "masterId": "m0",
+                        "name": "Regular",
+                        "isMasterLayer": True,
+                        "isSpecialLayer": False,
+                        "hasAlignedWidth": False,
+                        "width": 600,
+                        "LSB": 50,
+                        "RSB": 50,
+                        "leftMetricsKey": None,
+                        "rightMetricsKey": None,
+                        "widthMetricsKey": None,
+                        "anchors": {},
+                        "paths": [],
+                        "components": [],
+                        "pathSignature": [],
+                    }
+                },
             }
         },
         "kerning": {},
@@ -206,6 +234,40 @@ class V2LiveGateGuardTests(unittest.TestCase):
             )
 
         self.assertEqual(host.model, before)
+
+    def test_schema_v4_master_gate_round_trips_one_composite_lifecycle(self) -> None:
+        host = _StructuralHost()
+        app = GlyphsMCPApplication(host)
+        before = copy.deepcopy(host.model)
+
+        result = verify_schema_v4_master_lifecycle(
+            _Font(), application=app, host=host
+        )
+
+        self.assertEqual(host.model, before)
+        self.assertEqual(result["baselineFingerprint"], fingerprint_model(before))
+        self.assertEqual(result["finalFingerprint"], fingerprint_model(before))
+        self.assertEqual(
+            result["qualifiedDomains"],
+            ["master_lifecycle", "atomic_refusal"],
+        )
+        self.assertEqual(result["successfulTransactionCount"], 8)
+        self.assertEqual(result["refusalCount"], 2)
+        self.assertTrue(result["exactBaselineRestored"])
+        self.assertTrue(result["singleTransactionResponses"])
+        self.assertTrue(result["auditReceiptsPresent"])
+        self.assertTrue(result["changeLogCommitsPresent"])
+
+    def test_schema_v4_master_gate_refuses_non_disposable_font(self) -> None:
+        host = _StructuralHost()
+        app = GlyphsMCPApplication(host)
+
+        with self.assertRaises(ValueError):
+            verify_schema_v4_master_lifecycle(
+                _Font("Production Family"), application=app, host=host
+            )
+
+        self.assertEqual(host.apply_calls, 0)
 
 
 if __name__ == "__main__":

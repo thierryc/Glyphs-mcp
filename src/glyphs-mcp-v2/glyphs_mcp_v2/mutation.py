@@ -4,10 +4,16 @@ from __future__ import annotations
 
 import copy
 import re
-from dataclasses import dataclass
-from typing import Any, Mapping, Protocol
+from dataclasses import dataclass, field
+from typing import Any, Mapping, Protocol, Sequence
 
-from .semantic import ChangeSet, diff_models, fingerprint_model, subset_change_set
+from .semantic import (
+    ChangeSet,
+    SemanticChange,
+    diff_models,
+    fingerprint_model,
+    subset_change_set,
+)
 
 
 _FONT_WRITABLE = frozenset(
@@ -32,6 +38,79 @@ _LAYER_WRITABLE = frozenset(
 _OPENTYPE_ROOTS = frozenset({"features", "classes", "featurePrefixes"})
 _OPENTYPE_WRITABLE = frozenset({"name", "code", "automatic", "disabled"})
 _INSTANCE_WRITABLE = frozenset({"name", "type", "included", "axes"})
+MASTER_LIFECYCLE_CAPABILITY = "master_lifecycle"
+
+
+@dataclass(frozen=True)
+class MutationBuild:
+    """Pure semantic patch plus bounded native replay information.
+
+    Most mutations need only a :class:`ChangeSet`. Structural duplication is
+    the exception: the canonical target says *what* the document must become,
+    while ``execution_context`` identifies the native object that must be
+    copied so Glyphs-only state is preserved. The context is process-local,
+    never enters the canonical tree, audit ledger, or public response.
+    """
+
+    change_set: ChangeSet
+    capabilities: tuple[str, ...] = ()
+    execution_context: Mapping[str, Any] = field(default_factory=dict)
+
+
+def normalize_mutation_build(value: ChangeSet | MutationBuild) -> MutationBuild:
+    if isinstance(value, MutationBuild):
+        return value
+    if isinstance(value, ChangeSet):
+        return MutationBuild(value)
+    raise TypeError("mutation builders must return ChangeSet or MutationBuild")
+
+
+def master_lifecycle_diff(
+    before: Mapping[str, Any], after: Mapping[str, Any]
+) -> ChangeSet:
+    """Diff master-owned structures as independently reversible entities."""
+
+    changes = diff_models(before, after)
+    before_ids = {
+        str(master.get("id") or "")
+        for master in before.get("masters", [])
+        if isinstance(master, Mapping)
+    }
+    after_ids = {
+        str(master.get("id") or "")
+        for master in after.get("masters", [])
+        if isinstance(master, Mapping)
+    }
+    added_ids = after_ids - before_ids
+    if not added_ids:
+        return changes
+    retained = [
+        change
+        for change in changes.changes
+        if not (
+            len(change.path) >= 2
+            and change.path[0] == "kerning"
+            and change.path[1] in added_ids
+        )
+    ]
+    after_kerning = after.get("kerning", {})
+    if isinstance(after_kerning, Mapping):
+        for master_id in sorted(added_ids & set(after_kerning)):
+            retained.append(
+                SemanticChange(
+                    path=("kerning", master_id),
+                    after=copy.deepcopy(after_kerning[master_id]),
+                    before_present=False,
+                )
+            )
+    result = ChangeSet.from_changes(
+        before_fingerprint=fingerprint_model(before),
+        after_fingerprint=fingerprint_model(after),
+        changes=retained,
+    )
+    result.apply(before)
+    result.inverse().apply(after)
+    return result
 
 
 def classify_change_path(path: tuple[str, ...]) -> str:
@@ -87,19 +166,71 @@ def is_structural_change_path(path: tuple[str, ...]) -> bool:
     }
 
 
-def writable_subset(before: Mapping[str, Any], observed: ChangeSet) -> ChangeSet:
-    return subset_change_set(
-        before,
-        observed,
-        lambda change: classify_change_path(change.path) == "writable",
+def _master_structural_ids(change_set: ChangeSet) -> frozenset[str]:
+    return frozenset(
+        change.path[1]
+        for change in change_set.changes
+        if len(change.path) == 2
+        and change.path[0] == "masters"
+        and change.path[1] != "$order"
+        and change.before_present != change.after_present
     )
 
 
-def unsupported_change_diagnostics(changes: ChangeSet, *, limit: int = 100) -> dict[str, Any]:
+def _change_classification(
+    change: Any,
+    change_set: ChangeSet,
+    capabilities: Sequence[str],
+) -> str:
+    classification = classify_change_path(change.path)
+    if classification != "unsupported":
+        return classification
+    if MASTER_LIFECYCLE_CAPABILITY not in capabilities:
+        return classification
+    structural_ids = _master_structural_ids(change_set)
+    path = change.path
+    if path[0] == "masters":
+        if len(path) == 2:
+            return "writable"
+        if len(path) >= 3 and path[2] in {"name", "italicAngle", "axes"}:
+            return "writable"
+    if (
+        len(path) >= 4
+        and path[0] == "glyphs"
+        and path[2] == "layers"
+        and path[3] in structural_ids
+    ):
+        # Master-layer membership and its complete canonical payload are one
+        # consequence of adding/removing the owning master. They are not a
+        # general layer-mutation permission.
+        return "writable"
+    return classification
+
+
+def writable_subset(
+    before: Mapping[str, Any],
+    observed: ChangeSet,
+    *,
+    capabilities: Sequence[str] = (),
+) -> ChangeSet:
+    return subset_change_set(
+        before,
+        observed,
+        lambda change: _change_classification(change, observed, capabilities)
+        == "writable",
+    )
+
+
+def unsupported_change_diagnostics(
+    changes: ChangeSet,
+    *,
+    limit: int = 100,
+    capabilities: Sequence[str] = (),
+) -> dict[str, Any]:
     paths = [
         change.path
         for change in changes.changes
-        if classify_change_path(change.path) == "unsupported"
+        if _change_classification(change, changes, capabilities) == "unsupported"
     ]
     roots: list[str] = []
     for path in paths:
@@ -158,6 +289,11 @@ def mutation_scope(
         for change in change_set.changes
         if len(change.path) >= 2 and change.path[0] == "glyphs"
     }
+    if "masters" in roots:
+        # A master owns one layer in every glyph. Even a scalar master rename
+        # can change derived layer names, so the conservative semantic closure
+        # is the complete glyph collection.
+        direct = set(known_names)
     if "glyphs" in roots and not direct:
         direct = set(known_names)
 
@@ -223,6 +359,8 @@ class VerifiedMutationPlan:
     dirty_state_intent: str = "forward"
     removes_contribution_id: str | None = None
     replay_replacements: tuple[tuple[str, ...], ...] = ()
+    capabilities: tuple[str, ...] = ()
+    execution_context: Mapping[str, Any] = field(default_factory=dict)
 
     @property
     def before_fingerprint(self) -> str:
@@ -248,6 +386,8 @@ class MutationPlanner:
         dirty_state_intent: str = "forward",
         removes_contribution_id: str | None = None,
         required_after_model: Mapping[str, Any] | None = None,
+        capabilities: Sequence[str] = (),
+        execution_context: Mapping[str, Any] | None = None,
     ) -> VerifiedMutationPlan:
         if not document_id:
             raise ValueError("document_id is required")
@@ -274,8 +414,36 @@ class MutationPlanner:
         # clone anything. This also rejects duplicate/stale paths deterministically.
         requested_change_set.apply(before)
         replay_replacements: tuple[tuple[str, ...], ...] = ()
+        normalized_capabilities = tuple(sorted(set(str(value) for value in capabilities)))
+        normalized_context = copy.deepcopy(dict(execution_context or {}))
+        verified_simulator = getattr(
+            self._host, "simulate_verified_change_set", None
+        )
         reconciler = getattr(self._host, "simulate_reconciliation", None)
-        if required_after_model is not None and callable(reconciler):
+        if callable(verified_simulator):
+            simulation = verified_simulator(
+                document_id,
+                requested_change_set,
+                copy.deepcopy(before),
+                required_after_model=(
+                    copy.deepcopy(dict(required_after_model))
+                    if required_after_model is not None
+                    else None
+                ),
+                capabilities=normalized_capabilities,
+                execution_context=normalized_context,
+                removes_contribution_id=removes_contribution_id,
+            )
+            if not isinstance(simulation, Mapping) or not isinstance(
+                simulation.get("afterModel"), Mapping
+            ):
+                raise ValueError("verified canonical simulation returned an invalid result")
+            expected_after = copy.deepcopy(dict(simulation["afterModel"]))
+            replay_replacements = tuple(
+                tuple(str(part) for part in path)
+                for path in simulation.get("replayReplacements", ())
+            )
+        elif required_after_model is not None and callable(reconciler):
             simulation = reconciler(
                 document_id,
                 requested_change_set,
@@ -319,7 +487,11 @@ class MutationPlanner:
                 required_after_model,
                 expected_after,
             )
-        observed = diff_models(before, expected_after)
+        observed = (
+            master_lifecycle_diff(before, expected_after)
+            if MASTER_LIFECYCLE_CAPABILITY in normalized_capabilities
+            else diff_models(before, expected_after)
+        )
         observed.apply(before)
         return VerifiedMutationPlan(
             document_id=document_id,
@@ -331,6 +503,8 @@ class MutationPlanner:
             dirty_state_intent=dirty_state_intent,
             removes_contribution_id=removes_contribution_id,
             replay_replacements=replay_replacements,
+            capabilities=normalized_capabilities,
+            execution_context=normalized_context,
         )
 
 
@@ -339,10 +513,14 @@ __all__ = [
     "MutationScope",
     "MutationPlanner",
     "MutationPlanningHost",
+    "MutationBuild",
+    "MASTER_LIFECYCLE_CAPABILITY",
     "VerifiedMutationPlan",
     "classify_change_path",
     "is_structural_change_path",
     "mutation_scope",
+    "master_lifecycle_diff",
+    "normalize_mutation_build",
     "unsupported_change_diagnostics",
     "writable_subset",
 ]

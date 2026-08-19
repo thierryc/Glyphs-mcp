@@ -3,14 +3,14 @@
 This is the isolated, unreleased Glyphs MCP 2.0 package. It is based on signed
 release `v1.11.0` but does not change the shipped 1.x wire contracts.
 
-The catalog contains 27 operations across:
+The catalog contains 29 operations across:
 
 - stable document status and bounded glyph, instance, kerning, audit, and operation pages;
 - compatibility, metrics, anchors, spacing, kerning, and export reviews;
 - direct apply-first typed mutations through detached simulation and one shared
   verified transaction kernel;
-- schema-v3 identity-aware glyph, instance, feature, class, and prefix
-  membership/order patches with conflict-aware semantic revert;
+- schema-v4 identity-aware glyph, layer, master, instance, feature, class, and
+  prefix membership/order patches with conflict-aware semantic revert;
 - staged, destination-fingerprint-bound source-bundle publication;
 - `execute_python` staged-document and live-open-world modes;
 - fingerprint-bound `rollback_python_execution` and separate recovery copies.
@@ -36,11 +36,12 @@ typed apply tokens are intentionally absent. Confirmation remains only for
 Python and export/open-world effects.
 
 Ordered canonical collections remain ordinary detached JSON lists, but schema
-v3 addresses their entities by stable IDs and represents order independently.
+v4 addresses their entities by stable IDs and represents order independently.
 `apply_glyph_updates`, `apply_opentype_updates`, and
-`apply_instance_updates` all use that one semantic collection abstraction.
-Master duplication, layer membership changes, and staged-Python structural
-replay remain explicit later boundaries.
+`apply_instance_updates` use that one semantic collection abstraction.
+`apply_master_updates` extends it to a composite master, its owned glyph layers,
+and its kerning partition. Arbitrary special/intermediate layer membership and
+staged-Python structural replay remain explicit later boundaries.
 
 ## Worktree-contained development
 
@@ -83,3 +84,21 @@ successful forward operation is tracked so an unexpected failure first tries
 to revert the remaining operations in reverse order; the gate refuses to
 report success unless the exact baseline fingerprint, path, active master, and
 reported dirty state are restored.
+
+## Glyphs 4 schema-v4 master qualification
+
+After rebuilding, relinking, and restarting Glyphs 4, the same disposable font
+can run the separate master lifecycle gate:
+
+```python
+from GlyphsApp import Glyphs
+from glyphs_mcp_v2.live_gates import verify_schema_v4_master_lifecycle
+
+print(verify_schema_v4_master_lifecycle(Glyphs.font))
+```
+
+The gate duplicates one existing master, preserves its native master and layer
+payload, updates and reorders it, deletes it, and reverts all four operations
+in reverse order. It also verifies stale-fingerprint and duplicate-ID atomic
+refusals. It never saves and reports success only after exact canonical
+baseline, active-master, path, and dirty-state restoration.

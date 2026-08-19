@@ -140,6 +140,34 @@ def _public_change_value(path: Sequence[str], value: Any) -> Any:
             "fingerprint": fingerprint_model(value),
             **summary,
         }
+    if (
+        len(path) == 4
+        and path[0] == "glyphs"
+        and path[2] == "layers"
+        and isinstance(value, Mapping)
+    ):
+        return {
+            "kind": "canonical_layer_entity",
+            "id": str(value.get("id") or path[3]),
+            "masterId": str(value.get("masterId") or ""),
+            "name": str(value.get("name") or ""),
+            "pathCount": len(value.get("paths") or ()),
+            "componentCount": len(value.get("components") or ()),
+            "fieldCount": len(value),
+            "fingerprint": fingerprint_model(value),
+        }
+    if len(path) == 2 and path[0] == "kerning" and isinstance(value, Mapping):
+        pair_count = sum(
+            len(rights)
+            for rights in value.values()
+            if isinstance(rights, Mapping)
+        )
+        return {
+            "kind": "canonical_kerning_partition",
+            "masterId": path[1],
+            "pairCount": pair_count,
+            "fingerprint": fingerprint_model(value),
+        }
     if path and path[-1] == ORDER_TOKEN and isinstance(value, (list, tuple)):
         bounded = [str(identity) for identity in value[:100]]
         return {
@@ -358,7 +386,11 @@ def _diff(before: Any, after: Any, path: Tuple[str, ...]) -> list[SemanticChange
             before_present = key in before
             after_present = key in after
             if not before_present:
-                if path == ("glyphs",):
+                if path == ("glyphs",) or (
+                    len(path) == 3
+                    and path[0] == "glyphs"
+                    and path[2] == "layers"
+                ):
                     changes.append(
                         SemanticChange(
                             path=path + (key_text,),
