@@ -952,6 +952,54 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(native_font_to_model(font), after)
 
+    def test_layer_reconciliation_converges_after_geometry_derived_state(self) -> None:
+        target = {
+            "width": 1062,
+            "LSB": 30,
+            "RSB": 30,
+            "leftMetricsKey": None,
+            "rightMetricsKey": None,
+            "widthMetricsKey": None,
+            "anchors": {},
+            "paths": [{"closed": True, "nodes": []}],
+            "components": [],
+        }
+        initial = copy.deepcopy(target)
+        initial.update(
+            LSB=38,
+            RSB=22,
+            paths=[{"closed": False, "nodes": []}],
+        )
+        after_geometry = copy.deepcopy(target)
+        after_geometry.update(LSB=38, RSB=22)
+        layer = SimpleNamespace(
+            width=1062,
+            LSB=38,
+            RSB=22,
+            leftMetricsKey=None,
+            rightMetricsKey=None,
+            widthMetricsKey=None,
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_update_paths_in_place",
+            return_value=True,
+        ), mock.patch.object(
+            document_adapter,
+            "_layer_model",
+            side_effect=[after_geometry, target],
+        ) as capture:
+            document_adapter._reconcile_layer_to_canonical_target(
+                layer,
+                initial,
+                target,
+                layer_root=("glyphs", "A", "layers", "master_text"),
+            )
+
+        self.assertEqual((layer.LSB, layer.RSB), (30, 30))
+        self.assertEqual(capture.call_count, 2)
+
     def test_master_lifecycle_paths_require_the_explicit_capability(self) -> None:
         font = _master_lifecycle_font()
         before = native_font_to_model(font)
