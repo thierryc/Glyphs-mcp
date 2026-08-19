@@ -268,6 +268,29 @@ class _ObjectiveCReadOnlyInstanceType:
         self._type = int(value)
 
 
+class _AtomicCollectionProxy:
+    """Model a Glyphs list proxy whose slice setter replaces members."""
+
+    def __init__(self, values):
+        self.values = list(values)
+        self.slice_assignment_count = 0
+        self.atomic_assignment_count = 0
+
+    def __len__(self):
+        return len(self.values)
+
+    def __getitem__(self, index):
+        return self.values[index]
+
+    def __setitem__(self, index, value):
+        self.slice_assignment_count += 1
+        self.values[index] = value
+
+    def setter(self, values):
+        self.atomic_assignment_count += 1
+        self.values = list(values)
+
+
 class _OutlineNode:
     def __init__(self, x, y, *, node_type="line", smooth=False, name=None):
         self._position = SimpleNamespace(x=float(x), y=float(y))
@@ -679,6 +702,19 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(native.name, "Variable")
         self.assertEqual(native.type, 1)
+
+    def test_collection_reorder_prefers_one_atomic_proxy_setter(self) -> None:
+        first = SimpleNamespace(name="First")
+        second = SimpleNamespace(name="Second")
+        collection = _AtomicCollectionProxy([first, second])
+
+        document_adapter._replace_native_collection_order(
+            collection, [second, first]
+        )
+
+        self.assertEqual(collection.values, [second, first])
+        self.assertEqual(collection.atomic_assignment_count, 1)
+        self.assertEqual(collection.slice_assignment_count, 0)
 
     def test_structural_glyph_replay_adds_and_removes_through_one_boundary(self) -> None:
         font = _TransactionalFont()

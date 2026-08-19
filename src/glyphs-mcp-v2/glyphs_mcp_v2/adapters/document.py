@@ -989,6 +989,14 @@ def _append_native_collection_item(collection: Any, value: Any) -> None:
 
 def _replace_native_collection_order(collection: Any, values: Sequence[Any]) -> None:
     desired = list(values)
+    # Glyphs list proxies expose one whole-collection setter backed by the
+    # native ``set…_`` contract. Prefer it over slice assignment: ListProxy
+    # implements slices as repeated member replacement, which can detach and
+    # reattach live objects and thereby recompute unrelated derived state.
+    atomic_setter = _safe_getattr(collection, "setter")
+    if callable(atomic_setter):
+        atomic_setter(desired)
+        return
     try:
         collection[:] = desired
         return
