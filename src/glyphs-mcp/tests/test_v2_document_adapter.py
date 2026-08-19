@@ -1096,6 +1096,81 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual((layer.LSB, layer.RSB), (50, 50))
         self.assertIs(glyph.layers["master_text"], layer)
 
+    def test_exact_master_restore_does_not_rewrite_equal_master_fields(self) -> None:
+        class IdentitySensitiveMaster(_MasterLifecycleMaster):
+            def __init__(self, master_id, name, coordinate, *, native_only):
+                self.track_equal_writes = False
+                self.equal_value_writes = 0
+                super().__init__(
+                    master_id,
+                    name,
+                    coordinate,
+                    native_only=native_only,
+                )
+                self.track_equal_writes = True
+
+            def __setattr__(self, name, value):
+                if (
+                    name in {"id", "name", "italicAngle", "axes"}
+                    and self.__dict__.get("track_equal_writes", False)
+                    and name in self.__dict__
+                    and self.__dict__[name] == value
+                ):
+                    self.equal_value_writes += 1
+                super().__setattr__(name, value)
+
+        font = _master_lifecycle_font()
+        font.masters[0] = IdentitySensitiveMaster(
+            "master_regular",
+            "Regular",
+            100,
+            native_only="master-secret",
+        )
+        before = native_font_to_model(font)
+        build = build_master_updates(
+            before,
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": "master_regular",
+                    "masterId": "master_text",
+                    "name": "Text",
+                }
+            ],
+        )
+        after = build.change_set.apply(before)
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=build.capabilities,
+            execution_context=build.execution_context,
+        )
+        host = object.__new__(GlyphsDocumentHost)
+        templates = host._capture_removed_master_templates(font, after, before)
+        retained = templates["master_text"]["nativeMaster"]
+        document_adapter._apply_target_model(
+            font,
+            after,
+            before,
+            build.change_set.inverse(),
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+        )
+        writes_before_restore = retained.equal_value_writes
+
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+            master_restore_templates=templates,
+            reuse_native_master_templates=True,
+        )
+
+        self.assertEqual(retained.equal_value_writes, writes_before_restore)
+
     def test_master_lifecycle_paths_require_the_explicit_capability(self) -> None:
         font = _master_lifecycle_font()
         before = native_font_to_model(font)
