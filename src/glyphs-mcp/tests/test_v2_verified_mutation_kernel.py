@@ -150,6 +150,39 @@ class _LateSettlingHost(_DerivedHost):
         return settled
 
 
+class _PostSettleReconciliationHost(_LateSettlingHost):
+    def __init__(self) -> None:
+        super().__init__()
+        self.reconciliation_calls = 0
+        self.reconciliation_capabilities = None
+
+    def reconcile_verified_state(
+        self,
+        document_id,
+        actual_model,
+        expected_model,
+        *,
+        capabilities=(),
+        execution_context=None,
+    ):
+        self.reconciliation_calls += 1
+        self.reconciliation_capabilities = tuple(capabilities)
+        self.model = copy.deepcopy(expected_model)
+
+
+class _NonConvergingPostSettleHost(_PostSettleReconciliationHost):
+    def reconcile_verified_state(
+        self,
+        document_id,
+        actual_model,
+        expected_model,
+        *,
+        capabilities=(),
+        execution_context=None,
+    ):
+        self.reconciliation_calls += 1
+
+
 class VerifiedMutationKernelTests(unittest.TestCase):
     def test_mutation_scope_resolves_transitive_component_and_metrics_dependencies(self) -> None:
         before = _model()
@@ -300,6 +333,49 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         self.assertEqual(host.model, before)
         self.assertEqual(host.apply_calls, 1)
         self.assertEqual(host.restore_calls, 1)
+
+    def test_transaction_reconciles_writable_post_settle_drift_in_one_operation(self) -> None:
+        host = _PostSettleReconciliationHost()
+        before = host.capture_model("doc_kernel")
+        requested_after = copy.deepcopy(before)
+        requested_after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
+        plan = MutationPlanner(host).plan(
+            document_id="doc_kernel",
+            expected_document_fingerprint=fingerprint_model(before),
+            requested_change_set=diff_models(before, requested_after),
+            operation_id="op_post_settle",
+            capabilities=("master_lifecycle",),
+        )
+
+        result = TransactionKernel(host).apply_plan(plan)
+
+        self.assertEqual(result.after_fingerprint, plan.after_fingerprint)
+        self.assertEqual(host.model, plan.expected_after_model)
+        self.assertEqual(host.apply_calls, 1)
+        self.assertEqual(host.reconciliation_calls, 1)
+        self.assertEqual(host.reconciliation_capabilities, ("master_lifecycle",))
+        self.assertEqual(host.restore_calls, 0)
+
+    def test_nonconverging_post_settle_reconciliation_is_bounded_and_restored(self) -> None:
+        host = _NonConvergingPostSettleHost()
+        before = host.capture_model("doc_kernel")
+        requested_after = copy.deepcopy(before)
+        requested_after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
+        plan = MutationPlanner(host).plan(
+            document_id="doc_kernel",
+            expected_document_fingerprint=fingerprint_model(before),
+            requested_change_set=diff_models(before, requested_after),
+            operation_id="op_nonconverging_post_settle",
+        )
+
+        with self.assertRaises(TransactionVerificationError) as raised:
+            TransactionKernel(host).apply_plan(plan)
+
+        self.assertTrue(raised.exception.rollback_succeeded)
+        self.assertEqual(host.apply_calls, 1)
+        self.assertEqual(host.reconciliation_calls, 3)
+        self.assertEqual(host.restore_calls, 1)
+        self.assertEqual(host.model, before)
 
     def test_required_canonical_target_selects_and_replays_one_detached_strategy(self) -> None:
         host = _CanonicalReconciliationHost()
