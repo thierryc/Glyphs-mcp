@@ -334,6 +334,7 @@ class _MasterLifecycleLayer:
 class _MasterLayerCollection:
     def __init__(self, layers):
         self._values = {layer.layerId: layer for layer in layers}
+        self.recalculate_bearings_on_attach = False
 
     def __len__(self):
         return len(self._values)
@@ -344,6 +345,12 @@ class _MasterLayerCollection:
         return self._values[key]
 
     def __setitem__(self, key, value):
+        if self.recalculate_bearings_on_attach:
+            # Glyphs may recompute derived sidebearings when a copied layer is
+            # attached to a newly restored master. Structural replay must
+            # reconcile the resulting native object to its canonical target.
+            value.LSB += 7
+            value.RSB -= 7
         self._values[str(key)] = value
 
     def values(self):
@@ -891,6 +898,59 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 for glyph in font.glyphs
             )
         )
+
+    def test_master_restore_reconciles_native_attachment_derived_state(self) -> None:
+        font = _master_lifecycle_font()
+        before = native_font_to_model(font)
+        build = build_master_updates(
+            before,
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": "master_regular",
+                    "masterId": "master_text",
+                    "name": "Text",
+                }
+            ],
+        )
+        after = build.change_set.apply(before)
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=build.capabilities,
+            execution_context=build.execution_context,
+        )
+        templates = {
+            "master_text": {
+                "master": document_adapter._master_by_id(font, "master_text").copy(),
+                "layers": {
+                    glyph.name: glyph.layers["master_text"].copy()
+                    for glyph in font.glyphs
+                },
+            }
+        }
+        document_adapter._apply_target_model(
+            font,
+            after,
+            before,
+            build.change_set.inverse(),
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+        )
+        for glyph in font.glyphs:
+            glyph.layers.recalculate_bearings_on_attach = True
+
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+            master_restore_templates=templates,
+        )
+
+        self.assertEqual(native_font_to_model(font), after)
 
     def test_master_lifecycle_paths_require_the_explicit_capability(self) -> None:
         font = _master_lifecycle_font()
