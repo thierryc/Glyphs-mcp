@@ -1327,6 +1327,7 @@ def _apply_master_collection(
     target_glyphs: Mapping[str, Any] | None = None,
     execution_context: Mapping[str, Any] | None = None,
     restore_templates: Mapping[str, Mapping[str, Any]] | None = None,
+    reuse_native_templates: bool = False,
 ) -> None:
     """Replay master membership/order while preserving native-only state."""
 
@@ -1360,9 +1361,14 @@ def _apply_master_collection(
         if identity in native_by_id:
             continue
         template = templates.get(identity)
+        reuse_template = bool(
+            reuse_native_templates
+            and isinstance(template, Mapping)
+            and template.get("nativeMaster") is not None
+        )
         source_id = source_map.get(identity)
         source_master = (
-            template.get("master")
+            template.get("nativeMaster" if reuse_template else "master")
             if isinstance(template, Mapping)
             else native_by_id.get(source_id or "")
         )
@@ -1370,13 +1376,17 @@ def _apply_master_collection(
             raise HostAccessError(
                 "master creation requires a verified native copy source"
             )
-        master = _copy_native_object(source_master, kind="master")
+        master = (
+            source_master
+            if reuse_template
+            else _copy_native_object(source_master, kind="master")
+        )
         _set_native_property(master, "id", identity)
         _append_native_collection_item(collection, master)
         native_by_id[identity] = master
 
         stored_layers = (
-            template.get("layers", {})
+            template.get("nativeLayers" if reuse_template else "layers", {})
             if isinstance(template, Mapping)
             else {}
         )
@@ -1399,8 +1409,10 @@ def _apply_master_collection(
                         glyph_name
                     )
                 )
-            copied_layer = _copy_native_object(
-                source_layer, kind="master layer"
+            copied_layer = (
+                source_layer
+                if reuse_template
+                else _copy_native_object(source_layer, kind="master layer")
             )
             canonical_glyph = canonical_glyphs.get(glyph_name, {})
             canonical_layers = (
@@ -1546,6 +1558,7 @@ def _apply_target_model(
     capabilities: Sequence[str] = (),
     execution_context: Mapping[str, Any] | None = None,
     master_restore_templates: Mapping[str, Mapping[str, Any]] | None = None,
+    reuse_native_master_templates: bool = False,
 ) -> None:
     replacement_roots = {tuple(str(part) for part in path) for path in replay_replacements}
     changed_roots = {change.path[0] for change in change_set.changes}
@@ -1571,6 +1584,7 @@ def _apply_target_model(
             target_glyphs=target.get("glyphs", {}),
             execution_context=execution_context,
             restore_templates=master_restore_templates,
+            reuse_native_templates=reuse_native_master_templates,
         )
     if "font" in changed_roots:
         for name in _FONT_SCALARS:
@@ -1976,6 +1990,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "Glyphs could not snapshot removed master {}".format(master_id)
                 )
             layers: dict[str, Any] = {}
+            native_layers: dict[str, Any] = {}
             for glyph in glyphs:
                 glyph_name = str(_safe_getattr(glyph, "name") or "")
                 layer = _lookup_layer(glyph, master_id)
@@ -1985,12 +2000,16 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                             glyph_name or "<unnamed>", master_id
                         )
                     )
-                layers[glyph_name] = _copy_native_object(
-                    layer, kind="master layer"
-                )
+                native_layers[glyph_name] = layer
+                layers[glyph_name] = _copy_native_object(layer, kind="master layer")
             result[master_id] = {
                 "master": _copy_native_object(master, kind="master"),
                 "layers": layers,
+                # Exact detached objects are retained only for same-process
+                # live rollback. Detached simulation uses the copies above so
+                # no object ever crosses from the working font into a clone.
+                "nativeMaster": master,
+                "nativeLayers": native_layers,
             }
         return result
 
@@ -2558,6 +2577,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 master_restore_templates=self._master_restore_templates(
                     removes_contribution_id
                 ),
+                reuse_native_master_templates=True,
             )
             if any(change.path[0] == "instances" for change in change_set.changes):
                 self._bind_instance_ids(
@@ -2637,6 +2657,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 capabilities=capabilities,
                 execution_context=execution_context,
                 master_restore_templates=restore_templates,
+                reuse_native_master_templates=True,
             )
             if any(change.path[0] == "instances" for change in restoration.changes):
                 self._bind_instance_ids(
@@ -2664,6 +2685,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         capabilities=capabilities,
                         execution_context=execution_context,
                         master_restore_templates=restore_templates,
+                        reuse_native_master_templates=True,
                     )
                     if any(
                         change.path[0] == "instances" for change in residual.changes
