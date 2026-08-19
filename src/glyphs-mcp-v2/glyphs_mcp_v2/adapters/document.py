@@ -1202,6 +1202,90 @@ def _set_glyph_master_layer(glyph: Any, master_id: str, layer: Any) -> None:
     raise HostAccessError("Glyphs could not assign a master layer")
 
 
+def _reconcile_layer_to_canonical_target(
+    layer: Any,
+    current_layer: Mapping[str, Any],
+    target_layer: Mapping[str, Any],
+    *,
+    layer_root: Sequence[str],
+    replacement_roots: Sequence[Sequence[str]] = (),
+) -> None:
+    """Reconcile one attached native layer through the shared layer boundary.
+
+    Glyphs may derive metrics while a copied layer is attached to a master.
+    Structural creation and ordinary field updates therefore converge through
+    the same canonical writer instead of maintaining master-specific fixes.
+    """
+
+    replacement_set = {
+        tuple(str(part) for part in path) for path in replacement_roots
+    }
+    begin = _safe_getattr(layer, "beginChanges")
+    end = _safe_getattr(layer, "endChanges")
+    if callable(begin):
+        begin()
+    try:
+        metrics_key_changed = any(
+            current_layer.get(field) != target_layer.get(field)
+            for field in (
+                "leftMetricsKey",
+                "rightMetricsKey",
+                "widthMetricsKey",
+            )
+        )
+        for scalar in (
+            "leftMetricsKey",
+            "rightMetricsKey",
+            "widthMetricsKey",
+        ):
+            if current_layer.get(scalar) != target_layer.get(scalar):
+                _set_native_property(layer, scalar, target_layer.get(scalar))
+        if metrics_key_changed:
+            sync_metrics = _safe_getattr(layer, "syncMetrics")
+            if not callable(sync_metrics):
+                raise HostAccessError(
+                    "Glyphs did not expose GSLayer.syncMetrics for a metrics-key update"
+                )
+            sync_metrics()
+        shape_geometry_changed = any(
+            current_layer.get(field) != target_layer.get(field)
+            for field in ("paths", "components")
+        )
+        # LSB/RSB setters move or resize native geometry. When the semantic
+        # patch carries explicit shapes, those shapes remain authoritative.
+        if not shape_geometry_changed:
+            for scalar in ("LSB", "RSB"):
+                if current_layer.get(scalar) != target_layer.get(scalar):
+                    _set_native_property(layer, scalar, target_layer.get(scalar))
+        if current_layer.get("anchors") != target_layer.get("anchors"):
+            _replace_anchors(layer, target_layer.get("anchors", {}))
+        if current_layer.get("paths") != target_layer.get("paths"):
+            current_paths = current_layer.get("paths", [])
+            target_paths = target_layer.get("paths", [])
+            collection_root = tuple(layer_root) + ("paths",)
+            if collection_root in replacement_set:
+                _replace_paths(layer, target_paths)
+            elif not _update_paths_in_place(layer, current_paths, target_paths):
+                _replace_paths(layer, target_paths)
+        if current_layer.get("components") != target_layer.get("components"):
+            current_components = current_layer.get("components", [])
+            target_components = target_layer.get("components", [])
+            collection_root = tuple(layer_root) + ("components",)
+            if collection_root in replacement_set:
+                _replace_components(layer, target_components)
+            elif not _update_components_in_place(
+                layer, current_components, target_components
+            ):
+                _replace_components(layer, target_components)
+        # Width is stable last: bearings and absolute outline replay can both
+        # invalidate an earlier assignment.
+        if current_layer.get("width") != target_layer.get("width"):
+            _set_native_property(layer, "width", target_layer.get("width"))
+    finally:
+        if callable(end):
+            end()
+
+
 def _apply_master_collection(
     font: Any,
     current: Sequence[Mapping[str, Any]],
@@ -1215,6 +1299,7 @@ def _apply_master_collection(
 
     current_order, current_entities = require_indexed_entities(current, "masters")
     target_order, target_entities = require_indexed_entities(target, "masters")
+    added_ids = set(target_entities) - set(current_entities)
     collection = _safe_getattr(font, "masters")
     native_values = _sequence_values(collection)
     if len(native_values) != len(current_order):
@@ -1329,6 +1414,40 @@ def _apply_master_collection(
                 _set_native_property(native, "internalAxesValues", positions)
             else:
                 _set_native_property(native, "axes", positions)
+
+    # Copying preserves native-only state, but attachment may recalculate
+    # canonical metrics. Re-read each added layer and converge it through the
+    # same writer used by every ordinary layer mutation.
+    for identity in target_order:
+        if identity not in added_ids:
+            continue
+        for glyph_name, glyph in glyphs.items():
+            canonical_glyph = canonical_glyphs.get(glyph_name, {})
+            canonical_layers = (
+                canonical_glyph.get("layers", {})
+                if isinstance(canonical_glyph, Mapping)
+                else {}
+            )
+            target_layer = (
+                canonical_layers.get(identity)
+                if isinstance(canonical_layers, Mapping)
+                else None
+            )
+            layer = _lookup_layer(glyph, identity)
+            if not isinstance(target_layer, Mapping) or layer is None:
+                raise HostAccessError(
+                    "canonical restored layer is missing for {}/{}".format(
+                        glyph_name, identity
+                    )
+                )
+            current_layer = _layer_model(layer)
+            if current_layer != target_layer:
+                _reconcile_layer_to_canonical_target(
+                    layer,
+                    current_layer,
+                    target_layer,
+                    layer_root=("glyphs", glyph_name, "layers", identity),
+                )
 
 
 def _apply_glyph_membership(
@@ -1479,95 +1598,13 @@ def _apply_target_model(
                 layer = _lookup_layer(glyph, layer_key)
                 if layer is None:
                     raise HostAccessError("Glyphs could not resolve layer {}".format(layer_key))
-                begin = _safe_getattr(layer, "beginChanges")
-                end = _safe_getattr(layer, "endChanges")
-                if callable(begin):
-                    begin()
-                try:
-                    current_layer = current_layers[layer_key]
-                    target_layer = target_layers[layer_key]
-                    metrics_key_changed = any(
-                        current_layer.get(field) != target_layer.get(field)
-                        for field in (
-                            "leftMetricsKey",
-                            "rightMetricsKey",
-                            "widthMetricsKey",
-                        )
-                    )
-                    # Metrics links must be established or cleared before any
-                    # dependent geometry is replayed.
-                    for scalar in (
-                        "leftMetricsKey",
-                        "rightMetricsKey",
-                        "widthMetricsKey",
-                    ):
-                        if current_layer.get(scalar) != target_layer.get(scalar):
-                            _set_native_property(layer, scalar, target_layer.get(scalar))
-                    if metrics_key_changed:
-                        sync_metrics = _safe_getattr(layer, "syncMetrics")
-                        if not callable(sync_metrics):
-                            raise HostAccessError(
-                                "Glyphs did not expose GSLayer.syncMetrics for a metrics-key update"
-                            )
-                        sync_metrics()
-                    shape_geometry_changed = any(
-                        current_layer.get(field) != target_layer.get(field)
-                        for field in ("paths", "components")
-                    )
-                    # LSB/RSB setters move or resize native geometry. When the
-                    # semantic patch already carries explicit shape geometry,
-                    # that geometry is authoritative and naturally determines
-                    # the bearings after the final width assignment.
-                    if not shape_geometry_changed:
-                        for scalar in ("LSB", "RSB"):
-                            if current_layer.get(scalar) != target_layer.get(scalar):
-                                _set_native_property(layer, scalar, target_layer.get(scalar))
-                    if current_layers[layer_key].get("anchors") != target_layers[layer_key].get("anchors"):
-                        _replace_anchors(layer, target_layers[layer_key].get("anchors", {}))
-                    if current_layers[layer_key].get("paths") != target_layers[layer_key].get("paths"):
-                        current_paths = current_layers[layer_key].get("paths", [])
-                        target_paths = target_layers[layer_key].get("paths", [])
-                        collection_root = (
-                            "glyphs",
-                            name,
-                            "layers",
-                            layer_key,
-                            "paths",
-                        )
-                        if collection_root in replacement_roots:
-                            _replace_paths(layer, target_paths)
-                        elif not _update_paths_in_place(layer, current_paths, target_paths):
-                            _replace_paths(layer, target_paths)
-                    if current_layers[layer_key].get("components") != target_layers[layer_key].get("components"):
-                        current_components = current_layers[layer_key].get("components", [])
-                        target_components = target_layers[layer_key].get("components", [])
-                        collection_root = (
-                            "glyphs",
-                            name,
-                            "layers",
-                            layer_key,
-                            "components",
-                        )
-                        if collection_root in replacement_roots:
-                            _replace_components(layer, target_components)
-                        elif not _update_components_in_place(
-                            layer, current_components, target_components
-                        ):
-                            _replace_components(layer, target_components)
-                    # LSB/RSB setters and absolute outline replay can both
-                    # invalidate an earlier width assignment. Width is the
-                    # stable final scalar: assigning it after geometry fixes
-                    # the right sidebearing without moving the restored shape.
-                    if (
-                        current_layers[layer_key].get("width")
-                        != target_layers[layer_key].get("width")
-                    ):
-                        _set_native_property(
-                            layer, "width", target_layers[layer_key].get("width")
-                        )
-                finally:
-                    if callable(end):
-                        end()
+                _reconcile_layer_to_canonical_target(
+                    layer,
+                    current_layers[layer_key],
+                    target_layers[layer_key],
+                    layer_root=("glyphs", name, "layers", layer_key),
+                    replacement_roots=replacement_roots,
+                )
     if "kerning" in changed_roots:
         _replace_kerning(font, target.get("kerning", []))
     if "instances" in changed_roots:
