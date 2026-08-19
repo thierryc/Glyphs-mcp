@@ -134,6 +134,10 @@ native user history is never globally cleared.
   lifecycle callbacks.
 - Closing a document removes only its process-local history. Saving clears only
   the exact saved document.
+- The explicit Glyphs 4 schema-v3 qualification gate composes the public typed
+  tools and `revert_change`; it owns no mutation or rollback implementation of
+  its own. It must restore the exact disposable baseline after normal and
+  injected-failure paths before reporting success.
 - Files, subprocesses, network effects, preferences, and other open-world side
   effects are never represented as reversible document commits.
 

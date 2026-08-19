@@ -413,15 +413,28 @@ def _diff(before: Any, after: Any, path: Tuple[str, ...]) -> list[SemanticChange
                                 path + (identity,),
                             )
                         )
-                # Removal naturally preserves survivor order and additions are
-                # appended in after-order.  Emit an order patch only when that
-                # minimal membership replay cannot reproduce the target.
+                # ChangeSet normalization sorts entity paths, so simultaneous
+                # additions replay in identity order rather than construction
+                # order. Emit an order patch only when that normalized minimal
+                # membership replay cannot reproduce the target.
                 replayed_order = [
                     identity for identity in before_order if identity in after_entities
                 ] + [
-                    identity for identity in after_order if identity not in before_entities
+                    identity
+                    for identity in sorted(after_entities)
+                    if identity not in before_entities
                 ]
-                if replayed_order != after_order:
+                inverse_replayed_order = [
+                    identity for identity in after_order if identity in before_entities
+                ] + [
+                    identity
+                    for identity in sorted(before_entities)
+                    if identity not in after_entities
+                ]
+                if (
+                    replayed_order != after_order
+                    or inverse_replayed_order != before_order
+                ):
                     changes.append(
                         SemanticChange(
                             path=path + (ORDER_TOKEN,),
@@ -546,35 +559,43 @@ def revert_change_set_onto(
     for change in pending:
         _set_at(target, change.path, change.before, change.before_present)
     for change in order_changes:
-        value = _value_at(target, change.path)
-        if value is MISSING:
+        live_value = _value_at(current_plain, change.path)
+        target_value = _value_at(target, change.path)
+        if live_value is MISSING or target_value is MISSING:
             conflicts.append(change.path)
             continue
-        current_order = [str(identity) for identity in value]
+        live_order = [str(identity) for identity in live_value]
+        target_order = [str(identity) for identity in target_value]
         before_order = [str(identity) for identity in change.before]
         after_order = [str(identity) for identity in change.after]
         universe = set(before_order) | set(after_order)
-        surviving = {identity for identity in universe if identity in current_order}
-        projected_current = [identity for identity in current_order if identity in surviving]
-        projected_before = [identity for identity in before_order if identity in surviving]
-        if projected_current == projected_before:
-            continue
-        replayed_inverse = [
-            identity
-            for identity in after_order
-            if identity in surviving and identity in before_order
-        ] + [
-            identity
-            for identity in before_order
-            if identity in surviving and identity not in after_order
+        live_surviving = {identity for identity in universe if identity in live_order}
+        projected_live = [
+            identity for identity in live_order if identity in live_surviving
         ]
-        if projected_current != replayed_inverse:
+        projected_before = [
+            identity for identity in before_order if identity in live_surviving
+        ]
+        projected_after = [
+            identity for identity in after_order if identity in live_surviving
+        ]
+        if projected_live not in (projected_before, projected_after):
             conflicts.append(change.path)
             continue
-        replacement = iter(projected_before)
+        # Membership inverses above may have restored deleted entities or
+        # removed added ones. Reorder that target projection to the original
+        # before order while leaving later unrelated identities in their exact
+        # slots and relative order.
+        target_surviving = {
+            identity for identity in universe if identity in target_order
+        }
+        desired = [
+            identity for identity in before_order if identity in target_surviving
+        ]
+        replacement = iter(desired)
         rebased_order = [
-            next(replacement) if identity in surviving else identity
-            for identity in current_order
+            next(replacement) if identity in target_surviving else identity
+            for identity in target_order
         ]
         _set_at(target, change.path, rebased_order, True)
     if conflicts:

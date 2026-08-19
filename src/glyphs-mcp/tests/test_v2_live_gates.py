@@ -182,6 +182,7 @@ class V2LiveGateGuardTests(unittest.TestCase):
         self.assertTrue(result["exactBaselineRestored"])
         self.assertTrue(result["singleTransactionResponses"])
         self.assertTrue(result["auditReceiptsPresent"])
+        self.assertTrue(result["changeLogCommitsPresent"])
 
     def test_schema_v3_gate_leaves_no_partial_state_when_a_phase_fails(self) -> None:
         host = _StructuralHost()

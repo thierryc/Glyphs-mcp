@@ -61,3 +61,25 @@ Inside each supported host, `glyphs_mcp_v2.live_gates.verify_copy_and_make_copy`
 accepts only a font whose family name starts with `Glyphs MCP V2 Disposable`.
 It verifies canonical and serialized clone equality plus `save(makeCopy=True)`
 path/dirty-state invariants, writing only to a new explicit output path.
+
+## Glyphs 4 schema-v3 qualification
+
+After the current v2 source bundle is explicitly linked and Glyphs 4 is
+restarted, open a disposable font whose family name starts with
+`Glyphs MCP V2 Disposable`. The Macro window can then run:
+
+```python
+from GlyphsApp import Glyphs
+from glyphs_mcp_v2.live_gates import verify_schema_v3_structural_kernel
+
+print(verify_schema_v3_structural_kernel(Glyphs.font))
+```
+
+The gate calls only the existing public apply-first tools and generic
+`revert_change`. It qualifies glyph, OpenType, and instance membership,
+updates, order, deletion, selective revert, stale fingerprints, and invalid
+duplicates through 22 one-transaction operations. It never saves. Every
+successful forward operation is tracked so an unexpected failure first tries
+to revert the remaining operations in reverse order; the gate refuses to
+report success unless the exact baseline fingerprint, path, active master, and
+reported dirty state are restored.

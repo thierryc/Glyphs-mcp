@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import itertools
 import json
 import sys
 import unittest
@@ -111,6 +112,85 @@ class StructuralKernelTests(unittest.TestCase):
 
         self.assertEqual([change.path for change in changes.changes], [("features", "$order")])
         self.assertEqual(changes.apply(before), after)
+
+    def test_multiple_additions_preserve_declared_identity_order(self) -> None:
+        before = _model()
+        after = copy.deepcopy(before)
+        after["features"].extend(
+            [
+                {"id": "cv99", "name": "cv99", "code": "", "automatic": False, "disabled": False},
+                {"id": "cv98", "name": "cv98", "code": "", "automatic": False, "disabled": False},
+            ]
+        )
+
+        changes = diff_models(before, after)
+
+        self.assertEqual(changes.apply(before), after)
+        self.assertIn(("features", "$order"), [change.path for change in changes.changes])
+
+    def test_multiple_deletions_keep_the_inverse_reproducible(self) -> None:
+        before = _model()
+        before["features"] = [
+            {"id": name, "name": name, "code": "", "automatic": False, "disabled": False}
+            for name in ("cv98", "liga", "cv99")
+        ]
+        after = copy.deepcopy(before)
+        after["features"] = [after["features"][1]]
+
+        changes = diff_models(before, after)
+
+        self.assertEqual(changes.apply(before), after)
+        self.assertEqual(changes.inverse().apply(after), before)
+        self.assertIn(("features", "$order"), [change.path for change in changes.changes])
+
+    def test_rebased_order_inverse_preserves_an_unrelated_later_entity(self) -> None:
+        before = _model()
+        before["features"].append(
+            {"id": "kern", "name": "kern", "code": "", "automatic": False, "disabled": False}
+        )
+        after = copy.deepcopy(before)
+        after["features"] = list(reversed(after["features"]))
+        original = diff_models(before, after)
+        current = copy.deepcopy(after)
+        current["features"].insert(
+            1,
+            {"id": "calt", "name": "calt", "code": "", "automatic": False, "disabled": False},
+        )
+
+        inverse, conflicts = revert_change_set_onto(current, original)
+
+        self.assertEqual(conflicts, ())
+        self.assertIsNotNone(inverse)
+        reverted = inverse.apply(current)
+        self.assertEqual(
+            [item["id"] for item in reverted["features"]],
+            ["liga", "calt", "kern"],
+        )
+
+    def test_all_small_identity_membership_and_order_transitions_are_reversible(self) -> None:
+        identities = ("a", "b", "c", "d")
+        orders = [
+            order
+            for length in range(len(identities) + 1)
+            for members in itertools.combinations(identities, length)
+            for order in itertools.permutations(members)
+        ]
+
+        for before_order in orders:
+            before = _model()
+            before["features"] = [
+                {"id": name, "name": name, "code": "", "automatic": False, "disabled": False}
+                for name in before_order
+            ]
+            for after_order in orders:
+                after = copy.deepcopy(before)
+                after["features"] = [
+                    {"id": name, "name": name, "code": "", "automatic": False, "disabled": False}
+                    for name in after_order
+                ]
+                changes = diff_models(before, after)
+                self.assertEqual(changes.apply(before), after)
+                self.assertEqual(changes.inverse().apply(after), before)
 
     def test_numeric_entity_ids_are_not_confused_with_list_indexes(self) -> None:
         before = _model()
