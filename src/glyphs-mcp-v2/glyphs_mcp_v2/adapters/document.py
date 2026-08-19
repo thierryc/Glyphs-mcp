@@ -1179,6 +1179,21 @@ def _copy_native_object(value: Any, *, kind: str) -> Any:
         raise HostAccessError("Glyphs could not copy native {} state".format(kind)) from exc
 
 
+def _set_native_scalar_if_changed(value: Any, name: str, target: Any) -> bool:
+    """Write a canonical scalar only when the native value actually differs.
+
+    Objective-C setters are not guaranteed to be inert when assigned their
+    current value. Structural replay therefore compares the retained native
+    object itself instead of assuming that a newly added canonical entity has
+    no pre-existing state.
+    """
+
+    if _plain_scalar(_safe_getattr(value, name)) == _plain_scalar(target):
+        return False
+    _set_native_property(value, name, target)
+    return True
+
+
 def _master_by_id(font: Any, master_id: str) -> Any:
     for master in _sequence_values(_safe_getattr(font, "masters")):
         if str(_safe_getattr(master, "id") or "") == str(master_id):
@@ -1187,8 +1202,8 @@ def _master_by_id(font: Any, master_id: str) -> Any:
 
 
 def _set_glyph_master_layer(glyph: Any, master_id: str, layer: Any) -> None:
-    _set_native_property(layer, "associatedMasterId", master_id)
-    _set_native_property(layer, "layerId", master_id)
+    _set_native_scalar_if_changed(layer, "associatedMasterId", master_id)
+    _set_native_scalar_if_changed(layer, "layerId", master_id)
     layers = _safe_getattr(glyph, "layers")
     try:
         layers[master_id] = layer
@@ -1381,7 +1396,7 @@ def _apply_master_collection(
             if reuse_template
             else _copy_native_object(source_master, kind="master")
         )
-        _set_native_property(master, "id", identity)
+        _set_native_scalar_if_changed(master, "id", identity)
         _append_native_collection_item(collection, master)
         native_by_id[identity] = master
 
@@ -1426,7 +1441,7 @@ def _apply_master_collection(
                 else None
             )
             if isinstance(canonical_layer, Mapping) and "name" in canonical_layer:
-                _set_native_property(
+                _set_native_scalar_if_changed(
                     copied_layer,
                     "name",
                     str(canonical_layer.get("name") or ""),
@@ -1445,16 +1460,23 @@ def _apply_master_collection(
     )
     for identity in target_order:
         native = native_by_id[identity]
-        before = current_entities.get(identity, {})
         after = target_entities[identity]
-        if before.get("name") != after.get("name"):
-            _set_native_property(native, "name", str(after.get("name") or ""))
-        if before.get("italicAngle") != after.get("italicAngle"):
-            _set_native_property(
-                native, "italicAngle", float(after.get("italicAngle") or 0)
-            )
-        if before.get("axes") != after.get("axes"):
-            positions = [axis.get("internal") for axis in after.get("axes", [])]
+        _set_native_scalar_if_changed(
+            native,
+            "name",
+            str(after.get("name") or ""),
+        )
+        _set_native_scalar_if_changed(
+            native,
+            "italicAngle",
+            float(after.get("italicAngle") or 0),
+        )
+        positions = [axis.get("internal") for axis in after.get("axes", [])]
+        native_positions = [
+            _plain_scalar(position)
+            for position in _sequence_values(_safe_getattr(native, "axes"))
+        ]
+        if native_positions != positions:
             if _safe_getattr(native, "internalAxesValues") is not None:
                 _set_native_property(native, "internalAxesValues", positions)
             else:
