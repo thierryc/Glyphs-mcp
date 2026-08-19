@@ -62,6 +62,8 @@ class TransactionResult:
 
 
 class TransactionKernel:
+    _MAX_POST_SETTLE_RECONCILIATION_PASSES = 3
+
     def __init__(
         self,
         adapter: TransactionAdapter,
@@ -146,6 +148,26 @@ class TransactionKernel:
                 self._adapter.apply_change_set(document_id, plan.writable_change_set)
             actual_after = copy.deepcopy(dict(self._capture_verified_state(document_id)))
             actual_fingerprint = fingerprint_model(actual_after)
+            reconcile = getattr(self._adapter, "reconcile_verified_state", None)
+            if (
+                actual_fingerprint != plan.after_fingerprint
+                and callable(reconcile)
+                and fingerprint_model(expected_after) == plan.after_fingerprint
+            ):
+                for _ in range(self._MAX_POST_SETTLE_RECONCILIATION_PASSES):
+                    reconcile(
+                        document_id,
+                        actual_after,
+                        expected_after,
+                        capabilities=plan.capabilities,
+                        execution_context=plan.execution_context,
+                    )
+                    actual_after = copy.deepcopy(
+                        dict(self._capture_verified_state(document_id))
+                    )
+                    actual_fingerprint = fingerprint_model(actual_after)
+                    if actual_fingerprint == plan.after_fingerprint:
+                        break
             if (
                 actual_fingerprint != plan.after_fingerprint
                 or fingerprint_model(expected_after) != plan.after_fingerprint

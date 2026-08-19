@@ -2636,6 +2636,68 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         self._executor.run(apply)
 
+    def reconcile_verified_state(
+        self,
+        document_id: str,
+        actual_model: Mapping[str, Any],
+        expected_model: Mapping[str, Any],
+        *,
+        capabilities: Sequence[str] = (),
+        execution_context: Mapping[str, Any] | None = None,
+    ) -> None:
+        """Converge writable drift that Glyphs derives after one UI turn.
+
+        This remains inside the original verified transaction: it owns no
+        dirty contribution, operation, audit event, or history entry. The
+        complete settled tree is compared with the detached canonical target,
+        and any non-writable residual refuses the transaction atomically.
+        """
+
+        expected = copy.deepcopy(dict(expected_model))
+        actual_fingerprint = fingerprint_model(actual_model)
+
+        def reconcile() -> None:
+            font = self._font_for_document(document_id)
+            current = self._capture_cached_model(document_id, font)
+            if fingerprint_model(current) != actual_fingerprint:
+                raise HostAccessError(
+                    "the document changed during post-settle reconciliation"
+                )
+            residual = diff_models(current, expected)
+            if not residual.changes:
+                return
+            writable = writable_subset(
+                current,
+                residual,
+                capabilities=capabilities,
+            )
+            if fingerprint_model(writable.apply(current)) != fingerprint_model(
+                expected
+            ):
+                raise HostAccessError(
+                    "the settled canonical residual contains non-writable state"
+                )
+            scope = mutation_scope(current, writable)
+            self._canonical_model_cache.invalidate_glyphs(
+                document_id, scope.glyph_names
+            )
+            _apply_target_model(
+                font,
+                current,
+                expected,
+                writable,
+                capabilities=capabilities,
+                execution_context=execution_context,
+            )
+            if any(change.path[0] == "instances" for change in writable.changes):
+                self._bind_instance_ids(
+                    document_id,
+                    font,
+                    collection_order(expected.get("instances", [])),
+                )
+
+        self._executor.run(reconcile)
+
     def commit_verified_change(self, operation_id: str) -> None:
         pending = getattr(self, "_document_mcp_pending_reverts", {})
         completed_revert = pending.pop(operation_id, None)
