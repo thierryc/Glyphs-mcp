@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import sys
 import tempfile
 import unittest
@@ -13,7 +14,12 @@ V2_SOURCE = REPO / "src" / "glyphs-mcp-v2"
 if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
-from glyphs_mcp_v2.live_gates import verify_copy_and_make_copy  # noqa: E402
+from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
+from glyphs_mcp_v2.live_gates import (  # noqa: E402
+    verify_copy_and_make_copy,
+    verify_schema_v3_structural_kernel,
+)
+from glyphs_mcp_v2.semantic import fingerprint_model  # noqa: E402
 
 
 class _Document:
@@ -48,6 +54,83 @@ class _Font:
         Path(path).write_text("stable disposable archive", encoding="utf-8")
 
 
+def _structural_model():
+    return {
+        "font": {"familyName": "Glyphs MCP V2 Disposable Gate", "upm": 1000},
+        "masters": [{"id": "m0", "name": "Regular"}],
+        "instances": [
+            {
+                "id": "instance_regular",
+                "name": "Regular",
+                "type": "static",
+                "included": True,
+                "inclusionReason": None,
+                "interpolationSupported": True,
+                "axes": [],
+            }
+        ],
+        "glyphs": {
+            "A": {
+                "id": "glyph_A",
+                "name": "A",
+                "category": "Letter",
+                "subCategory": "Uppercase",
+                "unicode": "0041",
+                "export": True,
+                "leftKerningGroup": "A",
+                "rightKerningGroup": "A",
+                "layers": {},
+            }
+        },
+        "kerning": {},
+        "features": [
+            {
+                "id": "liga",
+                "name": "liga",
+                "code": "sub f i by fi;",
+                "automatic": False,
+                "disabled": False,
+            }
+        ],
+        "classes": [],
+        "featurePrefixes": [],
+    }
+
+
+class _StructuralHost:
+    def __init__(self):
+        self.model = _structural_model()
+        self.apply_calls = 0
+        self.restore_calls = 0
+
+    def document_id_for_font(self, font):
+        return "doc_structural_gate"
+
+    def capture_model(self, document_id):
+        if document_id != "doc_structural_gate":
+            raise ValueError("wrong document")
+        return copy.deepcopy(self.model)
+
+    def simulate_change_set(self, document_id, change_set):
+        return change_set.apply(self.model)
+
+    def simulate_reconciliation(
+        self, document_id, change_set, required_after_model, before_model
+    ):
+        return {
+            "afterModel": copy.deepcopy(required_after_model),
+            "replayReplacements": [],
+        }
+
+    def apply_change_set(self, document_id, change_set):
+        self.apply_calls += 1
+        self.model = change_set.apply(self.model)
+
+    def restore_model(self, document_id, model):
+        self.restore_calls += 1
+        self.model = copy.deepcopy(model)
+
+
 class V2LiveGateGuardTests(unittest.TestCase):
     def test_gate_refuses_non_disposable_font(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -62,6 +145,66 @@ class V2LiveGateGuardTests(unittest.TestCase):
             self.assertTrue(result["dirtyStateUnchanged"])
             self.assertEqual(font.filepath, "/disposable/source.glyphs")
             self.assertTrue(font.parent.isDocumentEdited)
+
+    def test_schema_v3_gate_refuses_non_disposable_font(self) -> None:
+        host = _StructuralHost()
+        app = GlyphsMCPApplication(host)
+
+        with self.assertRaises(ValueError):
+            verify_schema_v3_structural_kernel(
+                _Font("Production Family"), application=app, host=host
+            )
+
+        self.assertEqual(host.apply_calls, 0)
+
+    def test_schema_v3_gate_qualifies_all_structural_domains_and_restores_baseline(self) -> None:
+        host = _StructuralHost()
+        app = GlyphsMCPApplication(host)
+        before = copy.deepcopy(host.model)
+
+        result = verify_schema_v3_structural_kernel(
+            _Font(), application=app, host=host
+        )
+
+        self.assertEqual(host.model, before)
+        self.assertEqual(result["baselineFingerprint"], fingerprint_model(before))
+        self.assertEqual(result["finalFingerprint"], fingerprint_model(before))
+        self.assertEqual(result["qualifiedDomains"], [
+            "glyphs",
+            "opentype",
+            "instances",
+            "selective_revert",
+            "atomic_refusal",
+        ])
+        self.assertEqual(result["successfulTransactionCount"], host.apply_calls)
+        self.assertEqual(result["successfulTransactionCount"], 22)
+        self.assertEqual(result["refusalCount"], 2)
+        self.assertTrue(result["exactBaselineRestored"])
+        self.assertTrue(result["singleTransactionResponses"])
+        self.assertTrue(result["auditReceiptsPresent"])
+
+    def test_schema_v3_gate_leaves_no_partial_state_when_a_phase_fails(self) -> None:
+        host = _StructuralHost()
+        app = GlyphsMCPApplication(host)
+        before = copy.deepcopy(host.model)
+        original_invoke = app.invoke
+        calls = 0
+
+        def fail_during_opentype(tool, arguments=None):
+            nonlocal calls
+            calls += 1
+            if calls == 8:
+                raise RuntimeError("injected live-gate failure")
+            return original_invoke(tool, arguments)
+
+        app.invoke = fail_during_opentype
+
+        with self.assertRaises(RuntimeError):
+            verify_schema_v3_structural_kernel(
+                _Font(), application=app, host=host
+            )
+
+        self.assertEqual(host.model, before)
 
 
 if __name__ == "__main__":
