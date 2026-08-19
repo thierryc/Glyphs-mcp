@@ -245,6 +245,29 @@ class _ObjectiveCBooleanFeature:
         self._disabled = bool(value)
 
 
+class _ObjectiveCReadOnlyInstanceType:
+    """Reproduce Glyphs 4's read-only Python ``GSInstance.type`` wrapper.
+
+    The native Objective-C property remains writable through ``setType_``.
+    Structural replay must therefore use the shared native-property boundary
+    instead of assigning the Python descriptor directly.
+    """
+
+    def __init__(self, *, name=""):
+        self.name = name
+        self._type = 0
+        self.active = True
+        self.axes = []
+        self.externalAxes = []
+
+    @property
+    def type(self):
+        return self._type
+
+    def setType_(self, value):
+        self._type = int(value)
+
+
 class _OutlineNode:
     def __init__(self, x, y, *, node_type="line", smooth=False, name=None):
         self._position = SimpleNamespace(x=float(x), y=float(y))
@@ -628,6 +651,34 @@ class V2DocumentAdapterTests(unittest.TestCase):
             document_adapter._apply_target_model(font, before, after, changes)
 
         self.assertEqual([value.name for value in font.instances], ["Regular", "Bold"])
+
+    def test_structural_instance_replay_uses_native_setter_for_read_only_type(self) -> None:
+        font = _TransactionalFont()
+        before = native_font_to_model(font)
+        after = copy.deepcopy(before)
+        after["instances"].append(
+            {
+                "id": "instance_variable",
+                "name": "Variable",
+                "type": "variable",
+                "included": True,
+                "inclusionReason": None,
+                "interpolationSupported": False,
+                "axes": [],
+            }
+        )
+        changes = diff_models(before, after)
+        native = _ObjectiveCReadOnlyInstanceType()
+
+        with mock.patch.object(
+            document_adapter,
+            "_construct_native_entity",
+            return_value=native,
+        ):
+            document_adapter._apply_target_model(font, before, after, changes)
+
+        self.assertEqual(native.name, "Variable")
+        self.assertEqual(native.type, 1)
 
     def test_structural_glyph_replay_adds_and_removes_through_one_boundary(self) -> None:
         font = _TransactionalFont()

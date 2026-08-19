@@ -672,7 +672,7 @@ def _replace_layer_shape_kind(
     for index, value in zip(indices, values):
         shapes[index] = value
     try:
-        setattr(layer, "shapes", list(shapes))
+        _set_native_property(layer, "shapes", list(shapes))
     except Exception:
         _replace_collection(collection, shapes)
 
@@ -686,8 +686,10 @@ def _new_anchor(name: str, position: Sequence[float]) -> Any:
         return GSAnchor(name, (float(position[0]), float(position[1])))
     except Exception:
         anchor = GSAnchor()
-        anchor.name = name
-        anchor.position = (float(position[0]), float(position[1]))
+        _set_native_property(anchor, "name", name)
+        _set_native_property(
+            anchor, "position", (float(position[0]), float(position[1]))
+        )
         return anchor
 
 
@@ -724,10 +726,14 @@ def _new_path(spec: Mapping[str, Any]) -> Any:
             node = GSNode((float(node_spec.get("x", 0)), float(node_spec.get("y", 0))), node_type)
         except Exception:
             node = GSNode()
-            node.position = (float(node_spec.get("x", 0)), float(node_spec.get("y", 0)))
-            node.type = node_type
+            _set_native_property(
+                node,
+                "position",
+                (float(node_spec.get("x", 0)), float(node_spec.get("y", 0))),
+            )
+            _set_native_property(node, "type", node_type)
         try:
-            node.smooth = bool(node_spec.get("smooth", False))
+            _set_native_property(node, "smooth", bool(node_spec.get("smooth", False)))
         except Exception:
             pass
         # GSNode.name is not a normal nullable NSString bridge: assigning
@@ -736,12 +742,12 @@ def _new_path(spec: Mapping[str, Any]) -> Any:
         node_name = _optional_text(node_spec.get("name"))
         if node_name is not None:
             try:
-                node.name = node_name
+                _set_native_property(node, "name", node_name)
             except Exception:
                 pass
         nodes.append(node)
     _replace_collection(path.nodes, nodes)
-    path.closed = bool(spec.get("closed", True))
+    _set_native_property(path, "closed", bool(spec.get("closed", True)))
     return path
 
 
@@ -785,11 +791,15 @@ def _update_paths_in_place(
             float(target_node.get("y", 0)),
         )
         if current_position != target_position:
-            native_node.position = target_position
+            _set_native_property(native_node, "position", target_position)
         if bool(current_node.get("smooth", False)) != bool(target_node.get("smooth", False)):
-            native_node.smooth = bool(target_node.get("smooth", False))
+            _set_native_property(
+                native_node, "smooth", bool(target_node.get("smooth", False))
+            )
         if current_node.get("name") != target_node.get("name"):
-            native_node.name = str(target_node.get("name") or "")
+            _set_native_property(
+                native_node, "name", str(target_node.get("name") or "")
+            )
     return True
 
 
@@ -813,12 +823,18 @@ def _new_component(spec: Mapping[str, Any]) -> Any:
         component = GSComponent(name)
     except Exception:
         component = GSComponent()
-        component.componentName = name
+        _set_native_property(component, "componentName", name)
     transform = spec.get("transform")
     if isinstance(transform, Sequence) and len(transform) == 6:
-        component.transform = tuple(float(value) for value in transform)
+        _set_native_property(
+            component, "transform", tuple(float(value) for value in transform)
+        )
     if "automaticAlignment" in spec:
-        component.automaticAlignment = bool(spec.get("automaticAlignment"))
+        _set_native_property(
+            component,
+            "automaticAlignment",
+            bool(spec.get("automaticAlignment")),
+        )
     return component
 
 
@@ -860,11 +876,11 @@ def _update_components_in_place(
             return False
     for native, transform, alignment in updates:
         if tuple(_component_transform(native)) != transform:
-            native.transform = transform
+            _set_native_property(native, "transform", transform)
         if alignment is not None and bool(
             _maybe_call(_safe_getattr(native, "automaticAlignment", False))
         ) != alignment:
-            native.automaticAlignment = alignment
+            _set_native_property(native, "automaticAlignment", alignment)
     return True
 
 
@@ -1017,7 +1033,7 @@ def _construct_native_entity(kind: str, name: str = "") -> Any:
     if value is None:
         raise HostAccessError("Glyphs could not create a native {}".format(kind))
     if name and str(_safe_getattr(value, "name") or "") != name:
-        setattr(value, "name", name)
+        _set_native_property(value, "name", name)
     return value
 
 
@@ -1050,7 +1066,7 @@ def _sync_native_entities(
         entity_name = str(entity.get("name") or identity)
         value = _construct_native_entity(kind, entity_name)
         if str(_safe_getattr(value, "name") or "") != entity_name:
-            setattr(value, "name", entity_name)
+            _set_native_property(value, "name", entity_name)
         native_by_id[identity] = value
         _append_native_collection_item(collection, value)
     _replace_native_collection_order(
@@ -1078,7 +1094,7 @@ def _apply_code_collection(
         before = current_entities.get(identity, {})
         after = target_entities[identity]
         if str(_safe_getattr(native, "name") or "") != str(after.get("name") or ""):
-            setattr(native, "name", str(after.get("name") or ""))
+            _set_native_property(native, "name", str(after.get("name") or ""))
         # Automatic mode is applied first. Custom code is legal only in the
         # resulting manual state, as enforced by the pure request builder.
         if before.get("automatic") != after.get("automatic"):
@@ -1109,18 +1125,18 @@ def _apply_instance_collection(
         before = current_entities.get(identity, {})
         after = target_entities[identity]
         if before.get("name") != after.get("name"):
-            setattr(native, "name", str(after.get("name") or ""))
+            _set_native_property(native, "name", str(after.get("name") or ""))
         if before.get("type") != after.get("type"):
-            setattr(
+            _set_native_property(
                 native,
                 "type",
                 INSTANCETYPEVARIABLE if after.get("type") == "variable" else 0,
             )
         if before.get("included") != after.get("included"):
             if _safe_getattr(native, "active") is not None:
-                setattr(native, "active", bool(after.get("included")))
+                _set_native_property(native, "active", bool(after.get("included")))
             else:
-                setattr(native, "exports", bool(after.get("included")))
+                _set_native_property(native, "exports", bool(after.get("included")))
         if before.get("axes") != after.get("axes"):
             axes = list(after.get("axes") or [])
             internal = [axis.get("internal") for axis in axes]
@@ -1161,7 +1177,7 @@ def _apply_glyph_membership(
     for name in sorted(set(target) - set(current)):
         value = _construct_native_entity("glyph", name)
         if str(_safe_getattr(value, "name") or "") != name:
-            setattr(value, "name", name)
+            _set_native_property(value, "name", name)
         _append_native_collection_item(collection, value)
         native_by_name[name] = value
 
@@ -1203,7 +1219,7 @@ def _apply_target_model(
     if "font" in changed_roots:
         for name in _FONT_SCALARS:
             if current.get("font", {}).get(name) != target.get("font", {}).get(name):
-                setattr(font, name, target.get("font", {}).get(name))
+                _set_native_property(font, name, target.get("font", {}).get(name))
     if "glyphs" in changed_roots:
         current_glyphs = current.get("glyphs", {})
         target_glyphs = target.get("glyphs", {})
@@ -1227,7 +1243,7 @@ def _apply_target_model(
                 current_glyph = _glyph_model(glyph)
             for scalar in _GLYPH_SCALARS:
                 if current_glyph.get(scalar) != target_glyphs[name].get(scalar):
-                    setattr(glyph, scalar, target_glyphs[name].get(scalar))
+                    _set_native_property(glyph, scalar, target_glyphs[name].get(scalar))
             current_layers = current_glyph.get("layers", {})
             target_layers = target_glyphs[name].get("layers", {})
             if set(current_layers) != set(target_layers):
@@ -1269,7 +1285,7 @@ def _apply_target_model(
                         "widthMetricsKey",
                     ):
                         if current_layer.get(scalar) != target_layer.get(scalar):
-                            setattr(layer, scalar, target_layer.get(scalar))
+                            _set_native_property(layer, scalar, target_layer.get(scalar))
                     if metrics_key_changed:
                         sync_metrics = _safe_getattr(layer, "syncMetrics")
                         if not callable(sync_metrics):
@@ -1288,7 +1304,7 @@ def _apply_target_model(
                     if not shape_geometry_changed:
                         for scalar in ("LSB", "RSB"):
                             if current_layer.get(scalar) != target_layer.get(scalar):
-                                setattr(layer, scalar, target_layer.get(scalar))
+                                _set_native_property(layer, scalar, target_layer.get(scalar))
                     if current_layers[layer_key].get("anchors") != target_layers[layer_key].get("anchors"):
                         _replace_anchors(layer, target_layers[layer_key].get("anchors", {}))
                     if current_layers[layer_key].get("paths") != target_layers[layer_key].get("paths"):
@@ -1329,7 +1345,9 @@ def _apply_target_model(
                         current_layers[layer_key].get("width")
                         != target_layers[layer_key].get("width")
                     ):
-                        setattr(layer, "width", target_layers[layer_key].get("width"))
+                        _set_native_property(
+                            layer, "width", target_layers[layer_key].get("width")
+                        )
                 finally:
                     if callable(end):
                         end()
