@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -284,10 +285,18 @@ class V2LiveGateGuardTests(unittest.TestCase):
         host = _StructuralHost()
         app = GlyphsMCPApplication(host)
         before = copy.deepcopy(host.model)
+        model_reads = 0
+        original_model = _StructuralGateSession.model
 
-        result = verify_schema_v4_master_lifecycle(
-            _Font(), application=app, host=host
-        )
+        def counted_model(session):
+            nonlocal model_reads
+            model_reads += 1
+            return original_model(session)
+
+        with mock.patch.object(_StructuralGateSession, "model", counted_model):
+            result = verify_schema_v4_master_lifecycle(
+                _Font(), application=app, host=host
+            )
 
         self.assertEqual(host.model, before)
         self.assertEqual(result["baselineFingerprint"], fingerprint_model(before))
@@ -305,6 +314,11 @@ class V2LiveGateGuardTests(unittest.TestCase):
         self.assertIn("stageTimingTotalsMs", result)
         self.assertIn("gateDurationMs", result)
         self.assertGreaterEqual(result["gateDurationMs"], 0)
+        self.assertEqual(
+            model_reads,
+            1,
+            "the gate must use verified commits for intermediate proof and recapture only the final baseline",
+        )
 
     def test_schema_v4_master_gate_refuses_non_disposable_font(self) -> None:
         host = _StructuralHost()
