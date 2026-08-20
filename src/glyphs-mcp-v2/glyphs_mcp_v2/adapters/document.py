@@ -394,22 +394,143 @@ def _glyph_matches_model(glyph: Any, expected: Mapping[str, Any]) -> bool:
     expected_layers = expected.get("layers", {})
     if not isinstance(expected_layers, Mapping):
         return False
-    native_layers: dict[str, Any] = {}
+    native_layers = _native_layer_index(glyph)
+    return set(native_layers) == set(expected_layers) and all(
+        isinstance(expected_layers[key], Mapping)
+        and _layer_matches_model(layer, expected_layers[key])
+        for key, layer in native_layers.items()
+    )
+
+
+def _glyph_root_matches_model(glyph: Any, expected: Mapping[str, Any]) -> bool:
+    """Compare authoritative glyph fields without traversing layer contents."""
+
+    name = str(_safe_getattr(glyph, "name") or "")
+    if (
+        name != str(expected.get("name") or "")
+        or canonical_glyph_id(name) != str(expected.get("id") or "")
+        or bool(_maybe_call(_safe_getattr(glyph, "mastersCompatible", False)))
+        != bool(expected.get("mastersCompatible", False))
+    ):
+        return False
+    return all(
+        _plain_scalar(_safe_getattr(glyph, field_name))
+        == expected.get(field_name)
+        for field_name in _GLYPH_SCALARS
+    )
+
+
+def _native_layer_index(glyph: Any) -> dict[str, Any]:
+    result: dict[str, Any] = {}
     for layer in _sequence_values(_safe_getattr(glyph, "layers")):
         layer_id = str(
             _safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""
         )
         master_id = str(_safe_getattr(layer, "associatedMasterId") or layer_id)
         key = master_id or layer_id
-        if key in native_layers:
-            key = layer_id or "{}#{}".format(key, len(native_layers))
+        if key in result:
+            key = layer_id or "{}#{}".format(key, len(result))
         if key:
-            native_layers[key] = layer
-    return set(native_layers) == set(expected_layers) and all(
-        isinstance(expected_layers[key], Mapping)
-        and _layer_matches_model(layer, expected_layers[key])
-        for key, layer in native_layers.items()
+            result[key] = layer
+    return result
+
+
+def _layer_revision_token(layer: Any) -> tuple[Any, ...] | None:
+    """Return cheap native evidence covering one otherwise-reused layer.
+
+    Glyphs 4's ``lastUpdate`` changes for outline, anchor, component, and metric
+    edits. It is paired with every inexpensive canonical scalar and collection
+    structure so layer-name and membership edits that do not advance that
+    clock are still visible. Hosts without this native clock return ``None``
+    and therefore retain the conservative full-layer verification path.
+    """
+
+    raw_last_update = _safe_getattr(layer, "lastUpdate")
+    if raw_last_update is None:
+        return None
+    try:
+        last_update = _plain_scalar(raw_last_update)
+        if last_update is None:
+            return None
+    except Exception:
+        return None
+    paths = _layer_paths(layer)
+    components = _layer_components(layer)
+    anchors = _anchor_model(layer)
+    return (
+        str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""),
+        str(_safe_getattr(layer, "associatedMasterId") or ""),
+        str(_safe_getattr(layer, "name") or ""),
+        bool(_maybe_call(_safe_getattr(layer, "isMasterLayer", False))),
+        bool(_maybe_call(_safe_getattr(layer, "isSpecialLayer", False))),
+        bool(_maybe_call(_safe_getattr(layer, "hasAlignedWidth", False))),
+        tuple(_plain_scalar(_safe_getattr(layer, name)) for name in _LAYER_SCALARS),
+        tuple(
+            sorted(
+                (str(name), tuple(float(value) for value in position))
+                for name, position in anchors.items()
+            )
+        ),
+        tuple(
+            (
+                bool(_safe_getattr(path, "closed", True)),
+                len(_sequence_values(_safe_getattr(path, "nodes"))),
+            )
+            for path in paths
+        ),
+        tuple(
+            (
+                str(_safe_getattr(component, "componentName") or ""),
+                tuple(_component_transform(component)),
+                bool(
+                    _maybe_call(
+                        _safe_getattr(component, "automaticAlignment", False)
+                    )
+                ),
+            )
+            for component in components
+        ),
+        last_update,
     )
+
+
+def _layer_revision_index(glyph: Any) -> dict[str, tuple[Any, ...] | None]:
+    return {
+        key: _layer_revision_token(layer)
+        for key, layer in _native_layer_index(glyph).items()
+    }
+
+
+def _verified_glyph_fragment_matches(
+    glyph: Any,
+    modeled: Mapping[str, Any],
+    expected: Mapping[str, Any],
+    paths: Sequence[Sequence[str]],
+    *,
+    before_layer_tokens: Mapping[str, tuple[Any, ...] | None],
+    current_layer_tokens: Mapping[str, tuple[Any, ...] | None],
+) -> bool:
+    """Prove a predicted glyph fragment without rescanning sibling outlines."""
+
+    if modeled != expected or not _glyph_root_matches_model(glyph, expected):
+        return False
+    expected_layers = expected.get("layers", {})
+    if not isinstance(expected_layers, Mapping):
+        return False
+    if set(current_layer_tokens) != set(expected_layers):
+        return False
+    impacted = {
+        str(path[3])
+        for path in paths
+        if len(path) >= 4 and path[2] == "layers"
+    }
+    for layer_id, token in current_layer_tokens.items():
+        if layer_id in impacted:
+            continue
+        before_token = before_layer_tokens.get(layer_id)
+        if token is None or before_token is None or token != before_token:
+            return False
+    return True
 
 
 def _axis_models(font: Any) -> list[dict[str, Any]]:
@@ -686,11 +807,13 @@ class _RevisionBoundGlyphModelCache:
                     and not pending_paths.get(name)
                 ):
                     model = cached["model"]
+                    layer_tokens = cached.get("layerTokens", {})
                 elif (
                     cached is not None
                     and pending_paths.get(name)
                     and expected is not None
                 ):
+                    layer_tokens = _layer_revision_index(glyph)
                     model = _glyph_fragment_model(
                         glyph,
                         cached["model"],
@@ -703,7 +826,14 @@ class _RevisionBoundGlyphModelCache:
                     )
                     if (
                         isinstance(expected_glyph, Mapping)
-                        and not _glyph_matches_model(glyph, expected_glyph)
+                        and not _verified_glyph_fragment_matches(
+                            glyph,
+                            model,
+                            expected_glyph,
+                            pending_paths[name],
+                            before_layer_tokens=cached.get("layerTokens", {}),
+                            current_layer_tokens=layer_tokens,
+                        )
                     ):
                         # A native side effect escaped the predicted paths.
                         # Materialize the complete mismatch so verification
@@ -712,10 +842,12 @@ class _RevisionBoundGlyphModelCache:
                         model = _glyph_model(glyph)
                 else:
                     model = _glyph_model(glyph)
+                    layer_tokens = _layer_revision_index(glyph)
                 result_glyphs[name] = model
                 current_glyphs[name] = {
                     "token": token,
                     "model": model,
+                    "layerTokens": layer_tokens,
                 }
             model = _font_model_with_glyphs(
                 font,
