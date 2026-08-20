@@ -19,6 +19,7 @@ from glyphs_mcp_v2.mutation import (  # noqa: E402
     MutationPlanner,
     VerifiedMutationPlan,
     mutation_scope,
+    writable_subset,
 )
 from glyphs_mcp_v2.semantic import (  # noqa: E402
     canonical_json,
@@ -280,6 +281,16 @@ class VerifiedMutationKernelTests(unittest.TestCase):
 
         self.assertEqual(changes.apply(before), after)
         self.assertEqual(changes.after_fingerprint, fingerprint_model(after))
+
+    def test_writable_projection_reuses_an_already_writable_verified_patch(self) -> None:
+        before = _model()
+        after = copy.deepcopy(before)
+        after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
+        changes = diff_models(before, after)
+
+        projected = writable_subset(before, changes)
+
+        self.assertIs(projected, changes)
 
     def test_plan_separates_requested_writes_from_complete_observed_diff(self) -> None:
         host = _DerivedHost()
