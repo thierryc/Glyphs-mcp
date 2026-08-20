@@ -1631,6 +1631,44 @@ def _native_layer_identity(layer: Any) -> str:
     return str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or "")
 
 
+@contextlib.contextmanager
+def _suspended_native_undo_registration(owner: Any):
+    """Suspend one native object's undo recording without touching document history.
+
+    Live ``GSGlyph`` instances own an undo manager while detached copies do not.
+    Reattaching the same layer identity while that manager records the removal
+    can replay a stale insertion and leave a duplicate native entry. Glyphs'
+    declared object contract uses a ``nil`` glyph undo manager to suppress only
+    those registrations. The verified transaction still owns the document's
+    single dirty contribution and canonical inverse.
+    """
+
+    missing = object()
+    manager = _safe_getattr(owner, "undoManager", missing)
+    if manager is missing:
+        yield
+        return
+    manager = _maybe_call(manager)
+    if manager is None:
+        yield
+        return
+    try:
+        _set_native_property(owner, "undoManager", None)
+    except Exception as exc:
+        raise HostAccessError(
+            "Glyphs could not suspend object-local undo registration"
+        ) from exc
+    try:
+        yield
+    finally:
+        try:
+            _set_native_property(owner, "undoManager", manager)
+        except Exception as exc:
+            raise HostAccessError(
+                "Glyphs could not restore object-local undo registration"
+            ) from exc
+
+
 def _replace_glyph_layer_order(glyph: Any, values: Sequence[Any]) -> None:
     """Replay the one order Glyphs actually owns for a glyph's layers.
 
@@ -1696,24 +1734,25 @@ def _replace_glyph_layer_order(glyph: Any, values: Sequence[Any]) -> None:
         except ValueError:
             break
         retained_prefix_length += 1
-    for layer in desired_non_masters[retained_prefix_length:]:
-        identity = _native_layer_identity(layer)
-        exact_remover = _safe_getattr(glyph, "removeLayerForId_")
-        if callable(exact_remover):
-            exact_remover(identity)
-        else:
-            _remove_glyph_layer(glyph, identity, layer)
-        exact_setter = _safe_getattr(glyph, "setLayer_forId_")
-        if callable(exact_setter):
-            exact_setter(layer, identity)
-        else:
-            collection = _safe_getattr(glyph, "layers")
-            try:
-                collection[identity] = layer
-            except Exception as exc:
-                raise HostAccessError(
-                    "Glyphs could not reattach a reordered layer identity"
-                ) from exc
+    with _suspended_native_undo_registration(glyph):
+        for layer in desired_non_masters[retained_prefix_length:]:
+            identity = _native_layer_identity(layer)
+            exact_remover = _safe_getattr(glyph, "removeLayerForId_")
+            if callable(exact_remover):
+                exact_remover(identity)
+            else:
+                _remove_glyph_layer(glyph, identity, layer)
+            exact_setter = _safe_getattr(glyph, "setLayer_forId_")
+            if callable(exact_setter):
+                exact_setter(layer, identity)
+            else:
+                collection = _safe_getattr(glyph, "layers")
+                try:
+                    collection[identity] = layer
+                except Exception as exc:
+                    raise HostAccessError(
+                        "Glyphs could not reattach a reordered layer identity"
+                    ) from exc
 
     if [_native_layer_identity(layer) for layer in _native_layers(glyph)] != desired_ids:
         raise HostAccessError("Glyphs did not preserve the requested non-master layer order")
