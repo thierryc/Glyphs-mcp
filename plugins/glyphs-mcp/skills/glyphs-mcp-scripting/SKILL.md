@@ -33,6 +33,8 @@ Use the smallest verified Python fallback that covers the request.
    when canonical replay and an independent native-archive comparison both
    prove equivalence. The review retains bounded opaque native evidence for
    added entities; native objects never enter responses, audit, or history.
+   A small allowlist of detached Glyphs entity constructors is available in
+   clone context so empty structural collections do not require a live import.
    Axis lifecycle and specialized Smart/color properties remain unsupported.
 6. Use `live_open_world` only for UI state, global Glyphs APIs, unsupported native objects, files, processes, or networking. It requires exact preview and confirmation, creates a private recovery copy, and never claims external effects are transactional.
 7. Keep the returned execution ID, after-fingerprint, rollback coverage, and expiry. Do not infer automatic rollback from native undo grouping.

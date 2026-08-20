@@ -1237,23 +1237,6 @@ def verify_staged_python_structural_replay(
     prefixes = [item for item in baseline.get("featurePrefixes", []) if isinstance(item, Mapping)]
     if not isinstance(glyphs, Mapping) or not glyphs or not masters:
         raise ValueError("the staged structural gate requires glyphs and at least one master")
-    missing_templates = [
-        name
-        for name, values in (
-            ("instances", instances),
-            ("features", features),
-            ("classes", classes),
-            ("featurePrefixes", prefixes),
-        )
-        if not values
-    ]
-    if missing_templates:
-        raise ValueError(
-            "the staged structural gate requires one native template in: {}".format(
-                ", ".join(missing_templates)
-            )
-        )
-
     suffix = uuid4().hex[:8]
     source_glyph_name = str(next(iter(glyphs)))
     source_master_id = str(masters[0].get("id") or "")
@@ -1283,6 +1266,12 @@ def verify_staged_python_structural_replay(
         "MCP Staged Prefix {}".format(suffix),
         [str(item.get("name") or "") for item in prefixes],
     )
+    instance_constructor = "font.instances[0].copy()" if instances else "GSInstance()"
+    feature_constructor = "font.features[0].copy()" if features else "GSFeature()"
+    class_constructor = "font.classes[0].copy()" if classes else "GSClass()"
+    prefix_constructor = (
+        "font.featurePrefixes[0].copy()" if prefixes else "GSFeaturePrefix()"
+    )
 
     add_code = "\n".join(
         (
@@ -1307,22 +1296,22 @@ def verify_staged_python_structural_replay(
             "review_layer.associatedMasterId = {!r}".format(source_master_id),
             "review_layer.name = {!r}".format(layer_name),
             "review_glyph.layers.append(review_layer)",
-            "added_instance = font.instances[0].copy()",
+            "added_instance = {}".format(instance_constructor),
             "added_instance.name = {!r}".format(instance_name),
             "font.instances.append(added_instance)",
-            "added_feature = font.features[0].copy()",
+            "added_feature = {}".format(feature_constructor),
             "added_feature.name = {!r}".format(feature_name),
             "added_feature.automatic = False",
             "added_feature.code = {!r}".format(
                 "sub {0} by {0};".format(source_glyph_name)
             ),
             "font.features.append(added_feature)",
-            "added_class = font.classes[0].copy()",
+            "added_class = {}".format(class_constructor),
             "added_class.name = {!r}".format(class_name),
             "added_class.automatic = False",
             "added_class.code = {!r}".format(source_glyph_name),
             "font.classes.append(added_class)",
-            "added_prefix = font.featurePrefixes[0].copy()",
+            "added_prefix = {}".format(prefix_constructor),
             "added_prefix.name = {!r}".format(prefix_name),
             "added_prefix.automatic = False",
             "added_prefix.code = 'languagesystem DFLT dflt;'",
@@ -1369,7 +1358,7 @@ def verify_staged_python_structural_replay(
     )
     revert_code = "\n".join(
         (
-            "added_feature = font.features[0].copy()",
+            "added_feature = {}".format(feature_constructor),
             "added_feature.name = {!r}".format(revert_feature_name),
             "added_feature.automatic = False",
             "added_feature.code = {!r}".format(

@@ -6,7 +6,8 @@ import copy
 import sys
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -155,6 +156,36 @@ class _StructuralPythonHost:
 
 
 class StagedStructuralReplayTests(unittest.TestCase):
+    def test_detached_context_exposes_only_allowlisted_native_constructors(self) -> None:
+        glyphs_app = ModuleType("GlyphsApp")
+        for name in (
+            "GSClass",
+            "GSFeature",
+            "GSFeaturePrefix",
+            "GSFontMaster",
+            "GSGlyph",
+            "GSInstance",
+            "GSLayer",
+        ):
+            setattr(glyphs_app, name, type(name, (), {}))
+
+        with mock.patch.dict(sys.modules, {"GlyphsApp": glyphs_app}):
+            constructors = document_adapter._staged_native_types()
+
+        self.assertEqual(
+            set(constructors),
+            {
+                "GSClass",
+                "GSFeature",
+                "GSFeaturePrefix",
+                "GSFontMaster",
+                "GSGlyph",
+                "GSInstance",
+                "GSLayer",
+            },
+        )
+        self.assertNotIn("Glyphs", constructors)
+
     def test_native_evidence_is_bounded_expiring_and_document_bound(self) -> None:
         clock = _Clock()
         store = NativeReplayEvidenceStore(

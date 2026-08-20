@@ -1766,6 +1766,32 @@ def _construct_native_entity(kind: str, name: str = "") -> Any:
     return value
 
 
+def _staged_native_types() -> dict[str, Any]:
+    """Expose constructors only; never inject the live Glyphs singleton."""
+
+    try:
+        from GlyphsApp import (  # type: ignore[import-not-found]
+            GSClass,
+            GSFeature,
+            GSFeaturePrefix,
+            GSFontMaster,
+            GSGlyph,
+            GSInstance,
+            GSLayer,
+        )
+    except Exception:
+        return {}
+    return {
+        "GSClass": GSClass,
+        "GSFeature": GSFeature,
+        "GSFeaturePrefix": GSFeaturePrefix,
+        "GSFontMaster": GSFontMaster,
+        "GSGlyph": GSGlyph,
+        "GSInstance": GSInstance,
+        "GSLayer": GSLayer,
+    }
+
+
 def _sync_native_entities(
     collection: Any,
     current: Sequence[Mapping[str, Any]],
@@ -2887,7 +2913,12 @@ def _archive_delta(before: bytes, after: bytes) -> list[dict[str, Any]]:
     before_lines = before.splitlines()
     after_lines = after.splitlines()
     result: list[dict[str, Any]] = []
-    matcher = difflib.SequenceMatcher(a=before_lines, b=after_lines, autojunk=False)
+    # Glyph archives contain thousands of repeated structural lines. Disabling
+    # SequenceMatcher's popular-line index makes a one-line insertion
+    # quadratic on a production font. The heuristic cannot hide a difference:
+    # opcodes still cover both complete sequences and every changed block is
+    # hashed below. It only chooses anchors efficiently.
+    matcher = difflib.SequenceMatcher(a=before_lines, b=after_lines, autojunk=True)
     for tag, before_start, before_end, after_start, after_end in matcher.get_opcodes():
         if tag == "equal":
             continue
@@ -3854,7 +3885,14 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         layer = _lookup_layer(glyph, request.layer_id or request.master_id or "") if glyph is not None and (request.layer_id or request.master_id) else None
         if glyph is not None and (request.layer_id or request.master_id) and layer is None:
             raise HostAccessError("The Python layer does not exist")
-        return {"font": font, "glyph": glyph, "master": master, "layer": layer, "selectedLayers": [layer] if layer is not None else []}
+        return {
+            "font": font,
+            "glyph": glyph,
+            "master": master,
+            "layer": layer,
+            "selectedLayers": [layer] if layer is not None else [],
+            **_staged_native_types(),
+        }
 
     def preview_python(self, request: PythonExecutionRequest, before_model: Mapping[str, Any]) -> Mapping[str, Any]:
         def run() -> Mapping[str, Any]:

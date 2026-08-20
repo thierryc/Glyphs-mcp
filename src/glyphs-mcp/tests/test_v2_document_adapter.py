@@ -6,6 +6,7 @@ import copy
 import stat
 import sys
 import tempfile
+import time
 import unittest
 from collections.abc import Mapping
 from pathlib import Path
@@ -2962,6 +2963,18 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertLessEqual(len(result["mismatchLocations"]), 100)
         self.assertIn("direct", result["mismatchLocations"][0])
         self.assertIn("replay", result["mismatchLocations"][0])
+
+    def test_archive_delta_is_linear_enough_for_repeated_glyphs_lines(self) -> None:
+        before = b"\n".join([b"layer = {" for _ in range(20_000)])
+        after_lines = before.splitlines()
+        after_lines.insert(10_000, b"name = staged;")
+
+        started = time.perf_counter()
+        delta = document_adapter._archive_delta(before, b"\n".join(after_lines))
+        duration = time.perf_counter() - started
+
+        self.assertTrue(delta)
+        self.assertLess(duration, 1.0)
 
     def test_glyphs4_make_copy_fallback_restores_temp_data_and_native_format(self) -> None:
         with tempfile.TemporaryDirectory() as root:
