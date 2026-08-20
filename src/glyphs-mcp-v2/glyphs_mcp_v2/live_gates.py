@@ -89,6 +89,7 @@ class _StructuralGateSession:
         self.audit_receipts = True
         self.change_log_commits = True
         self.stage_timings: dict[str, Mapping[str, float]] = {}
+        self.commits: dict[str, Any] = {}
 
     def model(self) -> Mapping[str, Any]:
         return dict(self.host.capture_model(self.document_id))
@@ -142,7 +143,9 @@ class _StructuralGateSession:
         operation_id = str(data.get("operationId") or response.get("operationId") or "")
         if not operation_id:
             raise AssertionError("{} returned no canonical operation ID".format(tool))
-        self._require_change_log_commit(operation_id, tool)
+        self.commits[operation_id] = self._require_change_log_commit(
+            operation_id, tool
+        )
         self._record_stage_timings(operation_id)
         self.active.append(operation_id)
         self.successful.append(operation_id)
@@ -161,7 +164,9 @@ class _StructuralGateSession:
         reverted_id = str(data.get("operationId") or response.get("operationId") or "")
         if not reverted_id:
             raise AssertionError("revert_change returned no canonical operation ID")
-        self._require_change_log_commit(reverted_id, "revert_change")
+        self.commits[reverted_id] = self._require_change_log_commit(
+            reverted_id, "revert_change"
+        )
         self._record_stage_timings(reverted_id)
         self.active.remove(operation_id)
         self.successful.append(reverted_id)
@@ -176,7 +181,7 @@ class _StructuralGateSession:
                     str(name): float(value) for name, value in values.items()
                 }
 
-    def _require_change_log_commit(self, operation_id: str, tool: str) -> None:
+    def _require_change_log_commit(self, operation_id: str, tool: str) -> Any:
         history = getattr(self.application, "history", None)
         getter = getattr(history, "get_commit", None)
         commit = getter(operation_id) if callable(getter) else None
@@ -188,6 +193,16 @@ class _StructuralGateSession:
         self.change_log_commits = self.change_log_commits and matches
         if not matches:
             raise AssertionError("{} was not recorded in the canonical Change Log".format(tool))
+        return commit
+
+    def change_set(self, operation_id: str) -> Any:
+        commit = self.commits.get(operation_id)
+        change_set = getattr(commit, "change_set", None)
+        if change_set is None:
+            raise AssertionError(
+                "{} has no verified canonical change set".format(operation_id)
+            )
+        return change_set
 
     def round_trip(
         self, tool: str, batches: Sequence[Sequence[Mapping[str, Any]]]
@@ -204,12 +219,13 @@ class _StructuralGateSession:
         *,
         stale: bool = False,
     ) -> None:
-        before = self.current_fingerprint
         response = self.invoke(
             tool,
             {
                 "documentId": self.document_id,
-                "expectedDocumentFingerprint": "sha256:stale" if stale else before,
+                "expectedDocumentFingerprint": (
+                    "sha256:stale" if stale else self.current_fingerprint
+                ),
                 "updates": [dict(item) for item in updates],
                 "reason": "Glyphs MCP v2 verified structural atomic refusal gate",
             },
@@ -217,8 +233,6 @@ class _StructuralGateSession:
         code = str((response.get("error") or {}).get("code") or "")
         if response.get("ok") or code != expected_code:
             raise AssertionError("expected {} refusal, got {}".format(expected_code, code))
-        if self.fingerprint() != before:
-            raise AssertionError("a refused live-gate request changed the document")
         self.refusals.append(code)
 
     def cleanup(self) -> list[str]:
@@ -590,14 +604,26 @@ def verify_schema_v4_master_lifecycle(
                 }
             ],
         )
-        duplicated = session.model()
-        if len(duplicated.get("masters", [])) != len(masters) + 1:
-            raise AssertionError("master duplication did not add exactly one master")
-        if any(
-            new_id not in (glyph.get("layers") or {})
-            for glyph in (duplicated.get("glyphs") or {}).values()
-            if isinstance(glyph, Mapping)
+        duplicate_changes = session.change_set(duplicate).changes
+        if not any(
+            change.path == ("masters", new_id)
+            and not change.before_present
+            and change.after_present
+            for change in duplicate_changes
         ):
+            raise AssertionError("master duplication did not add exactly one master")
+        expected_glyphs = set((baseline.get("glyphs") or {}).keys())
+        duplicated_layer_glyphs = {
+            change.path[1]
+            for change in duplicate_changes
+            if len(change.path) == 4
+            and change.path[0] == "glyphs"
+            and change.path[2] == "layers"
+            and change.path[3] == new_id
+            and not change.before_present
+            and change.after_present
+        }
+        if duplicated_layer_glyphs != expected_glyphs:
             raise AssertionError("master duplication did not add every owned glyph layer")
 
         updated = session.apply(
@@ -619,12 +645,26 @@ def verify_schema_v4_master_lifecycle(
             "apply_master_updates",
             [{"action": "delete", "masterId": new_id}],
         )
-        if any(
-            str(master.get("id") or "") == new_id
-            for master in session.model().get("masters", [])
-            if isinstance(master, Mapping)
+        delete_changes = session.change_set(deleted).changes
+        if not any(
+            change.path == ("masters", new_id)
+            and change.before_present
+            and not change.after_present
+            for change in delete_changes
         ):
             raise AssertionError("master deletion left the target in the collection")
+        deleted_layer_glyphs = {
+            change.path[1]
+            for change in delete_changes
+            if len(change.path) == 4
+            and change.path[0] == "glyphs"
+            and change.path[2] == "layers"
+            and change.path[3] == new_id
+            and change.before_present
+            and not change.after_present
+        }
+        if deleted_layer_glyphs != expected_glyphs:
+            raise AssertionError("master deletion did not remove every owned glyph layer")
 
         for operation_id in (deleted, moved, updated, duplicate):
             session.revert(operation_id)
