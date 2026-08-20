@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import copy
 import re
+import time
 from dataclasses import dataclass, field
-from typing import Any, Mapping, Protocol, Sequence
+from typing import Any, Iterable, Mapping, Protocol, Sequence
 
+from .canonical_tree import CanonicalSnapshot
 from .semantic import (
     ChangeSet,
     SemanticChange,
@@ -280,75 +282,147 @@ class MutationScope:
     glyph_names: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class CanonicalImpact:
+    """Exact canonical fragments that one semantic patch can affect."""
+
+    roots: tuple[str, ...]
+    paths: tuple[tuple[str, ...], ...]
+    glyph_paths: Mapping[str, tuple[tuple[str, ...], ...]]
+
+    @classmethod
+    def from_change_set(
+        cls, model: Mapping[str, Any], change_set: ChangeSet
+    ) -> "CanonicalImpact":
+        paths = [change.path for change in change_set.changes]
+        renamed_master_ids = {
+            change.path[1]
+            for change in change_set.changes
+            if len(change.path) == 3
+            and change.path[0] == "masters"
+            and change.path[2] == "name"
+        }
+        if renamed_master_ids:
+            glyphs = model.get("glyphs", {})
+            if isinstance(glyphs, Mapping):
+                for glyph_name, glyph in glyphs.items():
+                    layers = (
+                        glyph.get("layers", {})
+                        if isinstance(glyph, Mapping)
+                        else {}
+                    )
+                    if not isinstance(layers, Mapping):
+                        continue
+                    for master_id in renamed_master_ids & set(layers):
+                        path = (
+                            "glyphs",
+                            str(glyph_name),
+                            "layers",
+                            str(master_id),
+                            "name",
+                        )
+                        if path not in paths:
+                            paths.append(path)
+        return cls.from_paths(model, paths)
+
+    @classmethod
+    def from_paths(
+        cls,
+        model: Mapping[str, Any],
+        paths: Iterable[Sequence[str]],
+    ) -> "CanonicalImpact":
+        paths = tuple(tuple(str(part) for part in path) for path in paths)
+        roots = tuple(sorted({path[0] for path in paths if path}))
+        direct: dict[str, list[tuple[str, ...]]] = {}
+        for path in paths:
+            if len(path) >= 2 and path[0] == "glyphs":
+                direct.setdefault(str(path[1]), []).append(path)
+
+        if not direct:
+            return cls(roots=roots, paths=paths, glyph_paths={})
+
+        glyphs = model.get("glyphs", {})
+        glyph_map = glyphs if isinstance(glyphs, Mapping) else {}
+        known_names = {str(name) for name in glyph_map}
+        reverse_dependencies: dict[str, set[str]] = {}
+        for dependent_name, glyph in glyph_map.items():
+            if not isinstance(glyph, Mapping):
+                continue
+            references: set[str] = set()
+            layers = glyph.get("layers", {})
+            layer_values = layers.values() if isinstance(layers, Mapping) else ()
+            for layer in layer_values:
+                if not isinstance(layer, Mapping):
+                    continue
+                components = layer.get("components", ())
+                if isinstance(components, (list, tuple)):
+                    for component in components:
+                        if isinstance(component, Mapping):
+                            name = str(
+                                component.get("name")
+                                or component.get("componentName")
+                                or ""
+                            )
+                            if name in known_names:
+                                references.add(name)
+                for field_name in (
+                    "leftMetricsKey",
+                    "rightMetricsKey",
+                    "widthMetricsKey",
+                ):
+                    value = layer.get(field_name)
+                    if value:
+                        references.update(
+                            token
+                            for token in re.findall(r"[\w.-]+", str(value))
+                            if token in known_names
+                        )
+            for reference in references:
+                reverse_dependencies.setdefault(reference, set()).add(
+                    str(dependent_name)
+                )
+
+        pending = list(direct)
+        while pending:
+            source = pending.pop()
+            for dependent in reverse_dependencies.get(source, ()):
+                if dependent not in direct:
+                    direct[dependent] = [("glyphs", dependent)]
+                    pending.append(dependent)
+        return cls(
+            roots=roots,
+            paths=paths,
+            glyph_paths={
+                name: tuple(values) for name, values in sorted(direct.items())
+            },
+        )
+
+    @property
+    def glyph_names(self) -> tuple[str, ...]:
+        return tuple(self.glyph_paths)
+
+    def layer_ids(self, glyph_name: str) -> tuple[str, ...]:
+        return tuple(
+            dict.fromkeys(
+                path[3]
+                for path in self.glyph_paths.get(glyph_name, ())
+                if len(path) >= 4 and path[2] == "layers"
+            )
+        )
+
+    def requires_complete_glyph(self, glyph_name: str) -> bool:
+        return any(
+            len(path) <= 2 for path in self.glyph_paths.get(glyph_name, ())
+        )
+
+
 def mutation_scope(
     model: Mapping[str, Any], change_set: ChangeSet
 ) -> MutationScope:
-    """Resolve one conservative semantic scope without native Glyphs objects."""
+    """Compatibility view over the path-derived canonical impact."""
 
-    roots = {change.path[0] for change in change_set.changes if change.path}
-    glyphs = model.get("glyphs", {})
-    glyph_map = glyphs if isinstance(glyphs, Mapping) else {}
-    known_names = {str(name) for name in glyph_map}
-    direct = {
-        change.path[1]
-        for change in change_set.changes
-        if len(change.path) >= 2 and change.path[0] == "glyphs"
-    }
-    if "masters" in roots:
-        # A master owns one layer in every glyph. Even a scalar master rename
-        # can change derived layer names, so the conservative semantic closure
-        # is the complete glyph collection.
-        direct = set(known_names)
-    if "glyphs" in roots and not direct:
-        direct = set(known_names)
-
-    reverse_dependencies: dict[str, set[str]] = {}
-    for dependent_name, glyph in glyph_map.items():
-        if not isinstance(glyph, Mapping):
-            continue
-        references: set[str] = set()
-        layers = glyph.get("layers", {})
-        layer_values = layers.values() if isinstance(layers, Mapping) else ()
-        for layer in layer_values:
-            if not isinstance(layer, Mapping):
-                continue
-            components = layer.get("components", ())
-            if isinstance(components, (list, tuple)):
-                for component in components:
-                    if isinstance(component, Mapping):
-                        name = str(
-                            component.get("name")
-                            or component.get("componentName")
-                            or ""
-                        )
-                        if name in known_names:
-                            references.add(name)
-            for field in (
-                "leftMetricsKey",
-                "rightMetricsKey",
-                "widthMetricsKey",
-            ):
-                value = layer.get(field)
-                if value:
-                    references.update(
-                        token
-                        for token in re.findall(r"[\w.-]+", str(value))
-                        if token in known_names
-                    )
-        for reference in references:
-            reverse_dependencies.setdefault(reference, set()).add(
-                str(dependent_name)
-            )
-
-    resolved = set(str(name) for name in direct)
-    pending = list(resolved)
-    while pending:
-        source = pending.pop()
-        for dependent in reverse_dependencies.get(source, ()):
-            if dependent not in resolved:
-                resolved.add(dependent)
-                pending.append(dependent)
-    return MutationScope(tuple(sorted(roots)), tuple(sorted(resolved)))
+    impact = CanonicalImpact.from_change_set(model, change_set)
+    return MutationScope(impact.roots, impact.glyph_names)
 
 
 @dataclass(frozen=True)
@@ -366,6 +440,9 @@ class VerifiedMutationPlan:
     replay_replacements: tuple[tuple[str, ...], ...] = ()
     capabilities: tuple[str, ...] = ()
     execution_context: Mapping[str, Any] = field(default_factory=dict)
+    stage_timings: Mapping[str, float] = field(
+        default_factory=dict, compare=False, repr=False
+    )
 
     @property
     def before_fingerprint(self) -> str:
@@ -393,15 +470,39 @@ class MutationPlanner:
         required_after_model: Mapping[str, Any] | None = None,
         capabilities: Sequence[str] = (),
         execution_context: Mapping[str, Any] | None = None,
+        initial_stage_timings: Mapping[str, float] | None = None,
     ) -> VerifiedMutationPlan:
+        plan_started = time.perf_counter_ns()
+        stage_timings = {
+            "initial_capture": 0.0,
+            "clone": 0.0,
+            "detached_apply": 0.0,
+            "verification": 0.0,
+            **{
+                str(name): float(value)
+                for name, value in dict(initial_stage_timings or {}).items()
+            },
+        }
         if not document_id:
             raise ValueError("document_id is required")
         if not operation_id:
             raise ValueError("operation_id is required")
-        before = copy.deepcopy(
-            dict(before_model)
-            if before_model is not None
-            else dict(self._host.capture_model(document_id))
+        capture_started = time.perf_counter_ns()
+        captured = before_model
+        if captured is None:
+            snapshot_capture = getattr(self._host, "capture_snapshot", None)
+            captured = (
+                snapshot_capture(document_id)
+                if callable(snapshot_capture)
+                else self._host.capture_model(document_id)
+            )
+            stage_timings["initial_capture"] += (
+                time.perf_counter_ns() - capture_started
+            ) / 1_000_000
+        before = (
+            captured
+            if isinstance(captured, CanonicalSnapshot)
+            else copy.deepcopy(dict(captured))
         )
         before_fingerprint = fingerprint_model(before)
         if before_fingerprint != expected_document_fingerprint:
@@ -426,12 +527,15 @@ class MutationPlanner:
         )
         reconciler = getattr(self._host, "simulate_reconciliation", None)
         if callable(verified_simulator):
+            simulation_started = time.perf_counter_ns()
             simulation = verified_simulator(
                 document_id,
                 requested_change_set,
-                copy.deepcopy(before),
+                before,
                 required_after_model=(
-                    copy.deepcopy(dict(required_after_model))
+                    required_after_model
+                    if isinstance(required_after_model, CanonicalSnapshot)
+                    else copy.deepcopy(dict(required_after_model))
                     if required_after_model is not None
                     else None
                 ),
@@ -443,39 +547,65 @@ class MutationPlanner:
                 simulation.get("afterModel"), Mapping
             ):
                 raise ValueError("verified canonical simulation returned an invalid result")
-            expected_after = copy.deepcopy(dict(simulation["afterModel"]))
+            provided_timings = simulation.get("stageTimings", {})
+            if isinstance(provided_timings, Mapping):
+                for name in ("clone", "detached_apply", "verification"):
+                    stage_timings[name] += float(provided_timings.get(name, 0.0))
+            else:
+                stage_timings["clone"] += (
+                    time.perf_counter_ns() - simulation_started
+                ) / 1_000_000
+            simulated_after = simulation["afterModel"]
+            expected_after = (
+                simulated_after
+                if isinstance(simulated_after, CanonicalSnapshot)
+                else copy.deepcopy(dict(simulated_after))
+            )
             replay_replacements = tuple(
                 tuple(str(part) for part in path)
                 for path in simulation.get("replayReplacements", ())
             )
         elif required_after_model is not None and callable(reconciler):
+            simulation_started = time.perf_counter_ns()
             simulation = reconciler(
                 document_id,
                 requested_change_set,
-                copy.deepcopy(dict(required_after_model)),
-                copy.deepcopy(before),
+                required_after_model
+                if isinstance(required_after_model, CanonicalSnapshot)
+                else copy.deepcopy(dict(required_after_model)),
+                before,
             )
             if not isinstance(simulation, Mapping) or not isinstance(
                 simulation.get("afterModel"), Mapping
             ):
                 raise ValueError("canonical reconciliation returned an invalid simulation")
-            expected_after = copy.deepcopy(dict(simulation["afterModel"]))
+            stage_timings["clone"] += (
+                time.perf_counter_ns() - simulation_started
+            ) / 1_000_000
+            simulated_after = simulation["afterModel"]
+            expected_after = (
+                simulated_after
+                if isinstance(simulated_after, CanonicalSnapshot)
+                else copy.deepcopy(dict(simulated_after))
+            )
             replay_replacements = tuple(
                 tuple(str(part) for part in path)
                 for path in simulation.get("replayReplacements", ())
             )
         else:
+            simulation_started = time.perf_counter_ns()
             scoped_simulator = getattr(
                 self._host, "simulate_change_set_from_model", None
             )
             simulator = getattr(self._host, "simulate_change_set", None)
             if callable(scoped_simulator):
-                expected_after = copy.deepcopy(
-                    dict(
-                        scoped_simulator(
-                            document_id, requested_change_set, before
-                        )
-                    )
+                simulated_after = scoped_simulator(
+                    document_id, requested_change_set, before
+                )
+                expected_after = (
+                    simulated_after
+                    if isinstance(simulated_after, CanonicalSnapshot)
+                    else copy.deepcopy(dict(simulated_after))
                 )
             elif callable(simulator):
                 expected_after = copy.deepcopy(
@@ -483,6 +613,10 @@ class MutationPlanner:
                 )
             else:
                 expected_after = requested_change_set.apply(before)
+            stage_timings["clone"] += (
+                time.perf_counter_ns() - simulation_started
+            ) / 1_000_000
+        verification_started = time.perf_counter_ns()
         if (
             required_after_model is not None
             and fingerprint_model(expected_after)
@@ -498,6 +632,19 @@ class MutationPlanner:
             else diff_models(before, expected_after)
         )
         observed.apply(before)
+        if isinstance(before, CanonicalSnapshot) and not isinstance(
+            expected_after, CanonicalSnapshot
+        ):
+            expected_after = before.store_verified_transition(
+                expected_after,
+                observed,
+            )
+        stage_timings["verification"] += (
+            time.perf_counter_ns() - verification_started
+        ) / 1_000_000
+        stage_timings["total"] = (
+            time.perf_counter_ns() - plan_started
+        ) / 1_000_000
         return VerifiedMutationPlan(
             document_id=document_id,
             operation_id=operation_id,
@@ -510,10 +657,12 @@ class MutationPlanner:
             replay_replacements=replay_replacements,
             capabilities=normalized_capabilities,
             execution_context=normalized_context,
+            stage_timings=stage_timings,
         )
 
 
 __all__ = [
+    "CanonicalImpact",
     "CanonicalTargetMismatchError",
     "MutationScope",
     "MutationPlanner",

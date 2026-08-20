@@ -1274,7 +1274,11 @@ class V2DocumentAdapterTests(unittest.TestCase):
         ) as capture_glyph:
             first = host.capture_model(document_id)
             first["glyphs"]["A"]["export"] = False
-            second = host.capture_model(document_id)
+            with mock.patch(
+                "glyphs_mcp_v2.canonical_tree.fingerprint_model",
+                side_effect=AssertionError("stable capture rehashed the full tree"),
+            ):
+                second = host.capture_model(document_id)
 
             self.assertEqual(capture_glyph.call_count, 2)
             self.assertTrue(second["glyphs"]["A"]["export"])
@@ -1340,6 +1344,161 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertFalse(captured["glyphs"]["A"]["export"])
         self.assertEqual(capture_glyph.call_count, 3)
+
+    def test_verified_snapshot_readback_reuses_expected_fingerprint_and_unaffected_shards(self) -> None:
+        font = _TransactionalFont()
+
+        def glyph(name):
+            return SimpleNamespace(
+                name=name,
+                id="id-{}".format(name),
+                lastChange="revision-1",
+                changeCount=lambda: 0,
+                mastersCompatible=True,
+                layers=[],
+                category="Letter",
+                subCategory="Uppercase",
+                unicode=None,
+                export=True,
+                leftKerningGroup=None,
+                rightKerningGroup=None,
+            )
+
+        first_glyph = glyph("A")
+        font.glyphs = [first_glyph, glyph("B")]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_snapshot(document_id)
+        target = before.materialize()
+        target["glyphs"]["A"]["export"] = False
+        changes = diff_models(before, target)
+        expected = before.store_verified_transition(target, changes)
+
+        first_glyph.export = False
+        first_glyph.lastChange = "revision-2"
+        with mock.patch(
+            "glyphs_mcp_v2.canonical_tree.fingerprint_model",
+            side_effect=AssertionError("verified readback hashed the whole tree"),
+        ):
+            actual = host._executor.run(
+                lambda: host._capture_cached_snapshot(
+                    document_id, font, expected=expected
+                )
+            )
+
+        self.assertEqual(actual.document_fingerprint, expected.document_fingerprint)
+        self.assertIs(actual.glyph_shards["B"], before.glyph_shards["B"])
+        self.assertEqual(actual.materialize(), target)
+
+    def test_unexpected_revision_outside_predicted_snapshot_is_not_silently_reused(self) -> None:
+        font = _TransactionalFont()
+
+        def glyph(name):
+            return SimpleNamespace(
+                name=name,
+                id="id-{}".format(name),
+                lastChange="revision-1",
+                changeCount=lambda: 0,
+                mastersCompatible=True,
+                layers=[],
+                category="Letter",
+                subCategory="Uppercase",
+                unicode=None,
+                export=True,
+                leftKerningGroup=None,
+                rightKerningGroup=None,
+            )
+
+        glyph_a = glyph("A")
+        glyph_b = glyph("B")
+        font.glyphs = [glyph_a, glyph_b]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_snapshot(document_id)
+        target = before.materialize()
+        target["glyphs"]["A"]["export"] = False
+        expected = before.store_verified_transition(
+            target, diff_models(before, target)
+        )
+
+        glyph_a.export = False
+        glyph_a.lastChange = "revision-2"
+        glyph_b.export = False
+        glyph_b.lastChange = "unexpected-revision"
+        actual = host._executor.run(
+            lambda: host._capture_cached_snapshot(
+                document_id, font, expected=expected
+            )
+        )
+
+        self.assertNotEqual(actual.document_fingerprint, expected.document_fingerprint)
+        self.assertFalse(actual["glyphs"]["B"]["export"])
+
+    def test_verified_layer_impact_materializes_only_the_named_layer_fragment(self) -> None:
+        font = _TransactionalFont()
+        regular = _MetricsLayer()
+        regular.layerId = "master-regular"
+        regular.associatedMasterId = "master-regular"
+        regular.name = "Regular"
+        regular.isMasterLayer = True
+        regular.isSpecialLayer = False
+        bold = _MetricsLayer()
+        bold.layerId = "master-bold"
+        bold.associatedMasterId = "master-bold"
+        bold.name = "Bold"
+        bold.isMasterLayer = True
+        bold.isSpecialLayer = False
+        glyph = SimpleNamespace(
+            name="A",
+            id="id-A",
+            lastChange="revision-1",
+            changeCount=lambda: 0,
+            mastersCompatible=True,
+            layers=[regular, bold],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        font.glyphs = [glyph]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_snapshot(document_id)
+        target = before.materialize()
+        target["glyphs"]["A"]["layers"]["master-regular"]["width"] = 520
+        changes = diff_models(before, target)
+        expected = before.store_verified_transition(target, changes)
+        host._canonical_model_cache.invalidate_impact(
+            document_id,
+            document_adapter.CanonicalImpact.from_change_set(before, changes),
+        )
+        regular.width = 520
+        glyph.lastChange = "revision-2"
+
+        with mock.patch.object(
+            document_adapter,
+            "_glyph_model",
+            wraps=document_adapter._glyph_model,
+        ) as full_glyph, mock.patch.object(
+            document_adapter,
+            "_layer_model",
+            wraps=document_adapter._layer_model,
+        ) as layer_fragment:
+            actual = host._executor.run(
+                lambda: host._capture_cached_snapshot(
+                    document_id, font, expected=expected
+                )
+            )
+
+        self.assertEqual(actual.document_fingerprint, expected.document_fingerprint)
+        self.assertEqual(full_glyph.call_count, 0)
+        self.assertEqual(layer_fragment.call_count, 1)
+        self.assertIs(
+            actual["glyphs"]["A"]["layers"]["master-bold"],
+            before["glyphs"]["A"]["layers"]["master-bold"],
+        )
 
     def test_detached_simulation_recaptures_only_the_change_scope(self) -> None:
         font = _TransactionalFont()

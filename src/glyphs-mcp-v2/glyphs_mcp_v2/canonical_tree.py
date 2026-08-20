@@ -12,12 +12,19 @@ import hashlib
 import os
 import sqlite3
 import zlib
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from threading import RLock
 from typing import Any, Mapping, Protocol
 
-from .semantic import ChangeSet, canonical_json, diff_models, fingerprint_model
+from .semantic import (
+    _CACHED_FINGERPRINT_ACCESS,
+    ChangeSet,
+    canonical_json,
+    diff_models,
+    fingerprint_model,
+)
 
 
 TREE_SCHEMA_VERSION = 1
@@ -180,6 +187,264 @@ class TreeSnapshot:
     inserted_byte_count: int
     glyph_count: int
     reused_glyph_count: int
+
+
+def _snapshot_shard_hash(value: Any) -> str:
+    return _object_hash(_json_bytes(value))
+
+
+def _snapshot_content_hash(root_hashes: Mapping[str, str]) -> str:
+    return _object_hash(
+        _json_bytes(
+            {
+                "modelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
+                "roots": dict(root_hashes),
+            }
+        )
+    )
+
+
+class _ImmutableMapping(Mapping[str, Any]):
+    """Small read-only mapping whose explicit deepcopy is a plain boundary."""
+
+    __slots__ = ("_values",)
+
+    def __init__(self, values: Mapping[str, Any]) -> None:
+        self._values = dict(values)
+
+    def __getitem__(self, key: str) -> Any:
+        return self._values[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._values)
+
+    def __len__(self) -> int:
+        return len(self._values)
+
+    def __deepcopy__(self, memo: dict[int, Any]) -> dict[str, Any]:
+        return copy.deepcopy(self._values, memo)
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, Mapping) and dict(self) == dict(other)
+
+
+@dataclass(frozen=True)
+class CanonicalSnapshot(Mapping[str, Any]):
+    """Immutable canonical model view with reusable content shards.
+
+    The public document fingerprint remains the exact schema-v4 canonical JSON
+    fingerprint. ``content_tree_hash`` is an internal Merkle-style identity
+    used to share unchanged roots and glyph entities without serializing them
+    again. Native revision evidence is opaque to the core and never contributes
+    to either identity.
+    """
+
+    model_schema_version: int
+    content_tree_hash: str
+    document_fingerprint: str
+    root_shards: Mapping[str, Any]
+    glyph_shards: Mapping[str, Any]
+    root_hashes: Mapping[str, str]
+    glyph_hashes: Mapping[str, str]
+    native_revision_evidence: Mapping[str, Any]
+    reused_glyph_count: int = 0
+
+    @classmethod
+    def from_model(
+        cls,
+        model: Mapping[str, Any],
+        *,
+        native_revision_evidence: Mapping[str, Any] | None = None,
+    ) -> "CanonicalSnapshot":
+        import json
+
+        encoded = canonical_json(model)
+        plain = json.loads(encoded)
+        return cls.from_shards(
+            {
+                str(name): value
+                for name, value in plain.items()
+                if str(name) != "glyphs"
+            },
+            dict(plain.get("glyphs") or {}),
+            document_fingerprint=_object_hash(encoded.encode("utf-8")),
+            native_revision_evidence=native_revision_evidence,
+        )
+
+    @classmethod
+    def from_shards(
+        cls,
+        root_shards: Mapping[str, Any],
+        glyph_shards: Mapping[str, Any],
+        *,
+        previous: "CanonicalSnapshot | None" = None,
+        document_fingerprint: str | None = None,
+        native_revision_evidence: Mapping[str, Any] | None = None,
+    ) -> "CanonicalSnapshot":
+        """Assemble a snapshot while retaining equal previous shard objects."""
+
+        roots: dict[str, Any] = {}
+        root_hashes: dict[str, str] = {}
+        for name, candidate in root_shards.items():
+            key = str(name)
+            previous_value = (
+                previous.root_shards.get(key) if previous is not None else None
+            )
+            if previous is not None and candidate == previous_value:
+                roots[key] = previous_value
+                root_hashes[key] = previous.root_hashes[key]
+            else:
+                roots[key] = candidate
+                root_hashes[key] = _snapshot_shard_hash(candidate)
+
+        glyphs: dict[str, Any] = {}
+        glyph_hashes: dict[str, str] = {}
+        reused = 0
+        for name, candidate in glyph_shards.items():
+            key = str(name)
+            previous_value = (
+                previous.glyph_shards.get(key) if previous is not None else None
+            )
+            if previous is not None and candidate == previous_value:
+                glyphs[key] = previous_value
+                glyph_hashes[key] = previous.glyph_hashes[key]
+                reused += 1
+            else:
+                glyphs[key] = candidate
+                glyph_hashes[key] = _snapshot_shard_hash(candidate)
+        glyph_root_unchanged = bool(
+            previous is not None
+            and set(glyphs) == set(previous.glyph_shards)
+            and reused == len(glyphs)
+        )
+        root_hashes["glyphs"] = (
+            previous.root_hashes["glyphs"]
+            if glyph_root_unchanged
+            else _snapshot_shard_hash(glyph_hashes)
+        )
+        unchanged_from_previous = bool(
+            previous is not None
+            and set(roots) == set(previous.root_shards)
+            and set(glyphs) == set(previous.glyph_shards)
+            and all(
+                roots[name] is previous.root_shards[name] for name in roots
+            )
+            and reused == len(glyphs)
+        )
+        if document_fingerprint is None:
+            document_fingerprint = (
+                previous.document_fingerprint
+                if unchanged_from_previous
+                else fingerprint_model({**roots, "glyphs": glyphs})
+            )
+        return cls(
+            model_schema_version=CANONICAL_MODEL_SCHEMA_VERSION,
+            content_tree_hash=_snapshot_content_hash(root_hashes),
+            document_fingerprint=document_fingerprint,
+            root_shards=_ImmutableMapping(roots),
+            glyph_shards=_ImmutableMapping(glyphs),
+            root_hashes=_ImmutableMapping(root_hashes),
+            glyph_hashes=_ImmutableMapping(glyph_hashes),
+            native_revision_evidence=_ImmutableMapping(
+                copy.deepcopy(dict(native_revision_evidence or {}))
+            ),
+            reused_glyph_count=reused,
+        )
+
+    def __getitem__(self, key: str) -> Any:
+        if key == "glyphs":
+            return self.glyph_shards
+        return self.root_shards[key]
+
+    def _verified_canonical_fingerprint(self, access: object) -> str | None:
+        return (
+            self.document_fingerprint
+            if access is _CACHED_FINGERPRINT_ACCESS
+            else None
+        )
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(sorted((*self.root_shards.keys(), "glyphs")))
+
+    def __len__(self) -> int:
+        return len(self.root_shards) + 1
+
+    def materialize(self) -> dict[str, Any]:
+        result = {
+            name: copy.deepcopy(value) for name, value in self.root_shards.items()
+        }
+        result["glyphs"] = {
+            name: copy.deepcopy(value) for name, value in self.glyph_shards.items()
+        }
+        return result
+
+    def store_verified_transition(
+        self,
+        after_model: Mapping[str, Any],
+        change_set: ChangeSet,
+        *,
+        native_revision_evidence: Mapping[str, Any] | None = None,
+    ) -> "CanonicalSnapshot":
+        """Create the proven after-snapshot by replacing changed shards only."""
+
+        if change_set.before_fingerprint != self.document_fingerprint:
+            raise ValueError("verified transition starts at another snapshot")
+        if not change_set.changes:
+            if change_set.after_fingerprint != self.document_fingerprint:
+                raise ValueError("an empty transition cannot change fingerprints")
+            return self
+
+        changed_roots = {change.path[0] for change in change_set.changes}
+        roots = dict(self.root_shards)
+        root_hashes = dict(self.root_hashes)
+        glyphs = dict(self.glyph_shards)
+        glyph_hashes = dict(self.glyph_hashes)
+        after_glyphs = after_model.get("glyphs", {})
+        if not isinstance(after_glyphs, Mapping):
+            raise ValueError("canonical glyph root must be a mapping")
+        changed_glyphs = {
+            str(change.path[1])
+            for change in change_set.changes
+            if len(change.path) >= 2 and change.path[0] == "glyphs"
+        }
+        membership_delta = set(glyphs) ^ {str(name) for name in after_glyphs}
+        if not membership_delta.issubset(changed_glyphs):
+            raise ValueError("verified transition omitted changed glyph membership")
+        for name in changed_glyphs:
+            if name not in after_glyphs:
+                glyphs.pop(name, None)
+                glyph_hashes.pop(name, None)
+                continue
+            value = after_glyphs[name]
+            glyphs[name] = value
+            glyph_hashes[name] = _snapshot_shard_hash(value)
+        if "glyphs" in changed_roots:
+            root_hashes["glyphs"] = _snapshot_shard_hash(glyph_hashes)
+
+        for root_name in changed_roots - {"glyphs"}:
+            value = after_model.get(root_name)
+            roots[root_name] = value
+            root_hashes[root_name] = _snapshot_shard_hash(value)
+
+        return CanonicalSnapshot(
+            model_schema_version=self.model_schema_version,
+            content_tree_hash=_snapshot_content_hash(root_hashes),
+            document_fingerprint=change_set.after_fingerprint,
+            root_shards=_ImmutableMapping(roots),
+            glyph_shards=_ImmutableMapping(glyphs),
+            root_hashes=_ImmutableMapping(root_hashes),
+            glyph_hashes=_ImmutableMapping(glyph_hashes),
+            native_revision_evidence=_ImmutableMapping(
+                copy.deepcopy(
+                    dict(
+                        self.native_revision_evidence
+                        if native_revision_evidence is None
+                        else native_revision_evidence
+                    )
+                )
+            ),
+            reused_glyph_count=max(0, len(glyphs) - len(changed_glyphs)),
+        )
 
 
 class CanonicalFontTree:
@@ -449,9 +714,80 @@ class CanonicalFontTree:
 
     def diff(self, before_tree_hash: str, after_tree_hash: str) -> ChangeSet:
         if before_tree_hash == after_tree_hash:
-            model = self.load_model(before_tree_hash)
-            return diff_models(model, model)
-        return diff_models(self.load_model(before_tree_hash), self.load_model(after_tree_hash))
+            fingerprint = str(
+                self.descriptor(before_tree_hash).get("modelFingerprint") or ""
+            )
+            return ChangeSet.from_changes(
+                before_fingerprint=fingerprint,
+                after_fingerprint=fingerprint,
+                changes=(),
+            )
+        before_descriptor = self.descriptor(before_tree_hash)
+        after_descriptor = self.descriptor(after_tree_hash)
+        before_roots = before_descriptor.get("roots") or {}
+        after_roots = after_descriptor.get("roots") or {}
+        changes: list[Any] = []
+        for root_name in sorted(set(before_roots) | set(after_roots)):
+            before_ref = before_roots.get(root_name)
+            after_ref = after_roots.get(root_name)
+            if before_ref == after_ref:
+                continue
+            before_child = (
+                self._decode(str(before_ref["hash"]))
+                if isinstance(before_ref, Mapping)
+                else None
+            )
+            after_child = (
+                self._decode(str(after_ref["hash"]))
+                if isinstance(after_ref, Mapping)
+                else None
+            )
+            if (
+                isinstance(before_child, Mapping)
+                and isinstance(after_child, Mapping)
+                and before_child.get("kind") == "map"
+                and after_child.get("kind") == "map"
+            ):
+                before_entries = before_child.get("entries") or {}
+                after_entries = after_child.get("entries") or {}
+                for key in sorted(set(before_entries) | set(after_entries)):
+                    if before_entries.get(key) == after_entries.get(key):
+                        continue
+                    before_fragment: dict[str, Any] = {str(root_name): {}}
+                    after_fragment: dict[str, Any] = {str(root_name): {}}
+                    if key in before_entries:
+                        before_fragment[str(root_name)][str(key)] = self._decode(
+                            str(before_entries[key])
+                        ).get("value")
+                    if key in after_entries:
+                        after_fragment[str(root_name)][str(key)] = self._decode(
+                            str(after_entries[key])
+                        ).get("value")
+                    changes.extend(
+                        diff_models(before_fragment, after_fragment).changes
+                    )
+                continue
+            before_value = (
+                before_child.get("value")
+                if isinstance(before_child, Mapping)
+                else None
+            )
+            after_value = (
+                after_child.get("value")
+                if isinstance(after_child, Mapping)
+                else None
+            )
+            changes.extend(
+                diff_models(
+                    ({str(root_name): before_value} if before_ref else {}),
+                    ({str(root_name): after_value} if after_ref else {}),
+                ).changes
+            )
+        return ChangeSet.from_changes(
+            before_fingerprint=str(before_descriptor.get("modelFingerprint") or ""),
+            after_fingerprint=str(after_descriptor.get("modelFingerprint") or ""),
+            changes=changes,
+        )
 
     def _reachable_from_tree(self, tree_hash: str) -> set[str]:
         retained = {tree_hash}
@@ -481,6 +817,7 @@ class CanonicalFontTree:
 
 __all__ = [
     "CANONICAL_MODEL_SCHEMA_VERSION",
+    "CanonicalSnapshot",
     "CanonicalFontTree",
     "MemoryObjectStore",
     "ObjectStore",

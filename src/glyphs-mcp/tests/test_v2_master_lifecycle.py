@@ -18,6 +18,7 @@ if str(V2_SOURCE) not in sys.path:
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
     CANONICAL_MODEL_SCHEMA_VERSION,
+    CanonicalSnapshot,
 )
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
 from glyphs_mcp_v2.mutation import CanonicalImpact, mutation_scope  # noqa: E402
@@ -129,6 +130,19 @@ class MasterLifecycleTests(unittest.TestCase):
         self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 4)
         self.assertIn("list_masters", TOOL_CATALOG)
         self.assertIn("apply_master_updates", TOOL_CATALOG)
+
+    def test_master_builder_accepts_the_immutable_snapshot_mapping(self) -> None:
+        snapshot = CanonicalSnapshot.from_model(_model())
+
+        build = build_master_updates(
+            snapshot,
+            [{"action": "move", "masterId": "master_bold", "index": 0}],
+        )
+
+        self.assertEqual(
+            build.change_set.apply(snapshot)["masters"][0]["id"],
+            "master_bold",
+        )
 
     def test_list_masters_preserves_canonical_order_and_axes(self) -> None:
         items = list_masters(_model())
@@ -276,6 +290,31 @@ class MasterLifecycleTests(unittest.TestCase):
             (),
         )
 
+    def test_master_rename_targets_only_corresponding_layer_name_fragments(self) -> None:
+        before = _model(40)
+        renamed = build_master_updates(
+            before,
+            [
+                {
+                    "action": "update",
+                    "masterId": "master_bold",
+                    "name": "Display",
+                }
+            ],
+        )
+        impact = CanonicalImpact.from_change_set(before, renamed.change_set)
+
+        self.assertEqual(len(impact.glyph_names), 40)
+        self.assertTrue(
+            all(impact.layer_ids(name) == ("master_bold",) for name in impact.glyph_names)
+        )
+        self.assertTrue(
+            all(
+                all(path[-1] == "name" for path in impact.glyph_paths[name])
+                for name in impact.glyph_names
+            )
+        )
+
     def test_direct_apply_and_revert_use_one_transaction_each(self) -> None:
         baseline = _model()
         host = _Host(baseline)
@@ -300,6 +339,7 @@ class MasterLifecycleTests(unittest.TestCase):
         self.assertTrue(response["ok"], response)
         self.assertEqual(host.apply_calls, 1)
         self.assertEqual(response["data"]["transactionCount"], 1)
+        self.assertNotIn("stageTimings", response["data"])
         self.assertLess(len(json.dumps(response).encode("utf-8")), 64 * 1024)
 
         reverted = app.invoke(

@@ -128,12 +128,17 @@ breaking catalog changes do not flow back to 1.x.
    updates, deletion, insertion, and reorder as identity-aware semantic
    patches. Glyph collection, OpenType collection, and instance mutations use
    the verified apply-first kernel and the same conflict-aware revert logic.
-6. Implemented, pending explicit Glyphs 4 live execution: canonical schema v4
-   adds `list_masters` and one composite `apply_master_updates` lifecycle for
-   duplicate, update, move, and delete. Master-owned layers and kerning share
-   the same operation, while process-local native tombstones preserve fields
-   outside the canonical projection until revert or save.
-7. Deferred: arbitrary special/intermediate layer membership, staged-Python
+6. Complete and live-qualified on the disposable Glyphs 4 font: canonical
+   schema v4 adds `list_masters` and one composite `apply_master_updates`
+   lifecycle for duplicate, update, move, delete, and exact reverse-order
+   revert. The qualification completed eight verified transactions, two atomic
+   refusals, and exact clean-baseline restoration without saving.
+7. Performance closure: immutable canonical snapshots, path-derived impact,
+   independently reusable layer fragments, streaming native verification, and
+   internal stage timings retain the schema-v4 proof while removing repeated
+   whole-tree copies and hashes. The guarded live gate is the final timing
+   authority for the 72-second target.
+8. Deferred: arbitrary special/intermediate layer membership, staged-Python
    structural replay, installer integration, and the release-candidate matrix.
 
 Every milestone must pass focused tests, the complete Python suite, catalog

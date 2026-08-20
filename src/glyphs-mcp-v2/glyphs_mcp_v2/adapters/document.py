@@ -23,13 +23,14 @@ from ..canonical_collections import (
     collection_order,
     require_indexed_entities,
 )
+from ..canonical_tree import CanonicalSnapshot
 from ..exporting import inspect_destination, publish_staged_directory
 from ..ports import HostAccessError
 from ..python_execution import PythonExecutionRequest
 from ..mutation import (
+    CanonicalImpact,
     MASTER_LIFECYCLE_CAPABILITY,
     MutationScope,
-    mutation_scope,
     writable_subset,
 )
 from ..semantic import ChangeSet, diff_models, fingerprint_model
@@ -241,6 +242,176 @@ def _glyph_model(glyph: Any) -> dict[str, Any]:
     return result
 
 
+def _glyph_fragment_model(
+    glyph: Any,
+    base_glyph: Mapping[str, Any],
+    paths: Sequence[Sequence[str]],
+) -> dict[str, Any]:
+    """Materialize only glyph fields named by canonical semantic paths."""
+
+    if any(len(path) <= 2 for path in paths):
+        return _glyph_model(glyph)
+    result = dict(base_glyph)
+    for path in paths:
+        if len(path) == 3:
+            field = str(path[2])
+            if field == "mastersCompatible":
+                result[field] = bool(
+                    _maybe_call(
+                        _safe_getattr(glyph, "mastersCompatible", False)
+                    )
+                )
+            elif field in _GLYPH_SCALARS:
+                result[field] = _plain_scalar(_safe_getattr(glyph, field))
+    layer_ids = tuple(
+        dict.fromkeys(
+            str(path[3])
+            for path in paths
+            if len(path) >= 4 and path[2] == "layers"
+        )
+    )
+    if layer_ids:
+        layers = dict(base_glyph.get("layers", {}))
+        for layer_id in layer_ids:
+            native = _lookup_layer(glyph, layer_id)
+            if native is None:
+                layers.pop(layer_id, None)
+            else:
+                layer = _layer_model(native)
+                key = str(layer.get("masterId") or layer.get("id") or layer_id)
+                if key != layer_id:
+                    layers.pop(layer_id, None)
+                layers[key] = layer
+        result["layers"] = layers
+    return result
+
+
+def _path_matches_model(path: Any, expected: Mapping[str, Any]) -> bool:
+    if bool(_safe_getattr(path, "closed", True)) != bool(
+        expected.get("closed", True)
+    ):
+        return False
+    native_nodes = _sequence_values(_safe_getattr(path, "nodes"))
+    expected_nodes = expected.get("nodes", ())
+    if not isinstance(expected_nodes, (list, tuple)) or len(native_nodes) != len(
+        expected_nodes
+    ):
+        return False
+    for native, modeled in zip(native_nodes, expected_nodes):
+        if not isinstance(modeled, Mapping):
+            return False
+        precise = _maybe_call(_safe_getattr(native, "positionPrecise"))
+        position = _point(
+            precise if precise is not None else _safe_getattr(native, "position")
+        )
+        if (
+            position[0] != modeled.get("x")
+            or position[1] != modeled.get("y")
+            or str(_safe_getattr(native, "type") or "line").lower()
+            != str(modeled.get("type") or "line")
+            or bool(_safe_getattr(native, "smooth", False))
+            != bool(modeled.get("smooth", False))
+            or _optional_text(_safe_getattr(native, "name"))
+            != modeled.get("name")
+        ):
+            return False
+    return True
+
+
+def _layer_matches_model(layer: Any, expected: Mapping[str, Any]) -> bool:
+    layer_id = str(
+        _safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""
+    )
+    master_id = str(_safe_getattr(layer, "associatedMasterId") or layer_id)
+    if (
+        layer_id != str(expected.get("id") or "")
+        or master_id != str(expected.get("masterId") or "")
+        or str(_safe_getattr(layer, "name") or "")
+        != str(expected.get("name") or "")
+        or bool(_maybe_call(_safe_getattr(layer, "isMasterLayer", False)))
+        != bool(expected.get("isMasterLayer", False))
+        or bool(_maybe_call(_safe_getattr(layer, "isSpecialLayer", False)))
+        != bool(expected.get("isSpecialLayer", False))
+        or bool(_maybe_call(_safe_getattr(layer, "hasAlignedWidth", False)))
+        != bool(expected.get("hasAlignedWidth", False))
+    ):
+        return False
+    for name in _LAYER_SCALARS:
+        if _plain_scalar(_safe_getattr(layer, name)) != expected.get(name):
+            return False
+    if _anchor_model(layer) != expected.get("anchors", {}):
+        return False
+    native_paths = _layer_paths(layer)
+    expected_paths = expected.get("paths", ())
+    if not isinstance(expected_paths, (list, tuple)) or len(native_paths) != len(
+        expected_paths
+    ):
+        return False
+    if any(
+        not isinstance(modeled, Mapping)
+        or not _path_matches_model(native, modeled)
+        for native, modeled in zip(native_paths, expected_paths)
+    ):
+        return False
+    components = _layer_components(layer)
+    expected_components = expected.get("components", ())
+    if not isinstance(expected_components, (list, tuple)) or len(components) != len(
+        expected_components
+    ):
+        return False
+    for native, modeled in zip(components, expected_components):
+        if not isinstance(modeled, Mapping) or (
+            str(_safe_getattr(native, "componentName") or "")
+            != str(modeled.get("name") or "")
+            or _component_transform(native) != modeled.get("transform")
+            or bool(
+                _maybe_call(
+                    _safe_getattr(native, "automaticAlignment", False)
+                )
+            )
+            != bool(modeled.get("automaticAlignment", False))
+        ):
+            return False
+    return [len(_sequence_values(_safe_getattr(path, "nodes"))) for path in native_paths] == expected.get(
+        "pathSignature", []
+    )
+
+
+def _glyph_matches_model(glyph: Any, expected: Mapping[str, Any]) -> bool:
+    name = str(_safe_getattr(glyph, "name") or "")
+    if (
+        name != str(expected.get("name") or "")
+        or canonical_glyph_id(name) != str(expected.get("id") or "")
+        or bool(_maybe_call(_safe_getattr(glyph, "mastersCompatible", False)))
+        != bool(expected.get("mastersCompatible", False))
+    ):
+        return False
+    for field_name in _GLYPH_SCALARS:
+        if _plain_scalar(_safe_getattr(glyph, field_name)) != expected.get(
+            field_name
+        ):
+            return False
+    expected_layers = expected.get("layers", {})
+    if not isinstance(expected_layers, Mapping):
+        return False
+    native_layers: dict[str, Any] = {}
+    for layer in _sequence_values(_safe_getattr(glyph, "layers")):
+        layer_id = str(
+            _safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""
+        )
+        master_id = str(_safe_getattr(layer, "associatedMasterId") or layer_id)
+        key = master_id or layer_id
+        if key in native_layers:
+            key = layer_id or "{}#{}".format(key, len(native_layers))
+        if key:
+            native_layers[key] = layer
+    return set(native_layers) == set(expected_layers) and all(
+        isinstance(expected_layers[key], Mapping)
+        and _layer_matches_model(layer, expected_layers[key])
+        for key, layer in native_layers.items()
+    )
+
+
 def _axis_models(font: Any) -> list[dict[str, Any]]:
     return [
         {
@@ -435,9 +606,9 @@ class _RevisionBoundGlyphModelCache:
     """Reuse detached glyph trees only while native revision evidence agrees.
 
     Paths and components dominate live canonical capture cost. Glyphs updates a
-    glyph's ``lastChange`` when its own layers or derived metrics change; layer
-    membership and the ordered master identity are included independently so a
-    structural collection change cannot reuse an incompatible glyph tree.
+    glyph's ``lastChange`` when its own layers or derived metrics change; each
+    glyph's own layer membership is included independently. Master order lives
+    in the master root and cannot invalidate unrelated glyph shards.
     Agent-owned writes invalidate the document explicitly before verification.
     """
 
@@ -460,21 +631,45 @@ class _RevisionBoundGlyphModelCache:
             for name in glyph_names:
                 glyphs.pop(str(name), None)
 
-    def capture(
+    def invalidate_impact(
+        self, document_id: str, impact: CanonicalImpact
+    ) -> None:
+        """Mark exact glyph fragments stale without discarding sibling layers."""
+
+        with self._lock:
+            document = self._documents.get(document_id)
+            if document is None:
+                return
+            pending = document.setdefault("pendingGlyphPaths", {})
+            for name, paths in impact.glyph_paths.items():
+                existing = list(pending.get(name, ()))
+                for path in paths:
+                    if path not in existing:
+                        existing.append(path)
+                pending[name] = tuple(existing)
+
+    def capture_snapshot(
         self,
         document_id: str,
         font: Any,
         *,
         instance_ids: Optional[Sequence[str]] = None,
-    ) -> dict[str, Any]:
+        expected: CanonicalSnapshot | None = None,
+    ) -> CanonicalSnapshot:
         masters = _master_models(font)
-        master_structure = tuple(str(master.get("id") or "") for master in masters)
         with self._lock:
             previous = self._documents.get(document_id)
+            previous_snapshot = (
+                previous.get("snapshot") if previous is not None else None
+            )
             previous_glyphs = (
                 previous.get("glyphs", {})
                 if previous is not None
-                and previous.get("masterStructure") == master_structure
+                else {}
+            )
+            pending_paths = (
+                previous.get("pendingGlyphPaths", {})
+                if previous is not None
                 else {}
             )
             current_glyphs: dict[str, dict[str, Any]] = {}
@@ -485,24 +680,109 @@ class _RevisionBoundGlyphModelCache:
                 if not name:
                     continue
                 cached = previous_glyphs.get(name)
-                if cached is not None and cached.get("token") == token:
-                    model = copy.deepcopy(cached["model"])
+                if (
+                    cached is not None
+                    and cached.get("token") == token
+                    and not pending_paths.get(name)
+                ):
+                    model = cached["model"]
+                elif (
+                    cached is not None
+                    and pending_paths.get(name)
+                    and expected is not None
+                ):
+                    model = _glyph_fragment_model(
+                        glyph,
+                        cached["model"],
+                        pending_paths[name],
+                    )
+                    expected_glyph = (
+                        expected.glyph_shards.get(name)
+                        if expected is not None
+                        else None
+                    )
+                    if (
+                        isinstance(expected_glyph, Mapping)
+                        and not _glyph_matches_model(glyph, expected_glyph)
+                    ):
+                        # A native side effect escaped the predicted paths.
+                        # Materialize the complete mismatch so verification
+                        # reports the real observed tree rather than accepting
+                        # a stale sibling shard.
+                        model = _glyph_model(glyph)
                 else:
                     model = _glyph_model(glyph)
                 result_glyphs[name] = model
                 current_glyphs[name] = {
                     "token": token,
-                    "model": copy.deepcopy(model),
+                    "model": model,
                 }
+            model = _font_model_with_glyphs(
+                font,
+                result_glyphs,
+                masters=masters,
+                instance_ids=instance_ids,
+            )
+            roots = {name: value for name, value in model.items() if name != "glyphs"}
+            exact_fingerprint = None
+            if expected is not None and all(
+                roots.get(name) == expected.root_shards.get(name)
+                for name in set(roots) | set(expected.root_shards)
+            ) and result_glyphs == expected.glyph_shards:
+                exact_fingerprint = expected.document_fingerprint
+            snapshot = CanonicalSnapshot.from_shards(
+                roots,
+                result_glyphs,
+                previous=previous_snapshot,
+                document_fingerprint=exact_fingerprint,
+                native_revision_evidence={
+                    "glyphs": {
+                        name: value["token"] for name, value in current_glyphs.items()
+                    },
+                    "masters": tuple(
+                        str(master.get("id") or "") for master in masters
+                    ),
+                },
+            )
             self._documents[document_id] = {
-                "masterStructure": master_structure,
                 "glyphs": current_glyphs,
+                "snapshot": snapshot,
+                "pendingGlyphPaths": (
+                    dict(pending_paths)
+                    if expected is not None
+                    and snapshot.document_fingerprint
+                    != expected.document_fingerprint
+                    else {}
+                ),
             }
-        return _font_model_with_glyphs(
+        return snapshot
+
+    def capture(
+        self,
+        document_id: str,
+        font: Any,
+        *,
+        instance_ids: Optional[Sequence[str]] = None,
+    ) -> dict[str, Any]:
+        return self.capture_snapshot(
+            document_id,
             font,
-            result_glyphs,
-            masters=masters,
             instance_ids=instance_ids,
+        ).materialize()
+
+    def capture_verified_snapshot(
+        self,
+        document_id: str,
+        font: Any,
+        expected: CanonicalSnapshot,
+        *,
+        instance_ids: Optional[Sequence[str]] = None,
+    ) -> CanonicalSnapshot:
+        return self.capture_snapshot(
+            document_id,
+            font,
+            instance_ids=instance_ids,
+            expected=expected,
         )
 
 
@@ -532,12 +812,17 @@ def _scoped_font_model(
     base_model: Mapping[str, Any],
     scope: MutationScope,
     *,
+    impact: CanonicalImpact | None = None,
     extra_glyph_names: Sequence[str] = (),
     instance_ids: Optional[Sequence[str]] = None,
 ) -> dict[str, Any]:
     """Refresh one canonical tree from native state without rebuilding every glyph."""
 
-    result = copy.deepcopy(dict(base_model))
+    # Copy only the top-level maps that this capture may replace. Canonical
+    # shards are detached and immutable by convention; unchanged glyph/layer
+    # objects remain shared until a native fragment is materialized below.
+    result = dict(base_model)
+    result["glyphs"] = dict(base_model.get("glyphs", {}))
     non_glyph = _font_model_with_glyphs(font, {}, instance_ids=instance_ids)
     for root, value in non_glyph.items():
         if root != "glyphs":
@@ -557,7 +842,8 @@ def _scoped_font_model(
         base_glyphs.pop(name, None)
     for name in added:
         base_glyphs[name] = _glyph_model(native_index[name])
-    for name in sorted(set(scope.glyph_names) | {str(value) for value in extra_glyph_names}):
+    extra = {str(value) for value in extra_glyph_names}
+    for name in sorted(set(scope.glyph_names) | extra):
         glyph = native_index.get(name)
         if glyph is None:
             # A collection insertion scopes the future identity before it
@@ -566,7 +852,16 @@ def _scoped_font_model(
             # ``removed``. Request validation owns missing update/delete
             # targets; capture only reflects the native collection it sees.
             continue
-        base_glyphs[name] = _glyph_model(glyph)
+        paths = impact.glyph_paths.get(name, ()) if impact is not None else ()
+        base = base_glyphs.get(name)
+        if (
+            isinstance(base, Mapping)
+            and paths
+            and not impact.requires_complete_glyph(name)
+        ):
+            base_glyphs[name] = _glyph_fragment_model(glyph, base, paths)
+        else:
+            base_glyphs[name] = _glyph_model(glyph)
     return result
 
 
@@ -1973,10 +2268,20 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         }
 
     def _capture_cached_model(self, document_id: str, font: Any) -> dict[str, Any]:
-        return self._canonical_model_cache.capture(
+        return self._capture_cached_snapshot(document_id, font).materialize()
+
+    def _capture_cached_snapshot(
+        self,
+        document_id: str,
+        font: Any,
+        *,
+        expected: CanonicalSnapshot | None = None,
+    ) -> CanonicalSnapshot:
+        return self._canonical_model_cache.capture_snapshot(
             document_id,
             font,
             instance_ids=self._instance_ids_for_font(document_id, font),
+            expected=expected,
         )
 
     def _capture_removed_master_templates(
@@ -2055,7 +2360,22 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             )
         )
 
+    def capture_snapshot(self, document_id: str) -> CanonicalSnapshot:
+        return self._executor.run(
+            lambda: self._capture_cached_snapshot(
+                document_id, self._font_for_document(document_id)
+            )
+        )
+
     def capture_stable_model(self, document_id: str) -> Mapping[str, Any]:
+        return self.capture_stable_snapshot(document_id).materialize()
+
+    def capture_stable_snapshot(
+        self,
+        document_id: str,
+        *,
+        expected_snapshot: CanonicalSnapshot | None = None,
+    ) -> CanonicalSnapshot:
         """Capture a canonical tree only after two host readbacks agree.
 
         Glyphs may resolve metrics and other derived layer state on a later
@@ -2064,11 +2384,20 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         A transaction must fail rather than publish an unstable fingerprint.
         """
 
-        previous = copy.deepcopy(dict(self.capture_model(document_id)))
+        def capture() -> CanonicalSnapshot:
+            return self._executor.run(
+                lambda: self._capture_cached_snapshot(
+                    document_id,
+                    self._font_for_document(document_id),
+                    expected=expected_snapshot,
+                )
+            )
+
+        previous = capture()
         previous_fingerprint = fingerprint_model(previous)
         for _ in range(3):
             time.sleep(0.02)
-            current = copy.deepcopy(dict(self.capture_model(document_id)))
+            current = capture()
             current_fingerprint = fingerprint_model(current)
             if current_fingerprint == previous_fingerprint:
                 return current
@@ -2131,10 +2460,31 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             copier = _safe_getattr(font, "copy")
             if not callable(copier):
                 raise HostAccessError("Glyphs did not provide GSFont.copy()")
-            source = copy.deepcopy(dict(before_model))
-            scope = mutation_scope(source, change_set)
+            source = (
+                before_model
+                if isinstance(before_model, CanonicalSnapshot)
+                else copy.deepcopy(dict(before_model))
+            )
+            impact = CanonicalImpact.from_change_set(source, change_set)
+            before_impact = CanonicalImpact.from_change_set(
+                source,
+                ChangeSet.from_changes(
+                    before_fingerprint=change_set.before_fingerprint,
+                    after_fingerprint=change_set.after_fingerprint,
+                    changes=(
+                        change
+                        for change in change_set.changes
+                        if change.before_present
+                    ),
+                ),
+            )
+            before_scope = MutationScope(
+                before_impact.roots, before_impact.glyph_names
+            )
             required = (
-                copy.deepcopy(dict(required_after_model))
+                required_after_model
+                if isinstance(required_after_model, CanonicalSnapshot)
+                else copy.deepcopy(dict(required_after_model))
                 if required_after_model is not None
                 else None
             )
@@ -2143,48 +2493,96 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 removes_contribution_id
             )
 
-            def attempt(replacements: Sequence[Sequence[str]]) -> Mapping[str, Any]:
-                clone = copier()
-                revisions_before = _glyph_revision_index(clone)
-                clone_before = _scoped_font_model(
-                    clone,
-                    source,
-                    scope,
-                    instance_ids=source_instance_ids,
-                )
-                if fingerprint_model(clone_before) != change_set.before_fingerprint:
-                    raise HostAccessError(
-                        "Detached GSFont.copy() did not reproduce the canonical source"
-                    )
-                requested_target = change_set.apply(clone_before)
-                target = required if required is not None else requested_target
-                _apply_target_model(
-                    clone,
-                    clone_before,
-                    target,
-                    change_set,
-                    replay_replacements=replacements,
-                    capabilities=capabilities,
-                    execution_context=execution_context,
-                    master_restore_templates=restore_templates,
-                )
+            timings = {
+                "clone": 0.0,
+                "detached_apply": 0.0,
+                "verification": 0.0,
+            }
+            started = time.perf_counter_ns()
+            clone = copier()
+            timings["clone"] += (time.perf_counter_ns() - started) / 1_000_000
+            revisions_before = _glyph_revision_index(clone)
+
+            def capture_after(
+                base: Mapping[str, Any],
+                target: Mapping[str, Any],
+                current_impact: CanonicalImpact,
+                revisions_start: Mapping[str, tuple[Any, ...]],
+            ) -> tuple[Mapping[str, Any], Mapping[str, tuple[Any, ...]]]:
+                verification_started = time.perf_counter_ns()
                 revisions_after = _glyph_revision_index(clone)
                 changed_glyphs = _changed_revision_glyphs(
-                    revisions_before, revisions_after
+                    revisions_start, revisions_after
                 )
-                return _scoped_font_model(
+                current_scope = MutationScope(
+                    current_impact.roots, current_impact.glyph_names
+                )
+                captured = _scoped_font_model(
                     clone,
-                    source,
-                    scope,
+                    base,
+                    current_scope,
+                    impact=current_impact,
                     extra_glyph_names=changed_glyphs,
                     instance_ids=collection_order(target.get("instances", [])),
                 )
+                timings["verification"] += (
+                    time.perf_counter_ns() - verification_started
+                ) / 1_000_000
+                return captured, revisions_after
 
-            preferred = attempt(())
+            verification_started = time.perf_counter_ns()
+            clone_before = _scoped_font_model(
+                clone,
+                source,
+                before_scope,
+                impact=before_impact,
+                instance_ids=source_instance_ids,
+            )
+            if isinstance(source, CanonicalSnapshot) and clone_before == source:
+                clone_before = source
+            if fingerprint_model(clone_before) != change_set.before_fingerprint:
+                raise HostAccessError(
+                    "Detached GSFont.copy() did not reproduce the canonical source"
+                )
+            timings["verification"] += (
+                time.perf_counter_ns() - verification_started
+            ) / 1_000_000
+            requested_target = change_set.apply(clone_before)
+            target = required if required is not None else requested_target
+            apply_started = time.perf_counter_ns()
+            _apply_target_model(
+                clone,
+                clone_before,
+                target,
+                change_set,
+                capabilities=capabilities,
+                execution_context=execution_context,
+                master_restore_templates=restore_templates,
+            )
+            timings["detached_apply"] += (
+                time.perf_counter_ns() - apply_started
+            ) / 1_000_000
+            preferred, revisions_after = capture_after(
+                source, target, impact, revisions_before
+            )
+            if (
+                isinstance(source, CanonicalSnapshot)
+                and preferred == target
+                and fingerprint_model(target) == change_set.after_fingerprint
+            ):
+                preferred = source.store_verified_transition(
+                    preferred,
+                    change_set,
+                    native_revision_evidence={"glyphs": revisions_after},
+                )
             if required is None or fingerprint_model(preferred) == fingerprint_model(
                 required
             ):
-                return {"afterModel": preferred, "replayReplacements": []}
+                return {
+                    "afterModel": preferred,
+                    "replayReplacements": [],
+                    "stageTimings": timings,
+                }
 
             replacements = _canonical_replacement_roots(
                 source,
@@ -2192,11 +2590,34 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 preferred,
             )
             if not replacements:
-                return {"afterModel": preferred, "replayReplacements": []}
-            canonical = attempt(replacements)
+                return {
+                    "afterModel": preferred,
+                    "replayReplacements": [],
+                    "stageTimings": timings,
+                }
+            residual = diff_models(preferred, required)
+            residual_impact = CanonicalImpact.from_change_set(preferred, residual)
+            apply_started = time.perf_counter_ns()
+            _apply_target_model(
+                clone,
+                preferred,
+                required,
+                residual,
+                replay_replacements=replacements,
+                capabilities=capabilities,
+                execution_context=execution_context,
+                master_restore_templates=restore_templates,
+            )
+            timings["detached_apply"] += (
+                time.perf_counter_ns() - apply_started
+            ) / 1_000_000
+            canonical, _ = capture_after(
+                preferred, required, residual_impact, revisions_after
+            )
             return {
                 "afterModel": canonical,
                 "replayReplacements": [list(path) for path in replacements],
+                "stageTimings": timings,
             }
 
         return self._executor.run(simulate)
@@ -2559,7 +2980,6 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             font = self._font_for_document(document_id)
             current = self._capture_cached_model(document_id, font)
             target = change_set.apply(current)
-            scope = mutation_scope(current, change_set)
             contributions = getattr(self, "_document_mcp_contributions", {})
             active = contributions.setdefault(document_id, {})
             baselines = getattr(self, "_document_mcp_baseline_dirty", {})
@@ -2580,8 +3000,8 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "documentId": document_id,
                     "templates": master_templates,
                 }
-            self._canonical_model_cache.invalidate_glyphs(
-                document_id, scope.glyph_names
+            self._canonical_model_cache.invalidate_impact(
+                document_id, CanonicalImpact.from_change_set(current, change_set)
             )
             _apply_target_model(
                 font,
@@ -2672,9 +3092,8 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 raise HostAccessError(
                     "the settled canonical residual contains non-writable state"
                 )
-            scope = mutation_scope(current, writable)
-            self._canonical_model_cache.invalidate_glyphs(
-                document_id, scope.glyph_names
+            self._canonical_model_cache.invalidate_impact(
+                document_id, CanonicalImpact.from_change_set(current, writable)
             )
             _apply_target_model(
                 font,
@@ -2719,9 +3138,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             font = self._font_for_document(document_id)
             current = self._capture_cached_model(document_id, font)
             restoration = diff_models(current, model)
-            restoration_scope = mutation_scope(current, restoration)
-            self._canonical_model_cache.invalidate_glyphs(
-                document_id, restoration_scope.glyph_names
+            self._canonical_model_cache.invalidate_impact(
+                document_id,
+                CanonicalImpact.from_change_set(current, restoration),
             )
             restore_templates = self._master_restore_templates(operation_id)
             if not restore_templates:
@@ -2751,9 +3170,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 )
                 if replacements:
                     residual = diff_models(preferred, model)
-                    residual_scope = mutation_scope(preferred, residual)
-                    self._canonical_model_cache.invalidate_glyphs(
-                        document_id, residual_scope.glyph_names
+                    self._canonical_model_cache.invalidate_impact(
+                        document_id,
+                        CanonicalImpact.from_change_set(preferred, residual),
                     )
                     _apply_target_model(
                         font,

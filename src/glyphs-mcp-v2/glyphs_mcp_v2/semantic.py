@@ -22,6 +22,7 @@ from .canonical_collections import (
 
 
 MISSING = object()
+_CACHED_FINGERPRINT_ACCESS = object()
 SUPPORTED_DOCUMENT_ROOTS = frozenset(
     {
         "font",
@@ -72,6 +73,16 @@ def canonical_json(value: Any) -> str:
 
 
 def fingerprint_model(value: Any) -> str:
+    provider = getattr(value, "_verified_canonical_fingerprint", None)
+    cached = (
+        provider(_CACHED_FINGERPRINT_ACCESS) if callable(provider) else None
+    )
+    if (
+        isinstance(cached, str)
+        and cached.startswith("sha256:")
+        and len(cached) == 71
+    ):
+        return cached
     digest = hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
     return "sha256:{}".format(digest)
 

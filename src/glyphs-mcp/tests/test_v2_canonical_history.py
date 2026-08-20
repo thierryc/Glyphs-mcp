@@ -199,6 +199,26 @@ class CanonicalFontTreeTests(unittest.TestCase):
         self.assertEqual(transition.reused_glyph_count, 382)
         self.assertEqual(trees.load_model(transition.tree_hash), after)
 
+    def test_tree_diff_reads_only_changed_shards_not_both_complete_models(self) -> None:
+        trees = CanonicalFontTree(MemoryObjectStore())
+        before = _model(glyph_count=383, master_count=5)
+        first = trees.store_model(before)
+        after = copy.deepcopy(before)
+        after["glyphs"]["g0191"]["export"] = False
+        changes = diff_models(before, after)
+        second = trees.store_verified_transition(
+            first.tree_hash, after, changes
+        )
+
+        with mock.patch.object(
+            trees,
+            "load_model",
+            side_effect=AssertionError("tree diff loaded a complete model"),
+        ):
+            observed = trees.diff(first.tree_hash, second.tree_hash)
+
+        self.assertEqual(observed, changes)
+
     def test_scale_snapshot_hashing_stays_off_the_ui_budget(self) -> None:
         # This measures detached Python data only. Native Glyphs capture is
         # already required by the transaction kernel and must not be repeated.

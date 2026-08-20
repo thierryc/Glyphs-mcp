@@ -257,6 +257,9 @@ class V2LiveGateGuardTests(unittest.TestCase):
         self.assertTrue(result["singleTransactionResponses"])
         self.assertTrue(result["auditReceiptsPresent"])
         self.assertTrue(result["changeLogCommitsPresent"])
+        self.assertIn("stageTimingTotalsMs", result)
+        self.assertIn("gateDurationMs", result)
+        self.assertGreaterEqual(result["gateDurationMs"], 0)
 
     def test_schema_v4_master_gate_refuses_non_disposable_font(self) -> None:
         host = _StructuralHost()

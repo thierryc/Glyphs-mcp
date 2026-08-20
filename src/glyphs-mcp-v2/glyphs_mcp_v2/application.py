@@ -218,12 +218,14 @@ class GlyphsMCPApplication:
             self._trace.needs_initial_observation(scope)
             and self.history.head_tree_hash(scope.document_id or "") is None
         ):
-            capture = getattr(self._host, "capture_model", None)
+            capture = getattr(self._host, "capture_snapshot", None)
+            if not callable(capture):
+                capture = getattr(self._host, "capture_model", None)
             if callable(capture):
                 try:
                     self._trace.observe_model(
                         scope.document_id or "",
-                        copy.deepcopy(dict(capture(scope.document_id or ""))),
+                        capture(scope.document_id or ""),
                     )
                 except Exception:
                     pass
@@ -291,13 +293,20 @@ class GlyphsMCPApplication:
                 details={"exceptionType": type(exc).__name__},
             )
 
-    def _document_model(self, document_id: str) -> dict[str, Any]:
+    def _document_model(self, document_id: str) -> Mapping[str, Any]:
         if not document_id:
             raise ValueError("documentId is required")
-        capture = getattr(self._host, "capture_model", None)
+        capture = getattr(self._host, "capture_snapshot", None)
+        if not callable(capture):
+            capture = getattr(self._host, "capture_model", None)
         if not callable(capture):
             raise HostAccessError("This host adapter does not expose document snapshots.")
-        model = copy.deepcopy(dict(capture(document_id)))
+        captured = capture(document_id)
+        model = (
+            captured
+            if hasattr(captured, "document_fingerprint")
+            else copy.deepcopy(dict(captured))
+        )
         self._trace.observe_model(document_id, model)
         return model
 
@@ -413,7 +422,11 @@ class GlyphsMCPApplication:
             raise ValueError("documentId and expectedDocumentFingerprint are required")
         if not items:
             raise ValueError("{} requires at least one explicit item".format(tool))
+        capture_started = time.perf_counter_ns()
         before = self._document_model(document_id)
+        initial_capture_ms = (
+            time.perf_counter_ns() - capture_started
+        ) / 1_000_000
         if fingerprint_model(before) != expected:
             return self._audited_edit_failure(
                 tool=tool,
@@ -456,6 +469,9 @@ class GlyphsMCPApplication:
                 before_model=before,
                 capabilities=build.capabilities,
                 execution_context=build.execution_context,
+                initial_stage_timings={
+                    "initial_capture": initial_capture_ms
+                },
             )
             result = self._transactions.apply_plan(plan)
         except StaleDocumentError:
@@ -1201,7 +1217,11 @@ class GlyphsMCPApplication:
                 code="change_commit_empty",
                 message="There is no document delta to revert.",
             )
+        capture_started = time.perf_counter_ns()
         current = self._document_model(document_id)
+        initial_capture_ms = (
+            time.perf_counter_ns() - capture_started
+        ) / 1_000_000
         current_fingerprint = fingerprint_model(current)
         if current_fingerprint != expected:
             return ToolResponse.failure(
@@ -1251,6 +1271,9 @@ class GlyphsMCPApplication:
                 removes_contribution_id=operation_id,
                 required_after_model=intended_after,
                 capabilities=revert_capabilities,
+                initial_stage_timings={
+                    "initial_capture": initial_capture_ms
+                },
             )
         except CanonicalTargetMismatchError as exc:
             mismatch = exc.mismatch

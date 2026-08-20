@@ -333,7 +333,8 @@ class VerifiedMutationKernelTests(unittest.TestCase):
             operation_id="op_direct",
         )
 
-        result = TransactionKernel(host).apply_plan(plan)
+        kernel = TransactionKernel(host)
+        result = kernel.apply_plan(plan)
 
         self.assertEqual(host.apply_calls, 1)
         self.assertEqual(result.requested_change_count, 1)
@@ -345,7 +346,7 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         # projected fields while applying it, just as Glyphs does natively.
         self.assertEqual(host._derive(result.inverse.apply(host.model)), before)
         self.assertEqual(
-            set(TransactionKernel(host).stage_timing_names),
+            set(kernel.stage_timing_names),
             {
                 "initial_capture",
                 "clone",
@@ -357,6 +358,9 @@ class VerifiedMutationKernelTests(unittest.TestCase):
                 "total",
             },
         )
+        timings = kernel.diagnostic_stage_timings("op_direct")
+        self.assertEqual(set(timings), set(kernel.stage_timing_names))
+        self.assertTrue(all(value >= 0 for value in timings.values()))
 
     def test_transaction_verifies_the_settled_host_state_not_the_first_readback(self) -> None:
         host = _LateSettlingHost()

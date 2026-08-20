@@ -111,4 +111,6 @@ The gate duplicates one existing master, preserves its native master and layer
 payload, updates and reorders it, deletes it, and reverts all four operations
 in reverse order. It also verifies stale-fingerprint and duplicate-ID atomic
 refusals. It never saves and reports success only after exact canonical
-baseline, active-master, path, and dirty-state restoration.
+baseline, active-master, path, and dirty-state restoration. The explicit gate
+result includes per-operation and aggregate internal stage timings plus total
+gate duration; ordinary MCP mutation responses remain unchanged.

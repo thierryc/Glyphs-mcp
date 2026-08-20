@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import time
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 from uuid import uuid4
@@ -80,6 +81,7 @@ class _StructuralGateSession:
         self.single_transactions = True
         self.audit_receipts = True
         self.change_log_commits = True
+        self.stage_timings: dict[str, Mapping[str, float]] = {}
 
     def model(self) -> Mapping[str, Any]:
         return dict(self.host.capture_model(self.document_id))
@@ -127,6 +129,7 @@ class _StructuralGateSession:
         if not operation_id:
             raise AssertionError("{} returned no canonical operation ID".format(tool))
         self._require_change_log_commit(operation_id, tool)
+        self._record_stage_timings(operation_id)
         self.active.append(operation_id)
         self.successful.append(operation_id)
         return operation_id
@@ -145,8 +148,19 @@ class _StructuralGateSession:
         if not reverted_id:
             raise AssertionError("revert_change returned no canonical operation ID")
         self._require_change_log_commit(reverted_id, "revert_change")
+        self._record_stage_timings(reverted_id)
         self.active.remove(operation_id)
         self.successful.append(reverted_id)
+
+    def _record_stage_timings(self, operation_id: str) -> None:
+        kernel = getattr(self.application, "_transactions", None)
+        diagnostics = getattr(kernel, "diagnostic_stage_timings", None)
+        if callable(diagnostics):
+            values = diagnostics(operation_id)
+            if values:
+                self.stage_timings[operation_id] = {
+                    str(name): float(value) for name, value in values.items()
+                }
 
     def _require_change_log_commit(self, operation_id: str, tool: str) -> None:
         history = getattr(self.application, "history", None)
@@ -499,6 +513,7 @@ def verify_schema_v4_master_lifecycle(
 ) -> Mapping[str, Any]:
     """Duplicate, edit, reorder, delete, and exactly revert one master."""
 
+    gate_started = time.perf_counter_ns()
     family_name = str(getattr(font, "familyName", "") or "")
     if not family_name.startswith(DISPOSABLE_FAMILY_PREFIX):
         raise ValueError(
@@ -633,6 +648,19 @@ def verify_schema_v4_master_lifecycle(
         raise AssertionError("schema-v4 master gate changed the active master")
     if before_dirty is not None and after_dirty != before_dirty:
         raise AssertionError("schema-v4 master gate changed the reported dirty state")
+    timing_totals = {
+        name: sum(values.get(name, 0.0) for values in session.stage_timings.values())
+        for name in (
+            "initial_capture",
+            "clone",
+            "detached_apply",
+            "verification",
+            "live_apply",
+            "settled_verification",
+            "history",
+            "total",
+        )
+    }
     return {
         "documentId": document_id,
         "familyName": family_name,
@@ -651,6 +679,11 @@ def verify_schema_v4_master_lifecycle(
         "singleTransactionResponses": session.single_transactions,
         "auditReceiptsPresent": session.audit_receipts,
         "changeLogCommitsPresent": session.change_log_commits,
+        "stageTimingsByOperation": dict(session.stage_timings),
+        "stageTimingTotalsMs": timing_totals,
+        "gateDurationMs": (
+            time.perf_counter_ns() - gate_started
+        ) / 1_000_000,
     }
 
 

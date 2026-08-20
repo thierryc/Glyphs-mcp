@@ -83,6 +83,21 @@ the unsaved operation lifetime. This preserves custom parameters, guides,
 hints, backgrounds, and other native fields that model schema v4 does not yet
 project. The tombstone is released after verified revert or successful save.
 
+The live adapter carries the same model as an immutable `CanonicalSnapshot`.
+Its exact schema-v4 document fingerprint is cached separately from an internal
+content-tree hash. Root, glyph, and layer references are retained while native
+revision evidence agrees; a verified transition replaces only shards named by
+its semantic paths. A stable repeat capture therefore neither deep-copies nor
+rehashes the complete font.
+
+`CanonicalImpact` is derived from semantic paths rather than tool names.
+Master order and italic/axis changes touch no glyph shards. A master rename
+checks the corresponding layer-name fragment. Duplicate and delete check one
+owned layer entity per glyph plus the master and kerning partition. The native
+verifier streams authoritative sibling values against the expected snapshot;
+an unexpected out-of-impact value forces materialization of the real mismatch
+and can never inherit the expected fingerprint.
+
 Canonical fields have explicit roles:
 
 - **writable source fields** can participate in an automatic semantic replay;
@@ -102,10 +117,16 @@ strategy. Reconciliation first uses identity-preserving native edits on a
 detached copy. It recaptures that copy and compares it with the intended tree.
 If a changed canonical collection still differs, the remaining tree diff—not
 the tool name or mutation type—selects deterministic replacement for that
-collection. A fresh detached copy must then reproduce the target exactly. The
-selected strategy is reused once in the live transaction and verified by
-read-back. No metrics-, spacing-, or glyph-specific rollback rule participates
-in this decision.
+collection. The same detached copy must then reproduce the target exactly; a
+second clone is not created for reconciliation. The selected strategy is reused
+once in the live transaction and verified by read-back. No metrics-, spacing-,
+or glyph-specific rollback rule participates in this decision.
+
+Initial capture, clone, detached apply, verification, live apply, settled
+verification, history, and total timings are retained only as bounded internal
+diagnostics. The schema-v4 live gate includes them in its explicit result, but
+ordinary MCP responses and the capability manifest do not expose profiling
+fields.
 
 History, pagination, and the Reporter use the observed diff. The latest-session
 diff is cached when operations are recorded, so Reporter redraws perform only
