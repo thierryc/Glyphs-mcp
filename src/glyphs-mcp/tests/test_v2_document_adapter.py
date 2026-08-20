@@ -25,6 +25,10 @@ from glyphs_mcp_v2.adapters.document import (  # noqa: E402
 )
 from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
 from glyphs_mcp_v2.python_execution import PythonExecutionRequest  # noqa: E402
+from glyphs_mcp_v2.python_execution import PythonExecutionService  # noqa: E402
+from glyphs_mcp_v2.audit import AuditLog  # noqa: E402
+from glyphs_mcp_v2.operations import OperationStore  # noqa: E402
+from glyphs_mcp_v2.transactions import TransactionKernel  # noqa: E402
 from glyphs_mcp_v2.mutation import (  # noqa: E402
     LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
@@ -2104,6 +2108,151 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertTrue(model["hasAlignedWidth"])
         self.assertTrue(model["components"][0]["automaticAlignment"])
+
+    def test_staged_feature_addition_uses_opaque_native_replay_evidence(self) -> None:
+        class Feature:
+            def __init__(self, name, code, native_only):
+                self.name = name
+                self.code = code
+                self.automatic = False
+                self.disabled = False
+                self.nativeOnly = native_only
+
+            def copy(self):
+                return copy.copy(self)
+
+        font = _TransactionalFont()
+        font.features = [
+            Feature("liga", "sub f i by fi;", "private-feature-state")
+        ]
+        font.copy = lambda: copy.deepcopy(font)
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        request = PythonExecutionRequest(
+            code=(
+                "feature = font.features[0].copy()\n"
+                "feature.name = 'kern'\n"
+                "feature.code = 'pos A V -80;'\n"
+                "font.features.append(feature)"
+            ),
+            reason="staged feature membership",
+            intended_effect="document_edit",
+            execution_mode="staged_document",
+            document_id=document_id,
+            expected_document_fingerprint=fingerprint_model(before),
+        )
+
+        def archive(candidate, _request):
+            return repr(
+                [
+                    (item.name, item.code, item.nativeOnly)
+                    for item in candidate.features
+                ]
+            ).encode("utf-8")
+
+        with mock.patch.object(
+            document_adapter,
+            "_serialized_review_scope",
+            side_effect=archive,
+        ):
+            preview = host.preview_python(request, before)
+
+        self.assertTrue(preview["nativeArchiveComparison"]["equivalent"])
+        self.assertEqual(
+            [item["id"] for item in preview["afterModel"]["features"]],
+            ["liga", "kern"],
+        )
+        context = preview["executionContext"]
+        self.assertEqual(set(context), {"nativeReplayEvidenceId"})
+        self.assertTrue(
+            host.validate_staged_replay_evidence(
+                document_id,
+                context,
+                before_fingerprint=fingerprint_model(before),
+                after_fingerprint=fingerprint_model(preview["afterModel"]),
+                capabilities=preview["capabilities"],
+            )
+        )
+        host.release_staged_replay_evidence(
+            context["nativeReplayEvidenceId"]
+        )
+        self.assertFalse(
+            host.validate_staged_replay_evidence(
+                document_id,
+                context,
+                before_fingerprint=fingerprint_model(before),
+                after_fingerprint=fingerprint_model(preview["afterModel"]),
+                capabilities=preview["capabilities"],
+            )
+        )
+
+    def test_staged_feature_deletion_rolls_back_the_exact_native_entity(self) -> None:
+        class Feature:
+            def __init__(self):
+                self.name = "liga"
+                self.code = "sub f i by fi;"
+                self.automatic = False
+                self.disabled = False
+                self.nativeOnly = "private-feature-state"
+
+            def copy(self):
+                return copy.copy(self)
+
+        original = Feature()
+        font = _TransactionalFont()
+        font.features = [original]
+        font.copy = lambda: copy.deepcopy(font)
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        service = PythonExecutionService(
+            host=host,
+            transactions=TransactionKernel(host),
+            reviews=OperationStore(),
+            checkpoints=OperationStore(),
+            audit=AuditLog(),
+        )
+        document_id = host.list_documents()[0].document_id
+        baseline = host.capture_model(document_id)
+        request = PythonExecutionRequest(
+            code="del font.features[0]",
+            reason="delete feature through staged replay",
+            intended_effect="document_edit",
+            execution_mode="staged_document",
+            document_id=document_id,
+            expected_document_fingerprint=fingerprint_model(baseline),
+        )
+
+        def archive(candidate, _request):
+            return repr(
+                [
+                    (item.name, item.code, item.nativeOnly)
+                    for item in candidate.features
+                ]
+            ).encode("utf-8")
+
+        with mock.patch.object(
+            document_adapter,
+            "_serialized_review_scope",
+            side_effect=archive,
+        ):
+            preview = service.execute(request).to_dict()
+        confirmed = service.execute(
+            PythonExecutionRequest(
+                review_id=preview["data"]["reviewId"], confirm=True
+            )
+        ).to_dict()
+
+        self.assertTrue(confirmed["ok"])
+        self.assertEqual(font.features, [])
+        rolled_back = service.rollback(
+            execution_id=confirmed["data"]["executionId"],
+            expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
+            confirm=True,
+        ).to_dict()
+
+        self.assertTrue(rolled_back["ok"])
+        self.assertIs(font.features[0], original)
+        self.assertEqual(host.capture_model(document_id), baseline)
 
     def test_canonical_layer_excludes_projected_native_sidebearings(self) -> None:
         layer = _MasterLifecycleLayer(

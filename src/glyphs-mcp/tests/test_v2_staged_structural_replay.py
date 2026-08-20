@@ -6,6 +6,7 @@ import copy
 import sys
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -14,6 +15,11 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.audit import AuditLog  # noqa: E402
+from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
+from glyphs_mcp_v2.adapters.document import (  # noqa: E402
+    GlyphsDocumentHost,
+    native_font_to_model,
+)
 from glyphs_mcp_v2.mutation import (  # noqa: E402
     LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
@@ -258,7 +264,7 @@ class StagedStructuralReplayTests(unittest.TestCase):
         ).to_dict()
 
         self.assertTrue(confirmed["ok"])
-        self.assertEqual(confirmed["operation"]["operationId"], review_id)
+        self.assertEqual(confirmed["operationId"], review_id)
         self.assertEqual(host.preview_calls, 1)
         self.assertIn("B", host.model["glyphs"])
         self.assertEqual(
@@ -266,6 +272,84 @@ class StagedStructuralReplayTests(unittest.TestCase):
             [{"nativeReplayEvidenceId": "evidence_structural"}],
         )
         self.assertEqual(host.released, ["evidence_structural"])
+
+    def test_generic_native_template_preserves_added_and_deleted_feature_payload(self) -> None:
+        original = SimpleNamespace(
+            name="liga",
+            code="sub f i by fi;",
+            automatic=False,
+            disabled=False,
+            nativeOnly="private-feature-payload",
+        )
+        font = SimpleNamespace(
+            familyName="Native Evidence",
+            upm=1000,
+            versionMajor=1,
+            versionMinor=0,
+            note=None,
+            grid=1,
+            gridSubDivision=1,
+            masters=[],
+            instances=[],
+            glyphs=[],
+            kerning={},
+            features=[original],
+            classes=[],
+            featurePrefixes=[],
+        )
+        before = native_font_to_model(font)
+        empty = copy.deepcopy(before)
+        empty["features"] = []
+        removal = diff_models(before, empty)
+        host = object.__new__(GlyphsDocumentHost)
+        retained = host._capture_removed_native_templates(font, before, empty)
+
+        document_adapter._apply_target_model(font, before, empty, removal)
+        self.assertEqual(font.features, [])
+        restoration = diff_models(empty, before)
+        document_adapter._apply_target_model(
+            font,
+            empty,
+            before,
+            restoration,
+            execution_context={
+                "nativeReplayTemplates": {
+                    path: value["native"] for path, value in retained.items()
+                },
+                "reuseNativeReplayTemplates": True,
+            },
+        )
+
+        self.assertIs(font.features[0], original)
+        self.assertEqual(
+            font.features[0].nativeOnly, "private-feature-payload"
+        )
+
+    def test_review_store_contains_only_the_opaque_evidence_identifier(self) -> None:
+        host = _StructuralPythonHost()
+        service = PythonExecutionService(
+            host=host,
+            transactions=TransactionKernel(host),
+            reviews=OperationStore(),
+            checkpoints=OperationStore(),
+            audit=AuditLog(),
+        )
+        preview = service.execute(
+            PythonExecutionRequest(
+                code="# add glyph B",
+                reason="opaque native evidence",
+                intended_effect="document_edit",
+                document_id="doc_structural",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+        record = service._reviews.get(preview["data"]["reviewId"])
+
+        self.assertEqual(
+            record.payload["executionContext"],
+            {"nativeReplayEvidenceId": "evidence_structural"},
+        )
+        self.assertNotIn("nativeReplayTemplates", repr(record.payload))
 
 
 if __name__ == "__main__":

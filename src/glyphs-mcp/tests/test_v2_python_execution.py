@@ -569,7 +569,7 @@ class V2PythonExecutionTests(unittest.TestCase):
         ).to_dict()
         self.assertEqual(unsupported["error"]["code"], "unsupported_staged_change")
 
-    def test_staged_structural_replay_is_deferred_to_typed_tools(self) -> None:
+    def test_staged_structural_replay_reaches_exact_preview(self) -> None:
         service, host = self.service()
         result = service.execute(
             PythonExecutionRequest(
@@ -581,8 +581,8 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
 
-        self.assertEqual(result["error"]["code"], "unsupported_staged_change")
-        self.assertEqual(result["data"]["changedRoots"], ["glyphs"])
+        self.assertEqual(result["status"], "review_required")
+        self.assertEqual(result["data"]["changeSet"]["changeCount"], 1)
         self.assertEqual(host.model["glyphs"], {})
 
     def test_staged_explicit_context_escape_is_refused_before_review(self) -> None:

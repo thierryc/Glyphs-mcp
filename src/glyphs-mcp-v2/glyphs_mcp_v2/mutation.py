@@ -552,21 +552,126 @@ def lifecycle_capabilities(
 ) -> tuple[str, ...]:
     """Derive structural ownership from semantic paths for replay and revert."""
 
+    capabilities: set[str] = set()
     if tool == "apply_master_updates":
-        return (MASTER_LIFECYCLE_CAPABILITY,)
+        capabilities.add(MASTER_LIFECYCLE_CAPABILITY)
     if tool == "apply_layer_updates":
-        return (LAYER_LIFECYCLE_CAPABILITY,)
+        capabilities.add(LAYER_LIFECYCLE_CAPABILITY)
     paths = tuple(change.path for change in change_set.changes)
     if any(path and path[0] == "masters" for path in paths):
-        return (MASTER_LIFECYCLE_CAPABILITY,)
+        capabilities.add(MASTER_LIFECYCLE_CAPABILITY)
+    structural_master_ids = _master_structural_ids(change_set)
     if any(
         len(path) == 4
         and path[0] == "glyphs"
         and path[2] == "layers"
+        and path[3] not in structural_master_ids
         for path in paths
     ):
-        return (LAYER_LIFECYCLE_CAPABILITY,)
-    return ()
+        capabilities.add(LAYER_LIFECYCLE_CAPABILITY)
+    return tuple(sorted(capabilities))
+
+
+class StructuralReplayValidationError(ValueError):
+    """A staged structural change violates canonical lifecycle ownership."""
+
+
+def _master_axis_tags(model: Mapping[str, Any]) -> tuple[str, ...]:
+    tags: list[str] = []
+    for master in model.get("masters", ()):
+        if not isinstance(master, Mapping):
+            continue
+        current = tuple(
+            str(axis.get("tag") or "")
+            for axis in master.get("axes", ())
+            if isinstance(axis, Mapping)
+        )
+        if current:
+            if not tags:
+                tags.extend(current)
+            elif tuple(tags) != current:
+                raise StructuralReplayValidationError(
+                    "canonical masters disagree about the font axis order"
+                )
+    return tuple(tags)
+
+
+def staged_lifecycle_capabilities(
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+    change_set: ChangeSet,
+) -> tuple[str, ...]:
+    """Validate staged collection ownership and return replay capabilities."""
+
+    before_tags = _master_axis_tags(before)
+    after_tags = _master_axis_tags(after)
+    if before_tags != after_tags:
+        raise StructuralReplayValidationError(
+            "staged Python cannot change the font axis lifecycle"
+        )
+
+    before_masters = {
+        str(master.get("id") or "")
+        for master in before.get("masters", ())
+        if isinstance(master, Mapping) and str(master.get("id") or "")
+    }
+    after_masters = {
+        str(master.get("id") or "")
+        for master in after.get("masters", ())
+        if isinstance(master, Mapping) and str(master.get("id") or "")
+    }
+    added_masters = after_masters - before_masters
+    removed_masters = before_masters - after_masters
+    capabilities = set(lifecycle_capabilities(change_set))
+
+    before_glyphs = before.get("glyphs", {})
+    after_glyphs = after.get("glyphs", {})
+    before_glyphs = before_glyphs if isinstance(before_glyphs, Mapping) else {}
+    after_glyphs = after_glyphs if isinstance(after_glyphs, Mapping) else {}
+    for glyph_name in sorted(set(before_glyphs) | set(after_glyphs)):
+        if glyph_name not in before_glyphs or glyph_name not in after_glyphs:
+            # A glyph entity owns its complete layer collection. Its master
+            # layers do not independently claim master lifecycle capability.
+            continue
+        _, old_layers = _layer_entities(before_glyphs.get(glyph_name, {}))
+        _, new_layers = _layer_entities(after_glyphs.get(glyph_name, {}))
+        for layer_id in sorted(set(old_layers) | set(new_layers)):
+            old = old_layers.get(layer_id)
+            new = new_layers.get(layer_id)
+            if old is not None and new is not None:
+                continue
+            value = new if new is not None else old
+            if not isinstance(value, Mapping):
+                raise StructuralReplayValidationError(
+                    "staged layer lifecycle produced an invalid entity"
+                )
+            master_id = str(value.get("masterId") or "")
+            is_master = bool(value.get("isMasterLayer")) or "master" in set(
+                str(role) for role in value.get("roles", ())
+            )
+            if is_master:
+                expected = added_masters if new is not None else removed_masters
+                if layer_id != master_id or layer_id not in expected:
+                    raise StructuralReplayValidationError(
+                        "master-layer membership belongs to master lifecycle"
+                    )
+                capabilities.add(MASTER_LIFECYCLE_CAPABILITY)
+            else:
+                capabilities.add(LAYER_LIFECYCLE_CAPABILITY)
+
+    for glyph in after_glyphs.values():
+        _, layers = _layer_entities(glyph)
+        for layer_id, layer in layers.items():
+            master_id = str(layer.get("masterId") or "")
+            if not master_id or master_id not in after_masters:
+                raise StructuralReplayValidationError(
+                    "a staged layer references a missing master"
+                )
+            if bool(layer.get("isMasterLayer")) and layer_id != master_id:
+                raise StructuralReplayValidationError(
+                    "a master layer must use its owning master identity"
+                )
+    return tuple(sorted(capabilities))
 
 
 @dataclass(frozen=True)
@@ -819,6 +924,8 @@ __all__ = [
     "LAYER_LIFECYCLE_CAPABILITY",
     "lifecycle_capabilities",
     "MASTER_LIFECYCLE_CAPABILITY",
+    "staged_lifecycle_capabilities",
+    "StructuralReplayValidationError",
     "VerifiedMutationPlan",
     "classify_change_path",
     "is_structural_change_path",

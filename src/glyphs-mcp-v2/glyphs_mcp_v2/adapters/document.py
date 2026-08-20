@@ -34,8 +34,10 @@ from ..mutation import (
     LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
     MutationScope,
+    staged_lifecycle_capabilities,
     writable_subset,
 )
+from ..native_replay import NativeReplayEvidenceStore
 from ..semantic import ChangeSet, diff_models, fingerprint_model
 from .glyphs import (
     GlyphsHostAdapter,
@@ -1218,7 +1220,7 @@ def _staged_context_violations(
     for change in changes.changes:
         path = change.path
         allowed = (
-            len(path) >= 2
+            len(path) >= 3
             and path[0] == "glyphs"
             and path[1] == request.glyph_name
         )
@@ -1770,6 +1772,8 @@ def _sync_native_entities(
     target: Sequence[Mapping[str, Any]],
     *,
     kind: str,
+    templates: Mapping[str, Any] | None = None,
+    reuse_native_templates: bool = False,
 ) -> dict[str, Any]:
     current_order, _ = require_indexed_entities(current, kind)
     target_order, target_entities = require_indexed_entities(target, kind)
@@ -1780,6 +1784,7 @@ def _sync_native_entities(
         identity: native_values[index]
         for index, identity in enumerate(current_order)
     }
+    available_templates = dict(templates or {})
     for identity in reversed(current_order):
         if identity in target_entities:
             continue
@@ -1791,7 +1796,14 @@ def _sync_native_entities(
             continue
         entity = target_entities[identity]
         entity_name = str(entity.get("name") or identity)
-        value = _construct_native_entity(kind, entity_name)
+        template = available_templates.get(identity)
+        value = (
+            template
+            if reuse_native_templates and template is not None
+            else _copy_native_object(template, kind=kind)
+            if template is not None
+            else _construct_native_entity(kind, entity_name)
+        )
         if str(_safe_getattr(value, "name") or "") != entity_name:
             _set_native_property(value, "name", entity_name)
         native_by_id[identity] = value
@@ -1807,12 +1819,20 @@ def _apply_code_collection(
     attribute: str,
     current: Sequence[Mapping[str, Any]],
     target: Sequence[Mapping[str, Any]],
+    *,
+    templates: Mapping[str, Any] | None = None,
+    reuse_native_templates: bool = False,
 ) -> None:
     """Apply membership, order, and scalar fields through one collection path."""
 
     collection = _safe_getattr(font, attribute)
     native_by_id = _sync_native_entities(
-        collection, current, target, kind=attribute
+        collection,
+        current,
+        target,
+        kind=attribute,
+        templates=templates,
+        reuse_native_templates=reuse_native_templates,
     )
     _, current_entities = require_indexed_entities(current, attribute)
     target_order, target_entities = require_indexed_entities(target, attribute)
@@ -1836,10 +1856,18 @@ def _apply_instance_collection(
     font: Any,
     current: Sequence[Mapping[str, Any]],
     target: Sequence[Mapping[str, Any]],
+    *,
+    templates: Mapping[str, Any] | None = None,
+    reuse_native_templates: bool = False,
 ) -> None:
     collection = _safe_getattr(font, "instances")
     native_by_id = _sync_native_entities(
-        collection, current, target, kind="instance"
+        collection,
+        current,
+        target,
+        kind="instance",
+        templates=templates,
+        reuse_native_templates=reuse_native_templates,
     )
     _, current_entities = require_indexed_entities(current, "instances")
     target_order, target_entities = require_indexed_entities(target, "instances")
@@ -2459,6 +2487,9 @@ def _apply_glyph_membership(
     font: Any,
     current: Mapping[str, Mapping[str, Any]],
     target: Mapping[str, Mapping[str, Any]],
+    *,
+    templates: Mapping[str, Any] | None = None,
+    reuse_native_templates: bool = False,
 ) -> None:
     collection = _safe_getattr(font, "glyphs")
     native_by_name = {
@@ -2468,6 +2499,7 @@ def _apply_glyph_membership(
     }
     if set(native_by_name) != set(current):
         raise HostAccessError("Glyphs glyph collection diverged before mutation")
+    available_templates = dict(templates or {})
     for name in sorted(set(current) - set(target), reverse=True):
         value = native_by_name.pop(name)
         try:
@@ -2476,7 +2508,14 @@ def _apply_glyph_membership(
             index = _sequence_values(collection).index(value)
             _remove_native_collection_item(collection, index, value)
     for name in sorted(set(target) - set(current)):
-        value = _construct_native_entity("glyph", name)
+        template = available_templates.get(name)
+        value = (
+            template
+            if reuse_native_templates and template is not None
+            else _copy_native_object(template, kind="glyph")
+            if template is not None
+            else _construct_native_entity("glyph", name)
+        )
         if str(_safe_getattr(value, "name") or "") != name:
             _set_native_property(value, "name", name)
         _append_native_collection_item(collection, value)
@@ -2507,6 +2546,26 @@ def _canonical_replacement_roots(
     return tuple(sorted(replacements))
 
 
+def _native_templates_for_root(
+    templates: Mapping[tuple[str, ...], Any], root: str
+) -> dict[str, Any]:
+    return {
+        path[1]: value
+        for path, value in templates.items()
+        if len(path) == 2 and path[0] == root
+    }
+
+
+def _native_layer_templates(
+    templates: Mapping[tuple[str, ...], Any]
+) -> dict[str, Any]:
+    return {
+        "{}/{}".format(path[1], path[3]): value
+        for path, value in templates.items()
+        if len(path) == 4 and path[0] == "glyphs" and path[2] == "layers"
+    }
+
+
 def _apply_target_model(
     font: Any,
     current: Mapping[str, Any],
@@ -2521,6 +2580,26 @@ def _apply_target_model(
     reuse_native_master_templates: bool = False,
     reuse_native_layer_templates: bool = False,
 ) -> None:
+    context = dict(execution_context or {})
+    raw_templates = context.get("nativeReplayTemplates") or {}
+    native_templates = {
+        tuple(str(part) for part in path): value
+        for path, value in dict(raw_templates).items()
+        if isinstance(path, (tuple, list))
+    }
+    reuse_native_templates = bool(context.get("reuseNativeReplayTemplates"))
+    contextual_master_templates = _native_templates_for_root(
+        native_templates, "masters"
+    )
+    contextual_layer_templates = _native_layer_templates(native_templates)
+    resolved_master_templates = {
+        **contextual_master_templates,
+        **dict(master_restore_templates or {}),
+    }
+    resolved_layer_templates = {
+        **contextual_layer_templates,
+        **dict(layer_restore_templates or {}),
+    }
     replacement_roots = {tuple(str(part) for part in path) for path in replay_replacements}
     changed_roots = {change.path[0] for change in change_set.changes}
     master_structural_ids: set[str] = set()
@@ -2543,9 +2622,11 @@ def _apply_target_model(
             current.get("masters", []),
             target.get("masters", []),
             target_glyphs=target.get("glyphs", {}),
-            execution_context=execution_context,
-            restore_templates=master_restore_templates,
-            reuse_native_templates=reuse_native_master_templates,
+            execution_context=context,
+            restore_templates=resolved_master_templates,
+            reuse_native_templates=(
+                reuse_native_master_templates or reuse_native_templates
+            ),
         )
     if "font" in changed_roots:
         for name in _FONT_SCALARS:
@@ -2559,7 +2640,13 @@ def _apply_target_model(
         ):
             raise HostAccessError("canonical glyph collections must be keyed by name")
         if set(current_glyphs) != set(target_glyphs):
-            _apply_glyph_membership(font, current_glyphs, target_glyphs)
+            _apply_glyph_membership(
+                font,
+                current_glyphs,
+                target_glyphs,
+                templates=_native_templates_for_root(native_templates, "glyphs"),
+                reuse_native_templates=reuse_native_templates,
+            )
         for name in sorted(target_glyphs):
             if current_glyphs.get(name) == target_glyphs.get(name):
                 continue
@@ -2620,9 +2707,11 @@ def _apply_target_model(
                 name,
                 current_glyph,
                 target_glyphs[name],
-                execution_context=execution_context,
-                restore_templates=layer_restore_templates,
-                reuse_native_templates=reuse_native_layer_templates,
+                execution_context=context,
+                restore_templates=resolved_layer_templates,
+                reuse_native_templates=(
+                    reuse_native_layer_templates or reuse_native_templates
+                ),
                 replacement_roots=replacement_roots,
                 excluded_ids=master_structural_ids,
             )
@@ -2633,6 +2722,8 @@ def _apply_target_model(
             font,
             current.get("instances", []),
             target.get("instances", []),
+            templates=_native_templates_for_root(native_templates, "instances"),
+            reuse_native_templates=reuse_native_templates,
         )
     for root, attribute in (
         ("features", "features"),
@@ -2645,6 +2736,8 @@ def _apply_target_model(
                 attribute,
                 current.get(root, []),
                 target.get(root, []),
+                templates=_native_templates_for_root(native_templates, root),
+                reuse_native_templates=reuse_native_templates,
             )
 
 
@@ -2844,6 +2937,130 @@ def _compare_native_archive_deltas(
     }
 
 
+def _staged_instance_identity(value: Any) -> str:
+    native = str(_plain_scalar(_safe_getattr(value, "id")) or "")
+    return native or "py:{}".format(id(value))
+
+
+def _staged_instance_ids(
+    before_instances: Sequence[Any],
+    before_ids: Sequence[str],
+    after_instances: Sequence[Any],
+    *,
+    code_hash: str,
+) -> list[str]:
+    if len(before_instances) != len(before_ids):
+        raise HostAccessError("staged instance identity baseline is invalid")
+    retained = {
+        _staged_instance_identity(value): str(before_ids[index])
+        for index, value in enumerate(before_instances)
+    }
+    used = set(retained.values())
+    result: list[str] = []
+    new_index = 0
+    for value in after_instances:
+        identity = retained.get(_staged_instance_identity(value))
+        if identity is None:
+            while True:
+                identity = "instance_staged_{}_{:04d}".format(
+                    code_hash[:12], new_index
+                )
+                new_index += 1
+                if identity not in used:
+                    break
+        if identity in result:
+            raise HostAccessError("staged instances produced a duplicate identity")
+        used.add(identity)
+        result.append(identity)
+    return result
+
+
+def _added_native_replay_templates(
+    font: Any,
+    before: Mapping[str, Any],
+    after: Mapping[str, Any],
+    changes: ChangeSet,
+) -> dict[tuple[str, ...], Any]:
+    """Copy only newly added native entities from the Python-modified clone."""
+
+    additions = {
+        change.path
+        for change in changes.changes
+        if not change.before_present and change.after_present
+    }
+    if not additions:
+        return {}
+    templates: dict[tuple[str, ...], Any] = {}
+    added_master_ids = {
+        path[1]
+        for path in additions
+        if len(path) == 2 and path[0] == "masters"
+    }
+    native_glyphs = {
+        str(_safe_getattr(glyph, "name") or ""): glyph
+        for glyph in _sequence_values(_safe_getattr(font, "glyphs"))
+        if str(_safe_getattr(glyph, "name") or "")
+    }
+
+    for master_id in sorted(added_master_ids):
+        master = _master_by_id(font, master_id)
+        if master is None:
+            raise HostAccessError("staged master template is unavailable")
+        layers: dict[str, Any] = {}
+        for glyph_name, glyph in native_glyphs.items():
+            layer = _lookup_layer(glyph, master_id)
+            if layer is None:
+                raise HostAccessError(
+                    "staged master layer template is unavailable for {}".format(
+                        glyph_name
+                    )
+                )
+            layers[glyph_name] = _copy_native_object(
+                layer, kind="staged master layer"
+            )
+        templates[("masters", master_id)] = {
+            "master": _copy_native_object(master, kind="staged master"),
+            "layers": layers,
+        }
+
+    for path in sorted(additions):
+        if len(path) == 2 and path[0] == "glyphs":
+            glyph = native_glyphs.get(path[1])
+            if glyph is None:
+                raise HostAccessError("staged glyph template is unavailable")
+            templates[path] = _copy_native_object(glyph, kind="staged glyph")
+        elif (
+            len(path) == 4
+            and path[0] == "glyphs"
+            and path[2] == "layers"
+            and path[3] not in added_master_ids
+        ):
+            layer = _lookup_layer(native_glyphs.get(path[1]), path[3])
+            if layer is None:
+                raise HostAccessError("staged layer template is unavailable")
+            templates[path] = _copy_native_object(layer, kind="staged layer")
+
+    for root, attribute, kind in (
+        ("instances", "instances", "instance"),
+        ("features", "features", "feature"),
+        ("classes", "classes", "class"),
+        ("featurePrefixes", "featurePrefixes", "feature prefix"),
+    ):
+        target_order = collection_order(after.get(root, []))
+        native_values = _sequence_values(_safe_getattr(font, attribute))
+        if len(target_order) != len(native_values):
+            raise HostAccessError("staged {} identity count is invalid".format(kind))
+        native_by_id = {
+            target_order[index]: value for index, value in enumerate(native_values)
+        }
+        for path in sorted(additions):
+            if len(path) == 2 and path[0] == root:
+                templates[path] = _copy_native_object(
+                    native_by_id[path[1]], kind="staged {}".format(kind)
+                )
+    return templates
+
+
 def _document_edited_state(font: Any) -> Optional[bool]:
     document = _maybe_call(_safe_getattr(font, "parent"))
     return _native_unsaved_changes(document)
@@ -2859,6 +3076,58 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         self._instance_identity_counters: dict[str, int] = {}
         self._master_lifecycle_tombstones: dict[str, Mapping[str, Any]] = {}
         self._layer_lifecycle_tombstones: dict[str, Mapping[str, Any]] = {}
+        self._native_replay_evidence = NativeReplayEvidenceStore(
+            max_records=32, max_records_per_document=8
+        )
+        self._native_lifecycle_tombstones: dict[str, Mapping[str, Any]] = {}
+
+    def release_staged_replay_evidence(self, evidence_id: str) -> None:
+        self._native_replay_evidence.discard(str(evidence_id))
+
+    def validate_staged_replay_evidence(
+        self,
+        document_id: str,
+        execution_context: Mapping[str, Any],
+        *,
+        before_fingerprint: str,
+        after_fingerprint: str,
+        capabilities: Sequence[str],
+    ) -> bool:
+        evidence_id = str(execution_context.get("nativeReplayEvidenceId") or "")
+        if not evidence_id:
+            return True
+        evidence = self._native_replay_evidence.resolve(
+            evidence_id, document_id=document_id
+        )
+        return bool(
+            evidence is not None
+            and evidence.before_fingerprint == str(before_fingerprint)
+            and evidence.after_fingerprint == str(after_fingerprint)
+            and evidence.capabilities
+            == tuple(sorted(set(str(value) for value in capabilities)))
+        )
+
+    def _resolved_replay_context(
+        self,
+        document_id: str,
+        execution_context: Mapping[str, Any] | None,
+        *,
+        native_restore: bool = False,
+    ) -> dict[str, Any]:
+        context = dict(execution_context or {})
+        evidence_id = str(context.get("nativeReplayEvidenceId") or "")
+        if evidence_id:
+            evidence = self._native_replay_evidence.resolve(
+                evidence_id, document_id=document_id
+            )
+            if evidence is None:
+                raise HostAccessError(
+                    "staged structural replay evidence is missing or expired"
+                )
+            context["nativeReplayTemplates"] = evidence.templates
+        if native_restore:
+            context["reuseNativeReplayTemplates"] = True
+        return context
 
     def runtime_snapshot(self):
         self._cleanup_all_recovery()
@@ -3070,6 +3339,93 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             if isinstance(value, Mapping) and value.get(key) is not None
         }
 
+    def _capture_removed_native_templates(
+        self,
+        font: Any,
+        current: Mapping[str, Any],
+        target: Mapping[str, Any],
+    ) -> dict[tuple[str, ...], Mapping[str, Any]]:
+        """Capture every removed registered entity through one path registry."""
+
+        result: dict[tuple[str, ...], Mapping[str, Any]] = {}
+        for master_id, value in self._capture_removed_master_templates(
+            font, current, target
+        ).items():
+            result[("masters", master_id)] = {
+                "copy": {
+                    "master": value.get("master"),
+                    "layers": value.get("layers", {}),
+                },
+                "native": {
+                    "master": value.get("nativeMaster"),
+                    "layers": value.get("nativeLayers", {}),
+                },
+            }
+        for key, value in self._capture_removed_layer_templates(
+            font, current, target
+        ).items():
+            glyph_name, layer_id = key.split("/", 1)
+            result[("glyphs", glyph_name, "layers", layer_id)] = value
+
+        current_glyphs = current.get("glyphs", {})
+        target_glyphs = target.get("glyphs", {})
+        if isinstance(current_glyphs, Mapping) and isinstance(
+            target_glyphs, Mapping
+        ):
+            for glyph_name in sorted(set(current_glyphs) - set(target_glyphs)):
+                glyph = _lookup_by_name(_safe_getattr(font, "glyphs"), glyph_name)
+                if glyph is None:
+                    raise HostAccessError(
+                        "Glyphs could not snapshot removed glyph {}".format(
+                            glyph_name
+                        )
+                    )
+                result[("glyphs", glyph_name)] = {
+                    "copy": _copy_native_object(glyph, kind="glyph"),
+                    "native": glyph,
+                }
+
+        for root, attribute, kind in (
+            ("instances", "instances", "instance"),
+            ("features", "features", "feature"),
+            ("classes", "classes", "class"),
+            ("featurePrefixes", "featurePrefixes", "feature prefix"),
+        ):
+            current_order = collection_order(current.get(root, []))
+            target_order = set(collection_order(target.get(root, [])))
+            native_values = _sequence_values(_safe_getattr(font, attribute))
+            if len(current_order) != len(native_values):
+                raise HostAccessError(
+                    "Glyphs {} collection diverged before tombstone capture".format(
+                        kind
+                    )
+                )
+            for index, identity in enumerate(current_order):
+                if identity in target_order:
+                    continue
+                native = native_values[index]
+                result[(root, identity)] = {
+                    "copy": _copy_native_object(native, kind=kind),
+                    "native": native,
+                }
+        return result
+
+    def _native_restore_templates(
+        self, contribution_id: Optional[str], *, native: bool
+    ) -> dict[tuple[str, ...], Any]:
+        if not contribution_id:
+            return {}
+        record = self._native_lifecycle_tombstones.get(
+            str(contribution_id), {}
+        )
+        templates = record.get("templates", {}) if isinstance(record, Mapping) else {}
+        key = "native" if native else "copy"
+        return {
+            tuple(path): value.get(key)
+            for path, value in dict(templates).items()
+            if isinstance(value, Mapping) and value.get(key) is not None
+        }
+
     def _cached_open_models(self) -> dict[str, dict[str, Any]]:
         return {
             document_id: self._capture_cached_model(document_id, font)
@@ -3221,6 +3577,15 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             layer_restore_templates = self._layer_restore_templates(
                 removes_contribution_id, native=False
             )
+            resolved_context = dict(execution_context or {})
+            native_restore_templates = self._native_restore_templates(
+                removes_contribution_id, native=False
+            )
+            if native_restore_templates:
+                resolved_context["nativeReplayTemplates"] = {
+                    **dict(resolved_context.get("nativeReplayTemplates") or {}),
+                    **native_restore_templates,
+                }
 
             timings = {
                 "clone": 0.0,
@@ -3285,7 +3650,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 target,
                 change_set,
                 capabilities=capabilities,
-                execution_context=execution_context,
+                execution_context=resolved_context,
                 master_restore_templates=restore_templates,
                 layer_restore_templates=layer_restore_templates,
             )
@@ -3335,7 +3700,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 residual,
                 replay_replacements=replacements,
                 capabilities=capabilities,
-                execution_context=execution_context,
+                execution_context=resolved_context,
                 master_restore_templates=restore_templates,
                 layer_restore_templates=layer_restore_templates,
             )
@@ -3507,11 +3872,25 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             direct_before_archive = _serialized_review_scope(clone, request)
             replay_before_archive = _serialized_review_scope(verifier, request)
             clone_revisions_before = _glyph_revision_index(clone)
+            before_instance_ids = collection_order(
+                before_model.get("instances", [])
+            )
+            clone_instances_before = _sequence_values(
+                _safe_getattr(clone, "instances")
+            )
             namespace = self._context(clone, request)
             namespace["__builtins__"] = _STAGED_BUILTINS
             stdout, stderr = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 exec(compile(request.code or "", "<glyphs-mcp-staged>", "exec"), namespace, namespace)
+            after_instance_ids = _staged_instance_ids(
+                clone_instances_before,
+                before_instance_ids,
+                _sequence_values(_safe_getattr(clone, "instances")),
+                code_hash=hashlib.sha256(
+                    (request.code or "").encode("utf-8")
+                ).hexdigest(),
+            )
             if request.glyph_name:
                 clone_revisions_after = _glyph_revision_index(clone)
                 after_model = _scoped_font_model(
@@ -3522,22 +3901,27 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         clone_revisions_before,
                         clone_revisions_after,
                     ),
-                    instance_ids=collection_order(before_model.get("instances", [])),
+                    instance_ids=after_instance_ids,
                 )
             else:
                 # Open-world staged requests retain the conservative full-tree
                 # fallback because no smaller correctness boundary was declared.
                 after_model = native_font_to_model(
                     clone,
-                    instance_ids=collection_order(before_model.get("instances", [])),
+                    instance_ids=after_instance_ids,
                 )
             changes = diff_models(before_model, after_model)
+            capabilities = staged_lifecycle_capabilities(
+                before_model, after_model, changes
+            )
             context_violations = _staged_context_violations(
                 request,
                 changes,
                 model=before_model,
             )
-            writable_changes = writable_subset(before_model, changes)
+            writable_changes = writable_subset(
+                before_model, changes, capabilities=capabilities
+            )
             archive_comparison = {
                 "equivalent": True,
                 "mismatchCount": 0,
@@ -3546,31 +3930,81 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 "directDeltaCount": 0,
                 "replayDeltaCount": 0,
             }
-            if self.supports_change_set(writable_changes):
+            templates: dict[tuple[str, ...], Any] = {}
+            if self.supports_change_set(
+                writable_changes, capabilities=capabilities
+            ):
                 writable_target = writable_changes.apply(before_model)
+                templates = _added_native_replay_templates(
+                    clone, before_model, after_model, changes
+                )
                 _apply_target_model(
                     verifier,
                     before_model,
                     writable_target,
                     writable_changes,
+                    capabilities=capabilities,
+                    execution_context={"nativeReplayTemplates": templates},
                 )
-                archive_comparison = _compare_native_archive_deltas(
-                    direct_before_archive,
-                    _serialized_review_scope(clone, request),
-                    replay_before_archive,
-                    _serialized_review_scope(verifier, request),
-                    limit=100,
+                verifier_model = native_font_to_model(
+                    verifier, instance_ids=after_instance_ids
                 )
+                if fingerprint_model(verifier_model) != fingerprint_model(
+                    after_model
+                ):
+                    archive_comparison = {
+                        "equivalent": False,
+                        "mismatchCount": 1,
+                        "mismatchLocations": [
+                            {
+                                "canonical": {
+                                    "expected": fingerprint_model(after_model),
+                                    "observed": fingerprint_model(verifier_model),
+                                }
+                            }
+                        ],
+                        "truncated": False,
+                        "directDeltaCount": 0,
+                        "replayDeltaCount": 0,
+                    }
+                elif not int(context_violations.get("count") or 0):
+                    archive_comparison = _compare_native_archive_deltas(
+                        direct_before_archive,
+                        _serialized_review_scope(clone, request),
+                        replay_before_archive,
+                        _serialized_review_scope(verifier, request),
+                        limit=100,
+                    )
             live_after_models = self._cached_open_models()
             live_after = {
                 document_id: fingerprint_model(model)
                 for document_id, model in live_after_models.items()
             }
             violations = [document_id for document_id in sorted(set(live_before) | set(live_after)) if live_before.get(document_id) != live_after.get(document_id)]
+            replay_context: dict[str, Any] = {}
+            if (
+                templates
+                and not violations
+                and not int(context_violations.get("count") or 0)
+                and bool(archive_comparison.get("equivalent"))
+            ):
+                evidence = self._native_replay_evidence.create(
+                    document_id=request.document_id or "",
+                    before_fingerprint=fingerprint_model(before_model),
+                    after_fingerprint=fingerprint_model(after_model),
+                    capabilities=capabilities,
+                    templates=templates,
+                    ttl_seconds=15 * 60,
+                )
+                replay_context = {
+                    "nativeReplayEvidenceId": evidence.evidence_id
+                }
             return {
                 "afterModel": after_model,
                 "changeSet": changes,
                 "writableChangeSet": writable_changes,
+                "capabilities": capabilities,
+                "executionContext": replay_context,
                 "stdout": stdout.getvalue(),
                 "stderr": stderr.getvalue(),
                 "scopeViolations": violations,
@@ -3723,6 +4157,21 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             font = self._font_for_document(document_id)
             current = self._capture_cached_model(document_id, font)
             target = change_set.apply(current)
+            resolved_context = self._resolved_replay_context(
+                document_id, execution_context
+            )
+            native_restore_templates = self._native_restore_templates(
+                removes_contribution_id, native=True
+            )
+            if native_restore_templates:
+                existing = dict(
+                    resolved_context.get("nativeReplayTemplates") or {}
+                )
+                resolved_context["nativeReplayTemplates"] = {
+                    **existing,
+                    **native_restore_templates,
+                }
+                resolved_context["reuseNativeReplayTemplates"] = True
             contributions = getattr(self, "_document_mcp_contributions", {})
             active = contributions.setdefault(document_id, {})
             baselines = getattr(self, "_document_mcp_baseline_dirty", {})
@@ -3735,22 +4184,40 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             if removes_contribution_id and removes_contribution_id not in active:
                 raise HostAccessError("The reverted MCP dirty contribution is unavailable")
             native_before = _document_edited_state(font)
-            master_templates = self._capture_removed_master_templates(
+            removed_templates = self._capture_removed_native_templates(
                 font, current, target
             )
-            if master_templates:
-                self._master_lifecycle_tombstones[operation_id] = {
+            if removed_templates:
+                self._native_lifecycle_tombstones[operation_id] = {
                     "documentId": document_id,
-                    "templates": master_templates,
+                    "templates": removed_templates,
                 }
-            layer_templates = self._capture_removed_layer_templates(
-                font, current, target
-            )
-            if layer_templates:
-                self._layer_lifecycle_tombstones[operation_id] = {
-                    "documentId": document_id,
-                    "templates": layer_templates,
-                }
+                # Keep the established private compatibility views while the
+                # single path-keyed store owns the retained objects.
+                master_templates = {}
+                layer_templates = {}
+                for path, retained in removed_templates.items():
+                    if len(path) == 2 and path[0] == "masters":
+                        copied = retained.get("copy", {})
+                        native = retained.get("native", {})
+                        master_templates[path[1]] = {
+                            "master": copied.get("master"),
+                            "layers": copied.get("layers", {}),
+                            "nativeMaster": native.get("master"),
+                            "nativeLayers": native.get("layers", {}),
+                        }
+                    elif len(path) == 4 and path[0] == "glyphs":
+                        layer_templates["{}/{}".format(path[1], path[3])] = retained
+                if master_templates:
+                    self._master_lifecycle_tombstones[operation_id] = {
+                        "documentId": document_id,
+                        "templates": master_templates,
+                    }
+                if layer_templates:
+                    self._layer_lifecycle_tombstones[operation_id] = {
+                        "documentId": document_id,
+                        "templates": layer_templates,
+                    }
             self._canonical_model_cache.invalidate_impact(
                 document_id, CanonicalImpact.from_change_set(current, change_set)
             )
@@ -3761,7 +4228,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 change_set,
                 replay_replacements=replay_replacements,
                 capabilities=capabilities,
-                execution_context=execution_context,
+                execution_context=resolved_context,
                 master_restore_templates=self._master_restore_templates(
                     removes_contribution_id
                 ),
@@ -3850,13 +4317,16 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             self._canonical_model_cache.invalidate_impact(
                 document_id, CanonicalImpact.from_change_set(current, writable)
             )
+            resolved_context = self._resolved_replay_context(
+                document_id, execution_context
+            )
             _apply_target_model(
                 font,
                 current,
                 expected,
                 writable,
                 capabilities=capabilities,
-                execution_context=execution_context,
+                execution_context=resolved_context,
             )
             if any(change.path[0] == "instances" for change in writable.changes):
                 self._bind_instance_ids(
@@ -3874,6 +4344,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             for tombstones in (
                 self._master_lifecycle_tombstones,
                 self._layer_lifecycle_tombstones,
+                self._native_lifecycle_tombstones,
             ):
                 tombstones.pop(
                     str(completed_revert.get("removedId") or ""), None
@@ -3913,13 +4384,28 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 layer_restore_templates = self._layer_restore_templates(
                     removes_contribution_id, native=True
                 )
+            resolved_context = self._resolved_replay_context(
+                document_id, execution_context, native_restore=True
+            )
+            native_restore_templates = self._native_restore_templates(
+                operation_id, native=True
+            )
+            if not native_restore_templates:
+                native_restore_templates = self._native_restore_templates(
+                    removes_contribution_id, native=True
+                )
+            if native_restore_templates:
+                resolved_context["nativeReplayTemplates"] = {
+                    **dict(resolved_context.get("nativeReplayTemplates") or {}),
+                    **native_restore_templates,
+                }
             _apply_target_model(
                 font,
                 current,
                 model,
                 restoration,
                 capabilities=capabilities,
-                execution_context=execution_context,
+                execution_context=resolved_context,
                 master_restore_templates=restore_templates,
                 layer_restore_templates=layer_restore_templates,
                 reuse_native_master_templates=True,
@@ -3949,7 +4435,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         residual,
                         replay_replacements=replacements,
                         capabilities=capabilities,
-                        execution_context=execution_context,
+                        execution_context=resolved_context,
                         master_restore_templates=restore_templates,
                         layer_restore_templates=layer_restore_templates,
                         reuse_native_master_templates=True,
@@ -3975,6 +4461,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 self._native_change_count(font, _NS_CHANGE_UNDONE)
             self._master_lifecycle_tombstones.pop(operation_id, None)
             self._layer_lifecycle_tombstones.pop(operation_id, None)
+            self._native_lifecycle_tombstones.pop(operation_id, None)
             self._document_mcp_contributions = contributions
             self._document_mcp_pending_reverts = pending
             self._refresh_verified_dirty_override(
@@ -4014,6 +4501,15 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             for operation_id, record in layer_tombstones.items()
             if str(record.get("documentId") or "") != document_id
         }
+        native_tombstones = getattr(self, "_native_lifecycle_tombstones", {})
+        self._native_lifecycle_tombstones = {
+            operation_id: record
+            for operation_id, record in native_tombstones.items()
+            if str(record.get("documentId") or "") != document_id
+        }
+        replay_evidence = getattr(self, "_native_replay_evidence", None)
+        if replay_evidence is not None:
+            replay_evidence.clear_document(document_id)
 
     def complete_observed_diff_covered(
         self, change_set: ChangeSet, execution_result: Mapping[str, Any]

@@ -9,15 +9,15 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Protocol
 
 from .audit import AuditLog
-from .contracts import ToolResponse, ToolWarning
+from .contracts import OperationMetadata, ToolResponse, ToolWarning
 from .operations import OperationRecord, OperationStore
 from .pagination import paginate
 from .mutation import (
     CanonicalTargetMismatchError,
     MutationPlanner,
     VerifiedMutationPlan,
+    staged_lifecycle_capabilities,
     unsupported_change_diagnostics,
-    is_structural_change_path,
     writable_subset,
 )
 from .semantic import ChangeSet, diff_models, fingerprint_model, public_change_dict
@@ -220,6 +220,22 @@ class PythonExecutionService:
         self._audit = audit
         self._operations = operations or OperationStore(max_records=512)
         self._trace = trace
+
+    @staticmethod
+    def _replay_context(value: Mapping[str, Any]) -> dict[str, Any]:
+        context = value.get("executionContext")
+        if not isinstance(context, Mapping):
+            return {}
+        return {str(key): item for key, item in context.items()}
+
+    def _release_replay_evidence(self, context: Mapping[str, Any]) -> None:
+        evidence_id = str(context.get("nativeReplayEvidenceId") or "")
+        release = getattr(self._host, "release_staged_replay_evidence", None)
+        if evidence_id and callable(release):
+            try:
+                release(evidence_id)
+            except Exception:
+                pass
 
     def _store_diff(self, changes: ChangeSet) -> tuple[OperationRecord, Mapping[str, Any]]:
         items = [public_change_dict(change) for change in changes.changes]
@@ -470,7 +486,9 @@ class PythonExecutionService:
                 "Detached Python preview failed: {}".format(type(exc).__name__),
             )
         scope_violations = list(preview.get("scopeViolations") or [])
+        replay_context = self._replay_context(preview)
         if scope_violations:
+            self._release_replay_evidence(replay_context)
             return self._failure(
                 "staged_scope_violation",
                 "Staged Python changed one or more live documents; confirmation is refused.",
@@ -481,6 +499,7 @@ class PythonExecutionService:
             isinstance(context_violations, Mapping)
             and int(context_violations.get("count") or 0) > 0
         ):
+            self._release_replay_evidence(replay_context)
             return self._failure(
                 "staged_context_violation",
                 "Staged Python changed fields outside its explicit glyph/layer context; confirmation is refused.",
@@ -496,6 +515,7 @@ class PythonExecutionService:
             and not bool(archive_comparison.get("equivalent"))
         )
         if archive_mismatch or bool(preview.get("unsupportedNativeChange")):
+            self._release_replay_evidence(replay_context)
             bounded_comparison = (
                 {
                     "equivalent": False,
@@ -519,28 +539,42 @@ class PythonExecutionService:
                 "The detached script changed native fields outside the canonical semantic model.",
                 data={"unsupportedPaths": [], "nativeArchiveMismatch": bounded_comparison},
             )
-        diagnostics = unsupported_change_diagnostics(changes, limit=100)
-        structural_paths = [
-            change.path
-            for change in changes.changes
-            if is_structural_change_path(change.path)
-        ]
-        if structural_paths:
+        try:
+            capabilities = staged_lifecycle_capabilities(before, after, changes)
+        except ValueError as exc:
+            self._release_replay_evidence(replay_context)
             return self._failure(
                 "unsupported_staged_change",
-                "Staged Python structural replay is deferred; use the typed structural tools.",
+                str(exc),
                 data={
-                    "unsupportedCount": len(structural_paths),
+                    "unsupportedCount": 1,
                     "changedRoots": list(
-                        dict.fromkeys(path[0] for path in structural_paths)
+                        dict.fromkeys(
+                            change.path[0]
+                            for change in changes.changes
+                            if change.path
+                        )
                     ),
-                    "unsupportedPaths": [list(path) for path in structural_paths[:100]],
-                    "truncated": len(structural_paths) > 100,
+                    "unsupportedPaths": [],
+                    "truncated": False,
                 },
             )
+        provided_capabilities = tuple(
+            sorted(set(str(value) for value in preview.get("capabilities", ())) )
+        )
+        if provided_capabilities and provided_capabilities != capabilities:
+            self._release_replay_evidence(replay_context)
+            return self._failure(
+                "python_preview_failed",
+                "Detached Python preview returned inconsistent lifecycle capabilities.",
+            )
+        diagnostics = unsupported_change_diagnostics(
+            changes, limit=100, capabilities=capabilities
+        )
         provided_writable = preview.get("writableChangeSet")
         if isinstance(provided_writable, ChangeSet):
             if provided_writable.before_fingerprint != before_fingerprint:
+                self._release_replay_evidence(replay_context)
                 return self._failure(
                     "python_preview_failed",
                     "Detached Python preview returned a stale writable change set.",
@@ -548,21 +582,34 @@ class PythonExecutionService:
             try:
                 writable_after = provided_writable.apply(before)
             except (KeyError, ValueError):
+                self._release_replay_evidence(replay_context)
                 return self._failure(
                     "python_preview_failed",
                     "Detached Python preview returned an invalid writable change set.",
                 )
             if fingerprint_model(writable_after) != provided_writable.after_fingerprint:
+                self._release_replay_evidence(replay_context)
                 return self._failure(
                     "python_preview_failed",
                     "Detached Python preview returned an unreproducible writable change set.",
                 )
             writable_changes = provided_writable
         else:
-            writable_changes = writable_subset(before, changes)
+            writable_changes = writable_subset(
+                before, changes, capabilities=capabilities
+            )
         supports = getattr(self._host, "supports_change_set", None)
-        host_supported = bool(supports(writable_changes)) if callable(supports) else True
+        if callable(supports):
+            try:
+                host_supported = bool(
+                    supports(writable_changes, capabilities=capabilities)
+                )
+            except TypeError:
+                host_supported = bool(supports(writable_changes))
+        else:
+            host_supported = True
         if diagnostics["unsupportedCount"] or not host_supported:
+            self._release_replay_evidence(replay_context)
             if not diagnostics["unsupportedCount"] and not host_supported:
                 diagnostics = {
                     "unsupportedCount": len(writable_changes.changes),
@@ -589,6 +636,8 @@ class PythonExecutionService:
                 "changeSet": changes,
                 "writableChangeSet": writable_changes,
                 "expectedAfterModel": after,
+                "capabilities": capabilities,
+                "executionContext": replay_context,
                 "stdout": _bounded(preview.get("stdout"), min(request.max_output_chars, MAX_OUTPUT_CHARS)),
                 "stderr": _bounded(preview.get("stderr"), min(request.max_error_chars, MAX_OUTPUT_CHARS)),
                 "scopeViolations": list(preview.get("scopeViolations") or []),
@@ -609,6 +658,7 @@ class PythonExecutionService:
                 "beforeFingerprint": before_fingerprint,
                 "proposedFingerprint": changes.after_fingerprint,
                 "changeCount": len(changes.changes),
+                "capabilities": list(capabilities),
                 "scopeViolations": list(preview.get("scopeViolations") or []),
             },
         )
@@ -692,6 +742,32 @@ class PythonExecutionService:
         ):
             return self._failure("review_corrupt", "The stored staged review is incomplete.", recoverable=False)
         before = dict(self._host.capture_model(request.document_id or ""))
+        capabilities = tuple(
+            sorted(set(str(value) for value in payload.get("capabilities", ())))
+        )
+        execution_context = dict(payload.get("executionContext") or {})
+        evidence_validator = getattr(
+            self._host, "validate_staged_replay_evidence", None
+        )
+        if callable(evidence_validator):
+            try:
+                evidence_available = bool(
+                    evidence_validator(
+                        request.document_id or "",
+                        execution_context,
+                        before_fingerprint=fingerprint_model(before),
+                        after_fingerprint=fingerprint_model(expected_after),
+                        capabilities=capabilities,
+                    )
+                )
+            except Exception:
+                evidence_available = False
+            if not evidence_available:
+                self._release_replay_evidence(execution_context)
+                return self._failure(
+                    "review_unavailable",
+                    "The staged structural replay evidence is missing, expired, or mismatched.",
+                )
         plan = VerifiedMutationPlan(
             document_id=request.document_id or "",
             operation_id=review_id,
@@ -699,6 +775,8 @@ class PythonExecutionService:
             expected_after_model=dict(expected_after),
             writable_change_set=writable,
             observed_change_set=changes,
+            capabilities=capabilities,
+            execution_context=execution_context,
         )
         try:
             transaction = self._transactions.apply_plan(plan)
@@ -726,6 +804,8 @@ class PythonExecutionService:
                 data={"rollbackAttempted": True, "rollbackSucceeded": exc.rollback_succeeded},
                 receipt=receipt.to_dict(),
             )
+        finally:
+            self._release_replay_evidence(execution_context)
         checkpoint = self._checkpoints.create(
             kind="python_checkpoint",
             ttl_seconds=ROLLBACK_TTL_SECONDS,
@@ -739,6 +819,7 @@ class PythonExecutionService:
                 "contributionId": review_id,
                 "coverage": "document_inverse",
                 "recoveryPath": None,
+                "capabilities": capabilities,
             },
         )
         receipt = self._audit.record(
@@ -748,12 +829,14 @@ class PythonExecutionService:
             document_id=request.document_id,
             details={
                 "codeHash": payload.get("codeHash"),
+                "operationId": review_id,
                 "reason": request.reason,
                 "executionMode": "staged_document",
                 "context": _context_details(request),
                 "beforeFingerprint": transaction.before_fingerprint,
                 "afterFingerprint": transaction.after_fingerprint,
                 "changeCount": transaction.change_count,
+                "capabilities": list(capabilities),
                 "rollbackCoverage": "document_inverse",
             },
         )
@@ -762,6 +845,7 @@ class PythonExecutionService:
             effect="code",
             summary="The reviewed Python change set was applied and verified without rerunning the script.",
             audit_receipt=receipt.to_dict(),
+            metadata=OperationMetadata.create(operation_id=review_id),
             data={
                 "executionId": checkpoint.operation_id,
                 "codeHash": payload.get("codeHash"),
@@ -1131,6 +1215,14 @@ class PythonExecutionService:
                 dirty_state_intent="rollback",
                 removes_contribution_id=str(payload.get("contributionId") or "") or None,
                 required_after_model=required_before,
+                capabilities=tuple(
+                    sorted(
+                        set(
+                            str(value)
+                            for value in payload.get("capabilities", ())
+                        )
+                    )
+                ),
             )
             result = self._transactions.apply_plan(plan)
         except CanonicalTargetMismatchError as exc:
