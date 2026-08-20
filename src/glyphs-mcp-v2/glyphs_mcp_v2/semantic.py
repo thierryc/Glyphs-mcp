@@ -882,11 +882,16 @@ def subset_change_set(
 ) -> ChangeSet:
     """Project a verified change set while preserving a reproducible target."""
 
+    selected = [change for change in source.changes if predicate(change)]
+    if len(selected) == len(source.changes):
+        if fingerprint_model(before) != source.before_fingerprint:
+            raise ValueError("source change set does not match the supplied before state")
+        return source
+
     before_plain = _plain(before)
     if fingerprint_model(before_plain) != source.before_fingerprint:
         raise ValueError("source change set does not match the supplied before state")
     target = copy.deepcopy(before_plain)
-    selected = [change for change in source.changes if predicate(change)]
     selected.sort(key=lambda change: (change.path[-1] == ORDER_TOKEN, change.path))
     for change in selected:
         current = _value_at(target, change.path)
