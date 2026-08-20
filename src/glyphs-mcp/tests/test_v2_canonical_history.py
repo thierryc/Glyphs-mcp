@@ -322,13 +322,25 @@ class ChangeHistoryTests(unittest.TestCase):
         final["glyphs"]["g0000"]["layers"]["m0"]["width"] = 500
         final["glyphs"]["g0002"]["export"] = False
 
-        composed = compose_change_sets(
-            diff_models(self.before, middle),
-            diff_models(middle, final),
+        first = diff_models(self.before, middle)
+        second = diff_models(middle, final)
+        retained = next(
+            change
+            for change in first.changes
+            if change.path == ("glyphs", "g0001", "export")
         )
+        composed = compose_change_sets(first, second)
 
         self.assertEqual(composed, diff_models(self.before, final))
         self.assertEqual(composed.apply(self.before), final)
+        self.assertIs(
+            next(
+                change
+                for change in composed.changes
+                if change.path == retained.path
+            ),
+            retained,
+        )
 
     def test_verified_patch_composition_folds_child_edit_into_parent_addition(self) -> None:
         middle = copy.deepcopy(self.before)
@@ -340,8 +352,10 @@ class ChangeHistoryTests(unittest.TestCase):
         final = copy.deepcopy(middle)
         final["glyphs"]["newGlyph"]["layers"]["m0"]["width"] = 640
 
+        addition = diff_models(self.before, middle)
+        nested_paths = addition.changes[0].after["layers"]["m0"]["paths"]
         composed = compose_change_sets(
-            diff_models(self.before, middle),
+            addition,
             diff_models(middle, final),
         )
 
@@ -349,6 +363,10 @@ class ChangeHistoryTests(unittest.TestCase):
         self.assertEqual(len(composed.changes), 1)
         self.assertEqual(composed.changes[0].path, ("glyphs", "newGlyph"))
         self.assertEqual(composed.apply(self.before), final)
+        self.assertIs(
+            composed.changes[0].after["layers"]["m0"]["paths"],
+            nested_paths,
+        )
 
     def test_verified_patch_composition_reconstructs_parent_before_deletion(self) -> None:
         middle = copy.deepcopy(self.before)
