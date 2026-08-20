@@ -1237,11 +1237,11 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(native_font_to_model(font), after)
         self.assertEqual(glyph.layers[1].layerId, "brace-150")
         self.assertEqual(glyph.layers[1].native_only, "backup-private-state")
-        self.assertGreater(glyph.exact_layer_remove_count, 0)
-        self.assertGreater(glyph.exact_layer_set_count, 0)
+        self.assertEqual(glyph.exact_layer_remove_count, 0)
+        self.assertEqual(glyph.exact_layer_set_count, 0)
         self.assertEqual(glyph.layer_array_remove_count, 0)
         self.assertEqual(glyph.layer_array_insert_count, 0)
-        self.assertEqual(glyph.layers.atomic_assignment_count, 0)
+        self.assertGreater(glyph.layers.atomic_assignment_count, 0)
         self.assertEqual(
             len({layer.layerId for layer in glyph.layers.values()}),
             len(glyph.layers),
@@ -1255,7 +1255,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         )
         self.assertEqual(native_font_to_model(font), before)
 
-    def test_live_layer_reorder_suspends_only_the_glyph_undo_manager(self) -> None:
+    def test_live_layer_reorder_uses_one_atomic_identity_preserving_setter(self) -> None:
         font = _master_lifecycle_font()
         glyph = font.glyphs[0]
         original_undo_manager = glyph.undoManager
@@ -1276,7 +1276,10 @@ class V2DocumentAdapterTests(unittest.TestCase):
         )
 
         self.assertIs(glyph.undoManager, original_undo_manager)
-        self.assertGreater(glyph.undo_disabled_layer_remove_count, 0)
+        self.assertEqual(glyph.undo_disabled_layer_remove_count, 0)
+        self.assertEqual(glyph.exact_layer_remove_count, 0)
+        self.assertEqual(glyph.exact_layer_set_count, 0)
+        self.assertEqual(glyph.layers.atomic_assignment_count, 1)
         self.assertEqual(glyph._ghost_layers, [])
         self.assertEqual(
             [
