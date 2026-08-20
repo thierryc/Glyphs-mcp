@@ -440,6 +440,30 @@ class ChangeHistoryTests(unittest.TestCase):
         self.assertEqual(trees.diff_calls, 0)
         self.assertEqual(trees.glyph_reads, 0)
 
+    def test_master_membership_and_order_compose_to_the_exact_lifecycle_delta(self) -> None:
+        baseline = _model(glyph_count=3, master_count=3)
+        added = copy.deepcopy(baseline)
+        added["masters"].append({"id": "m3", "name": "M3"})
+        for glyph in added["glyphs"].values():
+            glyph["layers"]["m3"] = _layer("m3")
+        moved = copy.deepcopy(added)
+        moved["masters"].insert(0, moved["masters"].pop())
+        restored = copy.deepcopy(moved)
+        restored["masters"].pop(0)
+        for glyph in restored["glyphs"].values():
+            glyph["layers"].pop("m3")
+
+        composed = compose_change_sets(
+            compose_change_sets(
+                diff_models(baseline, added),
+                diff_models(added, moved),
+            ),
+            diff_models(moved, restored),
+        )
+
+        self.assertEqual(composed, diff_models(baseline, restored))
+        self.assertEqual(composed.apply(baseline), restored)
+
     def test_latest_agent_session_spans_distinct_tool_run_ids_until_an_external_boundary(self) -> None:
         middle = copy.deepcopy(self.before)
         middle["glyphs"]["g0000"]["export"] = False
