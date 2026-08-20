@@ -28,7 +28,11 @@ from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
 from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
 from glyphs_mcp_v2.change_trace import ActionTraceCoordinator  # noqa: E402
 from glyphs_mcp_v2.contracts import ToolResponse  # noqa: E402
-from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
+from glyphs_mcp_v2.semantic import (  # noqa: E402
+    compose_change_sets,
+    diff_models,
+    fingerprint_model,
+)
 
 
 def _layer(master_id: str, x: float = 0.0) -> dict:
@@ -309,6 +313,114 @@ class ChangeHistoryTests(unittest.TestCase):
         self.assertEqual(session.run_id, "run_1")
         self.assertEqual(len(session.change_set.changes), 1)
         self.assertEqual(session.change_set.changes[0].path[:3], ("glyphs", "g0001", "export"))
+
+    def test_verified_patch_composition_preserves_unrelated_changes_and_cancellation(self) -> None:
+        middle = copy.deepcopy(self.before)
+        middle["glyphs"]["g0000"]["layers"]["m0"]["width"] = 520
+        middle["glyphs"]["g0001"]["export"] = False
+        final = copy.deepcopy(middle)
+        final["glyphs"]["g0000"]["layers"]["m0"]["width"] = 500
+        final["glyphs"]["g0002"]["export"] = False
+
+        composed = compose_change_sets(
+            diff_models(self.before, middle),
+            diff_models(middle, final),
+        )
+
+        self.assertEqual(composed, diff_models(self.before, final))
+        self.assertEqual(composed.apply(self.before), final)
+
+    def test_verified_patch_composition_folds_child_edit_into_parent_addition(self) -> None:
+        middle = copy.deepcopy(self.before)
+        middle["glyphs"]["newGlyph"] = copy.deepcopy(
+            middle["glyphs"]["g0000"]
+        )
+        middle["glyphs"]["newGlyph"]["name"] = "newGlyph"
+        middle["glyphs"]["newGlyph"]["id"] = "id_newGlyph"
+        final = copy.deepcopy(middle)
+        final["glyphs"]["newGlyph"]["layers"]["m0"]["width"] = 640
+
+        composed = compose_change_sets(
+            diff_models(self.before, middle),
+            diff_models(middle, final),
+        )
+
+        self.assertEqual(composed, diff_models(self.before, final))
+        self.assertEqual(len(composed.changes), 1)
+        self.assertEqual(composed.changes[0].path, ("glyphs", "newGlyph"))
+        self.assertEqual(composed.apply(self.before), final)
+
+    def test_verified_patch_composition_reconstructs_parent_before_deletion(self) -> None:
+        middle = copy.deepcopy(self.before)
+        middle["glyphs"]["g0000"]["layers"]["m0"]["width"] = 640
+        final = copy.deepcopy(middle)
+        del final["glyphs"]["g0000"]
+
+        composed = compose_change_sets(
+            diff_models(self.before, middle),
+            diff_models(middle, final),
+        )
+
+        self.assertEqual(composed, diff_models(self.before, final))
+        self.assertEqual(len(composed.changes), 1)
+        self.assertEqual(composed.changes[0].path, ("glyphs", "g0000"))
+        self.assertEqual(composed.changes[0].before, self.before["glyphs"]["g0000"])
+        self.assertEqual(composed.apply(self.before), final)
+
+    def test_master_lifecycle_session_composes_without_tree_diff_or_tree_reads(self) -> None:
+        class CountingTree(CanonicalFontTree):
+            def __init__(self):
+                super().__init__(MemoryObjectStore())
+                self.diff_calls = 0
+                self.glyph_reads = 0
+
+            def diff(self, before_tree_hash, after_tree_hash):
+                self.diff_calls += 1
+                raise AssertionError("session composition rebuilt a tree diff")
+
+            def glyph(self, tree_hash, glyph_name):
+                self.glyph_reads += 1
+                raise AssertionError("session composition read a glyph shard")
+
+        trees = CountingTree()
+        history = ChangeHistory(trees)
+        baseline = _model(glyph_count=383, master_count=5)
+        middle = copy.deepcopy(baseline)
+        added_master = {"id": "m5", "name": "M5"}
+        middle["masters"].append(added_master)
+        for glyph in middle["glyphs"].values():
+            glyph["layers"]["m5"] = _layer("m5")
+        forward = diff_models(baseline, middle)
+        inverse = diff_models(middle, baseline)
+
+        history.record_action(
+            document_id="doc_scale",
+            tool="duplicate_master",
+            effect="edit",
+            status="success",
+            run_id="run_scale",
+            before_model=baseline,
+            after_model=middle,
+            change_set=forward,
+        )
+        history.record_action(
+            document_id="doc_scale",
+            tool="delete_master",
+            effect="edit",
+            status="success",
+            run_id="run_scale",
+            before_model=middle,
+            after_model=baseline,
+            change_set=inverse,
+        )
+
+        session = history.latest_session_diff("doc_scale")
+        self.assertIsNotNone(session)
+        self.assertEqual(session.change_set.changes, ())
+        self.assertEqual(session.change_set.before_fingerprint, fingerprint_model(baseline))
+        self.assertEqual(session.change_set.after_fingerprint, fingerprint_model(baseline))
+        self.assertEqual(trees.diff_calls, 0)
+        self.assertEqual(trees.glyph_reads, 0)
 
     def test_latest_agent_session_spans_distinct_tool_run_ids_until_an_external_boundary(self) -> None:
         middle = copy.deepcopy(self.before)
