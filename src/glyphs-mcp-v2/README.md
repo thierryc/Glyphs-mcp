@@ -114,3 +114,9 @@ refusals. It never saves and reports success only after exact canonical
 baseline, active-master, path, and dirty-state restoration. The explicit gate
 result includes per-operation and aggregate internal stage timings plus total
 gate duration; ordinary MCP mutation responses remain unchanged.
+
+Canonical snapshot performance is live-qualified on Glyphs 4.0.1 build 4004:
+the 383-glyph/five-master gate completed in 62.702 seconds, restored fingerprint
+`sha256:2488888b35cd25f208ca508a001bff863b03a530df71e069b06eda0177ad5076`,
+and left the document clean and unsaved. This is 56.8% faster than the recorded
+145.163-second baseline and 9.298 seconds below the 72-second acceptance limit.
