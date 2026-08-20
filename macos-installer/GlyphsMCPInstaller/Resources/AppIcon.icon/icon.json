@@ -7,15 +7,12 @@
       "blur-material" : null,
       "layers" : [
         {
-          "image-name" : "main.svg",
-          "name" : "main",
-          "position" : {
-            "scale" : 1.15,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
+          "image-name" : "sparkles.png",
+          "name" : "sparkles"
+        },
+        {
+          "image-name" : "green.png",
+          "name" : "green"
         }
       ],
       "shadow" : {
