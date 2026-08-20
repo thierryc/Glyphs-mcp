@@ -1500,6 +1500,130 @@ class V2DocumentAdapterTests(unittest.TestCase):
             before["glyphs"]["A"]["layers"]["master-bold"],
         )
 
+    def test_verified_layer_membership_uses_revision_evidence_without_rescanning_unaffected_layers(self) -> None:
+        font = _TransactionalFont()
+        regular = _MetricsLayer()
+        regular.layerId = "master-regular"
+        regular.associatedMasterId = "master-regular"
+        regular.name = "Regular"
+        regular.isMasterLayer = True
+        regular.isSpecialLayer = False
+        bold = _MetricsLayer()
+        bold.layerId = "master-bold"
+        bold.associatedMasterId = "master-bold"
+        bold.name = "Bold"
+        bold.isMasterLayer = True
+        bold.isSpecialLayer = False
+        glyph = SimpleNamespace(
+            name="A",
+            id="id-A",
+            lastChange="revision-1",
+            changeCount=lambda: 0,
+            mastersCompatible=True,
+            layers=[regular, bold],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        font.glyphs = [glyph]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_snapshot(document_id)
+        target = before.materialize()
+        target["glyphs"]["A"]["layers"].pop("master-bold")
+        changes = diff_models(before, target)
+        expected = before.store_verified_transition(target, changes)
+        host._canonical_model_cache.invalidate_impact(
+            document_id,
+            document_adapter.CanonicalImpact.from_change_set(before, changes),
+        )
+        glyph.layers = [regular]
+        glyph.lastChange = "revision-2"
+
+        with mock.patch.object(
+            document_adapter,
+            "_glyph_model",
+            wraps=document_adapter._glyph_model,
+        ) as full_glyph, mock.patch.object(
+            document_adapter,
+            "_layer_matches_model",
+            wraps=document_adapter._layer_matches_model,
+        ) as deep_layer_scan:
+            actual = host._executor.run(
+                lambda: host._capture_cached_snapshot(
+                    document_id, font, expected=expected
+                )
+            )
+
+        self.assertEqual(actual.document_fingerprint, expected.document_fingerprint)
+        self.assertEqual(full_glyph.call_count, 0)
+        self.assertEqual(deep_layer_scan.call_count, 0)
+        self.assertIs(
+            actual["glyphs"]["A"]["layers"]["master-regular"],
+            before["glyphs"]["A"]["layers"]["master-regular"],
+        )
+
+    def test_unexpected_unaffected_layer_scalar_change_breaks_revision_proof(self) -> None:
+        font = _TransactionalFont()
+        regular = _MetricsLayer()
+        regular.layerId = "master-regular"
+        regular.associatedMasterId = "master-regular"
+        regular.name = "Regular"
+        regular.isMasterLayer = True
+        regular.isSpecialLayer = False
+        bold = _MetricsLayer()
+        bold.layerId = "master-bold"
+        bold.associatedMasterId = "master-bold"
+        bold.name = "Bold"
+        bold.isMasterLayer = True
+        bold.isSpecialLayer = False
+        glyph = SimpleNamespace(
+            name="A",
+            id="id-A",
+            lastChange="revision-1",
+            changeCount=lambda: 0,
+            mastersCompatible=True,
+            layers=[regular, bold],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        font.glyphs = [glyph]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_snapshot(document_id)
+        target = before.materialize()
+        target["glyphs"]["A"]["layers"].pop("master-bold")
+        changes = diff_models(before, target)
+        expected = before.store_verified_transition(target, changes)
+        host._canonical_model_cache.invalidate_impact(
+            document_id,
+            document_adapter.CanonicalImpact.from_change_set(before, changes),
+        )
+        glyph.layers = [regular]
+        glyph.lastChange = "revision-2"
+        regular.width = 777
+
+        actual = host._executor.run(
+            lambda: host._capture_cached_snapshot(
+                document_id, font, expected=expected
+            )
+        )
+
+        self.assertNotEqual(
+            actual.document_fingerprint, expected.document_fingerprint
+        )
+        self.assertEqual(
+            actual["glyphs"]["A"]["layers"]["master-regular"]["width"],
+            777,
+        )
+
     def test_detached_simulation_recaptures_only_the_change_scope(self) -> None:
         font = _TransactionalFont()
 
