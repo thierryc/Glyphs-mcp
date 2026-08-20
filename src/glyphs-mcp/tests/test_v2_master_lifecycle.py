@@ -8,6 +8,7 @@ import sys
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -22,7 +23,7 @@ from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
 )
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
 from glyphs_mcp_v2.mutation import CanonicalImpact, mutation_scope  # noqa: E402
-from glyphs_mcp_v2.semantic import fingerprint_model  # noqa: E402
+from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
 from glyphs_mcp_v2.workflows import (  # noqa: E402
     build_master_updates,
     list_masters,
@@ -262,6 +263,43 @@ class MasterLifecycleTests(unittest.TestCase):
         )
         self.assertTrue(
             all(not impact.requires_complete_glyph(name) for name in impact.glyph_names)
+        )
+
+    def test_master_builder_reuses_unchanged_layer_branches_and_never_full_diffs_glyphs(self) -> None:
+        snapshot = CanonicalSnapshot.from_model(_model(383))
+        source_paths = snapshot.glyph_shards["glyph0000"]["layers"][
+            "master_regular"
+        ]["paths"]
+
+        with mock.patch(
+            "glyphs_mcp_v2.mutation.diff_models",
+            wraps=diff_models,
+        ) as diff:
+            build = build_master_updates(
+                snapshot,
+                [
+                    {
+                        "action": "duplicate",
+                        "sourceMasterId": "master_regular",
+                        "masterId": "master_text",
+                        "name": "Text",
+                    }
+                ],
+            )
+
+        layer_addition = next(
+            change
+            for change in build.change_set.changes
+            if change.path == (
+                "glyphs",
+                "glyph0000",
+                "layers",
+                "master_text",
+            )
+        )
+        self.assertIs(layer_addition.after["paths"], source_paths)
+        self.assertTrue(
+            all("glyphs" not in call.args[0] for call in diff.call_args_list)
         )
 
     def test_master_move_and_scalar_update_materialize_no_glyphs(self) -> None:
