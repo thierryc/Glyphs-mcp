@@ -9,10 +9,6 @@
         {
           "image-name" : "sparkles.svg",
           "name" : "sparkles"
-        },
-        {
-          "image-name" : "green.svg",
-          "name" : "green"
         }
       ],
       "shadow" : {
@@ -20,6 +16,25 @@
         "opacity" : 0.5
       },
       "specular" : true,
+      "translucency" : {
+        "enabled" : false,
+        "value" : 0.5
+      }
+    },
+    {
+      "blur-material" : null,
+      "layers" : [
+        {
+          "image-name" : "green.svg",
+          "is-glass" : false,
+          "name" : "green"
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "specular" : false,
       "translucency" : {
         "enabled" : false,
         "value" : 0.5
