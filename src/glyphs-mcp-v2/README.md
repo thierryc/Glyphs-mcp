@@ -54,13 +54,15 @@ v5 addresses their entities by stable IDs and represents order independently.
 `apply_master_updates` extends it to a composite master, its owned glyph layers,
 and its kerning partition. `apply_layer_updates` uses the same abstraction for
 intermediate, alternate, backup, Smart, and color layer membership. Specialized
-Smart/color properties and staged-Python structural replay remain explicit
-later boundaries. Glyphs owns master-layer ordering through the font master
+Smart/color property editing and staged-Python structural replay remain explicit
+later boundaries; schema-v5 layer membership itself is complete and
+live-qualified. Glyphs owns master-layer ordering through the font master
 collection, so those layers form an immutable prefix; layer lifecycle indexes
-address only positions at or after that prefix. The adapter reorders that
-non-master suffix by detaching and reattaching the same native objects under
-their exact IDs rather than using the unordered dictionary-shaped setter or
-the duplicate-producing KVC array insertion primitives.
+address only positions at or after that prefix. The adapter atomically reorders
+the non-master suffix by building Glyphs' native `MGOrderedDictionary` and
+assigning it through `GSGlyph.setLayers:`. It does not use the unordered public
+dictionary setter, exact-ID detach/reattach, or duplicate-producing KVC array
+insertion primitives.
 
 ## Worktree-contained development
 

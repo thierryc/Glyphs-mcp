@@ -140,8 +140,14 @@ breaking catalog changes do not flow back to 1.x.
    guarded 383-glyph/five-master gate completed in 62.702 seconds, 56.8% faster
    than the 145.163-second baseline and 9.298 seconds below the 72-second
    target, with exact clean-baseline restoration and no save.
-8. Deferred: arbitrary special/intermediate layer membership, staged-Python
-   structural replay, installer integration, and the release-candidate matrix.
+8. Complete and live-qualified on Glyphs 4: canonical schema v5 adds ordered,
+   identity-addressed lifecycle support for intermediate, alternate, backup,
+   Smart, and color layers. Non-master layer order is assigned atomically with
+   Glyphs' native ordered collection; specialized Smart/color property editing
+   remains deferred.
+9. Next: staged-Python structural replay through the schema-v5 canonical
+   collections, followed by installer integration and the release-candidate
+   matrix.
 
 Every milestone must pass focused tests, the complete Python suite, catalog
 and schema gates, deterministic payload assembly, and `git diff --check`.
