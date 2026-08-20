@@ -352,16 +352,19 @@ class _MasterLifecycleLayer:
 class _MasterLayerCollection:
     def __init__(self, layers):
         self._values = {layer.layerId: layer for layer in layers}
+        self.owner = None
         self.recalculate_bearings_on_attach = False
         self.preserved_native_objects = set()
         self.atomic_assignment_count = 0
 
     def __len__(self):
-        return len(self._values)
+        ghosts = self.owner._ghost_layers if self.owner is not None else ()
+        return len(self._values) + len(ghosts)
 
     def __getitem__(self, key):
         if isinstance(key, int):
-            return list(self._values.values())[key]
+            ghosts = self.owner._ghost_layers if self.owner is not None else ()
+            return (list(self._values.values()) + list(ghosts))[key]
         return self._values[key]
 
     def __setitem__(self, key, value):
@@ -404,10 +407,16 @@ class _MasterLifecycleGlyph:
         self.leftKerningGroup = None
         self.rightKerningGroup = None
         self.layers = _MasterLayerCollection(layers)
+        self.layers.owner = self
         self.layer_array_remove_count = 0
         self.layer_array_insert_count = 0
         self.exact_layer_remove_count = 0
         self.exact_layer_set_count = 0
+        self.undoManager = object()
+        self.ghost_layer_reinsertions = False
+        self.undo_disabled_layer_remove_count = 0
+        self._undo_removed_layer = None
+        self._ghost_layers = []
 
     def countOfLayers(self):
         return len(self.layers)
@@ -429,12 +438,23 @@ class _MasterLifecycleGlyph:
 
     def removeLayerForId_(self, layer_id):
         self.exact_layer_remove_count += 1
+        if self.undoManager is None:
+            self.undo_disabled_layer_remove_count += 1
+        elif self.ghost_layer_reinsertions:
+            self._undo_removed_layer = self.layers[str(layer_id)]
         del self.layers[str(layer_id)]
 
     def setLayer_forId_(self, value, layer_id):
         self.exact_layer_set_count += 1
         value.layerId = str(layer_id)
         self.layers[str(layer_id)] = value
+        if (
+            self.ghost_layer_reinsertions
+            and self.undoManager is not None
+            and self._undo_removed_layer is value
+        ):
+            self._ghost_layers.append(value)
+        self._undo_removed_layer = None
 
 
 def _master_lifecycle_font():
@@ -1234,6 +1254,37 @@ class V2DocumentAdapterTests(unittest.TestCase):
             capabilities=(LAYER_LIFECYCLE_CAPABILITY,),
         )
         self.assertEqual(native_font_to_model(font), before)
+
+    def test_live_layer_reorder_suspends_only_the_glyph_undo_manager(self) -> None:
+        font = _master_lifecycle_font()
+        glyph = font.glyphs[0]
+        original_undo_manager = glyph.undoManager
+        source = glyph.layers[0]
+        first = source.copy()
+        first.layerId = "special-first"
+        first.isMasterLayer = False
+        second = source.copy()
+        second.layerId = "special-second"
+        second.isMasterLayer = False
+        glyph.layers["special-first"] = first
+        glyph.layers["special-second"] = second
+        glyph.ghost_layer_reinsertions = True
+
+        document_adapter._replace_glyph_layer_order(
+            glyph,
+            [source, second, first],
+        )
+
+        self.assertIs(glyph.undoManager, original_undo_manager)
+        self.assertGreater(glyph.undo_disabled_layer_remove_count, 0)
+        self.assertEqual(glyph._ghost_layers, [])
+        self.assertEqual(
+            [
+                glyph.objectInLayersAtIndex_(index).layerId
+                for index in range(glyph.countOfLayers())
+            ],
+            ["master_regular", "special-second", "special-first"],
+        )
 
     def test_layer_capture_uses_proxy_index_order_not_mapping_values_order(self) -> None:
         class GlyphLayerProxyLike(Mapping):
