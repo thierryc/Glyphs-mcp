@@ -7,6 +7,7 @@ import stat
 import sys
 import tempfile
 import unittest
+from collections.abc import Mapping
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -353,6 +354,7 @@ class _MasterLayerCollection:
         self._values = {layer.layerId: layer for layer in layers}
         self.recalculate_bearings_on_attach = False
         self.preserved_native_objects = set()
+        self.atomic_assignment_count = 0
 
     def __len__(self):
         return len(self._values)
@@ -381,6 +383,7 @@ class _MasterLayerCollection:
         self._values[str(value.layerId)] = value
 
     def setter(self, values):
+        self.atomic_assignment_count += 1
         self._values = {str(value.layerId): value for value in values}
 
     def values(self):
@@ -401,6 +404,26 @@ class _MasterLifecycleGlyph:
         self.leftKerningGroup = None
         self.rightKerningGroup = None
         self.layers = _MasterLayerCollection(layers)
+        self.layer_array_remove_count = 0
+        self.layer_array_insert_count = 0
+
+    def countOfLayers(self):
+        return len(self.layers)
+
+    def objectInLayersAtIndex_(self, index):
+        return self.layers[index]
+
+    def removeObjectFromLayersArrayAtIndex_(self, index):
+        self.layer_array_remove_count += 1
+        values = list(self.layers._values.values())
+        del values[index]
+        self.layers._values = {str(value.layerId): value for value in values}
+
+    def insertObject_inLayersArrayAtIndex_(self, value, index):
+        self.layer_array_insert_count += 1
+        values = list(self.layers._values.values())
+        values.insert(index, value)
+        self.layers._values = {str(item.layerId): item for item in values}
 
 
 def _master_lifecycle_font():
@@ -1165,7 +1188,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
                         "kind": "intermediate",
                         "coordinates": {"wght": 150},
                     },
-                    "index": 0,
+                    "index": 1,
                 }
             ],
         )
@@ -1181,8 +1204,11 @@ class V2DocumentAdapterTests(unittest.TestCase):
         )
 
         self.assertEqual(native_font_to_model(font), after)
-        self.assertEqual(glyph.layers[0].layerId, "brace-150")
-        self.assertEqual(glyph.layers[0].native_only, "backup-private-state")
+        self.assertEqual(glyph.layers[1].layerId, "brace-150")
+        self.assertEqual(glyph.layers[1].native_only, "backup-private-state")
+        self.assertGreater(glyph.layer_array_remove_count, 0)
+        self.assertGreater(glyph.layer_array_insert_count, 0)
+        self.assertEqual(glyph.layers.atomic_assignment_count, 0)
         document_adapter._apply_target_model(
             font,
             after,
@@ -1191,6 +1217,43 @@ class V2DocumentAdapterTests(unittest.TestCase):
             capabilities=(LAYER_LIFECYCLE_CAPABILITY,),
         )
         self.assertEqual(native_font_to_model(font), before)
+
+    def test_layer_capture_uses_proxy_index_order_not_mapping_values_order(self) -> None:
+        class GlyphLayerProxyLike(Mapping):
+            def __init__(self, values):
+                self._ordered = list(values)
+                self._by_id = {str(value.layerId): value for value in values}
+
+            def __len__(self):
+                return len(self._ordered)
+
+            def __iter__(self):
+                return iter(self._ordered)
+
+            def __getitem__(self, key):
+                if isinstance(key, int):
+                    return self._ordered[key]
+                return self._by_id[str(key)]
+
+            def values(self):
+                return list(reversed(self._ordered))
+
+        font = _master_lifecycle_font()
+        glyph = font.glyphs[0]
+        first = glyph.layers[0]
+        extra = _MasterLifecycleLayer(
+            "master_regular", "Backup", native_only="backup-private-state"
+        )
+        extra.layerId = "backup-1"
+        extra.isMasterLayer = False
+        glyph.layers = GlyphLayerProxyLike([first, extra])
+
+        captured = native_font_to_model(font)
+
+        self.assertEqual(
+            [layer["id"] for layer in captured["glyphs"]["A"]["layers"]],
+            ["master_regular", "backup-1"],
+        )
 
     def test_master_attachment_does_not_rewrite_equal_native_identities(self) -> None:
         class IdentitySensitiveLayer(_MasterLifecycleLayer):

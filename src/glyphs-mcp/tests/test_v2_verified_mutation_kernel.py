@@ -86,6 +86,14 @@ class _DerivedHost:
         self.model = copy.deepcopy(model)
 
 
+class _NormalizingNoEffectHost(_DerivedHost):
+    """A host that accepts a setter but canonicalizes it back to the source."""
+
+    def simulate_change_set(self, document_id, change_set):
+        self.clone_calls += 1
+        return copy.deepcopy(self.model)
+
+
 class _CanonicalReconciliationHost(_DerivedHost):
     def __init__(self) -> None:
         super().__init__()
@@ -330,6 +338,23 @@ class VerifiedMutationKernelTests(unittest.TestCase):
             )
 
         self.assertEqual(host.clone_calls, 0)
+        self.assertEqual(host.apply_calls, 0)
+
+    def test_detached_host_normalized_noop_is_rejected_before_live_apply(self) -> None:
+        host = _NormalizingNoEffectHost()
+        before = host.capture_model("doc_kernel")
+        requested_after = copy.deepcopy(before)
+        requested_after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
+
+        with self.assertRaisesRegex(ValueError, "no document change"):
+            MutationPlanner(host).plan(
+                document_id="doc_kernel",
+                expected_document_fingerprint=fingerprint_model(before),
+                requested_change_set=diff_models(before, requested_after),
+                operation_id="op_normalized_noop",
+            )
+
+        self.assertEqual(host.clone_calls, 1)
         self.assertEqual(host.apply_calls, 0)
 
     def test_plan_applies_once_and_verifies_complete_derived_readback(self) -> None:

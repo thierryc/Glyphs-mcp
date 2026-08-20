@@ -277,6 +277,27 @@ class LayerLifecycleTests(unittest.TestCase):
                     update["index"] = 1
                 build_layer_updates(_model(), [update])
 
+    def test_non_master_reordering_cannot_cross_the_master_layer_prefix(self) -> None:
+        for update in (
+            {
+                "action": "move",
+                "glyphName": "A",
+                "layerId": "backup-1",
+                "index": 0,
+            },
+            {
+                "action": "duplicate",
+                "glyphName": "A",
+                "sourceLayerId": "brace-125",
+                "layerId": "brace-150",
+                "index": 0,
+            },
+        ):
+            with self.subTest(action=update["action"]), self.assertRaisesRegex(
+                ValueError, "master-layer prefix"
+            ):
+                build_layer_updates(_model(), [update])
+
     def test_interpolation_configuration_validates_known_axis_tags_and_ranges(self) -> None:
         with self.assertRaisesRegex(ValueError, "unknown axis tag"):
             build_layer_updates(
