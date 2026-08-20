@@ -7,11 +7,11 @@
       "blur-material" : null,
       "layers" : [
         {
-          "image-name" : "sparkles.png",
+          "image-name" : "sparkles.svg",
           "name" : "sparkles"
         },
         {
-          "image-name" : "green.png",
+          "image-name" : "green.svg",
           "name" : "green"
         }
       ],
