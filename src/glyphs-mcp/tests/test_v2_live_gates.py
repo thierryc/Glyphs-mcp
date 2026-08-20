@@ -16,6 +16,7 @@ if str(V2_SOURCE) not in sys.path:
 
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.live_gates import (  # noqa: E402
+    _StructuralGateSession,
     verify_copy_and_make_copy,
     verify_schema_v3_structural_kernel,
     verify_schema_v4_master_lifecycle,
@@ -160,6 +161,50 @@ class _StructuralHost:
 
 
 class V2LiveGateGuardTests(unittest.TestCase):
+    def test_structural_gate_carries_verified_fingerprints_between_transactions(self) -> None:
+        class Host:
+            def capture_model(self, document_id):
+                raise AssertionError("gate recaptured the complete model between operations")
+
+        class Application:
+            def __init__(self):
+                self.expected = ["sha256:before", "sha256:after"]
+                self.after = ["sha256:after", "sha256:before"]
+                self.calls = 0
+
+            def invoke(self, tool, arguments):
+                index = self.calls
+                self.calls += 1
+                if arguments["expectedDocumentFingerprint"] != self.expected[index]:
+                    raise AssertionError("gate did not carry the verified fingerprint")
+                return {
+                    "ok": True,
+                    "operationId": "op_{}".format(index),
+                    "auditReceipt": {"auditId": "audit_{}".format(index)},
+                    "data": {
+                        "operationId": "op_{}".format(index),
+                        "transactionCount": 1,
+                        "beforeFingerprint": self.expected[index],
+                        "afterFingerprint": self.after[index],
+                    },
+                }
+
+        application = Application()
+        session = _StructuralGateSession(
+            application,
+            Host(),
+            "doc_gate",
+            "sha256:before",
+        )
+        session._require_change_log_commit = lambda operation_id, tool: None
+        session._record_stage_timings = lambda operation_id: None
+
+        operation_id = session.apply("apply_master_updates", [{"action": "move"}])
+        session.revert(operation_id)
+
+        self.assertEqual(application.calls, 2)
+        self.assertEqual(session.current_fingerprint, "sha256:before")
+
     def test_gate_refuses_non_disposable_font(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             with self.assertRaises(ValueError):
