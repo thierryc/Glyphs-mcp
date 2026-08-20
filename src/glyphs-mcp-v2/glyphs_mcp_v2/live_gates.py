@@ -757,9 +757,205 @@ def verify_schema_v4_master_lifecycle(
     }
 
 
+def verify_schema_v5_layer_lifecycle(
+    font: Any,
+    *,
+    application: Any = None,
+    host: Any = None,
+) -> Mapping[str, Any]:
+    """Round-trip one intermediate layer through every public lifecycle action."""
+
+    gate_started = time.perf_counter_ns()
+    family_name = str(getattr(font, "familyName", "") or "")
+    if not family_name.startswith(DISPOSABLE_FAMILY_PREFIX):
+        raise ValueError(
+            "live v2 gates require a disposable font whose family name starts with {!r}".format(
+                DISPOSABLE_FAMILY_PREFIX
+            )
+        )
+    application, host = _resolve_live_runtime(application, host)
+    document_id_for_font = getattr(host, "document_id_for_font", None)
+    capture_model = getattr(host, "capture_model", None)
+    if not callable(document_id_for_font) or not callable(capture_model):
+        raise RuntimeError("the active host does not expose the layer live-gate boundary")
+    document_id = str(document_id_for_font(font) or "")
+    baseline = dict(capture_model(document_id))
+    baseline_fingerprint = fingerprint_model(baseline)
+    axis_tags = [
+        str(axis.get("tag") or "")
+        for master in baseline.get("masters", [])
+        if isinstance(master, Mapping)
+        for axis in master.get("axes", [])
+        if isinstance(axis, Mapping) and axis.get("tag")
+    ]
+    if not axis_tags:
+        raise ValueError("the schema-v5 layer gate requires one known font axis")
+    glyph_name = ""
+    source_layer_id = ""
+    source_master_id = ""
+    source_order = 0
+    glyphs = baseline.get("glyphs", {})
+    if isinstance(glyphs, Mapping):
+        for candidate_name in sorted(glyphs):
+            glyph = glyphs[candidate_name]
+            layers = glyph.get("layers", ()) if isinstance(glyph, Mapping) else ()
+            if not isinstance(layers, (list, tuple)):
+                continue
+            for index, layer in enumerate(layers):
+                if isinstance(layer, Mapping) and bool(layer.get("isMasterLayer")):
+                    glyph_name = str(candidate_name)
+                    source_layer_id = str(layer.get("id") or "")
+                    source_master_id = str(layer.get("masterId") or source_layer_id)
+                    source_order = index
+                    break
+            if source_layer_id:
+                break
+    if not glyph_name or not source_layer_id or not source_master_id:
+        raise ValueError("the schema-v5 layer gate requires one stable master layer")
+
+    before_path = _plain_attribute(font, "filepath")
+    before_master = _plain_attribute(font, "selectedFontMaster")
+    before_master_id = str(_plain_attribute(before_master, "id") or "")
+    before_dirty = _reported_dirty_state(host, document_id)
+    new_id = str(uuid4()).upper()
+    axis_tag = axis_tags[0]
+    session = _StructuralGateSession(
+        application,
+        host,
+        document_id,
+        baseline_fingerprint,
+    )
+
+    try:
+        duplicate = session.apply(
+            "apply_layer_updates",
+            [
+                {
+                    "action": "duplicate",
+                    "glyphName": glyph_name,
+                    "sourceLayerId": source_layer_id,
+                    "layerId": new_id,
+                    "masterId": source_master_id,
+                    "name": "{125}",
+                    "interpolation": {
+                        "kind": "intermediate",
+                        "coordinates": {axis_tag: 125},
+                    },
+                    "index": source_order + 1,
+                }
+            ],
+        )
+        duplicate_changes = session.change_set(duplicate).changes
+        if not any(
+            change.path == ("glyphs", glyph_name, "layers", new_id)
+            and not change.before_present
+            and change.after_present
+            for change in duplicate_changes
+        ):
+            raise AssertionError("layer duplication did not add one identity-addressed layer")
+
+        updated = session.apply(
+            "apply_layer_updates",
+            [
+                {
+                    "action": "update",
+                    "glyphName": glyph_name,
+                    "layerId": new_id,
+                    "name": "[400]",
+                    "interpolation": {
+                        "kind": "alternate",
+                        "ranges": {axis_tag: {"min": 400, "max": None}},
+                    },
+                }
+            ],
+        )
+        moved = session.apply(
+            "apply_layer_updates",
+            [
+                {
+                    "action": "move",
+                    "glyphName": glyph_name,
+                    "layerId": new_id,
+                    "index": 0,
+                }
+            ],
+        )
+        deleted = session.apply(
+            "apply_layer_updates",
+            [{"action": "delete", "glyphName": glyph_name, "layerId": new_id}],
+        )
+        if not any(
+            change.path == ("glyphs", glyph_name, "layers", new_id)
+            and change.before_present
+            and not change.after_present
+            for change in session.change_set(deleted).changes
+        ):
+            raise AssertionError("layer deletion left the target in the collection")
+
+        for operation_id in (deleted, moved, updated, duplicate):
+            session.revert(operation_id)
+
+        session.refuse(
+            "apply_layer_updates",
+            "stale_document",
+            [{"action": "move", "glyphName": glyph_name, "layerId": source_layer_id, "index": 0}],
+            stale=True,
+        )
+        session.refuse(
+            "apply_layer_updates",
+            "invalid_request",
+            [{"action": "delete", "glyphName": glyph_name, "layerId": source_layer_id}],
+        )
+    except BaseException:
+        cleanup_failures = session.cleanup()
+        final = session.fingerprint()
+        if cleanup_failures or final != baseline_fingerprint:
+            raise RuntimeError(
+                "schema-v5 layer gate cleanup failed for {} operation(s); final fingerprint {}".format(
+                    len(cleanup_failures), final
+                )
+            )
+        raise
+
+    final_fingerprint = session.fingerprint()
+    after_path = _plain_attribute(font, "filepath")
+    after_master = _plain_attribute(font, "selectedFontMaster")
+    after_master_id = str(_plain_attribute(after_master, "id") or "")
+    after_dirty = _reported_dirty_state(host, document_id)
+    if final_fingerprint != baseline_fingerprint:
+        raise AssertionError("schema-v5 layer gate did not restore the canonical baseline")
+    if after_path != before_path:
+        raise AssertionError("schema-v5 layer gate changed the working document path")
+    if after_master_id != before_master_id:
+        raise AssertionError("schema-v5 layer gate changed the active master")
+    if before_dirty is not None and after_dirty != before_dirty:
+        raise AssertionError("schema-v5 layer gate changed the reported dirty state")
+    return {
+        "documentId": document_id,
+        "familyName": family_name,
+        "baselineFingerprint": baseline_fingerprint,
+        "finalFingerprint": final_fingerprint,
+        "qualifiedDomains": ["layer_lifecycle", "interpolation_rules", "atomic_refusal"],
+        "successfulTransactionCount": len(session.successful),
+        "operationIds": session.successful,
+        "refusalCount": len(session.refusals),
+        "refusalCodes": session.refusals,
+        "exactBaselineRestored": True,
+        "workingPathUnchanged": True,
+        "activeMasterUnchanged": True,
+        "reportedDirtyStateUnchanged": before_dirty is None or after_dirty == before_dirty,
+        "singleTransactionResponses": session.single_transactions,
+        "auditReceiptsPresent": session.audit_receipts,
+        "changeLogCommitsPresent": session.change_log_commits,
+        "stageTimingsByOperation": dict(session.stage_timings),
+        "gateDurationMs": (time.perf_counter_ns() - gate_started) / 1_000_000,
+    }
+
+
 __all__ = [
     "DISPOSABLE_FAMILY_PREFIX",
     "verify_copy_and_make_copy",
     "verify_schema_v3_structural_kernel",
     "verify_schema_v4_master_lifecycle",
+    "verify_schema_v5_layer_lifecycle",
 ]

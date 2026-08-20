@@ -20,6 +20,7 @@ from typing import Any, Mapping, Protocol
 
 from .semantic import (
     _CACHED_FINGERPRINT_ACCESS,
+    _persistent_set_at,
     ChangeSet,
     canonical_json,
     diff_models,
@@ -28,7 +29,7 @@ from .semantic import (
 
 
 TREE_SCHEMA_VERSION = 1
-CANONICAL_MODEL_SCHEMA_VERSION = 4
+CANONICAL_MODEL_SCHEMA_VERSION = 5
 REVERSIBILITY_COVERAGE = "modeled_fields_only"
 SHARDED_MAPPING_ROOTS = frozenset({"glyphs", "kerning"})
 
@@ -232,7 +233,7 @@ class _ImmutableMapping(Mapping[str, Any]):
 class CanonicalSnapshot(Mapping[str, Any]):
     """Immutable canonical model view with reusable content shards.
 
-    The public document fingerprint remains the exact schema-v4 canonical JSON
+    The public document fingerprint remains the exact schema-v5 canonical JSON
     fingerprint. ``content_tree_hash`` is an internal Merkle-style identity
     used to share unchanged roots and glyph entities without serializing them
     again. Native revision evidence is opaque to the core and never contributes
@@ -410,12 +411,45 @@ class CanonicalSnapshot(Mapping[str, Any]):
         membership_delta = set(glyphs) ^ {str(name) for name in after_glyphs}
         if not membership_delta.issubset(changed_glyphs):
             raise ValueError("verified transition omitted changed glyph membership")
+        glyph_changes: dict[str, list[Any]] = {}
+        for change in change_set.changes:
+            if len(change.path) >= 2 and change.path[0] == "glyphs":
+                glyph_changes.setdefault(str(change.path[1]), []).append(change)
         for name in changed_glyphs:
             if name not in after_glyphs:
                 glyphs.pop(name, None)
                 glyph_hashes.pop(name, None)
                 continue
-            value = after_glyphs[name]
+            exact = next(
+                (
+                    change
+                    for change in glyph_changes.get(name, ())
+                    if len(change.path) == 2
+                ),
+                None,
+            )
+            if exact is not None or name not in glyphs:
+                value = after_glyphs[name]
+            else:
+                # Reapply the already verified nested patch through the same
+                # copy-on-write primitive used by composition. This preserves
+                # object identity for every sibling layer shard in a changed
+                # glyph rather than replacing the complete glyph dictionary.
+                value = glyphs[name]
+                for change in sorted(
+                    glyph_changes.get(name, ()),
+                    key=lambda item: (item.path[-1] == "$order", item.path),
+                ):
+                    value = _persistent_set_at(
+                        value,
+                        change.path[2:],
+                        change.after,
+                        change.after_present,
+                    )
+                if value != after_glyphs[name]:
+                    raise ValueError(
+                        "verified transition omitted or misapplied a glyph fragment"
+                    )
             glyphs[name] = value
             glyph_hashes[name] = _snapshot_shard_hash(value)
         if "glyphs" in changed_roots:

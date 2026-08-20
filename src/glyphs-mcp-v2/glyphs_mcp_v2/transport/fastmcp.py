@@ -72,6 +72,16 @@ class ToolHandlers:
     ) -> ToolResult:
         return self._invoke("list_masters", locals())
 
+    async def list_layers(
+        self,
+        documentId: str,
+        pageSize: int = 100,
+        cursor: Optional[str] = None,
+        glyphNames: Optional[List[str]] = None,
+        roles: Optional[List[str]] = None,
+    ) -> ToolResult:
+        return self._invoke("list_layers", locals())
+
     async def list_kerning_pairs(
         self,
         documentId: str,
@@ -127,6 +137,9 @@ class ToolHandlers:
 
     async def apply_master_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
         return self._invoke("apply_master_updates", locals())
+
+    async def apply_layer_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
+        return self._invoke("apply_layer_updates", locals())
 
     async def review_spacing(
         self,
@@ -224,7 +237,6 @@ class CatalogRegistrar:
             name=definition.name,
             title=definition.title,
             description=definition.description,
-            tags={definition.category, definition.effect},
             output_schema=definition.output_schema,
             annotations=definition.annotations,
             meta={"ui": {"visibility": visibility}},

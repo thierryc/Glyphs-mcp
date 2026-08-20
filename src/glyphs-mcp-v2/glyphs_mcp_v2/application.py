@@ -28,6 +28,7 @@ from .mutation import (
     normalize_mutation_build,
     unsupported_change_diagnostics,
     writable_subset,
+    lifecycle_capabilities,
 )
 from .pagination import CursorError, paginate
 from .ports import HostAccessError, ReadOnlyHost
@@ -44,10 +45,12 @@ from .versions import SERVER_NAME, SERVER_VERSION
 from .workflows import (
     build_glyph_updates,
     build_instance_updates,
+    build_layer_updates,
     build_master_updates,
     build_opentype_updates,
     list_glyphs as model_list_glyphs,
     list_instances as model_list_instances,
+    list_layers as model_list_layers,
     list_masters as model_list_masters,
     list_kerning_pairs as model_list_kerning_pairs,
     review_anchor_consistency as model_review_anchor_consistency,
@@ -73,6 +76,37 @@ def _value(arguments: Mapping[str, Any], snake: str, camel: Optional[str] = None
     if camel and camel in arguments:
         return arguments[camel]
     return default
+
+
+def _model_layer(glyph: Any, identity: Any) -> Mapping[str, Any] | None:
+    if not isinstance(glyph, Mapping):
+        return None
+    layers = glyph.get("layers", ())
+    if isinstance(layers, Mapping):
+        candidate = layers.get(identity)
+        return candidate if isinstance(candidate, Mapping) else None
+    if not isinstance(layers, (list, tuple)):
+        return None
+    text = str(identity or "")
+    direct = [layer for layer in layers if isinstance(layer, Mapping) and str(layer.get("id") or "") == text]
+    if len(direct) == 1:
+        return direct[0]
+    masters = [
+        layer
+        for layer in layers
+        if isinstance(layer, Mapping)
+        and bool(layer.get("isMasterLayer"))
+        and str(layer.get("masterId") or "") == text
+    ]
+    return masters[0] if len(masters) == 1 else None
+
+
+def _model_layers(glyph: Any) -> tuple[Mapping[str, Any], ...]:
+    if not isinstance(glyph, Mapping):
+        return ()
+    layers = glyph.get("layers", ())
+    source = layers.values() if isinstance(layers, Mapping) else layers
+    return tuple(layer for layer in source if isinstance(layer, Mapping))
 
 
 def _iso_timestamp(value: float) -> str:
@@ -418,6 +452,7 @@ class GlyphsMCPApplication:
             or ""
         )
         items = list(arguments.get(item_key) or [])
+        requested_count = len(items)
         if not document_id or not expected:
             raise ValueError("documentId and expectedDocumentFingerprint are required")
         if not items:
@@ -519,7 +554,7 @@ class GlyphsMCPApplication:
                     "operationId": metadata.operation_id,
                     "beforeFingerprint": result.before_fingerprint,
                     "afterFingerprint": result.after_fingerprint,
-                    "requestedChangeCount": result.requested_change_count,
+                    "requestedChangeCount": requested_count,
                     "observedChangeCount": result.observed_change_count,
                     "affectedGlyphCount": len(changed_glyphs),
                 },
@@ -541,7 +576,7 @@ class GlyphsMCPApplication:
                 "reason": _value(arguments, "reason"),
                 "beforeFingerprint": result.before_fingerprint,
                 "afterFingerprint": result.after_fingerprint,
-                "requestedChangeCount": result.requested_change_count,
+                "requestedChangeCount": requested_count,
                 "observedChangeCount": result.observed_change_count,
                 "affectedGlyphCount": len(changed_glyphs),
             },
@@ -558,7 +593,7 @@ class GlyphsMCPApplication:
                 "documentId": document_id,
                 "beforeFingerprint": result.before_fingerprint,
                 "afterFingerprint": result.after_fingerprint,
-                "requestedChangeCount": result.requested_change_count,
+                "requestedChangeCount": requested_count,
                 "observedChangeCount": result.observed_change_count,
                 "affectedGlyphCount": len(changed_glyphs),
                 "observedChangeSet": {
@@ -595,6 +630,7 @@ class GlyphsMCPApplication:
                     "canonical_change_history",
                     "identity_structural_changes",
                     "master_lifecycle",
+                    "layer_lifecycle",
                 ],
                 "host": runtime.to_dict(),
             },
@@ -770,6 +806,20 @@ class GlyphsMCPApplication:
             item_key="masters",
         )
 
+    def list_layers(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        glyph_names = _value(arguments, "glyph_names", "glyphNames", None)
+        roles = _value(arguments, "roles", default=None)
+        return self._list_model_items(
+            tool="list_layers",
+            arguments=arguments,
+            producer=lambda model: model_list_layers(
+                model,
+                glyph_names=glyph_names,
+                roles=roles,
+            ),
+            item_key="layers",
+        )
+
     def list_kerning_pairs(self, arguments: Mapping[str, Any]) -> ToolResponse:
         return self._list_model_items(tool="list_kerning_pairs", arguments=arguments, producer=model_list_kerning_pairs, item_key="pairs")
 
@@ -902,6 +952,13 @@ class GlyphsMCPApplication:
             builder=build_master_updates,
         )
 
+    def apply_layer_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        return self._direct_apply(
+            arguments,
+            tool="apply_layer_updates",
+            builder=build_layer_updates,
+        )
+
     def review_spacing(self, arguments: Mapping[str, Any]) -> ToolResponse:
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
         model = self._document_model(document_id)
@@ -911,7 +968,10 @@ class GlyphsMCPApplication:
             for name, glyph in model.get("glyphs", {}).items():
                 if names and name not in names:
                     continue
-                for master_id, layer in glyph.get("layers", {}).items():
+                for layer in _model_layers(glyph):
+                    if not bool(layer.get("isMasterLayer")):
+                        continue
+                    master_id = str(layer.get("masterId") or layer.get("id") or "")
                     requested_items.append(
                         {
                             "glyphName": name,
@@ -925,11 +985,7 @@ class GlyphsMCPApplication:
         else:
             for item in requested_items:
                 glyph = model.get("glyphs", {}).get(item.get("glyphName"))
-                layer = (
-                    glyph.get("layers", {}).get(item.get("masterId"))
-                    if isinstance(glyph, Mapping)
-                    else None
-                )
+                layer = _model_layer(glyph, item.get("masterId"))
                 if isinstance(layer, Mapping):
                     item["hostOwnsWidth"] = bool(layer.get("hasAlignedWidth"))
         simulation = simulate_spacing(
@@ -962,11 +1018,7 @@ class GlyphsMCPApplication:
         ) -> ChangeSet:
             for source in items:
                 glyph = model.get("glyphs", {}).get(source.get("glyphName"))
-                layer = (
-                    glyph.get("layers", {}).get(source.get("masterId"))
-                    if isinstance(glyph, Mapping)
-                    else None
-                )
+                layer = _model_layer(glyph, source.get("masterId"))
                 if not isinstance(layer, Mapping):
                     raise ValueError(
                         "unknown spacing target: {}/{}".format(
@@ -989,7 +1041,7 @@ class GlyphsMCPApplication:
                 if item.get("status") != "ready":
                     continue
                 glyph = after.get("glyphs", {}).get(item.get("glyphName"))
-                layer = glyph.get("layers", {}).get(item.get("masterId")) if isinstance(glyph, Mapping) else None
+                layer = _model_layer(glyph, item.get("masterId"))
                 if not isinstance(layer, dict):
                     raise ValueError(
                         "unknown spacing target: {}/{}".format(
@@ -1246,13 +1298,8 @@ class GlyphsMCPApplication:
         # Writable paths bound what the host may touch; detached reconciliation
         # selects a cause-independent replay that must reproduce the tree.
         intended_after = inverse.apply(current)
-        revert_capabilities = (
-            (MASTER_LIFECYCLE_CAPABILITY,)
-            if any(
-                change.path and change.path[0] == "masters"
-                for change in original.change_set.changes
-            )
-            else ()
+        revert_capabilities = lifecycle_capabilities(
+            original.change_set, tool=original.tool
         )
         writable_inverse = writable_subset(
             current,

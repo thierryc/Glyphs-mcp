@@ -31,6 +31,7 @@ class V2ContractTests(unittest.TestCase):
             "get_operation",
             "list_glyphs",
             "list_masters",
+            "list_layers",
             "list_instances",
             "list_kerning_pairs",
             "review_kerning_coverage",
@@ -45,6 +46,7 @@ class V2ContractTests(unittest.TestCase):
             "apply_opentype_updates",
             "apply_instance_updates",
             "apply_master_updates",
+            "apply_layer_updates",
             "review_spacing",
             "apply_spacing",
             "review_export",
@@ -64,7 +66,6 @@ class V2ContractTests(unittest.TestCase):
             self.assertEqual(
                 set(definition.annotations),
                 {
-                    "title",
                     "readOnlyHint",
                     "destructiveHint",
                     "idempotentHint",
@@ -192,6 +193,7 @@ class V2ContractTests(unittest.TestCase):
             "apply_metrics_updates": "updates",
             "apply_compatibility_updates": "updates",
             "apply_opentype_updates": "updates",
+            "apply_layer_updates": "updates",
             "apply_spacing": "items",
         }
         for name, items_parameter in mutation_tools.items():

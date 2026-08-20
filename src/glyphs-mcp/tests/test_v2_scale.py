@@ -35,8 +35,11 @@ def _scale_model():
             "unicode": "{:04X}".format(0xE000 + index),
             "export": True,
             "mastersCompatible": True,
-            "layers": {
-                master["id"]: {
+            "layers": [
+                {
+                    "id": master["id"],
+                    "masterId": master["id"],
+                    "isMasterLayer": True,
                     "width": 500,
                     "LSB": 40,
                     "RSB": 60,
@@ -59,7 +62,7 @@ def _scale_model():
                     ],
                 }
                 for master in masters
-            },
+            ],
         }
     return {
         "font": {"familyName": "Synthetic Scale", "upm": 1000},
@@ -205,7 +208,7 @@ class V2ScaleTests(unittest.TestCase):
             name = "g{:03d}".format(glyph_index)
             for master_index in range(5):
                 paths = copy.deepcopy(
-                    self.host.model["glyphs"][name]["layers"]["m{}".format(master_index)]["paths"]
+                    self.host.model["glyphs"][name]["layers"][master_index]["paths"]
                 )
                 paths[0]["nodes"][0]["x"] = 12 + master_index
                 path_updates.append(

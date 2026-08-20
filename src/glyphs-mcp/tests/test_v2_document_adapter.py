@@ -25,12 +25,28 @@ from glyphs_mcp_v2.adapters.document import (  # noqa: E402
 from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
 from glyphs_mcp_v2.python_execution import PythonExecutionRequest  # noqa: E402
 from glyphs_mcp_v2.mutation import (  # noqa: E402
+    LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
     MutationScope,
     classify_change_path,
 )
 from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
-from glyphs_mcp_v2.workflows import build_master_updates  # noqa: E402
+from glyphs_mcp_v2.workflows import build_layer_updates, build_master_updates  # noqa: E402
+
+
+def _model_layer(model, glyph_name, layer_id):
+    layers = model["glyphs"][glyph_name]["layers"]
+    if isinstance(layers, dict):
+        return layers[layer_id]
+    return next(layer for layer in layers if layer["id"] == layer_id)
+
+
+def _remove_model_layer(model, glyph_name, layer_id):
+    layers = model["glyphs"][glyph_name]["layers"]
+    if isinstance(layers, dict):
+        layers.pop(layer_id)
+        return
+    layers[:] = [layer for layer in layers if layer["id"] != layer_id]
 
 
 class _Immediate:
@@ -357,6 +373,15 @@ class _MasterLayerCollection:
             value.LSB += 7
             value.RSB -= 7
         self._values[str(key)] = value
+
+    def __delitem__(self, key):
+        del self._values[str(key)]
+
+    def append(self, value):
+        self._values[str(value.layerId)] = value
+
+    def setter(self, values):
+        self._values = {str(value.layerId): value for value in values}
 
     def values(self):
         return list(self._values.values())
@@ -1055,6 +1080,118 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 templates["master_text"]["nativeLayers"][glyph.name],
             )
 
+    def test_layer_tombstone_restores_the_exact_native_special_layer(self) -> None:
+        font = _master_lifecycle_font()
+        glyph = font.glyphs[0]
+        layer = _MasterLifecycleLayer(
+            "master_regular",
+            "{125}",
+            native_only="special-layer-private-state",
+        )
+        layer.layerId = "brace-125"
+        layer.isMasterLayer = False
+        layer.isSpecialLayer = True
+        layer.isBraceLayer = True
+        layer.isBracketLayer = False
+        layer.isSmartComponentLayer = False
+        layer.isColorPaletteLayer = False
+        layer.isBackupLayer = False
+        layer.attributes = {"coordinates": {"axis-weight": 125}}
+        glyph.layers["brace-125"] = layer
+        before = native_font_to_model(font)
+        build = build_layer_updates(
+            before,
+            [{"action": "delete", "glyphName": "A", "layerId": "brace-125"}],
+        )
+        after = build.change_set.apply(before)
+        host = object.__new__(GlyphsDocumentHost)
+        captured = host._capture_removed_layer_templates(font, before, after)
+
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=(LAYER_LIFECYCLE_CAPABILITY,),
+        )
+        self.assertIsNone(document_adapter._lookup_layer(glyph, "brace-125"))
+
+        document_adapter._apply_target_model(
+            font,
+            after,
+            before,
+            build.change_set.inverse(),
+            capabilities=(LAYER_LIFECYCLE_CAPABILITY,),
+            layer_restore_templates={
+                identity: value["native"] for identity, value in captured.items()
+            },
+            reuse_native_layer_templates=True,
+        )
+
+        self.assertEqual(native_font_to_model(font), before)
+        self.assertIs(glyph.layers["brace-125"], layer)
+        self.assertEqual(
+            glyph.layers["brace-125"].native_only,
+            "special-layer-private-state",
+        )
+
+    def test_layer_duplicate_attaches_by_identity_and_replays_exact_order(self) -> None:
+        font = _master_lifecycle_font()
+        glyph = font.glyphs[0]
+        source = _MasterLifecycleLayer(
+            "master_regular", "Backup", native_only="backup-private-state"
+        )
+        source.layerId = "backup-source"
+        source.isMasterLayer = False
+        source.isSpecialLayer = False
+        source.isBraceLayer = False
+        source.isBracketLayer = False
+        source.isSmartComponentLayer = False
+        source.isColorPaletteLayer = False
+        source.isBackupLayer = True
+        source.attributes = {"color": 3}
+        glyph.layers["backup-source"] = source
+        before = native_font_to_model(font)
+        build = build_layer_updates(
+            before,
+            [
+                {
+                    "action": "duplicate",
+                    "glyphName": "A",
+                    "sourceLayerId": "backup-source",
+                    "layerId": "brace-150",
+                    "name": "{150}",
+                    "interpolation": {
+                        "kind": "intermediate",
+                        "coordinates": {"wght": 150},
+                    },
+                    "index": 0,
+                }
+            ],
+        )
+        after = build.change_set.apply(before)
+
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=build.capabilities,
+            execution_context=build.execution_context,
+        )
+
+        self.assertEqual(native_font_to_model(font), after)
+        self.assertEqual(glyph.layers[0].layerId, "brace-150")
+        self.assertEqual(glyph.layers[0].native_only, "backup-private-state")
+        document_adapter._apply_target_model(
+            font,
+            after,
+            before,
+            build.change_set.inverse(),
+            capabilities=(LAYER_LIFECYCLE_CAPABILITY,),
+        )
+        self.assertEqual(native_font_to_model(font), before)
+
     def test_master_attachment_does_not_rewrite_equal_native_identities(self) -> None:
         class IdentitySensitiveLayer(_MasterLifecycleLayer):
             def __init__(self, master_id, name, *, native_only):
@@ -1469,7 +1606,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         document_id = host.list_documents()[0].document_id
         before = host.capture_snapshot(document_id)
         target = before.materialize()
-        target["glyphs"]["A"]["layers"]["master-regular"]["width"] = 520
+        _model_layer(target, "A", "master-regular")["width"] = 520
         changes = diff_models(before, target)
         expected = before.store_verified_transition(target, changes)
         host._canonical_model_cache.invalidate_impact(
@@ -1498,8 +1635,8 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(full_glyph.call_count, 0)
         self.assertEqual(layer_fragment.call_count, 1)
         self.assertIs(
-            actual["glyphs"]["A"]["layers"]["master-bold"],
-            before["glyphs"]["A"]["layers"]["master-bold"],
+            _model_layer(actual, "A", "master-bold"),
+            _model_layer(before, "A", "master-bold"),
         )
 
     def test_verified_layer_membership_uses_revision_evidence_without_rescanning_unaffected_layers(self) -> None:
@@ -1537,7 +1674,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         document_id = host.list_documents()[0].document_id
         before = host.capture_snapshot(document_id)
         target = before.materialize()
-        target["glyphs"]["A"]["layers"].pop("master-bold")
+        _remove_model_layer(target, "A", "master-bold")
         changes = diff_models(before, target)
         expected = before.store_verified_transition(target, changes)
         host._canonical_model_cache.invalidate_impact(
@@ -1566,8 +1703,8 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(full_glyph.call_count, 0)
         self.assertEqual(deep_layer_scan.call_count, 0)
         self.assertIs(
-            actual["glyphs"]["A"]["layers"]["master-regular"],
-            before["glyphs"]["A"]["layers"]["master-regular"],
+            _model_layer(actual, "A", "master-regular"),
+            _model_layer(before, "A", "master-regular"),
         )
 
     def test_unexpected_unaffected_layer_scalar_change_breaks_revision_proof(self) -> None:
@@ -1605,7 +1742,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         document_id = host.list_documents()[0].document_id
         before = host.capture_snapshot(document_id)
         target = before.materialize()
-        target["glyphs"]["A"]["layers"].pop("master-bold")
+        _remove_model_layer(target, "A", "master-bold")
         changes = diff_models(before, target)
         expected = before.store_verified_transition(target, changes)
         host._canonical_model_cache.invalidate_impact(
@@ -1626,7 +1763,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
             actual.document_fingerprint, expected.document_fingerprint
         )
         self.assertEqual(
-            actual["glyphs"]["A"]["layers"]["master-regular"]["width"],
+            _model_layer(actual, "A", "master-regular")["width"],
             777,
         )
 
@@ -1809,7 +1946,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
             preview = host.preview_python(request, before)
 
         self.assertEqual(
-            preview["afterModel"]["glyphs"]["A"]["layers"]["master-regular"]
+            _model_layer(preview["afterModel"], "A", "master-regular")
             ["paths"][0]["nodes"][0]["x"],
             25,
         )
@@ -2189,9 +2326,9 @@ class V2DocumentAdapterTests(unittest.TestCase):
             }
         }
         target = copy.deepcopy(before)
-        target["glyphs"]["L"]["layers"]["m0"]["paths"][0]["nodes"][0]["x"] = 20
+        _model_layer(target, "L", "m0")["paths"][0]["nodes"][0]["x"] = 20
         observed = copy.deepcopy(target)
-        observed["glyphs"]["L"]["layers"]["m0"]["paths"][0]["nodes"][0]["x"] = 19
+        _model_layer(observed, "L", "m0")["paths"][0]["nodes"][0]["x"] = 19
 
         roots = document_adapter._canonical_replacement_roots(
             before, target, observed
@@ -2217,10 +2354,10 @@ class V2DocumentAdapterTests(unittest.TestCase):
             }
         }
         target = copy.deepcopy(before)
-        target["glyphs"]["L"]["layers"]["m0"]["paths"][0]["nodes"][0]["x"] = 20
-        target["glyphs"]["L"]["layers"]["m0"]["components"][0]["transform"][4] = 20
+        _model_layer(target, "L", "m0")["paths"][0]["nodes"][0]["x"] = 20
+        _model_layer(target, "L", "m0")["components"][0]["transform"][4] = 20
         observed = copy.deepcopy(target)
-        observed["glyphs"]["L"]["layers"]["m0"]["width"] = 501
+        _model_layer(observed, "L", "m0")["width"] = 501
 
         self.assertEqual(
             document_adapter._canonical_replacement_roots(before, target, observed),

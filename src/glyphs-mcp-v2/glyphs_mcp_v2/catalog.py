@@ -72,7 +72,6 @@ class ToolDefinition:
     def annotations(self) -> Dict[str, object]:
         read_only = self.effect == "read"
         return {
-            "title": self.title,
             "readOnlyHint": read_only,
             "destructiveHint": not read_only,
             "idempotentHint": read_only if self.idempotent is None else self.idempotent,
@@ -162,6 +161,7 @@ TOOL_DEFINITIONS: Tuple[ToolDefinition, ...] = (
     _definition("get_operation", "Get Operation", "Read a bounded page from a stored analysis, review, execution diff, or operation result.", "operations"),
     _definition("list_glyphs", "List Glyphs", "List paginated glyph metadata with optional field selection and links.", "glyphs"),
     _definition("list_masters", "List Masters", "List ordered master identities, names, italic angles, and internal axis coordinates.", "masters"),
+    _definition("list_layers", "List Layers", "List paginated ordered layer identities, roles, associated masters, and interpolation configuration.", "layers"),
     _definition("list_instances", "List Instances", "List static and variable instances with internal and external axis coordinates.", "instances"),
     _definition("list_kerning_pairs", "List Kerning Pairs", "List paginated kerning pairs with typed key identity and provenance.", "kerning"),
     _definition("review_kerning_coverage", "Review Kerning Coverage", "Account honestly for eligible, measured, skipped, and untested pairs in one proof or exhaustive mode.", "kerning"),
@@ -176,6 +176,7 @@ TOOL_DEFINITIONS: Tuple[ToolDefinition, ...] = (
     _definition("apply_opentype_updates", "Apply OpenType Updates", "Apply feature, class, and prefix collection or state updates through one verified transaction.", "features", "edit", idempotent=False),
     _definition("apply_instance_updates", "Apply Instance Updates", "Apply ordered static or variable instance collection updates through one verified transaction.", "instances", "edit", idempotent=False),
     _definition("apply_master_updates", "Apply Master Updates", "Duplicate, update, move, or delete masters with their owned layers and kerning through one verified transaction.", "masters", "edit", idempotent=False),
+    _definition("apply_layer_updates", "Apply Layer Updates", "Duplicate, update, move, or delete non-master layers through one verified transaction.", "layers", "edit", idempotent=False),
     _definition("review_spacing", "Review Spacing", "Run bounded detached fixed-point spacing simulation with dependency revalidation.", "spacing"),
     _definition("apply_spacing", "Apply Spacing", "Apply explicit spacing targets through detached simulation and one verified transaction.", "spacing", "edit", idempotent=False),
     _definition("review_export", "Review Export", "Review compatibility, instances, exclusions, and destination replacement policy.", "export", open_world=True),

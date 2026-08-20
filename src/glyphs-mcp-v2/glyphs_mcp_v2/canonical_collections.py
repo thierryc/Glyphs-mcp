@@ -10,13 +10,79 @@ Glyphs or teaching the generic diff engine about individual domains.
 from __future__ import annotations
 
 import copy
-from typing import Any, Mapping, MutableSequence, Sequence
+from typing import Any, Iterable, Mapping, MutableSequence, Sequence
 
 
 IDENTITY_COLLECTION_ROOTS = frozenset(
     {"masters", "instances", "features", "classes", "featurePrefixes"}
 )
+IDENTITY_COLLECTION_PATHS = (
+    *((root,) for root in sorted(IDENTITY_COLLECTION_ROOTS)),
+    ("glyphs", "*", "layers"),
+)
 ORDER_TOKEN = "$order"
+
+
+def _path_matches(pattern: Sequence[str], path: Sequence[str]) -> bool:
+    return len(pattern) == len(path) and all(
+        expected == "*" or expected == actual
+        for expected, actual in zip(pattern, path)
+    )
+
+
+def is_identity_collection_path(path: Sequence[str]) -> bool:
+    """Return whether ``path`` names a registered ordered entity collection.
+
+    Registrations, rather than domain branches in the diff engine, are the
+    extension point. A schema may therefore add another nested collection by
+    declaring its path shape here while retaining the same semantic patch,
+    composition, selective-revert, and order rules.
+    """
+
+    normalized = tuple(str(part) for part in path)
+    return any(_path_matches(pattern, normalized) for pattern in IDENTITY_COLLECTION_PATHS)
+
+
+def identity_collection_ancestor(path: Sequence[str]) -> tuple[str, ...] | None:
+    """Return the registered collection prefix containing ``path``."""
+
+    normalized = tuple(str(part) for part in path)
+    matches = [
+        normalized[: len(pattern)]
+        for pattern in IDENTITY_COLLECTION_PATHS
+        if len(normalized) >= len(pattern)
+        and _path_matches(pattern, normalized[: len(pattern)])
+    ]
+    return max(matches, key=len) if matches else None
+
+
+def identity_collection_paths(paths: Iterable[Sequence[str]]) -> tuple[tuple[str, ...], ...]:
+    """Return every concrete registered collection referenced by paths."""
+
+    values = {
+        collection
+        for path in paths
+        if (collection := identity_collection_ancestor(path)) is not None
+    }
+    return tuple(sorted(values))
+
+
+def identity_order_change_required(
+    before_order: Sequence[str], after_order: Sequence[str]
+) -> bool:
+    """Return whether minimal sorted membership replay needs an order patch."""
+
+    before = [str(identity) for identity in before_order]
+    after = [str(identity) for identity in after_order]
+    before_set = set(before)
+    after_set = set(after)
+    replayed = [identity for identity in before if identity in after_set] + sorted(
+        after_set - before_set
+    )
+    inverse_replayed = [identity for identity in after if identity in before_set] + sorted(
+        before_set - after_set
+    )
+    return replayed != after or inverse_replayed != before
 
 
 def canonical_glyph_id(name: str) -> str:
@@ -104,13 +170,18 @@ def move_entity(collection: MutableSequence[Any], identity: str, index: int) -> 
 
 
 __all__ = [
+    "IDENTITY_COLLECTION_PATHS",
     "IDENTITY_COLLECTION_ROOTS",
     "ORDER_TOKEN",
     "canonical_glyph_id",
     "collection_order",
     "entity_id",
     "find_entity_index",
+    "identity_collection_ancestor",
+    "identity_collection_paths",
+    "identity_order_change_required",
     "indexed_entities",
+    "is_identity_collection_path",
     "move_entity",
     "reorder_entities",
     "replace_entity",

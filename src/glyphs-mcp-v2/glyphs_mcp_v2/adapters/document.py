@@ -21,6 +21,8 @@ from typing import Any, Mapping, Optional, Sequence
 from ..canonical_collections import (
     canonical_glyph_id,
     collection_order,
+    find_entity_index,
+    indexed_entities,
     require_indexed_entities,
 )
 from ..canonical_tree import CanonicalSnapshot
@@ -29,6 +31,7 @@ from ..ports import HostAccessError
 from ..python_execution import PythonExecutionRequest
 from ..mutation import (
     CanonicalImpact,
+    LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
     MutationScope,
     writable_subset,
@@ -144,6 +147,13 @@ def _layer_components(layer: Any) -> list[Any]:
     return [value for value in _sequence_values(_safe_getattr(layer, "components")) if _is_component(value)]
 
 
+def _native_layers(glyph: Any) -> list[Any]:
+    layers = _safe_getattr(glyph, "layers")
+    if isinstance(layers, Mapping):
+        return list(layers.values())
+    return _sequence_values(layers)
+
+
 def _path_model(path: Any) -> dict[str, Any]:
     nodes = []
     for node in _sequence_values(_safe_getattr(path, "nodes")):
@@ -180,18 +190,136 @@ def _anchor_model(layer: Any) -> dict[str, list[float]]:
     return result
 
 
-def _layer_model(layer: Any) -> dict[str, Any]:
+def _plain_attribute_value(value: Any) -> Any:
+    value = _maybe_call(value)
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    if isinstance(value, Mapping):
+        return {
+            str(key): _plain_attribute_value(value[key])
+            for key in sorted(value, key=str)
+        }
+    if isinstance(value, (list, tuple)):
+        return [_plain_attribute_value(item) for item in value]
+    keys = _mapping_keys(value)
+    if keys:
+        return {key: _plain_attribute_value(_mapping_get(value, key)) for key in keys}
+    return str(value)
+
+
+def _layer_attributes(layer: Any) -> dict[str, Any]:
+    attributes = _safe_getattr(layer, "attributes")
+    return {
+        key: _plain_attribute_value(_mapping_get(attributes, key))
+        for key in _mapping_keys(attributes)
+    }
+
+
+def _axis_tag_mapping(axis_tags: Optional[Mapping[str, str]]) -> dict[str, str]:
+    return {str(key): str(value) for key, value in dict(axis_tags or {}).items()}
+
+
+def _interpolation_model(
+    attributes: Mapping[str, Any],
+    *,
+    axis_tags: Optional[Mapping[str, str]],
+    is_intermediate: bool,
+    is_alternate: bool,
+) -> dict[str, Any] | None:
+    tag_by_id = _axis_tag_mapping(axis_tags)
+    coordinates = attributes.get("coordinates")
+    if isinstance(coordinates, Mapping) or is_intermediate:
+        values = coordinates if isinstance(coordinates, Mapping) else {}
+        return {
+            "kind": "intermediate",
+            "coordinates": {
+                tag_by_id.get(str(axis_id), str(axis_id)): _plain_attribute_value(value)
+                for axis_id, value in sorted(values.items(), key=lambda item: str(item[0]))
+            },
+        }
+    rules = attributes.get("axisRules")
+    if isinstance(rules, Mapping) or is_alternate:
+        values = rules if isinstance(rules, Mapping) else {}
+        ranges: dict[str, dict[str, Any]] = {}
+        for axis_id, rule in sorted(values.items(), key=lambda item: str(item[0])):
+            source = rule if isinstance(rule, Mapping) else {}
+            ranges[tag_by_id.get(str(axis_id), str(axis_id))] = {
+                "min": _plain_attribute_value(source.get("min")),
+                "max": _plain_attribute_value(source.get("max")),
+            }
+        return {"kind": "alternate", "ranges": ranges}
+    return None
+
+
+def _layer_roles(
+    layer: Any,
+    attributes: Mapping[str, Any],
+    interpolation: Mapping[str, Any] | None,
+) -> list[str]:
+    if bool(_maybe_call(_safe_getattr(layer, "isMasterLayer", False))):
+        return ["master"]
+    roles: list[str] = []
+    kind = str(interpolation.get("kind") or "") if interpolation else ""
+    if kind == "intermediate":
+        roles.append("intermediate")
+    if kind == "alternate":
+        roles.append("alternate")
+    if bool(_maybe_call(_safe_getattr(layer, "isSmartComponentLayer", False))):
+        roles.append("smart")
+    if bool(_maybe_call(_safe_getattr(layer, "isColorPaletteLayer", False))) or any(
+        key in attributes for key in ("colorPalette", "sbixSize", "svg")
+    ):
+        roles.append("color")
+    # Backup is the fallback role, not an additive specialization. A copied
+    # backup layer can retain a stale native flag briefly after interpolation
+    # attributes are attached; the canonical role follows the authoritative
+    # interpolation payload instead.
+    if not roles and bool(
+        _maybe_call(_safe_getattr(layer, "isBackupLayer", False))
+    ):
+        roles.append("backup")
+    if not roles:
+        roles.append("backup")
+    return roles
+
+
+def _layer_model(
+    layer: Any, *, axis_tags: Optional[Mapping[str, str]] = None
+) -> dict[str, Any]:
     layer_id = str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or "")
     master_id = str(_safe_getattr(layer, "associatedMasterId") or layer_id)
+    attributes = _layer_attributes(layer)
+    interpolation = _interpolation_model(
+        attributes,
+        axis_tags=axis_tags,
+        is_intermediate=bool(
+            _maybe_call(_safe_getattr(layer, "isBraceLayer", False))
+        ),
+        is_alternate=bool(
+            _maybe_call(_safe_getattr(layer, "isBracketLayer", False))
+        ),
+    )
+    canonical_attributes = {
+        key: copy.deepcopy(value)
+        for key, value in attributes.items()
+        if key not in {"coordinates", "axisRules"}
+    }
+    roles = _layer_roles(layer, attributes, interpolation)
     values = {
         "id": layer_id,
         "masterId": master_id,
         "name": str(_safe_getattr(layer, "name") or ""),
+        "roles": roles,
         "isMasterLayer": bool(_maybe_call(_safe_getattr(layer, "isMasterLayer", False))),
-        "isSpecialLayer": bool(_maybe_call(_safe_getattr(layer, "isSpecialLayer", False))),
+        "isSpecialLayer": bool(
+            _maybe_call(_safe_getattr(layer, "isSpecialLayer", False))
+        )
+        or bool(set(roles) & {"intermediate", "alternate", "smart"}),
         "hasAlignedWidth": bool(
             _maybe_call(_safe_getattr(layer, "hasAlignedWidth", False))
         ),
+        "interpolation": interpolation,
+        "attributes": canonical_attributes,
         "anchors": _anchor_model(layer),
         "paths": [_path_model(path) for path in _layer_paths(layer)],
         "components": [
@@ -213,22 +341,25 @@ def _layer_model(layer: Any) -> dict[str, Any]:
     return values
 
 
-def native_layer_to_model(layer: Any) -> dict[str, Any]:
+def native_layer_to_model(
+    layer: Any, *, axis_tags: Optional[Mapping[str, str]] = None
+) -> dict[str, Any]:
     """Return one detached canonical layer for drawing-only consumers."""
 
-    return _layer_model(layer)
+    return _layer_model(layer, axis_tags=axis_tags)
 
 
-def _glyph_model(glyph: Any) -> dict[str, Any]:
+def _glyph_model(
+    glyph: Any, *, axis_tags: Optional[Mapping[str, str]] = None
+) -> dict[str, Any]:
     name = str(_safe_getattr(glyph, "name") or "")
-    layers: dict[str, Any] = {}
-    for layer in _sequence_values(_safe_getattr(glyph, "layers")):
-        model = _layer_model(layer)
-        key = model["masterId"] or model["id"]
-        if key:
-            if key in layers:
-                key = model["id"] or "{}#{}".format(key, len(layers))
-            layers[key] = model
+    layers: list[dict[str, Any]] = []
+    for layer in _native_layers(glyph):
+        model = _layer_model(layer, axis_tags=axis_tags)
+        if model["id"]:
+            layers.append(model)
+    if indexed_entities(layers) is None:
+        raise HostAccessError("Glyphs returned duplicate or empty layer identities")
     result = {
         "name": name,
         # Native glyph UUIDs can be regenerated after deletion. The glyph map
@@ -246,11 +377,13 @@ def _glyph_fragment_model(
     glyph: Any,
     base_glyph: Mapping[str, Any],
     paths: Sequence[Sequence[str]],
+    *,
+    axis_tags: Optional[Mapping[str, str]] = None,
 ) -> dict[str, Any]:
     """Materialize only glyph fields named by canonical semantic paths."""
 
     if any(len(path) <= 2 for path in paths):
-        return _glyph_model(glyph)
+        return _glyph_model(glyph, axis_tags=axis_tags)
     result = dict(base_glyph)
     for path in paths:
         if len(path) == 3:
@@ -271,17 +404,26 @@ def _glyph_fragment_model(
         )
     )
     if layer_ids:
-        layers = dict(base_glyph.get("layers", {}))
+        layers = list(base_glyph.get("layers", ()))
         for layer_id in layer_ids:
             native = _lookup_layer(glyph, layer_id)
+            index = find_entity_index(layers, layer_id)
             if native is None:
-                layers.pop(layer_id, None)
+                if index is not None:
+                    del layers[index]
             else:
-                layer = _layer_model(native)
-                key = str(layer.get("masterId") or layer.get("id") or layer_id)
-                if key != layer_id:
-                    layers.pop(layer_id, None)
-                layers[key] = layer
+                layer = _layer_model(native, axis_tags=axis_tags)
+                if index is None:
+                    layers.append(layer)
+                else:
+                    layers[index] = layer
+        native_order = [
+            str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or "")
+            for layer in _native_layers(glyph)
+        ]
+        if set(native_order) == {str(layer.get("id") or "") for layer in layers}:
+            by_id = {str(layer.get("id") or ""): layer for layer in layers}
+            layers = [by_id[identity] for identity in native_order]
         result["layers"] = layers
     return result
 
@@ -391,13 +533,19 @@ def _glyph_matches_model(glyph: Any, expected: Mapping[str, Any]) -> bool:
             field_name
         ):
             return False
-    expected_layers = expected.get("layers", {})
-    if not isinstance(expected_layers, Mapping):
+    expected_layers = expected.get("layers", ())
+    indexed = indexed_entities(expected_layers)
+    if indexed is None:
         return False
+    expected_order, expected_by_id = indexed
     native_layers = _native_layer_index(glyph)
-    return set(native_layers) == set(expected_layers) and all(
-        isinstance(expected_layers[key], Mapping)
-        and _layer_matches_model(layer, expected_layers[key])
+    native_order = [
+        str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or "")
+        for layer in _native_layers(glyph)
+    ]
+    return native_order == expected_order and set(native_layers) == set(expected_by_id) and all(
+        isinstance(expected_by_id[key], Mapping)
+        and _layer_matches_model(layer, expected_by_id[key])
         for key, layer in native_layers.items()
     )
 
@@ -422,16 +570,12 @@ def _glyph_root_matches_model(glyph: Any, expected: Mapping[str, Any]) -> bool:
 
 def _native_layer_index(glyph: Any) -> dict[str, Any]:
     result: dict[str, Any] = {}
-    for layer in _sequence_values(_safe_getattr(glyph, "layers")):
+    for layer in _native_layers(glyph):
         layer_id = str(
             _safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""
         )
-        master_id = str(_safe_getattr(layer, "associatedMasterId") or layer_id)
-        key = master_id or layer_id
-        if key in result:
-            key = layer_id or "{}#{}".format(key, len(result))
-        if key:
-            result[key] = layer
+        if layer_id and layer_id not in result:
+            result[layer_id] = layer
     return result
 
 
@@ -464,6 +608,7 @@ def _layer_revision_token(layer: Any) -> tuple[Any, ...] | None:
         bool(_maybe_call(_safe_getattr(layer, "isMasterLayer", False))),
         bool(_maybe_call(_safe_getattr(layer, "isSpecialLayer", False))),
         bool(_maybe_call(_safe_getattr(layer, "hasAlignedWidth", False))),
+        json.dumps(_layer_attributes(layer), sort_keys=True, separators=(",", ":")),
         tuple(_plain_scalar(_safe_getattr(layer, name)) for name in _LAYER_SCALARS),
         tuple(
             sorted(
@@ -514,10 +659,12 @@ def _verified_glyph_fragment_matches(
 
     if modeled != expected or not _glyph_root_matches_model(glyph, expected):
         return False
-    expected_layers = expected.get("layers", {})
-    if not isinstance(expected_layers, Mapping):
+    expected_layers = expected.get("layers", ())
+    indexed = indexed_entities(expected_layers)
+    if indexed is None:
         return False
-    if set(current_layer_tokens) != set(expected_layers):
+    expected_order, _ = indexed
+    if set(current_layer_tokens) != set(expected_order):
         return False
     impacted = {
         str(path[3])
@@ -686,9 +833,14 @@ def _font_model_with_glyphs(
 def native_font_to_model(
     font: Any, *, instance_ids: Optional[Sequence[str]] = None
 ) -> dict[str, Any]:
+    axis_tags = {
+        str(axis.get("id") or ""): str(axis.get("tag") or "")
+        for axis in _axis_models(font)
+        if axis.get("id") and axis.get("tag")
+    }
     glyphs = {}
     for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
-        model = _glyph_model(glyph)
+        model = _glyph_model(glyph, axis_tags=axis_tags)
         if model["name"]:
             glyphs[model["name"]] = model
     return _font_model_with_glyphs(font, glyphs, instance_ids=instance_ids)
@@ -700,7 +852,7 @@ def _glyph_layer_structure(glyph: Any) -> tuple[tuple[str, str], ...]:
             str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""),
             str(_safe_getattr(layer, "associatedMasterId") or ""),
         )
-        for layer in _sequence_values(_safe_getattr(glyph, "layers"))
+        for layer in _native_layers(glyph)
     )
 
 
@@ -778,6 +930,11 @@ class _RevisionBoundGlyphModelCache:
         expected: CanonicalSnapshot | None = None,
     ) -> CanonicalSnapshot:
         masters = _master_models(font)
+        axis_tags = {
+            str(axis.get("id") or ""): str(axis.get("tag") or "")
+            for axis in _axis_models(font)
+            if axis.get("id") and axis.get("tag")
+        }
         with self._lock:
             previous = self._documents.get(document_id)
             previous_snapshot = (
@@ -818,6 +975,7 @@ class _RevisionBoundGlyphModelCache:
                         glyph,
                         cached["model"],
                         pending_paths[name],
+                        axis_tags=axis_tags,
                     )
                     expected_glyph = (
                         expected.glyph_shards.get(name)
@@ -839,9 +997,9 @@ class _RevisionBoundGlyphModelCache:
                         # Materialize the complete mismatch so verification
                         # reports the real observed tree rather than accepting
                         # a stale sibling shard.
-                        model = _glyph_model(glyph)
+                        model = _glyph_model(glyph, axis_tags=axis_tags)
                 else:
-                    model = _glyph_model(glyph)
+                    model = _glyph_model(glyph, axis_tags=axis_tags)
                     layer_tokens = _layer_revision_index(glyph)
                 result_glyphs[name] = model
                 current_glyphs[name] = {
@@ -933,7 +1091,7 @@ def _lookup_layer(glyph: Any, key: str) -> Any:
     value = _mapping_get(layers, key)
     if value is not None:
         return value
-    for layer in _sequence_values(layers):
+    for layer in _native_layers(glyph):
         if key in {str(_safe_getattr(layer, "layerId") or ""), str(_safe_getattr(layer, "associatedMasterId") or "")}:
             return layer
     return None
@@ -954,6 +1112,11 @@ def _scoped_font_model(
     # shards are detached and immutable by convention; unchanged glyph/layer
     # objects remain shared until a native fragment is materialized below.
     result = dict(base_model)
+    axis_tags = {
+        str(axis.get("id") or ""): str(axis.get("tag") or "")
+        for axis in _axis_models(font)
+        if axis.get("id") and axis.get("tag")
+    }
     result["glyphs"] = dict(base_model.get("glyphs", {}))
     non_glyph = _font_model_with_glyphs(font, {}, instance_ids=instance_ids)
     for root, value in non_glyph.items():
@@ -973,7 +1136,7 @@ def _scoped_font_model(
     for name in removed:
         base_glyphs.pop(name, None)
     for name in added:
-        base_glyphs[name] = _glyph_model(native_index[name])
+        base_glyphs[name] = _glyph_model(native_index[name], axis_tags=axis_tags)
     extra = {str(value) for value in extra_glyph_names}
     for name in sorted(set(scope.glyph_names) | extra):
         glyph = native_index.get(name)
@@ -991,9 +1154,11 @@ def _scoped_font_model(
             and paths
             and not impact.requires_complete_glyph(name)
         ):
-            base_glyphs[name] = _glyph_fragment_model(glyph, base, paths)
+            base_glyphs[name] = _glyph_fragment_model(
+                glyph, base, paths, axis_tags=axis_tags
+            )
         else:
-            base_glyphs[name] = _glyph_model(glyph)
+            base_glyphs[name] = _glyph_model(glyph, axis_tags=axis_tags)
     return result
 
 
@@ -1025,18 +1190,19 @@ def _staged_context_violations(
     }
     glyphs = model.get("glyphs", {}) if isinstance(model, Mapping) else {}
     glyph = glyphs.get(request.glyph_name, {}) if isinstance(glyphs, Mapping) else {}
-    layers = glyph.get("layers", {}) if isinstance(glyph, Mapping) else {}
+    layers = glyph.get("layers", ()) if isinstance(glyph, Mapping) else ()
     if isinstance(layers, Mapping):
-        for key, layer in layers.items():
+        layers = list(layers.values())
+    if isinstance(layers, (list, tuple)):
+        for layer in layers:
             if not isinstance(layer, Mapping):
                 continue
             identities = {
-                str(key),
                 str(layer.get("id") or ""),
                 str(layer.get("masterId") or ""),
             }
             if identities & allowed_layers:
-                allowed_layers.add(str(key))
+                allowed_layers.add(str(layer.get("id") or ""))
     violations: list[tuple[str, ...]] = []
     for change in changes.changes:
         path = change.path
@@ -1426,6 +1592,11 @@ def _append_native_collection_item(collection: Any, value: Any) -> None:
 
 def _replace_native_collection_order(collection: Any, values: Sequence[Any]) -> None:
     desired = list(values)
+    current = _sequence_values(collection)
+    if len(current) == len(desired) and all(
+        before is after for before, after in zip(current, desired)
+    ):
+        return
     # Glyphs list proxies expose one whole-collection setter backed by the
     # native ``set…_`` contract. Prefer it over slice assignment: ListProxy
     # implements slices as repeated member replacement, which can detach and
@@ -1439,7 +1610,6 @@ def _replace_native_collection_order(collection: Any, values: Sequence[Any]) -> 
         return
     except Exception:
         pass
-    current = _sequence_values(collection)
     for index in reversed(range(len(current))):
         _remove_native_collection_item(collection, index, current[index])
     for value in desired:
@@ -1649,6 +1819,240 @@ def _set_glyph_master_layer(glyph: Any, master_id: str, layer: Any) -> None:
     raise HostAccessError("Glyphs could not assign a master layer")
 
 
+def _remove_glyph_layer(glyph: Any, layer_id: str, layer: Any) -> None:
+    """Remove a layer by stable identity across Glyphs proxy variants."""
+
+    layers = _safe_getattr(glyph, "layers")
+    try:
+        del layers[layer_id]
+        return
+    except Exception:
+        pass
+    remover = _safe_getattr(layers, "removeObjectForKey_")
+    if callable(remover):
+        remover(layer_id)
+        return
+    setter = _safe_getattr(glyph, "setLayer_forId_")
+    if callable(setter):
+        setter(None, layer_id)
+        return
+    values = _native_layers(glyph)
+    try:
+        index = values.index(layer)
+    except ValueError as exc:
+        raise HostAccessError("Glyphs layer identity is missing") from exc
+    _remove_native_collection_item(layers, index, layer)
+
+
+def _canonical_layer_collection(
+    glyph: Mapping[str, Any],
+) -> tuple[list[str], dict[str, Mapping[str, Any]]]:
+    layers = glyph.get("layers", ())
+    if isinstance(layers, Mapping):
+        layers = [
+            {
+                "id": str(key),
+                "masterId": str(value.get("masterId") or key),
+                **dict(value),
+            }
+            for key, value in layers.items()
+            if isinstance(value, Mapping)
+        ]
+    return require_indexed_entities(layers, "glyph layers")
+
+
+def _set_mapping_value(mapping: Any, key: str, value: Any) -> None:
+    try:
+        mapping[key] = value
+        return
+    except Exception:
+        setter = _safe_getattr(mapping, "setObject_forKey_")
+        if callable(setter):
+            setter(value, key)
+            return
+    raise HostAccessError("Glyphs could not update layer attribute {}".format(key))
+
+
+def _remove_mapping_value(mapping: Any, key: str) -> None:
+    if _mapping_get(mapping, key) is None:
+        return
+    try:
+        del mapping[key]
+        return
+    except Exception:
+        remover = _safe_getattr(mapping, "removeObjectForKey_")
+        if callable(remover):
+            remover(key)
+            return
+    raise HostAccessError("Glyphs could not remove layer attribute {}".format(key))
+
+
+def _axis_ids_by_tag(font: Any) -> dict[str, str]:
+    return {
+        str(axis.get("tag") or ""): str(axis.get("id") or "")
+        for axis in _axis_models(font)
+        if axis.get("id") and axis.get("tag")
+    }
+
+
+def _set_layer_interpolation(
+    font: Any,
+    layer: Any,
+    interpolation: Mapping[str, Any] | None,
+) -> None:
+    attributes = _safe_getattr(layer, "attributes")
+    if attributes is None:
+        attributes = {}
+        _set_native_property(layer, "attributes", attributes)
+    _remove_mapping_value(attributes, "coordinates")
+    _remove_mapping_value(attributes, "axisRules")
+    if interpolation is None:
+        return
+    axis_ids = _axis_ids_by_tag(font)
+    kind = str(interpolation.get("kind") or "")
+    if kind == "intermediate":
+        coordinates = interpolation.get("coordinates", {})
+        _set_mapping_value(
+            attributes,
+            "coordinates",
+            {
+                axis_ids[str(tag)]: value
+                for tag, value in dict(coordinates).items()
+                if str(tag) in axis_ids
+            },
+        )
+        return
+    if kind == "alternate":
+        ranges = interpolation.get("ranges", {})
+        _set_mapping_value(
+            attributes,
+            "axisRules",
+            {
+                axis_ids[str(tag)]: {
+                    key: value
+                    for key, value in dict(rule).items()
+                    if value is not None
+                }
+                for tag, rule in dict(ranges).items()
+                if str(tag) in axis_ids and isinstance(rule, Mapping)
+            },
+        )
+        return
+    raise HostAccessError("canonical layer interpolation kind is unsupported")
+
+
+def _apply_layer_collection(
+    font: Any,
+    glyph: Any,
+    glyph_name: str,
+    current: Mapping[str, Any],
+    target: Mapping[str, Any],
+    *,
+    execution_context: Mapping[str, Any] | None = None,
+    restore_templates: Mapping[str, Any] | None = None,
+    reuse_native_templates: bool = False,
+    replacement_roots: Sequence[Sequence[str]] = (),
+    excluded_ids: Sequence[str] = (),
+) -> None:
+    """Synchronize one ordered layer collection through native identity."""
+
+    current_order, current_entities = _canonical_layer_collection(current)
+    target_order, target_entities = _canonical_layer_collection(target)
+    excluded = {str(identity) for identity in excluded_ids}
+    collection = _safe_getattr(glyph, "layers")
+    native_values = _native_layers(glyph)
+    native_by_id = {
+        str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""): layer
+        for layer in native_values
+        if str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or "")
+    }
+    if set(native_by_id) != set(current_order) and len(native_values) == len(
+        current_order
+    ):
+        # Sparse adapter unit fixtures predate stable layer IDs. The real
+        # schema-v5 host never enters this branch because capture rejects an
+        # empty identity before mutation.
+        native_by_id = {
+            identity: native_values[index]
+            for index, identity in enumerate(current_order)
+        }
+    expected_native_ids = (set(current_order) - excluded) | (
+        set(target_order) & excluded
+    )
+    if set(native_by_id) != expected_native_ids:
+        raise HostAccessError("Glyphs layer collection diverged before mutation")
+    context = dict(execution_context or {})
+    source_map = {
+        str(key): str(value)
+        for key, value in dict(context.get("layerSources") or {}).items()
+    }
+    templates = dict(restore_templates or {})
+
+    for identity in target_order:
+        if identity in native_by_id or identity in excluded:
+            continue
+        key = "{}/{}".format(glyph_name, identity)
+        template = templates.get(key)
+        reuse = bool(reuse_native_templates and template is not None)
+        source_id = source_map.get(key)
+        source = template if template is not None else native_by_id.get(source_id or "")
+        if source is None:
+            raise HostAccessError(
+                "layer creation requires a verified native copy source for {}".format(key)
+            )
+        layer = source if reuse else _copy_native_object(source, kind="layer")
+        after = target_entities[identity]
+        _set_native_scalar_if_changed(layer, "layerId", identity)
+        _set_native_scalar_if_changed(
+            layer, "associatedMasterId", str(after.get("masterId") or "")
+        )
+        _set_native_scalar_if_changed(layer, "name", str(after.get("name") or ""))
+        _set_layer_interpolation(font, layer, after.get("interpolation"))
+        _append_native_collection_item(collection, layer)
+        native_by_id[identity] = layer
+
+    for identity in reversed(current_order):
+        if identity in target_entities or identity in excluded:
+            continue
+        value = native_by_id.pop(identity)
+        _remove_glyph_layer(glyph, identity, value)
+
+    complete_order = [identity for identity in target_order if identity in native_by_id]
+    if set(complete_order) != set(native_by_id):
+        raise HostAccessError("canonical layer order omitted a native identity")
+    _replace_native_collection_order(
+        collection, [native_by_id[identity] for identity in complete_order]
+    )
+
+    axis_tags = {
+        axis_id: tag for tag, axis_id in _axis_ids_by_tag(font).items()
+    }
+    for identity in target_order:
+        if identity in excluded:
+            continue
+        native = native_by_id[identity]
+        before = current_entities.get(identity, {})
+        after = target_entities[identity]
+        _set_native_scalar_if_changed(native, "layerId", identity)
+        _set_native_scalar_if_changed(
+            native, "associatedMasterId", str(after.get("masterId") or "")
+        )
+        _set_native_scalar_if_changed(native, "name", str(after.get("name") or ""))
+        if before.get("interpolation") != after.get("interpolation"):
+            _set_layer_interpolation(font, native, after.get("interpolation"))
+        current_layer = _layer_model(native, axis_tags=axis_tags)
+        if current_layer != after:
+            _reconcile_layer_to_canonical_target(
+                native,
+                current_layer,
+                after,
+                layer_root=("glyphs", glyph_name, "layers", identity),
+                replacement_roots=replacement_roots,
+                axis_tags=axis_tags,
+                max_passes=3,
+            )
+
+
 def _apply_layer_canonical_pass(
     layer: Any,
     current_layer: Mapping[str, Any],
@@ -1723,6 +2127,7 @@ def _reconcile_layer_to_canonical_target(
     *,
     layer_root: Sequence[str],
     replacement_roots: Sequence[Sequence[str]] = (),
+    axis_tags: Optional[Mapping[str, str]] = None,
     max_passes: int = 1,
 ) -> None:
     """Converge one native layer through a bounded canonical fixed point.
@@ -1750,7 +2155,7 @@ def _reconcile_layer_to_canonical_target(
             layer_root=layer_root,
             replacement_roots=replacement_roots,
         )
-        updated = _layer_model(layer)
+        updated = _layer_model(layer, axis_tags=axis_tags)
         if updated == state:
             return
         state = updated
@@ -1852,16 +2257,12 @@ def _apply_master_collection(
                 else _copy_native_object(source_layer, kind="master layer")
             )
             canonical_glyph = canonical_glyphs.get(glyph_name, {})
-            canonical_layers = (
-                canonical_glyph.get("layers", {})
+            _, canonical_layers = (
+                _canonical_layer_collection(canonical_glyph)
                 if isinstance(canonical_glyph, Mapping)
-                else {}
+                else ([], {})
             )
-            canonical_layer = (
-                canonical_layers.get(identity)
-                if isinstance(canonical_layers, Mapping)
-                else None
-            )
+            canonical_layer = canonical_layers.get(identity)
             if isinstance(canonical_layer, Mapping) and "name" in canonical_layer:
                 _set_native_scalar_if_changed(
                     copied_layer,
@@ -1876,6 +2277,12 @@ def _apply_master_collection(
         value = native_by_id.pop(identity)
         index = _sequence_values(collection).index(value)
         _remove_native_collection_item(collection, index, value)
+        # Some native collection wrappers do not cascade master deletion to
+        # the glyph layer collection. Converge it explicitly when needed.
+        for glyph in glyphs.values():
+            layer = _lookup_layer(glyph, identity)
+            if layer is not None:
+                _remove_glyph_layer(glyph, identity, layer)
 
     _replace_native_collection_order(
         collection, [native_by_id[identity] for identity in target_order]
@@ -1912,16 +2319,12 @@ def _apply_master_collection(
             continue
         for glyph_name, glyph in glyphs.items():
             canonical_glyph = canonical_glyphs.get(glyph_name, {})
-            canonical_layers = (
-                canonical_glyph.get("layers", {})
+            _, canonical_layers = (
+                _canonical_layer_collection(canonical_glyph)
                 if isinstance(canonical_glyph, Mapping)
-                else {}
+                else ([], {})
             )
-            target_layer = (
-                canonical_layers.get(identity)
-                if isinstance(canonical_layers, Mapping)
-                else None
-            )
+            target_layer = canonical_layers.get(identity)
             layer = _lookup_layer(glyph, identity)
             if not isinstance(target_layer, Mapping) or layer is None:
                 raise HostAccessError(
@@ -2002,7 +2405,9 @@ def _apply_target_model(
     capabilities: Sequence[str] = (),
     execution_context: Mapping[str, Any] | None = None,
     master_restore_templates: Mapping[str, Mapping[str, Any]] | None = None,
+    layer_restore_templates: Mapping[str, Any] | None = None,
     reuse_native_master_templates: bool = False,
+    reuse_native_layer_templates: bool = False,
 ) -> None:
     replacement_roots = {tuple(str(part) for part in path) for path in replay_replacements}
     changed_roots = {change.path[0] for change in change_set.changes}
@@ -2058,45 +2463,57 @@ def _apply_target_model(
             for scalar in _GLYPH_SCALARS:
                 if current_glyph.get(scalar) != target_glyphs[name].get(scalar):
                     _set_native_property(glyph, scalar, target_glyphs[name].get(scalar))
-            current_layers = current_glyph.get("layers", {})
-            target_layers = target_glyphs[name].get("layers", {})
-            if master_structural_ids:
-                # Master lifecycle replay above owns these layers as complete
-                # native copies. The generic layer writer must not replay the
-                # same structural consequence field-by-field.
-                current_layers = {
-                    key: value
-                    for key, value in current_layers.items()
-                    if key not in master_structural_ids
-                }
-                target_layers = {
-                    key: value
-                    for key, value in target_layers.items()
-                    if key not in master_structural_ids
-                }
-            if set(current_layers) != set(target_layers):
-                # Layer collection mutation remains a separate structural
-                # boundary. Empty requested layers on a newly created glyph
-                # mean "accept Glyphs' derived master layers".
-                if name not in current_glyphs and not target_layers:
-                    target_layers = current_layers
-                else:
+            raw_current_layers = current_glyph.get("layers", {})
+            raw_target_layers = target_glyphs[name].get("layers", {})
+            if isinstance(raw_current_layers, Mapping) and isinstance(
+                raw_target_layers, Mapping
+            ):
+                # Internal schema-v4 sparse adapter fixtures retain their
+                # field-level replay contract. Native schema-v5 capture never
+                # emits this representation.
+                if set(raw_current_layers) != set(raw_target_layers):
                     raise HostAccessError(
-                        "canonical layer collection membership changes are not supported"
+                        "schema-v4 layer membership cannot be replayed"
                     )
-            for layer_key in sorted(target_layers):
-                if current_layers.get(layer_key) == target_layers.get(layer_key):
-                    continue
-                layer = _lookup_layer(glyph, layer_key)
-                if layer is None:
-                    raise HostAccessError("Glyphs could not resolve layer {}".format(layer_key))
-                _reconcile_layer_to_canonical_target(
-                    layer,
-                    current_layers[layer_key],
-                    target_layers[layer_key],
-                    layer_root=("glyphs", name, "layers", layer_key),
-                    replacement_roots=replacement_roots,
+                for layer_key in sorted(raw_target_layers):
+                    if raw_current_layers[layer_key] == raw_target_layers[layer_key]:
+                        continue
+                    layer = _lookup_layer(glyph, layer_key)
+                    if layer is None:
+                        raise HostAccessError(
+                            "Glyphs could not resolve layer {}".format(layer_key)
+                        )
+                    _reconcile_layer_to_canonical_target(
+                        layer,
+                        raw_current_layers[layer_key],
+                        raw_target_layers[layer_key],
+                        layer_root=("glyphs", name, "layers", layer_key),
+                        replacement_roots=replacement_roots,
+                    )
+                continue
+            current_order, _ = _canonical_layer_collection(current_glyph)
+            target_order, _ = _canonical_layer_collection(target_glyphs[name])
+            if name not in current_glyphs and not target_order:
+                # Glyphs derives master layers for a newly attached glyph.
+                continue
+            membership_changed = set(current_order) != set(target_order)
+            layer_lifecycle = LAYER_LIFECYCLE_CAPABILITY in capabilities
+            if membership_changed and not (layer_lifecycle or master_structural_ids):
+                raise HostAccessError(
+                    "canonical layer collection membership changes require layer lifecycle"
                 )
+            _apply_layer_collection(
+                font,
+                glyph,
+                name,
+                current_glyph,
+                target_glyphs[name],
+                execution_context=execution_context,
+                restore_templates=layer_restore_templates,
+                reuse_native_templates=reuse_native_layer_templates,
+                replacement_roots=replacement_roots,
+                excluded_ids=master_structural_ids,
+            )
     if "kerning" in changed_roots:
         _replace_kerning(font, target.get("kerning", []))
     if "instances" in changed_roots:
@@ -2329,6 +2746,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         self._instance_identity_maps: dict[str, dict[str, str]] = {}
         self._instance_identity_counters: dict[str, int] = {}
         self._master_lifecycle_tombstones: dict[str, Mapping[str, Any]] = {}
+        self._layer_lifecycle_tombstones: dict[str, Mapping[str, Any]] = {}
 
     def runtime_snapshot(self):
         self._cleanup_all_recovery()
@@ -2475,6 +2893,70 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         record = self._master_lifecycle_tombstones.get(str(contribution_id), {})
         templates = record.get("templates", {}) if isinstance(record, Mapping) else {}
         return templates if isinstance(templates, Mapping) else {}
+
+    def _capture_removed_layer_templates(
+        self,
+        font: Any,
+        current: Mapping[str, Any],
+        target: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        current_glyphs = current.get("glyphs", {})
+        target_glyphs = target.get("glyphs", {})
+        if not isinstance(current_glyphs, Mapping) or not isinstance(
+            target_glyphs, Mapping
+        ):
+            return {}
+        native_glyphs = {
+            str(_safe_getattr(glyph, "name") or ""): glyph
+            for glyph in _sequence_values(_safe_getattr(font, "glyphs"))
+            if str(_safe_getattr(glyph, "name") or "")
+        }
+        result: dict[str, Any] = {}
+        for glyph_name in sorted(set(current_glyphs) & set(target_glyphs)):
+            before_order, before_layers = _canonical_layer_collection(
+                current_glyphs[glyph_name]
+            )
+            _, after_layers = _canonical_layer_collection(target_glyphs[glyph_name])
+            for identity in before_order:
+                if identity in after_layers or bool(
+                    before_layers[identity].get("isMasterLayer")
+                ):
+                    continue
+                native = _lookup_layer(native_glyphs.get(glyph_name), identity)
+                if native is None:
+                    raise HostAccessError(
+                        "Glyphs could not snapshot removed layer {}/{}".format(
+                            glyph_name, identity
+                        )
+                    )
+                # The detached copy is safe for clone simulation; the exact
+                # live object is retained separately so same-process revert
+                # restores hints, backgrounds, images, guides, and private
+                # native payload without canonical reconstruction.
+                result["{}/{}".format(glyph_name, identity)] = {
+                    "copy": _copy_native_object(native, kind="layer"),
+                    "native": native,
+                }
+        return result
+
+    def _layer_restore_templates(
+        self,
+        contribution_id: Optional[str],
+        *,
+        native: bool,
+    ) -> Mapping[str, Any]:
+        if not contribution_id:
+            return {}
+        record = self._layer_lifecycle_tombstones.get(str(contribution_id), {})
+        templates = record.get("templates", {}) if isinstance(record, Mapping) else {}
+        if not isinstance(templates, Mapping):
+            return {}
+        key = "native" if native else "copy"
+        return {
+            str(identity): value.get(key)
+            for identity, value in templates.items()
+            if isinstance(value, Mapping) and value.get(key) is not None
+        }
 
     def _cached_open_models(self) -> dict[str, dict[str, Any]]:
         return {
@@ -2624,6 +3106,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             restore_templates = self._master_restore_templates(
                 removes_contribution_id
             )
+            layer_restore_templates = self._layer_restore_templates(
+                removes_contribution_id, native=False
+            )
 
             timings = {
                 "clone": 0.0,
@@ -2690,6 +3175,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 capabilities=capabilities,
                 execution_context=execution_context,
                 master_restore_templates=restore_templates,
+                layer_restore_templates=layer_restore_templates,
             )
             timings["detached_apply"] += (
                 time.perf_counter_ns() - apply_started
@@ -2739,6 +3225,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 capabilities=capabilities,
                 execution_context=execution_context,
                 master_restore_templates=restore_templates,
+                layer_restore_templates=layer_restore_templates,
             )
             timings["detached_apply"] += (
                 time.perf_counter_ns() - apply_started
@@ -2797,6 +3284,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         self, change_set: ChangeSet, *, capabilities: Sequence[str] = ()
     ) -> bool:
         master_lifecycle = MASTER_LIFECYCLE_CAPABILITY in capabilities
+        layer_lifecycle = LAYER_LIFECYCLE_CAPABILITY in capabilities
         structural_master_ids = {
             change.path[1]
             for change in change_set.changes
@@ -2857,6 +3345,17 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     if not change.before_present or not change.after_present:
                         return False
                     continue
+                if layer_lifecycle and len(path) >= 4 and path[2] == "layers":
+                    if len(path) == 4:
+                        continue
+                    if path[4] in {
+                        "name",
+                        "masterId",
+                        "interpolation",
+                        "roles",
+                        "isSpecialLayer",
+                    }:
+                        continue
                 if len(path) >= 5 and path[2] == "layers" and path[4] in set(_LAYER_SCALARS) | {"anchors", "paths", "components", "pathSignature"}:
                     if len(path) == 5 and path[4] in _LAYER_SCALARS and (
                         not change.before_present or not change.after_present
@@ -3132,6 +3631,14 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "documentId": document_id,
                     "templates": master_templates,
                 }
+            layer_templates = self._capture_removed_layer_templates(
+                font, current, target
+            )
+            if layer_templates:
+                self._layer_lifecycle_tombstones[operation_id] = {
+                    "documentId": document_id,
+                    "templates": layer_templates,
+                }
             self._canonical_model_cache.invalidate_impact(
                 document_id, CanonicalImpact.from_change_set(current, change_set)
             )
@@ -3146,7 +3653,11 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 master_restore_templates=self._master_restore_templates(
                     removes_contribution_id
                 ),
+                layer_restore_templates=self._layer_restore_templates(
+                    removes_contribution_id, native=True
+                ),
                 reuse_native_master_templates=True,
+                reuse_native_layer_templates=True,
             )
             if any(change.path[0] == "instances" for change in change_set.changes):
                 self._bind_instance_ids(
@@ -3248,10 +3759,14 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         pending = getattr(self, "_document_mcp_pending_reverts", {})
         completed_revert = pending.pop(operation_id, None)
         if completed_revert is not None:
-            self._master_lifecycle_tombstones.pop(
-                str(completed_revert.get("removedId") or ""), None
-            )
-            self._master_lifecycle_tombstones.pop(operation_id, None)
+            for tombstones in (
+                self._master_lifecycle_tombstones,
+                self._layer_lifecycle_tombstones,
+            ):
+                tombstones.pop(
+                    str(completed_revert.get("removedId") or ""), None
+                )
+                tombstones.pop(operation_id, None)
         self._document_mcp_pending_reverts = pending
 
     def restore_verified_attempt(
@@ -3279,6 +3794,13 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 restore_templates = self._master_restore_templates(
                     removes_contribution_id
                 )
+            layer_restore_templates = self._layer_restore_templates(
+                operation_id, native=True
+            )
+            if not layer_restore_templates:
+                layer_restore_templates = self._layer_restore_templates(
+                    removes_contribution_id, native=True
+                )
             _apply_target_model(
                 font,
                 current,
@@ -3287,7 +3809,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 capabilities=capabilities,
                 execution_context=execution_context,
                 master_restore_templates=restore_templates,
+                layer_restore_templates=layer_restore_templates,
                 reuse_native_master_templates=True,
+                reuse_native_layer_templates=True,
             )
             if any(change.path[0] == "instances" for change in restoration.changes):
                 self._bind_instance_ids(
@@ -3315,7 +3839,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         capabilities=capabilities,
                         execution_context=execution_context,
                         master_restore_templates=restore_templates,
+                        layer_restore_templates=layer_restore_templates,
                         reuse_native_master_templates=True,
+                        reuse_native_layer_templates=True,
                     )
                     if any(
                         change.path[0] == "instances" for change in residual.changes
@@ -3336,6 +3862,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 active.pop(operation_id, None)
                 self._native_change_count(font, _NS_CHANGE_UNDONE)
             self._master_lifecycle_tombstones.pop(operation_id, None)
+            self._layer_lifecycle_tombstones.pop(operation_id, None)
             self._document_mcp_contributions = contributions
             self._document_mcp_pending_reverts = pending
             self._refresh_verified_dirty_override(
@@ -3367,6 +3894,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         self._master_lifecycle_tombstones = {
             operation_id: record
             for operation_id, record in self._master_lifecycle_tombstones.items()
+            if str(record.get("documentId") or "") != document_id
+        }
+        layer_tombstones = getattr(self, "_layer_lifecycle_tombstones", {})
+        self._layer_lifecycle_tombstones = {
+            operation_id: record
+            for operation_id, record in layer_tombstones.items()
             if str(record.get("documentId") or "") != document_id
         }
 

@@ -305,15 +305,20 @@ def result_schema(data_schema: Mapping[str, Any]) -> Dict[str, Any]:
         },
         "additionalProperties": False,
     }
+    then_properties: Dict[str, Any] = {"error": {"type": "null"}}
+    # Most operations intentionally return an open data object. Repeating that
+    # no-op schema in every discovery entry costs several KiB without adding a
+    # constraint; only embed a tool-specific data schema when one exists.
+    if dict(data_schema) != {"type": "object", "additionalProperties": True}:
+        then_properties["data"] = deepcopy(dict(data_schema))
     schema["allOf"] = [
         {
-            "if": {"properties": {"ok": {"const": True}}, "required": ["ok"]},
-            "then": {"properties": {"data": deepcopy(dict(data_schema)), "error": {"type": "null"}}},
+            "if": {"properties": {"ok": {"const": True}}},
+            "then": {"properties": then_properties},
             "else": {
                 "properties": {
-                    "data": {"type": "object"},
                     "status": {"const": "error"},
-                    "error": {"type": "object", "required": ["code", "message", "recoverable"]},
+                    "error": {"type": "object"},
                 }
             },
         }

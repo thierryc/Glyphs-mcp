@@ -87,10 +87,10 @@ def _model(glyph_count: int = 2) -> dict:
             "leftKerningGroup": None,
             "rightKerningGroup": None,
             "mastersCompatible": True,
-            "layers": {
-                "master_regular": _layer("master_regular", "Regular", index),
-                "master_bold": _layer("master_bold", "Bold", index + 20),
-            },
+            "layers": [
+                _layer("master_regular", "Regular", index),
+                _layer("master_bold", "Bold", index + 20),
+            ],
         }
     return {
         "font": {"familyName": "Master Lifecycle", "upm": 1000},
@@ -126,9 +126,13 @@ class _Host:
         self.model = copy.deepcopy(model)
 
 
+def _layer_for(glyph: dict, identity: str) -> dict:
+    return next(layer for layer in glyph["layers"] if layer["id"] == identity)
+
+
 class MasterLifecycleTests(unittest.TestCase):
-    def test_schema_v4_and_master_tools_are_explicit(self) -> None:
-        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 4)
+    def test_schema_v5_and_master_tools_are_explicit(self) -> None:
+        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 5)
         self.assertIn("list_masters", TOOL_CATALOG)
         self.assertIn("apply_master_updates", TOOL_CATALOG)
 
@@ -180,10 +184,10 @@ class MasterLifecycleTests(unittest.TestCase):
         self.assertEqual(after["masters"][1]["name"], "Text")
         for glyph in after["glyphs"].values():
             self.assertEqual(
-                glyph["layers"]["master_text"]["paths"],
-                glyph["layers"]["master_regular"]["paths"],
+                _layer_for(glyph, "master_text")["paths"],
+                _layer_for(glyph, "master_regular")["paths"],
             )
-            self.assertEqual(glyph["layers"]["master_text"]["masterId"], "master_text")
+            self.assertEqual(_layer_for(glyph, "master_text")["masterId"], "master_text")
         self.assertEqual(
             after["kerning"]["master_text"], before["kerning"]["master_regular"]
         )
@@ -216,7 +220,10 @@ class MasterLifecycleTests(unittest.TestCase):
         self.assertEqual([master["id"] for master in deleted["masters"]], ["master_bold"])
         self.assertNotIn("master_regular", deleted["kerning"])
         self.assertTrue(
-            all("master_regular" not in glyph["layers"] for glyph in deleted["glyphs"].values())
+            all(
+                all(layer["id"] != "master_regular" for layer in glyph["layers"])
+                for glyph in deleted["glyphs"].values()
+            )
         )
         self.assertEqual(build.change_set.inverse().apply(deleted), updated)
 
@@ -224,18 +231,20 @@ class MasterLifecycleTests(unittest.TestCase):
         final = _model()
         final["masters"] = final["masters"][:1]
         for glyph in final["glyphs"].values():
-            glyph["layers"].pop("master_bold")
+            glyph["layers"] = [
+                layer for layer in glyph["layers"] if layer["id"] != "master_bold"
+            ]
         final["kerning"].pop("master_bold")
         with self.assertRaisesRegex(ValueError, "final master"):
             build_master_updates(final, [{"action": "delete", "masterId": "master_regular"}])
 
         special = _model()
-        special["glyphs"]["glyph0000"]["layers"]["brace-layer"] = {
+        special["glyphs"]["glyph0000"]["layers"].append({
             **_layer("brace-layer", "{125}", 3),
             "masterId": "master_regular",
             "isMasterLayer": False,
             "isSpecialLayer": True,
-        }
+        })
         with self.assertRaisesRegex(ValueError, "special layer"):
             build_master_updates(special, [{"action": "delete", "masterId": "master_regular"}])
 
@@ -267,9 +276,9 @@ class MasterLifecycleTests(unittest.TestCase):
 
     def test_master_builder_reuses_unchanged_layer_branches_and_never_full_diffs_glyphs(self) -> None:
         snapshot = CanonicalSnapshot.from_model(_model(383))
-        source_paths = snapshot.glyph_shards["glyph0000"]["layers"][
-            "master_regular"
-        ]["paths"]
+        source_paths = _layer_for(
+            snapshot.glyph_shards["glyph0000"], "master_regular"
+        )["paths"]
 
         with mock.patch(
             "glyphs_mcp_v2.mutation.diff_models",

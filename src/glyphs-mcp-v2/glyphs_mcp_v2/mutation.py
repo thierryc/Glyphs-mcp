@@ -9,6 +9,11 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Protocol, Sequence
 
 from .canonical_tree import CanonicalSnapshot
+from .canonical_collections import (
+    identity_order_change_required,
+    indexed_entities,
+    is_identity_collection_path,
+)
 from .semantic import (
     ChangeSet,
     SemanticChange,
@@ -39,6 +44,26 @@ _OPENTYPE_ROOTS = frozenset({"features", "classes", "featurePrefixes"})
 _OPENTYPE_WRITABLE = frozenset({"name", "code", "automatic", "disabled"})
 _INSTANCE_WRITABLE = frozenset({"name", "type", "included", "axes"})
 MASTER_LIFECYCLE_CAPABILITY = "master_lifecycle"
+LAYER_LIFECYCLE_CAPABILITY = "layer_lifecycle"
+
+
+def _layer_entities(glyph: Any) -> tuple[list[str], dict[str, Mapping[str, Any]]]:
+    layers = glyph.get("layers", ()) if isinstance(glyph, Mapping) else ()
+    indexed = indexed_entities(layers)
+    if indexed is None:
+        # Schema-v4 models are accepted only as an internal migration input;
+        # every schema-v5 native capture and public operation emits a list.
+        if isinstance(layers, Mapping):
+            order = [str(key) for key in layers]
+            entities = {
+                str(key): value
+                for key, value in layers.items()
+                if isinstance(value, Mapping)
+            }
+            return order, entities
+    if indexed is None:
+        return [], {}
+    return indexed
 
 
 @dataclass(frozen=True)
@@ -144,16 +169,8 @@ def master_lifecycle_request_diff(
     for glyph_name in sorted(set(before_glyphs) | set(after_glyphs)):
         before_glyph = before_glyphs.get(glyph_name, {})
         after_glyph = after_glyphs.get(glyph_name, {})
-        before_layers = (
-            before_glyph.get("layers", {})
-            if isinstance(before_glyph, Mapping)
-            else {}
-        )
-        after_layers = (
-            after_glyph.get("layers", {})
-            if isinstance(after_glyph, Mapping)
-            else {}
-        )
+        before_order, before_layers = _layer_entities(before_glyph)
+        after_order, after_layers = _layer_entities(after_glyph)
         for master_id in sorted(structural_ids):
             before_present = master_id in before_layers
             after_present = master_id in after_layers
@@ -166,6 +183,14 @@ def master_lifecycle_request_diff(
                     after=after_layers.get(master_id),
                     before_present=before_present,
                     after_present=after_present,
+                )
+            )
+        if identity_order_change_required(before_order, after_order):
+            changes.append(
+                SemanticChange(
+                    path=("glyphs", str(glyph_name), "layers", "$order"),
+                    before=before_order,
+                    after=after_order,
                 )
             )
 
@@ -245,14 +270,10 @@ def classify_change_path(path: tuple[str, ...]) -> str:
 def is_structural_change_path(path: tuple[str, ...]) -> bool:
     """Return whether a patch changes canonical collection membership/order."""
 
-    return len(path) == 2 and path[0] in {
-        "glyphs",
-        "masters",
-        "instances",
-        "features",
-        "classes",
-        "featurePrefixes",
-    }
+    if len(path) == 2 and path[0] == "glyphs":
+        return True
+    collection = path[:-1]
+    return bool(path) and is_identity_collection_path(collection)
 
 
 def _master_structural_ids(change_set: ChangeSet) -> frozenset[str]:
@@ -274,6 +295,23 @@ def _change_classification(
     classification = classify_change_path(change.path)
     if classification != "unsupported":
         return classification
+    if LAYER_LIFECYCLE_CAPABILITY in capabilities:
+        path = change.path
+        if (
+            len(path) >= 4
+            and path[0] == "glyphs"
+            and path[2] == "layers"
+        ):
+            if len(path) == 4 or path[3] == "$order":
+                return "writable"
+            if len(path) >= 5 and path[4] in {
+                "name",
+                "masterId",
+                "interpolation",
+                "roles",
+                "isSpecialLayer",
+            }:
+                return "writable" if path[4] in {"name", "masterId", "interpolation"} else "derived"
     if MASTER_LIFECYCLE_CAPABILITY not in capabilities:
         return classification
     structural_ids = _master_structural_ids(change_set)
@@ -292,6 +330,14 @@ def _change_classification(
         # Master-layer membership and its complete canonical payload are one
         # consequence of adding/removing the owning master. They are not a
         # general layer-mutation permission.
+        return "writable"
+    if (
+        len(path) == 4
+        and path[0] == "glyphs"
+        and path[2] == "layers"
+        and path[3] == "$order"
+        and structural_ids
+    ):
         return "writable"
     return classification
 
@@ -388,13 +434,7 @@ class CanonicalImpact:
             glyphs = model.get("glyphs", {})
             if isinstance(glyphs, Mapping):
                 for glyph_name, glyph in glyphs.items():
-                    layers = (
-                        glyph.get("layers", {})
-                        if isinstance(glyph, Mapping)
-                        else {}
-                    )
-                    if not isinstance(layers, Mapping):
-                        continue
+                    _, layers = _layer_entities(glyph)
                     for master_id in renamed_master_ids & set(layers):
                         path = (
                             "glyphs",
@@ -431,8 +471,8 @@ class CanonicalImpact:
             if not isinstance(glyph, Mapping):
                 continue
             references: set[str] = set()
-            layers = glyph.get("layers", {})
-            layer_values = layers.values() if isinstance(layers, Mapping) else ()
+            _, layer_map = _layer_entities(glyph)
+            layer_values = layer_map.values()
             for layer in layer_values:
                 if not isinstance(layer, Mapping):
                     continue
@@ -488,7 +528,7 @@ class CanonicalImpact:
             dict.fromkeys(
                 path[3]
                 for path in self.glyph_paths.get(glyph_name, ())
-                if len(path) >= 4 and path[2] == "layers"
+                if len(path) >= 4 and path[2] == "layers" and path[3] != "$order"
             )
         )
 
@@ -505,6 +545,28 @@ def mutation_scope(
 
     impact = CanonicalImpact.from_change_set(model, change_set)
     return MutationScope(impact.roots, impact.glyph_names)
+
+
+def lifecycle_capabilities(
+    change_set: ChangeSet, *, tool: str | None = None
+) -> tuple[str, ...]:
+    """Derive structural ownership from semantic paths for replay and revert."""
+
+    if tool == "apply_master_updates":
+        return (MASTER_LIFECYCLE_CAPABILITY,)
+    if tool == "apply_layer_updates":
+        return (LAYER_LIFECYCLE_CAPABILITY,)
+    paths = tuple(change.path for change in change_set.changes)
+    if any(path and path[0] == "masters" for path in paths):
+        return (MASTER_LIFECYCLE_CAPABILITY,)
+    if any(
+        len(path) == 4
+        and path[0] == "glyphs"
+        and path[2] == "layers"
+        for path in paths
+    ):
+        return (LAYER_LIFECYCLE_CAPABILITY,)
+    return ()
 
 
 @dataclass(frozen=True)
@@ -750,6 +812,8 @@ __all__ = [
     "MutationPlanner",
     "MutationPlanningHost",
     "MutationBuild",
+    "LAYER_LIFECYCLE_CAPABILITY",
+    "lifecycle_capabilities",
     "MASTER_LIFECYCLE_CAPABILITY",
     "VerifiedMutationPlan",
     "classify_change_path",

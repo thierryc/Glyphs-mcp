@@ -16,6 +16,7 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.adapters.document import native_layer_to_model  # noqa: E402
+from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.canonical_collections import (  # noqa: E402
     is_identity_collection_path,
 )
@@ -33,6 +34,7 @@ from glyphs_mcp_v2.mutation import (  # noqa: E402
 )
 from glyphs_mcp_v2.semantic import (  # noqa: E402
     diff_models,
+    fingerprint_model,
     public_change_dict,
     revert_change_set_onto,
 )
@@ -409,6 +411,82 @@ class LayerLifecycleTests(unittest.TestCase):
             {"kind": "intermediate", "coordinates": {"wght": 125}},
         )
         self.assertEqual(model["attributes"], {"color": 2})
+
+    def test_public_apply_and_revert_share_one_operation_pipeline(self) -> None:
+        class Host:
+            def __init__(self):
+                self.model = _model()
+                self.clone_calls = 0
+                self.apply_calls = 0
+
+            def capture_model(self, document_id):
+                return copy.deepcopy(self.model)
+
+            def simulate_change_set(self, document_id, change_set):
+                self.clone_calls += 1
+                return change_set.apply(self.model)
+
+            def apply_change_set(self, document_id, change_set):
+                self.apply_calls += 1
+                self.model = change_set.apply(self.model)
+
+            def restore_model(self, document_id, model):
+                self.model = copy.deepcopy(model)
+
+        host = Host()
+        app = GlyphsMCPApplication(host)
+        baseline = copy.deepcopy(host.model)
+        listed = app.invoke(
+            "list_layers",
+            {
+                "documentId": "doc_layers",
+                "glyphNames": ["A"],
+                "roles": ["intermediate", "alternate"],
+                "pageSize": 1,
+            },
+        ).to_dict()
+        self.assertTrue(listed["ok"])
+        self.assertEqual(listed["page"]["totalItems"], 2)
+        self.assertEqual(len(listed["data"]["layers"]), 1)
+
+        applied = app.invoke(
+            "apply_layer_updates",
+            {
+                "documentId": "doc_layers",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "updates": [
+                    {
+                        "action": "duplicate",
+                        "glyphName": "A",
+                        "sourceLayerId": "brace-125",
+                        "layerId": "brace-150",
+                        "interpolation": {
+                            "kind": "intermediate",
+                            "coordinates": {"wght": 150},
+                        },
+                    }
+                ],
+            },
+        ).to_dict()
+        self.assertTrue(applied["ok"])
+        self.assertEqual(applied["data"]["transactionCount"], 1)
+        self.assertIsNotNone(applied["auditReceipt"])
+        self.assertEqual(host.clone_calls, 1)
+        self.assertEqual(host.apply_calls, 1)
+
+        reverted = app.invoke(
+            "revert_change",
+            {
+                "documentId": "doc_layers",
+                "operationId": applied["operationId"],
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+            },
+        ).to_dict()
+        self.assertTrue(reverted["ok"])
+        self.assertEqual(host.model, baseline)
+        self.assertEqual(host.clone_calls, 2)
+        self.assertEqual(host.apply_calls, 2)
+        self.assertIsNotNone(reverted["auditReceipt"])
 
 
 if __name__ == "__main__":

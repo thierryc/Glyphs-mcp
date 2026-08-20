@@ -10,12 +10,14 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Sequence, Tuple
 
 from .canonical_collections import (
-    IDENTITY_COLLECTION_ROOTS,
     ORDER_TOKEN,
     collection_order,
     entity_id,
     find_entity_index,
+    identity_collection_paths,
+    identity_order_change_required,
     indexed_entities,
+    is_identity_collection_path,
     reorder_entities,
     replace_entity,
 )
@@ -315,11 +317,11 @@ def _require_change_before(current: Any, change: SemanticChange) -> None:
 
 
 def _missing_changes(value: Any, path: Tuple[str, ...], *, addition: bool) -> list[SemanticChange]:
-    if isinstance(value, Mapping) and value:
-        changes: list[SemanticChange] = []
-        for key in sorted(value, key=str):
-            changes.extend(_missing_changes(value[key], path + (str(key),), addition=addition))
-        return changes
+    # Presence belongs to the missing subtree root. Decomposing a newly added
+    # mapping into leaf writes loses whether its ancestor existed; a later
+    # inverse would then leave empty dictionaries and could not reproduce the
+    # original fingerprint. Treating the subtree atomically is the same
+    # identity/presence rule already used for collection entities.
     if addition:
         return [SemanticChange(path=path, after=copy.deepcopy(value), before_present=False)]
     return [SemanticChange(path=path, before=copy.deepcopy(value), after_present=False)]
@@ -435,7 +437,7 @@ def _diff(before: Any, after: Any, path: Tuple[str, ...]) -> list[SemanticChange
                 changes.extend(_diff(before[key], after[key], path + (key_text,)))
         return changes
     if isinstance(before, (list, tuple)) and isinstance(after, (list, tuple)):
-        if len(path) == 1 and path[0] in IDENTITY_COLLECTION_ROOTS:
+        if is_identity_collection_path(path):
             before_indexed = indexed_entities(before)
             after_indexed = indexed_entities(after)
             if before_indexed is not None and after_indexed is not None:
@@ -472,24 +474,7 @@ def _diff(before: Any, after: Any, path: Tuple[str, ...]) -> list[SemanticChange
                 # additions replay in identity order rather than construction
                 # order. Emit an order patch only when that normalized minimal
                 # membership replay cannot reproduce the target.
-                replayed_order = [
-                    identity for identity in before_order if identity in after_entities
-                ] + [
-                    identity
-                    for identity in sorted(after_entities)
-                    if identity not in before_entities
-                ]
-                inverse_replayed_order = [
-                    identity for identity in after_order if identity in before_entities
-                ] + [
-                    identity
-                    for identity in sorted(before_entities)
-                    if identity not in after_entities
-                ]
-                if (
-                    replayed_order != after_order
-                    or inverse_replayed_order != before_order
-                ):
+                if identity_order_change_required(before_order, after_order):
                     changes.append(
                         SemanticChange(
                             path=path + (ORDER_TOKEN,),
@@ -690,7 +675,7 @@ def _replay_identity_membership(
     for original in sorted(changes, key=lambda item: item.path):
         before_present = original.after_present if inverse else original.before_present
         after_present = original.before_present if inverse else original.after_present
-        identity = original.path[1]
+        identity = original.path[-1]
         if before_present and not after_present:
             if identity in result:
                 result.remove(identity)
@@ -705,29 +690,33 @@ def _normalize_composed_orders(
     second: ChangeSet,
 ) -> list[SemanticChange]:
     result = list(changes)
-    for root in IDENTITY_COLLECTION_ROOTS:
-        order_path = (root, ORDER_TOKEN)
+    collection_paths = identity_collection_paths(
+        change.path for change in (*first.changes, *second.changes, *result)
+    )
+    for collection_path in collection_paths:
+        order_path = collection_path + (ORDER_TOKEN,)
+        member_length = len(collection_path) + 1
         first_membership = tuple(
             change
             for change in first.changes
-            if len(change.path) == 2
-            and change.path[0] == root
-            and change.path[1] != ORDER_TOKEN
+            if len(change.path) == member_length
+            and change.path[: len(collection_path)] == collection_path
+            and change.path[-1] != ORDER_TOKEN
         )
         second_membership = tuple(
             change
             for change in second.changes
-            if len(change.path) == 2
-            and change.path[0] == root
-            and change.path[1] != ORDER_TOKEN
+            if len(change.path) == member_length
+            and change.path[: len(collection_path)] == collection_path
+            and change.path[-1] != ORDER_TOKEN
         )
         order = next((change for change in result if change.path == order_path), None)
         membership = tuple(
             change
             for change in result
-            if len(change.path) == 2
-            and change.path[0] == root
-            and change.path[1] != ORDER_TOKEN
+            if len(change.path) == member_length
+            and change.path[: len(collection_path)] == collection_path
+            and change.path[-1] != ORDER_TOKEN
         )
         if order is None:
             if first_membership and second_membership and membership:
@@ -737,12 +726,12 @@ def _normalize_composed_orders(
             continue
 
         additions = {
-            change.path[1]
+            change.path[-1]
             for change in membership
             if not change.before_present and change.after_present
         }
         deletions = {
-            change.path[1]
+            change.path[-1]
             for change in membership
             if change.before_present and not change.after_present
         }

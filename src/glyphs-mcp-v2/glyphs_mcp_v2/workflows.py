@@ -10,10 +10,12 @@ from typing import Any, Iterable, Mapping, Optional, Sequence
 from .canonical_collections import (
     canonical_glyph_id,
     find_entity_index,
+    indexed_entities,
     move_entity,
     require_indexed_entities,
 )
 from .mutation import (
+    LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
     MutationBuild,
     master_lifecycle_request_diff,
@@ -32,6 +34,51 @@ def _items(value: Any, *, key_name: str = "id") -> list[dict[str, Any]]:
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
         return [copy.deepcopy(dict(item)) for item in value if isinstance(item, Mapping)]
     return []
+
+
+def _canonical_layers(
+    glyph: Any, *, copy_values: bool = True
+) -> list[dict[str, Any]]:
+    """Return the schema-v5 ordered layer entities for one glyph.
+
+    A mapping is accepted only as a local schema-v4 migration fixture. Native
+    capture and every schema-v5 builder return the ordered list form.
+    """
+
+    source = glyph.get("layers", ()) if isinstance(glyph, Mapping) else ()
+    if isinstance(source, Mapping):
+        source = list(source.values())
+    if not isinstance(source, (list, tuple)):
+        raise ValueError("glyph layers must be an ordered canonical collection")
+    layers = [
+        copy.deepcopy(dict(layer)) if copy_values else layer
+        for layer in source
+        if isinstance(layer, Mapping)
+    ]
+    if len(layers) != len(source) or indexed_entities(layers) is None:
+        raise ValueError("glyph layers require unique non-empty layer IDs")
+    return layers
+
+
+def _layer_index(layers: Sequence[Mapping[str, Any]], identity: str) -> int | None:
+    index = find_entity_index(layers, identity)
+    if index is not None:
+        return index
+    # Existing metrics/spacing APIs address master layers by master ID. Keep
+    # that semantic lookup while schema v5 addresses lifecycle by layer ID.
+    matches = [
+        offset
+        for offset, layer in enumerate(layers)
+        if bool(layer.get("isMasterLayer"))
+        and str(layer.get("masterId") or "") == identity
+    ]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _layer_for(glyph: Any, identity: str) -> dict[str, Any] | None:
+    layers = _canonical_layers(glyph)
+    index = _layer_index(layers, identity)
+    return layers[index] if index is not None else None
 
 
 def _finding_id(code: str, target: Mapping[str, Any]) -> str:
@@ -132,6 +179,51 @@ def list_masters(model: Mapping[str, Any]) -> list[dict[str, Any]]:
         }
         for master in masters
     ]
+
+
+def list_layers(
+    model: Mapping[str, Any],
+    *,
+    glyph_names: Optional[Sequence[str]] = None,
+    roles: Optional[Sequence[str]] = None,
+) -> list[dict[str, Any]]:
+    """Return ordered layer identities and reviewable lifecycle metadata."""
+
+    requested_glyphs = {str(name) for name in glyph_names or () if str(name)}
+    requested_roles = {str(role).lower() for role in roles or () if str(role)}
+    known_roles = {"master", "intermediate", "alternate", "backup", "smart", "color"}
+    unknown = requested_roles - known_roles
+    if unknown:
+        raise ValueError("unsupported layer roles: {}".format(", ".join(sorted(unknown))))
+    glyphs = model.get("glyphs", {})
+    if not isinstance(glyphs, Mapping):
+        raise ValueError("glyph model must be keyed by name")
+    result: list[dict[str, Any]] = []
+    for glyph_name in sorted(glyphs):
+        if requested_glyphs and str(glyph_name) not in requested_glyphs:
+            continue
+        for order, layer in enumerate(_canonical_layers(glyphs[glyph_name])):
+            layer_roles = [str(role) for role in layer.get("roles", ())]
+            if requested_roles and not requested_roles.intersection(layer_roles):
+                continue
+            result.append(
+                {
+                    "glyphName": str(glyph_name),
+                    "id": str(layer.get("id") or ""),
+                    "masterId": str(layer.get("masterId") or ""),
+                    "name": str(layer.get("name") or ""),
+                    "order": order,
+                    "roles": layer_roles,
+                    "isMasterLayer": bool(layer.get("isMasterLayer")),
+                    "isSpecialLayer": bool(layer.get("isSpecialLayer")),
+                    "interpolation": copy.deepcopy(layer.get("interpolation")),
+                    "width": layer.get("width"),
+                    "pathCount": len(layer.get("paths") or ()),
+                    "componentCount": len(layer.get("components") or ()),
+                    "anchorCount": len(layer.get("anchors") or {}),
+                }
+            )
+    return result
 
 
 def _kerning_key(value: Any, id_to_name: Optional[Mapping[str, str]] = None) -> dict[str, Any]:
@@ -654,7 +746,7 @@ def build_glyph_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str,
                 "export": bool(update.get("export", True)),
                 "leftKerningGroup": update.get("leftKerningGroup"),
                 "rightKerningGroup": update.get("rightKerningGroup"),
-                "layers": {},
+                "layers": [],
             }
             continue
         if action == "delete":
@@ -920,12 +1012,13 @@ def build_master_updates(
 
             for glyph_name, glyph in glyphs.items():
                 glyph_copy = dict(glyph) if isinstance(glyph, Mapping) else None
-                layers = (
-                    dict(glyph.get("layers") or {})
-                    if isinstance(glyph, Mapping)
+                layers = _canonical_layers(glyph, copy_values=False)
+                source_layer_index = _layer_index(layers, source_id)
+                source_layer = (
+                    layers[source_layer_index]
+                    if source_layer_index is not None
                     else None
                 )
-                source_layer = layers.get(source_id) if isinstance(layers, dict) else None
                 if not isinstance(source_layer, Mapping) or not bool(
                     source_layer.get("isMasterLayer", True)
                 ):
@@ -934,7 +1027,7 @@ def build_master_updates(
                             glyph_name, source_id
                         )
                     )
-                if master_id in layers:
+                if _layer_index(layers, master_id) is not None:
                     raise ValueError(
                         "glyph {} already has layer {}".format(glyph_name, master_id)
                     )
@@ -944,7 +1037,7 @@ def build_master_updates(
                 layer["name"] = source["name"]
                 layer["isMasterLayer"] = True
                 layer["isSpecialLayer"] = False
-                layers[master_id] = layer
+                layers.append(layer)
                 glyph_copy["layers"] = layers
                 glyphs[glyph_name] = glyph_copy
             if source_id in kerning:
@@ -958,20 +1051,17 @@ def build_master_updates(
                 raise ValueError("the final master cannot be deleted")
             for glyph_name, glyph in glyphs.items():
                 glyph_copy = dict(glyph) if isinstance(glyph, Mapping) else None
-                layers = (
-                    dict(glyph.get("layers") or {})
-                    if isinstance(glyph, Mapping)
-                    else None
-                )
-                if not isinstance(layers, dict) or master_id not in layers:
+                layers = _canonical_layers(glyph, copy_values=False)
+                master_layer_index = _layer_index(layers, master_id)
+                if master_layer_index is None:
                     raise ValueError(
                         "glyph {} has no canonical master layer {}".format(
                             glyph_name, master_id
                         )
                     )
-                for key, layer in layers.items():
+                for layer in layers:
                     if (
-                        key != master_id
+                        str(layer.get("id") or "") != master_id
                         and isinstance(layer, Mapping)
                         and str(layer.get("masterId") or "") == master_id
                         and bool(layer.get("isSpecialLayer"))
@@ -981,7 +1071,7 @@ def build_master_updates(
                                 master_id, glyph_name
                             )
                         )
-                del layers[master_id]
+                del layers[master_layer_index]
                 glyph_copy["layers"] = layers
                 glyphs[glyph_name] = glyph_copy
             del masters[index]
@@ -1020,6 +1110,198 @@ def build_master_updates(
     )
 
 
+def _font_axis_tags(model: Mapping[str, Any]) -> tuple[str, ...]:
+    tags: list[str] = []
+    for master in _items(model.get("masters", [])):
+        for axis in _items(master.get("axes", []), key_name="tag"):
+            tag = str(axis.get("tag") or "")
+            if tag and tag not in tags:
+                tags.append(tag)
+    return tuple(tags)
+
+
+def _normalized_interpolation(
+    value: Any,
+    *,
+    known_axis_tags: Sequence[str],
+) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if not isinstance(value, Mapping):
+        raise ValueError("layer interpolation must be an object or null")
+    kind = str(value.get("kind") or "").lower()
+    known = set(str(tag) for tag in known_axis_tags)
+    if kind == "intermediate":
+        coordinates = value.get("coordinates")
+        if not isinstance(coordinates, Mapping) or not coordinates:
+            raise ValueError("intermediate layers require axis coordinates")
+        unknown = {str(tag) for tag in coordinates} - known
+        if unknown:
+            raise ValueError("unknown axis tag: {}".format(", ".join(sorted(unknown))))
+        return {
+            "kind": "intermediate",
+            "coordinates": {
+                str(tag): float(coordinates[tag]) for tag in sorted(coordinates, key=str)
+            },
+        }
+    if kind == "alternate":
+        ranges = value.get("ranges")
+        if not isinstance(ranges, Mapping) or not ranges:
+            raise ValueError("alternate layers require axis ranges")
+        unknown = {str(tag) for tag in ranges} - known
+        if unknown:
+            raise ValueError("unknown axis tag: {}".format(", ".join(sorted(unknown))))
+        normalized: dict[str, dict[str, float | None]] = {}
+        for tag in sorted(ranges, key=str):
+            rule = ranges[tag]
+            if not isinstance(rule, Mapping):
+                raise ValueError("alternate axis ranges require min/max objects")
+            minimum = rule.get("min")
+            maximum = rule.get("max")
+            if minimum is None and maximum is None:
+                raise ValueError("alternate axis ranges require a minimum or maximum")
+            minimum = float(minimum) if minimum is not None else None
+            maximum = float(maximum) if maximum is not None else None
+            if minimum is not None and maximum is not None and minimum > maximum:
+                raise ValueError("alternate range minimum cannot exceed maximum")
+            normalized[str(tag)] = {"min": minimum, "max": maximum}
+        return {"kind": "alternate", "ranges": normalized}
+    raise ValueError("layer interpolation kind must be intermediate or alternate")
+
+
+def _project_layer_roles(
+    layer: Mapping[str, Any], interpolation: Mapping[str, Any] | None
+) -> list[str]:
+    retained = [
+        str(role)
+        for role in layer.get("roles", ())
+        if str(role) in {"smart", "color"}
+    ]
+    kind = str(interpolation.get("kind") or "") if interpolation else ""
+    if kind:
+        retained.insert(0, kind)
+    if not retained:
+        retained.append("backup")
+    return list(dict.fromkeys(retained))
+
+
+def build_layer_updates(
+    model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]
+) -> MutationBuild:
+    """Build one verified lifecycle patch for non-master layer entities."""
+
+    after = dict(model)
+    source_glyphs = model.get("glyphs", {})
+    if not isinstance(source_glyphs, Mapping):
+        raise ValueError("glyphs must be keyed by name")
+    glyphs = dict(source_glyphs)
+    after["glyphs"] = glyphs
+    known_masters = {
+        str(master.get("id") or "")
+        for master in _items(model.get("masters", []))
+        if master.get("id")
+    }
+    known_axis_tags = _font_axis_tags(model)
+    source_map: dict[str, str] = {}
+    seen: set[tuple[str, str, str]] = set()
+
+    for update in updates:
+        action = str(update.get("action") or "update").lower()
+        glyph_name = str(update.get("glyphName") or "")
+        layer_id = str(update.get("layerId") or "")
+        target = (action, glyph_name, layer_id)
+        if not glyph_name or not layer_id or layer_id == "$order" or target in seen:
+            raise ValueError(
+                "layer updates require unique explicit action/glyphName/layerId targets"
+            )
+        seen.add(target)
+        glyph = glyphs.get(glyph_name)
+        if not isinstance(glyph, Mapping):
+            raise ValueError("unknown glyph: {}".format(glyph_name))
+        glyph_copy = dict(glyph)
+        layers = _canonical_layers(glyph)
+        glyph_copy["layers"] = layers
+        glyphs[glyph_name] = glyph_copy
+        index = _layer_index(layers, layer_id)
+
+        if action == "duplicate":
+            if index is not None:
+                raise ValueError("layer already exists: {}/{}".format(glyph_name, layer_id))
+            source_id = str(update.get("sourceLayerId") or "")
+            source_index = _layer_index(layers, source_id)
+            if not source_id or source_index is None:
+                raise ValueError("unknown source layer: {}/{}".format(glyph_name, source_id))
+            source = copy.deepcopy(layers[source_index])
+            source["id"] = layer_id
+            source["isMasterLayer"] = False
+            if "masterId" in update:
+                source["masterId"] = str(update.get("masterId") or "")
+            if str(source.get("masterId") or "") not in known_masters:
+                raise ValueError("unknown associated master: {}".format(source.get("masterId")))
+            if "name" in update:
+                source["name"] = str(update.get("name") or "")
+            interpolation = _normalized_interpolation(
+                update.get("interpolation", source.get("interpolation")),
+                known_axis_tags=known_axis_tags,
+            )
+            source["interpolation"] = interpolation
+            source["roles"] = _project_layer_roles(source, interpolation)
+            source["isSpecialLayer"] = bool(
+                set(source["roles"]) & {"intermediate", "alternate", "smart"}
+            )
+            layers.append(source)
+            if "index" in update:
+                move_entity(layers, layer_id, int(update["index"]))
+            source_map["{}/{}".format(glyph_name, layer_id)] = source_id
+            continue
+
+        if index is None:
+            raise ValueError("unknown layer: {}/{}".format(glyph_name, layer_id))
+        layer = layers[index]
+        if bool(layer.get("isMasterLayer")):
+            raise ValueError(
+                "master layer mutations belong to apply_master_updates"
+            )
+        if action == "delete":
+            del layers[index]
+            continue
+        if action == "move":
+            if "index" not in update:
+                raise ValueError("layer move requires index")
+            move_entity(layers, layer_id, int(update["index"]))
+            continue
+        if action != "update":
+            raise ValueError("layer action must be duplicate, update, move, or delete")
+        supplied = {"name", "masterId", "interpolation"}.intersection(update)
+        if not supplied:
+            raise ValueError("layer updates require name, masterId, or interpolation")
+        if "name" in supplied:
+            layer["name"] = str(update.get("name") or "")
+        if "masterId" in supplied:
+            master_id = str(update.get("masterId") or "")
+            if master_id not in known_masters:
+                raise ValueError("unknown associated master: {}".format(master_id))
+            layer["masterId"] = master_id
+        if "interpolation" in supplied:
+            interpolation = _normalized_interpolation(
+                update.get("interpolation"), known_axis_tags=known_axis_tags
+            )
+            layer["interpolation"] = interpolation
+            layer["roles"] = _project_layer_roles(layer, interpolation)
+            layer["isSpecialLayer"] = bool(
+                set(layer["roles"]) & {"intermediate", "alternate", "smart"}
+            )
+
+    changes = diff_models(model, after)
+    if not changes.changes:
+        raise ValueError("layer updates must produce a document change")
+    return MutationBuild(
+        change_set=changes,
+        capabilities=(LAYER_LIFECYCLE_CAPABILITY,),
+        execution_context={"layerSources": source_map},
+    )
+
+
 def review_anchor_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
     after = copy.deepcopy(dict(model))
     glyphs = after.setdefault("glyphs", {})
@@ -1032,8 +1314,10 @@ def review_anchor_updates(model: Mapping[str, Any], updates: Sequence[Mapping[st
         glyph = glyphs.get(target[0]) if isinstance(glyphs, dict) else None
         if not isinstance(glyph, dict):
             raise ValueError("unknown glyph: {}".format(target[0]))
-        layers = glyph.setdefault("layers", {})
-        layer = layers.get(target[1]) if isinstance(layers, dict) else None
+        layers = _canonical_layers(glyph)
+        glyph["layers"] = layers
+        layer_index = _layer_index(layers, target[1])
+        layer = layers[layer_index] if layer_index is not None else None
         if not isinstance(layer, dict):
             raise ValueError("unknown master layer: {}".format(target[1]))
         anchors = layer.setdefault("anchors", {})
@@ -1120,8 +1404,11 @@ def review_metrics_updates(model: Mapping[str, Any], updates: Sequence[Mapping[s
             raise ValueError("metrics updates require unique explicit glyph/master targets")
         seen.add(target)
         glyph = glyphs.get(target[0]) if isinstance(glyphs, dict) else None
-        layers = glyph.get("layers") if isinstance(glyph, dict) else None
-        layer = layers.get(target[1]) if isinstance(layers, dict) else None
+        layers = _canonical_layers(glyph) if isinstance(glyph, dict) else []
+        if isinstance(glyph, dict):
+            glyph["layers"] = layers
+        layer_index = _layer_index(layers, target[1])
+        layer = layers[layer_index] if layer_index is not None else None
         if not isinstance(layer, dict):
             raise ValueError("unknown metrics target: {}/{}".format(*target))
         supplied = allowed.intersection(update)
@@ -1143,8 +1430,11 @@ def review_compatibility_updates(model: Mapping[str, Any], updates: Sequence[Map
             raise ValueError("compatibility updates require unique explicit glyph/master targets")
         seen.add(target)
         glyph = glyphs.get(target[0]) if isinstance(glyphs, dict) else None
-        layers = glyph.get("layers") if isinstance(glyph, dict) else None
-        layer = layers.get(target[1]) if isinstance(layers, dict) else None
+        layers = _canonical_layers(glyph) if isinstance(glyph, dict) else []
+        if isinstance(glyph, dict):
+            glyph["layers"] = layers
+        layer_index = _layer_index(layers, target[1])
+        layer = layers[layer_index] if layer_index is not None else None
         if not isinstance(layer, dict):
             raise ValueError("unknown compatibility target: {}/{}".format(*target))
         supplied = {"paths", "components"}.intersection(update)
@@ -1164,10 +1454,12 @@ def review_compatibility_updates(model: Mapping[str, Any], updates: Sequence[Map
 
 
 __all__ = [
+    "build_layer_updates",
     "build_master_updates",
     "build_opentype_updates",
     "list_glyphs",
     "list_instances",
+    "list_layers",
     "list_masters",
     "list_kerning_pairs",
     "review_anchor_consistency",

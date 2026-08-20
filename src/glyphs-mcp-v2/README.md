@@ -3,14 +3,16 @@
 This is the isolated, unreleased Glyphs MCP 2.0 package. It is based on signed
 release `v1.11.0` but does not change the shipped 1.x wire contracts.
 
-The catalog contains 29 operations across:
+The catalog contains 31 operations across:
 
 - stable document status and bounded glyph, instance, kerning, audit, and operation pages;
 - compatibility, metrics, anchors, spacing, kerning, and export reviews;
 - direct apply-first typed mutations through detached simulation and one shared
   verified transaction kernel;
-- schema-v4 identity-aware glyph, layer, master, instance, feature, class, and
+- schema-v5 identity-aware glyph, layer, master, instance, feature, class, and
   prefix membership/order patches with conflict-aware semantic revert;
+- paginated layer discovery and direct non-master layer duplication, update,
+  order, deletion, interpolation rules, native tombstones, and exact revert;
 - staged, destination-fingerprint-bound source-bundle publication;
 - `execute_python` staged-document and live-open-world modes;
 - fingerprint-bound `rollback_python_execution` and separate recovery copies.
@@ -46,12 +48,14 @@ expressed and inspected as sidebearings at the workflow boundary; verification
 records the authoritative geometry and width effects caused by that command.
 
 Ordered canonical collections remain ordinary detached JSON lists, but schema
-v4 addresses their entities by stable IDs and represents order independently.
+v5 addresses their entities by stable IDs and represents order independently.
 `apply_glyph_updates`, `apply_opentype_updates`, and
 `apply_instance_updates` use that one semantic collection abstraction.
 `apply_master_updates` extends it to a composite master, its owned glyph layers,
-and its kerning partition. Arbitrary special/intermediate layer membership and
-staged-Python structural replay remain explicit later boundaries.
+and its kerning partition. `apply_layer_updates` uses the same abstraction for
+intermediate, alternate, backup, Smart, and color layer membership. Specialized
+Smart/color properties and staged-Python structural replay remain explicit
+later boundaries.
 
 ## Worktree-contained development
 
@@ -120,3 +124,21 @@ the 383-glyph/five-master gate completed in 62.702 seconds, restored fingerprint
 `sha256:2488888b35cd25f208ca508a001bff863b03a530df71e069b06eda0177ad5076`,
 and left the document clean and unsaved. This is 56.8% faster than the recorded
 145.163-second baseline and 9.298 seconds below the 72-second acceptance limit.
+
+## Glyphs 4 schema-v5 layer qualification
+
+After rebuilding, relinking, and restarting Glyphs 4, run the layer lifecycle
+gate on the disposable font:
+
+```python
+from GlyphsApp import Glyphs
+from glyphs_mcp_v2.live_gates import verify_schema_v5_layer_lifecycle
+
+print(verify_schema_v5_layer_lifecycle(Glyphs.font))
+```
+
+The gate duplicates a master layer into an intermediate layer, converts its
+axis configuration to an alternate range, reorders and deletes it, then
+reverts every operation. It also verifies stale-fingerprint and master-layer
+ownership refusals. It never saves and succeeds only after restoring the exact
+canonical baseline, active master, working path, and reported dirty state.

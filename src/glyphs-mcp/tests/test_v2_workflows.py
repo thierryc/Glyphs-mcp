@@ -217,8 +217,11 @@ class V2WorkflowTests(unittest.TestCase):
         model = {
             "glyphs": {
                 "A": {
-                    "layers": {
-                        "m1": {
+                    "layers": [
+                        {
+                            "id": "m1",
+                            "masterId": "m1",
+                            "isMasterLayer": True,
                             "leftMetricsKey": None,
                             "rightMetricsKey": None,
                             "widthMetricsKey": None,
@@ -226,7 +229,7 @@ class V2WorkflowTests(unittest.TestCase):
                             "components": [],
                             "pathSignature": [],
                         }
-                    }
+                    ]
                 }
             }
         }
@@ -234,7 +237,7 @@ class V2WorkflowTests(unittest.TestCase):
             model,
             [{"glyphName": "A", "masterId": "m1", "leftMetricsKey": "=H"}],
         )
-        self.assertEqual(metrics.apply(model)["glyphs"]["A"]["layers"]["m1"]["leftMetricsKey"], "=H")
+        self.assertEqual(metrics.apply(model)["glyphs"]["A"]["layers"][0]["leftMetricsKey"], "=H")
 
         compatibility = review_compatibility_updates(
             model,
@@ -247,7 +250,7 @@ class V2WorkflowTests(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            compatibility.apply(model)["glyphs"]["A"]["layers"]["m1"]["components"][0]["name"],
+            compatibility.apply(model)["glyphs"]["A"]["layers"][0]["components"][0]["name"],
             "A.base",
         )
 

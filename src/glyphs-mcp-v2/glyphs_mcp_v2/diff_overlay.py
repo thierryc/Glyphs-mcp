@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional
 
 from .canonical_tree import CanonicalFontTree
+from .canonical_collections import find_entity_index
 from .change_history import SessionDiff
 
 
@@ -37,9 +38,13 @@ def _layer(glyph: Any, layer_key: str) -> Optional[Mapping[str, Any]]:
     if not isinstance(glyph, Mapping):
         return None
     layers = glyph.get("layers")
-    if not isinstance(layers, Mapping):
-        return None
-    value = layers.get(layer_key)
+    if isinstance(layers, Mapping):
+        value = layers.get(layer_key)
+    elif isinstance(layers, (list, tuple)):
+        index = find_entity_index(layers, layer_key)
+        value = layers[index] if index is not None else None
+    else:
+        value = None
     return value if isinstance(value, Mapping) else None
 
 

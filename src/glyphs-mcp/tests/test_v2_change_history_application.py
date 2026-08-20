@@ -30,16 +30,23 @@ def _model() -> dict:
                 "name": "A",
                 "id": "id_A",
                 "export": True,
-                "layers": {
-                    "m0": {
+                "layers": [
+                    {
+                        "id": "m0",
+                        "masterId": "m0",
+                        "isMasterLayer": True,
                         "width": 500,
                         "leftMetricsKey": None,
                     }
-                },
+                ],
             }
         },
         "kerning": {}, "features": [], "classes": [], "featurePrefixes": [],
     }
+
+
+def _layer(model):
+    return model["glyphs"]["A"]["layers"][0]
 
 
 class _Host:
@@ -91,7 +98,7 @@ class _NormalizingMetricsHost(_Host):
     @staticmethod
     def _normalize(model):
         normalized = copy.deepcopy(model)
-        layer = normalized["glyphs"]["A"]["layers"]["m0"]
+        layer = _layer(normalized)
         if layer.get("leftMetricsKey") == "=H":
             layer["leftMetricsKey"] = "==H"
             layer["width"] = 520
@@ -112,11 +119,11 @@ class _DriftingMetricsHost(_NormalizingMetricsHost):
 
     def _apply_with_host_effects(self, change_set):
         was_linked = (
-            self.model["glyphs"]["A"]["layers"]["m0"].get("leftMetricsKey")
+            _layer(self.model).get("leftMetricsKey")
             == "==H"
         )
         target = self._normalize(change_set.apply(self.model))
-        layer = target["glyphs"]["A"]["layers"]["m0"]
+        layer = _layer(target)
         if was_linked and layer.get("leftMetricsKey") is None:
             layer["width"] = 501
         return target
@@ -334,10 +341,10 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
 
         self.assertTrue(applied["ok"])
         self.assertEqual(
-            host.model["glyphs"]["A"]["layers"]["m0"]["leftMetricsKey"],
+            _layer(host.model)["leftMetricsKey"],
             "==H",
         )
-        self.assertEqual(host.model["glyphs"]["A"]["layers"]["m0"]["width"], 520)
+        self.assertEqual(_layer(host.model)["width"], 520)
 
         reverted = app.invoke(
             "revert_change",
@@ -350,9 +357,9 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
 
         self.assertTrue(reverted["ok"])
         self.assertIsNone(
-            host.model["glyphs"]["A"]["layers"]["m0"]["leftMetricsKey"]
+            _layer(host.model)["leftMetricsKey"]
         )
-        self.assertEqual(host.model["glyphs"]["A"]["layers"]["m0"]["width"], 500)
+        self.assertEqual(_layer(host.model)["width"], 500)
 
     def test_revert_refuses_when_detached_inverse_cannot_reproduce_target(self) -> None:
         host = _DriftingMetricsHost()
@@ -442,7 +449,7 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertEqual(events[0].tool, "apply_glyph_updates")
 
     def test_spacing_refuses_a_native_aligned_width_before_live_apply(self) -> None:
-        layer = self.host.model["glyphs"]["A"]["layers"]["m0"]
+        layer = _layer(self.host.model)
         layer["hasAlignedWidth"] = True
         before = copy.deepcopy(self.host.model)
 
