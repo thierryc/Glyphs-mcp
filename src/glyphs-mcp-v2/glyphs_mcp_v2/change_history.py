@@ -10,7 +10,7 @@ from typing import Any, Callable, Mapping, Optional
 from uuid import uuid4
 
 from .canonical_tree import CanonicalFontTree
-from .semantic import ChangeSet
+from .semantic import ChangeSet, compose_change_sets
 
 
 @dataclass(frozen=True)
@@ -165,7 +165,7 @@ class ChangeHistory:
             session_change_set = (
                 commit.change_set
                 if previous is None
-                else self.trees.diff(previous.before_tree_hash, commit.after_tree_hash)
+                else compose_change_sets(previous.change_set, commit.change_set)
             )
             state.latest_session = SessionDiff(
                 document_id=document_id,

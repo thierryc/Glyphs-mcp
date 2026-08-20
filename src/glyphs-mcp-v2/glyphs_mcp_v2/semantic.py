@@ -280,6 +280,36 @@ def _set_at(model: dict[str, Any], path: Sequence[str], value: Any, present: boo
         current.pop(leaf, None)
 
 
+def _require_change_before(current: Any, change: SemanticChange) -> None:
+    if change.before_present and current is MISSING:
+        raise ValueError("change path is missing: {}".format("/".join(change.path)))
+    if not change.before_present and current is not MISSING:
+        raise ValueError(
+            "change path unexpectedly exists: {}".format("/".join(change.path))
+        )
+    if (
+        change.path[-1] == ORDER_TOKEN
+        and change.after_present
+        and (
+            not isinstance(current, (list, tuple))
+            or set(current) != set(change.after)
+        )
+    ):
+        raise ValueError(
+            "canonical collection membership is stale: {}".format(
+                "/".join(change.path)
+            )
+        )
+    if (
+        change.path[-1] != ORDER_TOKEN
+        and change.before_present
+        and current != change.before
+    ):
+        raise ValueError(
+            "change path has stale content: {}".format("/".join(change.path))
+        )
+
+
 def _missing_changes(value: Any, path: Tuple[str, ...], *, addition: bool) -> list[SemanticChange]:
     if isinstance(value, Mapping) and value:
         changes: list[SemanticChange] = []
@@ -344,29 +374,7 @@ class ChangeSet:
         for change in ordered_changes:
             current = _value_at(result, change.path)
             if verify_before:
-                if change.before_present and current is MISSING:
-                    raise ValueError("change path is missing: {}".format("/".join(change.path)))
-                if not change.before_present and current is not MISSING:
-                    raise ValueError("change path unexpectedly exists: {}".format("/".join(change.path)))
-                if (
-                    change.path[-1] == ORDER_TOKEN
-                    and change.after_present
-                    and (
-                        not isinstance(current, (list, tuple))
-                        or set(current) != set(change.after)
-                    )
-                ):
-                    raise ValueError(
-                        "canonical collection membership is stale: {}".format(
-                            "/".join(change.path)
-                        )
-                    )
-                if (
-                    change.path[-1] != ORDER_TOKEN
-                    and change.before_present
-                    and current != change.before
-                ):
-                    raise ValueError("change path has stale content: {}".format("/".join(change.path)))
+                _require_change_before(current, change)
             _set_at(result, change.path, change.after, change.after_present)
         if fingerprint_model(result) != self.after_fingerprint:
             raise ValueError("change set did not produce its declared after fingerprint")
@@ -523,6 +531,177 @@ def diff_models(before: Mapping[str, Any], after: Mapping[str, Any]) -> ChangeSe
     return change_set
 
 
+def _is_path_prefix(prefix: Sequence[str], path: Sequence[str]) -> bool:
+    return len(prefix) <= len(path) and tuple(path[: len(prefix)]) == tuple(prefix)
+
+
+def _compose_paths(first: ChangeSet, second: ChangeSet) -> tuple[Tuple[str, ...], ...]:
+    candidates: list[Tuple[str, ...]] = []
+    for path in sorted(
+        {change.path for change in first.changes + second.changes},
+        key=lambda value: (len(value), value),
+    ):
+        if not any(_is_path_prefix(candidate, path) for candidate in candidates):
+            candidates.append(path)
+    return tuple(candidates)
+
+
+def _apply_descendant_changes(
+    value: Any,
+    candidate: Sequence[str],
+    changes: Sequence[SemanticChange],
+    *,
+    inverse: bool = False,
+) -> Any:
+    wrapper = {"$value": copy.deepcopy(value)}
+    projected: list[SemanticChange] = []
+    for original in changes:
+        change = original.inverse() if inverse else original
+        relative = change.path[len(candidate) :]
+        if not relative:
+            raise ValueError("an exact change cannot be applied as a descendant")
+        projected.append(
+            SemanticChange(
+                path=("$value",) + tuple(relative),
+                before=copy.deepcopy(change.before),
+                after=copy.deepcopy(change.after),
+                before_present=change.before_present,
+                after_present=change.after_present,
+            )
+        )
+    for change in sorted(
+        projected,
+        key=lambda item: (item.path[-1] == ORDER_TOKEN, item.path),
+    ):
+        current = _value_at(wrapper, change.path)
+        _require_change_before(current, change)
+        _set_at(wrapper, change.path, change.after, change.after_present)
+    return wrapper["$value"]
+
+
+def _composed_fragment_changes(
+    path: Tuple[str, ...],
+    before: Any,
+    after: Any,
+    *,
+    before_present: bool,
+    after_present: bool,
+) -> list[SemanticChange]:
+    if before_present == after_present and (
+        not before_present or before == after
+    ):
+        return []
+    if not before_present or not after_present:
+        return [
+            SemanticChange(
+                path=path,
+                before=copy.deepcopy(before),
+                after=copy.deepcopy(after),
+                before_present=before_present,
+                after_present=after_present,
+            )
+        ]
+    if path[-1] == ORDER_TOKEN:
+        return [SemanticChange(path=path, before=before, after=after)]
+    return _diff(before, after, path)
+
+
+def compose_change_sets(first: ChangeSet, second: ChangeSet) -> ChangeSet:
+    """Compose two verified semantic patches without reopening their trees.
+
+    This is the canonical equivalent of composing adjacent Git deltas. Parent
+    replacements absorb later child edits, child edits are reconstructed when
+    a parent is subsequently removed, and exact reversals cancel. The bridge
+    fingerprint and every overlapping before-value are checked before a
+    composed patch is returned.
+    """
+
+    if first.after_fingerprint != second.before_fingerprint:
+        raise ValueError("change sets are not adjacent")
+    changes: list[SemanticChange] = []
+    for candidate in _compose_paths(first, second):
+        first_related = tuple(
+            change
+            for change in first.changes
+            if _is_path_prefix(candidate, change.path)
+        )
+        second_related = tuple(
+            change
+            for change in second.changes
+            if _is_path_prefix(candidate, change.path)
+        )
+        first_exact = next(
+            (change for change in first_related if change.path == candidate),
+            None,
+        )
+        second_exact = next(
+            (change for change in second_related if change.path == candidate),
+            None,
+        )
+
+        if first_exact is not None:
+            before_present = first_exact.before_present
+            before = copy.deepcopy(first_exact.before)
+            middle_present = first_exact.after_present
+            middle = copy.deepcopy(first_exact.after)
+            if second_exact is not None:
+                if (
+                    middle_present != second_exact.before_present
+                    or (middle_present and middle != second_exact.before)
+                ):
+                    raise ValueError("overlapping change sets have a stale bridge")
+                after_present = second_exact.after_present
+                after = copy.deepcopy(second_exact.after)
+            else:
+                after_present = middle_present
+                after = (
+                    _apply_descendant_changes(
+                        middle,
+                        candidate,
+                        second_related,
+                    )
+                    if second_related
+                    else middle
+                )
+        elif second_exact is not None:
+            middle_present = second_exact.before_present
+            middle = copy.deepcopy(second_exact.before)
+            after_present = second_exact.after_present
+            after = copy.deepcopy(second_exact.after)
+            before_present = middle_present
+            before = (
+                _apply_descendant_changes(
+                    middle,
+                    candidate,
+                    first_related,
+                    inverse=True,
+                )
+                if first_related
+                else middle
+            )
+        else:  # pragma: no cover - every candidate originates from one exact path
+            raise ValueError("composition candidate has no exact change")
+
+        changes.extend(
+            _composed_fragment_changes(
+                candidate,
+                before,
+                after,
+                before_present=before_present,
+                after_present=after_present,
+            )
+        )
+
+    result = ChangeSet.from_changes(
+        before_fingerprint=first.before_fingerprint,
+        after_fingerprint=second.after_fingerprint,
+        changes=changes,
+    )
+    if not result.changes and result.before_fingerprint != result.after_fingerprint:
+        raise ValueError("composed changes omitted a fingerprint delta")
+    return result
+
+
 def subset_change_set(
     before: Mapping[str, Any],
     source: ChangeSet,
@@ -651,6 +830,7 @@ __all__ = [
     "SUPPORTED_DOCUMENT_ROOTS",
     "SemanticChange",
     "canonical_json",
+    "compose_change_sets",
     "diff_models",
     "fingerprint_model",
     "public_change_dict",
