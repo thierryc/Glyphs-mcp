@@ -1637,7 +1637,8 @@ def _replace_glyph_layer_order(glyph: Any, values: Sequence[Any]) -> None:
     Glyphs projects master layers first according to the font master order.
     Only the remaining native layer array is user-orderable. The public
     ``GlyphLayerProxy.setter`` rebuilds an NSDictionary and therefore cannot
-    prove order; use the native array selectors when the host exposes them.
+    prove order. Glyphs' exact-ID detach/reattach contract moves the retained
+    native layer safely; KVC array insertion creates duplicate entries.
     """
 
     desired = list(values)
@@ -1677,41 +1678,42 @@ def _replace_glyph_layer_order(glyph: Any, values: Sequence[Any]) -> None:
     ]:
         return
 
-    count = _safe_getattr(glyph, "countOfLayers")
-    getter = _safe_getattr(glyph, "objectInLayersAtIndex_")
-    remover = _safe_getattr(glyph, "removeObjectFromLayersArrayAtIndex_")
-    inserter = _safe_getattr(glyph, "insertObject_inLayersArrayAtIndex_")
-    if all(callable(value) for value in (count, getter, remover, inserter)):
-        raw = [getter(index) for index in range(int(count()))]
-        raw_ids = [_native_layer_identity(layer) for layer in raw]
-        if not all(raw_ids) or set(raw_ids) != set(desired_ids):
-            raise HostAccessError("Glyphs native layer array diverged before reorder")
-        desired_non_master_iterator = iter(desired_non_masters)
-        desired_raw = [
-            layer
-            if bool(_maybe_call(_safe_getattr(layer, "isMasterLayer", False)))
-            else next(desired_non_master_iterator)
-            for layer in raw
-        ]
-        for target_index, target in enumerate(desired_raw):
-            if raw[target_index] is target:
-                continue
-            source_index = next(
-                (
-                    index
-                    for index in range(target_index + 1, len(raw))
-                    if raw[index] is target
-                ),
-                None,
-            )
-            if source_index is None:
-                raise HostAccessError("Glyphs native layer identity disappeared during reorder")
-            remover(source_index)
-            raw.pop(source_index)
-            inserter(target, target_index)
-            raw.insert(target_index, target)
-    else:
-        _replace_native_collection_order(_safe_getattr(glyph, "layers"), desired)
+    current_non_master_ids = [
+        _native_layer_identity(layer) for layer in current_non_masters
+    ]
+    desired_non_master_ids = [
+        _native_layer_identity(layer) for layer in desired_non_masters
+    ]
+    # Glyphs orders non-master layers by exact-ID attachment order. Preserve
+    # the longest desired prefix already present as a subsequence and move
+    # only the remaining suffix. Reattaching the same object preserves its
+    # complete native payload; KVC array insertions merely duplicate entries.
+    cursor = 0
+    retained_prefix_length = 0
+    for identity in desired_non_master_ids:
+        try:
+            cursor = current_non_master_ids.index(identity, cursor) + 1
+        except ValueError:
+            break
+        retained_prefix_length += 1
+    for layer in desired_non_masters[retained_prefix_length:]:
+        identity = _native_layer_identity(layer)
+        exact_remover = _safe_getattr(glyph, "removeLayerForId_")
+        if callable(exact_remover):
+            exact_remover(identity)
+        else:
+            _remove_glyph_layer(glyph, identity, layer)
+        exact_setter = _safe_getattr(glyph, "setLayer_forId_")
+        if callable(exact_setter):
+            exact_setter(layer, identity)
+        else:
+            collection = _safe_getattr(glyph, "layers")
+            try:
+                collection[identity] = layer
+            except Exception as exc:
+                raise HostAccessError(
+                    "Glyphs could not reattach a reordered layer identity"
+                ) from exc
 
     if [_native_layer_identity(layer) for layer in _native_layers(glyph)] != desired_ids:
         raise HostAccessError("Glyphs did not preserve the requested non-master layer order")

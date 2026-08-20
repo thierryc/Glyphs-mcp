@@ -58,8 +58,9 @@ Smart/color properties and staged-Python structural replay remain explicit
 later boundaries. Glyphs owns master-layer ordering through the font master
 collection, so those layers form an immutable prefix; layer lifecycle indexes
 address only positions at or after that prefix. The adapter reorders that
-non-master suffix through Glyphs' native layer-array selectors rather than the
-unordered dictionary-shaped Python setter.
+non-master suffix by detaching and reattaching the same native objects under
+their exact IDs rather than using the unordered dictionary-shaped setter or
+the duplicate-producing KVC array insertion primitives.
 
 ## Worktree-contained development
 
