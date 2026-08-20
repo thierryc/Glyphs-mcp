@@ -1631,42 +1631,47 @@ def _native_layer_identity(layer: Any) -> str:
     return str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or "")
 
 
-@contextlib.contextmanager
-def _suspended_native_undo_registration(owner: Any):
-    """Suspend one native object's undo recording without touching document history.
+def _set_ordered_glyph_layers(glyph: Any, values: Sequence[Any]) -> None:
+    """Assign one identity-preserving native layer collection atomically.
 
-    Live ``GSGlyph`` instances own an undo manager while detached copies do not.
-    Reattaching the same layer identity while that manager records the removal
-    can replay a stale insertion and leave a duplicate native entry. Glyphs'
-    declared object contract uses a ``nil`` glyph undo manager to suppress only
-    those registrations. The verified transaction still owns the document's
-    single dirty contribution and canonical inverse.
+    ``GSGlyph.layers`` is backed by Glyphs' ``MGOrderedDictionary``. Building
+    that exact type preserves insertion order while ``setLayers:`` retains the
+    official ownership, undo, and notification boundary. A plain
+    ``NSMutableDictionary`` is intentionally insufficient because its key
+    order is undefined. Adapter fakes expose the same boundary as ``setter``.
     """
 
-    missing = object()
-    manager = _safe_getattr(owner, "undoManager", missing)
-    if manager is missing:
-        yield
-        return
-    manager = _maybe_call(manager)
-    if manager is None:
-        yield
-        return
-    try:
-        _set_native_property(owner, "undoManager", None)
-    except Exception as exc:
-        raise HostAccessError(
-            "Glyphs could not suspend object-local undo registration"
-        ) from exc
-    try:
-        yield
-    finally:
+    desired = list(values)
+    native_setter = _safe_getattr(glyph, "setLayers_")
+    if callable(native_setter):
         try:
-            _set_native_property(owner, "undoManager", manager)
+            from Foundation import NSClassFromString  # type: ignore[import-not-found]
+
+            ordered_class = NSClassFromString("MGOrderedDictionary")
+            if ordered_class is None:
+                raise RuntimeError("MGOrderedDictionary is unavailable")
+            ordered = ordered_class.alloc().initWithCapacity_(len(desired))
+            insert = _safe_getattr(ordered, "setObject_forKey_")
+            if not callable(insert):
+                raise RuntimeError("MGOrderedDictionary insertion is unavailable")
+            for layer in desired:
+                identity = _native_layer_identity(layer)
+                if not identity:
+                    raise RuntimeError("layer identity is empty")
+                insert(layer, identity)
+            native_setter(ordered)
+            return
         except Exception as exc:
             raise HostAccessError(
-                "Glyphs could not restore object-local undo registration"
+                "Glyphs could not atomically assign the ordered layer collection"
             ) from exc
+
+    collection = _safe_getattr(glyph, "layers")
+    atomic_setter = _safe_getattr(collection, "setter")
+    if callable(atomic_setter):
+        atomic_setter(desired)
+        return
+    raise HostAccessError("Glyphs does not expose an ordered layer setter")
 
 
 def _replace_glyph_layer_order(glyph: Any, values: Sequence[Any]) -> None:
@@ -1674,9 +1679,10 @@ def _replace_glyph_layer_order(glyph: Any, values: Sequence[Any]) -> None:
 
     Glyphs projects master layers first according to the font master order.
     Only the remaining native layer array is user-orderable. The public
-    ``GlyphLayerProxy.setter`` rebuilds an NSDictionary and therefore cannot
-    prove order. Glyphs' exact-ID detach/reattach contract moves the retained
-    native layer safely; KVC array insertion creates duplicate entries.
+    ``GlyphLayerProxy.setter`` rebuilds an unordered NSDictionary and therefore
+    cannot prove order. Exact-ID detach/reattach is also invalid here: the live
+    glyph undo manager may restore the removed entry before reattachment even
+    though a detached copy appears correct. Use one ordered native assignment.
     """
 
     desired = list(values)
@@ -1716,43 +1722,7 @@ def _replace_glyph_layer_order(glyph: Any, values: Sequence[Any]) -> None:
     ]:
         return
 
-    current_non_master_ids = [
-        _native_layer_identity(layer) for layer in current_non_masters
-    ]
-    desired_non_master_ids = [
-        _native_layer_identity(layer) for layer in desired_non_masters
-    ]
-    # Glyphs orders non-master layers by exact-ID attachment order. Preserve
-    # the longest desired prefix already present as a subsequence and move
-    # only the remaining suffix. Reattaching the same object preserves its
-    # complete native payload; KVC array insertions merely duplicate entries.
-    cursor = 0
-    retained_prefix_length = 0
-    for identity in desired_non_master_ids:
-        try:
-            cursor = current_non_master_ids.index(identity, cursor) + 1
-        except ValueError:
-            break
-        retained_prefix_length += 1
-    with _suspended_native_undo_registration(glyph):
-        for layer in desired_non_masters[retained_prefix_length:]:
-            identity = _native_layer_identity(layer)
-            exact_remover = _safe_getattr(glyph, "removeLayerForId_")
-            if callable(exact_remover):
-                exact_remover(identity)
-            else:
-                _remove_glyph_layer(glyph, identity, layer)
-            exact_setter = _safe_getattr(glyph, "setLayer_forId_")
-            if callable(exact_setter):
-                exact_setter(layer, identity)
-            else:
-                collection = _safe_getattr(glyph, "layers")
-                try:
-                    collection[identity] = layer
-                except Exception as exc:
-                    raise HostAccessError(
-                        "Glyphs could not reattach a reordered layer identity"
-                    ) from exc
+    _set_ordered_glyph_layers(glyph, desired)
 
     if [_native_layer_identity(layer) for layer in _native_layers(glyph)] != desired_ids:
         raise HostAccessError("Glyphs did not preserve the requested non-master layer order")
