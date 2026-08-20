@@ -22,6 +22,7 @@ from glyphs_mcp_v2.live_gates import (  # noqa: E402
     verify_schema_v3_structural_kernel,
     verify_schema_v4_master_lifecycle,
     verify_schema_v5_layer_lifecycle,
+    verify_staged_python_structural_replay,
 )
 from glyphs_mcp_v2.semantic import fingerprint_model  # noqa: E402
 
@@ -373,6 +374,17 @@ class V2LiveGateGuardTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             verify_schema_v5_layer_lifecycle(
+                _Font("Production Family"), application=app, host=host
+            )
+
+        self.assertEqual(host.apply_calls, 0)
+
+    def test_staged_structural_gate_refuses_non_disposable_font(self) -> None:
+        host = _StructuralHost()
+        app = GlyphsMCPApplication(host)
+
+        with self.assertRaises(ValueError):
+            verify_staged_python_structural_replay(
                 _Font("Production Family"), application=app, host=host
             )
 

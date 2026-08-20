@@ -145,9 +145,12 @@ breaking catalog changes do not flow back to 1.x.
    Smart, and color layers. Non-master layer order is assigned atomically with
    Glyphs' native ordered collection; specialized Smart/color property editing
    remains deferred.
-9. Next: staged-Python structural replay through the schema-v5 canonical
-   collections, followed by installer integration and the release-candidate
-   matrix.
+9. Implemented; Glyphs 4 live qualification is the remaining closure gate:
+   staged-Python structural replay uses schema-v5 canonical collections, one
+   bounded adapter-owned native-evidence registry, the shared verified
+   transaction kernel, and the existing Change Log/revert machinery. It never
+   reruns confirmed Python against the live font. Installer integration and
+   the release-candidate matrix follow qualification.
 
 Every milestone must pass focused tests, the complete Python suite, catalog
 and schema gates, deterministic payload assembly, and `git diff --check`.

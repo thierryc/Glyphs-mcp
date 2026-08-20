@@ -54,9 +54,11 @@ v5 addresses their entities by stable IDs and represents order independently.
 `apply_master_updates` extends it to a composite master, its owned glyph layers,
 and its kerning partition. `apply_layer_updates` uses the same abstraction for
 intermediate, alternate, backup, Smart, and color layer membership. Specialized
-Smart/color property editing and staged-Python structural replay remain explicit
-later boundaries; schema-v5 layer membership itself is complete and
-live-qualified. Glyphs owns master-layer ordering through the font master
+Smart/color property editing remains an explicit later boundary. Staged Python
+can replay schema-v5 glyph, master, non-master layer, instance, feature, class,
+and prefix lifecycle changes after canonical and native-archive equivalence
+proof; confirmation applies the stored replay once and never reruns the script.
+Schema-v5 layer membership itself is complete and live-qualified. Glyphs owns master-layer ordering through the font master
 collection, so those layers form an immutable prefix; layer lifecycle indexes
 address only positions at or after that prefix. The adapter atomically reorders
 the non-master suffix by building Glyphs' native `MGOrderedDictionary` and
@@ -149,3 +151,20 @@ axis configuration to an alternate range, reorders and deletes it, then
 reverts every operation. It also verifies stale-fingerprint and master-layer
 ownership refusals. It never saves and succeeds only after restoring the exact
 canonical baseline, active master, working path, and reported dirty state.
+
+## Glyphs 4 staged-Python structural qualification
+
+After rebuilding, relinking, and restarting Glyphs 4, run the staged structural
+gate on the disposable font:
+
+```python
+from GlyphsApp import Glyphs
+from glyphs_mcp_v2.live_gates import verify_staged_python_structural_replay
+
+print(verify_staged_python_structural_replay(Glyphs.font))
+```
+
+The gate runs Python only against detached clones, confirms the exact stored
+replay through the shared transaction kernel, and then exercises both Python
+rollback and Change Log revert. It covers glyph, master, non-master layer,
+instance, feature, class, and prefix lifecycle changes and never saves.

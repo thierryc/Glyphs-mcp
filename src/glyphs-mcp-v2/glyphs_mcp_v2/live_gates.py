@@ -262,6 +262,221 @@ class _StructuralGateSession:
         return failures
 
 
+class _StagedPythonGateSession:
+    """Thin qualification driver over public staged preview/confirm/rollback."""
+
+    def __init__(
+        self,
+        application: Any,
+        host: Any,
+        document_id: str,
+        current_fingerprint: str,
+    ) -> None:
+        self.application = application
+        self.host = host
+        self.document_id = document_id
+        self.current_fingerprint = str(current_fingerprint)
+        self.active: list[dict[str, str]] = []
+        self.pending_review_id: Optional[str] = None
+        self.operation_ids: list[str] = []
+        self.rollback_operation_ids: list[str] = []
+        self.preview_count = 0
+        self.confirm_count = 0
+        self.rollback_count = 0
+        self.audit_receipts = True
+        self.change_log_commits = True
+
+    @staticmethod
+    def _plain_response(value: Any) -> Mapping[str, Any]:
+        return value.to_dict() if hasattr(value, "to_dict") else dict(value)
+
+    def invoke(self, tool: str, arguments: Mapping[str, Any]) -> Mapping[str, Any]:
+        return self._plain_response(self.application.invoke(tool, arguments))
+
+    def fingerprint(self) -> str:
+        return fingerprint_model(self.host.capture_model(self.document_id))
+
+    @staticmethod
+    def _require_ok(tool: str, response: Mapping[str, Any]) -> Mapping[str, Any]:
+        if not response.get("ok"):
+            error = response.get("error") or {}
+            raise AssertionError(
+                "{} failed: {} ({})".format(
+                    tool,
+                    error.get("message") or response.get("summary") or "unknown error",
+                    error.get("code") or "unknown",
+                )
+            )
+        return dict(response.get("data") or {})
+
+    def _require_receipt(self, tool: str, response: Mapping[str, Any]) -> None:
+        present = bool(response.get("auditReceipt"))
+        self.audit_receipts = self.audit_receipts and present
+        if not present:
+            raise AssertionError("{} did not emit an audit receipt".format(tool))
+
+    def _require_commit(self, operation_id: str, tool: str) -> None:
+        history = getattr(self.application, "history", None)
+        getter = getattr(history, "get_commit", None)
+        commit = getter(operation_id) if callable(getter) else None
+        matches = bool(
+            commit is not None
+            and commit.document_id == self.document_id
+            and commit.tool == tool
+            and commit.changed
+        )
+        self.change_log_commits = self.change_log_commits and matches
+        if not matches:
+            raise AssertionError(
+                "{} was not recorded as a changed canonical action".format(tool)
+            )
+
+    def preview_and_confirm(self, code: str, *, reason: str) -> dict[str, str]:
+        before = self.current_fingerprint
+        preview = self.invoke(
+            "execute_python",
+            {
+                "code": code,
+                "reason": reason,
+                "intendedEffect": "document_edit",
+                "executionMode": "staged_document",
+                "documentId": self.document_id,
+                "expectedDocumentFingerprint": before,
+            },
+        )
+        preview_data = self._require_ok("execute_python preview", preview)
+        self._require_receipt("execute_python preview", preview)
+        if preview.get("status") != "review_required":
+            raise AssertionError("staged Python did not return review_required")
+        if preview_data.get("liveDocumentChanged") is not False:
+            raise AssertionError("staged preview claimed a live document change")
+        if self.fingerprint() != before:
+            raise AssertionError("staged preview changed the live document")
+        review_id = str(preview_data.get("reviewId") or "")
+        if not review_id:
+            raise AssertionError("staged preview returned no review ID")
+        self.pending_review_id = review_id
+        self.preview_count += 1
+
+        confirmed = self.invoke(
+            "execute_python", {"reviewId": review_id, "confirm": True}
+        )
+        confirmed_data = self._require_ok("execute_python confirmation", confirmed)
+        self._require_receipt("execute_python confirmation", confirmed)
+        operation_id = str(confirmed.get("operationId") or "")
+        execution_id = str(confirmed_data.get("executionId") or "")
+        after = str(confirmed_data.get("afterFingerprint") or "")
+        if operation_id != review_id:
+            raise AssertionError("confirmation did not reuse the exact review ID")
+        if not execution_id or not after:
+            raise AssertionError("confirmation returned no rollback checkpoint")
+        if confirmed_data.get("transactionCount") != 1:
+            raise AssertionError("confirmation did not use one live transaction")
+        if confirmed_data.get("fontSaved") is not False:
+            raise AssertionError("confirmation did not report fontSaved=false")
+        if str(confirmed_data.get("beforeFingerprint") or "") != before:
+            raise AssertionError("confirmation did not use the reviewed baseline")
+        if self.fingerprint() != after:
+            raise AssertionError("confirmed live state does not match its fingerprint")
+        self._require_commit(operation_id, "execute_python")
+        self.current_fingerprint = after
+        record = {
+            "operationId": operation_id,
+            "executionId": execution_id,
+            "afterFingerprint": after,
+        }
+        self.active.append(record)
+        self.operation_ids.append(operation_id)
+        self.confirm_count += 1
+        self.pending_review_id = None
+        return record
+
+    def rollback(self, record: Mapping[str, str]) -> str:
+        response = self.invoke(
+            "rollback_python_execution",
+            {
+                "executionId": record["executionId"],
+                "expectedAfterFingerprint": self.current_fingerprint,
+                "strategy": "auto",
+                "confirm": True,
+            },
+        )
+        data = self._require_ok("rollback_python_execution", response)
+        self._require_receipt("rollback_python_execution", response)
+        if data.get("transactionCount") != 1:
+            raise AssertionError("Python rollback did not use one live transaction")
+        after = str(data.get("afterFingerprint") or "")
+        operation_id = str(response.get("operationId") or "")
+        if not after or not operation_id:
+            raise AssertionError("Python rollback returned no verified transition")
+        if self.fingerprint() != after:
+            raise AssertionError("Python rollback state does not match its fingerprint")
+        self._require_commit(operation_id, "rollback_python_execution")
+        self.current_fingerprint = after
+        self.active.remove(dict(record))
+        self.rollback_operation_ids.append(operation_id)
+        self.rollback_count += 1
+        return operation_id
+
+    def revert(self, record: Mapping[str, str]) -> str:
+        response = self.invoke(
+            "revert_change",
+            {
+                "operationId": record["operationId"],
+                "documentId": self.document_id,
+                "expectedDocumentFingerprint": self.current_fingerprint,
+            },
+        )
+        data = self._require_ok("revert_change", response)
+        self._require_receipt("revert_change", response)
+        if data.get("transactionCount") != 1:
+            raise AssertionError("Change Log revert did not use one live transaction")
+        after = str(data.get("afterFingerprint") or "")
+        operation_id = str(response.get("operationId") or "")
+        if not after or not operation_id:
+            raise AssertionError("Change Log revert returned no verified transition")
+        if self.fingerprint() != after:
+            raise AssertionError("Change Log revert state does not match its fingerprint")
+        self._require_commit(operation_id, "revert_change")
+        self.current_fingerprint = after
+        self.active.remove(dict(record))
+        self.rollback_operation_ids.append(operation_id)
+        self.rollback_count += 1
+        # Generic revert consumes the contribution, so its parallel Python
+        # checkpoint is intentionally no longer useful to this diagnostic.
+        checkpoints = getattr(self.application, "_checkpoints", None)
+        discard = getattr(checkpoints, "discard", None)
+        if callable(discard):
+            discard(record["executionId"])
+        return operation_id
+
+    def _discard_pending_review(self) -> None:
+        if not self.pending_review_id:
+            return
+        reviews = getattr(self.application, "_reviews", None)
+        getter = getattr(reviews, "get", None)
+        record = getter(self.pending_review_id) if callable(getter) else None
+        payload = getattr(record, "payload", {}) if record is not None else {}
+        context = payload.get("executionContext", {}) if isinstance(payload, Mapping) else {}
+        evidence_id = str(context.get("nativeReplayEvidenceId") or "") if isinstance(context, Mapping) else ""
+        release = getattr(self.host, "release_staged_replay_evidence", None)
+        if evidence_id and callable(release):
+            release(evidence_id)
+        discard = getattr(reviews, "discard", None)
+        if callable(discard):
+            discard(self.pending_review_id)
+        self.pending_review_id = None
+
+    def cleanup(self) -> list[str]:
+        failures: list[str] = []
+        self._discard_pending_review()
+        for record in reversed(tuple(self.active)):
+            try:
+                self.rollback(record)
+            except Exception:
+                failures.append(record["operationId"])
+        return failures
+
 def verify_copy_and_make_copy(font: Any, output_path: str) -> Mapping[str, Any]:
     """Verify clone/archive invariants without saving the working document."""
 
@@ -979,10 +1194,289 @@ def verify_schema_v5_layer_lifecycle(
     }
 
 
+def verify_staged_python_structural_replay(
+    font: Any,
+    *,
+    application: Any = None,
+    host: Any = None,
+) -> Mapping[str, Any]:
+    """Qualify schema-v5 structural replay on one disposable Glyphs 4 font."""
+
+    family_name = str(getattr(font, "familyName", "") or "")
+    if not family_name.startswith(DISPOSABLE_FAMILY_PREFIX):
+        raise ValueError(
+            "live v2 gates require a disposable font whose family name starts with {!r}".format(
+                DISPOSABLE_FAMILY_PREFIX
+            )
+        )
+    application, host = _resolve_live_runtime(application, host)
+    document_id_for_font = getattr(host, "document_id_for_font", None)
+    capture_model = getattr(host, "capture_model", None)
+    if not callable(document_id_for_font) or not callable(capture_model):
+        raise RuntimeError(
+            "the active host does not expose the staged structural live-gate boundary"
+        )
+    document_id = str(document_id_for_font(font) or "")
+    if not document_id:
+        raise RuntimeError("the disposable font has no stable v2 document ID")
+
+    gate_started = time.perf_counter_ns()
+    baseline = dict(capture_model(document_id))
+    baseline_fingerprint = fingerprint_model(baseline)
+    baseline_archive_fingerprint = _serialized_font_fingerprint(font)
+    before_path = _plain_attribute(font, "filepath")
+    before_master = _plain_attribute(font, "selectedFontMaster")
+    before_master_id = str(_plain_attribute(before_master, "id") or "")
+    before_dirty = _reported_dirty_state(host, document_id)
+
+    glyphs = baseline.get("glyphs", {})
+    masters = [item for item in baseline.get("masters", []) if isinstance(item, Mapping)]
+    instances = [item for item in baseline.get("instances", []) if isinstance(item, Mapping)]
+    features = [item for item in baseline.get("features", []) if isinstance(item, Mapping)]
+    classes = [item for item in baseline.get("classes", []) if isinstance(item, Mapping)]
+    prefixes = [item for item in baseline.get("featurePrefixes", []) if isinstance(item, Mapping)]
+    if not isinstance(glyphs, Mapping) or not glyphs or not masters:
+        raise ValueError("the staged structural gate requires glyphs and at least one master")
+    missing_templates = [
+        name
+        for name, values in (
+            ("instances", instances),
+            ("features", features),
+            ("classes", classes),
+            ("featurePrefixes", prefixes),
+        )
+        if not values
+    ]
+    if missing_templates:
+        raise ValueError(
+            "the staged structural gate requires one native template in: {}".format(
+                ", ".join(missing_templates)
+            )
+        )
+
+    suffix = uuid4().hex[:8]
+    source_glyph_name = str(next(iter(glyphs)))
+    source_master_id = str(masters[0].get("id") or "")
+    if not source_master_id:
+        raise ValueError("the staged structural gate requires a stable master ID")
+    glyph_name = _unique_name(
+        "mcpStagedGlyph{}".format(suffix), [str(name) for name in glyphs]
+    )
+    master_id = str(uuid4()).upper()
+    master_name = _unique_name(
+        "MCP Staged Master {}".format(suffix),
+        [str(item.get("name") or "") for item in masters],
+    )
+    layer_id = str(uuid4()).upper()
+    layer_name = "MCP Staged Layer {}".format(suffix)
+    instance_name = _unique_name(
+        "MCP Staged Instance {}".format(suffix),
+        [str(item.get("name") or "") for item in instances],
+    )
+    feature_name = _unused_feature_tags(baseline, 2)[0]
+    revert_feature_name = _unused_feature_tags(baseline, 2)[1]
+    class_name = _unique_name(
+        "MCP_STAGED_CLASS_{}".format(suffix),
+        [str(item.get("name") or "") for item in classes],
+    )
+    prefix_name = _unique_name(
+        "MCP Staged Prefix {}".format(suffix),
+        [str(item.get("name") or "") for item in prefixes],
+    )
+
+    add_code = "\n".join(
+        (
+            "source_glyph = font.glyphs[{!r}]".format(source_glyph_name),
+            "added_glyph = source_glyph.copy()",
+            "added_glyph.name = {!r}".format(glyph_name),
+            "added_glyph.unicode = None",
+            "font.glyphs.append(added_glyph)",
+            "source_master = font.masters[0]",
+            "added_master = source_master.copy()",
+            "added_master.id = {!r}".format(master_id),
+            "added_master.name = {!r}".format(master_name),
+            "font.masters.append(added_master)",
+            "for candidate_glyph in list(font.glyphs):",
+            "    owned_layer = candidate_glyph.layers[{!r}].copy()".format(source_master_id),
+            "    owned_layer.layerId = {!r}".format(master_id),
+            "    owned_layer.associatedMasterId = {!r}".format(master_id),
+            "    candidate_glyph.layers.append(owned_layer)",
+            "review_glyph = font.glyphs[{!r}]".format(source_glyph_name),
+            "review_layer = review_glyph.layers[{!r}].copy()".format(source_master_id),
+            "review_layer.layerId = {!r}".format(layer_id),
+            "review_layer.associatedMasterId = {!r}".format(source_master_id),
+            "review_layer.name = {!r}".format(layer_name),
+            "review_glyph.layers.append(review_layer)",
+            "added_instance = font.instances[0].copy()",
+            "added_instance.name = {!r}".format(instance_name),
+            "font.instances.append(added_instance)",
+            "added_feature = font.features[0].copy()",
+            "added_feature.name = {!r}".format(feature_name),
+            "added_feature.automatic = False",
+            "added_feature.code = {!r}".format(
+                "sub {0} by {0};".format(source_glyph_name)
+            ),
+            "font.features.append(added_feature)",
+            "added_class = font.classes[0].copy()",
+            "added_class.name = {!r}".format(class_name),
+            "added_class.automatic = False",
+            "added_class.code = {!r}".format(source_glyph_name),
+            "font.classes.append(added_class)",
+            "added_prefix = font.featurePrefixes[0].copy()",
+            "added_prefix.name = {!r}".format(prefix_name),
+            "added_prefix.automatic = False",
+            "added_prefix.code = 'languagesystem DFLT dflt;'",
+            "font.featurePrefixes.append(added_prefix)",
+        )
+    )
+    reorder_code = "\n".join(
+        (
+            "def move_last_first(collection):",
+            "    values = list(collection)",
+            "    collection.setter([values[-1]] + values[:-1])",
+            "move_last_first(font.masters)",
+            "move_last_first(font.instances)",
+            "move_last_first(font.features)",
+            "move_last_first(font.classes)",
+            "move_last_first(font.featurePrefixes)",
+        )
+    )
+    delete_code = "\n".join(
+        (
+            "def remove_named(collection, target_name):",
+            "    for target_index, target in enumerate(list(collection)):",
+            "        if str(target.name) == target_name:",
+            "            del collection[target_index]",
+            "            return",
+            "    raise ValueError('missing staged structural target: ' + target_name)",
+            "review_glyph = font.glyphs[{!r}]".format(source_glyph_name),
+            "del review_glyph.layers[{!r}]".format(layer_id),
+            "del font.glyphs[{!r}]".format(glyph_name),
+            "for target_index, target in enumerate(list(font.masters)):",
+            "    if str(target.id) == {!r}:".format(master_id),
+            "        del font.masters[target_index]",
+            "        break",
+            "for candidate_glyph in list(font.glyphs):",
+            "    for candidate_layer in list(candidate_glyph.layers):",
+            "        if str(candidate_layer.layerId) == {!r}:".format(master_id),
+            "            del candidate_glyph.layers[{!r}]".format(master_id),
+            "            break",
+            "remove_named(font.instances, {!r})".format(instance_name),
+            "remove_named(font.features, {!r})".format(feature_name),
+            "remove_named(font.classes, {!r})".format(class_name),
+            "remove_named(font.featurePrefixes, {!r})".format(prefix_name),
+        )
+    )
+    revert_code = "\n".join(
+        (
+            "added_feature = font.features[0].copy()",
+            "added_feature.name = {!r}".format(revert_feature_name),
+            "added_feature.automatic = False",
+            "added_feature.code = {!r}".format(
+                "sub {0} by {0};".format(source_glyph_name)
+            ),
+            "font.features.append(added_feature)",
+        )
+    )
+
+    session = _StagedPythonGateSession(
+        application, host, document_id, baseline_fingerprint
+    )
+    try:
+        added = session.preview_and_confirm(
+            add_code, reason="Glyphs MCP v2 staged structural add qualification"
+        )
+        reordered = session.preview_and_confirm(
+            reorder_code, reason="Glyphs MCP v2 staged structural order qualification"
+        )
+        deleted = session.preview_and_confirm(
+            delete_code, reason="Glyphs MCP v2 staged structural delete qualification"
+        )
+        if session.current_fingerprint != baseline_fingerprint:
+            raise AssertionError(
+                "add/reorder/delete composition did not return to the canonical baseline"
+            )
+        session.rollback(deleted)
+        session.rollback(reordered)
+        session.rollback(added)
+        change_log_target = session.preview_and_confirm(
+            revert_code, reason="Glyphs MCP v2 staged structural Change Log qualification"
+        )
+        session.revert(change_log_target)
+    except BaseException:
+        cleanup_failures = session.cleanup()
+        final = session.fingerprint()
+        if cleanup_failures or final != baseline_fingerprint:
+            raise RuntimeError(
+                "staged structural gate cleanup failed for {} operation(s); final fingerprint {}".format(
+                    len(cleanup_failures), final
+                )
+            )
+        raise
+
+    final_fingerprint = session.fingerprint()
+    final_archive_fingerprint = _serialized_font_fingerprint(font)
+    after_path = _plain_attribute(font, "filepath")
+    after_master = _plain_attribute(font, "selectedFontMaster")
+    after_master_id = str(_plain_attribute(after_master, "id") or "")
+    after_dirty = _reported_dirty_state(host, document_id)
+    evidence_store = getattr(host, "_native_replay_evidence", None)
+    evidence_count = (
+        int(evidence_store.record_count())
+        if callable(getattr(evidence_store, "record_count", None))
+        else 0
+    )
+    if final_fingerprint != baseline_fingerprint:
+        raise AssertionError("staged structural gate did not restore the canonical baseline")
+    if final_archive_fingerprint != baseline_archive_fingerprint:
+        raise AssertionError("staged structural gate did not restore the native archive")
+    if after_path != before_path:
+        raise AssertionError("staged structural gate changed the working document path")
+    if after_master_id != before_master_id:
+        raise AssertionError("staged structural gate changed the active master")
+    if before_dirty is not None and after_dirty != before_dirty:
+        raise AssertionError("staged structural gate changed the reported dirty state")
+    if evidence_count:
+        raise AssertionError("staged structural gate retained preview-native evidence")
+    return {
+        "documentId": document_id,
+        "familyName": family_name,
+        "baselineFingerprint": baseline_fingerprint,
+        "finalFingerprint": final_fingerprint,
+        "baselineArchiveFingerprint": baseline_archive_fingerprint,
+        "finalArchiveFingerprint": final_archive_fingerprint,
+        "qualifiedDomains": [
+            "glyph_membership",
+            "master_lifecycle",
+            "layer_membership",
+            "instance_lifecycle",
+            "opentype_lifecycle",
+            "ordered_collections",
+            "python_rollback",
+            "change_log_revert",
+        ],
+        "previewCount": session.preview_count,
+        "confirmedTransactionCount": session.confirm_count,
+        "rollbackTransactionCount": session.rollback_count,
+        "operationIds": session.operation_ids,
+        "rollbackOperationIds": session.rollback_operation_ids,
+        "exactCanonicalBaselineRestored": True,
+        "exactNativeArchiveRestored": True,
+        "workingPathUnchanged": True,
+        "activeMasterUnchanged": True,
+        "reportedDirtyStateUnchanged": before_dirty is None or after_dirty == before_dirty,
+        "auditReceiptsPresent": session.audit_receipts,
+        "changeLogCommitsPresent": session.change_log_commits,
+        "pendingNativeEvidenceCount": evidence_count,
+        "gateDurationMs": (time.perf_counter_ns() - gate_started) / 1_000_000,
+    }
+
+
 __all__ = [
     "DISPOSABLE_FAMILY_PREFIX",
     "verify_copy_and_make_copy",
     "verify_schema_v3_structural_kernel",
     "verify_schema_v4_master_lifecycle",
     "verify_schema_v5_layer_lifecycle",
+    "verify_staged_python_structural_replay",
 ]

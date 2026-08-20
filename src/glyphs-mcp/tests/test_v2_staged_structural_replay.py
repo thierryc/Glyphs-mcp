@@ -265,6 +265,8 @@ class StagedStructuralReplayTests(unittest.TestCase):
 
         self.assertTrue(confirmed["ok"])
         self.assertEqual(confirmed["operationId"], review_id)
+        self.assertEqual(confirmed["data"]["transactionCount"], 1)
+        self.assertFalse(confirmed["data"]["fontSaved"])
         self.assertEqual(host.preview_calls, 1)
         self.assertIn("B", host.model["glyphs"])
         self.assertEqual(

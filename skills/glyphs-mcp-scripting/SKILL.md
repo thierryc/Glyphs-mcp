@@ -28,8 +28,12 @@ Use the smallest verified Python fallback that covers the request.
    delta must match an independent clone receiving the extracted writable
    patch. This is a correctness boundary, not a hostile-code sandbox.
 5. Confirm only with `execute_python(reviewId=..., confirm=true)`. The runtime consumes the exact stored code, arguments, context, and code hash and applies the stored patch without rerunning Python.
-   Staged Python does not replay glyph, instance, master, feature, class, or
-   prefix membership/order changes; use the typed structural tools instead.
+   Schema-v5 membership and order changes for glyphs, masters, non-master
+   layers, instances, features, classes, and prefixes may be confirmed only
+   when canonical replay and an independent native-archive comparison both
+   prove equivalence. The review retains bounded opaque native evidence for
+   added entities; native objects never enter responses, audit, or history.
+   Axis lifecycle and specialized Smart/color properties remain unsupported.
 6. Use `live_open_world` only for UI state, global Glyphs APIs, unsupported native objects, files, processes, or networking. It requires exact preview and confirmation, creates a private recovery copy, and never claims external effects are transactional.
 7. Keep the returned execution ID, after-fingerprint, rollback coverage, and expiry. Do not infer automatic rollback from native undo grouping.
 

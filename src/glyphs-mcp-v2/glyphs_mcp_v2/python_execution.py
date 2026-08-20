@@ -852,6 +852,8 @@ class PythonExecutionService:
                 "beforeFingerprint": transaction.before_fingerprint,
                 "afterFingerprint": transaction.after_fingerprint,
                 "changeCount": transaction.change_count,
+                "transactionCount": 1,
+                "fontSaved": False,
                 "transactional": True,
                 "externalEffectsVerifiable": True,
                 "rollback": {
@@ -1288,6 +1290,8 @@ class PythonExecutionService:
                 "strategy": "auto",
                 "beforeFingerprint": result.before_fingerprint,
                 "afterFingerprint": result.after_fingerprint,
+                "transactionCount": 1,
+                "fontSaved": False,
                 "checkpointConsumed": True,
             },
         )
