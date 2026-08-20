@@ -406,6 +406,8 @@ class _MasterLifecycleGlyph:
         self.layers = _MasterLayerCollection(layers)
         self.layer_array_remove_count = 0
         self.layer_array_insert_count = 0
+        self.exact_layer_remove_count = 0
+        self.exact_layer_set_count = 0
 
     def countOfLayers(self):
         return len(self.layers)
@@ -424,6 +426,15 @@ class _MasterLifecycleGlyph:
         values = list(self.layers._values.values())
         values.insert(index, value)
         self.layers._values = {str(item.layerId): item for item in values}
+
+    def removeLayerForId_(self, layer_id):
+        self.exact_layer_remove_count += 1
+        del self.layers[str(layer_id)]
+
+    def setLayer_forId_(self, value, layer_id):
+        self.exact_layer_set_count += 1
+        value.layerId = str(layer_id)
+        self.layers[str(layer_id)] = value
 
 
 def _master_lifecycle_font():
@@ -1206,9 +1217,15 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(native_font_to_model(font), after)
         self.assertEqual(glyph.layers[1].layerId, "brace-150")
         self.assertEqual(glyph.layers[1].native_only, "backup-private-state")
-        self.assertGreater(glyph.layer_array_remove_count, 0)
-        self.assertGreater(glyph.layer_array_insert_count, 0)
+        self.assertGreater(glyph.exact_layer_remove_count, 0)
+        self.assertGreater(glyph.exact_layer_set_count, 0)
+        self.assertEqual(glyph.layer_array_remove_count, 0)
+        self.assertEqual(glyph.layer_array_insert_count, 0)
         self.assertEqual(glyph.layers.atomic_assignment_count, 0)
+        self.assertEqual(
+            len({layer.layerId for layer in glyph.layers.values()}),
+            len(glyph.layers),
+        )
         document_adapter._apply_target_model(
             font,
             after,
