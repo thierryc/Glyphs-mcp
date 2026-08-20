@@ -776,6 +776,10 @@ class MutationPlanner:
             else diff_models(before, expected_after)
         )
         observed.apply(before)
+        if requested_change_set.changes and not observed.changes:
+            raise ValueError(
+                "detached simulation normalized the requested mutation to no document change"
+            )
         if isinstance(before, CanonicalSnapshot) and not isinstance(
             expected_after, CanonicalSnapshot
         ):

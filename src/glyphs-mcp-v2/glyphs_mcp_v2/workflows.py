@@ -75,6 +75,22 @@ def _layer_index(layers: Sequence[Mapping[str, Any]], identity: str) -> int | No
     return matches[0] if len(matches) == 1 else None
 
 
+def _master_layer_prefix_length(layers: Sequence[Mapping[str, Any]]) -> int:
+    """Return the immutable Glyphs master-layer prefix length."""
+
+    prefix = 0
+    reached_non_master = False
+    for layer in layers:
+        is_master = bool(layer.get("isMasterLayer"))
+        if is_master and reached_non_master:
+            raise ValueError("canonical master layers must form the master-layer prefix")
+        if is_master:
+            prefix += 1
+        else:
+            reached_non_master = True
+    return prefix
+
+
 def _layer_for(glyph: Any, identity: str) -> dict[str, Any] | None:
     layers = _canonical_layers(glyph)
     index = _layer_index(layers, identity)
@@ -1220,6 +1236,7 @@ def build_layer_updates(
             raise ValueError("unknown glyph: {}".format(glyph_name))
         glyph_copy = dict(glyph)
         layers = _canonical_layers(glyph)
+        master_prefix_length = _master_layer_prefix_length(layers)
         glyph_copy["layers"] = layers
         glyphs[glyph_name] = glyph_copy
         index = _layer_index(layers, layer_id)
@@ -1251,7 +1268,12 @@ def build_layer_updates(
             )
             layers.append(source)
             if "index" in update:
-                move_entity(layers, layer_id, int(update["index"]))
+                requested_index = int(update["index"])
+                if requested_index < master_prefix_length:
+                    raise ValueError(
+                        "non-master layers cannot cross the master-layer prefix"
+                    )
+                move_entity(layers, layer_id, requested_index)
             source_map["{}/{}".format(glyph_name, layer_id)] = source_id
             continue
 
@@ -1268,7 +1290,12 @@ def build_layer_updates(
         if action == "move":
             if "index" not in update:
                 raise ValueError("layer move requires index")
-            move_entity(layers, layer_id, int(update["index"]))
+            requested_index = int(update["index"])
+            if requested_index < master_prefix_length:
+                raise ValueError(
+                    "non-master layers cannot cross the master-layer prefix"
+                )
+            move_entity(layers, layer_id, requested_index)
             continue
         if action != "update":
             raise ValueError("layer action must be duplicate, update, move, or delete")

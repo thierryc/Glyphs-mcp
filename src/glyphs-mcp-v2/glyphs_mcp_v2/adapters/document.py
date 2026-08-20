@@ -149,9 +149,20 @@ def _layer_components(layer: Any) -> list[Any]:
 
 def _native_layers(glyph: Any) -> list[Any]:
     layers = _safe_getattr(glyph, "layers")
+    ordered = _sequence_values(layers)
+    if ordered and all(
+        _safe_getattr(layer, "layerId") is not None
+        or _safe_getattr(layer, "id") is not None
+        for layer in ordered
+    ):
+        # GlyphLayerProxy is Mapping-shaped, but integer access and iteration
+        # implement Glyphs' authoritative presentation order: master layers
+        # in font-master order followed by the native non-master layer array.
+        # ``values()`` delegates to NSDictionary.allValues() and is unordered.
+        return ordered
     if isinstance(layers, Mapping):
         return list(layers.values())
-    return _sequence_values(layers)
+    return ordered
 
 
 def _path_model(path: Any) -> dict[str, Any]:
@@ -1616,6 +1627,96 @@ def _replace_native_collection_order(collection: Any, values: Sequence[Any]) -> 
         _append_native_collection_item(collection, value)
 
 
+def _native_layer_identity(layer: Any) -> str:
+    return str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or "")
+
+
+def _replace_glyph_layer_order(glyph: Any, values: Sequence[Any]) -> None:
+    """Replay the one order Glyphs actually owns for a glyph's layers.
+
+    Glyphs projects master layers first according to the font master order.
+    Only the remaining native layer array is user-orderable. The public
+    ``GlyphLayerProxy.setter`` rebuilds an NSDictionary and therefore cannot
+    prove order; use the native array selectors when the host exposes them.
+    """
+
+    desired = list(values)
+    current = _native_layers(glyph)
+    desired_ids = [_native_layer_identity(layer) for layer in desired]
+    current_ids = [_native_layer_identity(layer) for layer in current]
+    if (
+        not all(desired_ids)
+        or len(set(desired_ids)) != len(desired_ids)
+        or set(desired_ids) != set(current_ids)
+    ):
+        raise HostAccessError("Glyphs layer order requires identical stable identities")
+
+    def partition(layers: Sequence[Any]) -> tuple[list[Any], list[Any]]:
+        masters: list[Any] = []
+        non_masters: list[Any] = []
+        reached_non_master = False
+        for layer in layers:
+            is_master = bool(_maybe_call(_safe_getattr(layer, "isMasterLayer", False)))
+            if is_master and reached_non_master:
+                raise HostAccessError("Glyphs master layers must form the canonical prefix")
+            if is_master:
+                masters.append(layer)
+            else:
+                reached_non_master = True
+                non_masters.append(layer)
+        return masters, non_masters
+
+    current_masters, current_non_masters = partition(current)
+    desired_masters, desired_non_masters = partition(desired)
+    if [_native_layer_identity(layer) for layer in current_masters] != [
+        _native_layer_identity(layer) for layer in desired_masters
+    ]:
+        raise HostAccessError("layer lifecycle cannot reorder master layers")
+    if [_native_layer_identity(layer) for layer in current_non_masters] == [
+        _native_layer_identity(layer) for layer in desired_non_masters
+    ]:
+        return
+
+    count = _safe_getattr(glyph, "countOfLayers")
+    getter = _safe_getattr(glyph, "objectInLayersAtIndex_")
+    remover = _safe_getattr(glyph, "removeObjectFromLayersArrayAtIndex_")
+    inserter = _safe_getattr(glyph, "insertObject_inLayersArrayAtIndex_")
+    if all(callable(value) for value in (count, getter, remover, inserter)):
+        raw = [getter(index) for index in range(int(count()))]
+        raw_ids = [_native_layer_identity(layer) for layer in raw]
+        if not all(raw_ids) or set(raw_ids) != set(desired_ids):
+            raise HostAccessError("Glyphs native layer array diverged before reorder")
+        desired_non_master_iterator = iter(desired_non_masters)
+        desired_raw = [
+            layer
+            if bool(_maybe_call(_safe_getattr(layer, "isMasterLayer", False)))
+            else next(desired_non_master_iterator)
+            for layer in raw
+        ]
+        for target_index, target in enumerate(desired_raw):
+            if raw[target_index] is target:
+                continue
+            source_index = next(
+                (
+                    index
+                    for index in range(target_index + 1, len(raw))
+                    if raw[index] is target
+                ),
+                None,
+            )
+            if source_index is None:
+                raise HostAccessError("Glyphs native layer identity disappeared during reorder")
+            remover(source_index)
+            raw.pop(source_index)
+            inserter(target, target_index)
+            raw.insert(target_index, target)
+    else:
+        _replace_native_collection_order(_safe_getattr(glyph, "layers"), desired)
+
+    if [_native_layer_identity(layer) for layer in _native_layers(glyph)] != desired_ids:
+        raise HostAccessError("Glyphs did not preserve the requested non-master layer order")
+
+
 def _construct_native_entity(kind: str, name: str = "") -> Any:
     """Create one native entity behind a single testable SDK boundary."""
 
@@ -2020,8 +2121,8 @@ def _apply_layer_collection(
     complete_order = [identity for identity in target_order if identity in native_by_id]
     if set(complete_order) != set(native_by_id):
         raise HostAccessError("canonical layer order omitted a native identity")
-    _replace_native_collection_order(
-        collection, [native_by_id[identity] for identity in complete_order]
+    _replace_glyph_layer_order(
+        glyph, [native_by_id[identity] for identity in complete_order]
     )
 
     axis_tags = {

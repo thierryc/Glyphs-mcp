@@ -55,7 +55,11 @@ v5 addresses their entities by stable IDs and represents order independently.
 and its kerning partition. `apply_layer_updates` uses the same abstraction for
 intermediate, alternate, backup, Smart, and color layer membership. Specialized
 Smart/color properties and staged-Python structural replay remain explicit
-later boundaries.
+later boundaries. Glyphs owns master-layer ordering through the font master
+collection, so those layers form an immutable prefix; layer lifecycle indexes
+address only positions at or after that prefix. The adapter reorders that
+non-master suffix through Glyphs' native layer-array selectors rather than the
+unordered dictionary-shaped Python setter.
 
 ## Worktree-contained development
 

@@ -176,7 +176,7 @@ TOOL_DEFINITIONS: Tuple[ToolDefinition, ...] = (
     _definition("apply_opentype_updates", "Apply OpenType Updates", "Apply feature, class, and prefix collection or state updates through one verified transaction.", "features", "edit", idempotent=False),
     _definition("apply_instance_updates", "Apply Instance Updates", "Apply ordered static or variable instance collection updates through one verified transaction.", "instances", "edit", idempotent=False),
     _definition("apply_master_updates", "Apply Master Updates", "Duplicate, update, move, or delete masters with their owned layers and kerning through one verified transaction.", "masters", "edit", idempotent=False),
-    _definition("apply_layer_updates", "Apply Layer Updates", "Duplicate, update, move, or delete non-master layers through one verified transaction.", "layers", "edit", idempotent=False),
+    _definition("apply_layer_updates", "Apply Layer Updates", "Duplicate, update, move, or delete non-master layers after the immutable master-layer prefix through one verified transaction.", "layers", "edit", idempotent=False),
     _definition("review_spacing", "Review Spacing", "Run bounded detached fixed-point spacing simulation with dependency revalidation.", "spacing"),
     _definition("apply_spacing", "Apply Spacing", "Apply explicit spacing targets through detached simulation and one verified transaction.", "spacing", "edit", idempotent=False),
     _definition("review_export", "Review Export", "Review compatibility, instances, exclusions, and destination replacement policy.", "export", open_world=True),

@@ -356,7 +356,10 @@ class V2LiveGateGuardTests(unittest.TestCase):
             result["qualifiedDomains"],
             ["layer_lifecycle", "interpolation_rules", "atomic_refusal"],
         )
-        self.assertEqual(result["successfulTransactionCount"], 8)
+        # Five forward lifecycle actions and their five exact reverts. A
+        # second non-master layer is required because Glyphs master layers
+        # form an immutable prefix and one trailing layer cannot be reordered.
+        self.assertEqual(result["successfulTransactionCount"], 10)
         self.assertEqual(result["refusalCount"], 2)
         self.assertTrue(result["exactBaselineRestored"])
         self.assertTrue(result["singleTransactionResponses"])

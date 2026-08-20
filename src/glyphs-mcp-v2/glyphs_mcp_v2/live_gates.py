@@ -793,7 +793,7 @@ def verify_schema_v5_layer_lifecycle(
     glyph_name = ""
     source_layer_id = ""
     source_master_id = ""
-    source_order = 0
+    master_prefix_length = 0
     glyphs = baseline.get("glyphs", {})
     if isinstance(glyphs, Mapping):
         for candidate_name in sorted(glyphs):
@@ -801,12 +801,18 @@ def verify_schema_v5_layer_lifecycle(
             layers = glyph.get("layers", ()) if isinstance(glyph, Mapping) else ()
             if not isinstance(layers, (list, tuple)):
                 continue
-            for index, layer in enumerate(layers):
+            candidate_master_prefix = 0
+            for layer in layers:
+                if isinstance(layer, Mapping) and bool(layer.get("isMasterLayer")):
+                    candidate_master_prefix += 1
+                else:
+                    break
+            for layer in layers:
                 if isinstance(layer, Mapping) and bool(layer.get("isMasterLayer")):
                     glyph_name = str(candidate_name)
                     source_layer_id = str(layer.get("id") or "")
                     source_master_id = str(layer.get("masterId") or source_layer_id)
-                    source_order = index
+                    master_prefix_length = candidate_master_prefix
                     break
             if source_layer_id:
                 break
@@ -818,6 +824,7 @@ def verify_schema_v5_layer_lifecycle(
     before_master_id = str(_plain_attribute(before_master, "id") or "")
     before_dirty = _reported_dirty_state(host, document_id)
     new_id = str(uuid4()).upper()
+    sentinel_id = str(uuid4()).upper()
     axis_tag = axis_tags[0]
     session = _StructuralGateSession(
         application,
@@ -841,7 +848,7 @@ def verify_schema_v5_layer_lifecycle(
                         "kind": "intermediate",
                         "coordinates": {axis_tag: 125},
                     },
-                    "index": source_order + 1,
+                    "index": master_prefix_length,
                 }
             ],
         )
@@ -869,6 +876,21 @@ def verify_schema_v5_layer_lifecycle(
                 }
             ],
         )
+        sentinel = session.apply(
+            "apply_layer_updates",
+            [
+                {
+                    "action": "duplicate",
+                    "glyphName": glyph_name,
+                    "sourceLayerId": source_layer_id,
+                    "layerId": sentinel_id,
+                    "masterId": source_master_id,
+                    "name": "MCP layer order sentinel",
+                    "interpolation": None,
+                    "index": master_prefix_length + 1,
+                }
+            ],
+        )
         moved = session.apply(
             "apply_layer_updates",
             [
@@ -876,10 +898,15 @@ def verify_schema_v5_layer_lifecycle(
                     "action": "move",
                     "glyphName": glyph_name,
                     "layerId": new_id,
-                    "index": 0,
+                    "index": master_prefix_length + 1,
                 }
             ],
         )
+        if not any(
+            change.path == ("glyphs", glyph_name, "layers", "$order")
+            for change in session.change_set(moved).changes
+        ):
+            raise AssertionError("layer move did not change the canonical non-master order")
         deleted = session.apply(
             "apply_layer_updates",
             [{"action": "delete", "glyphName": glyph_name, "layerId": new_id}],
@@ -892,7 +919,7 @@ def verify_schema_v5_layer_lifecycle(
         ):
             raise AssertionError("layer deletion left the target in the collection")
 
-        for operation_id in (deleted, moved, updated, duplicate):
+        for operation_id in (deleted, moved, sentinel, updated, duplicate):
             session.revert(operation_id)
 
         session.refuse(
