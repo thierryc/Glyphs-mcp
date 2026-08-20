@@ -10,7 +10,7 @@ from typing import Any, Callable, Mapping, Optional
 from uuid import uuid4
 
 from .canonical_tree import CanonicalFontTree
-from .semantic import ChangeSet, compose_change_sets
+from .semantic import ChangeCompositionError, ChangeSet, compose_change_sets
 
 
 @dataclass(frozen=True)
@@ -162,11 +162,22 @@ class ChangeHistory:
             state.latest_session = None
         elif commit.changed:
             previous = state.latest_session
-            session_change_set = (
-                commit.change_set
-                if previous is None
-                else compose_change_sets(previous.change_set, commit.change_set)
-            )
+            if previous is None:
+                session_change_set = commit.change_set
+            else:
+                try:
+                    session_change_set = compose_change_sets(
+                        previous.change_set,
+                        commit.change_set,
+                    )
+                except ChangeCompositionError:
+                    # Consecutive append-only identity edits can omit order
+                    # patches individually while requiring one in their net
+                    # diff. Fall back only for that under-specified case.
+                    session_change_set = self.trees.diff(
+                        previous.before_tree_hash,
+                        commit.after_tree_hash,
+                    )
             state.latest_session = SessionDiff(
                 document_id=document_id,
                 run_id=run_id,

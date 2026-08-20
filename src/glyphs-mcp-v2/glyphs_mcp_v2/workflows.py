@@ -16,7 +16,7 @@ from .canonical_collections import (
 from .mutation import (
     MASTER_LIFECYCLE_CAPABILITY,
     MutationBuild,
-    master_lifecycle_diff,
+    master_lifecycle_request_diff,
 )
 from .semantic import ChangeSet, diff_models
 
@@ -863,17 +863,23 @@ def build_master_updates(
     source master to copy so state outside the canonical schema is retained.
     """
 
-    after = copy.deepcopy(dict(model))
-    masters = after.setdefault("masters", [])
-    if not isinstance(masters, list):
+    after = dict(model)
+    source_masters = model.get("masters", [])
+    if not isinstance(source_masters, (list, tuple)):
         raise ValueError("masters must be an ordered canonical collection")
+    masters = [dict(master) for master in source_masters]
+    after["masters"] = masters
     require_indexed_entities(masters, "masters")
-    glyphs = after.get("glyphs", {})
-    if not isinstance(glyphs, dict):
+    source_glyphs = model.get("glyphs", {})
+    if not isinstance(source_glyphs, Mapping):
         raise ValueError("glyphs must be keyed by name")
-    kerning = after.setdefault("kerning", {})
-    if not isinstance(kerning, dict):
+    glyphs = dict(source_glyphs)
+    after["glyphs"] = glyphs
+    source_kerning = model.get("kerning", {})
+    if not isinstance(source_kerning, Mapping):
         raise ValueError("kerning must be keyed by master ID")
+    kerning = dict(source_kerning)
+    after["kerning"] = kerning
     source_map: dict[str, str] = {}
     seen: set[tuple[str, str]] = set()
 
@@ -897,7 +903,7 @@ def build_master_updates(
                 )
             if index is not None:
                 raise ValueError("master already exists: {}".format(master_id))
-            source = copy.deepcopy(masters[source_index])
+            source = dict(masters[source_index])
             source["id"] = master_id
             source["name"] = str(update.get("name") or source.get("name") or "")
             if not source["name"]:
@@ -913,7 +919,12 @@ def build_master_updates(
             source_map[master_id] = source_id
 
             for glyph_name, glyph in glyphs.items():
-                layers = glyph.get("layers") if isinstance(glyph, Mapping) else None
+                glyph_copy = dict(glyph) if isinstance(glyph, Mapping) else None
+                layers = (
+                    dict(glyph.get("layers") or {})
+                    if isinstance(glyph, Mapping)
+                    else None
+                )
                 source_layer = layers.get(source_id) if isinstance(layers, dict) else None
                 if not isinstance(source_layer, Mapping) or not bool(
                     source_layer.get("isMasterLayer", True)
@@ -927,15 +938,17 @@ def build_master_updates(
                     raise ValueError(
                         "glyph {} already has layer {}".format(glyph_name, master_id)
                     )
-                layer = copy.deepcopy(dict(source_layer))
+                layer = dict(source_layer)
                 layer["id"] = master_id
                 layer["masterId"] = master_id
                 layer["name"] = source["name"]
                 layer["isMasterLayer"] = True
                 layer["isSpecialLayer"] = False
                 layers[master_id] = layer
+                glyph_copy["layers"] = layers
+                glyphs[glyph_name] = glyph_copy
             if source_id in kerning:
-                kerning[master_id] = copy.deepcopy(kerning[source_id])
+                kerning[master_id] = kerning[source_id]
             continue
 
         if index is None:
@@ -944,7 +957,12 @@ def build_master_updates(
             if len(masters) <= 1:
                 raise ValueError("the final master cannot be deleted")
             for glyph_name, glyph in glyphs.items():
-                layers = glyph.get("layers") if isinstance(glyph, Mapping) else None
+                glyph_copy = dict(glyph) if isinstance(glyph, Mapping) else None
+                layers = (
+                    dict(glyph.get("layers") or {})
+                    if isinstance(glyph, Mapping)
+                    else None
+                )
                 if not isinstance(layers, dict) or master_id not in layers:
                     raise ValueError(
                         "glyph {} has no canonical master layer {}".format(
@@ -964,6 +982,8 @@ def build_master_updates(
                             )
                         )
                 del layers[master_id]
+                glyph_copy["layers"] = layers
+                glyphs[glyph_name] = glyph_copy
             del masters[index]
             kerning.pop(master_id, None)
             continue
@@ -990,7 +1010,7 @@ def build_master_updates(
             expected_tags = [str(axis.get("tag") or "") for axis in item.get("axes", [])]
             item["axes"] = _master_axes(update["axes"], expected_tags=expected_tags)
 
-    changes = master_lifecycle_diff(model, after)
+    changes = master_lifecycle_request_diff(model, after)
     if not changes.changes:
         raise ValueError("master updates must produce a document change")
     return MutationBuild(

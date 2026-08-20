@@ -37,6 +37,10 @@ SUPPORTED_DOCUMENT_ROOTS = frozenset(
 )
 
 
+class ChangeCompositionError(ValueError):
+    """Raised when adjacent patches omit the order context needed to compose."""
+
+
 def _plain(value: Any) -> Any:
     if value is None or isinstance(value, (bool, int, str)):
         return value
@@ -553,18 +557,28 @@ def _apply_descendant_changes(
     *,
     inverse: bool = False,
 ) -> Any:
-    wrapper = {"$value": copy.deepcopy(value)}
+    result = value
     projected: list[SemanticChange] = []
     for original in changes:
-        change = original.inverse() if inverse else original
+        change = (
+            SemanticChange(
+                path=original.path,
+                before=original.after,
+                after=original.before,
+                before_present=original.after_present,
+                after_present=original.before_present,
+            )
+            if inverse
+            else original
+        )
         relative = change.path[len(candidate) :]
         if not relative:
             raise ValueError("an exact change cannot be applied as a descendant")
         projected.append(
             SemanticChange(
-                path=("$value",) + tuple(relative),
-                before=copy.deepcopy(change.before),
-                after=copy.deepcopy(change.after),
+                path=tuple(relative),
+                before=change.before,
+                after=change.after,
                 before_present=change.before_present,
                 after_present=change.after_present,
             )
@@ -573,10 +587,70 @@ def _apply_descendant_changes(
         projected,
         key=lambda item: (item.path[-1] == ORDER_TOKEN, item.path),
     ):
-        current = _value_at(wrapper, change.path)
+        current = _value_at(result, change.path)
         _require_change_before(current, change)
-        _set_at(wrapper, change.path, change.after, change.after_present)
-    return wrapper["$value"]
+        result = _persistent_set_at(
+            result,
+            change.path,
+            change.after,
+            change.after_present,
+        )
+    return result
+
+
+def _persistent_set_at(
+    current: Any,
+    path: Sequence[str],
+    value: Any,
+    present: bool,
+) -> Any:
+    """Return one copy-on-write update while sharing every untouched branch."""
+
+    part = path[0]
+    leaf = len(path) == 1
+    if isinstance(current, Mapping):
+        result = dict(current)
+        if leaf:
+            if present:
+                result[part] = value
+            else:
+                result.pop(part, None)
+            return result
+        child = current.get(part, {})
+        result[part] = _persistent_set_at(child, path[1:], value, present)
+        return result
+    if isinstance(current, (list, tuple)):
+        result = list(current)
+        if part == ORDER_TOKEN:
+            if not leaf or not present:
+                raise ValueError("canonical collection order cannot be removed")
+            identities = {entity_id(item): item for item in result}
+            requested = [str(identity) for identity in value]
+            if set(requested) != set(identities) or len(requested) != len(identities):
+                raise ValueError("canonical collection membership is stale")
+            return [identities[identity] for identity in requested]
+        index = find_entity_index(result, part)
+        if index is None:
+            try:
+                index = int(part)
+            except ValueError:
+                index = None
+        if leaf:
+            if index is None:
+                if present and entity_id(value) == part:
+                    result.append(value)
+                elif present:
+                    raise ValueError("change path is missing: {}".format("/".join(path)))
+            elif present:
+                result[index] = value
+            else:
+                del result[index]
+            return result
+        if index is None:
+            raise ValueError("change path is missing: {}".format("/".join(path)))
+        result[index] = _persistent_set_at(result[index], path[1:], value, present)
+        return result
+    raise ValueError("change path traverses a scalar: {}".format("/".join(path)))
 
 
 def _composed_fragment_changes(
@@ -595,8 +669,8 @@ def _composed_fragment_changes(
         return [
             SemanticChange(
                 path=path,
-                before=copy.deepcopy(before),
-                after=copy.deepcopy(after),
+                before=before,
+                after=after,
                 before_present=before_present,
                 after_present=after_present,
             )
@@ -604,6 +678,97 @@ def _composed_fragment_changes(
     if path[-1] == ORDER_TOKEN:
         return [SemanticChange(path=path, before=before, after=after)]
     return _diff(before, after, path)
+
+
+def _replay_identity_membership(
+    order: Sequence[str],
+    changes: Sequence[SemanticChange],
+    *,
+    inverse: bool = False,
+) -> list[str]:
+    result = [str(identity) for identity in order]
+    for original in sorted(changes, key=lambda item: item.path):
+        before_present = original.after_present if inverse else original.before_present
+        after_present = original.before_present if inverse else original.after_present
+        identity = original.path[1]
+        if before_present and not after_present:
+            if identity in result:
+                result.remove(identity)
+        elif not before_present and after_present and identity not in result:
+            result.append(identity)
+    return result
+
+
+def _normalize_composed_orders(
+    changes: Sequence[SemanticChange],
+    first: ChangeSet,
+    second: ChangeSet,
+) -> list[SemanticChange]:
+    result = list(changes)
+    for root in IDENTITY_COLLECTION_ROOTS:
+        order_path = (root, ORDER_TOKEN)
+        first_membership = tuple(
+            change
+            for change in first.changes
+            if len(change.path) == 2
+            and change.path[0] == root
+            and change.path[1] != ORDER_TOKEN
+        )
+        second_membership = tuple(
+            change
+            for change in second.changes
+            if len(change.path) == 2
+            and change.path[0] == root
+            and change.path[1] != ORDER_TOKEN
+        )
+        order = next((change for change in result if change.path == order_path), None)
+        membership = tuple(
+            change
+            for change in result
+            if len(change.path) == 2
+            and change.path[0] == root
+            and change.path[1] != ORDER_TOKEN
+        )
+        if order is None:
+            if first_membership and second_membership and membership:
+                raise ChangeCompositionError(
+                    "identity membership changes require canonical order context"
+                )
+            continue
+
+        additions = {
+            change.path[1]
+            for change in membership
+            if not change.before_present and change.after_present
+        }
+        deletions = {
+            change.path[1]
+            for change in membership
+            if change.before_present and not change.after_present
+        }
+        before = [str(identity) for identity in order.before]
+        after = [str(identity) for identity in order.after]
+        before = [identity for identity in before if identity not in additions]
+        after = [identity for identity in after if identity not in deletions]
+        before_only = set(before) - set(after)
+        after_only = set(after) - set(before)
+        before = [
+            identity
+            for identity in before
+            if identity not in before_only or identity in deletions
+        ]
+        after = [
+            identity
+            for identity in after
+            if identity not in after_only or identity in additions
+        ]
+        result = [change for change in result if change.path != order_path]
+        if (
+            _replay_identity_membership(before, membership) != after
+            or _replay_identity_membership(after, membership, inverse=True) != before
+        ):
+            result.append(SemanticChange(path=order_path, before=before, after=after))
+    return result
 
 
 def compose_change_sets(first: ChangeSet, second: ChangeSet) -> ChangeSet:
@@ -639,11 +804,18 @@ def compose_change_sets(first: ChangeSet, second: ChangeSet) -> ChangeSet:
             None,
         )
 
+        if not second_related:
+            changes.extend(first_related)
+            continue
+        if not first_related:
+            changes.extend(second_related)
+            continue
+
         if first_exact is not None:
             before_present = first_exact.before_present
-            before = copy.deepcopy(first_exact.before)
+            before = first_exact.before
             middle_present = first_exact.after_present
-            middle = copy.deepcopy(first_exact.after)
+            middle = first_exact.after
             if second_exact is not None:
                 if (
                     middle_present != second_exact.before_present
@@ -651,7 +823,7 @@ def compose_change_sets(first: ChangeSet, second: ChangeSet) -> ChangeSet:
                 ):
                     raise ValueError("overlapping change sets have a stale bridge")
                 after_present = second_exact.after_present
-                after = copy.deepcopy(second_exact.after)
+                after = second_exact.after
             else:
                 after_present = middle_present
                 after = (
@@ -665,9 +837,9 @@ def compose_change_sets(first: ChangeSet, second: ChangeSet) -> ChangeSet:
                 )
         elif second_exact is not None:
             middle_present = second_exact.before_present
-            middle = copy.deepcopy(second_exact.before)
+            middle = second_exact.before
             after_present = second_exact.after_present
-            after = copy.deepcopy(second_exact.after)
+            after = second_exact.after
             before_present = middle_present
             before = (
                 _apply_descendant_changes(
@@ -692,6 +864,7 @@ def compose_change_sets(first: ChangeSet, second: ChangeSet) -> ChangeSet:
             )
         )
 
+    changes = _normalize_composed_orders(changes, first, second)
     result = ChangeSet.from_changes(
         before_fingerprint=first.before_fingerprint,
         after_fingerprint=second.after_fingerprint,
@@ -826,6 +999,7 @@ def revert_change_set_onto(
 
 
 __all__ = [
+    "ChangeCompositionError",
     "ChangeSet",
     "SUPPORTED_DOCUMENT_ROOTS",
     "SemanticChange",

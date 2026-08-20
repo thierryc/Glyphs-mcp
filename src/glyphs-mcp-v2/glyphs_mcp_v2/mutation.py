@@ -99,7 +99,7 @@ def master_lifecycle_diff(
             retained.append(
                 SemanticChange(
                     path=("kerning", master_id),
-                    after=copy.deepcopy(after_kerning[master_id]),
+                    after=after_kerning[master_id],
                     before_present=False,
                 )
             )
@@ -109,7 +109,89 @@ def master_lifecycle_diff(
         changes=retained,
     )
     result.apply(before)
-    result.inverse().apply(after)
+    return result
+
+
+def master_lifecycle_request_diff(
+    before: Mapping[str, Any], after: Mapping[str, Any]
+) -> ChangeSet:
+    """Build the bounded writable master request without diffing every glyph."""
+
+    before_masters = before.get("masters", [])
+    after_masters = after.get("masters", [])
+    master_changes = diff_models(
+        {"masters": before_masters},
+        {"masters": after_masters},
+    ).changes
+    before_ids = {
+        str(master.get("id") or "")
+        for master in before_masters
+        if isinstance(master, Mapping)
+    }
+    after_ids = {
+        str(master.get("id") or "")
+        for master in after_masters
+        if isinstance(master, Mapping)
+    }
+    structural_ids = before_ids ^ after_ids
+    changes: list[SemanticChange] = list(master_changes)
+    before_glyphs = before.get("glyphs", {})
+    after_glyphs = after.get("glyphs", {})
+    if not isinstance(before_glyphs, Mapping) or not isinstance(
+        after_glyphs, Mapping
+    ):
+        raise ValueError("master lifecycle requires canonical glyph mappings")
+    for glyph_name in sorted(set(before_glyphs) | set(after_glyphs)):
+        before_glyph = before_glyphs.get(glyph_name, {})
+        after_glyph = after_glyphs.get(glyph_name, {})
+        before_layers = (
+            before_glyph.get("layers", {})
+            if isinstance(before_glyph, Mapping)
+            else {}
+        )
+        after_layers = (
+            after_glyph.get("layers", {})
+            if isinstance(after_glyph, Mapping)
+            else {}
+        )
+        for master_id in sorted(structural_ids):
+            before_present = master_id in before_layers
+            after_present = master_id in after_layers
+            if before_present == after_present:
+                continue
+            changes.append(
+                SemanticChange(
+                    path=("glyphs", str(glyph_name), "layers", master_id),
+                    before=before_layers.get(master_id),
+                    after=after_layers.get(master_id),
+                    before_present=before_present,
+                    after_present=after_present,
+                )
+            )
+
+    before_kerning = before.get("kerning", {})
+    after_kerning = after.get("kerning", {})
+    if isinstance(before_kerning, Mapping) and isinstance(after_kerning, Mapping):
+        for master_id in sorted(structural_ids):
+            before_present = master_id in before_kerning
+            after_present = master_id in after_kerning
+            if before_present == after_present:
+                continue
+            changes.append(
+                SemanticChange(
+                    path=("kerning", master_id),
+                    before=before_kerning.get(master_id),
+                    after=after_kerning.get(master_id),
+                    before_present=before_present,
+                    after_present=after_present,
+                )
+            )
+    result = ChangeSet.from_changes(
+        before_fingerprint=fingerprint_model(before),
+        after_fingerprint=fingerprint_model(after),
+        changes=changes,
+    )
+    result.apply(before)
     return result
 
 
@@ -674,6 +756,7 @@ __all__ = [
     "is_structural_change_path",
     "mutation_scope",
     "master_lifecycle_diff",
+    "master_lifecycle_request_diff",
     "normalize_mutation_build",
     "unsupported_change_diagnostics",
     "writable_subset",
