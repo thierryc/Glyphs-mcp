@@ -71,10 +71,17 @@ def _resolve_live_runtime(application: Any, host: Any) -> tuple[Any, Any]:
 class _StructuralGateSession:
     """Small generic driver over the public apply/revert contract."""
 
-    def __init__(self, application: Any, host: Any, document_id: str) -> None:
+    def __init__(
+        self,
+        application: Any,
+        host: Any,
+        document_id: str,
+        current_fingerprint: str,
+    ) -> None:
         self.application = application
         self.host = host
         self.document_id = document_id
+        self.current_fingerprint = str(current_fingerprint)
         self.active: list[str] = []
         self.successful: list[str] = []
         self.refusals: list[str] = []
@@ -112,6 +119,13 @@ class _StructuralGateSession:
             raise AssertionError("{} did not report exactly one live transaction".format(tool))
         if not has_receipt:
             raise AssertionError("{} did not emit an audit receipt".format(tool))
+        before_fingerprint = str(data.get("beforeFingerprint") or "")
+        after_fingerprint = str(data.get("afterFingerprint") or "")
+        if before_fingerprint != self.current_fingerprint or not after_fingerprint:
+            raise AssertionError(
+                "{} did not return the verified fingerprint transition".format(tool)
+            )
+        self.current_fingerprint = after_fingerprint
         return data
 
     def apply(self, tool: str, updates: Sequence[Mapping[str, Any]]) -> str:
@@ -119,7 +133,7 @@ class _StructuralGateSession:
             tool,
             {
                 "documentId": self.document_id,
-                "expectedDocumentFingerprint": self.fingerprint(),
+                "expectedDocumentFingerprint": self.current_fingerprint,
                 "updates": [dict(item) for item in updates],
                 "reason": "Glyphs MCP v2 verified structural live qualification",
             },
@@ -140,7 +154,7 @@ class _StructuralGateSession:
             {
                 "documentId": self.document_id,
                 "operationId": operation_id,
-                "expectedDocumentFingerprint": self.fingerprint(),
+                "expectedDocumentFingerprint": self.current_fingerprint,
             },
         )
         data = self._success("revert_change", response)
@@ -190,7 +204,7 @@ class _StructuralGateSession:
         *,
         stale: bool = False,
     ) -> None:
-        before = self.fingerprint()
+        before = self.current_fingerprint
         response = self.invoke(
             tool,
             {
@@ -216,10 +230,16 @@ class _StructuralGateSession:
                     {
                         "documentId": self.document_id,
                         "operationId": operation_id,
-                        "expectedDocumentFingerprint": self.fingerprint(),
+                        "expectedDocumentFingerprint": self.current_fingerprint,
                     },
                 )
                 if response.get("ok"):
+                    data = dict(response.get("data") or {})
+                    if str(data.get("beforeFingerprint") or "") != self.current_fingerprint:
+                        raise AssertionError("cleanup revert returned a stale fingerprint")
+                    self.current_fingerprint = str(data.get("afterFingerprint") or "")
+                    if not self.current_fingerprint:
+                        raise AssertionError("cleanup revert returned no after fingerprint")
                     self.active.remove(operation_id)
                 else:
                     failures.append(operation_id)
@@ -369,7 +389,12 @@ def verify_schema_v3_structural_kernel(
     instance_axes = list(baseline_instances[0].get("axes") or []) if baseline_instances else []
 
     qualified_domains: list[str] = []
-    session = _StructuralGateSession(application, host, document_id)
+    session = _StructuralGateSession(
+        application,
+        host,
+        document_id,
+        baseline_fingerprint,
+    )
 
     try:
         session.round_trip(
@@ -545,7 +570,12 @@ def verify_schema_v4_master_lifecycle(
     before_master_id = str(_plain_attribute(before_master, "id") or "")
     before_dirty = _reported_dirty_state(host, document_id)
     new_id = str(uuid4()).upper()
-    session = _StructuralGateSession(application, host, document_id)
+    session = _StructuralGateSession(
+        application,
+        host,
+        document_id,
+        baseline_fingerprint,
+    )
 
     try:
         duplicate = session.apply(
