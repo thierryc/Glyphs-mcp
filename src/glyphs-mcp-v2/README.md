@@ -216,3 +216,23 @@ showed that `PalettePlugin.title()` returns an updated value, but an
 already-mounted palette header does not refresh after normal redraw or KVO
 notification. V2 therefore keeps `self.name` and the native header title stable
 as `Glyphs MCP`; it does not manipulate Glyphs' private sidebar hierarchy.
+
+## Target-aware installer payload
+
+Milestone 10 integrates v2 without sharing a runtime bundle between Glyphs
+majors. One deterministic builder produces schema-v2 `payload.json`, shared
+requirements and skills, a pinned Glyphs 3 `v1.11.0` bundle from `13ca805`, and
+the generated Glyphs 4 v2 bundle. The macOS app, terminal installer, updater,
+and release gates all consume that same manifest.
+
+Glyphs 3 uses the `1.x`/`pinned` track. Glyphs 4 uses the `2.x`/`release` track.
+Each host has an independent plug-in destination, Python environment, staged
+update directory, authorization receipt, rollback boundary, and uninstall
+selection. Protocol-v1 stages are not migrated or reinterpreted. Managed
+skills remain one optional v2 package rather than a duplicate legacy
+namespace.
+
+This milestone validates packaging and simulated installation only. It does
+not bump the production version, sign, notarize, publish, install into a live
+Glyphs folder, or restart Glyphs. Those release-candidate gates remain
+Milestone 11.

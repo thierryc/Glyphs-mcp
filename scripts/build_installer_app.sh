@@ -135,6 +135,20 @@ sign_nested_payload_code() {
   echo "Signed $signed_executable_count payload executable(s) and sealed $signed_bundle_count Glyphs code bundle(s)."
 }
 
+verify_target_payload_plugins() {
+  local payload_root="$1"
+  python3 "$repo_root/scripts/build_installer_payload.py" --verify-root "$payload_root"
+  local target
+  for target in 3 4; do
+    local plugin="$payload_root/Plugins/Glyphs${target}/Glyphs MCP.glyphsPlugin"
+    if [[ ! -d "$plugin" ]]; then
+      echo "error: target-aware payload is missing Glyphs $target plug-in: $plugin" >&2
+      exit 1
+    fi
+    /usr/bin/codesign --verify --deep --strict --verbose=2 "$plugin"
+  done
+}
+
 payload_root="$out_dir/$scheme.app/Contents/Resources/Payload"
 sign_nested_payload_code "$payload_root"
 
@@ -149,8 +163,7 @@ rm -f "$payload_archive"
 COPYFILE_DISABLE=1 /usr/bin/tar -czf "$payload_archive" -C "$(dirname "$payload_root")" "$(basename "$payload_root")"
 /usr/bin/tar -xzf "$payload_archive" -C "$payload_check"
 checked_payload="$payload_check/Payload"
-checked_plugin="$checked_payload/Glyphs MCP.glyphsPlugin"
-/usr/bin/codesign --verify --deep --strict --verbose=2 "$checked_plugin"
+verify_target_payload_plugins "$checked_payload"
 while IFS= read -r -d '' candidate; do
   if /usr/bin/file -b "$candidate" | /usr/bin/grep -q 'Mach-O'; then
     /usr/bin/codesign --verify --strict --verbose=2 "$candidate"
@@ -200,8 +213,7 @@ rm -rf "$payload_check"
 mkdir -p "$payload_check"
 /usr/bin/tar -xzf "$payload_archive" -C "$payload_check"
 checked_payload="$payload_check/Payload"
-checked_plugin="$checked_payload/Glyphs MCP.glyphsPlugin"
-/usr/bin/codesign --verify --deep --strict --verbose=2 "$checked_plugin"
+verify_target_payload_plugins "$checked_payload"
 while IFS= read -r -d '' candidate; do
   if /usr/bin/file -b "$candidate" | /usr/bin/grep -q 'Mach-O'; then
     /usr/bin/codesign --verify --strict --verbose=2 "$candidate"

@@ -20,6 +20,10 @@ public struct GitHubPluginDownloader {
 	}
 
 	public func downloadAndExtractPluginBundle(timeout: TimeInterval = 30) async throws -> URL {
+		try await downloadAndExtractPayload(timeout: timeout).pluginBundle
+	}
+
+	public func downloadAndExtractPayload(timeout: TimeInterval = 30) async throws -> InstallerPayload {
 		log("Resolving the latest signed Glyphs MCP release…")
 		let releaseData = try await client.data(from: GitHubReleaseResolver.latestReleaseURL, timeout: timeout)
 		let release = try GitHubReleaseResolver.parsePublishedRelease(releaseData)
@@ -51,9 +55,9 @@ public struct GitHubPluginDownloader {
 			onLine: { _ in }
 		)
 
-		let plugin = try archiveVerifier.verifyAndResolvePlugin(extractDir, release.version)
-		log("Verified signed release plug-in \(release.version).")
-		return plugin
+		let payload = try archiveVerifier.verifyAndResolvePayload(extractDir, release.version)
+		log("Verified target-aware signed release payload \(release.version).")
+		return payload
 	}
 
 	public static func verifyChecksum(_ data: Data, manifestData: Data, assetName: String) throws {
@@ -97,10 +101,10 @@ public struct GitHubPluginDownloader {
 }
 
 public struct InstallerArchiveVerifier {
-	public let verifyAndResolvePlugin: (URL, String) throws -> URL
+	public let verifyAndResolvePayload: (URL, String) throws -> InstallerPayload
 
-	public init(verifyAndResolvePlugin: @escaping (URL, String) throws -> URL) {
-		self.verifyAndResolvePlugin = verifyAndResolvePlugin
+	public init(verifyAndResolvePayload: @escaping (URL, String) throws -> InstallerPayload) {
+		self.verifyAndResolvePayload = verifyAndResolvePayload
 	}
 
 	public static let live = InstallerArchiveVerifier { extractedRoot, expectedVersion in
@@ -135,15 +139,22 @@ public struct InstallerArchiveVerifier {
 		guard let appBundle = Bundle(url: app) else {
 			throw InstallerError.userFacing("Signed installer archive is not a readable app bundle.")
 		}
-		let plugin = try InstallerPayload.resolve(bundle: appBundle).pluginBundle
-		guard PluginVersionReader.readPluginVersion(pluginBundle: plugin)?.displayString == expectedVersion else {
-			throw InstallerError.userFacing("Installer payload plug-in version does not match the published release.")
+		let releaseMajor = Int(expectedVersion.split(separator: ".").first ?? "")
+		let payload = try InstallerPayload.resolve(
+			bundle: appBundle,
+			allowVerifiedLegacyRelease: releaseMajor.map { $0 < 2 } ?? false
+		)
+		for version in GlyphsMajorVersion.allCases {
+			let target = payload.plugin(for: version)
+			if target.updatePolicy == .release, target.version.displayString != expectedVersion {
+				throw InstallerError.userFacing("\(version.displayName) payload version does not match the published release.")
+			}
+			let signature = try PluginExecutableVerifier.live.verify(target.bundleURL)
+			guard signature.authority == PluginExecutableVerifier.expectedDeveloperIDAuthority else {
+				throw InstallerError.userFacing("\(version.displayName) payload is not signed by the expected Developer ID.")
+			}
 		}
-		let pluginSignature = try PluginExecutableVerifier.live.verify(plugin)
-		guard pluginSignature.authority == PluginExecutableVerifier.expectedDeveloperIDAuthority else {
-			throw InstallerError.userFacing("Installer payload plug-in is not signed by the expected Developer ID.")
-		}
-		return plugin
+		return payload
 	}
 
 	private static func run(_ executablePath: String, _ arguments: [String], subject: URL) throws -> String {

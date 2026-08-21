@@ -294,7 +294,7 @@ class InstallerSmokeTests(unittest.TestCase):
             original_verify = install_cli.verify_trusted_plugin_signature
             versions: list[str] = []
             try:
-                install_cli.resolve_signed_release_plugin = lambda version: (
+                install_cli.resolve_signed_release_plugin = lambda version, glyphs_version="4": (
                     versions.append(version)
                     or (
                         _repo_root()
@@ -313,13 +313,19 @@ class InstallerSmokeTests(unittest.TestCase):
                     os.environ.pop("HOME", None)
                 else:
                     os.environ["HOME"] = old_home
-            plist_path = (
-                _repo_root()
-                / "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist"
-            )
-            with plist_path.open("rb") as handle:
-                expected_version = plistlib.load(handle)["CFBundleShortVersionString"]
-            self.assertEqual(versions, [expected_version])
+            self.assertEqual(versions, [install_cli.v2_distribution_version()])
+
+    def test_signed_copy_mode_requires_a_stable_published_version(self) -> None:
+        install_cli = _load_install_cli()
+
+        self.assertEqual(
+            install_cli._require_stable_release_version("2.0.0"),
+            "2.0.0",
+        )
+        for version in ("2.0.0.dev1", "2.0.0-rc1", "v2.0.0", "2.0"):
+            with self.subTest(version=version):
+                with self.assertRaisesRegex(RuntimeError, "stable published"):
+                    install_cli._require_stable_release_version(version)
 
     def test_installer_zip_validation_rejects_path_traversal(self) -> None:
         install_cli = _load_install_cli()
@@ -420,13 +426,29 @@ class InstallerSmokeTests(unittest.TestCase):
                 / "Info.plist"
             )
             info.parent.mkdir(parents=True)
-            info.write_bytes(b"plist")
+            with info.open("wb") as stream:
+                plistlib.dump(
+                    {
+                        "CFBundleShortVersionString": "1.11.0",
+                        "CFBundleVersion": "1.11.0",
+                    },
+                    stream,
+                )
+            (source / "Payload" / "requirements.txt").write_text("mcp\n", encoding="utf-8")
             with tarfile.open(archive, "w:gz") as handle:
                 handle.add(source / "Payload", arcname="Payload")
+            rejected_extraction = root / "rejected-extraction"
+            rejected_extraction.mkdir()
+
+            with self.assertRaisesRegex(RuntimeError, "schema-v2 manifest"):
+                install_cli._resolve_installer_payload_plugin(app, rejected_extraction)
             extraction = root / "extraction"
             extraction.mkdir()
-
-            plugin = install_cli._resolve_installer_payload_plugin(app, extraction)
+            plugin = install_cli._resolve_installer_payload_plugin(
+                app,
+                extraction,
+                allow_verified_legacy_release=True,
+            )
 
             self.assertEqual(plugin.name, "Glyphs MCP.glyphsPlugin")
             self.assertTrue((plugin / "Contents" / "Info.plist").is_file())
@@ -446,6 +468,104 @@ class InstallerSmokeTests(unittest.TestCase):
                     archive_path,
                     root / "extract",
                 )
+
+    def test_schema_v2_payload_resolves_distinct_target_bundles(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-target-payload.") as tmp:
+            payload = Path(tmp) / "Payload"
+            (payload / "skills").mkdir(parents=True)
+            (payload / "requirements.txt").write_text("mcp\n", encoding="utf-8")
+            targets: dict[str, dict[str, object]] = {}
+            for major, directory, version, track, policy in (
+                ("3", "Glyphs3", "1.11.0", "1.x", "pinned"),
+                ("4", "Glyphs4", "2.0.0", "2.x", "release"),
+            ):
+                relative = f"Plugins/{directory}/Glyphs MCP.glyphsPlugin"
+                plugin = payload / relative
+                info = plugin / "Contents" / "Info.plist"
+                info.parent.mkdir(parents=True)
+                with info.open("wb") as stream:
+                    plistlib.dump(
+                        {
+                            "CFBundleShortVersionString": version,
+                            "CFBundleVersion": version,
+                        },
+                        stream,
+                    )
+                targets[major] = {
+                    "pluginPath": relative,
+                    "pluginVersion": version,
+                    "runtimeTrack": track,
+                    "updatePolicy": policy,
+                    "baseline": {
+                        "tag": "v1.11.0" if major == "3" else "working-tree",
+                        "commit": "13ca805" if major == "3" else "fixture",
+                    },
+                }
+            (payload / "payload.json").write_text(
+                json.dumps(
+                    {
+                        "schemaVersion": 2,
+                        "requirementsPath": "requirements.txt",
+                        "skillsPath": "skills",
+                        "targets": targets,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            app = Path(tmp) / "GlyphsMCPInstaller.app"
+            resources = app / "Contents" / "Resources"
+            resources.mkdir(parents=True)
+            shutil.copytree(payload, resources / "Payload")
+
+            resolved = install_cli._resolve_installer_payload(app, Path(tmp) / "extract")
+
+            self.assertEqual(resolved.plugin_for("3").plugin_version, "1.11.0")
+            self.assertEqual(resolved.plugin_for("4").plugin_version, "2.0.0")
+            self.assertNotEqual(resolved.plugin_for("3").plugin, resolved.plugin_for("4").plugin)
+
+    def test_glyphs3_update_pin_restores_only_owned_preferences(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-g3-pin.") as tmp:
+            receipt = Path(tmp) / "Glyphs3UpdatePin.json"
+            values: dict[str, bool] = {
+                install_cli.GLYPHS3_PIN_KEYS[0]: True,
+            }
+            with (
+                mock.patch.object(install_cli, "glyphs3_pin_receipt_path", return_value=receipt),
+                mock.patch.object(install_cli, "_read_defaults_bool", side_effect=lambda _domain, key: values.get(key)),
+                mock.patch.object(install_cli, "_write_defaults_bool", side_effect=lambda _domain, key, value: values.__setitem__(key, value)),
+                mock.patch.object(install_cli, "_delete_default", side_effect=lambda _domain, key: values.pop(key, None)),
+            ):
+                install_cli.pin_glyphs3_updates()
+                self.assertTrue(receipt.is_file())
+                self.assertEqual(receipt.stat().st_mode & 0o777, 0o600)
+                self.assertTrue(all(values[key] is False for key in install_cli.GLYPHS3_PIN_KEYS))
+
+                values[install_cli.GLYPHS3_PIN_KEYS[0]] = True
+                install_cli.restore_glyphs3_update_pin()
+
+            self.assertTrue(values[install_cli.GLYPHS3_PIN_KEYS[0]])
+            self.assertNotIn(install_cli.GLYPHS3_PIN_KEYS[1], values)
+            self.assertFalse(receipt.exists())
+
+    def test_glyphs3_update_pin_preserves_an_unrecognized_receipt(self) -> None:
+        install_cli = _load_install_cli()
+        with tempfile.TemporaryDirectory(prefix="glyphs-mcp-g3-pin-unsafe.") as tmp:
+            receipt = Path(tmp) / "Glyphs3UpdatePin.json"
+            original = b'{"schemaVersion":999}\n'
+            receipt.write_bytes(original)
+            values = {key: True for key in install_cli.GLYPHS3_PIN_KEYS}
+            with (
+                mock.patch.object(install_cli, "glyphs3_pin_receipt_path", return_value=receipt),
+                mock.patch.object(install_cli, "_read_defaults_bool", side_effect=lambda _domain, key: values.get(key)),
+                mock.patch.object(install_cli, "_write_defaults_bool", side_effect=lambda _domain, key, value: values.__setitem__(key, value)),
+            ):
+                with self.assertRaisesRegex(RuntimeError, "unrecognized"):
+                    install_cli.pin_glyphs3_updates()
+
+            self.assertEqual(receipt.read_bytes(), original)
+            self.assertTrue(all(values[key] is True for key in install_cli.GLYPHS3_PIN_KEYS))
 
     def test_install_plugin_symlink_uses_temp_home(self) -> None:
         if not hasattr(os, "symlink"):
@@ -478,7 +598,7 @@ class InstallerSmokeTests(unittest.TestCase):
             self.assertTrue(dest.exists())
             self.assertTrue(dest.is_symlink())
 
-            expected = _repo_root() / "src" / "glyphs-mcp" / "Glyphs MCP.glyphsPlugin"
+            expected = _repo_root() / "build/installer-payload/Payload/Plugins/Glyphs4/Glyphs MCP.glyphsPlugin"
             self.assertEqual(dest.resolve(), expected.resolve())
 
     def test_install_plugin_symlink_can_target_glyphs_4(self) -> None:
@@ -512,7 +632,7 @@ class InstallerSmokeTests(unittest.TestCase):
             self.assertTrue(dest.exists())
             self.assertTrue(dest.is_symlink())
 
-            expected = _repo_root() / "src" / "glyphs-mcp" / "Glyphs MCP.glyphsPlugin"
+            expected = _repo_root() / "build/installer-payload/Payload/Plugins/Glyphs4/Glyphs MCP.glyphsPlugin"
             self.assertEqual(dest.resolve(), expected.resolve())
 
     def test_main_without_flags_uses_interactive_flow(self) -> None:

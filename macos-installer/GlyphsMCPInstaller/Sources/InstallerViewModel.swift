@@ -205,14 +205,15 @@ final class InstallerViewModel: ObservableObject {
 		let check = Check.scanClients()
 		let applications = GlyphsApplicationDetector.detect()
 		let applicationsByVersion = Dictionary(uniqueKeysWithValues: applications.map { ($0.majorVersion, $0) })
-		let payloadPluginVersion = (try? InstallerPayload.resolve()).flatMap { PluginVersionReader.readPluginVersion(pluginBundle: $0.pluginBundle) }
+		let payload = try? InstallerPayload.resolve()
+		let payloadPluginVersion = payload?.plugin(for: .installerDefault).version
 		let runningVersions = GlyphsRuntime.runningVersions()
 		let targets = GlyphsMajorVersion.allCases.map { version in
 			GlyphsTargetStatusBuilder.build(
 				version: version,
 				application: applicationsByVersion[version],
 				preflight: Preflight.scanGlyphs(glyphsVersion: version),
-				payloadPluginVersion: payloadPluginVersion,
+				payloadPluginVersion: payload?.plugin(for: version).version,
 				isRunning: runningVersions.contains(version)
 			)
 		}
@@ -265,8 +266,12 @@ final class InstallerViewModel: ObservableObject {
 
 	func verifiedUpdatesBinding(for version: GlyphsMajorVersion) -> Binding<Bool> {
 		Binding(
-			get: { self.verifiedUpdatesEnabledVersions.contains(version) },
+			get: { version == .v4 && self.verifiedUpdatesEnabledVersions.contains(version) },
 			set: { enabled in
+				guard version == .v4 else {
+					self.verifiedUpdatesEnabledVersions.remove(.v3)
+					return
+				}
 				if enabled {
 					self.verifiedUpdatesEnabledVersions.insert(version)
 				} else {
@@ -750,7 +755,7 @@ final class InstallerViewModel: ObservableObject {
 				do {
 					_ = try await RuntimeProbeExecutor(runner: runner, log: log).check(
 						python: target.pythonSelection.pythonExecutable,
-						probe: payload.runtimeProbe,
+						probe: payload.plugin(for: target.version).runtimeProbe,
 						sitePackages: sitePackages,
 						mode: .preinstall
 					)
@@ -767,7 +772,7 @@ Installation stopped before changing dependencies, plug-ins, or client settings.
 		}
 
 		var completedDependencyKeys: Set<String> = []
-		var downloadedPluginBundle: URL?
+		var downloadedPayload: InstallerPayload?
 		for target in options.targets.sorted(by: { $0.version < $1.version }) {
 			if Task.isCancelled { throw CancellationError() }
 			let dependencyStepID = InstallStep.ID.dependencies(target.version)
@@ -779,7 +784,7 @@ Installation stopped before changing dependencies, plug-ins, or client settings.
 					try await DepsInstaller(runner: runner, log: log).installAndVerify(
 						python: target.pythonSelection,
 						requirementsTxt: payload.requirementsTxt,
-						runtimeProbe: payload.runtimeProbe,
+						runtimeProbe: payload.plugin(for: target.version).runtimeProbe,
 						glyphsVersion: target.version
 					)
 				}
@@ -791,23 +796,35 @@ Installation stopped before changing dependencies, plug-ins, or client settings.
 				switch target.pluginInstallStrategy {
 				case .bundledPayload:
 					log("Installing the bundled plug-in for \(target.version.displayName).")
-					_ = try installer.installPluginBundle(from: payload.pluginBundle, toPluginsDir: target.pluginsDirectory, allowReplace: true)
+					_ = try installer.installPluginBundle(
+						from: payload.plugin(for: target.version).bundleURL,
+						toPluginsDir: target.pluginsDirectory,
+						allowReplace: true
+					)
 				case .keepDevSymlink:
 					log("Keeping the existing \(target.version.displayName) development symlink in place.")
 				case .latestFromGitHub:
-					if downloadedPluginBundle == nil {
+					if downloadedPayload == nil {
 						log("Downloading the latest GitHub plug-in once for the selected targets.")
-						downloadedPluginBundle = try await GitHubPluginDownloader(runner: runner, log: log).downloadAndExtractPluginBundle()
+						downloadedPayload = try await GitHubPluginDownloader(runner: runner, log: log).downloadAndExtractPayload()
 					}
-					guard let downloadedPluginBundle else {
+					guard let downloadedPayload else {
 						throw InstallerError.userFacing("The latest GitHub plug-in could not be resolved.")
 					}
-					_ = try installer.installPluginBundle(from: downloadedPluginBundle, toPluginsDir: target.pluginsDirectory, allowReplace: true)
+					_ = try installer.installPluginBundle(
+						from: downloadedPayload.plugin(for: target.version).bundleURL,
+						toPluginsDir: target.pluginsDirectory,
+						allowReplace: true
+					)
 				}
 			}
 		}
 
 		try await step("Set up future updates", id: .updater) {
+			if options.targets.contains(where: { $0.version == .v3 }) {
+				try Glyphs3UpdatePinManager().pin()
+				log("Pinned Glyphs 3 to the verified 1.11 update track.")
+			}
 			let selections = Dictionary(
 				uniqueKeysWithValues: options.targets.map {
 					($0.version, $0.enableVerifiedInAppUpdates)

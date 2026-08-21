@@ -395,9 +395,14 @@ private struct GlyphsTargetSelectionRow: View {
 			}
 
 			if isSelected {
-				Toggle("Make future updates easier", isOn: $enableVerifiedUpdates)
-					.disabled(isBusy)
-				Text("When a new version is available, prepare it in Glyphs and install it when you’re ready.")
+				Toggle(
+					target.version == .v3 ? "Pinned to Glyphs MCP 1.11" : "Make future updates easier",
+					isOn: $enableVerifiedUpdates
+				)
+					.disabled(isBusy || target.version == .v3)
+				Text(target.version == .v3
+					? "Glyphs 3 stays on the qualified 1.11 runtime and will not prepare v2 updates."
+					: "When a new version is available, prepare it in Glyphs and install it when you’re ready.")
 					.font(.caption)
 					.foregroundStyle(.secondary)
 			}

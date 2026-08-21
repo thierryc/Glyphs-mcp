@@ -12,12 +12,12 @@ import uuid
 from collections import namedtuple
 
 
-PROTOCOL_VERSION = 1
+PROTOCOL_VERSION = 2
 EXPECTED_TEAM_ID = "N9U29A4T8J"
 EXPECTED_AUTHORITY = "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)"
 OPT_IN_DEFAULTS_KEY = "com.ap.cx.glyphs-mcp.inAppUpdatesEnabled"
 HELPER_NAME = "GlyphsMCPUpdater"
-MANAGED_MARKER = "cx.ap.glyphs-mcp-updater-v1"
+MANAGED_MARKER = "cx.ap.glyphs-mcp-updater-v2"
 STRICT_VERSION_RE = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
 UUID_RE = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
@@ -59,17 +59,26 @@ def authorization_path(version, glyphs_major, home=None):
     )
 
 
-def stage_receipt_path(version, home=None):
+def stage_receipt_path(version, glyphs_major, home=None):
     version = validate_version(version)
-    return os.path.join(updater_root(home), "Staged", "v" + version, "receipt.json")
-
-
-def staged_plugin_path(version, home=None):
-    version = validate_version(version)
+    glyphs_major = validate_glyphs_major(glyphs_major)
     return os.path.join(
         updater_root(home),
         "Staged",
         "v" + version,
+        "glyphs-{}".format(glyphs_major),
+        "receipt.json",
+    )
+
+
+def staged_plugin_path(version, glyphs_major, home=None):
+    version = validate_version(version)
+    glyphs_major = validate_glyphs_major(glyphs_major)
+    return os.path.join(
+        updater_root(home),
+        "Staged",
+        "v" + version,
+        "glyphs-{}".format(glyphs_major),
         "Glyphs MCP.glyphsPlugin",
     )
 
@@ -320,8 +329,10 @@ def verified_stage_is_ready(
     authorization = _read_bounded_json(
         authorization_path(version, glyphs_major, home=home)
     )
-    receipt = _read_bounded_json(stage_receipt_path(version, home=home))
-    plugin = staged_plugin_path(version, home=home)
+    receipt = _read_bounded_json(
+        stage_receipt_path(version, glyphs_major, home=home)
+    )
+    plugin = staged_plugin_path(version, glyphs_major, home=home)
     if authorization is None or receipt is None or os.path.islink(plugin):
         return False
     request_id = str(authorization.get("requestID") or "").lower()
@@ -335,7 +346,10 @@ def verified_stage_is_ready(
         and authorization.get("version") == version
         and int(authorization.get("glyphsMajor", -1)) == glyphs_major
         and int(receipt.get("protocolVersion", -1)) == PROTOCOL_VERSION
-        and receipt.get("version") == version
+        and receipt.get("releaseVersion") == version
+        and receipt.get("pluginVersion") == version
+        and int(receipt.get("payloadSchemaVersion", -1)) == 2
+        and int(receipt.get("glyphsMajor", -1)) == glyphs_major
         and receipt.get("tag") == "v" + version
         and receipt.get("assetName") == "GlyphsMCPInstaller.zip"
         and re.match(r"^[0-9a-f]{64}$", asset_sha256)

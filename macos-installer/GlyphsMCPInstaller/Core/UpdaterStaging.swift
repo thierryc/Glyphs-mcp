@@ -1,14 +1,186 @@
 import CryptoKit
 import Foundation
 
+public enum InstallerTargetUpdatePolicy: String, Codable, Equatable, Sendable {
+	case pinned
+	case release
+}
+
+public struct ResolvedInstallerTargetPayload: Equatable, Sendable {
+	public let glyphsMajor: Int
+	public let bundleURL: URL
+	public let pluginVersion: String
+	public let runtimeTrack: String
+	public let updatePolicy: InstallerTargetUpdatePolicy
+	public let baselineTag: String?
+	public let baselineCommit: String?
+}
+
+public struct ResolvedInstallerPayloadManifest: Equatable, Sendable {
+	public let schemaVersion: Int
+	public let requirementsURL: URL
+	public let skillsURL: URL?
+	public let targets: [Int: ResolvedInstallerTargetPayload]
+}
+
+/// The single schema-v2 parser used by the installer and the standalone updater.
+public enum InstallerPayloadManifestResolver {
+	private struct Manifest: Decodable {
+		struct Target: Decodable {
+			struct Baseline: Decodable {
+				let tag: String
+				let commit: String
+			}
+			let pluginPath: String
+			let pluginVersion: String
+			let runtimeTrack: String
+			let updatePolicy: InstallerTargetUpdatePolicy
+			let baseline: Baseline?
+		}
+		let schemaVersion: Int
+		let requirementsPath: String
+		let skillsPath: String?
+		let targets: [String: Target]
+	}
+
+	public static func resolve(_ payloadDirectory: URL) throws -> ResolvedInstallerPayloadManifest {
+		let manifestURL = payloadDirectory.appendingPathComponent("payload.json")
+		let data = try Data(contentsOf: manifestURL)
+		guard data.count <= 64 * 1024,
+			  let manifest = try? JSONDecoder().decode(Manifest.self, from: data),
+			  manifest.schemaVersion == 2,
+			  Set(manifest.targets.keys) == Set(["3", "4"]) else {
+			throw UpdateStagingError("payload_manifest", "Installer payload manifest is malformed or unsupported.")
+		}
+		guard manifest.requirementsPath == "requirements.txt", manifest.skillsPath == "skills" else {
+			throw UpdateStagingError("payload_manifest", "Installer payload shared-resource paths are invalid.")
+		}
+		let requirements = try resolveRelativePath(manifest.requirementsPath, under: payloadDirectory)
+		guard FileManager.default.fileExists(atPath: requirements.path) else {
+			throw UpdateStagingError("payload_manifest", "Installer payload requirements are missing.")
+		}
+		let skills = try manifest.skillsPath.map { try resolveRelativePath($0, under: payloadDirectory) }
+		guard let skills, FileManager.default.fileExists(atPath: skills.path) else {
+			throw UpdateStagingError("payload_manifest", "Installer payload skills are missing.")
+		}
+		var targets: [Int: ResolvedInstallerTargetPayload] = [:]
+		for glyphsMajor in [3, 4] {
+			guard let target = manifest.targets[String(glyphsMajor)] else {
+				throw UpdateStagingError("payload_manifest", "Installer payload target is missing.")
+			}
+			let expectedTrack = glyphsMajor == 3 ? "1.x" : "2.x"
+			let expectedPolicy: InstallerTargetUpdatePolicy = glyphsMajor == 3 ? .pinned : .release
+			let expectedPluginPath = "Plugins/Glyphs\(glyphsMajor)/Glyphs MCP.glyphsPlugin"
+			guard target.pluginPath == expectedPluginPath,
+				  target.runtimeTrack == expectedTrack,
+				  target.updatePolicy == expectedPolicy,
+				  let baseline = target.baseline,
+				  !baseline.tag.isEmpty,
+				  !baseline.commit.isEmpty else {
+				throw UpdateStagingError("payload_manifest", "Installer payload target policy is invalid.")
+			}
+			if glyphsMajor == 3 {
+				guard target.pluginVersion == "1.11.0",
+					  baseline.tag == "v1.11.0",
+					  baseline.commit == "13ca805" else {
+					throw UpdateStagingError("payload_manifest", "Glyphs 3 payload provenance is not the pinned v1.11 baseline.")
+				}
+			}
+			let bundleURL = try resolveRelativePath(target.pluginPath, under: payloadDirectory)
+			let infoURL = bundleURL.appendingPathComponent("Contents/Info.plist")
+			let runtimeProbe = bundleURL.appendingPathComponent("Contents/Resources/runtime_probe.py")
+			guard
+				let plistData = try? Data(contentsOf: infoURL),
+				let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
+				(plist["CFBundleShortVersionString"] as? String) == target.pluginVersion,
+				(plist["CFBundleVersion"] as? String) == target.pluginVersion,
+				FileManager.default.fileExists(atPath: runtimeProbe.path)
+			else {
+				throw UpdateStagingError("payload_manifest", "Installer payload target version or runtime is invalid.")
+			}
+			targets[glyphsMajor] = ResolvedInstallerTargetPayload(
+				glyphsMajor: glyphsMajor,
+				bundleURL: bundleURL,
+				pluginVersion: target.pluginVersion,
+				runtimeTrack: target.runtimeTrack,
+				updatePolicy: target.updatePolicy,
+				baselineTag: target.baseline?.tag,
+				baselineCommit: target.baseline?.commit
+			)
+		}
+		return ResolvedInstallerPayloadManifest(
+			schemaVersion: manifest.schemaVersion,
+			requirementsURL: requirements,
+			skillsURL: skills,
+			targets: targets
+		)
+	}
+
+	private static func resolveRelativePath(_ path: String, under root: URL) throws -> URL {
+		guard !path.isEmpty, !path.hasPrefix("/"), !path.contains("\\") else {
+			throw UpdateStagingError("payload_manifest", "Installer payload contains an unsafe path.")
+		}
+		let components = path.split(separator: "/", omittingEmptySubsequences: false)
+		guard !components.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }) else {
+			throw UpdateStagingError("payload_manifest", "Installer payload contains an unsafe path.")
+		}
+		let candidate = root.appendingPathComponent(path).standardizedFileURL
+		let resolvedRoot = root.resolvingSymlinksInPath().standardizedFileURL
+		let resolvedCandidate = candidate.resolvingSymlinksInPath().standardizedFileURL
+		guard resolvedCandidate.path.hasPrefix(resolvedRoot.path + "/") else {
+			throw UpdateStagingError("payload_manifest", "Installer payload path escapes its root.")
+		}
+		return candidate
+	}
+}
+
+/// Validates the opaque payload archive before extraction. Archive trust and
+/// manifest trust remain separate: this proves containment and required roots;
+/// `InstallerPayloadManifestResolver` proves the extracted target identities.
+public enum InstallerPayloadArchiveValidator {
+	public static func validateListing(_ listing: String) throws {
+		let rawEntries = listing.split(whereSeparator: \.isNewline).map(String.init)
+		guard !rawEntries.isEmpty else {
+			throw UpdateStagingError("archive", "The signed installer payload archive is empty.")
+		}
+		var entries = Set<String>()
+		for rawEntry in rawEntries {
+			let entry = rawEntry.hasSuffix("/") ? String(rawEntry.dropLast()) : rawEntry
+			let components = entry.split(separator: "/", omittingEmptySubsequences: false)
+			guard
+				!entry.isEmpty,
+				!entry.hasPrefix("/"),
+				!entry.contains("\\"),
+				!components.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }),
+				entry == "Payload" || entry.hasPrefix("Payload/")
+			else {
+				throw UpdateStagingError("archive", "The signed installer payload contains an unsafe path.")
+			}
+			guard entries.insert(entry).inserted else {
+				throw UpdateStagingError("archive", "The signed installer payload contains a duplicate path.")
+			}
+		}
+		let required = [
+			"Payload/payload.json",
+			"Payload/requirements.txt",
+			"Payload/Plugins/Glyphs3/Glyphs MCP.glyphsPlugin/Contents/Info.plist",
+			"Payload/Plugins/Glyphs4/Glyphs MCP.glyphsPlugin/Contents/Info.plist",
+		]
+		guard required.allSatisfy(entries.contains) else {
+			throw UpdateStagingError("archive", "The signed installer payload archive is missing schema-v2 target files.")
+		}
+	}
+}
+
 public enum UpdateHelperProtocol {
-	public static let currentVersion = 1
-	public static let helperVersion = "1.0.0"
+	public static let currentVersion = 2
+	public static let helperVersion = "2.0.0"
 	public static let expectedTeamIdentifier = "N9U29A4T8J"
 	public static let expectedDeveloperIDAuthority = "Developer ID Application: Thierry Charbonnel (N9U29A4T8J)"
 	public static let executableName = "GlyphsMCPUpdater"
 	public static let optInDefaultsKey = "com.ap.cx.glyphs-mcp.inAppUpdatesEnabled"
-	public static let managedMarker = "cx.ap.glyphs-mcp-updater-v1"
+	public static let managedMarker = "cx.ap.glyphs-mcp-updater-v2"
+	public static let previousManagedMarker = "cx.ap.glyphs-mcp-updater-v1"
 }
 
 public struct UpdateHelperProbe: Codable, Equatable {
@@ -75,7 +247,10 @@ public struct UpdatePreparationStatus: Codable, Equatable {
 
 public struct UpdateStageReceipt: Codable, Equatable {
 	public let protocolVersion: Int
-	public let version: String
+	public let releaseVersion: String
+	public let pluginVersion: String
+	public let payloadSchemaVersion: Int
+	public let glyphsMajor: Int
 	public let tag: String
 	public let assetName: String
 	public let assetSHA256: String
@@ -99,19 +274,22 @@ public struct UpdateVerifiedPlugin: Equatable {
 	public let cdHash: String
 	public let teamIdentifier: String
 	public let authority: String
+	public let payloadSchemaVersion: Int
 
 	public init(
 		bundleURL: URL,
 		version: String,
 		cdHash: String,
 		teamIdentifier: String,
-		authority: String
+		authority: String,
+		payloadSchemaVersion: Int = 1
 	) {
 		self.bundleURL = bundleURL
 		self.version = version
 		self.cdHash = cdHash
 		self.teamIdentifier = teamIdentifier
 		self.authority = authority
+		self.payloadSchemaVersion = payloadSchemaVersion
 	}
 }
 
@@ -220,12 +398,17 @@ public struct UpdateStagingPaths {
 		staged.appendingPathComponent("v\(version)", isDirectory: true)
 	}
 
-	public func stagedPlugin(_ version: String) -> URL {
-		stagedVersion(version).appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+	public func stagedTarget(_ version: String, glyphsMajor: Int) -> URL {
+		stagedVersion(version).appendingPathComponent("glyphs-\(glyphsMajor)", isDirectory: true)
 	}
 
-	public func stageReceipt(_ version: String) -> URL {
-		stagedVersion(version).appendingPathComponent("receipt.json")
+	public func stagedPlugin(_ version: String, glyphsMajor: Int) -> URL {
+		stagedTarget(version, glyphsMajor: glyphsMajor)
+			.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+	}
+
+	public func stageReceipt(_ version: String, glyphsMajor: Int) -> URL {
+		stagedTarget(version, glyphsMajor: glyphsMajor).appendingPathComponent("receipt.json")
 	}
 
 	public func authorization(version: String, glyphsMajor: Int) -> URL {
@@ -463,11 +646,11 @@ public struct UpdateCommandRunner {
 }
 
 public struct UpdateTrustVerifier {
-	public let verifyArchive: @Sendable (URL, String) throws -> UpdateVerifiedPlugin
+	public let verifyArchive: @Sendable (URL, String, Int) throws -> UpdateVerifiedPlugin
 	public let verifyPlugin: @Sendable (URL, String) throws -> UpdateVerifiedPlugin
 
 	public init(
-		verifyArchive: @escaping @Sendable (URL, String) throws -> UpdateVerifiedPlugin,
+		verifyArchive: @escaping @Sendable (URL, String, Int) throws -> UpdateVerifiedPlugin,
 		verifyPlugin: @escaping @Sendable (URL, String) throws -> UpdateVerifiedPlugin
 	) {
 		self.verifyArchive = verifyArchive
@@ -540,7 +723,7 @@ public struct UpdateTrustVerifier {
 			)
 		}
 
-		let verifyArchive: @Sendable (URL, String) throws -> UpdateVerifiedPlugin = { extractedRoot, expectedVersion in
+		let verifyArchive: @Sendable (URL, String, Int) throws -> UpdateVerifiedPlugin = { extractedRoot, expectedVersion, glyphsMajor in
 			let app = extractedRoot.appendingPathComponent("GlyphsMCPInstaller.app", isDirectory: true)
 			guard FileManager.default.fileExists(atPath: app.path) else {
 				throw UpdateStagingError("archive", "The release archive does not contain GlyphsMCPInstaller.app.")
@@ -576,45 +759,44 @@ public struct UpdateTrustVerifier {
 
 			let resources = app.appendingPathComponent("Contents/Resources", isDirectory: true)
 			let directPayload = resources.appendingPathComponent("Payload", isDirectory: true)
-			let plugin: URL
+			let payloadDirectory: URL
 			if FileManager.default.fileExists(atPath: directPayload.path) {
-				plugin = directPayload.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+				payloadDirectory = directPayload
 			} else {
 				let archive = resources.appendingPathComponent("Payload.gmcparchive")
 				guard FileManager.default.fileExists(atPath: archive.path) else {
 					throw UpdateStagingError("archive", "The signed installer payload is missing.")
 				}
 				let listing = try command("/usr/bin/tar", ["-tzf", archive.path])
-				let entries = listing.split(whereSeparator: \.isNewline).map(String.init)
-				guard !entries.isEmpty,
-					  entries.contains("Payload/Glyphs MCP.glyphsPlugin/Contents/Info.plist") else {
-					throw UpdateStagingError("archive", "The signed installer payload archive is malformed.")
-				}
-				for rawEntry in entries {
-					let entry = rawEntry.hasSuffix("/") ? String(rawEntry.dropLast()) : rawEntry
-					let components = entry.split(separator: "/", omittingEmptySubsequences: false)
-					guard
-						!entry.isEmpty,
-						!entry.hasPrefix("/"),
-						!entry.contains("\\"),
-						!components.contains(where: { $0.isEmpty || $0 == "." || $0 == ".." }),
-						entry == "Payload" || entry.hasPrefix("Payload/")
-					else {
-						throw UpdateStagingError("archive", "The signed installer payload contains an unsafe path.")
-					}
-				}
+				try InstallerPayloadArchiveValidator.validateListing(listing)
 				let payloadRoot = extractedRoot.appendingPathComponent(".payload-\(UUID().uuidString)", isDirectory: true)
 				try FileManager.default.createDirectory(at: payloadRoot, withIntermediateDirectories: true, attributes: nil)
 				_ = try command("/usr/bin/tar", ["-xzf", archive.path, "-C", payloadRoot.path])
 				try UpdateExtractedTreeValidator.validate(payloadRoot)
-				plugin = payloadRoot
-					.appendingPathComponent("Payload", isDirectory: true)
-					.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
+				payloadDirectory = payloadRoot.appendingPathComponent("Payload", isDirectory: true)
 			}
-			guard FileManager.default.fileExists(atPath: plugin.path) else {
-				throw UpdateStagingError("archive", "The signed installer payload does not contain the plug-in.")
+			guard glyphsMajor == 3 || glyphsMajor == 4 else {
+				throw UpdateStagingError("invalid_glyphs_version", "Glyphs major version must be 3 or 4.")
 			}
-			return try verifyPlugin(plugin, expectedVersion)
+			let payload = try InstallerPayloadManifestResolver.resolve(payloadDirectory)
+			guard let target = payload.targets[glyphsMajor] else {
+				throw UpdateStagingError("archive", "The installer payload does not contain the requested target.")
+			}
+			guard target.updatePolicy == .release else {
+				throw UpdateStagingError("pinned_target", "Glyphs 3 is pinned to plug-in 1.11.0 and does not accept v2 release updates.")
+			}
+			guard target.pluginVersion == expectedVersion else {
+				throw UpdateStagingError("version", "The target plug-in version does not match the authorized release.")
+			}
+			let verified = try verifyPlugin(target.bundleURL, target.pluginVersion)
+			return UpdateVerifiedPlugin(
+				bundleURL: verified.bundleURL,
+				version: verified.version,
+				cdHash: verified.cdHash,
+				teamIdentifier: verified.teamIdentifier,
+				authority: verified.authority,
+				payloadSchemaVersion: payload.schemaVersion
+			)
 		}
 
 		return UpdateTrustVerifier(
@@ -947,6 +1129,9 @@ public struct UpdateStagingService {
 	}
 
 	public func prepare(_ request: UpdatePrepareRequest) async throws -> UpdateStageReceipt {
+		guard request.glyphsMajor == 4 else {
+			throw UpdateStagingError("pinned_target", "Glyphs 3 is pinned to plug-in 1.11.0 and does not accept v2 release updates.")
+		}
 		try ensureManagedDirectories()
 		try writeStatus(request, phase: .resolving)
 		do {
@@ -1007,7 +1192,7 @@ public struct UpdateStagingService {
 				["-x", "-k", zip.path, extracted.path]
 			)
 			try UpdateExtractedTreeValidator.validate(extracted)
-			let verified = try verifier.verifyArchive(extracted, request.version)
+			let verified = try verifier.verifyArchive(extracted, request.version, request.glyphsMajor)
 
 			try Task.checkCancellation()
 			try writeStatus(request, phase: .preparing)
@@ -1071,8 +1256,8 @@ public struct UpdateStagingService {
 			  verified.teamIdentifier == UpdateHelperProtocol.expectedTeamIdentifier else {
 			throw UpdateStagingError("signature", "The verified plug-in does not match the authorized release.")
 		}
-		let destination = paths.stagedVersion(request.version)
-		let temporary = paths.staged.appendingPathComponent(".v\(request.version).staging-\(request.requestID.uuidString.lowercased())", isDirectory: true)
+		let destination = paths.stagedTarget(request.version, glyphsMajor: request.glyphsMajor)
+		let temporary = paths.staged.appendingPathComponent(".v\(request.version)-glyphs-\(request.glyphsMajor).staging-\(request.requestID.uuidString.lowercased())", isDirectory: true)
 		try removeManagedPathIfPresent(temporary)
 		try createPrivateDirectory(temporary)
 		do {
@@ -1085,7 +1270,10 @@ public struct UpdateStagingService {
 			}
 			let receipt = UpdateStageReceipt(
 				protocolVersion: UpdateHelperProtocol.currentVersion,
-				version: request.version,
+				releaseVersion: request.version,
+				pluginVersion: verified.version,
+				payloadSchemaVersion: verified.payloadSchemaVersion,
+				glyphsMajor: request.glyphsMajor,
 				tag: tag,
 				assetName: assetName,
 				assetSHA256: assetSHA256,
@@ -1095,6 +1283,7 @@ public struct UpdateStagingService {
 				preparedAt: now()
 			)
 			try writeJSON(receipt, to: temporary.appendingPathComponent("receipt.json"))
+			try createPrivateDirectory(destination.deletingLastPathComponent())
 			try removeManagedPathIfPresent(destination)
 			try FileManager.default.moveItem(at: temporary, to: destination)
 			return receipt
@@ -1105,15 +1294,18 @@ public struct UpdateStagingService {
 	}
 
 	private func reusableReceipt(for request: UpdatePrepareRequest) throws -> UpdateStageReceipt? {
-		let receiptURL = paths.stageReceipt(request.version)
-		let pluginURL = paths.stagedPlugin(request.version)
+		let receiptURL = paths.stageReceipt(request.version, glyphsMajor: request.glyphsMajor)
+		let pluginURL = paths.stagedPlugin(request.version, glyphsMajor: request.glyphsMajor)
 		guard
 			FileManager.default.fileExists(atPath: receiptURL.path),
 			FileManager.default.fileExists(atPath: pluginURL.path),
 			let data = try? Data(contentsOf: receiptURL),
 			let receipt = try? Self.decoder.decode(UpdateStageReceipt.self, from: data),
 			receipt.protocolVersion == UpdateHelperProtocol.currentVersion,
-			receipt.version == request.version,
+			receipt.releaseVersion == request.version,
+			receipt.pluginVersion == request.version,
+			receipt.payloadSchemaVersion == 2,
+			receipt.glyphsMajor == request.glyphsMajor,
 			receipt.tag == "v\(request.version)",
 			receipt.teamIdentifier == UpdateHelperProtocol.expectedTeamIdentifier
 		else { return nil }

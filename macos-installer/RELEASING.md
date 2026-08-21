@@ -33,15 +33,17 @@ gh auth login -h github.com
 
 ## Versioning (what to bump)
 
-This project keeps the installer app and the plug‑in version aligned (`X.Y.Z`).
+The installer release version and target plug-in versions are separate fields.
+For a production v2 release, the installer app and Glyphs 4 plug-in are aligned
+at `X.Y.Z`; the Glyphs 3 payload remains pinned to `1.11.0` from signed baseline
+`v1.11.0`/`13ca805`.
 
-1) **Plug‑in version** (both copies):
-- `src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist`
-- `plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Info.plist`
+1) **Glyphs 4 v2 version**:
+- `src/glyphs-mcp-v2/glyphs_mcp_v2/versions.py`
+- `src/glyphs-mcp-v2/pyproject.toml`
 
-Update both:
-- `CFBundleShortVersionString` → `X.Y.Z`
-- `CFBundleVersion` → `X.Y.Z`
+The deterministic payload builder writes that version into the generated
+Glyphs 4 plist. Do not bump or patch the pinned Glyphs 3 runtime.
 
 2) **Installer app version** (Xcode project):
 - `macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj`
@@ -115,7 +117,7 @@ Outputs:
 - `dist/installer-app/GlyphsMCPInstaller.zip` (contains the stapled app)
 - `dist/SHA256SUMS` (exact release artifact set)
 
-The verifier checks source/Xcode/built versions, Developer ID authority and Team ID, the extracted `Payload.gmcparchive` signatures, hardened runtime, secure timestamps, stapled tickets, Gatekeeper, ZIP contents, byte-identical latest/versioned DMGs, and the exact checksum set. It also copies the embedded plug-in into a temporary Glyphs plug-ins directory and requires the installed copy to preserve the executable bytes and Developer ID signature.
+The verifier checks source/Xcode/built versions, Developer ID authority and Team ID, the extracted `Payload.gmcparchive` signatures, hardened runtime, secure timestamps, stapled tickets, Gatekeeper, ZIP contents, byte-identical latest/versioned DMGs, and the exact checksum set. It also copies the two embedded plug-ins into separate temporary Glyphs 3 and Glyphs 4 directories and requires both installed copies to preserve their executable bytes and Developer ID signatures.
 
 There is deliberately no standalone `Glyphs MCP.glyphsPlugin.zip` release
 asset. The mutable tracked source bundle does not carry the release's Developer
@@ -133,12 +135,12 @@ verifier independently extracts and validates the archived payload before and
 after notarization.
 
 Because `Payload.gmcparchive` is opaque to the installer app's notarization
-submission, `notarize_installer_app.sh` also extracts the exact signed main
-plug-in and submits a temporary ZIP of that unchanged code hash to Apple. It
-then staples and validates Apple's ticket on the custom `.glyphsPlugin`,
+submission, `notarize_installer_app.sh` also extracts both exact signed target
+plug-ins and submits separate temporary ZIPs of those unchanged code hashes to
+Apple. It staples and validates Apple's ticket on each custom `.glyphsPlugin`,
 rebuilds the opaque payload archive, and re-signs the outer app before
-submitting that exact app to Apple. The temporary plug-in ZIP is never a
-release asset.
+submitting that exact app to Apple. The temporary plug-in ZIPs are never
+release assets.
 
 The Release export step removes stale/ad-hoc signatures, then signs and
 timestamps every Mach-O executable under:
@@ -170,14 +172,15 @@ applications and rejects custom bundles as “does not seem to be an app.”
 
 ### Verified update preparation contract
 
-Version 1.6.0 introduces staging, not automatic installation. The signed macOS
-installer can opt Glyphs 3 and Glyphs 4 into a fixed verified helper. In the
-plug-in, **Prepare Update** downloads and verifies one exact later release and
-stages its plug-in without editing the running or installed bundle. A ready
-stage must keep **View Release** available so the user can run the signed
-installer separately. Users on 1.5.4 install 1.6.0 manually because 1.5.4 does
-not contain this helper. Do not describe this workflow as automatic or in-app
-installation.
+Updater protocol v2 stages one target-addressed Glyphs 4 release without
+editing the running or installed bundle. Receipts include installer release,
+plug-in version, payload schema, and Glyphs major, and live below host-specific
+directories. Protocol-v1 stages and authorizations are ignored after
+migration. Glyphs 3 is pinned to 1.11: the installer disables v2 notification
+and update preparation through reversible, installer-owned preferences and
+never patches the v1.11 runtime. A ready Glyphs 4 stage keeps **View Release**
+available so the user can run the signed installer separately; this is not
+automatic or in-app installation.
 
 ## QA
 

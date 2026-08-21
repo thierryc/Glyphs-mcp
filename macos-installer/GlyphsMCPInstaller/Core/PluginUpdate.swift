@@ -1,6 +1,6 @@
 import Foundation
 
-public struct PluginBundleVersion: Equatable, Comparable, CustomStringConvertible {
+public struct PluginBundleVersion: Equatable, Comparable, CustomStringConvertible, Sendable {
 	public let shortVersion: String?
 	public let buildVersion: String?
 

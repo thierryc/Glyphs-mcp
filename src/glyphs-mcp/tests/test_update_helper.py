@@ -49,8 +49,8 @@ class UpdateHelperTests(unittest.TestCase):
         probe = overrides.get(
             "probe",
             {
-                "protocolVersion": 1,
-                "helperVersion": "1.0.0",
+                "protocolVersion": update_helper.PROTOCOL_VERSION,
+                "helperVersion": "2.0.0",
                 "teamIdentifier": update_helper.EXPECTED_TEAM_ID,
                 "capabilities": ["prepare"],
                 "build": "release",
@@ -116,7 +116,7 @@ class UpdateHelperTests(unittest.TestCase):
                 str(self.helper),
                 "prepare",
                 "--protocol",
-                "1",
+                str(update_helper.PROTOCOL_VERSION),
                 "--version",
                 "1.6.0",
                 "--glyphs-major",
@@ -136,7 +136,7 @@ class UpdateHelperTests(unittest.TestCase):
             home=str(self.home),
         )
         self.assertEqual(probe.team_identifier, update_helper.EXPECTED_TEAM_ID)
-        self.assertEqual(probe.helper_version, "1.0.0")
+        self.assertEqual(probe.helper_version, "2.0.0")
         self.assertEqual(calls[-1], [str(self.helper), "probe", "--json"])
 
     def test_helper_verification_rejects_wrong_team(self) -> None:
@@ -240,7 +240,7 @@ class UpdateHelperTests(unittest.TestCase):
         path.write_text(
             json.dumps(
                 {
-                    "protocolVersion": 1,
+                    "protocolVersion": update_helper.PROTOCOL_VERSION,
                     "requestID": request_id,
                     "version": "1.6.0",
                     "glyphsMajor": 4,
@@ -295,8 +295,8 @@ class UpdateHelperTests(unittest.TestCase):
         authorization = Path(
             update_helper.authorization_path("1.6.0", 4, home=str(self.home))
         )
-        receipt = Path(update_helper.stage_receipt_path("1.6.0", home=str(self.home)))
-        plugin = Path(update_helper.staged_plugin_path("1.6.0", home=str(self.home)))
+        receipt = Path(update_helper.stage_receipt_path("1.6.0", 4, home=str(self.home)))
+        plugin = Path(update_helper.staged_plugin_path("1.6.0", 4, home=str(self.home)))
         authorization.parent.mkdir(parents=True)
         receipt.parent.mkdir(parents=True, exist_ok=True)
         executable = plugin / "Contents" / "MacOS" / "plugin"
@@ -315,7 +315,7 @@ class UpdateHelperTests(unittest.TestCase):
         authorization.write_text(
             json.dumps(
                 {
-                    "protocolVersion": 1,
+                    "protocolVersion": update_helper.PROTOCOL_VERSION,
                     "requestID": request_id,
                     "version": "1.6.0",
                     "glyphsMajor": 4,
@@ -326,14 +326,17 @@ class UpdateHelperTests(unittest.TestCase):
         receipt.write_text(
             json.dumps(
                 {
-                    "protocolVersion": 1,
-                    "version": "1.6.0",
+                    "protocolVersion": update_helper.PROTOCOL_VERSION,
+                    "releaseVersion": "1.6.0",
+                    "pluginVersion": "1.6.0",
+                    "payloadSchemaVersion": 2,
+                    "glyphsMajor": 4,
                     "tag": "v1.6.0",
                     "assetName": "GlyphsMCPInstaller.zip",
                     "assetSHA256": "a" * 64,
                     "teamIdentifier": update_helper.EXPECTED_TEAM_ID,
                     "pluginCDHash": "abc123",
-                    "helperVersion": "1.0.0",
+                    "helperVersion": "2.0.0",
                 }
             ),
             encoding="utf-8",
@@ -355,6 +358,19 @@ class UpdateHelperTests(unittest.TestCase):
                 run=run,
             )
         )
+        protocol_v1 = json.loads(receipt.read_text(encoding="utf-8"))
+        protocol_v1["protocolVersion"] = 1
+        receipt.write_text(json.dumps(protocol_v1), encoding="utf-8")
+        self.assertFalse(
+            update_helper.verified_stage_is_ready(
+                "1.6.0",
+                4,
+                home=str(self.home),
+                run=run,
+            )
+        )
+        protocol_v1["protocolVersion"] = update_helper.PROTOCOL_VERSION
+        receipt.write_text(json.dumps(protocol_v1), encoding="utf-8")
         tampered = json.loads(receipt.read_text(encoding="utf-8"))
         tampered["pluginCDHash"] = "different"
         receipt.write_text(json.dumps(tampered), encoding="utf-8")

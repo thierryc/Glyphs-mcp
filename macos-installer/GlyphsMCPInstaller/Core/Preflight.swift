@@ -274,7 +274,7 @@ public enum Preflight {
 		if let pluginBundleURL {
 			return readPluginVersionFromBundle(pluginBundle: pluginBundleURL)
 		}
-		// In the built app, the plugin is placed under Resources/Payload/Glyphs MCP.glyphsPlugin.
+		// In the built app, resolve the schema-v2 payload's installer-default target.
 		if let payload = try? InstallerPayload.resolve(bundle: bundle) {
 			return readPluginVersionFromBundle(pluginBundle: payload.pluginBundle)
 		}

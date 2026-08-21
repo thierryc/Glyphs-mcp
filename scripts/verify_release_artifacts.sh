@@ -165,6 +165,9 @@ zipped_payload_extract="$tmp_root/extracted-signed-payload"
 mkdir -p "$zipped_payload_extract"
 /usr/bin/tar -xzf "$zipped_payload_archive" -C "$zipped_payload_extract"
 zipped_payload_root="$zipped_payload_extract/Payload"
+python3 "$repo_root/scripts/build_installer_payload.py" \
+  --verify-root "$zipped_payload_root" \
+  --release-version "$version"
 verify_payload_executables "$zipped_payload_root"
 zipped_core_framework="$zipped_app/Contents/Frameworks/GlyphsMCPInstallerCore.framework"
 if [[ ! -d "$zipped_core_framework" ]]; then
@@ -188,35 +191,41 @@ python3 "$repo_root/scripts/release_security.py" metadata \
   --tag "$tag" \
   --app-plist "$zipped_app/Contents/Info.plist" >/dev/null
 
-# Simulate the installer copy into an isolated Glyphs plug-in directory. The
-# trusted nested executable must remain byte-identical and keep the same
-# Developer ID CDHash after installation; no ad-hoc re-signing is permitted.
-simulated_plugins="$tmp_root/simulated-install/Plugins"
-mkdir -p "$simulated_plugins"
-zipped_plugin="$zipped_payload_root/Glyphs MCP.glyphsPlugin"
-installed_plugin="$simulated_plugins/Glyphs MCP.glyphsPlugin"
-"$ditto_bin" "$zipped_plugin" "$installed_plugin"
-installed_plugin_bin="$installed_plugin/Contents/MacOS/plugin"
-verify_runtime_signature "$zipped_plugin" 1
-verify_runtime_signature "$installed_plugin" 1
-verify_runtime_signature "$installed_plugin_bin" 0
-"$xcrun_bin" stapler validate "$zipped_plugin"
-"$xcrun_bin" stapler validate "$installed_plugin"
-if [[ ! -f "$zipped_plugin/Contents/CodeResources" || ! -f "$installed_plugin/Contents/CodeResources" ]]; then
-  echo "error: the stapled plug-in notarization ticket did not survive installation" >&2
-  exit 1
-fi
-if ! cmp -s "$zipped_plugin/Contents/MacOS/plugin" "$installed_plugin_bin"; then
-  echo "error: installed plug-in executable changed during copy" >&2
-  exit 1
-fi
-source_cdhash="$("$codesign_bin" -d --verbose=4 "$zipped_plugin/Contents/MacOS/plugin" 2>&1 | awk -F= '/^CDHash=/{value=$2} END{print value}')"
-installed_cdhash="$("$codesign_bin" -d --verbose=4 "$installed_plugin_bin" 2>&1 | awk -F= '/^CDHash=/{value=$2} END{print value}')"
-if [[ -z "$source_cdhash" || "$source_cdhash" != "$installed_cdhash" ]]; then
-  echo "error: installed plug-in CDHash does not match the trusted payload" >&2
-  exit 1
-fi
-echo "Verified signature-preserving simulated plug-in installation."
+# Simulate independent installer copies into isolated Glyphs 3 and Glyphs 4
+# plug-in directories. Each trusted executable must remain byte-identical and
+# keep its Developer ID CDHash; no target may reuse the other target's bundle.
+for target in 3 4; do
+  simulated_plugins="$tmp_root/simulated-install/Glyphs $target/Plugins"
+  mkdir -p "$simulated_plugins"
+  zipped_plugin="$zipped_payload_root/Plugins/Glyphs${target}/Glyphs MCP.glyphsPlugin"
+  installed_plugin="$simulated_plugins/Glyphs MCP.glyphsPlugin"
+  if [[ ! -d "$zipped_plugin" ]]; then
+    echo "error: release payload is missing its Glyphs $target plug-in" >&2
+    exit 1
+  fi
+  "$ditto_bin" "$zipped_plugin" "$installed_plugin"
+  installed_plugin_bin="$installed_plugin/Contents/MacOS/plugin"
+  verify_runtime_signature "$zipped_plugin" 1
+  verify_runtime_signature "$installed_plugin" 1
+  verify_runtime_signature "$installed_plugin_bin" 0
+  "$xcrun_bin" stapler validate "$zipped_plugin"
+  "$xcrun_bin" stapler validate "$installed_plugin"
+  if [[ ! -f "$zipped_plugin/Contents/CodeResources" || ! -f "$installed_plugin/Contents/CodeResources" ]]; then
+    echo "error: the stapled Glyphs $target plug-in ticket did not survive installation" >&2
+    exit 1
+  fi
+  if ! cmp -s "$zipped_plugin/Contents/MacOS/plugin" "$installed_plugin_bin"; then
+    echo "error: installed Glyphs $target plug-in executable changed during copy" >&2
+    exit 1
+  fi
+  source_cdhash="$("$codesign_bin" -d --verbose=4 "$zipped_plugin/Contents/MacOS/plugin" 2>&1 | awk -F= '/^CDHash=/{value=$2} END{print value}')"
+  installed_cdhash="$("$codesign_bin" -d --verbose=4 "$installed_plugin_bin" 2>&1 | awk -F= '/^CDHash=/{value=$2} END{print value}')"
+  if [[ -z "$source_cdhash" || "$source_cdhash" != "$installed_cdhash" ]]; then
+    echo "error: installed Glyphs $target plug-in CDHash does not match the trusted payload" >&2
+    exit 1
+  fi
+  echo "Verified signature-preserving simulated Glyphs $target plug-in installation."
+done
 
 checksum_assets=("$dmg_versioned" "$dmg_latest" "$zip")
 checksum_stage="$tmp_root/release-assets"

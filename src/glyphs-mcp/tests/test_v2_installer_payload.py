@@ -81,10 +81,56 @@ class V2InstallerPayloadTests(unittest.TestCase):
             resources3 = first / glyphs3["pluginPath"] / "Contents/Resources"
             self.assertFalse((resources3 / "glyphs_mcp_v2").exists())
 
+            verified = subprocess.run(
+                [
+                    sys.executable,
+                    str(BUILDER),
+                    "--verify-root",
+                    str(first),
+                    "--release-version",
+                    glyphs4["pluginVersion"],
+                ],
+                cwd=REPO,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=30,
+            )
+            self.assertEqual(verified.returncode, 0, verified.stderr)
+            wrong_release = subprocess.run(
+                [
+                    sys.executable,
+                    str(BUILDER),
+                    "--verify-root",
+                    str(first),
+                    "--release-version",
+                    "9.9.9",
+                ],
+                cwd=REPO,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=30,
+            )
+            self.assertNotEqual(wrong_release.returncode, 0)
+            self.assertIn("does not match the release", wrong_release.stderr)
+
     def test_builder_rejects_output_outside_worktree(self) -> None:
         result = self._build(Path("/private/tmp/glyphs-mcp-installer-payload-escape"))
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("must remain inside", result.stderr)
+
+    def test_xcode_payload_phase_cannot_reuse_a_stale_generated_bundle(self) -> None:
+        project = (
+            REPO
+            / "macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj"
+        ).read_text(encoding="utf-8")
+        phase_start = project.index("AA0000000000000000000015 /* Copy Payload */ = {")
+        phase_end = project.index("\n\t\t};", phase_start)
+        phase = project[phase_start:phase_end]
+
+        self.assertIn("alwaysOutOfDate = 1;", phase)
+        self.assertIn("scripts/build_installer_payload.py", phase)
 
 
 if __name__ == "__main__":

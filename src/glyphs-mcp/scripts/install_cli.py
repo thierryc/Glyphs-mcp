@@ -16,6 +16,7 @@ Run:
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import os
@@ -544,7 +545,55 @@ def _extract_signed_payload_archive(archive_path: Path, destination: Path) -> No
         ) from exc
 
 
-def _resolve_installer_payload_plugin(app: Path, temp_root: Path) -> Path:
+@dataclass(frozen=True)
+class InstallerTargetPayload:
+    glyphs_version: Literal["3", "4"]
+    plugin: Path
+    plugin_version: str
+    runtime_track: str
+    update_policy: Literal["pinned", "release"]
+
+
+@dataclass(frozen=True)
+class InstallerReleasePayload:
+    root: Path
+    targets: Dict[str, InstallerTargetPayload]
+    requirements: Path
+    skills: Optional[Path]
+
+    def plugin_for(self, glyphs_version: Literal["3", "4"]) -> InstallerTargetPayload:
+        try:
+            return self.targets[glyphs_version]
+        except KeyError as exc:
+            raise RuntimeError(
+                f"Signed installer payload does not contain Glyphs {glyphs_version}."
+            ) from exc
+
+
+def _safe_payload_relative_path(root: Path, value: Any, description: str) -> Path:
+    text = str(value or "")
+    logical = Path(text)
+    if (
+        not text
+        or logical.is_absolute()
+        or "\\" in text
+        or any(part in ("", ".", "..") for part in logical.parts)
+    ):
+        raise RuntimeError(f"Signed installer payload contains an unsafe {description} path.")
+    candidate = (root / logical).resolve()
+    try:
+        candidate.relative_to(root.resolve())
+    except ValueError as exc:
+        raise RuntimeError("Signed installer payload path escapes its root.") from exc
+    return candidate
+
+
+def _resolve_installer_payload(
+    app: Path,
+    temp_root: Path,
+    *,
+    allow_verified_legacy_release: bool = False,
+) -> InstallerReleasePayload:
     resources = app / "Contents" / "Resources"
     payload = resources / "Payload"
     if not payload.is_dir():
@@ -557,15 +606,130 @@ def _resolve_installer_payload_plugin(app: Path, temp_root: Path) -> Path:
         payload_root.mkdir()
         _extract_signed_payload_archive(payload_archive, payload_root)
         payload = payload_root / "Payload"
-    plugin = payload / "Glyphs MCP.glyphsPlugin"
-    if not plugin.is_dir():
-        raise RuntimeError(
-            "Signed installer payload does not contain Glyphs MCP.glyphsPlugin."
+    manifest_path = payload / "payload.json"
+    if not manifest_path.is_file():
+        if not allow_verified_legacy_release:
+            raise RuntimeError(
+                "Signed v2 installer payload is missing its schema-v2 manifest."
+            )
+        plugin = payload / "Glyphs MCP.glyphsPlugin"
+        requirements = payload / "requirements.txt"
+        if not plugin.is_dir():
+            raise RuntimeError(
+                "Signed installer payload does not contain Glyphs MCP.glyphsPlugin."
+            )
+        if not requirements.is_file():
+            raise RuntimeError("Signed installer payload does not contain requirements.txt.")
+        version = _plugin_version(plugin)
+        return InstallerReleasePayload(
+            root=payload,
+            targets={
+                glyphs_version: InstallerTargetPayload(
+                    glyphs_version=glyphs_version,
+                    plugin=plugin,
+                    plugin_version=version,
+                    runtime_track="1.x",
+                    update_policy="release",
+                )
+                for glyphs_version in ("3", "4")
+            },
+            requirements=requirements,
+            skills=(payload / "skills") if (payload / "skills").is_dir() else None,
         )
-    return plugin
+    if manifest_path.stat().st_size > 64 * 1024:
+        raise RuntimeError("Signed installer payload manifest is too large.")
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("Signed installer payload manifest is malformed.") from exc
+    if (
+        not isinstance(manifest, dict)
+        or manifest.get("schemaVersion") != 2
+        or set((manifest.get("targets") or {}).keys()) != {"3", "4"}
+        or manifest.get("requirementsPath") != "requirements.txt"
+        or manifest.get("skillsPath") != "skills"
+    ):
+        raise RuntimeError("Signed installer payload has an unsupported target schema.")
+    requirements = _safe_payload_relative_path(
+        payload, manifest["requirementsPath"], "requirements"
+    )
+    skills = _safe_payload_relative_path(payload, manifest["skillsPath"], "skills")
+    if not requirements.is_file() or not skills.is_dir():
+        raise RuntimeError("Signed installer payload shared resources are missing.")
+    targets: Dict[str, InstallerTargetPayload] = {}
+    for glyphs_version, expected_track, expected_policy in (
+        ("3", "1.x", "pinned"),
+        ("4", "2.x", "release"),
+    ):
+        item = manifest["targets"].get(glyphs_version)
+        if not isinstance(item, dict):
+            raise RuntimeError(f"Signed installer payload is missing Glyphs {glyphs_version}.")
+        expected_path = f"Plugins/Glyphs{glyphs_version}/Glyphs MCP.glyphsPlugin"
+        if item.get("pluginPath") != expected_path:
+            raise RuntimeError(
+                f"Signed installer payload has an invalid Glyphs {glyphs_version} path."
+            )
+        plugin = _safe_payload_relative_path(payload, expected_path, glyphs_version)
+        declared_version = str(item.get("pluginVersion") or "")
+        baseline = item.get("baseline")
+        if (
+            item.get("runtimeTrack") != expected_track
+            or item.get("updatePolicy") != expected_policy
+            or not isinstance(baseline, dict)
+            or not str(baseline.get("tag") or "")
+            or not str(baseline.get("commit") or "")
+            or not plugin.is_dir()
+            or _plugin_version(plugin) != declared_version
+        ):
+            raise RuntimeError(f"Signed installer payload is invalid for Glyphs {glyphs_version}.")
+        if glyphs_version == "3" and (
+            declared_version != "1.11.0"
+            or baseline.get("tag") != "v1.11.0"
+            or baseline.get("commit") != "13ca805"
+        ):
+            raise RuntimeError("Glyphs 3 payload is not the pinned v1.11 baseline.")
+        targets[glyphs_version] = InstallerTargetPayload(
+            glyphs_version=glyphs_version,
+            plugin=plugin,
+            plugin_version=declared_version,
+            runtime_track=expected_track,
+            update_policy=expected_policy,
+        )
+    return InstallerReleasePayload(
+        root=payload,
+        targets=targets,
+        requirements=requirements,
+        skills=skills,
+    )
 
 
-def resolve_signed_release_plugin(version: str) -> Tuple[Path, Path]:
+def _resolve_installer_payload_plugin(
+    app: Path,
+    temp_root: Path,
+    glyphs_version: Literal["3", "4"] = "4",
+    allow_verified_legacy_release: bool = False,
+) -> Path:
+    return _resolve_installer_payload(
+        app,
+        temp_root,
+        allow_verified_legacy_release=allow_verified_legacy_release,
+    ).plugin_for(glyphs_version).plugin
+
+
+def _require_stable_release_version(version: str) -> str:
+    if re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version) is None:
+        raise RuntimeError(
+            "Terminal copy mode requires a stable published Glyphs MCP release. "
+            "Use link mode for a development checkout."
+        )
+    return version
+
+
+def resolve_signed_release_plugin(
+    version: str,
+    glyphs_version: Literal["3", "4"] = "4",
+) -> Tuple[Path, Path]:
+    version = _require_stable_release_version(version)
     tag = f"v{version}"
     installer_name = "GlyphsMCPInstaller.zip"
     release_root = f"{RELEASE_DOWNLOAD_ROOT}/{tag}"
@@ -603,8 +767,17 @@ def resolve_signed_release_plugin(version: str) -> Tuple[Path, Path]:
                 "Signed installer archive does not contain GlyphsMCPInstaller.app."
             )
         _verify_installer_app(app, version)
-        plugin = _resolve_installer_payload_plugin(app, temp_root)
-        if _plugin_version(plugin) != version:
+        try:
+            release_major = int(version.split(".", 1)[0])
+        except ValueError as exc:
+            raise RuntimeError("Signed installer release has an invalid version.") from exc
+        target = _resolve_installer_payload(
+            app,
+            temp_root,
+            allow_verified_legacy_release=release_major < 2,
+        ).plugin_for(glyphs_version)
+        plugin = target.plugin
+        if target.update_policy == "release" and target.plugin_version != version:
             raise RuntimeError(
                 "Signed plug-in payload version does not match the checkout."
             )
@@ -667,6 +840,30 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[3]
 
 
+def v2_distribution_version() -> str:
+    versions = repo_root() / "src/glyphs-mcp-v2/glyphs_mcp_v2/versions.py"
+    tree = ast.parse(versions.read_text(encoding="utf-8"), filename=str(versions))
+    for node in tree.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        if any(isinstance(target, ast.Name) and target.id == "SERVER_VERSION" for target in node.targets):
+            value = ast.literal_eval(node.value)
+            if isinstance(value, str) and value:
+                return value
+    raise RuntimeError("The v2 distribution version is unavailable.")
+
+
+def development_plugin_for(glyphs_version: Literal["3", "4"]) -> Path:
+    output = repo_root() / "build" / "installer-payload" / "Payload"
+    subprocess.run(
+        [sys.executable, str(repo_root() / "scripts/build_installer_payload.py"), "--output-root", str(output)],
+        cwd=repo_root(),
+        check=True,
+    )
+    target = "Glyphs3" if glyphs_version == "3" else "Glyphs4"
+    return output / "Plugins" / target / "Glyphs MCP.glyphsPlugin"
+
+
 def glyphs_base_dir(glyphs_version: Literal["3", "4"] = "4") -> Path:
     return Path.home() / "Library" / "Application Support" / f"Glyphs {glyphs_version}"
 
@@ -711,6 +908,126 @@ def glyphs_python_pip(glyphs_version: Literal["3", "4"] = "4") -> Optional[Path]
 
 def glyphs_preferences_domain(glyphs_version: Literal["3", "4"] = "4") -> str:
     return "com.GeorgSeifert.Glyphs4" if glyphs_version == "4" else "com.GeorgSeifert.Glyphs3"
+
+
+GLYPHS3_PIN_KEYS = (
+    "com.ap.cx.glyphs-mcp.updateChecksEnabled",
+    "com.ap.cx.glyphs-mcp.inAppUpdatesEnabled",
+)
+
+
+def glyphs3_pin_receipt_path() -> Path:
+    return (
+        Path.home()
+        / "Library"
+        / "Application Support"
+        / "Glyphs MCP"
+        / "Installer"
+        / "Glyphs3UpdatePin.json"
+    )
+
+
+def _read_defaults_bool(domain: str, key: str) -> Optional[bool]:
+    completed = subprocess.run(
+        ["/usr/bin/defaults", "read", domain, key],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        return None
+    value = completed.stdout.strip().lower()
+    if value in {"1", "true", "yes"}:
+        return True
+    if value in {"0", "false", "no"}:
+        return False
+    raise RuntimeError(f"Glyphs 3 preference {key} is not Boolean.")
+
+
+def _write_defaults_bool(domain: str, key: str, value: bool) -> None:
+    subprocess.run(
+        ["/usr/bin/defaults", "write", domain, key, "-bool", "true" if value else "false"],
+        check=True,
+    )
+
+
+def _delete_default(domain: str, key: str) -> None:
+    subprocess.run(
+        ["/usr/bin/defaults", "delete", domain, key],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+
+
+def pin_glyphs3_updates() -> None:
+    receipt_path = glyphs3_pin_receipt_path()
+    previous: Dict[str, Dict[str, Any]] = {}
+    if receipt_path.exists() or receipt_path.is_symlink():
+        if (
+            receipt_path.is_symlink()
+            or not receipt_path.is_file()
+            or receipt_path.stat().st_size > 64 * 1024
+        ):
+            raise RuntimeError("Glyphs 3 update pin receipt is unsafe and was preserved.")
+        try:
+            current_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                "Glyphs 3 update pin receipt is unrecognized and was preserved."
+            ) from exc
+        if (
+            not isinstance(current_receipt, dict)
+            or current_receipt.get("schemaVersion") != 1
+            or current_receipt.get("writtenValue") is not False
+            or not isinstance(current_receipt.get("previous"), dict)
+        ):
+            raise RuntimeError(
+                "Glyphs 3 update pin receipt is unrecognized and was preserved."
+            )
+        previous = dict(current_receipt["previous"])
+    domain = glyphs_preferences_domain("3")
+    for key in GLYPHS3_PIN_KEYS:
+        current = _read_defaults_bool(domain, key)
+        if key not in previous or current is not False:
+            previous[key] = {"existed": current is not None, "value": current}
+        _write_defaults_bool(domain, key, False)
+    receipt_path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = receipt_path.with_name(f".{receipt_path.name}.{uuid.uuid4().hex}.tmp")
+    temporary.write_text(
+        json.dumps(
+            {"schemaVersion": 1, "writtenValue": False, "previous": previous},
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    temporary.chmod(0o600)
+    temporary.replace(receipt_path)
+
+
+def restore_glyphs3_update_pin() -> None:
+    receipt_path = glyphs3_pin_receipt_path()
+    if not receipt_path.exists():
+        return
+    if receipt_path.is_symlink() or receipt_path.stat().st_size > 64 * 1024:
+        raise RuntimeError("Glyphs 3 update pin receipt is unsafe and was preserved.")
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    if receipt.get("schemaVersion") != 1 or receipt.get("writtenValue") is not False:
+        raise RuntimeError("Glyphs 3 update pin receipt is unrecognized and was preserved.")
+    domain = glyphs_preferences_domain("3")
+    previous = receipt.get("previous") or {}
+    for key in GLYPHS3_PIN_KEYS:
+        state = previous.get(key)
+        if not isinstance(state, dict) or _read_defaults_bool(domain, key) is not False:
+            continue
+        if state.get("existed") and isinstance(state.get("value"), bool):
+            _write_defaults_bool(domain, key, state["value"])
+        else:
+            _delete_default(domain, key)
+    receipt_path.unlink()
 
 
 def glyphs_selected_python_framework(glyphs_version: Literal["3", "4"] = "4") -> Optional[Path]:
@@ -1390,9 +1707,11 @@ def install_plugin(
 ) -> bool:
     """Install a trusted release copy or create an explicit development link."""
     checkout_plugin = (
-        repo_root() / "src" / "glyphs-mcp" / "Glyphs MCP.glyphsPlugin"
+        development_plugin_for(glyphs_version)
+        if mode == "link"
+        else repo_root() / "Glyphs MCP.glyphsPlugin"
     )
-    if not checkout_plugin.exists():
+    if mode == "link" and not checkout_plugin.exists():
         console.print(f"[red]Plugin bundle not found at:[/red] {checkout_plugin}")
         raise SystemExit(2)
 
@@ -1437,15 +1756,18 @@ def install_plugin(
         os.symlink(checkout_plugin, dest)
         if sign_executable:
             sign_plugin_executable(dest)
+        if glyphs_version == "3":
+            pin_glyphs3_updates()
         return True
 
     temporary_release_root: Optional[Path] = None
     try:
         trusted_plugin = release_plugin
         if trusted_plugin is None:
-            version = _plugin_version(checkout_plugin)
+            version = v2_distribution_version()
             trusted_plugin, temporary_release_root = resolve_signed_release_plugin(
-                version
+                version,
+                glyphs_version=glyphs_version,
             )
         if not trusted_plugin.is_dir():
             raise RuntimeError(
@@ -1491,6 +1813,8 @@ def install_plugin(
                         "The installed plug-in signature does not match the "
                         "trusted release payload."
                     )
+            if glyphs_version == "3":
+                pin_glyphs3_updates()
             if moved_existing:
                 _remove_existing_path(backup)
             return True
@@ -2182,6 +2506,8 @@ def execute_uninstall_plan(plan: GlyphsUninstallPlan) -> Tuple[UninstallOutcome,
                     outcomes.append(UninstallOutcome(candidate, "skipped", "Already absent."))
                     continue
                 _remove_existing_path(candidate.location)
+                if candidate.component == "plugin" and candidate.glyphs_version == "3":
+                    restore_glyphs3_update_pin()
             elif candidate.component == "updater":
                 state, detail = inspect_updater_root(candidate.location)
                 if state != "removable":

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 from pathlib import Path
@@ -54,16 +55,47 @@ def read_xcode_versions(path: Path) -> tuple[set[str], set[int]]:
     return marketing, builds
 
 
+def read_v2_source_version(versions_path: Path, pyproject_path: Path) -> str:
+    try:
+        tree = ast.parse(versions_path.read_text(encoding="utf-8"), filename=str(versions_path))
+    except Exception as exc:
+        raise ReleaseSecurityError(f"could not read v2 versions from {versions_path}: {exc}") from exc
+    runtime_version = ""
+    for node in tree.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        if any(isinstance(target, ast.Name) and target.id == "SERVER_VERSION" for target in node.targets):
+            try:
+                value = ast.literal_eval(node.value)
+            except Exception as exc:
+                raise ReleaseSecurityError(f"invalid SERVER_VERSION in {versions_path}") from exc
+            runtime_version = value if isinstance(value, str) else ""
+            break
+    try:
+        pyproject_text = pyproject_path.read_text(encoding="utf-8")
+    except Exception as exc:
+        raise ReleaseSecurityError(f"could not read v2 project metadata {pyproject_path}: {exc}") from exc
+    project_match = re.search(
+        r"(?ms)^\[project\]\s*$.*?^version\s*=\s*\"([^\"]+)\"\s*$",
+        pyproject_text,
+    )
+    project_version = project_match.group(1) if project_match else ""
+    if not VERSION_RE.fullmatch(runtime_version):
+        raise ReleaseSecurityError(f"v2 SERVER_VERSION is not release-ready: {runtime_version!r}")
+    if project_version != runtime_version:
+        raise ReleaseSecurityError(
+            f"v2 pyproject version {project_version!r} does not match SERVER_VERSION {runtime_version!r}"
+        )
+    return runtime_version
+
+
 def validate_release_metadata(repo_root: Path, tag: str, app_plist: Path | None = None) -> str:
     root = repo_root.resolve()
-    source_plist = root / "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist"
-    manager_plist = root / "plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Info.plist"
+    versions_path = root / "src/glyphs-mcp-v2/glyphs_mcp_v2/versions.py"
+    pyproject_path = root / "src/glyphs-mcp-v2/pyproject.toml"
     project = root / "macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj"
 
-    version, _ = read_plist_version(source_plist)
-    manager_version, _ = read_plist_version(manager_plist)
-    if manager_version != version:
-        raise ReleaseSecurityError(f"Plugin Manager version {manager_version} does not match source {version}")
+    version = read_v2_source_version(versions_path, pyproject_path)
     if tag != f"v{version}":
         raise ReleaseSecurityError(f"release tag {tag!r} must exactly match v{version}")
 

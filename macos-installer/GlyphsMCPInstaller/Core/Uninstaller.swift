@@ -447,15 +447,18 @@ public enum GlyphsUninstallScanner {
 public struct GlyphsUninstaller {
 	private let fileManager: FileManager
 	private let updateOptInStore: UpdateOptInStore
+	private let restoreGlyphs3UpdatePin: () throws -> Void
 	private let log: (String) -> Void
 
 	public init(
 		fileManager: FileManager = .default,
 		updateOptInStore: UpdateOptInStore = .live,
+		restoreGlyphs3UpdatePin: @escaping () throws -> Void = { try Glyphs3UpdatePinManager().restoreIfOwned() },
 		log: @escaping (String) -> Void
 	) {
 		self.fileManager = fileManager
 		self.updateOptInStore = updateOptInStore
+		self.restoreGlyphs3UpdatePin = restoreGlyphs3UpdatePin
 		self.log = log
 	}
 
@@ -493,6 +496,9 @@ public struct GlyphsUninstaller {
 			return UninstallOutcome(candidate: candidate, status: .skipped, message: NSLocalizedString("Already absent.", comment: "Uninstall already absent"))
 		}
 		try fileManager.removeItem(at: candidate.location)
+		if candidate.component == .plugin, candidate.glyphsVersion == .v3 {
+			try restoreGlyphs3UpdatePin()
+		}
 		return UninstallOutcome(candidate: candidate, status: .removed, message: NSLocalizedString("Removed.", comment: "Uninstall removed outcome"))
 	}
 

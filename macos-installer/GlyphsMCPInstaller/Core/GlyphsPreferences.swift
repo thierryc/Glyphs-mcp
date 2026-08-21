@@ -73,3 +73,116 @@ public enum GlyphsPreferences {
 		return last
 	}
 }
+
+public struct Glyphs3UpdatePinStore: Sendable {
+	public let read: @Sendable (String) -> Bool?
+	public let write: @Sendable (String, Bool) -> Void
+	public let remove: @Sendable (String) -> Void
+
+	public init(
+		read: @escaping @Sendable (String) -> Bool?,
+		write: @escaping @Sendable (String, Bool) -> Void,
+		remove: @escaping @Sendable (String) -> Void
+	) {
+		self.read = read
+		self.write = write
+		self.remove = remove
+	}
+
+	public static let live = Glyphs3UpdatePinStore(
+		read: { key in
+			UserDefaults(suiteName: GlyphsMajorVersion.v3.preferencesSuiteName)?.object(forKey: key) as? Bool
+		},
+		write: { key, value in
+			let defaults = UserDefaults(suiteName: GlyphsMajorVersion.v3.preferencesSuiteName)
+			defaults?.set(value, forKey: key)
+			defaults?.synchronize()
+		},
+		remove: { key in
+			let defaults = UserDefaults(suiteName: GlyphsMajorVersion.v3.preferencesSuiteName)
+			defaults?.removeObject(forKey: key)
+			defaults?.synchronize()
+		}
+	)
+}
+
+public struct Glyphs3UpdatePinManager: Sendable {
+	private struct Receipt: Codable {
+		struct Previous: Codable {
+			let existed: Bool
+			let value: Bool?
+		}
+		let schemaVersion: Int
+		let writtenValue: Bool
+		let previous: [String: Previous]
+	}
+
+	public static let notificationKey = "com.ap.cx.glyphs-mcp.updateChecksEnabled"
+	public static let preparationKey = UpdateHelperProtocol.optInDefaultsKey
+	public static let managedKeys = [notificationKey, preparationKey]
+
+	public let receiptURL: URL
+	public let store: Glyphs3UpdatePinStore
+
+	public init(
+		receiptURL: URL = FileManager.default.homeDirectoryForCurrentUser
+			.appendingPathComponent("Library/Application Support/Glyphs MCP/Installer/Glyphs3UpdatePin.json"),
+		store: Glyphs3UpdatePinStore = .live
+	) {
+		self.receiptURL = receiptURL
+		self.store = store
+	}
+
+	public func pin() throws {
+		var prior: [String: Receipt.Previous] = [:]
+		let receiptValues = try? receiptURL.resourceValues(forKeys: [.isSymbolicLinkKey])
+		if FileManager.default.fileExists(atPath: receiptURL.path) || receiptValues?.isSymbolicLink == true {
+			let current = try readReceipt()
+			guard current.schemaVersion == 1, current.writtenValue == false else {
+				throw InstallerError.userFacing("The Glyphs 3 update pin receipt is not recognized and was preserved.")
+			}
+			prior = current.previous
+		}
+		for key in Self.managedKeys {
+			let current = store.read(key)
+			if prior[key] == nil || current != false {
+				prior[key] = Receipt.Previous(existed: current != nil, value: current)
+			}
+			store.write(key, false)
+		}
+		let receipt = Receipt(schemaVersion: 1, writtenValue: false, previous: prior)
+		let encoder = JSONEncoder()
+		encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+		var data = try encoder.encode(receipt)
+		data.append(Data("\n".utf8))
+		try FileIO.writeAtomically(data, to: receiptURL)
+		try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: receiptURL.path)
+	}
+
+	public func restoreIfOwned() throws {
+		guard FileManager.default.fileExists(atPath: receiptURL.path) else { return }
+		let receipt = try readReceipt()
+		guard receipt.schemaVersion == 1, receipt.writtenValue == false else {
+			throw InstallerError.userFacing("The Glyphs 3 update pin receipt is not recognized and was preserved.")
+		}
+		for key in Self.managedKeys {
+			guard store.read(key) == receipt.writtenValue, let previous = receipt.previous[key] else {
+				continue
+			}
+			if previous.existed, let value = previous.value {
+				store.write(key, value)
+			} else {
+				store.remove(key)
+			}
+		}
+		try FileManager.default.removeItem(at: receiptURL)
+	}
+
+	private func readReceipt() throws -> Receipt {
+		let values = try receiptURL.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
+		guard values.isRegularFile == true, values.isSymbolicLink != true, (values.fileSize ?? 0) <= 64 * 1024 else {
+			throw InstallerError.userFacing("The Glyphs 3 update pin receipt is unsafe and was preserved.")
+		}
+		return try JSONDecoder().decode(Receipt.self, from: Data(contentsOf: receiptURL))
+	}
+}

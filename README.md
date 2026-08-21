@@ -62,7 +62,11 @@ signature, installs Python dependencies, and links Glyphs MCP into:
 - Claude App
 - Claude CLI (terminal tools or in VS Code)
 
-The macOS app detects Glyphs 3 and Glyphs 4 independently. If both are installed, both are selected by default; you can install or update either version alone by clearing the other checkbox. Each version keeps its own plug-in, Python, and Application Support status.
+The macOS app detects Glyphs 3 and Glyphs 4 independently. On the v2 track,
+Glyphs 3 receives pinned Glyphs MCP 1.11 while Glyphs 4 receives Glyphs MCP
+2.0. If both hosts are installed, each has its own plug-in payload, Python
+environment, status, rollback boundary, and uninstall selection; operating on
+one target never replaces the other target's bundle.
 
 ![Glyphs MCP Installer](./website/static/img/glyphs-mcp-installer.png)
 
@@ -87,9 +91,10 @@ python3 install.py
 In its default **Copy** mode, the terminal installer downloads the installer
 ZIP for the exact version in the checkout, verifies its published SHA-256,
 Developer ID signature, Team ID, notarization ticket, Gatekeeper acceptance,
-and embedded plug-in signature and stapled ticket, then installs that verified
-payload transactionally. The matching GitHub release must already exist and
-the machine must be online.
+and schema-v2 target manifest, then installs only the selected host bundle
+transactionally. Link mode assembles the same deterministic payload before
+linking the selected development target. The matching GitHub release must
+already exist for Copy mode and the machine must be online.
 
 The terminal installer targets Glyphs 4 by default. To install into Glyphs 3 explicitly, pass `--glyphs-version 3`. The macOS app instead detects and offers every installed Glyphs 3/4 target.
 

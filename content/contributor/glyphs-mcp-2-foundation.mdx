@@ -157,10 +157,14 @@ breaking catalog changes do not flow back to 1.x.
    canonical and native-archive fingerprints; retained no preview evidence;
    and never saved. Cooperative phase feedback is also complete through the
    unified `Glyphs MCP` inspector and its hidden-sidebar capsule.
-10. Next: integrate the deterministic v2 payload with both installers while
-    keeping installed 1.x and v2 runtimes explicitly isolated during upgrade,
-    reinstall, and removal.
-11. Following: run the Glyphs 3.5/4 release-candidate qualification matrix and
+10. Complete and locally qualified: the target-aware installer payload schema
+    maps Glyphs 3 to pinned `v1.11.0`/`13ca805` and Glyphs 4 to the deterministic
+    v2 bundle. The macOS app, terminal installer, updater protocol v2, atomic
+    copy engine, reversible Glyphs 3 update pin, and release-verification
+    scripts all resolve a host-specific bundle. Installation, staging,
+    reinstall, and removal remain target-isolated; no live Glyphs folder was
+    changed for this milestone.
+11. Next: run the Glyphs 3.5/4 release-candidate qualification matrix and
     close versioning, migration, packaging, signing, and notarization gates.
 
 Every milestone must pass focused tests, the complete Python suite, catalog

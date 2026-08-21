@@ -37,8 +37,11 @@ def _write_plist(path: Path, version: str, build: str | None = None) -> None:
 
 
 def _release_tree(root: Path, version: str = "2.3.4") -> Path:
-    _write_plist(root / "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist", version)
-    _write_plist(root / "plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Info.plist", version)
+    versions = root / "src/glyphs-mcp-v2/glyphs_mcp_v2/versions.py"
+    versions.parent.mkdir(parents=True, exist_ok=True)
+    versions.write_text(f'SERVER_VERSION = "{version}"\n', encoding="utf-8")
+    pyproject = root / "src/glyphs-mcp-v2/pyproject.toml"
+    pyproject.write_text(f'[project]\nname = "glyphs-mcp-v2"\nversion = "{version}"\n', encoding="utf-8")
     project = root / "macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj"
     project.parent.mkdir(parents=True, exist_ok=True)
     project.write_text(
@@ -66,16 +69,23 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
             with self.assertRaisesRegex(self.security.ReleaseSecurityError, "must exactly match"):
                 self.security.validate_release_metadata(root, "v2.3.5", app_plist)
 
-    def test_metadata_gate_rejects_plugin_manager_xcode_and_built_app_drift(self) -> None:
+    def test_metadata_gate_rejects_v2_source_xcode_and_built_app_drift(self) -> None:
         with tempfile.TemporaryDirectory(prefix="glyphs-release-security.") as temp:
             root = Path(temp)
             app_plist = _release_tree(root)
 
-            _write_plist(root / "plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Info.plist", "2.3.5")
-            with self.assertRaisesRegex(self.security.ReleaseSecurityError, "Plugin Manager version"):
+            pyproject = root / "src/glyphs-mcp-v2/pyproject.toml"
+            pyproject.write_text(
+                '[project]\nname = "glyphs-mcp-v2"\nversion = "2.3.5"\n',
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(self.security.ReleaseSecurityError, "pyproject version"):
                 self.security.validate_release_metadata(root, "v2.3.4", app_plist)
 
-            _write_plist(root / "plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Info.plist", "2.3.4")
+            pyproject.write_text(
+                '[project]\nname = "glyphs-mcp-v2"\nversion = "2.3.4"\n',
+                encoding="utf-8",
+            )
             project = root / "macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj"
             project.write_text("MARKETING_VERSION = 9.9.9;\nCURRENT_PROJECT_VERSION = 42;\n", encoding="utf-8")
             with self.assertRaisesRegex(self.security.ReleaseSecurityError, "MARKETING_VERSION"):
@@ -247,10 +257,13 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
         self.assertIn('verify_runtime_signature "$installed_plugin" 1', verify)
         self.assertIn('stapler validate "$installed_plugin"', verify)
         self.assertIn('Contents/CodeResources', verify)
+        self.assertIn('--verify-root "$zipped_payload_root"', verify)
+        self.assertIn('--release-version "$version"', verify)
         self.assertNotIn("include-plugin-zip", publish)
         self.assertNotIn("Glyphs MCP.glyphsPlugin-v$version.zip", publish)
         self.assertIn("Payload.gmcparchive", notarize)
-        self.assertIn("GlyphsMCPNotaryPayload.zip", notarize)
+        self.assertIn("GlyphsMCPNotaryPayload-Glyphs${target}.zip", notarize)
+        self.assertIn("for target in 3 4", notarize)
         self.assertEqual(notarize.count("notarytool submit"), 2)
         self.assertIn('stapler staple "$plugin"', notarize)
         self.assertIn('stapler validate "$plugin"', notarize)
