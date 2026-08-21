@@ -26,17 +26,15 @@ from AppKit import (
 )
 from Foundation import NSOperationQueue, NSThread, NSTimer
 
-from glyphs_litsquare_palette import (
-    PALETTE_HEIGHT as METADATA_HEIGHT,
-    GlyphsMCPLitSquareMetadataPalette,
-)
+from glyphs_litsquare_palette import GlyphsMCPLitSquareMetadataPalette
 
 from .activity import ActivitySnapshot, default_activity_store
 
 
 PALETTE_NAME = "Glyphs MCP"
-STATUS_HEIGHT = 38
-PALETTE_HEIGHT = METADATA_HEIGHT + STATUS_HEIGHT
+COMPACT_METADATA_HEIGHT = 190
+STATUS_HEIGHT = 28
+PALETTE_HEIGHT = COMPACT_METADATA_HEIGHT + STATUS_HEIGHT
 CAPSULE_DELAY_SECONDS = 2.0
 SUCCESS_LINGER_SECONDS = 3.0
 
@@ -76,24 +74,35 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
     def settings(self):
         GlyphsMCPLitSquareMetadataPalette.settings(self)
         metadata_view = self.dialog
-        metadata_view.setFrame_(NSMakeRect(0, 0, 260, METADATA_HEIGHT))
+        metadata_view.setFrame_(NSMakeRect(0, 0, 260, COMPACT_METADATA_HEIGHT))
+        self.scopeControl.setFrame_(NSMakeRect(8, 160, 244, 22))
+        self.scrollView.setFrame_(NSMakeRect(8, 37, 244, 115))
+        self.textView.setFrame_(NSMakeRect(0, 0, 240, 111))
+        self.infoLabel.setFrame_(NSMakeRect(8, 5, 128, 22))
+        for button, x in (
+            (self.inspectButton, 144),
+            (self.helpButton, 172),
+            (self.copyButton, 200),
+            (self.refreshButton, 228),
+        ):
+            button.setFrame_(NSMakeRect(x, 4, 24, 24))
 
         root = NSView.alloc().initWithFrame_(NSMakeRect(0, 0, 260, PALETTE_HEIGHT))
         metadata_view.setAutoresizingMask_(NSViewWidthSizable)
         root.addSubview_(metadata_view)
 
         status = NSView.alloc().initWithFrame_(
-            NSMakeRect(0, METADATA_HEIGHT, 260, STATUS_HEIGHT)
+            NSMakeRect(0, COMPACT_METADATA_HEIGHT, 260, STATUS_HEIGHT)
         )
         status.setAutoresizingMask_(NSViewWidthSizable | NSViewMinYMargin)
         root.addSubview_(status)
 
-        field = _quiet_field(NSMakeRect(10, 8, 190, 22), "Ready", 10.5)
+        field = _quiet_field(NSMakeRect(10, 3, 190, 20), "Ready", 10.5)
         field.setAutoresizingMask_(NSViewWidthSizable)
         field.setToolTip_("Glyphs MCP is ready")
         status.addSubview_(field)
 
-        cancel = NSButton.alloc().initWithFrame_(NSMakeRect(202, 7, 50, 24))
+        cancel = NSButton.alloc().initWithFrame_(NSMakeRect(202, 2, 50, 24))
         cancel.setTitle_("Cancel")
         cancel.setBezelStyle_(getattr(AppKit, "NSBezelStyleInline", 15))
         cancel.setTarget_(self)
