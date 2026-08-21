@@ -52,6 +52,16 @@ def _quiet_field(frame, text="", size=10.0):
     return field
 
 
+def _native_value(value):
+    return value() if callable(value) else value
+
+
+def _font_from_window(window):
+    controller = _native_value(getattr(window, "windowController", None))
+    document = _native_value(getattr(controller, "document", None))
+    return _native_value(getattr(document, "font", None))
+
+
 class _PassThroughCapsule(NSVisualEffectView):
     """A drawing-only overlay that never steals editor interaction."""
 
@@ -150,7 +160,7 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
             self._activity_document_id = None
             self._activity_window = window
         try:
-            font = self._font()
+            font = self._font() or _font_from_window(window)
             if font is not None:
                 from .runtime import active_host
 
