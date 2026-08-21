@@ -140,9 +140,7 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
     @objc.python_method
     def _document_id(self):
         try:
-            controller = self.windowController()
-            document = controller.document() if controller is not None else None
-            font = document.font() if document is not None else None
+            font = self._font()
             if font is None:
                 return None
             from .runtime import active_host
