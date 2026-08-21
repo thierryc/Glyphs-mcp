@@ -1230,6 +1230,78 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		XCTAssertNotEqual(resolved.payloadDir.path, payload.path)
 	}
 
+	func testInstallerPayloadResolvesSchemaV2BundlesByGlyphsTarget() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-target-payload-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		let payload = root.appendingPathComponent("Payload", isDirectory: true)
+		let requirements = payload.appendingPathComponent("requirements.txt")
+		let skills = payload.appendingPathComponent("skills", isDirectory: true)
+		try FileManager.default.createDirectory(at: skills, withIntermediateDirectories: true)
+		try Data("mcp\n".utf8).write(to: requirements)
+
+		var targetJSON: [String: Any] = [:]
+		for (major, directory, version, track, policy) in [
+			(3, "Glyphs3", "1.11.0", "1.x", "pinned"),
+			(4, "Glyphs4", "2.0.0", "2.x", "release"),
+		] {
+			let relative = "Plugins/\(directory)/Glyphs MCP.glyphsPlugin"
+			let plugin = payload.appendingPathComponent(relative, isDirectory: true)
+			let resources = plugin.appendingPathComponent("Contents/Resources", isDirectory: true)
+			try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
+			try Data("# probe\n".utf8).write(to: resources.appendingPathComponent("runtime_probe.py"))
+			let info: [String: Any] = [
+				"CFBundleShortVersionString": version,
+				"CFBundleVersion": version,
+			]
+			try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0)
+				.write(to: plugin.appendingPathComponent("Contents/Info.plist"))
+			targetJSON[String(major)] = [
+				"pluginPath": relative,
+				"pluginVersion": version,
+				"runtimeTrack": track,
+				"updatePolicy": policy,
+				"baseline": ["tag": major == 3 ? "v1.11.0" : "working", "commit": major == 3 ? "13ca805" : "working"],
+			]
+		}
+		let manifest: [String: Any] = [
+			"schemaVersion": 2,
+			"requirementsPath": "requirements.txt",
+			"skillsPath": "skills",
+			"targets": targetJSON,
+		]
+		try JSONSerialization.data(withJSONObject: manifest, options: [.sortedKeys])
+			.write(to: payload.appendingPathComponent("payload.json"))
+
+		let resolved = try InstallerPayload.resolve(payloadDir: payload)
+		XCTAssertEqual(resolved.plugin(for: .v3).version.displayString, "1.11.0")
+		XCTAssertEqual(resolved.plugin(for: .v3).runtimeTrack, "1.x")
+		XCTAssertEqual(resolved.plugin(for: .v3).updatePolicy, .pinned)
+		XCTAssertEqual(resolved.plugin(for: .v4).version.displayString, "2.0.0")
+		XCTAssertEqual(resolved.plugin(for: .v4).runtimeTrack, "2.x")
+		XCTAssertEqual(resolved.plugin(for: .v4).updatePolicy, .release)
+		XCTAssertNotEqual(resolved.plugin(for: .v3).bundleURL, resolved.plugin(for: .v4).bundleURL)
+	}
+
+	func testSchemaV2PayloadRejectsTraversalAndVersionMismatch() throws {
+		let root = FileManager.default.temporaryDirectory
+			.appendingPathComponent("glyphs-mcp-invalid-target-payload-\(UUID().uuidString)", isDirectory: true)
+		defer { try? FileManager.default.removeItem(at: root) }
+		try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+		let manifest: [String: Any] = [
+			"schemaVersion": 2,
+			"requirementsPath": "requirements.txt",
+			"targets": [
+				"3": ["pluginPath": "../escape", "pluginVersion": "1.11.0", "runtimeTrack": "1.x", "updatePolicy": "pinned"],
+				"4": ["pluginPath": "Plugins/Glyphs4/Glyphs MCP.glyphsPlugin", "pluginVersion": "9.9.9", "runtimeTrack": "2.x", "updatePolicy": "release"],
+			],
+		]
+		try Data("mcp\n".utf8).write(to: root.appendingPathComponent("requirements.txt"))
+		try JSONSerialization.data(withJSONObject: manifest, options: [.sortedKeys])
+			.write(to: root.appendingPathComponent("payload.json"))
+		XCTAssertThrowsError(try InstallerPayload.resolve(payloadDir: root))
+	}
+
 	func testPayloadManagedSkillDirectoriesFiltersGlyphsSkills() throws {
 		let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
 		let payloadDir = tmp.appendingPathComponent("Payload", isDirectory: true)
@@ -2039,7 +2111,7 @@ exit 0
 		let identifier = UUID()
 		let request = try UpdatePrepareRequest.parse(arguments: [
 			"prepare",
-			"--protocol", "1",
+			"--protocol", "2",
 			"--version", "1.6.0",
 			"--glyphs-major", "4",
 			"--request-id", identifier.uuidString.lowercased(),
@@ -2049,7 +2121,7 @@ exit 0
 		XCTAssertEqual(request.requestID, identifier)
 
 		for arguments in [
-			["prepare", "--protocol", "2", "--version", "1.6.0", "--glyphs-major", "4", "--request-id", identifier.uuidString],
+			["prepare", "--protocol", "1", "--version", "1.6.0", "--glyphs-major", "4", "--request-id", identifier.uuidString],
 			["prepare", "--protocol", "1", "--version", "v1.6.0", "--glyphs-major", "4", "--request-id", identifier.uuidString],
 			["prepare", "--protocol", "1", "--version", "1.6.0", "--glyphs-major", "5", "--request-id", identifier.uuidString],
 			["prepare", "--protocol", "1", "--version", "1.6.0", "--glyphs-major", "4", "--destination", "/tmp"],
