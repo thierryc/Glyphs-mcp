@@ -167,6 +167,18 @@ class OperationActivityStoreTests(unittest.TestCase):
         self.assertIn("font = self._font() or _font_from_window(window)", document_scope)
         self.assertIn("def _font_from_window(window):", source)
 
+    def test_unified_inspector_uses_the_compact_metadata_layout(self) -> None:
+        source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("COMPACT_METADATA_HEIGHT = 190", source)
+        self.assertIn("STATUS_HEIGHT = 28", source)
+        self.assertIn(
+            "PALETTE_HEIGHT = COMPACT_METADATA_HEIGHT + STATUS_HEIGHT", source
+        )
+        self.assertIn("self.scrollView.setFrame_", source)
+        self.assertNotIn("PALETTE_HEIGHT = METADATA_HEIGHT + STATUS_HEIGHT", source)
+
 
 if __name__ == "__main__":
     unittest.main()
