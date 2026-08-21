@@ -40,12 +40,12 @@ The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
 - a recoverable main-thread execution port;
 - Glyphs 3.5/4 collection fallbacks;
 - catalog-generated schemas and safety annotations;
-- 29 catalog-driven FastMCP operations;
+- one catalog-driven FastMCP operation surface;
 - paginated glyph, instance, kerning, audit, review, and Python-diff results;
 - direct glyph, anchor, kerning, spacing, metrics, and compatibility batches
   with detached derived-effect simulation;
-- schema-v4 identity-aware glyph, master, instance, feature, class, and prefix
-  collection membership/order changes through the same verified kernel;
+- schema-v5 identity-aware glyph, layer, master, instance, feature, class, and
+  prefix collection membership/order changes through the same verified kernel;
 - compatibility, metrics-inheritance, anchor, spacing, kerning-coverage, and
   export analysis;
 - staged export with destination fingerprints and macOS atomic directory swap;
@@ -54,6 +54,8 @@ The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
 - Git-like content-addressed unsaved-session action history, bounded commit
   discovery, conflict-aware semantic revert, a passive Change Log, and an
   independent drawing-only Edit View diff;
+- document-scoped cooperative activity state presented through one compact
+  Glyphs inspector or, while hidden, one delayed drawing-only capsule;
 - restart-safe Streamable HTTP application construction;
 - deterministic source and Plugin Manager payload assembly.
 
@@ -145,12 +147,21 @@ breaking catalog changes do not flow back to 1.x.
    Smart, and color layers. Non-master layer order is assigned atomically with
    Glyphs' native ordered collection; specialized Smart/color property editing
    remains deferred.
-9. Implemented; Glyphs 4 live qualification is the remaining closure gate:
-   staged-Python structural replay uses schema-v5 canonical collections, one
-   bounded adapter-owned native-evidence registry, the shared verified
-   transaction kernel, and the existing Change Log/revert machinery. It never
-   reruns confirmed Python against the live font. Installer integration and
-   the release-candidate matrix follow qualification.
+9. Complete and live-qualified on Glyphs 4.0.1 build 4004: staged-Python
+   structural replay uses schema-v5 canonical collections, one bounded
+   adapter-owned native-evidence registry, the shared verified transaction
+   kernel, and the existing Change Log/revert machinery. The guarded
+   383-glyph gate covered glyph, master, non-master layer, instance, feature,
+   class, and prefix lifecycle; confirmed four stored replays without rerunning
+   Python; exercised Python rollback and Change Log revert; restored the exact
+   canonical and native-archive fingerprints; retained no preview evidence;
+   and never saved. Cooperative phase feedback is also complete through the
+   unified `Glyphs MCP` inspector and its hidden-sidebar capsule.
+10. Next: integrate the deterministic v2 payload with both installers while
+    keeping installed 1.x and v2 runtimes explicitly isolated during upgrade,
+    reinstall, and removal.
+11. Following: run the Glyphs 3.5/4 release-candidate qualification matrix and
+    close versioning, migration, packaging, signing, and notarization gates.
 
 Every milestone must pass focused tests, the complete Python suite, catalog
 and schema gates, deterministic payload assembly, and `git diff --check`.

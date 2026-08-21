@@ -3,7 +3,7 @@
 This is the isolated, unreleased Glyphs MCP 2.0 package. It is based on signed
 release `v1.11.0` but does not change the shipped 1.x wire contracts.
 
-The catalog contains 31 operations across:
+The runtime exposes one catalog-driven operation surface across:
 
 - stable document status and bounded glyph, instance, kerning, audit, and operation pages;
 - compatibility, metrics, anchors, spacing, kerning, and export reviews;
@@ -186,8 +186,9 @@ and exact native archive fingerprint
 `sha256:b61cee283d0d77ef2114dc04fe36dd20cda7f27ebacbb714c69a5d8da5e04b29`,
 preserved path, active master, and dirty state, retained no preview evidence,
 and never saved. This is an exhaustive development gate rather than one user
-operation; remaining multi-second native phases still require cooperative
-progress UI before release-candidate qualification.
+operation. Individual native phases can still take several seconds, so the
+runtime publishes cooperative phase feedback; that feedback does not claim
+that the live atomic boundary can be interrupted safely.
 
 ## Glyphs MCP activity
 
@@ -207,9 +208,11 @@ two seconds receives one drawing-only, click-through capsule attached to the
 document content view. The palette and capsule consume the same state and are
 never shown as competing activity controls.
 
-Glyphs 4.0.1 build 4004 live qualification showed that `PalettePlugin.title()`
-returns an updated value, but an already-mounted palette header does not refresh
-after normal redraw or KVO notification. V2 therefore keeps `self.name` and the
-native header title stable as `Glyphs MCP`; it does not manipulate Glyphs'
-private sidebar hierarchy. A live restart is still required to qualify the
-mounted palette layout and the hidden-sidebar capsule together.
+Glyphs 4.0.1 build 4004 live qualification covered a visible palette, a
+collapsed palette, a sidebar hidden after mounting, and a sidebar hidden from
+cold start. Activity remained bound to the correct document, and the delayed
+capsule appeared only when the palette was not visible. The same qualification
+showed that `PalettePlugin.title()` returns an updated value, but an
+already-mounted palette header does not refresh after normal redraw or KVO
+notification. V2 therefore keeps `self.name` and the native header title stable
+as `Glyphs MCP`; it does not manipulate Glyphs' private sidebar hierarchy.

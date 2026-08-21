@@ -36,9 +36,9 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 ## Glyphs MCP 2.0 development
 
 The `lit/v2` branch contains an isolated, unreleased 2.0 runtime at
-[`src/glyphs-mcp-v2`](src/glyphs-mcp-v2). Its catalog now exposes 28 typed
-operations for bounded reads, production reviews, reviewed batch mutations,
-staged export, model-visible Python fallback, and verified document rollback.
+[`src/glyphs-mcp-v2`](src/glyphs-mcp-v2). Its single catalog-driven surface
+covers bounded reads, production analysis, direct apply-first verified
+mutations, staged export, model-visible Python fallback, and document rollback.
 Stable process-local document IDs, fingerprint-bound pagination, one shared
 transaction kernel, redacted audit receipts, and the main-thread Glyphs 3.5/4
 adapter are implemented without loading the runtime into the installed 1.x
