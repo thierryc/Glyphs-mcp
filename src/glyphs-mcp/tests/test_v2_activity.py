@@ -135,6 +135,16 @@ class OperationActivityStoreTests(unittest.TestCase):
         self.assertIn("font = self._font()", document_scope)
         self.assertNotIn("document.font()", document_scope)
 
+    def test_capsule_anchors_to_the_palette_native_window(self) -> None:
+        source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
+            encoding="utf-8"
+        )
+        window_scope = source.split("def _document_window(self):", 1)[1].split(
+            "def _show_capsule", 1
+        )[0]
+        self.assertIn("return self.dialog.window()", window_scope)
+        self.assertNotIn("controller.window()", window_scope)
+
 
 if __name__ == "__main__":
     unittest.main()
