@@ -168,3 +168,23 @@ The gate runs Python only against detached clones, confirms the exact stored
 replay through the shared transaction kernel, and then exercises both Python
 rollback and Change Log revert. It covers glyph, master, non-master layer,
 instance, feature, class, and prefix lifecycle changes and never saves.
+
+Native equivalence uses a deterministic manifest of every file in a detached
+`.glyphspackage`. Exact package bytes preserve Glyphs-only and private state;
+the canonical schema supplies field-level semantics. Only clone-generated
+instance UUIDs proven volatile across untouched copies are normalized. The
+package boundary follows the canonical shard model and avoids Glyphs' costly
+monolithic flat-file writer: on the 383-glyph qualification font one complete
+native snapshot fell from 46.898 seconds to approximately 0.114 seconds.
+
+Staged structural replay is live-qualified on Glyphs 4.0.1 build 4004. The
+383-glyph stress gate completed four previews, four confirmations, three
+Python rollbacks, and one Change Log revert in 131.393 seconds. It restored the
+exact canonical fingerprint
+`sha256:22a1d5598adfe5ec0aa956a0395b33327394211e5b6f04610a0fb8302e3e98a2`
+and exact native archive fingerprint
+`sha256:b61cee283d0d77ef2114dc04fe36dd20cda7f27ebacbb714c69a5d8da5e04b29`,
+preserved path, active master, and dirty state, retained no preview evidence,
+and never saved. This is an exhaustive development gate rather than one user
+operation; remaining multi-second native phases still require cooperative
+progress UI before release-candidate qualification.

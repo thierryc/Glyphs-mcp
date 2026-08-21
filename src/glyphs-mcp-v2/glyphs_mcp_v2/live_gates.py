@@ -9,11 +9,15 @@ from typing import Any, Mapping, Optional, Sequence
 from uuid import uuid4
 
 from .adapters.document import (
+    _decoded_native_archive_tree,
+    _native_archive_fingerprint,
+    _native_archive_tree_mismatches,
     _save_font_copy,
+    _serialized_font_archive,
     _serialized_font_fingerprint,
     native_font_to_model,
 )
-from .semantic import fingerprint_model
+from .semantic import diff_models, fingerprint_model
 
 
 DISPOSABLE_FAMILY_PREFIX = "Glyphs MCP V2 Disposable"
@@ -300,11 +304,31 @@ class _StagedPythonGateSession:
     def _require_ok(tool: str, response: Mapping[str, Any]) -> Mapping[str, Any]:
         if not response.get("ok"):
             error = response.get("error") or {}
+            data = response.get("data") or {}
+            archive = (
+                data.get("nativeArchiveMismatch", {})
+                if isinstance(data, Mapping)
+                else {}
+            )
+            diagnostic = ""
+            if isinstance(archive, Mapping) and archive:
+                diagnostic = "; native mismatch count={}, locations={!r}".format(
+                    int(archive.get("mismatchCount") or 0),
+                    list(archive.get("mismatchLocations") or [])[:3],
+                )
+            verification_failure = (
+                str(data.get("verificationFailure") or "")[:500]
+                if isinstance(data, Mapping)
+                else ""
+            )
+            if verification_failure:
+                diagnostic += "; verification={!r}".format(verification_failure)
             raise AssertionError(
-                "{} failed: {} ({})".format(
+                "{} failed: {} ({}){}".format(
                     tool,
                     error.get("message") or response.get("summary") or "unknown error",
                     error.get("code") or "unknown",
+                    diagnostic,
                 )
             )
         return dict(response.get("data") or {})
@@ -473,8 +497,10 @@ class _StagedPythonGateSession:
         for record in reversed(tuple(self.active)):
             try:
                 self.rollback(record)
-            except Exception:
-                failures.append(record["operationId"])
+            except Exception as exc:
+                failures.append(
+                    "{}: {}".format(record["operationId"], str(exc)[:240])
+                )
         return failures
 
 def verify_copy_and_make_copy(font: Any, output_path: str) -> Mapping[str, Any]:
@@ -1223,7 +1249,8 @@ def verify_staged_python_structural_replay(
     gate_started = time.perf_counter_ns()
     baseline = dict(capture_model(document_id))
     baseline_fingerprint = fingerprint_model(baseline)
-    baseline_archive_fingerprint = _serialized_font_fingerprint(font)
+    baseline_archive = _serialized_font_archive(font)
+    baseline_archive_fingerprint = _native_archive_fingerprint(baseline_archive)
     before_path = _plain_attribute(font, "filepath")
     before_master = _plain_attribute(font, "selectedFontMaster")
     before_master_id = str(_plain_attribute(before_master, "id") or "")
@@ -1289,7 +1316,7 @@ def verify_staged_python_structural_replay(
             "    owned_layer = candidate_glyph.layers[{!r}].copy()".format(source_master_id),
             "    owned_layer.layerId = {!r}".format(master_id),
             "    owned_layer.associatedMasterId = {!r}".format(master_id),
-            "    candidate_glyph.layers.append(owned_layer)",
+            "    candidate_glyph.layers[{!r}] = owned_layer".format(master_id),
             "review_glyph = font.glyphs[{!r}]".format(source_glyph_name),
             "review_layer = review_glyph.layers[{!r}].copy()".format(source_master_id),
             "review_layer.layerId = {!r}".format(layer_id),
@@ -1339,17 +1366,28 @@ def verify_staged_python_structural_replay(
             "            return",
             "    raise ValueError('missing staged structural target: ' + target_name)",
             "review_glyph = font.glyphs[{!r}]".format(source_glyph_name),
-            "del review_glyph.layers[{!r}]".format(layer_id),
+            # Glyphs assigns a fresh native identity when a copied layer is
+            # appended. The add preview records that authoritative identity,
+            # so the later independent tool call must rediscover the retained
+            # entity by its unique semantic name instead of assuming the
+            # pre-attachment candidate ID survived.
+            "for candidate_layer in list(review_glyph.layers):",
+            "    if str(candidate_layer.name) == {!r}:".format(layer_name),
+            "        del review_glyph.layers[str(candidate_layer.layerId)]",
+            "        break",
+            "else:",
+            "    raise ValueError('missing staged structural layer: ' + {!r})".format(
+                layer_name
+            ),
             "del font.glyphs[{!r}]".format(glyph_name),
+            # Master-layer membership is owned by the master lifecycle.
+            # Glyphs removes the associated layer from every glyph when the
+            # master is deleted; deleting those layers first is redundant and
+            # makes Glyphs recreate them while the master still exists.
             "for target_index, target in enumerate(list(font.masters)):",
             "    if str(target.id) == {!r}:".format(master_id),
             "        del font.masters[target_index]",
             "        break",
-            "for candidate_glyph in list(font.glyphs):",
-            "    for candidate_layer in list(candidate_glyph.layers):",
-            "        if str(candidate_layer.layerId) == {!r}:".format(master_id),
-            "            del candidate_glyph.layers[{!r}]".format(master_id),
-            "            break",
             "remove_named(font.instances, {!r})".format(instance_name),
             "remove_named(font.features, {!r})".format(feature_name),
             "remove_named(font.classes, {!r})".format(class_name),
@@ -1382,8 +1420,20 @@ def verify_staged_python_structural_replay(
             delete_code, reason="Glyphs MCP v2 staged structural delete qualification"
         )
         if session.current_fingerprint != baseline_fingerprint:
+            observed = dict(capture_model(document_id))
+            composition = diff_models(baseline, observed)
+            diagnostics = [
+                {
+                    "path": "/".join(change.path),
+                    "before": repr(change.before)[:120],
+                    "after": repr(change.after)[:120],
+                }
+                for change in composition.changes[:20]
+            ]
             raise AssertionError(
-                "add/reorder/delete composition did not return to the canonical baseline"
+                "add/reorder/delete composition left {} canonical change(s): {!r}".format(
+                    len(composition.changes), diagnostics
+                )
             )
         session.rollback(deleted)
         session.rollback(reordered)
@@ -1397,14 +1447,15 @@ def verify_staged_python_structural_replay(
         final = session.fingerprint()
         if cleanup_failures or final != baseline_fingerprint:
             raise RuntimeError(
-                "staged structural gate cleanup failed for {} operation(s); final fingerprint {}".format(
-                    len(cleanup_failures), final
+                "staged structural gate cleanup failed for {} operation(s); final fingerprint {}; failures={!r}".format(
+                    len(cleanup_failures), final, cleanup_failures[:3]
                 )
             )
         raise
 
     final_fingerprint = session.fingerprint()
-    final_archive_fingerprint = _serialized_font_fingerprint(font)
+    final_archive = _serialized_font_archive(font)
+    final_archive_fingerprint = _native_archive_fingerprint(final_archive)
     after_path = _plain_attribute(font, "filepath")
     after_master = _plain_attribute(font, "selectedFontMaster")
     after_master_id = str(_plain_attribute(after_master, "id") or "")
@@ -1418,7 +1469,28 @@ def verify_staged_python_structural_replay(
     if final_fingerprint != baseline_fingerprint:
         raise AssertionError("staged structural gate did not restore the canonical baseline")
     if final_archive_fingerprint != baseline_archive_fingerprint:
-        raise AssertionError("staged structural gate did not restore the native archive")
+        baseline_tree = _decoded_native_archive_tree(baseline_archive)
+        final_tree = _decoded_native_archive_tree(final_archive)
+        mismatches, truncated = (
+            _native_archive_tree_mismatches(
+                baseline_tree,
+                final_tree,
+                limit=20,
+            )
+            if baseline_tree is not None and final_tree is not None
+            else ([], False)
+        )
+        if not mismatches and baseline_tree is not None and final_tree is not None:
+            mismatches, truncated = _native_archive_tree_mismatches(
+                baseline_tree,
+                final_tree,
+                limit=20,
+                align_identity_collections=False,
+            )
+        raise AssertionError(
+            "staged structural gate did not restore the native archive; "
+            "mismatches={!r}; truncated={}".format(mismatches, truncated)
+        )
     if after_path != before_path:
         raise AssertionError("staged structural gate changed the working document path")
     if after_master_id != before_master_id:

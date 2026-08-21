@@ -783,6 +783,7 @@ class PythonExecutionService:
         except StaleDocumentError:
             return self._failure("stale_document", "The document changed after Python review.")
         except TransactionVerificationError as exc:
+            verification_failure = (str(exc) or "transaction verification failed")[:500]
             receipt = self._audit.record(
                 tool="execute_python",
                 effect="code",
@@ -794,6 +795,7 @@ class PythonExecutionService:
                     "executionMode": "staged_document",
                     "context": _context_details(request),
                     "errorCode": "transaction_failed",
+                    "verificationFailure": verification_failure,
                     "rollbackAttempted": True,
                     "rollbackSucceeded": exc.rollback_succeeded,
                 },
@@ -801,7 +803,11 @@ class PythonExecutionService:
             return self._failure(
                 "transaction_failed",
                 "The reviewed Python patch failed verification.",
-                data={"rollbackAttempted": True, "rollbackSucceeded": exc.rollback_succeeded},
+                data={
+                    "verificationFailure": verification_failure,
+                    "rollbackAttempted": True,
+                    "rollbackSucceeded": exc.rollback_succeeded,
+                },
                 receipt=receipt.to_dict(),
             )
         finally:
@@ -1247,12 +1253,16 @@ class PythonExecutionService:
                 },
             )
         except (StaleDocumentError, TransactionVerificationError) as exc:
+            verification_failure = (
+                str(exc) or "transaction verification failed"
+            )[:500]
             return self._rollback_failure(
                 code="rollback_failed",
                 summary="Python rollback failed verification.",
                 execution_id=execution_id,
                 document_id=document_id,
                 data={
+                    "verificationFailure": verification_failure,
                     "afterStateRestored": bool(
                         isinstance(exc, TransactionVerificationError) and exc.rollback_succeeded
                     )

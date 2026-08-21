@@ -25,7 +25,10 @@ from glyphs_mcp_v2.python_execution import (  # noqa: E402
     validate_staged_code,
 )
 from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
-from glyphs_mcp_v2.transactions import TransactionKernel  # noqa: E402
+from glyphs_mcp_v2.transactions import (  # noqa: E402
+    TransactionKernel,
+    TransactionVerificationError,
+)
 
 
 class _PythonHost:
@@ -283,6 +286,45 @@ class V2PythonExecutionTests(unittest.TestCase):
 
         self.assertEqual(preview["status"], "review_required")
         self.assertEqual(host.preview_calls, 1)
+
+    def test_confirmation_reports_a_bounded_transaction_failure_reason(self) -> None:
+        class FailingTransactions:
+            @staticmethod
+            def apply_plan(plan):
+                del plan
+                raise TransactionVerificationError(
+                    "verification-detail-" + ("x" * 800),
+                    rollback_succeeded=True,
+                )
+
+        host = _PythonHost()
+        service = PythonExecutionService(
+            host=host,
+            transactions=FailingTransactions(),
+            reviews=OperationStore(),
+            checkpoints=OperationStore(),
+            audit=AuditLog(),
+        )
+        preview = service.execute(
+            PythonExecutionRequest(
+                code="font.familyName = 'Beta'",
+                reason="exercise bounded verification diagnostics",
+                intended_effect="document_edit",
+                execution_mode="staged_document",
+                document_id="doc_alpha",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+
+        confirmed = service.execute(
+            PythonExecutionRequest(review_id=preview["data"]["reviewId"], confirm=True)
+        ).to_dict()
+
+        self.assertEqual(confirmed["error"]["code"], "transaction_failed")
+        failure = confirmed["data"]["verificationFailure"]
+        self.assertTrue(failure.startswith("verification-detail-"))
+        self.assertEqual(len(failure), 500)
+        self.assertTrue(confirmed["data"]["rollbackSucceeded"])
 
     def test_staged_existing_feature_code_is_confirmable_and_reversible(self) -> None:
         service, host = self.service()
@@ -746,6 +788,8 @@ class V2PythonExecutionTests(unittest.TestCase):
         ).to_dict()
         self.assertEqual(failed["error"]["code"], "rollback_failed")
         self.assertTrue(failed["data"]["afterStateRestored"])
+        self.assertTrue(failed["data"]["verificationFailure"])
+        self.assertLessEqual(len(failed["data"]["verificationFailure"]), 500)
         self.assertEqual(host.model["font"]["familyName"], "Beta")
 
     def test_reviews_and_automatic_rollback_expire(self) -> None:

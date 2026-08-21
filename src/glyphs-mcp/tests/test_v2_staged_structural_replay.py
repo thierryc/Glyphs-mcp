@@ -226,6 +226,30 @@ class StagedStructuralReplayTests(unittest.TestCase):
         self.assertIsNone(store.resolve(third.evidence_id, document_id="doc_a"))
         self.assertEqual(store.record_count(), 0)
 
+    def test_resolved_evidence_reuses_the_exact_detached_native_templates(self) -> None:
+        store = NativeReplayEvidenceStore()
+        native_template = object()
+        evidence = store.create(
+            document_id="doc_a",
+            before_fingerprint="before",
+            after_fingerprint="after",
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+            templates={("masters", "m1"): native_template},
+            ttl_seconds=60,
+        )
+        host = object.__new__(GlyphsDocumentHost)
+        host._native_replay_evidence = store
+
+        context = host._resolved_replay_context(
+            "doc_a", {"nativeReplayEvidenceId": evidence.evidence_id}
+        )
+
+        self.assertIs(
+            context["nativeReplayTemplates"][("masters", "m1")],
+            native_template,
+        )
+        self.assertTrue(context["reuseNativeReplayTemplates"])
+
     def test_lifecycle_capabilities_are_composed_and_master_layers_are_owned(self) -> None:
         before = _model()
         after = copy.deepcopy(before)

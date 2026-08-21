@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import ast
 import builtins
+import base64
 import copy
 import contextlib
 import difflib
@@ -1687,16 +1687,33 @@ def _replace_glyph_layer_order(glyph: Any, values: Sequence[Any]) -> None:
     though a detached copy appears correct. Use one ordered native assignment.
     """
 
+    _replace_glyph_layer_collection(
+        glyph,
+        values,
+        allow_master_membership_change=False,
+    )
+
+
+def _replace_glyph_layer_collection(
+    glyph: Any,
+    values: Sequence[Any],
+    *,
+    allow_master_membership_change: bool,
+) -> None:
+    """Atomically replace canonical layer membership and order.
+
+    Layer lifecycle may change only the non-master suffix. Master lifecycle
+    opts into changing the master prefix, but both domains share the same
+    ``setLayers:`` ownership boundary so Glyphs' undo manager cannot reinsert
+    an exact-ID deletion under a fresh backup identity.
+    """
+
     desired = list(values)
     current = _native_layers(glyph)
     desired_ids = [_native_layer_identity(layer) for layer in desired]
     current_ids = [_native_layer_identity(layer) for layer in current]
-    if (
-        not all(desired_ids)
-        or len(set(desired_ids)) != len(desired_ids)
-        or set(desired_ids) != set(current_ids)
-    ):
-        raise HostAccessError("Glyphs layer order requires identical stable identities")
+    if not all(desired_ids) or len(set(desired_ids)) != len(desired_ids):
+        raise HostAccessError("Glyphs layer collection requires unique stable identities")
 
     def partition(layers: Sequence[Any]) -> tuple[list[Any], list[Any]]:
         masters: list[Any] = []
@@ -1713,21 +1730,19 @@ def _replace_glyph_layer_order(glyph: Any, values: Sequence[Any]) -> None:
                 non_masters.append(layer)
         return masters, non_masters
 
-    current_masters, current_non_masters = partition(current)
-    desired_masters, desired_non_masters = partition(desired)
-    if [_native_layer_identity(layer) for layer in current_masters] != [
-        _native_layer_identity(layer) for layer in desired_masters
-    ]:
+    current_masters, _ = partition(current)
+    desired_masters, _ = partition(desired)
+    if not allow_master_membership_change and [
+        _native_layer_identity(layer) for layer in current_masters
+    ] != [_native_layer_identity(layer) for layer in desired_masters]:
         raise HostAccessError("layer lifecycle cannot reorder master layers")
-    if [_native_layer_identity(layer) for layer in current_non_masters] == [
-        _native_layer_identity(layer) for layer in desired_non_masters
-    ]:
+    if current_ids == desired_ids:
         return
 
     _set_ordered_glyph_layers(glyph, desired)
 
     if [_native_layer_identity(layer) for layer in _native_layers(glyph)] != desired_ids:
-        raise HostAccessError("Glyphs did not preserve the requested non-master layer order")
+        raise HostAccessError("Glyphs did not preserve the requested layer collection")
 
 
 def _construct_native_entity(kind: str, name: str = "") -> Any:
@@ -2146,7 +2161,18 @@ def _apply_layer_collection(
         set(target_order) & excluded
     )
     if set(native_by_id) != expected_native_ids:
-        raise HostAccessError("Glyphs layer collection diverged before mutation")
+        native_ids = sorted(native_by_id)
+        expected_ids = sorted(expected_native_ids)
+        raise HostAccessError(
+            "Glyphs layer collection diverged before mutation for {!r}: "
+            "native={} {!r}; expected={} {!r}".format(
+                glyph_name,
+                len(native_ids),
+                native_ids[:12],
+                len(expected_ids),
+                expected_ids[:12],
+            )
+        )
     context = dict(execution_context or {})
     source_map = {
         str(key): str(value)
@@ -2174,20 +2200,25 @@ def _apply_layer_collection(
         )
         _set_native_scalar_if_changed(layer, "name", str(after.get("name") or ""))
         _set_layer_interpolation(font, layer, after.get("interpolation"))
+        # Native append is the archive-equivalent attachment boundary for a
+        # new non-master layer. Deletion deliberately does not use its exact-ID
+        # inverse below because Glyphs' undo machinery can reinsert a removed
+        # object under a fresh identity; the complete assignment handles that.
         _append_native_collection_item(collection, layer)
         native_by_id[identity] = layer
 
     for identity in reversed(current_order):
         if identity in target_entities or identity in excluded:
             continue
-        value = native_by_id.pop(identity)
-        _remove_glyph_layer(glyph, identity, value)
+        native_by_id.pop(identity)
 
     complete_order = [identity for identity in target_order if identity in native_by_id]
     if set(complete_order) != set(native_by_id):
         raise HostAccessError("canonical layer order omitted a native identity")
-    _replace_glyph_layer_order(
-        glyph, [native_by_id[identity] for identity in complete_order]
+    _replace_glyph_layer_collection(
+        glyph,
+        [native_by_id[identity] for identity in complete_order],
+        allow_master_membership_change=False,
     )
 
     axis_tags = {
@@ -2422,33 +2453,26 @@ def _apply_master_collection(
                 if reuse_template
                 else _copy_native_object(source_layer, kind="master layer")
             )
-            canonical_glyph = canonical_glyphs.get(glyph_name, {})
-            _, canonical_layers = (
-                _canonical_layer_collection(canonical_glyph)
-                if isinstance(canonical_glyph, Mapping)
-                else ([], {})
-            )
-            canonical_layer = canonical_layers.get(identity)
-            if isinstance(canonical_layer, Mapping) and "name" in canonical_layer:
-                _set_native_scalar_if_changed(
-                    copied_layer,
-                    "name",
-                    str(canonical_layer.get("name") or ""),
-                )
+            # A master layer's displayed name is derived from its associated
+            # master. Persisting the same text on GSLayer creates a redundant
+            # native ``name`` field and makes replay differ from a native
+            # master duplication. Attachment below establishes the derived
+            # value; special-layer names remain owned by layer lifecycle.
             _set_glyph_master_layer(glyph, identity, copied_layer)
 
-    for identity in reversed(current_order):
-        if identity in target_entities:
-            continue
+    removed_master_ids = [
+        identity for identity in current_order if identity not in target_entities
+    ]
+    # Master layers are owned by the master collection. Glyphs removes them as
+    # one native lifecycle cascade when their master is deleted. Removing the
+    # layers first is both redundant and incorrect: while the master still
+    # exists Glyphs recreates its required layer membership. Keep that
+    # ownership boundary in one place and let complete read-back verification
+    # prove the resulting nested collection state.
+    for identity in reversed(removed_master_ids):
         value = native_by_id.pop(identity)
         index = _sequence_values(collection).index(value)
         _remove_native_collection_item(collection, index, value)
-        # Some native collection wrappers do not cascade master deletion to
-        # the glyph layer collection. Converge it explicitly when needed.
-        for glyph in glyphs.values():
-            layer = _lookup_layer(glyph, identity)
-            if layer is not None:
-                _remove_glyph_layer(glyph, identity, layer)
 
     _replace_native_collection_order(
         collection, [native_by_id[identity] for identity in target_order]
@@ -2628,6 +2652,35 @@ def _apply_target_model(
     }
     replacement_roots = {tuple(str(part) for part in path) for path in replay_replacements}
     changed_roots = {change.path[0] for change in change_set.changes}
+    current_glyphs = current.get("glyphs", {})
+    target_glyphs = target.get("glyphs", {})
+    if "glyphs" in changed_roots and (
+        not isinstance(current_glyphs, Mapping)
+        or not isinstance(target_glyphs, Mapping)
+    ):
+        raise HostAccessError("canonical glyph collections must be keyed by name")
+
+    # Resolve the parent glyph collection before master-owned layer
+    # membership. This is the canonical ownership order in both directions:
+    # removed glyphs are detached before Glyphs cascades a master deletion,
+    # preserving their exact native tombstones; newly restored glyphs are
+    # present when master replay attaches its one owned layer per glyph.
+    # Scalar and nested-layer reconciliation remains below, after the master
+    # collection has reached its target membership.
+    if (
+        "glyphs" in changed_roots
+        and isinstance(current_glyphs, Mapping)
+        and isinstance(target_glyphs, Mapping)
+        and set(current_glyphs) != set(target_glyphs)
+    ):
+        _apply_glyph_membership(
+            font,
+            current_glyphs,
+            target_glyphs,
+            templates=_native_templates_for_root(native_templates, "glyphs"),
+            reuse_native_templates=reuse_native_templates,
+        )
+
     master_structural_ids: set[str] = set()
     if "masters" in changed_roots:
         current_master_ids = {
@@ -2659,20 +2712,10 @@ def _apply_target_model(
             if current.get("font", {}).get(name) != target.get("font", {}).get(name):
                 _set_native_property(font, name, target.get("font", {}).get(name))
     if "glyphs" in changed_roots:
-        current_glyphs = current.get("glyphs", {})
-        target_glyphs = target.get("glyphs", {})
         if not isinstance(current_glyphs, Mapping) or not isinstance(
             target_glyphs, Mapping
         ):
             raise HostAccessError("canonical glyph collections must be keyed by name")
-        if set(current_glyphs) != set(target_glyphs):
-            _apply_glyph_membership(
-                font,
-                current_glyphs,
-                target_glyphs,
-                templates=_native_templates_for_root(native_templates, "glyphs"),
-                reuse_native_templates=reuse_native_templates,
-            )
         for name in sorted(target_glyphs):
             if current_glyphs.get(name) == target_glyphs.get(name):
                 continue
@@ -2843,70 +2886,115 @@ def _save_font_copy(font: Any, destination: Path) -> None:
     finally:
         restore_temp_path()
 
-    if not path.is_file():
+    created = (
+        path.is_dir() and (path / "fontinfo.plist").is_file()
+        if path.suffix.lower() == ".glyphspackage"
+        else path.is_file()
+    )
+    if not created:
         raise HostAccessError("Glyphs did not create the requested copy")
 
 
 def _serialized_font_archive(font: Any) -> bytes:
+    """Serialize complete native evidence as a deterministic package manifest.
+
+    Glyphs' flat writer is disproportionately expensive for large documents.
+    Its package writer preserves the same native payload in independently
+    addressable root and glyph files, matching the canonical tree's shard
+    model while retaining every unsupported/private field for proof.
+    """
+
     with tempfile.TemporaryDirectory(prefix="glyphs-mcp-v2-archive-") as root:
-        path = Path(root) / "checkpoint.glyphs"
+        path = Path(root) / "checkpoint.glyphspackage"
         _save_font_copy(font, path)
-        archive = path.read_bytes()
-        # GSFont.copy() in Glyphs 4 assigns fresh UUIDs to GSInstance objects.
-        # Replace only those exact native UUID values, by ordered instance, so
-        # archive comparison still detects every other non-canonical field.
-        for index, instance in enumerate(_sequence_values(_safe_getattr(font, "instances"))):
-            identifier = str(_plain_scalar(_safe_getattr(instance, "id")) or "").strip()
+        replacements: dict[bytes, bytes] = {}
+        for index, instance in enumerate(
+            _sequence_values(_safe_getattr(font, "instances"))
+        ):
+            identifier = str(
+                _plain_scalar(_safe_getattr(instance, "id")) or ""
+            ).strip()
             if not _UUID_PATTERN.fullmatch(identifier):
                 continue
-            replacement = "__GLYPHS_MCP_INSTANCE_{:04d}__".format(index).encode("ascii")
+            replacement = "__GLYPHS_MCP_INSTANCE_{:04d}__".format(index).encode(
+                "ascii"
+            )
             for spelling in (identifier, identifier.upper(), identifier.lower()):
-                archive = archive.replace(spelling.encode("ascii"), replacement)
+                replacements[spelling.encode("ascii")] = replacement
+        files = [
+            {
+                "path": item.relative_to(path).as_posix(),
+                "value": _native_package_file_value(item, replacements),
+            }
+            for item in sorted(
+                (candidate for candidate in path.rglob("*") if candidate.is_file()),
+                key=lambda candidate: candidate.relative_to(path).as_posix(),
+            )
+        ]
+        archive = json.dumps(
+            {"format": "glyphspackage-v1", "files": files},
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
     return archive
+
+
+def _native_package_file_value(
+    path: Path, replacements: Mapping[bytes, bytes] | None = None
+) -> Any:
+    """Capture one package file without reparsing it through Glyphs/Cocoa.
+
+    JSON is decoded for deterministic synthetic fixtures. Glyphs' production
+    package files use OpenStep syntax; their exact bytes are the authoritative
+    private-state evidence. Canonical state supplies field-level semantics,
+    while native mismatches remain attributable to a stable package path.
+    """
+
+    data = path.read_bytes()
+    if replacements:
+        data = _ARCHIVE_UUID_BYTES.sub(
+            lambda match: replacements.get(match.group(0), match.group(0)), data
+        )
+    try:
+        return json.loads(data.decode("utf-8"))
+    except Exception:
+        return {"$data": base64.b64encode(data).decode("ascii")}
 
 
 def _serialized_review_scope(
     font: Any, request: PythonExecutionRequest
 ) -> bytes:
-    """Archive a safe declared native scope, retaining a full-font fallback."""
+    """Archive one clone-stable native scope for staged replay proof.
 
-    target = font
-    if request.glyph_name:
-        glyph = _lookup_by_name(_safe_getattr(font, "glyphs"), request.glyph_name)
-        if glyph is None:
-            raise HostAccessError(
-                "The staged archive glyph no longer exists: {}".format(
-                    request.glyph_name
-                )
-            )
-        target = glyph
-        try:
-            tree = ast.parse(request.code or "", mode="exec")
-        except SyntaxError as exc:
-            raise HostAccessError("The staged Python source is invalid") from exc
-        broad_names = {"font", "master"}
-        if any(
-            (isinstance(node, ast.Name) and node.id in broad_names)
-            or (isinstance(node, ast.Attribute) and node.attr in {"font", "parent"})
-            for node in ast.walk(tree)
-        ):
-            target = font
-    if target is font:
-        return _serialized_font_archive(font)
-    try:
-        from Foundation import NSKeyedArchiver  # type: ignore[import-not-found]
+    NSKeyedArchiver output for an isolated glyph is not stable across two
+    independent ``GSFont.copy()`` clones, even before either clone is changed.
+    Comparing those archives therefore creates false native mismatches. The
+    normalized serialized font archive is the smallest proven clone-stable
+    evidence boundary. Staged context validation still constrains which
+    objects Python may address; archive proof deliberately verifies more than
+    that declared context so an unexpected native side effect cannot hide.
+    """
 
-        data = NSKeyedArchiver.archivedDataWithRootObject_(target)
-        return bytes(data)
-    except Exception as exc:
-        raise HostAccessError(
-            "Glyphs could not archive the declared staged review scope"
-        ) from exc
+    del request
+    return _serialized_font_archive(font)
+
+
+def _native_archive_fingerprint(archive: bytes) -> str:
+    tree = _decoded_native_archive_tree(archive)
+    if tree is not None:
+        archive = json.dumps(
+            _normalized_native_archive_tree(tree),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    digest = hashlib.sha256(archive).hexdigest()
+    return "sha256:{}".format(digest)
 
 
 def _serialized_font_fingerprint(font: Any) -> str:
-    digest = hashlib.sha256(_serialized_font_archive(font)).hexdigest()
-    return "sha256:{}".format(digest)
+    return _native_archive_fingerprint(_serialized_font_archive(font))
 
 
 def _archive_delta(before: bytes, after: bytes) -> list[dict[str, Any]]:
@@ -2938,6 +3026,262 @@ def _archive_delta(before: bytes, after: bytes) -> list[dict[str, Any]]:
     return result
 
 
+_NATIVE_ARCHIVE_MISSING = object()
+
+
+def _bounded_native_archive_value(value: Any) -> Any:
+    """Return one bounded diagnostic value without exposing a native subtree."""
+
+    if value is _NATIVE_ARCHIVE_MISSING:
+        return {"missing": True}
+    if value is None or isinstance(value, (bool, int, float)):
+        return value
+    if isinstance(value, str):
+        return value if len(value) <= 160 else value[:157] + "..."
+    encoded = json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return {
+        "type": "array" if isinstance(value, list) else "object",
+        "size": len(value),
+        "hash": hashlib.sha256(encoded).hexdigest(),
+    }
+
+
+def _native_archive_tree_mismatches(
+    direct: Any,
+    replay: Any,
+    *,
+    limit: int,
+    align_identity_collections: bool = True,
+) -> tuple[list[dict[str, Any]], bool]:
+    """Locate native proof differences by semantic plist path.
+
+    Serialized Glyphs archives are canonical JSON trees at this boundary.
+    Walking those trees makes a private-state refusal actionable without
+    retaining or returning the complete native payload. Traversal stops after
+    one item beyond the public bound; callers still know the result truncated.
+    """
+
+    maximum = max(0, min(100, int(limit)))
+    found: list[dict[str, Any]] = []
+
+    def record(path: tuple[str | int, ...], left: Any, right: Any) -> None:
+        if len(found) > maximum:
+            return
+        found.append(
+            {
+                "path": list(path),
+                "direct": _bounded_native_archive_value(left),
+                "replay": _bounded_native_archive_value(right),
+            }
+        )
+
+    def walk(path: tuple[str | int, ...], left: Any, right: Any) -> None:
+        if len(found) > maximum or left == right:
+            return
+        if isinstance(left, Mapping) and isinstance(right, Mapping):
+            for key in sorted(set(left) | set(right), key=str):
+                if len(found) > maximum:
+                    return
+                walk(
+                    path + (str(key),),
+                    left.get(key, _NATIVE_ARCHIVE_MISSING),
+                    right.get(key, _NATIVE_ARCHIVE_MISSING),
+                )
+            return
+        if isinstance(left, list) and isinstance(right, list):
+            identity_key = _native_archive_collection_identity(left, right)
+            if identity_key is not None:
+                if not align_identity_collections:
+                    found.append(
+                        {
+                            "path": list(path),
+                            "identityKey": identity_key,
+                            "directOrder": [
+                                str(item[identity_key]) for item in left[:20]
+                            ],
+                            "replayOrder": [
+                                str(item[identity_key]) for item in right[:20]
+                            ],
+                            "orderTruncated": len(left) > 20,
+                        }
+                    )
+                    return
+                left_by_identity = {
+                    str(item[identity_key]): item for item in left
+                }
+                right_by_identity = {
+                    str(item[identity_key]): item for item in right
+                }
+                for identity in sorted(left_by_identity):
+                    if len(found) > maximum:
+                        return
+                    walk(
+                        path + ("@{}={}".format(identity_key, identity),),
+                        left_by_identity[identity],
+                        right_by_identity[identity],
+                    )
+                return
+            for index in range(max(len(left), len(right))):
+                if len(found) > maximum:
+                    return
+                walk(
+                    path + (index,),
+                    left[index] if index < len(left) else _NATIVE_ARCHIVE_MISSING,
+                    right[index] if index < len(right) else _NATIVE_ARCHIVE_MISSING,
+                )
+            return
+        record(path, left, right)
+
+    walk((), direct, replay)
+    return found[:maximum], len(found) > maximum
+
+
+def _native_archive_collection_identity(
+    direct: list[Any], replay: list[Any]
+) -> str | None:
+    """Return a shared unique identity key only when list order diverges.
+
+    Canonical schema v5 already verifies meaningful collection order. Native
+    archive proof therefore aligns the same identity-addressed entities before
+    checking private fields, while positional arrays (paths, nodes, coordinate
+    tuples) remain strictly ordered.
+    """
+
+    if len(direct) != len(replay) or not direct:
+        return None
+    if not all(isinstance(item, Mapping) for item in direct + replay):
+        return None
+    for key in ("path", "glyphname", "layerId", "id", "name"):
+        if not all(key in item and str(item[key]) for item in direct + replay):
+            continue
+        direct_ids = [str(item[key]) for item in direct]
+        replay_ids = [str(item[key]) for item in replay]
+        if direct_ids == replay_ids:
+            return None
+        if (
+            len(set(direct_ids)) == len(direct_ids)
+            and len(set(replay_ids)) == len(replay_ids)
+            and set(direct_ids) == set(replay_ids)
+        ):
+            return key
+    return None
+
+
+def _native_archive_identity_key(values: list[Any]) -> str | None:
+    """Return a unique native identity key for one unordered archive array."""
+
+    if not values or not all(isinstance(item, Mapping) for item in values):
+        return None
+    for key in ("path", "glyphname", "layerId", "id", "name"):
+        if not all(key in item and str(item[key]) for item in values):
+            continue
+        identities = [str(item[key]) for item in values]
+        if len(set(identities)) == len(identities):
+            return key
+    return None
+
+
+def _normalized_native_archive_tree(value: Any) -> Any:
+    """Normalize only archive storage order already proven by canonical IDs.
+
+    Native package storage may reorder identity-addressed entities after an
+    exact detach/reattach even though schema-v5 authoritative order is
+    unchanged. Fingerprinting sorts only arrays whose members all expose one
+    unique stable identity. Positional arrays such as paths, nodes,
+    coordinates, and transforms remain order-sensitive.
+    """
+
+    if isinstance(value, Mapping):
+        return {
+            str(key): _normalized_native_archive_tree(child)
+            for key, child in sorted(value.items(), key=lambda item: str(item[0]))
+        }
+    if isinstance(value, list):
+        normalized = [_normalized_native_archive_tree(child) for child in value]
+        identity_key = _native_archive_identity_key(normalized)
+        if identity_key is not None:
+            return sorted(normalized, key=lambda item: str(item[identity_key]))
+        return normalized
+    return value
+
+
+def _decoded_native_archive_tree(archive: bytes) -> Any | None:
+    try:
+        return json.loads(archive.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return None
+
+
+_ARCHIVE_UUID_BYTES = re.compile(
+    rb"(?<![0-9A-Fa-f])[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[1-5][0-9A-Fa-f]{3}-[89ABab][0-9A-Fa-f]{3}-[0-9A-Fa-f]{12}(?![0-9A-Fa-f])"
+)
+
+
+def _normalize_independent_clone_archives(
+    direct_before: bytes,
+    direct_after: bytes,
+    replay_before: bytes,
+    replay_after: bytes,
+) -> tuple[bytes, bytes, bytes, bytes, int]:
+    """Normalize only UUID values proven volatile by untouched clone baselines.
+
+    The two before archives are independent ``GSFont.copy()`` results of the
+    same live font. UUIDs that differ at the same serialized occurrence are
+    therefore clone-local native evidence, not document state. Build a
+    review-local isomorphism from those untouched baselines and apply it to
+    both before/after lineages. A value introduced or changed by either
+    mutation is absent from the baseline map and remains visible to proof.
+    """
+
+    direct_values = _ARCHIVE_UUID_BYTES.findall(direct_before)
+    replay_values = _ARCHIVE_UUID_BYTES.findall(replay_before)
+    if len(direct_values) != len(replay_values):
+        return (
+            direct_before,
+            direct_after,
+            replay_before,
+            replay_after,
+            0,
+        )
+    direct_map: dict[bytes, bytes] = {}
+    replay_map: dict[bytes, bytes] = {}
+    for index, (direct_value, replay_value) in enumerate(
+        zip(direct_values, replay_values)
+    ):
+        if direct_value == replay_value:
+            continue
+        existing_direct = direct_map.get(direct_value)
+        existing_replay = replay_map.get(replay_value)
+        if existing_direct is not None or existing_replay is not None:
+            if existing_direct is None or existing_direct != existing_replay:
+                return direct_before, direct_after, replay_before, replay_after, 0
+            continue
+        placeholder = "__GLYPHS_MCP_CLONE_UUID_{:06d}__".format(index).encode("ascii")
+        direct_map[direct_value] = placeholder
+        replay_map[replay_value] = placeholder
+
+    def normalize(archive: bytes, replacements: Mapping[bytes, bytes]) -> bytes:
+        if not replacements:
+            return archive
+        return _ARCHIVE_UUID_BYTES.sub(
+            lambda match: replacements.get(match.group(0), match.group(0)),
+            archive,
+        )
+
+    return (
+        normalize(direct_before, direct_map),
+        normalize(direct_after, direct_map),
+        normalize(replay_before, replay_map),
+        normalize(replay_after, replay_map),
+        len(direct_map),
+    )
+
+
 def _compare_native_archive_deltas(
     direct_before: bytes,
     direct_after: bytes,
@@ -2948,23 +3292,86 @@ def _compare_native_archive_deltas(
 ) -> dict[str, Any]:
     """Compare native archive effects, not unrelated identities of two clones."""
 
+    (
+        direct_before,
+        direct_after,
+        replay_before,
+        replay_after,
+        normalized_count,
+    ) = _normalize_independent_clone_archives(
+        direct_before,
+        direct_after,
+        replay_before,
+        replay_after,
+    )
+    baseline_equivalent = direct_before == replay_before
+    final_equivalent = direct_after == replay_after
     direct = _archive_delta(direct_before, direct_after)
     replay = _archive_delta(replay_before, replay_after)
     count = max(len(direct), len(replay))
     mismatches: list[dict[str, Any]] = []
-    for index in range(count):
-        direct_item = direct[index] if index < len(direct) else None
-        replay_item = replay[index] if index < len(replay) else None
-        if direct_item != replay_item:
-            mismatches.append({"direct": direct_item, "replay": replay_item})
+    tree_truncated = False
+    if not baseline_equivalent:
+        direct_baseline_tree = _decoded_native_archive_tree(direct_before)
+        replay_baseline_tree = _decoded_native_archive_tree(replay_before)
+        if direct_baseline_tree is not None and replay_baseline_tree is not None:
+            baseline_mismatches, baseline_truncated = _native_archive_tree_mismatches(
+                direct_baseline_tree,
+                replay_baseline_tree,
+                limit=limit,
+            )
+            baseline_equivalent = not baseline_mismatches and not baseline_truncated
+            tree_truncated = tree_truncated or baseline_truncated
+            mismatches.extend(
+                dict(item, phase="baseline") for item in baseline_mismatches
+            )
+        else:
+            mismatches.append(
+                {
+                    "baseline": {
+                        "directHash": hashlib.sha256(direct_before).hexdigest(),
+                        "replayHash": hashlib.sha256(replay_before).hexdigest(),
+                    }
+                }
+            )
+    if not final_equivalent:
+        direct_tree = _decoded_native_archive_tree(direct_after)
+        replay_tree = _decoded_native_archive_tree(replay_after)
+        if direct_tree is not None and replay_tree is not None:
+            final_mismatches, final_truncated = _native_archive_tree_mismatches(
+                direct_tree,
+                replay_tree,
+                limit=limit,
+            )
+            final_equivalent = not final_mismatches and not final_truncated
+            tree_truncated = tree_truncated or final_truncated
+            mismatches.extend(dict(item, phase="final") for item in final_mismatches)
+        else:
+            for index in range(count):
+                direct_item = direct[index] if index < len(direct) else None
+                replay_item = replay[index] if index < len(replay) else None
+                if direct_item != replay_item:
+                    mismatches.append({"direct": direct_item, "replay": replay_item})
+    if not final_equivalent and not mismatches:
+        mismatches.append(
+            {
+                "final": {
+                    "directHash": hashlib.sha256(direct_after).hexdigest(),
+                    "replayHash": hashlib.sha256(replay_after).hexdigest(),
+                }
+            }
+        )
     bounded = mismatches[: max(0, min(100, int(limit)))]
     return {
-        "equivalent": not mismatches,
+        "equivalent": baseline_equivalent and final_equivalent,
         "mismatchCount": len(mismatches),
         "mismatchLocations": bounded,
-        "truncated": len(mismatches) > len(bounded),
+        "truncated": tree_truncated or len(mismatches) > len(bounded),
         "directDeltaCount": len(direct),
         "replayDeltaCount": len(replay),
+        "baselineEquivalent": baseline_equivalent,
+        "finalEquivalent": final_equivalent,
+        "normalizedCloneUuidCount": normalized_count,
     }
 
 
@@ -3156,6 +3563,11 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "staged structural replay evidence is missing or expired"
                 )
             context["nativeReplayTemplates"] = evidence.templates
+            # Evidence contains detached copies whose exact native payload was
+            # qualified on the independent verifier clone. Attaching those
+            # objects is the replay operation; copying them again can create
+            # fresh Glyphs-private state, especially for composite masters.
+            context["reuseNativeReplayTemplates"] = True
         if native_restore:
             context["reuseNativeReplayTemplates"] = True
         return context
@@ -3982,7 +4394,10 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     writable_target,
                     writable_changes,
                     capabilities=capabilities,
-                    execution_context={"nativeReplayTemplates": templates},
+                    execution_context={
+                        "nativeReplayTemplates": templates,
+                        "reuseNativeReplayTemplates": True,
+                    },
                 )
                 verifier_model = native_font_to_model(
                     verifier, instance_ids=after_instance_ids
@@ -4026,12 +4441,18 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 and not int(context_violations.get("count") or 0)
                 and bool(archive_comparison.get("equivalent"))
             ):
+                # The verifier owns the first detached copies after replay.
+                # Retain an independent detached set for one-time live
+                # confirmation so no verifier font or full clone survives.
+                retained_templates = _added_native_replay_templates(
+                    clone, before_model, after_model, changes
+                )
                 evidence = self._native_replay_evidence.create(
                     document_id=request.document_id or "",
                     before_fingerprint=fingerprint_model(before_model),
                     after_fingerprint=fingerprint_model(after_model),
                     capabilities=capabilities,
-                    templates=templates,
+                    templates=retained_templates,
                     ttl_seconds=15 * 60,
                 )
                 replay_context = {

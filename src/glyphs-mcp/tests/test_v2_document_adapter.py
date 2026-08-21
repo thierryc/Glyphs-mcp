@@ -120,7 +120,11 @@ class _ArchiveInstanceFont(_InstanceFont):
 
     def save(self, path, formatVersion=3, makeCopy=False):
         instance_id = self.instances[0].id()
-        Path(path).write_text(
+        destination = Path(path)
+        if destination.suffix == ".glyphspackage":
+            destination.mkdir()
+            destination = destination / "fontinfo.plist"
+        destination.write_text(
             "instances = (\n{id = \"%s\";}\n);\nunsupportedNativeValue = %s;\n"
             % (instance_id, self.unsupported_native_value),
             encoding="utf-8",
@@ -332,6 +336,8 @@ class _MasterLifecycleMaster:
 
 class _MasterLifecycleLayer:
     def __init__(self, master_id, name, *, native_only):
+        self._font = None
+        self._stored_name = None
         self.layerId = master_id
         self.associatedMasterId = master_id
         self.name = name
@@ -349,6 +355,18 @@ class _MasterLifecycleLayer:
         self.components = []
         self.shapes = []
         self.native_only = native_only
+
+    @property
+    def name(self):
+        if self.isMasterLayer and self._font is not None:
+            for master in self._font.masters:
+                if str(master.id) == str(self.associatedMasterId):
+                    return master.name
+        return self._stored_name
+
+    @name.setter
+    def name(self, value):
+        self._stored_name = value
 
     def copy(self):
         return copy.deepcopy(self)
@@ -382,6 +400,12 @@ class _MasterLayerCollection:
             # reconcile the resulting native object to its canonical target.
             value.LSB += 7
             value.RSB -= 7
+        font = getattr(self.owner, "font", None)
+        if font is not None:
+            # Glyphs derives master-layer names dynamically from the font.
+            # The fixture carries the parent explicitly without invoking the
+            # GSLayer.name setter.
+            value._font = font
         self._values[str(key)] = value
 
     def __delitem__(self, key):
@@ -392,6 +416,10 @@ class _MasterLayerCollection:
 
     def setter(self, values):
         self.atomic_assignment_count += 1
+        font = getattr(self.owner, "font", None)
+        if font is not None:
+            for value in values:
+                value._font = font
         self._values = {str(value.layerId): value for value in values}
 
     def values(self):
@@ -462,6 +490,21 @@ class _MasterLifecycleGlyph:
         self._undo_removed_layer = None
 
 
+class _CascadingMasterCollection(list):
+    """Model Glyphs' ownership cascade from masters to master layers."""
+
+    def __init__(self, values, font):
+        super().__init__(values)
+        self.font = font
+
+    def __delitem__(self, index):
+        master_id = str(self[index].id)
+        for glyph in self.font.glyphs:
+            if document_adapter._lookup_layer(glyph, master_id) is not None:
+                del glyph.layers[master_id]
+        super().__delitem__(index)
+
+
 def _master_lifecycle_font():
     regular = _MasterLifecycleMaster(
         "master_regular", "Regular", 100, native_only="master-secret"
@@ -481,8 +524,12 @@ def _master_lifecycle_font():
     ]
     font = _TransactionalFont()
     font.axes = [SimpleNamespace(axisId="axis-weight", name="Weight", axisTag="wght")]
-    font.masters = [regular]
+    font.masters = _CascadingMasterCollection([regular], font)
     font.glyphs = glyphs
+    for glyph in glyphs:
+        glyph.font = font
+        for layer in glyph.layers.values():
+            layer._font = font
     return font
 
 
@@ -988,6 +1035,50 @@ class V2DocumentAdapterTests(unittest.TestCase):
             )
         )
 
+    def test_master_deletion_uses_the_native_owned_layer_cascade(self) -> None:
+        font = _master_lifecycle_font()
+        before = native_font_to_model(font)
+        build = build_master_updates(
+            before,
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": "master_regular",
+                    "masterId": "master_text",
+                    "name": "Text",
+                }
+            ],
+        )
+        after = build.change_set.apply(before)
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=build.capabilities,
+            execution_context=build.execution_context,
+        )
+        assignments_before_delete = {
+            glyph.name: glyph.layers.atomic_assignment_count
+            for glyph in font.glyphs
+        }
+
+        document_adapter._apply_target_model(
+            font,
+            after,
+            before,
+            build.change_set.inverse(),
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+        )
+
+        self.assertEqual(native_font_to_model(font), before)
+        for glyph in font.glyphs:
+            self.assertNotIn("master_text", glyph.layers._values)
+            self.assertEqual(
+                glyph.layers.atomic_assignment_count,
+                assignments_before_delete[glyph.name],
+            )
+
     def test_master_restore_reconciles_native_attachment_derived_state(self) -> None:
         font = _master_lifecycle_font()
         before = native_font_to_model(font)
@@ -1139,6 +1230,104 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 templates["master_text"]["nativeLayers"][glyph.name],
             )
 
+    def test_overlapping_glyph_and_master_tombstones_compose_by_ownership(self) -> None:
+        """A parent lifecycle must not mutate a retained child tombstone.
+
+        A removed glyph owns its detached native payload while a removed
+        master owns the corresponding layers of glyphs that remain attached.
+        Replaying the two lifecycles in one transaction must preserve both
+        pieces of evidence and restore the exact canonical tree.
+        """
+
+        font = _master_lifecycle_font()
+        added_master = _MasterLifecycleMaster(
+            "master_text", "Text", 125, native_only="master-text-secret"
+        )
+        font.masters.append(added_master)
+        for glyph in font.glyphs:
+            glyph.layers["master_text"] = _MasterLifecycleLayer(
+                "master_text",
+                "Text",
+                native_only="text-layer-secret-{}".format(glyph.name),
+            )
+        removed_glyph = _MasterLifecycleGlyph(
+            "C",
+            [
+                _MasterLifecycleLayer(
+                    "master_regular",
+                    "Regular",
+                    native_only="regular-layer-secret-C",
+                ),
+                _MasterLifecycleLayer(
+                    "master_text",
+                    "Text",
+                    native_only="text-layer-secret-C",
+                ),
+            ],
+        )
+        removed_glyph.font = font
+        for layer in removed_glyph.layers.values():
+            layer._font = font
+        font.glyphs.append(removed_glyph)
+
+        expanded = native_font_to_model(font)
+        reduced = copy.deepcopy(expanded)
+        reduced["masters"] = [
+            master
+            for master in reduced["masters"]
+            if master["id"] != "master_text"
+        ]
+        del reduced["glyphs"]["C"]
+        for glyph in reduced["glyphs"].values():
+            glyph["layers"] = [
+                layer
+                for layer in glyph["layers"]
+                if layer["id"] != "master_text"
+            ]
+
+        host = object.__new__(GlyphsDocumentHost)
+        tombstones = host._capture_removed_native_templates(font, expanded, reduced)
+        glyph_tombstone = tombstones[("glyphs", "C")]["native"]
+        self.assertIs(glyph_tombstone, removed_glyph)
+        self.assertIsNotNone(
+            document_adapter._lookup_layer(glyph_tombstone, "master_text")
+        )
+
+        removal = diff_models(expanded, reduced)
+        document_adapter._apply_target_model(
+            font,
+            expanded,
+            reduced,
+            removal,
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+        )
+
+        # The glyph was detached before Glyphs cascaded master-layer deletion
+        # through the remaining font, so the exact rollback evidence is intact.
+        self.assertIsNotNone(
+            document_adapter._lookup_layer(glyph_tombstone, "master_text")
+        )
+
+        document_adapter._apply_target_model(
+            font,
+            reduced,
+            expanded,
+            removal.inverse(),
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+            execution_context={
+                "nativeReplayTemplates": {
+                    path: value["native"] for path, value in tombstones.items()
+                },
+                "reuseNativeReplayTemplates": True,
+            },
+        )
+
+        self.assertEqual(native_font_to_model(font), expanded)
+        self.assertIs(
+            next(glyph for glyph in font.glyphs if glyph.name == "C"),
+            removed_glyph,
+        )
+
     def test_layer_tombstone_restores_the_exact_native_special_layer(self) -> None:
         font = _master_lifecycle_font()
         glyph = font.glyphs[0]
@@ -1259,6 +1448,9 @@ class V2DocumentAdapterTests(unittest.TestCase):
             capabilities=(LAYER_LIFECYCLE_CAPABILITY,),
         )
         self.assertEqual(native_font_to_model(font), before)
+        self.assertEqual(glyph.exact_layer_remove_count, 0)
+        self.assertEqual(glyph.layer_array_remove_count, 0)
+        self.assertGreaterEqual(glyph.layers.atomic_assignment_count, 2)
 
     def test_live_layer_reorder_uses_one_atomic_identity_preserving_setter(self) -> None:
         font = _master_lifecycle_font()
@@ -1366,6 +1558,52 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(layer.equal_identity_writes, 0)
         self.assertEqual((layer.LSB, layer.RSB), (50, 50))
         self.assertIs(glyph.layers["master_text"], layer)
+
+    def test_master_duplication_does_not_persist_a_redundant_layer_name(self) -> None:
+        class NameSensitiveLayer(_MasterLifecycleLayer):
+            def __init__(self, master_id, name, *, native_only):
+                self.track_name_writes = False
+                self.explicit_name_writes = 0
+                super().__init__(master_id, name, native_only=native_only)
+                self.track_name_writes = True
+
+            def __setattr__(self, name, value):
+                if name == "name" and self.__dict__.get("track_name_writes", False):
+                    self.explicit_name_writes += 1
+                super().__setattr__(name, value)
+
+        font = _master_lifecycle_font()
+        source = NameSensitiveLayer(
+            "master_regular",
+            "Regular",
+            native_only="layer-secret-A",
+        )
+        font.glyphs[0].layers["master_regular"] = source
+        before = native_font_to_model(font)
+        build = build_master_updates(
+            before,
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": "master_regular",
+                    "masterId": "master_text",
+                    "name": "Text",
+                }
+            ],
+        )
+
+        document_adapter._apply_target_model(
+            font,
+            before,
+            build.change_set.apply(before),
+            build.change_set,
+            capabilities=build.capabilities,
+            execution_context=build.execution_context,
+        )
+
+        duplicated = font.glyphs[0].layers["master_text"]
+        self.assertEqual(duplicated.name, "Text")
+        self.assertEqual(duplicated.explicit_name_writes, 0)
 
     def test_exact_master_restore_does_not_rewrite_equal_master_fields(self) -> None:
         class IdentitySensitiveMaster(_MasterLifecycleMaster):
@@ -2016,7 +2254,118 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertIn("Transaction Test", result["stdout"])
         self.assertEqual(full_capture.call_count, 0)
 
-    def test_staged_layer_python_compares_only_the_declared_native_scope(self) -> None:
+    def test_staged_review_scope_uses_clone_stable_full_font_archive(self) -> None:
+        font = _TransactionalFont()
+        request = PythonExecutionRequest(
+            code="layer.width += 10",
+            reason="clone-stable archive proof",
+            intended_effect="document_edit",
+            execution_mode="staged_document",
+            document_id="doc-1",
+            glyph_name="A",
+            layer_id="master-regular",
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_serialized_font_archive",
+            return_value=b"normalized-full-font-archive",
+        ) as full_archive:
+            archive = document_adapter._serialized_review_scope(font, request)
+
+        self.assertEqual(archive, b"normalized-full-font-archive")
+        full_archive.assert_called_once_with(font)
+
+    def test_native_archive_uses_complete_sharded_package_manifest(self) -> None:
+        requested_paths = []
+
+        def save_package(_font, path):
+            requested_paths.append(path)
+            path.mkdir()
+            (path / "fontinfo.plist").write_text(
+                '{"familyName":"Test","privateRoot":"root-state"}',
+                encoding="utf-8",
+            )
+            glyphs = path / "glyphs"
+            glyphs.mkdir()
+            (glyphs / "B.glyph").write_text(
+                '{"glyphname":"B","privateGlyph":2}', encoding="utf-8"
+            )
+            (glyphs / "A.glyph").write_text(
+                '{"glyphname":"A","privateGlyph":1}', encoding="utf-8"
+            )
+
+        with mock.patch.object(
+            document_adapter,
+            "_save_font_copy",
+            side_effect=save_package,
+        ):
+            archive = document_adapter._serialized_font_archive(object())
+
+        self.assertEqual(len(requested_paths), 1)
+        self.assertEqual(requested_paths[0].suffix, ".glyphspackage")
+        manifest = document_adapter._decoded_native_archive_tree(archive)
+        self.assertEqual(manifest["format"], "glyphspackage-v1")
+        self.assertEqual(
+            [entry["path"] for entry in manifest["files"]],
+            ["fontinfo.plist", "glyphs/A.glyph", "glyphs/B.glyph"],
+        )
+        self.assertEqual(
+            manifest["files"][0]["value"]["privateRoot"], "root-state"
+        )
+        self.assertEqual(
+            manifest["files"][1]["value"]["privateGlyph"], 1
+        )
+
+    def test_native_package_manifest_detects_private_file_changes(self) -> None:
+        before = {
+            "format": "glyphspackage-v1",
+            "files": [
+                {
+                    "path": "glyphs/A.glyph",
+                    "value": {"glyphname": "A", "privateGlyph": 1},
+                }
+            ],
+        }
+        after = copy.deepcopy(before)
+        after["files"][0]["value"]["privateGlyph"] = 2
+        encode = lambda value: document_adapter.json.dumps(
+            value, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+
+        result = document_adapter._compare_native_archive_deltas(
+            encode(before), encode(after), encode(before), encode(before)
+        )
+
+        self.assertFalse(result["equivalent"])
+        self.assertEqual(
+            result["mismatchLocations"][0]["path"],
+            ["files", 0, "value", "privateGlyph"],
+        )
+
+    def test_native_package_normalizes_clone_instance_ids_before_encoding(self) -> None:
+        identifier = "11111111-1111-4111-8111-111111111111"
+
+        def save_package(_font, path):
+            path.mkdir()
+            (path / "fontinfo.plist").write_text(
+                'instances = ({ id = "' + identifier + '"; });',
+                encoding="utf-8",
+            )
+
+        font = SimpleNamespace(instances=[SimpleNamespace(id=identifier)])
+        with mock.patch.object(
+            document_adapter, "_save_font_copy", side_effect=save_package
+        ):
+            archive = document_adapter._serialized_font_archive(font)
+
+        manifest = document_adapter._decoded_native_archive_tree(archive)
+        encoded = manifest["files"][0]["value"]["$data"]
+        decoded = document_adapter.base64.b64decode(encoded)
+        self.assertNotIn(identifier.encode("ascii"), decoded)
+        self.assertIn(b"__GLYPHS_MCP_INSTANCE_0000__", decoded)
+
+    def test_staged_layer_python_compares_native_archive_deltas(self) -> None:
         node = _OutlineNode(0, 0)
         path = _OutlinePath([node])
         layer = _ReadOnlyShapeProxyLayer([path])
@@ -2074,10 +2423,6 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         with mock.patch.object(
             document_adapter,
-            "_serialized_font_archive",
-            return_value=b"full-font-archive",
-        ) as full_archive, mock.patch.object(
-            document_adapter,
             "_serialized_review_scope",
             side_effect=scoped_archive,
             create=True,
@@ -2098,8 +2443,6 @@ class V2DocumentAdapterTests(unittest.TestCase):
             preview["writableChangeSet"].after_fingerprint,
             document_adapter.fingerprint_model(preview["afterModel"]),
         )
-        self.assertEqual(full_archive.call_count, 0)
-
     def test_canonical_layer_records_native_width_ownership(self) -> None:
         path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
         component = _OutlineComponent("jdotless")
@@ -2963,6 +3306,141 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertLessEqual(len(result["mismatchLocations"]), 100)
         self.assertIn("direct", result["mismatchLocations"][0])
         self.assertIn("replay", result["mismatchLocations"][0])
+
+    def test_canonical_native_archive_mismatch_reports_semantic_path(self) -> None:
+        direct_before = b'{"font":{"glyphs":[{"name":"A","private":1}]}}'
+        replay_before = b'{"font":{"glyphs":[{"name":"A","private":1}]}}'
+        direct_after = b'{"font":{"glyphs":[{"name":"A","private":2}]}}'
+        replay_after = b'{"font":{"glyphs":[{"name":"A","private":3}]}}'
+
+        result = document_adapter._compare_native_archive_deltas(
+            direct_before,
+            direct_after,
+            replay_before,
+            replay_after,
+        )
+
+        self.assertFalse(result["equivalent"])
+        self.assertEqual(result["mismatchCount"], 1)
+        self.assertEqual(
+            result["mismatchLocations"][0]["path"],
+            ["font", "glyphs", 0, "private"],
+        )
+        self.assertEqual(result["mismatchLocations"][0]["direct"], 2)
+        self.assertEqual(result["mismatchLocations"][0]["replay"], 3)
+
+    def test_native_archive_proof_aligns_identity_addressed_collections(self) -> None:
+        before = b'{"layers":[{"layerId":"A","private":1},{"layerId":"B","private":2}]}'
+        direct_after = b'{"layers":[{"layerId":"B","private":2},{"layerId":"A","private":1}]}'
+        replay_after = b'{"layers":[{"layerId":"A","private":1},{"layerId":"B","private":2}]}'
+
+        result = document_adapter._compare_native_archive_deltas(
+            before,
+            direct_after,
+            before,
+            replay_after,
+        )
+
+        self.assertTrue(result["equivalent"])
+        self.assertTrue(result["finalEquivalent"])
+        self.assertEqual(result["mismatchLocations"], [])
+
+    def test_native_archive_fingerprint_normalizes_only_identity_storage_order(self) -> None:
+        first = {
+            "layers": [
+                {"layerId": "B", "private": 2},
+                {"layerId": "A", "private": 1},
+            ],
+            "nodes": [[0, 0], [10, 0]],
+        }
+        reordered_layers = {
+            "layers": list(reversed(first["layers"])),
+            "nodes": list(first["nodes"]),
+        }
+        reordered_nodes = {
+            "layers": list(first["layers"]),
+            "nodes": list(reversed(first["nodes"])),
+        }
+
+        self.assertEqual(
+            document_adapter._normalized_native_archive_tree(first),
+            document_adapter._normalized_native_archive_tree(reordered_layers),
+        )
+        self.assertNotEqual(
+            document_adapter._normalized_native_archive_tree(first),
+            document_adapter._normalized_native_archive_tree(reordered_nodes),
+        )
+
+    def test_native_archive_proof_preserves_positional_collection_order(self) -> None:
+        before = b'{"nodes":[[0,0],[10,0]]}'
+        direct_after = b'{"nodes":[[10,0],[0,0]]}'
+
+        result = document_adapter._compare_native_archive_deltas(
+            before,
+            direct_after,
+            before,
+            before,
+        )
+
+        self.assertFalse(result["equivalent"])
+        self.assertFalse(result["finalEquivalent"])
+        self.assertEqual(result["mismatchLocations"][0]["path"], ["nodes", 0, 0])
+
+    def test_native_archive_proof_normalizes_only_clone_baseline_uuids(self) -> None:
+        direct_id = b"11111111-1111-4111-8111-111111111111"
+        replay_id = b"22222222-2222-4222-8222-222222222222"
+        direct_before = b"font = {\nprivateId = " + direct_id + b";\nvalue = 1;\n};\n"
+        replay_before = b"font = {\nprivateId = " + replay_id + b";\nvalue = 1;\n};\n"
+        direct_after = direct_before.replace(b"value = 1", b"value = 2")
+        replay_after = replay_before.replace(b"value = 1", b"value = 2")
+
+        result = document_adapter._compare_native_archive_deltas(
+            direct_before,
+            direct_after,
+            replay_before,
+            replay_after,
+        )
+
+        self.assertTrue(result["equivalent"])
+        self.assertTrue(result["baselineEquivalent"])
+        self.assertTrue(result["finalEquivalent"])
+        self.assertEqual(result["normalizedCloneUuidCount"], 1)
+
+    def test_native_archive_uuid_normalization_handles_repeated_ids_once(self) -> None:
+        direct_id = b"11111111-1111-4111-8111-111111111111"
+        replay_id = b"22222222-2222-4222-8222-222222222222"
+        direct_before = b"{" + direct_id + b":" + direct_id + b"}"
+        replay_before = b"{" + replay_id + b":" + replay_id + b"}"
+
+        normalized = document_adapter._normalize_independent_clone_archives(
+            direct_before,
+            direct_before,
+            replay_before,
+            replay_before,
+        )
+
+        self.assertEqual(normalized[0], normalized[2])
+        self.assertEqual(normalized[1], normalized[3])
+        self.assertEqual(normalized[4], 1)
+
+    def test_native_archive_proof_rejects_new_private_uuid_changes(self) -> None:
+        direct_id = b"11111111-1111-4111-8111-111111111111"
+        replay_id = b"22222222-2222-4222-8222-222222222222"
+        unexpected_id = b"33333333-3333-4333-8333-333333333333"
+        direct_before = b"privateId = " + direct_id + b";\n"
+        replay_before = b"privateId = " + replay_id + b";\n"
+        direct_after = b"privateId = " + unexpected_id + b";\n"
+
+        result = document_adapter._compare_native_archive_deltas(
+            direct_before,
+            direct_after,
+            replay_before,
+            replay_before,
+        )
+
+        self.assertFalse(result["equivalent"])
+        self.assertTrue(result["baselineEquivalent"])
+        self.assertFalse(result["finalEquivalent"])
 
     def test_archive_delta_is_linear_enough_for_repeated_glyphs_lines(self) -> None:
         before = b"\n".join([b"layer = {" for _ in range(20_000)])

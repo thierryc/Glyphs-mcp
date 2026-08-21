@@ -56,7 +56,11 @@ class _Font:
         return _Font(self.familyName)
 
     def save(self, path, formatVersion=3, makeCopy=False):
-        Path(path).write_text("stable disposable archive", encoding="utf-8")
+        destination = Path(path)
+        if destination.suffix == ".glyphspackage":
+            destination.mkdir()
+            destination = destination / "fontinfo.plist"
+        destination.write_text("stable disposable archive", encoding="utf-8")
 
 
 def _structural_model():
