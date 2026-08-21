@@ -259,8 +259,7 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
     @objc.python_method
     def _document_window(self):
         try:
-            controller = self.windowController()
-            return controller.window() if controller is not None else None
+            return self.dialog.window()
         except Exception:
             return None
 
