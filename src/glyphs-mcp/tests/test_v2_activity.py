@@ -157,6 +157,16 @@ class OperationActivityStoreTests(unittest.TestCase):
         self.assertIn("window = self.dialog.window()", document_scope)
         self.assertIn("if window is None:", document_scope)
 
+    def test_cold_hidden_palette_resolves_font_from_its_native_window(self) -> None:
+        source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
+            encoding="utf-8"
+        )
+        document_scope = source.split("def _document_id(self):", 1)[1].split(
+            "def _activity_changed", 1
+        )[0]
+        self.assertIn("font = self._font() or _font_from_window(window)", document_scope)
+        self.assertIn("def _font_from_window(window):", source)
+
 
 if __name__ == "__main__":
     unittest.main()
