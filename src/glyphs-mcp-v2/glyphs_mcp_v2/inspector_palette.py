@@ -102,6 +102,8 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
         self._cancel_button = cancel
         self._activity_store = default_activity_store()
         self._activity_snapshot = None
+        self._activity_document_id = None
+        self._activity_window = None
         self._activity_unsubscribe = None
         self._activity_timer = None
         self._capsule = None
@@ -139,16 +141,26 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
 
     @objc.python_method
     def _document_id(self):
+        window = self.dialog.window()
+        if window is None:
+            self._activity_document_id = None
+            self._activity_window = None
+            return None
+        if window is not self._activity_window:
+            self._activity_document_id = None
+            self._activity_window = window
         try:
             font = self._font()
-            if font is None:
-                return None
-            from .runtime import active_host
+            if font is not None:
+                from .runtime import active_host
 
-            host = active_host()
-            return host.document_id_for_font(font) if host is not None else None
+                host = active_host()
+                if host is not None:
+                    document_id = host.document_id_for_font(font)
+                    self._activity_document_id = document_id
         except Exception:
-            return None
+            pass
+        return self._activity_document_id
 
     @objc.python_method
     def _activity_changed(self, _snapshot):
