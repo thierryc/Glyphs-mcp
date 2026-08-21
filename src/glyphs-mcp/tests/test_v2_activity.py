@@ -145,6 +145,17 @@ class OperationActivityStoreTests(unittest.TestCase):
         self.assertIn("return self.dialog.window()", window_scope)
         self.assertNotIn("controller.window()", window_scope)
 
+    def test_collapsed_palette_retains_its_document_presentation_binding(self) -> None:
+        source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
+            encoding="utf-8"
+        )
+        document_scope = source.split("def _document_id(self):", 1)[1].split(
+            "def _activity_changed", 1
+        )[0]
+        self.assertIn("self._activity_document_id = document_id", document_scope)
+        self.assertIn("return self._activity_document_id", document_scope)
+        self.assertIn("if self.dialog.window() is None:", document_scope)
+
 
 if __name__ == "__main__":
     unittest.main()
