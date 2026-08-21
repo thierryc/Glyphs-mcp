@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Protocol
 
+from .activity import ActivityCancelled, OperationActivityStore
 from .audit import AuditLog
 from .contracts import OperationMetadata, ToolResponse, ToolWarning
 from .operations import OperationRecord, OperationStore
@@ -212,6 +213,7 @@ class PythonExecutionService:
         audit: AuditLog,
         operations: Optional[OperationStore] = None,
         trace: Optional["ActionTraceCoordinator"] = None,
+        activity: Optional[OperationActivityStore] = None,
     ) -> None:
         self._host = host
         self._transactions = transactions
@@ -220,6 +222,7 @@ class PythonExecutionService:
         self._audit = audit
         self._operations = operations or OperationStore(max_records=512)
         self._trace = trace
+        self._activity = activity
 
     @staticmethod
     def _replay_context(value: Mapping[str, Any]) -> dict[str, Any]:
@@ -467,7 +470,19 @@ class PythonExecutionService:
         if before_fingerprint != request.expected_document_fingerprint:
             return self._failure("stale_document", "The document changed before staged execution.")
         try:
+            if self._activity is not None:
+                self._activity.advance_current(
+                    "detached",
+                    "Running Python on a detached document",
+                    cancellable=True,
+                )
+                self._activity.checkpoint_current()
             preview = self._host.preview_python(request, before)
+            if self._activity is not None:
+                self._activity.advance_current(
+                    "comparing", "Comparing changes", cancellable=True
+                )
+                self._activity.checkpoint_current()
             after = dict(preview["afterModel"])
             after_fingerprint = fingerprint_model(after)
             provided_changes = preview.get("changeSet")
@@ -480,6 +495,8 @@ class PythonExecutionService:
                 changes = provided_changes
             else:
                 changes = diff_models(before, after)
+        except ActivityCancelled:
+            raise
         except Exception as exc:
             return self._failure(
                 "python_preview_failed",

@@ -188,3 +188,28 @@ preserved path, active master, and dirty state, retained no preview evidence,
 and never saved. This is an exhaustive development gate rather than one user
 operation; remaining multi-second native phases still require cooperative
 progress UI before release-candidate qualification.
+
+## Glyphs MCP activity
+
+V2 owns one UI-neutral, process-local activity state. Application services,
+detached planning, staged Python, live apply, verification, and exact restore
+publish coarse phases without importing AppKit or GlyphsApp. Presentation
+observers are fail-open and cannot affect mutation, history, audit, or Reporter
+behavior. Cancellation is cooperative before the live atomic boundary; once
+live apply starts, the operation finishes or restores through the verified
+transaction kernel.
+
+The Glyphs 4 bundle replaces the legacy Metadata Inspector principal class
+with one `Glyphs MCP` palette. It subclasses the existing LitSquare metadata
+editor and adds a compact status row rather than duplicating its editor. When
+the palette is collapsed or the right sidebar is hidden, work lasting at least
+two seconds receives one drawing-only, click-through capsule attached to the
+document content view. The palette and capsule consume the same state and are
+never shown as competing activity controls.
+
+Glyphs 4.0.1 build 4004 live qualification showed that `PalettePlugin.title()`
+returns an updated value, but an already-mounted palette header does not refresh
+after normal redraw or KVO notification. V2 therefore keeps `self.name` and the
+native header title stable as `Glyphs MCP`; it does not manipulate Glyphs'
+private sidebar hierarchy. A live restart is still required to qualify the
+mounted palette layout and the hidden-sidebar capsule together.

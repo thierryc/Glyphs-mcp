@@ -109,6 +109,16 @@ def _activate_v2_bundle(bundle: Path) -> Path:
     )
     plugin_text = plugin_text.replace("GlyphsMCPCandidateReporter", "GlyphsMCPChangeDiffReporter")
     plugin_text = plugin_text.replace("Glyphs MCP Candidate (unavailable)", "Glyphs MCP Changes (unavailable)")
+    plugin_text = plugin_text.replace(
+        "from glyphs_litsquare_palette import GlyphsMCPLitSquareMetadataPalette",
+        "from glyphs_mcp_v2.inspector_palette import GlyphsMCPInspectorPalette",
+    )
+    plugin_text = plugin_text.replace(
+        "GlyphsMCPLitSquareMetadataPalette", "GlyphsMCPInspectorPalette"
+    )
+    plugin_text = plugin_text.replace(
+        "Glyphs MCP Metadata Inspector (unavailable)", "Glyphs MCP (unavailable)"
+    )
     plugin_path.write_text(plugin_text, encoding="utf-8")
 
     for legacy_name in (
@@ -127,7 +137,11 @@ def _activate_v2_bundle(bundle: Path) -> Path:
     info["CFBundleShortVersionString"] = version
     info["CFBundleVersion"] = version
     info["Principal Classes"] = [
-        "GlyphsMCPChangeDiffReporter" if value == "GlyphsMCPCandidateReporter" else value
+        "GlyphsMCPChangeDiffReporter"
+        if value == "GlyphsMCPCandidateReporter"
+        else "GlyphsMCPInspectorPalette"
+        if value == "GlyphsMCPLitSquareMetadataPalette"
+        else value
         for value in info.get("Principal Classes", [])
     ]
     with plist_path.open("wb") as plist_file:

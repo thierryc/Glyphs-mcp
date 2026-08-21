@@ -86,9 +86,11 @@ class TransactionKernel:
         adapter: TransactionAdapter,
         *,
         observer: Optional[TransactionObserver] = None,
+        activity: Any = None,
     ) -> None:
         self._adapter = adapter
         self._observer = observer
+        self._activity = activity
         self._diagnostic_timings: dict[str, Mapping[str, float]] = {}
         self._timing_lock = RLock()
 
@@ -184,6 +186,8 @@ class TransactionKernel:
         document_id = plan.document_id
         if not document_id:
             raise ValueError("document_id is required")
+        if self._activity is not None:
+            self._activity.checkpoint_current()
         capture_started = time.perf_counter_ns()
         before = self._retain_or_copy(self._capture_state(document_id))
         timings["initial_capture"] += (
@@ -203,6 +207,12 @@ class TransactionKernel:
                 time.perf_counter_ns() - history_started
             ) / 1_000_000
         try:
+            if self._activity is not None:
+                self._activity.advance_current(
+                    "applying",
+                    "Applying verified changes",
+                    cancellable=False,
+                )
             live_apply_started = time.perf_counter_ns()
             verified_apply = getattr(self._adapter, "apply_verified_change_set", None)
             if callable(verified_apply):
@@ -226,6 +236,10 @@ class TransactionKernel:
             timings["live_apply"] += (
                 time.perf_counter_ns() - live_apply_started
             ) / 1_000_000
+            if self._activity is not None:
+                self._activity.advance_current(
+                    "verifying", "Verifying the result", cancellable=False
+                )
             settled_started = time.perf_counter_ns()
             actual_after = self._retain_or_copy(
                 self._capture_verified_state(document_id, expected_after)
@@ -288,6 +302,10 @@ class TransactionKernel:
         except Exception as exc:
             rollback_succeeded = False
             try:
+                if self._activity is not None:
+                    self._activity.advance_current(
+                        "restoring", "Restoring the previous state", cancellable=False
+                    )
                 verified_restore = getattr(self._adapter, "restore_verified_attempt", None)
                 if callable(verified_restore):
                     restore_options = {

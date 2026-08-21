@@ -16,6 +16,7 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.application import ReadOnlyApplication  # noqa: E402
+from glyphs_mcp_v2.activity import OperationActivityStore  # noqa: E402
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
 from glyphs_mcp_v2.contracts import ToolResponse  # noqa: E402
 from glyphs_mcp_v2.ports import (  # noqa: E402
@@ -60,6 +61,19 @@ class _FakeHost:
 
 
 class V2ApplicationTests(unittest.TestCase):
+    def test_invoke_publishes_one_event_driven_activity_lifecycle(self) -> None:
+        activity = OperationActivityStore(id_factory=lambda: "activity_invoke")
+        observed = []
+        activity.subscribe(observed.append)
+        app = ReadOnlyApplication(_FakeHost(), activity=activity)
+
+        response = app.invoke("get_server_info")
+
+        self.assertTrue(response.ok)
+        self.assertEqual(observed[0].phase, "preparing")
+        self.assertEqual(observed[-1].state, "success")
+        self.assertEqual(activity.current(None).state, "success")
+
     def test_invoke_reports_the_complete_handler_wall_time(self) -> None:
         app = ReadOnlyApplication(_FakeHost())
 

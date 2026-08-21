@@ -8,6 +8,11 @@ from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence
 
+from .activity import (
+    ActivityCancelled,
+    OperationActivityStore,
+    default_activity_store,
+)
 from .audit import AuditLog
 from .canonical_tree import (
     CANONICAL_MODEL_SCHEMA_VERSION,
@@ -178,8 +183,10 @@ class GlyphsMCPApplication:
         operations: Optional[OperationStore] = None,
         audit: Optional[AuditLog] = None,
         history: Optional[ChangeHistory] = None,
+        activity: Optional[OperationActivityStore] = None,
     ) -> None:
         self._host = host
+        self.activity = activity or default_activity_store()
         self._operations = operations or OperationStore()
         self._reviews = OperationStore()
         self._checkpoints = OperationStore(max_records=512)
@@ -187,11 +194,15 @@ class GlyphsMCPApplication:
         self.history = history or ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
         self._trace = ActionTraceCoordinator(self.history)
         self._transactions = (
-            TransactionKernel(host, observer=self._trace)
+            TransactionKernel(host, observer=self._trace, activity=self.activity)
             if hasattr(host, "capture_model")
             else None
         )
-        self._mutation_planner = MutationPlanner(host) if self._transactions is not None else None
+        self._mutation_planner = (
+            MutationPlanner(host, activity=self.activity)
+            if self._transactions is not None
+            else None
+        )
         self._python = (
             PythonExecutionService(
                 host=host,
@@ -201,6 +212,7 @@ class GlyphsMCPApplication:
                 audit=self._audit,
                 operations=self._operations,
                 trace=self._trace,
+                activity=self.activity,
             )
             if self._transactions is not None
             and hasattr(host, "preview_python")
@@ -222,6 +234,18 @@ class GlyphsMCPApplication:
         started_clock = time.perf_counter_ns()
         values = dict(arguments or {})
         definition = TOOL_CATALOG.get(handler_name)
+        document_id = str(
+            values.get("documentId") or values.get("document_id") or ""
+        ) or None
+        activity_token = self.activity.begin(
+            document_id=document_id,
+            tool=handler_name or "unknown",
+            title=(
+                definition.title
+                if definition is not None
+                else str(handler_name or "Glyphs MCP")
+            ),
+        )
         scope = self._trace.start_action(
             handler_name or "unknown",
             definition.effect if definition is not None else "read",
@@ -273,6 +297,14 @@ class GlyphsMCPApplication:
             ),
         )
         self._trace.finish_action(scope, response)
+        self.activity.complete(
+            activity_token,
+            ok=response.ok,
+            summary=response.summary,
+            cancelled=bool(
+                response.error is not None and response.error.code == "cancelled"
+            ),
+        )
         return response
 
     def _invoke_untraced(
@@ -308,6 +340,14 @@ class GlyphsMCPApplication:
                 summary="Glyphs host state is temporarily unavailable.",
                 code="host_unavailable",
                 message=str(exc) or "Glyphs host state is unavailable.",
+            )
+        except ActivityCancelled as exc:
+            return ToolResponse.failure(
+                tool=handler_name,
+                effect=definition.effect,
+                summary="The operation was cancelled before live mutation.",
+                code="cancelled",
+                message=str(exc) or "The operation was cancelled.",
             )
         except (ValueError, TypeError) as exc:
             return ToolResponse.failure(

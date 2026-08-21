@@ -703,8 +703,9 @@ class VerifiedMutationPlan:
 
 
 class MutationPlanner:
-    def __init__(self, host: MutationPlanningHost) -> None:
+    def __init__(self, host: MutationPlanningHost, *, activity: Any = None) -> None:
         self._host = host
+        self._activity = activity
 
     def plan(
         self,
@@ -736,6 +737,11 @@ class MutationPlanner:
             raise ValueError("document_id is required")
         if not operation_id:
             raise ValueError("operation_id is required")
+        if self._activity is not None:
+            self._activity.advance_current(
+                "capturing", "Reading the current document", cancellable=True
+            )
+            self._activity.checkpoint_current()
         capture_started = time.perf_counter_ns()
         captured = before_model
         if captured is None:
@@ -776,6 +782,13 @@ class MutationPlanner:
         )
         reconciler = getattr(self._host, "simulate_reconciliation", None)
         if callable(verified_simulator):
+            if self._activity is not None:
+                self._activity.advance_current(
+                    "detached",
+                    "Running on a detached document",
+                    cancellable=True,
+                )
+                self._activity.checkpoint_current()
             simulation_started = time.perf_counter_ns()
             simulation = verified_simulator(
                 document_id,
@@ -866,6 +879,11 @@ class MutationPlanner:
                 time.perf_counter_ns() - simulation_started
             ) / 1_000_000
         verification_started = time.perf_counter_ns()
+        if self._activity is not None:
+            self._activity.advance_current(
+                "comparing", "Comparing changes", cancellable=True
+            )
+            self._activity.checkpoint_current()
         if (
             required_after_model is not None
             and fingerprint_model(expected_after)
