@@ -8,6 +8,7 @@ from typing import Any, Mapping, Optional
 
 from .canonical_tree import CanonicalFontTree
 from .canonical_collections import find_entity_index
+from .canonical_views import layer_anchors, layer_paths
 from .change_history import SessionDiff
 
 
@@ -48,6 +49,15 @@ def _layer(glyph: Any, layer_key: str) -> Optional[Mapping[str, Any]]:
     return value if isinstance(value, Mapping) else None
 
 
+def _anchor_positions(layer: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        str(anchor.get("id") or "anchor:{}".format(index)): copy.deepcopy(
+            anchor.get("position")
+        )
+        for index, anchor in enumerate(layer_anchors(layer))
+    }
+
+
 def overlay_for_layer(
     *,
     trees: CanonicalFontTree,
@@ -74,26 +84,34 @@ def overlay_for_layer(
     target = _layer(trees.glyph(session.after_tree_hash, glyph_name), layer_key)
     if before is None or target is None:
         return _empty()
-    recorded_visual_changed = any(
-        before.get(field) != target.get(field)
-        for field in ("paths", "anchors", "components", "width")
+    recorded_visual_changed = (
+        layer_paths(before) != layer_paths(target)
+        or layer_anchors(before) != layer_anchors(target)
+        or before.get("width") != target.get("width")
     )
     if not recorded_visual_changed:
         return _empty()
-    visual_fields = ("paths", "anchors", "components", "width")
-    live_visual_changed = any(before.get(field) != live_layer.get(field) for field in visual_fields)
+    live_visual_changed = (
+        layer_paths(before) != layer_paths(live_layer)
+        or layer_anchors(before) != layer_anchors(live_layer)
+        or before.get("width") != live_layer.get("width")
+    )
     if not live_visual_changed:
         return _empty()
-    includes_later_edits = any(target.get(field) != live_layer.get(field) for field in visual_fields)
+    includes_later_edits = (
+        layer_paths(target) != layer_paths(live_layer)
+        or layer_anchors(target) != layer_anchors(live_layer)
+        or target.get("width") != live_layer.get("width")
+    )
     return LayerOverlay(
         visible=True,
         includes_later_edits=includes_later_edits,
         glyph_name=glyph_name,
         layer_key=layer_key,
-        baseline_paths=tuple(copy.deepcopy(list(before.get("paths") or []))),
-        current_paths=tuple(copy.deepcopy(list(live_layer.get("paths") or []))),
-        baseline_anchors=copy.deepcopy(dict(before.get("anchors") or {})),
-        current_anchors=copy.deepcopy(dict(live_layer.get("anchors") or {})),
+        baseline_paths=tuple(copy.deepcopy(list(layer_paths(before)))),
+        current_paths=tuple(copy.deepcopy(list(layer_paths(live_layer)))),
+        baseline_anchors=_anchor_positions(before),
+        current_anchors=_anchor_positions(live_layer),
         baseline_width=float(before["width"]) if before.get("width") is not None else None,
         current_width=float(live_layer["width"]) if live_layer.get("width") is not None else None,
     )

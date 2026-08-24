@@ -8,7 +8,7 @@ import objc
 from AppKit import NSBezierPath, NSColor, NSGraphicsContext, NSPoint
 from GlyphsApp.plugins import ReporterPlugin  # type: ignore[import-not-found]
 
-from .adapters.document import native_layer_to_model
+from .adapters.document import native_layer_overlay_state
 from .diff_geometry import DifferenceTopologyError, difference_bands
 from .diff_overlay import overlay_for_layer
 from .runtime import active_history, active_host
@@ -116,7 +116,7 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
             return
         try:
             document_id = host.document_id_for_font(font)
-            layer_model = native_layer_to_model(layer)
+            layer_model = native_layer_overlay_state(layer)
             session = history.latest_session_diff(document_id)
             overlay = None
             for layer_key in dict.fromkeys(

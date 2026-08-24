@@ -9,6 +9,7 @@ import hashlib
 import json
 import plistlib
 import shutil
+import sys
 from pathlib import Path
 from typing import Dict
 
@@ -20,6 +21,7 @@ PLUGIN_MANAGER_BUNDLE = REPO_ROOT / "plugin-manager" / "Glyphs MCP.glyphsPlugin"
 DEFAULT_OUTPUT_ROOT = REPO_ROOT / "build" / "v2-runtime"
 BUNDLE_NAME = "Glyphs MCP.glyphsPlugin"
 PACKAGE_RELATIVE_TO_BUNDLE = Path("Contents/Resources/glyphs_mcp_v2")
+PINNED_FORMAT_ROOT = REPO_ROOT / "third_party" / "glyphs-file-format-v4"
 
 V2_MCP_TOOLS = '''# encoding: utf-8
 
@@ -51,6 +53,14 @@ V2_IMPORT_BLOCK = '''    # Load only the isolated v2 catalog. The generated mcp_
     # constructs the Glyphs-backed v2 application and FastMCP server.
     from mcp_tools import mcp  # noqa: F401
 '''
+
+LEGACY_TOOL_REGISTRY_PROBE = '''            tools = None
+            for attr_name in ["_tools", "tools", "_tool_registry", "tool_registry", "_handlers"]:
+                tools = getattr(mcp, attr_name, None)
+                if tools:
+                    break
+'''
+V2_TOOL_REGISTRY_PROBE = "            tools = get_mcp_tool_registry(mcp)\n"
 
 
 def _assert_output_is_contained(output_root: Path) -> Path:
@@ -92,6 +102,28 @@ def _activate_v2_bundle(bundle: Path) -> Path:
         shutil.rmtree(package_destination)
     shutil.copytree(SOURCE_PACKAGE, package_destination, ignore=_ignore_generated)
 
+    documentation = resources / "MCP Documentation" / "docs" / "file-format"
+    documentation.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(
+        PINNED_FORMAT_ROOT / "GlyphsFileFormatv4.md",
+        documentation / "GlyphsFileFormatv4.md",
+    )
+    shutil.copy2(
+        PINNED_FORMAT_ROOT / "LICENSE",
+        documentation / "GlyphsFileFormatv4-LICENSE.txt",
+    )
+    if str(SOURCE_PACKAGE.parent) not in sys.path:
+        sys.path.insert(0, str(SOURCE_PACKAGE.parent))
+    from glyphs_mcp_v2.canonical_schema import render_canonical_coverage_markdown
+
+    schema = json.loads(
+        (PINNED_FORMAT_ROOT / "glyphs-4.schema.json").read_text(encoding="utf-8")
+    )
+    (documentation / "canonical-schema-v6-coverage.md").write_text(
+        render_canonical_coverage_markdown(schema),
+        encoding="utf-8",
+    )
+
     (resources / "mcp_tools.py").write_text(V2_MCP_TOOLS, encoding="utf-8")
     (resources / "document_changes_panel.py").write_text(V2_CHANGES_PANEL, encoding="utf-8")
 
@@ -120,6 +152,24 @@ def _activate_v2_bundle(bundle: Path) -> Path:
         "Glyphs MCP Metadata Inspector (unavailable)", "Glyphs MCP (unavailable)"
     )
     plugin_path.write_text(plugin_text, encoding="utf-8")
+
+    glyphs_plugin_path = resources / "glyphs_plugin.py"
+    glyphs_plugin_text = glyphs_plugin_path.read_text(encoding="utf-8")
+    import_anchor = "from utils import (\n    get_known_tools,\n"
+    if glyphs_plugin_text.count(import_anchor) != 1:
+        raise RuntimeError("could not locate the shared tool-registry utility import")
+    glyphs_plugin_text = glyphs_plugin_text.replace(
+        import_anchor,
+        "from utils import (\n    get_known_tools,\n    get_mcp_tool_registry,\n",
+        1,
+    )
+    if glyphs_plugin_text.count(LEGACY_TOOL_REGISTRY_PROBE) != 2:
+        raise RuntimeError("could not locate both legacy tool-registry probes")
+    glyphs_plugin_text = glyphs_plugin_text.replace(
+        LEGACY_TOOL_REGISTRY_PROBE,
+        V2_TOOL_REGISTRY_PROBE,
+    )
+    glyphs_plugin_path.write_text(glyphs_plugin_text, encoding="utf-8")
 
     for legacy_name in (
         "glyphs_candidate_reporter.py",
@@ -197,8 +247,18 @@ def build(output_root: Path) -> Dict[str, object]:
         "fileCount": len(manifests["source"]),
         "files": manifests["source"],
     }
+    # The returned paths are process-local conveniences for callers assembling
+    # another payload. The persisted manifest is a distributable artifact and
+    # must not encode the checkout or selected build directory: doing so made
+    # equivalent builds byte-different and prevented relocation verification.
+    portable_result = {
+        **result,
+        "sourcePackage": SOURCE_PACKAGE.name,
+        "outputRoot": ".",
+        "installableBundle": (Path("source") / BUNDLE_NAME).as_posix(),
+    }
     (output / "manifest.json").write_text(
-        json.dumps(result, indent=2, sort_keys=True) + "\n",
+        json.dumps(portable_result, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
     return result

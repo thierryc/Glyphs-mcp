@@ -10,6 +10,7 @@ from typing import Any, Callable, Mapping, Optional
 from uuid import uuid4
 
 from .canonical_tree import CanonicalFontTree
+from .canonical_schema import CanonicalCoverage
 from .semantic import ChangeCompositionError, ChangeSet, compose_change_sets
 
 
@@ -30,6 +31,7 @@ class ActionCommit:
     operation_id: Optional[str]
     change_set: ChangeSet
     writable_change_set: Optional[ChangeSet] = None
+    coverage: CanonicalCoverage = CanonicalCoverage.complete()
 
     @property
     def changed(self) -> bool:
@@ -83,6 +85,39 @@ class ChangeHistory:
         self._commits: dict[str, ActionCommit] = {}
         self._listeners: list[Callable[[str], None]] = []
         self._lock = RLock()
+        self._last_reset_reason: Optional[str] = None
+
+    @property
+    def last_reset_reason(self) -> Optional[str]:
+        """Return the bounded reason for the latest whole-history reset."""
+
+        with self._lock:
+            return self._last_reset_reason
+
+    def reset_for_schema_change(
+        self, previous_version: int, current_version: int
+    ) -> str:
+        """Drop process-local refs when canonical fingerprints change schema.
+
+        Action history is intentionally not migrated across model schemas.
+        Content objects are pruned after refs are removed, and listeners are
+        notified so Change Log and Reporter views clear immediately.
+        """
+
+        previous = int(previous_version)
+        current = int(current_version)
+        if previous == current:
+            raise ValueError("schema-change reset requires different versions")
+        reason = "canonical_schema_changed:{}_to_{}".format(previous, current)
+        with self._lock:
+            document_ids = tuple(self._documents)
+            self._documents.clear()
+            self._commits.clear()
+            self._last_reset_reason = reason
+        self.trees.prune(set())
+        for document_id in document_ids:
+            self._notify(document_id)
+        return reason
 
     def subscribe(self, listener: Callable[[str], None]) -> Callable[[], None]:
         with self._lock:
@@ -120,6 +155,7 @@ class ChangeHistory:
         operation_id: Optional[str],
         change_set: Optional[ChangeSet] = None,
         writable_change_set: Optional[ChangeSet] = None,
+        coverage: CanonicalCoverage | None = None,
         commit_id: Optional[str] = None,
     ) -> ActionCommit:
         before_fingerprint = str(self.trees.descriptor(before_tree_hash)["modelFingerprint"])
@@ -154,6 +190,7 @@ class ChangeHistory:
             operation_id=operation_id,
             change_set=change_set,
             writable_change_set=writable_change_set or change_set,
+            coverage=coverage or CanonicalCoverage.complete(),
         )
         state.commits.append(commit)
         state.head_tree_hash = after_tree_hash
@@ -211,6 +248,7 @@ class ChangeHistory:
         source: str = "agent",
         change_set: Optional[ChangeSet] = None,
         writable_change_set: Optional[ChangeSet] = None,
+        coverage: CanonicalCoverage | None = None,
         commit_id: Optional[str] = None,
     ) -> ActionCommit:
         if not document_id:
@@ -258,6 +296,7 @@ class ChangeHistory:
                 operation_id=operation_id,
                 change_set=change_set,
                 writable_change_set=writable_change_set,
+                coverage=coverage,
                 commit_id=commit_id,
             )
         self._notify(document_id)

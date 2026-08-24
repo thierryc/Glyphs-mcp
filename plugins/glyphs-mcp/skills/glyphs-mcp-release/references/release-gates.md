@@ -25,12 +25,13 @@ creation, or upload unless the user explicitly expands the scope.
 2. Align versions:
 
    ```bash
-   python3 scripts/bump_version.py X.Y.Z
-   python3 scripts/release_security.py metadata --repo-root . --tag vX.Y.Z
+   python3 scripts/bump_version.py --installer-build BUILD X.Y.Z
+   python3 scripts/release_security.py candidate --repo-root . --version X.Y.Z --installer-build BUILD
    ```
 
-   Increment `CURRENT_PROJECT_VERSION` separately. Confirm both plug-in plists,
-   `MARKETING_VERSION`, the installer build, README links, and command-set text.
+   The build is explicit and never inferred. Confirm v2 source and agent
+   versions, `MARKETING_VERSION`, and the installer build. Both Glyphs 3
+   source plists must remain exactly 1.11.0.
 
 3. Synchronize skill packaging:
 
@@ -51,6 +52,14 @@ creation, or upload unless the user explicitly expands the scope.
    Use another project-approved Python 3.11-3.14 interpreter only when the
    exact path and reason are recorded. The gate runs the complete Python suite,
    Xcode tests, shell syntax, patch whitespace, and an unsigned Debug build.
+   For schema v6 it also runs the offline knowledge/hash check and independent
+   canonical audit. Set `GLYPHS_MCP_FULL_NETWORK=1` for the final release run;
+   upstream GlyphsSDK drift then fails closed pending manual review.
+
+   ```bash
+   python3 scripts/release_security.py knowledge --repo-root .
+   python3 scripts/audit_canonical_schema_v6.py --repo-root .
+   ```
 
 5. Build and validate documentation:
 
@@ -71,11 +80,15 @@ creation, or upload unless the user explicitly expands the scope.
    - Run documentation, catalog/registration, release-security, installer, marketplace, and
      Plugin Manager contract tests.
    - Run `git diff --check` after the final documentation edits.
+   - Require zero unclassified official schema paths and matching vendored
+     hashes/licenses. Treat the handbook and custom-parameter articles as
+     explanatory sources rather than closed schemas.
    - Confirm no open font was mutated or saved.
 
-7. Complete applicable manual QA from the release protocol on disposable font
-   copies. Record app version, Python interpreter, font fixture, catalog/runtime ID, tool
-   calls, result, logs, and whether document/file state changed. Update-related
+7. Complete the asymmetric manual QA from the release protocol. Glyphs 3.5
+   runs pinned-v1.11 read-only checks; Glyphs 4 runs v2 gates on the disposable
+   font. Record app version, Python interpreter, font fixture, catalog/runtime
+   ID, tool calls, result, logs, and whether document/file state changed. Update-related
    releases must exercise notification-only discovery, explicit staging,
    cancellation/failure paths, signature/receipt checks, and no automatic
    replacement of the running plug-in. Label staging actions **Prepare Update**,

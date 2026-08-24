@@ -17,12 +17,17 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
+from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
 from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
     CANONICAL_MODEL_SCHEMA_VERSION,
     CanonicalSnapshot,
 )
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
-from glyphs_mcp_v2.mutation import CanonicalImpact, mutation_scope  # noqa: E402
+from glyphs_mcp_v2.mutation import (  # noqa: E402
+    MASTER_LIFECYCLE_CAPABILITY,
+    CanonicalImpact,
+    mutation_scope,
+)
 from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
 from glyphs_mcp_v2.workflows import (  # noqa: E402
     build_master_updates,
@@ -131,8 +136,8 @@ def _layer_for(glyph: dict, identity: str) -> dict:
 
 
 class MasterLifecycleTests(unittest.TestCase):
-    def test_schema_v5_and_master_tools_are_explicit(self) -> None:
-        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 5)
+    def test_schema_v6_and_master_tools_are_explicit(self) -> None:
+        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 6)
         self.assertIn("list_masters", TOOL_CATALOG)
         self.assertIn("apply_master_updates", TOOL_CATALOG)
 
@@ -183,6 +188,10 @@ class MasterLifecycleTests(unittest.TestCase):
         )
         self.assertEqual(after["masters"][1]["name"], "Text")
         for glyph in after["glyphs"].values():
+            self.assertEqual(
+                [layer["id"] for layer in glyph["layers"][:3]],
+                ["master_regular", "master_text", "master_bold"],
+            )
             self.assertEqual(
                 _layer_for(glyph, "master_text")["paths"],
                 _layer_for(glyph, "master_regular")["paths"],
@@ -337,6 +346,47 @@ class MasterLifecycleTests(unittest.TestCase):
             (),
         )
 
+    def test_master_verification_strategy_follows_path_derived_impact(self) -> None:
+        before = _model(40)
+        moved = build_master_updates(
+            before, [{"action": "move", "masterId": "master_bold", "index": 0}]
+        )
+        updated = build_master_updates(
+            before,
+            [{
+                "action": "update",
+                "masterId": "master_bold",
+                "italicAngle": 12,
+                "axes": [{"tag": "wght", "internal": 240}],
+            }],
+        )
+        renamed = build_master_updates(
+            before,
+            [{"action": "update", "masterId": "master_bold", "name": "Display"}],
+        )
+        duplicated = build_master_updates(
+            before,
+            [{
+                "action": "duplicate",
+                "sourceMasterId": "master_regular",
+                "masterId": "master_text",
+                "name": "Text",
+            }],
+        )
+
+        self.assertFalse(document_adapter._impact_prefers_persistent_verification(
+            CanonicalImpact.from_change_set(before, moved.change_set)
+        ))
+        self.assertFalse(document_adapter._impact_prefers_persistent_verification(
+            CanonicalImpact.from_change_set(before, updated.change_set)
+        ))
+        self.assertTrue(document_adapter._impact_prefers_persistent_verification(
+            CanonicalImpact.from_change_set(before, renamed.change_set)
+        ))
+        self.assertTrue(document_adapter._impact_prefers_persistent_verification(
+            CanonicalImpact.from_change_set(before, duplicated.change_set)
+        ))
+
     def test_master_rename_targets_only_corresponding_layer_name_fragments(self) -> None:
         before = _model(40)
         renamed = build_master_updates(
@@ -400,6 +450,61 @@ class MasterLifecycleTests(unittest.TestCase):
         self.assertTrue(reverted["ok"], reverted)
         self.assertEqual(host.apply_calls, 2)
         self.assertEqual(host.model, baseline)
+
+    def test_direct_apply_composes_capabilities_from_the_semantic_patch(self) -> None:
+        class CapabilityHost(_Host):
+            def __init__(self, model):
+                super().__init__(model)
+                self.simulated_capabilities = ()
+
+            def simulate_verified_change_set(
+                self,
+                document_id,
+                change_set,
+                before_model,
+                *,
+                required_after_model=None,
+                capabilities=(),
+                execution_context=None,
+                removes_contribution_id=None,
+            ):
+                self.simulated_capabilities = tuple(capabilities)
+                return {
+                    "afterModel": change_set.apply(before_model),
+                    "replayReplacements": [],
+                }
+
+        host = CapabilityHost(_model())
+        app = GlyphsMCPApplication(host)
+        with mock.patch(
+            "glyphs_mcp_v2.application.lifecycle_capabilities",
+            return_value=("derived_capability",),
+        ) as derive:
+            response = app.invoke(
+                "apply_master_updates",
+                {
+                    "documentId": "doc_master",
+                    "expectedDocumentFingerprint": fingerprint_model(host.model),
+                    "updates": [
+                        {
+                            "action": "duplicate",
+                            "sourceMasterId": "master_regular",
+                            "masterId": "master_text",
+                            "name": "Text",
+                        }
+                    ],
+                },
+            ).to_dict()
+
+        self.assertTrue(response["ok"], response)
+        derive.assert_called_once()
+        self.assertEqual(
+            set(host.simulated_capabilities),
+            {
+                MASTER_LIFECYCLE_CAPABILITY,
+                "derived_capability",
+            },
+        )
 
     def test_master_revert_preserves_unrelated_edits_and_refuses_overlap(self) -> None:
         host = _Host(_model())

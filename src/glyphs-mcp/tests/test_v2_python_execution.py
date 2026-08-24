@@ -718,6 +718,35 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertIn("undeclared_document_mutation", codes)
         self.assertIn("output truncated", result["data"]["stdout"])
 
+    def test_observed_read_execution_does_not_recapture_the_document(self) -> None:
+        service, host = self.service()
+        host.observes_live_python_exceptions = True
+        before = copy.deepcopy(host.model)
+        after = copy.deepcopy(before)
+        host.run_live_python = lambda _request: {
+            "beforeModel": before,
+            "afterModel": after,
+            "stdout": "observed",
+            "stderr": "",
+            "scopeViolations": [],
+        }
+        host.capture_model = mock.Mock(
+            side_effect=AssertionError("read execution recaptured the document")
+        )
+
+        result = service.execute(
+            PythonExecutionRequest(
+                code="print('read')",
+                reason="single observation boundary",
+                intended_effect="read",
+                document_id="doc_alpha",
+            )
+        ).to_dict()
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["data"]["stdout"], "observed")
+        host.capture_model.assert_not_called()
+
     def test_obvious_external_effect_cannot_bypass_exact_review_as_read_intent(self) -> None:
         service, host = self.service()
         result = service.execute(

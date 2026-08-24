@@ -160,8 +160,8 @@ def _model() -> dict:
 
 
 class LayerLifecycleTests(unittest.TestCase):
-    def test_schema_v5_and_public_tools_are_explicit(self) -> None:
-        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 5)
+    def test_schema_v6_and_public_tools_are_explicit(self) -> None:
+        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 6)
         self.assertIn("list_layers", TOOL_CATALOG)
         self.assertIn("apply_layer_updates", TOOL_CATALOG)
         parameters = inspect.signature(ToolHandlers.apply_layer_updates).parameters

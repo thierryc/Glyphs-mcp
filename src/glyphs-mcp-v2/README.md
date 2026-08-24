@@ -1,7 +1,7 @@
 # Glyphs MCP 2.0 runtime
 
-This is the isolated, unreleased Glyphs MCP 2.0 package. It is based on signed
-release `v1.11.0` but does not change the shipped 1.x wire contracts.
+This is the isolated Glyphs MCP 2.0 release-candidate package. It is based on
+signed release `v1.11.0` but does not change the shipped 1.x wire contracts.
 
 The runtime exposes one catalog-driven operation surface across:
 
@@ -9,8 +9,8 @@ The runtime exposes one catalog-driven operation surface across:
 - compatibility, metrics, anchors, spacing, kerning, and export reviews;
 - direct apply-first typed mutations through detached simulation and one shared
   verified transaction kernel;
-- schema-v5 identity-aware glyph, layer, master, instance, feature, class, and
-  prefix membership/order patches with conflict-aware semantic revert;
+- schema-v6 complete saved semantic state, with identity-aware roots and nested
+  collections plus conflict-aware semantic revert;
 - paginated layer discovery and direct non-master layer duplication, update,
   order, deletion, interpolation rules, native tombstones, and exact revert;
 - staged, destination-fingerprint-bound source-bundle publication;
@@ -47,18 +47,19 @@ and avoids two native getter calls per captured layer. Spacing may still be
 expressed and inspected as sidebearings at the workflow boundary; verification
 records the authoritative geometry and width effects caused by that command.
 
-Ordered canonical collections remain ordinary detached JSON lists, but schema
-v5 addresses their entities by stable IDs and represents order independently.
+Ordered canonical collections remain ordinary detached JSON lists. Schemas v5
+and v6 address their entities by official IDs or conservative deterministic
+occurrence identities and represent order independently.
 `apply_glyph_updates`, `apply_opentype_updates`, and
 `apply_instance_updates` use that one semantic collection abstraction.
 `apply_master_updates` extends it to a composite master, its owned glyph layers,
 and its kerning partition. `apply_layer_updates` uses the same abstraction for
 intermediate, alternate, backup, Smart, and color layer membership. Specialized
 Smart/color property editing remains an explicit later boundary. Staged Python
-can replay schema-v5 glyph, master, non-master layer, instance, feature, class,
+can replay schema-v6 glyph, master, non-master layer, instance, feature, class,
 and prefix lifecycle changes after canonical and native-archive equivalence
 proof; confirmation applies the stored replay once and never reruns the script.
-Schema-v5 layer membership itself is complete and live-qualified. Glyphs owns master-layer ordering through the font master
+Schema-v5 layer membership itself remains live-qualified. Glyphs owns master-layer ordering through the font master
 collection, so those layers form an immutable prefix; layer lifecycle indexes
 address only positions at or after that prefix. The adapter atomically reorders
 the non-master suffix by building Glyphs' native `MGOrderedDictionary` and
@@ -232,7 +233,30 @@ selection. Protocol-v1 stages are not migrated or reinterpreted. Managed
 skills remain one optional v2 package rather than a duplicate legacy
 namespace.
 
-This milestone validates packaging and simulated installation only. It does
-not bump the production version, sign, notarize, publish, install into a live
-Glyphs folder, or restart Glyphs. Those release-candidate gates remain
-Milestone 11.
+Milestone 11 aligns this runtime and the installer at version `2.0.0` build
+`27` and freezes the schema-v5 unsigned regression baseline. Milestone 12 moves
+only `modelSchemaVersion` to 6 and aligns canonical saved state with the pinned
+official Glyphs File Format v4 schema. It retains the same immutable snapshots,
+semantic patches, verified transactions, Change Log, Reporter and rollback
+kernel; it is not a serialized-plist mirror and adds no second mutation engine.
+
+The v6 registry declares official, native, serialized and canonical paths,
+normalization, field role, identity/order policy, shard impact, replay and
+redaction. The generated coverage report classifies all 293 pinned official
+properties and wildcard containers. `.appVersion`, `.formatVersion`, master
+`tempData`, glyph `lastChange`, and UI session state have explicit excluded or
+derived roles rather than disappearing silently. Each operation reports a
+bounded `canonicalCoverage` summary. V5 process-local history is cleared on
+activation with reason `canonical_schema_changed:5_to_6`.
+
+The source-neutral `CanonicalSource` port normalizes live `GSFont`, decoded
+flat `.glyphs`, and decoded `.glyphspackage` mappings to the same semantic
+content. The live adapter uses the pinned `openstep_plist` decoder for a clean
+saved-source bootstrap; revision retrieval remains outside the runtime, and no
+runtime `glyphsLib` or public Git tool is introduced.
+
+Pinned format knowledge, hashes, licenses and provenance are recorded under
+`third_party/glyphs-file-format-v4`. Ordinary tests are offline. The
+full-network release gate compares upstream branch heads and blocks signing on
+drift without auto-updating the model. Signing, notarization, tagging, upload,
+publication, and live installation remain separate authorization boundaries.

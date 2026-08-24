@@ -1,7 +1,7 @@
 # Glyphs MCP
 
 > [!IMPORTANT]
-> **Glyphs 3 and Glyphs 4:** the `main` branch supports both major versions. The macOS installer detects each installed version and can target either or both. The terminal installer defaults to Glyphs 4; pass `--glyphs-version 3` for Glyphs 3.
+> **Glyphs 3 and Glyphs 4:** the 2.0 installer keeps Glyphs 3 on pinned Glyphs MCP 1.11 and installs Glyphs MCP 2.0 for Glyphs 4. Each target is independent. The terminal installer defaults to Glyphs 4; pass `--glyphs-version 3` for Glyphs 3.
 
 Site: https://ap.cx/gmcp
 
@@ -9,22 +9,23 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 ---
 
-## What's new in 1.11.0 (release candidate)
+## What's new in 2.0.0 (unsigned release-candidate source)
 
-**Safe live vibe coding for Glyphs Python.**
+**Verified apply-first Glyphs 4 automation with exact change history.**
 
-- The new `glyphs-mcp-scripting` skill turns natural-language ideas into small,
-  documentation-grounded scripts for the running Glyphs app. Read-only probes
-  can run directly; mutations are returned as exact `snippet_only` previews and
-  stop for explicit approval before unchanged execution.
-- Existing coding workflows remain intact: `glyphs-mcp-development` owns
-  reusable scripts and six plug-in types, while outline and italic fallback
-  code stays in its domain-specific skills.
-- The general `glyphs` router now distinguishes live runs, Macro Panel snippets,
-  reusable artifacts, and non-Glyphs Python explicitly.
-- Codex/ChatGPT, Claude Code, Cursor, GitHub Copilot CLI, and both installers
-  receive the same 11 synchronized skills.
-- The MCP runtime remains at 87 active tools: 76 model-visible and 11 app-only.
+- Typed edits use one detached simulation and verified transaction kernel,
+  complete read-back, atomic restoration, and no implicit save.
+- A Git-like semantic Change Log supports exact, conflict-aware selective
+  revert. The independent Reporter displays the geometric before/current gap.
+- Staged Python previews structural changes on a detached clone and confirms by
+  replaying its stored canonical patch without rerunning code on the live font.
+- Canonical schema v6 classifies every property in the pinned official Glyphs
+  File Format v4 schema and models complete saved semantic font state without
+  mirroring plist/package layout or claiming private PyObjC state is canonical.
+- The dual-target installer keeps Glyphs 3.5 on signed v1.11 and installs the
+  isolated v2 runtime only for Glyphs 4.
+- Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot CLI receive the same 13
+  synchronized v2 skills.
 
 [Read the 1.9 roadmap →](ROADMAP.md) ·
 [Read the changelog →](CHANGELOG.md) ·
@@ -33,9 +34,9 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 [Broad-Latin benchmark](content/contributor/italic-balanced-broad-latin-benchmark.md) ·
 [Full-resolution three-family sheet](content/contributor/images/italic-balanced-three-family-story.png)
 
-## Glyphs MCP 2.0 development
+## Glyphs MCP 2.0
 
-The `lit/v2` branch contains an isolated, unreleased 2.0 runtime at
+The `lit/v2` branch contains the isolated 2.0 release candidate at
 [`src/glyphs-mcp-v2`](src/glyphs-mcp-v2). Its single catalog-driven surface
 covers bounded reads, production analysis, direct apply-first verified
 mutations, staged export, model-visible Python fallback, and document rollback.
@@ -70,7 +71,7 @@ one target never replaces the other target's bundle.
 
 ![Glyphs MCP Installer](./website/static/img/glyphs-mcp-installer.png)
 
-- Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.dmg
+- Download (DMG): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/Glyphs-MCP-latest.dmg
 - Download (ZIP): https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip
 - Latest release: https://github.com/thierryc/Glyphs-mcp/releases/latest
 
@@ -128,7 +129,7 @@ Glyphs 3 backward compatibility is maintained for the shared MCP server code whe
 
 ## Optional agent plugins
 
-Glyphs MCP 1.11.0 provides one shared plugin package for Codex/ChatGPT, Claude
+Glyphs MCP 2.0.0 provides one shared plugin package for Codex/ChatGPT, Claude
 Code, Cursor, and GitHub Copilot CLI. Every host gets its own native manifest,
 but all four load the same synchronized skill package and local MCP connection:
 
@@ -158,8 +159,9 @@ installers do not install, update, or remove these agent plugins; each host owns
 that lifecycle. The repository also does not enable GitHub Copilot plugins
 through `.github/copilot/settings.json`.
 
-All host manifests use version `1.11.0`. Skills inherit that package version,
-while the running MCP server reports the matching native Glyphs MCP version.
+All host manifests use version `2.0.0`. Skills inherit that package version.
+The running server reports the selected host runtime: pinned `1.11.0` in
+Glyphs 3.5 and `2.0.0` in Glyphs 4.
 See [Use agent skills and optional plugins](content/getting-started/use-agent-skills.mdx)
 for install, update, removal, fallback, and host-specific invocation details.
 The [Codex and ChatGPT plugin UI](content/getting-started/codex-chatgpt-plugin-ui.mdx)
@@ -169,7 +171,8 @@ and structured-result fallbacks.
 
 ## Repo skills for Codex, Claude Code, Cursor, and GitHub Copilot
 
-This repo ships 11 workflow skills in `skills/` for common Glyphs MCP tasks.
+This repo ships 13 managed workflow skills in `skills/` for common Glyphs MCP
+tasks.
 The same source of truth is exposed through client-specific discovery paths:
 
 - Codex, Cursor, and GitHub Copilot CLI read them through `.agents/skills`

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping, Optional
 
 from .change_history import ActionCommit, ChangeHistory
+from .canonical_schema import CanonicalCoverage
 from .contracts import ToolResponse
 from .semantic import ChangeSet, diff_models, fingerprint_model
 
@@ -22,6 +23,7 @@ class _ActionScope:
     after_tree_hash: Optional[str] = None
     change_set: Optional[ChangeSet] = None
     writable_change_set: Optional[ChangeSet] = None
+    coverage: CanonicalCoverage = CanonicalCoverage.complete()
     transaction_completed: bool = False
     commit: Optional[ActionCommit] = None
     context_token: Optional[Token] = None
@@ -101,6 +103,7 @@ class ActionTraceCoordinator:
         before: Mapping[str, Any],
         after: Mapping[str, Any],
         change_set: Optional[ChangeSet] = None,
+        coverage: CanonicalCoverage | None = None,
     ) -> tuple[str, str]:
         """Record a detached before/after pair captured outside the mutation kernel."""
 
@@ -121,6 +124,7 @@ class ActionTraceCoordinator:
             scope.before_tree_hash = before_tree_hash
             scope.after_tree_hash = after_snapshot.tree_hash
             scope.change_set = resolved_changes
+            scope.coverage = coverage or CanonicalCoverage.complete()
             scope.transaction_completed = True
         return before_tree_hash, after_snapshot.tree_hash
 
@@ -151,6 +155,7 @@ class ActionTraceCoordinator:
         after: Mapping[str, Any],
         change_set: ChangeSet,
         writable_change_set: Optional[ChangeSet] = None,
+        coverage: Optional[CanonicalCoverage] = None,
     ) -> None:
         del before
         after_snapshot = self.history.trees.store_verified_transition(
@@ -164,6 +169,7 @@ class ActionTraceCoordinator:
             token.scope.after_tree_hash = after_snapshot.tree_hash
             token.scope.change_set = change_set
             token.scope.writable_change_set = writable_change_set or change_set
+            token.scope.coverage = coverage or CanonicalCoverage.complete()
             token.scope.transaction_completed = True
 
     def abort_transaction(self, token: _TransactionTrace) -> None:
@@ -202,6 +208,7 @@ class ActionTraceCoordinator:
                 operation_id=response.metadata.operation_id,
                 change_set=scope.change_set,
                 writable_change_set=scope.writable_change_set,
+                coverage=scope.coverage,
                 commit_id=response.metadata.operation_id,
             )
             return scope.commit

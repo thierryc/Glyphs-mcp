@@ -9,6 +9,13 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping, Protocol, Sequence
 
 from .canonical_tree import CanonicalSnapshot
+from .canonical_schema import (
+    CANONICAL_FONT_SCALAR_FIELDS,
+    CANONICAL_SCHEMA,
+    CanonicalCoverage,
+    FieldRole,
+)
+from .canonical_views import layer_components
 from .canonical_collections import (
     identity_order_change_required,
     indexed_entities,
@@ -17,17 +24,28 @@ from .canonical_collections import (
 from .semantic import (
     ChangeSet,
     SemanticChange,
+    complete_models_equal,
     diff_models,
     fingerprint_model,
+    rebase_canonical_model,
     subset_change_set,
 )
 
 
-_FONT_WRITABLE = frozenset(
-    {"familyName", "upm", "versionMajor", "versionMinor", "note", "grid", "gridSubDivision"}
-)
-_GLYPH_WRITABLE = frozenset(
-    {"category", "subCategory", "unicode", "export", "leftKerningGroup", "rightKerningGroup"}
+_FONT_WRITABLE = frozenset(CANONICAL_FONT_SCALAR_FIELDS)
+_GLYPH_WRITABLE = (
+    frozenset(
+        CANONICAL_SCHEMA.canonical_fields_for(
+            "definition.glyph", roles=(FieldRole.WRITABLE,)
+        )
+    )
+    # Glyph membership and layer lifecycle have their own capability owners;
+    # a glyph rename remains conservative delete/add rather than a scalar edit.
+    - {"name", "layers"}
+    # The live API exposes both a primary ``unicode`` and its complete list.
+    # Official v4 serializes the list through the same field, so this adapter
+    # spelling intentionally supplements the registry-derived set.
+    | {"unicodes"}
 )
 _LAYER_WRITABLE = frozenset(
     {
@@ -35,16 +53,43 @@ _LAYER_WRITABLE = frozenset(
         "leftMetricsKey",
         "rightMetricsKey",
         "widthMetricsKey",
+        "bottomMetricsKey",
+        "topMetricsKey",
+        "vertOriginMetricsKey",
+        "vertWidthMetricsKey",
+        "vertOrigin",
+        "vertWidth",
+        "active",
+        "visible",
+        "color",
         "anchors",
-        "paths",
-        "components",
+        "shapes",
+        "attributes",
+        "annotations",
+        "background",
+        "backgroundImage",
+        "guides",
+        "hints",
+        "partSelection",
+        "userData",
     }
 )
 _OPENTYPE_ROOTS = frozenset({"features", "classes", "featurePrefixes"})
-_OPENTYPE_WRITABLE = frozenset({"name", "code", "automatic", "disabled"})
+_OPENTYPE_WRITABLE = frozenset().union(
+    *(
+        CANONICAL_SCHEMA.fields_for(source, roles=(FieldRole.WRITABLE,))
+        for source in (
+            "definition.feature",
+            "definition.class",
+            "definition.featurePrefix",
+        )
+    )
+)
 _INSTANCE_WRITABLE = frozenset({"name", "type", "included", "axes"})
 MASTER_LIFECYCLE_CAPABILITY = "master_lifecycle"
 LAYER_LIFECYCLE_CAPABILITY = "layer_lifecycle"
+CANONICAL_V6_LIFECYCLE_CAPABILITY = "canonical_v6_lifecycle"
+_V6_ROOT_COLLECTIONS = frozenset({"axes", "metrics", "stems", "numbers"})
 
 
 def _layer_entities(glyph: Any) -> tuple[list[str], dict[str, Mapping[str, Any]]]:
@@ -52,7 +97,7 @@ def _layer_entities(glyph: Any) -> tuple[list[str], dict[str, Mapping[str, Any]]
     indexed = indexed_entities(layers)
     if indexed is None:
         # Schema-v4 models are accepted only as an internal migration input;
-        # every schema-v5 native capture and public operation emits a list.
+        # every schema-v6 native capture and public operation emits a list.
         if isinstance(layers, Mapping):
             order = [str(key) for key in layers]
             entities = {
@@ -95,6 +140,7 @@ def master_lifecycle_diff(
 ) -> ChangeSet:
     """Diff master-owned structures as independently reversible entities."""
 
+    after = rebase_canonical_model(before, after)
     changes = diff_models(before, after)
     before_ids = {
         str(master.get("id") or "")
@@ -115,19 +161,30 @@ def master_lifecycle_diff(
         if not (
             len(change.path) >= 2
             and change.path[0] == "kerning"
-            and change.path[1] in added_ids
+            and (
+                (len(change.path) >= 3 and change.path[2] in added_ids)
+                or (len(change.path) == 2 and change.path[1] in added_ids)
+            )
         )
     ]
     after_kerning = after.get("kerning", {})
     if isinstance(after_kerning, Mapping):
-        for master_id in sorted(added_ids & set(after_kerning)):
-            retained.append(
-                SemanticChange(
-                    path=("kerning", master_id),
-                    after=after_kerning[master_id],
-                    before_present=False,
+        directional = any(
+            domain in after_kerning for domain in ("ltr", "rtl", "vertical", "context")
+        )
+        domains = ("ltr", "rtl", "vertical") if directional else (None,)
+        for domain in domains:
+            values = after_kerning.get(domain, {}) if domain else after_kerning
+            if not isinstance(values, Mapping):
+                continue
+            for master_id in sorted(added_ids & set(values)):
+                retained.append(
+                    SemanticChange(
+                        path=("kerning", domain, master_id) if domain else ("kerning", master_id),
+                        after=values[master_id],
+                        before_present=False,
+                    )
                 )
-            )
     result = ChangeSet.from_changes(
         before_fingerprint=fingerprint_model(before),
         after_fingerprint=fingerprint_model(after),
@@ -142,6 +199,7 @@ def master_lifecycle_request_diff(
 ) -> ChangeSet:
     """Build the bounded writable master request without diffing every glyph."""
 
+    after = rebase_canonical_model(before, after)
     before_masters = before.get("masters", [])
     after_masters = after.get("masters", [])
     master_changes = diff_models(
@@ -197,20 +255,30 @@ def master_lifecycle_request_diff(
     before_kerning = before.get("kerning", {})
     after_kerning = after.get("kerning", {})
     if isinstance(before_kerning, Mapping) and isinstance(after_kerning, Mapping):
-        for master_id in sorted(structural_ids):
-            before_present = master_id in before_kerning
-            after_present = master_id in after_kerning
-            if before_present == after_present:
+        directional = any(
+            domain in before_kerning or domain in after_kerning
+            for domain in ("ltr", "rtl", "vertical", "context")
+        )
+        domains = ("ltr", "rtl", "vertical") if directional else (None,)
+        for domain in domains:
+            before_domain = before_kerning.get(domain, {}) if domain else before_kerning
+            after_domain = after_kerning.get(domain, {}) if domain else after_kerning
+            if not isinstance(before_domain, Mapping) or not isinstance(after_domain, Mapping):
                 continue
-            changes.append(
-                SemanticChange(
-                    path=("kerning", master_id),
-                    before=before_kerning.get(master_id),
-                    after=after_kerning.get(master_id),
-                    before_present=before_present,
-                    after_present=after_present,
+            for master_id in sorted(structural_ids):
+                before_present = master_id in before_domain
+                after_present = master_id in after_domain
+                if before_present == after_present:
+                    continue
+                changes.append(
+                    SemanticChange(
+                        path=("kerning", domain, master_id) if domain else ("kerning", master_id),
+                        before=before_domain.get(master_id),
+                        after=after_domain.get(master_id),
+                        before_present=before_present,
+                        after_present=after_present,
+                    )
                 )
-            )
     result = ChangeSet.from_changes(
         before_fingerprint=fingerprint_model(before),
         after_fingerprint=fingerprint_model(after),
@@ -225,20 +293,32 @@ def classify_change_path(path: tuple[str, ...]) -> str:
         return "unsupported"
     if path[0] == "font" and len(path) == 2 and path[1] in _FONT_WRITABLE:
         return "writable"
+    if path[0] == "font" and len(path) >= 2 and path[1] in {
+        "customParameters", "properties", "userData"
+    }:
+        return "writable"
+    if path[0] in _V6_ROOT_COLLECTIONS:
+        return "writable"
+    if path[0] in {"glyphOrder", "settings"}:
+        return "writable"
     if path[0] == "kerning":
         return "writable"
     if (
         path[0] in _OPENTYPE_ROOTS
         and (
             len(path) == 2
-            or (len(path) == 3 and path[2] in _OPENTYPE_WRITABLE)
+            or (len(path) >= 3 and path[2] in _OPENTYPE_WRITABLE)
         )
     ):
         return "writable"
     if path[0] == "instances":
         if len(path) == 2:
             return "writable"
-        if len(path) >= 3 and path[2] in _INSTANCE_WRITABLE:
+        if len(path) >= 3 and path[2] in _INSTANCE_WRITABLE | {
+            "exports", "visible", "isBold", "isItalic", "linkStyle",
+            "manualInterpolation", "weightClass", "widthClass",
+            "instanceInterpolations", "customParameters", "properties", "userData",
+        }:
             return "writable"
         if len(path) == 3 and path[2] in {
             "inclusionReason",
@@ -251,8 +331,6 @@ def classify_change_path(path: tuple[str, ...]) -> str:
         if len(path) == 3 and path[2] in _GLYPH_WRITABLE:
             return "writable"
         if len(path) >= 5 and path[2] == "layers":
-            if path[4] == "pathSignature":
-                return "derived"
             # Sidebearings are host projections of authoritative outline,
             # width, metrics-key, and master state. Their native setters are
             # mutation commands because they move geometry or resize width;
@@ -287,6 +365,123 @@ def _master_structural_ids(change_set: ChangeSet) -> frozenset[str]:
     )
 
 
+def master_owns_layer_order_change(change: Any, change_set: ChangeSet) -> bool:
+    """Return whether master lifecycle completely explains one layer order.
+
+    Master add/delete owns the corresponding master-layer membership in every
+    glyph, including the position projected from the master collection. It
+    does not grant permission to reorder any retained layer. Glyphs permits a
+    glyph to lack retained master layers, so proof is local to the affected
+    layer collection: the structural identities must have matching membership
+    changes and every retained layer must keep its exact relative order.
+    """
+
+    path = tuple(str(part) for part in getattr(change, "path", ()))
+    structural_ids = _master_structural_ids(change_set)
+    if (
+        len(path) != 4
+        or path[0] != "glyphs"
+        or path[2:] != ("layers", "$order")
+        or not structural_ids
+        or not getattr(change, "before_present", False)
+        or not getattr(change, "after_present", False)
+    ):
+        return False
+    def identities(value: Any) -> list[str] | None:
+        if not isinstance(value, (list, tuple)):
+            return None
+        result = [str(identity) for identity in value]
+        if not all(result) or len(result) != len(set(result)):
+            return None
+        return result
+
+    layer_before = identities(change.before)
+    layer_after = identities(change.after)
+    if layer_before is None or layer_after is None:
+        return False
+    assert layer_before is not None
+    assert layer_after is not None
+    if set(layer_before) ^ set(layer_after) != set(structural_ids):
+        return False
+    glyph_name = path[1]
+    for identity in structural_ids:
+        master_change = next(
+            (
+                candidate
+                for candidate in change_set.changes
+                if candidate.path == ("masters", identity)
+            ),
+            None,
+        )
+        layer_change = next(
+            (
+                candidate
+                for candidate in change_set.changes
+                if candidate.path
+                == ("glyphs", glyph_name, "layers", identity)
+            ),
+            None,
+        )
+        if (
+            master_change is None
+            or layer_change is None
+            or master_change.before_present != layer_change.before_present
+            or master_change.after_present != layer_change.after_present
+        ):
+            return False
+    retained = (set(layer_before) | set(layer_after)) - set(structural_ids)
+    if [identity for identity in layer_before if identity in retained] != [
+        identity for identity in layer_after if identity in retained
+    ]:
+        return False
+
+    master_order_change = next(
+        (
+            candidate
+            for candidate in change_set.changes
+            if candidate.path == ("masters", "$order")
+            and candidate.after_present
+        ),
+        None,
+    )
+    added = {
+        identity
+        for identity in structural_ids
+        if any(
+            candidate.path == ("masters", identity)
+            and not candidate.before_present
+            and candidate.after_present
+            for candidate in change_set.changes
+        )
+    }
+    removed = set(structural_ids) - added
+    expected = [identity for identity in layer_before if identity not in removed]
+    if added:
+        # An insertion index is owned by the font master order. When the
+        # semantic diff contains no master order evidence we cannot prove
+        # where a newly owned layer belongs, so fail closed instead of
+        # accepting an arbitrary local reorder.
+        if master_order_change is None:
+            return False
+        master_before = identities(master_order_change.before)
+        master_after = identities(master_order_change.after)
+        if master_before is None or master_after is None:
+            return False
+        master_ids = set(master_before) | set(master_after)
+        for identity in master_after:
+            if identity not in added:
+                continue
+            prefix_length = 0
+            for current in expected:
+                if current not in master_ids:
+                    break
+                prefix_length += 1
+            expected.insert(
+                min(master_after.index(identity), prefix_length), identity
+            )
+    return expected == layer_after
+
+
 def _change_classification(
     change: Any,
     change_set: ChangeSet,
@@ -312,6 +507,10 @@ def _change_classification(
                 "isSpecialLayer",
             }:
                 return "writable" if path[4] in {"name", "masterId", "interpolation"} else "derived"
+    if CANONICAL_V6_LIFECYCLE_CAPABILITY in capabilities and path[0] in {
+        "axes", "metrics", "stems", "numbers", "glyphOrder", "settings"
+    }:
+        return "writable"
     if MASTER_LIFECYCLE_CAPABILITY not in capabilities:
         return classification
     structural_ids = _master_structural_ids(change_set)
@@ -319,7 +518,11 @@ def _change_classification(
     if path[0] == "masters":
         if len(path) == 2:
             return "writable"
-        if len(path) >= 3 and path[2] in {"name", "italicAngle", "axes"}:
+        if len(path) >= 3 and path[2] in {
+            "name", "italicAngle", "axes", "active", "visible", "iconName",
+            "customParameters", "properties", "guides", "metricValues",
+            "stemValues", "numberValues", "userData",
+        }:
             return "writable"
     if (
         len(path) >= 4
@@ -331,13 +534,7 @@ def _change_classification(
         # consequence of adding/removing the owning master. They are not a
         # general layer-mutation permission.
         return "writable"
-    if (
-        len(path) == 4
-        and path[0] == "glyphs"
-        and path[2] == "layers"
-        and path[3] == "$order"
-        and structural_ids
-    ):
+    if master_owns_layer_order_change(change, change_set):
         return "writable"
     return classification
 
@@ -476,17 +673,14 @@ class CanonicalImpact:
             for layer in layer_values:
                 if not isinstance(layer, Mapping):
                     continue
-                components = layer.get("components", ())
-                if isinstance(components, (list, tuple)):
-                    for component in components:
-                        if isinstance(component, Mapping):
-                            name = str(
-                                component.get("name")
-                                or component.get("componentName")
-                                or ""
-                            )
-                            if name in known_names:
-                                references.add(name)
+                for component in layer_components(layer):
+                    name = str(
+                        component.get("name")
+                        or component.get("componentName")
+                        or ""
+                    )
+                    if name in known_names:
+                        references.add(name)
                 for field_name in (
                     "leftMetricsKey",
                     "rightMetricsKey",
@@ -504,7 +698,47 @@ class CanonicalImpact:
                     str(dependent_name)
                 )
 
-        pending = list(direct)
+        def requires_dependency_closure(path: tuple[str, ...]) -> bool:
+            if len(path) <= 2:
+                return True
+            if path[2] in {
+                "leftMetricsKey",
+                "rightMetricsKey",
+                "widthMetricsKey",
+                "bottomMetricsKey",
+                "topMetricsKey",
+                "vertOriginMetricsKey",
+                "vertWidthMetricsKey",
+                "smartAxes",
+                "partsSettings",
+            }:
+                return True
+            if path[2] != "layers":
+                return False
+            if len(path) <= 4:
+                return True
+            return path[4] in {
+                "anchors",
+                "shapes",
+                "paths",
+                "components",
+                "width",
+                "vertOrigin",
+                "vertWidth",
+                "leftMetricsKey",
+                "rightMetricsKey",
+                "widthMetricsKey",
+                "bottomMetricsKey",
+                "topMetricsKey",
+                "vertOriginMetricsKey",
+                "vertWidthMetricsKey",
+            }
+
+        pending = [
+            name
+            for name, changed_paths in direct.items()
+            if any(requires_dependency_closure(path) for path in changed_paths)
+        ]
         while pending:
             source = pending.pop()
             for dependent in reverse_dependencies.get(source, ()):
@@ -558,6 +792,8 @@ def lifecycle_capabilities(
     if tool == "apply_layer_updates":
         capabilities.add(LAYER_LIFECYCLE_CAPABILITY)
     paths = tuple(change.path for change in change_set.changes)
+    if any(path and path[0] in _V6_ROOT_COLLECTIONS | {"glyphOrder", "settings"} for path in paths):
+        capabilities.add(CANONICAL_V6_LIFECYCLE_CAPABILITY)
     if any(path and path[0] == "masters" for path in paths):
         capabilities.add(MASTER_LIFECYCLE_CAPABILITY)
     structural_master_ids = _master_structural_ids(change_set)
@@ -605,10 +841,6 @@ def staged_lifecycle_capabilities(
 
     before_tags = _master_axis_tags(before)
     after_tags = _master_axis_tags(after)
-    if before_tags != after_tags:
-        raise StructuralReplayValidationError(
-            "staged Python cannot change the font axis lifecycle"
-        )
 
     before_masters = {
         str(master.get("id") or "")
@@ -623,6 +855,8 @@ def staged_lifecycle_capabilities(
     added_masters = after_masters - before_masters
     removed_masters = before_masters - after_masters
     capabilities = set(lifecycle_capabilities(change_set))
+    if before_tags != after_tags or before.get("axes") != after.get("axes"):
+        capabilities.add(CANONICAL_V6_LIFECYCLE_CAPABILITY)
 
     before_glyphs = before.get("glyphs", {})
     after_glyphs = after.get("glyphs", {})
@@ -689,6 +923,7 @@ class VerifiedMutationPlan:
     replay_replacements: tuple[tuple[str, ...], ...] = ()
     capabilities: tuple[str, ...] = ()
     execution_context: Mapping[str, Any] = field(default_factory=dict)
+    coverage: CanonicalCoverage = CanonicalCoverage.complete()
     stage_timings: Mapping[str, float] = field(
         default_factory=dict, compare=False, repr=False
     )
@@ -700,6 +935,59 @@ class VerifiedMutationPlan:
     @property
     def after_fingerprint(self) -> str:
         return self.observed_change_set.after_fingerprint
+
+
+def _unicode_owners(model: Mapping[str, Any]) -> dict[str, frozenset[str]]:
+    """Return canonical Unicode ownership without consulting Glyphs UI state."""
+
+    owners: dict[str, set[str]] = {}
+    glyphs = model.get("glyphs", {})
+    if not isinstance(glyphs, Mapping):
+        return {}
+    for key, glyph in glyphs.items():
+        if not isinstance(glyph, Mapping):
+            continue
+        name = str(glyph.get("name") or key)
+        values = glyph.get("unicodes")
+        if values is None:
+            values = (glyph.get("unicode"),)
+        elif isinstance(values, str):
+            values = (values,)
+        elif not isinstance(values, Sequence):
+            values = (values,)
+        for value in values:
+            codepoint = str(value or "").upper()
+            if codepoint.startswith("U+"):
+                codepoint = codepoint[2:]
+            if codepoint:
+                owners.setdefault(codepoint, set()).add(name)
+    return {
+        codepoint: frozenset(names)
+        for codepoint, names in owners.items()
+        if len(names) > 1
+    }
+
+
+def _reject_new_duplicate_unicodes(
+    before: Mapping[str, Any], after: Mapping[str, Any]
+) -> None:
+    """Reject new Glyphs-invalid Unicode ownership, preserving legacy state."""
+
+    existing = _unicode_owners(before)
+    introduced = [
+        (codepoint, owners)
+        for codepoint, owners in sorted(_unicode_owners(after).items())
+        if existing.get(codepoint) != owners
+    ]
+    if not introduced:
+        return
+    codepoint, owners = introduced[0]
+    raise ValueError(
+        "mutation introduces duplicate Unicode U+{} in glyphs {}".format(
+            codepoint,
+            ", ".join(sorted(owners)[:8]),
+        )
+    )
 
 
 class MutationPlanner:
@@ -720,6 +1008,7 @@ class MutationPlanner:
         required_after_model: Mapping[str, Any] | None = None,
         capabilities: Sequence[str] = (),
         execution_context: Mapping[str, Any] | None = None,
+        coverage: CanonicalCoverage | None = None,
         initial_stage_timings: Mapping[str, float] | None = None,
     ) -> VerifiedMutationPlan:
         plan_started = time.perf_counter_ns()
@@ -772,8 +1061,11 @@ class MutationPlanner:
             raise StaleDocumentError("requested patch targets another document state")
 
         # Validate the writable patch independently before asking Glyphs to
-        # clone anything. This also rejects duplicate/stale paths deterministically.
-        requested_change_set.apply(before)
+        # clone anything. This also rejects duplicate/stale paths and new
+        # document-integrity conflicts deterministically.
+        requested_target = requested_change_set.apply(before)
+        if dirty_state_intent == "forward":
+            _reject_new_duplicate_unicodes(before, requested_target)
         replay_replacements: tuple[tuple[str, ...], ...] = ()
         normalized_capabilities = tuple(sorted(set(str(value) for value in capabilities)))
         normalized_context = copy.deepcopy(dict(execution_context or {}))
@@ -884,17 +1176,24 @@ class MutationPlanner:
                 "comparing", "Comparing changes", cancellable=True
             )
             self._activity.checkpoint_current()
-        if (
-            required_after_model is not None
-            and fingerprint_model(expected_after)
-            != fingerprint_model(required_after_model)
+        if required_after_model is not None and not complete_models_equal(
+            expected_after, required_after_model
         ):
             raise CanonicalTargetMismatchError(
                 required_after_model,
                 expected_after,
             )
+        if dirty_state_intent == "forward":
+            _reject_new_duplicate_unicodes(before, expected_after)
+        # The requested patch already proves the exact canonical target. When
+        # detached read-back agrees completely, it is also the observed diff;
+        # re-diffing hundreds of newly attached layers would only duplicate
+        # their complete outline payloads. Host-derived effects retain the
+        # complete fallback below.
         observed = (
-            master_lifecycle_diff(before, expected_after)
+            requested_change_set
+            if complete_models_equal(requested_target, expected_after)
+            else master_lifecycle_diff(before, expected_after)
             if MASTER_LIFECYCLE_CAPABILITY in normalized_capabilities
             else diff_models(before, expected_after)
         )
@@ -928,6 +1227,7 @@ class MutationPlanner:
             replay_replacements=replay_replacements,
             capabilities=normalized_capabilities,
             execution_context=normalized_context,
+            coverage=coverage or CanonicalCoverage.complete(),
             stage_timings=stage_timings,
         )
 
@@ -939,6 +1239,7 @@ __all__ = [
     "MutationPlanner",
     "MutationPlanningHost",
     "MutationBuild",
+    "CANONICAL_V6_LIFECYCLE_CAPABILITY",
     "LAYER_LIFECYCLE_CAPABILITY",
     "lifecycle_capabilities",
     "MASTER_LIFECYCLE_CAPABILITY",
@@ -949,6 +1250,7 @@ __all__ = [
     "is_structural_change_path",
     "mutation_scope",
     "master_lifecycle_diff",
+    "master_owns_layer_order_change",
     "master_lifecycle_request_diff",
     "normalize_mutation_build",
     "unsupported_change_diagnostics",

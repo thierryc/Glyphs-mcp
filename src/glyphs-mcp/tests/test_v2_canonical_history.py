@@ -9,6 +9,7 @@ import sys
 import tempfile
 import time
 import unittest
+from collections.abc import Mapping
 from pathlib import Path
 from unittest import mock
 
@@ -33,6 +34,7 @@ from glyphs_mcp_v2.semantic import (  # noqa: E402
     diff_models,
     fingerprint_model,
 )
+from glyphs_mcp_v2.workflows import build_master_updates  # noqa: E402
 
 
 def _layer(master_id: str, x: float = 0.0) -> dict:
@@ -94,6 +96,30 @@ def _model(glyph_count: int = 3, master_count: int = 2) -> dict:
 
 
 class CanonicalFontTreeTests(unittest.TestCase):
+    def test_schema_activation_clears_process_local_v5_history_with_reason(self) -> None:
+        trees = CanonicalFontTree(MemoryObjectStore())
+        history = ChangeHistory(trees)
+        before = _model(glyph_count=1, master_count=1)
+        after = copy.deepcopy(before)
+        after["font"]["familyName"] = "Changed"
+        history.record_action(
+            document_id="doc_schema_reset",
+            tool="test",
+            effect="edit",
+            status="applied",
+            run_id="run",
+            before_model=before,
+            after_model=after,
+        )
+
+        reason = history.reset_for_schema_change(5, 6)
+
+        self.assertEqual(reason, "canonical_schema_changed:5_to_6")
+        self.assertEqual(history.last_reset_reason, reason)
+        self.assertEqual(history.list_commits("doc_schema_reset"), ())
+        self.assertIsNone(history.head_tree_hash("doc_schema_reset"))
+        self.assertEqual(len(trees._store), 0)
+
     def test_snapshot_caches_exact_fingerprint_and_immutable_shards(self) -> None:
         model = _model(glyph_count=383, master_count=5)
         snapshot = CanonicalSnapshot.from_model(
@@ -107,6 +133,88 @@ class CanonicalFontTreeTests(unittest.TestCase):
         self.assertTrue(snapshot.content_tree_hash.startswith("sha256:"))
         self.assertEqual(snapshot.native_revision_evidence["glyphs"]["g0000"], ("revision-1",))
         self.assertEqual(snapshot.materialize(), model)
+
+    def test_sharded_snapshot_streams_the_exact_canonical_document_fingerprint(self) -> None:
+        model = {
+            "font": {"familyName": "G\u00e9\u03b2", "upm": 1000.0},
+            "settings": {"negativeZero": -0.0, "fraction": 1.25},
+            "glyphs": {
+                "A": {"name": "A", "export": True, "layers": []},
+                "\u03b2": {"name": "\u03b2", "export": False, "layers": []},
+            },
+        }
+
+        with mock.patch(
+            "glyphs_mcp_v2.canonical_tree.fingerprint_model",
+            side_effect=AssertionError("snapshot encoded the complete document"),
+        ):
+            snapshot = CanonicalSnapshot.from_shards(
+                {"font": model["font"], "settings": model["settings"]},
+                model["glyphs"],
+            )
+
+        self.assertEqual(snapshot.document_fingerprint, fingerprint_model(model))
+
+    def test_rebased_snapshot_encodes_only_the_changed_glyph_shard(self) -> None:
+        before = _model(glyph_count=383, master_count=5)
+        baseline = CanonicalSnapshot.from_shards(
+            {name: value for name, value in before.items() if name != "glyphs"},
+            before["glyphs"],
+        )
+        after = dict(baseline)
+        glyphs = dict(baseline.glyph_shards)
+        changed = copy.deepcopy(glyphs["g0191"])
+        changed["export"] = False
+        glyphs["g0191"] = changed
+        after["glyphs"] = glyphs
+
+        from glyphs_mcp_v2 import canonical_tree
+
+        original = canonical_tree._json_bytes
+        encoded_values = []
+
+        def record(value):
+            encoded_values.append(value)
+            return original(value)
+
+        with mock.patch(
+            "glyphs_mcp_v2.canonical_tree._json_bytes",
+            side_effect=record,
+        ), mock.patch(
+            "glyphs_mcp_v2.canonical_tree.fingerprint_model",
+            side_effect=AssertionError("rebase encoded the complete document"),
+        ):
+            rebased = baseline._rebase_shared_model(after)
+
+        self.assertEqual(rebased.document_fingerprint, fingerprint_model(after))
+        self.assertIs(rebased.glyph_shards["g0190"], baseline.glyph_shards["g0190"])
+        self.assertIsNot(rebased.glyph_shards["g0191"], baseline.glyph_shards["g0191"])
+        self.assertIn(False, encoded_values)
+        self.assertFalse(
+            any(
+                isinstance(value, Mapping)
+                and "layers" in value
+                and "name" in value
+                for value in encoded_values
+            )
+        )
+        self.assertFalse(any(value is glyphs["g0190"] for value in encoded_values))
+
+    def test_equal_verified_snapshots_diff_without_materializing_or_walking_the_tree(self) -> None:
+        snapshot = CanonicalSnapshot.from_model(_model(glyph_count=383, master_count=5))
+
+        with mock.patch(
+            "glyphs_mcp_v2.semantic._plain",
+            side_effect=AssertionError("equal snapshots were materialized"),
+        ), mock.patch(
+            "glyphs_mcp_v2.semantic._diff",
+            side_effect=AssertionError("equal snapshots were recursively walked"),
+        ):
+            changes = diff_models(snapshot, snapshot)
+
+        self.assertEqual(changes.changes, ())
+        self.assertEqual(changes.before_fingerprint, snapshot.document_fingerprint)
+        self.assertEqual(changes.after_fingerprint, snapshot.document_fingerprint)
 
     def test_verified_snapshot_transition_reuses_unchanged_glyph_shards_without_full_hash(self) -> None:
         before = _model(glyph_count=383, master_count=5)
@@ -133,6 +241,146 @@ class CanonicalFontTreeTests(unittest.TestCase):
         )
         self.assertEqual(transitioned.reused_glyph_count, 382)
 
+    def test_master_duplication_reuses_every_unchanged_layer_encoding(self) -> None:
+        model = _model(glyph_count=40, master_count=5)
+        for glyph in model["glyphs"].values():
+            glyph["layers"] = list(glyph["layers"].values())
+        baseline = CanonicalSnapshot.from_model(model)
+        build = build_master_updates(
+            baseline,
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": "m0",
+                    "masterId": "m5",
+                    "name": "M5",
+                }
+            ],
+        )
+        from glyphs_mcp_v2 import canonical_tree
+
+        original = canonical_tree._json_bytes
+        encoded_values = []
+
+        def record(value):
+            encoded_values.append(value)
+            return original(value)
+
+        with mock.patch(
+            "glyphs_mcp_v2.canonical_tree._json_bytes",
+            side_effect=record,
+        ):
+            transitioned = build.change_set.apply(baseline)
+
+        for glyph_name in baseline.glyph_shards:
+            for master_id in ("m0", "m1", "m2", "m3", "m4"):
+                self.assertIs(
+                    transitioned.glyph_layer_encodings[glyph_name][master_id],
+                    baseline.glyph_layer_encodings[glyph_name][master_id],
+                )
+        self.assertFalse(
+            any(
+                isinstance(value, Mapping)
+                and "layers" in value
+                and "name" in value
+                for value in encoded_values
+            )
+        )
+
+    def test_master_request_builder_never_hashes_a_plain_whole_font_target(self) -> None:
+        model = _model(glyph_count=40, master_count=5)
+        for glyph in model["glyphs"].values():
+            glyph["layers"] = list(glyph["layers"].values())
+        baseline = CanonicalSnapshot.from_model(model)
+
+        from glyphs_mcp_v2 import semantic
+
+        original = semantic.canonical_json
+
+        def reject_whole_font(value):
+            if (
+                isinstance(value, Mapping)
+                and "font" in value
+                and "glyphs" in value
+            ):
+                raise AssertionError("builder hashed a plain whole-font target")
+            return original(value)
+
+        with mock.patch(
+            "glyphs_mcp_v2.semantic.canonical_json",
+            side_effect=reject_whole_font,
+        ):
+            build = build_master_updates(
+                baseline,
+                [
+                    {
+                        "action": "duplicate",
+                        "sourceMasterId": "m0",
+                        "masterId": "m5",
+                        "name": "M5",
+                    }
+                ],
+            )
+
+        self.assertEqual(len(build.change_set.changes), 41)
+        self.assertTrue(build.change_set.after_fingerprint.startswith("sha256:"))
+
+    def test_tree_store_persists_snapshot_shards_without_encoding_the_complete_model(self) -> None:
+        snapshot = CanonicalSnapshot.from_model(_model(glyph_count=383, master_count=5))
+        store = MemoryObjectStore()
+        trees = CanonicalFontTree(store)
+        from glyphs_mcp_v2 import canonical_tree
+
+        original = canonical_tree.canonical_json
+        encoded_values = []
+
+        def record(value):
+            encoded_values.append(value)
+            return original(value)
+
+        with mock.patch.object(
+            CanonicalSnapshot,
+            "materialize",
+            side_effect=AssertionError("snapshot store materialized the complete model"),
+        ), mock.patch(
+            "glyphs_mcp_v2.canonical_tree.canonical_json",
+            side_effect=record,
+        ):
+            stored = trees.store_model(snapshot)
+
+        self.assertEqual(stored.model_fingerprint, snapshot.document_fingerprint)
+        self.assertFalse(any(value is snapshot for value in encoded_values))
+        self.assertFalse(
+            any(
+                isinstance(value, Mapping)
+                and "font" in value
+                and "glyphs" in value
+                for value in encoded_values
+            )
+        )
+
+    def test_applying_a_verified_change_set_to_a_snapshot_stays_copy_on_write(self) -> None:
+        before = _model(glyph_count=383, master_count=5)
+        baseline = CanonicalSnapshot.from_model(before)
+        after = copy.deepcopy(before)
+        after["masters"] = [after["masters"][1], after["masters"][0], *after["masters"][2:]]
+        changes = diff_models(before, after)
+
+        with mock.patch.object(
+            CanonicalSnapshot,
+            "materialize",
+            side_effect=AssertionError("snapshot apply materialized the complete model"),
+        ), mock.patch(
+            "glyphs_mcp_v2.canonical_tree.fingerprint_model",
+            side_effect=AssertionError("snapshot apply rehashed the complete model"),
+        ):
+            transitioned = changes.apply(baseline)
+
+        self.assertIsInstance(transitioned, CanonicalSnapshot)
+        self.assertEqual(transitioned.document_fingerprint, changes.after_fingerprint)
+        self.assertEqual(transitioned.materialize(), after)
+        self.assertEqual(transitioned.reused_glyph_count, 383)
+
     def test_tree_hash_is_deterministic_and_mapping_order_independent(self) -> None:
         store = MemoryObjectStore()
         trees = CanonicalFontTree(store)
@@ -152,7 +400,7 @@ class CanonicalFontTreeTests(unittest.TestCase):
         )
         self.assertEqual(
             trees.descriptor(first.tree_hash)["reversibilityCoverage"],
-            "modeled_fields_only",
+            "complete_semantic_state",
         )
 
     def test_one_glyph_edit_reuses_every_unchanged_glyph_object(self) -> None:

@@ -18,9 +18,13 @@ from pathlib import Path
 from threading import RLock
 from typing import Any, Mapping, Protocol
 
+from .canonical_schema import CanonicalCoverage
+from .canonical_views import semantic_identity_glyph
 from .semantic import (
     _CACHED_FINGERPRINT_ACCESS,
     _persistent_set_at,
+    _require_change_before,
+    _value_at,
     ChangeSet,
     canonical_json,
     diff_models,
@@ -29,8 +33,8 @@ from .semantic import (
 
 
 TREE_SCHEMA_VERSION = 1
-CANONICAL_MODEL_SCHEMA_VERSION = 5
-REVERSIBILITY_COVERAGE = "modeled_fields_only"
+CANONICAL_MODEL_SCHEMA_VERSION = 6
+REVERSIBILITY_COVERAGE = "complete_semantic_state"
 SHARDED_MAPPING_ROOTS = frozenset({"glyphs", "kerning"})
 
 
@@ -40,6 +44,89 @@ def _object_hash(payload: bytes) -> str:
 
 def _json_bytes(value: Any) -> bytes:
     return canonical_json(value).encode("utf-8")
+
+
+def _encoded_mapping_bytes(encodings: Mapping[str, bytes]) -> bytes:
+    result = bytearray(b"{")
+    for offset, key in enumerate(sorted(encodings, key=str)):
+        if offset:
+            result.extend(b",")
+        result.extend(_json_bytes(str(key)))
+        result.extend(b":")
+        result.extend(encodings[key])
+    result.extend(b"}")
+    return bytes(result)
+
+
+def _layer_encoding_items(
+    layers: Any,
+) -> tuple[str, tuple[tuple[str, Any], ...]]:
+    if isinstance(layers, Mapping):
+        return (
+            "mapping",
+            tuple((str(key), layers[key]) for key in sorted(layers, key=str)),
+        )
+    if isinstance(layers, (list, tuple)):
+        counts: dict[str, int] = {}
+        items = []
+        for index, layer in enumerate(layers):
+            identity = (
+                str(layer.get("id") or "")
+                if isinstance(layer, Mapping)
+                else ""
+            ) or "index:{}".format(index)
+            occurrence = counts.get(identity, 0)
+            counts[identity] = occurrence + 1
+            key = identity if occurrence == 0 else "{}#{}".format(identity, occurrence)
+            items.append((key, layer))
+        return "sequence", tuple(items)
+    return "scalar", ()
+
+
+def _encoded_glyph_bytes(
+    glyph: Mapping[str, Any],
+    *,
+    previous_glyph: Mapping[str, Any] | None = None,
+    previous_layer_encodings: Mapping[str, bytes] | None = None,
+) -> tuple[bytes, Mapping[str, bytes]]:
+    """Encode one glyph while retaining every unchanged layer byte shard."""
+
+    identity = semantic_identity_glyph(glyph)
+    previous_identity = (
+        semantic_identity_glyph(previous_glyph)
+        if isinstance(previous_glyph, Mapping)
+        else {}
+    )
+    fields: dict[str, bytes] = {}
+    layer_encodings: dict[str, bytes] = {}
+    for name, value in identity.items():
+        key = str(name)
+        if key != "layers":
+            fields[key] = _json_bytes(value)
+            continue
+        kind, items = _layer_encoding_items(value)
+        previous_kind, previous_items = _layer_encoding_items(
+            previous_identity.get("layers")
+        )
+        previous_values = dict(previous_items) if kind == previous_kind else {}
+        previous_encodings = dict(previous_layer_encodings or {})
+        ordered: list[bytes] = []
+        for layer_id, layer in items:
+            previous_layer = previous_values.get(layer_id)
+            encoded = previous_encodings.get(layer_id)
+            if encoded is None or not (
+                layer is previous_layer or layer == previous_layer
+            ):
+                encoded = _json_bytes(layer)
+            layer_encodings[layer_id] = encoded
+            ordered.append(encoded)
+        if kind == "mapping":
+            fields[key] = _encoded_mapping_bytes(layer_encodings)
+        elif kind == "sequence":
+            fields[key] = b"[" + b",".join(ordered) + b"]"
+        else:
+            fields[key] = _json_bytes(value)
+    return _encoded_mapping_bytes(fields), _ImmutableMapping(layer_encodings)
 
 
 class ObjectStore(Protocol):
@@ -194,6 +281,52 @@ def _snapshot_shard_hash(value: Any) -> str:
     return _object_hash(_json_bytes(value))
 
 
+def _snapshot_encoded_hash(payload: bytes) -> str:
+    return _object_hash(payload)
+
+
+def _update_encoded_mapping_hash(
+    digest: "hashlib._Hash", encodings: Mapping[str, bytes]
+) -> None:
+    """Feed one canonical JSON mapping into an existing SHA-256 digest.
+
+    Values are already normalized canonical JSON shards. Joining those shards
+    with the same sorted-key punctuation as :func:`canonical_json` produces
+    exactly the historical whole-document byte stream without allocating or
+    traversing that complete stream again.
+    """
+
+    digest.update(b"{")
+    for offset, key in enumerate(sorted(encodings, key=str)):
+        if offset:
+            digest.update(b",")
+        digest.update(_json_bytes(str(key)))
+        digest.update(b":")
+        digest.update(encodings[key])
+    digest.update(b"}")
+
+
+def _streamed_document_fingerprint(
+    root_encodings: Mapping[str, bytes], glyph_encodings: Mapping[str, bytes]
+) -> str:
+    """Return the exact canonical document SHA from immutable shard bytes."""
+
+    digest = hashlib.sha256()
+    names = sorted((*root_encodings.keys(), "glyphs"), key=str)
+    digest.update(b"{")
+    for offset, name in enumerate(names):
+        if offset:
+            digest.update(b",")
+        digest.update(_json_bytes(str(name)))
+        digest.update(b":")
+        if name == "glyphs":
+            _update_encoded_mapping_hash(digest, glyph_encodings)
+        else:
+            digest.update(root_encodings[name])
+    digest.update(b"}")
+    return "sha256:" + digest.hexdigest()
+
+
 def _snapshot_content_hash(root_hashes: Mapping[str, str]) -> str:
     return _object_hash(
         _json_bytes(
@@ -233,7 +366,7 @@ class _ImmutableMapping(Mapping[str, Any]):
 class CanonicalSnapshot(Mapping[str, Any]):
     """Immutable canonical model view with reusable content shards.
 
-    The public document fingerprint remains the exact schema-v5 canonical JSON
+    The public document fingerprint remains the schema-v6 canonical JSON
     fingerprint. ``content_tree_hash`` is an internal Merkle-style identity
     used to share unchanged roots and glyph entities without serializing them
     again. Native revision evidence is opaque to the core and never contributes
@@ -247,7 +380,11 @@ class CanonicalSnapshot(Mapping[str, Any]):
     glyph_shards: Mapping[str, Any]
     root_hashes: Mapping[str, str]
     glyph_hashes: Mapping[str, str]
+    root_encodings: Mapping[str, bytes]
+    glyph_encodings: Mapping[str, bytes]
+    glyph_layer_encodings: Mapping[str, Mapping[str, bytes]]
     native_revision_evidence: Mapping[str, Any]
+    coverage: CanonicalCoverage = CanonicalCoverage.complete()
     reused_glyph_count: int = 0
 
     @classmethod
@@ -256,6 +393,7 @@ class CanonicalSnapshot(Mapping[str, Any]):
         model: Mapping[str, Any],
         *,
         native_revision_evidence: Mapping[str, Any] | None = None,
+        coverage: CanonicalCoverage | None = None,
     ) -> "CanonicalSnapshot":
         import json
 
@@ -268,8 +406,8 @@ class CanonicalSnapshot(Mapping[str, Any]):
                 if str(name) != "glyphs"
             },
             dict(plain.get("glyphs") or {}),
-            document_fingerprint=_object_hash(encoded.encode("utf-8")),
             native_revision_evidence=native_revision_evidence,
+            coverage=coverage,
         )
 
     @classmethod
@@ -281,38 +419,68 @@ class CanonicalSnapshot(Mapping[str, Any]):
         previous: "CanonicalSnapshot | None" = None,
         document_fingerprint: str | None = None,
         native_revision_evidence: Mapping[str, Any] | None = None,
+        coverage: CanonicalCoverage | None = None,
     ) -> "CanonicalSnapshot":
         """Assemble a snapshot while retaining equal previous shard objects."""
 
         roots: dict[str, Any] = {}
         root_hashes: dict[str, str] = {}
+        root_encodings: dict[str, bytes] = {}
         for name, candidate in root_shards.items():
             key = str(name)
             previous_value = (
                 previous.root_shards.get(key) if previous is not None else None
             )
-            if previous is not None and candidate == previous_value:
+            if (
+                previous is not None
+                and key in previous.root_shards
+                and candidate == previous_value
+            ):
                 roots[key] = previous_value
                 root_hashes[key] = previous.root_hashes[key]
+                root_encodings[key] = previous.root_encodings[key]
             else:
+                encoded = _json_bytes(candidate)
                 roots[key] = candidate
-                root_hashes[key] = _snapshot_shard_hash(candidate)
+                root_hashes[key] = _snapshot_encoded_hash(encoded)
+                root_encodings[key] = encoded
 
         glyphs: dict[str, Any] = {}
         glyph_hashes: dict[str, str] = {}
+        glyph_encodings: dict[str, bytes] = {}
+        glyph_layer_encodings: dict[str, Mapping[str, bytes]] = {}
         reused = 0
         for name, candidate in glyph_shards.items():
             key = str(name)
             previous_value = (
                 previous.glyph_shards.get(key) if previous is not None else None
             )
-            if previous is not None and candidate == previous_value:
+            if (
+                previous is not None
+                and key in previous.glyph_shards
+                and candidate == previous_value
+            ):
                 glyphs[key] = previous_value
                 glyph_hashes[key] = previous.glyph_hashes[key]
+                glyph_encodings[key] = previous.glyph_encodings[key]
+                glyph_layer_encodings[key] = previous.glyph_layer_encodings[key]
                 reused += 1
             else:
+                encoded, layer_encodings = _encoded_glyph_bytes(
+                    candidate,
+                    previous_glyph=previous_value
+                    if isinstance(previous_value, Mapping)
+                    else None,
+                    previous_layer_encodings=(
+                        previous.glyph_layer_encodings.get(key, {})
+                        if previous is not None
+                        else None
+                    ),
+                )
                 glyphs[key] = candidate
-                glyph_hashes[key] = _snapshot_shard_hash(candidate)
+                glyph_hashes[key] = _snapshot_encoded_hash(encoded)
+                glyph_encodings[key] = encoded
+                glyph_layer_encodings[key] = layer_encodings
         glyph_root_unchanged = bool(
             previous is not None
             and set(glyphs) == set(previous.glyph_shards)
@@ -332,12 +500,17 @@ class CanonicalSnapshot(Mapping[str, Any]):
             )
             and reused == len(glyphs)
         )
-        if document_fingerprint is None:
-            document_fingerprint = (
-                previous.document_fingerprint
-                if unchanged_from_previous
-                else fingerprint_model({**roots, "glyphs": glyphs})
-            )
+        computed_fingerprint = (
+            previous.document_fingerprint
+            if unchanged_from_previous
+            else _streamed_document_fingerprint(root_encodings, glyph_encodings)
+        )
+        if (
+            document_fingerprint is not None
+            and document_fingerprint != computed_fingerprint
+        ):
+            raise ValueError("supplied document fingerprint does not match its shards")
+        document_fingerprint = computed_fingerprint
         return cls(
             model_schema_version=CANONICAL_MODEL_SCHEMA_VERSION,
             content_tree_hash=_snapshot_content_hash(root_hashes),
@@ -346,8 +519,14 @@ class CanonicalSnapshot(Mapping[str, Any]):
             glyph_shards=_ImmutableMapping(glyphs),
             root_hashes=_ImmutableMapping(root_hashes),
             glyph_hashes=_ImmutableMapping(glyph_hashes),
+            root_encodings=_ImmutableMapping(root_encodings),
+            glyph_encodings=_ImmutableMapping(glyph_encodings),
+            glyph_layer_encodings=_ImmutableMapping(glyph_layer_encodings),
             native_revision_evidence=_ImmutableMapping(
                 copy.deepcopy(dict(native_revision_evidence or {}))
+            ),
+            coverage=coverage or (
+                previous.coverage if previous is not None else CanonicalCoverage.complete()
             ),
             reused_glyph_count=reused,
         )
@@ -379,6 +558,62 @@ class CanonicalSnapshot(Mapping[str, Any]):
         }
         return result
 
+    def _rebase_shared_model(
+        self, model: Mapping[str, Any]
+    ) -> "CanonicalSnapshot":
+        """Normalize one copy-on-write model while reusing unchanged shards.
+
+        Mutation builders and native read-back both use this seam. It is
+        intentionally domain-neutral: shard ownership, not the mutation tool,
+        determines what must be encoded.
+        """
+
+        if model is self:
+            return self
+        glyphs = model.get("glyphs", {})
+        if not isinstance(glyphs, Mapping):
+            raise ValueError("canonical glyph root must be a mapping")
+        return type(self).from_shards(
+            {
+                str(name): value
+                for name, value in model.items()
+                if str(name) != "glyphs"
+            },
+            {str(name): value for name, value in glyphs.items()},
+            previous=self,
+            coverage=self.coverage,
+        )
+
+    def _apply_verified_change_set(
+        self, change_set: ChangeSet, *, verify_before: bool = True
+    ) -> "CanonicalSnapshot":
+        """Apply an already verified semantic patch without rebuilding JSON.
+
+        ``diff_models`` and the lifecycle builders prove the exact public
+        after-fingerprint when they create a change set. At runtime this method
+        revalidates every before-value, applies the patch copy-on-write, and
+        retains the declared exact fingerprint while hashing only changed
+        shards. It is the immutable-snapshot equivalent of applying a Git
+        tree delta.
+        """
+
+        if verify_before and self.document_fingerprint != change_set.before_fingerprint:
+            raise ValueError("change set does not match the supplied before state")
+        result: Mapping[str, Any] = self
+        for change in sorted(
+            change_set.changes,
+            key=lambda item: (item.path[-1] == "$order", item.path),
+        ):
+            if verify_before:
+                _require_change_before(_value_at(result, change.path), change)
+            result = _persistent_set_at(
+                result,
+                change.path,
+                change.after,
+                change.after_present,
+            )
+        return self.store_verified_transition(result, change_set)
+
     def store_verified_transition(
         self,
         after_model: Mapping[str, Any],
@@ -398,8 +633,11 @@ class CanonicalSnapshot(Mapping[str, Any]):
         changed_roots = {change.path[0] for change in change_set.changes}
         roots = dict(self.root_shards)
         root_hashes = dict(self.root_hashes)
+        root_encodings = dict(self.root_encodings)
         glyphs = dict(self.glyph_shards)
         glyph_hashes = dict(self.glyph_hashes)
+        glyph_encodings = dict(self.glyph_encodings)
+        glyph_layer_encodings = dict(self.glyph_layer_encodings)
         after_glyphs = after_model.get("glyphs", {})
         if not isinstance(after_glyphs, Mapping):
             raise ValueError("canonical glyph root must be a mapping")
@@ -419,6 +657,8 @@ class CanonicalSnapshot(Mapping[str, Any]):
             if name not in after_glyphs:
                 glyphs.pop(name, None)
                 glyph_hashes.pop(name, None)
+                glyph_encodings.pop(name, None)
+                glyph_layer_encodings.pop(name, None)
                 continue
             exact = next(
                 (
@@ -451,23 +691,43 @@ class CanonicalSnapshot(Mapping[str, Any]):
                         "verified transition omitted or misapplied a glyph fragment"
                     )
             glyphs[name] = value
-            glyph_hashes[name] = _snapshot_shard_hash(value)
+            encoded, layer_encodings = _encoded_glyph_bytes(
+                value,
+                previous_glyph=self.glyph_shards.get(name),
+                previous_layer_encodings=self.glyph_layer_encodings.get(name, {}),
+            )
+            glyph_encodings[name] = encoded
+            glyph_hashes[name] = _snapshot_encoded_hash(encoded)
+            glyph_layer_encodings[name] = layer_encodings
         if "glyphs" in changed_roots:
             root_hashes["glyphs"] = _snapshot_shard_hash(glyph_hashes)
 
         for root_name in changed_roots - {"glyphs"}:
             value = after_model.get(root_name)
             roots[root_name] = value
-            root_hashes[root_name] = _snapshot_shard_hash(value)
+            encoded = _json_bytes(value)
+            root_encodings[root_name] = encoded
+            root_hashes[root_name] = _snapshot_encoded_hash(encoded)
+
+        computed_fingerprint = _streamed_document_fingerprint(
+            root_encodings, glyph_encodings
+        )
+        if computed_fingerprint != change_set.after_fingerprint:
+            raise ValueError(
+                "verified transition does not reproduce its after fingerprint"
+            )
 
         return CanonicalSnapshot(
             model_schema_version=self.model_schema_version,
             content_tree_hash=_snapshot_content_hash(root_hashes),
-            document_fingerprint=change_set.after_fingerprint,
+            document_fingerprint=computed_fingerprint,
             root_shards=_ImmutableMapping(roots),
             glyph_shards=_ImmutableMapping(glyphs),
             root_hashes=_ImmutableMapping(root_hashes),
             glyph_hashes=_ImmutableMapping(glyph_hashes),
+            root_encodings=_ImmutableMapping(root_encodings),
+            glyph_encodings=_ImmutableMapping(glyph_encodings),
+            glyph_layer_encodings=_ImmutableMapping(glyph_layer_encodings),
             native_revision_evidence=_ImmutableMapping(
                 copy.deepcopy(
                     dict(
@@ -477,6 +737,7 @@ class CanonicalSnapshot(Mapping[str, Any]):
                     )
                 )
             ),
+            coverage=self.coverage,
             reused_glyph_count=max(0, len(glyphs) - len(changed_glyphs)),
         )
 
@@ -515,18 +776,47 @@ class CanonicalFontTree:
             return self._store_model(model)
 
     def _store_model(self, model: Mapping[str, Any]) -> TreeSnapshot:
+        if isinstance(model, CanonicalSnapshot):
+            # The live adapter has already normalized and fingerprinted these
+            # immutable shards. Persist them independently instead of encoding
+            # the complete font once here and then encoding every shard again.
+            roots: dict[str, Any] = dict(model.root_shards)
+            roots["glyphs"] = model.glyph_shards
+            return self._store_roots(
+                roots,
+                model_fingerprint=model.document_fingerprint,
+                coverage=model.coverage,
+            )
         # canonical_json performs the authoritative JSON-safe normalization.
         encoded = canonical_json(model)
         plain = __import__("json").loads(encoded)
-        model_fingerprint = _object_hash(encoded.encode("utf-8"))
+        return self._store_roots(
+            plain,
+            model_fingerprint=fingerprint_model(plain),
+            coverage=CanonicalCoverage.complete(),
+        )
+
+    def _store_roots(
+        self,
+        model: Mapping[str, Any],
+        *,
+        model_fingerprint: str,
+        coverage: CanonicalCoverage,
+    ) -> TreeSnapshot:
+        """Persist normalized canonical roots through one shared shard writer."""
+
         roots: dict[str, Any] = {}
         inserted_count = 0
         inserted_bytes = 0
-        glyph_count = len(plain.get("glyphs") or {}) if isinstance(plain.get("glyphs"), Mapping) else 0
+        glyph_count = (
+            len(model.get("glyphs") or {})
+            if isinstance(model.get("glyphs"), Mapping)
+            else 0
+        )
         reused_glyphs = 0
 
-        for root_name in sorted(plain):
-            root_value = plain[root_name]
+        for root_name in sorted(model):
+            root_value = model[root_name]
             if root_name in SHARDED_MAPPING_ROOTS and isinstance(root_value, Mapping):
                 entries: dict[str, str] = {}
                 for key in sorted(root_value, key=str):
@@ -556,6 +846,7 @@ class CanonicalFontTree:
             "schemaVersion": TREE_SCHEMA_VERSION,
             "modelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
             "reversibilityCoverage": REVERSIBILITY_COVERAGE,
+            "canonicalCoverage": coverage.to_public_dict(),
             "modelFingerprint": model_fingerprint,
             "roots": roots,
         }
@@ -682,6 +973,7 @@ class CanonicalFontTree:
                 "schemaVersion": TREE_SCHEMA_VERSION,
                 "modelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
                 "reversibilityCoverage": REVERSIBILITY_COVERAGE,
+                "canonicalCoverage": CanonicalCoverage.complete().to_public_dict(),
                 "modelFingerprint": change_set.after_fingerprint,
                 "roots": roots,
             }

@@ -5,7 +5,7 @@ description: Install and use the Glyphs MCP plugin, skills, and embedded feedbac
 
 The Glyphs MCP repository plugin packages three parts that belong together:
 
-- 11 reusable Glyphs skills
+- 13 reusable Glyphs skills
 - the local Glyphs MCP server connection
 - an optional feedback UI for hosts that support MCP Apps
 
@@ -17,7 +17,9 @@ MCP server connections, and optional UI; see
 The underlying `plugins/glyphs-mcp` package also powers the optional Claude
 Code, Cursor, and GitHub Copilot CLI plugins. This page covers only the richer
 embedded UI available to compatible OpenAI hosts; every host shares the same
-11 skills, localhost MCP configuration, and `1.11.0` package version.
+13 skills, localhost MCP configuration, and `2.0.0` package version. The
+connected native server remains host-specific: Glyphs 3.5 reports pinned 1.11,
+while Glyphs 4 reports v2.0.
 
 ## Install the repository plugin
 
@@ -41,8 +43,11 @@ repository plugin. ChatGPT or Codex owns that installation lifecycle.
 
 ## Feedback states
 
-The versioned `ui://glyphs-mcp/feedback-v1.html` resource presents bounded
-feedback for the current server, font, glyph, or reviewed plan.
+The pinned 1.11 runtime can expose the versioned
+`ui://glyphs-mcp/feedback-v1.html` resource for bounded server, font, glyph, or
+reviewed-plan feedback. The Glyphs 4 v2 runtime instead uses its native compact
+inspector, Change Log, and portable text/structured tool results; it does not
+add a second embedded approval workflow.
 
 | State | What the panel shows |
 | --- | --- |
@@ -91,12 +96,17 @@ optional and tool results should work without it; see
 
 ## Safety boundaries
 
-The panel is a review surface, not a second font editor:
+Where the legacy panel is available, it is a review surface, not a second font
+editor:
 
 - it does not expose editable paths, coordinates, metrics, or feature code
 - it does not provide file navigation, arbitrary Python, tabs, or a drawing canvas
-- mutations require a fresh dry run and explicit confirmation
-- reviewed plans expire after ten minutes and are consumed before mutation
+- pinned 1.11 reviewed mutations keep their existing dry-run and confirmation
+  contracts
+- v2 typed document mutations apply first through the verified kernel; exact
+  confirmation remains only for staged Python and external/export effects
+- reviewed plans expire and are consumed according to the connected runtime's
+  contract
 - stale, partial, failed, or uncertain results require a new review
 - no feedback action saves the font automatically
 

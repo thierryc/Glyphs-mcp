@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """
-Bump the project version across native bundles, agent plugins, installer, and docs.
+Bump the Glyphs 4 v2 release, installer, agent plugins, and shared docs.
 
 Usage:
-  python3 scripts/bump_version.py [--dry-run] X.Y.Z
+  python3 scripts/bump_version.py [--dry-run] --installer-build BUILD X.Y.Z
+
+The Glyphs 3 source and Plugin Manager bundles are pinned to v1.11.0 and are
+validated but never modified by this command.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
+import plistlib
 import re
 import shutil
 import subprocess
@@ -30,7 +35,7 @@ AGENT_PLUGIN_DOC_REPLACEMENTS = {
         re.compile(r"(All host manifests use version `)\d+\.\d+\.\d+(`)"),
     ),
     Path("plugins/glyphs-mcp/README.md"): (
-        re.compile(r"(Version )\d+\.\d+\.\d+( bundles the same general Glyphs)"),
+        re.compile(r"(Version )\d+\.\d+\.\d+( bundles (?:the same |the )?general Glyphs)"),
     ),
     Path("content/getting-started/use-agent-skills.mdx"): (
         re.compile(r"(All four manifests use version `)\d+\.\d+\.\d+(`)"),
@@ -39,8 +44,8 @@ AGENT_PLUGIN_DOC_REPLACEMENTS = {
     Path("content/getting-started/installation.mdx"): (
         re.compile(r"(Agent plugins are a separate, optional setup\. Version )\d+\.\d+\.\d+( includes one shared)"),
     ),
-    Path("content/contributor/release-qa-protocol.mdx"): (
-        re.compile(r"(Each host resolves version `)\d+\.\d+\.\d+(`)"),
+    Path("content/getting-started/codex-chatgpt-plugin-ui.mdx"): (
+        re.compile(r"(same\s+13 skills, localhost MCP configuration, and `)\d+\.\d+\.\d+(` package version)"),
     ),
 }
 
@@ -103,15 +108,22 @@ _README_COMMAND_SET_HEADER_RE = re.compile(r"^(##\s+Command Set\s+\(MCP server v
 _FAST_MCP_VERSION_RE = re.compile(r"(FastMCP\s+`version=\")([^\"]+)(\"`)")
 _README_SERVER_VERSION_RE = re.compile(r"(shipped in this repo \(version `)(\d+\.\d+\.\d+)(`\))")
 _README_INSTALLER_URL_RE = re.compile(
-    r"https://github\.com/thierryc/Glyphs-mcp/releases/(?:download/v\d+\.\d+\.\d+|latest/download)/GlyphsMCPInstaller(?:-\d+\.\d+\.\d+)?\.(dmg|zip)"
+    r"https://github\.com/thierryc/Glyphs-mcp/releases/(?:download/v\d+\.\d+\.\d+|latest/download)/(?:GlyphsMCPInstaller(?:-\d+\.\d+\.\d+)?|Glyphs-MCP-(?:latest|\d+\.\d+\.\d+))\.(dmg|zip)"
 )
 _RELEASE_TAG_URL_RE = re.compile(
     r"https://github\.com/thierryc/Glyphs-mcp/releases/tag/v\d+\.\d+\.\d+"
 )
 _VERSIONED_INSTALLER_URL_RE = re.compile(
-    r"https://github\.com/thierryc/Glyphs-mcp/releases/download/v\d+\.\d+\.\d+/GlyphsMCPInstaller(?:-\d+\.\d+\.\d+)?\.(dmg|zip)"
+    r"https://github\.com/thierryc/Glyphs-mcp/releases/download/v\d+\.\d+\.\d+/(?:GlyphsMCPInstaller(?:-\d+\.\d+\.\d+)?|Glyphs-MCP-(?:latest|\d+\.\d+\.\d+))\.(dmg|zip)"
 )
 _PBXPROJ_MARKETING_VERSION_RE = re.compile(r"(\bMARKETING_VERSION\s*=\s*)(\d+\.\d+\.\d+)(\s*;)")
+_PBXPROJ_BUILD_VERSION_RE = re.compile(r"(\bCURRENT_PROJECT_VERSION\s*=\s*)(\d+)(\s*;)")
+_SERVER_VERSION_ASSIGNMENT_RE = re.compile(
+    r'^(SERVER_VERSION\s*=\s*")[^"]+("\s*)$', re.M
+)
+_PYPROJECT_VERSION_RE = re.compile(
+    r'(?ms)(^\[project\]\s*$.*?^version\s*=\s*")[^"]+("\s*$)'
+)
 
 
 def update_readme(readme_path: Path, version: str) -> None:
@@ -147,12 +159,13 @@ def update_readme(readme_path: Path, version: str) -> None:
     # 3) Installer download URLs:
     def _installer_url_repl(match: re.Match[str]) -> str:
         ext = match.group(1)
-        return f"https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.{ext}"
+        asset = "Glyphs-MCP-latest.dmg" if ext == "dmg" else "GlyphsMCPInstaller.zip"
+        return f"https://github.com/thierryc/Glyphs-mcp/releases/latest/download/{asset}"
 
     text, n3 = _README_INSTALLER_URL_RE.subn(_installer_url_repl, text)
     if n3 < 1:
         raise SystemExit(
-            f"error: could not find installer URL in {readme_path} (expected releases/latest/download/GlyphsMCPInstaller.(dmg|zip) or releases/download/vX.Y.Z/GlyphsMCPInstaller[-X.Y.Z].(dmg|zip))"
+            f"error: could not find installer URL in {readme_path} (expected Glyphs-MCP-latest.dmg, Glyphs-MCP-X.Y.Z.dmg, or GlyphsMCPInstaller.zip)"
         )
 
     text, n4 = _RELEASE_TAG_URL_RE.subn(
@@ -198,12 +211,18 @@ def update_installation_doc(path: Path, version: str) -> None:
 
     def _installer_url_repl(match: re.Match[str]) -> str:
         ext = match.group(1)
-        return f"https://github.com/thierryc/Glyphs-mcp/releases/download/v{version}/GlyphsMCPInstaller.{ext}"
+        asset = f"Glyphs-MCP-{version}.dmg" if ext == "dmg" else "GlyphsMCPInstaller.zip"
+        return f"https://github.com/thierryc/Glyphs-mcp/releases/download/v{version}/{asset}"
 
     text, n2 = _VERSIONED_INSTALLER_URL_RE.subn(_installer_url_repl, text)
-    if n2 < 1 and "https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller." not in text:
+    if n2 < 1 and not (
+        "https://github.com/thierryc/Glyphs-mcp/releases/latest/download/Glyphs-MCP-latest.dmg"
+        in text
+        or "https://github.com/thierryc/Glyphs-mcp/releases/latest/download/GlyphsMCPInstaller.zip"
+        in text
+    ):
         raise SystemExit(
-            f"error: could not find installer URL in {path} (expected releases/download/vX.Y.Z/GlyphsMCPInstaller.(dmg|zip) or releases/latest/download/GlyphsMCPInstaller.(dmg|zip))"
+            f"error: could not find installer URL in {path} (expected Glyphs-MCP-latest.dmg, Glyphs-MCP-X.Y.Z.dmg, or GlyphsMCPInstaller.zip)"
         )
 
     if text != original:
@@ -222,22 +241,72 @@ def update_marketing_version(pbxproj_path: Path, version: str) -> None:
         pbxproj_path.write_text(text, encoding="utf-8")
 
 
-def main(argv: list[str]) -> int:
-    if len(argv) == 2 and argv[1] in {"-h", "--help"}:
-        print(__doc__.strip())
-        return 0
-    args = argv[1:]
-    dry_run = False
-    if args[:1] == ["--dry-run"]:
-        dry_run = True
-        args = args[1:]
-    if len(args) != 1:
-        print(__doc__.strip())
-        return 2
+def update_v2_source_version(versions_path: Path, pyproject_path: Path, version: str) -> None:
+    versions_text = versions_path.read_text(encoding="utf-8")
+    versions_text, runtime_count = _SERVER_VERSION_ASSIGNMENT_RE.subn(
+        rf"\g<1>{version}\g<2>", versions_text
+    )
+    if runtime_count != 1:
+        raise SystemExit(
+            f"error: expected one SERVER_VERSION assignment in {versions_path}, found {runtime_count}"
+        )
+    pyproject_text = pyproject_path.read_text(encoding="utf-8")
+    pyproject_text, project_count = _PYPROJECT_VERSION_RE.subn(
+        rf"\g<1>{version}\g<2>", pyproject_text
+    )
+    if project_count != 1:
+        raise SystemExit(
+            f"error: expected one [project] version in {pyproject_path}, found {project_count}"
+        )
+    versions_path.write_text(versions_text, encoding="utf-8")
+    pyproject_path.write_text(pyproject_text, encoding="utf-8")
 
-    version = args[0].strip()
+
+def update_installer_versions(pbxproj_path: Path, version: str, build: int) -> None:
+    if isinstance(build, bool) or build < 1:
+        raise SystemExit("error: installer build must be a positive integer")
+    text = pbxproj_path.read_text(encoding="utf-8")
+    text, marketing_count = _PBXPROJ_MARKETING_VERSION_RE.subn(
+        rf"\g<1>{version}\g<3>", text
+    )
+    text, build_count = _PBXPROJ_BUILD_VERSION_RE.subn(
+        rf"\g<1>{build}\g<3>", text
+    )
+    if marketing_count < 1:
+        raise SystemExit(f"error: could not find MARKETING_VERSION assignments in {pbxproj_path}")
+    if build_count < 1:
+        raise SystemExit(f"error: could not find CURRENT_PROJECT_VERSION assignments in {pbxproj_path}")
+    pbxproj_path.write_text(text, encoding="utf-8")
+
+
+def require_pinned_glyphs3_plist(path: Path) -> None:
+    try:
+        with path.open("rb") as stream:
+            info = plistlib.load(stream)
+    except Exception as exc:
+        raise SystemExit(f"error: could not read pinned Glyphs 3 plist {path}: {exc}") from exc
+    short = str(info.get("CFBundleShortVersionString") or "")
+    build = str(info.get("CFBundleVersion") or "")
+    if short != "1.11.0" or build != "1.11.0":
+        raise SystemExit(
+            f"error: pinned Glyphs 3 plist must remain 1.11.0: {path} ({short!r}, {build!r})"
+        )
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--installer-build", type=int, required=True)
+    parser.add_argument("version")
+    arguments = parser.parse_args(argv[1:])
+    dry_run = arguments.dry_run
+    version = arguments.version.strip()
+    installer_build = arguments.installer_build
     if not VERSION_RE.match(version):
         print(f"error: invalid version: {version!r} (expected X.Y.Z)", file=sys.stderr)
+        return 2
+    if installer_build < 1:
+        print("error: --installer-build must be a positive integer", file=sys.stderr)
         return 2
 
     repo_root = Path(__file__).resolve().parent.parent
@@ -256,9 +325,8 @@ def main(argv: list[str]) -> int:
         / "Contents"
         / "Info.plist"
     )
-    readme_path = repo_root / "README.md"
-    command_set_path = repo_root / "content" / "reference" / "command-set.mdx"
-    installation_doc_path = repo_root / "content" / "getting-started" / "installation.mdx"
+    versions_path = repo_root / "src" / "glyphs-mcp-v2" / "glyphs_mcp_v2" / "versions.py"
+    pyproject_path = repo_root / "src" / "glyphs-mcp-v2" / "pyproject.toml"
     pbxproj_path = (
         repo_root
         / "macos-installer"
@@ -273,9 +341,9 @@ def main(argv: list[str]) -> int:
 
     required_paths = (
         src_plist_path,
-        readme_path,
-        command_set_path,
-        installation_doc_path,
+        plugin_manager_plist_path,
+        versions_path,
+        pyproject_path,
         pbxproj_path,
         *agent_plugin_manifest_paths,
         *agent_plugin_doc_replacements,
@@ -285,6 +353,8 @@ def main(argv: list[str]) -> int:
         for path in missing_paths:
             print(f"error: required release surface not found at: {path}", file=sys.stderr)
         return 1
+    require_pinned_glyphs3_plist(src_plist_path)
+    require_pinned_glyphs3_plist(plugin_manager_plist_path)
 
     temporary_directory: tempfile.TemporaryDirectory[str] | None = None
     if dry_run:
@@ -307,15 +377,12 @@ def main(argv: list[str]) -> int:
             return path
 
     try:
-        set_plist_key(working_path(src_plist_path), "CFBundleShortVersionString", version)
-        set_plist_key(working_path(src_plist_path), "CFBundleVersion", version)
-        if plugin_manager_plist_path.exists():
-            set_plist_key(working_path(plugin_manager_plist_path), "CFBundleShortVersionString", version)
-            set_plist_key(working_path(plugin_manager_plist_path), "CFBundleVersion", version)
-        update_readme(working_path(readme_path), version)
-        updated_command_set = update_command_set_mdx(working_path(command_set_path), version)
-        update_installation_doc(working_path(installation_doc_path), version)
-        update_marketing_version(working_path(pbxproj_path), version)
+        update_v2_source_version(
+            working_path(versions_path), working_path(pyproject_path), version
+        )
+        update_installer_versions(
+            working_path(pbxproj_path), version, installer_build
+        )
         for manifest_path in agent_plugin_manifest_paths:
             update_json_version(working_path(manifest_path), version)
         for doc_path, patterns in agent_plugin_doc_replacements.items():
@@ -325,20 +392,17 @@ def main(argv: list[str]) -> int:
             temporary_directory.cleanup()
 
     print("Would update:" if dry_run else "Updated:")
-    print(f"  - {src_plist_path} (CFBundleShortVersionString, CFBundleVersion) -> {version}")
-    if plugin_manager_plist_path.exists():
-        print(f"  - {plugin_manager_plist_path} (CFBundleShortVersionString, CFBundleVersion) -> {version}")
-    print(f"  - {readme_path} (installer URLs + Command Set + FastMCP version mention) -> {version}")
-    if updated_command_set:
-        print(f"  - {command_set_path} (FastMCP version mention) -> {version}")
-    else:
-        print(f"  - {command_set_path} (no FastMCP version mention; skipped)")
-    print(f"  - {installation_doc_path} (release links) -> {version}")
-    print(f"  - {pbxproj_path} (MARKETING_VERSION) -> {version}")
+    print(f"  - {versions_path} (SERVER_VERSION) -> {version}")
+    print(f"  - {pyproject_path} ([project].version) -> {version}")
+    print(
+        f"  - {pbxproj_path} (MARKETING_VERSION, CURRENT_PROJECT_VERSION) "
+        f"-> {version} ({installer_build})"
+    )
     for manifest_path in agent_plugin_manifest_paths:
         print(f"  - {manifest_path} (agent plugin version) -> {version}")
     for doc_path in agent_plugin_doc_replacements:
         print(f"  - {doc_path} (agent plugin documentation version) -> {version}")
+    print("Pinned Glyphs 3 surfaces unchanged at 1.11.0.")
     if dry_run:
         print("Dry run complete; repository files were not changed.")
     return 0

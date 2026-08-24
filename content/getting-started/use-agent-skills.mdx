@@ -47,10 +47,11 @@ Claude Code filesystem skills are loaded into every Claude chat surface.
 ## Optional multi-host plugin
 
 The package at `plugins/glyphs-mcp` carries native manifests for Codex, Claude
-Code, Cursor, and GitHub Copilot CLI. All four manifests use version `1.11.0`
+Code, Cursor, and GitHub Copilot CLI. All four manifests use version `2.0.0`
 and load the same `skills/` directory and `.mcp.json`. Individual skills do not
 carry separate release numbers; they inherit the package version. The MCP
-server reports the aligned version of the native Glyphs MCP plug-in.
+server reports the selected host runtime: pinned 1.11 in Glyphs 3.5 and 2.0 in
+Glyphs 4.
 
 Install the native Glyphs plug-in and start its server before enabling an agent
 plugin. The plugin is optional: skip this section if you prefer the repo-local
@@ -236,7 +237,7 @@ supporting files.
 | `glyphs-mcp-kerning` | Kerning bumper review and approved applies | `Use the glyphs-mcp-kerning skill to review kerning collisions and do a dry run first.` |
 | `glyphs-mcp-litsquare-metadata` | LitSquare metadata, semantic path roles, and layer-specific IconGrid centering | `Use $glyphs-mcp-litsquare-metadata to inspect inherited LitSquare metadata without changing it.` |
 | `glyphs-mcp-spacing` | Spacing review and approved applies | `Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.` |
-| `glyphs-mcp-release` | Version, docs, packaging, validation, signing, and publication gates | `Use $glyphs-mcp-release to prepare version 1.11.0 and stop before external publication.` |
+| `glyphs-mcp-release` | Version, docs, packaging, validation, signing, and publication gates | `Use $glyphs-mcp-release to prepare version 2.0.0 and stop before external publication.` |
 
 ## Operating rules
 

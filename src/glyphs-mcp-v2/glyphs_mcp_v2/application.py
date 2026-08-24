@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import copy
+import os
 import time
+import traceback
 from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence
@@ -20,6 +22,7 @@ from .canonical_tree import (
     CanonicalFontTree,
     MemoryObjectStore,
 )
+from .canonical_schema import CanonicalCoverage
 from .catalog import TOOL_CATALOG
 from .change_history import ActionCommit, ChangeHistory
 from .change_trace import ActionTraceCoordinator
@@ -48,6 +51,7 @@ from .semantic import (
 from .transactions import StaleDocumentError, TransactionKernel, TransactionVerificationError
 from .versions import SERVER_NAME, SERVER_VERSION
 from .workflows import (
+    _copy_on_write_model,
     build_glyph_updates,
     build_instance_updates,
     build_layer_updates,
@@ -73,6 +77,7 @@ from .workflows import (
 
 REVIEW_TTL_SECONDS = 15 * 60
 RESULT_TTL_SECONDS = 60 * 60
+COMPLETE_CANONICAL_COVERAGE = CanonicalCoverage.complete().to_public_dict()
 
 
 def _value(arguments: Mapping[str, Any], snake: str, camel: Optional[str] = None, default: Any = None) -> Any:
@@ -172,6 +177,7 @@ def _change_commit_summary(commit: ActionCommit) -> dict[str, Any]:
         "changedGlyphsTruncated": len(glyphs) > 20,
         "beforeFingerprint": commit.change_set.before_fingerprint,
         "afterFingerprint": commit.change_set.after_fingerprint,
+        "canonicalCoverage": commit.coverage.to_public_dict(),
     }
 
 
@@ -191,7 +197,10 @@ class GlyphsMCPApplication:
         self._reviews = OperationStore()
         self._checkpoints = OperationStore(max_records=512)
         self._audit = audit or AuditLog()
-        self.history = history or ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        if history is None:
+            history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+            history.reset_for_schema_change(5, 6)
+        self.history = history
         self._trace = ActionTraceCoordinator(self.history)
         self._transactions = (
             TransactionKernel(host, observer=self._trace, activity=self.activity)
@@ -350,6 +359,8 @@ class GlyphsMCPApplication:
                 message=str(exc) or "The operation was cancelled.",
             )
         except (ValueError, TypeError) as exc:
+            if os.environ.get("GLYPHS_MCP_DEBUG_CAPTURE"):
+                traceback.print_exc()
             return ToolResponse.failure(
                 tool=handler_name,
                 effect=definition.effect,
@@ -358,6 +369,8 @@ class GlyphsMCPApplication:
                 message=str(exc),
             )
         except Exception as exc:
+            if os.environ.get("GLYPHS_MCP_DEBUG_CAPTURE"):
+                traceback.print_exc()
             return ToolResponse.failure(
                 tool=handler_name,
                 effect=definition.effect,
@@ -513,10 +526,16 @@ class GlyphsMCPApplication:
             )
         build = normalize_mutation_build(builder(before, items))
         requested_model_diff = build.change_set
+        capabilities = tuple(
+            sorted(
+                set(build.capabilities)
+                | set(lifecycle_capabilities(requested_model_diff, tool=tool))
+            )
+        )
         diagnostics = unsupported_change_diagnostics(
             requested_model_diff,
             limit=100,
-            capabilities=build.capabilities,
+            capabilities=capabilities,
         )
         if diagnostics["unsupportedCount"]:
             return self._audited_edit_failure(
@@ -532,9 +551,53 @@ class GlyphsMCPApplication:
         requested = writable_subset(
             before,
             requested_model_diff,
-            capabilities=build.capabilities,
+            capabilities=capabilities,
         )
         self._trace.bind_document(document_id)
+        if not requested.changes:
+            receipt = self._audit.record(
+                tool=tool,
+                effect="edit",
+                status="success",
+                document_id=document_id,
+                details={
+                    "operationId": metadata.operation_id,
+                    "reason": _value(arguments, "reason"),
+                    "beforeFingerprint": expected,
+                    "afterFingerprint": expected,
+                    "requestedChangeCount": requested_count,
+                    "observedChangeCount": 0,
+                    "affectedGlyphCount": 0,
+                    "canonicalCoverage": COMPLETE_CANONICAL_COVERAGE,
+                    "noDocumentChange": True,
+                },
+            )
+            return ToolResponse.success(
+                tool=tool,
+                effect="edit",
+                summary="The requested values already match the canonical document; no transaction ran.",
+                metadata=metadata,
+                audit_receipt=receipt.to_dict(),
+                data={
+                    "operationId": metadata.operation_id,
+                    "documentId": document_id,
+                    "beforeFingerprint": expected,
+                    "afterFingerprint": expected,
+                    "requestedChangeCount": requested_count,
+                    "observedChangeCount": 0,
+                    "affectedGlyphCount": 0,
+                    "canonicalCoverage": COMPLETE_CANONICAL_COVERAGE,
+                    "observedChangeSet": {
+                        "beforeFingerprint": expected,
+                        "afterFingerprint": expected,
+                        "changeCount": 0,
+                        "changes": [],
+                    },
+                    "fontSaved": False,
+                    "transactionCount": 0,
+                    "revert": {"available": False, "operationId": None},
+                },
+            )
         try:
             plan = self._mutation_planner.plan(
                 document_id=document_id,
@@ -542,7 +605,7 @@ class GlyphsMCPApplication:
                 requested_change_set=requested,
                 operation_id=metadata.operation_id,
                 before_model=before,
-                capabilities=build.capabilities,
+                capabilities=capabilities,
                 execution_context=build.execution_context,
                 initial_stage_timings={
                     "initial_capture": initial_capture_ms
@@ -562,6 +625,7 @@ class GlyphsMCPApplication:
             failure_data = {
                 "rollbackAttempted": True,
                 "rollbackSucceeded": exc.rollback_succeeded,
+                "verificationError": str(exc)[:2048],
             }
             return self._audited_edit_failure(
                 tool=tool,
@@ -597,6 +661,7 @@ class GlyphsMCPApplication:
                     "requestedChangeCount": requested_count,
                     "observedChangeCount": result.observed_change_count,
                     "affectedGlyphCount": len(changed_glyphs),
+                    "canonicalCoverage": result.coverage.to_public_dict(),
                 },
             },
         )
@@ -619,6 +684,7 @@ class GlyphsMCPApplication:
                 "requestedChangeCount": requested_count,
                 "observedChangeCount": result.observed_change_count,
                 "affectedGlyphCount": len(changed_glyphs),
+                "canonicalCoverage": result.coverage.to_public_dict(),
             },
         )
         return ToolResponse.success(
@@ -636,6 +702,7 @@ class GlyphsMCPApplication:
                 "requestedChangeCount": requested_count,
                 "observedChangeCount": result.observed_change_count,
                 "affectedGlyphCount": len(changed_glyphs),
+                "canonicalCoverage": result.coverage.to_public_dict(),
                 "observedChangeSet": {
                     "beforeFingerprint": result.before_fingerprint,
                     "afterFingerprint": result.after_fingerprint,
@@ -711,6 +778,7 @@ class GlyphsMCPApplication:
                 "documentFingerprint": fingerprint_model(model),
                 "canonicalModelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
                 "reversibilityCoverage": REVERSIBILITY_COVERAGE,
+                "canonicalCoverage": COMPLETE_CANONICAL_COVERAGE,
             },
         )
 
@@ -1076,7 +1144,14 @@ class GlyphsMCPApplication:
                 max_iterations=int(_value(arguments, "max_iterations", "maxIterations", 5)),
                 tolerance=float(_value(arguments, "tolerance", default=1)),
             )
-            after = copy.deepcopy(dict(model))
+            after = _copy_on_write_model(
+                model,
+                glyph_names=(
+                    str(item.get("glyphName") or "")
+                    for item in simulation["items"]
+                    if item.get("status") == "ready"
+                ),
+            )
             for item in simulation["items"]:
                 if item.get("status") != "ready":
                     continue
@@ -1420,6 +1495,7 @@ class GlyphsMCPApplication:
                 "beforeFingerprint": result.before_fingerprint,
                 "afterFingerprint": result.after_fingerprint,
                 "changeCount": result.change_count,
+                "canonicalCoverage": result.coverage.to_public_dict(),
             },
         )
         return ToolResponse.success(
@@ -1436,6 +1512,7 @@ class GlyphsMCPApplication:
                 "afterFingerprint": result.after_fingerprint,
                 "requestedChangeCount": result.requested_change_count,
                 "observedChangeCount": result.observed_change_count,
+                "canonicalCoverage": result.coverage.to_public_dict(),
                 "fontSaved": False,
                 "transactionCount": 1,
             },

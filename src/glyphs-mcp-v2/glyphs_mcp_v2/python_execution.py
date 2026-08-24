@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Mapping, Optional, Protocol
 
 from .activity import ActivityCancelled, OperationActivityStore
 from .audit import AuditLog
+from .canonical_schema import CanonicalCoverage, CoverageStatus
 from .contracts import OperationMetadata, ToolResponse, ToolWarning
 from .operations import OperationRecord, OperationStore
 from .pagination import paginate
@@ -122,6 +123,40 @@ def _bounded(value: Any, limit: int) -> str:
     return text if len(text) <= limit else text[:limit] + "\n… output truncated"
 
 
+def _staged_canonical_coverage(
+    changes: ChangeSet,
+    replay_context: Mapping[str, Any],
+) -> CanonicalCoverage:
+    """Separate complete semantic proof from exact native opaque evidence."""
+
+    if not replay_context.get("nativeReplayEvidenceId"):
+        return CanonicalCoverage.complete()
+    opaque_paths = tuple(
+        change.path
+        for change in changes.changes
+        if change.before_present != change.after_present
+    )
+    if not opaque_paths:
+        return CanonicalCoverage.complete()
+    return CanonicalCoverage(
+        status=CoverageStatus.COMPLETE_WITH_OPAQUE_PRESERVATION,
+        opaque_paths=opaque_paths,
+    )
+
+
+def _recovery_only_canonical_coverage(
+    changes: ChangeSet | None = None,
+) -> CanonicalCoverage:
+    return CanonicalCoverage(
+        status=CoverageStatus.RECOVERY_ONLY,
+        unsupported_paths=(
+            tuple(change.path for change in changes.changes)
+            if changes is not None
+            else ()
+        ),
+    )
+
+
 def _iso_timestamp(value: float) -> str:
     return datetime.fromtimestamp(float(value), tz=timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -202,6 +237,15 @@ class PythonExecutionHost(Protocol):
         ...
 
 
+class ObservedLivePythonError(RuntimeError):
+    """Carry exact before/after evidence when live Python raises."""
+
+    def __init__(self, cause: BaseException, result: Mapping[str, Any]) -> None:
+        super().__init__(str(cause) or type(cause).__name__)
+        self.cause = cause
+        self.result = result
+
+
 class PythonExecutionService:
     def __init__(
         self,
@@ -224,6 +268,13 @@ class PythonExecutionService:
         self._trace = trace
         self._activity = activity
 
+    def _capture_document_state(self, document_id: str) -> Mapping[str, Any]:
+        capture = getattr(self._host, "capture_snapshot", None)
+        if not callable(capture):
+            capture = self._host.capture_model
+        value = capture(document_id)
+        return value if isinstance(value, Mapping) else dict(value)
+
     @staticmethod
     def _replay_context(value: Mapping[str, Any]) -> dict[str, Any]:
         context = value.get("executionContext")
@@ -240,7 +291,13 @@ class PythonExecutionService:
             except Exception:
                 pass
 
-    def _store_diff(self, changes: ChangeSet) -> tuple[OperationRecord, Mapping[str, Any]]:
+    def _store_diff(
+        self,
+        changes: ChangeSet,
+        *,
+        coverage: CanonicalCoverage | None = None,
+    ) -> tuple[OperationRecord, Mapping[str, Any]]:
+        resolved_coverage = coverage or CanonicalCoverage.complete()
         items = [public_change_dict(change) for change in changes.changes]
         operation = self._operations.create(
             kind="python_diff",
@@ -254,6 +311,7 @@ class PythonExecutionService:
                     "afterFingerprint": changes.after_fingerprint,
                     "changeCount": len(items),
                     "supported": changes.supported,
+                    "canonicalCoverage": resolved_coverage.to_public_dict(),
                 },
             },
         )
@@ -378,18 +436,52 @@ class PythonExecutionService:
         return self._preview_live(request)
 
     def _execute_read(self, request: PythonExecutionRequest) -> ToolResponse:
-        before = None
-        if request.document_id:
-            before = dict(self._host.capture_model(request.document_id))
+        fallback_before = (
+            self._capture_document_state(request.document_id)
+            if request.document_id
+            and not bool(
+                getattr(self._host, "observes_live_python_exceptions", False)
+            )
+            else None
+        )
         try:
             result = self._host.run_live_python(request)
-        except Exception:
-            if request.document_id and before is not None and self._trace is not None:
-                try:
+        except ObservedLivePythonError as exc:
+            result = exc.result
+            if request.document_id and self._trace is not None:
+                before = result.get("beforeModel")
+                after = result.get("afterModel")
+                if isinstance(before, Mapping) and isinstance(after, Mapping):
+                    failed_changes = diff_models(before, after)
                     self._trace.observe_transition(
                         request.document_id,
                         before,
-                        dict(self._host.capture_model(request.document_id)),
+                        after,
+                        change_set=failed_changes,
+                        coverage=_recovery_only_canonical_coverage(
+                            failed_changes
+                        ),
+                    )
+            raise exc.cause from exc
+        except Exception:
+            if (
+                request.document_id
+                and fallback_before is not None
+                and self._trace is not None
+            ):
+                try:
+                    failed_after = self._capture_document_state(
+                        request.document_id
+                    )
+                    failed_changes = diff_models(
+                        fallback_before, failed_after
+                    )
+                    self._trace.observe_transition(
+                        request.document_id,
+                        fallback_before,
+                        failed_after,
+                        change_set=failed_changes,
+                        coverage=_recovery_only_canonical_coverage(failed_changes),
                     )
                 except Exception:
                     pass
@@ -397,10 +489,26 @@ class PythonExecutionService:
         after = None
         violated = False
         if request.document_id:
-            after = dict(self._host.capture_model(request.document_id))
+            before = result.get("beforeModel")
+            after = result.get("afterModel")
+            if not isinstance(before, Mapping) or not isinstance(after, Mapping):
+                raise RuntimeError(
+                    "live Python host returned no canonical observation"
+                )
             violated = fingerprint_model(before) != fingerprint_model(after)
             if self._trace is not None:
-                self._trace.observe_transition(request.document_id, before, after)
+                observed = diff_models(before, after)
+                self._trace.observe_transition(
+                    request.document_id,
+                    before,
+                    after,
+                    change_set=observed,
+                    coverage=(
+                        _recovery_only_canonical_coverage(observed)
+                        if violated
+                        else CanonicalCoverage.complete()
+                    ),
+                )
         scope_violations = sorted(set(result.get("scopeViolations") or []))
         if request.document_id and violated and request.document_id not in scope_violations:
             scope_violations.append(request.document_id)
@@ -463,7 +571,7 @@ class PythonExecutionService:
             validate_staged_code(request.code or "")
         except PythonPolicyError as exc:
             return self._failure("staged_policy_violation", str(exc), recoverable=True)
-        before = dict(self._host.capture_model(request.document_id or ""))
+        before = self._capture_document_state(request.document_id or "")
         if self._trace is not None and request.document_id:
             self._trace.observe_model(request.document_id, before)
         before_fingerprint = fingerprint_model(before)
@@ -643,7 +751,11 @@ class PythonExecutionService:
                 "The staged script changed document fields outside the supported semantic model.",
                 data=diagnostics,
             )
-        diff_operation, public_change_set = self._store_diff(changes)
+        canonical_coverage = _staged_canonical_coverage(changes, replay_context)
+        diff_operation, public_change_set = self._store_diff(
+            changes,
+            coverage=canonical_coverage,
+        )
         review = self._reviews.create(
             kind="python_review",
             ttl_seconds=REVIEW_TTL_SECONDS,
@@ -659,6 +771,7 @@ class PythonExecutionService:
                 "stderr": _bounded(preview.get("stderr"), min(request.max_error_chars, MAX_OUTPUT_CHARS)),
                 "scopeViolations": list(preview.get("scopeViolations") or []),
                 "diffOperationId": diff_operation.operation_id,
+                "canonicalCoverage": canonical_coverage,
             },
         )
         receipt = self._audit.record(
@@ -677,6 +790,7 @@ class PythonExecutionService:
                 "changeCount": len(changes.changes),
                 "capabilities": list(capabilities),
                 "scopeViolations": list(preview.get("scopeViolations") or []),
+                "canonicalCoverage": canonical_coverage.to_public_dict(),
             },
         )
         return ToolResponse.success(
@@ -693,13 +807,14 @@ class PythonExecutionService:
                 "liveDocumentChanged": False,
                 "changeSet": public_change_set,
                 "operationId": diff_operation.operation_id,
+                "canonicalCoverage": canonical_coverage.to_public_dict(),
                 "stdout": _bounded(preview.get("stdout"), min(request.max_output_chars, MAX_OUTPUT_CHARS)),
                 "stderr": _bounded(preview.get("stderr"), min(request.max_error_chars, MAX_OUTPUT_CHARS)),
             },
         )
 
     def _preview_live(self, request: PythonExecutionRequest) -> ToolResponse:
-        current = self._host.capture_model(request.document_id or "")
+        current = self._capture_document_state(request.document_id or "")
         if self._trace is not None and request.document_id:
             self._trace.observe_model(request.document_id, current)
         if fingerprint_model(current) != request.expected_document_fingerprint:
@@ -758,7 +873,7 @@ class PythonExecutionService:
             or not isinstance(expected_after, Mapping)
         ):
             return self._failure("review_corrupt", "The stored staged review is incomplete.", recoverable=False)
-        before = dict(self._host.capture_model(request.document_id or ""))
+        before = self._capture_document_state(request.document_id or "")
         capabilities = tuple(
             sorted(set(str(value) for value in payload.get("capabilities", ())))
         )
@@ -794,6 +909,11 @@ class PythonExecutionService:
             observed_change_set=changes,
             capabilities=capabilities,
             execution_context=execution_context,
+            coverage=(
+                payload.get("canonicalCoverage")
+                if isinstance(payload.get("canonicalCoverage"), CanonicalCoverage)
+                else CanonicalCoverage.complete()
+            ),
         )
         try:
             transaction = self._transactions.apply_plan(plan)
@@ -843,6 +963,7 @@ class PythonExecutionService:
                 "coverage": "document_inverse",
                 "recoveryPath": None,
                 "capabilities": capabilities,
+                "canonicalCoverage": transaction.coverage,
             },
         )
         receipt = self._audit.record(
@@ -861,6 +982,7 @@ class PythonExecutionService:
                 "changeCount": transaction.change_count,
                 "capabilities": list(capabilities),
                 "rollbackCoverage": "document_inverse",
+                "canonicalCoverage": transaction.coverage.to_public_dict(),
             },
         )
         return ToolResponse.success(
@@ -879,6 +1001,7 @@ class PythonExecutionService:
                 "fontSaved": False,
                 "transactional": True,
                 "externalEffectsVerifiable": True,
+                "canonicalCoverage": transaction.coverage.to_public_dict(),
                 "rollback": {
                     "available": True,
                     "coverage": "document_inverse",
@@ -896,7 +1019,7 @@ class PythonExecutionService:
         *,
         review_id: str,
     ) -> ToolResponse:
-        before = dict(self._host.capture_model(request.document_id or ""))
+        before = self._capture_document_state(request.document_id or "")
         if self._trace is not None and request.document_id:
             self._trace.observe_model(request.document_id, before)
         before_fingerprint = fingerprint_model(before)
@@ -910,13 +1033,21 @@ class PythonExecutionService:
                 "Open-world Python was not run because its recovery copy failed: {}".format(type(exc).__name__),
                 data={"stateMayHaveChanged": False},
             )
-        try:
-            result = self._host.run_live_python(request)
-            after = dict(result.get("afterModel") or self._host.capture_model(request.document_id or ""))
-        except Exception as exc:
-            after = dict(self._host.capture_model(request.document_id or ""))
+
+        def failed_execution(
+            exc: BaseException, after: Mapping[str, Any]
+        ) -> ToolResponse:
             if self._trace is not None and request.document_id:
-                self._trace.observe_transition(request.document_id, before, after)
+                failed_changes = diff_models(before, after)
+                self._trace.observe_transition(
+                    request.document_id,
+                    before,
+                    after,
+                    change_set=failed_changes,
+                    coverage=_recovery_only_canonical_coverage(
+                        failed_changes
+                    ),
+                )
             after_fingerprint = fingerprint_model(after)
             checkpoint = self._checkpoints.create(
                 kind="python_checkpoint",
@@ -963,13 +1094,34 @@ class PythonExecutionService:
                 },
                 receipt=receipt.to_dict(),
             )
+
+        try:
+            result = self._host.run_live_python(request)
+            after = result.get("afterModel")
+            if not isinstance(after, Mapping):
+                after = self._capture_document_state(
+                    request.document_id or ""
+                )
+        except ObservedLivePythonError as exc:
+            result = exc.result
+            after = result.get("afterModel")
+            if not isinstance(after, Mapping):
+                after = self._capture_document_state(
+                    request.document_id or ""
+                )
+            return failed_execution(exc.cause, after)
+        except Exception as exc:
+            after = self._capture_document_state(request.document_id or "")
+            return failed_execution(exc, after)
         changes = diff_models(before, after)
+        canonical_coverage = _recovery_only_canonical_coverage(changes)
         if self._trace is not None and request.document_id:
             self._trace.observe_transition(
                 request.document_id,
                 before,
                 after,
                 change_set=changes,
+                coverage=canonical_coverage,
             )
         supports = getattr(self._host, "supports_change_set", None)
         host_supported = bool(supports(changes)) if callable(supports) else True
@@ -994,6 +1146,7 @@ class PythonExecutionService:
                 else None
             ),
             "coverage": coverage,
+            "canonicalCoverage": canonical_coverage,
             "recoveryPath": recovery_path,
         }
         checkpoint = self._checkpoints.create(
@@ -1019,6 +1172,7 @@ class PythonExecutionService:
                 "externalEffectsVerifiable": False,
                 "scopeViolations": list(result.get("scopeViolations") or []),
                 "recoveryPersisted": recovery_persisted,
+                "canonicalCoverage": canonical_coverage.to_public_dict(),
             },
         )
         return ToolResponse.success(
@@ -1053,6 +1207,7 @@ class PythonExecutionService:
                 "timeoutEnforcement": "cooperative",
                 "scopeViolations": list(result.get("scopeViolations") or []),
                 "recoveryAvailableAfterRestart": recovery_persisted,
+                "canonicalCoverage": canonical_coverage.to_public_dict(),
                 "rollback": {
                     "available": True,
                     "coverage": coverage,
@@ -1169,7 +1324,10 @@ class PythonExecutionService:
             try:
                 if self._trace is not None:
                     try:
-                        self._trace.observe_model(document_id, self._host.capture_model(document_id))
+                        self._trace.observe_model(
+                            document_id,
+                            self._capture_document_state(document_id),
+                        )
                     except Exception:
                         pass
                 self._host.open_recovery_copy(str(path))
@@ -1213,7 +1371,7 @@ class PythonExecutionService:
                 recoverable=False,
             )
         try:
-            current = self._host.capture_model(document_id)
+            current = self._capture_document_state(document_id)
         except Exception:
             return self._rollback_failure(
                 code="document_unavailable",
@@ -1247,6 +1405,11 @@ class PythonExecutionService:
                             for value in payload.get("capabilities", ())
                         )
                     )
+                ),
+                coverage=(
+                    payload.get("canonicalCoverage")
+                    if isinstance(payload.get("canonicalCoverage"), CanonicalCoverage)
+                    else CanonicalCoverage.complete()
                 ),
             )
             result = self._transactions.apply_plan(plan)

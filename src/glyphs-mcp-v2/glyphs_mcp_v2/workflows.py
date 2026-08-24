@@ -14,6 +14,14 @@ from .canonical_collections import (
     move_entity,
     require_indexed_entities,
 )
+from .canonical_views import (
+    layer_anchors,
+    layer_components,
+    layer_paths,
+    path_signature,
+    replace_shape_kind,
+)
+from .canonical_schema import deterministic_occurrence_id
 from .mutation import (
     LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
@@ -21,6 +29,49 @@ from .mutation import (
     master_lifecycle_request_diff,
 )
 from .semantic import ChangeSet, diff_models
+
+
+def _copy_on_write_model(
+    model: Mapping[str, Any],
+    *,
+    roots: Iterable[str] = (),
+    glyph_names: Iterable[str] = (),
+    deep_glyphs: bool = True,
+) -> dict[str, Any]:
+    """Detach only mutation-owned canonical shards.
+
+    The returned top-level mapping shares every undeclared root and glyph with
+    ``model``. Requested roots are detached completely because their builders
+    own the corresponding bounded collection. Requested glyphs are detached
+    independently, preserving all unrelated glyph objects. This is the common
+    builder-side counterpart to ``CanonicalSnapshot.store_verified_transition``.
+    """
+
+    after = dict(model)
+    for root in dict.fromkeys(str(value) for value in roots):
+        if root == "glyphs":
+            raise ValueError("glyphs must be detached through glyph_names")
+        if root in model:
+            after[root] = copy.deepcopy(model[root])
+    names = tuple(dict.fromkeys(str(value) for value in glyph_names))
+    if names:
+        source_glyphs = model.get("glyphs", {})
+        if not isinstance(source_glyphs, Mapping):
+            raise ValueError("glyph model must be keyed by name")
+        glyphs = dict(source_glyphs)
+        for name in names:
+            if name not in source_glyphs:
+                continue
+            source = source_glyphs[name]
+            glyphs[name] = (
+                copy.deepcopy(dict(source))
+                if deep_glyphs and isinstance(source, Mapping)
+                else dict(source)
+                if isinstance(source, Mapping)
+                else copy.deepcopy(source)
+            )
+        after["glyphs"] = glyphs
+    return after
 
 
 def _items(value: Any, *, key_name: str = "id") -> list[dict[str, Any]]:
@@ -39,10 +90,10 @@ def _items(value: Any, *, key_name: str = "id") -> list[dict[str, Any]]:
 def _canonical_layers(
     glyph: Any, *, copy_values: bool = True
 ) -> list[dict[str, Any]]:
-    """Return the schema-v5 ordered layer entities for one glyph.
+    """Return the schema-v6 ordered layer entities for one glyph.
 
     A mapping is accepted only as a local schema-v4 migration fixture. Native
-    capture and every schema-v5 builder return the ordered list form.
+    capture and every schema-v6 builder return the ordered list form.
     """
 
     source = glyph.get("layers", ()) if isinstance(glyph, Mapping) else ()
@@ -65,7 +116,7 @@ def _layer_index(layers: Sequence[Mapping[str, Any]], identity: str) -> int | No
     if index is not None:
         return index
     # Existing metrics/spacing APIs address master layers by master ID. Keep
-    # that semantic lookup while schema v5 addresses lifecycle by layer ID.
+    # that semantic lookup while schema v6 addresses lifecycle by layer ID.
     matches = [
         offset
         for offset, layer in enumerate(layers)
@@ -234,9 +285,9 @@ def list_layers(
                     "isSpecialLayer": bool(layer.get("isSpecialLayer")),
                     "interpolation": copy.deepcopy(layer.get("interpolation")),
                     "width": layer.get("width"),
-                    "pathCount": len(layer.get("paths") or ()),
-                    "componentCount": len(layer.get("components") or ()),
-                    "anchorCount": len(layer.get("anchors") or {}),
+                    "pathCount": len(layer_paths(layer)),
+                    "componentCount": len(layer_components(layer)),
+                    "anchorCount": len(layer_anchors(layer)),
                 }
             )
     return result
@@ -323,13 +374,16 @@ def _layer_map(glyph: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
 
 
 def _component_names(layer: Mapping[str, Any]) -> list[str]:
-    values = layer.get("components", [])
     result = []
-    for component in values if isinstance(values, Sequence) else []:
+    for component in layer_components(layer):
         if isinstance(component, Mapping):
             result.append(str(component.get("name") or component.get("componentName") or ""))
-        else:
-            result.append(str(component))
+    if not result and isinstance(layer.get("components"), Sequence):
+        result.extend(
+            str(component)
+            for component in layer.get("components", ())
+            if not isinstance(component, Mapping)
+        )
     return result
 
 
@@ -407,7 +461,7 @@ def review_master_compatibility(
                         {"glyphName": name, "referenceMasterId": reference_id, "masterId": master_id},
                     )
                 )
-            if layer.get("pathSignature") != reference.get("pathSignature"):
+            if path_signature(layer) != path_signature(reference):
                 findings.append(
                     _finding(
                         "path_topology_mismatch",
@@ -507,10 +561,7 @@ def review_metrics_inheritance(model: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _anchor_names(layer: Mapping[str, Any]) -> list[str]:
-    anchors = layer.get("anchors", {})
-    if isinstance(anchors, Mapping):
-        return [str(name) for name in anchors]
-    return [str(anchor.get("name") or "") for anchor in _items(anchors, key_name="name")]
+    return [str(anchor.get("name") or "") for anchor in layer_anchors(layer)]
 
 
 def review_anchor_consistency(model: Mapping[str, Any]) -> dict[str, Any]:
@@ -737,7 +788,12 @@ def review_export(
 def build_glyph_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
     """Build property and membership changes for the canonical glyph map."""
 
-    after = copy.deepcopy(dict(model))
+    target_names = [str(update.get("glyphName") or "") for update in updates]
+    after = _copy_on_write_model(
+        model,
+        glyph_names=target_names,
+        deep_glyphs=False,
+    )
     glyphs = after.setdefault("glyphs", {})
     if not isinstance(glyphs, dict):
         raise ValueError("glyph model must be keyed by name for batch updates")
@@ -793,12 +849,19 @@ def build_opentype_updates(
 ) -> ChangeSet:
     """Build feature, class, and prefix membership/state changes."""
 
-    after = copy.deepcopy(dict(model))
     roots = {
         "feature": "features",
         "class": "classes",
         "prefix": "featurePrefixes",
     }
+    after = _copy_on_write_model(
+        model,
+        roots=(
+            roots[str(update.get("kind") or "")]
+            for update in updates
+            if str(update.get("kind") or "") in roots
+        ),
+    )
     allowed = {"code", "automatic", "disabled"}
     seen: set[tuple[str, str, str]] = set()
     for update in updates:
@@ -873,13 +936,61 @@ def build_instance_updates(
 ) -> ChangeSet:
     """Build ordered instance membership and property changes."""
 
-    after = copy.deepcopy(dict(model))
+    after = _copy_on_write_model(model, roots=("instances",))
     collection = after.setdefault("instances", [])
     if not isinstance(collection, list):
         raise ValueError("instances must be an ordered canonical collection")
     require_indexed_entities(collection, "instances")
     seen: set[tuple[str, str]] = set()
     writable = {"name", "type", "included", "axes"}
+
+    def synchronized_style_name(
+        properties: Sequence[Mapping[str, Any]], name: str
+    ) -> list[dict[str, Any]]:
+        """Synchronize the convenience name with official v4 properties."""
+
+        result = [copy.deepcopy(dict(item)) for item in properties]
+        style_index = next(
+            (
+                index
+                for index, item in enumerate(result)
+                if str(item.get("key") or "") == "styleNames"
+            ),
+            None,
+        )
+        if style_index is None:
+            result.append(
+                {
+                    "id": deterministic_occurrence_id(
+                        "property", "styleNames", 0
+                    ),
+                    "key": "styleNames",
+                    "value": None,
+                    "values": [{"language": "dflt", "value": name}],
+                }
+            )
+            return result
+        record = result[style_index]
+        localized = [
+            copy.deepcopy(dict(item))
+            for item in record.get("values", [])
+            if isinstance(item, Mapping)
+        ]
+        default_index = next(
+            (
+                index
+                for index, item in enumerate(localized)
+                if str(item.get("language") or "") == "dflt"
+            ),
+            None,
+        )
+        if default_index is None:
+            localized.append({"language": "dflt", "value": name})
+        else:
+            localized[default_index]["value"] = name
+        record["value"] = None
+        record["values"] = localized
+        return result
     for update in updates:
         action = str(update.get("action") or "update").lower()
         identity = str(update.get("instanceId") or "")
@@ -896,14 +1007,28 @@ def build_instance_updates(
                 raise ValueError("instance type must be static or variable")
             if not str(update.get("name") or ""):
                 raise ValueError("instance creation requires name")
+            name = str(update.get("name"))
+            included = bool(update.get("included", True))
             collection.append(
                 {
                     "id": identity,
-                    "name": str(update.get("name")),
+                    "name": name,
                     "type": kind,
-                    "included": bool(update.get("included", True)),
+                    "included": included,
                     "inclusionReason": None,
                     "interpolationSupported": kind != "variable",
+                    "exports": included,
+                    "visible": True,
+                    "isBold": False,
+                    "isItalic": False,
+                    "linkStyle": None,
+                    "manualInterpolation": False,
+                    "weightClass": 400,
+                    "widthClass": 5,
+                    "instanceInterpolations": {},
+                    "customParameters": [],
+                    "properties": synchronized_style_name([], name),
+                    "userData": {},
                     "axes": copy.deepcopy(list(update.get("axes") or [])),
                 }
             )
@@ -931,6 +1056,9 @@ def build_instance_updates(
             if not name:
                 raise ValueError("instance name cannot be empty")
             item["name"] = name
+            item["properties"] = synchronized_style_name(
+                item.get("properties", []), name
+            )
         if "type" in supplied:
             kind = str(update.get("type") or "").lower()
             if kind not in {"static", "variable"}:
@@ -939,6 +1067,7 @@ def build_instance_updates(
             item["interpolationSupported"] = kind != "variable"
         if "included" in supplied:
             item["included"] = bool(update.get("included"))
+            item["exports"] = item["included"]
         if "axes" in supplied:
             item["axes"] = copy.deepcopy(list(update.get("axes") or []))
     return diff_models(model, after)
@@ -986,7 +1115,19 @@ def build_master_updates(
     source_kerning = model.get("kerning", {})
     if not isinstance(source_kerning, Mapping):
         raise ValueError("kerning must be keyed by master ID")
-    kerning = dict(source_kerning)
+    directional_kerning = any(
+        domain in source_kerning for domain in ("ltr", "rtl", "vertical", "context")
+    )
+    kerning = (
+        {
+            domain: dict(source_kerning.get(domain, {}))
+            if isinstance(source_kerning.get(domain, {}), Mapping)
+            else copy.deepcopy(source_kerning.get(domain))
+            for domain in ("ltr", "rtl", "vertical", "context")
+        }
+        if directional_kerning
+        else dict(source_kerning)
+    )
     after["kerning"] = kerning
     source_map: dict[str, str] = {}
     seen: set[tuple[str, str]] = set()
@@ -1053,10 +1194,27 @@ def build_master_updates(
                 layer["name"] = source["name"]
                 layer["isMasterLayer"] = True
                 layer["isSpecialLayer"] = False
-                layers.append(layer)
+                # Glyphs owns master-layer attachment as the nested side of
+                # master lifecycle. A master inserted before the end is
+                # projected at the same position in every glyph's master
+                # prefix; asking the layer writer to append it produces a
+                # canonical target the host cannot preserve. Keep existing
+                # master layers in place and insert only the new owned layer.
+                master_position = find_entity_index(masters, master_id)
+                if master_position is None:
+                    raise ValueError(
+                        "duplicated master is missing from the canonical order"
+                    )
+                prefix_length = _master_layer_prefix_length(layers)
+                layers.insert(min(master_position, prefix_length), layer)
                 glyph_copy["layers"] = layers
                 glyphs[glyph_name] = glyph_copy
-            if source_id in kerning:
+            if directional_kerning:
+                for domain in ("ltr", "rtl", "vertical"):
+                    partitions = kerning.get(domain, {})
+                    if isinstance(partitions, dict) and source_id in partitions:
+                        partitions[master_id] = copy.deepcopy(partitions[source_id])
+            elif source_id in kerning:
                 kerning[master_id] = kerning[source_id]
             continue
 
@@ -1091,7 +1249,13 @@ def build_master_updates(
                 glyph_copy["layers"] = layers
                 glyphs[glyph_name] = glyph_copy
             del masters[index]
-            kerning.pop(master_id, None)
+            if directional_kerning:
+                for domain in ("ltr", "rtl", "vertical"):
+                    partitions = kerning.get(domain, {})
+                    if isinstance(partitions, dict):
+                        partitions.pop(master_id, None)
+            else:
+                kerning.pop(master_id, None)
             continue
         if action == "move":
             if "index" not in update:
@@ -1330,7 +1494,10 @@ def build_layer_updates(
 
 
 def review_anchor_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
-    after = copy.deepcopy(dict(model))
+    after = _copy_on_write_model(
+        model,
+        glyph_names=(str(update.get("glyphName") or "") for update in updates),
+    )
     glyphs = after.setdefault("glyphs", {})
     seen = set()
     for update in updates:
@@ -1358,7 +1525,7 @@ def review_anchor_updates(model: Mapping[str, Any], updates: Sequence[Mapping[st
 
 
 def review_kerning_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
-    after = copy.deepcopy(dict(model))
+    after = _copy_on_write_model(model, roots=("kerning",))
     pairs = list_kerning_pairs(after)
     keyed = {(pair["masterId"], pair["left"]["id"], pair["right"]["id"]): pair for pair in pairs}
     glyphs = {
@@ -1421,7 +1588,10 @@ def review_kerning_updates(model: Mapping[str, Any], updates: Sequence[Mapping[s
 
 
 def review_metrics_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
-    after = copy.deepcopy(dict(model))
+    after = _copy_on_write_model(
+        model,
+        glyph_names=(str(update.get("glyphName") or "") for update in updates),
+    )
     glyphs = after.setdefault("glyphs", {})
     allowed = {"leftMetricsKey", "rightMetricsKey", "widthMetricsKey"}
     seen = set()
@@ -1448,7 +1618,10 @@ def review_metrics_updates(model: Mapping[str, Any], updates: Sequence[Mapping[s
 
 
 def review_compatibility_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
-    after = copy.deepcopy(dict(model))
+    after = _copy_on_write_model(
+        model,
+        glyph_names=(str(update.get("glyphName") or "") for update in updates),
+    )
     glyphs = after.setdefault("glyphs", {})
     seen = set()
     for update in updates:
@@ -1471,12 +1644,12 @@ def review_compatibility_updates(model: Mapping[str, Any], updates: Sequence[Map
             value = update.get(field)
             if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
                 raise ValueError("{} must be an explicit sequence".format(field))
-            layer[field] = copy.deepcopy(list(value))
-        if "paths" in supplied:
-            layer["pathSignature"] = [
-                len(path.get("nodes", [])) if isinstance(path, Mapping) else 0
-                for path in layer["paths"]
-            ]
+            kind = "path" if field == "paths" else "component"
+            layer["shapes"] = replace_shape_kind(
+                layer,
+                kind,
+                copy.deepcopy(list(value)),
+            )
     return diff_models(model, after)
 
 

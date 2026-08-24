@@ -11,6 +11,131 @@ Do not duplicate release flow, command reference, or long installer notes across
 
 Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish compatibility pass across Glyphs 3.5 and Glyphs 4.
 
+## Prepared 2.0.0 unsigned candidate
+
+Version `2.0.0` (installer build `27`) uses an asymmetric host payload. Glyphs
+3.5 remains pinned to signed `v1.11.0` at `13ca805`; Glyphs 4 receives the
+generated schema-v6 v2 runtime. The two catalogs are intentionally different.
+
+Schema v5 is retained only as the `modeled_fields_only` unsigned regression
+baseline. Schema v6 is required before the signed 2.0 release: it classifies
+the pinned official Glyphs File Format v4 schema completely, keeps the existing
+snapshot/transaction/revert kernel, and does not claim byte-for-byte ownership
+of private native or UI-session state.
+
+Pinned knowledge dependencies live in
+`third_party/glyphs-file-format-v4/knowledge-dependencies.json`. Ordinary tests
+verify local hashes and licenses. The full-network release gate compares the
+pinned GlyphsSDK branch heads and blocks signing on drift without auto-updating
+the registry. The handbook and custom-parameter articles are explanatory
+sources, not closed schemas.
+
+The v2 runtime provides direct verified apply-first edits, immutable canonical
+snapshots, semantic Change Log commits, conflict-aware selective revert,
+drawing-only outline-delta feedback, staged Python with exact confirmation,
+and structural replay for glyph, master, layer, instance, feature, class, and
+prefix lifecycle. Every supported live mutation uses the same detached
+simulation and verified transaction kernel and never saves implicitly.
+
+Milestone 10 established deterministic schema-v2 installer payloads and
+target-isolated install, update, rollback, preference, and uninstall behavior.
+Milestone 11 makes version migration target-aware, adds unsigned-candidate
+security validation, composes deterministic payload, skills, documentation,
+Python, Xcode, and Debug-build checks in one local release gate, and replaces
+the obsolete symmetric host QA protocol.
+
+Qualification results are recorded below only after the corresponding gate is
+run:
+
+- Milestone 13 unsigned pre-integration qualification: passed on August 24,
+  2026 from branch `lit/v2` with the Milestones 10–13 closure changes still
+  uncommitted. The mandatory full-network gate found no upstream drift across
+  the five pinned GlyphsSDK sources; the Python 3.12/3.14 matrix passed 1,359
+  tests with two expected skips; all 112 Xcode test methods passed; two
+  independently assembled dual-target payloads were byte-identical; all 13
+  canonical/packaged skill pairs, the documentation production build, the
+  unsigned Debug installer build, schema-v6 coverage, discovery limits, and
+  unsigned-candidate security validation passed. The candidate remained
+  `signed:false`, `notarized:false`, and `publishable:false`.
+- Schema-v6 source qualification: passed on August 23, 2026 from branch
+  `lit/v2` at `2f2b22d8d51c339d49e938e0d4a28dd91f5f742f` with the milestone
+  changes uncommitted. The full Python 3.12/3.14 matrix passed 1,357 Python tests with
+  two expected skips; all 112 Xcode test methods passed; deterministic dual-target
+  payload builds were byte-identical; all 13 canonical/packaged skill pairs
+  validated and remained synchronized; the documentation production build and
+  unsigned Debug installer build passed; and the final candidate result remained
+  `signed:false`, `notarized:false`, and `publishable:false`. With signing
+  disabled, both embedded plug-in loaders retained their source ad-hoc
+  signatures (`TeamIdentifier=not set`); the build phase did not apply an Apple
+  Development signature.
+- Schema-v6 independent audit: passed with 293 of 293 official properties
+  classified, zero unclassified properties, zero stale registry entries, and
+  no GlyphsSDK upstream drift across the five pinned knowledge sources. The
+  audit found one native replay adapter, one verified mutation kernel, native
+  imports bounded to adapters/UI, no runtime `glyphsLib` dependency, and no
+  full canonical capture, hashing, or mutation in Reporter callbacks. The
+  source-neutral flat/package fixture fingerprint was
+  `sha256:e12de192ebc7bf025147b20f0e1d6f8a85ce8f8c72348712617641c787a681c0`.
+- Automated local gate: passed on August 21, 2026 from branch `lit/v2` at
+  `2f2b22d8d51c339d49e938e0d4a28dd91f5f742f` with the release changes
+  uncommitted. The full-network Python matrix passed 1,167 tests with two
+  expected skips; both configured Python runtimes passed their dependency and
+  test matrices; all 112 Xcode test methods passed; the documentation
+  production build and unsigned Debug installer build passed; all canonical
+  and packaged skills validated and remained synchronized; and the final
+  unsigned-candidate check reported `publishable:false`.
+- Deterministic payload evidence: complete sorted-file-map SHA-256
+  `5ef26a09f6568eefd9b27247c1616c46f51cbc046f6d37748a5fe121b90f401d`;
+  `payload.json`
+  `2d777dfda5f83afc5c05e653c37018a77209b1656360d4eef5f18659c3de897d`;
+  Glyphs 3 target
+  `16be942f34191a59a01073c169e99e72241c214ee97c8676a63437b720086d3a`;
+  Glyphs 4 target
+  `a4bed7dc0dc642e3648e8c92e3eeb27e475fc08ef1c6850df839e1dc3fba4897`;
+  skills
+  `40d762c6395e97141163f6117e0d546578e556de517a7c6977b1689f78448d70`.
+- Glyphs 3.5 build 3532 / Python 3.12.3 read-only pinned-runtime gate:
+  passed with runtime `1.11.0+d6b79471dc05`, code hash
+  `d6b79471dc05274a1d1ac50339134f31b55e7064c28d38bfde62dad0154d9da1`,
+  and 87 tools. A temporary copy of the SDK format-3 fixture was used because
+  the schema-v4 disposable package cannot be opened in Glyphs 3. The server
+  started, stopped, restarted, and accepted a fresh MCP session; representative
+  font, master, and glyph reads succeeded; and the temporary fixture remained
+  at SHA-256
+  `86ba946d125a404e6bb9ccce992b832c93f81bf16edf5895969ac615acd5baa8`.
+  The linked pinned plug-in tree remained at
+  `7a337250cd223c92a1d165ff9d5c00d7fb509caa393cfbe3f361cc58c9b7f9ca`.
+  This live development symlink was intentionally not reinstalled, so no
+  installer-owned preference receipt existed and neither managed preference
+  was set. Preference pin ownership, conditional restoration, and protocol-v1
+  stage rejection were instead proved by the complete simulated-installer
+  suite; the live gate did not claim an installer state it had not created.
+- Glyphs 4.0.1 build 4004 / Python 3.14.6 candidate gate: passed against the
+  generated `2.0.0` schema-v6 development target and the disposable
+  383-glyph, 29-instance, five-master package. Every phase restored canonical
+  fingerprint
+  `sha256:9de0d412f2395920340b7910e79b2853bf94dad912d40e7757d63c032062ea1d`,
+  the working path, active master, and clean dirty state without saving.
+  Staged structural replay completed four previews, four confirmations and
+  four rollback/revert paths without rerunning Python; it retained no pending
+  native evidence. Native restoration uses reviewed pairwise archive
+  equivalence, including only official omission defaults, identity-addressed
+  storage order, and six proven detached-clone artifacts; unexplained or
+  private archive deltas remain hard failures.
+- Latest Milestone 13 schema-v4 master lifecycle timing: `71.837` seconds on
+  the same 383-glyph, five-master candidate, below the 72-second ceiling. The
+  schema-v5 layer lifecycle gate completed in `34.734` seconds and the staged
+  structural replay gate completed in `142.671` seconds across four previews,
+  confirmations, and rollback/revert paths. The earlier schema-v6 master
+  qualification measured `68.176` seconds; both runs remained below the
+  release ceiling. The optimized detached copy-equivalence gate completed in
+  `1.913` seconds, replacing an obsolete repeated whole-model capture that took
+  approximately `238.8` seconds.
+- Signing and notarization: not performed.
+- Integration boundary: this record is included in the local signed audited
+  closure commit created after the gates above. Merge, tag, push, GitHub draft,
+  upload, and publication were not performed by the qualification run.
+
 ## Prepared 1.11.0 candidate
 
 Version `1.11.0` (installer build `26`) preserves the 87-tool MCP runtime and

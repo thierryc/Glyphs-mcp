@@ -179,6 +179,19 @@ class OperationActivityStoreTests(unittest.TestCase):
         self.assertIn("self.scrollView.setFrame_", source)
         self.assertNotIn("PALETTE_HEIGHT = METADATA_HEIGHT + STATUS_HEIGHT", source)
 
+    def test_terminal_errors_linger_briefly_then_return_to_ready(self) -> None:
+        source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("ERROR_LINGER_SECONDS", source)
+        self.assertIn(
+            'snapshot.state in ("success", "cancelled", "error")', source
+        )
+        self.assertIn(
+            'snapshot.state == "error"\n            and snapshot.completed_at is not None',
+            source,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 
@@ -18,6 +19,7 @@ if str(V2_SOURCE) not in sys.path:
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.live_gates import (  # noqa: E402
     _StructuralGateSession,
+    _assert_unique_unicode_assignments,
     verify_copy_and_make_copy,
     verify_schema_v3_structural_kernel,
     verify_schema_v4_master_lifecycle,
@@ -61,6 +63,25 @@ class _Font:
             destination.mkdir()
             destination = destination / "fontinfo.plist"
         destination.write_text("stable disposable archive", encoding="utf-8")
+
+
+def _copy_gate_host(source, *, observed_clone=None, dirty=True):
+    observed_clone = source if observed_clone is None else observed_clone
+    return SimpleNamespace(
+        document_id_for_font=mock.Mock(return_value="doc_copy_gate"),
+        capture_snapshot=mock.Mock(return_value=source),
+        _instance_ids_for_font=mock.Mock(return_value=[]),
+        _capture_detached_model=mock.Mock(return_value=observed_clone),
+        _reconcile_detached_clone=mock.Mock(return_value=(source, object())),
+        list_documents=mock.Mock(
+            return_value=[
+                SimpleNamespace(
+                    document_id="doc_copy_gate",
+                    has_unsaved_changes=dirty,
+                )
+            ]
+        ),
+    )
 
 
 def _structural_model():
@@ -168,6 +189,26 @@ class _StructuralHost:
 
 
 class V2LiveGateGuardTests(unittest.TestCase):
+    def test_live_gate_rejects_duplicate_unicode_before_mutation(self) -> None:
+        model = _structural_model()
+        model["glyphs"]["e"] = copy.deepcopy(model["glyphs"]["A"])
+        model["glyphs"]["e"]["id"] = "glyph_e"
+        model["glyphs"]["e"]["name"] = "e"
+
+        with self.assertRaisesRegex(ValueError, "U\\+0041.*A.*e"):
+            _assert_unique_unicode_assignments(model, phase="baseline")
+
+    def test_live_gate_allows_unencoded_and_distinct_unicode(self) -> None:
+        model = _structural_model()
+        model["glyphs"]["unencoded"] = {
+            "id": "glyph_unencoded",
+            "name": "unencoded",
+            "unicode": None,
+            "layers": [],
+        }
+
+        _assert_unique_unicode_assignments(model, phase="baseline")
+
     def test_structural_gate_carries_verified_fingerprints_between_transactions(self) -> None:
         class Host:
             def capture_model(self, document_id):
@@ -220,11 +261,54 @@ class V2LiveGateGuardTests(unittest.TestCase):
     def test_gate_preserves_path_and_dirty_state(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             font = _Font()
-            result = verify_copy_and_make_copy(font, str(Path(root) / "copy.glyphs"))
+            source = {"font": {"familyName": font.familyName}}
+            result = verify_copy_and_make_copy(
+                font,
+                str(Path(root) / "copy.glyphs"),
+                application=object(),
+                host=_copy_gate_host(source),
+            )
             self.assertTrue(result["workingPathUnchanged"])
             self.assertTrue(result["dirtyStateUnchanged"])
             self.assertEqual(font.filepath, "/disposable/source.glyphs")
             self.assertTrue(font.parent.isDocumentEdited)
+
+    def test_copy_gate_uses_the_shared_detached_projection_boundary(self) -> None:
+        source = {"font": {"familyName": "Glyphs MCP V2 Disposable Test"}}
+        observed_clone = copy.deepcopy(source)
+        observed_clone["font"]["note"] = "clone-only artifact"
+        font = _Font()
+        clone = font.copy()
+        font.copy = mock.Mock(return_value=clone)
+        host = _copy_gate_host(
+            source,
+            observed_clone=observed_clone,
+        )
+        host._reconcile_detached_clone.return_value = (
+            source,
+            SimpleNamespace(
+                artifacts=SimpleNamespace(
+                    changes=[SimpleNamespace(path=("settings", "colorSpace"))]
+                )
+            ),
+        )
+        direct_archive = b'{"format":"glyphspackage-v1","files":[{"path":"fontinfo.plist","value":{"settings":{"colorSpace":"apple-rgb"}}}]}'
+        clone_archive = b'{"format":"glyphspackage-v1","files":[{"path":"fontinfo.plist","value":{}}]}'
+
+        with tempfile.TemporaryDirectory() as root, mock.patch(
+            "glyphs_mcp_v2.live_gates._serialized_font_archive",
+            side_effect=(direct_archive, clone_archive),
+        ):
+            result = verify_copy_and_make_copy(
+                font,
+                str(Path(root) / "copy.glyphs"),
+                application=object(),
+                host=host,
+            )
+
+        self.assertEqual(result["copyFingerprint"], fingerprint_model(source))
+        host._capture_detached_model.assert_called_once()
+        host._reconcile_detached_clone.assert_called_once()
 
     def test_schema_v3_gate_refuses_non_disposable_font(self) -> None:
         host = _StructuralHost()

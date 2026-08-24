@@ -1,5 +1,63 @@
 # Changelog
 
+## 2.0.0 — Verified apply-first Glyphs automation
+
+_August 21, 2026_
+
+Glyphs MCP 2.0 is a breaking, Glyphs 4-focused runtime built around one
+canonical font model, detached simulation, verified transactions, semantic
+history, exact selective revert, and an optional visual change overlay. The
+installer keeps Glyphs 3.5 on signed v1.11 while installing the isolated v2
+runtime only for Glyphs 4.
+
+### Verified mutations and history
+
+- Typed edits apply immediately through one shared transaction kernel: stale
+  checks, detached simulation, one main-thread apply, complete read-back,
+  atomic restoration on failure, one audit receipt, and no implicit save.
+- Canonical schema v6 classifies all 293 properties and wildcard containers in
+  the pinned official Glyphs File Format v4 schema. Axes, font metadata and
+  settings, ordered parameters, metrics/stems/numbers, complete master,
+  instance, glyph and layer state, directional kerning, OpenType collections,
+  unified shapes, duplicate anchors, Smart Glyph data, and serializable user
+  data share the existing immutable snapshot and verified replay kernel.
+- Every operation reports bounded canonical coverage. Typed mutations require
+  `complete`; staged structural Python may use
+  `complete_with_opaque_preservation` only when native archive equivalence and
+  reversible adapter evidence prove the private payload.
+- Every successful action enters a Git-like, process-local Change Log. Exact
+  semantic inverse patches support non-linear selective revert while refusing
+  conflicts with later manual or agent edits.
+- The drawing-only Reporter compares the current layer with the fixed
+  pre-session baseline and updates after manual point movement. The Change Log
+  remains independent textual feedback.
+
+### Python and structural replay
+
+- `execute_python` retains an honest open-world escape hatch but defaults to
+  staged document execution on a detached clone.
+- Exact preview and confirmation bind immutable code and context. Confirmation
+  replays the stored canonical patch and native evidence without rerunning
+  Python against the live font.
+- Structural replay covers glyph, master, non-master layer, instance, feature,
+  class, and prefix lifecycle. Unsupported external and private effects remain
+  explicit refusals or recovery-only operations.
+
+### Installer and compatibility
+
+- Deterministic payload schema v2 contains separate Glyphs 3 and Glyphs 4
+  plug-ins. Glyphs 3 is pinned to `v1.11.0`/`13ca805`; Glyphs 4 receives v2.
+- Installation, replacement rollback, update staging, preferences, receipts,
+  and uninstall are target-addressed. Acting on one host never replaces the
+  other host's plug-in.
+- The macOS installer is version 2.0.0 build 27. Agent plug-in manifests and
+  the 13 managed v2 skills share version 2.0.0.
+
+This entry records unsigned local candidate source. Schema-v5 qualification is
+the frozen regression baseline. Schema-v6 automated and disposable-host closure passed
+on Glyphs 4.0.1 build 4004 without saving the disposable font. Signing,
+notarization, tagging, upload, and publication remain separate release actions.
+
 ## 1.11.0 — Safe live Glyphs scripting
 
 _August 16, 2026_

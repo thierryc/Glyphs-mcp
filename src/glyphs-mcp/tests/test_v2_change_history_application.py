@@ -195,6 +195,44 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertEqual(commits[0].commit_id, applied["operationId"])
         self.assertEqual(commits[0].operation_id, applied["operationId"])
         self.assertEqual(self.host.apply_calls, 1)
+        expected_coverage = {
+            "modelSchemaVersion": 6,
+            "status": "complete",
+            "opaqueChangeCount": 0,
+            "unsupportedChangeCount": 0,
+            "knowledgeRevision": "GlyphsSDK:569244a7181e08fc7c5230bcdfad6b9f7e5ea11f",
+        }
+        self.assertEqual(applied["data"]["canonicalCoverage"], expected_coverage)
+        self.assertEqual(commits[0].coverage.to_public_dict(), expected_coverage)
+        operation = self.app.invoke(
+            "get_operation", {"operationId": applied["operationId"]}
+        ).to_dict()
+        self.assertEqual(
+            operation["data"]["payload"]["canonicalCoverage"],
+            expected_coverage,
+        )
+        events = self.app._audit.list_events(document_id="doc_history")
+        self.assertEqual(events[0].details["canonicalCoverage"], expected_coverage)
+
+    def test_direct_apply_noop_runs_no_transaction_and_offers_no_revert(self) -> None:
+        response = self.app.invoke(
+            "apply_glyph_updates",
+            {
+                "documentId": "doc_history",
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+                "updates": [{"glyphName": "A", "export": True}],
+                "reason": "already canonical",
+            },
+        ).to_dict()
+
+        self.assertTrue(response["ok"])
+        self.assertEqual(response["data"]["transactionCount"], 0)
+        self.assertEqual(response["data"]["observedChangeCount"], 0)
+        self.assertFalse(response["data"]["revert"]["available"])
+        self.assertEqual(self.host.apply_calls, 0)
+        commits = self.history.list_commits("doc_history")
+        self.assertEqual(len(commits), 1)
+        self.assertFalse(commits[0].changed)
 
     def test_opentype_apply_and_revert_use_one_verified_operation_each(self) -> None:
         self.host.model["features"] = [

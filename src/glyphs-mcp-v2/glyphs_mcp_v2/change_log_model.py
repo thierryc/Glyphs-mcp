@@ -95,6 +95,11 @@ class ChangeLogModel:
             "{} · {}".format(_title(commit.tool), _title(commit.status)),
             "Operation: {}".format(commit.operation_id or commit.commit_id),
             "Changes: {}".format(len(commit.change_set.changes)),
+            "Canonical coverage: {} · opaque {} · unsupported {}".format(
+                commit.coverage.status.value,
+                len(commit.coverage.opaque_paths),
+                len(commit.coverage.unsupported_paths),
+            ),
         ]
         if commit.reason:
             lines.append("Reason: {}".format(commit.reason))

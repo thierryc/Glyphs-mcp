@@ -3,11 +3,26 @@
 from __future__ import annotations
 
 import platform
+from threading import RLock
 from typing import Any, Callable, Hashable, List, Optional, Sequence
 
 from ..identity import DocumentIdRegistry
 from ..ports import FontSnapshot, HostAccessError, HostRuntimeSnapshot, MainThreadExecutor
 from .main_thread import GlyphsMainThreadExecutor
+
+
+_MISSING_OBJC_ATTRIBUTES: set[tuple[type, str]] = set()
+_MISSING_OBJC_ATTRIBUTES_LOCK = RLock()
+
+
+def _is_objc_proxy(value: Any) -> bool:
+    """Identify PyObjC instances without asking the proxy for more state."""
+
+    try:
+        metaclass_module = str(type(type(value)).__module__)
+    except Exception:
+        return False
+    return metaclass_module == "objc" or metaclass_module.startswith("objc.")
 
 
 def _maybe_call(value: Any) -> Any:
@@ -20,8 +35,22 @@ def _maybe_call(value: Any) -> Any:
 
 
 def _safe_getattr(value: Any, name: str, default: Any = None) -> Any:
+    native_key = (type(value), str(name)) if _is_objc_proxy(value) else None
+    if native_key is not None:
+        with _MISSING_OBJC_ATTRIBUTES_LOCK:
+            if native_key in _MISSING_OBJC_ATTRIBUTES:
+                return default
     try:
-        return getattr(value, name, default)
+        return getattr(value, name)
+    except AttributeError:
+        if native_key is not None:
+            # PyObjC resolves an unknown selector by scanning the Objective-C
+            # class and protocol metadata. Schema-v6 capture asks the same
+            # official field of hundreds of same-class objects, so remember
+            # the class-wide absence for the lifetime of this runtime.
+            with _MISSING_OBJC_ATTRIBUTES_LOCK:
+                _MISSING_OBJC_ATTRIBUTES.add(native_key)
+        return default
     except Exception:
         return default
 

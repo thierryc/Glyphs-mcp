@@ -9,13 +9,12 @@ from typing import Any, Mapping, Optional, Sequence
 from uuid import uuid4
 
 from .adapters.document import (
+    _classify_native_clone_archive_mismatches,
+    _compare_native_archives,
     _decoded_native_archive_tree,
     _native_archive_fingerprint,
-    _native_archive_tree_mismatches,
     _save_font_copy,
     _serialized_font_archive,
-    _serialized_font_fingerprint,
-    native_font_to_model,
 )
 from .semantic import diff_models, fingerprint_model
 
@@ -61,6 +60,49 @@ def _unique_name(prefix: str, existing: Sequence[str]) -> str:
     raise ValueError("the disposable font has no free live-gate identity")
 
 
+def _assert_unique_unicode_assignments(
+    model: Mapping[str, Any], *, phase: str
+) -> None:
+    """Refuse a live fixture that could summon Glyphs' modal repair UI."""
+
+    glyphs = model.get("glyphs", {})
+    if not isinstance(glyphs, Mapping):
+        return
+    owners: dict[str, list[str]] = {}
+    for key, glyph in glyphs.items():
+        if not isinstance(glyph, Mapping):
+            continue
+        glyph_name = str(glyph.get("name") or key)
+        values = glyph.get("unicodes")
+        if values is None:
+            values = [glyph.get("unicode")]
+        elif isinstance(values, str):
+            values = [values]
+        for value in values or ():
+            codepoint = str(value or "").strip().upper()
+            if not codepoint:
+                continue
+            if codepoint.startswith("U+"):
+                codepoint = codepoint[2:]
+            owners.setdefault(codepoint, []).append(glyph_name)
+    duplicates = [
+        (codepoint, names)
+        for codepoint, names in sorted(owners.items())
+        if len(set(names)) > 1
+    ]
+    if not duplicates:
+        return
+    codepoint, names = duplicates[0]
+    raise ValueError(
+        "{} live-gate model has duplicate Unicode U+{} in glyphs {}; "
+        "qualification refuses modal repair workflows".format(
+            phase,
+            codepoint,
+            ", ".join(dict.fromkeys(names)),
+        )
+    )
+
+
 def _resolve_live_runtime(application: Any, host: Any) -> tuple[Any, Any]:
     if application is None or host is None:
         from .runtime import active_application, active_host
@@ -96,7 +138,12 @@ class _StructuralGateSession:
         self.commits: dict[str, Any] = {}
 
     def model(self) -> Mapping[str, Any]:
-        return dict(self.host.capture_model(self.document_id))
+        capture = getattr(self.host, "capture_snapshot", None)
+        if not callable(capture):
+            capture = getattr(self.host, "capture_model", None)
+        if not callable(capture):
+            raise RuntimeError("the live gate host exposes no canonical capture")
+        return capture(self.document_id)
 
     def fingerprint(self) -> str:
         return fingerprint_model(self.model())
@@ -109,10 +156,11 @@ class _StructuralGateSession:
         if not response.get("ok"):
             error = response.get("error") or {}
             raise AssertionError(
-                "{} failed: {} ({})".format(
+                "{} failed: {} ({}) details={}".format(
                     tool,
                     error.get("message") or response.get("summary") or "unknown error",
                     error.get("code") or "unknown",
+                    dict(error.get("details") or {}),
                 )
             )
         data = dict(response.get("data") or {})
@@ -503,7 +551,13 @@ class _StagedPythonGateSession:
                 )
         return failures
 
-def verify_copy_and_make_copy(font: Any, output_path: str) -> Mapping[str, Any]:
+def verify_copy_and_make_copy(
+    font: Any,
+    output_path: str,
+    *,
+    application: Any = None,
+    host: Any = None,
+) -> Mapping[str, Any]:
     """Verify clone/archive invariants without saving the working document."""
 
     family_name = str(getattr(font, "familyName", "") or "")
@@ -519,30 +573,126 @@ def verify_copy_and_make_copy(font: Any, output_path: str) -> Mapping[str, Any]:
     if not destination.parent.is_dir():
         raise ValueError("the live-gate output parent must already exist")
 
-    before_model = native_font_to_model(font)
+    application, host = _resolve_live_runtime(application, host)
+    document_id_for_font = getattr(host, "document_id_for_font", None)
+    capture_model = getattr(host, "capture_snapshot", None)
+    capture_detached = getattr(host, "_capture_detached_model", None)
+    reconcile_detached = getattr(host, "_reconcile_detached_clone", None)
+    instance_ids_for_font = getattr(host, "_instance_ids_for_font", None)
+    if not all(
+        callable(value)
+        for value in (
+            document_id_for_font,
+            capture_model,
+            capture_detached,
+            reconcile_detached,
+            instance_ids_for_font,
+        )
+    ):
+        raise RuntimeError(
+            "the active host does not expose the detached-copy proof boundary"
+        )
+    document_id = str(document_id_for_font(font) or "")
+    if not document_id:
+        raise RuntimeError("the disposable font has no stable v2 document ID")
+    before_model = capture_model(document_id)
     before_fingerprint = fingerprint_model(before_model)
     before_path = getattr(font, "filepath", None)
     document = getattr(font, "parent", None)
-    before_dirty = getattr(document, "isDocumentEdited", None) if document is not None else None
-    before_dirty = before_dirty() if callable(before_dirty) else before_dirty
+    before_native_dirty = (
+        getattr(document, "isDocumentEdited", None)
+        if document is not None
+        else None
+    )
+    before_native_dirty = (
+        before_native_dirty()
+        if callable(before_native_dirty)
+        else before_native_dirty
+    )
+    before_dirty = _reported_dirty_state(host, document_id)
 
     clone = font.copy()
     if clone is None or clone is font:
         raise AssertionError("GSFont.copy() did not return a detached clone")
-    clone_fingerprint = fingerprint_model(native_font_to_model(clone))
+    instance_ids = instance_ids_for_font(document_id, font)
+    observed_clone = capture_detached(
+        clone,
+        before_model,
+        instance_ids=instance_ids,
+        document_path=before_path,
+    )
+    normalized_clone, _projection = reconcile_detached(
+        clone,
+        before_model,
+        observed_clone,
+        document_id=document_id,
+        instance_ids=instance_ids,
+        observed_is_complete=True,
+    )
+    clone_fingerprint = fingerprint_model(normalized_clone)
     if clone_fingerprint != before_fingerprint:
-        raise AssertionError("GSFont.copy() changed the canonical document model")
-    if _serialized_font_fingerprint(clone) != _serialized_font_fingerprint(font):
-        raise AssertionError("GSFont.copy() changed the serialized document archive")
+        residual = diff_models(before_model, normalized_clone)
+        raise AssertionError(
+            "GSFont.copy() changed the canonical document model; "
+            "changes={}; firstPaths={!r}".format(
+                len(residual.changes),
+                [list(change.path) for change in residual.changes[:20]],
+            )
+        )
+    source_archive = _serialized_font_archive(font)
+    clone_archive = _serialized_font_archive(clone)
+    archive_comparison = _compare_native_archives(
+        source_archive,
+        clone_archive,
+        limit=20,
+    )
+    archive_coverage = {
+        "complete": True,
+        "coveredCount": 0,
+        "uncoveredLocations": [],
+    }
+    if not archive_comparison["equivalent"]:
+        artifacts = getattr(_projection, "artifacts", None)
+        artifact_paths = tuple(
+            change.path
+            for change in getattr(artifacts, "changes", ())
+        )
+        archive_coverage = _classify_native_clone_archive_mismatches(
+            archive_comparison["mismatchLocations"],
+            artifact_paths=artifact_paths,
+            direct_tree=_decoded_native_archive_tree(source_archive),
+            replay_tree=_decoded_native_archive_tree(clone_archive),
+        )
+        if archive_comparison["truncated"] or not archive_coverage["complete"]:
+            raise AssertionError(
+                "GSFont.copy() changed unmodeled serialized document state; "
+                "mismatches={!r}; truncated={}".format(
+                    archive_coverage["uncoveredLocations"],
+                    archive_comparison["truncated"],
+                )
+            )
 
     _save_font_copy(font, destination)
     os.chmod(destination, 0o600)
 
     after_path = getattr(font, "filepath", None)
-    after_dirty = getattr(document, "isDocumentEdited", None) if document is not None else None
-    after_dirty = after_dirty() if callable(after_dirty) else after_dirty
-    after_fingerprint = fingerprint_model(native_font_to_model(font))
-    if after_path != before_path or after_dirty != before_dirty:
+    after_native_dirty = (
+        getattr(document, "isDocumentEdited", None)
+        if document is not None
+        else None
+    )
+    after_native_dirty = (
+        after_native_dirty()
+        if callable(after_native_dirty)
+        else after_native_dirty
+    )
+    after_dirty = _reported_dirty_state(host, document_id)
+    after_fingerprint = fingerprint_model(capture_model(document_id))
+    if (
+        after_path != before_path
+        or after_native_dirty != before_native_dirty
+        or after_dirty != before_dirty
+    ):
         raise AssertionError("GSFont.save(makeCopy=True) changed the working path or dirty state")
     if after_fingerprint != before_fingerprint:
         raise AssertionError("the live working document changed during the copy gate")
@@ -552,6 +702,10 @@ def verify_copy_and_make_copy(font: Any, output_path: str) -> Mapping[str, Any]:
         "copyFingerprint": clone_fingerprint,
         "outputPath": str(destination),
         "outputMode": "0600",
+        "nativeCloneArtifactCount": len(
+            getattr(getattr(_projection, "artifacts", None), "changes", ())
+        ),
+        "nativeArchiveCoveredMismatchCount": archive_coverage["coveredCount"],
         "workingPathUnchanged": True,
         "dirtyStateUnchanged": True,
     }
@@ -581,14 +735,17 @@ def verify_schema_v3_structural_kernel(
         )
     application, host = _resolve_live_runtime(application, host)
     document_id_for_font = getattr(host, "document_id_for_font", None)
-    capture_model = getattr(host, "capture_model", None)
+    capture_model = getattr(host, "capture_snapshot", None)
+    if not callable(capture_model):
+        capture_model = getattr(host, "capture_model", None)
     if not callable(document_id_for_font) or not callable(capture_model):
         raise RuntimeError("the active host does not expose the structural live-gate boundary")
     document_id = str(document_id_for_font(font) or "")
     if not document_id:
         raise RuntimeError("the disposable font has no stable v2 document ID")
 
-    baseline = dict(capture_model(document_id))
+    baseline = capture_model(document_id)
+    _assert_unique_unicode_assignments(baseline, phase="baseline")
     baseline_fingerprint = fingerprint_model(baseline)
     before_path = _plain_attribute(font, "filepath")
     before_master = _plain_attribute(font, "selectedFontMaster")
@@ -803,11 +960,14 @@ def verify_schema_v4_master_lifecycle(
         )
     application, host = _resolve_live_runtime(application, host)
     document_id_for_font = getattr(host, "document_id_for_font", None)
-    capture_model = getattr(host, "capture_model", None)
+    capture_model = getattr(host, "capture_snapshot", None)
+    if not callable(capture_model):
+        capture_model = getattr(host, "capture_model", None)
     if not callable(document_id_for_font) or not callable(capture_model):
         raise RuntimeError("the active host does not expose the master live-gate boundary")
     document_id = str(document_id_for_font(font) or "")
-    baseline = dict(capture_model(document_id))
+    baseline = capture_model(document_id)
+    _assert_unique_unicode_assignments(baseline, phase="baseline")
     baseline_fingerprint = fingerprint_model(baseline)
     masters = [
         master
@@ -1016,11 +1176,14 @@ def verify_schema_v5_layer_lifecycle(
         )
     application, host = _resolve_live_runtime(application, host)
     document_id_for_font = getattr(host, "document_id_for_font", None)
-    capture_model = getattr(host, "capture_model", None)
+    capture_model = getattr(host, "capture_snapshot", None)
+    if not callable(capture_model):
+        capture_model = getattr(host, "capture_model", None)
     if not callable(document_id_for_font) or not callable(capture_model):
         raise RuntimeError("the active host does not expose the layer live-gate boundary")
     document_id = str(document_id_for_font(font) or "")
-    baseline = dict(capture_model(document_id))
+    baseline = capture_model(document_id)
+    _assert_unique_unicode_assignments(baseline, phase="baseline")
     baseline_fingerprint = fingerprint_model(baseline)
     axis_tags = [
         str(axis.get("tag") or "")
@@ -1237,7 +1400,9 @@ def verify_staged_python_structural_replay(
         )
     application, host = _resolve_live_runtime(application, host)
     document_id_for_font = getattr(host, "document_id_for_font", None)
-    capture_model = getattr(host, "capture_model", None)
+    capture_model = getattr(host, "capture_snapshot", None)
+    if not callable(capture_model):
+        capture_model = getattr(host, "capture_model", None)
     if not callable(document_id_for_font) or not callable(capture_model):
         raise RuntimeError(
             "the active host does not expose the staged structural live-gate boundary"
@@ -1247,7 +1412,8 @@ def verify_staged_python_structural_replay(
         raise RuntimeError("the disposable font has no stable v2 document ID")
 
     gate_started = time.perf_counter_ns()
-    baseline = dict(capture_model(document_id))
+    baseline = capture_model(document_id)
+    _assert_unique_unicode_assignments(baseline, phase="baseline")
     baseline_fingerprint = fingerprint_model(baseline)
     baseline_archive = _serialized_font_archive(font)
     baseline_archive_fingerprint = _native_archive_fingerprint(baseline_archive)
@@ -1371,14 +1537,17 @@ def verify_staged_python_structural_replay(
             # so the later independent tool call must rediscover the retained
             # entity by its unique semantic name instead of assuming the
             # pre-attachment candidate ID survived.
-            "for candidate_layer in list(review_glyph.layers):",
-            "    if str(candidate_layer.name) == {!r}:".format(layer_name),
-            "        del review_glyph.layers[str(candidate_layer.layerId)]",
-            "        break",
-            "else:",
+            "retained_layers = [candidate_layer for candidate_layer in list(review_glyph.layers) if str(candidate_layer.name) != {!r}]".format(
+                layer_name
+            ),
+            "if len(retained_layers) == len(review_glyph.layers):",
             "    raise ValueError('missing staged structural layer: ' + {!r})".format(
                 layer_name
             ),
+            "ordered_layers = MGOrderedDictionary.alloc().initWithCapacity_(len(retained_layers))",
+            "for retained_layer in retained_layers:",
+            "    ordered_layers.setObject_forKey_(retained_layer, str(retained_layer.layerId))",
+            "review_glyph.setLayers_(ordered_layers)",
             "del font.glyphs[{!r}]".format(glyph_name),
             # Master-layer membership is owned by the master lifecycle.
             # Glyphs removes the associated layer from every glyph when the
@@ -1456,6 +1625,11 @@ def verify_staged_python_structural_replay(
     final_fingerprint = session.fingerprint()
     final_archive = _serialized_font_archive(font)
     final_archive_fingerprint = _native_archive_fingerprint(final_archive)
+    archive_comparison = _compare_native_archives(
+        baseline_archive,
+        final_archive,
+        limit=20,
+    )
     after_path = _plain_attribute(font, "filepath")
     after_master = _plain_attribute(font, "selectedFontMaster")
     after_master_id = str(_plain_attribute(after_master, "id") or "")
@@ -1468,28 +1642,13 @@ def verify_staged_python_structural_replay(
     )
     if final_fingerprint != baseline_fingerprint:
         raise AssertionError("staged structural gate did not restore the canonical baseline")
-    if final_archive_fingerprint != baseline_archive_fingerprint:
-        baseline_tree = _decoded_native_archive_tree(baseline_archive)
-        final_tree = _decoded_native_archive_tree(final_archive)
-        mismatches, truncated = (
-            _native_archive_tree_mismatches(
-                baseline_tree,
-                final_tree,
-                limit=20,
-            )
-            if baseline_tree is not None and final_tree is not None
-            else ([], False)
-        )
-        if not mismatches and baseline_tree is not None and final_tree is not None:
-            mismatches, truncated = _native_archive_tree_mismatches(
-                baseline_tree,
-                final_tree,
-                limit=20,
-                align_identity_collections=False,
-            )
+    if not archive_comparison["equivalent"]:
         raise AssertionError(
             "staged structural gate did not restore the native archive; "
-            "mismatches={!r}; truncated={}".format(mismatches, truncated)
+            "mismatches={!r}; truncated={}".format(
+                archive_comparison["mismatchLocations"],
+                archive_comparison["truncated"],
+            )
         )
     if after_path != before_path:
         raise AssertionError("staged structural gate changed the working document path")
@@ -1523,6 +1682,7 @@ def verify_staged_python_structural_replay(
         "rollbackOperationIds": session.rollback_operation_ids,
         "exactCanonicalBaselineRestored": True,
         "exactNativeArchiveRestored": True,
+        "nativeArchiveBytesUnchanged": baseline_archive == final_archive,
         "workingPathUnchanged": True,
         "activeMasterUnchanged": True,
         "reportedDirtyStateUnchanged": before_dirty is None or after_dirty == before_dirty,

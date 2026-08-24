@@ -37,6 +37,7 @@ STATUS_HEIGHT = 28
 PALETTE_HEIGHT = COMPACT_METADATA_HEIGHT + STATUS_HEIGHT
 CAPSULE_DELAY_SECONDS = 2.0
 SUCCESS_LINGER_SECONDS = 3.0
+ERROR_LINGER_SECONDS = 8.0
 
 
 def _quiet_field(frame, text="", size=10.0):
@@ -195,7 +196,7 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
         snapshot = self._activity_store.current(self._document_id())
         self._activity_snapshot = snapshot
         self._render_activity(snapshot)
-        if snapshot.active or snapshot.state in ("success", "cancelled"):
+        if snapshot.active or snapshot.state in ("success", "cancelled", "error"):
             self._start_activity_timer()
         else:
             self._stop_activity_timer()
@@ -277,6 +278,14 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
             and snapshot.completed_at is not None
             and snapshot.observed_at - snapshot.completed_at
             >= SUCCESS_LINGER_SECONDS
+        ):
+            self._activity_store.dismiss(snapshot.document_id)
+            return
+        if (
+            snapshot.state == "error"
+            and snapshot.completed_at is not None
+            and snapshot.observed_at - snapshot.completed_at
+            >= ERROR_LINGER_SECONDS
         ):
             self._activity_store.dismiss(snapshot.document_id)
             return

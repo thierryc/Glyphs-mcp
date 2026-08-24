@@ -123,7 +123,7 @@ if [[ -z "$remote_tag_commit" || "$remote_tag_commit" != "$head_commit" ]]; then
   exit 1
 fi
 
-./scripts/run_local_release_tests.sh
+GLYPHS_MCP_FULL_NETWORK=1 ./scripts/run_local_release_tests.sh
 
 if [[ "$skip_build" != "1" ]]; then
   ./scripts/build_installer_app.sh
@@ -135,8 +135,8 @@ verify_args=(--tag "$tag" --write-checksums)
 ./scripts/verify_release_artifacts.sh "${verify_args[@]}"
 
 assets=(
-  "$repo_root/dist/GlyphsMCPInstaller-$version.dmg"
-  "$repo_root/dist/GlyphsMCPInstaller.dmg"
+  "$repo_root/dist/Glyphs-MCP-$version.dmg"
+  "$repo_root/dist/Glyphs-MCP-latest.dmg"
   "$repo_root/dist/installer-app/GlyphsMCPInstaller.zip"
   "$repo_root/dist/SHA256SUMS"
 )

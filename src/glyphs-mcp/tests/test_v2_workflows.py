@@ -13,6 +13,7 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.workflows import (  # noqa: E402
+    build_glyph_updates,
     list_instances,
     list_kerning_pairs,
     review_anchor_consistency,
@@ -24,9 +25,43 @@ from glyphs_mcp_v2.workflows import (  # noqa: E402
     build_opentype_updates,
     simulate_spacing,
 )
+from glyphs_mcp_v2.canonical_views import layer_components  # noqa: E402
 
 
 class V2WorkflowTests(unittest.TestCase):
+    def test_glyph_builder_does_not_deepcopy_unrelated_canonical_shards(self) -> None:
+        class UnrelatedGlyph(dict):
+            def __deepcopy__(self, _memo):
+                raise AssertionError("unrelated glyph shard was deep-copied")
+
+        model = {
+            "font": {"familyName": "Copy-on-write"},
+            "glyphs": {
+                "A": {
+                    "id": "glyph:A",
+                    "name": "A",
+                    "export": True,
+                    "layers": [],
+                },
+                "B": UnrelatedGlyph(
+                    {
+                        "id": "glyph:B",
+                        "name": "B",
+                        "export": True,
+                        "layers": [],
+                    }
+                ),
+            },
+        }
+
+        changes = build_glyph_updates(
+            model,
+            [{"action": "update", "glyphName": "A", "export": False}],
+        )
+
+        self.assertEqual([change.path for change in changes.changes], [("glyphs", "A", "export")])
+        self.assertFalse(changes.apply(model)["glyphs"]["A"]["export"])
+
     def test_opentype_updates_share_one_existing_collection_contract(self) -> None:
         model = {
             "features": [
@@ -250,7 +285,9 @@ class V2WorkflowTests(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            compatibility.apply(model)["glyphs"]["A"]["layers"][0]["components"][0]["name"],
+            layer_components(
+                compatibility.apply(model)["glyphs"]["A"]["layers"][0]
+            )[0]["name"],
             "A.base",
         )
 

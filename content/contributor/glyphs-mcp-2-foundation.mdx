@@ -44,8 +44,8 @@ The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
 - paginated glyph, instance, kerning, audit, review, and Python-diff results;
 - direct glyph, anchor, kerning, spacing, metrics, and compatibility batches
   with detached derived-effect simulation;
-- schema-v5 identity-aware glyph, layer, master, instance, feature, class, and
-  prefix collection membership/order changes through the same verified kernel;
+- schema-v6 registry-driven complete saved semantic state, retaining the same
+  identity-aware collection and verified mutation kernel;
 - compatibility, metrics-inheritance, anchor, spacing, kerning-coverage, and
   export analysis;
 - staged export with destination fingerprints and macOS atomic directory swap;
@@ -164,8 +164,34 @@ breaking catalog changes do not flow back to 1.x.
     scripts all resolve a host-specific bundle. Installation, staging,
     reinstall, and removal remain target-isolated; no live Glyphs folder was
     changed for this milestone.
-11. Next: run the Glyphs 3.5/4 release-candidate qualification matrix and
-    close versioning, migration, packaging, signing, and notarization gates.
+11. Complete as an unsigned release-candidate baseline: the Glyphs 4 runtime
+    and installer source are aligned at `2.0.0` build `27`; Glyphs 3.5 remains
+    pinned to signed v1.11. The automated closure gate, installed Glyphs 3.5
+    build 3532 read-only gate, and disposable Glyphs 4 build 4004 matrix pass.
+    Schema v5
+    remains documented as `modeled_fields_only`, not arbitrary whole-font Git
+    history. Signing, notarization, tagging, upload, and publication remain
+    separate authorization boundaries.
+12. Complete and live-qualified on Glyphs 4.0.1 build 4004: canonical schema
+    v6 classifies all 293 properties and wildcard containers
+    in the pinned official Glyphs File Format v4 schema. One declarative
+    registry defines field roles, identities, ordering, shard impact, replay,
+    redaction and generated coverage; generic capture, replay and planning
+    boundaries consume those declarations rather than repeating field lists.
+    Ordered duplicate anchors, unified
+    interleaved shapes, complete component transform decomposition, remaining
+    layer content, root metadata, axes, parameters, metrics/stems/numbers,
+    directional kerning, OpenType state, Smart Glyph data and serializable user
+    data stay on the existing immutable snapshot and verified transaction
+    kernel. Flat, package and live inputs share one source-neutral seam. V5
+    history is not migrated; activation clears it with an explicit schema
+    reason. Offline and current-upstream knowledge audits pass with zero drift,
+    zero unclassified paths, and zero stale registry entries. The 383-glyph
+    master gate remains below 72 seconds; staged structural replay, native-copy
+    equivalence, deterministic dual-target payloads, the complete Python and
+    Xcode suites, and unsigned-candidate validation all pass without saving the
+    disposable font. The next phase is signed-release qualification, and it
+    still requires separate authorization.
 
 Every milestone must pass focused tests, the complete Python suite, catalog
 and schema gates, deterministic payload assembly, and `git diff --check`.

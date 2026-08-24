@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 from pathlib import Path
 import plistlib
 import subprocess
 import tempfile
 import unittest
+import hashlib
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -50,6 +52,75 @@ def _release_tree(root: Path, version: str = "2.3.4") -> Path:
     )
     app_plist = root / "dist/installer-app/GlyphsMCPInstaller.app/Contents/Info.plist"
     _write_plist(app_plist, version, "42")
+    return app_plist
+
+
+def _candidate_tree(root: Path, version: str = "2.3.4", build: int = 42) -> Path:
+    app_plist = _release_tree(root, version)
+    project = root / "macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj"
+    project.write_text(
+        f"MARKETING_VERSION = {version};\nCURRENT_PROJECT_VERSION = {build};\n",
+        encoding="utf-8",
+    )
+    for relative in (
+        "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist",
+        "plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Info.plist",
+    ):
+        _write_plist(root / relative, "1.11.0")
+    for relative in (
+        "plugins/glyphs-mcp/.codex-plugin/plugin.json",
+        "plugins/glyphs-mcp/.claude-plugin/plugin.json",
+        "plugins/glyphs-mcp/.cursor-plugin/plugin.json",
+        "plugins/glyphs-mcp/.github/plugin/plugin.json",
+    ):
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"name": "glyphs-mcp", "version": version}), encoding="utf-8")
+    knowledge = root / "third_party/glyphs-file-format-v4"
+    knowledge.mkdir(parents=True)
+    schema = knowledge / "glyphs-4.schema.json"
+    specification = knowledge / "GlyphsFileFormatv4.md"
+    object_wrapper = knowledge / "GlyphsApp-init.py"
+    reporter_template = knowledge / "Reporter-plugin.py"
+    palette_template = knowledge / "Palette-plugin.py"
+    schema.write_text("{}\n", encoding="utf-8")
+    specification.write_text("# Fixture\n", encoding="utf-8")
+    object_wrapper.write_text("# ObjectWrapper fixture\n", encoding="utf-8")
+    reporter_template.write_text("# Reporter fixture\n", encoding="utf-8")
+    palette_template.write_text("# Palette fixture\n", encoding="utf-8")
+    (knowledge / "LICENSE").write_text("Apache-2.0 fixture\n", encoding="utf-8")
+    dependencies = []
+    for identity, path in (
+        ("glyphs-file-format-v4-schema", schema),
+        ("glyphs-file-format-v4-specification", specification),
+        ("glyphs-object-wrapper", object_wrapper),
+        ("glyphs-python-reporter-template", reporter_template),
+        ("glyphs-python-palette-template", palette_template),
+    ):
+        dependencies.append(
+            {
+                "id": identity,
+                "source": "https://example.invalid/GlyphsSDK",
+                "branch": "Glyphs3",
+                "commit": "a" * 40,
+                "path": path.name,
+                "localPath": path.name,
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                "license": "Apache-2.0",
+                "role": "fixture",
+                "auditedAt": "2026-08-22",
+            }
+        )
+    (knowledge / "knowledge-dependencies.json").write_text(
+        json.dumps(
+            {
+                "schemaVersion": 1,
+                "auditedAt": "2026-08-22",
+                "dependencies": dependencies,
+            }
+        ),
+        encoding="utf-8",
+    )
     return app_plist
 
 
@@ -95,6 +166,90 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
             _write_plist(app_plist, "2.3.5", "42")
             with self.assertRaisesRegex(self.security.ReleaseSecurityError, "built installer version"):
                 self.security.validate_release_metadata(root, "v2.3.4", app_plist)
+
+    def test_unsigned_candidate_validates_asymmetric_versions_and_explicit_build(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="glyphs-unsigned-candidate.") as temp:
+            root = Path(temp)
+            _candidate_tree(root)
+
+            result = self.security.validate_unsigned_candidate(
+                root,
+                expected_version="2.3.4",
+                installer_build=42,
+            )
+
+            self.assertEqual(result["releaseVersion"], "2.3.4")
+            self.assertEqual(result["installerBuild"], 42)
+            self.assertEqual(result["targets"]["3"], "1.11.0")
+            self.assertEqual(result["targets"]["4"], "2.3.4")
+            self.assertEqual(len(result["knowledgeDependencies"]["verified"]), 5)
+
+            pinned = root / "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist"
+            _write_plist(pinned, "2.3.4")
+            with self.assertRaisesRegex(self.security.ReleaseSecurityError, "pinned Glyphs 3"):
+                self.security.validate_unsigned_candidate(
+                    root,
+                    expected_version="2.3.4",
+                    installer_build=42,
+                )
+
+            _write_plist(pinned, "1.11.0")
+            with self.assertRaisesRegex(self.security.ReleaseSecurityError, "installer build"):
+                self.security.validate_unsigned_candidate(
+                    root,
+                    expected_version="2.3.4",
+                    installer_build=43,
+                )
+
+    def test_knowledge_gate_fails_closed_on_vendored_hash_drift(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="glyphs-knowledge-security.") as temp:
+            root = Path(temp)
+            _candidate_tree(root)
+            result = self.security.validate_knowledge_dependencies(root)
+            self.assertEqual(len(result["verified"]), 5)
+
+            schema = root / "third_party/glyphs-file-format-v4/glyphs-4.schema.json"
+            schema.write_text("{\"drift\": true}\n", encoding="utf-8")
+            with self.assertRaisesRegex(
+                self.security.ReleaseSecurityError, "hash differs"
+            ):
+                self.security.validate_knowledge_dependencies(root)
+
+    def test_knowledge_gate_rejects_incomplete_authoritative_provenance(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="glyphs-knowledge-provenance.") as temp:
+            root = Path(temp)
+            _candidate_tree(root)
+            manifest_path = root / "third_party/glyphs-file-format-v4/knowledge-dependencies.json"
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["dependencies"][0].pop("path")
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+            with self.assertRaisesRegex(
+                self.security.ReleaseSecurityError, "lacks path"
+            ):
+                self.security.validate_knowledge_dependencies(root)
+
+    def test_local_gate_composes_payload_skills_docs_and_unsigned_candidate_checks(self) -> None:
+        runner = (REPO / "scripts/run_local_release_tests.sh").read_text(encoding="utf-8")
+        for required in (
+            "bump_version.py",
+            "--dry-run",
+            "build_installer_payload.py",
+            "diff -qr",
+            "sync_codex_plugin_skills.sh --check",
+            "quick_validate.py",
+            "npm run build",
+            "release_security.py candidate",
+            "release_security.py knowledge",
+            "--check-upstream",
+        ):
+            self.assertIn(required, runner)
+        project = (
+            REPO
+            / "macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj"
+        ).read_text(encoding="utf-8")
+        self.assertIn('${CODE_SIGNING_ALLOWED:-YES}', project)
+        self.assertIn("leaving payload plug-in executables unsigned", project)
 
     def test_checksum_manifest_is_deterministic_and_detects_tampering(self) -> None:
         with tempfile.TemporaryDirectory(prefix="glyphs-release-checksums.") as temp:
@@ -183,7 +338,7 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
         self.assertIn("publishing is disabled", skipped.stderr)
 
     def test_release_state_requires_matching_empty_draft(self) -> None:
-        expected = ["GlyphsMCPInstaller-2.3.4.dmg", "SHA256SUMS"]
+        expected = ["Glyphs-MCP-2.3.4.dmg", "SHA256SUMS"]
         self.security.validate_release_state(
             {"tagName": "v2.3.4", "isDraft": True, "assets": []},
             "v2.3.4",
@@ -200,7 +355,15 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
                     "isDraft": True,
                     "assets": [{"name": "SHA256SUMS"}],
                 },
-                "already contains",
+                "must be empty",
+            ),
+            (
+                {
+                    "tagName": "v2.3.4",
+                    "isDraft": True,
+                    "assets": [{"name": "unrelated-notes.txt"}],
+                },
+                "must be empty",
             ),
         ]
         for state, message in invalid_states:
@@ -218,6 +381,10 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
         self.assertIn("git verify-tag", publish)
         self.assertIn("git fetch --quiet origin", publish)
         self.assertIn("git ls-remote origin", publish)
+        self.assertIn(
+            "GLYPHS_MCP_FULL_NETWORK=1 ./scripts/run_local_release_tests.sh",
+            publish,
+        )
         self.assertIn("--confirm-publish", publish)
         self.assertIn("verify_release_artifacts.sh", publish)
         self.assertIn("run_local_release_tests.sh", publish)
@@ -277,6 +444,28 @@ class ReleaseSecurityWorkflowTests(unittest.TestCase):
             if "publish_release_assets.sh" in text or "notarytool" in text or "Developer ID Application" in text:
                 release_workflows.append(path.name)
         self.assertEqual(release_workflows, [], "Release publishing must remain local-only")
+
+    def test_release_assets_use_the_milestone_13_draft_names(self) -> None:
+        publish = (REPO / "scripts" / "publish_release_assets.sh").read_text(
+            encoding="utf-8"
+        )
+        make_dmg = (REPO / "scripts" / "make_installer_dmg.sh").read_text(
+            encoding="utf-8"
+        )
+        verify = (REPO / "scripts" / "verify_release_artifacts.sh").read_text(
+            encoding="utf-8"
+        )
+        readme = (REPO / "README.md").read_text(encoding="utf-8")
+        installation = (REPO / "content/getting-started/installation.mdx").read_text(
+            encoding="utf-8"
+        )
+
+        for script in (publish, make_dmg, verify):
+            self.assertIn("Glyphs-MCP-$version.dmg", script)
+            self.assertIn("Glyphs-MCP-latest.dmg", script)
+            self.assertNotIn("GlyphsMCPInstaller-$version.dmg", script)
+        self.assertIn("Glyphs-MCP-latest.dmg", readme)
+        self.assertIn("Glyphs-MCP-latest.dmg", installation)
 
 
 if __name__ == "__main__":

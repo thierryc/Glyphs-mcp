@@ -35,6 +35,7 @@ def create_glyphs_server() -> FastMCP:
     # detached Python bytes, structurally shared, and pruned on save; no disk IO
     # or hashing happens in Reporter callbacks.
     history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+    history.reset_for_schema_change(5, 6)
     application = GlyphsMCPApplication(host, history=history)
     _ACTIVE_HOST = host
     _ACTIVE_APPLICATION = application

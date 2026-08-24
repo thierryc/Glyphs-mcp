@@ -47,8 +47,8 @@ updater_helper="$app/Contents/Resources/GlyphsMCPUpdater"
 zip="$repo_root/dist/installer-app/GlyphsMCPInstaller.zip"
 
 version="$(python3 "$repo_root/scripts/release_security.py" metadata --repo-root "$repo_root" --tag "$tag" --app-plist "$app_plist")"
-dmg_versioned="$repo_root/dist/GlyphsMCPInstaller-$version.dmg"
-dmg_latest="$repo_root/dist/GlyphsMCPInstaller.dmg"
+dmg_versioned="$repo_root/dist/Glyphs-MCP-$version.dmg"
+dmg_latest="$repo_root/dist/Glyphs-MCP-latest.dmg"
 checksum_file="$repo_root/dist/SHA256SUMS"
 
 for path in "$app" "$payload_archive" "$core_framework" "$updater_helper" "$zip" "$dmg_versioned" "$dmg_latest"; do

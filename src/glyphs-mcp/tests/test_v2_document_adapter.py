@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import base64
 import copy
+import json
+import os
 import stat
 import sys
 import tempfile
@@ -29,14 +32,19 @@ from glyphs_mcp_v2.python_execution import PythonExecutionRequest  # noqa: E402
 from glyphs_mcp_v2.python_execution import PythonExecutionService  # noqa: E402
 from glyphs_mcp_v2.audit import AuditLog  # noqa: E402
 from glyphs_mcp_v2.operations import OperationStore  # noqa: E402
+from glyphs_mcp_v2.ports import HostAccessError  # noqa: E402
 from glyphs_mcp_v2.transactions import TransactionKernel  # noqa: E402
 from glyphs_mcp_v2.mutation import (  # noqa: E402
     LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
     MutationScope,
     classify_change_path,
+    unsupported_change_diagnostics,
 )
-from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
+from glyphs_mcp_v2.semantic import ChangeSet, diff_models, fingerprint_model  # noqa: E402
+from glyphs_mcp_v2.canonical_views import layer_components, layer_paths  # noqa: E402
+from glyphs_mcp_v2.canonical_schema import deterministic_occurrence_id  # noqa: E402
+from glyphs_mcp_v2.canonical_tree import CanonicalSnapshot  # noqa: E402
 from glyphs_mcp_v2.workflows import build_layer_updates, build_master_updates  # noqa: E402
 
 
@@ -58,6 +66,110 @@ def _remove_model_layer(model, glyph_name, layer_id):
 class _Immediate:
     def run(self, callback):
         return callback()
+
+
+class FontUpdateSuspensionTests(unittest.TestCase):
+    def test_live_write_balances_interface_suspension(self) -> None:
+        events = []
+        font = SimpleNamespace(
+            disableUpdateInterface=lambda: events.append("disable"),
+            enableUpdateInterface=lambda: events.append("enable"),
+        )
+
+        result = document_adapter._run_with_font_updates_suspended(
+            font, lambda: events.append("write") or "result"
+        )
+
+        self.assertEqual(result, "result")
+        self.assertEqual(events, ["disable", "write", "enable"])
+
+    def test_live_write_reenables_interface_after_failure(self) -> None:
+        events = []
+        font = SimpleNamespace(
+            disableUpdateInterface=lambda: events.append("disable"),
+            enableUpdateInterface=lambda: events.append("enable"),
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "failed"):
+            document_adapter._run_with_font_updates_suspended(
+                font,
+                lambda: (_ for _ in ()).throw(RuntimeError("failed")),
+            )
+
+        self.assertEqual(events, ["disable", "enable"])
+
+    def test_transaction_gc_boundary_defers_collection_and_restoration(self) -> None:
+        callbacks = []
+        boundary = document_adapter._DeferredCyclicGC(
+            scheduler=callbacks.append
+        )
+        events = []
+        with mock.patch.object(document_adapter.gc, "isenabled", return_value=True), mock.patch.object(
+            document_adapter.gc, "disable", side_effect=lambda: events.append("disable")
+        ), mock.patch.object(
+            document_adapter.gc,
+            "collect",
+            side_effect=lambda generation: events.append("collect:{}".format(generation)),
+        ), mock.patch.object(
+            document_adapter.gc, "enable", side_effect=lambda: events.append("enable")
+        ):
+            boundary.begin()
+            boundary.begin()
+            boundary.end()
+            self.assertEqual(callbacks, [])
+            boundary.end()
+            self.assertEqual(events, ["disable"])
+            self.assertEqual(len(callbacks), 1)
+            callbacks.pop()()
+
+        self.assertEqual(events, ["disable", "collect:0", "enable"])
+
+    def test_native_image_replay_resolves_canonical_relative_path(self) -> None:
+        glyphs_app = SimpleNamespace(
+            GSBackgroundImage=type("GSBackgroundImage", (), {})
+        )
+        with mock.patch.dict(sys.modules, {"GlyphsApp": glyphs_app}):
+            image = document_adapter._new_image(
+                {"imagePath": "Images/reference.tif"},
+                document_path="/fonts/Family.glyphspackage",
+            )
+
+        self.assertEqual(image.imagePath, "/fonts/Images/reference.tif")
+        self.assertEqual(
+            document_adapter.canonical_image_path(
+                "fonts/Images/reference.tif",
+                "/fonts/Family.glyphspackage",
+            ),
+            "Images/reference.tif",
+        )
+        self.assertEqual(
+            document_adapter.canonical_image_path(
+                "Images/reference.tif",
+                "/fonts/Family.glyphspackage",
+            ),
+            "Images/reference.tif",
+        )
+
+    def test_native_image_capture_invokes_the_persistent_path_selector(self) -> None:
+        image = SimpleNamespace(
+            imagePath=lambda: "/fonts/Images/reference.tif",
+            imageURL=None,
+            position=(0, 0),
+            scale=(1, 1),
+            crop=None,
+            angle=0,
+            slant=0,
+            alpha=1,
+            locked=False,
+            attributes={},
+        )
+
+        model = document_adapter._image_model(
+            image,
+            document_path="/fonts/Family.glyphspackage",
+        )
+
+        self.assertEqual(model["imagePath"], "Images/reference.tif")
 
 
 class _Font:
@@ -236,6 +348,35 @@ class _TransactionalFont:
         self.featurePrefixes = []
 
 
+class VerifiedTransactionUpdateBoundaryTests(unittest.TestCase):
+    def test_document_boundary_is_nested_and_balanced_on_the_host_executor(self) -> None:
+        font = _TransactionalFont()
+        events = []
+        font.disableUpdateInterface = lambda: events.append("disable")
+        font.enableUpdateInterface = lambda: events.append("enable")
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+
+        gc_events = []
+        gc_boundary = SimpleNamespace(
+            begin=lambda: gc_events.append("begin"),
+            end=lambda: gc_events.append("end"),
+        )
+        with mock.patch.object(
+            document_adapter, "_VERIFIED_TRANSACTION_GC", gc_boundary
+        ):
+            host.begin_verified_transaction(document_id)
+            host.begin_verified_transaction(document_id)
+            self.assertEqual(events, ["disable"])
+
+            host.end_verified_transaction(document_id)
+            self.assertEqual(events, ["disable"])
+            host.end_verified_transaction(document_id)
+            self.assertEqual(events, ["disable", "enable"])
+        self.assertEqual(host._verified_transaction_updates, {})
+        self.assertEqual(gc_events, ["begin", "begin", "end", "end"])
+
+
 class _ObjectiveCBooleanFeature:
     """Reproduce a PyObjC Boolean property with is/set selectors.
 
@@ -320,6 +461,36 @@ class _AtomicCollectionProxy:
     def setter(self, values):
         self.atomic_assignment_count += 1
         self.values = list(values)
+
+
+class _MutableIdentityStorage:
+    def __init__(self, values):
+        self.values = list(values)
+        self.exchanges = []
+
+    def __len__(self):
+        return len(self.values)
+
+    def __getitem__(self, index):
+        return self.values[index]
+
+    def exchangeObjectAtIndex_withObjectAtIndex_(self, first, second):
+        self.exchanges.append((first, second))
+        self.values[first], self.values[second] = (
+            self.values[second],
+            self.values[first],
+        )
+
+
+class _CollectionChangeOwner:
+    def __init__(self):
+        self.notifications = []
+
+    def willChangeValueForKey_(self, key):
+        self.notifications.append(("will", key))
+
+    def didChangeValueForKey_(self, key):
+        self.notifications.append(("did", key))
 
 
 class _MasterLifecycleMaster:
@@ -715,6 +886,961 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_master_value_stores_follow_root_definition_identity(self) -> None:
+        class NativeStore(dict):
+            """Model Glyphs' NSDictionary-backed master value stores."""
+
+            def __getitem__(self, key):
+                if isinstance(key, int):
+                    return list(self.keys())[key]
+                return super().__getitem__(key)
+
+        metric = SimpleNamespace(
+            id="native-metric",
+            type=1,
+            name=None,
+            horizontal=False,
+            filter=None,
+        )
+        stem = SimpleNamespace(
+            id="native-stem",
+            type=None,
+            name="Primary Vertical Stem",
+            horizontal=False,
+            filter=None,
+        )
+        number = SimpleNamespace(
+            id="native-number",
+            type=None,
+            name="Overshoot Amount",
+            horizontal=False,
+            filter=None,
+        )
+        metric_value = SimpleNamespace(position=700, overshoot=12)
+        stem_store = NativeStore({stem.id: 86})
+        number_store = NativeStore({number.id: 14})
+        master = SimpleNamespace(
+            id="master-regular",
+            name="Regular",
+            italicAngle=0,
+            axes=[],
+            metricValues=NativeStore({metric.id: metric_value}),
+            stemValues=lambda: stem_store,
+            numberValues=lambda: number_store,
+        )
+        master.setStemValueValue_forId_ = (
+            lambda value, identity: stem_store.__setitem__(identity, value)
+        )
+        master.setNumberValueValue_forId_ = (
+            lambda value, identity: number_store.__setitem__(identity, value)
+        )
+        font = SimpleNamespace(
+            axes=[],
+            masters=[master],
+            metrics=[metric],
+            stems=[stem],
+            numbers=[number],
+        )
+
+        model = document_adapter._master_models(font)[0]
+        metric_id = document_adapter._metric_models(font, "metrics")[0]["id"]
+        stem_id = document_adapter._metric_models(font, "stems")[0]["id"]
+        number_id = document_adapter._metric_models(font, "numbers")[0]["id"]
+
+        self.assertEqual(
+            model["metricValues"],
+            [{"id": metric_id, "pos": 700, "over": 12}],
+        )
+        self.assertEqual(model["stemValues"], [{"id": stem_id, "value": 86}])
+        self.assertEqual(
+            model["numberValues"], [{"id": number_id, "value": 14}]
+        )
+
+        document_adapter._apply_master_store_models(
+            font,
+            master,
+            "metricValues",
+            [{"id": metric_id, "pos": 710, "over": 16}],
+        )
+        document_adapter._apply_master_store_models(
+            font, master, "stemValues", [{"id": stem_id, "value": 92}]
+        )
+        document_adapter._apply_master_store_models(
+            font, master, "numberValues", [{"id": number_id, "value": 18}]
+        )
+
+        self.assertEqual((metric_value.position, metric_value.overshoot), (710, 16))
+        self.assertEqual(stem_store[stem.id], 92)
+        self.assertEqual(number_store[number.id], 18)
+
+    def test_change_set_routes_only_semantically_affected_identities(self) -> None:
+        before = {
+            "glyphs": {
+                "A": {"export": True, "layers": []},
+                "B": {"export": True, "layers": []},
+            }
+        }
+        after = copy.deepcopy(before)
+        after["glyphs"]["A"]["export"] = False
+        changes = diff_models(before, after)
+
+        self.assertEqual(changes.affected_identities(("glyphs",)), ("A",))
+        self.assertEqual(
+            tuple(change.path for change in changes.changes_under(("glyphs", "A"))),
+            (("glyphs", "A", "export"),),
+        )
+        self.assertEqual(
+            changes.affected_identities(("glyphs", "A", "layers")),
+            (),
+        )
+
+        whole_collection = ChangeSet.from_changes(
+            before_fingerprint=changes.before_fingerprint,
+            after_fingerprint=changes.after_fingerprint,
+            changes=(
+                {
+                    "path": ["glyphs"],
+                    "before": before["glyphs"],
+                    "after": after["glyphs"],
+                },
+            ),
+        )
+        self.assertIsNone(whole_collection.affected_identities(("glyphs",)))
+
+    def test_glyph_scalar_replay_never_descends_into_unaffected_layers_or_roots(
+        self,
+    ) -> None:
+        glyph_a = SimpleNamespace(name="A", export=True, layers=[])
+        glyph_b = SimpleNamespace(name="B", export=True, layers=[])
+        font = SimpleNamespace(glyphs=[glyph_a, glyph_b])
+        before = {
+            "glyphs": {
+                "A": {"export": True, "layers": []},
+                "B": {"export": True, "layers": []},
+            }
+        }
+        after = copy.deepcopy(before)
+        after["glyphs"]["A"]["export"] = False
+
+        with mock.patch.object(
+            document_adapter,
+            "_apply_layer_collection",
+            side_effect=AssertionError("scalar replay descended into layers"),
+        ), mock.patch.object(
+            document_adapter,
+            "_apply_font_record_roots",
+            side_effect=AssertionError("scalar replay compared unrelated roots"),
+        ):
+            document_adapter._apply_target_model(
+                font,
+                before,
+                after,
+                diff_models(before, after),
+            )
+
+        self.assertFalse(glyph_a.export)
+        self.assertTrue(glyph_b.export)
+
+    def test_native_constructor_fields_preserve_defaults_for_canonical_nulls(self) -> None:
+        calls = []
+
+        class Native:
+            def setOrientation_(self, value):
+                if value is None:
+                    raise ValueError("native char fields cannot accept None")
+                calls.append(("orientation", value))
+
+            def setLocked_(self, value):
+                calls.append(("locked", value))
+
+            def setAttributes_(self, value):
+                calls.append(("attributes", value))
+
+        document_adapter._apply_native_constructor_fields(
+            Native(),
+            {"orientation": None, "locked": False, "attributes": {}},
+            ("orientation", "locked", "attributes"),
+        )
+
+        self.assertEqual(calls, [("locked", False), ("attributes", {})])
+
+    def test_component_capture_uses_registry_owned_native_aliases(self) -> None:
+        component = SimpleNamespace(
+            componentName="A",
+            position=(0, 0),
+            scale=(1, 1),
+            rotation=0,
+            slant=(0, 0),
+            transform=(1, 0, 0, 1, 0, 0),
+            automaticAlignment=True,
+            alignment=0,
+            anchor=None,
+            locked=False,
+            componentMasterId="master-2",
+            orientation=lambda: 0,
+            keepWeight=False,
+            traverseAnchors=True,
+            attributes={},
+            smartComponentValues={"Width": 75},
+        )
+
+        captured = document_adapter._component_model(component)
+
+        self.assertEqual(captured["masterId"], "master-2")
+        self.assertEqual(captured["piece"], {"Width": 75})
+
+    def test_component_capture_derives_alignment_from_saved_fields(self) -> None:
+        component = SimpleNamespace(
+            componentName="A",
+            position=(0, 0),
+            scale=(1, 1),
+            rotation=0,
+            slant=(0, 0),
+            # GSFont.copy() can temporarily expose a false getter even though
+            # the saved alignment value still requests automatic alignment.
+            automaticAlignment=False,
+            alignment=0,
+            anchor=None,
+            locked=False,
+            componentMasterId=None,
+            orientation=0,
+            keepWeight=0,
+            traverseAnchors=True,
+            attributes={},
+            smartComponentValues={},
+        )
+
+        captured = document_adapter._component_model(component)
+
+        self.assertEqual(captured["alignment"], 0)
+        self.assertTrue(captured["automaticAlignment"])
+        self.assertEqual(captured["transform"], [1.0, 0.0, 0.0, 1.0, 0.0, 0.0])
+
+    def test_registered_mapping_field_replays_through_read_only_native_proxy(self) -> None:
+        class Component:
+            def __init__(self):
+                self._values = {"Width": 25, "Height": 50}
+
+            @property
+            def smartComponentValues(self):
+                return self._values
+
+        component = Component()
+        document_adapter._set_registered_native_field(
+            component,
+            "definition.component",
+            "piece",
+            {"Width": 75},
+        )
+
+        self.assertEqual(component.smartComponentValues, {"Width": 75})
+
+    def test_bulk_capture_gc_guard_restores_the_prior_state(self) -> None:
+        import gc
+
+        initial = gc.isenabled()
+        with mock.patch.object(
+            document_adapter.gc,
+            "collect",
+            wraps=document_adapter.gc.collect,
+        ) as collect:
+            with document_adapter._suspend_cyclic_gc_for_bulk_capture():
+                self.assertFalse(gc.isenabled())
+        self.assertEqual(gc.isenabled(), initial)
+        if initial:
+            collect.assert_called_once_with(0)
+        else:
+            collect.assert_not_called()
+
+    def test_custom_parameter_capture_uses_persistent_value_not_native_description(self) -> None:
+        class NativeArray:
+            def __init__(self, values):
+                self.values = list(values)
+
+            def count(self):
+                return len(self.values)
+
+            def objectAtIndex_(self, index):
+                return self.values[index]
+
+        class NativeStem:
+            def __init__(self, address):
+                self.address = address
+
+            def __str__(self):
+                return "<GSTTStem {}> h 86:86".format(self.address)
+
+        class Parameter:
+            name = "TTFStems"
+            disabled = False
+
+            def __init__(self, address):
+                # A copied GSFont can expose the rich value as an ordinary
+                # Objective-C description string even though its official
+                # persistent representation remains structured data.
+                self.value = str(NativeStem(address))
+
+            def propertyListValueFormat_error_(self, format_version, error):
+                self.seen = (format_version, error)
+                return ({
+                    "name": self.name,
+                    "value": NativeArray([{
+                        "horizontal": 1,
+                        # Glyphs' native serializer can return NSNumber here
+                        # even though the v4 file field is textual.
+                        "name": 86,
+                        "width": 86,
+                    }]),
+                }, None)
+
+        def captured(address):
+            font = _TransactionalFont()
+            master = SimpleNamespace(
+                id="master-regular",
+                name="Regular",
+                italicAngle=0,
+                axes=[],
+                customParameters=[Parameter(address)],
+                properties=[],
+                userData={},
+                guides=[],
+                alignmentZones=[],
+                metrics=[],
+                stems=[],
+                numbers=[],
+            )
+            font.masters = [master]
+            return native_font_to_model(font)
+
+        before = captured("0x111111")
+        after = captured("0x999999")
+
+        self.assertEqual(before, after)
+        parameter = before["masters"][0]["customParameters"][0]
+        self.assertEqual(
+            parameter["value"],
+            [{"horizontal": 1, "name": "86", "width": 86}],
+        )
+        self.assertNotIn("GSTTStem", repr(parameter))
+
+    def test_live_guide_omitted_defaults_match_the_serialized_schema(self) -> None:
+        guide = SimpleNamespace(attributes=None, slope=0)
+
+        captured = document_adapter._generic_record_model(
+            guide, document_adapter._GUIDE_FIELDS, kind="guide"
+        )
+
+        self.assertEqual(captured["attr"], {})
+        self.assertIs(captured["slope"], False)
+        self.assertEqual(captured["angle"], 0)
+        self.assertEqual(captured["orientation"], 0)
+
+    def test_live_guide_native_point_matches_serialized_position(self) -> None:
+        point = SimpleNamespace(x=229.0, y=1480.0)
+        guide = SimpleNamespace(position=point, attributes=None, slope=0)
+
+        captured = document_adapter._generic_record_model(
+            guide, document_adapter._GUIDE_FIELDS, kind="guide"
+        )
+
+        self.assertEqual(captured["pos"], [229, 1480])
+
+    def test_axis_localized_names_use_the_persistent_record_boundary(self) -> None:
+        class BrokenWrapperValue:
+            def __str__(self):
+                raise AssertionError("the wrapper description is not canonical")
+
+        axis = SimpleNamespace(
+            axisTag="wght",
+            name="Weight",
+            names=BrokenWrapperValue(),
+            default=400,
+            hidden=False,
+            userData={},
+        )
+        font = SimpleNamespace(axes=[axis])
+        font.propertyListValueFormat_error_ = lambda _format, _error: (
+            {"axes": [axis]},
+            None,
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_serialized_property_tree",
+            return_value={
+                "axes": [{
+                    "tag": "wght",
+                    "name": "Weight",
+                    "names": [{"language": "de", "value": "Gewicht"}],
+                }],
+            },
+        ) as flatten:
+            captured = document_adapter._axis_models(font)
+
+        self.assertEqual(
+            captured[0]["names"],
+            [{"language": "de", "value": "Gewicht"}],
+        )
+        flatten.assert_called_once()
+
+    def test_persisted_axis_omission_uses_the_schema_default_not_the_ui_wrapper(self) -> None:
+        class UnsafeWrapperValue:
+            def __str__(self):
+                raise AssertionError("an omitted persisted field probed the UI wrapper")
+
+        axis = SimpleNamespace(
+            axisTag="wght",
+            name="Weight",
+            names=[UnsafeWrapperValue()],
+            default=400,
+            hidden=False,
+            userData={},
+        )
+        font = SimpleNamespace(axes=[axis])
+        font.propertyListValueFormat_error_ = lambda _format, _error: (
+            {"axes": [axis]},
+            None,
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_serialized_property_tree",
+            return_value={"axes": [{"tag": "wght", "name": "Weight"}]},
+        ):
+            captured = document_adapter._axis_models(font)
+
+        self.assertEqual(captured[0]["names"], [])
+
+    def test_live_full_capture_uses_the_source_neutral_persistent_mapping(self) -> None:
+        font = _TransactionalFont()
+        expected = native_font_to_model(font)
+        calls = []
+
+        def persistent(format_version, error):
+            calls.append((format_version, error))
+            return (copy.deepcopy(expected), None)
+
+        font.propertyListValueFormat_error_ = persistent
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+
+        with mock.patch.dict(
+            os.environ, {"GLYPHS_MCP_VERIFY_SERIALIZED_SOURCE": "1"}
+        ), mock.patch.object(
+            document_adapter,
+            "_master_models",
+            side_effect=AssertionError("manual master traversal was used"),
+        ), mock.patch.object(
+            document_adapter,
+            "_font_model_with_glyphs",
+            side_effect=AssertionError("manual root traversal was used"),
+        ):
+            snapshot = host.capture_snapshot(document_id)
+
+        self.assertEqual(snapshot.materialize(), expected)
+        self.assertEqual(calls, [(4, None)])
+
+    def test_live_full_capture_flattens_shallow_native_property_tree_once(self) -> None:
+        font = _TransactionalFont()
+        expected = native_font_to_model(font)
+        shallow = {"glyphs": [object()]}
+        flattened = copy.deepcopy(expected)
+        font.propertyListValueFormat_error_ = lambda _format, _error: (
+            shallow,
+            None,
+        )
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+
+        with mock.patch.dict(
+            os.environ, {"GLYPHS_MCP_VERIFY_SERIALIZED_SOURCE": "1"}
+        ), mock.patch.object(
+            document_adapter.SerializedMappingSource,
+            "capture",
+            return_value=flattened,
+        ) as capture, mock.patch.object(
+            document_adapter,
+            "_native_serialized_property_tree",
+            return_value=flattened,
+        ) as native_flatten:
+            snapshot = host.capture_snapshot(document_id)
+
+        self.assertEqual(snapshot.materialize(), expected)
+        self.assertEqual(capture.call_count, 1)
+        native_flatten.assert_called_once_with(shallow)
+
+    def test_canonical_looking_persistent_tree_flattens_native_children(self) -> None:
+        font = _TransactionalFont()
+        expected = native_font_to_model(font)
+        shallow = copy.deepcopy(expected)
+        shallow["axes"] = [object()]
+        font.propertyListValueFormat_error_ = lambda _format, _error: (
+            shallow,
+            None,
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_serialized_property_tree",
+            return_value=copy.deepcopy(expected),
+        ) as native_flatten:
+            captured = document_adapter._native_persistent_font_model(font)
+
+        self.assertEqual(captured, expected)
+        native_flatten.assert_called_once_with(shallow)
+
+    def test_persistent_model_refuses_a_native_child_after_bulk_flatten(self) -> None:
+        font = _TransactionalFont()
+        expected = native_font_to_model(font)
+        shallow = copy.deepcopy(expected)
+        shallow["axes"] = [object()]
+        font.propertyListValueFormat_error_ = lambda _format, _error: (
+            {"glyphs": [object()]},
+            None,
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_serialized_property_tree",
+            return_value=shallow,
+        ):
+            captured = document_adapter._native_persistent_font_model(font)
+
+        self.assertIsNone(captured)
+
+    def test_native_serialized_tree_refuses_a_native_child_after_flattening(self) -> None:
+        native_axis = object()
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_property_list_flattener",
+            return_value=lambda _persistent, _format, _error: {
+                "axes": [native_axis],
+            },
+        ):
+            flattened = document_adapter._native_serialized_property_tree(
+                {"axes": [native_axis]}
+            )
+
+        self.assertIsNone(flattened)
+
+    def test_strict_property_list_guard_never_introspects_mapping_like_native_objects(self) -> None:
+        class NativeMapping(Mapping):
+            def __getitem__(self, key):
+                raise AssertionError("native mapping was introspected")
+
+            def __iter__(self):
+                raise AssertionError("native mapping was iterated")
+
+            def __len__(self):
+                raise AssertionError("native mapping was counted")
+
+        plain, is_plain = document_adapter._strict_plain_property_list_value(
+            {"axes": [NativeMapping()]}
+        )
+
+        self.assertIsNone(plain)
+        self.assertFalse(is_plain)
+
+    def test_strict_property_list_predicate_never_introspects_native_objects(self) -> None:
+        class NativeMapping(Mapping):
+            def __getitem__(self, key):
+                raise AssertionError("native mapping was introspected")
+
+            def __iter__(self):
+                raise AssertionError("native mapping was iterated")
+
+            def __len__(self):
+                raise AssertionError("native mapping was counted")
+
+        self.assertTrue(
+            document_adapter._is_strict_plain_property_list_value(
+                {"axes": [{"tag": "wght"}]}
+            )
+        )
+        self.assertFalse(
+            document_adapter._is_strict_plain_property_list_value(
+                {"axes": [NativeMapping()]}
+            )
+        )
+
+    def test_property_list_probe_never_iterates_mapping_shaped_native_objects(self) -> None:
+        class NativeMapping(Mapping):
+            def __getitem__(self, key):
+                raise AssertionError("native mapping was introspected")
+
+            def __iter__(self):
+                raise AssertionError("native mapping was iterated")
+
+            def __len__(self):
+                raise AssertionError("native mapping was counted")
+
+        plain, is_plain = document_adapter._plain_property_list_value(
+            {"axes": [NativeMapping()]}
+        )
+
+        self.assertIsNone(plain)
+        self.assertFalse(is_plain)
+
+    def test_attribute_probe_never_iterates_mapping_shaped_native_objects(self) -> None:
+        class NativeMapping(Mapping):
+            def __getitem__(self, key):
+                raise AssertionError("native mapping was introspected")
+
+            def __iter__(self):
+                raise AssertionError("native mapping was iterated")
+
+            def __len__(self):
+                raise AssertionError("native mapping was counted")
+
+        value = NativeMapping()
+
+        self.assertEqual(
+            document_adapter._plain_attribute_value(value), str(value)
+        )
+
+    def test_native_property_list_containers_use_explicit_foundation_boundaries(self) -> None:
+        class NativeDictionary:
+            def __init__(self, values):
+                self.values = values
+
+            def allKeys(self):
+                return list(self.values)
+
+            def objectForKey_(self, key):
+                return self.values[key]
+
+        class NativeArray:
+            def __init__(self, values):
+                self.values = values
+
+            def count(self):
+                return len(self.values)
+
+            def objectAtIndex_(self, index):
+                return self.values[index]
+
+        value = NativeDictionary(
+            {"axes": NativeArray([NativeDictionary({"tag": "wght"})])}
+        )
+
+        plain, is_plain = document_adapter._plain_property_list_value(value)
+
+        self.assertTrue(is_plain)
+        self.assertEqual(plain, {"axes": [{"tag": "wght"}]})
+
+    def test_live_glyph_order_uses_the_official_serializer_not_the_editor_proxy(self) -> None:
+        font = _TransactionalFont()
+
+        def glyph(name):
+            return SimpleNamespace(
+                name=name,
+                id="id-{}".format(name),
+                lastChange=None,
+                changeCount=lambda: 0,
+                mastersCompatible=True,
+                layers=[],
+                category="Letter",
+                subCategory="Uppercase",
+                unicode=None,
+                export=True,
+                leftKerningGroup=None,
+                rightKerningGroup=None,
+            )
+
+        font.glyphs = [glyph("A"), glyph("B")]
+        canonical = native_font_to_model(font)
+        serializer_view = copy.deepcopy(canonical)
+        serializer_view["glyphs"] = {
+            "B": serializer_view["glyphs"]["B"],
+            "A": serializer_view["glyphs"]["A"],
+        }
+        serializer_view["glyphOrder"] = ["B", "A"]
+        font.propertyListValueFormat_error_ = lambda _format, _error: (
+            serializer_view,
+            None,
+        )
+
+        captured = document_adapter._native_persistent_font_model(font)
+
+        self.assertIsNotNone(captured)
+        self.assertEqual(captured["glyphOrder"], ["B", "A"])
+
+    def test_saved_package_mapping_uses_record_identity_and_external_feature_code(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            package = Path(root) / "Fixture.glyphspackage"
+            (package / "glyphs").mkdir(parents=True)
+            (package / "features").mkdir()
+            for relative in (
+                "fontinfo.plist",
+                "order.plist",
+                "kerning.plist",
+                "glyphs/A_.glyph",
+                "glyphs/amacron.glyph",
+            ):
+                (package / relative).touch()
+            (package / "features" / "liga.fea").write_text(
+                "sub f i by fi;\n", encoding="utf-8"
+            )
+            decoded = {
+                "fontinfo.plist": {
+                    "features": [{"tag": "liga", "file": "liga.fea"}]
+                },
+                "order.plist": ["A", "amacron"],
+                "kerning.plist": {},
+                "A_.glyph": {"glyphname": "A", "unicode": 65},
+                "amacron.glyph": {"glyphname": "amacron", "unicode": 257},
+            }
+
+            captured = document_adapter._saved_package_mapping(
+                package,
+                decoder=lambda path: copy.deepcopy(decoded[path.name]),
+            )
+
+        self.assertIsNotNone(captured)
+        self.assertEqual(captured["glyphs"]["A"]["unicode"], 65)
+        self.assertEqual(captured["glyphs"]["amacron"]["unicode"], 257)
+        self.assertEqual(
+            captured["fontinfo.plist"]["features"][0]["code"],
+            "sub f i by fi;\n",
+        )
+
+    def test_runtime_openstep_decoder_preserves_v4_numeric_atoms(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            path = Path(root) / "A_.glyph"
+            path.write_text(
+                "{ glyphname = A; unicode = 65; width = 2048; note = \"001\"; }",
+                encoding="utf-8",
+            )
+
+            decoded = document_adapter._native_openstep_property_list(path)
+
+        self.assertEqual(decoded["glyphname"], "A")
+        self.assertEqual(decoded["unicode"], 65)
+        self.assertEqual(decoded["width"], 2048)
+        self.assertEqual(decoded["note"], "001")
+
+    def test_clean_saved_document_bootstraps_from_qualified_saved_source(self) -> None:
+        font = _TransactionalFont()
+        glyph = SimpleNamespace(
+            name="A",
+            unicode="0041",
+            export=True,
+            mastersCompatible=True,
+            layers=[],
+            lastChange=None,
+            changeCount=lambda: 0,
+        )
+        font.glyphs = [glyph]
+        cache = document_adapter._RevisionBoundGlyphModelCache()
+
+        expected = native_font_to_model(font)
+        font.filepath = "/tmp/Fixture.glyphspackage"
+        with mock.patch.object(
+            document_adapter,
+            "_saved_document_canonical_model",
+            return_value=expected,
+        ) as saved, mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            side_effect=AssertionError(
+                "ordinary interaction used the opt-in serialized audit source"
+            ),
+        ) as live:
+            snapshot = cache.capture_snapshot("saved-doc", font)
+
+        self.assertEqual(snapshot.materialize(), expected)
+        saved.assert_called_once_with(font, instance_ids=None)
+        live.assert_not_called()
+
+    def test_post_notification_reuses_unchanged_saved_source_roots(self) -> None:
+        font = _TransactionalFont()
+        expected = native_font_to_model(font)
+        expected["font"]["familyName"] = "Saved spelling"
+        cache = document_adapter._RevisionBoundGlyphModelCache()
+        revision = [1]
+
+        with mock.patch.object(
+            document_adapter,
+            "_saved_document_canonical_model",
+            return_value=expected,
+        ):
+            first = cache.capture_snapshot(
+                "saved-notification",
+                font,
+                revision_provider=lambda: ("revision", revision[0]),
+            )
+        revision[0] += 1
+        with mock.patch.object(
+            document_adapter,
+            "_font_model_with_glyphs",
+            side_effect=AssertionError("unchanged saved roots were re-materialized"),
+        ):
+            second = cache.capture_snapshot(
+                "saved-notification",
+                font,
+                revision_provider=lambda: ("revision", revision[0]),
+            )
+
+        self.assertEqual(second.document_fingerprint, first.document_fingerprint)
+        self.assertEqual(second["font"]["familyName"], "Saved spelling")
+
+    def test_saved_document_rejects_falsely_clean_restored_identity(self) -> None:
+        native = SimpleNamespace(name="A", unicode="0101", export=False)
+        saved = {"A": {"name": "A", "unicode": "0041", "export": True}}
+
+        self.assertFalse(
+            document_adapter._saved_model_matches_live_identity(
+                {"A": native}, saved
+            )
+        )
+
+    def test_scoped_scalar_capture_preserves_canonical_order_when_proxy_regroups(self) -> None:
+        font = _TransactionalFont()
+
+        def glyph(name):
+            return SimpleNamespace(
+                name=name,
+                id="id-{}".format(name),
+                lastChange=None,
+                changeCount=lambda: 0,
+                mastersCompatible=True,
+                layers=[],
+                category="Letter",
+                subCategory="Uppercase",
+                unicode=None,
+                export=True,
+                leftKerningGroup=None,
+                rightKerningGroup=None,
+            )
+
+        glyph_a = glyph("A")
+        glyph_b = glyph("B")
+        font.glyphs = [glyph_a, glyph_b]
+        source = native_font_to_model(font)
+        glyph_a.export = False
+        font.glyphs = [glyph_b, glyph_a]
+        impact = document_adapter.CanonicalImpact.from_paths(
+            source, [("glyphs", "A", "export")]
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            side_effect=AssertionError(
+                "a scalar fragment must not materialize document order"
+            ),
+        ):
+            captured = document_adapter._scoped_font_model(
+                font,
+                source,
+                MutationScope(impact.roots, impact.glyph_names),
+                impact=impact,
+                expected_model=source,
+            )
+
+        self.assertEqual(captured["glyphOrder"], ["A", "B"])
+        self.assertFalse(captured["glyphs"]["A"]["export"])
+
+    def test_structural_capture_preserves_the_baseline_canonical_source(self) -> None:
+        regular = _MasterLifecycleLayer(
+            "master-regular", "Regular", native_only="regular"
+        )
+        glyph = _MasterLifecycleGlyph("A", [regular])
+        font = _TransactionalFont()
+        font.axes = []
+        font.masters = []
+        font.glyphs = [glyph]
+        glyph.font = font
+
+        before = native_font_to_model(font)
+        source = document_adapter.CanonicalSnapshot.from_model(
+            before,
+            native_revision_evidence={"capture": "saved_format_v4_mapping"},
+        )
+        added = _MasterLifecycleLayer(
+            "master-added", "Added", native_only="added"
+        )
+        glyph.layers[added.layerId] = added
+        target = copy.deepcopy(before)
+        target["glyphs"]["A"]["layers"].append(
+            document_adapter._layer_model(added)
+        )
+        paths = (
+            ("glyphs", "A", "layers", "$order"),
+            ("glyphs", "A", "layers", "master-added"),
+        )
+        impact = document_adapter.CanonicalImpact.from_paths(source, paths)
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value=target,
+        ) as persistent, mock.patch.object(
+            document_adapter,
+            "_glyph_fragment_model",
+            side_effect=AssertionError(
+                "structural capture mixed ObjectWrapper and saved-source spellings"
+            ),
+        ):
+            captured = document_adapter._scoped_font_model(
+                font,
+                source,
+                MutationScope(impact.roots, impact.glyph_names),
+                impact=impact,
+                expected_model=target,
+            )
+
+        self.assertEqual(captured["glyphs"]["A"], target["glyphs"]["A"])
+        persistent.assert_called_once_with(
+            font, instance_ids=None, document_path=None
+        )
+
+    def test_nested_layer_capture_preserves_the_baseline_canonical_source(self) -> None:
+        regular = _MasterLifecycleLayer(
+            "master-regular", "Regular", native_only="regular"
+        )
+        glyph = _MasterLifecycleGlyph("A", [regular])
+        font = _TransactionalFont()
+        font.axes = []
+        font.masters = []
+        font.glyphs = [glyph]
+        glyph.font = font
+        before = native_font_to_model(font)
+        source = document_adapter.CanonicalSnapshot.from_model(
+            before,
+            native_revision_evidence={"capture": "saved_format_v4_mapping"},
+        )
+        paths = ((
+            "glyphs", "A", "layers", "master-regular",
+            "background", "hints", "hint:corner:0", "origin",
+        ),)
+        impact = document_adapter.CanonicalImpact.from_paths(source, paths)
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value=before,
+        ) as persistent, mock.patch.object(
+            document_adapter,
+            "_glyph_fragment_model",
+            side_effect=AssertionError(
+                "nested layer capture mixed ObjectWrapper and saved-source spellings"
+            ),
+        ):
+            captured = document_adapter._scoped_font_model(
+                font,
+                source,
+                MutationScope(impact.roots, impact.glyph_names),
+                impact=impact,
+                expected_model=source,
+            )
+
+        self.assertEqual(captured["glyphs"]["A"], before["glyphs"]["A"])
+        persistent.assert_called_once_with(
+            font, instance_ids=None, document_path=None
+        )
+
     def test_future_collection_identity_is_not_required_in_source_capture(self) -> None:
         font = _TransactionalFont()
         font.glyphs = [
@@ -743,6 +1869,1015 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(captured, source)
 
+    def test_cold_live_capture_bootstraps_from_registry_then_reuses_snapshot(self) -> None:
+        font = _TransactionalFont()
+        expected = native_font_to_model(font)
+        cache = document_adapter._RevisionBoundGlyphModelCache()
+
+        with mock.patch.dict(
+            os.environ, {"GLYPHS_MCP_VERIFY_SERIALIZED_SOURCE": ""}
+        ), mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value=expected,
+        ) as persistent:
+            snapshot = cache.capture_snapshot(
+                "doc-cold",
+                font,
+                revision_provider=lambda: ("stable", 1),
+            )
+            repeated = cache.capture_snapshot(
+                "doc-cold",
+                font,
+                revision_provider=lambda: ("stable", 1),
+            )
+
+        self.assertEqual(snapshot["font"]["familyName"], font.familyName)
+        self.assertIs(repeated, snapshot)
+        persistent.assert_not_called()
+
+    def test_cold_registry_capture_seeds_native_layer_proof(self) -> None:
+        font = _TransactionalFont()
+        glyphs = []
+        for index in range(383):
+            layer = _MetricsLayer()
+            layer.layerId = "master-regular"
+            layer.associatedMasterId = "master-regular"
+            layer.name = "Regular"
+            layer.isMasterLayer = True
+            layer.isSpecialLayer = False
+            layer.lastUpdate = lambda: 1.0
+            glyphs.append(
+                SimpleNamespace(
+                    name="glyph{:03d}".format(index),
+                    id="native-{:03d}".format(index),
+                    unicode=None,
+                    export=True,
+                    mastersCompatible=True,
+                    layers=[layer],
+                    lastChange=None,
+                    changeCount=lambda: 0,
+                )
+            )
+        font.glyphs = glyphs
+        cache = document_adapter._RevisionBoundGlyphModelCache()
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            side_effect=AssertionError("ordinary capture used serialized audit source"),
+        ):
+            snapshot = cache.capture_snapshot(
+                "doc-cold-lazy-evidence",
+                font,
+                revision_provider=lambda: ("stable", 1),
+            )
+
+        self.assertEqual(len(snapshot.glyph_shards), 383)
+        cached = cache._documents["doc-cold-lazy-evidence"]["glyphs"]
+        self.assertTrue(all(value.get("layerTokens") is not None for value in cached.values()))
+
+    def test_large_glyph_impact_selects_one_bulk_verification_boundary(self) -> None:
+        font = _TransactionalFont()
+        font.glyphs = [
+            SimpleNamespace(
+                name="g{:03d}".format(index),
+                id="native-{:03d}".format(index),
+                unicode=None,
+                export=True,
+                mastersCompatible=True,
+                layers=[],
+                lastChange=None,
+                changeCount=lambda: 0,
+            )
+            for index in range(40)
+        ]
+        before = native_font_to_model(font)
+        cache = document_adapter._RevisionBoundGlyphModelCache()
+        with mock.patch.dict(
+            os.environ, {"GLYPHS_MCP_VERIFY_SERIALIZED_SOURCE": "1"}
+        ), mock.patch.object(
+            document_adapter, "_native_persistent_font_model", return_value=before
+        ):
+            cache.capture_snapshot(
+                "doc-large-impact",
+                font,
+                revision_provider=lambda: ("stable", 1),
+            )
+        impact = document_adapter.CanonicalImpact.from_paths(
+            before,
+            (("glyphs", glyph.name, "export") for glyph in font.glyphs),
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_layer_revision_index",
+            side_effect=AssertionError("large impact seeded per-glyph evidence"),
+        ):
+            cache.invalidate_impact(
+                "doc-large-impact", impact, font=font
+            )
+
+        self.assertTrue(
+            cache._documents["doc-large-impact"]["forcePersistentVerification"]
+        )
+        expected = document_adapter.CanonicalSnapshot.from_model(before)
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value=before,
+        ) as persistent:
+            captured = cache.capture_snapshot(
+                "doc-large-impact",
+                font,
+                expected=expected,
+                revision_provider=lambda: ("stable", 2),
+            )
+        persistent.assert_called_once()
+        self.assertEqual(
+            captured.document_fingerprint, expected.document_fingerprint
+        )
+
+    def test_bulk_verification_never_switches_source_while_expected_state_mismatches(self) -> None:
+        font = _TransactionalFont()
+        before = native_font_to_model(font)
+        expected_model = copy.deepcopy(before)
+        expected_model["font"]["familyName"] = "Expected after state"
+        expected = document_adapter.CanonicalSnapshot.from_model(expected_model)
+        cache = document_adapter._RevisionBoundGlyphModelCache()
+
+        with mock.patch.dict(
+            os.environ, {"GLYPHS_MCP_VERIFY_SERIALIZED_SOURCE": "1"}
+        ), mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value=before,
+        ) as persistent, mock.patch.object(
+            document_adapter,
+            "_native_canonical_root",
+            side_effect=AssertionError(
+                "bulk verification switched to the registry live adapter"
+            ),
+        ):
+            cache.capture_snapshot(
+                "doc-persistent-fixed-point",
+                font,
+                revision_provider=lambda: ("stable", 1),
+            )
+            cache.invalidate_impact(
+                "doc-persistent-fixed-point",
+                document_adapter.CanonicalImpact.from_paths(
+                    before, [("glyphs",)]
+                ),
+                font=font,
+            )
+            first = cache.capture_snapshot(
+                "doc-persistent-fixed-point",
+                font,
+                expected=expected,
+                revision_provider=lambda: ("stable", 2),
+            )
+            second = cache.capture_snapshot(
+                "doc-persistent-fixed-point",
+                font,
+                expected=expected,
+                revision_provider=lambda: ("stable", 2),
+            )
+
+        self.assertNotEqual(
+            first.document_fingerprint, expected.document_fingerprint
+        )
+        self.assertEqual(
+            second.document_fingerprint, first.document_fingerprint
+        )
+        self.assertEqual(persistent.call_count, 3)
+
+    def test_bulk_verification_keeps_its_source_until_native_revision_settles(self) -> None:
+        font = _TransactionalFont()
+        model = native_font_to_model(font)
+        expected = document_adapter.CanonicalSnapshot.from_model(model)
+        cache = document_adapter._RevisionBoundGlyphModelCache()
+
+        with mock.patch.dict(
+            os.environ, {"GLYPHS_MCP_VERIFY_SERIALIZED_SOURCE": "1"}
+        ), mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value=model,
+        ) as persistent, mock.patch.object(
+            document_adapter,
+            "_native_canonical_root",
+            side_effect=AssertionError(
+                "an unsettled bulk capture switched canonical sources"
+            ),
+        ):
+            cache.capture_snapshot(
+                "doc-persistent-settle",
+                font,
+                revision_provider=lambda: ("stable", 1),
+            )
+            cache.invalidate_impact(
+                "doc-persistent-settle",
+                document_adapter.CanonicalImpact.from_paths(
+                    model, [("glyphs",)]
+                ),
+                font=font,
+            )
+            revisions = iter(
+                [
+                    ("changing", 1),
+                    ("changing", 2),
+                    ("stable", 2),
+                    ("stable", 2),
+                ]
+            )
+            first = cache.capture_snapshot(
+                "doc-persistent-settle",
+                font,
+                expected=expected,
+                revision_provider=lambda: next(revisions),
+            )
+            second = cache.capture_snapshot(
+                "doc-persistent-settle",
+                font,
+                expected=expected,
+                revision_provider=lambda: next(revisions),
+            )
+
+        self.assertEqual(
+            first.document_fingerprint, expected.document_fingerprint
+        )
+        self.assertEqual(
+            second.document_fingerprint, expected.document_fingerprint
+        )
+        self.assertEqual(persistent.call_count, 3)
+
+    def test_exact_bulk_verification_keeps_its_source_for_the_agreement_read(self) -> None:
+        font = _TransactionalFont()
+        model = native_font_to_model(font)
+        expected = document_adapter.CanonicalSnapshot.from_model(model)
+        cache = document_adapter._RevisionBoundGlyphModelCache()
+
+        with mock.patch.dict(
+            os.environ, {"GLYPHS_MCP_VERIFY_SERIALIZED_SOURCE": "1"}
+        ), mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value=model,
+        ) as persistent, mock.patch.object(
+            document_adapter,
+            "_font_model_with_glyphs",
+            side_effect=AssertionError(
+                "the exact agreement read switched canonical sources"
+            ),
+        ):
+            cache.capture_snapshot(
+                "doc-persistent-exact-pair",
+                font,
+                revision_provider=lambda: ("stable", 1),
+            )
+            cache.invalidate_impact(
+                "doc-persistent-exact-pair",
+                document_adapter.CanonicalImpact.from_paths(
+                    model, [("glyphs",)]
+                ),
+                font=font,
+            )
+            first = cache.capture_snapshot(
+                "doc-persistent-exact-pair",
+                font,
+                expected=expected,
+                revision_provider=lambda: ("stable", 2),
+            )
+            second = cache.capture_snapshot(
+                "doc-persistent-exact-pair",
+                font,
+                expected=expected,
+                revision_provider=lambda: ("stable", 2),
+            )
+
+        self.assertEqual(first.document_fingerprint, expected.document_fingerprint)
+        self.assertEqual(second.document_fingerprint, expected.document_fingerprint)
+        # The second read may reuse the first result when identical native
+        # revision evidence proves no intervening change. It must never switch
+        # to another canonical source.
+        self.assertEqual(persistent.call_count, 2)
+
+    def test_unscoped_refresh_preserves_the_serialized_source_family(self) -> None:
+        font = _TransactionalFont()
+        model = native_font_to_model(font)
+        cache = document_adapter._RevisionBoundGlyphModelCache()
+
+        with mock.patch.dict(
+            os.environ, {"GLYPHS_MCP_VERIFY_SERIALIZED_SOURCE": "1"}
+        ), mock.patch.object(
+            document_adapter, "_native_persistent_font_model", return_value=model
+        ):
+            first = cache.capture_snapshot(
+                "doc-serialized-refresh",
+                font,
+                revision_provider=lambda: ("stable", 1),
+            )
+
+        with mock.patch.dict(
+            os.environ, {"GLYPHS_MCP_VERIFY_SERIALIZED_SOURCE": "0"}
+        ), mock.patch.object(
+            document_adapter, "_native_persistent_font_model", return_value=model
+        ) as persistent, mock.patch.object(
+            document_adapter,
+            "_font_model_with_glyphs",
+            side_effect=AssertionError(
+                "an unscoped refresh switched away from serialized canonical state"
+            ),
+        ):
+            second = cache.capture_snapshot(
+                "doc-serialized-refresh",
+                font,
+                revision_provider=lambda: ("stable", 2),
+            )
+
+        persistent.assert_called_once()
+        self.assertEqual(
+            second.document_fingerprint, first.document_fingerprint
+        )
+
+    def test_host_finalizes_bulk_snapshot_after_main_thread_callback_returns(self) -> None:
+        class TrackingExecutor:
+            def __init__(self):
+                self.active = False
+
+            def run(self, callback):
+                self.active = True
+                try:
+                    return callback()
+                finally:
+                    self.active = False
+
+        font = _TransactionalFont()
+        expected = native_font_to_model(font)
+        executor = TrackingExecutor()
+        host = GlyphsDocumentHost(_App(font), executor=executor)
+        document_id = host.list_documents()[0].document_id
+        original = host._canonical_model_cache.finalize_persistent_capture
+
+        def finalize(draft):
+            self.assertFalse(executor.active)
+            return original(draft)
+
+        with mock.patch.dict(
+            os.environ, {"GLYPHS_MCP_VERIFY_SERIALIZED_SOURCE": "1"}
+        ), mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value=expected,
+        ), mock.patch.object(
+            host._canonical_model_cache,
+            "finalize_persistent_capture",
+            side_effect=finalize,
+        ) as finalized:
+            snapshot = host.capture_snapshot(document_id)
+
+        self.assertEqual(snapshot.document_fingerprint, fingerprint_model(expected))
+        finalized.assert_called_once()
+
+    def test_invalidated_live_capture_streams_the_predicted_impact(self) -> None:
+        font = _TransactionalFont()
+        glyph = SimpleNamespace(
+            name="A",
+            export=True,
+            mastersCompatible=True,
+            layers=[],
+            lastChange="revision-1",
+            changeCount=lambda: 0,
+        )
+        font.glyphs = [glyph]
+        before = native_font_to_model(font)
+        expected_model = copy.deepcopy(before)
+        expected_model["glyphs"]["A"]["export"] = False
+        expected = document_adapter.CanonicalSnapshot.from_model(expected_model)
+        changes = diff_models(before, expected_model)
+        cache = document_adapter._RevisionBoundGlyphModelCache()
+        revision = [1]
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            side_effect=AssertionError("ordinary capture used serialized audit source"),
+        ):
+            cache.capture_snapshot(
+                "doc-stream",
+                font,
+                revision_provider=lambda: ("revision", revision[0]),
+            )
+        glyph.export = False
+        revision[0] += 1
+        cache.invalidate_impact(
+            "doc-stream",
+            document_adapter.CanonicalImpact.from_change_set(before, changes),
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            side_effect=AssertionError("warm verification used serialized audit source"),
+        ) as persistent, mock.patch.object(
+            document_adapter,
+            "_font_model_with_glyphs",
+            side_effect=AssertionError("warm verification rebuilt every root"),
+        ):
+            captured = cache.capture_snapshot(
+                "doc-stream",
+                font,
+                expected=expected,
+                revision_provider=lambda: ("revision", revision[0]),
+            )
+
+        self.assertEqual(captured.document_fingerprint, expected.document_fingerprint)
+        persistent.assert_not_called()
+
+    def test_streaming_fallback_detects_an_unexpected_live_glyph_change(self) -> None:
+        font = _TransactionalFont()
+        glyph = SimpleNamespace(
+            name="A",
+            unicode="0041",
+            export=True,
+            mastersCompatible=True,
+            layers=[],
+            lastChange="revision-1",
+            changeCount=lambda: 0,
+        )
+        font.glyphs = [glyph]
+        before = native_font_to_model(font)
+        expected_model = copy.deepcopy(before)
+        expected_model["glyphs"]["A"]["export"] = False
+        expected = document_adapter.CanonicalSnapshot.from_model(expected_model)
+        changes = diff_models(before, expected_model)
+        cache = document_adapter._RevisionBoundGlyphModelCache()
+        revision = [1]
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            side_effect=AssertionError("ordinary capture used serialized audit source"),
+        ) as persistent:
+            cache.capture_snapshot(
+                "doc-stream-authoritative",
+                font,
+                revision_provider=lambda: ("revision", revision[0]),
+            )
+            # Simulate an unexpected sibling field mutation accompanying the
+            # requested export edit.
+            glyph.export = False
+            glyph.unicode = "0065"
+            revision[0] += 1
+            cache.invalidate_impact(
+                "doc-stream-authoritative",
+                document_adapter.CanonicalImpact.from_change_set(before, changes),
+            )
+            captured = cache.capture_snapshot(
+                "doc-stream-authoritative",
+                font,
+                expected=expected,
+                revision_provider=lambda: ("revision", revision[0]),
+            )
+
+        self.assertNotEqual(captured.document_fingerprint, expected.document_fingerprint)
+        self.assertEqual(captured.glyph_shards["A"]["unicode"], "0065")
+        persistent.assert_not_called()
+
+    def test_authoritative_glyph_resolver_reuses_one_font_serializer_capture(self) -> None:
+        font = _TransactionalFont()
+        glyph_a = SimpleNamespace(name="A")
+        glyph_b = SimpleNamespace(name="B")
+        expected_a = {"name": "A", "layers": [], "export": False}
+        expected_b = {"name": "B", "layers": [], "export": True}
+
+        with mock.patch.dict(
+            os.environ, {"GLYPHS_MCP_VERIFY_SERIALIZED_SOURCE": "1"}
+        ), mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value={"glyphs": {"A": expected_a, "B": expected_b}},
+        ) as complete, mock.patch.object(
+            document_adapter,
+            "_glyph_model",
+            side_effect=AssertionError("projected getters are not authoritative"),
+        ):
+            resolver = document_adapter._AuthoritativeGlyphShardResolver(font)
+            captured_a = resolver.capture(
+                glyph_a, layer_order_reference=expected_a
+            )
+            captured_b = resolver.capture(
+                glyph_b, layer_order_reference=expected_b
+            )
+
+        self.assertEqual(captured_a, expected_a)
+        self.assertEqual(captured_b, expected_b)
+        self.assertIsNot(captured_a, expected_a)
+        self.assertIsNot(captured_b, expected_b)
+        complete.assert_called_once_with(
+            font, instance_ids=None, document_path=None
+        )
+
+    def test_glyph_metadata_impact_does_not_expand_component_dependencies(self) -> None:
+        model = {
+            "glyphs": {
+                "A": {"layers": {"M1": {"components": []}}},
+                "Aacute": {
+                    "layers": {"M1": {"components": [{"name": "A"}]}}
+                },
+            }
+        }
+
+        impact = document_adapter.CanonicalImpact.from_paths(
+            model, [("glyphs", "A", "export")]
+        )
+
+        self.assertEqual(impact.glyph_names, ("A",))
+
+    def test_layer_geometry_impact_retains_transitive_component_dependencies(self) -> None:
+        model = {
+            "glyphs": {
+                "A": {"layers": {"M1": {"components": []}}},
+                "Aacute": {
+                    "layers": {"M1": {"components": [{"name": "A"}]}}
+                },
+            }
+        }
+
+        impact = document_adapter.CanonicalImpact.from_paths(
+            model, [("glyphs", "A", "layers", "M1", "shapes")]
+        )
+
+        self.assertEqual(impact.glyph_names, ("A", "Aacute"))
+
+    def test_native_data_bridge_uses_the_bounded_buffer_not_object_iteration(self) -> None:
+        payload = b'{"glyphs":{}}'
+
+        class Pointer:
+            def as_buffer(self, length):
+                self.length = length
+                return memoryview(payload)
+
+        class NativeData:
+            def __init__(self):
+                self.pointer = Pointer()
+
+            def length(self):
+                return len(payload)
+
+            def bytes(self):
+                return self.pointer
+
+            def __bytes__(self):
+                raise AssertionError("unbounded NSData iteration was used")
+
+        data = NativeData()
+        self.assertEqual(document_adapter._native_data_bytes(data), payload)
+        self.assertEqual(data.pointer.length, len(payload))
+
+    def test_settings_replay_uses_the_owned_font_mapping_setter(self) -> None:
+        class Font:
+            def __init__(self):
+                self._settings = {}
+                self.read_calls = []
+
+            def readSettingDict_(self, value):
+                self.read_calls.append(copy.deepcopy(value))
+                self._settings = copy.deepcopy(value)
+
+        font = Font()
+        target = {"colorSpace": "apple-rgb", "dependencies": {}}
+        document_adapter._apply_settings_model(font, {}, target)
+
+        self.assertEqual(font._settings, target)
+        self.assertEqual(font.read_calls, [target])
+
+    def test_detached_scoped_capture_streams_impact_and_reuses_unchanged_shards(self) -> None:
+        source = {
+            "font": {"familyName": "Persistent"},
+            "features": [{"id": "liga", "name": "liga", "code": "sub f i by fi;"}],
+            "glyphs": {
+                "A": {"id": "glyph:A", "name": "A", "export": True, "layers": []},
+                "B": {"id": "glyph:B", "name": "B", "export": True, "layers": []},
+            },
+            "glyphOrder": ["A", "B"],
+        }
+        glyph_a = SimpleNamespace(name="A", export=False, mastersCompatible=True, layers=[])
+        glyph_b = SimpleNamespace(name="B", export=True, mastersCompatible=True, layers=[])
+        font = SimpleNamespace(glyphs=[glyph_a, glyph_b])
+        impact = document_adapter.CanonicalImpact.from_paths(
+            source, [("glyphs", "A", "export")]
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            side_effect=AssertionError("scoped verification rebuilt the full tree"),
+        ):
+            captured = document_adapter._scoped_font_model(
+                font,
+                source,
+                MutationScope(("glyphs",), ("A",)),
+                impact=impact,
+                expected_model=source,
+            )
+
+        self.assertFalse(captured["glyphs"]["A"]["export"])
+        self.assertIs(captured["glyphs"]["B"], source["glyphs"]["B"])
+        self.assertIs(captured["features"], source["features"])
+
+    def test_detached_scoped_capture_returns_a_streamed_snapshot_for_snapshot_source(self) -> None:
+        source_model = {
+            "font": {"familyName": "Persistent"},
+            "features": [{"id": "liga", "name": "liga", "code": "sub f i by fi;"}],
+            "glyphs": {
+                "A": {"id": "glyph:A", "name": "A", "export": True, "layers": []},
+                "B": {"id": "glyph:B", "name": "B", "export": True, "layers": []},
+            },
+            "glyphOrder": ["A", "B"],
+        }
+        source = document_adapter.CanonicalSnapshot.from_shards(
+            {name: value for name, value in source_model.items() if name != "glyphs"},
+            source_model["glyphs"],
+        )
+        glyph_a = SimpleNamespace(name="A", export=False, mastersCompatible=True, layers=[])
+        glyph_b = SimpleNamespace(name="B", export=True, mastersCompatible=True, layers=[])
+        font = SimpleNamespace(glyphs=[glyph_a, glyph_b])
+        impact = document_adapter.CanonicalImpact.from_paths(
+            source, [("glyphs", "A", "export")]
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            side_effect=AssertionError("scoped verification rebuilt the full tree"),
+        ):
+            captured = document_adapter._scoped_font_model(
+                font,
+                source,
+                MutationScope(("glyphs",), ("A",)),
+                impact=impact,
+                expected_model=source,
+            )
+
+        self.assertIsInstance(captured, document_adapter.CanonicalSnapshot)
+        self.assertEqual(fingerprint_model(captured), captured.document_fingerprint)
+        self.assertIs(captured.glyph_shards["B"], source.glyph_shards["B"])
+
+    def test_detached_clone_normalization_projects_copy_drift_without_native_replay(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        observed = {
+            "settings": {},
+            "kerning": {"context": {}},
+            "masters": [{"id": "M1", "visible": False}],
+            "glyphs": {},
+        }
+        source = {
+            "settings": {"colorSpace": 1},
+            "kerning": {"context": {"M1": {}}},
+            "masters": [{"id": "M1", "visible": True}],
+            "glyphs": {},
+        }
+
+        with mock.patch.object(
+            document_adapter,
+            "_apply_target_model",
+            side_effect=AssertionError("clone normalization must be projection-only"),
+        ):
+            reconciled, projection = host._reconcile_detached_clone(
+                font,
+                source,
+                observed,
+            )
+
+        self.assertIs(reconciled, source)
+        self.assertEqual(
+            projection.normalize(observed),
+            source,
+        )
+
+    def test_detached_clone_projection_preserves_requested_and_unexpected_values(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        source = {"settings": {"colorSpace": 0}, "glyphs": {}}
+        observed = {"settings": {"colorSpace": 1}, "glyphs": {}}
+
+        _, projection = host._reconcile_detached_clone(font, source, observed)
+
+        self.assertEqual(
+            projection.normalize(
+                observed,
+                protected_paths=(("settings", "colorSpace"),),
+            ),
+            observed,
+        )
+        unexpected = {"settings": {"colorSpace": 2}, "glyphs": {}}
+        self.assertEqual(projection.normalize(unexpected), unexpected)
+
+    def test_detached_clone_normalization_never_replays_derived_diagnostics(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        observed = {
+            "settings": {},
+            "glyphs": {
+                "A": {
+                    "name": "A",
+                    "layers": [{"id": "M1", "hasAlignedWidth": False}],
+                }
+            },
+        }
+        source = {
+            "settings": {"colorSpace": "apple-rgb"},
+            "glyphs": {
+                "A": {
+                    "name": "A",
+                    "layers": [{"id": "M1", "hasAlignedWidth": True}],
+                }
+            },
+        }
+
+        with mock.patch.object(
+            document_adapter,
+            "_apply_target_model",
+            side_effect=AssertionError("derived normalization must be projection-only"),
+        ):
+            reconciled, projection = host._reconcile_detached_clone(
+                font, source, observed
+            )
+
+        self.assertIs(reconciled, source)
+        self.assertEqual(
+            [change.path for change in projection.artifacts.changes],
+            [("settings", "colorSpace")],
+        )
+
+    def test_snapshot_clone_reconciliation_reuses_shards_without_whole_tree_projection(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        source = CanonicalSnapshot.from_model(
+            {
+                "settings": {"colorSpace": "apple-rgb"},
+                "glyphs": {
+                    "A": {
+                        "name": "A",
+                        "mastersCompatible": True,
+                        "layers": [{"id": "M1", "hasAlignedWidth": True}],
+                    },
+                    "B": {"name": "B", "layers": []},
+                },
+            }
+        )
+        observed = source.materialize()
+        observed["settings"] = {}
+        observed["glyphs"]["A"]["mastersCompatible"] = False
+
+        with mock.patch.object(
+            document_adapter,
+            "semantic_identity_document",
+            side_effect=AssertionError("snapshot reconciliation projected the whole tree"),
+        ):
+            reconciled, projection = host._reconcile_detached_clone(
+                font, source, observed
+            )
+
+        self.assertIs(reconciled, source)
+        self.assertEqual(
+            [change.path for change in projection.artifacts.changes],
+            [("settings", "colorSpace")],
+        )
+
+    def test_snapshot_clone_reconciliation_learns_hidden_artifacts_once_per_source(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        source = CanonicalSnapshot.from_model(
+            {
+                "settings": {"colorSpace": "apple-rgb"},
+                "glyphs": {
+                    "A": {
+                        "name": "A",
+                        "layers": [{
+                            "id": "M1",
+                            "background": {
+                                "hints": [{"id": "hint:corner:0", "origin": None}]
+                            },
+                        }],
+                    },
+                },
+            }
+        )
+        scoped_observed = source
+        complete_clone = source.materialize()
+        complete_clone["glyphs"]["A"]["layers"][0]["background"]["hints"][0][
+            "origin"
+        ] = [1, 1]
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value=complete_clone,
+        ) as persistent:
+            reconciled, projection = host._reconcile_detached_clone(
+                font,
+                source,
+                scoped_observed,
+                document_id="doc-clone-artifacts",
+            )
+            _again, cached = host._reconcile_detached_clone(
+                font,
+                source,
+                scoped_observed,
+                document_id="doc-clone-artifacts",
+            )
+
+        self.assertIs(reconciled, source)
+        self.assertEqual(
+            [change.path for change in projection.artifacts.changes],
+            [
+                (
+                    "glyphs",
+                    "A",
+                    "layers",
+                    "M1",
+                    "background",
+                    "hints",
+                    "hint:corner:0",
+                    "origin",
+                )
+            ],
+        )
+        self.assertIs(cached, projection)
+        persistent.assert_called_once()
+
+    def test_complete_clone_capture_is_not_recaptured_during_reconciliation(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        source = CanonicalSnapshot.from_model(
+            {
+                "settings": {"colorSpace": "apple-rgb"},
+                "glyphs": {"A": {"name": "A", "layers": []}},
+            }
+        )
+        complete_observed = source.materialize()
+        complete_observed["settings"] = {}
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            side_effect=AssertionError("complete clone capture was repeated"),
+        ):
+            reconciled, projection = host._reconcile_detached_clone(
+                font,
+                source,
+                complete_observed,
+                document_id="doc-complete-clone",
+                observed_is_complete=True,
+            )
+
+        self.assertIs(reconciled, source)
+        self.assertEqual(
+            [change.path for change in projection.artifacts.changes],
+            [("settings", "colorSpace")],
+        )
+
+    def test_master_order_does_not_protect_unmodified_copy_userdata_artifacts(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        source = CanonicalSnapshot.from_model(
+            {
+                "masters": [{"id": "M1", "userData": {}}],
+                "glyphs": {},
+            }
+        )
+        complete_observed = source.materialize()
+        complete_observed["masters"][0]["userData"] = {
+            "GSCornerRadius": 15,
+            "GSExtrudeAngle": 30,
+            "GSExtrudeOffset": 15,
+        }
+
+        reconciled, projection = host._reconcile_detached_clone(
+            font,
+            source,
+            complete_observed,
+            document_id="doc-copy-userdata",
+            observed_is_complete=True,
+        )
+        normalized = projection.normalize(
+            complete_observed,
+            protected_paths=(("masters", "$order"),),
+        )
+
+        self.assertIs(reconciled, source)
+        self.assertEqual(normalized["masters"][0]["userData"], {})
+        self.assertEqual(
+            [change.path for change in projection.artifacts.changes],
+            [
+                ("masters", "M1", "userData", "GSCornerRadius"),
+                ("masters", "M1", "userData", "GSExtrudeAngle"),
+                ("masters", "M1", "userData", "GSExtrudeOffset"),
+            ],
+        )
+
+    def test_userdata_capture_bypasses_broken_dict_proxy_overrides(self) -> None:
+        class GlyphsDictionaryProxy(dict):
+            def keys(self):
+                raise AttributeError("dict proxy has no Foundation allKeys")
+
+            def get(self, key, default=None):
+                raise AttributeError("dict proxy has no Foundation objectForKey")
+
+            def __iter__(self):
+                raise AttributeError("dict proxy iteration is unavailable")
+
+        owner = SimpleNamespace(
+            userData=GlyphsDictionaryProxy(
+                {
+                    "GSCornerRadius": 15,
+                    "nested": GlyphsDictionaryProxy({"value": 30}),
+                }
+            )
+        )
+
+        self.assertEqual(
+            document_adapter._user_data_model(owner),
+            {"GSCornerRadius": 15, "nested": {"value": 30}},
+        )
+
+    def test_userdata_capture_prefers_the_native_persistent_selector(self) -> None:
+        wrapper_projection = {}
+        native_persistent_value = {"GSCornerRadius": 15}
+        owner = SimpleNamespace(
+            userData=wrapper_projection,
+            pyobjc_instanceMethods=SimpleNamespace(
+                userData=lambda: native_persistent_value
+            ),
+        )
+
+        self.assertEqual(
+            document_adapter._user_data_model(owner),
+            native_persistent_value,
+        )
+
+    def test_snapshot_clone_reconciliation_projects_serialized_master_layer_order(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        source = CanonicalSnapshot.from_model(
+            {
+                "masters": [{"id": "M1"}, {"id": "M2"}],
+                "glyphs": {
+                    "A": {
+                        "name": "A",
+                        "layers": [
+                            {"id": "M2", "isMasterLayer": True},
+                            {"id": "M1", "isMasterLayer": True},
+                            {"id": "special", "isMasterLayer": False},
+                        ],
+                    },
+                },
+            }
+        )
+        serialized_clone = source.materialize()
+        serialized_clone["glyphs"]["A"]["layers"] = [
+            serialized_clone["glyphs"]["A"]["layers"][1],
+            serialized_clone["glyphs"]["A"]["layers"][0],
+            serialized_clone["glyphs"]["A"]["layers"][2],
+        ]
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value=serialized_clone,
+        ):
+            reconciled, projection = host._reconcile_detached_clone(
+                font,
+                source,
+                source,
+                document_id="doc-serialized-order",
+            )
+
+        self.assertIs(reconciled, source)
+        self.assertEqual(projection.artifacts.changes, ())
+
+    def test_reconciliation_retains_an_immutable_expected_snapshot(self) -> None:
+        snapshot = CanonicalSnapshot.from_model(
+            {
+                "font": {"familyName": "Snapshot"},
+                "glyphs": {
+                    "A": {"name": "A", "layers": [{"id": "M1"}]},
+                },
+            }
+        )
+
+        with mock.patch(
+            "glyphs_mcp_v2.adapters.document.copy.deepcopy",
+            side_effect=AssertionError("immutable expected snapshot was copied"),
+        ):
+            retained = document_adapter._retain_canonical_model(snapshot)
+
+        self.assertIs(retained, snapshot)
+
     def test_glyph_and_kerning_identity_is_semantic_not_native(self) -> None:
         def glyph(name, native_id):
             return SimpleNamespace(
@@ -770,9 +2905,53 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(model["glyphs"]["V"]["id"], "glyph_V")
         self.assertEqual(
             model["kerning"],
-            {"master-1": {"glyph_A": {"glyph_V": -80.0}}},
+            {
+                "ltr": {"master-1": {"glyph_A": {"glyph_V": -80.0}}},
+                "rtl": {},
+                "vertical": {},
+                "context": {},
+            },
         )
         self.assertEqual(document_adapter._native_kerning_key(font, "glyph_A"), "A")
+
+    def test_objc_kerning_dictionary_uses_the_same_semantic_boundary(self) -> None:
+        class ObjCMapping:
+            def __init__(self, values):
+                self.values = values
+
+            def keys(self):
+                return list(self.values)
+
+            def objectForKey_(self, key):
+                return self.values[key]
+
+        glyphs = [
+            SimpleNamespace(name="A", id="native-A"),
+            SimpleNamespace(name="V", id="native-V"),
+        ]
+        font = SimpleNamespace(
+            glyphs=glyphs,
+            kerning=ObjCMapping(
+                {
+                    "M1": ObjCMapping(
+                        {
+                            "native-A": ObjCMapping({"native-V": -80}),
+                            "@MMK_L_A": ObjCMapping({"@MMK_R_V": -70}),
+                        }
+                    )
+                }
+            ),
+        )
+
+        self.assertEqual(
+            document_adapter._kerning_domain_model(font, "kerning"),
+            {
+                "M1": {
+                    "glyph_A": {"glyph_V": -80.0},
+                    "@MMK_L_A": {"@MMK_R_V": -70.0},
+                }
+            },
+        )
 
     def test_recreated_native_glyph_id_does_not_change_canonical_model(self) -> None:
         def model(native_prefix):
@@ -822,7 +3001,13 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
     def test_opentype_code_fields_apply_in_place_without_collection_replacement(self) -> None:
         feature = SimpleNamespace(
-            name="liga", code="sub f i by fi;", automatic=False, disabled=False
+            name="liga",
+            tag="liga",
+            code="sub f i by fi;",
+            automatic=False,
+            disabled=False,
+            notes="before",
+            labels=[{"language": "en", "value": "Ligatures"}],
         )
         font = _TransactionalFont()
         font.features = [feature]
@@ -830,6 +3015,10 @@ class V2DocumentAdapterTests(unittest.TestCase):
         after = copy.deepcopy(before)
         after["features"][0]["code"] = "sub f f i by ffi;"
         after["features"][0]["disabled"] = True
+        after["features"][0]["notes"] = "after"
+        after["features"][0]["labels"] = [
+            {"language": "fr", "value": "Ligatures"}
+        ]
         changes = diff_models(before, after)
         host = GlyphsDocumentHost(_App(font), executor=_Immediate())
 
@@ -839,6 +3028,317 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertIs(font.features[0], feature)
         self.assertEqual(feature.code, "sub f f i by ffi;")
         self.assertTrue(feature.disabled)
+        self.assertEqual(feature.notes, "after")
+        self.assertEqual(feature.labels[0]["language"], "fr")
+
+    def test_feature_labels_use_the_glyphs4_singular_info_value_contract(self) -> None:
+        class Value:
+            def __init__(self, language="dflt", value=""):
+                self.languageTag = language
+                self.value = value
+
+        class Localized:
+            def __init__(self):
+                self.key = ""
+                self.value = None
+                self.values = []
+
+        class Single:
+            def __init__(self):
+                self.key = ""
+                self.value = None
+
+        class Feature:
+            def __init__(self):
+                self.name = "ss01"
+                self.code = "sub a by a.ss01;"
+                self.automatic = False
+                self.disabled = False
+                self.notes = ""
+                self._label = Localized()
+                self._label.values = [Value("dflt", "First")]
+
+            def label(self):
+                return self._label
+
+            def setLabel_(self, value):
+                self._label = value
+
+        feature = Feature()
+        font = _TransactionalFont()
+        font.features = [feature]
+        before = native_font_to_model(font)
+        self.assertEqual(
+            before["features"][0]["labels"],
+            [{"language": "dflt", "value": "First"}],
+        )
+        after = copy.deepcopy(before)
+        after["features"][0]["labels"] = [
+            {"language": "FRA", "value": "Première"}
+        ]
+        glyphs_module = SimpleNamespace(
+            GSInfoValue=Value,
+            GSInfoValueLocalized=Localized,
+            GSInfoValueSingle=Single,
+        )
+
+        with mock.patch.dict(sys.modules, {"GlyphsApp": glyphs_module}):
+            document_adapter._apply_target_model(
+                font, before, after, diff_models(before, after)
+            )
+
+        self.assertEqual(len(feature._label.values), 1)
+        self.assertEqual(feature._label.values[0].languageTag, "FRA")
+        self.assertEqual(feature._label.values[0].value, "Première")
+
+    def test_opentype_replay_uses_each_registered_native_field_set(self) -> None:
+        class NativeClass:
+            def __init__(self):
+                self.name = "MCP_A"
+                self.code = "A"
+                self.automatic = False
+                self.disabled = False
+                self.notes = None
+
+            @property
+            def tag(self):
+                raise AssertionError("GSClass has no feature tag")
+
+            @tag.setter
+            def tag(self, value):
+                raise AssertionError("GSClass must never receive a feature tag")
+
+        native = NativeClass()
+        font = _TransactionalFont()
+        font.classes = [native]
+        before = native_font_to_model(font)
+        after = copy.deepcopy(before)
+        after["classes"][0]["code"] = "A A"
+        after["classes"][0]["notes"] = "reviewed"
+
+        document_adapter._apply_target_model(
+            font, before, after, diff_models(before, after)
+        )
+
+        self.assertIs(font.classes[0], native)
+        self.assertEqual(native.code, "A A")
+        self.assertEqual(native.notes, "reviewed")
+
+    def test_registered_v6_root_records_replay_through_one_target_model_path(self) -> None:
+        font = _TransactionalFont()
+        font.customParameters = []
+        font.properties = []
+        font.userData = {}
+        font.settings = {}
+        font.metrics = []
+        font.stems = []
+        font.numbers = []
+        before = native_font_to_model(font)
+        after = copy.deepcopy(before)
+        after["axes"] = [{
+            "id": "wght",
+            "tag": "wght",
+            "name": "Weight",
+            "names": [],
+            "default": 400,
+            "hidden": False,
+            "userData": {"source": "v6"},
+        }]
+        for root, kind, name, metric_type in (
+            ("metrics", "metric", "Cap Height", 2),
+            ("stems", "stem", "Vertical", None),
+            ("numbers", "number", "Overshoot", None),
+        ):
+            semantic = "{}:{}:False:".format(metric_type, name)
+            after[root] = [{
+                "id": deterministic_occurrence_id(kind, semantic, 0),
+                "type": metric_type,
+                "name": name,
+                "horizontal": False,
+                "filter": None,
+            }]
+        after["font"]["customParameters"] = [{
+            "id": deterministic_occurrence_id(
+                "parameter", "Use Typo Metrics", 0
+            ),
+            "name": "Use Typo Metrics",
+            "value": True,
+            "disabled": False,
+        }]
+        after["font"]["userData"] = {"com.example.v6": {"enabled": True}}
+        after["settings"] = {
+            **before["settings"],
+            "disablesNiceNames": True,
+            "keyboardIncrement": 2,
+        }
+
+        def construct(kind, name=""):
+            if kind == "axis":
+                return SimpleNamespace(
+                    axisTag="", name="", names=[], default=None,
+                    hidden=False, userData={},
+                )
+            if kind in {"metric", "stem", "number"}:
+                return SimpleNamespace(
+                    name="", type=None, horizontal=False, filter=None
+                )
+            if kind == "customParameter":
+                return SimpleNamespace(name="", value=None, disabled=False)
+            self.fail("unexpected v6 entity kind {}".format(kind))
+
+        with mock.patch.object(
+            document_adapter, "_construct_native_entity", side_effect=construct
+        ):
+            document_adapter._apply_target_model(
+                font, before, after, diff_models(before, after)
+            )
+
+        self.assertEqual(native_font_to_model(font), after)
+
+    def test_directional_and_contextual_kerning_replay_exactly(self) -> None:
+        def glyph(name):
+            return SimpleNamespace(
+                name=name,
+                id="native-{}".format(name),
+                lastChange="revision-1",
+                changeCount=lambda: 0,
+                mastersCompatible=True,
+                layers=[],
+            )
+
+        font = _TransactionalFont()
+        font.glyphs = [glyph("A"), glyph("V")]
+        font.kerning = {}
+        font.kerningRTL = {}
+        font.kerningVertical = {}
+        font.kerningContext = {}
+
+        def set_pair(master, left, right, value, direction=0):
+            domain = {0: font.kerning, 1: font.kerningRTL, 2: font.kerningVertical}[direction]
+            domain.setdefault(master, {}).setdefault(left, {})[right] = value
+
+        font.setKerningForPair = set_pair
+        target = {
+            "ltr": {"M1": {"glyph_A": {"glyph_V": -80}}},
+            "rtl": {"M1": {"glyph_V": {"glyph_A": -40}}},
+            "vertical": {"M1": {"glyph_A": {"glyph_V": -20}}},
+            "context": {"M1": {"A V": -10}},
+        }
+
+        document_adapter._replace_kerning(font, target)
+
+        self.assertEqual(document_adapter._kerning_model(font), target)
+
+    def test_absent_native_kerning_context_matches_the_empty_serialized_domain(self) -> None:
+        font = SimpleNamespace(
+            glyphs=[],
+            kerning={},
+            kerningRTL={},
+            kerningVertical={},
+            kerningContext=None,
+        )
+
+        self.assertEqual(document_adapter._kerning_model(font)["context"], {})
+
+    def test_guide_attributes_have_one_canonical_capture_and_replay_name(self) -> None:
+        guide = SimpleNamespace(
+            name="cap",
+            type=0,
+            position=(0, 700),
+            hasSlope=False,
+            attributes={"color": [1, 0, 0, 1]},
+        )
+        captured = document_adapter._ordered_records(
+            SimpleNamespace(guides=[guide]),
+            "guides",
+            kind="guide",
+            fields=("attr", "name", "pos", "slope", "type"),
+        )
+        self.assertEqual(captured[0]["attr"], {"color": [1, 0, 0, 1]})
+        self.assertFalse(captured[0]["slope"])
+        target = copy.deepcopy(captured)
+        target[0]["attr"] = {"color": [0, 1, 0, 1]}
+        target[0]["slope"] = True
+        document_adapter._apply_ordered_record_collection(
+            SimpleNamespace(guides=[guide]),
+            "guides",
+            captured,
+            target,
+            kind="guide",
+            fields={
+                "attr": "attributes",
+                "name": "name",
+                "pos": "position",
+                "slope": "hasSlope",
+                "type": "type",
+            },
+        )
+        self.assertEqual(guide.attributes, {"color": [0, 1, 0, 1]})
+        self.assertTrue(guide.hasSlope)
+
+    def test_nested_glyph_replay_does_not_rewrite_canonical_parent_order(self) -> None:
+        glyph = SimpleNamespace(name="A", export=True)
+        font = SimpleNamespace(glyphs=[glyph])
+        before = {
+            "glyphs": {"A": {"name": "A", "export": True}},
+            "glyphOrder": ["A"],
+        }
+        after = copy.deepcopy(before)
+        after["glyphs"]["A"]["export"] = False
+        changes = diff_models(before, after)
+
+        with mock.patch.object(document_adapter, "_apply_glyph_order") as apply_order:
+            document_adapter._apply_target_model(
+                font,
+                before,
+                after,
+                changes,
+            )
+
+        self.assertFalse(glyph.export)
+        apply_order.assert_not_called()
+
+    def test_layer_replay_uses_one_canonical_source_and_one_outer_verifier(self) -> None:
+        native = SimpleNamespace(
+            layerId="L1",
+            associatedMasterId="M1",
+            name="Regular",
+            isMasterLayer=True,
+        )
+        glyph = SimpleNamespace(layers=[native])
+        font = SimpleNamespace(axes=[])
+        before_layer = {
+            "id": "L1",
+            "masterId": "M1",
+            "name": "Regular",
+            "visible": True,
+        }
+        after_layer = {**before_layer, "visible": False}
+        current = {"layers": [before_layer]}
+        target = {"layers": [after_layer]}
+
+        with mock.patch.object(
+            document_adapter, "_apply_layer_canonical_pass"
+        ) as apply_pass, mock.patch.object(
+            document_adapter,
+            "_layer_model",
+            side_effect=AssertionError("ordinary replay must not recapture a second model"),
+        ):
+            document_adapter._apply_layer_collection(
+                font,
+                glyph,
+                "A",
+                current,
+                target,
+            )
+
+        apply_pass.assert_called_once_with(
+            native,
+            before_layer,
+            after_layer,
+            layer_root=("glyphs", "A", "layers", "L1"),
+            replacement_roots=(),
+        )
 
     def test_structural_opentype_replay_preserves_entities_and_order(self) -> None:
         liga = SimpleNamespace(
@@ -958,6 +3458,31 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(collection.atomic_assignment_count, 1)
         self.assertEqual(collection.slice_assignment_count, 0)
 
+    def test_collection_reorder_can_permute_identity_storage_in_one_notification(self) -> None:
+        first = SimpleNamespace(name="First")
+        second = SimpleNamespace(name="Second")
+        third = SimpleNamespace(name="Third")
+        collection = _AtomicCollectionProxy([first, second, third])
+        storage = _MutableIdentityStorage([first, second, third])
+        owner = _CollectionChangeOwner()
+
+        document_adapter._replace_native_collection_order(
+            collection,
+            [third, first, second],
+            identity_storage=storage,
+            notification_owner=owner,
+            notification_key="fontMasters",
+        )
+
+        self.assertEqual(storage.values, [third, first, second])
+        self.assertEqual(storage.exchanges, [(0, 2), (1, 2)])
+        self.assertEqual(
+            owner.notifications,
+            [("will", "fontMasters"), ("did", "fontMasters")],
+        )
+        self.assertEqual(collection.atomic_assignment_count, 0)
+        self.assertEqual(collection.slice_assignment_count, 0)
+
     def test_master_lifecycle_replay_preserves_native_only_master_and_layer_state(self) -> None:
         font = _master_lifecycle_font()
         before = native_font_to_model(font)
@@ -970,19 +3495,30 @@ class V2DocumentAdapterTests(unittest.TestCase):
                     "masterId": "master_text",
                     "name": "Text",
                     "axes": [{"tag": "wght", "internal": 125}],
+                    "index": 0,
                 }
             ],
         )
         after = build.change_set.apply(before)
 
-        document_adapter._apply_target_model(
-            font,
-            before,
-            after,
-            build.change_set,
-            capabilities=build.capabilities,
-            execution_context=build.execution_context,
-        )
+        with mock.patch.object(
+            document_adapter,
+            "_replace_glyph_layer_collection",
+            wraps=document_adapter._replace_glyph_layer_collection,
+        ) as replace_layers:
+            document_adapter._apply_target_model(
+                font,
+                before,
+                after,
+                build.change_set,
+                capabilities=build.capabilities,
+                execution_context=build.execution_context,
+            )
+
+        # The master lifecycle attachment already established membership.
+        # Layer replay must not perform a second whole-collection assignment
+        # when only Glyphs' root-owned master prefix presentation differs.
+        replace_layers.assert_not_called()
 
         copied_master = document_adapter._master_by_id(font, "master_text")
         self.assertEqual(copied_master.native_only, "master-secret")
@@ -1034,6 +3570,217 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 for glyph in font.glyphs
             )
         )
+
+    def test_layer_field_replay_does_not_reassign_unchanged_collection_order(self) -> None:
+        font = _master_lifecycle_font()
+        glyph = font.glyphs[0]
+        current = document_adapter._glyph_model(glyph)
+        target = copy.deepcopy(current)
+        target["layers"][0]["visible"] = not bool(
+            target["layers"][0].get("visible")
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_replace_glyph_layer_collection",
+            side_effect=AssertionError("unchanged layer order was reassigned"),
+        ) as replace_layers, mock.patch.object(
+            document_adapter,
+            "_reconcile_layer_to_canonical_target",
+        ):
+            document_adapter._apply_layer_collection(
+                font,
+                glyph,
+                glyph.name,
+                current,
+                target,
+            )
+
+        replace_layers.assert_not_called()
+
+    def test_layer_field_replay_does_not_claim_host_master_order(self) -> None:
+        regular = _MasterLifecycleLayer(
+            "master-regular", "Regular", native_only="regular"
+        )
+        condensed = _MasterLifecycleLayer(
+            "master-condensed", "Condensed", native_only="condensed"
+        )
+        special = _MasterLifecycleLayer(
+            "special-layer", "Special", native_only="special"
+        )
+        special.isMasterLayer = False
+        special.isSpecialLayer = True
+        special.isBackupLayer = True
+        special.associatedMasterId = "master-regular"
+        glyph = _MasterLifecycleGlyph(
+            "A", [condensed, regular, special]
+        )
+        font = SimpleNamespace(axes=[], glyphs=[glyph], masters=[])
+        glyph.font = font
+        current = {
+            "layers": [
+                document_adapter._layer_model(regular),
+                document_adapter._layer_model(condensed),
+                document_adapter._layer_model(special),
+            ]
+        }
+        target = copy.deepcopy(current)
+        target["layers"][2]["visible"] = True
+
+        with mock.patch.object(
+            document_adapter,
+            "_replace_glyph_layer_collection",
+            side_effect=AssertionError(
+                "a scalar replay attempted to own master-layer order"
+            ),
+        ) as replace_layers:
+            document_adapter._apply_layer_collection(
+                font,
+                glyph,
+                glyph.name,
+                current,
+                target,
+            )
+
+        replace_layers.assert_not_called()
+        self.assertTrue(special.visible)
+
+    def test_layer_membership_replay_preserves_host_master_prefix_order(self) -> None:
+        regular = _MasterLifecycleLayer(
+            "master-regular", "Regular", native_only="regular"
+        )
+        condensed = _MasterLifecycleLayer(
+            "master-condensed", "Condensed", native_only="condensed"
+        )
+        special = _MasterLifecycleLayer(
+            "special-layer", "Special", native_only="special"
+        )
+        special.isMasterLayer = False
+        special.isSpecialLayer = True
+        special.isBackupLayer = True
+        special.associatedMasterId = "master-regular"
+        glyph = _MasterLifecycleGlyph("A", [condensed, regular, special])
+        font = SimpleNamespace(axes=[], glyphs=[glyph], masters=[])
+        glyph.font = font
+
+        current = {
+            "layers": [
+                document_adapter._layer_model(regular),
+                document_adapter._layer_model(condensed),
+                document_adapter._layer_model(special),
+            ]
+        }
+        duplicate = special.copy()
+        duplicate.layerId = "special-duplicate"
+        duplicate.name = "Duplicate"
+        target = copy.deepcopy(current)
+        target["layers"].insert(
+            2, document_adapter._layer_model(duplicate)
+        )
+
+        document_adapter._apply_layer_collection(
+            font,
+            glyph,
+            "A",
+            current,
+            target,
+            execution_context={
+                "layerSources": {"A/special-duplicate": "special-layer"}
+            },
+        )
+
+        self.assertEqual(
+            [layer.layerId for layer in glyph.layers.values()],
+            [
+                "master-condensed",
+                "master-regular",
+                "special-duplicate",
+                "special-layer",
+            ],
+        )
+
+    def test_layer_lifecycle_refuses_master_membership_change_before_native_write(self) -> None:
+        font = _master_lifecycle_font()
+        glyph = font.glyphs[0]
+        current = document_adapter._glyph_model(glyph)
+        target = copy.deepcopy(current)
+        target["layers"] = [
+            layer
+            for layer in target["layers"]
+            if layer["id"] != "master_regular"
+        ]
+
+        with self.assertRaisesRegex(
+            HostAccessError, "cannot change master-layer membership"
+        ):
+            document_adapter._apply_layer_collection(
+                font,
+                glyph,
+                glyph.name,
+                current,
+                target,
+            )
+
+    def test_master_lifecycle_preserves_host_owned_master_layer_order(self) -> None:
+        regular = _MasterLifecycleLayer(
+            "master-regular", "Regular", native_only="regular"
+        )
+        condensed = _MasterLifecycleLayer(
+            "master-condensed", "Condensed", native_only="condensed"
+        )
+        added = _MasterLifecycleLayer(
+            "master-added", "Added", native_only="added"
+        )
+        special = _MasterLifecycleLayer(
+            "special-layer", "Special", native_only="special"
+        )
+        special.isMasterLayer = False
+        special.isSpecialLayer = True
+        special.associatedMasterId = "master-regular"
+        special.isBackupLayer = True
+
+        glyph = _MasterLifecycleGlyph(
+            "A", [condensed, added, regular, special]
+        )
+        font = SimpleNamespace(axes=[], glyphs=[glyph], masters=[])
+        glyph.font = font
+
+        current = {
+            "layers": [
+                document_adapter._layer_model(regular),
+                document_adapter._layer_model(condensed),
+                document_adapter._layer_model(special),
+            ]
+        }
+        target = {
+            "layers": [
+                document_adapter._layer_model(regular),
+                document_adapter._layer_model(added),
+                document_adapter._layer_model(condensed),
+                document_adapter._layer_model(special),
+            ]
+        }
+
+        with mock.patch.object(
+            document_adapter,
+            "_replace_glyph_layer_collection",
+            wraps=document_adapter._replace_glyph_layer_collection,
+        ) as replace_layers:
+            document_adapter._apply_layer_collection(
+                font,
+                glyph,
+                "A",
+                current,
+                target,
+                excluded_ids=("master-added",),
+                allow_master_membership_change=True,
+            )
+
+        self.assertEqual(
+            [layer.layerId for layer in glyph.layers.values()],
+            ["master-condensed", "master-added", "master-regular", "special-layer"],
+        )
+        replace_layers.assert_not_called()
 
     def test_master_deletion_uses_the_native_owned_layer_cascade(self) -> None:
         font = _master_lifecycle_font()
@@ -1605,6 +4352,44 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(duplicated.name, "Text")
         self.assertEqual(duplicated.explicit_name_writes, 0)
 
+    def test_master_duplication_uses_the_native_template_as_its_write_baseline(self) -> None:
+        font = _master_lifecycle_font()
+        parameter = SimpleNamespace(
+            name="Keep Glyphs Only",
+            value=True,
+            disabled=False,
+        )
+        parameter.propertyListValueFormat_error_ = lambda _format, _error: (
+            {"name": parameter.name, "value": True},
+            None,
+        )
+        font.masters[0].customParameters = [parameter]
+        before = native_font_to_model(font)
+        build = build_master_updates(
+            before,
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": "master_regular",
+                    "masterId": "master_text",
+                    "name": "Text",
+                }
+            ],
+        )
+
+        document_adapter._apply_target_model(
+            font,
+            before,
+            build.change_set.apply(before),
+            build.change_set,
+            capabilities=build.capabilities,
+            execution_context=build.execution_context,
+        )
+
+        duplicate = next(master for master in font.masters if master.id == "master_text")
+        self.assertEqual(len(duplicate.customParameters), 1)
+        self.assertEqual(duplicate.customParameters[0].name, "Keep Glyphs Only")
+
     def test_exact_master_restore_does_not_rewrite_equal_master_fields(self) -> None:
         class IdentitySensitiveMaster(_MasterLifecycleMaster):
             def __init__(self, master_id, name, coordinate, *, native_only):
@@ -1680,6 +4465,93 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(retained.equal_value_writes, writes_before_restore)
 
+    def test_exact_master_restore_uses_its_populated_metadata_as_baseline(self) -> None:
+        font = _master_lifecycle_font()
+        parameter = SimpleNamespace(
+            name="Keep Glyphs Only",
+            value=True,
+            disabled=False,
+        )
+        parameter.propertyListValueFormat_error_ = lambda _format, _error: (
+            {"name": parameter.name, "value": True},
+            None,
+        )
+        font.masters[0].customParameters = [parameter]
+        before = native_font_to_model(font)
+        build = build_master_updates(
+            before,
+            [{
+                "action": "duplicate",
+                "sourceMasterId": "master_regular",
+                "masterId": "master_text",
+                "name": "Text",
+            }],
+        )
+        after = build.change_set.apply(before)
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=build.capabilities,
+            execution_context=build.execution_context,
+        )
+        host = object.__new__(GlyphsDocumentHost)
+        tombstones = host._capture_removed_native_templates(font, after, before)
+        retained = tombstones[("masters", "master_text")]["native"]["master"]
+        document_adapter._apply_target_model(
+            font,
+            after,
+            before,
+            build.change_set.inverse(),
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+        )
+
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+            execution_context={
+                "nativeReplayTemplates": {
+                    path: value["native"] for path, value in tombstones.items()
+                },
+                "reuseNativeReplayTemplates": True,
+            },
+        )
+
+        restored = next(master for master in font.masters if master.id == "master_text")
+        self.assertIs(restored, retained)
+        self.assertEqual(len(restored.customParameters), 1)
+        self.assertEqual(restored.customParameters[0].name, "Keep Glyphs Only")
+
+        # Detached revert simulation receives the verifier-safe copies from
+        # the same path-keyed evidence store. They also already embody the
+        # canonical target and must not be replayed as empty entities.
+        document_adapter._apply_target_model(
+            font,
+            after,
+            before,
+            build.change_set.inverse(),
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+        )
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+            execution_context={
+                "nativeReplayTemplates": {
+                    path: value["copy"] for path, value in tombstones.items()
+                }
+            },
+        )
+        simulated = next(master for master in font.masters if master.id == "master_text")
+        self.assertEqual(len(simulated.customParameters), 1)
+        self.assertEqual(simulated.customParameters[0].name, "Keep Glyphs Only")
+
     def test_master_lifecycle_paths_require_the_explicit_capability(self) -> None:
         font = _master_lifecycle_font()
         before = native_font_to_model(font)
@@ -1691,6 +4563,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
                     "sourceMasterId": "master_regular",
                     "masterId": "master_text",
                     "name": "Text",
+                    "index": 0,
                 }
             ],
         )
@@ -1702,6 +4575,42 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 build.change_set,
                 capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
             )
+        )
+
+        unrelated_order = next(
+            change
+            for change in build.change_set.changes
+            if change.path[-1] == "$order"
+        )
+        unrelated_order = type(unrelated_order)(
+            path=unrelated_order.path,
+            before=unrelated_order.before,
+            after=list(reversed(unrelated_order.after)),
+            before_present=unrelated_order.before_present,
+            after_present=unrelated_order.after_present,
+        )
+        unsupported = ChangeSet.from_changes(
+            before_fingerprint=build.change_set.before_fingerprint,
+            after_fingerprint=build.change_set.after_fingerprint,
+            changes=[
+                change
+                if change.path != unrelated_order.path
+                else unrelated_order
+                for change in build.change_set.changes
+            ],
+        )
+        self.assertFalse(
+            host.supports_change_set(
+                unsupported,
+                capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+            )
+        )
+        self.assertEqual(
+            unsupported_change_diagnostics(
+                unsupported,
+                capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+            )["unsupportedPaths"],
+            [["glyphs", "A", "layers", "$order"]],
         )
 
     def test_save_reset_releases_only_that_documents_master_tombstones(self) -> None:
@@ -1755,6 +4664,194 @@ class V2DocumentAdapterTests(unittest.TestCase):
         removal = diff_models(restored, before)
         document_adapter._apply_target_model(font, restored, before, removal)
         self.assertEqual(font.glyphs, [])
+
+    def test_sparse_glyph_create_preserves_host_defaults_for_absent_fields(self) -> None:
+        class NativeGlyph:
+            def __init__(self):
+                self.name = ""
+                self.id = ""
+                self.category = None
+                self.subCategory = None
+                self.unicode = None
+                self.export = True
+                self.leftKerningGroup = None
+                self.rightKerningGroup = None
+                self.mastersCompatible = True
+                self.layers = []
+                self._direction = 0
+                self._case = 0
+
+            @property
+            def direction(self):
+                return self._direction
+
+            @direction.setter
+            def direction(self, value):
+                if value is None:
+                    raise TypeError("unsigned char cannot receive None")
+                self._direction = int(value)
+
+            @property
+            def case(self):
+                return self._case
+
+            @case.setter
+            def case(self, value):
+                if value is None:
+                    raise TypeError("unsigned char cannot receive None")
+                self._case = int(value)
+
+        font = _TransactionalFont()
+        before = native_font_to_model(font)
+        after = copy.deepcopy(before)
+        after["glyphs"]["B"] = {
+            "id": "glyph_B",
+            "name": "B",
+            "category": None,
+            "subCategory": None,
+            "unicode": None,
+            "export": True,
+            "leftKerningGroup": None,
+            "rightKerningGroup": None,
+            "layers": [],
+        }
+
+        created = NativeGlyph()
+        with mock.patch.object(
+            document_adapter, "_construct_native_entity", return_value=created
+        ):
+            document_adapter._apply_target_model(
+                font, before, after, diff_models(before, after)
+            )
+
+        self.assertEqual(created.name, "B")
+        self.assertEqual(created.direction, 0)
+        self.assertEqual(created.case, 0)
+
+    def test_native_template_only_glyph_field_is_not_assigned_directly(self) -> None:
+        class NativeGlyph:
+            def __init__(self):
+                self.name = "A"
+                self.layers = []
+
+            @property
+            def partsSettings(self):
+                return None
+
+        glyph = NativeGlyph()
+        font = SimpleNamespace(glyphs=[glyph])
+        before = {
+            "glyphs": {
+                "A": {
+                    "id": "glyph_A",
+                    "name": "A",
+                    "partsSettings": None,
+                    "layers": [],
+                }
+            }
+        }
+        after = copy.deepcopy(before)
+        after["glyphs"]["A"]["partsSettings"] = []
+
+        # Glyphs 4 exposes no GSGlyph.partsSettings setter. The official
+        # serialized field is preserved by a structural native template and
+        # verified through recapture; it must never be assigned as a scalar.
+        document_adapter._apply_target_model(
+            font, before, after, diff_models(before, after)
+        )
+
+        self.assertIsNone(glyph.partsSettings)
+        self.assertEqual(
+            document_adapter._glyph_native_template_field_value(
+                glyph, "partsSettings"
+            ),
+            [],
+        )
+
+    def test_glyph_override_presence_round_trips_without_writing_none_to_enums(self) -> None:
+        class NativeGlyph:
+            def __init__(self):
+                self.name = "A"
+                self.id = "native-A"
+                self.layers = []
+                self.mastersCompatible = True
+                self._case = 1
+                self._direction = 0
+                self.storeCase = False
+                self.storeDirection = False
+
+            @property
+            def case(self):
+                return self._case
+
+            @case.setter
+            def case(self, value):
+                if value is None:
+                    raise TypeError("unsigned char cannot receive None")
+                self._case = int(value)
+
+            @property
+            def direction(self):
+                return self._direction
+
+            @direction.setter
+            def direction(self, value):
+                if value is None:
+                    raise TypeError("unsigned char cannot receive None")
+                self._direction = int(value)
+
+        glyph = NativeGlyph()
+        inherited = document_adapter._glyph_model(glyph)
+        self.assertIsNone(inherited["case"])
+        self.assertIsNone(inherited["direction"])
+
+        explicit = copy.deepcopy(inherited)
+        explicit["case"] = 2
+        explicit["direction"] = 2
+        document_adapter._apply_glyph_scalar_updates(
+            glyph,
+            inherited,
+            explicit,
+            whole_glyph=True,
+            changed_fields=set(),
+        )
+        self.assertTrue(glyph.storeCase)
+        self.assertTrue(glyph.storeDirection)
+        self.assertEqual(document_adapter._glyph_model(glyph)["case"], 2)
+        self.assertEqual(document_adapter._glyph_model(glyph)["direction"], 2)
+
+        document_adapter._apply_glyph_scalar_updates(
+            glyph,
+            explicit,
+            inherited,
+            whole_glyph=True,
+            changed_fields=set(),
+        )
+        self.assertFalse(glyph.storeCase)
+        self.assertFalse(glyph.storeDirection)
+        self.assertIsNone(document_adapter._glyph_model(glyph)["case"])
+        self.assertIsNone(document_adapter._glyph_model(glyph)["direction"])
+
+    def test_shared_sort_name_presence_is_decided_from_complete_target(self) -> None:
+        glyph = SimpleNamespace(
+            sortName="alpha",
+            sortNameKeep="alpha.keep",
+            storeSortName=True,
+        )
+        current = {"sortName": "alpha", "sortNameKeep": "alpha.keep"}
+        target = {"sortName": "beta", "sortNameKeep": None}
+
+        document_adapter._apply_glyph_scalar_updates(
+            glyph,
+            current,
+            target,
+            whole_glyph=True,
+            changed_fields=set(),
+        )
+
+        self.assertTrue(glyph.storeSortName)
+        self.assertEqual(glyph.sortName, "beta")
+        self.assertIsNone(glyph.sortNameKeep)
 
     def test_live_capture_reuses_only_unchanged_revision_bound_glyph_models(self) -> None:
         font = _TransactionalFont()
@@ -1816,6 +4913,816 @@ class V2DocumentAdapterTests(unittest.TestCase):
             # reconstructed only when its own layer membership/revision token
             # changes, so adding a bare master cannot flush every glyph shard.
             self.assertEqual(capture_glyph.call_count, 3)
+
+    def test_live_snapshot_reuses_the_complete_tree_only_with_stable_document_revision_evidence(self) -> None:
+        font = _TransactionalFont()
+        revision = {"value": 7}
+        font.parent.changeCount = lambda: revision["value"]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+
+        first = host.capture_snapshot(document_id)
+        with mock.patch.object(
+            document_adapter,
+            "_font_model_with_glyphs",
+            side_effect=AssertionError("unchanged document roots were rebuilt"),
+        ):
+            second = host.capture_snapshot(document_id)
+
+        self.assertIs(second, first)
+
+        revision["value"] += 1
+        with mock.patch.object(
+            document_adapter,
+            "_native_root_evidence",
+            wraps=document_adapter._native_root_evidence,
+        ) as capture_evidence:
+            third = host.capture_snapshot(document_id)
+
+        self.assertEqual(capture_evidence.call_count, 1)
+        self.assertEqual(third.document_fingerprint, first.document_fingerprint)
+
+    def test_glyphs_notification_generation_reuses_and_invalidates_snapshot(self) -> None:
+        class Evidence:
+            def __init__(self):
+                self.value = 0
+
+            def current(self):
+                return self.value
+
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        evidence = Evidence()
+        host._glyphs_change_generation = evidence
+        document_id = host.list_documents()[0].document_id
+
+        first = host.capture_snapshot(document_id)
+        with mock.patch.object(
+            document_adapter,
+            "_font_model_with_glyphs",
+            side_effect=AssertionError("unchanged notified roots were rebuilt"),
+        ):
+            second = host.capture_snapshot(document_id)
+        self.assertIs(second, first)
+
+        evidence.value += 1
+        with mock.patch.object(
+            document_adapter,
+            "_native_root_evidence",
+            wraps=document_adapter._native_root_evidence,
+        ) as capture_evidence:
+            third = host.capture_snapshot(document_id)
+        self.assertEqual(capture_evidence.call_count, 1)
+        self.assertEqual(third.document_fingerprint, first.document_fingerprint)
+
+    def test_document_revision_ignores_ephemeral_pyobjc_proxy_identity(self) -> None:
+        class NativeDocumentProxy:
+            def changeCount(self):
+                return None
+
+            def isDocumentEdited(self):
+                return False
+
+        class FontWithEphemeralParentProxy:
+            @property
+            def parent(self):
+                return NativeDocumentProxy()
+
+        font = FontWithEphemeralParentProxy()
+
+        first = document_adapter._document_revision_token(
+            font, notification_generation=12
+        )
+        second = document_adapter._document_revision_token(
+            font, notification_generation=12
+        )
+
+        self.assertEqual(
+            first,
+            ("glyphs_update_interface", 12, False),
+        )
+        self.assertEqual(second, first)
+
+    def test_glyphs_change_listener_only_advances_passive_generation(self) -> None:
+        class App:
+            def __init__(self):
+                self.callbacks = []
+                self.removed = []
+
+            def addCallback(self, callback, event):
+                self.callbacks.append((callback, event))
+
+            def removeCallback(self, callback, event=None):
+                self.removed.append((callback, event))
+
+        app = App()
+        glyphs_module = SimpleNamespace(
+            Glyphs=app,
+            UPDATEINTERFACE="update",
+            DOCUMENTOPENED="opened",
+            DOCUMENTCLOSED="closed",
+            DOCUMENTWASSAVED="saved",
+        )
+        with mock.patch.dict(sys.modules, {"GlyphsApp": glyphs_module}):
+            listener = document_adapter._GlyphsChangeGeneration.install(app)
+
+        self.assertIsNotNone(listener)
+        self.assertEqual(listener.current(), 0)
+        callback = next(
+            callback for callback, event in app.callbacks if event == "update"
+        )
+        callback(None)
+        self.assertEqual(listener.current(), 1)
+        listener.close()
+        self.assertEqual({event for _callback, event in app.removed}, {
+            "update", "opened", "closed", "saved",
+        })
+
+    def test_mcp_impact_bypasses_unchanged_document_revision_shortcut(self) -> None:
+        font = _TransactionalFont()
+        font.parent.changeCount = lambda: 7
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_snapshot(document_id)
+        target = before.materialize()
+        target["font"]["note"] = "planned"
+        changes = diff_models(before, target)
+        host._canonical_model_cache.invalidate_impact(
+            document_id,
+            document_adapter.CanonicalImpact.from_change_set(before, changes),
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_canonical_root",
+            wraps=document_adapter._native_canonical_root,
+        ) as capture_root:
+            host.capture_snapshot(document_id)
+
+        capture_root.assert_any_call(font, "font", instance_ids=[])
+
+    def test_master_only_readback_proves_broad_glyph_marker_without_full_capture(self) -> None:
+        font = _TransactionalFont()
+        master = SimpleNamespace(
+            id="master-regular", name="Regular", italicAngle=0, axes=[]
+        )
+        layer = _MetricsLayer()
+        layer.name = "Regular"
+        layer.isMasterLayer = True
+        layer.isSpecialLayer = False
+        layer.lastUpdate = lambda: 1.0
+        glyph = SimpleNamespace(
+            name="A",
+            id="native-A",
+            lastChange="revision-1",
+            changeCount=lambda: 0,
+            mastersCompatible=True,
+            layers=[layer],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        font.masters = [master]
+        font.glyphs = [glyph]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_snapshot(document_id)
+        target = before.materialize()
+        target["masters"][0]["italicAngle"] = 12
+        changes = diff_models(before, target)
+        expected = before.store_verified_transition(target, changes)
+        host._canonical_model_cache.invalidate_impact(
+            document_id,
+            document_adapter.CanonicalImpact.from_change_set(before, changes),
+        )
+        master.italicAngle = 12
+        glyph.lastChange = "broad-master-notification"
+
+        with mock.patch.object(
+            document_adapter,
+            "_glyph_model",
+            wraps=document_adapter._glyph_model,
+        ) as full_glyph:
+            actual = host._executor.run(
+                lambda: host._capture_cached_snapshot(
+                    document_id, font, expected=expected
+                )
+            )
+            glyph.lastChange = "late-master-notification"
+            recaptured = host.capture_snapshot(document_id)
+
+        self.assertEqual(actual.document_fingerprint, expected.document_fingerprint)
+        self.assertEqual(
+            recaptured.document_fingerprint, expected.document_fingerprint
+        )
+        self.assertEqual(full_glyph.call_count, 0)
+        self.assertIs(actual.glyph_shards["A"], before.glyph_shards["A"])
+
+    def test_layer_revision_token_never_traverses_geometry(self) -> None:
+        layer = _MetricsLayer()
+        layer.name = "Regular"
+        layer.isMasterLayer = True
+        layer.isSpecialLayer = False
+        layer.lastUpdate = lambda: 1.0
+
+        with mock.patch.object(
+            document_adapter,
+            "_layer_paths",
+            side_effect=AssertionError("revision token traversed paths"),
+        ), mock.patch.object(
+            document_adapter,
+            "_layer_components",
+            side_effect=AssertionError("revision token traversed components"),
+        ), mock.patch.object(
+            document_adapter,
+            "_anchor_model",
+            side_effect=AssertionError("revision token traversed anchors"),
+        ):
+            before = document_adapter._layer_revision_token(layer)
+            layer.lastUpdate = lambda: 2.0
+            after = document_adapter._layer_revision_token(layer)
+
+        self.assertNotEqual(before, after)
+
+    def test_detached_unexpected_revision_requires_layer_proof(self) -> None:
+        font = _TransactionalFont()
+        master = SimpleNamespace(
+            id="master-regular", name="Regular", italicAngle=0, axes=[]
+        )
+        layer = _MetricsLayer()
+        layer.name = "Regular"
+        layer.isMasterLayer = True
+        layer.isSpecialLayer = False
+        layer.lastUpdate = lambda: 1.0
+        glyph = SimpleNamespace(
+            name="A",
+            id="native-A",
+            lastChange="revision-1",
+            changeCount=lambda: 0,
+            mastersCompatible=True,
+            layers=[layer],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        font.masters = [master]
+        font.glyphs = [glyph]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_snapshot(document_id)
+        target = before.materialize()
+        target["masters"][0]["italicAngle"] = 12
+        changes = diff_models(before, target)
+        impact = document_adapter.CanonicalImpact.from_change_set(before, changes)
+        glyph.lastChange = "broad-master-notification"
+
+        self.assertEqual(
+            document_adapter._unproved_revision_glyphs(
+                font, before, target, impact, ("A",)
+            ),
+            (),
+        )
+        layer.width = 777
+        self.assertEqual(
+            document_adapter._unproved_revision_glyphs(
+                font, before, target, impact, ("A",)
+            ),
+            ("A",),
+        )
+
+    def test_revision_proof_ignores_master_order_but_preserves_special_order(self) -> None:
+        def layer(identity, *, master):
+            value = _MetricsLayer()
+            value.layerId = identity
+            value.associatedMasterId = identity if master else "master-a"
+            value.name = identity
+            value.isMasterLayer = master
+            value.isSpecialLayer = not master
+            value.lastUpdate = lambda: 1.0
+            return value
+
+        master_a = layer("master-a", master=True)
+        special_a = layer("special-a", master=False)
+        master_b = layer("master-b", master=True)
+        special_b = layer("special-b", master=False)
+        glyph = SimpleNamespace(
+            name="A",
+            id="native-A",
+            mastersCompatible=True,
+            layers=[master_a, special_a, master_b, special_b],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        expected = document_adapter._glyph_model(glyph)
+        before_tokens = document_adapter._layer_revision_index(glyph)
+
+        glyph.layers = [master_b, special_a, master_a, special_b]
+        self.assertTrue(
+            document_adapter._verified_glyph_fragment_matches(
+                glyph,
+                expected,
+                expected,
+                (),
+                before_layer_tokens=before_tokens,
+                current_layer_tokens=document_adapter._layer_revision_index(glyph),
+            )
+        )
+        glyph.layers = [master_b, special_b, master_a, special_a]
+        self.assertFalse(
+            document_adapter._verified_glyph_fragment_matches(
+                glyph,
+                expected,
+                expected,
+                (),
+                before_layer_tokens=before_tokens,
+                current_layer_tokens=document_adapter._layer_revision_index(glyph),
+            )
+        )
+
+    def test_fragment_verification_uses_source_neutral_root_evidence(self) -> None:
+        glyph = SimpleNamespace(
+            name="A",
+            id="native-A",
+            mastersCompatible=True,
+            layers=[],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode="0041",
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        expected = document_adapter._glyph_model(glyph)
+        # The serialized source owns saved semantics and may omit a projected
+        # native default. That pre-existing source/native representation gap
+        # must not invalidate an unrelated verified edit.
+        expected["category"] = None
+        modeled = copy.deepcopy(expected)
+        modeled["export"] = False
+        glyph.export = False
+        before_root = document_adapter._glyph_root_revision_evidence(glyph)
+        before_root["export"] = True
+
+        self.assertTrue(
+            document_adapter._verified_glyph_fragment_matches(
+                glyph,
+                modeled,
+                modeled,
+                (("glyphs", "A", "export"),),
+                before_root_evidence=before_root,
+                current_root_evidence=document_adapter._glyph_root_revision_evidence(glyph),
+                before_layer_tokens={},
+                current_layer_tokens={},
+            )
+        )
+
+        glyph.category = "Mark"
+        self.assertFalse(
+            document_adapter._verified_glyph_fragment_matches(
+                glyph,
+                modeled,
+                modeled,
+                (("glyphs", "A", "export"),),
+                before_root_evidence=before_root,
+                current_root_evidence=document_adapter._glyph_root_revision_evidence(glyph),
+                before_layer_tokens={},
+                current_layer_tokens={},
+            )
+        )
+
+    def test_root_verification_compares_native_delta_not_source_spelling(self) -> None:
+        before_evidence = [
+            {
+                "id": "master-a",
+                "name": "A",
+                "italicAngle": 0,
+                "customParameters": [{"name": "legacy", "value": 1}],
+            },
+            {
+                "id": "master-b",
+                "name": "B",
+                "italicAngle": 0,
+                "customParameters": [{"name": "legacy", "value": 2}],
+            },
+        ]
+        current_evidence = [before_evidence[1], before_evidence[0]]
+        expected = [
+            {
+                "id": "master-b",
+                "name": "B",
+                "italicAngle": 0,
+                "customParameters": [],
+            },
+            {
+                "id": "master-a",
+                "name": "A",
+                "italicAngle": 0,
+                "customParameters": [],
+            },
+        ]
+
+        verified, unexpected = (
+            document_adapter._verified_root_evidence_transition(
+                "masters",
+                before_evidence,
+                current_evidence,
+                expected,
+                (("$order",),),
+            )
+        )
+        self.assertTrue(verified)
+        self.assertEqual(unexpected, ())
+
+        converged = copy.deepcopy(current_evidence)
+        converged[0]["italicAngle"] = 12
+        converged_expected = copy.deepcopy(expected)
+        converged_expected[0]["italicAngle"] = 12
+        verified, unexpected = (
+            document_adapter._verified_root_evidence_transition(
+                "masters",
+                before_evidence,
+                converged,
+                converged_expected,
+                (("$order",),),
+            )
+        )
+        self.assertTrue(verified)
+        self.assertEqual(unexpected, ())
+
+        changed = copy.deepcopy(current_evidence)
+        changed[0]["name"] = "Unexpected"
+        verified, unexpected = (
+            document_adapter._verified_root_evidence_transition(
+                "masters",
+                before_evidence,
+                changed,
+                expected,
+                (("$order",),),
+            )
+        )
+        self.assertFalse(verified)
+        self.assertIn(("master-b", "name"), unexpected)
+
+    def test_scoped_root_verification_accepts_exact_record_level_fallback(self) -> None:
+        source_model = {
+            "masters": [
+                {"id": "master-a", "name": "A"},
+                {"id": "master-b", "name": "B"},
+            ],
+            "glyphs": {},
+            "glyphOrder": [],
+        }
+        source = document_adapter.CanonicalSnapshot.from_model(
+            source_model,
+            native_revision_evidence={"capture": "saved_format_v4_mapping"},
+        )
+        expected_model = copy.deepcopy(source_model)
+        expected_model["masters"] = list(reversed(expected_model["masters"]))
+        expected = document_adapter.CanonicalSnapshot.from_model(
+            expected_model,
+            native_revision_evidence={"capture": "saved_format_v4_mapping"},
+        )
+        impact = document_adapter.CanonicalImpact.from_paths(
+            source, [("masters", "$order")]
+        )
+        font = SimpleNamespace(glyphs=[], axes=[], masters=[])
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_root_evidence_value",
+            return_value=[{"id": "master-b", "metricValues": [{"pos": 0}]}],
+        ), mock.patch.object(
+            document_adapter,
+            "_persistent_canonical_record_root",
+            return_value=expected["masters"],
+        ) as record_fallback:
+            captured = document_adapter._scoped_font_model(
+                font,
+                source,
+                MutationScope(impact.roots, impact.glyph_names),
+                impact=impact,
+                expected_model=expected,
+                before_root_evidence={
+                    "masters": [
+                        {"id": "master-a", "metricValues": [{"pos": 0}]},
+                        {"id": "master-b", "metricValues": [{"pos": 1}]},
+                    ]
+                },
+            )
+
+        self.assertEqual(captured["masters"], expected["masters"])
+        record_fallback.assert_called_once_with(font, "masters", expected)
+
+    def test_scoped_root_verification_rejects_divergent_record_level_fallback(self) -> None:
+        source_model = {
+            "masters": [
+                {"id": "master-a", "name": "A"},
+                {"id": "master-b", "name": "B"},
+            ],
+            "glyphs": {},
+            "glyphOrder": [],
+        }
+        source = document_adapter.CanonicalSnapshot.from_model(
+            source_model,
+            native_revision_evidence={"capture": "saved_format_v4_mapping"},
+        )
+        expected_model = copy.deepcopy(source_model)
+        expected_model["masters"] = list(reversed(expected_model["masters"]))
+        expected = document_adapter.CanonicalSnapshot.from_model(
+            expected_model,
+            native_revision_evidence={"capture": "saved_format_v4_mapping"},
+        )
+        impact = document_adapter.CanonicalImpact.from_paths(
+            source, [("masters", "$order")]
+        )
+        font = SimpleNamespace(glyphs=[], axes=[], masters=[])
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_root_evidence_value",
+            return_value=[{"id": "master-b", "metricValues": [{"pos": 0}]}],
+        ), mock.patch.object(
+            document_adapter,
+            "_persistent_canonical_record_root",
+            return_value=[{"id": "master-b", "name": "Wrong"}],
+        ):
+            with self.assertRaisesRegex(
+                document_adapter.HostAccessError,
+                "escaped the predicted canonical impact",
+            ):
+                document_adapter._scoped_font_model(
+                    font,
+                    source,
+                    MutationScope(impact.roots, impact.glyph_names),
+                    impact=impact,
+                    expected_model=expected,
+                    before_root_evidence={
+                        "masters": [
+                            {"id": "master-a", "metricValues": [{"pos": 0}]},
+                            {"id": "master-b", "metricValues": [{"pos": 1}]},
+                        ]
+                    },
+                )
+
+    def test_scoped_root_discovery_records_authoritative_derived_effects(self) -> None:
+        source_model = {
+            "masters": [
+                {
+                    "id": "master-a",
+                    "name": "A",
+                    "metricValues": [{"id": "metric-a", "pos": 1}],
+                },
+                {
+                    "id": "master-b",
+                    "name": "B",
+                    "metricValues": [{"id": "metric-a", "pos": 1}],
+                },
+            ],
+            "glyphs": {},
+            "glyphOrder": [],
+        }
+        source = document_adapter.CanonicalSnapshot.from_model(
+            source_model,
+            native_revision_evidence={"capture": "saved_format_v4_mapping"},
+        )
+        requested_model = copy.deepcopy(source_model)
+        requested_model["masters"] = list(reversed(requested_model["masters"]))
+        requested = document_adapter.CanonicalSnapshot.from_model(
+            requested_model,
+            native_revision_evidence={"capture": "saved_format_v4_mapping"},
+        )
+        observed_root = copy.deepcopy(requested_model["masters"])
+        observed_root[0]["metricValues"][0]["pos"] = 0
+        impact = document_adapter.CanonicalImpact.from_paths(
+            source, [("masters", "$order")]
+        )
+        font = SimpleNamespace(glyphs=[], axes=[], masters=[])
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_root_evidence_value",
+            return_value=[{"id": "master-b", "metricValues": [{"pos": 0}]}],
+        ), mock.patch.object(
+            document_adapter,
+            "_persistent_canonical_record_root",
+            return_value=observed_root,
+        ):
+            captured = document_adapter._scoped_font_model(
+                font,
+                source,
+                MutationScope(impact.roots, impact.glyph_names),
+                impact=impact,
+                expected_model=requested,
+                before_root_evidence={
+                    "masters": [
+                        {"id": "master-a", "metricValues": [{"pos": 1}]},
+                        {"id": "master-b", "metricValues": [{"pos": 1}]},
+                    ]
+                },
+                allow_observed_root_expansion=True,
+            )
+
+        self.assertEqual(captured["masters"], observed_root)
+
+    def test_expected_capture_normalizes_only_root_owned_master_layer_order(self) -> None:
+        def layer(identity, *, master):
+            value = _MetricsLayer()
+            value.layerId = identity
+            value.associatedMasterId = identity if master else "master-a"
+            value.name = identity
+            value.isMasterLayer = master
+            value.isSpecialLayer = not master
+            value.lastUpdate = lambda: 1.0
+            return value
+
+        master_a = layer("master-a", master=True)
+        master_b = layer("master-b", master=True)
+        special_a = layer("special-a", master=False)
+        special_b = layer("special-b", master=False)
+        glyph = SimpleNamespace(
+            name="A",
+            id="native-A",
+            mastersCompatible=True,
+            layers=[master_a, master_b, special_a, special_b],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        reference = document_adapter._glyph_model(glyph)
+
+        # Glyphs projects the master prefix from the root master order. That
+        # host presentation must not rewrite the canonical nested collection;
+        # the native non-master order remains independently authoritative.
+        glyph.layers = [master_b, master_a, special_b, special_a]
+        captured = document_adapter._glyph_model(
+            glyph,
+            layer_order_reference=reference,
+        )
+
+        self.assertEqual(
+            [layer["id"] for layer in captured["layers"]],
+            ["master-a", "master-b", "special-b", "special-a"],
+        )
+
+    def test_expected_capture_places_new_master_without_reordering_retained_layers(self) -> None:
+        def layer(identity):
+            value = _MetricsLayer()
+            value.layerId = identity
+            value.associatedMasterId = identity
+            value.name = identity
+            value.isMasterLayer = True
+            value.isSpecialLayer = False
+            value.lastUpdate = lambda: 1.0
+            return value
+
+        master_a = layer("master-a")
+        master_b = layer("master-b")
+        master_new = layer("master-new")
+        glyph = SimpleNamespace(
+            name="A",
+            id="native-A",
+            mastersCompatible=True,
+            layers=[master_a, master_b],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        reference = document_adapter._glyph_model(glyph)
+
+        # The root projection moved B ahead of A and inserted the new master
+        # between them. Canonically, retained A/B order stays stable while the
+        # new identity is inserted at its root-owned position.
+        glyph.layers = [master_b, master_new, master_a]
+        captured = document_adapter._glyph_model(
+            glyph,
+            layer_order_reference=reference,
+        )
+
+        self.assertEqual(
+            [layer["id"] for layer in captured["layers"]],
+            ["master-a", "master-new", "master-b"],
+        )
+
+    def test_master_move_then_delete_keeps_one_canonical_order_owner(self) -> None:
+        font = _TransactionalFont()
+
+        def master(identity):
+            return SimpleNamespace(
+                id=identity,
+                name=identity,
+                italicAngle=0,
+                axes=[],
+            )
+
+        def layer(identity):
+            value = _MetricsLayer()
+            value.layerId = identity
+            value.associatedMasterId = identity
+            value.name = identity
+            value.isMasterLayer = True
+            value.isSpecialLayer = False
+            value.lastUpdate = lambda: 1.0
+            return value
+
+        master_a = master("master-a")
+        master_b = master("master-b")
+        layer_a = layer("master-a")
+        layer_b = layer("master-b")
+        glyph = SimpleNamespace(
+            name="A",
+            id="native-A",
+            lastChange="revision-1",
+            changeCount=lambda: 0,
+            mastersCompatible=True,
+            layers=[layer_a, layer_b],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        font.masters = [master_a, master_b]
+        font.glyphs = [glyph]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_snapshot(document_id)
+
+        moved_model = before.materialize()
+        moved_model["masters"].reverse()
+        move = diff_models(before, moved_model)
+        moved_expected = before.store_verified_transition(moved_model, move)
+        host._canonical_model_cache.invalidate_impact(
+            document_id,
+            document_adapter.CanonicalImpact.from_change_set(before, move),
+        )
+        font.masters = [master_b, master_a]
+        glyph.layers = [layer_b, layer_a]
+        glyph.lastChange = "revision-2"
+        moved = host._executor.run(
+            lambda: host._capture_cached_snapshot(
+                document_id,
+                font,
+                expected=moved_expected,
+            )
+        )
+        self.assertEqual(moved.document_fingerprint, moved_expected.document_fingerprint)
+        self.assertEqual(
+            [item["id"] for item in moved["glyphs"]["A"]["layers"]],
+            ["master-a", "master-b"],
+        )
+
+        deletion = build_master_updates(
+            moved,
+            [{"action": "delete", "masterId": "master-a"}],
+        )
+        deleted_model = deletion.change_set.apply(moved)
+        deleted_expected = moved.store_verified_transition(
+            deleted_model,
+            deletion.change_set,
+        )
+        host._canonical_model_cache.invalidate_impact(
+            document_id,
+            document_adapter.CanonicalImpact.from_change_set(
+                moved,
+                deletion.change_set,
+            ),
+        )
+        font.masters = [master_b]
+        glyph.layers = [layer_b]
+        glyph.lastChange = "revision-3"
+        deleted = host._executor.run(
+            lambda: host._capture_cached_snapshot(
+                document_id,
+                font,
+                expected=deleted_expected,
+            )
+        )
+
+        self.assertEqual(
+            deleted.document_fingerprint,
+            deleted_expected.document_fingerprint,
+        )
+        self.assertEqual(
+            [item["id"] for item in deleted["glyphs"]["A"]["layers"]],
+            ["master-b"],
+        )
 
     def test_verified_write_refreshes_only_the_affected_cached_glyph(self) -> None:
         font = _TransactionalFont()
@@ -2182,6 +6089,44 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(simulated, target)
         self.assertLessEqual(capture_glyph.call_count, 2)
 
+    def test_detached_simulation_reconciles_clone_omissions_generically(self) -> None:
+        font = _TransactionalFont()
+        font.note = "Saved canonical note"
+        glyph = SimpleNamespace(
+            name="A",
+            id="id-A",
+            lastChange="revision-1",
+            changeCount=lambda: 0,
+            mastersCompatible=True,
+            layers=[],
+            category="Letter",
+            subCategory="Uppercase",
+            unicode=None,
+            export=True,
+            leftKerningGroup=None,
+            rightKerningGroup=None,
+        )
+        font.glyphs = [glyph]
+
+        def copy_with_native_omission():
+            clone = copy.deepcopy(font)
+            clone.note = None
+            return clone
+
+        font.copy = copy_with_native_omission
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        target = copy.deepcopy(before)
+        target["glyphs"]["A"]["export"] = False
+        changes = diff_models(before, target)
+
+        simulated = host.simulate_change_set(document_id, changes)
+
+        self.assertEqual(simulated, target)
+        self.assertEqual(font.note, "Saved canonical note")
+        self.assertTrue(glyph.export)
+
     def test_detached_reconciliation_recaptures_only_the_change_scope(self) -> None:
         font = _TransactionalFont()
 
@@ -2248,11 +6193,82 @@ class V2DocumentAdapterTests(unittest.TestCase):
             document_adapter,
             "native_font_to_model",
             wraps=document_adapter.native_font_to_model,
-        ) as full_capture:
+        ) as full_capture, mock.patch.object(
+            host._canonical_model_cache,
+            "invalidate_unscoped",
+            wraps=host._canonical_model_cache.invalidate_unscoped,
+        ) as invalidate_unscoped:
             result = host.run_live_python(request)
 
         self.assertIn("Transaction Test", result["stdout"])
         self.assertEqual(full_capture.call_count, 0)
+        self.assertEqual(invalidate_unscoped.call_count, 1)
+
+    def test_live_python_after_model_is_captured_after_main_queue_yields(self) -> None:
+        font = _TransactionalFont()
+
+        class SettlingExecutor:
+            def run(self, callback):
+                result = callback()
+                if font.familyName == "Intermediate":
+                    font.familyName = "Settled"
+                return result
+
+        host = GlyphsDocumentHost(_App(font), executor=SettlingExecutor())
+        document_id = host.list_documents()[0].document_id
+        request = PythonExecutionRequest(
+            code="font.familyName = 'Intermediate'",
+            reason="prove post-main-queue settlement",
+            intended_effect="document_edit",
+            execution_mode="live_open_world",
+            document_id=document_id,
+        )
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            side_effect=lambda value, **options: native_font_to_model(
+                value, instance_ids=options.get("instance_ids")
+            ),
+        ) as persistent_capture:
+            result = host.run_live_python(request)
+
+        self.assertEqual(
+            result["beforeModel"]["font"]["familyName"], "Transaction Test"
+        )
+        self.assertEqual(result["afterModel"]["font"]["familyName"], "Settled")
+        self.assertEqual(font.familyName, "Settled")
+        self.assertGreaterEqual(persistent_capture.call_count, 1)
+
+    def test_complete_staged_clone_capture_prefers_format_v4_source(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        source = host.capture_snapshot(document_id)
+        persistent = source.materialize()
+
+        with mock.patch.object(
+            document_adapter,
+            "_native_persistent_font_model",
+            return_value=persistent,
+        ) as persistent_capture, mock.patch.object(
+            document_adapter,
+            "native_font_to_model",
+            wraps=document_adapter.native_font_to_model,
+        ) as getter_capture:
+            observed = host._capture_detached_model(
+                font,
+                source,
+                document_path="/fonts/Canonical.glyphspackage",
+            )
+
+        self.assertEqual(fingerprint_model(observed), fingerprint_model(source))
+        persistent_capture.assert_called_once()
+        self.assertEqual(
+            persistent_capture.call_args.kwargs["document_path"],
+            "/fonts/Canonical.glyphspackage",
+        )
+        getter_capture.assert_not_called()
 
     def test_staged_review_scope_uses_clone_stable_full_font_archive(self) -> None:
         font = _TransactionalFont()
@@ -2317,6 +6333,29 @@ class V2DocumentAdapterTests(unittest.TestCase):
             manifest["files"][1]["value"]["privateGlyph"], 1
         )
 
+    def test_native_archive_excludes_package_ui_session_state(self) -> None:
+        def save_package(_font, path):
+            path.mkdir()
+            (path / "fontinfo.plist").write_text(
+                '{"familyName":"Test"}', encoding="utf-8"
+            )
+            (path / "UIState.plist").write_text(
+                '{"tabs":["A","B"]}', encoding="utf-8"
+            )
+
+        with mock.patch.object(
+            document_adapter,
+            "_save_font_copy",
+            side_effect=save_package,
+        ):
+            archive = document_adapter._serialized_font_archive(object())
+
+        manifest = document_adapter._decoded_native_archive_tree(archive)
+        self.assertEqual(
+            [entry["path"] for entry in manifest["files"]],
+            ["fontinfo.plist"],
+        )
+
     def test_native_package_manifest_detects_private_file_changes(self) -> None:
         before = {
             "format": "glyphspackage-v1",
@@ -2340,7 +6379,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertFalse(result["equivalent"])
         self.assertEqual(
             result["mismatchLocations"][0]["path"],
-            ["files", 0, "value", "privateGlyph"],
+            ["files", "@path=glyphs/A.glyph", "value", "privateGlyph"],
         )
 
     def test_native_package_normalizes_clone_instance_ids_before_encoding(self) -> None:
@@ -2430,8 +6469,9 @@ class V2DocumentAdapterTests(unittest.TestCase):
             preview = host.preview_python(request, before)
 
         self.assertEqual(
-            _model_layer(preview["afterModel"], "A", "master-regular")
-            ["paths"][0]["nodes"][0]["x"],
+            layer_paths(
+                _model_layer(preview["afterModel"], "A", "master-regular")
+            )[0]["nodes"][0]["x"],
             25,
         )
         self.assertTrue(preview["nativeArchiveComparison"]["equivalent"])
@@ -2451,7 +6491,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         model = native_layer_to_model(layer)
 
         self.assertTrue(model["hasAlignedWidth"])
-        self.assertTrue(model["components"][0]["automaticAlignment"])
+        self.assertTrue(layer_components(model)[0]["automaticAlignment"])
 
     def test_staged_feature_addition_uses_opaque_native_replay_evidence(self) -> None:
         class Feature:
@@ -2645,7 +6685,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         model = native_layer_to_model(layer)
 
         self.assertEqual(
-            model["paths"][0]["nodes"][0]["x"],
+            layer_paths(model)[0]["nodes"][0]["x"],
             383.1785068235414,
         )
 
@@ -2803,31 +6843,12 @@ class V2DocumentAdapterTests(unittest.TestCase):
         layer = _ReadOnlyShapeProxyLayer([path])
         glyph = SimpleNamespace(name="L", layers={"master-regular": layer})
         font = SimpleNamespace(glyphs={"L": glyph})
-        current_paths = [
-            {
-                "closed": True,
-                "nodes": [
-                    {"x": 29, "y": 0, "type": "line", "smooth": False, "name": None},
-                    {"x": 129, "y": 0, "type": "line", "smooth": False, "name": None},
-                ],
-            }
-        ]
-        target_paths = copy.deepcopy(current_paths)
-        target_paths[0]["nodes"][0]["x"] = 0
-        target_paths[0]["nodes"][1]["x"] = 100
-        current_layer = {
-            "width": 529,
-            "LSB": 69,
-            "RSB": 60,
-            "leftMetricsKey": None,
-            "rightMetricsKey": None,
-            "widthMetricsKey": None,
-            "paths": current_paths,
-            "components": [],
-            "anchors": {},
-        }
+        current_layer = native_layer_to_model(layer)
+        current_layer["width"] = 529
         target_layer = copy.deepcopy(current_layer)
-        target_layer.update({"width": 500, "LSB": 40, "paths": target_paths})
+        target_layer["width"] = 500
+        layer_paths(target_layer)[0]["nodes"][0]["x"] = 0
+        layer_paths(target_layer)[0]["nodes"][1]["x"] = 100
         current = {"glyphs": {"L": {"layers": {"master-regular": current_layer}}}}
         target = {"glyphs": {"L": {"layers": {"master-regular": target_layer}}}}
         replacement = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
@@ -2839,7 +6860,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 target,
                 diff_models(current, target),
                 replay_replacements=(
-                    ("glyphs", "L", "layers", "master-regular", "paths"),
+                    ("glyphs", "L", "layers", "master-regular", "shapes"),
                 ),
             )
 
@@ -2852,31 +6873,11 @@ class V2DocumentAdapterTests(unittest.TestCase):
         layer = _ReadOnlyShapeProxyLayer([original_component, original_path])
         glyph = SimpleNamespace(name="L", layers={"master-regular": layer})
         font = SimpleNamespace(glyphs={"L": glyph})
-        current_layer = {
-            "width": None,
-            "LSB": None,
-            "RSB": None,
-            "leftMetricsKey": None,
-            "rightMetricsKey": None,
-            "widthMetricsKey": None,
-            "anchors": {},
-            "paths": [
-                {
-                    "closed": True,
-                    "nodes": [
-                        {"x": 29, "y": 0, "type": "line", "smooth": False, "name": None},
-                        {"x": 129, "y": 0, "type": "line", "smooth": False, "name": None},
-                    ],
-                }
-            ],
-            "components": [
-                {"name": "acute", "transform": [1, 0, 0, 1, 0, 0]}
-            ],
-        }
+        current_layer = native_layer_to_model(layer)
         target_layer = copy.deepcopy(current_layer)
-        target_layer["paths"][0]["nodes"][0]["x"] = 0
-        target_layer["paths"][0]["nodes"][1]["x"] = 100
-        target_layer["components"][0]["transform"][4] = 20
+        layer_paths(target_layer)[0]["nodes"][0]["x"] = 0
+        layer_paths(target_layer)[0]["nodes"][1]["x"] = 100
+        layer_components(target_layer)[0]["transform"][4] = 20
         current = {"glyphs": {"L": {"layers": {"master-regular": current_layer}}}}
         target = {"glyphs": {"L": {"layers": {"master-regular": target_layer}}}}
         replacement_path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
@@ -2892,8 +6893,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 target,
                 diff_models(current, target),
                 replay_replacements=(
-                    ("glyphs", "L", "layers", "master-regular", "paths"),
-                    ("glyphs", "L", "layers", "master-regular", "components"),
+                    ("glyphs", "L", "layers", "master-regular", "shapes"),
                 ),
             )
 
@@ -2913,7 +6913,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         empty_model = native_layer_to_model(empty)
 
         self.assertEqual(absent_model, empty_model)
-        self.assertIsNone(absent_model["paths"][0]["nodes"][0]["name"])
+        self.assertIsNone(layer_paths(absent_model)[0]["nodes"][0]["name"])
 
     def test_new_path_preserves_native_absence_instead_of_writing_none_sentinel(self) -> None:
         glyphs_module = SimpleNamespace(
@@ -2944,8 +6944,11 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 "L": {
                     "layers": {
                         "m0": {
-                            "paths": [{"closed": True, "nodes": [{"x": 0, "y": 0}]}],
-                            "components": [],
+                            "shapes": [{
+                                "id": "shape:path:0",
+                                "kind": "path",
+                                "value": {"closed": True, "nodes": [{"x": 0, "y": 0}]},
+                            }],
                             "width": 500,
                         }
                     }
@@ -2953,9 +6956,9 @@ class V2DocumentAdapterTests(unittest.TestCase):
             }
         }
         target = copy.deepcopy(before)
-        _model_layer(target, "L", "m0")["paths"][0]["nodes"][0]["x"] = 20
+        layer_paths(_model_layer(target, "L", "m0"))[0]["nodes"][0]["x"] = 20
         observed = copy.deepcopy(target)
-        _model_layer(observed, "L", "m0")["paths"][0]["nodes"][0]["x"] = 19
+        layer_paths(_model_layer(observed, "L", "m0"))[0]["nodes"][0]["x"] = 19
 
         roots = document_adapter._canonical_replacement_roots(
             before, target, observed
@@ -2963,7 +6966,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(
             roots,
-            (("glyphs", "L", "layers", "m0", "paths"),),
+            (("glyphs", "L", "layers", "m0", "shapes"),),
         )
 
     def test_scalar_residue_does_not_guess_at_unrelated_collection_replacement(self) -> None:
@@ -2997,6 +7000,218 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertEqual(source, clone)
         self.assertEqual(source["instances"][0]["id"], "instance_0")
+
+    def test_instance_without_external_mapping_uses_internal_coordinates(self) -> None:
+        font = SimpleNamespace(
+            axes=[SimpleNamespace(axisTag="wght"), SimpleNamespace(axisTag="wdth")],
+            instances=[
+                SimpleNamespace(
+                    name="Semibold Condensed",
+                    type=0,
+                    active=True,
+                    axes=[650, 82],
+                    externalAxes=[],
+                    customParameters=[],
+                    properties=[],
+                    userData={},
+                )
+            ],
+        )
+
+        instances = document_adapter._instance_models(font)
+
+        self.assertEqual(
+            instances[0]["axes"],
+            [
+                {"tag": "wght", "internal": 650, "external": 650},
+                {"tag": "wdth", "internal": 82, "external": 82},
+            ],
+        )
+
+    def test_instance_external_coordinates_fall_back_per_axis(self) -> None:
+        font = SimpleNamespace(
+            axes=[SimpleNamespace(axisTag="wght"), SimpleNamespace(axisTag="wdth")],
+            instances=[
+                SimpleNamespace(
+                    name="Semibold Condensed",
+                    type=0,
+                    active=True,
+                    axes=[650, 82],
+                    externalAxes=[None, 70],
+                    customParameters=[],
+                    properties=[],
+                    userData={},
+                )
+            ],
+        )
+
+        instances = document_adapter._instance_models(font)
+
+        self.assertEqual(
+            instances[0]["axes"],
+            [
+                {"tag": "wght", "internal": 650, "external": 650},
+                {"tag": "wdth", "internal": 82, "external": 70},
+            ],
+        )
+
+    def test_instance_replay_treats_style_names_as_the_authoritative_name(self) -> None:
+        old_property = {
+            "id": "property:styleNames:0",
+            "key": "styleNames",
+            "value": None,
+            "values": [{"language": "dflt", "value": "Old"}],
+        }
+        new_property = copy.deepcopy(old_property)
+        new_property["values"][0]["value"] = "New"
+        native = SimpleNamespace(
+            name="New",
+            properties=[
+                SimpleNamespace(
+                    key="styleNames",
+                    value=None,
+                    values=[SimpleNamespace(language="dflt", value="New")],
+                )
+            ],
+            customParameters=[],
+            userData={},
+        )
+        font = SimpleNamespace(instances=[native])
+
+        document_adapter._apply_instance_collection(
+            font,
+            [{"id": "instance_0", "name": "Old", "properties": [old_property]}],
+            [{"id": "instance_0", "name": "New", "properties": [new_property]}],
+        )
+
+        self.assertEqual(native.name, "New")
+        self.assertEqual(document_adapter._property_models(native), [new_property])
+
+    def test_native_localized_property_collapses_to_official_v4_spelling(self) -> None:
+        owner = SimpleNamespace(
+            properties=[
+                SimpleNamespace(
+                    key="styleNames",
+                    value="Regular",
+                    values=[SimpleNamespace(language="", value="Regular")],
+                )
+            ]
+        )
+
+        self.assertEqual(
+            document_adapter._property_models(owner),
+            [
+                {
+                    "id": "property:styleNames:0",
+                    "key": "styleNames",
+                    "value": None,
+                    "values": [{"language": "dflt", "value": "Regular"}],
+                }
+            ],
+        )
+
+    def test_new_instance_is_constructed_without_the_convenience_name(self) -> None:
+        collection = []
+        native = SimpleNamespace(name="")
+
+        with mock.patch.object(
+            document_adapter,
+            "_construct_native_entity",
+            return_value=native,
+        ) as constructor:
+            result = document_adapter._sync_native_entities(
+                collection,
+                [],
+                [{"id": "instance_new", "name": "Bold"}],
+                kind="instance",
+            )
+
+        constructor.assert_called_once_with("instance", "")
+        self.assertIs(result["instance_new"], native)
+        self.assertEqual(collection, [native])
+
+    def test_exact_instance_evidence_is_attached_without_default_replay(self) -> None:
+        native = SimpleNamespace(name="Exact")
+        font = SimpleNamespace(instances=[])
+        target = {
+            "id": "instance_new",
+            "name": "Exact",
+            "properties": [],
+            "customParameters": [],
+            "instanceInterpolations": {"master": 1.0},
+        }
+
+        with mock.patch.object(
+            document_adapter, "_set_native_property"
+        ) as set_property, mock.patch.object(
+            document_adapter, "_apply_owned_metadata"
+        ) as apply_metadata:
+            document_adapter._apply_instance_collection(
+                font,
+                [],
+                [target],
+                templates={"instance_new": native},
+                reuse_native_templates=True,
+            )
+
+        self.assertEqual(font.instances, [native])
+        set_property.assert_not_called()
+        apply_metadata.assert_called_once_with(native, target, target)
+
+    def test_new_owner_replays_over_registered_native_constructor_defaults(self) -> None:
+        class Localized:
+            def __init__(self):
+                self.key = ""
+                self.value = None
+                self.values = []
+
+        class Single:
+            def __init__(self):
+                self.key = ""
+                self.value = None
+
+        class Value:
+            def __init__(self):
+                self.languageTag = ""
+                self.value = None
+
+        glyphs_module = SimpleNamespace(
+            GSInfoValue=Value,
+            GSInfoValueLocalized=Localized,
+            GSInfoValueSingle=Single,
+        )
+        native = SimpleNamespace(
+            properties=[
+                SimpleNamespace(
+                    key="styleNames",
+                    value=None,
+                    values=[SimpleNamespace(language="dflt", value="Regular")],
+                )
+            ],
+            customParameters=[],
+            userData={},
+        )
+        target = {
+            "properties": [
+                {
+                    "id": "property:styleNames:0",
+                    "key": "styleNames",
+                    "value": None,
+                    "values": [{"language": "dflt", "value": "Bold"}],
+                }
+            ],
+            "customParameters": [],
+            "userData": {},
+        }
+
+        with mock.patch.dict(sys.modules, {"GlyphsApp": glyphs_module}):
+            document_adapter._apply_owned_metadata(native, {}, target)
+
+        self.assertIsInstance(native.properties[0], Localized)
+        self.assertEqual(
+            document_adapter._property_models(native), target["properties"]
+        )
+        self.assertIsInstance(native.properties[0].values[0], Value)
 
     def test_document_host_keeps_process_local_instance_identity_after_reorder(self) -> None:
         font = _InstanceFont("native-uuid", "native-pointer")
@@ -3184,6 +7399,35 @@ class V2DocumentAdapterTests(unittest.TestCase):
         font.note = "manual later edit"
         self.assertTrue(host.list_documents()[0].has_unsaved_changes)
 
+    def test_sequential_exact_reverts_preserve_the_verified_clean_baseline(self) -> None:
+        font = _TransactionalFont(sticky_after_undo=True)
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        baseline = host.capture_model(document_id)
+
+        for suffix in ("A", "B"):
+            current = host.capture_model(document_id)
+            changed = copy.deepcopy(current)
+            changed["font"]["note"] = suffix
+            change_set = diff_models(current, changed)
+            host.apply_verified_change_set(
+                document_id,
+                change_set,
+                operation_id="op_forward_{}".format(suffix),
+            )
+            host.apply_verified_change_set(
+                document_id,
+                diff_models(host.capture_model(document_id), baseline),
+                operation_id="op_revert_{}".format(suffix),
+                removes_contribution_id="op_forward_{}".format(suffix),
+            )
+
+            self.assertTrue(font.parent.isDocumentEdited)
+            self.assertFalse(
+                host.list_documents()[0].has_unsaved_changes,
+                "verified cycle {} inherited a sticky native dirty bit".format(suffix),
+            )
+
     def test_failed_transaction_restoration_balances_dirty_state_after_divergence(self) -> None:
         font = _TransactionalFont()
         host = GlyphsDocumentHost(_App(font), executor=_Immediate())
@@ -3328,6 +7572,257 @@ class V2DocumentAdapterTests(unittest.TestCase):
         )
         self.assertEqual(result["mismatchLocations"][0]["direct"], 2)
         self.assertEqual(result["mismatchLocations"][0]["replay"], 3)
+
+    def test_native_package_mismatch_reports_file_and_decoded_openstep_path(self) -> None:
+        def archive(value: int) -> bytes:
+            data = base64.b64encode(
+                "glyphs = ({ glyphname = A; private = %d; });".encode("utf-8")
+                % value
+            ).decode("ascii")
+            return json.dumps(
+                {
+                    "format": "glyphspackage-v1",
+                    "files": [
+                        {"path": "glyphs/A.glyph", "value": {"$data": data}}
+                    ],
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+
+        before = archive(1)
+        result = document_adapter._compare_native_archive_deltas(
+            before,
+            archive(2),
+            before,
+            archive(3),
+        )
+
+        self.assertFalse(result["equivalent"])
+        self.assertEqual(result["mismatchCount"], 1)
+        self.assertEqual(
+            result["mismatchLocations"][0]["path"],
+            [
+                "files",
+                "@path=glyphs/A.glyph",
+                "value",
+                "$decoded",
+                "glyphs",
+                0,
+                "private",
+            ],
+        )
+        self.assertEqual(result["mismatchLocations"][0]["direct"], 2)
+        self.assertEqual(result["mismatchLocations"][0]["replay"], 3)
+
+    def test_native_package_byte_difference_remains_strict_when_decoded_equal(self) -> None:
+        def archive(data: bytes) -> bytes:
+            return json.dumps(
+                {
+                    "format": "glyphspackage-v1",
+                    "files": [
+                        {
+                            "path": "fontinfo.plist",
+                            "value": {
+                                "$data": base64.b64encode(data).decode("ascii")
+                            },
+                        }
+                    ],
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+
+        compact = archive(b"font = { value = 1; };")
+        spaced = archive(b"font = {\nvalue = 1;\n};\n")
+        result = document_adapter._compare_native_archive_deltas(
+            compact,
+            compact,
+            compact,
+            spaced,
+        )
+
+        self.assertFalse(result["equivalent"])
+        self.assertEqual(result["mismatchCount"], 1)
+        self.assertEqual(
+            result["mismatchLocations"][0]["path"],
+            ["files", "@path=fontinfo.plist", "value", "$data"],
+        )
+
+    def test_native_archive_proof_normalizes_only_registered_omitted_defaults(self) -> None:
+        direct = {
+            "files": [
+                {
+                    "path": "glyphs/A.glyph",
+                    "value": {"layers": [{"layerId": "special"}]},
+                }
+            ]
+        }
+        replay = copy.deepcopy(direct)
+        replay["files"][0]["value"]["layers"][0]["vertWidth"] = 0
+        encode = lambda value: json.dumps(
+            value, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+
+        equivalent = document_adapter._compare_native_archive_deltas(
+            encode(direct), encode(direct), encode(direct), encode(replay)
+        )
+        self.assertTrue(equivalent["equivalent"])
+
+        replay["files"][0]["value"]["layers"][0]["vertWidth"] = 1
+        meaningful = document_adapter._compare_native_archive_deltas(
+            encode(direct), encode(direct), encode(direct), encode(replay)
+        )
+        self.assertFalse(meaningful["equivalent"])
+        self.assertEqual(
+            meaningful["mismatchLocations"][0]["path"],
+            ["files", "@path=glyphs/A.glyph", "value", "layers", 0, "vertWidth"],
+        )
+
+        direct_master = {
+            "files": [
+                {
+                    "path": "fontinfo.plist",
+                    "value": {"fontMaster": [{"id": "M1"}]},
+                }
+            ]
+        }
+        explicit_master_default = copy.deepcopy(direct_master)
+        explicit_master_default["files"][0]["value"]["fontMaster"][0][
+            "visible"
+        ] = 1
+        equivalent_master = document_adapter._compare_native_archive_deltas(
+            encode(direct_master),
+            encode(direct_master),
+            encode(direct_master),
+            encode(explicit_master_default),
+        )
+        self.assertTrue(equivalent_master["equivalent"])
+        self.assertEqual(
+            document_adapter._native_archive_fingerprint(encode(direct_master)),
+            document_adapter._native_archive_fingerprint(
+                encode(explicit_master_default)
+            ),
+        )
+
+        explicit_master_default["files"][0]["value"]["fontMaster"][0][
+            "visible"
+        ] = 0
+        meaningful_master = document_adapter._compare_native_archive_deltas(
+            encode(direct_master),
+            encode(direct_master),
+            encode(direct_master),
+            encode(explicit_master_default),
+        )
+        self.assertFalse(meaningful_master["equivalent"])
+
+    def test_native_archive_equivalence_is_pairwise_for_wrapped_omission_defaults(
+        self,
+    ) -> None:
+        def wrapped(text):
+            return {
+                "$data": base64.b64encode(text.encode("utf-8")).decode("ascii")
+            }
+
+        omitted = {
+            "format": "glyphspackage-v1",
+            "files": [
+                {
+                    "path": "fontinfo.plist",
+                    "value": wrapped(
+                        'fontMaster = ({ id = "MASTER"; name = Regular; });'
+                    ),
+                }
+            ],
+        }
+        explicit = copy.deepcopy(omitted)
+        explicit["files"][0]["value"] = wrapped(
+            'fontMaster = ({ id = "MASTER"; name = Regular; visible = 1; });'
+        )
+        formatting_only = copy.deepcopy(omitted)
+        formatting_only["files"][0]["value"] = wrapped(
+            'fontMaster=({id="MASTER";name=Regular;});'
+        )
+        encode = lambda value: json.dumps(
+            value, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+
+        accepted = document_adapter._compare_native_archives(
+            encode(omitted), encode(explicit)
+        )
+        strict = document_adapter._compare_native_archives(
+            encode(omitted), encode(formatting_only)
+        )
+
+        self.assertTrue(accepted["equivalent"])
+        self.assertEqual(accepted["mismatchLocations"], [])
+        self.assertFalse(strict["equivalent"])
+        self.assertEqual(
+            strict["mismatchLocations"][0]["path"],
+            ["files", "@path=fontinfo.plist", "value", "$data"],
+        )
+
+    def test_native_clone_archive_mismatches_require_exact_canonical_artifacts(
+        self,
+    ) -> None:
+        direct = {
+            "format": "glyphspackage-v1",
+            "files": [
+                {
+                    "path": "fontinfo.plist",
+                    "value": {"settings": {"colorSpace": "apple-rgb"}},
+                },
+                {
+                    "path": "glyphs/H_.glyph",
+                    "value": {
+                        "glyphname": "H",
+                        "layers": [{"layerId": "L", "visible": 1}],
+                    },
+                },
+            ],
+        }
+        clone = copy.deepcopy(direct)
+        del clone["files"][0]["value"]["settings"]
+        del clone["files"][1]["value"]["layers"][0]["visible"]
+        encode = lambda value: json.dumps(
+            value, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+        comparison = document_adapter._compare_native_archives(
+            encode(direct), encode(clone)
+        )
+        artifact_paths = (
+            ("settings", "colorSpace"),
+            ("glyphs", "H", "layers", "L", "visible"),
+        )
+
+        coverage = document_adapter._classify_native_clone_archive_mismatches(
+            comparison["mismatchLocations"],
+            artifact_paths=artifact_paths,
+            direct_tree=direct,
+            replay_tree=clone,
+        )
+
+        self.assertTrue(coverage["complete"])
+        self.assertEqual(coverage["coveredCount"], 2)
+        self.assertEqual(coverage["uncoveredLocations"], [])
+
+        direct["files"][1]["value"]["privateState"] = 1
+        comparison = document_adapter._compare_native_archives(
+            encode(direct), encode(clone)
+        )
+        coverage = document_adapter._classify_native_clone_archive_mismatches(
+            comparison["mismatchLocations"],
+            artifact_paths=artifact_paths,
+            direct_tree=direct,
+            replay_tree=clone,
+        )
+
+        self.assertFalse(coverage["complete"])
+        self.assertEqual(coverage["coveredCount"], 2)
+        self.assertEqual(
+            coverage["uncoveredLocations"][0]["path"],
+            ["files", "@path=glyphs/H_.glyph", "value", "privateState"],
+        )
 
     def test_native_archive_proof_aligns_identity_addressed_collections(self) -> None:
         before = b'{"layers":[{"layerId":"A","private":1},{"layerId":"B","private":2}]}'

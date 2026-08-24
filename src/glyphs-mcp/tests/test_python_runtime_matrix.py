@@ -24,6 +24,7 @@ IMPORT_MODULES = (
     "uvicorn",
     "httpx",
     "sse_starlette",
+    "openstep_plist",
     "fontParts",
     "fontTools",
     "objc",
@@ -46,6 +47,7 @@ class PythonRequirementsTests(unittest.TestCase):
 
         self.assertIn("pyobjc-core==11.1", lines)
         self.assertIn("pyobjc-framework-Cocoa==11.1", lines)
+        self.assertIn("openstep_plist==0.5.2", lines)
         self.assertNotIn("pyobjc==11.1", lines)
 
     def test_development_requirements_extend_runtime_without_shipping_test_tools(self) -> None:
@@ -77,6 +79,15 @@ class PythonRequirementsTests(unittest.TestCase):
         )
 
         self.assertIn(f'{FULL_MATRIX_ENV}=1', release_runner)
+
+    def test_release_gate_resolves_python_before_forwarding_it_to_xcode(self) -> None:
+        release_runner = (_repo_root() / "scripts" / "run_local_release_tests.sh").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn('python_bin="$(cd "$(dirname "$python_bin")"', release_runner)
+        self.assertIn('PYTHON_BIN="$python_bin" "$xcodebuild_bin" test', release_runner)
+        self.assertIn('PYTHON_BIN="$python_bin" "$xcodebuild_bin" build', release_runner)
 
 
 @unittest.skipUnless(

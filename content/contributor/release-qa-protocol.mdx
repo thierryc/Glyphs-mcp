@@ -1,320 +1,153 @@
 ---
 title: Release QA protocol
-description: Manual release validation for the catalog-driven Glyphs MCP surface in Glyphs 3.5 and 4.
+description: Asymmetric release validation for pinned Glyphs 3 and Glyphs MCP v2 on Glyphs 4.
 ---
 
 # Release QA protocol
 
-Run this protocol on every public candidate after the complete automated gate.
-It verifies the real Glyphs host, MCP transport, catalog discovery, guarded
-editing, native Reporters, packaging, and cross-version behavior. Unit tests
-remain responsible for exhaustive implementation branches.
+Run this protocol only after the complete local release gate passes. The 2.0
+installer intentionally ships two different runtimes:
 
-## Release gate
+- Glyphs 3.5 -> pinned v1.11 from signed baseline `v1.11.0` / `13ca805`.
+- Glyphs 4 -> v2.0 from the deterministic generated bundle.
 
-Required hosts:
+Catalog equality is not an acceptance criterion. Each host must match its own
+declared runtime track, version, safety contract, and payload manifest.
 
-| Host | Requirement |
-| --- | --- |
-| Glyphs 3.5.x | Required rows pass on a serialized disposable copy, or an accepted host-only limitation is recorded. |
-| Glyphs 4.x | Required rows pass on a serialized disposable copy, or an accepted host-only limitation is recorded. |
+## Automated prerequisite
 
-A candidate is blocked when the server cannot start/restart/stop, the MCP
-client cannot connect, catalog discovery differs materially between hosts, a
-review dirties the font, a dry run mutates, confirmation changes an unintended
-target, rollback fails, output is unbounded, or Glyphs crashes/hangs.
-
-## Automated prerequisites
-
-Before live testing, require all of the following:
+From the repository root, run:
 
 ```bash
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements-dev.txt
-PYTHON_BIN=.venv/bin/python ./scripts/run_python_tests.sh
-PYTHON_BIN=.venv/bin/python ./scripts/run_local_release_tests.sh
-cd website && npm run build
+python3 scripts/bump_version.py --dry-run --installer-build 27 2.0.0
+PYTHON_BIN=python3.12 ./scripts/run_local_release_tests.sh
 ```
 
-`requirements-dev.txt` extends the Glyphs runtime requirements with the
-repository-only `glyphsLib` benchmark dependency and pytest. The Python runner
-fails early with the exact missing modules and installation command. Its
-optional `--pytest` mode disables third-party plug-in autoloading; this keeps
-globally installed pytest integrations from changing FastMCP/Pydantic import
-state. The release gate itself remains on the canonical `unittest` path.
-It also creates temporary Python 3.12 and 3.14 environments, installs the
-pinned runtime requirements from the package index, and verifies every runtime
-import. Both interpreters and package-index access are therefore mandatory for
-the complete release gate.
+The consolidated gate runs shell and patch checks, the complete Python matrix,
+two byte-identical schema-v2 payload builds, source/package skill parity,
+canonical and packaged skill validation, the documentation production build,
+the complete Xcode suite, an unsigned Debug app build, and unsigned-candidate
+metadata validation. It also verifies pinned format hashes, generates the
+schema-v6 coverage report, requires zero unclassified official paths, and runs
+the independent flat/package source-seam audit. With
+`GLYPHS_MCP_FULL_NETWORK=1`, upstream knowledge drift blocks qualification. It
+does not sign, notarize, install, tag, upload, or publish anything.
 
-The automated gate must prove:
+## Containment and evidence
 
-- `TOOL_CATALOG` contains 87 active entries: 76 `model+app` and 11
-  `app-only`, plus exactly eight unregistered tombstones.
-- Every registered tool has one catalog entry, all four MCP safety hints,
-  concise metadata, a release classification, and a valid output schema.
-- No runtime module calls `mcp.tool` directly and no removed tool registers.
-- Model-visible `tools/list` metadata stays below 160 KiB.
-- Catalog-generated docs, routing fixtures, canonical skills, packaged skills,
-  and runtime mirrors agree.
-- Document-audit results conform to their dedicated schema. Outline, candidate,
-  curve, spacing, and kerning results conform to the common envelope while
-  preserving legacy JSON text.
-- No executable resource uses glyph undo groups.
+- Use only `Glyphs MCP V2 Disposable - Gee gee.glyphspackage` for Glyphs 4
+  mutation gates. Never open or save the production Gee gee source.
+- Record the disposable package tree hash, working path, canonical fingerprint,
+  native archive fingerprint, dirty state, and active master before each gate.
+- A Glyphs 3.5 check is read-only and must not mutate a document.
+- Every Glyphs 4 gate must restore its exact canonical and native baseline,
+  working path, dirty state, and active master before the next gate starts.
+- Run heavyweight gates separately. Return control to Glyphs between phases
+  and expose progress through the Glyphs MCP inspector; do not run one opaque,
+  monolithic qualification task.
+- No live installation is replaced by this protocol. Installer behavior is
+  exercised only against simulated target roots.
+- Treat a development symlink and its generated target as one effective live
+  installation. Rebuilding the target changes the code Glyphs will load even
+  when the symlink itself is unchanged.
+- Before either host matrix, verify that the resolved plug-in bundle already
+  has the required host version. Stop rather than qualifying a `dev` build as a
+  release or rebuilding a protected link target implicitly.
 
-## Fixtures and containment
+## Glyphs 3.5 pinned-runtime matrix
 
-Use serialized copies under `/private/tmp`; never test on the sole production
-file. Include a large multi-master font with components, counters, open and
-closed paths, kerning groups, features, annotations, and incompatible topology
-in at least one glyph. Record source/copy SHA-256 and mtime before opening.
+Record Glyphs build, Python version, plug-in path, resolved link target, runtime
+version, and catalog counts.
 
-For each host, record app build, Python runtime, plug-in version/build, runtime
-ID, font path/hash, client, and start/end dirty state. Never call `save_font`
-unless a row explicitly uses a disposable save-as target. Close test fonts with
-changes discarded and verify the source fixture stayed byte-identical.
-
-## Startup and catalog discovery
-
-| ID | Action | Expected |
+| ID | Action | Required result |
 | --- | --- | --- |
-| S1 | Start, stop, then start the server three times. | Every fresh client initializes; no stale event-loop state or duplicate thread remains. |
-| S2 | Call `get_server_info`, `list_open_fonts`, and `get_selected_font_and_master`. | Correct host/runtime/selection data; no mutation. |
-| S3 | Inspect raw `tools/list`. | Exactly the active tools in the generated command set register with catalog title, description, tags, annotations, metadata, and schemas. |
-| S4 | Inspect a client honoring Apps visibility. | Exactly the generated model-visible set remains routable; the generated app-only set remains hidden. |
-| S5 | Search for all eight tombstone names. | None registers; command reference gives one replacement for each. |
-| S6 | Reconnect after a plug-in restart. | Client receives the same catalog and no cached removed command. |
+| G3-1 | Launch Glyphs 3.5 with the pinned development link. | Runtime is exactly `1.11.0`; no v2 module is loaded. |
+| G3-2 | Start, stop, and restart the MCP server, reconnecting a fresh client each time. | No duplicate server, stale event loop, or reconnect failure. |
+| G3-3 | Call server info, open-font listing, and one bounded read-only font/glyph query. | Results match the v1.11 contract; document and file state remain unchanged. |
+| G3-4 | Inspect update state. | Glyphs 3 is pinned; no v2 notification, stage, or authorization can replace it. |
+| G3-5 | Stop the server and close any disposable document without saving. | Plug-in link and source bytes remain unchanged. |
 
-## Document change overview
+Do not run v2 canonical mutations, staged Python, Change Log, or rollback gates
+on Glyphs 3.5. Those APIs do not belong to its pinned runtime.
 
-Run these rows in both Glyphs 3.5 and Glyphs 4. Use one saved disposable font
-and one newly created unsaved font; keep a second font open for attribution and
-mismatch checks.
+## Glyphs 4 v2 runtime matrix
 
-| ID | Action | Expected |
+Record Glyphs build, Python version, generated plug-in hash, runtime version,
+catalog size, discovery payload size, and selected disposable document ID.
+
+### Runtime and transport
+
+| ID | Action | Required result |
 | --- | --- | --- |
-| DA1 | Open **Edit → Glyphs MCP Changes…** before any mutation and with the server stopped. | Native empty state explains automatic first-mutation tracking; opening the panel does not dirty or save any font. |
-| DA2 | Start the server and make one direct dedicated edit, then one confirm-gated edit after its dry run. | The first real edit binds the session to its live font; dry run is absent; chronological rows and changed/succeeded counts reflect only proved outcomes. |
-| DA3 | Trigger one failed direct or confirmed mutation whose failure occurs after mutation may have started. | A bounded `failed` event is retained without replacing the original tool error; unrelated font data is unchanged. |
-| DA3a | Try to delete a glyph name that does not exist, then request the overview without `font_index`. | The tool reports the missing glyph, no event or count is added, an idle ledger remains idle, and an existing session is returned for its tracked document without a mismatch. |
-| DA4 | Run `execute_code_with_context` against the tracked font and `execute_code` while attribution is ambiguous. | The explicit call is an opaque `uncertain` event with no code retained; the ambiguous call increments the unattributed-operation warning. |
-| DA5 | Save the initially unsaved tracked document to a disposable path. | The same session survives the path transition, records `saved`, and reports timestamp and new path in `lastSave`; no implicit save occurs. |
-| DA6 | Select a captured glyph event and use **Open Target**, then **Copy Summary**. | Glyphs opens the bounded glyph target; the pasteboard contains bounded Markdown with counts, entries, omissions, and warnings. |
-| DA7 | Mutate the second open document, then request its overview. | The mutation proceeds, the original ledger remains bound, a cross-document warning increments, and the tool returns stable `tracked_document_mismatch`. |
-| DA8 | Confirm **Reset**. | Only the in-memory ledger clears; neither document is edited or saved. |
-| DA9 | Start a new session and close its tracked document without saving. | The close callback returns the panel and MCP overview to idle; no font data or custom data was added. |
-| DA10 | Accumulate more than 256 disposable events and request limits below and above the allowed range. | Aggregate counts remain complete, only the newest 256 are retained, omission counts are accurate, and result limits clamp to 1–100. |
+| G4-1 | Start, stop, restart, and reconnect the server. | Every client receives v2.0 identity and the exact v2 catalog. |
+| G4-2 | Inspect complete discovery. | Payload is below 96 KiB; removed preparation and Candidate APIs are absent. |
+| G4-3 | Run bounded document, glyph, layer, master, instance, feature, kerning, and change-log reads. | Every response page is below 64 KiB and performs no mutation. |
+| G4-4 | Leave one connection idle, cancel one bounded call, then reconnect. | No per-second debug-ping flood, progressive slowdown, or poisoned server state. |
 
-## Structured-result contract
+### Verified apply-first kernel
 
-For the document audit and representative outline, candidate, curve, spacing,
-kerning, and LitSquare calls, inspect both MCP content channels.
+Run existing gates independently; do not reproduce their mutation logic in the
+release protocol.
 
-| ID | Case | Expected |
+| ID | Existing gate | Required result |
 | --- | --- | --- |
-| SR1 | Successful review. | Legacy JSON text is unchanged; `structuredContent` has version 1, matching tool/mode/status/target/summary/data. |
-| SR2 | Validation failure. | `ok=false`, status `error`, normalized recoverable error, bounded details. |
-| SR3 | Dry run then confirmation. | Modes are `dry_run` and `confirmed`; no mutation occurs in the first call. |
-| SR4 | Warning/partial batch. | Warning objects have code/message/optional target; partial status is preserved. |
-| SR5 | Stale candidate and rollback fixture. | Stable error/rollback fields are present and legacy text stays parseable. |
+| G4-5 | `verify_schema_v3_structural_kernel` | Glyph, OpenType, instance, selective-revert, and atomic-refusal domains pass; exact baseline restored. |
+| G4-6 | `verify_schema_v4_master_lifecycle` | Master duplicate/update/move/delete and reverse-order revert pass in at most 72 seconds. |
+| G4-7 | `verify_schema_v5_layer_lifecycle` | Intermediate, alternate, backup, Smart, and color layer lifecycle passes with unrelated shard reuse. |
+| G4-8 | `verify_staged_python_structural_replay` | Preview and confirmation cover glyph, master, layer, instance, feature, class, and prefix lifecycle without rerunning Python. |
+| G4-9 | `verify_copy_and_make_copy` | `save(path, makeCopy=True)` leaves the working path and dirty state unchanged. |
 
-## Atomic node-position updates
+Each successful mutation and revert must report one live transaction, one
+canonical operation ID, one Change Log commit, and one audit receipt. Failed
+apply, verification, rollback, stale, or conflict cases must restore their
+exact pre-attempt content and dirty contribution.
 
-Use one disposable glyph with at least two paths. Record every node field,
-shape order, anchors, width, and save state before each row.
+### Change feedback and visual state
 
-| ID | Action | Expected |
+| ID | Action | Required result |
 | --- | --- | --- |
-| NP1 | Dry-run two explicit updates with `grid_policy="font"` and grid length `1`. | Requested fractions are reported, authoritative coordinates use whole units, and the font remains unchanged. |
-| NP2 | Repeat with effective grid length `0.1`, then with disabled grid length `0`. | Subdivision coordinates snap to tenths; disabled-grid coordinates remain continuous. |
-| NP3 | Confirm two updates across paths without a prior dry run. | One change batch applies both or neither; exact read-back proves only coordinates changed; no save occurs. |
-| NP4 | Change one expected source coordinate or lock one path before confirmation. | Stable stale/locked rejection occurs before `beginChanges()` and no node changes. |
-| NP5 | Request `grid_policy="continuous"` in a fixture that normalizes coordinates. | Read-back mismatch returns `continuous_coordinate_not_preserved` and restores every original field. |
-| NP6 | Inject write, read-back, and `endChanges()` failures. | Complete rollback is verified and the document-audit result stays bounded. |
+| G4-10 | Apply a topology-compatible outline change. | Change Log lists its semantic targets and the Reporter shows the geometric before/current gap. |
+| G4-11 | Move one affected point manually. | Overlay updates against the fixed pre-agent baseline without full-font capture during drawing. |
+| G4-12 | Revert the operation exactly. | Overlay disappears and Change Log status updates; baseline and dirty state are exact. |
+| G4-13 | Revert an earlier operation while an unrelated later operation remains. | Later change is preserved; a conflicting later edit refuses atomically. |
+| G4-14 | Open and collapse the Glyphs MCP inspector during a long phase. | Compact activity feedback remains document-bound and the UI returns between gates. |
 
-## Start-node alignment
+## Simulated installer matrix
 
-Use one disposable multi-master glyph with corresponding closed paths, plus
-open, ambiguous, stale, and incompatible fixtures. Record complete layer and
-file signatures before each row.
+Use temporary Glyphs Application Support roots. Do not target the live plug-in
+folders or alter the existing development symlinks.
 
-| ID | Action | Expected |
+| ID | Action | Required result |
 | --- | --- | --- |
-| SN1 | Select one on-curve landmark in the reference master and call `review_start_node_alignment` for every explicit compatible master. | One bounded joint plan and fingerprint are returned; no layer or file state changes. |
-| SN2 | Repeat with an unselected/off-curve reference, an open path, ambiguous geometry, and incompatible node types. | Stable manual-review or validation errors; no change batch starts. |
-| SN3 | Dry-run `apply_start_node_alignment` with the exact fingerprint. | Every proposed rotation is reported and the complete source state remains unchanged. |
-| SN4 | Change any fingerprinted source field before confirmation. | `stale_plan` is returned before mutation. |
-| SN5 | Confirm one current plan. | Only the intended closed-path node order rotates; coordinates, node fields, contour direction, path/shape order, components, anchors, metadata, compatibility, and save state remain unchanged. |
-| SN6 | Pass string or numeric values for `dry_run` or `confirm`. | Literal-boolean validation rejects the request before mutation. |
-| SN7 | Inject `makeNodeFirst()`, read-back, and `endChanges()` failures. | Every affected master rolls back or reports an explicit rollback failure; no save occurs. |
+| I-1 | Build the payload twice. | Complete file maps are byte-for-byte equal. |
+| I-2 | Inspect `payload.json`. | Schema 2 maps Glyphs 3 to `1.11.0`/`1.x`/`pinned` and Glyphs 4 to `2.0.0`/`2.x`/`release`. |
+| I-3 | Install and reinstall Glyphs 3 in a simulated root. | Glyphs 4 target remains byte-identical. |
+| I-4 | Install and reinstall Glyphs 4 in a simulated root. | Glyphs 3 target remains byte-identical. |
+| I-5 | Inject a replacement failure for either host. | That host restores its prior bundle; the other host is untouched. |
+| I-6 | Uninstall either host. | Other host, shared dependencies, skills, documents, and unrelated preferences remain. |
+| I-7 | Present protocol-v1 update state. | It cannot satisfy or authorize a protocol-v2 request. |
+| I-8 | Enable then remove the Glyphs 3 update pin. | Only installer-owned preference values are restored, and only while unchanged. |
+| I-9 | Start from development symlinks. | They remain unless replacement was explicitly selected. |
 
-## Adaptive curve diagnostics
+## Qualification record
 
-Use analytic fixtures plus one real multi-master glyph. Raw editable paths are
-the scope; record omitted component counts.
-
-| ID | Action | Expected |
-| --- | --- | --- |
-| CG1 | Call `review_curve_quality` with default arguments. | `analysis_mode=adaptive`, geometry version 2, extrema, inflections, stationary/cusp events, turning angle, adaptive arc length, bounded self-intersections, and continuity metrics. |
-| CG2 | Repeat with `analysis_mode="sampled_v1"`. | Reproducible 1.7 sampled measurements remain available in the version-2 envelope. |
-| CG3 | Review a smooth curve/curve join and a curve/line join. | G0/G1/G2 and declared/geometric smooth discrepancies use conservative warnings, never an artistic score. |
-| CG4 | Call `review_curve_quality_across_masters` on compatible masters. | Per-master path/shape indices plus Tunni drift, normalized-curvature variation, event-count and continuity variation. |
-| CG5 | Repeat on incompatible topology. | Stable incompatibility reasons; no misleading comparison or mutation. |
-| CG6 | Enable `curvature`, `curve_events`, and both through `set_curve_review_overlay`. | Native Reporter draws bounded combs/events and state reports selected overlays/caps. |
-| CG7 | Move a node and redraw. | Cache invalidates, events update, and the font changes only because of the explicit manual edit. |
-
-Verify translation, rotation, reflection, reversal, proportional UPM scaling,
-path-start rotation, and de Casteljau subdivision fixtures in automated tests.
-Verify roots near endpoints, cusps, loops, huge/tiny coordinates, recursion
-caps, response bounds, and stroke caps adversarially.
-
-## Candidate lifecycle
-
-Test Tunni, collinear smoothing, italic first pass, and compensated tuning. Use
-multi-master scopes through sessions; retain the two documented single-target
-shortcuts only for their narrow cases.
-
-| ID | Action | Expected |
-| --- | --- | --- |
-| C1 | Preview each candidate adapter. | Detached proposal, no dirty state, Reporter activates, structured session references returned. |
-| C2 | Switch glyphs and masters. | Matching entry is selected; only the golden-yellow geometric difference is drawn. |
-| C3 | Materialize one session. | Complete copied layers receive new IDs and persistent manifest metadata; backgrounds stay untouched. |
-| C4 | Make one permitted manual edit and review. | Exact bounded diff and one-time token bind source and candidate fingerprints. |
-| C5 | Make a forbidden topology/component/metadata edit. | Stable rejection; no source mutation. |
-| C6 | Dry-run acceptance. | Exact proposed targets and rollback plan, no source change. |
-| C7 | Change source or candidate after review. | Token is rejected as stale. |
-| C8 | Confirm a freshly reviewed session. | Only allowed fields change, read-back verifies, candidates/manifest clean up, no save. |
-| C9 | Simulate write/readback/end-change failure. | Source, candidate layers, manifests, and backups restore completely. |
-| C10 | Discard a materialized session. | Only session-owned candidate layers are removed after dry-run/confirmation. |
-
-For grid-safe Tunni, exercise font grid steps `1`, `0.5`, and `2`, including
-negative/half-grid coordinates, integer JSON serialization, impossible grid
-candidates, tangent/imbalance boundaries, and continuous opt-in.
-
-## Spacing and kerning
-
-| ID | Action | Expected |
-| --- | --- | --- |
-| SP1 | Review selection spacing. | Measurements and proposed values are bounded and non-mutating. |
-| SP2 | Dry-run the exact spacing proposal. | Same normalized targets; no width/sidebearing change. |
-| SP3 | Confirm an approved subset. | Only approved metrics change; legacy text and structured envelope agree. |
-| K1 | Read a bounded master kerning subset. | Groups/exceptions resolve consistently without unbounded output. |
-| K2 | Review collisions/near misses. | Conservative findings and bounded evidence. |
-| K3 | Dry-run then confirm one disposable pair. | One intended pair changes; unrelated pairs remain byte-for-byte equivalent. |
-
-## General edits, code, files, and UI
-
-- On disposable glyphs, smoke-test create/copy/property/metric/component/anchor,
-  path replacement, corner, annotation, and delete tools one mutation at a
-  time. Verify explicit targets and unchanged unrelated data.
-- Prefer dedicated tools. Test `execute_code` only for bounded read-only output,
-  context injection, snippet-only mode, invalid code, and process-exit refusal.
-- Test export in a unique temporary directory. Test save only as an explicitly
-  approved save-as to a disposable path.
-- Verify app-only feedback/status wrappers through an MCP Apps-capable client;
-  they must not enter the model-visible list.
-- Verify Reporter controls change UI state only and never save.
-
-## Security, packaging, and performance
-
-- Test unauthenticated localhost mode, bearer/header token mode, allowed-origin
-  restrictions, and loopback-only binding.
-- Install/upgrade both Glyphs targets with the release installer. Confirm
-  canonical and Plugin Manager runtimes, four host manifests, packaged skills,
-  and build number agree. Each host resolves version `1.11.0`, the same 11
-  skills, and the same localhost MCP endpoint (the version script updates this
-  sentence for the candidate).
-- Exercise update discovery and **Prepare Update** only with signed disposable
-  loopback fixtures. Detection never authorizes installation; cancellation,
-  checksum/signature/version failure, receipts, and unchanged installed bundle
-  must be verified.
-- Target server start under 10 seconds; common reads under 3 seconds; bounded
-  large-font reads under 20 seconds; cold Reporter geometry under 20 ms and
-  cached redraw under 5 ms on the recorded test Mac; no more than 2,000 comb
-  teeth per frame.
-- Run 20 mixed calls, cancel one request, reconnect the client, close the active
-  font, and retry valid calls. The server must recover without progressive
-  slowdown or poisoned state.
-
-## Cross-version acceptance
-
-Compare catalog names/schemas, common result envelopes, path/shape indices,
-curve events, candidate transitions, kerning/spacing outcomes, Reporter state,
-error codes, dirty-state behavior, and performance between Glyphs 3.5 and 4.
-Host build numbers and unavailable host-specific fields may differ. Request
-contracts, safety transitions, and mutation targets may not.
-
-## Deterministic agent-routing smoke prompts
-
-Run every case in the
-[skill-routing prompt fixture](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/tests/fixtures/llm_skill_routing.json)
-as a fresh prompt without exposing its expected fields to the agent. Compare
-the observed result with all of these fields before marking the case passed:
-
-- `expected_skill`, including the explicit no-Glyphs-skill negative case
-- `expected_action` and `expected_tools`
-- `approval` and `snippet_only`
-- the human-readable `expected_result`
-- every entry in `forbidden_skills` and `forbidden_tools`
-
-Record the host, client/model version, chosen skill, tool sequence, whether any
-code executed, whether approval was requested, and the final pass/fail result.
-A model judging its own response is useful iteration evidence but does not
-replace a fresh-host or independent-model pass.
-
-Then run the repository tool-routing fixture plus these broader real-client
-prompts:
-
-```text
-Review adaptive curve quality for the explicit current path, compare compatible
-masters, and enable curvature plus curve-event overlays. Do not mutate or save.
-```
-
-```text
-Create an italic first-pass candidate for the explicit glyphs and masters.
-Review the session and dry-run acceptance, then stop before confirmation.
-Do not call removed direct italic tools.
-```
-
-```text
-Review spacing and kerning for my explicit selection. Use the dedicated review
-tools, dry-run any proposal, summarize warnings and skipped targets, and stop
-before confirmation.
-```
-
-## Test log
+Record results in `release-build-notes.mdx` only after they were actually run:
 
 ```md
-# Glyphs MCP release QA
-
-- Release candidate:
-- Git commit:
-- Artifact:
-- Tester/date:
-- Fixture and pre-test SHA-256:
-
-| Host | Build | Python | Client | Runtime/catalog ID | Result | Dirty/file state |
-| --- | --- | --- | --- | --- | --- | --- |
-| Glyphs 3.5 | | | | | | |
-| Glyphs 4 | | | | | | |
-
-| Section | Glyphs 3.5 | Glyphs 4 | Notes |
-| --- | --- | --- | --- |
-| Startup/catalog | | | |
-| Structured results | | | |
-| Start-node alignment | | | |
-| LitSquare/IconGrid | | | |
-| Adaptive curves/Reporter | | | |
-| Candidate lifecycle | | | |
-| Spacing/kerning | | | |
-| General edits/code/files/UI | | | |
-| Security/packaging/performance | | | |
-
-- Blockers:
-- Accepted limitations:
-- Final decision:
+- Candidate: 2.0.0 (installer build 27)
+- Branch and commit:
+- Automated tests and skips:
+- Payload SHA-256 values:
+- Glyphs 3.5 build / Python / runtime / result:
+- Glyphs 4 build / Python / runtime / result:
+- Schema-v4 elapsed time:
+- Baseline canonical/native/file restoration:
+- Open blockers or accepted limitations:
+- Signing: not performed
+- Notarization: not performed
+- Publication: not performed
 ```
 
-After testing, close with changes discarded, verify fixture hashes, remove only
-owned temporary copies/exports, restore test client settings, and archive the
-log. Publication remains a separate authorization boundary.
+Passing this protocol produces an unsigned local release candidate, not a
+publishable release. Merge, commit, signed tag, signing, notarization, GitHub
+draft creation, upload, and publication remain separately authorized actions.

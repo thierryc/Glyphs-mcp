@@ -12,7 +12,11 @@ V2_SOURCE = REPO / "src" / "glyphs-mcp-v2"
 if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
-from glyphs_mcp_v2.adapters.glyphs import GlyphsHostAdapter  # noqa: E402
+from glyphs_mcp_v2.adapters.glyphs import (  # noqa: E402
+    GlyphsHostAdapter,
+    _MISSING_OBJC_ATTRIBUTES,
+    _safe_getattr,
+)
 
 
 class _RecordingExecutor:
@@ -51,6 +55,24 @@ class _Glyphs:
 
 
 class V2GlyphsAdapterTests(unittest.TestCase):
+    def test_missing_objc_selector_is_cached_once_per_native_class(self) -> None:
+        class NativeMeta(type):
+            pass
+
+        NativeMeta.__module__ = "objc"
+
+        class NativeProxy(metaclass=NativeMeta):
+            lookups = 0
+
+            def __getattr__(self, name):
+                type(self).lookups += 1
+                raise AttributeError(name)
+
+        _MISSING_OBJC_ATTRIBUTES.clear()
+        self.assertIsNone(_safe_getattr(NativeProxy(), "notInThisGlyphsBuild"))
+        self.assertIsNone(_safe_getattr(NativeProxy(), "notInThisGlyphsBuild"))
+        self.assertEqual(NativeProxy.lookups, 1)
+
     def test_unsaved_state_prefers_content_changes_over_editor_registration(self) -> None:
         font = _Font(12, "Editor State", "/tmp/EditorState.glyphs")
         document = _Document(font)

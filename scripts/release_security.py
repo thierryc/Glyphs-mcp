@@ -6,10 +6,12 @@ from __future__ import annotations
 import argparse
 import ast
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import plistlib
 import re
+import subprocess
 import sys
 from typing import Any, Iterable, Mapping
 
@@ -111,12 +113,281 @@ def validate_release_metadata(repo_root: Path, tag: str, app_plist: Path | None 
     return version
 
 
+PINNED_GLYPHS3_VERSION = "1.11.0"
+AGENT_PLUGIN_MANIFESTS = (
+    "plugins/glyphs-mcp/.codex-plugin/plugin.json",
+    "plugins/glyphs-mcp/.claude-plugin/plugin.json",
+    "plugins/glyphs-mcp/.cursor-plugin/plugin.json",
+    "plugins/glyphs-mcp/.github/plugin/plugin.json",
+)
+
+
+def _read_agent_plugin_version(path: Path) -> str:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise ReleaseSecurityError(f"could not read agent plug-in manifest {path}: {exc}") from exc
+    version = data.get("version") if isinstance(data, Mapping) else None
+    if not isinstance(version, str) or not VERSION_RE.fullmatch(version):
+        raise ReleaseSecurityError(f"invalid agent plug-in version in {path}: {version!r}")
+    return version
+
+
+def _validate_target_payload(payload_root: Path, release_version: str, repo_root: Path) -> None:
+    builder_path = repo_root / "scripts/build_installer_payload.py"
+    if not builder_path.is_file():
+        raise ReleaseSecurityError(f"installer payload builder is missing: {builder_path}")
+    spec = importlib.util.spec_from_file_location("glyphs_mcp_candidate_payload", builder_path)
+    if spec is None or spec.loader is None:
+        raise ReleaseSecurityError("could not load the installer payload validator")
+    module = importlib.util.module_from_spec(spec)
+    try:
+        spec.loader.exec_module(module)
+        module.validate_payload(payload_root, release_version=release_version)
+    except Exception as exc:
+        raise ReleaseSecurityError(f"target-aware installer payload is invalid: {exc}") from exc
+
+
+def validate_unsigned_candidate(
+    repo_root: Path,
+    *,
+    expected_version: str,
+    installer_build: int,
+    payload_root: Path | None = None,
+    app_plist: Path | None = None,
+) -> dict[str, Any]:
+    """Validate a local unsigned v2 candidate without requiring a tag or signature."""
+    root = repo_root.resolve()
+    knowledge = validate_knowledge_dependencies(root)
+    if not VERSION_RE.fullmatch(expected_version):
+        raise ReleaseSecurityError(f"invalid expected release version: {expected_version!r}")
+    if isinstance(installer_build, bool) or installer_build < 1:
+        raise ReleaseSecurityError("installer build must be a positive integer")
+
+    version = read_v2_source_version(
+        root / "src/glyphs-mcp-v2/glyphs_mcp_v2/versions.py",
+        root / "src/glyphs-mcp-v2/pyproject.toml",
+    )
+    if version != expected_version:
+        raise ReleaseSecurityError(
+            f"v2 source version {version!r} does not match expected {expected_version!r}"
+        )
+    project = root / "macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj"
+    marketing_versions, build_versions = read_xcode_versions(project)
+    if marketing_versions != {version}:
+        values = ", ".join(sorted(marketing_versions))
+        raise ReleaseSecurityError(f"Xcode MARKETING_VERSION values ({values}) do not all match {version}")
+    if build_versions != {installer_build}:
+        values = ", ".join(str(value) for value in sorted(build_versions))
+        raise ReleaseSecurityError(
+            f"installer build values ({values}) do not exactly match {installer_build}"
+        )
+
+    pinned_paths = (
+        root / "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist",
+        root / "plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Info.plist",
+    )
+    for path in pinned_paths:
+        short, build = read_plist_version(path)
+        if short != PINNED_GLYPHS3_VERSION or build != PINNED_GLYPHS3_VERSION:
+            raise ReleaseSecurityError(
+                f"pinned Glyphs 3 surface must remain {PINNED_GLYPHS3_VERSION}: {path}"
+            )
+
+    for relative in AGENT_PLUGIN_MANIFESTS:
+        manifest_version = _read_agent_plugin_version(root / relative)
+        if manifest_version != version:
+            raise ReleaseSecurityError(
+                f"agent plug-in manifest {relative} is {manifest_version}, expected {version}"
+            )
+
+    if app_plist is not None:
+        app_version, app_build = read_plist_version(app_plist.resolve(), require_matching_build=False)
+        if app_version != version or int(app_build) != installer_build:
+            raise ReleaseSecurityError(
+                f"built installer metadata {app_version} ({app_build}) does not match "
+                f"{version} ({installer_build})"
+            )
+    if payload_root is not None:
+        _validate_target_payload(payload_root.resolve(), version, root)
+
+    return {
+        "releaseVersion": version,
+        "installerBuild": installer_build,
+        "targets": {"3": PINNED_GLYPHS3_VERSION, "4": version},
+        "payloadValidated": payload_root is not None,
+        "builtAppValidated": app_plist is not None,
+        "signed": False,
+        "notarized": False,
+        "publishable": False,
+        "knowledgeDependencies": knowledge,
+    }
+
+
+def validate_candidate_repository_state(repo_root: Path) -> None:
+    root = repo_root.resolve()
+    for base in ("main", "origin/main"):
+        result = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", base, "HEAD"],
+            cwd=root,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            detail = result.stderr.strip() or "not an ancestor of HEAD"
+            raise ReleaseSecurityError(f"unsigned candidate is not based on {base}: {detail}")
+
+
+def validate_signing_preflight(repo_root: Path) -> None:
+    root = repo_root.resolve()
+    required = (
+        root / "scripts/build_installer_app.sh",
+        root / "scripts/notarize_installer_app.sh",
+        root / "scripts/verify_release_artifacts.sh",
+        root / "scripts/publish_release_assets.sh",
+    )
+    missing = [str(path) for path in required if not path.is_file()]
+    if missing:
+        raise ReleaseSecurityError("release signing scripts are missing: " + ", ".join(missing))
+    combined = "\n".join(path.read_text(encoding="utf-8") for path in required)
+    for marker in ("Developer ID Application", "notarytool", "stapler", "codesign", "git verify-tag"):
+        if marker not in combined:
+            raise ReleaseSecurityError(f"release signing preflight is missing {marker!r}")
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def validate_knowledge_dependencies(
+    repo_root: Path,
+    *,
+    check_upstream: bool = False,
+) -> dict[str, Any]:
+    """Verify vendored authority offline and optionally fail on upstream drift."""
+
+    root = repo_root.resolve()
+    knowledge_root = root / "third_party/glyphs-file-format-v4"
+    manifest_path = knowledge_root / "knowledge-dependencies.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise ReleaseSecurityError(
+            f"could not read knowledge provenance manifest {manifest_path}: {exc}"
+        ) from exc
+    if not isinstance(manifest, Mapping) or manifest.get("schemaVersion") != 1:
+        raise ReleaseSecurityError("knowledge provenance manifest schema is unsupported")
+    if not str(manifest.get("auditedAt") or ""):
+        raise ReleaseSecurityError("knowledge provenance manifest lacks an audit date")
+    dependencies = manifest.get("dependencies")
+    if not isinstance(dependencies, list) or not dependencies:
+        raise ReleaseSecurityError("knowledge provenance manifest has no dependencies")
+    if not (knowledge_root / "LICENSE").is_file():
+        raise ReleaseSecurityError("vendored Glyphs format reference lacks its license")
+
+    verified = []
+    drift_checked = []
+    for raw in dependencies:
+        if not isinstance(raw, Mapping):
+            raise ReleaseSecurityError("knowledge dependency entry is malformed")
+        identity = str(raw.get("id") or "")
+        source = str(raw.get("source") or "")
+        role = str(raw.get("role") or "")
+        if not identity or not source or not role:
+            raise ReleaseSecurityError("knowledge dependency lacks id, source, or role")
+        audited_at = str(raw.get("auditedAt") or manifest.get("auditedAt") or "")
+        local_path = raw.get("localPath")
+        expected_hash = str(raw.get("sha256") or "")
+        commit = str(raw.get("commit") or "")
+        branch = str(raw.get("branch") or "")
+        authoritative = role != "explanatory_online"
+        if not audited_at:
+            raise ReleaseSecurityError(f"knowledge dependency lacks an audit date: {identity}")
+        if authoritative:
+            missing = [
+                key
+                for key in ("branch", "commit", "path", "localPath", "sha256", "license")
+                if not raw.get(key)
+            ]
+            if missing:
+                raise ReleaseSecurityError(
+                    f"pinned knowledge dependency lacks {', '.join(missing)}: {identity}"
+                )
+            if not re.fullmatch(r"[0-9a-f]{40}", commit):
+                raise ReleaseSecurityError(
+                    f"pinned knowledge dependency has an invalid commit: {identity}"
+                )
+            if not re.fullmatch(r"[0-9a-f]{64}", expected_hash):
+                raise ReleaseSecurityError(
+                    f"pinned knowledge dependency has an invalid SHA-256: {identity}"
+                )
+        if expected_hash:
+            if not isinstance(local_path, str) or not local_path:
+                raise ReleaseSecurityError(f"hashed knowledge dependency lacks localPath: {identity}")
+            path = (knowledge_root / local_path).resolve()
+            try:
+                path.relative_to(root)
+            except ValueError as exc:
+                raise ReleaseSecurityError(
+                    f"knowledge dependency escapes the repository: {identity}"
+                ) from exc
+            if not path.is_file() or _sha256(path) != expected_hash:
+                raise ReleaseSecurityError(
+                    f"knowledge dependency hash differs from its pin: {identity}"
+                )
+            verified.append(identity)
+        if check_upstream and commit:
+            if not branch:
+                raise ReleaseSecurityError(
+                    f"pinned knowledge dependency lacks its upstream branch: {identity}"
+                )
+            try:
+                result = subprocess.run(
+                    ["git", "ls-remote", source, f"refs/heads/{branch}"],
+                    cwd=root,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=False,
+                    timeout=60,
+                )
+            except Exception as exc:
+                raise ReleaseSecurityError(
+                    f"could not resolve upstream knowledge head for {identity}: {exc}"
+                ) from exc
+            if result.returncode != 0:
+                detail = result.stderr.strip() or "git ls-remote failed"
+                raise ReleaseSecurityError(
+                    f"could not resolve upstream knowledge head for {identity}: {detail}"
+                )
+            lines = [line for line in result.stdout.splitlines() if line.strip()]
+            head = lines[0].split()[0] if lines else ""
+            if head != commit:
+                raise ReleaseSecurityError(
+                    f"upstream knowledge drift requires review for {identity}: {commit} -> {head or 'missing'}"
+                )
+            drift_checked.append(identity)
+    required = {
+        "glyphs-file-format-v4-schema",
+        "glyphs-file-format-v4-specification",
+        "glyphs-object-wrapper",
+        "glyphs-python-reporter-template",
+        "glyphs-python-palette-template",
+    }
+    if not required.issubset(verified):
+        raise ReleaseSecurityError("official Glyphs v4 schema and specification pins are required")
+    return {
+        "auditedAt": manifest["auditedAt"],
+        "verified": sorted(verified),
+        "upstreamChecked": sorted(drift_checked),
+        "upstreamDrift": False,
+    }
 
 
 def _safe_relative(path: Path, base_dir: Path) -> Path:
@@ -233,10 +504,9 @@ def validate_release_state(
     expected = set(expected_asset_names)
     if "" in expected:
         raise ReleaseSecurityError("expected release asset names must not be empty")
-    conflicts = sorted(expected & existing)
-    if conflicts:
+    if existing:
         raise ReleaseSecurityError(
-            "draft already contains release asset(s): " + ", ".join(conflicts)
+            "release draft must be empty before upload; found: " + ", ".join(sorted(existing))
         )
 
 
@@ -248,6 +518,23 @@ def _parser() -> argparse.ArgumentParser:
     metadata.add_argument("--repo-root", type=Path, required=True)
     metadata.add_argument("--tag", required=True)
     metadata.add_argument("--app-plist", type=Path)
+
+    candidate = subparsers.add_parser(
+        "candidate",
+        help="verify an unsigned local v2 candidate without requiring a tag or signature",
+    )
+    candidate.add_argument("--repo-root", type=Path, required=True)
+    candidate.add_argument("--version", required=True)
+    candidate.add_argument("--installer-build", type=int, required=True)
+    candidate.add_argument("--payload-root", type=Path)
+    candidate.add_argument("--app-plist", type=Path)
+
+    knowledge = subparsers.add_parser(
+        "knowledge",
+        help="verify pinned Glyphs format knowledge and optionally compare upstream heads",
+    )
+    knowledge.add_argument("--repo-root", type=Path, required=True)
+    knowledge.add_argument("--check-upstream", action="store_true")
 
     checksums = subparsers.add_parser("checksums", help="write deterministic SHA-256 checksums")
     checksums.add_argument("--base-dir", type=Path, required=True)
@@ -280,6 +567,27 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "metadata":
             print(validate_release_metadata(args.repo_root, args.tag, args.app_plist))
+        elif args.command == "candidate":
+            validate_candidate_repository_state(args.repo_root)
+            validate_signing_preflight(args.repo_root)
+            result = validate_unsigned_candidate(
+                args.repo_root,
+                expected_version=args.version,
+                installer_build=args.installer_build,
+                payload_root=args.payload_root,
+                app_plist=args.app_plist,
+            )
+            print(json.dumps(result, sort_keys=True))
+        elif args.command == "knowledge":
+            print(
+                json.dumps(
+                    validate_knowledge_dependencies(
+                        args.repo_root,
+                        check_upstream=args.check_upstream,
+                    ),
+                    sort_keys=True,
+                )
+            )
         elif args.command == "checksums":
             write_checksums(args.paths, args.output, args.base_dir)
             print(args.output)

@@ -152,6 +152,15 @@ class ChangeFeedbackTests(unittest.TestCase):
             self.assertNotIn(forbidden, panel_source)
         for forbidden in ("drawForegroundForLayer", "drawBackgroundForLayer", "fontView"):
             self.assertNotIn(forbidden, reporter_source)
+        for forbidden in (
+            "native_font_to_model",
+            "native_layer_to_model",
+            "fingerprint_model",
+            "diff_models",
+            "capture_snapshot",
+        ):
+            self.assertNotIn(forbidden, reporter_source)
+        self.assertIn("native_layer_overlay_state", reporter_source)
         self.assertIn("_draw_difference", reporter_source)
         self.assertIn(".fill()", reporter_source)
         self.assertNotIn("_stroke_paths", reporter_source)

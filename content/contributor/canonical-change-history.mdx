@@ -61,12 +61,14 @@ it uses a single short batch per snapshot, `0700` parent permissions, and a
 The tree descriptor carries two independent versions. `schemaVersion` describes
 the content-addressed storage layout. `modelSchemaVersion` describes the
 semantic font projection. They must never be treated as interchangeable. The
-descriptor also declares `reversibilityCoverage: modeled_fields_only` because
-the canonical model does not claim to contain every private Glyphs or PyObjC
-field. A model fingerprint is therefore an exact identity for that versioned
-projection, not a byte-for-byte identity for an arbitrary native document.
+descriptor declares `reversibilityCoverage: complete_semantic_state` for model
+schema v6. This means every saved-document property in the pinned official
+Glyphs File Format v4 schema is classified and all canonical saved semantics
+participate in identity. It does not turn private native objects, volatile
+provenance, or UI session state into canonical content. Native archive evidence
+remains a separate proof boundary for opaque Glyphs-only payloads.
 
-Model schema v4 keeps ordered collections as plain detached JSON lists while
+Model schemas v4 and v5 established ordered collections as plain detached JSON lists while
 addressing masters, instances, features, classes, and prefixes by stable entity
 ID. Membership and scalar patches are independent from a minimal `$order`
 patch, so create/delete/update/reorder, selective revert, storage, and audit all
@@ -74,6 +76,13 @@ share one semantic representation. Glyph membership uses the same whole-entity
 principle on its name-keyed map. Master-owned layer membership is one bounded
 layer-entity change per glyph, and a duplicated master's kerning is one atomic
 partition; ordinary kerning batches remain one semantic change per pair.
+
+Schema v6 retains that collection kernel and adds a declarative per-field
+registry aligned with the official v4 format. The registry declares official,
+native, serialized and canonical paths; normalization; role; identity; order;
+shard ownership; replay; and public redaction. A generated gate currently
+classifies all 293 official properties and wildcard containers; an upstream
+field can never default silently to opaque.
 
 Master lifecycle replay also carries a small process-local execution context
 that identifies the native copy source. It is not font data and is never stored
@@ -84,7 +93,7 @@ hints, backgrounds, and other native fields that model schema v4 does not yet
 project. The tombstone is released after verified revert or successful save.
 
 The live adapter carries the same model as an immutable `CanonicalSnapshot`.
-Its exact schema-v4 document fingerprint is cached separately from an internal
+Its exact schema-v6 document fingerprint is cached separately from an internal
 content-tree hash. Root, glyph, and layer references are retained while native
 revision evidence agrees; a verified transition replaces only shards named by
 its semantic paths. A stable repeat capture therefore neither deep-copies nor
@@ -104,7 +113,9 @@ Canonical fields have explicit roles:
 - **derived fields** such as compatibility verdicts are observed and verified
   but are never assigned as if they were source data;
 - **read-only modeled fields** support analysis but not write-back;
-- **unmodeled native fields** are outside automatic rollback coverage.
+- **opaque fields** require exact native template/tombstone evidence;
+- **volatile provenance and UI-session fields** are excluded from document
+  identity by explicit registry declarations.
 
 Adding a field, changing identity rules, or moving a field between these roles
 requires a model-schema revision plus clone, serialization, and live-host gates.
@@ -130,9 +141,10 @@ fields.
 
 History, pagination, and the Reporter use the observed diff. The latest-session
 diff is cached when operations are recorded, so Reporter redraws perform only
-affected-glyph and affected-layer lookups plus one detached capture of the layer
-currently being drawn. Reporter callbacks never hash or capture the full font,
-write, prune, or mutate a Glyphs object.
+affected-glyph and affected-layer lookups plus a lightweight projection of the
+current layer's identity, width, path geometry, and anchor positions. They do
+not construct a canonical layer, inspect backgrounds or metadata, hash or
+capture the font, write, prune, or mutate a Glyphs object.
 
 ## Revert semantics
 

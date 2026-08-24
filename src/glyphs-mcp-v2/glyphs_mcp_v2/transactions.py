@@ -4,20 +4,49 @@ from __future__ import annotations
 
 import copy
 import logging
+import os
 import time
+import traceback
 from dataclasses import dataclass
 from threading import RLock
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Protocol
 from uuid import uuid4
 
 from .canonical_tree import CanonicalSnapshot
-from .semantic import ChangeSet, fingerprint_model
+from .canonical_schema import CanonicalCoverage
+from .semantic import ChangeSet, complete_models_equal, diff_models, fingerprint_model
 
 if TYPE_CHECKING:
     from .mutation import VerifiedMutationPlan
 
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _bounded_verification_value(value: Any, *, max_chars: int = 240) -> Any:
+    """Keep scalar diagnostics exact and bound potentially large containers."""
+
+    rendered = repr(value)
+    if len(rendered) <= max_chars:
+        return value
+    return rendered[: max_chars - 3] + "..."
+
+
+def _verification_residual_summary(change_set: ChangeSet) -> list[dict[str, Any]]:
+    return [
+        {
+            "path": list(change.path),
+            "actualPresent": change.before_present,
+            "expectedPresent": change.after_present,
+            "actual": _bounded_verification_value(change.before)
+            if change.before_present
+            else "<missing>",
+            "expected": _bounded_verification_value(change.after)
+            if change.after_present
+            else "<missing>",
+        }
+        for change in change_set.changes[:12]
+    ]
 
 
 class TransactionAdapter(Protocol):
@@ -36,6 +65,8 @@ class TransactionObserver(Protocol):
         before: Mapping[str, Any],
         after: Mapping[str, Any],
         change_set: ChangeSet,
+        writable_change_set: Optional[ChangeSet] = None,
+        coverage: Optional[CanonicalCoverage] = None,
     ) -> None:
         ...
 
@@ -62,6 +93,7 @@ class TransactionResult:
     requested_change_count: int
     observed_change_count: int
     inverse: ChangeSet
+    coverage: CanonicalCoverage = CanonicalCoverage.complete()
 
     @property
     def change_count(self) -> int:
@@ -92,6 +124,7 @@ class TransactionKernel:
         self._observer = observer
         self._activity = activity
         self._diagnostic_timings: dict[str, Mapping[str, float]] = {}
+        self._diagnostic_failures: dict[str, str] = {}
         self._timing_lock = RLock()
 
     def diagnostic_stage_timings(
@@ -99,6 +132,37 @@ class TransactionKernel:
     ) -> Mapping[str, float]:
         with self._timing_lock:
             return dict(self._diagnostic_timings.get(operation_id, {}))
+
+    def diagnostic_failure_traceback(
+        self, operation_id: str | None = None
+    ) -> str:
+        """Return one bounded internal traceback for live-gate diagnostics.
+
+        Failure traces are deliberately absent from MCP responses and audit
+        receipts. They contain implementation locations rather than semantic
+        document evidence and exist only to diagnose a failed local gate.
+        """
+
+        with self._timing_lock:
+            if operation_id is not None:
+                return self._diagnostic_failures.get(operation_id, "")
+            if not self._diagnostic_failures:
+                return ""
+            return next(reversed(self._diagnostic_failures.values()))
+
+    def _store_failure_traceback(self, operation_id: str, value: str) -> None:
+        bounded = str(value)[-32_768:]
+        with self._timing_lock:
+            self._diagnostic_failures[operation_id] = bounded
+            while len(self._diagnostic_failures) > 100:
+                self._diagnostic_failures.pop(next(iter(self._diagnostic_failures)))
+        if os.environ.get("GLYPHS_MCP_DEBUG_CAPTURE"):
+            print(
+                "[Glyphs MCP][VerifiedTransaction] operation={} failure:\n{}".format(
+                    operation_id, bounded
+                ),
+                flush=True,
+            )
 
     def _store_stage_timings(
         self, operation_id: str, values: Mapping[str, float]
@@ -112,6 +176,14 @@ class TransactionKernel:
             operation_id,
             dict(values),
         )
+        if os.environ.get("GLYPHS_MCP_DEBUG_CAPTURE"):
+            print(
+                "[Glyphs MCP][VerifiedTransaction] operation={} stages={}".format(
+                    operation_id,
+                    dict(values),
+                ),
+                flush=True,
+            )
 
     def _capture_verified_state(
         self,
@@ -206,7 +278,20 @@ class TransactionKernel:
             timings["history"] += (
                 time.perf_counter_ns() - history_started
             ) / 1_000_000
+        begin_verified_transaction = getattr(
+            self._adapter, "begin_verified_transaction", None
+        )
+        end_verified_transaction = getattr(
+            self._adapter, "end_verified_transaction", None
+        )
+        transaction_boundary_active = False
+        failure_phase = "transaction_boundary"
         try:
+            if callable(begin_verified_transaction) and callable(
+                end_verified_transaction
+            ):
+                begin_verified_transaction(document_id)
+                transaction_boundary_active = True
             if self._activity is not None:
                 self._activity.advance_current(
                     "applying",
@@ -214,6 +299,7 @@ class TransactionKernel:
                     cancellable=False,
                 )
             live_apply_started = time.perf_counter_ns()
+            failure_phase = "live_apply"
             verified_apply = getattr(self._adapter, "apply_verified_change_set", None)
             if callable(verified_apply):
                 apply_options = {
@@ -241,6 +327,7 @@ class TransactionKernel:
                     "verifying", "Verifying the result", cancellable=False
                 )
             settled_started = time.perf_counter_ns()
+            failure_phase = "settled_verification"
             actual_after = self._retain_or_copy(
                 self._capture_verified_state(document_id, expected_after)
             )
@@ -268,13 +355,22 @@ class TransactionKernel:
             if (
                 actual_fingerprint != plan.after_fingerprint
                 or fingerprint_model(expected_after) != plan.after_fingerprint
+                or not complete_models_equal(actual_after, expected_after)
             ):
-                raise RuntimeError("document read-back did not match the detached verified plan")
+                residual = diff_models(actual_after, expected_after)
+                raise RuntimeError(
+                    "document read-back did not match the detached verified plan "
+                    "({} canonical changes; first residuals: {})".format(
+                        len(residual.changes),
+                        _verification_residual_summary(residual),
+                    )
+                )
             timings["settled_verification"] += (
                 time.perf_counter_ns() - settled_started
             ) / 1_000_000
             if self._observer is not None:
                 history_started = time.perf_counter_ns()
+                failure_phase = "history"
                 commit = self._observer.commit_transaction
                 if "writable_change_set" in getattr(commit, "__annotations__", {}):
                     commit(
@@ -284,6 +380,7 @@ class TransactionKernel:
                         actual_after,
                         plan.observed_change_set,
                         writable_change_set=plan.writable_change_set,
+                        coverage=plan.coverage,
                     )
                 else:
                     commit(
@@ -298,9 +395,14 @@ class TransactionKernel:
                 ) / 1_000_000
             verified_commit = getattr(self._adapter, "commit_verified_change", None)
             if callable(verified_commit):
+                failure_phase = "history"
                 verified_commit(plan.operation_id)
         except Exception as exc:
+            self._store_failure_traceback(
+                plan.operation_id, traceback.format_exc(limit=40)
+            )
             rollback_succeeded = False
+            rollback_error: Exception | None = None
             try:
                 if self._activity is not None:
                     self._activity.advance_current(
@@ -325,8 +427,12 @@ class TransactionKernel:
                 else:
                     self._adapter.restore_model(document_id, before)
                 restored = self._capture_verified_state(document_id, before)
-                rollback_succeeded = fingerprint_model(restored) == current_fingerprint
-            except Exception:
+                rollback_succeeded = bool(
+                    fingerprint_model(restored) == current_fingerprint
+                    and complete_models_equal(restored, before)
+                )
+            except Exception as restore_exc:
+                rollback_error = restore_exc
                 rollback_succeeded = False
             if self._observer is not None:
                 try:
@@ -337,10 +443,22 @@ class TransactionKernel:
                 time.perf_counter_ns() - transaction_started
             ) / 1_000_000
             self._store_stage_timings(plan.operation_id, timings)
-            raise TransactionVerificationError(
+            failure_message = "{} failed: {}".format(
+                failure_phase,
                 str(exc) or "document transaction verification failed",
+            )
+            if rollback_error is not None:
+                failure_message = "{}; rollback failed: {}".format(
+                    failure_message,
+                    str(rollback_error) or type(rollback_error).__name__,
+                )
+            raise TransactionVerificationError(
+                failure_message,
                 rollback_succeeded=rollback_succeeded,
             ) from exc
+        finally:
+            if transaction_boundary_active:
+                end_verified_transaction(document_id)
         from .mutation import writable_subset
 
         timings["total"] = float(plan.stage_timings.get("total", 0.0)) + (
@@ -363,6 +481,7 @@ class TransactionKernel:
                 plan.observed_change_set.inverse(),
                 capabilities=plan.capabilities,
             ),
+            coverage=plan.coverage,
         )
 
 

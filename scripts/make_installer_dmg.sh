@@ -23,10 +23,10 @@ if [[ -z "${version:-}" ]]; then
   exit 1
 fi
 
-dmg_versioned="$out_dir/$scheme-$version.dmg"
-dmg_latest="$out_dir/$scheme.dmg"
+dmg_versioned="$out_dir/Glyphs-MCP-$version.dmg"
+dmg_latest="$out_dir/Glyphs-MCP-latest.dmg"
 if [[ "$skip" == "1" ]]; then
-  dmg_versioned="$out_dir/$scheme-$version-UNNOTARIZED.dmg"
+  dmg_versioned="$out_dir/Glyphs-MCP-$version-UNNOTARIZED.dmg"
 fi
 
 if [[ "$skip" != "1" ]]; then

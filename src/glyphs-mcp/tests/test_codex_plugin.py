@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+import ast
 import json
 import os
 from pathlib import Path
-import plistlib
 import re
 import shutil
 import subprocess
@@ -31,8 +31,15 @@ SKILL_NAMES = (
     "glyphs-mcp-scripting",
     "glyphs-mcp-spacing",
 )
-with (REPO / "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Info.plist").open("rb") as plist_file:
-    PLUGIN_VERSION = str(plistlib.load(plist_file)["CFBundleShortVersionString"])
+version_tree = ast.parse(
+    (REPO / "src/glyphs-mcp-v2/glyphs_mcp_v2/versions.py").read_text(encoding="utf-8")
+)
+PLUGIN_VERSION = next(
+    ast.literal_eval(node.value)
+    for node in version_tree.body
+    if isinstance(node, ast.Assign)
+    and any(isinstance(target, ast.Name) and target.id == "SERVER_VERSION" for target in node.targets)
+)
 HOST_MANIFESTS = {
     "codex": PLUGIN / ".codex-plugin" / "plugin.json",
     "claude": PLUGIN / ".claude-plugin" / "plugin.json",

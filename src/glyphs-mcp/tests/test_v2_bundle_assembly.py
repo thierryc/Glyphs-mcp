@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import plistlib
@@ -27,6 +28,46 @@ def _file_map(root: Path) -> dict[str, bytes]:
 
 
 class V2BundleAssemblyTests(unittest.TestCase):
+    def test_builder_output_is_relocatable_and_byte_deterministic(self) -> None:
+        temporary_root = REPO / ".tmp"
+        temporary_root.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(
+            prefix="v2-payload-determinism-", dir=temporary_root
+        ) as tmp:
+            first = Path(tmp) / "first"
+            second = Path(tmp) / "second"
+            env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1"}
+            for output in (first, second):
+                result = subprocess.run(
+                    [sys.executable, str(BUILDER), "--output-root", str(output)],
+                    cwd=REPO,
+                    env=env,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=30,
+                )
+                self.assertEqual(result.returncode, 0, msg=result.stderr)
+
+            first_files = _file_map(first)
+            second_files = _file_map(second)
+            self.assertEqual(set(first_files), set(second_files))
+            for relative_path in first_files:
+                self.assertEqual(
+                    hashlib.sha256(first_files[relative_path]).digest(),
+                    hashlib.sha256(second_files[relative_path]).digest(),
+                    msg=relative_path,
+                )
+            manifest = json.loads(
+                (first / "manifest.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(manifest["sourcePackage"], "glyphs_mcp_v2")
+            self.assertEqual(manifest["outputRoot"], ".")
+            self.assertEqual(
+                manifest["installableBundle"],
+                "source/Glyphs MCP.glyphsPlugin",
+            )
+
     def test_builder_assembles_identical_payloads_inside_the_worktree(self) -> None:
         temporary_root = REPO / ".tmp"
         temporary_root.mkdir(exist_ok=True)
@@ -56,8 +97,8 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 self.assertTrue((bundle / "Contents" / "MacOS" / "plugin").is_file())
                 with (bundle / "Contents" / "Info.plist").open("rb") as plist_file:
                     info = plistlib.load(plist_file)
-                self.assertEqual(info["CFBundleShortVersionString"], "2.0.0.dev1")
-                self.assertEqual(info["CFBundleVersion"], "2.0.0.dev1")
+                self.assertEqual(info["CFBundleShortVersionString"], "2.0.0")
+                self.assertEqual(info["CFBundleVersion"], "2.0.0")
 
                 runtime_bridge = (resources / "mcp_tools.py").read_text(encoding="utf-8")
                 self.assertIn(
@@ -76,6 +117,14 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 self.assertNotIn("import documentation_resources", plugin_entry)
                 self.assertNotIn("import kerning_resources", plugin_entry)
 
+                plugin_runtime = (resources / "glyphs_plugin.py").read_text(encoding="utf-8")
+                self.assertIn("get_mcp_tool_registry", plugin_runtime)
+                self.assertIn("tools = get_mcp_tool_registry(mcp)", plugin_runtime)
+                self.assertNotIn(
+                    'for attr_name in ["_tools", "tools", "_tool_registry", "tool_registry", "_handlers"]',
+                    plugin_runtime,
+                )
+
                 changes_bridge = (resources / "document_changes_panel.py").read_text(encoding="utf-8")
                 self.assertIn("glyphs_mcp_v2.change_log_panel", changes_bridge)
                 self.assertTrue((resources / "glyphs_mcp_v2" / "change_diff_reporter.py").is_file())
@@ -84,6 +133,18 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 inspector_source = inspector.read_text(encoding="utf-8")
                 self.assertIn('PALETTE_NAME = "Glyphs MCP"', inspector_source)
                 self.assertIn("GlyphsMCPLitSquareMetadataPalette", inspector_source)
+
+                format_docs = resources / "MCP Documentation" / "docs" / "file-format"
+                pinned_specification = format_docs / "GlyphsFileFormatv4.md"
+                coverage_report = format_docs / "canonical-schema-v6-coverage.md"
+                self.assertEqual(
+                    pinned_specification.read_bytes(),
+                    (REPO / "third_party/glyphs-file-format-v4/GlyphsFileFormatv4.md").read_bytes(),
+                )
+                coverage = coverage_report.read_text(encoding="utf-8")
+                self.assertIn("Model schema: `6`", coverage)
+                self.assertIn("Status: `complete`", coverage)
+                self.assertIn("Unclassified: 0", coverage)
 
                 self.assertIn("GlyphsMCPChangeDiffReporter", info["Principal Classes"])
                 self.assertIn("GlyphsMCPInspectorPalette", info["Principal Classes"])

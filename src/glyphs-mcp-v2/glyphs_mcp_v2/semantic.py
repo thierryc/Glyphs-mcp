@@ -16,10 +16,19 @@ from .canonical_collections import (
     find_entity_index,
     identity_collection_paths,
     identity_order_change_required,
+    identity_sequence,
     indexed_entities,
     is_identity_collection_path,
+    is_identity_sequence_path,
     reorder_entities,
     replace_entity,
+    revert_identity_sequence_onto,
+)
+from .canonical_views import (
+    derived_diagnostics_equal,
+    layer_components,
+    layer_paths,
+    semantic_identity_document,
 )
 
 
@@ -28,13 +37,19 @@ _CACHED_FINGERPRINT_ACCESS = object()
 SUPPORTED_DOCUMENT_ROOTS = frozenset(
     {
         "font",
+        "axes",
         "masters",
         "instances",
         "glyphs",
+        "glyphOrder",
         "kerning",
         "features",
         "classes",
         "featurePrefixes",
+        "metrics",
+        "stems",
+        "numbers",
+        "settings",
     }
 )
 
@@ -65,7 +80,11 @@ def _plain(value: Any) -> Any:
         return [_plain(item) for item in value]
     if isinstance(value, Mapping):
         return {str(key): _plain(value[key]) for key in sorted(value, key=str)}
-    raise TypeError("document models must contain JSON-safe detached values")
+    raise TypeError(
+        "document models must contain JSON-safe detached values; found {}".format(
+            type(value).__name__
+        )
+    )
 
 
 def canonical_json(value: Any) -> str:
@@ -89,8 +108,45 @@ def fingerprint_model(value: Any) -> str:
         and len(cached) == 71
     ):
         return cached
-    digest = hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(
+        canonical_json(semantic_identity_document(value)).encode("utf-8")
+    ).hexdigest()
     return "sha256:{}".format(digest)
+
+
+def complete_models_equal(left: Mapping[str, Any], right: Mapping[str, Any]) -> bool:
+    """Compare complete observed state independently from document identity.
+
+    The document fingerprint intentionally excludes derived diagnostics such
+    as compatibility verdicts and last-change timestamps. Exact transaction
+    verification and rollback must still prove those observed fields against
+    the detached target. Comparing through the Mapping surface ignores cache
+    and native revision evidence while immutable shared shards make the usual
+    equal case bounded.
+    """
+
+    return (
+        fingerprint_model(left) == fingerprint_model(right)
+        and derived_diagnostics_equal(left, right)
+    )
+
+
+def rebase_canonical_model(
+    base: Mapping[str, Any], candidate: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    """Retain the immutable shards of ``base`` in a copy-on-write candidate.
+
+    Mutation builders intentionally operate on ordinary detached containers.
+    When their source is an immutable canonical snapshot, this seam turns the
+    resulting mapping back into a snapshot before any fingerprint or semantic
+    proof is computed. Domain code therefore never needs to know how snapshots
+    are sharded, and no builder can accidentally re-hash a complete font.
+    """
+
+    if callable(getattr(candidate, "_verified_canonical_fingerprint", None)):
+        return candidate
+    rebase = getattr(base, "_rebase_shared_model", None)
+    return rebase(candidate) if callable(rebase) else candidate
 
 
 @dataclass(frozen=True)
@@ -168,8 +224,8 @@ def _public_change_value(path: Sequence[str], value: Any) -> Any:
             "id": str(value.get("id") or path[3]),
             "masterId": str(value.get("masterId") or ""),
             "name": str(value.get("name") or ""),
-            "pathCount": len(value.get("paths") or ()),
-            "componentCount": len(value.get("components") or ()),
+            "pathCount": len(layer_paths(value)),
+            "componentCount": len(layer_components(value)),
             "fieldCount": len(value),
             "fingerprint": fingerprint_model(value),
         }
@@ -211,8 +267,11 @@ def public_change_dict(change: SemanticChange) -> dict[str, Any]:
     return value
 
 
-def _value_at(model: Any, path: Sequence[str]) -> Any:
+def _value_at(
+    model: Any, path: Sequence[str], *, prefix: Sequence[str] = ()
+) -> Any:
     current = model
+    traversed: list[str] = [str(part) for part in prefix]
     for part in path:
         if isinstance(current, Mapping):
             if part not in current:
@@ -220,10 +279,15 @@ def _value_at(model: Any, path: Sequence[str]) -> Any:
             current = current[part]
         elif isinstance(current, (list, tuple)):
             if part == ORDER_TOKEN:
-                try:
-                    current = collection_order(current)
-                except ValueError:
-                    return MISSING
+                if is_identity_sequence_path(traversed):
+                    current = identity_sequence(current)
+                    if current is None:
+                        return MISSING
+                else:
+                    try:
+                        current = collection_order(current)
+                    except ValueError:
+                        return MISSING
             else:
                 index = find_entity_index(current, part)
                 if index is not None:
@@ -235,7 +299,23 @@ def _value_at(model: Any, path: Sequence[str]) -> Any:
                         return MISSING
         else:
             return MISSING
+        traversed.append(str(part))
     return current
+
+
+def semantic_value_at(
+    model: Any, path: Sequence[str]
+) -> tuple[bool, Any]:
+    """Read one identity-aware canonical path without exposing a sentinel.
+
+    Adapters use this at source boundaries to distinguish an absent saved
+    field from an explicit null value. Collection identity and order lookup
+    remains owned by the semantic patch kernel rather than being reimplemented
+    by each native adapter.
+    """
+
+    value = _value_at(model, path)
+    return value is not MISSING, None if value is MISSING else value
 
 
 def _set_at(model: dict[str, Any], path: Sequence[str], value: Any, present: bool) -> None:
@@ -265,7 +345,13 @@ def _set_at(model: dict[str, Any], path: Sequence[str], value: Any, present: boo
         if leaf == ORDER_TOKEN:
             if not present:
                 raise ValueError("canonical collection order cannot be removed")
-            reorder_entities(current, value)
+            if is_identity_sequence_path(path[:-1]):
+                replacement = identity_sequence(value)
+                if replacement is None:
+                    raise ValueError("canonical identity sequence is invalid")
+                current[:] = replacement
+            else:
+                reorder_entities(current, value)
         else:
             identity_index = find_entity_index(current, leaf)
             is_entity_value = present and entity_id(value) == leaf
@@ -286,7 +372,13 @@ def _set_at(model: dict[str, Any], path: Sequence[str], value: Any, present: boo
         current.pop(leaf, None)
 
 
-def _require_change_before(current: Any, change: SemanticChange) -> None:
+def _require_change_before(
+    current: Any,
+    change: SemanticChange,
+    *,
+    prefix: Sequence[str] = (),
+) -> None:
+    absolute_path = tuple(str(part) for part in prefix) + change.path
     if change.before_present and current is MISSING:
         raise ValueError("change path is missing: {}".format("/".join(change.path)))
     if not change.before_present and current is not MISSING:
@@ -296,6 +388,7 @@ def _require_change_before(current: Any, change: SemanticChange) -> None:
     if (
         change.path[-1] == ORDER_TOKEN
         and change.after_present
+        and not is_identity_sequence_path(absolute_path[:-1])
         and (
             not isinstance(current, (list, tuple))
             or set(current) != set(change.after)
@@ -303,6 +396,17 @@ def _require_change_before(current: Any, change: SemanticChange) -> None:
     ):
         raise ValueError(
             "canonical collection membership is stale: {}".format(
+                "/".join(change.path)
+            )
+        )
+    if (
+        change.path[-1] == ORDER_TOKEN
+        and is_identity_sequence_path(absolute_path[:-1])
+        and change.before_present
+        and current != change.before
+    ):
+        raise ValueError(
+            "canonical identity sequence has stale content: {}".format(
                 "/".join(change.path)
             )
         )
@@ -354,6 +458,54 @@ class ChangeSet:
             changes=tuple(sorted(normalized, key=lambda item: item.path)),
         )
 
+    @classmethod
+    def project(
+        cls,
+        before: Mapping[str, Any],
+        changes: Iterable[SemanticChange | Mapping[str, Any]],
+    ) -> "ChangeSet":
+        """Build one verified copy-on-write projection from semantic paths.
+
+        Selective revert and writable-path projection operate on already
+        verified changes. Expanding their complete font into a mutable copy is
+        both unnecessary and especially expensive inside Glyphs. This generic
+        constructor applies only the supplied paths, asks an immutable
+        snapshot to rebase the changed shards when available, and derives the
+        exact target fingerprint from that shared tree.
+        """
+
+        normalized = tuple(
+            change if isinstance(change, SemanticChange) else _change_from_mapping(change)
+            for change in changes
+        )
+        before_fingerprint = fingerprint_model(before)
+        result: Mapping[str, Any] = before
+        for change in sorted(
+            normalized,
+            key=lambda item: (item.path[-1] == ORDER_TOKEN, item.path),
+        ):
+            _require_change_before(_value_at(result, change.path), change)
+            result = _persistent_set_at(
+                result,
+                change.path,
+                change.after,
+                change.after_present,
+            )
+        rebase = getattr(before, "_rebase_shared_model", None)
+        if callable(rebase):
+            result = rebase(result)
+            projected = cls.from_changes(
+                before_fingerprint=before_fingerprint,
+                after_fingerprint=fingerprint_model(result),
+                changes=normalized,
+            )
+            # The snapshot transition verifies every changed shard and the
+            # exact streamed document fingerprint without materializing the
+            # complete font.
+            projected.apply(before)
+            return projected
+        return diff_models(before, result)
+
     @property
     def supported(self) -> bool:
         return all(change.path[0] in SUPPORTED_DOCUMENT_ROOTS for change in self.changes)
@@ -366,7 +518,58 @@ class ChangeSet:
             if change.path[0] not in SUPPORTED_DOCUMENT_ROOTS
         )
 
-    def apply(self, model: Mapping[str, Any], *, verify_before: bool = True) -> dict[str, Any]:
+    def changes_under(
+        self, prefix: Sequence[str]
+    ) -> Tuple[SemanticChange, ...]:
+        """Return changes contained by one canonical subtree.
+
+        Replay and impact analysis consume the semantic patch as their one
+        routing index. Keeping prefix selection here prevents every native
+        domain adapter from independently rescanning or comparing complete
+        canonical trees.
+        """
+
+        normalized = tuple(str(part) for part in prefix)
+        return tuple(
+            change
+            for change in self.changes
+            if len(change.path) >= len(normalized)
+            and change.path[: len(normalized)] == normalized
+        )
+
+    def affected_identities(
+        self, collection_path: Sequence[str]
+    ) -> Tuple[str, ...] | None:
+        """Return identities touched below an identity-addressed collection.
+
+        ``None`` means the collection or one of its ancestors is replaced, so
+        callers must conservatively handle every identity. An empty tuple
+        means the collection is untouched (or only its independent order
+        token changed). Otherwise identities preserve semantic change order.
+        """
+
+        prefix = tuple(str(part) for part in collection_path)
+        identities: list[str] = []
+        seen: set[str] = set()
+        for change in self.changes:
+            path = change.path
+            if len(path) <= len(prefix) and prefix[: len(path)] == path:
+                return None
+            if len(path) <= len(prefix) or path[: len(prefix)] != prefix:
+                continue
+            identity = path[len(prefix)]
+            if identity == ORDER_TOKEN or identity in seen:
+                continue
+            seen.add(identity)
+            identities.append(identity)
+        return tuple(identities)
+
+    def apply(
+        self, model: Mapping[str, Any], *, verify_before: bool = True
+    ) -> Mapping[str, Any]:
+        snapshot_apply = getattr(model, "_apply_verified_change_set", None)
+        if callable(snapshot_apply):
+            return snapshot_apply(self, verify_before=verify_before)
         if verify_before and fingerprint_model(model) != self.before_fingerprint:
             raise ValueError("change set does not match the supplied before state")
         result = copy.deepcopy(_plain(model))
@@ -404,6 +607,11 @@ class ChangeSet:
 
 
 def _diff(before: Any, after: Any, path: Tuple[str, ...]) -> list[SemanticChange]:
+    # Copy-on-write mutation builders retain every untouched canonical shard
+    # by identity. That identity is stronger than recursive equality and lets
+    # a one-glyph edit avoid walking the other hundreds of glyph trees.
+    if before is after:
+        return []
     if isinstance(before, Mapping) and isinstance(after, Mapping):
         changes: list[SemanticChange] = []
         for key in sorted(set(before) | set(after), key=str):
@@ -437,6 +645,19 @@ def _diff(before: Any, after: Any, path: Tuple[str, ...]) -> list[SemanticChange
                 changes.extend(_diff(before[key], after[key], path + (key_text,)))
         return changes
     if isinstance(before, (list, tuple)) and isinstance(after, (list, tuple)):
+        if is_identity_sequence_path(path):
+            before_sequence = identity_sequence(before)
+            after_sequence = identity_sequence(after)
+            if before_sequence is not None and after_sequence is not None:
+                if before_sequence == after_sequence:
+                    return []
+                return [
+                    SemanticChange(
+                        path=path + (ORDER_TOKEN,),
+                        before=before_sequence,
+                        after=after_sequence,
+                    )
+                ]
         if is_identity_collection_path(path):
             before_indexed = indexed_entities(before)
             after_indexed = indexed_entities(after)
@@ -507,14 +728,35 @@ def _diff(before: Any, after: Any, path: Tuple[str, ...]) -> list[SemanticChange
 
 
 def diff_models(before: Mapping[str, Any], after: Mapping[str, Any]) -> ChangeSet:
-    before_plain = _plain(before)
-    after_plain = _plain(after)
+    # Immutable canonical snapshots carry fingerprints issued through the
+    # private verification token above. Equality at that boundary proves an
+    # empty semantic transition, so expanding hundreds of shared glyph shards
+    # and recursively comparing them would add no evidence. Plain mappings
+    # retain the same canonical-hash guarantee because ``fingerprint_model``
+    # normalizes their complete JSON-safe content before this check.
+    before_fingerprint = fingerprint_model(before)
+    # Builders return copy-on-write mappings. Rebase those mappings onto the
+    # immutable source before hashing so only changed shards are encoded and
+    # the resulting SHA remains byte-identical to canonical whole-document
+    # JSON.
+    after_for_diff = rebase_canonical_model(before, after)
+    after_fingerprint = fingerprint_model(after_for_diff)
+    if before_fingerprint == after_fingerprint:
+        return ChangeSet.from_changes(
+            before_fingerprint=before_fingerprint,
+            after_fingerprint=after_fingerprint,
+            changes=(),
+        )
     change_set = ChangeSet.from_changes(
-        before_fingerprint=fingerprint_model(before_plain),
-        after_fingerprint=fingerprint_model(after_plain),
-        changes=_diff(before_plain, after_plain, ()),
+        before_fingerprint=before_fingerprint,
+        after_fingerprint=after_fingerprint,
+        changes=_diff(before, after_for_diff, ()),
     )
-    reproduced = change_set.apply(before_plain)
+    # CanonicalSnapshot applies this patch through its persistent tree editor;
+    # plain mappings retain the existing detached-copy implementation. There
+    # is no reason to materialize both complete documents merely to prove the
+    # generated delta.
+    reproduced = change_set.apply(before)
     if fingerprint_model(reproduced) != change_set.after_fingerprint:
         raise ValueError("generated semantic diff does not reproduce its after fingerprint")
     return change_set
@@ -572,13 +814,14 @@ def _apply_descendant_changes(
         projected,
         key=lambda item: (item.path[-1] == ORDER_TOKEN, item.path),
     ):
-        current = _value_at(result, change.path)
-        _require_change_before(current, change)
+        current = _value_at(result, change.path, prefix=candidate)
+        _require_change_before(current, change, prefix=candidate)
         result = _persistent_set_at(
             result,
             change.path,
             change.after,
             change.after_present,
+            prefix=candidate,
         )
     return result
 
@@ -588,6 +831,8 @@ def _persistent_set_at(
     path: Sequence[str],
     value: Any,
     present: bool,
+    *,
+    prefix: Sequence[str] = (),
 ) -> Any:
     """Return one copy-on-write update while sharing every untouched branch."""
 
@@ -602,13 +847,24 @@ def _persistent_set_at(
                 result.pop(part, None)
             return result
         child = current.get(part, {})
-        result[part] = _persistent_set_at(child, path[1:], value, present)
+        result[part] = _persistent_set_at(
+            child,
+            path[1:],
+            value,
+            present,
+            prefix=tuple(prefix) + (str(part),),
+        )
         return result
     if isinstance(current, (list, tuple)):
         result = list(current)
         if part == ORDER_TOKEN:
             if not leaf or not present:
                 raise ValueError("canonical collection order cannot be removed")
+            if is_identity_sequence_path(prefix):
+                replacement = identity_sequence(value)
+                if replacement is None:
+                    raise ValueError("canonical identity sequence is invalid")
+                return replacement
             identities = {entity_id(item): item for item in result}
             requested = [str(identity) for identity in value]
             if set(requested) != set(identities) or len(requested) != len(identities):
@@ -633,7 +889,13 @@ def _persistent_set_at(
             return result
         if index is None:
             raise ValueError("change path is missing: {}".format("/".join(path)))
-        result[index] = _persistent_set_at(result[index], path[1:], value, present)
+        result[index] = _persistent_set_at(
+            result[index],
+            path[1:],
+            value,
+            present,
+            prefix=tuple(prefix) + (str(part),),
+        )
         return result
     raise ValueError("change path traverses a scalar: {}".format("/".join(path)))
 
@@ -877,34 +1139,9 @@ def subset_change_set(
             raise ValueError("source change set does not match the supplied before state")
         return source
 
-    before_plain = _plain(before)
-    if fingerprint_model(before_plain) != source.before_fingerprint:
+    if fingerprint_model(before) != source.before_fingerprint:
         raise ValueError("source change set does not match the supplied before state")
-    target = copy.deepcopy(before_plain)
-    selected.sort(key=lambda change: (change.path[-1] == ORDER_TOKEN, change.path))
-    for change in selected:
-        current = _value_at(target, change.path)
-        if (
-            change.path[-1] == ORDER_TOKEN
-            and change.after_present
-            and (
-                not isinstance(current, (list, tuple))
-                or set(current) != set(change.after)
-            )
-        ):
-            raise ValueError(
-                "projected collection membership is stale: {}".format(
-                    "/".join(change.path)
-                )
-            )
-        if (
-            change.path[-1] != ORDER_TOKEN
-            and change.before_present
-            and current != change.before
-        ):
-            raise ValueError("projected change path has stale content: {}".format("/".join(change.path)))
-        _set_at(target, change.path, change.after, change.after_present)
-    return diff_models(before_plain, target)
+    return ChangeSet.project(before, selected)
 
 
 def revert_change_set_onto(
@@ -919,7 +1156,6 @@ def revert_change_set_onto(
     overlapping edit and no partial patch is produced.
     """
 
-    current_plain = _plain(current)
     conflicts: list[Tuple[str, ...]] = []
     pending: list[SemanticChange] = []
     order_changes: list[SemanticChange] = []
@@ -927,7 +1163,7 @@ def revert_change_set_onto(
         if change.path[-1] == ORDER_TOKEN:
             order_changes.append(change)
             continue
-        value = _value_at(current_plain, change.path)
+        value = _value_at(current, change.path)
         matches_after = (
             value is not MISSING and value == change.after
             if change.after_present
@@ -939,17 +1175,16 @@ def revert_change_set_onto(
             else value is MISSING
         )
         if matches_after:
-            pending.append(change)
+            pending.append(change.inverse())
         elif not matches_before:
             conflicts.append(change.path)
     if conflicts:
         return None, tuple(conflicts)
-    target = copy.deepcopy(current_plain)
-    for change in pending:
-        _set_at(target, change.path, change.before, change.before_present)
+    partial = ChangeSet.project(current, pending).apply(current) if pending else current
+    projected = list(pending)
     for change in order_changes:
-        live_value = _value_at(current_plain, change.path)
-        target_value = _value_at(target, change.path)
+        live_value = _value_at(current, change.path)
+        target_value = _value_at(partial, change.path)
         if live_value is MISSING or target_value is MISSING:
             conflicts.append(change.path)
             continue
@@ -957,6 +1192,22 @@ def revert_change_set_onto(
         target_order = [str(identity) for identity in target_value]
         before_order = [str(identity) for identity in change.before]
         after_order = [str(identity) for identity in change.after]
+        if is_identity_sequence_path(change.path[:-1]):
+            rebased_order = revert_identity_sequence_onto(
+                live_order, before_order, after_order
+            )
+            if rebased_order is None:
+                conflicts.append(change.path)
+                continue
+            if target_order != rebased_order:
+                projected.append(
+                    SemanticChange(
+                        path=change.path,
+                        before=live_value,
+                        after=rebased_order,
+                    )
+                )
+            continue
         universe = set(before_order) | set(after_order)
         live_surviving = {identity for identity in universe if identity in live_order}
         projected_live = [
@@ -986,10 +1237,17 @@ def revert_change_set_onto(
             next(replacement) if identity in target_surviving else identity
             for identity in target_order
         ]
-        _set_at(target, change.path, rebased_order, True)
+        if target_order != rebased_order:
+            projected.append(
+                SemanticChange(
+                    path=change.path,
+                    before=live_value,
+                    after=rebased_order,
+                )
+            )
     if conflicts:
         return None, tuple(conflicts)
-    return diff_models(current_plain, target), ()
+    return ChangeSet.project(current, projected), ()
 
 
 __all__ = [
@@ -998,10 +1256,12 @@ __all__ = [
     "SUPPORTED_DOCUMENT_ROOTS",
     "SemanticChange",
     "canonical_json",
+    "complete_models_equal",
     "compose_change_sets",
     "diff_models",
     "fingerprint_model",
     "public_change_dict",
     "revert_change_set_onto",
+    "semantic_value_at",
     "subset_change_set",
 ]

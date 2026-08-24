@@ -340,6 +340,52 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         self.assertEqual(host.clone_calls, 0)
         self.assertEqual(host.apply_calls, 0)
 
+    def test_new_duplicate_unicode_is_rejected_before_detached_simulation(self) -> None:
+        host = _DerivedHost()
+        before = host.capture_model("doc_kernel")
+        before["glyphs"]["A"]["unicode"] = "0041"
+        before["glyphs"]["e"] = {
+            "name": "e",
+            "unicode": "0065",
+            "layers": {"m0": {"width": 480}},
+        }
+        host.model = copy.deepcopy(before)
+        requested_after = copy.deepcopy(before)
+        requested_after["glyphs"]["A"]["unicode"] = "0065"
+
+        with self.assertRaisesRegex(ValueError, "duplicate Unicode U\\+0065"):
+            MutationPlanner(host).plan(
+                document_id="doc_kernel",
+                expected_document_fingerprint=fingerprint_model(before),
+                requested_change_set=diff_models(before, requested_after),
+                operation_id="op_duplicate_unicode",
+            )
+
+        self.assertEqual(host.clone_calls, 0)
+        self.assertEqual(host.apply_calls, 0)
+
+    def test_unrelated_edit_preserves_preexisting_duplicate_unicode(self) -> None:
+        host = _DerivedHost()
+        before = host.capture_model("doc_kernel")
+        before["glyphs"]["A"]["unicode"] = "0065"
+        before["glyphs"]["e"] = {
+            "name": "e",
+            "unicode": "0065",
+            "layers": {"m0": {"width": 480}},
+        }
+        host.model = copy.deepcopy(before)
+        requested_after = copy.deepcopy(before)
+        requested_after["glyphs"]["A"]["export"] = False
+
+        plan = MutationPlanner(host).plan(
+            document_id="doc_kernel",
+            expected_document_fingerprint=fingerprint_model(before),
+            requested_change_set=diff_models(before, requested_after),
+            operation_id="op_preserve_duplicate_unicode",
+        )
+
+        self.assertEqual(plan.writable_change_set.changes[0].path[-1], "export")
+
     def test_detached_host_normalized_noop_is_rejected_before_live_apply(self) -> None:
         host = _NormalizingNoEffectHost()
         before = host.capture_model("doc_kernel")

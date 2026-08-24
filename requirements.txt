@@ -21,6 +21,7 @@ markdown-it-py==3.0.0
 mcp==1.12.4
 mdurl==0.1.2
 openapi-pydantic==0.5.1
+openstep_plist==0.5.2
 pycparser==2.22
 # Glyphs MCP only imports the Objective-C runtime and Cocoa (Foundation/AppKit).
 # Avoid the pyobjc meta-package, which installs every macOS framework binding.

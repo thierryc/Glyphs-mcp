@@ -70,7 +70,7 @@ and `.mcp.json` stays shared across hosts.
   - Cursor (optional host plugin or manual MCP)
   - GitHub Copilot CLI (optional host plugin or manual MCP)
 - Root `README.md` download link should match the future release asset name:
-  - `GlyphsMCPInstaller-X.Y.Z.dmg`
+  - `Glyphs-MCP-latest.dmg`
 
 ## Local release test gate
 
@@ -112,8 +112,8 @@ From repo root:
 ```
 
 Outputs:
-- `dist/GlyphsMCPInstaller-X.Y.Z.dmg` (versioned)
-- `dist/GlyphsMCPInstaller.dmg` (latest alias)
+- `dist/Glyphs-MCP-X.Y.Z.dmg` (versioned)
+- `dist/Glyphs-MCP-latest.dmg` (latest alias)
 - `dist/installer-app/GlyphsMCPInstaller.zip` (contains the stapled app)
 - `dist/SHA256SUMS` (exact release artifact set)
 

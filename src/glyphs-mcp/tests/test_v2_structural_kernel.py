@@ -1,4 +1,4 @@
-"""Schema-v3 contracts for identity-aware structural document changes."""
+"""Canonical structural contracts shared by schema-v6 document changes."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -15,20 +16,27 @@ V2_SOURCE = REPO / "src" / "glyphs-mcp-v2"
 if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
-from glyphs_mcp_v2.canonical_tree import CANONICAL_MODEL_SCHEMA_VERSION  # noqa: E402
+from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
+    CANONICAL_MODEL_SCHEMA_VERSION,
+    CanonicalSnapshot,
+)
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
 from glyphs_mcp_v2.semantic import (  # noqa: E402
+    ChangeSet,
+    SemanticChange,
     diff_models,
     fingerprint_model,
     public_change_dict,
     revert_change_set_onto,
+    subset_change_set,
 )
 from glyphs_mcp_v2.workflows import (  # noqa: E402
     build_glyph_updates,
     build_instance_updates,
     build_opentype_updates,
 )
+from glyphs_mcp_v2.mutation import master_owns_layer_order_change  # noqa: E402
 
 
 def _model() -> dict:
@@ -75,8 +83,8 @@ def _model() -> dict:
 
 
 class StructuralKernelTests(unittest.TestCase):
-    def test_schema_v5_is_explicit(self) -> None:
-        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 5)
+    def test_schema_v6_is_explicit(self) -> None:
+        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 6)
 
     def test_identity_collection_diff_is_entity_based_and_reproducible(self) -> None:
         before = _model()
@@ -166,6 +174,81 @@ class StructuralKernelTests(unittest.TestCase):
             [item["id"] for item in reverted["features"]],
             ["liga", "calt", "kern"],
         )
+
+    def test_snapshot_projection_and_revert_never_copy_the_complete_font(self) -> None:
+        before = _model()
+        before["glyphs"].update(
+            {
+                "g{:03d}".format(index): {
+                    "id": "glyph_g{:03d}".format(index),
+                    "name": "g{:03d}".format(index),
+                    "export": True,
+                    "layers": [],
+                }
+                for index in range(382)
+            }
+        )
+        snapshot = CanonicalSnapshot.from_model(before)
+        after = snapshot.materialize()
+        after["font"]["note"] = "unrelated derived projection"
+        after["glyphs"]["A"]["export"] = False
+        observed = diff_models(snapshot, after)
+
+        complete_copies = []
+        real_deepcopy = copy.deepcopy
+
+        def tracked_deepcopy(value, memo=None):
+            if isinstance(value, dict) and "glyphs" in value:
+                complete_copies.append(value)
+            return real_deepcopy(value, memo) if memo is not None else real_deepcopy(value)
+
+        with mock.patch(
+            "glyphs_mcp_v2.semantic.copy.deepcopy",
+            side_effect=tracked_deepcopy,
+        ):
+            glyph_only = subset_change_set(
+                snapshot,
+                observed,
+                lambda change: change.path[:2] == ("glyphs", "A"),
+            )
+            changed = glyph_only.apply(snapshot)
+            inverse, conflicts = revert_change_set_onto(changed, glyph_only)
+
+        self.assertEqual(conflicts, ())
+        self.assertIsNotNone(inverse)
+        restored = inverse.apply(changed)
+        self.assertEqual(restored.document_fingerprint, snapshot.document_fingerprint)
+        self.assertIs(restored.glyph_shards["g381"], snapshot.glyph_shards["g381"])
+        self.assertEqual(complete_copies, [])
+
+    def test_master_owns_layer_insertion_when_a_glyph_lacks_other_master_layers(self) -> None:
+        master_add = SemanticChange(
+            path=("masters", "m4"),
+            after={"id": "m4", "name": "Added"},
+            before_present=False,
+        )
+        layer_add = SemanticChange(
+            path=("glyphs", "A", "layers", "m4"),
+            after={"id": "m4", "masterId": "m4", "isMasterLayer": True},
+            before_present=False,
+        )
+        master_order = SemanticChange(
+            path=("masters", "$order"),
+            before=["m1", "m2", "m3"],
+            after=["m1", "m4", "m2", "m3"],
+        )
+        layer_order = SemanticChange(
+            path=("glyphs", "A", "layers", "$order"),
+            before=["m1", "m3", "special"],
+            after=["m1", "m4", "m3", "special"],
+        )
+        changes = ChangeSet.from_changes(
+            before_fingerprint="before",
+            after_fingerprint="after",
+            changes=(master_add, layer_add, master_order, layer_order),
+        )
+
+        self.assertTrue(master_owns_layer_order_change(layer_order, changes))
 
     def test_all_small_identity_membership_and_order_transitions_are_reversible(self) -> None:
         identities = ("a", "b", "c", "d")
@@ -268,6 +351,50 @@ class StructuralKernelTests(unittest.TestCase):
         self.assertEqual(reverted["features"], baseline["features"])
         self.assertEqual(reverted["classes"], current["classes"])
 
+    def test_selective_revert_rebases_order_only_identity_sequence(self) -> None:
+        baseline = _model()
+        baseline["glyphOrder"] = ["A"]
+        first = copy.deepcopy(baseline)
+        first["glyphOrder"].append("B")
+        first_change = diff_models(baseline, first)
+        current = copy.deepcopy(first)
+        current["glyphOrder"].append("C")
+
+        inverse, conflicts = revert_change_set_onto(current, first_change)
+
+        self.assertEqual(conflicts, ())
+        self.assertIsNotNone(inverse)
+        self.assertEqual(inverse.apply(current)["glyphOrder"], ["A", "C"])
+
+    def test_selective_revert_restores_deleted_identity_without_moving_later_one(self) -> None:
+        baseline = _model()
+        baseline["glyphOrder"] = ["A", "B"]
+        first = copy.deepcopy(baseline)
+        first["glyphOrder"] = ["B"]
+        first_change = diff_models(baseline, first)
+        current = copy.deepcopy(first)
+        current["glyphOrder"].append("C")
+
+        inverse, conflicts = revert_change_set_onto(current, first_change)
+
+        self.assertEqual(conflicts, ())
+        self.assertIsNotNone(inverse)
+        self.assertEqual(inverse.apply(current)["glyphOrder"], ["A", "B", "C"])
+
+    def test_selective_revert_refuses_a_third_identity_sequence_order(self) -> None:
+        baseline = _model()
+        baseline["glyphOrder"] = ["A", "B", "C"]
+        first = copy.deepcopy(baseline)
+        first["glyphOrder"] = ["B", "A", "C"]
+        first_change = diff_models(baseline, first)
+        current = copy.deepcopy(first)
+        current["glyphOrder"] = ["A", "C", "B"]
+
+        inverse, conflicts = revert_change_set_onto(current, first_change)
+
+        self.assertIsNone(inverse)
+        self.assertEqual(conflicts, (("glyphOrder", "$order"),))
+
     def test_glyph_collection_create_and_delete_use_the_existing_domain_tool(self) -> None:
         before = _model()
         created = build_glyph_updates(
@@ -341,6 +468,31 @@ class StructuralKernelTests(unittest.TestCase):
         self.assertEqual([item["id"] for item in changed["instances"]], ["instance_regular", "instance_bold"])
         self.assertEqual(changed["instances"][0]["name"], "Text")
         self.assertFalse(changed["instances"][0]["included"])
+        self.assertFalse(changed["instances"][0]["exports"])
+        regular_style_names = next(
+            item
+            for item in changed["instances"][0]["properties"]
+            if item["key"] == "styleNames"
+        )
+        self.assertEqual(
+            regular_style_names["values"],
+            [{"language": "dflt", "value": "Text"}],
+        )
+        created = changed["instances"][1]
+        self.assertTrue(created["exports"])
+        self.assertEqual(created["weightClass"], 400)
+        self.assertEqual(created["widthClass"], 5)
+        self.assertEqual(
+            created["properties"],
+            [
+                {
+                    "id": "property:styleNames:0",
+                    "key": "styleNames",
+                    "value": None,
+                    "values": [{"language": "dflt", "value": "Bold"}],
+                }
+            ],
+        )
 
         deleted = build_instance_updates(
             changed, [{"action": "delete", "instanceId": "instance_regular"}]

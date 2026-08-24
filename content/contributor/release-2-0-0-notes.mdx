@@ -1,0 +1,57 @@
+---
+title: Glyphs MCP 2.0 release notes
+description: Canonical notes for the private v2.0.0 GitHub release draft.
+---
+
+# Glyphs MCP 2.0.0
+
+Glyphs MCP 2.0 is a breaking, Glyphs 4-focused release built around verified
+apply-first automation. Typed edits are simulated on a detached font, applied
+once on Glyphs' main thread, read back completely, and recorded in a semantic
+Change Log without saving the font implicitly.
+
+## Highlights
+
+- Canonical schema v6 classifies all 293 properties and wildcard containers in
+  the pinned official Glyphs File Format v4 schema. It keeps saved semantic
+  font state separate from volatile provenance and editor UI-session state.
+- Exact semantic patches drive audit receipts, optional visual outline-delta
+  feedback, conflict-aware selective revert, and staged Python confirmation.
+- Staged Python runs against a detached clone by default. Confirmation replays
+  the verified stored patch instead of rerunning the script against the live
+  font.
+- The Target-aware installer carries separate, deterministic host payloads:
+  Glyphs 4 receives v2.0.0 while Glyphs 3.5 remains pinned to the signed v1.11
+  runtime. Installing or removing one target does not replace the other.
+- The compact Glyphs MCP inspector reports server and long-running operation
+  activity without turning the Change Log or Reporter into a mutation engine.
+
+## Rollback boundaries
+
+Automatic revert covers canonical Glyphs document state when the current
+document still matches the verified operation lineage. Conflicting later edits
+are refused rather than overwritten. Native-only payloads are retained only
+when exact reversible adapter evidence is proven.
+
+Files, network calls, subprocesses, preferences, saves, opened or closed
+documents, and other external effects are not represented as reversible font
+changes. Open-world Python reports those effects as unverifiable or
+recovery-only instead of claiming transactionality.
+
+The Change Log is process-local working history, not a replacement for source
+control or saved-file backups. No public Git comparison tool is included in
+this release.
+
+## Installation and upgrade
+
+Install with the notarized Glyphs MCP Installer from the attached DMG. The
+installer selects the correct payload for each installed Glyphs major version.
+Existing development symlinks are preserved unless replacement is explicitly
+chosen.
+
+The release assets are accepted for publication only after Developer ID
+signature, notarization, stapling, Gatekeeper, checksum, deterministic-payload,
+and isolated simulated-install verification all pass for the exact signed tag.
+The private draft contains exactly `Glyphs-MCP-2.0.0.dmg`, its byte-identical
+`Glyphs-MCP-latest.dmg` alias, `GlyphsMCPInstaller.zip`, and `SHA256SUMS`; no
+standalone plug-in ZIP is published.

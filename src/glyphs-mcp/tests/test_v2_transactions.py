@@ -95,7 +95,51 @@ class V2TransactionTests(unittest.TestCase):
             )
 
         self.assertTrue(caught.exception.rollback_succeeded)
+        self.assertIn("settled_verification failed:", str(caught.exception))
+        self.assertIn("['font', 'familyName']", str(caught.exception))
+        self.assertIn("'actual': 'Corrupt'", str(caught.exception))
+        self.assertIn("'expected': 'Beta'", str(caught.exception))
         self.assertEqual(adapter.model, self.before)
+        self.assertEqual(adapter.restore_calls, 1)
+
+    def test_live_apply_failure_names_its_transaction_phase(self) -> None:
+        class FailingApplyAdapter(_DocumentAdapter):
+            def apply_change_set(self, document_id, change_set):
+                self.apply_calls += 1
+                raise RuntimeError("native setter failed")
+
+        adapter = FailingApplyAdapter(self.before)
+        kernel = TransactionKernel(adapter)
+
+        with self.assertRaises(TransactionVerificationError) as caught:
+            kernel.apply(
+                document_id="doc_alpha",
+                expected_fingerprint=fingerprint_model(self.before),
+                change_set=diff_models(self.before, self.after),
+            )
+
+        self.assertTrue(caught.exception.rollback_succeeded)
+        self.assertIn(
+            "live_apply failed: native setter failed", str(caught.exception)
+        )
+        diagnostic = kernel.diagnostic_failure_traceback()
+        self.assertIn("native setter failed", diagnostic)
+        self.assertIn("apply_change_set", diagnostic)
+
+    def test_verification_failure_reports_the_restore_failure(self) -> None:
+        adapter = _DocumentAdapter(self.before)
+        adapter.corrupt_apply = True
+        adapter.fail_restore = True
+
+        with self.assertRaises(TransactionVerificationError) as caught:
+            TransactionKernel(adapter).apply(
+                document_id="doc_alpha",
+                expected_fingerprint=fingerprint_model(self.before),
+                change_set=diff_models(self.before, self.after),
+            )
+
+        self.assertFalse(caught.exception.rollback_succeeded)
+        self.assertIn("rollback failed: restore failed", str(caught.exception))
         self.assertEqual(adapter.restore_calls, 1)
 
     def test_duplicate_paths_are_invalid(self) -> None:
@@ -140,6 +184,85 @@ class V2TransactionTests(unittest.TestCase):
         self.assertEqual(observer.committed[0][2], self.before)
         self.assertEqual(observer.committed[0][3], self.after)
         self.assertEqual(adapter.apply_calls, 1)
+
+    def test_live_interface_updates_stay_suspended_through_settled_verification(self) -> None:
+        class SuspendingAdapter(_DocumentAdapter):
+            def __init__(self, model) -> None:
+                super().__init__(model)
+                self.events = []
+
+            def capture_model(self, document_id):
+                self.events.append("capture")
+                return super().capture_model(document_id)
+
+            def begin_verified_transaction(self, document_id):
+                self.events.append("begin")
+
+            def apply_change_set(self, document_id, change_set):
+                self.events.append("apply")
+                return super().apply_change_set(document_id, change_set)
+
+            def end_verified_transaction(self, document_id):
+                self.events.append("end")
+
+        adapter = SuspendingAdapter(self.before)
+        TransactionKernel(adapter).apply(
+            document_id="doc_alpha",
+            expected_fingerprint=fingerprint_model(self.before),
+            change_set=diff_models(self.before, self.after),
+        )
+
+        self.assertEqual(
+            adapter.events,
+            ["capture", "capture", "begin", "apply", "capture", "end"],
+        )
+
+    def test_live_interface_updates_resume_after_failed_verification_and_restore(self) -> None:
+        class SuspendingAdapter(_DocumentAdapter):
+            def __init__(self, model) -> None:
+                super().__init__(model)
+                self.events = []
+
+            def capture_model(self, document_id):
+                self.events.append("capture")
+                return super().capture_model(document_id)
+
+            def begin_verified_transaction(self, document_id):
+                self.events.append("begin")
+
+            def apply_change_set(self, document_id, change_set):
+                self.events.append("apply")
+                return super().apply_change_set(document_id, change_set)
+
+            def restore_model(self, document_id, model):
+                self.events.append("restore")
+                return super().restore_model(document_id, model)
+
+            def end_verified_transaction(self, document_id):
+                self.events.append("end")
+
+        adapter = SuspendingAdapter(self.before)
+        adapter.corrupt_apply = True
+        with self.assertRaises(TransactionVerificationError):
+            TransactionKernel(adapter).apply(
+                document_id="doc_alpha",
+                expected_fingerprint=fingerprint_model(self.before),
+                change_set=diff_models(self.before, self.after),
+            )
+
+        self.assertEqual(
+            adapter.events,
+            [
+                "capture",
+                "capture",
+                "begin",
+                "apply",
+                "capture",
+                "restore",
+                "capture",
+                "end",
+            ],
+        )
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@ from glyphs_mcp_v2.adapters.document import (  # noqa: E402
     native_font_to_model,
 )
 from glyphs_mcp_v2.mutation import (  # noqa: E402
+    CANONICAL_V6_LIFECYCLE_CAPABILITY,
     LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
     StructuralReplayValidationError,
@@ -166,6 +167,7 @@ class StagedStructuralReplayTests(unittest.TestCase):
             "GSGlyph",
             "GSInstance",
             "GSLayer",
+            "MGOrderedDictionary",
         ):
             setattr(glyphs_app, name, type(name, (), {}))
 
@@ -182,6 +184,7 @@ class StagedStructuralReplayTests(unittest.TestCase):
                 "GSGlyph",
                 "GSInstance",
                 "GSLayer",
+                "MGOrderedDictionary",
             },
         )
         self.assertNotIn("Glyphs", constructors)
@@ -283,15 +286,17 @@ class StagedStructuralReplayTests(unittest.TestCase):
                 before, orphaned, diff_models(before, orphaned)
             )
 
-    def test_axis_lifecycle_is_not_smuggled_through_master_coordinates(self) -> None:
+    def test_axis_lifecycle_is_owned_by_the_v6_replay_capability(self) -> None:
         before = _model()
         after = copy.deepcopy(before)
         after["masters"][0]["axes"].append(
             {"tag": "wdth", "internal": 100}
         )
 
-        with self.assertRaises(StructuralReplayValidationError):
-            staged_lifecycle_capabilities(before, after, diff_models(before, after))
+        capabilities = staged_lifecycle_capabilities(
+            before, after, diff_models(before, after)
+        )
+        self.assertIn(CANONICAL_V6_LIFECYCLE_CAPABILITY, capabilities)
 
     def test_structural_confirmation_reuses_review_id_and_never_reruns_code(self) -> None:
         host = _StructuralPythonHost()
@@ -313,6 +318,13 @@ class StagedStructuralReplayTests(unittest.TestCase):
         ).to_dict()
 
         self.assertEqual(preview["status"], "review_required")
+        self.assertEqual(
+            preview["data"]["canonicalCoverage"]["status"],
+            "complete_with_opaque_preservation",
+        )
+        self.assertGreater(
+            preview["data"]["canonicalCoverage"]["opaqueChangeCount"], 0
+        )
         review_id = preview["data"]["reviewId"]
         confirmed = service.execute(
             PythonExecutionRequest(review_id=review_id, confirm=True)
@@ -322,6 +334,10 @@ class StagedStructuralReplayTests(unittest.TestCase):
         self.assertEqual(confirmed["operationId"], review_id)
         self.assertEqual(confirmed["data"]["transactionCount"], 1)
         self.assertFalse(confirmed["data"]["fontSaved"])
+        self.assertEqual(
+            confirmed["data"]["canonicalCoverage"]["status"],
+            "complete_with_opaque_preservation",
+        )
         self.assertEqual(host.preview_calls, 1)
         self.assertIn("B", host.model["glyphs"])
         self.assertEqual(

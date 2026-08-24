@@ -1,0 +1,2 @@
+# Preserve the exact pinned upstream format specification byte-for-byte.
+third_party/glyphs-file-format-v4/GlyphsFileFormatv4.md -whitespace
