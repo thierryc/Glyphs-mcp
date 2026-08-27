@@ -64,10 +64,10 @@
     "prompt": "Debug my read-only Glyphs Python idea for reporting component names in the selected layer, using the bundled API docs before trying it live.",
     "expected_skill": "glyphs-mcp-scripting",
     "expected_action": "debug_live_script",
-    "expected_tools": ["docs_search", "docs_get", "execute_python"],
+    "expected_tools": ["execute_python"],
     "approval": "not_required",
     "review_required": false,
-    "expected_result": "Ground the component API with docs_search then docs_get, run a minimal bounded read-only reproducer, retry at most once on failure, and do not save.",
+    "expected_result": "Ground the component API in the bundled documentation, run a minimal bounded read-only reproducer, retry at most once on failure, and do not save.",
     "forbidden_skills": ["glyphs-mcp-development"],
     "forbidden_tools": ["save_font"]
   },
@@ -94,6 +94,18 @@
     "expected_result": "Scaffold the Reporter bundle from the pinned template, implement and statically validate it for Glyphs 3.5 and 4, and do not install or run it live.",
     "forbidden_skills": ["glyphs-mcp-scripting"],
     "forbidden_tools": ["execute_code", "execute_code_with_context", "execute_python"]
+  },
+  {
+    "id": "master-compatibility-domain-route",
+    "prompt": "Diagnose why my selected glyph is almost compatible across masters, safely fix what you can, and ask before adding off-curve nodes.",
+    "expected_skill": "glyphs-mcp-master-compatibility",
+    "expected_action": "use_domain_workflow",
+    "expected_tools": ["review_master_compatibility", "review_start_node_alignment", "apply_start_node_alignment", "apply_compatibility_updates", "execute_python"],
+    "approval": "domain_specific",
+    "review_required": true,
+    "expected_result": "Diagnose detailed topology first, align semantic start nodes before other repairs, require permission for off-curve additions, stage any Python fallback, and report success only after mastersCompatible is true without saving.",
+    "forbidden_skills": ["glyphs-mcp-outlines-docs", "glyphs-mcp-scripting"],
+    "forbidden_tools": ["save_font"]
   },
   {
     "id": "outline-start-node-domain-route",
@@ -140,6 +152,18 @@
     "approval": "domain_specific",
     "review_required": null,
     "expected_result": "Prefer the dedicated spacing review and dry-run workflow despite the Python wording, stop for approval before confirmation, and do not execute general code or save.",
+    "forbidden_skills": ["glyphs-mcp-scripting"],
+    "forbidden_tools": ["execute_code", "execute_code_with_context", "execute_python", "save_font"]
+  },
+  {
+    "id": "context-kerning-domain-route",
+    "prompt": "After normal spacing and pair kerning, add two Glyphs 4 contextual adjustments for L’A without changing L’O or l’A.",
+    "expected_skill": "glyphs-mcp-kerning",
+    "expected_action": "use_domain_workflow",
+    "expected_tools": ["list_kerning_pairs", "review_kerning_coverage", "apply_kerning_updates"],
+    "approval": "domain_specific",
+    "review_required": true,
+    "expected_result": "Inspect exact contextual records and all relevant masters, propose the two independent L quoteright A boundaries with negative controls, stop for approval, then apply one verified batch and require exported proof without saving.",
     "forbidden_skills": ["glyphs-mcp-scripting"],
     "forbidden_tools": ["execute_code", "execute_code_with_context", "execute_python", "save_font"]
   },

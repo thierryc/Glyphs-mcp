@@ -79,6 +79,13 @@ from utils import (
 )
 from versioning import get_docs_url_latest, get_plugin_version, get_runtime_info, get_runtime_label
 
+try:
+    from glyphs_mcp_v2.activity import default_activity_store
+    from glyphs_mcp_v2.connection_status import default_connection_status_store
+except Exception:
+    default_activity_store = None
+    default_connection_status_store = None
+
 
 AUTOSTART_DEFAULTS_KEY = "io.anotherplanet.glyphs-mcp.autostart"
 DEBUG_LOG_DEFAULTS_KEY = "com.ap.cx.glyphs-mcp.debugLogAllEvents"
@@ -117,14 +124,27 @@ class McpActivityStatusMiddleware:
     def __init__(self, app, recorder=None):
         self.app = app
         self.recorder = recorder
+        self._generation_lock = threading.RLock()
+        self._next_generation = 1
 
-    def _record(self, message, state="ok"):
+    def _record(self, message, state="ok", generation=None):
         if self.recorder is None:
             return
         try:
-            self.recorder(message, state)
+            self.recorder(message, state, generation)
+        except TypeError:
+            try:
+                self.recorder(message, state)
+            except Exception:
+                pass
         except Exception:
             pass
+
+    def _request_generation(self):
+        with self._generation_lock:
+            generation = self._next_generation
+            self._next_generation += 1
+            return generation
 
     @staticmethod
     def _header(scope, name):
@@ -212,7 +232,8 @@ class McpActivityStatusMiddleware:
                     break
 
         label = self._request_label(scope, body)
-        self._record(label, "active")
+        request_generation = self._request_generation()
+        self._record(label, "active", request_generation)
 
         event_index = 0
 
@@ -232,25 +253,34 @@ class McpActivityStatusMiddleware:
                 response_status = message.get("status")
             await send(message)
 
+        final_message = label
+        final_state = "ok"
         try:
-            await self.app(scope, replay_receive if body_events else receive, send_wrapper)
-        except Exception as exc:
-            self._record("Error: {}".format(exc), "error")
-            raise
-
-        try:
-            if response_status is not None and int(response_status) >= 400:
-                if self._is_session_refresh(scope, response_status):
-                    self._record("Client reconnecting", "ok")
-                else:
-                    self._record(
-                        "Error: HTTP {}".format(int(response_status)),
-                        "error",
-                    )
+            await self.app(
+                scope,
+                replay_receive if body_events else receive,
+                send_wrapper,
+            )
+            try:
+                if response_status is not None and int(response_status) >= 400:
+                    if self._is_session_refresh(scope, response_status):
+                        final_message = "Client reconnecting"
+                    else:
+                        final_message = "Error: HTTP {}".format(
+                            int(response_status)
+                        )
+                        final_state = "error"
+            except Exception:
+                pass
+        except BaseException as exc:
+            if type(exc).__name__ in {"CancelledError", "GeneratorExit"}:
+                final_message = "Request interrupted"
             else:
-                self._record(label, "ok")
-        except Exception:
-            self._record(label, "ok")
+                final_message = "Error: {}".format(exc)
+                final_state = "error"
+            raise
+        finally:
+            self._record(final_message, final_state, request_generation)
 
 
 class MCPBridgePlugin(GeneralPlugin):
@@ -293,6 +323,7 @@ class MCPBridgePlugin(GeneralPlugin):
         self.name_changes = tr("menu.changes")
         self._activity_text = tr("activity.idle")
         self._activity_state = "idle"
+        self._activity_request_generation = 0
         # Configuration
         self.default_port = self._configured_default_port()
         try:
@@ -936,6 +967,9 @@ class MCPBridgePlugin(GeneralPlugin):
         if is_thread_running(getattr(self, "_server_thread", None)):
             return False
 
+        if default_activity_store is not None:
+            default_activity_store().reset_session()
+        self._activity_request_generation = 0
         self._mark_server_starting()
         self._startup_notify = bool(notify)
         self._server_thread_error = None
@@ -1440,6 +1474,9 @@ class MCPBridgePlugin(GeneralPlugin):
         self._port = None
         self._activity_text = tr("activity.idle")
         self._activity_state = "idle"
+        if default_activity_store is not None:
+            default_activity_store().reset_session()
+        self._activity_request_generation = 0
         self._refresh_status_panel_if_visible()
 
     def ShowStatusWindow_(self, sender):
@@ -1535,10 +1572,30 @@ class MCPBridgePlugin(GeneralPlugin):
         self._refresh_status_panel_if_visible()
 
     @objc.python_method
-    def _record_activity(self, message, state="ok"):
+    def _record_activity(self, message, state="ok", generation=None):
+        current_generation = int(
+            getattr(self, "_activity_request_generation", 0)
+        )
+        if generation is None:
+            request_generation = current_generation + 1
+            self._activity_request_generation = request_generation
+        else:
+            try:
+                request_generation = int(generation)
+            except (TypeError, ValueError):
+                return
+        resolved_state = str(state or "ok")
+        if generation is None:
+            pass
+        elif resolved_state == "active":
+            if request_generation < current_generation:
+                return
+            self._activity_request_generation = request_generation
+        elif request_generation != current_generation:
+            return
         text = str(message or "").strip() or tr("activity.idle")
         self._activity_text = text
-        self._activity_state = str(state or "ok")
+        self._activity_state = resolved_state
         self._schedule_status_refresh()
 
     @objc.python_method
@@ -1956,7 +2013,48 @@ class MCPBridgePlugin(GeneralPlugin):
         self._toggle_updates_button = toggle_updates_button
 
     @objc.python_method
+    def _connection_status(self):
+        running = self._server_is_running()
+        status_state = "running" if running else "stopped"
+        status_value = tr("status." + status_text(running))
+        if getattr(self, "_starting_server", False):
+            status_state = "starting"
+            status_value = tr("status.starting")
+        elif getattr(self, "_stopping_server", False):
+            status_state = "stopping"
+            status_value = tr("status.stopping")
+        elif getattr(self, "_waiting_for_port", False) and not running:
+            status_state = "waiting"
+            status_value = tr(
+                "status.waiting",
+                port=getattr(self, "_wait_target_port", self.default_port),
+            )
+        elif getattr(self, "_autostart_waiting", False) and not running:
+            status_state = "waiting"
+            status_value = tr(
+                "status.autostart_waiting",
+                port=int(
+                    getattr(self, "_autostart_target_port", self.default_port)
+                ),
+            )
+        elif not running and getattr(self, "_activity_state", None) == "error":
+            status_state = "error"
+            status_value = tr("status.error")
+        return running, status_state, status_value
+
+    @objc.python_method
+    def _publish_connection_status(self):
+        if default_connection_status_store is None:
+            return
+        try:
+            _running, status_state, status_value = self._connection_status()
+            default_connection_status_store().publish(status_state, status_value)
+        except Exception:
+            pass
+
+    @objc.python_method
     def _refresh_status_panel_if_visible(self):
+        self._publish_connection_status()
         panel = getattr(self, "_status_panel", None)
         if panel is None:
             return
@@ -1968,40 +2066,12 @@ class MCPBridgePlugin(GeneralPlugin):
 
     @objc.python_method
     def _refresh_status_panel(self):
-        running = self._server_is_running()
+        running, status_state, status_value = self._connection_status()
         port = self._current_port()
         endpoint = endpoint_for(port)
         version = get_runtime_label()
-        status_state = "running" if running else "stopped"
-        status_value = tr("status." + status_text(running))
 
         try:
-            if getattr(self, "_starting_server", False):
-                status_state = "starting"
-                status_value = tr("status.starting")
-            elif getattr(self, "_stopping_server", False):
-                status_state = "stopping"
-                status_value = tr("status.stopping")
-            elif getattr(self, "_waiting_for_port", False) and not running:
-                status_state = "waiting"
-                status_value = tr(
-                    "status.waiting",
-                    port=getattr(self, "_wait_target_port", self.default_port),
-                )
-            elif getattr(self, "_autostart_waiting", False) and not running:
-                status_state = "waiting"
-                status_value = tr(
-                    "status.autostart_waiting",
-                    port=int(
-                        getattr(self, "_autostart_target_port", self.default_port)
-                    ),
-                )
-            elif (
-                not running
-                and getattr(self, "_activity_state", None) == "error"
-            ):
-                status_state = "error"
-                status_value = tr("status.error")
             dot = getattr(self, "_status_dot_field", None)
             if dot is not None:
                 dot.setStringValue_("●")

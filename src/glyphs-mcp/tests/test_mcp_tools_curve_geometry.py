@@ -116,11 +116,21 @@ class _FreshProxyPath:
 
 
 class _Component:
-    pass
+    def __init__(
+        self,
+        name="acute",
+        transform=(1.0, 0.0, 0.0, 1.0, 40.0, 120.0),
+        automatic_alignment=True,
+        smart_values=None,
+    ):
+        self.componentName = str(name)
+        self.transform = tuple(float(value) for value in transform)
+        self.automaticAlignment = bool(automatic_alignment)
+        self.smartComponentValues = dict(smart_values or {"height": 25.0})
 
 
 class _Layer:
-    def __init__(self, path, *, glyphs4=False):
+    def __init__(self, path, *, glyphs4=False, components=None):
         self.associatedMasterId = "m1"
         self.layerId = "m1"
         self.name = "Regular"
@@ -129,9 +139,9 @@ class _Layer:
         self.raise_begin_changes = False
         self.raise_end_changes = False
         self.width = 500
-        self.components = ["component-marker"]
+        self.components = list(components) if components is not None else [_Component()]
         if glyphs4:
-            self.shapes = [_Component(), path]
+            self.shapes = [*self.components, path]
             self.paths = []
         else:
             self.paths = [path]
@@ -172,6 +182,19 @@ def _positions(nodes):
     return [(node.position.x, node.position.y) for node in nodes]
 
 
+def _component_state(components):
+    return [
+        {
+            "identity": id(component),
+            "name": component.componentName,
+            "transform": tuple(component.transform),
+            "automaticAlignment": component.automaticAlignment,
+            "smartComponentValues": dict(component.smartComponentValues),
+        }
+        for component in components
+    ]
+
+
 class McpToolsCurveGeometryTests(unittest.TestCase):
     def _load_module(
         self,
@@ -183,10 +206,11 @@ class McpToolsCurveGeometryTests(unittest.TestCase):
         fresh_node_proxies=False,
         grid_length=1.0,
         grid_subdivision=1,
+        component_values=None,
     ):
         nodes = list(node_values) if node_values is not None else _nodes()
         path = _FreshProxyPath(nodes) if fresh_node_proxies else _Path(nodes)
-        layer = _Layer(path, glyphs4=glyphs4)
+        layer = _Layer(path, glyphs4=glyphs4, components=component_values)
         glyph = types.SimpleNamespace(name="A", layers={"m1": layer})
         font = types.SimpleNamespace(
             familyName="Geometry Test",
@@ -715,12 +739,26 @@ class McpToolsCurveGeometryTests(unittest.TestCase):
         self.assertEqual((layer.begin_count, layer.end_count), (0, 0))
 
     def test_confirm_changes_only_two_handles_and_batches_layer(self) -> None:
-        module, _font, layer, path, nodes = self._load_module()
+        components = [
+            _Component(
+                "acute",
+                transform=(1.0, 0.0, 0.0, 1.0, 40.0, 120.0),
+                automatic_alignment=True,
+                smart_values={"height": 25.0},
+            ),
+            _Component(
+                "dotaccent",
+                transform=(0.9, 0.1, -0.1, 0.9, 80.0, 160.0),
+                automatic_alignment=False,
+                smart_values={"roundness": 75.0},
+            ),
+        ]
+        module, _font, layer, path, nodes = self._load_module(component_values=components)
         before = _positions(nodes)
         types_before = [node.type for node in nodes]
         smooth_before = [node.smooth for node in nodes]
         width_before = layer.width
-        components_before = list(layer.components)
+        components_before = _component_state(layer.components)
         payload = json.loads(
             asyncio.run(
                 module.apply_tunni_balance(
@@ -757,8 +795,46 @@ class McpToolsCurveGeometryTests(unittest.TestCase):
         self.assertEqual([node.smooth for node in nodes], smooth_before)
         self.assertFalse(path.closed)
         self.assertEqual(layer.width, width_before)
-        self.assertEqual(layer.components, components_before)
+        self.assertEqual(_component_state(layer.components), components_before)
+        self.assertEqual(payload["summary"]["omittedComponentCount"], 2)
         self.assertEqual((layer.begin_count, layer.end_count), (1, 1))
+
+    def test_component_only_layer_has_no_tunni_target_and_never_mutates(self) -> None:
+        module, _font, layer, _path, nodes = self._load_module(glyphs4=True)
+        before_nodes = _positions(nodes)
+        before_components = _component_state(layer.components)
+        layer.paths = []
+        layer.shapes = list(layer.components)
+
+        review = json.loads(
+            asyncio.run(
+                module.review_tunni_geometry(
+                    glyph_name="A",
+                    master_id="m1",
+                    path_index=0,
+                    segment_end_node_indices=[3],
+                )
+            )
+        )
+        apply = json.loads(
+            asyncio.run(
+                module.apply_tunni_balance(
+                    glyph_name="A",
+                    master_id="m1",
+                    path_index=0,
+                    segment_end_node_indices=[3],
+                    confirm=True,
+                )
+            )
+        )
+
+        self.assertFalse(review["ok"])
+        self.assertIn("Available paths: 0", review["error"])
+        self.assertFalse(apply["ok"])
+        self.assertIn("Available paths: 0", apply["error"])
+        self.assertEqual(_positions(nodes), before_nodes)
+        self.assertEqual(_component_state(layer.components), before_components)
+        self.assertEqual((layer.begin_count, layer.end_count), (0, 0))
 
     def test_confirm_verifies_fresh_node_proxies_by_structure_and_coordinates(self) -> None:
         module, _font, layer, path, nodes = self._load_module(fresh_node_proxies=True)

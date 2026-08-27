@@ -5,10 +5,14 @@ signed release `v1.11.0` but does not change the shipped 1.x wire contracts.
 
 The runtime exposes one catalog-driven operation surface across:
 
-- stable document status and bounded glyph, instance, kerning, audit, and operation pages;
-- compatibility, metrics, anchors, spacing, kerning, and export reviews;
+- stable document status and bounded glyph, instance, directional
+  pair/context kerning, audit, and operation pages;
+- compatibility, metrics, anchors, spacing, pair/context kerning, and export
+  reviews;
 - direct apply-first typed mutations through detached simulation and one shared
   verified transaction kernel;
+- typed `open_edit_tab` UI transitions for atomic named-glyph tab opening
+  without classifying unchanged document state as a failed mutation;
 - schema-v6 complete saved semantic state, with identity-aware roots and nested
   collections plus conflict-aware semantic revert;
 - paginated layer discovery and direct non-master layer duplication, update,
@@ -66,6 +70,37 @@ the non-master suffix by building Glyphs' native `MGOrderedDictionary` and
 assigning it through `GSGlyph.setLayers:`. It does not use the unordered public
 dictionary setter, exact-ID detach/reattach, or duplicate-producing KVC array
 insertion primitives.
+
+## Directional and contextual kerning
+
+`list_kerning_pairs` defaults to ordinary pairs and accepts
+`entryKind=pair|context|all`. Pair records identify their `ltr`, `rtl`, or
+`vertical` domain. Exact Glyphs 4 contexts expose a glyph-name sequence,
+one-based boundary index, master ID, raw native key, value, and editability.
+Manual class/bracket keys are returned losslessly as raw-only records.
+
+`apply_kerning_updates` accepts compatible untagged LTR pair updates, explicit
+directional pair updates, and exact contextual updates in the same atomic
+batch. A contextual sequence must contain at least three known glyph names.
+The adapter normalizes the `*` boundary key, uses Glyphs 4's native context
+setter/remover selectors, preserves every unrelated pair/context value, and
+never saves. `review_kerning_coverage(mode="context_sequences")` reports
+editable/raw-only and per-master context counts.
+
+The explicit disposable-font storage gate is:
+
+```python
+from GlyphsApp import Glyphs
+from glyphs_mcp_v2.live_gates import verify_context_kerning
+
+print(verify_context_kerning(Glyphs.font))
+```
+
+It requires `L`, `quoteright`, and `A`, writes both boundaries in one verified
+transaction, reads them through the public list tool, confirms every pair
+domain is unchanged, refuses an invalid two-glyph context, reverts, and checks
+the exact canonical/native baseline, path, master, and dirty state. Exported
+shaping and optical quality remain separate manual acceptance checks.
 
 ## Worktree-contained development
 
@@ -152,6 +187,23 @@ axis configuration to an alternate range, reorders and deletes it, then
 reverts every operation. It also verifies stale-fingerprint and master-layer
 ownership refusals. It never saves and succeeds only after restoring the exact
 canonical baseline, active master, working path, and reported dirty state.
+
+## Glyphs 4 typed Edit-tab qualification
+
+After rebuilding, relinking, and restarting Glyphs 4, run the UI gate on a
+disposable font:
+
+```python
+from GlyphsApp import Glyphs
+from glyphs_mcp_v2.live_gates import verify_open_edit_tab
+
+print(verify_open_edit_tab(Glyphs.font, ["A", "B"]))
+```
+
+The gate opens one Edit tab through the typed `open_edit_tab` command and
+verifies that the canonical fingerprint, working path, active master, and
+reported dirty state remain unchanged. It refuses non-disposable fonts and
+does not save or close the document.
 
 ## Glyphs 4 staged-Python structural qualification
 

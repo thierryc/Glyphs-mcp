@@ -46,6 +46,27 @@ class OutlinesSkillTests(unittest.TestCase):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, text)
 
+    def test_tunni_scope_is_direct_paths_only(self) -> None:
+        text = CANONICAL.read_text(encoding="utf-8")
+        section = text.split("## Curve geometry workflow", 1)[1].split("\n## ", 1)[0]
+        normalized = " ".join(section.split())
+
+        for invariant in (
+            "direct editable paths are the complete target scope",
+            "Preflight each target layer with `get_glyph_paths` and `get_glyph_components`",
+            "Derive `path_index` only from the direct path order",
+            "optimize only eligible cubic segments in those direct paths",
+            "identity, order, transform, automatic alignment, and smart-component values",
+            "Skip a component-only layer",
+            "Never decompose or expand components",
+            "traverse nested component geometry",
+            "unless that glyph is independently selected as a target",
+            "Treat `omittedComponentCount` as confirmation of excluded geometry",
+            "stop if any component field or ordering changed",
+        ):
+            with self.subTest(invariant=invariant):
+                self.assertIn(invariant, normalized)
+
     def test_skill_contains_joint_start_node_alignment_contract(self) -> None:
         text = CANONICAL.read_text(encoding="utf-8")
         self.assertEqual(text.count("## Start-node alignment"), 1)

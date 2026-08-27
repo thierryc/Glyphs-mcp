@@ -743,6 +743,7 @@ final class InstallerViewModel: ObservableObject {
 			log("Payload OK: \(payload.payloadDir.path)")
 		}
 
+		var runtimePathPlans: [GlyphsMajorVersion: RuntimeProbeDocument.PathPlan] = [:]
 		for target in options.targets.sorted(by: { $0.version < $1.version }) {
 			if Task.isCancelled { throw CancellationError() }
 			try await step(
@@ -753,12 +754,16 @@ final class InstallerViewModel: ObservableObject {
 					glyphsVersion: target.version
 				)
 				do {
-					_ = try await RuntimeProbeExecutor(runner: runner, log: log).check(
+					let document = try await RuntimeProbeExecutor(runner: runner, log: log).check(
 						python: target.pythonSelection.pythonExecutable,
 						probe: payload.plugin(for: target.version).runtimeProbe,
 						sitePackages: sitePackages,
 						mode: .preinstall
 					)
+					guard let pathPlan = document.pathPlan else {
+						throw InstallerError.userFacing("Python environment preflight omitted the runtime path plan.")
+					}
+					runtimePathPlans[target.version] = pathPlan
 				} catch {
 					throw InstallerError.userFacing(
 						"""
@@ -776,19 +781,25 @@ Installation stopped before changing dependencies, plug-ins, or client settings.
 		for target in options.targets.sorted(by: { $0.version < $1.version }) {
 			if Task.isCancelled { throw CancellationError() }
 			let dependencyStepID = InstallStep.ID.dependencies(target.version)
-			if completedDependencyKeys.contains(target.dependencyInstallKey) {
+			let pathPlanKey = runtimePathPlans[target.version]?.orderedRoots.joined(separator: "\u{1f}") ?? "missing-plan"
+			let dependencyInstallKey = target.dependencyInstallKey + "|" + pathPlanKey
+			if completedDependencyKeys.contains(dependencyInstallKey) {
 				log("Reusing dependencies already installed for \(target.version.displayName).")
 				mark(dependencyStepID, .success)
 			} else {
 				try await step("Install \(target.version.displayName) dependencies", id: dependencyStepID) {
+					guard let pathPlan = runtimePathPlans[target.version] else {
+						throw InstallerError.userFacing("Python environment preflight plan is unavailable.")
+					}
 					try await DepsInstaller(runner: runner, log: log).installAndVerify(
 						python: target.pythonSelection,
 						requirementsTxt: payload.requirementsTxt,
 						runtimeProbe: payload.plugin(for: target.version).runtimeProbe,
-						glyphsVersion: target.version
+						glyphsVersion: target.version,
+						pathPlan: pathPlan
 					)
 				}
-				completedDependencyKeys.insert(target.dependencyInstallKey)
+				completedDependencyKeys.insert(dependencyInstallKey)
 			}
 
 			try await step("Install \(target.version.displayName) plug-in", id: .plugin(target.version)) {

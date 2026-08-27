@@ -27,6 +27,9 @@ class ActivityCancelled(RuntimeError):
 class ActivityToken:
     activity_id: str
     document_id: Optional[str]
+    session_generation: int
+    command_generation: int
+    invocation_lease: str
 
 
 @dataclass(frozen=True)
@@ -45,6 +48,8 @@ class ActivitySnapshot:
     observed_at: float
     completed_at: Optional[float]
     sequence: int
+    session_generation: int = 0
+    command_generation: int = 0
     summary: Optional[str] = None
 
     @property
@@ -73,6 +78,8 @@ def _idle_snapshot(document_id: Optional[str], now: float) -> ActivitySnapshot:
         observed_at=now,
         completed_at=now,
         sequence=0,
+        session_generation=0,
+        command_generation=0,
         summary=None,
     )
 
@@ -92,10 +99,15 @@ class OperationActivityStore:
         self._max_records = max(8, int(max_records))
         self._records: dict[str, ActivitySnapshot] = {}
         self._active_by_document: dict[Optional[str], list[str]] = {}
+        self._foreground_by_document: dict[Optional[str], str] = {}
         self._terminal_by_document: dict[Optional[str], str] = {}
+        self._lease_ids: dict[str, str] = {}
+        self._lease_released_at: dict[str, Optional[float]] = {}
         self._subscribers: dict[int, Callable[[ActivitySnapshot], None]] = {}
         self._next_subscriber = 1
         self._next_sequence = 1
+        self._session_generation = 1
+        self._next_command_generation = 1
         self._lock = RLock()
         self._current_token: ContextVar[Optional[ActivityToken]] = ContextVar(
             "glyphs_mcp_v2_activity_token_{}".format(id(self)), default=None
@@ -122,7 +134,9 @@ class OperationActivityStore:
             activity_id
             for values in self._active_by_document.values()
             for activity_id in values
-        } | set(self._terminal_by_document.values())
+        } | set(self._terminal_by_document.values()) | set(
+            self._foreground_by_document.values()
+        )
         removable = sorted(
             (
                 snapshot
@@ -135,6 +149,8 @@ class OperationActivityStore:
             if len(self._records) <= self._max_records:
                 break
             self._records.pop(snapshot.activity_id, None)
+            self._lease_ids.pop(snapshot.activity_id, None)
+            self._lease_released_at.pop(snapshot.activity_id, None)
 
     def subscribe(
         self, callback: Callable[[ActivitySnapshot], None]
@@ -162,11 +178,19 @@ class OperationActivityStore:
     ) -> ActivityToken:
         now = float(self._clock())
         activity_id = str(self._id_factory() or "activity_{}".format(uuid4().hex))
-        token = ActivityToken(activity_id=activity_id, document_id=document_id)
         with self._lock:
+            self._reconcile_orphans_locked(now, grace_seconds=30.0)
             while activity_id in self._records:
                 activity_id = "activity_{}".format(uuid4().hex)
-                token = ActivityToken(activity_id=activity_id, document_id=document_id)
+            command_generation = self._next_command_generation
+            self._next_command_generation += 1
+            token = ActivityToken(
+                activity_id=activity_id,
+                document_id=document_id,
+                session_generation=self._session_generation,
+                command_generation=command_generation,
+                invocation_lease="lease_{}".format(uuid4().hex),
+            )
             snapshot = ActivitySnapshot(
                 activity_id=activity_id,
                 document_id=document_id,
@@ -182,9 +206,15 @@ class OperationActivityStore:
                 observed_at=now,
                 completed_at=None,
                 sequence=self._sequence(),
+                session_generation=token.session_generation,
+                command_generation=token.command_generation,
             )
             self._records[activity_id] = snapshot
             self._active_by_document.setdefault(document_id, []).append(activity_id)
+            self._foreground_by_document[document_id] = activity_id
+            self._terminal_by_document.pop(document_id, None)
+            self._lease_ids[activity_id] = token.invocation_lease
+            self._lease_released_at[activity_id] = None
             self._prune()
         self._current_token.set(token)
         self._notify(snapshot)
@@ -203,6 +233,12 @@ class OperationActivityStore:
             current = self._records.get(token.activity_id)
             if current is None:
                 raise KeyError("activity is unavailable")
+            if (
+                token.session_generation != self._session_generation
+                or self._lease_ids.get(token.activity_id)
+                != token.invocation_lease
+            ):
+                return current
             if not current.active:
                 return current
             next_cancellable = (
@@ -220,6 +256,9 @@ class OperationActivityStore:
                 sequence=self._sequence(),
             )
             self._records[token.activity_id] = snapshot
+            self._lease_released_at[token.activity_id] = None
+            self._foreground_by_document[token.document_id] = token.activity_id
+            self._terminal_by_document.pop(token.document_id, None)
         self._notify(snapshot)
         return snapshot
 
@@ -252,13 +291,21 @@ class OperationActivityStore:
                 sequence=self._sequence(),
             )
             self._records[current.activity_id] = snapshot
+            self._foreground_by_document[current.document_id] = current.activity_id
+            self._terminal_by_document.pop(current.document_id, None)
         self._notify(snapshot)
         return True
 
     def checkpoint(self, token: ActivityToken) -> None:
         with self._lock:
             current = self._records.get(token.activity_id)
-            cancelled = bool(current and current.cancel_requested)
+            cancelled = bool(
+                current
+                and token.session_generation == self._session_generation
+                and self._lease_ids.get(token.activity_id)
+                == token.invocation_lease
+                and current.cancel_requested
+            )
         if cancelled:
             raise ActivityCancelled("operation cancelled before live mutation")
 
@@ -280,6 +327,14 @@ class OperationActivityStore:
             current = self._records.get(token.activity_id)
             if current is None:
                 raise KeyError("activity is unavailable")
+            if (
+                token.session_generation != self._session_generation
+                or self._lease_ids.get(token.activity_id)
+                != token.invocation_lease
+            ):
+                return current
+            if not current.active:
+                return current
             state = "cancelled" if cancelled else "success" if ok else "error"
             snapshot = replace(
                 current,
@@ -298,7 +353,17 @@ class OperationActivityStore:
             self._active_by_document[token.document_id] = [
                 value for value in active if value != token.activity_id
             ]
-            self._terminal_by_document[token.document_id] = token.activity_id
+            if self._foreground_by_document.get(token.document_id) == token.activity_id:
+                newer = self._newest_active_locked(
+                    token.document_id,
+                    newer_than=token.command_generation,
+                )
+                if newer is not None:
+                    self._foreground_by_document[token.document_id] = newer.activity_id
+                    self._terminal_by_document.pop(token.document_id, None)
+                else:
+                    self._foreground_by_document.pop(token.document_id, None)
+                    self._terminal_by_document[token.document_id] = token.activity_id
             visible = self._current_locked(token.document_id, now)
             self._prune()
         if self._current_token.get() == token:
@@ -306,19 +371,142 @@ class OperationActivityStore:
         self._notify(visible)
         return snapshot
 
+    def release(self, token: ActivityToken) -> None:
+        """Release one invocation lease without changing document state."""
+
+        now = float(self._clock())
+        with self._lock:
+            if (
+                token.session_generation == self._session_generation
+                and self._lease_ids.get(token.activity_id)
+                == token.invocation_lease
+                and token.activity_id in self._lease_released_at
+                and self._lease_released_at[token.activity_id] is None
+            ):
+                self._lease_released_at[token.activity_id] = now
+        if self._current_token.get() == token:
+            self._current_token.set(None)
+
+    def _newest_active_locked(
+        self,
+        document_id: Optional[str],
+        *,
+        newer_than: int = -1,
+    ) -> Optional[ActivitySnapshot]:
+        candidates = (
+            self._records.get(activity_id)
+            for activity_id in self._active_by_document.get(document_id, ())
+        )
+        return max(
+            (
+                snapshot
+                for snapshot in candidates
+                if snapshot is not None
+                and snapshot.active
+                and snapshot.command_generation > newer_than
+            ),
+            key=lambda snapshot: snapshot.command_generation,
+            default=None,
+        )
+
+    def _reconcile_orphans_locked(
+        self, now: float, *, grace_seconds: float
+    ) -> bool:
+        changed = False
+        grace = max(0.0, float(grace_seconds))
+        for activity_id, released_at in tuple(self._lease_released_at.items()):
+            if released_at is None or now - released_at < grace:
+                continue
+            snapshot = self._records.get(activity_id)
+            if snapshot is None or not snapshot.active:
+                continue
+            diagnostic = replace(
+                snapshot,
+                phase="orphaned",
+                message="Invocation ended without a terminal activity update",
+                state="cancelled",
+                cancellable=False,
+                completed_at=released_at,
+                updated_at=now,
+                observed_at=now,
+                sequence=self._sequence(),
+                summary="Orphaned activity cleared",
+            )
+            self._records[activity_id] = diagnostic
+            active = self._active_by_document.get(snapshot.document_id, [])
+            self._active_by_document[snapshot.document_id] = [
+                value for value in active if value != activity_id
+            ]
+            if self._foreground_by_document.get(snapshot.document_id) == activity_id:
+                self._foreground_by_document.pop(snapshot.document_id, None)
+                self._terminal_by_document.pop(snapshot.document_id, None)
+            changed = True
+        return changed
+
+    def reconcile_orphans(
+        self, *, grace_seconds: float = 30.0
+    ) -> ActivitySnapshot:
+        now = float(self._clock())
+        with self._lock:
+            changed = self._reconcile_orphans_locked(
+                now, grace_seconds=grace_seconds
+            )
+            snapshot = self._current_locked(None, now)
+            self._prune()
+        if changed:
+            self._notify(snapshot)
+        return snapshot
+
+    def reset_session(self) -> ActivitySnapshot:
+        """Start a fresh server activity generation without replacing observers."""
+
+        now = float(self._clock())
+        with self._lock:
+            self._session_generation += 1
+            for activity_id, snapshot in tuple(self._records.items()):
+                if snapshot.active:
+                    self._records[activity_id] = replace(
+                        snapshot,
+                        phase="session_ended",
+                        message="Server session ended",
+                        state="cancelled",
+                        cancellable=False,
+                        completed_at=now,
+                        updated_at=now,
+                        observed_at=now,
+                        sequence=self._sequence(),
+                        summary="Server session ended",
+                    )
+            self._active_by_document.clear()
+            self._foreground_by_document.clear()
+            self._terminal_by_document.clear()
+            self._lease_ids.clear()
+            self._lease_released_at.clear()
+            snapshot = _idle_snapshot(None, now)
+            self._prune()
+        self._current_token.set(None)
+        self._notify(snapshot)
+        return snapshot
+
     def _current_locked(
         self, document_id: Optional[str], now: float
     ) -> ActivitySnapshot:
-        for scope in (document_id, None) if document_id is not None else (None,):
-            active = self._active_by_document.get(scope, [])
-            for activity_id in reversed(active):
-                snapshot = self._records.get(activity_id)
-                if snapshot is not None and snapshot.active:
-                    return replace(snapshot, observed_at=now)
+        candidates: list[ActivitySnapshot] = []
+        scopes = (document_id, None) if document_id is not None else (None,)
+        for scope in scopes:
+            foreground_id = self._foreground_by_document.get(scope)
+            foreground = self._records.get(foreground_id or "")
+            if foreground is not None and foreground.active:
+                candidates.append(foreground)
             terminal_id = self._terminal_by_document.get(scope)
             terminal = self._records.get(terminal_id or "")
             if terminal is not None:
-                return replace(terminal, observed_at=now)
+                candidates.append(terminal)
+        if candidates:
+            return replace(
+                max(candidates, key=lambda item: item.command_generation),
+                observed_at=now,
+            )
         return _idle_snapshot(document_id, now)
 
     def current(self, document_id: Optional[str]) -> ActivitySnapshot:
@@ -330,6 +518,10 @@ class OperationActivityStore:
         now = float(self._clock())
         with self._lock:
             self._terminal_by_document.pop(document_id, None)
+            foreground_id = self._foreground_by_document.get(document_id)
+            foreground = self._records.get(foreground_id or "")
+            if foreground is None or not foreground.active:
+                self._foreground_by_document.pop(document_id, None)
             snapshot = self._current_locked(document_id, now)
         self._notify(snapshot)
         return snapshot

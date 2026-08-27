@@ -1,7 +1,7 @@
 interface:
   display_name: "Glyphs MCP Kerning"
-  short_description: "Review and apply kerning bumper changes safely."
-  default_prompt: "Use $glyphs-mcp-kerning to review kerning bumper suggestions, do a dry run first, and only apply approved changes."
+  short_description: "Review pair and contextual kerning safely."
+  default_prompt: "Use $glyphs-mcp-kerning to finish spacing and ordinary pairs before exact-sequence contextual kerning, account for coverage, disclose additive behavior and unmeasured geometry, and apply only explicit approved values."
 
 policy:
   allow_implicit_invocation: true

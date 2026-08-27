@@ -25,6 +25,8 @@ PLUGIN_NAME = "Glyphs MCP.glyphsPlugin"
 GLYPHS3_TAG = "v1.11.0"
 GLYPHS3_COMMIT_PREFIX = "13ca805"
 GLYPHS3_REPOSITORY_PATH = Path("src/glyphs-mcp") / PLUGIN_NAME
+CANONICAL_RUNTIME_RESOURCES = REPO_ROOT / "src/glyphs-mcp" / PLUGIN_NAME / "Contents/Resources"
+SHARED_RUNTIME_FILES = ("runtime_path_policy.py", "runtime_probe.py")
 PRODUCT_PAGE_URL = "https://github.com/thierryc/Glyphs-mcp"
 
 
@@ -211,7 +213,8 @@ def validate_payload(
             raise RuntimeError(f"Glyphs {major} plug-in version does not match the release")
         info_path = plugin / "Contents" / "Info.plist"
         runtime_probe = plugin / "Contents" / "Resources" / "runtime_probe.py"
-        if not plugin.is_dir() or not info_path.is_file() or not runtime_probe.is_file():
+        runtime_policy = plugin / "Contents" / "Resources" / "runtime_path_policy.py"
+        if not plugin.is_dir() or not info_path.is_file() or not runtime_probe.is_file() or not runtime_policy.is_file():
             raise RuntimeError(f"Glyphs {major} payload bundle is incomplete")
         with info_path.open("rb") as stream:
             info = plistlib.load(stream)
@@ -251,6 +254,12 @@ def build(output_root: Path, *, allow_outside_worktree: bool = False) -> dict[st
     glyphs4.parent.mkdir(parents=True)
 
     glyphs3_commit = _extract_pinned_glyphs3(glyphs3)
+    glyphs3_resources = glyphs3 / "Contents/Resources"
+    for name in SHARED_RUNTIME_FILES:
+        source = CANONICAL_RUNTIME_RESOURCES / name
+        if not source.is_file():
+            raise RuntimeError(f"canonical installer runtime module is missing: {source}")
+        shutil.copy2(source, glyphs3_resources / name)
     (REPO_ROOT / "build").mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="glyphs-mcp-v2-installer-", dir=REPO_ROOT / "build") as temporary:
         v2_output = Path(temporary) / "v2-runtime"

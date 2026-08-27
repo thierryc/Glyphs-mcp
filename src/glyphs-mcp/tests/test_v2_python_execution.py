@@ -287,6 +287,51 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertEqual(preview["status"], "review_required")
         self.assertEqual(host.preview_calls, 1)
 
+    def test_large_383_glyph_five_master_preview_records_phase_timings_without_refusal(self) -> None:
+        service, host = self.service()
+        host.model["masters"] = {
+            "master-{}".format(index): {"id": "master-{}".format(index)}
+            for index in range(5)
+        }
+        host.model["glyphs"] = {
+            "g{:03d}".format(index): {"layers": {}}
+            for index in range(383)
+        }
+        original_preview = host.preview_python
+
+        def timed_preview(request, before_model):
+            result = original_preview(request, before_model)
+            result["stageTimings"] = {
+                "cloneCaptureMs": 12.5,
+                "evaluationCaptureMs": 8.0,
+                "replayCaptureMs": 10.0,
+                "canonicalCompareMs": 3.0,
+                "totalMs": 45.0,
+                "maxNativePhaseMs": 12.5,
+            }
+            return result
+
+        host.preview_python = timed_preview
+        preview = service.execute(
+            PythonExecutionRequest(
+                code="font.familyName = 'Beta'",
+                reason="383 glyph five master regression fixture",
+                intended_effect="document_edit",
+                execution_mode="staged_document",
+                document_id="doc_alpha",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+
+        self.assertEqual(preview["status"], "review_required")
+        self.assertEqual(
+            preview["data"]["stageTimings"]["maxNativePhaseMs"], 12.5
+        )
+        self.assertIn(
+            "large_staged_scope",
+            {warning["code"] for warning in preview["warnings"]},
+        )
+
     def test_confirmation_reports_a_bounded_transaction_failure_reason(self) -> None:
         class FailingTransactions:
             @staticmethod
@@ -715,8 +760,98 @@ class V2PythonExecutionTests(unittest.TestCase):
         ).to_dict()
         codes = {warning["code"] for warning in result["warnings"]}
         self.assertIn("read_intent_violated", codes)
-        self.assertIn("undeclared_document_mutation", codes)
-        self.assertIn("output truncated", result["data"]["stdout"])
+        self.assertIn("observed_undeclared_document_change", codes)
+        self.assertEqual(result["data"]["stdout"], "x" * 20)
+        self.assertTrue(result["data"]["stdoutTruncated"])
+        self.assertFalse(result["data"]["stderrTruncated"])
+        self.assertEqual(result["data"]["stdoutOriginalChars"], 100)
+        self.assertEqual(result["data"]["stderrOriginalChars"], 0)
+        self.assertEqual(result["data"]["maxOutputCharsApplied"], 20)
+        self.assertEqual(result["data"]["maxErrorCharsApplied"], 8192)
+        self.assertEqual(
+            result["data"]["observedDocumentChanges"],
+            [
+                {
+                    "documentId": "doc_alpha",
+                    "beforeFingerprint": mock.ANY,
+                    "afterFingerprint": mock.ANY,
+                    "declared": True,
+                },
+                {
+                    "documentId": "doc_other",
+                    "beforeFingerprint": None,
+                    "afterFingerprint": None,
+                    "declared": False,
+                },
+            ],
+        )
+
+    def test_python_error_is_sanitized_structured_and_bounded(self) -> None:
+        service, host = self.service()
+
+        def fail(_request):
+            raise NameError(
+                "name 'missingGlyph' failed at /Users/private/font.glyphs "
+                "token=should-not-escape "
+                + ("x" * 700),
+                name="missingGlyph",
+            )
+
+        host.run_live_python = fail
+        result = service.execute(
+            PythonExecutionRequest(
+                code="print(missingGlyph)",
+                reason="structured failure",
+                intended_effect="read",
+                document_id="doc_alpha",
+            )
+        ).to_dict()
+
+        self.assertEqual(result["error"]["code"], "python_execution_failed")
+        details = result["error"]["details"]
+        self.assertEqual(details["phase"], "evaluation")
+        self.assertEqual(details["exceptionType"], "NameError")
+        self.assertEqual(details["symbol"], "missingGlyph")
+        self.assertTrue(details["codeHash"].startswith("sha256:"))
+        self.assertLessEqual(len(details["message"]), 500)
+        self.assertNotIn("/Users/private", details["message"])
+        self.assertNotIn("should-not-escape", details["message"])
+        self.assertNotIn("Traceback", repr(result))
+
+    def test_output_limits_reject_zero_and_values_above_contract_bound(self) -> None:
+        service, _host = self.service()
+        for field, value in (
+            ("max_output_chars", 0),
+            ("max_error_chars", 8193),
+        ):
+            with self.subTest(field=field):
+                values = {
+                    "code": "print('ok')",
+                    "reason": "invalid output bound",
+                    "intended_effect": "read",
+                    field: value,
+                }
+                result = service.execute(
+                    PythonExecutionRequest(**values)
+                ).to_dict()
+                self.assertEqual(result["error"]["code"], "invalid_request")
+
+    def test_compile_failure_uses_the_structured_error_contract(self) -> None:
+        service, _host = self.service()
+        result = service.execute(
+            PythonExecutionRequest(
+                code="if True print('broken')",
+                reason="compile contract",
+                intended_effect="read",
+            )
+        ).to_dict()
+
+        self.assertEqual(result["error"]["code"], "invalid_code")
+        details = result["error"]["details"]
+        self.assertEqual(details["phase"], "compile")
+        self.assertEqual(details["exceptionType"], "SyntaxError")
+        self.assertEqual(details["line"], 1)
+        self.assertTrue(details["codeHash"].startswith("sha256:"))
 
     def test_observed_read_execution_does_not_recapture_the_document(self) -> None:
         service, host = self.service()

@@ -241,6 +241,24 @@ class CanonicalFontTreeTests(unittest.TestCase):
         )
         self.assertEqual(transitioned.reused_glyph_count, 382)
 
+    def test_verified_snapshot_transition_removes_a_deleted_root_encoding(self) -> None:
+        before = _model(glyph_count=3, master_count=1)
+        before["uiSession"] = {"tab": "A"}
+        baseline = CanonicalSnapshot.from_model(before)
+        after = copy.deepcopy(before)
+        del after["uiSession"]
+
+        changes = diff_models(baseline, after)
+        transitioned = changes.apply(baseline)
+
+        self.assertNotIn("uiSession", transitioned)
+        self.assertNotIn("uiSession", transitioned.root_encodings)
+        self.assertEqual(transitioned.materialize(), after)
+        self.assertEqual(
+            transitioned.document_fingerprint,
+            fingerprint_model(after),
+        )
+
     def test_master_duplication_reuses_every_unchanged_layer_encoding(self) -> None:
         model = _model(glyph_count=40, master_count=5)
         for glyph in model["glyphs"].values():
@@ -450,6 +468,40 @@ class CanonicalFontTreeTests(unittest.TestCase):
         self.assertEqual(transition.model_fingerprint, fingerprint_model(after))
         self.assertEqual(transition.reused_glyph_count, 382)
         self.assertEqual(trees.load_model(transition.tree_hash), after)
+
+    def test_verified_transition_accepts_large_glyph_membership_growth(self) -> None:
+        trees = CanonicalFontTree(MemoryObjectStore())
+        before = _model(glyph_count=389, master_count=5)
+        after = _model(glyph_count=423, master_count=5)
+        baseline = trees.store_model(before)
+        changes = diff_models(before, after)
+
+        transition = trees.store_verified_transition(
+            baseline.tree_hash,
+            after,
+            changes,
+        )
+
+        self.assertEqual(len(after["glyphs"]) - len(before["glyphs"]), 34)
+        self.assertEqual(transition.model_fingerprint, fingerprint_model(after))
+        self.assertEqual(trees.load_model(transition.tree_hash), after)
+
+    def test_verified_transition_accepts_top_level_deletion(self) -> None:
+        trees = CanonicalFontTree(MemoryObjectStore())
+        before = _model(glyph_count=3, master_count=1)
+        before["temporaryRoot"] = {"value": True}
+        after = copy.deepcopy(before)
+        del after["temporaryRoot"]
+        baseline = trees.store_model(before)
+
+        transition = trees.store_verified_transition(
+            baseline.tree_hash,
+            after,
+            diff_models(before, after),
+        )
+
+        self.assertEqual(transition.model_fingerprint, fingerprint_model(after))
+        self.assertNotIn("temporaryRoot", trees.load_model(transition.tree_hash))
 
     def test_tree_diff_reads_only_changed_shards_not_both_complete_models(self) -> None:
         trees = CanonicalFontTree(MemoryObjectStore())

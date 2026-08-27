@@ -6,8 +6,9 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 - Glyphs MCP is a Python-based MCP server packaged as a Glyphs 3 plugin.
 - The server exposes GlyphsApp functionality as JSON-RPC tools via Streamable HTTP at `http://127.0.0.1:9680/mcp/`.
 - A plain browser `GET` to `/mcp/` returns JSON discovery; MCP clients connect using SSE (`Accept: text/event-stream`).
-- Dependencies are installed into the user Scripts `site-packages` directory,
-  not vendored inside the plugin.
+- Dependencies follow the shared runtime path plan: embedded Glyphs Python uses
+  the target's Scripts `site-packages`; external Python uses its user site with
+  the Glyphs path as fallback. Dependencies are not vendored inside the plugin.
 - Resources are helper reference material (guide + docs) to improve tool calls and generated code.
 
 ## Repository Map
@@ -22,7 +23,7 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 ## Everyday Commands
 - Activate tooling env: `source glyphs-build-env/bin/activate`.
 - Install dependencies:
-  - `src/glyphs-mcp/scripts/install_deps_glyphs_python.sh` (Glyphs’ Python → installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`)
+  - `src/glyphs-mcp/scripts/install_deps_glyphs_python.sh` (selected Python → follows the probe's exact user/target install plan)
   - `src/glyphs-mcp/scripts/install_deps_external_python.sh` (external Python → installs into that Python’s user site-packages)
 - Sync ObjectWrapper docs into the plugin: `python src/glyphs-mcp/scripts/copy_documentation.py`.
 - Run the complete 1.x + 2.0 Python suite without bytecode artifacts:

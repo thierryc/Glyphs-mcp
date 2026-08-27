@@ -20,6 +20,7 @@ SKILL_NAMES = (
     "glyphs",
     "glyphs-mcp-development",
     "glyphs-mcp-maintainer-feedback",
+    "glyphs-mcp-master-compatibility",
     "glyphs-mcp-opentype-features",
     "glyphs-mcp-production-audit",
     "glyphs-mcp-icon-font",
@@ -219,7 +220,7 @@ class AgentPluginTests(unittest.TestCase):
             self.assertTrue((installed / manifest["mcpServers"]).is_file())
 
     def test_plugin_skill_copies_match_the_canonical_sources(self) -> None:
-        self.assertEqual(len(SKILL_NAMES), 13)
+        self.assertEqual(len(SKILL_NAMES), 14)
         plugin_names = tuple(sorted(path.name for path in (PLUGIN / "skills").iterdir() if path.is_dir()))
         self.assertEqual(plugin_names, tuple(sorted(SKILL_NAMES)))
         for name in SKILL_NAMES:
@@ -289,6 +290,7 @@ class AgentPluginTests(unittest.TestCase):
         self.assertIn("glyphs-mcp-kerning", skill_text)
         self.assertIn("glyphs-mcp-development", skill_text)
         self.assertIn("glyphs-mcp-scripting", skill_text)
+        self.assertIn("glyphs-mcp-master-compatibility", skill_text)
         self.assertIn("glyphs-mcp-production-audit", skill_text)
         self.assertIn("Generic Python with no Glyphs app or font target", skill_text)
         self.assertIn('display_name: "Glyphs MCP"', metadata_text)
@@ -323,8 +325,6 @@ class AgentPluginTests(unittest.TestCase):
         metadata_text = (root / "agents" / "openai.yaml").read_text(encoding="utf-8")
         self.assertLessEqual(len(skill_text.splitlines()), 110)
         for required in (
-            "docs_search",
-            "docs_get",
             "execute_python",
             "staged_document",
             "live_open_world",
@@ -337,6 +337,11 @@ class AgentPluginTests(unittest.TestCase):
             "confirm=true",
         ):
             self.assertIn(required, skill_text)
+        # The scripting skill is a v2-surface skill. It must not route agents to
+        # documentation tools that are absent from the v2 catalog.
+        self.assertNotIn("docs_search", skill_text)
+        self.assertNotIn("docs_get", skill_text)
+        self.assertIn("bundled documentation", skill_text)
         self.assertIn("Never call `exit()`, `quit()`, or `sys.exit()`", skill_text)
         self.assertIn("applies the stored patch without rerunning Python", skill_text)
         self.assertIn("correctness boundary, not a hostile-code sandbox", skill_text)

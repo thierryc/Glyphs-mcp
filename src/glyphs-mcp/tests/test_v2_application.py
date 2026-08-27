@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import sys
 import time
 import unittest
@@ -60,7 +61,126 @@ class _FakeHost:
         return self.documents
 
 
+class _Clock:
+    def __init__(self) -> None:
+        self.value = 100.0
+
+    def __call__(self) -> float:
+        return self.value
+
+
 class V2ApplicationTests(unittest.TestCase):
+    def test_open_edit_tab_is_atomic_and_records_no_document_change(self) -> None:
+        class UIHost(_FakeHost):
+            def __init__(self) -> None:
+                super().__init__()
+                self.model = {
+                    "font": {"familyName": "Alpha"},
+                    "masters": [{"id": "m1", "name": "Regular"}],
+                    "instances": [],
+                    "glyphs": {
+                        "A": {"name": "A", "id": "gA", "layers": []},
+                        "B": {"name": "B", "id": "gB", "layers": []},
+                    },
+                    "kerning": {},
+                    "features": [],
+                    "classes": [],
+                    "featurePrefixes": [],
+                }
+                self.opened = []
+
+            def capture_model(self, _document_id):
+                return copy.deepcopy(self.model)
+
+            def open_edit_tab(self, document_id, glyph_names, *, master_id=None):
+                self.opened.append((document_id, tuple(glyph_names), master_id))
+
+        host = UIHost()
+        app = ReadOnlyApplication(host)
+        opened = app.invoke(
+            "open_edit_tab",
+            {
+                "documentId": "doc_alpha",
+                "glyphNames": ["A", "B"],
+                "masterId": "m1",
+            },
+        ).to_dict()
+
+        self.assertTrue(opened["ok"])
+        self.assertEqual(opened["effect"], "ui")
+        self.assertEqual(
+            host.opened, [("doc_alpha", ("A", "B"), "m1")]
+        )
+        self.assertFalse(opened["data"]["documentChanged"])
+        self.assertEqual(
+            opened["data"]["beforeFingerprint"],
+            opened["data"]["afterFingerprint"],
+        )
+        self.assertFalse(app.history.list_commits("doc_alpha")[-1].changed)
+        validate(opened, TOOL_CATALOG["open_edit_tab"].output_schema)
+
+        missing = app.invoke(
+            "open_edit_tab",
+            {"documentId": "doc_alpha", "glyphNames": ["A", "Missing"]},
+        ).to_dict()
+        self.assertFalse(missing["ok"])
+        self.assertEqual(missing["error"]["code"], "target_not_found")
+        self.assertEqual(len(host.opened), 1)
+
+        duplicate = app.invoke(
+            "open_edit_tab",
+            {"documentId": "doc_alpha", "glyphNames": ["A", "A"]},
+        ).to_dict()
+        self.assertFalse(duplicate["ok"])
+        self.assertEqual(duplicate["error"]["code"], "invalid_request")
+        self.assertEqual(len(host.opened), 1)
+
+    def test_kerning_entry_kind_filters_and_scopes_pagination_cursors(self) -> None:
+        class ModelHost(_FakeHost):
+            def capture_model(self, _document_id):
+                return {
+                    "glyphs": {
+                        name: {"id": "g{}".format(name), "name": name}
+                        for name in ("L", "quoteright", "A", "V")
+                    },
+                    "kerning": {
+                        "ltr": {
+                            "m1": {
+                                "gA": {"gV": -80},
+                                "gV": {"gA": -70},
+                            }
+                        },
+                        "rtl": {},
+                        "vertical": {},
+                        "context": {"L * quoteright A": {"m1": -40}},
+                    },
+                }
+
+        app = ReadOnlyApplication(ModelHost())
+        pair_page = app.invoke(
+            "list_kerning_pairs",
+            {"documentId": "doc_alpha", "entryKind": "pair", "pageSize": 1},
+        ).to_dict()
+        context_page = app.invoke(
+            "list_kerning_pairs",
+            {"documentId": "doc_alpha", "entryKind": "context"},
+        ).to_dict()
+
+        self.assertTrue(pair_page["ok"])
+        self.assertEqual(pair_page["data"]["pairs"][0]["entryKind"], "pair")
+        self.assertEqual(
+            context_page["data"]["pairs"][0]["entryKind"], "context"
+        )
+        crossed = app.invoke(
+            "list_kerning_pairs",
+            {
+                "documentId": "doc_alpha",
+                "entryKind": "context",
+                "cursor": pair_page["page"]["nextCursor"],
+            },
+        ).to_dict()
+        self.assertFalse(crossed["ok"])
+
     def test_invoke_publishes_one_event_driven_activity_lifecycle(self) -> None:
         activity = OperationActivityStore(id_factory=lambda: "activity_invoke")
         observed = []
@@ -99,8 +219,66 @@ class V2ApplicationTests(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["data"]["apiMajor"], 2)
         self.assertEqual(payload["data"]["apiVersion"], "2.0")
+        self.assertEqual(payload["data"]["canonicalModelSchemaVersion"], 6)
+        self.assertIn("contextual_kerning", payload["data"]["capabilities"])
         self.assertEqual(payload["data"]["host"]["openDocumentCount"], 1)
         validate(payload, TOOL_CATALOG["get_server_info"].output_schema)
+
+    def test_unexpected_invocation_exit_terminalizes_once_and_releases_lease(self) -> None:
+        class TransportInterrupted(BaseException):
+            pass
+
+        activity = OperationActivityStore(id_factory=lambda: "activity_abort")
+        observed = []
+        activity.subscribe(observed.append)
+        app = ReadOnlyApplication(_FakeHost(), activity=activity)
+        app._handlers["get_server_info"] = lambda _arguments: (_ for _ in ()).throw(
+            TransportInterrupted()
+        )
+
+        with self.assertRaises(TransportInterrupted):
+            app.invoke("get_server_info")
+
+        terminal = activity.current(None)
+        self.assertEqual(terminal.state, "error")
+        self.assertEqual(
+            len([item for item in observed if item.state == "error"]), 1
+        )
+        self.assertIsNotNone(
+            activity._lease_released_at[terminal.activity_id]
+        )
+
+    def test_synthetic_preparing_record_is_replaced_and_cleared_without_font_changes(self) -> None:
+        clock = _Clock()
+        ids = iter(("activity_stranded", "activity_command"))
+        activity = OperationActivityStore(
+            clock=clock, id_factory=lambda: next(ids)
+        )
+        stranded = activity.begin(
+            document_id="doc_alpha",
+            tool="execute_python",
+            title="Execute Python",
+        )
+        activity.release(stranded)
+        host = _FakeHost()
+        before = host.documents[0]
+        app = ReadOnlyApplication(host, activity=activity)
+
+        response = app.invoke(
+            "list_open_fonts", {"documentId": "doc_alpha"}
+        )
+
+        self.assertTrue(response.ok)
+        current = activity.current("doc_alpha")
+        self.assertEqual(current.activity_id, "activity_command")
+        self.assertEqual(current.state, "success")
+        activity.dismiss("doc_alpha")
+        self.assertEqual(activity.current("doc_alpha").state, "idle")
+        clock.value += 30.0
+        activity.reconcile_orphans(grace_seconds=30.0)
+        self.assertEqual(activity.current("doc_alpha").state, "idle")
+        self.assertEqual(host.documents[0], before)
+        self.assertFalse(host.documents[0].has_unsaved_changes)
 
     def test_list_open_fonts_uses_stable_document_ids_as_normative_targets(self) -> None:
         response = ReadOnlyApplication(_FakeHost()).invoke("list_open_fonts")

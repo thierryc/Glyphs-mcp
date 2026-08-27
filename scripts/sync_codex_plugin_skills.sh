@@ -9,6 +9,7 @@ SKILLS=(
   glyphs
   glyphs-mcp-development
   glyphs-mcp-maintainer-feedback
+  glyphs-mcp-master-compatibility
   glyphs-mcp-opentype-features
   glyphs-mcp-production-audit
   glyphs-mcp-icon-font

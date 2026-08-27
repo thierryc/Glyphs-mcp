@@ -95,7 +95,7 @@ class BumpVersionTests(unittest.TestCase):
                 "Agent plugins are a separate, optional setup. Version 1.6.0 includes one shared package.\n"
             ),
             Path("content/getting-started/codex-chatgpt-plugin-ui.mdx"): (
-                "Every host shares the same\n13 skills, localhost MCP configuration, and `1.6.0` package version.\n"
+                "Every host shares the same\n14 skills, localhost MCP configuration, and `1.6.0` package version.\n"
             ),
         }
 

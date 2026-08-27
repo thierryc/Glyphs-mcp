@@ -38,6 +38,9 @@ class V2CommonRuntimeTests(unittest.TestCase):
 
         self.assertEqual(len(first.items), 100)
         self.assertEqual(first.page.page_size, 100)
+        self.assertEqual(first.page.requested_page_size, 100)
+        self.assertEqual(first.page.max_page_bytes, 40 * 1024)
+        self.assertIsNone(first.page.truncation_reason)
         self.assertEqual(first.page.total_items, 225)
         self.assertIsNotNone(first.page.next_cursor)
 
@@ -50,6 +53,7 @@ class V2CommonRuntimeTests(unittest.TestCase):
         )
         self.assertEqual(len(second.items), 125)
         self.assertEqual(second.page.page_size, 500)
+        self.assertEqual(second.page.requested_page_size, 900)
 
         with self.assertRaises(CursorError):
             paginate(
@@ -68,6 +72,22 @@ class V2CommonRuntimeTests(unittest.TestCase):
                 page_size=100,
                 cursor=first.page.next_cursor,
             )
+
+    def test_pagination_explains_byte_budget_truncation(self) -> None:
+        values = [{"name": "g{}".format(index), "code": "x" * 80} for index in range(10)]
+        page = paginate(
+            values,
+            source_fingerprint="font_bytes",
+            cursor_scope="list_features:doc_alpha",
+            page_size=10,
+            max_page_bytes=250,
+        )
+
+        public = page.page.to_dict()
+        self.assertLess(public["returnedItems"], public["requestedPageSize"])
+        self.assertEqual(public["maxPageBytes"], 250)
+        self.assertEqual(public["truncationReason"], "byte_budget")
+        self.assertIsNotNone(public["nextCursor"])
 
     def test_operation_store_consumes_reviews_and_expires_them(self) -> None:
         clock = _Clock()

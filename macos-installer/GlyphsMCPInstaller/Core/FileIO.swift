@@ -241,6 +241,7 @@ public struct InstallerPayload {
 		let plugin = payloadDir.appendingPathComponent("Glyphs MCP.glyphsPlugin", isDirectory: true)
 		let requirements = payloadDir.appendingPathComponent("requirements.txt")
 		let runtimeProbe = plugin.appendingPathComponent("Contents/Resources/runtime_probe.py")
+		let runtimePolicy = plugin.appendingPathComponent("Contents/Resources/runtime_path_policy.py")
 		let skills = payloadDir.appendingPathComponent("skills", isDirectory: true)
 		guard FileManager.default.fileExists(atPath: plugin.path) else {
 			throw InstallerError.userFacing("Missing legacy payload plug-in bundle: \(plugin.path)")
@@ -250,6 +251,9 @@ public struct InstallerPayload {
 		}
 		guard FileManager.default.fileExists(atPath: runtimeProbe.path) else {
 			throw InstallerError.userFacing("Missing payload Python runtime probe: \(runtimeProbe.path)")
+		}
+		guard FileManager.default.fileExists(atPath: runtimePolicy.path) else {
+			throw InstallerError.userFacing("Missing payload Python runtime path policy: \(runtimePolicy.path)")
 		}
 		return InstallerPayload(
 			payloadDir: payloadDir,
@@ -290,6 +294,10 @@ public struct InstallerPayload {
 			)
 			guard FileManager.default.fileExists(atPath: plugin.runtimeProbe.path) else {
 				throw InstallerError.userFacing("Installer payload runtime probe is missing for \(version.displayName).")
+			}
+			let runtimePolicy = target.bundleURL.appendingPathComponent("Contents/Resources/runtime_path_policy.py")
+			guard FileManager.default.fileExists(atPath: runtimePolicy.path) else {
+				throw InstallerError.userFacing("Installer payload runtime path policy is missing for \(version.displayName).")
 			}
 			plugins[version] = plugin
 		}

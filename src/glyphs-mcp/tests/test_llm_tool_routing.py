@@ -154,10 +154,12 @@ class LLMToolRoutingTests(unittest.TestCase):
             "debug-live-read-only-script",
             "reusable-script-menu-file",
             "reporter-plugin-bundle",
+            "master-compatibility-domain-route",
             "outline-start-node-domain-route",
             "outline-specific-python-fallback",
             "italic-first-pass-domain-route",
             "spacing-domain-route",
+            "context-kerning-domain-route",
             "generic-python-negative-route",
         }
         self.assertEqual(set(by_id), required_cases)
@@ -218,10 +220,16 @@ class LLMToolRoutingTests(unittest.TestCase):
             for path in sorted(root.glob("*/SKILL.md")):
                 checked += 1
                 text = path.read_text(encoding="utf-8")
+                v2_only = "surface: glyphs-mcp-v2" in text
                 for name in BACKTICK_IDENTIFIER.findall(text):
                     if not TOOLISH.match(name):
                         continue
-                    if not self._is_model_tool(name):
+                    available = (
+                        name in V2_TOOL_CATALOG
+                        if v2_only
+                        else self._is_model_tool(name)
+                    )
+                    if not available:
                         violations.append((str(path.relative_to(REPO_ROOT)), name))
         self.assertGreaterEqual(checked, 18)
         self.assertEqual(violations, [])

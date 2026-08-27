@@ -865,6 +865,68 @@ class ActivityStatusMiddlewareTests(unittest.TestCase):
             [("GET /mcp/", "active"), ("GET /mcp/", "ok")],
         )
 
+    def test_request_generations_ignore_out_of_order_legacy_completion(self):
+        plugin = self.plugin_module.MCPBridgePlugin()
+        plugin._activity_request_generation = 0
+        plugin._schedule_status_refresh = lambda: None
+
+        plugin._record_activity("First", "active", 1)
+        plugin._record_activity("Second", "active", 2)
+        plugin._record_activity("First done", "ok", 1)
+
+        self.assertEqual(plugin._activity_text, "Second")
+        self.assertEqual(plugin._activity_state, "active")
+        plugin._record_activity("Second done", "ok", 2)
+        self.assertEqual(plugin._activity_text, "Second done")
+        self.assertEqual(plugin._activity_state, "ok")
+
+    def test_cancellation_releases_the_http_activity_generation(self):
+        activity = []
+
+        async def app(_scope, _receive, _send):
+            raise asyncio.CancelledError()
+
+        sent = False
+
+        async def receive():
+            nonlocal sent
+            if sent:
+                return {"type": "http.disconnect"}
+            sent = True
+            return {
+                "type": "http.request",
+                "body": b'{"jsonrpc":"2.0","method":"initialize"}',
+                "more_body": False,
+            }
+
+        async def send(_message):
+            return None
+
+        middleware = self.plugin_module.McpActivityStatusMiddleware(
+            app,
+            recorder=lambda message, state, generation: activity.append(
+                (message, state, generation)
+            ),
+        )
+
+        async def exercise():
+            with self.assertRaises(asyncio.CancelledError):
+                await middleware(
+                    {
+                        "type": "http",
+                        "method": "POST",
+                        "path": "/mcp/",
+                        "headers": [],
+                    },
+                    receive,
+                    send,
+                )
+
+        asyncio.run(exercise())
+        self.assertEqual(activity[0][1], "active")
+        self.assertEqual(activity[-1][0:2], ("Request interrupted", "ok"))
+        self.assertEqual(activity[0][2], activity[-1][2])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -22,6 +22,7 @@ DEFAULT_OUTPUT_ROOT = REPO_ROOT / "build" / "v2-runtime"
 BUNDLE_NAME = "Glyphs MCP.glyphsPlugin"
 PACKAGE_RELATIVE_TO_BUNDLE = Path("Contents/Resources/glyphs_mcp_v2")
 PINNED_FORMAT_ROOT = REPO_ROOT / "third_party" / "glyphs-file-format-v4"
+SHARED_RUNTIME_FILES = ("runtime_path_policy.py", "runtime_probe.py")
 
 V2_MCP_TOOLS = '''# encoding: utf-8
 
@@ -97,6 +98,12 @@ def _v2_version() -> str:
 
 def _activate_v2_bundle(bundle: Path) -> Path:
     resources = bundle / "Contents" / "Resources"
+    canonical_resources = SOURCE_BUNDLE / "Contents" / "Resources"
+    for name in SHARED_RUNTIME_FILES:
+        source = canonical_resources / name
+        if not source.is_file():
+            raise FileNotFoundError("canonical runtime module is missing: {}".format(source))
+        shutil.copy2(source, resources / name)
     package_destination = bundle / PACKAGE_RELATIVE_TO_BUNDLE
     if package_destination.exists():
         shutil.rmtree(package_destination)
@@ -237,6 +244,17 @@ def build(output_root: Path) -> Dict[str, object]:
     manifests = {name: _manifest(path) for name, path in destinations.items()}
     if manifests["source"] != manifests["pluginManager"]:
         raise RuntimeError("assembled v2 runtime payloads differ")
+    runtime_manifests = {
+        name: {
+            shared: hashlib.sha256(
+                (bundle_paths[name] / "Contents" / "Resources" / shared).read_bytes()
+            ).hexdigest()
+            for shared in SHARED_RUNTIME_FILES
+        }
+        for name in sources
+    }
+    if runtime_manifests["source"] != runtime_manifests["pluginManager"]:
+        raise RuntimeError("assembled shared runtime modules differ")
 
     result: Dict[str, object] = {
         "schemaVersion": 1,
@@ -246,6 +264,7 @@ def build(output_root: Path) -> Dict[str, object]:
         "installableBundle": str(bundle_paths["source"]),
         "fileCount": len(manifests["source"]),
         "files": manifests["source"],
+        "runtimeFiles": runtime_manifests["source"],
     }
     # The returned paths are process-local conveniences for callers assembling
     # another payload. The persisted manifest is a distributable artifact and

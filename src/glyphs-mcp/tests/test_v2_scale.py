@@ -167,8 +167,9 @@ class V2ScaleTests(unittest.TestCase):
                 "expectedDocumentFingerprint": fingerprint_model(self.host.model),
                 "updates": [
                     {
+                        "scope": "layer",
                         "glyphName": "g{:03d}".format(glyph_index),
-                        "masterId": "m{}".format(master_index),
+                        "layerId": "m{}".format(master_index),
                         "leftMetricsKey": "=H",
                     }
                     for glyph_index in range(40)
@@ -301,7 +302,7 @@ class V2ScaleTests(unittest.TestCase):
                 payload = [tool.model_dump(by_alias=True, exclude_none=True) for tool in tools]
                 return len(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
 
-        self.assertLess(asyncio.run(measure()), 96 * 1024)
+        self.assertLessEqual(asyncio.run(measure()), (96 - 8) * 1024)
 
 
 if __name__ == "__main__":

@@ -163,6 +163,11 @@ def master_lifecycle_diff(
             and change.path[0] == "kerning"
             and (
                 (len(change.path) >= 3 and change.path[2] in added_ids)
+                or (
+                    len(change.path) >= 4
+                    and change.path[1] == "context"
+                    and change.path[3] in added_ids
+                )
                 or (len(change.path) == 2 and change.path[1] in added_ids)
             )
         )
@@ -185,6 +190,25 @@ def master_lifecycle_diff(
                         before_present=False,
                     )
                 )
+        if directional:
+            contexts = after_kerning.get("context", {})
+            if isinstance(contexts, Mapping):
+                for context_key, master_values in contexts.items():
+                    if not isinstance(master_values, Mapping):
+                        continue
+                    for master_id in sorted(added_ids & set(master_values)):
+                        retained.append(
+                            SemanticChange(
+                                path=(
+                                    "kerning",
+                                    "context",
+                                    str(context_key),
+                                    master_id,
+                                ),
+                                after=master_values[master_id],
+                                before_present=False,
+                            )
+                        )
     result = ChangeSet.from_changes(
         before_fingerprint=fingerprint_model(before),
         after_fingerprint=fingerprint_model(after),
@@ -279,6 +303,60 @@ def master_lifecycle_request_diff(
                         after_present=after_present,
                     )
                 )
+        if directional:
+            before_contexts = before_kerning.get("context", {})
+            after_contexts = after_kerning.get("context", {})
+            if isinstance(before_contexts, Mapping) and isinstance(
+                after_contexts, Mapping
+            ):
+                for context_key in sorted(
+                    set(before_contexts) | set(after_contexts), key=str
+                ):
+                    before_values = before_contexts.get(context_key)
+                    after_values = after_contexts.get(context_key)
+                    before_mapping = (
+                        before_values if isinstance(before_values, Mapping) else {}
+                    )
+                    after_mapping = (
+                        after_values if isinstance(after_values, Mapping) else {}
+                    )
+                    if context_key not in before_contexts:
+                        changes.append(
+                            SemanticChange(
+                                path=("kerning", "context", str(context_key)),
+                                after=after_values,
+                                before_present=False,
+                            )
+                        )
+                        continue
+                    if context_key not in after_contexts:
+                        changes.append(
+                            SemanticChange(
+                                path=("kerning", "context", str(context_key)),
+                                before=before_values,
+                                after_present=False,
+                            )
+                        )
+                        continue
+                    for master_id in sorted(structural_ids):
+                        before_present = master_id in before_mapping
+                        after_present = master_id in after_mapping
+                        if before_present == after_present:
+                            continue
+                        changes.append(
+                            SemanticChange(
+                                path=(
+                                    "kerning",
+                                    "context",
+                                    str(context_key),
+                                    master_id,
+                                ),
+                                before=before_mapping.get(master_id),
+                                after=after_mapping.get(master_id),
+                                before_present=before_present,
+                                after_present=after_present,
+                            )
+                        )
     result = ChangeSet.from_changes(
         before_fingerprint=fingerprint_model(before),
         after_fingerprint=fingerprint_model(after),

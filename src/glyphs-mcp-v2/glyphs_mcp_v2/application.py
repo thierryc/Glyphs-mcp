@@ -62,6 +62,7 @@ from .workflows import (
     list_layers as model_list_layers,
     list_masters as model_list_masters,
     list_kerning_pairs as model_list_kerning_pairs,
+    list_opentype_items as model_list_opentype_items,
     review_anchor_consistency as model_review_anchor_consistency,
     review_anchor_updates as build_anchor_updates,
     review_compatibility_updates as build_compatibility_updates,
@@ -255,66 +256,108 @@ class GlyphsMCPApplication:
                 else str(handler_name or "Glyphs MCP")
             ),
         )
-        scope = self._trace.start_action(
-            handler_name or "unknown",
-            definition.effect if definition is not None else "read",
-            values,
-        )
-        response = self._invoke_untraced(handler_name, values)
-        if (
-            definition is not None
-            and definition.effect == "edit"
-            and response.audit_receipt is None
-        ):
-            # Edit calls are part of the durable action ledger even when
-            # validation or conflict detection refuses them before mutation.
-            # Handlers that already emitted a richer receipt remain untouched.
-            receipt = self._audit.record(
-                tool=handler_name,
-                effect="edit",
-                status=response.status,
-                document_id=scope.document_id,
-                details={
-                    "operationId": response.metadata.operation_id,
-                    "errorCode": response.error.code if response.error is not None else None,
-                    "mutated": bool(response.ok),
-                },
+        terminalized = False
+        try:
+            scope = self._trace.start_action(
+                handler_name or "unknown",
+                definition.effect if definition is not None else "read",
+                values,
             )
-            response = replace(response, audit_receipt=receipt.to_dict())
-        if (
-            self._trace.needs_initial_observation(scope)
-            and self.history.head_tree_hash(scope.document_id or "") is None
-        ):
-            capture = getattr(self._host, "capture_snapshot", None)
-            if not callable(capture):
-                capture = getattr(self._host, "capture_model", None)
-            if callable(capture):
-                try:
-                    self._trace.observe_model(
-                        scope.document_id or "",
-                        capture(scope.document_id or ""),
+            response = self._invoke_untraced(handler_name, values)
+            if (
+                definition is not None
+                and definition.effect == "edit"
+                and response.audit_receipt is None
+            ):
+                # Edit calls are part of the durable action ledger even when
+                # validation or conflict detection refuses them before mutation.
+                # Handlers that already emitted a richer receipt remain untouched.
+                receipt = self._audit.record(
+                    tool=handler_name,
+                    effect="edit",
+                    status=response.status,
+                    document_id=scope.document_id,
+                    details={
+                        "operationId": response.metadata.operation_id,
+                        "errorCode": response.error.code if response.error is not None else None,
+                        "mutated": bool(response.ok),
+                    },
+                )
+                response = replace(response, audit_receipt=receipt.to_dict())
+            if (
+                self._trace.needs_initial_observation(scope)
+                and self.history.head_tree_hash(scope.document_id or "") is None
+            ):
+                capture = getattr(self._host, "capture_snapshot", None)
+                if not callable(capture):
+                    capture = getattr(self._host, "capture_model", None)
+                if callable(capture):
+                    try:
+                        self._trace.observe_model(
+                            scope.document_id or "",
+                            capture(scope.document_id or ""),
+                        )
+                    except Exception:
+                        pass
+            completed_at = datetime.now(timezone.utc)
+            response = replace(
+                response,
+                metadata=response.metadata.with_timing(
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    duration_ms=(time.perf_counter_ns() - started_clock) // 1_000_000,
+                ),
+            )
+            commit = self._trace.finish_action(scope, response)
+            if scope.document_id:
+                history_recorded = bool(scope.history_recorded and commit is not None)
+                warnings = response.warnings
+                if not history_recorded:
+                    warnings = warnings + (
+                        ToolWarning(
+                            code="history_not_recorded",
+                            message=(
+                                scope.history_warning
+                                or "The execution result is valid, but change history was not recorded."
+                            ),
+                            target={"documentId": scope.document_id},
+                        ),
                     )
-                except Exception:
-                    pass
-        completed_at = datetime.now(timezone.utc)
-        response = replace(
-            response,
-            metadata=response.metadata.with_timing(
-                started_at=started_at,
-                completed_at=completed_at,
-                duration_ms=(time.perf_counter_ns() - started_clock) // 1_000_000,
-            ),
-        )
-        self._trace.finish_action(scope, response)
-        self.activity.complete(
-            activity_token,
-            ok=response.ok,
-            summary=response.summary,
-            cancelled=bool(
-                response.error is not None and response.error.code == "cancelled"
-            ),
-        )
-        return response
+                response = replace(
+                    response,
+                    data={**dict(response.data), "historyRecorded": history_recorded},
+                    warnings=warnings,
+                )
+            self.activity.complete(
+                activity_token,
+                ok=response.ok,
+                summary=response.summary,
+                cancelled=bool(
+                    response.error is not None
+                    and response.error.code == "cancelled"
+                ),
+            )
+            terminalized = True
+            return response
+        except BaseException as exc:
+            if not terminalized:
+                cancelled = isinstance(exc, ActivityCancelled) or type(exc).__name__ in {
+                    "CancelledError",
+                    "KeyboardInterrupt",
+                }
+                self.activity.complete(
+                    activity_token,
+                    ok=False,
+                    summary=(
+                        "Invocation cancelled"
+                        if cancelled
+                        else "Invocation ended unexpectedly"
+                    ),
+                    cancelled=cancelled,
+                )
+            raise
+        finally:
+            self.activity.release(activity_token)
 
     def _invoke_untraced(
         self,
@@ -623,8 +666,7 @@ class GlyphsMCPApplication:
             )
         except TransactionVerificationError as exc:
             failure_data = {
-                "rollbackAttempted": True,
-                "rollbackSucceeded": exc.rollback_succeeded,
+                **exc.to_public_dict(),
                 "verificationError": str(exc)[:2048],
             }
             return self._audited_edit_failure(
@@ -710,6 +752,7 @@ class GlyphsMCPApplication:
                     "changes": list(page.items),
                 },
                 "fontSaved": False,
+                "sourceFileChanged": result.source_file_changed,
                 "transactionCount": 1,
                 "revert": {"available": True, "operationId": metadata.operation_id},
             },
@@ -726,6 +769,7 @@ class GlyphsMCPApplication:
                 "serverVersion": SERVER_VERSION,
                 "apiMajor": API_MAJOR,
                 "apiVersion": API_VERSION,
+                "canonicalModelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
                 "capabilities": [
                     "stable_document_ids",
                     "typed_operation_envelopes",
@@ -738,6 +782,10 @@ class GlyphsMCPApplication:
                     "identity_structural_changes",
                     "master_lifecycle",
                     "layer_lifecycle",
+                    "contextual_kerning",
+                    "source_file_fingerprints",
+                    "opentype_inspection",
+                    "opentype_compile_preflight",
                 ],
                 "host": runtime.to_dict(),
             },
@@ -761,6 +809,123 @@ class GlyphsMCPApplication:
             summary="Found {} open Glyphs document(s).".format(len(documents)),
             warnings=warnings,
             data={"count": len(documents), "documents": [document.to_dict() for document in documents]},
+        )
+
+    def open_edit_tab(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        document_id = str(
+            _value(arguments, "document_id", "documentId", "") or ""
+        )
+        raw_names = _value(arguments, "glyph_names", "glyphNames")
+        if not isinstance(raw_names, (list, tuple)):
+            raise ValueError("glyphNames must be a list")
+        if not 1 <= len(raw_names) <= 64:
+            raise ValueError("glyphNames must contain between 1 and 64 names")
+        if any(not isinstance(name, str) or not name.strip() for name in raw_names):
+            raise ValueError("glyphNames must contain non-empty strings")
+        glyph_names = tuple(raw_names)
+        if len(set(glyph_names)) != len(glyph_names):
+            raise ValueError("glyphNames must not contain duplicates")
+        master_value = _value(arguments, "master_id", "masterId")
+        master_id = None if master_value is None else str(master_value)
+        if master_id == "":
+            raise ValueError("masterId must be non-empty when supplied")
+
+        before = self._document_model(document_id)
+        glyphs = before.get("glyphs", {})
+        available_glyphs = (
+            {str(name) for name in glyphs}
+            if isinstance(glyphs, Mapping)
+            else {
+                str(glyph.get("name") or "")
+                for glyph in glyphs
+                if isinstance(glyph, Mapping)
+            }
+        )
+        missing = [name for name in glyph_names if name not in available_glyphs]
+        if missing:
+            return ToolResponse.failure(
+                tool="open_edit_tab",
+                effect="ui",
+                summary="The Edit tab was not opened because glyph targets are missing.",
+                code="target_not_found",
+                message="Unknown glyph name(s): {}.".format(", ".join(missing)),
+                data={"documentId": document_id, "missingGlyphNames": missing},
+            )
+        if master_id is not None:
+            masters = before.get("masters", ())
+            master_ids = {
+                str(master.get("id") or "")
+                for master in (
+                    masters.values() if isinstance(masters, Mapping) else masters
+                )
+                if isinstance(master, Mapping)
+            }
+            if master_id not in master_ids:
+                return ToolResponse.failure(
+                    tool="open_edit_tab",
+                    effect="ui",
+                    summary="The Edit tab was not opened because the master is missing.",
+                    code="target_not_found",
+                    message="The requested master is not part of the document.",
+                    data={"documentId": document_id, "masterId": master_id},
+                )
+
+        opener = getattr(self._host, "open_edit_tab", None)
+        if not callable(opener):
+            raise HostAccessError("This host adapter cannot open Glyphs Edit tabs.")
+        opener(document_id, glyph_names, master_id=master_id)
+
+        capture = getattr(self._host, "capture_stable_snapshot", None)
+        if not callable(capture):
+            capture = getattr(self._host, "capture_snapshot", None)
+        if not callable(capture):
+            capture = getattr(self._host, "capture_model", None)
+        if not callable(capture):
+            raise HostAccessError("This host adapter does not expose document snapshots.")
+        after = capture(document_id)
+        changes = diff_models(before, after)
+        self._trace.observe_transition(
+            document_id,
+            before,
+            after,
+            change_set=changes,
+            coverage=CanonicalCoverage.complete(),
+        )
+        changed = bool(changes.changes)
+        warnings = (
+            (
+                ToolWarning(
+                    code="document_changed_during_ui_action",
+                    message=(
+                        "The Edit tab opened, but the document also changed; "
+                        "inspect the recorded semantic transition."
+                    ),
+                    target={"changeCount": len(changes.changes)},
+                ),
+            )
+            if changed
+            else ()
+        )
+        return ToolResponse.success(
+            tool="open_edit_tab",
+            effect="ui",
+            status="warning" if changed else "success",
+            summary="Opened {} glyph(s) in a Glyphs Edit tab.".format(
+                len(glyph_names)
+            ),
+            warnings=warnings,
+            data={
+                "documentId": document_id,
+                "glyphNames": list(glyph_names),
+                "glyphCount": len(glyph_names),
+                "masterId": master_id,
+                "openedTab": True,
+                "beforeFingerprint": changes.before_fingerprint,
+                "afterFingerprint": changes.after_fingerprint,
+                "documentChanged": changed,
+                "observedChangeCount": len(changes.changes),
+                "fontSaved": False,
+            },
         )
 
     def get_document_status(self, arguments: Mapping[str, Any]) -> ToolResponse:
@@ -915,21 +1080,87 @@ class GlyphsMCPApplication:
         )
 
     def list_layers(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
         glyph_names = _value(arguments, "glyph_names", "glyphNames", None)
         roles = _value(arguments, "roles", default=None)
-        return self._list_model_items(
-            tool="list_layers",
-            arguments=arguments,
-            producer=lambda model: model_list_layers(
-                model,
-                glyph_names=glyph_names,
-                roles=roles,
+        detail = str(_value(arguments, "detail", default="summary") or "summary")
+        model = self._document_model(document_id)
+        observations = {}
+        if detail != "summary":
+            inspector = getattr(self._host, "inspect_layers", None)
+            if callable(inspector):
+                observations = dict(
+                    inspector(
+                        document_id,
+                        tuple(glyph_names or ()),
+                        resolve_metrics=detail in {"metrics", "full"},
+                        include_geometry=detail in {"geometry", "full"},
+                    )
+                )
+        items = model_list_layers(
+            model,
+            glyph_names=glyph_names,
+            roles=roles,
+            detail=detail,
+            observations=observations,
+        )
+        source_fingerprint = fingerprint_model(model)
+        page = paginate(
+            items,
+            source_fingerprint=source_fingerprint,
+            cursor_scope=fingerprint_model(
+                {
+                    "tool": "list_layers",
+                    "documentId": document_id,
+                    "detail": detail,
+                    "items": items,
+                }
             ),
-            item_key="layers",
+            page_size=int(_value(arguments, "page_size", "pageSize", 100)),
+            cursor=_value(arguments, "cursor"),
+        )
+        return ToolResponse.success(
+            tool="list_layers",
+            effect="read",
+            summary="Returned {} of {} layer(s) with {} detail.".format(
+                len(page.items), len(items), detail
+            ),
+            page=page.page.to_dict(),
+            data={
+                "documentId": document_id,
+                "count": len(items),
+                "detail": detail,
+                "layers": list(page.items),
+            },
         )
 
     def list_kerning_pairs(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._list_model_items(tool="list_kerning_pairs", arguments=arguments, producer=model_list_kerning_pairs, item_key="pairs")
+        entry_kind = str(
+            _value(arguments, "entry_kind", "entryKind", "pair") or "pair"
+        ).lower()
+        return self._list_model_items(
+            tool="list_kerning_pairs",
+            arguments=arguments,
+            producer=lambda model: model_list_kerning_pairs(
+                model, entry_kind=entry_kind
+            ),
+            item_key="pairs",
+        )
+
+    def list_opentype_items(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        return self._list_model_items(
+            tool="list_opentype_items",
+            arguments=arguments,
+            producer=lambda model: model_list_opentype_items(
+                model,
+                kinds=_value(arguments, "kinds", default=None),
+                tags=_value(arguments, "tags", default=None),
+                include_disabled=bool(
+                    _value(arguments, "include_disabled", "includeDisabled", True)
+                ),
+            ),
+            item_key="items",
+        )
 
     def review_kerning_coverage(self, arguments: Mapping[str, Any]) -> ToolResponse:
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
@@ -945,8 +1176,10 @@ class GlyphsMCPApplication:
             tool="review_kerning_coverage",
             effect="read",
             status="success" if result["complete"] else "partial",
-            summary="Accounted for {} eligible kerning pair(s); {} remain untested.".format(
-                result["eligibleCount"], result["untestedCount"]
+            summary="Accounted for {} eligible kerning {} entry(s); {} remain untested.".format(
+                result["eligibleCount"],
+                result["entryKind"],
+                result["untestedCount"],
             ),
             data={
                 "documentId": document_id,
@@ -996,18 +1229,51 @@ class GlyphsMCPApplication:
 
     def review_metrics_inheritance(self, arguments: Mapping[str, Any]) -> ToolResponse:
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        glyph_names = _value(arguments, "glyph_names", "glyphNames", None)
+        tolerance = float(_value(arguments, "tolerance", default=0.01))
         model = self._document_model(document_id)
-        result = model_review_metrics_inheritance(model)
+        observations = {}
+        inspector = getattr(self._host, "inspect_layers", None)
+        if callable(inspector):
+            observations = dict(
+                inspector(
+                    document_id,
+                    tuple(glyph_names or ()),
+                    resolve_metrics=True,
+                )
+            )
+        result = model_review_metrics_inheritance(
+            model,
+            glyph_names=glyph_names,
+            tolerance=tolerance,
+            observations=observations,
+        )
+        metrics = list(result.pop("metrics"))
+        metrics_public, metrics_page = self._paged_analysis(
+            kind="metrics_resolution_review",
+            result={"metrics": metrics},
+            item_key="metrics",
+            source_fingerprint=fingerprint_model(
+                {"document": model, "metrics": metrics, "tolerance": tolerance}
+            ),
+        )
         public, page = self._paged_analysis(
             kind="metrics_review",
             result=result,
             item_key="findings",
             source_fingerprint=fingerprint_model({"document": model, "review": result}),
         )
+        public["metrics"] = metrics_public["metrics"]
+        public["metricsOperationId"] = metrics_public["operationId"]
+        public["metricsPage"] = metrics_page
         return ToolResponse.success(
             tool="review_metrics_inheritance",
             effect="read",
-            status="warning" if result["findings"] else "success",
+            status=(
+                "warning"
+                if result["findings"] or result["staleLayerCount"]
+                else "success"
+            ),
             summary="Reviewed metrics inheritance across {} glyph(s).".format(result["reviewedGlyphCount"]),
             data={"documentId": document_id, "documentFingerprint": fingerprint_model(model), **public},
             page=page,
@@ -1049,6 +1315,119 @@ class GlyphsMCPApplication:
 
     def apply_opentype_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
         return self._direct_apply(arguments, tool="apply_opentype_updates", builder=build_opentype_updates)
+
+    def compile_opentype_features(
+        self, arguments: Mapping[str, Any]
+    ) -> ToolResponse:
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        expected = str(
+            _value(
+                arguments,
+                "expected_document_fingerprint",
+                "expectedDocumentFingerprint",
+                "",
+            )
+            or ""
+        )
+        if not document_id or not expected:
+            raise ValueError(
+                "documentId and expectedDocumentFingerprint are required"
+            )
+        before = self._document_model(document_id)
+        before_fingerprint = fingerprint_model(before)
+        if before_fingerprint != expected:
+            return ToolResponse.failure(
+                tool="compile_opentype_features",
+                effect="ui",
+                summary="The document changed before OpenType compilation.",
+                code="stale_document",
+                message="Read the current fingerprint and try again.",
+                data={
+                    "documentId": document_id,
+                    "observedAfterFingerprint": before_fingerprint,
+                    "stateMayHaveChanged": False,
+                },
+            )
+        capture_source = getattr(self._host, "capture_source_file_state", None)
+        source_before = capture_source(document_id) if callable(capture_source) else None
+        compiler = getattr(self._host, "compile_opentype_features", None)
+        if not callable(compiler):
+            raise HostAccessError(
+                "This host adapter does not compile OpenType features."
+            )
+        result = dict(compiler(document_id))
+        after = self._document_model(document_id)
+        after_fingerprint = fingerprint_model(after)
+        changes = diff_models(before, after)
+        self._trace.observe_transition(
+            document_id,
+            before,
+            after,
+            change_set=changes,
+        )
+        source_after = capture_source(document_id) if callable(capture_source) else None
+        source_file_changed = bool(
+            source_before is not None
+            and (
+                source_after is None
+                or source_before.get("contentFingerprint")
+                != source_after.get("contentFingerprint")
+                or source_before.get("exists") != source_after.get("exists")
+            )
+        )
+        state_changed = bool(changes.changes or source_file_changed)
+        if state_changed:
+            force_dirty = getattr(self._host, "force_document_dirty", None)
+            if callable(force_dirty):
+                try:
+                    force_dirty(document_id)
+                except Exception:
+                    pass
+        data = {
+            "documentId": document_id,
+            "beforeFingerprint": before_fingerprint,
+            "observedAfterFingerprint": after_fingerprint,
+            "observedChangeCount": len(changes.changes),
+            "stateMayHaveChanged": state_changed,
+            "sourceFileChanged": source_file_changed,
+            "fontSaved": False,
+            **result,
+        }
+        if not result.get("preflightSucceeded"):
+            return ToolResponse.failure(
+                tool="compile_opentype_features",
+                effect="ui",
+                summary="Detached OpenType compilation failed; the live font was not compiled.",
+                code="opentype_preflight_failed",
+                message=str(result.get("errorMessage") or "OpenType preflight failed."),
+                data=data,
+            )
+        if not result.get("liveSucceeded") or state_changed:
+            return ToolResponse.failure(
+                tool="compile_opentype_features",
+                effect="ui",
+                summary=(
+                    "OpenType compilation changed protected state."
+                    if state_changed
+                    else "Live OpenType compilation failed."
+                ),
+                code=(
+                    "opentype_state_changed"
+                    if state_changed
+                    else "opentype_compile_failed"
+                ),
+                message=str(
+                    result.get("errorMessage")
+                    or "Canonical document and source-file state must remain unchanged."
+                ),
+                data=data,
+            )
+        return ToolResponse.success(
+            tool="compile_opentype_features",
+            effect="ui",
+            summary="Compiled OpenType features after a detached preflight; canonical state and source bytes are unchanged.",
+            data=data,
+        )
 
     def apply_instance_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
         return self._direct_apply(arguments, tool="apply_instance_updates", builder=build_instance_updates)
@@ -1472,17 +1851,18 @@ class GlyphsMCPApplication:
                 message="The document changed.",
             )
         except TransactionVerificationError as exc:
+            failure_data = {
+                "operationId": operation_id,
+                **exc.to_public_dict(),
+            }
             return self._audited_edit_failure(
                 tool="revert_change",
                 document_id=document_id,
                 summary="The revert failed verification.",
                 code="transaction_failed",
                 message="The revert was not verified.",
-                audit_details={
-                    "operationId": operation_id,
-                    "rollbackAttempted": True,
-                    "rollbackSucceeded": exc.rollback_succeeded,
-                },
+                audit_details=failure_data,
+                data=failure_data,
             )
         receipt = self._audit.record(
             tool="revert_change",
@@ -1514,6 +1894,7 @@ class GlyphsMCPApplication:
                 "observedChangeCount": result.observed_change_count,
                 "canonicalCoverage": result.coverage.to_public_dict(),
                 "fontSaved": False,
+                "sourceFileChanged": result.source_file_changed,
                 "transactionCount": 1,
             },
         )

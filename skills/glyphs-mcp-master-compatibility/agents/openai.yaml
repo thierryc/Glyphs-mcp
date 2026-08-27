@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs Master Compatibility"
+  short_description: "Diagnose and repair master compatibility"
+  default_prompt: "Use $glyphs-mcp-master-compatibility to diagnose my selected glyph and make its masters compatible when the repair is safe."
+
+policy:
+  allow_implicit_invocation: true

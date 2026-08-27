@@ -28,6 +28,12 @@ class _DocumentAdapter:
         self.restore_calls = 0
         self.corrupt_apply = False
         self.fail_restore = False
+        self.source_state = {
+            "kind": "glyphs",
+            "exists": True,
+            "contentFingerprint": "sha256:before",
+        }
+        self.change_source_on_apply = False
 
     def capture_model(self, document_id):
         return copy.deepcopy(self.model)
@@ -37,12 +43,17 @@ class _DocumentAdapter:
         self.model = change_set.apply(self.model)
         if self.corrupt_apply:
             self.model["font"]["familyName"] = "Corrupt"
+        if self.change_source_on_apply:
+            self.source_state["contentFingerprint"] = "sha256:after"
 
     def restore_model(self, document_id, model):
         self.restore_calls += 1
         if self.fail_restore:
             raise RuntimeError("restore failed")
         self.model = copy.deepcopy(model)
+
+    def capture_source_file_state(self, document_id):
+        return copy.deepcopy(self.source_state)
 
 
 class V2TransactionTests(unittest.TestCase):
@@ -139,8 +150,44 @@ class V2TransactionTests(unittest.TestCase):
             )
 
         self.assertFalse(caught.exception.rollback_succeeded)
+        self.assertTrue(caught.exception.state_may_have_changed)
+        self.assertEqual(caught.exception.observed_change_count, 1)
+        self.assertEqual(
+            caught.exception.observed_after_fingerprint,
+            fingerprint_model(adapter.model),
+        )
         self.assertIn("rollback failed: restore failed", str(caught.exception))
         self.assertEqual(adapter.restore_calls, 1)
+
+    def test_verified_mutation_observes_unchanged_source_content(self) -> None:
+        adapter = _DocumentAdapter(self.before)
+
+        result = TransactionKernel(adapter).apply(
+            document_id="doc_alpha",
+            expected_fingerprint=fingerprint_model(self.before),
+            change_set=diff_models(self.before, self.after),
+        )
+
+        self.assertFalse(result.source_file_changed)
+        self.assertEqual(
+            adapter.source_state["contentFingerprint"], "sha256:before"
+        )
+
+    def test_unexpected_source_change_fails_and_is_never_claimed_as_rolled_back(self) -> None:
+        adapter = _DocumentAdapter(self.before)
+        adapter.change_source_on_apply = True
+
+        with self.assertRaises(TransactionVerificationError) as caught:
+            TransactionKernel(adapter).apply(
+                document_id="doc_alpha",
+                expected_fingerprint=fingerprint_model(self.before),
+                change_set=diff_models(self.before, self.after),
+            )
+
+        self.assertEqual(adapter.model, self.before)
+        self.assertTrue(caught.exception.source_file_changed)
+        self.assertFalse(caught.exception.rollback_succeeded)
+        self.assertTrue(caught.exception.state_may_have_changed)
 
     def test_duplicate_paths_are_invalid(self) -> None:
         with self.assertRaises(ValueError):

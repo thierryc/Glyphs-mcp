@@ -21,6 +21,8 @@ from glyphs_mcp_v2.live_gates import (  # noqa: E402
     _StructuralGateSession,
     _assert_unique_unicode_assignments,
     verify_copy_and_make_copy,
+    verify_context_kerning,
+    verify_open_edit_tab,
     verify_schema_v3_structural_kernel,
     verify_schema_v4_master_lifecycle,
     verify_schema_v5_layer_lifecycle,
@@ -189,6 +191,60 @@ class _StructuralHost:
 
 
 class V2LiveGateGuardTests(unittest.TestCase):
+    def test_open_edit_tab_gate_records_a_non_document_ui_transition(self) -> None:
+        class UIHost(_StructuralHost):
+            def __init__(self):
+                super().__init__()
+                self.open_calls = []
+
+            def open_edit_tab(self, document_id, glyph_names, *, master_id=None):
+                self.open_calls.append((document_id, tuple(glyph_names), master_id))
+
+        host = UIHost()
+        app = GlyphsMCPApplication(host)
+        font = _Font()
+        font.selectedFontMaster = SimpleNamespace(id="m0")
+
+        result = verify_open_edit_tab(
+            font,
+            ["A"],
+            application=app,
+            host=host,
+        )
+
+        self.assertEqual(
+            host.open_calls,
+            [("doc_structural_gate", ("A",), "m0")],
+        )
+        self.assertTrue(result["openedTab"])
+        self.assertTrue(result["documentUnchanged"])
+        self.assertEqual(
+            result["documentFingerprint"],
+            fingerprint_model(host.model),
+        )
+
+    def test_open_edit_tab_gate_refuses_non_disposable_font_before_ui(self) -> None:
+        class UIHost(_StructuralHost):
+            def __init__(self):
+                super().__init__()
+                self.open_calls = []
+
+            def open_edit_tab(self, document_id, glyph_names, *, master_id=None):
+                self.open_calls.append((document_id, tuple(glyph_names), master_id))
+
+        host = UIHost()
+        app = GlyphsMCPApplication(host)
+
+        with self.assertRaises(ValueError):
+            verify_open_edit_tab(
+                _Font("Production Family"),
+                ["A"],
+                application=app,
+                host=host,
+            )
+
+        self.assertEqual(host.open_calls, [])
+
     def test_live_gate_rejects_duplicate_unicode_before_mutation(self) -> None:
         model = _structural_model()
         model["glyphs"]["e"] = copy.deepcopy(model["glyphs"]["A"])
@@ -320,6 +376,45 @@ class V2LiveGateGuardTests(unittest.TestCase):
             )
 
         self.assertEqual(host.apply_calls, 0)
+
+    def test_context_kerning_gate_round_trips_both_boundaries(self) -> None:
+        host = _StructuralHost()
+        for name, glyph_id in (("L", "glyph_L"), ("quoteright", "glyph_quote")):
+            glyph = copy.deepcopy(host.model["glyphs"]["A"])
+            glyph["id"] = glyph_id
+            glyph["name"] = name
+            glyph["unicode"] = None
+            host.model["glyphs"][name] = glyph
+        host.model["kerning"] = {
+            "ltr": {"m0": {"glyph_A": {"glyph_L": -20}}},
+            "rtl": {},
+            "vertical": {},
+            "context": {"manual [class] key": {"m0": -15}},
+        }
+        app = GlyphsMCPApplication(host)
+        before = copy.deepcopy(host.model)
+        archive = b'{"format":"glyphspackage-v1","files":[]}'
+
+        with mock.patch(
+            "glyphs_mcp_v2.live_gates._serialized_font_archive",
+            side_effect=(archive, archive),
+        ):
+            result = verify_context_kerning(
+                _Font(), application=app, host=host
+            )
+
+        self.assertEqual(host.model, before)
+        self.assertTrue(result["exactCanonicalBaselineRestored"])
+        self.assertTrue(result["exactNativeArchiveRestored"])
+        self.assertEqual(
+            result["qualifiedDomains"],
+            [
+                "context_storage",
+                "context_readback",
+                "pair_domain_preservation",
+                "atomic_refusal",
+            ],
+        )
 
     def test_schema_v3_gate_qualifies_all_structural_domains_and_restores_baseline(self) -> None:
         host = _StructuralHost()

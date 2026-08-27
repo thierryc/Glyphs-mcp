@@ -41,9 +41,10 @@ The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
 - Glyphs 3.5/4 collection fallbacks;
 - catalog-generated schemas and safety annotations;
 - one catalog-driven FastMCP operation surface;
-- paginated glyph, instance, kerning, audit, review, and Python-diff results;
-- direct glyph, anchor, kerning, spacing, metrics, and compatibility batches
-  with detached derived-effect simulation;
+- paginated glyph, instance, directional pair/context kerning, audit, review,
+  and Python-diff results;
+- direct glyph, anchor, directional pair/context kerning, spacing, metrics, and
+  compatibility batches with detached derived-effect simulation;
 - schema-v6 registry-driven complete saved semantic state, retaining the same
   identity-aware collection and verified mutation kernel;
 - compatibility, metrics-inheritance, anchor, spacing, kerning-coverage, and
@@ -84,6 +85,33 @@ The v2 tombstones are:
 None of the old names is registered as a v2 alias. The 1.11 runtime retains its
 own tools until an installed runtime is explicitly upgraded and Glyphs is
 restarted.
+
+## Directional and contextual kerning
+
+Schema v6 represents pair kerning in independent `ltr`, `rtl`, and `vertical`
+domains. `list_kerning_pairs` accepts `entryKind="pair"`, `"context"`, or
+`"all"`; pair records include their direction, and cursors are bound to the
+filtered result. The default remains `pair`.
+
+Glyphs 4 `kerningContext` is modeled in its native orientation: outer context
+key -> inner master ID -> numeric value. Exact-glyph keys containing one `*`
+boundary are exposed as a glyph-name sequence and one-based boundary index.
+Class, bracket, or manually authored keys remain visible losslessly as raw,
+non-editable records.
+
+`apply_kerning_updates` accepts a union of pair updates and exact contextual
+updates in one verified batch. Untagged pair updates remain LTR-compatible.
+Context updates require an existing master, at least three existing exact glyph
+names, an interior boundary, and a finite value; `null` removes and zero is a
+stored value. The adapter applies context deltas through Glyphs 4's native
+setter/remover selectors and never replaces the complete context dictionary.
+Master duplication and deletion update the master value nested inside every
+context key. Unrelated contexts and every pair direction remain unchanged.
+
+Contextual values are additive to ordinary kerning. The managed kerning skill
+therefore routes work through spacing and ordinary pairs first, reserves the
+typed context contract for punctuation/apostrophe/space exceptions, and sends
+class-based or tokenized rules to the OpenType-features workflow.
 
 ## Python execution and rollback
 

@@ -37,12 +37,14 @@ while Glyphs 4 receives the generated Glyphs MCP 2.0 bundle. Installing,
 reinstalling, updating, or removing one target does not reuse or modify the
 other target's plug-in.
 
-Version 1.5.4 adds a **Check Python environment** step for every selected
-Glyphs target. All selected targets are checked with their exact Python and
-version-specific `Scripts/site-packages` path before pip or plug-in installation
-begins. An incompatible existing native extension stops the run and is shown in
-the UI and full JSON log. Missing packages remain non-blocking until
-post-install verification. The installer does not automatically delete,
+The installer runs **Check Python environment** for every selected Glyphs
+target. All selected targets are checked with their exact Python and the exact
+runtime path plan before pip or plug-in installation begins. Embedded Glyphs
+Python uses the version-specific `Scripts/site-packages`; external Python uses
+its user site first and the Glyphs path as fallback. An incompatible selected
+native extension stops the run and is shown in the UI and full JSON log. Stale
+lower-priority copies are warnings, and missing packages remain non-blocking
+until post-install verification. The installer does not automatically delete,
 reinstall, move, or isolate shared packages.
 
 Notes for Xcode builds:

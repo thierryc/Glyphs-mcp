@@ -113,6 +113,24 @@ cyclic-alignment task.
 
 ## Curve geometry workflow
 
+For every Tunni review or mutation, direct editable paths are the complete
+target scope:
+
+- Preflight each target layer with `get_glyph_paths` and
+  `get_glyph_components`. Derive `path_index` only from the direct path order
+  returned by `get_glyph_paths`; a Glyphs 4 `shapeIndex` is context, never a
+  substitute path index.
+- On a mixed layer, optimize only eligible cubic segments in those direct
+  paths. Preserve every component's identity, order, transform, automatic
+  alignment, and smart-component values.
+- Skip a component-only layer and explain that it has no eligible direct path.
+  Never decompose or expand components, traverse nested component geometry, or
+  optimize a referenced component glyph unless that glyph is independently
+  selected as a target.
+- Treat `omittedComponentCount` as confirmation of excluded geometry. Snapshot
+  components before mutation, re-read them after acceptance, and stop if any
+  component field or ordering changed.
+
 1. Resolve and report the exact `font_index`, `glyph_name`, `master_id`, and path-order `path_index`. Read the path first and preserve the reported Glyphs 4 `shapeIndex` only as additional context.
 2. Call `review_tunni_geometry` for the explicit target. Omit `segment_end_node_indices` only when intentionally scanning every cubic; otherwise pass genuine integer curve end-node indices.
 3. Call `review_curve_quality` with its default `analysis_mode="adaptive"` for the same explicit target. Start with `include_samples=false`; request detailed samples only for a narrowed selection. Report signed and normalized curvature, parameterized events, arc length, turning angle, bounded self-intersections, G0/G1/G2 joins, warnings, and omitted components without converting them into an artistic verdict. Use `sampled_v1` only for a reproducible 1.7 comparison. For compatible multi-master work, call `review_curve_quality_across_masters` instead of looping and guessing segment mappings.

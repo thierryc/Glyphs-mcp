@@ -379,6 +379,30 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         self.assertNotIn('status_state = "active"', text)
         self.assertNotIn('"active": ("systemBlueColor", "blueColor")', text)
 
+    def test_v2_connection_state_publishes_without_the_status_window(self) -> None:
+        resources = _resources_dir()
+        plugin_path = resources / "glyphs_plugin.py"
+        text = plugin_path.read_text(encoding="utf-8", errors="replace")
+
+        self.assertIn(
+            "from glyphs_mcp_v2.connection_status import default_connection_status_store",
+            text,
+        )
+        self.assertIn("default_connection_status_store = None", text)
+        self.assertIn("def _connection_status(self):", text)
+        self.assertIn("def _publish_connection_status(self):", text)
+        self.assertIn(
+            "default_connection_status_store().publish(status_state, status_value)",
+            text,
+        )
+        refresh_scope = text.split(
+            "def _refresh_status_panel_if_visible(self):", 1
+        )[1].split("def _refresh_status_panel(self):", 1)[0]
+        self.assertLess(
+            refresh_scope.index("self._publish_connection_status()"),
+            refresh_scope.index('panel = getattr(self, "_status_panel", None)'),
+        )
+
     def test_status_window_project_link_opens_ap_cx(self) -> None:
         resources = _resources_dir()
         plugin_path = resources / "glyphs_plugin.py"
@@ -404,7 +428,16 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         self.assertIn("Middleware(McpActivityStatusMiddleware, recorder=self._record_activity)", text)
         self.assertIn('return "tools/call: {}".format(params.get("name"))', text)
         self.assertIn('self._activity_text = tr("activity.idle")', text)
-        self.assertIn("def _record_activity(self, message, state=\"ok\"):", text)
+        self.assertIn(
+            'def _record_activity(self, message, state="ok", generation=None):',
+            text,
+        )
+        self.assertIn("request_generation = self._request_generation()", text)
+        self.assertIn(
+            "self._record(final_message, final_state, request_generation)",
+            text,
+        )
+        self.assertIn("default_activity_store().reset_session()", text)
         self.assertIn("self._activity_field = activity_value", text)
 
     def test_server_startup_has_stop_handle(self) -> None:

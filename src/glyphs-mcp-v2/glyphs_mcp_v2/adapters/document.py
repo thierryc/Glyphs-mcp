@@ -1918,6 +1918,16 @@ def _apply_glyph_scalar_updates(
             # absent value. Integer-backed setters must never receive None.
             continue
         _set_native_property(glyph, field, target_value)
+    if set(selected).intersection(
+        {"leftMetricsKey", "rightMetricsKey", "widthMetricsKey"}
+    ):
+        for layer in _native_layers(glyph):
+            sync_metrics = _safe_getattr(layer, "syncMetrics")
+            if not callable(sync_metrics):
+                raise HostAccessError(
+                    "Glyphs did not expose GSLayer.syncMetrics for a glyph metrics-key update"
+                )
+            sync_metrics()
 
 
 def _glyph_model(
@@ -2867,13 +2877,29 @@ def _kerning_domain_model(
 
 
 def _kerning_model(font: Any) -> dict[str, Any]:
-    context = _maybe_call(_safe_getattr(font, "kerningContext"))
     return {
         "ltr": _kerning_domain_model(font, "kerning"),
         "rtl": _kerning_domain_model(font, "kerningRTL"),
         "vertical": _kerning_domain_model(font, "kerningVertical"),
-        "context": _plain_attribute_value({} if context is None else context),
+        "context": _context_kerning_model(font),
     }
+
+
+def _context_kerning_model(font: Any) -> dict[str, dict[str, Any]]:
+    """Capture Glyphs 4's context-key -> master -> numeric value domain."""
+
+    source = _maybe_call(_safe_getattr(font, "kerningContext"))
+    result: dict[str, dict[str, Any]] = {}
+    for context_key in _mapping_keys(source):
+        master_values = _mapping_get(source, context_key)
+        for master_id in _mapping_keys(master_values):
+            raw_value = _mapping_get(master_values, master_id)
+            try:
+                value: Any = float(raw_value)
+            except Exception:
+                value = _plain_attribute_value(raw_value)
+            result.setdefault(str(context_key), {})[str(master_id)] = value
+    return result
 
 
 def _settings_model(font: Any) -> dict[str, Any]:
@@ -4367,6 +4393,24 @@ def _lookup_layer(glyph: Any, key: str) -> Any:
     return None
 
 
+def _edit_layer_for_glyph(
+    font: Any, glyph: Any, master_id: Optional[str]
+) -> Any:
+    if master_id:
+        return _lookup_layer(glyph, master_id)
+    selected_master = _safe_getattr(font, "selectedFontMaster")
+    selected_master_id = str(_safe_getattr(selected_master, "id") or "")
+    if selected_master_id:
+        layer = _lookup_layer(glyph, selected_master_id)
+        if layer is not None:
+            return layer
+    for layer in _sequence_values(_safe_getattr(font, "selectedLayers")):
+        if _safe_getattr(layer, "parent") is glyph:
+            return layer
+    layers = _native_layers(glyph)
+    return layers[0] if layers else None
+
+
 _ROOT_EVIDENCE_NAMES = (
     "font",
     "axes",
@@ -5618,10 +5662,60 @@ def _replace_kerning_domain(font: Any, kind: str, target_pairs: Any) -> None:
 
 def _replace_kerning(font: Any, target: Any) -> None:
     domains = target if isinstance(target, Mapping) else {"ltr": target}
+    if "context" in domains:
+        _replace_context_kerning(
+            font, domains.get("context", {}), validate_only=True
+        )
     for kind in ("ltr", "rtl", "vertical"):
         _replace_kerning_domain(font, kind, domains.get(kind, {}))
     if "context" in domains:
-        _set_native_property(font, "kerningContext", copy.deepcopy(domains.get("context")))
+        _replace_context_kerning(font, domains.get("context", {}))
+
+
+def _replace_context_kerning(
+    font: Any, target_contexts: Any, *, validate_only: bool = False
+) -> None:
+    current_model = _context_kerning_model(font)
+    current = {
+        (str(context_key), str(master_id)): value
+        for context_key, master_values in current_model.items()
+        if isinstance(master_values, Mapping)
+        for master_id, value in master_values.items()
+    }
+    target = {
+        (str(context_key), str(master_id)): value
+        for context_key, master_values in (
+            target_contexts.items()
+            if isinstance(target_contexts, Mapping)
+            else ()
+        )
+        if isinstance(master_values, Mapping)
+        for master_id, value in master_values.items()
+    }
+    removed = sorted(set(current) - set(target))
+    changed = sorted(
+        key for key, value in target.items() if current.get(key) != value
+    )
+    remover = _safe_getattr(
+        font, "removeContextKerningForKey_fontMasterID_"
+    ) or _safe_getattr(font, "removeContextKerningForKey")
+    setter = _safe_getattr(
+        font, "setContextKerningForKey_fontMasterID_value_"
+    ) or _safe_getattr(font, "setContextKerningForKey")
+    if removed and not callable(remover):
+        raise HostAccessError(
+            "Glyphs did not expose contextual kerning removal"
+        )
+    if changed and not callable(setter):
+        raise HostAccessError(
+            "Glyphs did not expose contextual kerning assignment"
+        )
+    if validate_only:
+        return
+    for context_key, master_id in removed:
+        remover(context_key, master_id)
+    for context_key, master_id in changed:
+        setter(context_key, master_id, float(target[(context_key, master_id)]))
 
 
 def _remove_native_collection_item(collection: Any, index: int, value: Any) -> None:
@@ -8816,6 +8910,94 @@ def _document_edited_state(font: Any) -> Optional[bool]:
     return _native_unsaved_changes(document)
 
 
+def _source_file_state(path: Path) -> Mapping[str, Any] | None:
+    """Return a private content-only fingerprint for an existing Glyphs source."""
+
+    suffix = path.suffix.lower()
+    if suffix not in {".glyphs", ".glyphspackage"}:
+        return None
+    kind = "glyphspackage" if suffix == ".glyphspackage" else "glyphs"
+    if not path.exists():
+        return {
+            "kind": kind,
+            "exists": False,
+            "contentFingerprint": None,
+        }
+    digest = hashlib.sha256()
+    try:
+        if kind == "glyphs":
+            if not path.is_file():
+                return None
+            with path.open("rb") as source:
+                for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                    digest.update(chunk)
+        else:
+            if not path.is_dir():
+                return None
+            for candidate in sorted(
+                (item for item in path.rglob("*") if item.is_file()),
+                key=lambda item: item.relative_to(path).as_posix(),
+            ):
+                relative = candidate.relative_to(path).as_posix().encode("utf-8")
+                digest.update(len(relative).to_bytes(8, "big"))
+                digest.update(relative)
+                with candidate.open("rb") as source:
+                    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                        digest.update(chunk)
+    except OSError:
+        return {
+            "kind": kind,
+            "exists": True,
+            "contentFingerprint": None,
+            "readable": False,
+        }
+    return {
+        "kind": kind,
+        "exists": True,
+        "contentFingerprint": "sha256:{}".format(digest.hexdigest()),
+        "readable": True,
+    }
+
+
+def _observed_layer_metrics(layer: Any) -> dict[str, Any]:
+    def number(name: str) -> Any:
+        value = _plain_scalar(_maybe_call(_safe_getattr(layer, name)))
+        return value if isinstance(value, (int, float)) else None
+
+    return {
+        "width": number("width"),
+        "leftBearing": number("LSB"),
+        "rightBearing": number("RSB"),
+    }
+
+
+def _observed_layer_bounds(layer: Any) -> Mapping[str, float] | None:
+    if not (_layer_paths(layer) or _layer_components(layer)):
+        return None
+    bounds = _maybe_call(_safe_getattr(layer, "bounds"))
+    if bounds is None:
+        return None
+    origin = _safe_getattr(bounds, "origin")
+    size = _safe_getattr(bounds, "size")
+    values = (
+        _safe_getattr(origin, "x"),
+        _safe_getattr(origin, "y"),
+        _safe_getattr(size, "width"),
+        _safe_getattr(size, "height"),
+    )
+    if not all(isinstance(value, (int, float)) for value in values):
+        try:
+            values = (bounds[0][0], bounds[0][1], bounds[1][0], bounds[1][1])
+        except Exception:
+            return None
+    return {
+        "x": float(values[0]),
+        "y": float(values[1]),
+        "width": float(values[2]),
+        "height": float(values[3]),
+    }
+
+
 @dataclass(frozen=True)
 class _DetachedCloneProjection:
     """Three-way projection for state changed only by ``GSFont.copy()``.
@@ -8958,6 +9140,199 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
     def native_font(self, document_id: str) -> Any:
         return self._font_for_document(document_id)
+
+    def capture_source_file_state(
+        self, document_id: str
+    ) -> Mapping[str, Any] | None:
+        """Observe source bytes without saving, restoring, or exposing a path."""
+
+        def capture() -> Mapping[str, Any] | None:
+            font = self._font_for_document(document_id)
+            path_value = _safe_getattr(font, "filepath")
+            if not path_value:
+                return None
+            return _source_file_state(Path(str(path_value)))
+
+        return self._executor.run(capture)
+
+    def force_document_dirty(self, document_id: str) -> None:
+        """Keep an observed but unverified live mutation visibly dirty."""
+
+        def force() -> None:
+            font = self._font_for_document(document_id)
+            if _document_edited_state(font) is not True:
+                self._native_change_count(font, _NS_CHANGE_DONE)
+            overrides = getattr(self, "_document_dirty_overrides", {})
+            overrides[document_id] = True
+            self._document_dirty_overrides = overrides
+
+        self._executor.run(force)
+
+    def inspect_layers(
+        self,
+        document_id: str,
+        glyph_names: Sequence[str] = (),
+        *,
+        resolve_metrics: bool = False,
+        include_geometry: bool = False,
+    ) -> Mapping[tuple[str, str], Mapping[str, Any]]:
+        """Read non-canonical layer observations from one detached font copy."""
+
+        def inspect() -> Mapping[tuple[str, str], Mapping[str, Any]]:
+            font = self._font_for_document(document_id)
+            requested = {str(name) for name in glyph_names if str(name)}
+            clone = None
+            if resolve_metrics:
+                copier = _safe_getattr(font, "copy")
+                if not callable(copier):
+                    raise HostAccessError("Glyphs did not provide GSFont.copy()")
+                clone = copier()
+                if clone is None:
+                    raise HostAccessError("Glyphs returned no detached font copy")
+            result: dict[tuple[str, str], Mapping[str, Any]] = {}
+            for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
+                glyph_name = str(_safe_getattr(glyph, "name") or "")
+                if not glyph_name or (requested and glyph_name not in requested):
+                    continue
+                clone_glyph = (
+                    _lookup_by_name(_safe_getattr(clone, "glyphs"), glyph_name)
+                    if clone is not None
+                    else None
+                )
+                clone_layers = (
+                    _native_layer_index(clone_glyph)
+                    if clone_glyph is not None
+                    else {}
+                )
+                for layer_id, layer in _native_layer_index(glyph).items():
+                    observation: dict[str, Any] = {
+                        "hasAlignedWidth": bool(
+                            _maybe_call(
+                                _safe_getattr(layer, "hasAlignedWidth", False)
+                            )
+                        )
+                    }
+                    if resolve_metrics:
+                        detached_layer = clone_layers.get(layer_id)
+                        if detached_layer is None:
+                            raise HostAccessError(
+                                "The detached font omitted layer {}/{}".format(
+                                    glyph_name, layer_id
+                                )
+                            )
+                        current_metrics = _observed_layer_metrics(layer)
+                        sync = _safe_getattr(detached_layer, "syncMetrics")
+                        if not callable(sync):
+                            raise HostAccessError(
+                                "Glyphs did not expose GSLayer.syncMetrics()"
+                            )
+                        sync()
+                        observation["currentMetrics"] = current_metrics
+                        observation["resolvedMetrics"] = _observed_layer_metrics(
+                            detached_layer
+                        )
+                    if include_geometry:
+                        observation["bounds"] = _observed_layer_bounds(layer)
+                    result[(glyph_name, layer_id)] = observation
+            return result
+
+        return self._executor.run(inspect)
+
+    def compile_opentype_features(
+        self, document_id: str
+    ) -> Mapping[str, Any]:
+        """Compile a detached copy first, then compile the live font once."""
+
+        def compile_features() -> Mapping[str, Any]:
+            font = self._font_for_document(document_id)
+            copier = _safe_getattr(font, "copy")
+            if not callable(copier):
+                raise HostAccessError("Glyphs did not provide GSFont.copy()")
+            clone = copier()
+            if clone is None:
+                raise HostAccessError("Glyphs returned no detached font copy")
+            detached_compile = _safe_getattr(clone, "compileFeatures")
+            if not callable(detached_compile):
+                raise HostAccessError("Glyphs did not provide GSFont.compileFeatures()")
+            try:
+                detached_compile()
+            except Exception as error:
+                return {
+                    "preflightSucceeded": False,
+                    "liveAttempted": False,
+                    "liveSucceeded": False,
+                    "errorType": type(error).__name__,
+                    "errorMessage": str(error)[:1000],
+                }
+            live_compile = _safe_getattr(font, "compileFeatures")
+            if not callable(live_compile):
+                raise HostAccessError("Glyphs did not provide GSFont.compileFeatures()")
+            try:
+                live_compile()
+            except Exception as error:
+                self._canonical_model_cache.invalidate_unscoped()
+                return {
+                    "preflightSucceeded": True,
+                    "liveAttempted": True,
+                    "liveSucceeded": False,
+                    "errorType": type(error).__name__,
+                    "errorMessage": str(error)[:1000],
+                }
+            self._canonical_model_cache.invalidate_unscoped()
+            return {
+                "preflightSucceeded": True,
+                "liveAttempted": True,
+                "liveSucceeded": True,
+                "errorType": None,
+                "errorMessage": None,
+            }
+
+        return self._executor.run(compile_features)
+
+    def open_edit_tab(
+        self,
+        document_id: str,
+        glyph_names: Sequence[str],
+        *,
+        master_id: Optional[str] = None,
+    ) -> Mapping[str, Any]:
+        """Resolve every target, then open one Glyphs Edit tab on main."""
+
+        def open_tab() -> Mapping[str, Any]:
+            font = self._font_for_document(document_id)
+            if master_id and _master_by_id(font, master_id) is None:
+                raise HostAccessError(
+                    "The requested Glyphs master is no longer available."
+                )
+            resolved = []
+            missing = []
+            for name in glyph_names:
+                glyph = _lookup_by_name(_safe_getattr(font, "glyphs"), name)
+                layer = (
+                    _edit_layer_for_glyph(font, glyph, master_id)
+                    if glyph is not None
+                    else None
+                )
+                if layer is None:
+                    missing.append(name)
+                else:
+                    resolved.append(layer)
+            if missing:
+                raise HostAccessError(
+                    "Glyphs target(s) disappeared before opening the tab: {}.".format(
+                        ", ".join(missing)
+                    )
+                )
+            opener = _safe_getattr(font, "newTab")
+            if not callable(opener):
+                raise HostAccessError("Glyphs did not provide GSFont.newTab().")
+            opener(resolved)
+            return {
+                "glyphNames": list(glyph_names),
+                "masterId": master_id,
+            }
+
+        return self._executor.run(open_tab)
 
     @staticmethod
     def _native_instance_key(instance: Any) -> str:
@@ -9338,10 +9713,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 expected=expected_snapshot,
             )
 
+        quiet_window_seconds = 0.100
+        deadline = time.monotonic() + 0.750
         previous = capture()
         previous_fingerprint = fingerprint_model(previous)
-        for _ in range(3):
-            time.sleep(0.02)
+        while time.monotonic() + quiet_window_seconds <= deadline:
+            time.sleep(quiet_window_seconds)
             current = capture()
             current_fingerprint = fingerprint_model(current)
             if current_fingerprint == previous_fingerprint:
@@ -10112,12 +10489,58 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         }
 
     def preview_python(self, request: PythonExecutionRequest, before_model: Mapping[str, Any]) -> Mapping[str, Any]:
-        def run() -> Mapping[str, Any]:
-            live_before_models = self._cached_open_models()
-            live_before = {
-                document_id: fingerprint_model(model)
-                for document_id, model in live_before_models.items()
-            }
+        """Run staged Python in short native phases and compare off-main-thread."""
+
+        timings: dict[str, float] = {}
+        native_phase_timings: list[float] = []
+        total_started = time.perf_counter_ns()
+        native_state: dict[str, Any] = {}
+
+        def notify(phase: str, message: str, *, cancellable: bool = True) -> None:
+            callback = request.progress_callback
+            if callable(callback):
+                callback(phase, message, cancellable)
+
+        def checkpoint() -> None:
+            callback = request.checkpoint_callback
+            if callable(callback):
+                callback()
+
+        def elapsed_ms(started: int) -> float:
+            return (time.perf_counter_ns() - started) / 1_000_000.0
+
+        def native_phase(name: str, callback: Any) -> Any:
+            checkpoint()
+            started = time.perf_counter_ns()
+            try:
+                return self._executor.run(callback)
+            except BaseException as exc:
+                timings[name] = elapsed_ms(started)
+                native_phase_timings.append(timings[name])
+                timings["totalMs"] = elapsed_ms(total_started)
+                timings["maxNativePhaseMs"] = max(native_phase_timings, default=0.0)
+                try:
+                    setattr(exc, "stage_timings", dict(timings))
+                except Exception:
+                    pass
+                raise
+            finally:
+                if name not in timings:
+                    timings[name] = elapsed_ms(started)
+                    native_phase_timings.append(timings[name])
+
+        notify("stabilizing", "Capturing a stable live-document baseline")
+        started = time.perf_counter_ns()
+        live_before_models = self._stable_open_models()
+        timings["stableBaselineMs"] = elapsed_ms(started)
+        live_before = {
+            document_id: fingerprint_model(model)
+            for document_id, model in live_before_models.items()
+        }
+
+        notify("cloning", "Cloning and capturing detached documents")
+
+        def clone_and_capture() -> None:
             font = self._font_for_document(request.document_id or "")
             copier = _safe_getattr(font, "copy")
             if not callable(copier):
@@ -10166,14 +10589,33 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             clone_instances_before = _sequence_values(
                 _safe_getattr(clone, "instances")
             )
+            native_state.update(
+                {
+                    "clone": clone,
+                    "verifier": verifier,
+                    "cloneProjection": clone_projection,
+                    "verifierProjection": verifier_projection,
+                    "beforeInstanceIds": before_instance_ids,
+                    "cloneRevisionsBefore": clone_revisions_before,
+                    "cloneInstancesBefore": clone_instances_before,
+                    "directBeforeArchive": direct_before_archive,
+                    "replayBeforeArchive": replay_before_archive,
+                }
+            )
+
+        native_phase("cloneCaptureMs", clone_and_capture)
+        notify("executing", "Running Python on the detached document")
+
+        def execute_and_capture() -> Mapping[str, Any]:
+            clone = native_state["clone"]
             namespace = self._context(clone, request)
             namespace["__builtins__"] = _STAGED_BUILTINS
             stdout, stderr = io.StringIO(), io.StringIO()
             with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 exec(compile(request.code or "", "<glyphs-mcp-staged>", "exec"), namespace, namespace)
             after_instance_ids = _staged_instance_ids(
-                clone_instances_before,
-                before_instance_ids,
+                native_state["cloneInstancesBefore"],
+                native_state["beforeInstanceIds"],
                 _sequence_values(_safe_getattr(clone, "instances")),
                 code_hash=hashlib.sha256(
                     (request.code or "").encode("utf-8")
@@ -10186,7 +10628,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     before_model,
                     MutationScope(("glyphs",), (request.glyph_name,)),
                     extra_glyph_names=_changed_revision_glyphs(
-                        clone_revisions_before,
+                        native_state["cloneRevisionsBefore"],
                         clone_revisions_after,
                     ),
                     instance_ids=after_instance_ids,
@@ -10200,33 +10642,60 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     before_model,
                     instance_ids=after_instance_ids,
                 )
-            after_model = clone_projection.normalize(after_model)
-            changes = diff_models(before_model, after_model)
-            capabilities = staged_lifecycle_capabilities(
-                before_model, after_model, changes
-            )
-            context_violations = _staged_context_violations(
-                request,
-                changes,
-                model=before_model,
-            )
-            writable_changes = writable_subset(
-                before_model, changes, capabilities=capabilities
-            )
-            archive_comparison = {
-                "equivalent": True,
-                "mismatchCount": 0,
-                "mismatchLocations": [],
-                "truncated": False,
-                "directDeltaCount": 0,
-                "replayDeltaCount": 0,
+            return {
+                "afterModel": after_model,
+                "afterInstanceIds": after_instance_ids,
+                "stdout": stdout.getvalue(),
+                "stderr": stderr.getvalue(),
+                "directAfterArchive": _serialized_review_scope(clone, request),
             }
-            templates: dict[tuple[str, ...], Any] = {}
-            if self.supports_change_set(
-                writable_changes, capabilities=capabilities
-            ):
-                writable_target = writable_changes.apply(before_model)
-                templates = _added_native_replay_templates(
+
+        execution = native_phase("evaluationCaptureMs", execute_and_capture)
+        notify("comparing", "Comparing canonical staged changes")
+        checkpoint()
+        started = time.perf_counter_ns()
+        after_model = native_state["cloneProjection"].normalize(
+            execution["afterModel"]
+        )
+        changes = diff_models(before_model, after_model)
+        capabilities = staged_lifecycle_capabilities(
+            before_model, after_model, changes
+        )
+        context_violations = _staged_context_violations(
+            request,
+            changes,
+            model=before_model,
+        )
+        writable_changes = writable_subset(
+            before_model, changes, capabilities=capabilities
+        )
+        writable_supported = self.supports_change_set(
+            writable_changes, capabilities=capabilities
+        )
+        writable_target = (
+            writable_changes.apply(before_model) if writable_supported else None
+        )
+        timings["canonicalCompareMs"] = elapsed_ms(started)
+
+        archive_comparison = {
+            "equivalent": True,
+            "mismatchCount": 0,
+            "mismatchLocations": [],
+            "truncated": False,
+            "directDeltaCount": 0,
+            "replayDeltaCount": 0,
+        }
+        templates: dict[tuple[str, ...], Any] = {}
+        retained_templates: dict[tuple[str, ...], Any] = {}
+        verifier_model: Mapping[str, Any] | None = None
+        replay_after_archive: bytes | None = None
+        if writable_supported:
+            notify("replaying", "Replaying the staged change on a verifier")
+
+            def replay_and_capture() -> Mapping[str, Any]:
+                clone = native_state["clone"]
+                verifier = native_state["verifier"]
+                local_templates = _added_native_replay_templates(
                     clone, before_model, after_model, changes
                 )
                 _apply_target_model(
@@ -10236,99 +10705,127 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     writable_changes,
                     capabilities=capabilities,
                     execution_context={
-                        "nativeReplayTemplates": templates,
+                        "nativeReplayTemplates": local_templates,
                         "reuseNativeReplayTemplates": True,
                     },
                 )
-                verifier_model = self._capture_detached_model(
+                captured_verifier_model = self._capture_detached_model(
                     verifier,
                     after_model,
-                    instance_ids=after_instance_ids,
+                    instance_ids=execution["afterInstanceIds"],
                     document_path=_canonical_document_path(before_model),
                 )
-                verifier_model = verifier_projection.normalize(
-                    verifier_model,
-                    protected_paths=tuple(
-                        change.path for change in writable_changes.changes
-                    ),
-                )
-                if fingerprint_model(verifier_model) != fingerprint_model(
-                    after_model
-                ):
-                    canonical_mismatch = diff_models(after_model, verifier_model)
-                    mismatch_locations = [
-                        {
-                            "path": list(change.path),
-                            "expectedPresent": change.before_present,
-                            "observedPresent": change.after_present,
-                            "expected": repr(change.before)[:500],
-                            "observed": repr(change.after)[:500],
-                        }
-                        for change in canonical_mismatch.changes[:100]
-                    ]
-                    archive_comparison = {
-                        "equivalent": False,
-                        "mismatchCount": len(canonical_mismatch.changes),
-                        "mismatchLocations": mismatch_locations,
-                        "truncated": len(canonical_mismatch.changes)
-                        > len(mismatch_locations),
-                        "directDeltaCount": 0,
-                        "replayDeltaCount": 0,
-                    }
-                elif not int(context_violations.get("count") or 0):
-                    archive_comparison = _compare_native_archive_deltas(
-                        direct_before_archive,
-                        _serialized_review_scope(clone, request),
-                        replay_before_archive,
-                        _serialized_review_scope(verifier, request),
-                        limit=100,
-                    )
-            live_after_models = self._cached_open_models()
-            live_after = {
-                document_id: fingerprint_model(model)
-                for document_id, model in live_after_models.items()
-            }
-            violations = [document_id for document_id in sorted(set(live_before) | set(live_after)) if live_before.get(document_id) != live_after.get(document_id)]
-            replay_context: dict[str, Any] = {}
-            if (
-                templates
-                and not violations
-                and not int(context_violations.get("count") or 0)
-                and bool(archive_comparison.get("equivalent"))
-            ):
-                # The verifier owns the first detached copies after replay.
-                # Retain an independent detached set for one-time live
-                # confirmation so no verifier font or full clone survives.
-                retained_templates = _added_native_replay_templates(
+                local_retained_templates = _added_native_replay_templates(
                     clone, before_model, after_model, changes
                 )
-                evidence = self._native_replay_evidence.create(
-                    document_id=request.document_id or "",
-                    before_fingerprint=fingerprint_model(before_model),
-                    after_fingerprint=fingerprint_model(after_model),
-                    capabilities=capabilities,
-                    templates=retained_templates,
-                    ttl_seconds=15 * 60,
-                )
-                replay_context = {
-                    "nativeReplayEvidenceId": evidence.evidence_id
+                return {
+                    "templates": local_templates,
+                    "retainedTemplates": local_retained_templates,
+                    "verifierModel": captured_verifier_model,
+                    "replayAfterArchive": _serialized_review_scope(
+                        verifier, request
+                    ),
                 }
-            return {
-                "afterModel": after_model,
-                "changeSet": changes,
-                "writableChangeSet": writable_changes,
-                "capabilities": capabilities,
-                "executionContext": replay_context,
-                "stdout": stdout.getvalue(),
-                "stderr": stderr.getvalue(),
-                "scopeViolations": violations,
-                "contextViolations": context_violations,
-                "nativeArchiveComparison": archive_comparison,
+
+            replay = native_phase("replayCaptureMs", replay_and_capture)
+            templates = replay["templates"]
+            retained_templates = replay["retainedTemplates"]
+            replay_after_archive = replay["replayAfterArchive"]
+            verifier_model = native_state["verifierProjection"].normalize(
+                replay["verifierModel"],
+                protected_paths=tuple(
+                    change.path for change in writable_changes.changes
+                ),
+            )
+
+        notify("verifying", "Verifying canonical and native replay parity")
+        checkpoint()
+        started = time.perf_counter_ns()
+        if verifier_model is not None:
+            if fingerprint_model(verifier_model) != fingerprint_model(after_model):
+                canonical_mismatch = diff_models(after_model, verifier_model)
+                mismatch_locations = [
+                    {
+                        "path": list(change.path),
+                        "expectedPresent": change.before_present,
+                        "observedPresent": change.after_present,
+                        "expected": repr(change.before)[:500],
+                        "observed": repr(change.after)[:500],
+                    }
+                    for change in canonical_mismatch.changes[:100]
+                ]
+                archive_comparison = {
+                    "equivalent": False,
+                    "mismatchCount": len(canonical_mismatch.changes),
+                    "mismatchLocations": mismatch_locations,
+                    "truncated": len(canonical_mismatch.changes)
+                    > len(mismatch_locations),
+                    "directDeltaCount": 0,
+                    "replayDeltaCount": 0,
+                }
+            elif not int(context_violations.get("count") or 0):
+                archive_comparison = _compare_native_archive_deltas(
+                    native_state["directBeforeArchive"],
+                    execution["directAfterArchive"],
+                    native_state["replayBeforeArchive"],
+                    replay_after_archive or b"",
+                    limit=100,
+                )
+        timings["replayCompareMs"] = elapsed_ms(started)
+
+        notify("checking_scope", "Checking live documents for staged drift")
+        checkpoint()
+        started = time.perf_counter_ns()
+        live_after_models = self._stable_open_models()
+        timings["scopeVerificationMs"] = elapsed_ms(started)
+        live_after = {
+            document_id: fingerprint_model(model)
+            for document_id, model in live_after_models.items()
+        }
+        observed_document_changes = [
+            {
+                "documentId": document_id,
+                "beforeFingerprint": live_before.get(document_id),
+                "afterFingerprint": live_after.get(document_id),
+                "declared": document_id == request.document_id,
             }
-        return self._executor.run(run)
+            for document_id in sorted(set(live_before) | set(live_after))
+            if live_before.get(document_id) != live_after.get(document_id)
+        ]
+        replay_context: dict[str, Any] = {}
+        if (
+            retained_templates
+            and not observed_document_changes
+            and not int(context_violations.get("count") or 0)
+            and bool(archive_comparison.get("equivalent"))
+        ):
+            evidence = self._native_replay_evidence.create(
+                document_id=request.document_id or "",
+                before_fingerprint=fingerprint_model(before_model),
+                after_fingerprint=fingerprint_model(after_model),
+                capabilities=capabilities,
+                templates=retained_templates,
+                ttl_seconds=15 * 60,
+            )
+            replay_context = {"nativeReplayEvidenceId": evidence.evidence_id}
+        timings["totalMs"] = elapsed_ms(total_started)
+        timings["maxNativePhaseMs"] = max(native_phase_timings, default=0.0)
+        return {
+            "afterModel": after_model,
+            "changeSet": changes,
+            "writableChangeSet": writable_changes,
+            "capabilities": capabilities,
+            "executionContext": replay_context,
+            "stdout": execution["stdout"],
+            "stderr": execution["stderr"],
+            "observedDocumentChanges": observed_document_changes,
+            "contextViolations": context_violations,
+            "nativeArchiveComparison": archive_comparison,
+            "stageTimings": timings,
+        }
 
     def run_live_python(self, request: PythonExecutionRequest) -> Mapping[str, Any]:
-        live_before_models = self._executor.run(self._cached_open_models)
+        live_before_models = self._stable_open_models()
         live_before = {
             document_id: fingerprint_model(model)
             for document_id, model in live_before_models.items()
@@ -10381,17 +10878,21 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             for document_id in sorted(set(live_before) | set(live_after))
             if live_before.get(document_id) != live_after.get(document_id)
         ]
-        scope_violations = [
-            document_id
+        observed_document_changes = [
+            {
+                "documentId": document_id,
+                "beforeFingerprint": live_before.get(document_id),
+                "afterFingerprint": live_after.get(document_id),
+                "declared": document_id == request.document_id,
+            }
             for document_id in changed_documents
-            if document_id != request.document_id
         ]
         result = {
             "beforeModel": execution.get("beforeModel", {}),
             "afterModel": after,
             "stdout": execution.get("stdout", ""),
             "stderr": execution.get("stderr", ""),
-            "scopeViolations": scope_violations,
+            "observedDocumentChanges": observed_document_changes,
         }
         execution_error = execution.get("executionError")
         if isinstance(execution_error, BaseException):
@@ -10417,8 +10918,13 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
     ) -> None:
         contributions = getattr(self, "_document_mcp_contributions", {})
         active = contributions.get(document_id, {})
+        pending = getattr(self, "_document_mcp_pending_reverts", {})
+        has_pending = any(
+            str(record.get("documentId") or "") == document_id
+            for record in pending.values()
+        )
         overrides = getattr(self, "_document_dirty_overrides", {})
-        if active:
+        if active or has_pending:
             overrides[document_id] = True
         else:
             native = _document_edited_state(font)
@@ -10601,26 +11107,20 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     collection_order(target.get("instances", [])),
                 )
             if change_set.changes:
-                if removes_contribution_id:
-                    removed = active.pop(removes_contribution_id)
-                    pending[operation_id] = {
-                        "documentId": document_id,
-                        "removedId": removes_contribution_id,
-                        "record": removed,
-                    }
-                    self._native_change_count(font, _NS_CHANGE_UNDONE)
-                else:
-                    if not active:
-                        # A previous exact MCP revert may leave AppKit's raw
-                        # edited bit sticky.  New operations inherit the
-                        # verified effective state at their canonical before
-                        # fingerprint, never that stale native signal.
-                        baselines[document_id] = verified_dirty_before
-                        baseline_fingerprints[document_id] = (
-                            change_set.before_fingerprint
-                        )
-                    active[operation_id] = {"nativeDirtyBefore": native_before}
-                    self._native_change_count(font, _NS_CHANGE_DONE)
+                pending[operation_id] = {
+                    "documentId": document_id,
+                    "kind": "revert" if removes_contribution_id else "apply",
+                    "removedId": removes_contribution_id,
+                    "record": (
+                        active.get(removes_contribution_id)
+                        if removes_contribution_id
+                        else {"nativeDirtyBefore": native_before}
+                    ),
+                    "nativeDirtyBefore": native_before,
+                    "verifiedDirtyBefore": verified_dirty_before,
+                    "beforeFingerprint": change_set.before_fingerprint,
+                    "afterFingerprint": change_set.after_fingerprint,
+                }
             self._document_mcp_contributions = contributions
             self._document_mcp_baseline_dirty = baselines
             self._document_mcp_baseline_fingerprints = baseline_fingerprints
@@ -10780,19 +11280,60 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         self._executor.run(reconcile)
 
     def commit_verified_change(self, operation_id: str) -> None:
-        pending = getattr(self, "_document_mcp_pending_reverts", {})
-        completed_revert = pending.pop(operation_id, None)
-        if completed_revert is not None:
-            for tombstones in (
-                self._master_lifecycle_tombstones,
-                self._layer_lifecycle_tombstones,
-                self._native_lifecycle_tombstones,
-            ):
-                tombstones.pop(
-                    str(completed_revert.get("removedId") or ""), None
-                )
-                tombstones.pop(operation_id, None)
-        self._document_mcp_pending_reverts = pending
+        """Commit one pending native dirty contribution after exact verification."""
+
+        def commit() -> None:
+            pending = getattr(self, "_document_mcp_pending_reverts", {})
+            completed = pending.get(operation_id)
+            if completed is None:
+                return
+            document_id = str(completed.get("documentId") or "")
+            font = self._font_for_document(document_id)
+            contributions = getattr(self, "_document_mcp_contributions", {})
+            active = contributions.setdefault(document_id, {})
+            baselines = getattr(self, "_document_mcp_baseline_dirty", {})
+            baseline_fingerprints = getattr(
+                self, "_document_mcp_baseline_fingerprints", {}
+            )
+            if completed.get("kind") == "revert":
+                removed_id = str(completed.get("removedId") or "")
+                if removed_id not in active:
+                    raise HostAccessError(
+                        "The reverted MCP dirty contribution disappeared before commit"
+                    )
+                active.pop(removed_id, None)
+                self._native_change_count(font, _NS_CHANGE_UNDONE)
+                for tombstones in (
+                    self._master_lifecycle_tombstones,
+                    self._layer_lifecycle_tombstones,
+                    self._native_lifecycle_tombstones,
+                ):
+                    tombstones.pop(removed_id, None)
+                    tombstones.pop(operation_id, None)
+            else:
+                if not active:
+                    # Commit the effective pre-operation state, not a possibly
+                    # sticky native edited bit observed after prior MCP work.
+                    baselines[document_id] = completed.get(
+                        "verifiedDirtyBefore"
+                    )
+                    baseline_fingerprints[document_id] = str(
+                        completed.get("beforeFingerprint") or ""
+                    )
+                active[operation_id] = dict(completed.get("record") or {})
+                self._native_change_count(font, _NS_CHANGE_DONE)
+            pending.pop(operation_id, None)
+            self._document_mcp_contributions = contributions
+            self._document_mcp_baseline_dirty = baselines
+            self._document_mcp_baseline_fingerprints = baseline_fingerprints
+            self._document_mcp_pending_reverts = pending
+            self._refresh_verified_dirty_override(
+                document_id,
+                font,
+                current_fingerprint=str(completed.get("afterFingerprint") or ""),
+            )
+
+        self._executor.run(commit)
 
     def restore_verified_attempt(
         self,
@@ -10804,7 +11345,11 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         capabilities: Sequence[str] = (),
         execution_context: Mapping[str, Any] | None = None,
     ) -> None:
-        """Restore a failed attempt's content and its exact dirty contribution."""
+        """Restore only a failed attempt's content.
+
+        Dirty accounting remains pending until the transaction kernel proves
+        the exact canonical baseline and calls :meth:`finalize_verified_failure`.
+        """
 
         def restore() -> None:
             font = self._font_for_document(document_id)
@@ -10893,28 +11438,80 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                             font,
                             collection_order(model.get("instances", [])),
                         )
+        self._executor.run(restore)
+
+    def finalize_verified_failure(
+        self,
+        operation_id: str,
+        *,
+        rollback_succeeded: bool,
+        observed_fingerprint: str,
+    ) -> None:
+        """Resolve pending dirty state only after rollback verification."""
+
+        def finalize() -> None:
+            pending = getattr(self, "_document_mcp_pending_reverts", {})
+            attempt = pending.pop(operation_id, None)
+            if attempt is None:
+                return
+            document_id = str(attempt.get("documentId") or "")
+            font = self._font_for_document(document_id)
             contributions = getattr(self, "_document_mcp_contributions", {})
             active = contributions.setdefault(document_id, {})
-            pending = getattr(self, "_document_mcp_pending_reverts", {})
-            pending_revert = pending.pop(operation_id, None)
-            if pending_revert is not None:
-                active[pending_revert["removedId"]] = pending_revert["record"]
-                self._native_change_count(font, _NS_CHANGE_DONE)
-            elif operation_id in active:
-                active.pop(operation_id, None)
-                self._native_change_count(font, _NS_CHANGE_UNDONE)
-            self._master_lifecycle_tombstones.pop(operation_id, None)
-            self._layer_lifecycle_tombstones.pop(operation_id, None)
-            self._native_lifecycle_tombstones.pop(operation_id, None)
+            overrides = getattr(self, "_document_dirty_overrides", {})
+            if rollback_succeeded:
+                # No native change-count contribution was committed, so exact
+                # content restoration can now balance a native setter-owned
+                # dirty bit and reinstate the proven effective baseline.
+                baseline_dirty = attempt.get("verifiedDirtyBefore")
+                if (
+                    not active
+                    and baseline_dirty is False
+                    and _document_edited_state(font) is True
+                ):
+                    self._native_change_count(font, _NS_CHANGE_UNDONE)
+                overrides[document_id] = (
+                    True
+                    if active
+                    else baseline_dirty
+                )
+            else:
+                # Unverified content or disk state must stay visibly dirty. A
+                # failed forward operation owns a durable contribution; a
+                # failed revert retains the original one it never removed.
+                if attempt.get("kind") == "apply":
+                    baselines = getattr(self, "_document_mcp_baseline_dirty", {})
+                    baseline_fingerprints = getattr(
+                        self, "_document_mcp_baseline_fingerprints", {}
+                    )
+                    if not active:
+                        baselines[document_id] = attempt.get(
+                            "verifiedDirtyBefore"
+                        )
+                        baseline_fingerprints[document_id] = str(
+                            attempt.get("beforeFingerprint") or ""
+                        )
+                    active[operation_id] = {
+                        **dict(attempt.get("record") or {}),
+                        "failedVerification": True,
+                        "observedFingerprint": observed_fingerprint,
+                    }
+                    self._document_mcp_baseline_dirty = baselines
+                    self._document_mcp_baseline_fingerprints = baseline_fingerprints
+                if _document_edited_state(font) is not True:
+                    self._native_change_count(font, _NS_CHANGE_DONE)
+                overrides[document_id] = True
+            for tombstones in (
+                self._master_lifecycle_tombstones,
+                self._layer_lifecycle_tombstones,
+                self._native_lifecycle_tombstones,
+            ):
+                tombstones.pop(operation_id, None)
             self._document_mcp_contributions = contributions
             self._document_mcp_pending_reverts = pending
-            self._refresh_verified_dirty_override(
-                document_id,
-                font,
-                current_fingerprint=fingerprint_model(model),
-            )
+            self._document_dirty_overrides = overrides
 
-        self._executor.run(restore)
+        self._executor.run(finalize)
 
     def reset_verified_change_tracking(self, document_id: str) -> None:
         for attribute in (

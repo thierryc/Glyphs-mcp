@@ -156,11 +156,13 @@ If you are on an unsupported version, install Python 3.14 from python.org and re
 
 ## Installer stops at Check Python environment
 
-Starting with 1.5.4, both installers check the exact Python selected for each
-Glyphs target before running pip or changing the plug-in. The check prevents a
-false success when shared native packages were built for a different Python
-ABI. A typical example is Glyphs using Python 3.14 while
-`Scripts/site-packages` contains files such as:
+Both installers check the exact Python selected for each Glyphs target before
+running pip or changing the plug-in. The check uses the same ordered path plan
+as startup and post-install verification. Embedded Glyphs Python prioritizes
+the target's `Scripts/site-packages`; external Python prioritizes its user site
+and keeps the Glyphs path as fallback. This prevents a false success when the
+selected native package was built for a different Python ABI. A typical example
+is Glyphs using Python 3.14 while the selected site contains files such as:
 
 ```text
 pydantic_core/_pydantic_core.cpython-311-darwin.so
@@ -176,14 +178,14 @@ Copy these details from the installer error and log:
 - the Glyphs target (3 or 4);
 - the exact Python executable and version;
 - `SOABI`, extension suffix, and architecture;
-- the inspected `Scripts/site-packages` path;
+- the complete path plan, including primary and fallback roots;
 - every issue code, module, and offending file.
 
-If more than one native build exists, the check accepts the environment when a
-compatible candidate imports successfully. `.abi3` extensions and compatible
-universal binaries are also accepted. If the result looks incorrect, attach
-the JSON diagnostic to a GitHub issue rather than deleting shared packages
-blindly.
+If more than one native build exists, only the winning package copy can block;
+stale lower-priority copies are reported as warnings. `.abi3` extensions and
+compatible universal binaries are accepted. If the result looks incorrect,
+attach the JSON diagnostic to a GitHub issue rather than deleting shared
+packages blindly.
 
 For now, resolve the Python/package mismatch deliberately—for example by
 selecting the Python version those packages were built for, or by rebuilding
@@ -199,7 +201,8 @@ them. A normal 1.5.4 installation treats missing modules as non-blocking during
 preflight, installs dependencies, and then requires every runtime import to
 pass before reporting completion.
 
-Common location:
+The runtime probe's `pathPlan.primaryRoot` is the install location. For embedded
+Glyphs Python it is typically:
 
 ```text
 ~/Library/Application Support/Glyphs 4/Scripts/site-packages

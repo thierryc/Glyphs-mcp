@@ -24,7 +24,7 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
   mirroring plist/package layout or claiming private PyObjC state is canonical.
 - The dual-target installer keeps Glyphs 3.5 on signed v1.11 and installs the
   isolated v2 runtime only for Glyphs 4.
-- Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot CLI receive the same 13
+- Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot CLI receive the same 14
   synchronized v2 skills.
 
 [Read the 1.9 roadmap →](ROADMAP.md) ·
@@ -45,9 +45,9 @@ transaction kernel, redacted audit receipts, and the main-thread Glyphs 3.5/4
 adapter are implemented without loading the runtime into the installed 1.x
 plug-in. The builder writes only to `build/v2-runtime/`.
 
-The v2 skill package contains 13 synchronized skills. It renames the broad
+The v2 skill package contains 14 synchronized skills. It renames the broad
 `glyphs-mcp-features` workflow to `glyphs-mcp-opentype-features` and adds
-production-audit and maintainer-feedback workflows.
+production-audit, maintainer-feedback, and master-compatibility workflows.
 
 See the [2.0 foundation record](content/contributor/glyphs-mcp-2-foundation.mdx)
 for boundaries, migration policy, milestone order, and acceptance gates.
@@ -171,7 +171,7 @@ and structured-result fallbacks.
 
 ## Repo skills for Codex, Claude Code, Cursor, and GitHub Copilot
 
-This repo ships 13 managed workflow skills in `skills/` for common Glyphs MCP
+This repo ships 14 managed workflow skills in `skills/` for common Glyphs MCP
 tasks.
 The same source of truth is exposed through client-specific discovery paths:
 
@@ -239,6 +239,7 @@ Current repo skills focus on:
 - stable Unicode and PUA assignments for icon and symbol fonts
 - guarded kerning bumper reviews and applies
 - guarded spacing reviews and applies
+- diagnostic-first master compatibility repair with guarded topology changes
 - outlines, components, anchors, and docs lookup workflows
 - guarded roman-to-italic first-pass copy and slant workflows
 - version, documentation, packaging, validation, signing, and publication gates

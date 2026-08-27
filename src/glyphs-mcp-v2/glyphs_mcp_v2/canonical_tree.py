@@ -703,6 +703,11 @@ class CanonicalSnapshot(Mapping[str, Any]):
             root_hashes["glyphs"] = _snapshot_shard_hash(glyph_hashes)
 
         for root_name in changed_roots - {"glyphs"}:
+            if root_name not in after_model:
+                roots.pop(root_name, None)
+                root_encodings.pop(root_name, None)
+                root_hashes.pop(root_name, None)
+                continue
             value = after_model.get(root_name)
             roots[root_name] = value
             encoded = _json_bytes(value)
@@ -908,6 +913,9 @@ class CanonicalFontTree:
         context = batch() if callable(batch) else contextlib.nullcontext()
         with context:
             for root_name, changes in sorted(changes_by_root.items()):
+                if root_name not in after_model:
+                    roots.pop(root_name, None)
+                    continue
                 root_value = after_model.get(root_name)
                 if root_name in SHARDED_MAPPING_ROOTS and isinstance(
                     root_value, Mapping

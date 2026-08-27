@@ -27,6 +27,7 @@ class V2ContractTests(unittest.TestCase):
         expected = {
             "get_server_info",
             "list_open_fonts",
+            "open_edit_tab",
             "get_document_status",
             "get_operation",
             "list_glyphs",
@@ -44,6 +45,8 @@ class V2ContractTests(unittest.TestCase):
             "apply_glyph_updates",
             "apply_kerning_updates",
             "apply_opentype_updates",
+            "list_opentype_items",
+            "compile_opentype_features",
             "apply_instance_updates",
             "apply_master_updates",
             "apply_layer_updates",
@@ -74,6 +77,8 @@ class V2ContractTests(unittest.TestCase):
             )
             if definition.effect == "read":
                 self.assertTrue(definition.annotations["readOnlyHint"])
+            if definition.effect == "ui":
+                self.assertFalse(definition.annotations["destructiveHint"])
             if definition.name in {"execute_python", "rollback_python_execution", "revert_change"}:
                 self.assertTrue(definition.annotations["destructiveHint"])
             if definition.name == "execute_python":

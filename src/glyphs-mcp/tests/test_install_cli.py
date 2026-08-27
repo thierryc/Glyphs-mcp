@@ -1204,7 +1204,12 @@ class InstallerSmokeTests(unittest.TestCase):
                 install_cli.glyphs_selected_python_bin = lambda glyphs_version="4": None
                 install_cli.glyphs_python_pip = lambda glyphs_version="4": fake_pip
                 install_cli.verify_runtime = lambda *args, **kwargs: True
-                install_cli.check_runtime_preinstall = lambda *args, **kwargs: None
+                plan = {
+                    "schemaVersion": 1, "runtimeKind": "external", "installMode": "user",
+                    "executable": str(fake_python.resolve()), "primaryRoot": str(Path(tmp) / "user-site"),
+                    "fallbackRoots": [], "orderedRoots": [str(Path(tmp) / "user-site")],
+                }
+                install_cli.check_runtime_preinstall = lambda *args, **kwargs: install_cli.RuntimeProbeResult({"pathPlan": plan}, "")
                 install_cli.install_with_glyphs_python(_repo_root() / "requirements.txt")
             finally:
                 install_cli.run = original_run
@@ -1217,18 +1222,12 @@ class InstallerSmokeTests(unittest.TestCase):
                 else:
                     os.environ["HOME"] = old_home
 
-        target = (
-            Path(tmp)
-            / "Library"
-            / "Application Support"
-            / "Glyphs 4"
-            / "Scripts"
-            / "site-packages"
-        )
         self.assertEqual(
             calls[0],
             [
-                str(fake_pip),
+                str(fake_python),
+                "-m",
+                "pip",
                 "install",
                 "--upgrade",
                 "--upgrade-strategy",
@@ -1243,8 +1242,7 @@ class InstallerSmokeTests(unittest.TestCase):
                 "2",
                 "--no-compile",
                 "--only-binary=:all:",
-                "--target",
-                str(target),
+                "--user",
                 "-r",
                 str(_repo_root() / "requirements.txt"),
             ],
@@ -1273,8 +1271,13 @@ class InstallerSmokeTests(unittest.TestCase):
                 install_cli.glyphs_python_pip = lambda glyphs_version="3": self.fail("Glyphs 4 selected Python should be preferred")
                 install_cli.glyphs_selected_python_bin = lambda glyphs_version="3": selected_python if glyphs_version == "4" else None
                 install_cli.python_version = lambda python: "3.14.0"
-                install_cli.verify_runtime = lambda python, target=None: verify_calls.append((python, target)) or True
-                install_cli.check_runtime_preinstall = lambda *args, **kwargs: None
+                install_cli.verify_runtime = lambda python, target=None, **kwargs: verify_calls.append((python, target)) or True
+                plan = {
+                    "schemaVersion": 1, "runtimeKind": "external", "installMode": "user",
+                    "executable": str(selected_python.resolve()), "primaryRoot": str(Path(tmp) / "user-site"),
+                    "fallbackRoots": [], "orderedRoots": [str(Path(tmp) / "user-site")],
+                }
+                install_cli.check_runtime_preinstall = lambda *args, **kwargs: install_cli.RuntimeProbeResult({"pathPlan": plan}, "")
                 install_cli.install_with_glyphs_python(_repo_root() / "requirements.txt", glyphs_version="4")
             finally:
                 install_cli.run = original_run
@@ -1297,7 +1300,7 @@ class InstallerSmokeTests(unittest.TestCase):
             / "site-packages"
         )
         self.assertEqual(calls[0][:5], [str(selected_python), "-m", "pip", "install", "--upgrade"])
-        self.assertIn(str(target), calls[0])
+        self.assertIn("--user", calls[0])
         self.assertNotIn("--force-reinstall", calls[0])
         self.assertEqual(verify_calls, [(selected_python, target)])
 
@@ -1312,7 +1315,12 @@ class InstallerSmokeTests(unittest.TestCase):
             install_cli.run = lambda cmd, **kwargs: calls.append(cmd)
             install_cli.verify_runtime = lambda *args, **kwargs: True
             install_cli.python_version = lambda python: "3.12.9"
-            install_cli.check_runtime_preinstall = lambda *args, **kwargs: None
+            plan = {
+                "schemaVersion": 1, "runtimeKind": "external", "installMode": "user",
+                "executable": "/tmp/python3.12", "primaryRoot": "/tmp/user-site",
+                "fallbackRoots": [], "orderedRoots": ["/tmp/user-site"],
+            }
+            install_cli.check_runtime_preinstall = lambda *args, **kwargs: install_cli.RuntimeProbeResult({"pathPlan": plan}, "")
             install_cli.install_with_custom_python(Path("/tmp/python3.12"), _repo_root() / "requirements.txt")
         finally:
             install_cli.run = original_run

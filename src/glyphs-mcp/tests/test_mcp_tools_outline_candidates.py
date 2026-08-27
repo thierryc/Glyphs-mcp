@@ -500,10 +500,17 @@ class OutlineCandidateWrapperContractTests(unittest.TestCase):
                 self.closed = data["closed"]
                 self.nodes = [Node(item) for item in data["nodes"]]
 
+        class Component:
+            def __init__(self, data):
+                self.componentName = data["name"]
+                self.transform = tuple(data["transform"])
+                self.smartComponentValues = copy.deepcopy(data["smartValues"])
+                self.automaticAlignment = data["alignment"]
+
         class Layer:
             def __init__(self, snapshot, layer_id="m1"):
                 self.paths = [PathValue(item) for item in snapshot["paths"]]
-                self.components = []
+                self.components = [Component(item) for item in snapshot["components"]]
                 self.anchors = []
                 self.hints = []
                 self.guides = []
@@ -558,7 +565,19 @@ class OutlineCandidateWrapperContractTests(unittest.TestCase):
             def remove(self, layer):
                 self.items.remove(layer)
 
-        source_layer = Layer(_snapshot())
+        source_data = _snapshot()
+        source_data["components"] = [
+            {
+                "name": "acute",
+                "transform": [1.0, 0.0, 0.0, 1.0, 40.0, 120.0],
+                "smartValues": {"height": 25.0},
+                "alignment": True,
+            }
+        ]
+        source_data["shapeOrder"].append({"kind": "component", "index": 0})
+        source_layer = Layer(source_data)
+        source_component = source_layer.components[0]
+        component_before = module._component_snapshot(source_component)
         glyph = types.SimpleNamespace(name="A", parent=None)
         glyph.layers = Layers(glyph, source_layer)
         font = types.SimpleNamespace(
@@ -679,6 +698,8 @@ class OutlineCandidateWrapperContractTests(unittest.TestCase):
         self.assertTrue(accepted["ok"])
         self.assertEqual(module._point_values(source_layer.paths[0].nodes[1].position)[0], 31.0)
         self.assertEqual(module._point_values(source_layer.paths[0].nodes[2].position)[1], 70.0)
+        self.assertIs(source_layer.components[0], source_component)
+        self.assertEqual(module._component_snapshot(source_layer.components[0]), component_before)
         self.assertEqual(len(list(glyph.layers)), 1)
         self.assertEqual(source_layer.begin_count, source_layer.end_count)
         self.assertNotIn(module.FONT_MANIFEST_KEY, font.userData)

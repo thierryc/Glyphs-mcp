@@ -21,9 +21,13 @@ Use this skill as the general launcher for Glyphs MCP tasks.
 - Live Python runs, Macro Panel snippets, and iterative script debugging: follow `glyphs-mcp-scripting`.
 - Reusable Python scripts and plug-in development: follow `glyphs-mcp-development`.
 - Icon-font Unicode or PUA assignments: follow `glyphs-mcp-icon-font`.
-- Kerning collision review and bumper changes: follow `glyphs-mcp-kerning`.
+- Directional pair and Glyphs 4 contextual kerning review, coverage, explicit
+  updates, and exported visual proof:
+  follow `glyphs-mcp-kerning`.
 - LitSquare metadata, inherited settings, or semantic path roles: follow `glyphs-mcp-litsquare-metadata`.
 - Spacing, sidebearings, and width review: follow `glyphs-mcp-spacing`.
+- Full glyph compatibility diagnosis and repair across masters: follow
+  `glyphs-mcp-master-compatibility`.
 - Outlines, components, anchors, selected nodes, or bundled docs: follow `glyphs-mcp-outlines-docs`.
 - Roman-to-italic or oblique first passes: follow `glyphs-mcp-italic-first-pass`.
 - Production-readiness audits: follow `glyphs-mcp-production-audit`.

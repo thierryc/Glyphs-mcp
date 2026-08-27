@@ -7,7 +7,7 @@ Glyphs MCP ships a general launcher and focused workflow skills in `skills/`. Th
 
 Start with `glyphs` for a general task or context check. Use a focused skill
 when you already know the task is OpenType feature inspection, icon-font
-encoding, kerning, spacing, outline work, an italic first pass, or Glyphs
+encoding, kerning, spacing, master compatibility, outline work, an italic first pass, or Glyphs
 script and plug-in development. Use `glyphs-mcp-scripting` for live runs,
 Macro Panel snippets, and iterative debugging; use `glyphs-mcp-development`
 for reusable workspace artifacts. Use `glyphs-mcp-release` for repository release
@@ -217,7 +217,7 @@ Enable **Install Glyphs MCP agent skills** for Codex and/or Claude Code. The ins
 
 Reload or restart the client after installation.
 
-For a manual global Cursor install, copy the 13 skill directories from
+For a manual global Cursor install, copy the 14 skill directories from
 `skills/` into `~/.cursor/skills/`, preserving each directory's `SKILL.md` and
 supporting files.
 
@@ -227,6 +227,7 @@ supporting files.
 | --- | --- | --- |
 | `glyphs` | General tasks, connection and context checks, and workflow routing | `Use $glyphs to inspect my current Glyphs context and help with this font task.` |
 | `glyphs-mcp-development` | Reusable, documentation-grounded Glyphs Python scripts and six plug-in scaffolds | `Use $glyphs-mcp-development to create a reporter plug-in in this workspace.` |
+| `glyphs-mcp-master-compatibility` | Diagnostic-first repair of glyph compatibility across masters | `Use $glyphs-mcp-master-compatibility to diagnose my selected glyph and safely make its masters compatible.` |
 | `glyphs-mcp-outlines-docs` | Outline edits and their specialized live-code fallback, plus selected nodes, components, anchors, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes and fetch only the docs pages I need.` |
 | `glyphs-mcp-italic-first-pass` | Experimental Roman-to-italic construction drafts with a narrowly guarded Python fallback | `Use the glyphs-mcp-italic-first-pass skill to review selected glyphs in recommended Balanced mode before applying an italic first pass.` |
 | `glyphs-mcp-scripting` | Staged document Python, reviewed open-world fallback, and verified rollback | `Use $glyphs-mcp-scripting because the typed tools do not fit this document edit.` |

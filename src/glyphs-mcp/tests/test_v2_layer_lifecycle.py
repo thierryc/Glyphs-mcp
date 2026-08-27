@@ -217,6 +217,55 @@ class LayerLifecycleTests(unittest.TestCase):
         self.assertEqual([item["order"] for item in items], [1, 2])
         self.assertEqual(items[0]["interpolation"]["coordinates"], {"wght": 125})
 
+    def test_list_layers_full_detail_joins_observations_without_canonicalizing_them(self) -> None:
+        model = _model()
+        layer = model["glyphs"]["A"]["layers"][0]
+        layer["components"] = [
+            {
+                "name": "A.base",
+                "transform": [1, 0, 0, 1, 12, 0],
+                "automaticAlignment": True,
+            }
+        ]
+        observations = {
+            ("A", "m0"): {
+                "bounds": {"x": 10, "y": 0, "width": 500, "height": 700},
+                "currentMetrics": {
+                    "width": 600,
+                    "leftBearing": 45,
+                    "rightBearing": 55,
+                },
+                "resolvedMetrics": {
+                    "width": 620,
+                    "leftBearing": 50,
+                    "rightBearing": 50,
+                },
+                "delta": {
+                    "width": 20,
+                    "leftBearing": 5,
+                    "rightBearing": -5,
+                },
+                "stale": True,
+                "hasAlignedWidth": True,
+            }
+        }
+
+        item = list_layers(
+            model,
+            glyph_names=["A"],
+            roles=["master"],
+            detail="full",
+            observations=observations,
+        )[0]
+
+        self.assertEqual(item["currentMetrics"]["leftBearing"], 45)
+        self.assertEqual(item["resolvedMetrics"]["width"], 620)
+        self.assertTrue(item["stale"])
+        self.assertTrue(item["hasAlignedWidth"])
+        self.assertEqual(item["bounds"]["height"], 700)
+        self.assertEqual(item["components"][0]["transform"], [1, 0, 0, 1, 12, 0])
+        self.assertTrue(item["components"][0]["automaticAlignment"])
+
     def test_duplicate_update_move_delete_and_inverse_share_one_builder(self) -> None:
         before = _model()
         build = build_layer_updates(

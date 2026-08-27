@@ -81,7 +81,7 @@ catalog size, discovery payload size, and selected disposable document ID.
 | --- | --- | --- |
 | G4-1 | Start, stop, restart, and reconnect the server. | Every client receives v2.0 identity and the exact v2 catalog. |
 | G4-2 | Inspect complete discovery. | Payload is below 96 KiB; removed preparation and Candidate APIs are absent. |
-| G4-3 | Run bounded document, glyph, layer, master, instance, feature, kerning, and change-log reads. | Every response page is below 64 KiB and performs no mutation. |
+| G4-3 | Run bounded document, glyph, layer, master, instance, feature, pair/context kerning, and change-log reads. Exercise `entryKind=pair`, `context`, and `all`, plus `context_sequences` coverage. | Every response page is below 64 KiB, directions remain distinct, raw contexts remain visible, filtered cursors cannot cross scopes, and no read performs a mutation. |
 | G4-4 | Leave one connection idle, cancel one bounded call, then reconnect. | No per-second debug-ping flood, progressive slowdown, or poisoned server state. |
 
 ### Verified apply-first kernel
@@ -96,6 +96,7 @@ release protocol.
 | G4-7 | `verify_schema_v5_layer_lifecycle` | Intermediate, alternate, backup, Smart, and color layer lifecycle passes with unrelated shard reuse. |
 | G4-8 | `verify_staged_python_structural_replay` | Preview and confirmation cover glyph, master, layer, instance, feature, class, and prefix lifecycle without rerunning Python. |
 | G4-9 | `verify_copy_and_make_copy` | `save(path, makeCopy=True)` leaves the working path and dirty state unchanged. |
+| G4-10 | `verify_context_kerning` | Both `L quoteright A` boundaries apply atomically through native context deltas, list/read back exactly, preserve all pair domains, refuse a two-glyph context, and restore the exact canonical/native baseline without saving. |
 
 Each successful mutation and revert must report one live transaction, one
 canonical operation ID, one Change Log commit, and one audit receipt. Failed
@@ -106,11 +107,27 @@ exact pre-attempt content and dirty contribution.
 
 | ID | Action | Required result |
 | --- | --- | --- |
-| G4-10 | Apply a topology-compatible outline change. | Change Log lists its semantic targets and the Reporter shows the geometric before/current gap. |
-| G4-11 | Move one affected point manually. | Overlay updates against the fixed pre-agent baseline without full-font capture during drawing. |
-| G4-12 | Revert the operation exactly. | Overlay disappears and Change Log status updates; baseline and dirty state are exact. |
-| G4-13 | Revert an earlier operation while an unrelated later operation remains. | Later change is preserved; a conflicting later edit refuses atomically. |
-| G4-14 | Open and collapse the Glyphs MCP inspector during a long phase. | Compact activity feedback remains document-bound and the UI returns between gates. |
+| G4-11 | Apply a topology-compatible outline change. | Change Log lists its semantic targets and the Reporter shows the geometric before/current gap. |
+| G4-12 | Move one affected point manually. | Overlay updates against the fixed pre-agent baseline without full-font capture during drawing. |
+| G4-13 | Revert the operation exactly. | Overlay disappears and Change Log status updates; baseline and dirty state are exact. |
+| G4-14 | Revert an earlier operation while an unrelated later operation remains. | Later change is preserved; a conflicting later edit refuses atomically. |
+| G4-15 | Open and collapse the Glyphs MCP inspector during a long phase. | Compact activity feedback remains document-bound and the UI returns between gates. |
+
+### Exported contextual-kerning proof
+
+After G4-10 restores its baseline, make a separate disposable proof update for
+both `L’A` boundaries. Use illustrative values only if they are visibly
+appropriate for the disposable design.
+
+| ID | Action | Required result |
+| --- | --- | --- |
+| G4-16 | Compare `L’A` with `L’O`, `l’A`, standalone `’A`, and an unrelated apostrophe–`A` occurrence in Glyphs Context Kerning mode and normal Kerning & Spacing mode. | Only the complete positive context receives the extra boundary values; ordinary pair views remain unchanged. |
+| G4-17 | Export to a temporary destination and test Text Preview/CoreText plus one external shaping environment with `kern` on and off. | With `kern` on, both contextual deltas are additional to pair kerning; controls remain unchanged. With `kern` off, ordinary and contextual kerning disappear. |
+| G4-18 | For variable output, inspect named instances and intermediate slider positions; otherwise inspect every relevant static instance. | Interpolation is continuous and no master-specific context is missing. |
+
+Remove the temporary export, revert the proof operation, and re-confirm the
+canonical/native baseline. Do not record this gate as passed from stored-value
+readback alone.
 
 ## Simulated installer matrix
 

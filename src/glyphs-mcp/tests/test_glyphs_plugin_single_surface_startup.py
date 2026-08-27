@@ -223,6 +223,28 @@ class ServerStartupTests(unittest.TestCase):
         self.assertEqual(polls, [True])
         self.assertTrue(plugin._server_thread.started)
 
+    def test_connection_state_publishes_when_status_window_is_absent(self):
+        module = _load_plugin_module(_FakeMCP([]))
+        published = []
+
+        class Store:
+            def publish(self, state, message):
+                published.append((state, message))
+
+        module.default_connection_status_store = lambda: Store()
+        plugin = module.MCPBridgePlugin()
+        plugin.default_port = 9680
+        plugin._server_is_running = lambda: True
+
+        plugin._refresh_status_panel_if_visible()
+
+        self.assertEqual(published, [("running", "status.running")])
+
+        plugin._starting_server = True
+        plugin._refresh_status_panel_if_visible()
+
+        self.assertEqual(published[-1], ("starting", "status.starting"))
+
     def test_live_prior_server_thread_blocks_reset_and_new_http_app(self):
         events = []
         mcp = _FakeMCP(events)

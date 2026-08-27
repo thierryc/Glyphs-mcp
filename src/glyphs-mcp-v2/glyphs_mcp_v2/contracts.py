@@ -244,9 +244,17 @@ PAGE_SCHEMA: Dict[str, Any] = {
         {"type": "null"},
         {
             "type": "object",
-            "required": ["pageSize", "totalItems", "returnedItems", "offset", "nextCursor", "sourceFingerprint"],
+            "required": ["requestedPageSize", "pageSize", "maxPageBytes", "truncationReason", "totalItems", "returnedItems", "offset", "nextCursor", "sourceFingerprint"],
             "properties": {
+                "requestedPageSize": {"type": "integer"},
                 "pageSize": {"type": "integer", "minimum": 1, "maximum": 500},
+                "maxPageBytes": {"type": "integer", "minimum": 1},
+                "truncationReason": {
+                    "anyOf": [
+                        {"type": "string", "enum": ["byte_budget"]},
+                        {"type": "null"},
+                    ]
+                },
                 "totalItems": {"type": "integer", "minimum": 0},
                 "returnedItems": {"type": "integer", "minimum": 0, "maximum": 500},
                 "offset": {"type": "integer", "minimum": 0},

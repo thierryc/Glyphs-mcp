@@ -1259,6 +1259,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try plist.write(to: infoPlist, atomically: true, encoding: .utf8)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 		try "# probe\n".write(to: runtimeProbe, atomically: true, encoding: .utf8)
+		try "# policy\n".write(to: runtimeProbe.deletingLastPathComponent().appendingPathComponent("runtime_path_policy.py"), atomically: true, encoding: .utf8)
 
 		let b = try XCTUnwrap(Bundle(url: bundleURL))
 		let resolved = try InstallerPayload.resolve(bundle: b, allowVerifiedLegacyRelease: true)
@@ -1284,6 +1285,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 		try "# probe\n".write(to: runtimeProbe, atomically: true, encoding: .utf8)
+		try "# policy\n".write(to: runtimeProbe.deletingLastPathComponent().appendingPathComponent("runtime_path_policy.py"), atomically: true, encoding: .utf8)
 		try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true, attributes: nil)
 
 		let infoPlist = contents.appendingPathComponent("Info.plist")
@@ -1336,6 +1338,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 			let resources = plugin.appendingPathComponent("Contents/Resources", isDirectory: true)
 			try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
 			try Data("# probe\n".utf8).write(to: resources.appendingPathComponent("runtime_probe.py"))
+			try Data("# policy\n".utf8).write(to: resources.appendingPathComponent("runtime_path_policy.py"))
 			let info: [String: Any] = [
 				"CFBundleShortVersionString": version,
 				"CFBundleVersion": version,
@@ -1380,6 +1383,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 			withIntermediateDirectories: true
 		)
 		try Data("# probe\n".utf8).write(to: runtimeProbe)
+		try Data("# policy\n".utf8).write(to: runtimeProbe.deletingLastPathComponent().appendingPathComponent("runtime_path_policy.py"))
 		try Data("mcp\n".utf8).write(to: root.appendingPathComponent("requirements.txt"))
 
 		XCTAssertThrowsError(try InstallerPayload.resolve(payloadDir: root))
@@ -1564,7 +1568,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		let probe = root.appendingPathComponent("runtime_probe.py")
 		let target = root.appendingPathComponent("Glyphs 4/Scripts/site-packages")
 		let json = """
-{"schemaVersion":1,"mode":"preinstall","status":"incomplete","blocking":false,"runtime":{"executable":"\(python.path)","version":"3.14.2","implementation":"CPython","soabi":"cpython-314-darwin","extensionSuffix":".cpython-314-darwin.so","architecture":"arm64"},"sitePackages":"\(target.path)","checks":[],"issues":[]}
+{"schemaVersion":1,"mode":"preinstall","status":"incomplete","blocking":false,"runtime":{"executable":"\(python.path)","version":"3.14.2","implementation":"CPython","soabi":"cpython-314-darwin","extensionSuffix":".cpython-314-darwin.so","architecture":"arm64"},"pathPlan":{"schemaVersion":1,"runtimeKind":"external","installMode":"user","executable":"\(python.path)","primaryRoot":"/tmp/user-site","fallbackRoots":["\(target.path)"],"orderedRoots":["/tmp/user-site","\(target.path)"]},"sitePackages":"\(target.path)","checks":[],"issues":[]}
 """
 		let script = """
 #!/bin/sh
@@ -1592,6 +1596,7 @@ exit 0
 			.split(separator: "\n")
 			.map(String.init)
 		XCTAssertEqual(document.runtime.executable, python.path)
+		XCTAssertEqual(document.pathPlan?.orderedRoots, ["/tmp/user-site", target.path])
 		XCTAssertEqual(
 			arguments,
 			[
@@ -1646,7 +1651,17 @@ exit 0
 		let installer = DepsInstaller(runner: ProcessRunner(), log: { _ in })
 		let requirements = URL(fileURLWithPath: "/tmp/requirements.txt")
 		let target = URL(fileURLWithPath: "/tmp/glyphs-mcp-site-packages")
-		let args = installer.pipInstallArgs(requirementsTxt: requirements, target: target)
+		let fallback = "/tmp/Glyphs 4/Scripts/site-packages"
+		let plan = RuntimeProbeDocument.PathPlan(
+			schemaVersion: 1,
+			runtimeKind: "embedded",
+			installMode: "target",
+			executable: "/tmp/python",
+			primaryRoot: target.path,
+			fallbackRoots: [fallback],
+			orderedRoots: [target.path, fallback]
+		)
+		let args = installer.pipInstallArgs(requirementsTxt: requirements, pathPlan: plan)
 
 		XCTAssertFalse(args.contains("--force-reinstall"), "\(args)")
 		XCTAssertTrue(args.contains("--upgrade"), "\(args)")
@@ -1654,7 +1669,30 @@ exit 0
 		XCTAssertTrue(args.contains("--disable-pip-version-check"), "\(args)")
 		XCTAssertTrue(args.contains("--timeout"), "\(args)")
 		XCTAssertTrue(args.contains("--retries"), "\(args)")
-		XCTAssertEqual(installer.pipEnvironment(target: target)["PYTHONPATH"]?.split(separator: ":").first, Substring(target.path))
+		XCTAssertEqual(installer.pipEnvironment(pathPlan: plan)["PYTHONPATH"], target.path + ":" + fallback)
+		XCTAssertTrue(args.contains("--target"))
+		XCTAssertTrue(args.contains(target.path))
+	}
+
+	func testExternalRuntimePlanGeneratesUserInstallCommand() {
+		let installer = DepsInstaller(runner: ProcessRunner(), log: { _ in })
+		let requirements = URL(fileURLWithPath: "/tmp/requirements.txt")
+		let plan = RuntimeProbeDocument.PathPlan(
+			schemaVersion: 1,
+			runtimeKind: "external",
+			installMode: "user",
+			executable: "/opt/homebrew/bin/python3",
+			primaryRoot: "/tmp/user-site",
+			fallbackRoots: ["/tmp/Glyphs 3/Scripts/site-packages"],
+			orderedRoots: ["/tmp/user-site", "/tmp/Glyphs 3/Scripts/site-packages"]
+		)
+		let args = installer.pipInstallArgs(requirementsTxt: requirements, pathPlan: plan)
+		XCTAssertTrue(args.contains("--user"))
+		XCTAssertFalse(args.contains("--target"))
+		XCTAssertEqual(
+			installer.pipEnvironment(pathPlan: plan)["PYTHONPATH"],
+			"/tmp/user-site:/tmp/Glyphs 3/Scripts/site-packages"
+		)
 	}
 
 	func testDependencyPreflightRecognizesSatisfiedAndMismatchedRequirements() throws {
@@ -2531,6 +2569,9 @@ exit 0
 				try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
 				try Data("# probe\n".utf8).write(
 					to: resources.appendingPathComponent("runtime_probe.py")
+				)
+				try Data("# policy\n".utf8).write(
+					to: resources.appendingPathComponent("runtime_path_policy.py")
 				)
 			}
 		}

@@ -120,6 +120,10 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 plugin_runtime = (resources / "glyphs_plugin.py").read_text(encoding="utf-8")
                 self.assertIn("get_mcp_tool_registry", plugin_runtime)
                 self.assertIn("tools = get_mcp_tool_registry(mcp)", plugin_runtime)
+                self.assertIn(
+                    "from glyphs_mcp_v2.connection_status import default_connection_status_store",
+                    plugin_runtime,
+                )
                 self.assertNotIn(
                     'for attr_name in ["_tools", "tools", "_tool_registry", "tool_registry", "_handlers"]',
                     plugin_runtime,
@@ -130,9 +134,13 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 self.assertTrue((resources / "glyphs_mcp_v2" / "change_diff_reporter.py").is_file())
                 inspector = resources / "glyphs_mcp_v2" / "inspector_palette.py"
                 self.assertTrue(inspector.is_file())
+                self.assertTrue(
+                    (resources / "glyphs_mcp_v2" / "connection_status.py").is_file()
+                )
                 inspector_source = inspector.read_text(encoding="utf-8")
                 self.assertIn('PALETTE_NAME = "Glyphs MCP"', inspector_source)
                 self.assertIn("GlyphsMCPLitSquareMetadataPalette", inspector_source)
+                self.assertIn("default_connection_status_store", inspector_source)
 
                 format_docs = resources / "MCP Documentation" / "docs" / "file-format"
                 pinned_specification = format_docs / "GlyphsFileFormatv4.md"
@@ -154,6 +162,7 @@ class V2BundleAssemblyTests(unittest.TestCase):
             manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["fileCount"], len(_file_map(source)))
             self.assertEqual(set(manifest["files"]), set(_file_map(source)))
+            self.assertEqual(set(manifest["runtimeFiles"]), {"runtime_path_policy.py", "runtime_probe.py"})
 
     def test_builder_rejects_output_outside_the_worktree(self) -> None:
         result = subprocess.run(

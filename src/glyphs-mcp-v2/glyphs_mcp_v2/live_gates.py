@@ -551,6 +551,110 @@ class _StagedPythonGateSession:
                 )
         return failures
 
+
+def verify_open_edit_tab(
+    font: Any,
+    glyph_names: Sequence[str] = (),
+    *,
+    application: Any = None,
+    host: Any = None,
+) -> Mapping[str, Any]:
+    """Open a typed Edit tab while proving document state stays unchanged."""
+
+    family_name = str(getattr(font, "familyName", "") or "")
+    if not family_name.startswith(DISPOSABLE_FAMILY_PREFIX):
+        raise ValueError(
+            "live v2 gates require a disposable font whose family name starts with {!r}".format(
+                DISPOSABLE_FAMILY_PREFIX
+            )
+        )
+    application, host = _resolve_live_runtime(application, host)
+    document_id_for_font = getattr(host, "document_id_for_font", None)
+    capture_model = getattr(host, "capture_stable_snapshot", None)
+    if not callable(capture_model):
+        capture_model = getattr(host, "capture_snapshot", None)
+    if not callable(capture_model):
+        capture_model = getattr(host, "capture_model", None)
+    if not callable(document_id_for_font) or not callable(capture_model):
+        raise RuntimeError("the active host does not expose the Edit-tab live-gate boundary")
+
+    document_id = str(document_id_for_font(font) or "")
+    if not document_id:
+        raise RuntimeError("the disposable font has no stable v2 document ID")
+    baseline = capture_model(document_id)
+    baseline_fingerprint = fingerprint_model(baseline)
+    glyphs = baseline.get("glyphs", {})
+    available = list(glyphs) if isinstance(glyphs, Mapping) else [
+        str(item.get("name") or "")
+        for item in glyphs
+        if isinstance(item, Mapping) and item.get("name")
+    ]
+    requested = tuple(glyph_names) if glyph_names else tuple(available[:2])
+    if not requested:
+        raise ValueError("the Edit-tab live gate requires at least one glyph")
+    missing = [name for name in requested if name not in available]
+    if missing:
+        raise ValueError(
+            "the Edit-tab live gate cannot find glyph(s): {}".format(
+                ", ".join(missing)
+            )
+        )
+
+    before_path = _plain_attribute(font, "filepath")
+    before_master = _plain_attribute(font, "selectedFontMaster")
+    before_master_id = str(_plain_attribute(before_master, "id") or "")
+    before_dirty = _reported_dirty_state(host, document_id)
+    arguments = {
+        "documentId": document_id,
+        "glyphNames": list(requested),
+    }
+    if before_master_id:
+        arguments["masterId"] = before_master_id
+    response = application.invoke("open_edit_tab", arguments)
+    result = response.to_dict() if hasattr(response, "to_dict") else dict(response)
+    if not result.get("ok"):
+        error = result.get("error") or {}
+        raise AssertionError(
+            "open_edit_tab failed: {} ({})".format(
+                error.get("message") or result.get("summary") or "unknown error",
+                error.get("code") or "unknown",
+            )
+        )
+
+    data = dict(result.get("data") or {})
+    after = capture_model(document_id)
+    after_fingerprint = fingerprint_model(after)
+    after_path = _plain_attribute(font, "filepath")
+    after_master = _plain_attribute(font, "selectedFontMaster")
+    after_master_id = str(_plain_attribute(after_master, "id") or "")
+    after_dirty = _reported_dirty_state(host, document_id)
+    if data.get("beforeFingerprint") != baseline_fingerprint:
+        raise AssertionError("open_edit_tab did not report the baseline fingerprint")
+    if data.get("afterFingerprint") != after_fingerprint:
+        raise AssertionError("open_edit_tab did not report the observed after fingerprint")
+    if data.get("documentChanged") or data.get("observedChangeCount") != 0:
+        raise AssertionError("open_edit_tab reported an unexpected document mutation")
+    if after_fingerprint != baseline_fingerprint:
+        raise AssertionError("open_edit_tab changed the canonical document")
+    if after_path != before_path:
+        raise AssertionError("open_edit_tab changed the working document path")
+    if after_master_id != before_master_id:
+        raise AssertionError("open_edit_tab changed the active master")
+    if before_dirty is not None and after_dirty != before_dirty:
+        raise AssertionError("open_edit_tab changed the reported dirty state")
+    return {
+        "documentId": document_id,
+        "familyName": family_name,
+        "glyphNames": list(requested),
+        "documentFingerprint": baseline_fingerprint,
+        "openedTab": bool(data.get("openedTab")),
+        "documentUnchanged": True,
+        "workingPathUnchanged": True,
+        "activeMasterUnchanged": True,
+        "reportedDirtyStateUnchanged": before_dirty is None or after_dirty == before_dirty,
+    }
+
+
 def verify_copy_and_make_copy(
     font: Any,
     output_path: str,
@@ -1383,6 +1487,245 @@ def verify_schema_v5_layer_lifecycle(
     }
 
 
+def verify_context_kerning(
+    font: Any,
+    *,
+    application: Any = None,
+    host: Any = None,
+) -> Mapping[str, Any]:
+    """Round-trip both contextual boundaries in ``L quoteright A``.
+
+    This is a disposable Glyphs 4 mutation gate for the typed storage and
+    transaction contract. Exported shaping remains a separate visual QA step.
+    """
+
+    gate_started = time.perf_counter_ns()
+    family_name = str(getattr(font, "familyName", "") or "")
+    if not family_name.startswith(DISPOSABLE_FAMILY_PREFIX):
+        raise ValueError(
+            "live v2 gates require a disposable font whose family name starts with {!r}".format(
+                DISPOSABLE_FAMILY_PREFIX
+            )
+        )
+    application, host = _resolve_live_runtime(application, host)
+    document_id_for_font = getattr(host, "document_id_for_font", None)
+    capture_model = getattr(host, "capture_snapshot", None)
+    if not callable(capture_model):
+        capture_model = getattr(host, "capture_model", None)
+    if not callable(document_id_for_font) or not callable(capture_model):
+        raise RuntimeError(
+            "the active host does not expose the contextual kerning live-gate boundary"
+        )
+    document_id = str(document_id_for_font(font) or "")
+    baseline = capture_model(document_id)
+    _assert_unique_unicode_assignments(baseline, phase="baseline")
+    baseline_fingerprint = fingerprint_model(baseline)
+    glyphs = baseline.get("glyphs", {})
+    required_glyphs = ("L", "quoteright", "A")
+    if not isinstance(glyphs, Mapping) or any(
+        name not in glyphs for name in required_glyphs
+    ):
+        raise ValueError(
+            "the contextual kerning gate requires L, quoteright, and A"
+        )
+    masters = [
+        str(master.get("id") or "")
+        for master in baseline.get("masters", [])
+        if isinstance(master, Mapping) and master.get("id")
+    ]
+    if not masters:
+        raise ValueError(
+            "the contextual kerning gate requires one stable master ID"
+        )
+    master_id = masters[0]
+    before_path = _plain_attribute(font, "filepath")
+    before_master = _plain_attribute(font, "selectedFontMaster")
+    before_master_id = str(_plain_attribute(before_master, "id") or "")
+    before_dirty = _reported_dirty_state(host, document_id)
+    baseline_archive = _serialized_font_archive(font)
+    baseline_archive_fingerprint = _native_archive_fingerprint(baseline_archive)
+    baseline_kerning = baseline.get("kerning", {})
+    baseline_contexts = (
+        baseline_kerning.get("context", {})
+        if isinstance(baseline_kerning, Mapping)
+        else {}
+    )
+
+    def changed_value(context_key: str, fallback: float) -> float:
+        values = baseline_contexts.get(context_key, {})
+        existing = values.get(master_id) if isinstance(values, Mapping) else None
+        return float(existing) + 1.0 if existing is not None else fallback
+
+    first_value = changed_value("L * quoteright A", -40.0)
+    second_value = changed_value("L quoteright * A", 80.0)
+    session = _StructuralGateSession(
+        application,
+        host,
+        document_id,
+        baseline_fingerprint,
+    )
+
+    try:
+        operation_id = session.apply(
+            "apply_kerning_updates",
+            [
+                {
+                    "entryKind": "context",
+                    "masterId": master_id,
+                    "sequence": list(required_glyphs),
+                    "boundaryIndex": 1,
+                    "value": first_value,
+                },
+                {
+                    "entryKind": "context",
+                    "masterId": master_id,
+                    "sequence": list(required_glyphs),
+                    "boundaryIndex": 2,
+                    "value": second_value,
+                },
+            ],
+        )
+        observed_contexts: list[Mapping[str, Any]] = []
+        cursor = None
+        while True:
+            response = session.invoke(
+                "list_kerning_pairs",
+                {
+                    "documentId": document_id,
+                    "entryKind": "context",
+                    "pageSize": 500,
+                    "cursor": cursor,
+                },
+            )
+            if not response.get("ok"):
+                raise AssertionError(
+                    "contextual kerning readback failed: {}".format(
+                        response.get("summary") or response.get("error")
+                    )
+                )
+            observed_contexts.extend(
+                item
+                for item in (response.get("data") or {}).get("pairs", [])
+                if isinstance(item, Mapping)
+            )
+            cursor = (response.get("page") or {}).get("nextCursor")
+            if not cursor:
+                break
+        observed = {
+            (
+                str(item.get("masterId") or ""),
+                tuple(item.get("sequence") or ()),
+                item.get("boundaryIndex"),
+            ): item.get("value")
+            for item in observed_contexts
+            if item.get("editable")
+        }
+        expected_sequence = tuple(required_glyphs)
+        if observed.get((master_id, expected_sequence, 1)) != first_value:
+            raise AssertionError("first L quoteright A context did not read back")
+        if observed.get((master_id, expected_sequence, 2)) != second_value:
+            raise AssertionError("second L quoteright A context did not read back")
+
+        after_apply = session.model()
+        after_kerning = after_apply.get("kerning", {})
+        if isinstance(baseline_kerning, Mapping) and isinstance(
+            after_kerning, Mapping
+        ):
+            for direction in ("ltr", "rtl", "vertical"):
+                if after_kerning.get(direction, {}) != baseline_kerning.get(
+                    direction, {}
+                ):
+                    raise AssertionError(
+                        "contextual update changed {} pair kerning".format(
+                            direction
+                        )
+                    )
+        session.revert(operation_id)
+        session.refuse(
+            "apply_kerning_updates",
+            "invalid_request",
+            [
+                {
+                    "entryKind": "context",
+                    "masterId": master_id,
+                    "sequence": ["L", "A"],
+                    "boundaryIndex": 1,
+                    "value": -10,
+                }
+            ],
+        )
+    except BaseException:
+        cleanup_failures = session.cleanup()
+        final = session.fingerprint()
+        if cleanup_failures or final != baseline_fingerprint:
+            raise RuntimeError(
+                "contextual kerning gate cleanup failed for {} operation(s); final fingerprint {}".format(
+                    len(cleanup_failures), final
+                )
+            )
+        raise
+
+    final_fingerprint = session.fingerprint()
+    final_archive = _serialized_font_archive(font)
+    archive_comparison = _compare_native_archives(
+        baseline_archive,
+        final_archive,
+        limit=20,
+    )
+    after_path = _plain_attribute(font, "filepath")
+    after_master = _plain_attribute(font, "selectedFontMaster")
+    after_master_id = str(_plain_attribute(after_master, "id") or "")
+    after_dirty = _reported_dirty_state(host, document_id)
+    if final_fingerprint != baseline_fingerprint:
+        raise AssertionError(
+            "contextual kerning gate did not restore the canonical baseline"
+        )
+    if not archive_comparison["equivalent"]:
+        raise AssertionError(
+            "contextual kerning gate did not restore the native archive; mismatches={!r}".format(
+                archive_comparison["mismatchLocations"]
+            )
+        )
+    if after_path != before_path:
+        raise AssertionError(
+            "contextual kerning gate changed the working document path"
+        )
+    if after_master_id != before_master_id:
+        raise AssertionError("contextual kerning gate changed the active master")
+    if before_dirty is not None and after_dirty != before_dirty:
+        raise AssertionError(
+            "contextual kerning gate changed the reported dirty state"
+        )
+    return {
+        "documentId": document_id,
+        "familyName": family_name,
+        "masterId": master_id,
+        "baselineFingerprint": baseline_fingerprint,
+        "finalFingerprint": final_fingerprint,
+        "baselineArchiveFingerprint": baseline_archive_fingerprint,
+        "finalArchiveFingerprint": _native_archive_fingerprint(final_archive),
+        "qualifiedDomains": [
+            "context_storage",
+            "context_readback",
+            "pair_domain_preservation",
+            "atomic_refusal",
+        ],
+        "operationIds": session.successful,
+        "refusalCodes": session.refusals,
+        "exactCanonicalBaselineRestored": True,
+        "exactNativeArchiveRestored": True,
+        "nativeArchiveBytesUnchanged": baseline_archive == final_archive,
+        "workingPathUnchanged": True,
+        "activeMasterUnchanged": True,
+        "reportedDirtyStateUnchanged": before_dirty is None
+        or after_dirty == before_dirty,
+        "singleTransactionResponses": session.single_transactions,
+        "auditReceiptsPresent": session.audit_receipts,
+        "changeLogCommitsPresent": session.change_log_commits,
+        "gateDurationMs": (time.perf_counter_ns() - gate_started) / 1_000_000,
+    }
+
+
 def verify_staged_python_structural_replay(
     font: Any,
     *,
@@ -1696,6 +2039,8 @@ def verify_staged_python_structural_replay(
 __all__ = [
     "DISPOSABLE_FAMILY_PREFIX",
     "verify_copy_and_make_copy",
+    "verify_context_kerning",
+    "verify_open_edit_tab",
     "verify_schema_v3_structural_kernel",
     "verify_schema_v4_master_lifecycle",
     "verify_schema_v5_layer_lifecycle",

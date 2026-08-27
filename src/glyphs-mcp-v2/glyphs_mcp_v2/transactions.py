@@ -79,9 +79,39 @@ class StaleDocumentError(RuntimeError):
 
 
 class TransactionVerificationError(RuntimeError):
-    def __init__(self, message: str, *, rollback_succeeded: bool) -> None:
+    def __init__(
+        self,
+        message: str,
+        *,
+        rollback_succeeded: bool,
+        rollback_attempted: bool = True,
+        observed_after_fingerprint: Optional[str] = None,
+        observed_change_count: int = 0,
+        source_file_changed: bool = False,
+        state_may_have_changed: Optional[bool] = None,
+    ) -> None:
         super().__init__(message)
         self.rollback_succeeded = rollback_succeeded
+        self.rollback_attempted = rollback_attempted
+        self.observed_after_fingerprint = observed_after_fingerprint
+        self.observed_change_count = max(0, int(observed_change_count))
+        self.source_file_changed = bool(source_file_changed)
+        self.state_may_have_changed = (
+            bool(state_may_have_changed)
+            if state_may_have_changed is not None
+            else bool(not rollback_succeeded or source_file_changed)
+        )
+
+    def to_public_dict(self) -> dict[str, Any]:
+        return {
+            "stateMayHaveChanged": self.state_may_have_changed,
+            "rollbackAttempted": self.rollback_attempted,
+            "rollbackSucceeded": self.rollback_succeeded,
+            "observedAfterFingerprint": self.observed_after_fingerprint,
+            "observedChangeCount": self.observed_change_count,
+            "sourceFileChanged": self.source_file_changed,
+            "fontSaved": False,
+        }
 
 
 @dataclass(frozen=True)
@@ -94,6 +124,7 @@ class TransactionResult:
     observed_change_count: int
     inverse: ChangeSet
     coverage: CanonicalCoverage = CanonicalCoverage.complete()
+    source_file_changed: bool = False
 
     @property
     def change_count(self) -> int:
@@ -217,6 +248,31 @@ class TransactionKernel:
             return capture(document_id)
         return self._adapter.capture_model(document_id)
 
+    def _capture_source_state(
+        self, document_id: str
+    ) -> Optional[Mapping[str, Any]]:
+        capture = getattr(self._adapter, "capture_source_file_state", None)
+        if not callable(capture):
+            return None
+        value = capture(document_id)
+        return dict(value) if isinstance(value, Mapping) else None
+
+    @staticmethod
+    def _source_state_changed(
+        before: Optional[Mapping[str, Any]],
+        after: Optional[Mapping[str, Any]],
+    ) -> bool:
+        if before is None:
+            return False
+        if after is None:
+            return True
+        return (
+            before.get("contentFingerprint")
+            != after.get("contentFingerprint")
+            or before.get("kind") != after.get("kind")
+            or before.get("exists") != after.get("exists")
+        )
+
     @staticmethod
     def _retain_or_copy(model: Mapping[str, Any]) -> Mapping[str, Any]:
         if isinstance(model, CanonicalSnapshot):
@@ -271,6 +327,8 @@ class TransactionKernel:
         if current_fingerprint != fingerprint_model(plan.before_model):
             raise StaleDocumentError("verified plan was built for another document state")
         expected_after = self._retain_or_copy(plan.expected_after_model)
+        source_before = self._capture_source_state(document_id)
+        source_after = source_before
         trace_token = None
         if self._observer is not None:
             history_started = time.perf_counter_ns()
@@ -365,6 +423,11 @@ class TransactionKernel:
                         _verification_residual_summary(residual),
                     )
                 )
+            source_after = self._capture_source_state(document_id)
+            if self._source_state_changed(source_before, source_after):
+                raise RuntimeError(
+                    "the Glyphs source file changed during a verified mutation"
+                )
             timings["settled_verification"] += (
                 time.perf_counter_ns() - settled_started
             ) / 1_000_000
@@ -403,6 +466,7 @@ class TransactionKernel:
             )
             rollback_succeeded = False
             rollback_error: Exception | None = None
+            observed_after = before
             try:
                 if self._activity is not None:
                     self._activity.advance_current(
@@ -426,7 +490,10 @@ class TransactionKernel:
                     )
                 else:
                     self._adapter.restore_model(document_id, before)
-                restored = self._capture_verified_state(document_id, before)
+                restored = self._retain_or_copy(
+                    self._capture_verified_state(document_id, before)
+                )
+                observed_after = restored
                 rollback_succeeded = bool(
                     fingerprint_model(restored) == current_fingerprint
                     and complete_models_equal(restored, before)
@@ -434,9 +501,58 @@ class TransactionKernel:
             except Exception as restore_exc:
                 rollback_error = restore_exc
                 rollback_succeeded = False
+                try:
+                    observed_after = self._retain_or_copy(
+                        self._capture_verified_state(document_id)
+                    )
+                except Exception:
+                    observed_after = before
+            source_final = self._capture_source_state(document_id)
+            source_file_changed = self._source_state_changed(
+                source_before, source_final
+            )
+            safe_restored = bool(rollback_succeeded and not source_file_changed)
+            observed_after_fingerprint = fingerprint_model(observed_after)
+            observed_changes = diff_models(before, observed_after)
+            finalize_failure = getattr(
+                self._adapter, "finalize_verified_failure", None
+            )
+            if callable(finalize_failure):
+                try:
+                    finalize_failure(
+                        plan.operation_id,
+                        rollback_succeeded=safe_restored,
+                        observed_fingerprint=observed_after_fingerprint,
+                    )
+                except Exception as finalize_exc:
+                    rollback_error = rollback_error or finalize_exc
+                    safe_restored = False
             if self._observer is not None:
                 try:
-                    self._observer.abort_transaction(trace_token)
+                    if observed_changes.changes:
+                        commit = self._observer.commit_transaction
+                        if "writable_change_set" in getattr(
+                            commit, "__annotations__", {}
+                        ):
+                            commit(
+                                trace_token,
+                                document_id,
+                                before,
+                                observed_after,
+                                observed_changes,
+                                writable_change_set=observed_changes,
+                                coverage=plan.coverage,
+                            )
+                        else:
+                            commit(
+                                trace_token,
+                                document_id,
+                                before,
+                                observed_after,
+                                observed_changes,
+                            )
+                    else:
+                        self._observer.abort_transaction(trace_token)
                 except Exception:
                     pass
             timings["total"] = float(plan.stage_timings.get("total", 0.0)) + (
@@ -454,7 +570,14 @@ class TransactionKernel:
                 )
             raise TransactionVerificationError(
                 failure_message,
-                rollback_succeeded=rollback_succeeded,
+                rollback_succeeded=safe_restored,
+                rollback_attempted=True,
+                observed_after_fingerprint=observed_after_fingerprint,
+                observed_change_count=len(observed_changes.changes),
+                source_file_changed=source_file_changed,
+                state_may_have_changed=bool(
+                    observed_changes.changes or source_file_changed or not safe_restored
+                ),
             ) from exc
         finally:
             if transaction_boundary_active:
@@ -482,6 +605,7 @@ class TransactionKernel:
                 capabilities=plan.capabilities,
             ),
             coverage=plan.coverage,
+            source_file_changed=False,
         )
 
 

@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import ast
 import hashlib
-from dataclasses import dataclass, replace
+import logging
+import os
+import re
+import traceback
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Callable, Mapping, Optional, Protocol
 
 from .activity import ActivityCancelled, OperationActivityStore
 from .audit import AuditLog
@@ -34,6 +38,15 @@ ROLLBACK_TTL_SECONDS = 60 * 60
 DIFF_TTL_SECONDS = 60 * 60
 DEFAULT_OUTPUT_CHARS = 8 * 1024
 MAX_OUTPUT_CHARS = 8 * 1024
+MAX_ERROR_MESSAGE_CHARS = 500
+_ABSOLUTE_PATH = re.compile(
+    r"(?<![A-Za-z0-9_])(?:/Users|/private|/var|/tmp)/[^\s\"']+"
+)
+_SECRET_ASSIGNMENT = re.compile(
+    r"(?i)\b(api[_-]?key|access[_-]?token|token|password|secret)"
+    r"\s*[:=]\s*[^\s,;]+"
+)
+_LOGGER = logging.getLogger(__name__)
 
 
 class PythonPolicyError(ValueError):
@@ -120,7 +133,75 @@ def _code_hash(code: str) -> str:
 
 def _bounded(value: Any, limit: int) -> str:
     text = str(value or "")
-    return text if len(text) <= limit else text[:limit] + "\n… output truncated"
+    return text if len(text) <= limit else text[:limit]
+
+
+def _bounded_streams(
+    stdout: Any,
+    stderr: Any,
+    *,
+    max_output_chars: int,
+    max_error_chars: int,
+) -> dict[str, Any]:
+    stdout_text = str(stdout or "")
+    stderr_text = str(stderr or "")
+    output_limit = min(max(1, int(max_output_chars)), MAX_OUTPUT_CHARS)
+    error_limit = min(max(1, int(max_error_chars)), MAX_OUTPUT_CHARS)
+    return {
+        "stdout": _bounded(stdout_text, output_limit),
+        "stderr": _bounded(stderr_text, error_limit),
+        "stdoutTruncated": len(stdout_text) > output_limit,
+        "stderrTruncated": len(stderr_text) > error_limit,
+        "stdoutOriginalChars": len(stdout_text),
+        "stderrOriginalChars": len(stderr_text),
+        "maxOutputCharsApplied": output_limit,
+        "maxErrorCharsApplied": error_limit,
+    }
+
+
+def _sanitized_exception_message(exc: BaseException) -> str:
+    message = " ".join(str(exc).replace("\x00", "").split())
+    message = _ABSOLUTE_PATH.sub("<path>", message)
+    message = _SECRET_ASSIGNMENT.sub(
+        lambda match: "{}=<redacted>".format(match.group(1)), message
+    )
+    return message[:MAX_ERROR_MESSAGE_CHARS]
+
+
+def _exception_line(exc: BaseException) -> Optional[int]:
+    line = getattr(exc, "lineno", None)
+    if isinstance(line, int) and line > 0:
+        return line
+    current = exc.__traceback__
+    while current is not None and current.tb_next is not None:
+        current = current.tb_next
+    return current.tb_lineno if current is not None else None
+
+
+def _python_error_details(
+    exc: BaseException,
+    *,
+    phase: str,
+    code: str,
+) -> dict[str, Any]:
+    details: dict[str, Any] = {
+        "phase": str(phase or "evaluation"),
+        "exceptionType": type(exc).__name__,
+        "message": _sanitized_exception_message(exc),
+        "codeHash": _code_hash(code or ""),
+    }
+    symbol = getattr(exc, "name", None)
+    if symbol:
+        details["symbol"] = str(symbol)[:120]
+    line = _exception_line(exc)
+    if line is not None:
+        details["line"] = int(line)
+    return details
+
+
+def _debug_python_exception() -> None:
+    if os.environ.get("GLYPHS_MCP_DEBUG_CAPTURE"):
+        _LOGGER.debug("Full Python execution traceback:\n%s", traceback.format_exc(limit=40))
 
 
 def _staged_canonical_coverage(
@@ -170,6 +251,61 @@ def _context_details(request: "PythonExecutionRequest") -> dict[str, Any]:
     }
 
 
+def _observed_document_changes(
+    result: Mapping[str, Any], request: "PythonExecutionRequest"
+) -> list[dict[str, Any]]:
+    supplied = result.get("observedDocumentChanges")
+    if isinstance(supplied, (list, tuple)):
+        normalized = []
+        for item in supplied:
+            if not isinstance(item, Mapping):
+                continue
+            document_id = str(item.get("documentId") or "")
+            if not document_id:
+                continue
+            normalized.append(
+                {
+                    "documentId": document_id,
+                    "beforeFingerprint": item.get("beforeFingerprint"),
+                    "afterFingerprint": item.get("afterFingerprint"),
+                    "declared": document_id == request.document_id,
+                }
+            )
+        return sorted(normalized, key=lambda item: item["documentId"])
+
+    changes: list[dict[str, Any]] = []
+    before = result.get("beforeModel")
+    after = result.get("afterModel")
+    if (
+        request.document_id
+        and isinstance(before, Mapping)
+        and isinstance(after, Mapping)
+    ):
+        before_fingerprint = fingerprint_model(before)
+        after_fingerprint = fingerprint_model(after)
+        if before_fingerprint != after_fingerprint:
+            changes.append(
+                {
+                    "documentId": request.document_id,
+                    "beforeFingerprint": before_fingerprint,
+                    "afterFingerprint": after_fingerprint,
+                    "declared": True,
+                }
+            )
+    for document_id in sorted(set(result.get("scopeViolations") or [])):
+        if document_id == request.document_id:
+            continue
+        changes.append(
+            {
+                "documentId": str(document_id),
+                "beforeFingerprint": None,
+                "afterFingerprint": None,
+                "declared": False,
+            }
+        )
+    return changes
+
+
 @dataclass(frozen=True)
 class PythonExecutionRequest:
     code: Optional[str] = None
@@ -185,6 +321,12 @@ class PythonExecutionRequest:
     confirm: bool = False
     max_output_chars: int = DEFAULT_OUTPUT_CHARS
     max_error_chars: int = DEFAULT_OUTPUT_CHARS
+    progress_callback: Optional[Callable[[str, str, bool], None]] = field(
+        default=None, repr=False, compare=False
+    )
+    checkpoint_callback: Optional[Callable[[], None]] = field(
+        default=None, repr=False, compare=False
+    )
 
     def to_stored_dict(self) -> dict[str, Any]:
         return {
@@ -269,7 +411,9 @@ class PythonExecutionService:
         self._activity = activity
 
     def _capture_document_state(self, document_id: str) -> Mapping[str, Any]:
-        capture = getattr(self._host, "capture_snapshot", None)
+        capture = getattr(self._host, "capture_stable_snapshot", None)
+        if not callable(capture):
+            capture = getattr(self._host, "capture_snapshot", None)
         if not callable(capture):
             capture = self._host.capture_model
         value = capture(document_id)
@@ -335,6 +479,7 @@ class PythonExecutionService:
         *,
         recoverable: bool = True,
         data: Optional[Mapping[str, Any]] = None,
+        details: Optional[Mapping[str, Any]] = None,
         receipt: Optional[Mapping[str, Any]] = None,
     ) -> ToolResponse:
         return ToolResponse.failure(
@@ -344,6 +489,7 @@ class PythonExecutionService:
             code=code,
             message=message,
             recoverable=recoverable,
+            details=details,
             data=data,
             audit_receipt=receipt,
         )
@@ -371,8 +517,24 @@ class PythonExecutionService:
         }
         if request.code:
             details["codeHash"] = _code_hash(request.code)
-        if "documentIds" in response.data:
-            details["scopeViolations"] = list(response.data.get("documentIds") or [])
+        if (
+            response.error is not None
+            and isinstance(response.error.details, Mapping)
+        ):
+            details["pythonError"] = dict(response.error.details)
+        observed_changes = response.data.get("observedDocumentChanges")
+        if isinstance(observed_changes, (list, tuple)):
+            details["observedDocumentChanges"] = list(observed_changes)
+        elif "documentIds" in response.data:
+            details["observedDocumentChanges"] = [
+                {
+                    "documentId": str(document_id),
+                    "beforeFingerprint": None,
+                    "afterFingerprint": None,
+                    "declared": str(document_id) == request.document_id,
+                }
+                for document_id in response.data.get("documentIds") or []
+            ]
         if "unsupportedCount" in response.data:
             details["unsupportedCount"] = int(response.data.get("unsupportedCount") or 0)
         archive_mismatch = response.data.get("nativeArchiveMismatch")
@@ -410,6 +572,16 @@ class PythonExecutionService:
 
         if not request.code or not request.reason:
             return self._failure("invalid_request", "code and reason are required.")
+        if not 1 <= int(request.max_output_chars) <= MAX_OUTPUT_CHARS:
+            return self._failure(
+                "invalid_request",
+                "maxOutputChars must be between 1 and {}.".format(MAX_OUTPUT_CHARS),
+            )
+        if not 1 <= int(request.max_error_chars) <= MAX_OUTPUT_CHARS:
+            return self._failure(
+                "invalid_request",
+                "maxErrorChars must be between 1 and {}.".format(MAX_OUTPUT_CHARS),
+            )
         if request.intended_effect not in {"read", "document_edit", "files_or_external"}:
             return self._failure("invalid_effect", "intendedEffect is not supported.")
         if request.execution_mode not in {"staged_document", "live_open_world"}:
@@ -418,7 +590,18 @@ class PythonExecutionService:
             try:
                 external_findings = obvious_external_effects(request.code or "")
             except PythonPolicyError as exc:
-                return self._failure("invalid_code", str(exc))
+                cause = (
+                    exc.__cause__
+                    if isinstance(exc.__cause__, BaseException)
+                    else exc
+                )
+                return self._failure(
+                    "invalid_code",
+                    str(exc),
+                    details=_python_error_details(
+                        cause, phase="compile", code=request.code or ""
+                    ),
+                )
             if external_findings:
                 return self._failure(
                     "effect_review_required",
@@ -436,6 +619,12 @@ class PythonExecutionService:
         return self._preview_live(request)
 
     def _execute_read(self, request: PythonExecutionRequest) -> ToolResponse:
+        capture_source = getattr(self._host, "capture_source_file_state", None)
+        source_before = (
+            capture_source(request.document_id)
+            if request.document_id and callable(capture_source)
+            else None
+        )
         fallback_before = (
             self._capture_document_state(request.document_id)
             if request.document_id
@@ -446,8 +635,9 @@ class PythonExecutionService:
         )
         try:
             result = self._host.run_live_python(request)
-        except ObservedLivePythonError as exc:
-            result = exc.result
+        except ObservedLivePythonError as observed_error:
+            _debug_python_exception()
+            result = observed_error.result
             if request.document_id and self._trace is not None:
                 before = result.get("beforeModel")
                 after = result.get("afterModel")
@@ -462,8 +652,51 @@ class PythonExecutionService:
                             failed_changes
                         ),
                     )
-            raise exc.cause from exc
-        except Exception:
+            details = _python_error_details(
+                observed_error.cause,
+                phase="evaluation",
+                code=request.code or "",
+            )
+            observed_document_changes = _observed_document_changes(
+                result, request
+            )
+            receipt = self._audit.record(
+                tool="execute_python",
+                effect="code",
+                status="error",
+                document_id=request.document_id,
+                details={
+                    "reason": request.reason,
+                    "declaredEffect": "read",
+                    "context": _context_details(request),
+                    "observedDocumentChanges": observed_document_changes,
+                    **details,
+                },
+            )
+            return self._failure(
+                "python_execution_failed",
+                "Python evaluation failed safely.",
+                details=details,
+                data={
+                    "codeHash": _code_hash(request.code or ""),
+                    "observedDocumentChanges": observed_document_changes,
+                    "transactional": False,
+                    "rollback": {
+                        "coverage": "unavailable",
+                        "available": False,
+                    },
+                    **_bounded_streams(
+                        result.get("stdout"),
+                        result.get("stderr"),
+                        max_output_chars=request.max_output_chars,
+                        max_error_chars=request.max_error_chars,
+                    ),
+                },
+                receipt=receipt.to_dict(),
+            )
+        except Exception as exc:
+            _debug_python_exception()
+            result: dict[str, Any] = {}
             if (
                 request.document_id
                 and fallback_before is not None
@@ -483,11 +716,40 @@ class PythonExecutionService:
                         change_set=failed_changes,
                         coverage=_recovery_only_canonical_coverage(failed_changes),
                     )
+                    result = {
+                        "beforeModel": fallback_before,
+                        "afterModel": failed_after,
+                    }
                 except Exception:
                     pass
-            raise
+            details = _python_error_details(
+                exc, phase="evaluation", code=request.code or ""
+            )
+            return self._failure(
+                "python_execution_failed",
+                "Python evaluation failed safely.",
+                details=details,
+                data={
+                    "codeHash": _code_hash(request.code or ""),
+                    "observedDocumentChanges": _observed_document_changes(
+                        result, request
+                    ),
+                    "transactional": False,
+                    "rollback": {
+                        "coverage": "unavailable",
+                        "available": False,
+                    },
+                    **_bounded_streams(
+                        "",
+                        "",
+                        max_output_chars=request.max_output_chars,
+                        max_error_chars=request.max_error_chars,
+                    ),
+                },
+            )
         after = None
         violated = False
+        observed_change_count = 0
         if request.document_id:
             before = result.get("beforeModel")
             after = result.get("afterModel")
@@ -496,6 +758,7 @@ class PythonExecutionService:
                     "live Python host returned no canonical observation"
                 )
             violated = fingerprint_model(before) != fingerprint_model(after)
+            observed_change_count = len(diff_models(before, after).changes)
             if self._trace is not None:
                 observed = diff_models(before, after)
                 self._trace.observe_transition(
@@ -509,22 +772,44 @@ class PythonExecutionService:
                         else CanonicalCoverage.complete()
                     ),
                 )
-        scope_violations = sorted(set(result.get("scopeViolations") or []))
-        if request.document_id and violated and request.document_id not in scope_violations:
-            scope_violations.append(request.document_id)
-        undeclared = [value for value in scope_violations if value != request.document_id]
+        source_after = (
+            capture_source(request.document_id)
+            if request.document_id and callable(capture_source)
+            else None
+        )
+        source_file_changed = bool(
+            source_before is not None
+            and (
+                source_after is None
+                or source_before.get("contentFingerprint")
+                != source_after.get("contentFingerprint")
+                or source_before.get("exists") != source_after.get("exists")
+            )
+        )
+        if violated or source_file_changed:
+            force_dirty = getattr(self._host, "force_document_dirty", None)
+            if callable(force_dirty) and request.document_id:
+                try:
+                    force_dirty(request.document_id)
+                except Exception:
+                    pass
+        observed_document_changes = _observed_document_changes(result, request)
+        undeclared = [
+            item["documentId"]
+            for item in observed_document_changes
+            if not item["declared"]
+        ]
         receipt = self._audit.record(
             tool="execute_python",
             effect="code",
-            status="warning" if violated or undeclared else "success",
+            status="warning" if violated or source_file_changed or undeclared else "success",
             document_id=request.document_id,
             details={
                 "codeHash": _code_hash(request.code or ""),
                 "reason": request.reason,
                 "declaredEffect": "read",
                 "context": _context_details(request),
-                "observedDocumentChange": violated,
-                "scopeViolations": scope_violations,
+                "observedDocumentChanges": observed_document_changes,
             },
         )
         warnings = ()
@@ -538,11 +823,20 @@ class PythonExecutionService:
                     target={"documentId": request.document_id},
                 ),
             )
+        if source_file_changed:
+            status = "warning"
+            warnings += (
+                ToolWarning(
+                    code="source_file_changed",
+                    message="Read-intent Python changed the Glyphs source file.",
+                    target={"documentId": request.document_id},
+                ),
+            )
         if undeclared:
             status = "warning"
             warnings += (
                 ToolWarning(
-                    code="undeclared_document_mutation",
+                    code="observed_undeclared_document_change",
                     message="The read-intent Python changed document(s) outside its declared context.",
                     target={"documentIds": undeclared},
                 ),
@@ -556,10 +850,18 @@ class PythonExecutionService:
             audit_receipt=receipt.to_dict(),
             data={
                 "codeHash": _code_hash(request.code or ""),
-                "stdout": _bounded(result.get("stdout"), min(request.max_output_chars, MAX_OUTPUT_CHARS)),
-                "stderr": _bounded(result.get("stderr"), min(request.max_error_chars, MAX_OUTPUT_CHARS)),
-                "observedDocumentChange": violated,
-                "scopeViolations": scope_violations,
+                **_bounded_streams(
+                    result.get("stdout"),
+                    result.get("stderr"),
+                    max_output_chars=request.max_output_chars,
+                    max_error_chars=request.max_error_chars,
+                ),
+                "observedDocumentChanges": observed_document_changes,
+                "changed": bool(violated),
+                "observedChangeCount": observed_change_count,
+                "stateMayHaveChanged": bool(violated or source_file_changed),
+                "sourceFileChanged": source_file_changed,
+                "fontSaved": False,
                 "transactional": False,
                 "rollback": {"coverage": "unavailable", "available": False},
                 "timeoutEnforcement": "cooperative",
@@ -570,27 +872,43 @@ class PythonExecutionService:
         try:
             validate_staged_code(request.code or "")
         except PythonPolicyError as exc:
-            return self._failure("staged_policy_violation", str(exc), recoverable=True)
+            cause = exc.__cause__ if isinstance(exc.__cause__, BaseException) else exc
+            return self._failure(
+                "staged_policy_violation",
+                str(exc),
+                recoverable=True,
+                details=_python_error_details(
+                    cause, phase="compile", code=request.code or ""
+                ),
+            )
         before = self._capture_document_state(request.document_id or "")
         if self._trace is not None and request.document_id:
             self._trace.observe_model(request.document_id, before)
         before_fingerprint = fingerprint_model(before)
         if before_fingerprint != request.expected_document_fingerprint:
             return self._failure("stale_document", "The document changed before staged execution.")
+        phase = {"value": "setup"}
+
+        def progress(name: str, message: str, cancellable: bool = True) -> None:
+            phase["value"] = str(name or phase["value"])
+            if self._activity is not None:
+                self._activity.advance_current(
+                    phase["value"], message, cancellable=bool(cancellable)
+                )
+
+        def checkpoint() -> None:
+            if self._activity is not None:
+                self._activity.checkpoint_current()
+
+        execution_request = replace(
+            request,
+            progress_callback=progress,
+            checkpoint_callback=checkpoint,
+        )
         try:
-            if self._activity is not None:
-                self._activity.advance_current(
-                    "detached",
-                    "Running Python on a detached document",
-                    cancellable=True,
-                )
-                self._activity.checkpoint_current()
-            preview = self._host.preview_python(request, before)
-            if self._activity is not None:
-                self._activity.advance_current(
-                    "comparing", "Comparing changes", cancellable=True
-                )
-                self._activity.checkpoint_current()
+            progress("cloning", "Cloning and capturing the document", True)
+            checkpoint()
+            preview = self._host.preview_python(execution_request, before)
             after = dict(preview["afterModel"])
             after_fingerprint = fingerprint_model(after)
             provided_changes = preview.get("changeSet")
@@ -606,18 +924,32 @@ class PythonExecutionService:
         except ActivityCancelled:
             raise
         except Exception as exc:
+            _debug_python_exception()
             return self._failure(
                 "python_preview_failed",
-                "Detached Python preview failed: {}".format(type(exc).__name__),
+                "Detached Python preview failed safely.",
+                details=_python_error_details(
+                    exc, phase=phase["value"], code=request.code or ""
+                ),
+                data={
+                    "stageTimings": dict(
+                        getattr(exc, "stage_timings", {}) or {}
+                    )
+                },
             )
-        scope_violations = list(preview.get("scopeViolations") or [])
+        observed_document_changes = _observed_document_changes(preview, request)
+        undeclared_document_changes = [
+            item
+            for item in observed_document_changes
+            if not bool(item.get("declared"))
+        ]
         replay_context = self._replay_context(preview)
-        if scope_violations:
+        if undeclared_document_changes:
             self._release_replay_evidence(replay_context)
             return self._failure(
                 "staged_scope_violation",
                 "Staged Python changed one or more live documents; confirmation is refused.",
-                data={"documentIds": scope_violations},
+                data={"observedDocumentChanges": undeclared_document_changes},
             )
         context_violations = preview.get("contextViolations")
         if (
@@ -752,6 +1084,12 @@ class PythonExecutionService:
                 data=diagnostics,
             )
         canonical_coverage = _staged_canonical_coverage(changes, replay_context)
+        bounded_streams = _bounded_streams(
+            preview.get("stdout"),
+            preview.get("stderr"),
+            max_output_chars=request.max_output_chars,
+            max_error_chars=request.max_error_chars,
+        )
         diff_operation, public_change_set = self._store_diff(
             changes,
             coverage=canonical_coverage,
@@ -767,9 +1105,9 @@ class PythonExecutionService:
                 "expectedAfterModel": after,
                 "capabilities": capabilities,
                 "executionContext": replay_context,
-                "stdout": _bounded(preview.get("stdout"), min(request.max_output_chars, MAX_OUTPUT_CHARS)),
-                "stderr": _bounded(preview.get("stderr"), min(request.max_error_chars, MAX_OUTPUT_CHARS)),
-                "scopeViolations": list(preview.get("scopeViolations") or []),
+                "boundedStreams": bounded_streams,
+                "observedDocumentChanges": observed_document_changes,
+                "stageTimings": dict(preview.get("stageTimings") or {}),
                 "diffOperationId": diff_operation.operation_id,
                 "canonicalCoverage": canonical_coverage,
             },
@@ -789,9 +1127,36 @@ class PythonExecutionService:
                 "proposedFingerprint": changes.after_fingerprint,
                 "changeCount": len(changes.changes),
                 "capabilities": list(capabilities),
-                "scopeViolations": list(preview.get("scopeViolations") or []),
+                "observedDocumentChanges": observed_document_changes,
+                "stageTimings": dict(preview.get("stageTimings") or {}),
                 "canonicalCoverage": canonical_coverage.to_public_dict(),
             },
+        )
+        glyphs = before.get("glyphs", {})
+        large_scope_warning = (
+            (
+                ToolWarning(
+                    code="large_staged_scope",
+                    message=(
+                        "This full-document staged preview is large; prefer an "
+                        "explicit glyph/layer scope when the task permits it."
+                    ),
+                    target={
+                        "glyphCount": len(glyphs)
+                        if isinstance(glyphs, Mapping)
+                        else len(tuple(glyphs or ())),
+                        "stageTimings": dict(preview.get("stageTimings") or {}),
+                    },
+                ),
+            )
+            if not request.glyph_name
+            and (
+                len(glyphs)
+                if isinstance(glyphs, Mapping)
+                else len(tuple(glyphs or ()))
+            )
+            >= 300
+            else ()
         )
         return ToolResponse.success(
             tool="execute_python",
@@ -799,6 +1164,7 @@ class PythonExecutionService:
             status="review_required",
             summary="Detached Python produced a reviewed semantic change set; the live document is unchanged.",
             audit_receipt=receipt.to_dict(),
+            warnings=large_scope_warning,
             data={
                 "reviewId": review.operation_id,
                 "expiresAt": _iso_timestamp(review.expires_at),
@@ -808,8 +1174,9 @@ class PythonExecutionService:
                 "changeSet": public_change_set,
                 "operationId": diff_operation.operation_id,
                 "canonicalCoverage": canonical_coverage.to_public_dict(),
-                "stdout": _bounded(preview.get("stdout"), min(request.max_output_chars, MAX_OUTPUT_CHARS)),
-                "stderr": _bounded(preview.get("stderr"), min(request.max_error_chars, MAX_OUTPUT_CHARS)),
+                "stageTimings": dict(preview.get("stageTimings") or {}),
+                "observedDocumentChanges": observed_document_changes,
+                **bounded_streams,
             },
         )
 
@@ -933,8 +1300,7 @@ class PythonExecutionService:
                     "context": _context_details(request),
                     "errorCode": "transaction_failed",
                     "verificationFailure": verification_failure,
-                    "rollbackAttempted": True,
-                    "rollbackSucceeded": exc.rollback_succeeded,
+                    **exc.to_public_dict(),
                 },
             )
             return self._failure(
@@ -942,8 +1308,7 @@ class PythonExecutionService:
                 "The reviewed Python patch failed verification.",
                 data={
                     "verificationFailure": verification_failure,
-                    "rollbackAttempted": True,
-                    "rollbackSucceeded": exc.rollback_succeeded,
+                    **exc.to_public_dict(),
                 },
                 receipt=receipt.to_dict(),
             )
@@ -999,6 +1364,7 @@ class PythonExecutionService:
                 "changeCount": transaction.change_count,
                 "transactionCount": 1,
                 "fontSaved": False,
+                "sourceFileChanged": transaction.source_file_changed,
                 "transactional": True,
                 "externalEffectsVerifiable": True,
                 "canonicalCoverage": transaction.coverage.to_public_dict(),
@@ -1007,8 +1373,19 @@ class PythonExecutionService:
                     "coverage": "document_inverse",
                     "expiresAt": _iso_timestamp(checkpoint.expires_at),
                 },
-                "stdout": payload.get("stdout", ""),
-                "stderr": payload.get("stderr", ""),
+                "stageTimings": dict(payload.get("stageTimings") or {}),
+                "observedDocumentChanges": list(
+                    payload.get("observedDocumentChanges") or []
+                ),
+                **dict(
+                    payload.get("boundedStreams")
+                    or _bounded_streams(
+                        payload.get("stdout"),
+                        payload.get("stderr"),
+                        max_output_chars=request.max_output_chars,
+                        max_error_chars=request.max_error_chars,
+                    )
+                ),
             },
         )
 
@@ -1020,6 +1397,12 @@ class PythonExecutionService:
         review_id: str,
     ) -> ToolResponse:
         before = self._capture_document_state(request.document_id or "")
+        capture_source = getattr(self._host, "capture_source_file_state", None)
+        source_before = (
+            capture_source(request.document_id or "")
+            if callable(capture_source)
+            else None
+        )
         if self._trace is not None and request.document_id:
             self._trace.observe_model(request.document_id, before)
         before_fingerprint = fingerprint_model(before)
@@ -1035,10 +1418,33 @@ class PythonExecutionService:
             )
 
         def failed_execution(
-            exc: BaseException, after: Mapping[str, Any]
+            exc: BaseException,
+            after: Mapping[str, Any],
+            result: Optional[Mapping[str, Any]] = None,
         ) -> ToolResponse:
+            source_after = (
+                capture_source(request.document_id or "")
+                if callable(capture_source)
+                else None
+            )
+            source_file_changed = bool(
+                source_before is not None
+                and (
+                    source_after is None
+                    or source_before.get("contentFingerprint")
+                    != source_after.get("contentFingerprint")
+                    or source_before.get("exists") != source_after.get("exists")
+                )
+            )
+            failed_changes = diff_models(before, after)
+            if failed_changes.changes or source_file_changed:
+                force_dirty = getattr(self._host, "force_document_dirty", None)
+                if callable(force_dirty) and request.document_id:
+                    try:
+                        force_dirty(request.document_id)
+                    except Exception:
+                        pass
             if self._trace is not None and request.document_id:
-                failed_changes = diff_models(before, after)
                 self._trace.observe_transition(
                     request.document_id,
                     before,
@@ -1057,12 +1463,23 @@ class PythonExecutionService:
                     "codeHash": payload.get("codeHash"),
                     "beforeFingerprint": before_fingerprint,
                     "afterFingerprint": after_fingerprint,
+                    "stateMayHaveChanged": True,
+                    "sourceFileChanged": source_file_changed,
                     "inverse": None,
                     "coverage": "recovery_only",
                     "recoveryPath": recovery_path,
                 },
             )
             self._register_recovery(checkpoint, recovery_path)
+            error_details = _python_error_details(
+                exc,
+                phase="evaluation",
+                code=request.code or "",
+            )
+            observed_document_changes = _observed_document_changes(
+                result or {"beforeModel": before, "afterModel": after}, request
+            )
+            observed_result = result or {}
             receipt = self._audit.record(
                 tool="execute_python",
                 effect="code",
@@ -1076,16 +1493,32 @@ class PythonExecutionService:
                     "beforeFingerprint": before_fingerprint,
                     "afterFingerprint": after_fingerprint,
                     "rollbackCoverage": "recovery_only",
-                    "exceptionType": type(exc).__name__,
+                    "observedDocumentChanges": observed_document_changes,
+                    **error_details,
                 },
             )
             return self._failure(
                 "python_execution_failed",
-                "Open-world Python failed: {}".format(type(exc).__name__),
+                "Open-world Python failed safely.",
+                details=error_details,
                 data={
                     "stateMayHaveChanged": True,
                     "executionId": checkpoint.operation_id,
                     "afterFingerprint": after_fingerprint,
+                    "observedAfterFingerprint": after_fingerprint,
+                    "observedChangeCount": len(failed_changes.changes),
+                    "changed": bool(failed_changes.changes),
+                    "rollbackAttempted": False,
+                    "rollbackSucceeded": False,
+                    "sourceFileChanged": source_file_changed,
+                    "fontSaved": False,
+                    "observedDocumentChanges": observed_document_changes,
+                    **_bounded_streams(
+                        observed_result.get("stdout"),
+                        observed_result.get("stderr"),
+                        max_output_chars=request.max_output_chars,
+                        max_error_chars=request.max_error_chars,
+                    ),
                     "rollback": {
                         "available": True,
                         "coverage": "recovery_only",
@@ -1109,11 +1542,38 @@ class PythonExecutionService:
                 after = self._capture_document_state(
                     request.document_id or ""
                 )
-            return failed_execution(exc.cause, after)
+            return failed_execution(exc.cause, after, result)
         except Exception as exc:
             after = self._capture_document_state(request.document_id or "")
             return failed_execution(exc, after)
         changes = diff_models(before, after)
+        source_after = (
+            capture_source(request.document_id or "")
+            if callable(capture_source)
+            else None
+        )
+        source_file_changed = bool(
+            source_before is not None
+            and (
+                source_after is None
+                or source_before.get("contentFingerprint")
+                != source_after.get("contentFingerprint")
+                or source_before.get("exists") != source_after.get("exists")
+            )
+        )
+        if changes.changes:
+            force_dirty = getattr(self._host, "force_document_dirty", None)
+            if callable(force_dirty) and request.document_id:
+                try:
+                    force_dirty(request.document_id)
+                except Exception:
+                    pass
+        if source_file_changed:
+            return failed_execution(
+                RuntimeError("the Glyphs source file changed during live Python"),
+                after,
+                result,
+            )
         canonical_coverage = _recovery_only_canonical_coverage(changes)
         if self._trace is not None and request.document_id:
             self._trace.observe_transition(
@@ -1155,6 +1615,12 @@ class PythonExecutionService:
             payload=checkpoint_payload,
         )
         recovery_persisted = self._register_recovery(checkpoint, recovery_path)
+        observed_document_changes = _observed_document_changes(result, request)
+        undeclared_document_ids = [
+            item["documentId"]
+            for item in observed_document_changes
+            if not bool(item.get("declared"))
+        ]
         receipt = self._audit.record(
             tool="execute_python",
             effect="code",
@@ -1168,9 +1634,10 @@ class PythonExecutionService:
                 "beforeFingerprint": before_fingerprint,
                 "afterFingerprint": changes.after_fingerprint,
                 "changeCount": len(changes.changes),
+                "changed": bool(changes.changes),
                 "rollbackCoverage": coverage,
                 "externalEffectsVerifiable": False,
-                "scopeViolations": list(result.get("scopeViolations") or []),
+                "observedDocumentChanges": observed_document_changes,
                 "recoveryPersisted": recovery_persisted,
                 "canonicalCoverage": canonical_coverage.to_public_dict(),
             },
@@ -1188,12 +1655,12 @@ class PythonExecutionService:
             ) + (
                 (
                     ToolWarning(
-                        code="undeclared_document_mutation",
+                        code="observed_undeclared_document_change",
                         message="Open-world Python changed document(s) outside its declared context.",
-                        target={"documentIds": list(result.get("scopeViolations") or [])},
+                        target={"documentIds": undeclared_document_ids},
                     ),
                 )
-                if result.get("scopeViolations")
+                if undeclared_document_ids
                 else ()
             ),
             status="warning",
@@ -1202,19 +1669,27 @@ class PythonExecutionService:
                 "codeHash": payload.get("codeHash"),
                 "beforeFingerprint": before_fingerprint,
                 "afterFingerprint": changes.after_fingerprint,
+                "changeCount": len(changes.changes),
+                "changed": bool(changes.changes),
                 "transactional": False,
                 "externalEffectsVerifiable": False,
                 "timeoutEnforcement": "cooperative",
-                "scopeViolations": list(result.get("scopeViolations") or []),
+                "observedDocumentChanges": observed_document_changes,
                 "recoveryAvailableAfterRestart": recovery_persisted,
+                "fontSaved": False,
+                "sourceFileChanged": False,
                 "canonicalCoverage": canonical_coverage.to_public_dict(),
                 "rollback": {
                     "available": True,
                     "coverage": coverage,
                     "expiresAt": _iso_timestamp(checkpoint.expires_at),
                 },
-                "stdout": _bounded(result.get("stdout"), min(request.max_output_chars, MAX_OUTPUT_CHARS)),
-                "stderr": _bounded(result.get("stderr"), min(request.max_error_chars, MAX_OUTPUT_CHARS)),
+                **_bounded_streams(
+                    result.get("stdout"),
+                    result.get("stderr"),
+                    max_output_chars=request.max_output_chars,
+                    max_error_chars=request.max_error_chars,
+                ),
             },
         )
 

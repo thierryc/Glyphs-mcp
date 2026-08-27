@@ -1,48 +1,63 @@
 ---
 name: glyphs-mcp-spacing
-description: Review, compare, and safely apply Glyphs spacing suggestions with class-aware references, normalized negative-bearing guards, tabular-width checks, dry runs, and visual proofing. Use for sidebearings, advance widths, spacing audits, reference-font comparisons, or approved spacing changes.
+description: Review and safely apply the current Glyphs MCP v2 width-only spacing operation, then verify metrics and hand visual proof back with the font unsaved.
+metadata:
+  surface: glyphs-mcp-v2
 ---
 
-# Glyphs MCP spacing
+# Glyphs MCP v2 spacing
 
-Use class-aware review, normalized safeguards, and visual proofing. Negative sidebearings are legal; suspect them only when magnitude, class, geometry, or their effect across word spaces is implausible. Read [Negative sidebearings and spacing safeguards](references/negative-sidebearings.md) when a result is negative, blocked, exempted, or manually overridden.
+Use the current typed v2 spacing workflow for advance-width proposals. The
+operation does not translate outlines or anchors, does not directly set left or
+right sidebearings, and does not promise fractional-coordinate preservation.
 
-## Safe workflow
+## Core rules
 
-1. Connect to `glyphs-mcp-server` and call `list_open_fonts`.
-2. Resolve the exact stable `documentId`, current document fingerprint, and
-   master ID before calculating anything.
-3. Inspect UPM, x-height, cap height, italic angle, fixed-pitch status, current width and bearings, metrics keys, automatic alignment, whether current metrics are trusted or placeholders, and glyph category/Unicode data.
-4. Call `review_spacing` before mutation. Prefer omitted/`"auto"` `referenceGlyph`, then verify every `resolvedReferenceGlyph`, `referenceFallback`, and `glyphClass`.
-5. Inspect normalized metrics, negative-bearing warnings/blocks, width assessment, tabular provenance, confidence, and current-metric trust. Do not use a delta from untrusted placeholder metrics as proof that a proposal is wrong.
-6. Review representative glyphs before approving a set:
-   - Uppercase: `H O J T V W Y`
-   - Lowercase: `n o f j`
-   - Figures: `one seven` and all default figures
-   - Narrow punctuation, quotation marks, and any marks in scope
-7. Preserve width only when fixed-pitch metadata, equal default figures, width links, or explicit intent supports it. Do not infer monospacing from a family name or typewriter styling.
-8. Require explicit authorization unless the user already clearly requested
-   mutation. Call direct `apply_spacing` once with explicit target/dependency
-   items, the stable document ID, and the current expected fingerprint. It has
-   no review token or confirmation flag. Apply only eligible results.
-9. Inspect requested and observed counts, derived widths/sidebearings, the one
-   transaction and audit receipt, and revert availability. Disclose blocked and
-   manual-review glyphs separately; an override does not make an assessment safe.
-10. Re-read applied metrics and print a verification table. Never save the Glyphs document automatically.
+- Resolve the exact document with `get_server_info`, `list_open_fonts`, and
+  `get_document_status`. Record its stable `documentId` and fingerprint.
+- Inspect target glyphs and layers with `list_glyphs` and `list_layers`.
+  Review `review_metrics_inheritance` when metrics keys, linked widths, or
+  automatic alignment may own the result.
+- Call `review_spacing` before mutation with explicit glyph/master items.
+  Check bounded convergence, dependencies, proposed widths, skipped targets,
+  and automatic-alignment ownership.
+- Do not send the removed dry_run argument to `apply_spacing`; v2 uses `review_spacing` for the
+  non-mutating preview and a separate direct apply call.
+- The current `apply_spacing` operation changes eligible layer widths only.
+  Never describe it as translating foreground shapes, anchors, components, or
+  sidebearings.
+- Do not add or request a `preserveFractionalCoordinates` boolean. Glyphs Grid
+  1 behavior must be reproduced first; a later typed operation should
+  explicitly define foreground-shape and anchor translation together with the
+  width change.
+- When the user has clearly authorized the reviewed width edits, call
+  `apply_spacing` once with the exact targets, dependencies, fingerprint, and
+  reason. It is a direct verified transaction, not a review-token flow.
+- Re-read the affected layers and document fingerprint. Never auto-save.
 
-## Comparison workflow
+## Workflow
 
-When comparing another font:
+1. Identify the document, masters, target layers, current widths, metrics keys,
+   automatic-alignment state, and any width dependencies.
+2. Run `review_spacing` and report each target's current/proposed width,
+   dependency source, status, and skip reason.
+3. Separate eligible width changes from work that requires geometric
+   translation or sidebearing judgment. Leave the latter unchanged.
+4. After authorization, call `apply_spacing` for eligible width-only changes.
+5. Verify the requested and observed changes, operation ID, audit receipt, and
+   revert availability.
+6. Recommend manual Glyphs proofs appropriate to the glyph set. Computer Use is
+   optional; if unavailable or declined, leave the font open and unsaved for the
+   user's visual inspection.
 
-- State the exact source font and master.
-- State the scaling method. Do not blindly multiply by UPM ratio when cap heights or x-heights differ.
-- Prefer cap-height scaling for capitals/figures and x-height scaling for lowercase where appropriate. Report UPM and design-height scaling when they materially disagree.
-- Treat reference metrics as evidence, not ground truth.
+## Comparison and proofing
 
-Print a table with: Glyph, Current LSB/RSB, Calculated LSB/RSB, Reference LSB/RSB, calculated-minus-reference differences, resolved reference, normalized calculated bearings, and warning/block state.
+Treat reference-font metrics as evidence, not ground truth. State the source
+font, master, and scaling method when comparing widths. Useful proofs include
+`HHHOHH`, `HOHOHO`, `AVAYAW`, `JHJOJ`, `nnnon`, `nonono`, repeated
+figures, and narrow punctuation beside capitals, lowercase, figures, and spaces.
 
-## Proofing
+## Deeper references
 
-Recommend visual proofs: `HHHOHH`, `HOHOHO`, `AVAYAW`, `JHJOJ`, `nnnon`, `nonono`, `f` beside rounds/verticals/spaces, a complete repeated-figure proof, and narrow punctuation beside capitals, lowercase, figures, and spaces.
-
-Use `set_spacing_params` and `set_spacing_guides` only when requested. For the full tool surface, see the [command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx).
+- [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
+- [Safety model](https://github.com/thierryc/Glyphs-mcp/blob/main/content/concepts/safety-model.mdx)

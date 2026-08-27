@@ -74,9 +74,11 @@ Glyphs 3 backward compatibility is kept for the shared MCP server code where pos
 
 - Runs **Check Python environment** with the exact interpreter selected for
   every Glyphs target before making persistent changes.
-- Prioritizes that target's shared `Scripts/site-packages` and stops if an
-  existing native package was built for a different Python ABI or Mac
-  architecture.
+- Uses one runtime path plan everywhere: embedded Glyphs Python installs into
+  and prioritizes that target's `Scripts/site-packages`; external Python
+  installs into and prioritizes its user site, with the Glyphs path as fallback.
+- Stops when the selected package copy has an incompatible Python ABI or Mac
+  architecture, while reporting stale lower-priority copies as warnings.
 - Detects installed Glyphs 3 and Glyphs 4 applications and lets you target either or both.
 - Installs Python dependencies for Glyphs.
 - Installs or links `Glyphs MCP.glyphsPlugin` into Glyphs' plug-ins folder.

@@ -27,8 +27,15 @@ from AppKit import (
 from Foundation import NSOperationQueue, NSThread, NSTimer
 
 from glyphs_litsquare_palette import GlyphsMCPLitSquareMetadataPalette
+from i18n import tr
 
 from .activity import ActivitySnapshot, default_activity_store
+from .connection_status import (
+    TRANSITIONAL_CONNECTION_STATES,
+    ConnectionStatusSnapshot,
+    default_connection_status_store,
+    indicator_presentation,
+)
 
 
 PALETTE_NAME = "Glyphs MCP"
@@ -38,6 +45,8 @@ PALETTE_HEIGHT = COMPACT_METADATA_HEIGHT + STATUS_HEIGHT
 CAPSULE_DELAY_SECONDS = 2.0
 SUCCESS_LINGER_SECONDS = 3.0
 ERROR_LINGER_SECONDS = 8.0
+ORPHAN_GRACE_SECONDS = 30.0
+STATUS_DOT_PULSE_SECONDS = 0.55
 
 
 def _quiet_field(frame, text="", size=10.0):
@@ -98,9 +107,25 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
         status.setAutoresizingMask_(NSViewWidthSizable | NSViewMinYMargin)
         root.addSubview_(status)
 
-        field = _quiet_field(NSMakeRect(10, 3, 190, 20), "Ready", 10.5)
+        dot = NSView.alloc().initWithFrame_(
+            NSMakeRect(10, ((STATUS_HEIGHT - 7.0) / 2.0) + 1.5, 7.0, 7.0)
+        )
+        try:
+            dot.setWantsLayer_(True)
+            dot_layer = dot.layer()
+            if dot_layer is not None:
+                dot_layer.setCornerRadius_(3.5)
+                dot_layer.setBackgroundColor_(
+                    NSColor.secondaryLabelColor().CGColor()
+                )
+        except Exception:
+            pass
+        dot.setToolTip_(tr("palette.ready"))
+        status.addSubview_(dot)
+
+        field = _quiet_field(NSMakeRect(22, 3, 178, 20), tr("palette.ready"), 10.5)
         field.setAutoresizingMask_(NSViewWidthSizable)
-        field.setToolTip_("Glyphs MCP is ready")
+        field.setToolTip_(tr("palette.ready"))
         status.addSubview_(field)
 
         cancel = NSButton.alloc().initWithFrame_(NSMakeRect(202, 2, 50, 24))
@@ -118,14 +143,20 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
         self.dialog = root
         self._metadata_view = metadata_view
         self._status_view = status
+        self._status_dot_view = dot
         self._activity_field = field
         self._cancel_button = cancel
         self._activity_store = default_activity_store()
+        self._connection_store = default_connection_status_store()
         self._activity_snapshot = None
+        self._connection_snapshot = self._connection_store.current()
         self._activity_document_id = None
         self._activity_window = None
         self._activity_unsubscribe = None
+        self._connection_unsubscribe = None
         self._activity_timer = None
+        self._status_dot_pulse_timer = None
+        self._status_dot_pulse_dim = False
         self._capsule = None
         self._capsule_label = None
 
@@ -134,6 +165,9 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
         GlyphsMCPLitSquareMetadataPalette.start(self)
         self._activity_unsubscribe = self._activity_store.subscribe(
             self._activity_changed
+        )
+        self._connection_unsubscribe = self._connection_store.subscribe(
+            self._connection_changed
         )
         self._refresh_activity()
 
@@ -146,7 +180,15 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
             except Exception:
                 pass
             self._activity_unsubscribe = None
+        unsubscribe = getattr(self, "_connection_unsubscribe", None)
+        if unsubscribe is not None:
+            try:
+                unsubscribe()
+            except Exception:
+                pass
+            self._connection_unsubscribe = None
         self._stop_activity_timer()
+        self._stop_status_dot_pulse()
         self._hide_capsule()
         try:
             GlyphsMCPLitSquareMetadataPalette.__del__(self)
@@ -192,19 +234,47 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
             )
 
     @objc.python_method
+    def _connection_changed(self, _snapshot):
+        if NSThread.isMainThread():
+            self._refresh_activity()
+        else:
+            NSOperationQueue.mainQueue().addOperationWithBlock_(
+                self._refresh_activity
+            )
+
+    @objc.python_method
     def _refresh_activity(self):
         snapshot = self._activity_store.current(self._document_id())
+        connection = self._connection_store.current()
         self._activity_snapshot = snapshot
-        self._render_activity(snapshot)
-        if snapshot.active or snapshot.state in ("success", "cancelled", "error"):
+        self._connection_snapshot = connection
+        self._render_activity(snapshot, connection)
+        if (
+            snapshot.active
+            or snapshot.state in ("success", "cancelled", "error")
+            or connection.state in TRANSITIONAL_CONNECTION_STATES
+        ):
             self._start_activity_timer()
         else:
             self._stop_activity_timer()
             self._hide_capsule()
 
     @objc.python_method
-    def _render_activity(self, snapshot: ActivitySnapshot):
-        if snapshot.active:
+    def _render_activity(
+        self,
+        snapshot: ActivitySnapshot,
+        connection: ConnectionStatusSnapshot,
+    ):
+        presentation = indicator_presentation(
+            connection.state,
+            snapshot.state,
+            snapshot.elapsed_seconds,
+            snapshot.active,
+            heavy_after_seconds=CAPSULE_DELAY_SECONDS,
+        )
+        if presentation.text_key is not None:
+            text = tr(presentation.text_key)
+        elif snapshot.active:
             seconds = int(snapshot.elapsed_seconds)
             suffix = " · {} s".format(seconds) if seconds >= 1 else ""
             text = "{}{}".format(snapshot.message, suffix)
@@ -215,14 +285,22 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
         elif snapshot.state == "success":
             text = snapshot.summary or "Completed"
         else:
-            text = "Ready"
+            text = tr("palette.ready")
         self._activity_field.setStringValue_(text)
         self._activity_field.setToolTip_(text)
         self._cancel_button.setHidden_(
-            not bool(snapshot.active and snapshot.cancellable)
+            not bool(
+                connection.state == "running"
+                and snapshot.active
+                and snapshot.cancellable
+            )
         )
         try:
-            if snapshot.state == "error":
+            if presentation.text_key == "status.error":
+                self._activity_field.setTextColor_(NSColor.systemRedColor())
+            elif presentation.text_key is not None:
+                self._activity_field.setTextColor_(NSColor.secondaryLabelColor())
+            elif snapshot.state == "error":
                 self._activity_field.setTextColor_(NSColor.systemRedColor())
             elif snapshot.active:
                 self._activity_field.setTextColor_(NSColor.labelColor())
@@ -230,14 +308,108 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
                 self._activity_field.setTextColor_(NSColor.secondaryLabelColor())
         except Exception:
             pass
+        dot_tooltip = (
+            connection.message
+            if presentation.text_key is not None and connection.message
+            else text
+        )
+        self._render_status_dot(presentation, dot_tooltip)
         if (
-            snapshot.active
+            connection.state == "running"
+            and snapshot.active
             and snapshot.elapsed_seconds >= CAPSULE_DELAY_SECONDS
             and not self._palette_is_visible()
         ):
             self._show_capsule(text)
         else:
             self._hide_capsule()
+
+    @objc.python_method
+    def _status_dot_color(self, tone):
+        color_names = {
+            "green": ("systemGreenColor", "greenColor"),
+            "blue": ("systemBlueColor", "blueColor"),
+            "magenta": ("systemPinkColor", "magentaColor"),
+            "red": ("systemRedColor", "redColor"),
+            "gray": ("secondaryLabelColor", "grayColor"),
+        }
+        preferred, fallback = color_names.get(
+            str(tone or "gray"),
+            color_names["gray"],
+        )
+        for name in (preferred, fallback):
+            try:
+                return getattr(NSColor, name)()
+            except Exception:
+                pass
+        return None
+
+    @objc.python_method
+    def _render_status_dot(self, presentation, tooltip):
+        dot = getattr(self, "_status_dot_view", None)
+        if dot is None:
+            return
+        try:
+            dot.setToolTip_(str(tooltip or ""))
+            color = self._status_dot_color(presentation.tone)
+            dot_layer = dot.layer()
+            if color is not None and dot_layer is not None:
+                dot_layer.setBackgroundColor_(color.CGColor())
+        except Exception:
+            pass
+        self._update_status_dot_pulse(bool(presentation.pulsing))
+
+    @objc.python_method
+    def _update_status_dot_pulse(self, pulsing):
+        if bool(pulsing) and self._palette_is_visible():
+            self._start_status_dot_pulse()
+        else:
+            self._stop_status_dot_pulse()
+
+    @objc.python_method
+    def _start_status_dot_pulse(self):
+        if getattr(self, "_status_dot_pulse_timer", None) is not None:
+            return
+        self._status_dot_pulse_dim = False
+        self._status_dot_pulse_timer = NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
+            STATUS_DOT_PULSE_SECONDS,
+            self,
+            "statusDotPulse:",
+            None,
+            True,
+        )
+
+    def statusDotPulse_(self, _timer):
+        if not self._palette_is_visible():
+            self._stop_status_dot_pulse()
+            return
+        dot = getattr(self, "_status_dot_view", None)
+        if dot is None:
+            self._stop_status_dot_pulse()
+            return
+        dim = not bool(getattr(self, "_status_dot_pulse_dim", False))
+        self._status_dot_pulse_dim = dim
+        try:
+            dot.setAlphaValue_(0.35 if dim else 1.0)
+        except Exception:
+            pass
+
+    @objc.python_method
+    def _stop_status_dot_pulse(self):
+        timer = getattr(self, "_status_dot_pulse_timer", None)
+        if timer is not None:
+            try:
+                timer.invalidate()
+            except Exception:
+                pass
+        self._status_dot_pulse_timer = None
+        self._status_dot_pulse_dim = False
+        dot = getattr(self, "_status_dot_view", None)
+        if dot is not None:
+            try:
+                dot.setAlphaValue_(1.0)
+            except Exception:
+                pass
 
     @objc.python_method
     def _palette_is_visible(self):
@@ -271,8 +443,13 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
         self._activity_timer = None
 
     def activityTimer_(self, _timer):
+        self._activity_store.reconcile_orphans(
+            grace_seconds=ORPHAN_GRACE_SECONDS
+        )
         snapshot = self._activity_store.current(self._document_id())
+        connection = self._connection_store.current()
         self._activity_snapshot = snapshot
+        self._connection_snapshot = connection
         if (
             snapshot.state in ("success", "cancelled")
             and snapshot.completed_at is not None
@@ -289,7 +466,7 @@ class GlyphsMCPInspectorPalette(GlyphsMCPLitSquareMetadataPalette):
         ):
             self._activity_store.dismiss(snapshot.document_id)
             return
-        self._render_activity(snapshot)
+        self._render_activity(snapshot, connection)
 
     def cancelActivity_(self, _sender):
         snapshot = getattr(self, "_activity_snapshot", None)

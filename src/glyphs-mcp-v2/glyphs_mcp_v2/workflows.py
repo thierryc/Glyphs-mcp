@@ -5,6 +5,8 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import math
+import re
 from typing import Any, Iterable, Mapping, Optional, Sequence
 
 from .canonical_collections import (
@@ -248,11 +250,135 @@ def list_masters(model: Mapping[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+_SIMPLE_OPENTYPE_SUBSTITUTION = re.compile(
+    r"^sub\s+(\[[^\]]+\]|[^\s]+)\s+by\s+(\[[^\]]+\]|[^\s]+)$"
+)
+
+
+def _parse_opentype_glyphs(value: str) -> Optional[list[str]]:
+    text = value.strip()
+    if text.startswith("[") and text.endswith("]"):
+        text = text[1:-1].strip()
+    elif any(character.isspace() for character in text):
+        return None
+    glyphs = [part for part in text.split() if part]
+    if not glyphs or any(
+        marker in glyph for glyph in glyphs for marker in ("'", "\\", "@")
+    ):
+        return None
+    return glyphs
+
+
+def _parse_stylistic_set_substitutions(code: Any) -> dict[str, Any]:
+    clean = "\n".join(
+        line.split("#", 1)[0] for line in str(code or "").splitlines()
+    )
+    substitutions = []
+    unsupported = 0
+    for statement in clean.split(";"):
+        rule = " ".join(statement.strip().split())
+        if not rule:
+            continue
+        match = _SIMPLE_OPENTYPE_SUBSTITUTION.match(rule)
+        if not match or "'" in rule or " lookup " in rule or " from " in rule:
+            unsupported += 1
+            continue
+        sources = _parse_opentype_glyphs(match.group(1))
+        replacements = _parse_opentype_glyphs(match.group(2))
+        if not sources or not replacements or len(sources) != len(replacements):
+            unsupported += 1
+            continue
+        substitutions.extend(
+            {"source": source, "replacement": replacement}
+            for source, replacement in zip(sources, replacements)
+        )
+    return {
+        "substitutions": substitutions,
+        "unsupportedRuleCount": unsupported,
+        "warnings": (
+            [
+                "{} unsupported or contextual feature rule(s) were skipped.".format(
+                    unsupported
+                )
+            ]
+            if unsupported
+            else []
+        ),
+    }
+
+
+def list_opentype_items(
+    model: Mapping[str, Any],
+    *,
+    kinds: Optional[Sequence[str]] = None,
+    tags: Optional[Sequence[str]] = None,
+    include_disabled: bool = True,
+) -> list[dict[str, Any]]:
+    """Return ordered feature, class, and prefix source with parsed ssXX rules."""
+
+    roots = (
+        ("feature", "features"),
+        ("class", "classes"),
+        ("prefix", "featurePrefixes"),
+    )
+    requested_kinds = {str(kind) for kind in kinds or () if str(kind)}
+    unknown = requested_kinds - {kind for kind, _root in roots}
+    if unknown:
+        raise ValueError(
+            "unsupported OpenType kinds: {}".format(", ".join(sorted(unknown)))
+        )
+    requested_tags = {str(tag) for tag in tags or () if str(tag)}
+    result = []
+    order = 0
+    for kind, root in roots:
+        if requested_kinds and kind not in requested_kinds:
+            continue
+        for collection_order, item in enumerate(_items(model.get(root, []))):
+            tag = str(item.get("tag") or item.get("name") or item.get("id") or "")
+            if requested_tags and tag not in requested_tags:
+                continue
+            disabled = bool(item.get("disabled", False))
+            if disabled and not include_disabled:
+                continue
+            parsed = (
+                _parse_stylistic_set_substitutions(item.get("code"))
+                if kind == "feature" and re.fullmatch(r"ss\d\d", tag)
+                else {
+                    "substitutions": [],
+                    "unsupportedRuleCount": 0,
+                    "warnings": [],
+                }
+            )
+            result.append(
+                {
+                    "kind": kind,
+                    "order": order,
+                    "collectionOrder": collection_order,
+                    "id": str(item.get("id") or tag),
+                    "name": str(item.get("name") or tag),
+                    "tag": tag,
+                    "code": str(item.get("code") or ""),
+                    "automatic": bool(item.get("automatic", False)),
+                    "disabled": disabled,
+                    "notes": item.get("notes"),
+                    "labels": copy.deepcopy(item.get("labels") or []),
+                    "stylisticSet": bool(
+                        kind == "feature" and re.fullmatch(r"ss\d\d", tag)
+                    ),
+                    **parsed,
+                }
+            )
+            order += 1
+    return result
+
+
 def list_layers(
     model: Mapping[str, Any],
     *,
     glyph_names: Optional[Sequence[str]] = None,
     roles: Optional[Sequence[str]] = None,
+    detail: str = "summary",
+    observations: Optional[Mapping[tuple[str, str], Mapping[str, Any]]] = None,
 ) -> list[dict[str, Any]]:
     """Return ordered layer identities and reviewable lifecycle metadata."""
 
@@ -262,6 +388,8 @@ def list_layers(
     unknown = requested_roles - known_roles
     if unknown:
         raise ValueError("unsupported layer roles: {}".format(", ".join(sorted(unknown))))
+    if detail not in {"summary", "metrics", "geometry", "full"}:
+        raise ValueError("detail must be summary, metrics, geometry, or full")
     glyphs = model.get("glyphs", {})
     if not isinstance(glyphs, Mapping):
         raise ValueError("glyph model must be keyed by name")
@@ -273,8 +401,7 @@ def list_layers(
             layer_roles = [str(role) for role in layer.get("roles", ())]
             if requested_roles and not requested_roles.intersection(layer_roles):
                 continue
-            result.append(
-                {
+            item = {
                     "glyphName": str(glyph_name),
                     "id": str(layer.get("id") or ""),
                     "masterId": str(layer.get("masterId") or ""),
@@ -289,7 +416,95 @@ def list_layers(
                     "componentCount": len(layer_components(layer)),
                     "anchorCount": len(layer_anchors(layer)),
                 }
+            observation = dict(
+                (observations or {}).get(
+                    (str(glyph_name), str(layer.get("id") or "")),
+                    {},
+                )
             )
+            if detail in {"metrics", "full"}:
+                glyph = glyphs[glyph_name]
+                glyph_keys = {
+                    key: glyph.get(key)
+                    for key in (
+                        "leftMetricsKey",
+                        "rightMetricsKey",
+                        "widthMetricsKey",
+                    )
+                }
+                layer_keys = {
+                    key: layer.get(key)
+                    for key in glyph_keys
+                }
+                effective = {
+                    key: {
+                        "value": (
+                            layer_keys[key]
+                            if layer_keys[key] is not None
+                            else glyph_keys[key]
+                        ),
+                        "source": (
+                            "layer"
+                            if layer_keys[key] is not None
+                            else "glyph"
+                            if glyph_keys[key] is not None
+                            else "none"
+                        ),
+                    }
+                    for key in glyph_keys
+                }
+                current = {
+                    "width": layer.get("width"),
+                    "leftBearing": None,
+                    "rightBearing": None,
+                }
+                resolved = dict(current)
+                item.update(
+                    {
+                        "glyphMetricsKeys": glyph_keys,
+                        "layerMetricsKeys": layer_keys,
+                        "effectiveMetricsKeys": effective,
+                        "currentMetrics": current,
+                        "resolvedMetrics": resolved,
+                        "delta": {
+                            key: 0 if value is not None else None
+                            for key, value in current.items()
+                        },
+                        "stale": False,
+                        "hasAlignedWidth": bool(layer.get("hasAlignedWidth")),
+                    }
+                )
+                item.update(
+                    {
+                        key: copy.deepcopy(value)
+                        for key, value in observation.items()
+                        if key
+                        in {
+                            "glyphMetricsKeys",
+                            "layerMetricsKeys",
+                            "effectiveMetricsKeys",
+                            "currentMetrics",
+                            "resolvedMetrics",
+                            "delta",
+                            "stale",
+                            "hasAlignedWidth",
+                        }
+                    }
+                )
+            if detail in {"geometry", "full"}:
+                item["bounds"] = copy.deepcopy(observation.get("bounds"))
+                item["components"] = [
+                    {
+                        "name": str(component.get("name") or ""),
+                        "transform": copy.deepcopy(component.get("transform")),
+                        "automaticAlignment": bool(
+                            component.get("automaticAlignment", False)
+                        ),
+                    }
+                    for component in layer_components(layer)
+                    if isinstance(component, Mapping)
+                ]
+            result.append(item)
     return result
 
 
@@ -320,17 +535,75 @@ def _kerning_key(value: Any, id_to_name: Optional[Mapping[str, str]] = None) -> 
     }
 
 
-def list_kerning_pairs(model: Mapping[str, Any]) -> list[dict[str, Any]]:
+_KERNING_DIRECTIONS = ("ltr", "rtl", "vertical")
+_KERNING_ENTRY_KINDS = {"pair", "context", "all"}
+
+
+def _is_directional_kerning(value: Any) -> bool:
+    return isinstance(value, Mapping) and any(
+        domain in value for domain in (*_KERNING_DIRECTIONS, "context")
+    )
+
+
+def _parse_exact_context_key(
+    value: Any, *, glyph_names: set[str]
+) -> tuple[list[str], int] | None:
+    """Parse the exact-glyph subset of Glyphs 4 ``kerningContext`` keys.
+
+    Glyphs places ``*`` at the adjusted boundary. Bracket classes and AFDKO
+    marked-run syntax remain lossless raw records, but are intentionally not
+    normalized into the typed write contract.
+    """
+
+    tokens = str(value or "").split()
+    if tokens.count("*") != 1:
+        return None
+    boundary_index = tokens.index("*")
+    sequence = tokens[:boundary_index] + tokens[boundary_index + 1 :]
+    if (
+        len(sequence) < 3
+        or not 1 <= boundary_index < len(sequence)
+        or any(
+            not token
+            or token not in glyph_names
+            or any(character in token for character in "[]*'")
+            for token in sequence
+        )
+    ):
+        return None
+    return sequence, boundary_index
+
+
+def _context_key(sequence: Sequence[str], boundary_index: int) -> str:
+    return "{} * {}".format(
+        " ".join(sequence[:boundary_index]),
+        " ".join(sequence[boundary_index:]),
+    )
+
+
+def list_kerning_pairs(
+    model: Mapping[str, Any], *, entry_kind: str = "pair"
+) -> list[dict[str, Any]]:
+    selected_kind = str(entry_kind or "pair").lower()
+    if selected_kind not in _KERNING_ENTRY_KINDS:
+        raise ValueError("entryKind must be pair, context, or all")
     pairs: list[dict[str, Any]] = []
+    contexts: list[dict[str, Any]] = []
     glyphs = _items(model.get("glyphs", {}), key_name="name")
     id_to_name = {
         str(glyph.get("id")): str(glyph.get("name"))
         for glyph in glyphs
         if glyph.get("id") and glyph.get("name")
     }
+    glyph_names = {
+        str(glyph.get("name")) for glyph in glyphs if glyph.get("name")
+    }
     source = model.get("kerning", [])
-    if isinstance(source, Mapping):
-        for master_id, lefts in source.items():
+
+    def append_pair_domain(direction: str, domain: Any) -> None:
+        if not isinstance(domain, Mapping):
+            return
+        for master_id, lefts in domain.items():
             if not isinstance(lefts, Mapping):
                 continue
             for left, rights in lefts.items():
@@ -339,6 +612,8 @@ def list_kerning_pairs(model: Mapping[str, Any]) -> list[dict[str, Any]]:
                 for right, value in rights.items():
                     pairs.append(
                         {
+                            "entryKind": "pair",
+                            "direction": direction,
                             "masterId": str(master_id),
                             "left": _kerning_key(left, id_to_name),
                             "right": _kerning_key(right, id_to_name),
@@ -346,10 +621,20 @@ def list_kerning_pairs(model: Mapping[str, Any]) -> list[dict[str, Any]]:
                             "provenance": "source",
                         }
                     )
-    else:
+
+    directional = _is_directional_kerning(source)
+    if selected_kind in {"pair", "all"} and isinstance(source, Mapping):
+        if directional:
+            for direction in _KERNING_DIRECTIONS:
+                append_pair_domain(direction, source.get(direction, {}))
+        else:
+            append_pair_domain("ltr", source)
+    elif selected_kind in {"pair", "all"}:
         for pair in _items(source):
             pairs.append(
                 {
+                    "entryKind": "pair",
+                    "direction": str(pair.get("direction") or "ltr"),
                     "masterId": str(pair.get("masterId") or ""),
                     "left": _kerning_key(pair.get("left"), id_to_name),
                     "right": _kerning_key(pair.get("right"), id_to_name),
@@ -357,20 +642,157 @@ def list_kerning_pairs(model: Mapping[str, Any]) -> list[dict[str, Any]]:
                     "provenance": pair.get("provenance") or "source",
                 }
             )
-    pairs.sort(key=lambda pair: (pair["masterId"], pair["left"]["id"], pair["right"]["id"]))
-    return pairs
+
+    if selected_kind in {"context", "all"} and directional:
+        context_domain = source.get("context", {})
+        if isinstance(context_domain, Mapping):
+            for raw_context_key, master_values in context_domain.items():
+                if not isinstance(master_values, Mapping):
+                    continue
+                parsed = _parse_exact_context_key(
+                    raw_context_key, glyph_names=glyph_names
+                )
+                for master_id, value in master_values.items():
+                    contexts.append(
+                        {
+                            "entryKind": "context",
+                            "masterId": str(master_id),
+                            "sequence": parsed[0] if parsed else None,
+                            "boundaryIndex": parsed[1] if parsed else None,
+                            "value": value,
+                            "rawContextKey": str(raw_context_key),
+                            "editable": parsed is not None,
+                            "provenance": "source",
+                        }
+                    )
+
+    direction_order = {
+        direction: index for index, direction in enumerate(_KERNING_DIRECTIONS)
+    }
+    pairs.sort(
+        key=lambda pair: (
+            direction_order.get(str(pair["direction"]), len(direction_order)),
+            pair["masterId"],
+            pair["left"]["id"],
+            pair["right"]["id"],
+        )
+    )
+    contexts.sort(
+        key=lambda item: (
+            item["masterId"],
+            item["rawContextKey"],
+        )
+    )
+    return pairs + contexts
 
 
-def _layer_map(glyph: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
-    layers = glyph.get("layers", {})
+def _layer_roles(layer: Mapping[str, Any]) -> set[str]:
+    roles = layer.get("roles", ())
+    if not isinstance(roles, Sequence) or isinstance(
+        roles, (str, bytes, bytearray)
+    ):
+        return set()
+    return {str(role).lower() for role in roles if str(role)}
+
+
+def _iter_all_layers(
+    glyph: Mapping[str, Any],
+) -> Iterable[tuple[str, Optional[str], Mapping[str, Any]]]:
+    """Return every layer by layer identity without collapsing master links.
+
+    The optional second tuple value is the collection key of a legacy
+    mapping-shaped fixture. Schema-v6 canonical layers always use the ordered
+    list form and carry their own unique, non-empty ``id``.
+    """
+
+    layers = glyph.get("layers", ())
     if isinstance(layers, Mapping):
-        return {str(key): value for key, value in layers.items() if isinstance(value, Mapping)}
-    result = {}
-    for layer in _items(layers):
-        key = str(layer.get("masterId") or layer.get("id") or "")
-        if key:
-            result[key] = layer
-    return result
+        for key, layer in layers.items():
+            if not isinstance(layer, Mapping):
+                continue
+            collection_key = str(key)
+            layer_id = str(layer.get("id") or collection_key)
+            if layer_id:
+                yield layer_id, collection_key, layer
+        return
+    if not isinstance(layers, Sequence) or isinstance(
+        layers, (str, bytes, bytearray)
+    ):
+        return
+    for layer in layers:
+        if not isinstance(layer, Mapping):
+            continue
+        layer_id = str(layer.get("id") or "")
+        if layer_id:
+            yield layer_id, None, layer
+
+
+def _master_layer_map(
+    glyph: Mapping[str, Any], master_ids: Sequence[str]
+) -> tuple[
+    dict[str, Mapping[str, Any]],
+    dict[str, list[str]],
+]:
+    """Select true master layers without allowing associated layers to win.
+
+    Explicit ``isMasterLayer`` flags are authoritative. A ``master`` role is a
+    compatibility discriminator only when the boolean flag is absent. The
+    mapping-key fallback exists solely for older minimal test fixtures that do
+    not carry either discriminator.
+    """
+
+    declared_master_ids = {
+        str(master_id) for master_id in master_ids if str(master_id)
+    }
+    candidates: dict[str, list[tuple[str, Mapping[str, Any]]]] = {}
+    for layer_id, collection_key, layer in _iter_all_layers(glyph):
+        is_master = layer.get("isMasterLayer")
+        roles = _layer_roles(layer)
+        master_id = ""
+        if is_master is False:
+            continue
+        if is_master is True or "master" in roles:
+            master_id = str(layer.get("masterId") or layer_id)
+        elif collection_key is not None and not roles:
+            if declared_master_ids and collection_key not in declared_master_ids:
+                continue
+            master_id = collection_key
+        if master_id:
+            candidates.setdefault(master_id, []).append((layer_id, layer))
+
+    masters: dict[str, Mapping[str, Any]] = {}
+    duplicates: dict[str, list[str]] = {}
+    for master_id, layers in candidates.items():
+        masters[master_id] = layers[0][1]
+        if len(layers) > 1:
+            duplicates[master_id] = [layer_id for layer_id, _layer in layers]
+    return masters, duplicates
+
+
+def _is_special_layer(layer: Mapping[str, Any]) -> bool:
+    return bool(layer.get("isSpecialLayer")) or bool(
+        _layer_roles(layer).intersection(
+            {"intermediate", "alternate", "smart", "color"}
+        )
+    )
+
+
+def _duplicate_master_findings(
+    glyph_name: str, duplicates: Mapping[str, Sequence[str]]
+) -> list[dict[str, Any]]:
+    return [
+        _finding(
+            "duplicate_master_layer",
+            "hard",
+            "Multiple explicit master layers target the same master.",
+            {
+                "glyphName": glyph_name,
+                "masterId": master_id,
+                "layerIds": list(layer_ids),
+            },
+        )
+        for master_id, layer_ids in sorted(duplicates.items())
+    ]
 
 
 def _component_names(layer: Mapping[str, Any]) -> list[str]:
@@ -408,18 +830,27 @@ def review_master_compatibility(
         target = {"glyphName": name}
         if glyph.get("mastersCompatible") is False:
             findings.append(_finding("host_incompatible", "hard", "Glyphs reports incompatible master layers.", target))
-        layers = _layer_map(glyph)
-        for layer_id, layer in sorted(layers.items()):
-            if bool(layer.get("isSpecialLayer")):
-                special_layer_count += 1
-                findings.append(
-                    _finding(
-                        "special_layer_present",
-                        "soft",
-                        "A special layer participates in compatibility and export review.",
-                        {"glyphName": name, "layerId": layer.get("id") or layer_id},
-                    )
+        all_layers = list(_iter_all_layers(glyph))
+        layers, duplicate_masters = _master_layer_map(glyph, master_ids)
+        findings.extend(_duplicate_master_findings(name, duplicate_masters))
+        special_layers: list[tuple[str, Mapping[str, Any]]] = []
+        for layer_id, _collection_key, layer in all_layers:
+            if not _is_special_layer(layer):
+                continue
+            special_layer_count += 1
+            special_layers.append((layer_id, layer))
+            findings.append(
+                _finding(
+                    "special_layer_present",
+                    "soft",
+                    "A special layer participates in compatibility and export review.",
+                    {"glyphName": name, "layerId": layer_id},
                 )
+            )
+
+        dependency_layers: list[Mapping[str, Any]] = list(layers.values())
+        dependency_layers.extend(layer for _layer_id, layer in special_layers)
+        for layer in dependency_layers:
             for component_name in _component_names(layer):
                 if component_name:
                     graph[name].add(component_name)
@@ -468,6 +899,37 @@ def review_master_compatibility(
                         "hard",
                         "Path topology differs between masters.",
                         {"glyphName": name, "referenceMasterId": reference_id, "masterId": master_id},
+                    )
+                )
+        for layer_id, layer in special_layers:
+            associated_master_id = str(layer.get("masterId") or "")
+            associated_master = layers.get(associated_master_id)
+            if associated_master is None:
+                continue
+            special_target = {
+                "glyphName": name,
+                "layerId": layer_id,
+                "associatedMasterId": associated_master_id,
+            }
+            if (
+                mode == "component_preserving"
+                and _component_names(layer) != _component_names(associated_master)
+            ):
+                findings.append(
+                    _finding(
+                        "special_layer_component_sequence_mismatch",
+                        "hard",
+                        "Component identities or order differ from the associated master.",
+                        special_target,
+                    )
+                )
+            if path_signature(layer) != path_signature(associated_master):
+                findings.append(
+                    _finding(
+                        "special_layer_path_topology_mismatch",
+                        "hard",
+                        "Path topology differs from the associated master.",
+                        special_target,
                     )
                 )
     visiting: set[str] = set()
@@ -524,12 +986,111 @@ def review_master_compatibility(
     }
 
 
-def review_metrics_inheritance(model: Mapping[str, Any]) -> dict[str, Any]:
+def review_metrics_inheritance(
+    model: Mapping[str, Any],
+    *,
+    glyph_names: Optional[Sequence[str]] = None,
+    tolerance: float = 0.01,
+    observations: Optional[Mapping[tuple[str, str], Mapping[str, Any]]] = None,
+) -> dict[str, Any]:
+    if not math.isfinite(float(tolerance)) or float(tolerance) < 0:
+        raise ValueError("tolerance must be a non-negative finite number")
     glyphs = {str(item.get("name")): item for item in _items(model.get("glyphs", {}), key_name="name")}
+    requested = {str(name) for name in glyph_names or () if str(name)}
+    missing = sorted(requested - set(glyphs))
+    if missing:
+        raise ValueError("unknown glyphNames: {}".format(", ".join(missing)))
+    master_ids = [
+        str(master.get("id") or "")
+        for master in _items(model.get("masters", []))
+    ]
     findings: list[dict[str, Any]] = []
     keys = ("leftMetricsKey", "rightMetricsKey", "widthMetricsKey")
+    metrics: list[dict[str, Any]] = []
     for name, glyph in sorted(glyphs.items()):
-        for master_id, layer in sorted(_layer_map(glyph).items()):
+        if requested and name not in requested:
+            continue
+        for key in keys:
+            reference = glyph.get(key)
+            if isinstance(reference, str) and reference.startswith("="):
+                target = reference.lstrip("=|").split("+", 1)[0].strip()
+                if target and target not in glyphs:
+                    findings.append(
+                        _finding(
+                            "missing_metrics_reference",
+                            "hard",
+                            "A glyph metrics key references a missing glyph.",
+                            {
+                                "glyphName": name,
+                                "scope": "glyph",
+                                "field": key,
+                                "reference": target,
+                            },
+                        )
+                    )
+        layers, duplicate_masters = _master_layer_map(glyph, master_ids)
+        findings.extend(_duplicate_master_findings(name, duplicate_masters))
+        for master_id, layer in sorted(layers.items()):
+            observation = dict(
+                (observations or {}).get(
+                    (name, str(layer.get("id") or master_id)),
+                    {},
+                )
+            )
+            glyph_keys = {key: glyph.get(key) for key in keys}
+            layer_keys = {key: layer.get(key) for key in keys}
+            current = dict(
+                observation.get("currentMetrics")
+                or {
+                    "width": layer.get("width"),
+                    "leftBearing": None,
+                    "rightBearing": None,
+                }
+            )
+            resolved = dict(observation.get("resolvedMetrics") or current)
+            delta = {}
+            stale = False
+            for metric in ("width", "leftBearing", "rightBearing"):
+                left, right = current.get(metric), resolved.get(metric)
+                value = (
+                    float(right) - float(left)
+                    if isinstance(left, (int, float))
+                    and isinstance(right, (int, float))
+                    else None
+                )
+                delta[metric] = value
+                if value is not None and abs(value) > float(tolerance):
+                    stale = True
+            metrics.append(
+                {
+                    "glyphName": name,
+                    "layerId": str(layer.get("id") or master_id),
+                    "masterId": master_id,
+                    "glyphMetricsKeys": glyph_keys,
+                    "layerMetricsKeys": layer_keys,
+                    "effectiveMetricsKeys": {
+                        key: {
+                            "value": (
+                                layer_keys[key]
+                                if layer_keys[key] is not None
+                                else glyph_keys[key]
+                            ),
+                            "source": (
+                                "layer"
+                                if layer_keys[key] is not None
+                                else "glyph"
+                                if glyph_keys[key] is not None
+                                else "none"
+                            ),
+                        }
+                        for key in keys
+                    },
+                    "currentMetrics": current,
+                    "resolvedMetrics": resolved,
+                    "delta": delta,
+                    "stale": stale,
+                }
+            )
             for key in keys:
                 reference = layer.get(key)
                 if isinstance(reference, str) and reference.startswith("="):
@@ -544,7 +1105,10 @@ def review_metrics_inheritance(model: Mapping[str, Any]) -> dict[str, Any]:
                             )
                         )
             components = _component_names(layer)
-            if components and any(layer.get(key) for key in keys):
+            if components and any(
+                layer.get(key) is not None or glyph.get(key) is not None
+                for key in keys
+            ):
                 findings.append(
                     _finding(
                         "component_metrics_override",
@@ -554,7 +1118,11 @@ def review_metrics_inheritance(model: Mapping[str, Any]) -> dict[str, Any]:
                     )
                 )
     return {
-        "reviewedGlyphCount": len(glyphs),
+        "reviewedGlyphCount": len(requested or glyphs),
+        "reviewedLayerCount": len(metrics),
+        "staleLayerCount": sum(bool(item["stale"]) for item in metrics),
+        "tolerance": float(tolerance),
+        "metrics": metrics,
         "findings": findings,
         "hasHardFailures": any(item["severity"] == "hard" for item in findings),
     }
@@ -567,12 +1135,20 @@ def _anchor_names(layer: Mapping[str, Any]) -> list[str]:
 def review_anchor_consistency(model: Mapping[str, Any]) -> dict[str, Any]:
     findings: list[dict[str, Any]] = []
     glyphs = _items(model.get("glyphs", {}), key_name="name")
+    master_ids = [
+        str(master.get("id") or "")
+        for master in _items(model.get("masters", []))
+    ]
     for glyph in glyphs:
         name = str(glyph.get("name") or "")
-        layers = _layer_map(glyph)
+        layers, duplicate_masters = _master_layer_map(glyph, master_ids)
+        findings.extend(_duplicate_master_findings(name, duplicate_masters))
         if not layers:
             continue
-        reference_id = sorted(layers)[0]
+        reference_id = next(
+            (master_id for master_id in master_ids if master_id in layers),
+            sorted(layers)[0],
+        )
         reference_names = _anchor_names(layers[reference_id])
         if len(reference_names) != len(set(reference_names)):
             findings.append(
@@ -726,17 +1302,25 @@ def review_kerning_coverage(
     measured_count: Optional[int] = None,
     skipped_count: int = 0,
 ) -> dict[str, Any]:
-    modes = {"proof_families", "class_representatives", "class_cross_product", "glyph_expansion"}
+    modes = {
+        "proof_families",
+        "class_representatives",
+        "class_cross_product",
+        "glyph_expansion",
+        "context_sequences",
+    }
     if mode not in modes:
         raise ValueError("unsupported kerning coverage mode")
-    pairs = list_kerning_pairs(model)
-    eligible = len(pairs) if eligible_count is None else max(0, int(eligible_count))
+    entry_kind = "context" if mode == "context_sequences" else "pair"
+    entries = list_kerning_pairs(model, entry_kind=entry_kind)
+    eligible = len(entries) if eligible_count is None else max(0, int(eligible_count))
     measured = 0 if measured_count is None else max(0, int(measured_count))
     measured = min(eligible, measured)
     skipped = max(0, int(skipped_count))
     untested = max(0, eligible - measured - skipped)
-    return {
+    result = {
         "mode": mode,
+        "entryKind": entry_kind,
         "eligibleCount": eligible,
         "measuredCount": measured,
         "skippedCount": skipped,
@@ -744,6 +1328,33 @@ def review_kerning_coverage(
         "complete": untested == 0,
         "accountingComplete": eligible == measured + skipped + untested,
     }
+    if entry_kind == "context":
+        by_master: dict[str, dict[str, Any]] = {}
+        for entry in entries:
+            master_id = str(entry.get("masterId") or "")
+            summary = by_master.setdefault(
+                master_id,
+                {
+                    "masterId": master_id,
+                    "entryCount": 0,
+                    "editableCount": 0,
+                    "rawOnlyCount": 0,
+                },
+            )
+            summary["entryCount"] += 1
+            summary[
+                "editableCount" if entry.get("editable") else "rawOnlyCount"
+            ] += 1
+        editable_count = sum(bool(entry.get("editable")) for entry in entries)
+        result.update(
+            {
+                "contextEntryCount": len(entries),
+                "editableCount": editable_count,
+                "rawOnlyCount": len(entries) - editable_count,
+                "byMaster": [by_master[key] for key in sorted(by_master)],
+            }
+        )
+    return result
 
 
 def review_export(
@@ -1120,7 +1731,19 @@ def build_master_updates(
     )
     kerning = (
         {
-            domain: dict(source_kerning.get(domain, {}))
+            domain: (
+                {
+                    str(context_key): dict(master_values)
+                    if isinstance(master_values, Mapping)
+                    else copy.deepcopy(master_values)
+                    for context_key, master_values in source_kerning.get(
+                        domain, {}
+                    ).items()
+                }
+                if domain == "context"
+                and isinstance(source_kerning.get(domain, {}), Mapping)
+                else dict(source_kerning.get(domain, {}))
+            )
             if isinstance(source_kerning.get(domain, {}), Mapping)
             else copy.deepcopy(source_kerning.get(domain))
             for domain in ("ltr", "rtl", "vertical", "context")
@@ -1214,6 +1837,16 @@ def build_master_updates(
                     partitions = kerning.get(domain, {})
                     if isinstance(partitions, dict) and source_id in partitions:
                         partitions[master_id] = copy.deepcopy(partitions[source_id])
+                contexts = kerning.get("context", {})
+                if isinstance(contexts, dict):
+                    for master_values in contexts.values():
+                        if (
+                            isinstance(master_values, dict)
+                            and source_id in master_values
+                        ):
+                            master_values[master_id] = copy.deepcopy(
+                                master_values[source_id]
+                            )
             elif source_id in kerning:
                 kerning[master_id] = kerning[source_id]
             continue
@@ -1254,6 +1887,14 @@ def build_master_updates(
                     partitions = kerning.get(domain, {})
                     if isinstance(partitions, dict):
                         partitions.pop(master_id, None)
+                contexts = kerning.get("context", {})
+                if isinstance(contexts, dict):
+                    for context_key in list(contexts):
+                        master_values = contexts.get(context_key)
+                        if isinstance(master_values, dict):
+                            master_values.pop(master_id, None)
+                            if not master_values:
+                                contexts.pop(context_key, None)
             else:
                 kerning.pop(master_id, None)
             continue
@@ -1526,8 +2167,6 @@ def review_anchor_updates(model: Mapping[str, Any], updates: Sequence[Mapping[st
 
 def review_kerning_updates(model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]) -> ChangeSet:
     after = _copy_on_write_model(model, roots=("kerning",))
-    pairs = list_kerning_pairs(after)
-    keyed = {(pair["masterId"], pair["left"]["id"], pair["right"]["id"]): pair for pair in pairs}
     glyphs = {
         str(glyph.get("name")): glyph
         for glyph in _items(model.get("glyphs", {}), key_name="name")
@@ -1557,33 +2196,154 @@ def review_kerning_updates(model: Mapping[str, Any], updates: Sequence[Mapping[s
             return text
         if text in glyphs:
             return str(glyphs[text].get("id") or text)
-        raise ValueError("unresolved kerning glyph identity: {}".format(text))
+            raise ValueError("unresolved kerning glyph identity: {}".format(text))
 
-    seen = set()
+    kerning = after.get("kerning", {})
+    if not isinstance(kerning, dict):
+        raise ValueError("kerning must be a canonical mapping")
+    directional = _is_directional_kerning(kerning)
+    if not directional and any(
+        str(update.get("entryKind") or "pair").lower() == "context"
+        for update in updates
+    ):
+        kerning = {
+            "ltr": copy.deepcopy(kerning),
+            "rtl": {},
+            "vertical": {},
+            "context": {},
+        }
+        after["kerning"] = kerning
+        directional = True
+
+    master_ids = {
+        str(master.get("id") or "")
+        for master in _items(model.get("masters", []))
+        if master.get("id")
+    }
+    glyph_names = set(glyphs)
+    seen: set[tuple[str, ...]] = set()
     for update in updates:
-        target = (
-            str(update.get("masterId") or ""),
-            resolve(update.get("left")),
-            resolve(update.get("right")),
-        )
-        if not all(target) or target in seen:
+        entry_kind = str(update.get("entryKind") or "pair").lower()
+        if entry_kind not in {"pair", "context"}:
+            raise ValueError("kerning update entryKind must be pair or context")
+        master_id = str(update.get("masterId") or "")
+        if not master_id:
+            raise ValueError("kerning updates require an explicit masterId")
+
+        if entry_kind == "context":
+            if master_id not in master_ids:
+                raise ValueError(
+                    "unknown contextual kerning master: {}".format(master_id)
+                )
+            raw_sequence = update.get("sequence")
+            if not isinstance(raw_sequence, Sequence) or isinstance(
+                raw_sequence, (str, bytes, bytearray)
+            ):
+                raise ValueError(
+                    "context sequence must be an explicit glyph-name array"
+                )
+            sequence = [str(name or "") for name in raw_sequence]
+            if len(sequence) < 3:
+                raise ValueError("context sequences require at least three glyphs")
+            invalid_names = [
+                name
+                for name in sequence
+                if not name
+                or name not in glyph_names
+                or any(character in name for character in "[]*'")
+                or any(character.isspace() for character in name)
+            ]
+            if invalid_names:
+                raise ValueError(
+                    "context sequences require known exact glyph names: {}".format(
+                        ", ".join(invalid_names)
+                    )
+                )
+            raw_boundary = update.get("boundaryIndex")
+            if isinstance(raw_boundary, bool) or not isinstance(raw_boundary, int):
+                raise ValueError("context boundaryIndex must be an integer")
+            boundary_index = raw_boundary
+            if not 1 <= boundary_index < len(sequence):
+                raise ValueError(
+                    "context boundaryIndex must identify an interior boundary"
+                )
+            raw_key = _context_key(sequence, boundary_index)
+            target = ("context", master_id, raw_key)
+            if target in seen:
+                raise ValueError("kerning updates require unique explicit targets")
+            seen.add(target)
+            context_domain = kerning.setdefault("context", {})
+            if not isinstance(context_domain, dict):
+                raise ValueError(
+                    "context kerning must be keyed by context sequence"
+                )
+            master_values = context_domain.get(raw_key, {})
+            if not isinstance(master_values, Mapping):
+                raise ValueError(
+                    "context kerning values must be keyed by master ID"
+                )
+            master_values = dict(master_values)
+            if update.get("value") is None:
+                master_values.pop(master_id, None)
+                if master_values:
+                    context_domain[raw_key] = master_values
+                else:
+                    context_domain.pop(raw_key, None)
+            else:
+                value = float(update["value"])
+                if not math.isfinite(value):
+                    raise ValueError("context kerning values must be finite")
+                master_values[master_id] = value
+                context_domain[raw_key] = master_values
+            continue
+
+        direction = str(update.get("direction") or "ltr").lower()
+        if direction not in _KERNING_DIRECTIONS:
+            raise ValueError(
+                "pair kerning direction must be ltr, rtl, or vertical"
+            )
+        if not directional and direction != "ltr":
+            raise ValueError(
+                "directional pair updates require a directional kerning model"
+            )
+        left = resolve(update.get("left"))
+        right = resolve(update.get("right"))
+        target = ("pair", direction, master_id, left, right)
+        if target in seen:
             raise ValueError("kerning updates require unique explicit targets")
         seen.add(target)
+        domain = kerning.setdefault(direction, {}) if directional else kerning
+        if not isinstance(domain, dict):
+            raise ValueError("pair kerning domain must be keyed by master ID")
+        lefts = domain.get(master_id, {})
+        if not isinstance(lefts, Mapping):
+            raise ValueError(
+                "pair kerning master partition must be keyed by left key"
+            )
+        lefts = copy.deepcopy(dict(lefts))
+        rights = lefts.get(left, {})
+        if not isinstance(rights, Mapping):
+            raise ValueError(
+                "pair kerning left partition must be keyed by right key"
+            )
+        rights = dict(rights)
         if update.get("value") is None:
-            keyed.pop(target, None)
+            rights.pop(right, None)
+            if rights:
+                lefts[left] = rights
+            else:
+                lefts.pop(left, None)
+            if lefts:
+                domain[master_id] = lefts
+            else:
+                domain.pop(master_id, None)
         else:
-            keyed[target] = {
-                "masterId": target[0],
-                "left": _kerning_key(target[1], id_to_name),
-                "right": _kerning_key(target[2], id_to_name),
-                "value": float(update["value"]),
-                "provenance": "reviewed_update",
-            }
-    nested: dict[str, dict[str, dict[str, float]]] = {}
-    for master_id, left, right in sorted(keyed):
-        value = keyed[(master_id, left, right)].get("value")
-        nested.setdefault(master_id, {}).setdefault(left, {})[right] = float(value)
-    after["kerning"] = nested
+            value = float(update["value"])
+            if not math.isfinite(value):
+                raise ValueError("pair kerning values must be finite")
+            rights[right] = value
+            lefts[left] = rights
+            domain[master_id] = lefts
     return diff_models(model, after)
 
 
@@ -1596,21 +2356,41 @@ def review_metrics_updates(model: Mapping[str, Any], updates: Sequence[Mapping[s
     allowed = {"leftMetricsKey", "rightMetricsKey", "widthMetricsKey"}
     seen = set()
     for update in updates:
-        target = (str(update.get("glyphName") or ""), str(update.get("masterId") or ""))
-        if not all(target) or target in seen:
-            raise ValueError("metrics updates require unique explicit glyph/master targets")
+        if "masterId" in update:
+            raise ValueError("masterId is not part of the v2 metrics update contract")
+        scope = str(update.get("scope") or "")
+        glyph_name = str(update.get("glyphName") or "")
+        layer_id = str(update.get("layerId") or "")
+        if scope not in {"glyph", "layer"} or not glyph_name:
+            raise ValueError("metrics updates require explicit glyph or layer scope")
+        if scope == "glyph" and "layerId" in update:
+            raise ValueError("glyph-scoped metrics updates cannot include layerId")
+        if scope == "layer" and not layer_id:
+            raise ValueError("layer-scoped metrics updates require layerId")
+        target = (scope, glyph_name, layer_id if scope == "layer" else "")
+        if target in seen:
+            raise ValueError("metrics updates require unique explicit targets")
         seen.add(target)
-        glyph = glyphs.get(target[0]) if isinstance(glyphs, dict) else None
-        layers = _canonical_layers(glyph) if isinstance(glyph, dict) else []
-        if isinstance(glyph, dict):
-            glyph["layers"] = layers
-        layer_index = _layer_index(layers, target[1])
-        layer = layers[layer_index] if layer_index is not None else None
-        if not isinstance(layer, dict):
-            raise ValueError("unknown metrics target: {}/{}".format(*target))
+        glyph = glyphs.get(glyph_name) if isinstance(glyphs, dict) else None
+        if not isinstance(glyph, dict):
+            raise ValueError("unknown metrics glyph target: {}".format(glyph_name))
         supplied = allowed.intersection(update)
         if not supplied:
             raise ValueError("metrics updates require at least one inheritance key")
+        if scope == "glyph":
+            for field in supplied:
+                value = update.get(field)
+                glyph[field] = str(value) if value is not None else None
+            continue
+        layers = _canonical_layers(glyph) if isinstance(glyph, dict) else []
+        if isinstance(glyph, dict):
+            glyph["layers"] = layers
+        layer_index = _layer_index(layers, layer_id)
+        layer = layers[layer_index] if layer_index is not None else None
+        if not isinstance(layer, dict):
+            raise ValueError(
+                "unknown metrics layer target: {}/{}".format(glyph_name, layer_id)
+            )
         for field in supplied:
             value = update.get(field)
             layer[field] = str(value) if value is not None else None
@@ -1661,6 +2441,7 @@ __all__ = [
     "list_instances",
     "list_layers",
     "list_masters",
+    "list_opentype_items",
     "list_kerning_pairs",
     "review_anchor_consistency",
     "review_anchor_updates",

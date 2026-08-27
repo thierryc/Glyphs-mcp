@@ -163,11 +163,11 @@ unsigned Debug installer builds successfully. The documentation production
 build, release metadata and version checks, synchronization check, and all 22
 canonical and packaged skill validations also pass.
 
-The machine-readable skill-routing matrix contains 13 realistic prompts with
+The machine-readable skill-routing matrix contains 14 realistic prompts with
 an expected owning skill, action, tool family, approval state, `snippet_only`
 state, human-readable result, and forbidden routes. Deterministic contracts
 validate the matrix against active model-visible tools and canonical skill
-instructions. A prompt-only Codex self-evaluation matched all 13 expected
+instructions. A prompt-only Codex self-evaluation matched 13 expected
 routes and safety boundaries. This is model-as-judge evidence, not an
 independent cross-model evaluation; the release QA protocol retains a fresh
 real-client pass for every supported host.
@@ -503,9 +503,10 @@ Release highlights:
 - Fall back to ranked individual documentation-search terms only when an exact
   phrase has no result, preserving exact-query behavior while making canonical
   class-and-member prompts such as `GSLayer bounds` useful.
-- Run one shared pure-standard-library probe with the exact Python selected for
-  each Glyphs target and explicitly prioritize that target's shared
-  `Scripts/site-packages`.
+- Run one shared pure-standard-library path policy and probe with the exact
+  Python selected for each Glyphs target. Embedded Glyphs Python prioritizes
+  the target's `Scripts/site-packages`; external Python prioritizes its user
+  site and uses the Glyphs path as fallback.
 - Stop all selected targets before persistent changes when an existing native
   package has an incompatible CPython ABI, incompatible Mach-O architecture, or
   broken import.

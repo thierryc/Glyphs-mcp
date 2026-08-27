@@ -2,6 +2,15 @@ import AppKit
 import Foundation
 
 public struct RuntimeProbeDocument: Decodable, Equatable, Sendable {
+	public struct PathPlan: Decodable, Equatable, Sendable {
+		public let schemaVersion: Int
+		public let runtimeKind: String
+		public let installMode: String
+		public let executable: String
+		public let primaryRoot: String
+		public let fallbackRoots: [String]
+		public let orderedRoots: [String]
+	}
 	public struct Runtime: Decodable, Equatable, Sendable {
 		public let executable: String
 		public let version: String
@@ -24,6 +33,8 @@ public struct RuntimeProbeDocument: Decodable, Equatable, Sendable {
 		public let present: Bool
 		public let imported: Bool
 		public let origin: String?
+		public let logicalOrigin: String?
+		public let resolvedOrigin: String?
 		public let error: String?
 		public let nativeFiles: [NativeFile]
 	}
@@ -36,6 +47,9 @@ public struct RuntimeProbeDocument: Decodable, Equatable, Sendable {
 		public let detected: String?
 		public let message: String
 		public let blocking: Bool
+		public let logicalOrigin: String?
+		public let resolvedOrigin: String?
+		public let selectedRoot: String?
 	}
 
 	public let schemaVersion: Int
@@ -43,6 +57,7 @@ public struct RuntimeProbeDocument: Decodable, Equatable, Sendable {
 	public let status: String
 	public let blocking: Bool
 	public let runtime: Runtime
+	public let pathPlan: PathPlan?
 	public let sitePackages: String
 	public let checks: [Check]
 	public let issues: [Issue]
@@ -72,20 +87,11 @@ public struct RuntimeProbeExecutor {
 		mode: Mode,
 		allowUserSite: Bool = false
 	) async throws -> RuntimeProbeDocument {
-		var args = [
+		let args = [
 			probe.path,
 			"--mode", mode.rawValue,
 			"--site-packages", sitePackages.path,
 		]
-		if mode == .postinstall {
-			args += [
-				"--allow-origin", sitePackages.path,
-				"--allow-runtime-paths",
-			]
-			if allowUserSite {
-				args.append("--allow-user-site")
-			}
-		}
 
 		log("Python environment check: \(python.path)")
 		log("Prioritized site-packages: \(sitePackages.path)")
@@ -161,10 +167,21 @@ public struct RuntimeProbeExecutor {
 		let boundary = mode == .preinstall
 			? "Installation stopped before changing dependencies or the plug-in."
 			: "Post-install verification failed, so installation will not be reported as successful."
+		let codes = Set(document.issues.filter(\.blocking).map(\.code))
+		let native: Set<String> = ["incompatible_abi", "incompatible_architecture"]
+		let location: Set<String> = ["symlink_escape", "unexpected_origin"]
+		let imports: Set<String> = ["missing_module", "import_failure"]
+		let categoryCount = [native, location, imports].filter { !codes.isDisjoint(with: $0) }.count
+		let headline: String
+		if categoryCount == 1, !codes.isDisjoint(with: native) { headline = "Native compatibility failure." }
+		else if categoryCount == 1, !codes.isDisjoint(with: location) { headline = "Dependency-location verification failure." }
+		else if categoryCount == 1, !codes.isDisjoint(with: imports) { headline = "Dependency import failure." }
+		else { headline = "Python environment verification failure." }
 		return """
-Glyphs uses Python \(document.runtime.version) at \(document.runtime.executable), but its ABI does not match one or more existing native packages, or the environment could not be verified.
+\(headline)
+Glyphs uses Python \(document.runtime.version) at \(document.runtime.executable).
 \(summary)
-\(boundary) See the Glyphs MCP troubleshooting guide.
+\(boundary) Do not delete shared packages. Confirm that Glyphs and the installer use the same Python. Correct escaping symlinks; reinstall unexpected or native-incompatible packages using the reported primary root and selected interpreter. Lower-priority duplicate warnings normally require no action. See the Glyphs MCP troubleshooting guide.
 """
 	}
 }
@@ -234,26 +251,32 @@ public struct DepsInstaller {
 		python: PythonSelection,
 		requirementsTxt: URL,
 		runtimeProbe: URL,
-		glyphsVersion: GlyphsMajorVersion = .installerDefault
+		glyphsVersion: GlyphsMajorVersion = .installerDefault,
+		pathPlan: RuntimeProbeDocument.PathPlan? = nil
 	) async throws {
-		switch python {
-		case .glyphs(let pip3, let python3):
-			let target = InstallerPaths.glyphsScriptsSitePackages(glyphsVersion: glyphsVersion)
+		guard let pathPlan else {
+			throw InstallerError.userFacing("Python environment preflight omitted the runtime path plan.")
+		}
+		let target = URL(fileURLWithPath: pathPlan.primaryRoot, isDirectory: true)
+		if pathPlan.installMode == "target" {
 			try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true, attributes: nil)
+		}
+		switch python {
+		case .glyphs(_, let python3):
 			log("Installing into: \(target.path)")
 			if try await canReuseInstalledDependencies(
 				python: python3,
 				requirementsTxt: requirementsTxt,
-				extraSitePackages: target,
+				pathPlan: pathPlan,
 				runtimeProbe: runtimeProbe
 			) {
 				return
 			}
 			log("Checking for missing or outdated Python dependencies…")
 			try await runner.runStreaming(
-				executable: pip3,
-				args: pipInstallArgs(requirementsTxt: requirementsTxt, target: target),
-				environment: pipEnvironment(target: target),
+				executable: python3,
+				args: ["-m", "pip"] + pipInstallArgs(requirementsTxt: requirementsTxt, pathPlan: pathPlan),
+				environment: pipEnvironment(pathPlan: pathPlan),
 				timeout: Self.dependencyCommandTimeout,
 				onLine: log
 			)
@@ -261,18 +284,18 @@ public struct DepsInstaller {
 			try await verify(
 				python: python3,
 				runtimeProbe: runtimeProbe,
-				extraSitePackages: target
+				extraSitePackages: InstallerPaths.glyphsScriptsSitePackages(glyphsVersion: glyphsVersion),
+				expectedPathPlan: pathPlan
 			)
 		case .custom(let python3):
 			let ver = runner.runSync(executable: python3, args: ["-c", "import sys; print(sys.version.split()[0])"]).trimmingCharacters(in: .whitespacesAndNewlines)
 			if !VersionGate.isSupported(version: ver) {
 				throw InstallerError.userFacing("Selected Python \(ver) is not supported. Please use 3.11–3.14.")
 			}
-			let target = InstallerPaths.glyphsScriptsSitePackages(glyphsVersion: glyphsVersion)
 			if try await canReuseInstalledDependencies(
 				python: python3,
 				requirementsTxt: requirementsTxt,
-				extraSitePackages: target,
+				pathPlan: pathPlan,
 				runtimeProbe: runtimeProbe,
 				allowUserSite: true
 			) {
@@ -281,7 +304,8 @@ public struct DepsInstaller {
 			log("Checking for missing or outdated Python dependencies…")
 			try await runner.runStreaming(
 				executable: python3,
-				args: ["-m", "pip"] + pipInstallArgs(requirementsTxt: requirementsTxt),
+				args: ["-m", "pip"] + pipInstallArgs(requirementsTxt: requirementsTxt, pathPlan: pathPlan),
+				environment: pipEnvironment(pathPlan: pathPlan),
 				timeout: Self.dependencyCommandTimeout,
 				onLine: log
 			)
@@ -289,8 +313,9 @@ public struct DepsInstaller {
 			try await verify(
 				python: python3,
 				runtimeProbe: runtimeProbe,
-				extraSitePackages: target,
-				allowUserSite: true
+				extraSitePackages: InstallerPaths.glyphsScriptsSitePackages(glyphsVersion: glyphsVersion),
+				allowUserSite: true,
+				expectedPathPlan: pathPlan
 			)
 		}
 	}
@@ -298,14 +323,14 @@ public struct DepsInstaller {
 	private func canReuseInstalledDependencies(
 		python: URL,
 		requirementsTxt: URL,
-		extraSitePackages: URL,
+		pathPlan: RuntimeProbeDocument.PathPlan,
 		runtimeProbe: URL,
 		allowUserSite: Bool = false
 	) async throws -> Bool {
 		guard requirementsAreSatisfied(
 			python: python,
 			requirementsTxt: requirementsTxt,
-			extraSitePackages: extraSitePackages
+			pathPlan: pathPlan
 		) else {
 			return false
 		}
@@ -313,8 +338,9 @@ public struct DepsInstaller {
 		try await verify(
 			python: python,
 			runtimeProbe: runtimeProbe,
-			extraSitePackages: extraSitePackages,
-			allowUserSite: allowUserSite
+			extraSitePackages: URL(fileURLWithPath: pathPlan.orderedRoots.last ?? pathPlan.primaryRoot),
+			allowUserSite: allowUserSite,
+			expectedPathPlan: pathPlan
 		)
 		log("Python dependencies are already up to date; skipped installation.")
 		return true
@@ -323,19 +349,21 @@ public struct DepsInstaller {
 	func requirementsAreSatisfied(
 		python: URL,
 		requirementsTxt: URL,
-		extraSitePackages: URL? = nil
+		pathPlan: RuntimeProbeDocument.PathPlan? = nil
 	) -> Bool {
+		let orderedRoots = pathPlan?.orderedRoots ?? []
 		let code = """
 import importlib.metadata as metadata
 import re
 import site
 import sys
-extra_site=\(Self.pythonStringLiteral(extraSitePackages?.path ?? ""))
-if extra_site:
-  site.addsitedir(extra_site)
-  if extra_site in sys.path:
-    sys.path.remove(extra_site)
-  sys.path.insert(0, extra_site)
+ordered_roots=\(Self.pythonStringListLiteral(orderedRoots))
+for managed in reversed(ordered_roots):
+  if managed:
+    site.addsitedir(managed)
+    while managed in sys.path:
+      sys.path.remove(managed)
+    sys.path.insert(0, managed)
 requirements_path=\(Self.pythonStringLiteral(requirementsTxt.path))
 mismatches=[]
 try:
@@ -364,7 +392,7 @@ print('SATISFIED' if not mismatches else 'MISMATCH:'+repr(mismatches))
 			&& result.stdout.trimmingCharacters(in: .whitespacesAndNewlines) == "SATISFIED"
 	}
 
-	func pipInstallArgs(requirementsTxt: URL, target: URL? = nil) -> [String] {
+	func pipInstallArgs(requirementsTxt: URL, pathPlan: RuntimeProbeDocument.PathPlan) -> [String] {
 		var args = [
 			"install",
 			"--upgrade",
@@ -377,8 +405,8 @@ print('SATISFIED' if not mismatches else 'MISMATCH:'+repr(mismatches))
 			"--no-compile",
 			"--only-binary=:all:",
 		]
-		if let target {
-			args += ["--target", target.path]
+		if pathPlan.installMode == "target" {
+			args += ["--target", pathPlan.primaryRoot]
 		} else {
 			args.append("--user")
 		}
@@ -386,12 +414,12 @@ print('SATISFIED' if not mismatches else 'MISMATCH:'+repr(mismatches))
 		return args
 	}
 
-	func pipEnvironment(target: URL) -> [String: String] {
+	func pipEnvironment(pathPlan: RuntimeProbeDocument.PathPlan) -> [String: String] {
 		var environment = ProcessInfo.processInfo.environment
 		if let existing = environment["PYTHONPATH"], !existing.isEmpty {
-			environment["PYTHONPATH"] = target.path + ":" + existing
+			environment["PYTHONPATH"] = pathPlan.orderedRoots.joined(separator: ":") + ":" + existing
 		} else {
-			environment["PYTHONPATH"] = target.path
+			environment["PYTHONPATH"] = pathPlan.orderedRoots.joined(separator: ":")
 		}
 		return environment
 	}
@@ -400,20 +428,28 @@ print('SATISFIED' if not mismatches else 'MISMATCH:'+repr(mismatches))
 		python: URL,
 		runtimeProbe: URL,
 		extraSitePackages: URL,
-		allowUserSite: Bool = false
+		allowUserSite: Bool = false,
+		expectedPathPlan: RuntimeProbeDocument.PathPlan
 	) async throws {
 		log("Verifying imports in: \(python.path)")
-		_ = try await RuntimeProbeExecutor(runner: runner, log: log).check(
+		let document = try await RuntimeProbeExecutor(runner: runner, log: log).check(
 			python: python,
 			probe: runtimeProbe,
 			sitePackages: extraSitePackages,
 			mode: .postinstall,
 			allowUserSite: allowUserSite
 		)
+		guard document.pathPlan == expectedPathPlan else {
+			throw InstallerError.userFacing("Runtime path plan changed between preflight and post-install verification.")
+		}
 	}
 
 	private static func pythonStringLiteral(_ value: String) -> String {
 		"'\(value.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "'", with: "\\'"))'"
+	}
+
+	private static func pythonStringListLiteral(_ values: [String]) -> String {
+		"[" + values.map(pythonStringLiteral).joined(separator: ",") + "]"
 	}
 }
 

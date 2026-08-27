@@ -89,12 +89,14 @@ public enum InstallerPayloadManifestResolver {
 			let bundleURL = try resolveRelativePath(target.pluginPath, under: payloadDirectory)
 			let infoURL = bundleURL.appendingPathComponent("Contents/Info.plist")
 			let runtimeProbe = bundleURL.appendingPathComponent("Contents/Resources/runtime_probe.py")
+			let runtimePolicy = bundleURL.appendingPathComponent("Contents/Resources/runtime_path_policy.py")
 			guard
 				let plistData = try? Data(contentsOf: infoURL),
 				let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
 				(plist["CFBundleShortVersionString"] as? String) == target.pluginVersion,
 				(plist["CFBundleVersion"] as? String) == target.pluginVersion,
-				FileManager.default.fileExists(atPath: runtimeProbe.path)
+				FileManager.default.fileExists(atPath: runtimeProbe.path),
+				FileManager.default.fileExists(atPath: runtimePolicy.path)
 			else {
 				throw UpdateStagingError("payload_manifest", "Installer payload target version or runtime is invalid.")
 			}

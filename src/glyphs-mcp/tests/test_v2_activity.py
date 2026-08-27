@@ -104,7 +104,7 @@ class OperationActivityStoreTests(unittest.TestCase):
         self.assertEqual(current.state, "error")
         self.assertEqual(current.summary, "Failed")
 
-    def test_latest_active_operation_wins_without_losing_older_work(self) -> None:
+    def test_new_command_replaces_foreground_without_stale_resurrection(self) -> None:
         ids = iter(("activity_one", "activity_two"))
         store = OperationActivityStore(id_factory=lambda: next(ids))
         first = store.begin(document_id="doc_alpha", tool="one", title="One")
@@ -112,9 +112,96 @@ class OperationActivityStoreTests(unittest.TestCase):
 
         self.assertEqual(store.current("doc_alpha").activity_id, second.activity_id)
         store.complete(second, ok=True, summary="Two done")
-        self.assertEqual(store.current("doc_alpha").activity_id, first.activity_id)
+        store.release(second)
+        self.assertEqual(store.current("doc_alpha").activity_id, second.activity_id)
+        store.dismiss("doc_alpha")
+        self.assertEqual(store.current("doc_alpha").state, "idle")
         store.complete(first, ok=True, summary="One done")
-        self.assertEqual(store.current("doc_alpha").state, "success")
+        store.release(first)
+        self.assertEqual(store.current("doc_alpha").state, "idle")
+
+    def test_progress_promotes_ongoing_work_but_old_completion_cannot_hide_newer_work(self) -> None:
+        ids = iter(("activity_one", "activity_two"))
+        store = OperationActivityStore(id_factory=lambda: next(ids))
+        first = store.begin(document_id="doc_alpha", tool="one", title="One")
+        second = store.begin(document_id="doc_alpha", tool="two", title="Two")
+
+        store.advance(first, "verifying", "First made real progress")
+        self.assertEqual(store.current("doc_alpha").activity_id, first.activity_id)
+        store.complete(first, ok=True, summary="First done")
+        store.release(first)
+        self.assertEqual(store.current("doc_alpha").activity_id, second.activity_id)
+
+    def test_valid_progress_refreshes_a_released_invocation_lease(self) -> None:
+        clock = _Clock()
+        store = OperationActivityStore(
+            clock=clock, id_factory=lambda: "activity_progress"
+        )
+        token = store.begin(
+            document_id="doc_alpha", tool="one", title="One"
+        )
+        store.release(token)
+        clock.value += 20.0
+
+        store.advance(token, "verifying", "Progress resumed")
+        clock.value += 60.0
+        store.reconcile_orphans(grace_seconds=30.0)
+
+        self.assertEqual(
+            store.current("doc_alpha").activity_id, token.activity_id
+        )
+
+    def test_completion_is_idempotent(self) -> None:
+        store = OperationActivityStore(id_factory=lambda: "activity_once")
+        token = store.begin(document_id="doc_alpha", tool="one", title="One")
+
+        first = store.complete(token, ok=True, summary="Done")
+        second = store.complete(token, ok=False, summary="Late error")
+
+        self.assertEqual(first, second)
+        self.assertEqual(store.current("doc_alpha").summary, "Done")
+
+    def test_live_lease_never_expires_and_released_orphan_clears_at_thirty_seconds(self) -> None:
+        clock = _Clock()
+        ids = iter(("activity_live", "activity_orphan"))
+        store = OperationActivityStore(
+            clock=clock, id_factory=lambda: next(ids)
+        )
+        live = store.begin(
+            document_id="doc_live", tool="live", title="Live"
+        )
+        clock.value += 300.0
+        store.reconcile_orphans(grace_seconds=30.0)
+        self.assertEqual(store.current("doc_live").activity_id, live.activity_id)
+
+        orphan = store.begin(
+            document_id="doc_orphan", tool="orphan", title="Orphan"
+        )
+        store.release(orphan)
+        clock.value += 29.999
+        store.reconcile_orphans(grace_seconds=30.0)
+        self.assertEqual(
+            store.current("doc_orphan").activity_id, orphan.activity_id
+        )
+        clock.value += 0.001
+        store.reconcile_orphans(grace_seconds=30.0)
+        self.assertEqual(store.current("doc_orphan").state, "idle")
+
+    def test_server_session_reset_preserves_subscribers_and_rejects_stale_updates(self) -> None:
+        ids = iter(("activity_old", "activity_new"))
+        store = OperationActivityStore(id_factory=lambda: next(ids))
+        observed = []
+        store.subscribe(observed.append)
+        old = store.begin(document_id="doc_alpha", tool="old", title="Old")
+
+        store.reset_session()
+        old_snapshot = store.advance(old, "late", "Late old update")
+        self.assertEqual(old_snapshot.phase, "session_ended")
+        self.assertEqual(store.current("doc_alpha").state, "idle")
+        new = store.begin(document_id="doc_alpha", tool="new", title="New")
+
+        self.assertGreater(new.session_generation, old.session_generation)
+        self.assertEqual(observed[-1].activity_id, new.activity_id)
 
     def test_core_activity_module_has_no_native_ui_imports(self) -> None:
         source = (V2_SOURCE / "glyphs_mcp_v2" / "activity.py").read_text(
@@ -191,6 +278,62 @@ class OperationActivityStoreTests(unittest.TestCase):
             'snapshot.state == "error"\n            and snapshot.completed_at is not None',
             source,
         )
+        self.assertIn("ORPHAN_GRACE_SECONDS = 30.0", source)
+        self.assertIn("self._activity_store.reconcile_orphans(", source)
+
+    def test_palette_has_a_tiny_dot_without_growing_the_status_row(self) -> None:
+        source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("dot = NSView.alloc().initWithFrame_(", source)
+        self.assertIn(
+            "NSMakeRect(10, ((STATUS_HEIGHT - 7.0) / 2.0) + 1.5, 7.0, 7.0)",
+            source,
+        )
+        self.assertIn("dot.setWantsLayer_(True)", source)
+        self.assertIn("dot_layer.setCornerRadius_(3.5)", source)
+        self.assertIn(
+            "NSColor.secondaryLabelColor().CGColor()",
+            source,
+        )
+        self.assertIn(
+            "dot_layer.setBackgroundColor_(color.CGColor())",
+            source,
+        )
+        self.assertNotIn('dot = _quiet_field(NSMakeRect(10, 5, 8, 16), "●", 7.0)', source)
+        self.assertNotIn('dot.setStringValue_("●")', source)
+        self.assertIn(
+            'field = _quiet_field(NSMakeRect(22, 3, 178, 20), tr("palette.ready"), 10.5)',
+            source,
+        )
+        self.assertIn("STATUS_HEIGHT = 28", source)
+        self.assertIn("self._status_dot_view = dot", source)
+
+    def test_palette_combines_connection_and_activity_on_the_main_thread(self) -> None:
+        source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("default_connection_status_store", source)
+        self.assertIn("self._connection_store.subscribe(", source)
+        self.assertIn("def _connection_changed(self, _snapshot):", source)
+        self.assertIn("NSOperationQueue.mainQueue().addOperationWithBlock_", source)
+        self.assertIn("indicator_presentation(", source)
+        self.assertIn("connection.state in TRANSITIONAL_CONNECTION_STATES", source)
+        self.assertIn("self._connection_unsubscribe = None", source)
+
+    def test_palette_pulse_uses_the_window_cadence_and_cleans_up(self) -> None:
+        source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("STATUS_DOT_PULSE_SECONDS = 0.55", source)
+        self.assertIn('"statusDotPulse:"', source)
+        self.assertIn("dot.setAlphaValue_(0.35 if dim else 1.0)", source)
+        self.assertIn("if not self._palette_is_visible():", source)
+        self.assertIn("self._stop_status_dot_pulse()", source)
+        self.assertIn('"magenta": ("systemPinkColor", "magentaColor")', source)
 
 
 if __name__ == "__main__":

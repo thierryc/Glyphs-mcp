@@ -80,6 +80,11 @@ class V2InstallerPayloadTests(unittest.TestCase):
             )
             resources3 = first / glyphs3["pluginPath"] / "Contents/Resources"
             self.assertFalse((resources3 / "glyphs_mcp_v2").exists())
+            canonical = REPO / "src/glyphs-mcp" / PLUGIN / "Contents/Resources"
+            for name in ("runtime_path_policy.py", "runtime_probe.py"):
+                expected = (canonical / name).read_bytes()
+                self.assertEqual((resources3 / name).read_bytes(), expected)
+                self.assertEqual((resources4 / name).read_bytes(), expected)
 
             verified = subprocess.run(
                 [

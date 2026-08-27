@@ -1,6 +1,8 @@
 ---
 name: glyphs-mcp-scripting
 description: Use execute_python as the model-visible Glyphs fallback when typed v2 tools cannot express a focused read, document edit, UI task, or external operation; default document edits to detached staged execution and use explicit recovery rules for open-world code.
+metadata:
+  surface: glyphs-mcp-v2
 ---
 
 # Glyphs MCP scripting
@@ -11,10 +13,14 @@ Use the smallest verified Python fallback that covers the request.
 
 - Prefer a direct typed apply tool or domain skill when it fits. Typed document
   mutations apply first through detached simulation; they do not use review IDs
-  or confirmation tokens. Use `execute_python` because those contracts do not fit.
+  or confirmation tokens. Use `open_edit_tab` for named-glyph Edit tabs. Use
+  `execute_python` because those contracts do not fit.
 - Resolve stable `documentId` context and the current document fingerprint before mutation.
-- Ground unfamiliar GlyphsApp APIs with `docs_search` and focused `docs_get` pages. Target Glyphs 3.5 and 4 unless the user narrows the host.
+- Ground unfamiliar GlyphsApp APIs in the bundled documentation. Target Glyphs
+  3.5 and 4 unless the user narrows the host.
 - Supply a concise `reason`, `intendedEffect`, explicit context, and bounded output. Never claim arbitrary PyObjC code can be safely killed; timeout enforcement is cooperative.
+- Do not send the removed snippet_only argument; it is not part of the v2
+  `execute_python` contract.
 - Never call `exit()`, `quit()`, or `sys.exit()`. Never save, close, install, reload, restart Glyphs, use files or networking, or launch processes unless those effects are explicitly requested and reviewed in `live_open_world` mode.
 - Printed output is not mutation proof. Use fingerprints, semantic diffs, read-back verification, audit receipts, and focused post-read tools.
 
@@ -36,7 +42,7 @@ Use the smallest verified Python fallback that covers the request.
    A small allowlist of detached Glyphs entity constructors is available in
    clone context so empty structural collections do not require a live import.
    Axis lifecycle and specialized Smart/color properties remain unsupported.
-6. Use `live_open_world` only for UI state, global Glyphs APIs, unsupported native objects, files, processes, or networking. It requires exact preview and confirmation, creates a private recovery copy, and never claims external effects are transactional.
+6. Prefer typed UI tools such as `open_edit_tab`. Use `live_open_world` only for remaining UI state, global Glyphs APIs, unsupported native objects, files, processes, or networking. It requires exact preview and confirmation, creates a private recovery copy, and never claims external effects are transactional.
 7. Keep the returned execution ID, after-fingerprint, rollback coverage, and expiry. Do not infer automatic rollback from native undo grouping.
 
 ## Rollback workflow
@@ -49,7 +55,7 @@ Use the smallest verified Python fallback that covers the request.
 
 ## Reusable artifacts
 
-Route Script-menu commands and plug-ins to `glyphs-mcp-development`. Keep live installation and runtime testing as separate, explicit requests.
+Route Script-menu commands and plug-ins to `glyphs-mcp-development`. Keep live installation and runtime testing as separate, explicit requests. If Computer Use is unavoidable and the display name `Glyphs` is rejected, target the verified Glyphs 4 bundle identifier `com.GeorgSeifert.Glyphs4`.
 
 ## Deeper references
 

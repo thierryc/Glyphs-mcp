@@ -2,14 +2,207 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set
+from typing import (
+    Annotated,
+    Any,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Set,
+    Union,
+)
 
 from fastmcp import FastMCP
 from fastmcp.tools.tool import ToolResult
+from pydantic import Field, WithJsonSchema
+from typing_extensions import NotRequired, TypedDict
 
 from ..application import GlyphsMCPApplication
 from ..catalog import MODEL_AND_APP, TOOL_DEFINITIONS, ToolDefinition
 from ..versions import SERVER_NAME, SERVER_VERSION
+
+
+GlyphListField = Literal[
+    "name",
+    "id",
+    "category",
+    "subCategory",
+    "unicode",
+    "export",
+    "leftKerningGroup",
+    "rightKerningGroup",
+    "mastersCompatible",
+]
+LayerRole = Literal[
+    "master", "intermediate", "alternate", "backup", "smart", "color"
+]
+LayerDetail = Literal["summary", "metrics", "geometry", "full"]
+OpenTypeKind = Literal["feature", "class", "prefix"]
+CompatibilityMode = Literal["component_preserving", "decomposed_export"]
+OverwritePolicy = Literal["fail_if_nonempty", "replace_if_match"]
+RollbackStrategy = Literal["auto", "open_recovery_copy"]
+GlyphNameList = Annotated[
+    List[str],
+    Field(min_length=1, max_length=64),
+    WithJsonSchema(
+        {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "minItems": 1,
+            "maxItems": 64,
+            "uniqueItems": True,
+        }
+    ),
+]
+
+
+def _enum_property(values: List[str]) -> Dict[str, Any]:
+    return {
+        "type": "string",
+        "enum": list(values),
+    }
+
+
+def _open_object(properties: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": properties,
+    }
+
+
+def _compact_parameter_schema(value: Any) -> Any:
+    """Drop redundant annotations without changing input validation."""
+
+    if isinstance(value, dict):
+        return {
+            key: _compact_parameter_schema(item)
+            for key, item in value.items()
+            if key != "title" and not (key == "default" and item is None)
+        }
+    if isinstance(value, list):
+        return [_compact_parameter_schema(item) for item in value]
+    return value
+
+
+GlyphUpdate = Annotated[
+    Dict[str, Any],
+    WithJsonSchema(
+        _open_object(
+            {
+                "action": _enum_property(
+                    ["create", "update", "delete"]
+                )
+            }
+        )
+    ),
+]
+OpenTypeUpdate = Annotated[
+    Dict[str, Any],
+    WithJsonSchema(
+        _open_object(
+            {
+                "action": _enum_property(
+                    ["create", "update", "move", "delete"]
+                ),
+                "kind": _enum_property(
+                    ["feature", "class", "prefix"]
+                ),
+            }
+        )
+    ),
+]
+InstanceUpdate = Annotated[
+    Dict[str, Any],
+    WithJsonSchema(
+        _open_object(
+            {
+                "action": _enum_property(
+                    ["create", "update", "move", "delete"]
+                ),
+                "type": _enum_property(
+                    ["static", "variable"]
+                ),
+            }
+        )
+    ),
+]
+MasterUpdate = Annotated[
+    Dict[str, Any],
+    WithJsonSchema(
+        _open_object(
+            {
+                "action": _enum_property(
+                    ["duplicate", "update", "move", "delete"]
+                )
+            }
+        )
+    ),
+]
+LayerUpdate = Annotated[
+    Dict[str, Any],
+    WithJsonSchema(
+        _open_object(
+            {
+                "action": _enum_property(
+                    ["duplicate", "update", "move", "delete"]
+                ),
+                "interpolation": {
+                    "anyOf": [
+                        _open_object(
+                            {
+                                "kind": _enum_property(
+                                    ["intermediate", "alternate"]
+                                )
+                            }
+                        ),
+                        {"type": "null"},
+                    ]
+                },
+            }
+        )
+    ),
+]
+
+
+class PairKerningUpdate(TypedDict):
+    masterId: str
+    left: Union[str, Dict[str, Any]]
+    right: Union[str, Dict[str, Any]]
+    value: Optional[float]
+    entryKind: NotRequired[Literal["pair"]]
+    direction: NotRequired[Literal["ltr", "rtl", "vertical"]]
+
+
+class ContextKerningUpdate(TypedDict):
+    entryKind: Literal["context"]
+    masterId: str
+    sequence: List[str]
+    boundaryIndex: int
+    value: Optional[float]
+
+
+KerningUpdate = Union[PairKerningUpdate, ContextKerningUpdate]
+
+
+class GlyphMetricsUpdate(TypedDict):
+    scope: Literal["glyph"]
+    glyphName: str
+    leftMetricsKey: NotRequired[Optional[str]]
+    rightMetricsKey: NotRequired[Optional[str]]
+    widthMetricsKey: NotRequired[Optional[str]]
+
+
+class LayerMetricsUpdate(TypedDict):
+    scope: Literal["layer"]
+    glyphName: str
+    layerId: str
+    leftMetricsKey: NotRequired[Optional[str]]
+    rightMetricsKey: NotRequired[Optional[str]]
+    widthMetricsKey: NotRequired[Optional[str]]
+
+
+MetricsUpdate = Union[GlyphMetricsUpdate, LayerMetricsUpdate]
 
 
 class ToolHandlers:
@@ -35,6 +228,14 @@ class ToolHandlers:
     async def list_open_fonts(self) -> ToolResult:
         return self._invoke("list_open_fonts", {})
 
+    async def open_edit_tab(
+        self,
+        documentId: str,
+        glyphNames: GlyphNameList,
+        masterId: Optional[str] = None,
+    ) -> ToolResult:
+        return self._invoke("open_edit_tab", locals())
+
     async def get_document_status(self, documentId: str) -> ToolResult:
         return self._invoke("get_document_status", locals())
 
@@ -51,7 +252,7 @@ class ToolHandlers:
         documentId: str,
         pageSize: int = 100,
         cursor: Optional[str] = None,
-        fields: Optional[List[str]] = None,
+        fields: Optional[List[GlyphListField]] = None,
         includeLinks: bool = False,
     ) -> ToolResult:
         return self._invoke("list_glyphs", locals())
@@ -78,7 +279,8 @@ class ToolHandlers:
         pageSize: int = 100,
         cursor: Optional[str] = None,
         glyphNames: Optional[List[str]] = None,
-        roles: Optional[List[str]] = None,
+        roles: Optional[List[LayerRole]] = None,
+        detail: LayerDetail = "summary",
     ) -> ToolResult:
         return self._invoke("list_layers", locals())
 
@@ -87,13 +289,20 @@ class ToolHandlers:
         documentId: str,
         pageSize: int = 100,
         cursor: Optional[str] = None,
+        entryKind: Literal["pair", "context", "all"] = "pair",
     ) -> ToolResult:
         return self._invoke("list_kerning_pairs", locals())
 
     async def review_kerning_coverage(
         self,
         documentId: str,
-        mode: str = "class_representatives",
+        mode: Literal[
+            "proof_families",
+            "class_representatives",
+            "class_cross_product",
+            "glyph_expansion",
+            "context_sequences",
+        ] = "class_representatives",
         eligibleCount: Optional[int] = None,
         measuredCount: Optional[int] = None,
         skippedCount: int = 0,
@@ -103,15 +312,20 @@ class ToolHandlers:
     async def review_master_compatibility(
         self,
         documentId: str,
-        mode: str = "component_preserving",
+        mode: CompatibilityMode = "component_preserving",
         includeNonexporting: bool = False,
     ) -> ToolResult:
         return self._invoke("review_master_compatibility", locals())
 
-    async def review_metrics_inheritance(self, documentId: str) -> ToolResult:
+    async def review_metrics_inheritance(
+        self,
+        documentId: str,
+        glyphNames: Optional[List[str]] = None,
+        tolerance: float = 0.01,
+    ) -> ToolResult:
         return self._invoke("review_metrics_inheritance", locals())
 
-    async def apply_metrics_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
+    async def apply_metrics_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[MetricsUpdate], reason: Optional[str] = None) -> ToolResult:
         return self._invoke("apply_metrics_updates", locals())
 
     async def review_anchor_consistency(self, documentId: str) -> ToolResult:
@@ -123,22 +337,41 @@ class ToolHandlers:
     async def apply_anchor_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
         return self._invoke("apply_anchor_updates", locals())
 
-    async def apply_glyph_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
+    async def apply_glyph_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[GlyphUpdate], reason: Optional[str] = None) -> ToolResult:
         return self._invoke("apply_glyph_updates", locals())
 
-    async def apply_kerning_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
+    async def apply_kerning_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[KerningUpdate], reason: Optional[str] = None) -> ToolResult:
         return self._invoke("apply_kerning_updates", locals())
 
-    async def apply_opentype_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
+    async def apply_opentype_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[OpenTypeUpdate], reason: Optional[str] = None) -> ToolResult:
         return self._invoke("apply_opentype_updates", locals())
 
-    async def apply_instance_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
+    async def list_opentype_items(
+        self,
+        documentId: str,
+        pageSize: int = 100,
+        cursor: Optional[str] = None,
+        kinds: Optional[List[OpenTypeKind]] = None,
+        tags: Optional[List[str]] = None,
+        includeDisabled: bool = True,
+    ) -> ToolResult:
+        return self._invoke("list_opentype_items", locals())
+
+    async def compile_opentype_features(
+        self,
+        documentId: str,
+        expectedDocumentFingerprint: str,
+        reason: Optional[str] = None,
+    ) -> ToolResult:
+        return self._invoke("compile_opentype_features", locals())
+
+    async def apply_instance_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[InstanceUpdate], reason: Optional[str] = None) -> ToolResult:
         return self._invoke("apply_instance_updates", locals())
 
-    async def apply_master_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
+    async def apply_master_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[MasterUpdate], reason: Optional[str] = None) -> ToolResult:
         return self._invoke("apply_master_updates", locals())
 
-    async def apply_layer_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[Dict[str, Any]], reason: Optional[str] = None) -> ToolResult:
+    async def apply_layer_updates(self, documentId: str, expectedDocumentFingerprint: str, updates: List[LayerUpdate], reason: Optional[str] = None) -> ToolResult:
         return self._invoke("apply_layer_updates", locals())
 
     async def review_spacing(
@@ -158,8 +391,8 @@ class ToolHandlers:
         self,
         documentId: str,
         destination: str,
-        overwritePolicy: str = "fail_if_nonempty",
-        compatibilityMode: str = "component_preserving",
+        overwritePolicy: OverwritePolicy = "fail_if_nonempty",
+        compatibilityMode: CompatibilityMode = "component_preserving",
         expectedDestinationFingerprint: Optional[str] = None,
         acknowledgedFindingIds: Optional[List[str]] = None,
     ) -> ToolResult:
@@ -194,8 +427,18 @@ class ToolHandlers:
     async def execute_python(
         self,
         reason: Optional[str] = None,
-        intendedEffect: str = "read",
-        executionMode: str = "staged_document",
+        intendedEffect: Annotated[
+            Literal["read", "document_edit", "files_or_external"],
+            Field(
+                description=(
+                    "Declared effect: read, document_edit, or "
+                    "files_or_external."
+                )
+            ),
+        ] = "read",
+        executionMode: Literal[
+            "staged_document", "live_open_world"
+        ] = "staged_document",
         code: Optional[str] = None,
         documentId: Optional[str] = None,
         glyphName: Optional[str] = None,
@@ -204,8 +447,8 @@ class ToolHandlers:
         expectedDocumentFingerprint: Optional[str] = None,
         reviewId: Optional[str] = None,
         confirm: bool = False,
-        maxOutputChars: int = 8192,
-        maxErrorChars: int = 8192,
+        maxOutputChars: Annotated[int, Field(ge=1, le=8192)] = 8192,
+        maxErrorChars: Annotated[int, Field(ge=1, le=8192)] = 8192,
     ) -> ToolResult:
         return self._invoke("execute_python", locals())
 
@@ -214,7 +457,7 @@ class ToolHandlers:
         executionId: str,
         expectedAfterFingerprint: str,
         confirm: bool = False,
-        strategy: str = "auto",
+        strategy: RollbackStrategy = "auto",
     ) -> ToolResult:
         return self._invoke("rollback_python_execution", locals())
 
@@ -233,14 +476,15 @@ class CatalogRegistrar:
 
         invoke = getattr(self._handlers, definition.handler_name)
         visibility = ["model", "app"] if definition.visibility == MODEL_AND_APP else ["app"]
-        self._server.tool(
+        tool = self._server.tool(
             name=definition.name,
             title=definition.title,
             description=definition.description,
-            output_schema=definition.output_schema,
+            output_schema=definition.discovery_output_schema,
             annotations=definition.annotations,
             meta={"ui": {"visibility": visibility}},
         )(invoke)
+        tool.parameters = _compact_parameter_schema(tool.parameters)
         self._registered.add(definition.name)
 
     def register_all(self) -> None:

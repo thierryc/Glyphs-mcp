@@ -6,6 +6,7 @@ import copy
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -17,6 +18,7 @@ from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.canonical_tree import CanonicalFontTree, MemoryObjectStore  # noqa: E402
 from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
 from glyphs_mcp_v2.change_lifecycle import DocumentHistoryLifecycle  # noqa: E402
+from glyphs_mcp_v2.python_execution import ObservedLivePythonError  # noqa: E402
 from glyphs_mcp_v2.semantic import fingerprint_model  # noqa: E402
 
 
@@ -214,6 +216,51 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         events = self.app._audit.list_events(document_id="doc_history")
         self.assertEqual(events[0].details["canonicalCoverage"], expected_coverage)
 
+    def test_incremental_history_failure_falls_back_to_complete_after_tree(self) -> None:
+        with mock.patch.object(
+            self.history.trees,
+            "store_verified_transition",
+            side_effect=ValueError("injected incremental failure"),
+        ):
+            response = self._apply_export_toggle()
+
+        self.assertTrue(response["ok"])
+        self.assertTrue(response["data"]["historyRecorded"])
+        commits = self.history.list_commits("doc_history")
+        self.assertEqual(len(commits), 1)
+        self.assertTrue(commits[0].changed)
+        self.assertEqual(
+            commits[0].change_set.after_fingerprint,
+            fingerprint_model(self.host.model),
+        )
+
+    def test_complete_history_failure_does_not_hide_verified_execution_result(self) -> None:
+        original_store = self.history.trees.store_model
+        calls = 0
+
+        def fail_after_baseline(model):
+            nonlocal calls
+            calls += 1
+            if calls > 1:
+                raise OSError("injected complete-tree failure")
+            return original_store(model)
+
+        with mock.patch.object(
+            self.history.trees,
+            "store_verified_transition",
+            side_effect=ValueError("injected incremental failure"),
+        ), mock.patch.object(
+            self.history.trees,
+            "store_model",
+            side_effect=fail_after_baseline,
+        ):
+            response = self._apply_export_toggle()
+
+        self.assertTrue(response["ok"])
+        self.assertFalse(response["data"]["historyRecorded"])
+        self.assertEqual(response["warnings"][0]["code"], "history_not_recorded")
+        self.assertFalse(self.host.model["glyphs"]["A"]["export"])
+
     def test_direct_apply_noop_runs_no_transaction_and_offers_no_revert(self) -> None:
         response = self.app.invoke(
             "apply_glyph_updates",
@@ -369,8 +416,9 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
                 "expectedDocumentFingerprint": fingerprint_model(host.model),
                 "updates": [
                     {
+                        "scope": "layer",
                         "glyphName": "A",
-                        "masterId": "m0",
+                        "layerId": "m0",
                         "leftMetricsKey": "=H",
                     }
                 ],
@@ -410,8 +458,9 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
                 "expectedDocumentFingerprint": fingerprint_model(host.model),
                 "updates": [
                     {
+                        "scope": "layer",
                         "glyphName": "A",
-                        "masterId": "m0",
+                        "layerId": "m0",
                         "leftMetricsKey": "=H",
                     }
                 ],
@@ -450,8 +499,9 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
                 "expectedDocumentFingerprint": fingerprint_model(host.model),
                 "updates": [
                     {
+                        "scope": "layer",
                         "glyphName": "A",
-                        "masterId": "m0",
+                        "layerId": "m0",
                         "leftMetricsKey": "=H",
                     }
                 ],
@@ -555,6 +605,144 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertFalse(commits[0].changed)
         self.assertTrue(commits[1].changed)
         self.assertEqual(commits[1].after_tree_hash, self.history.head_tree_hash("doc_history"))
+
+    def test_live_python_34_glyph_growth_reports_changed_on_success_and_exception(self) -> None:
+        def add_glyphs() -> tuple[dict, dict]:
+            before = copy.deepcopy(self.host.model)
+            template = copy.deepcopy(before["glyphs"]["A"])
+            for index in range(34):
+                name = "added{:02d}".format(index)
+                glyph = copy.deepcopy(template)
+                glyph["name"] = name
+                glyph["id"] = "id_{}".format(name)
+                self.host.model["glyphs"][name] = glyph
+            return before, copy.deepcopy(self.host.model)
+
+        def run_and_confirm() -> dict:
+            preview = self.app.invoke(
+                "execute_python",
+                {
+                    "documentId": "doc_history",
+                    "code": "print('synthetic 34-glyph membership transition')",
+                    "reason": "exercise large live transition tracing",
+                    "intendedEffect": "files_or_external",
+                    "executionMode": "live_open_world",
+                    "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+                },
+            ).to_dict()
+            return self.app.invoke(
+                "execute_python",
+                {"reviewId": preview["data"]["reviewId"], "confirm": True},
+            ).to_dict()
+
+        def succeeds(_request):
+            before, after = add_glyphs()
+            return {
+                "beforeModel": before,
+                "afterModel": after,
+                "stdout": "",
+                "stderr": "",
+                "observedDocumentChanges": [],
+            }
+
+        self.host.run_live_python = succeeds
+        success = run_and_confirm()
+        self.assertTrue(success["ok"])
+        self.assertTrue(success["data"]["changed"])
+        self.assertEqual(len(self.host.model["glyphs"]), 35)
+        self.assertTrue(self.history.list_commits("doc_history")[-1].changed)
+
+        # Reset to the one-glyph fixture and exercise the same observed
+        # transition when the live interpreter raises after mutation.
+        self.host.model = _model()
+
+        def raises_after_mutation(_request):
+            before, after = add_glyphs()
+            result = {
+                "beforeModel": before,
+                "afterModel": after,
+                "stdout": "",
+                "stderr": "boom",
+                "observedDocumentChanges": [],
+            }
+            raise ObservedLivePythonError(RuntimeError("boom"), result)
+
+        self.host.run_live_python = raises_after_mutation
+        failed = run_and_confirm()
+        self.assertFalse(failed["ok"])
+        self.assertTrue(failed["data"]["changed"])
+        self.assertGreater(failed["data"]["observedChangeCount"], 0)
+        self.assertTrue(failed["data"]["rollback"]["available"])
+        self.assertTrue(self.history.list_commits("doc_history")[-1].changed)
+
+    def test_confirmed_ui_only_python_records_an_unchanged_transition(self) -> None:
+        def ui_only(_request):
+            model = copy.deepcopy(self.host.model)
+            return {
+                "beforeModel": model,
+                "afterModel": copy.deepcopy(model),
+                "stdout": "opened edit tab",
+                "stderr": "",
+                "scopeViolations": [],
+            }
+
+        self.host.run_live_python = ui_only
+        fingerprint = fingerprint_model(self.host.model)
+        preview = self.app.invoke(
+            "execute_python",
+            {
+                "documentId": "doc_history",
+                "code": "font.newTab([layer])",
+                "reason": "exercise a UI-only transition",
+                "intendedEffect": "files_or_external",
+                "executionMode": "live_open_world",
+                "expectedDocumentFingerprint": fingerprint,
+            },
+        ).to_dict()
+        confirmed = self.app.invoke(
+            "execute_python",
+            {"reviewId": preview["data"]["reviewId"], "confirm": True},
+        ).to_dict()
+
+        self.assertTrue(confirmed["ok"])
+        self.assertEqual(confirmed["data"]["beforeFingerprint"], fingerprint)
+        self.assertEqual(confirmed["data"]["afterFingerprint"], fingerprint)
+        commits = self.history.list_commits("doc_history")
+        self.assertEqual([commit.changed for commit in commits], [False, False])
+
+    def test_repeated_unchanged_read_python_calls_record_without_fingerprint_failure(self) -> None:
+        def unchanged(_request):
+            model = copy.deepcopy(self.host.model)
+            return {
+                "beforeModel": model,
+                "afterModel": copy.deepcopy(model),
+                "stdout": "ok",
+                "stderr": "",
+                "observedDocumentChanges": [],
+            }
+
+        self.host.run_live_python = unchanged
+        responses = [
+            self.app.invoke(
+                "execute_python",
+                {
+                    "documentId": "doc_history",
+                    "code": "print(font.familyName)",
+                    "reason": "repeat an unchanged read",
+                    "intendedEffect": "read",
+                },
+            ).to_dict()
+            for _ in range(3)
+        ]
+
+        self.assertTrue(all(response["ok"] for response in responses))
+        self.assertTrue(
+            all(response["data"]["historyRecorded"] for response in responses)
+        )
+        self.assertEqual(
+            [commit.changed for commit in self.history.list_commits("doc_history")],
+            [False, False, False],
+        )
 
     def test_read_intent_python_mutation_is_stored_as_a_changed_action_commit(self) -> None:
         response = self.app.invoke(

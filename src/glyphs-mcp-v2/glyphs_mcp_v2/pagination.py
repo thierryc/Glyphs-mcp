@@ -57,7 +57,10 @@ def _decode_cursor(cursor: str, fingerprint: str, cursor_scope: str) -> int:
 
 @dataclass(frozen=True)
 class PageInfo:
+    requested_page_size: int
     page_size: int
+    max_page_bytes: int
+    truncation_reason: Optional[str]
     total_items: int
     returned_items: int
     offset: int
@@ -66,7 +69,10 @@ class PageInfo:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "requestedPageSize": self.requested_page_size,
             "pageSize": self.page_size,
+            "maxPageBytes": self.max_page_bytes,
+            "truncationReason": self.truncation_reason,
             "totalItems": self.total_items,
             "returnedItems": self.returned_items,
             "offset": self.offset,
@@ -102,6 +108,7 @@ def paginate(
         raise CursorError("cursor offset is outside the result")
     selected_values: list[T] = []
     encoded_bytes = 2
+    byte_budget_truncated = False
     for item in items[offset : offset + bounded]:
         item_bytes = len(
             json.dumps(item, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -110,6 +117,7 @@ def paginate(
         if item_bytes + 2 > max_page_bytes and not selected_values:
             raise ValueError("one result item exceeds the bounded response-page size")
         if encoded_bytes + separator_bytes + item_bytes > max_page_bytes:
+            byte_budget_truncated = True
             break
         selected_values.append(item)
         encoded_bytes += separator_bytes + item_bytes
@@ -123,7 +131,12 @@ def paginate(
     return Page(
         items=selected,
         page=PageInfo(
+            requested_page_size=requested,
             page_size=bounded,
+            max_page_bytes=max_page_bytes,
+            truncation_reason=(
+                "byte_budget" if byte_budget_truncated else None
+            ),
             total_items=total,
             returned_items=len(selected),
             offset=offset,

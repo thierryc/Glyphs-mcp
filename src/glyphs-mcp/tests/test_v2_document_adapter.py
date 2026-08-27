@@ -278,6 +278,48 @@ class _App:
         self.opened.append((path, showInterface))
 
 
+class _CompileFont(_Font):
+    def __init__(self, events=None, *, detached=False, preflight_error=None):
+        super().__init__()
+        self.events = events if events is not None else []
+        self.detached = detached
+        self.preflight_error = preflight_error
+
+    def copy(self):
+        return _CompileFont(
+            self.events,
+            detached=True,
+            preflight_error=self.preflight_error,
+        )
+
+    def compileFeatures(self):
+        self.events.append("detached" if self.detached else "live")
+        if self.detached and self.preflight_error is not None:
+            raise self.preflight_error
+
+
+class OpenTypeCompileAdapterTests(unittest.TestCase):
+    def test_detached_preflight_completes_before_live_compile(self) -> None:
+        font = _CompileFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+
+        result = host.compile_opentype_features(host.document_id_for_font(font))
+
+        self.assertEqual(font.events, ["detached", "live"])
+        self.assertTrue(result["preflightSucceeded"])
+        self.assertTrue(result["liveSucceeded"])
+
+    def test_failed_detached_preflight_never_compiles_live_font(self) -> None:
+        font = _CompileFont(preflight_error=RuntimeError("bad feature source"))
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+
+        result = host.compile_opentype_features(host.document_id_for_font(font))
+
+        self.assertEqual(font.events, ["detached"])
+        self.assertFalse(result["preflightSucceeded"])
+        self.assertFalse(result["liveAttempted"])
+
+
 class _EditableDocument:
     def __init__(
         self,
@@ -886,6 +928,52 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_open_edit_tab_resolves_all_layers_before_main_thread_open(self) -> None:
+        font = _TransactionalFont()
+        master = SimpleNamespace(id="m1")
+        layer = SimpleNamespace(
+            layerId="m1", associatedMasterId="m1", parent=None
+        )
+        glyph = SimpleNamespace(name="A", id="gA", layers=[layer])
+        layer.parent = glyph
+        font.masters = [master]
+        font.selectedFontMaster = master
+        font.selectedLayers = []
+        font.glyphs = [glyph]
+        opened = []
+
+        class TrackingExecutor:
+            def __init__(self) -> None:
+                self.in_callback = False
+
+            def run(self, callback):
+                self.in_callback = True
+                try:
+                    return callback()
+                finally:
+                    self.in_callback = False
+
+        executor = TrackingExecutor()
+
+        def new_tab(layers):
+            self.assertTrue(executor.in_callback)
+            opened.append(list(layers))
+
+        font.newTab = new_tab
+        host = GlyphsDocumentHost(_App(font), executor=executor)
+        document_id = host.list_documents()[0].document_id
+
+        with self.assertRaisesRegex(HostAccessError, "Missing"):
+            host.open_edit_tab(
+                document_id, ("A", "Missing"), master_id="m1"
+            )
+        self.assertEqual(opened, [])
+
+        result = host.open_edit_tab(document_id, ("A",), master_id="m1")
+        self.assertEqual(opened, [[layer]])
+        self.assertEqual(result["glyphNames"], ["A"])
+        self.assertEqual(result["masterId"], "m1")
+
     def test_master_value_stores_follow_root_definition_identity(self) -> None:
         class NativeStore(dict):
             """Model Glyphs' NSDictionary-backed master value stores."""
@@ -3212,22 +3300,54 @@ class V2DocumentAdapterTests(unittest.TestCase):
         font.kerningRTL = {}
         font.kerningVertical = {}
         font.kerningContext = {}
+        context_calls = []
 
         def set_pair(master, left, right, value, direction=0):
             domain = {0: font.kerning, 1: font.kerningRTL, 2: font.kerningVertical}[direction]
             domain.setdefault(master, {}).setdefault(left, {})[right] = value
 
         font.setKerningForPair = set_pair
+        def set_context(context_key, master_id, value):
+            context_calls.append(("set", context_key, master_id, value))
+            font.kerningContext.setdefault(context_key, {})[master_id] = value
+
+        def remove_context(context_key, master_id):
+            context_calls.append(("remove", context_key, master_id))
+            values = font.kerningContext.get(context_key, {})
+            values.pop(master_id, None)
+            if not values:
+                font.kerningContext.pop(context_key, None)
+
+        font.setContextKerningForKey = set_context
+        font.removeContextKerningForKey = remove_context
         target = {
             "ltr": {"M1": {"glyph_A": {"glyph_V": -80}}},
             "rtl": {"M1": {"glyph_V": {"glyph_A": -40}}},
             "vertical": {"M1": {"glyph_A": {"glyph_V": -20}}},
-            "context": {"M1": {"A V": -10}},
+            "context": {"A * V A": {"M1": -10}},
         }
 
         document_adapter._replace_kerning(font, target)
 
         self.assertEqual(document_adapter._kerning_model(font), target)
+        self.assertEqual(
+            context_calls, [("set", "A * V A", "M1", -10.0)]
+        )
+
+        document_adapter._replace_kerning(
+            font,
+            {
+                **target,
+                "context": {"A V * A": {"M1": 0}},
+            },
+        )
+        self.assertEqual(
+            context_calls[-2:],
+            [
+                ("remove", "A * V A", "M1"),
+                ("set", "A V * A", "M1", 0.0),
+            ],
+        )
 
     def test_absent_native_kerning_context_matches_the_empty_serialized_domain(self) -> None:
         font = SimpleNamespace(
@@ -3239,6 +3359,31 @@ class V2DocumentAdapterTests(unittest.TestCase):
         )
 
         self.assertEqual(document_adapter._kerning_model(font)["context"], {})
+
+    def test_context_selector_support_is_checked_before_pair_mutation(self) -> None:
+        calls = []
+        font = SimpleNamespace(
+            glyphs=[],
+            kerning={},
+            kerningRTL={},
+            kerningVertical={},
+            kerningContext={},
+            setKerningForPair=lambda *arguments: calls.append(arguments),
+            removeKerningForPair=lambda *arguments: calls.append(arguments),
+        )
+        target = {
+            "ltr": {"M1": {"A": {"V": -80}}},
+            "rtl": {},
+            "vertical": {},
+            "context": {"L * quoteright A": {"M1": -40}},
+        }
+
+        with self.assertRaisesRegex(
+            HostAccessError, "contextual kerning assignment"
+        ):
+            document_adapter._replace_kerning(font, target)
+
+        self.assertEqual(calls, [])
 
     def test_guide_attributes_have_one_canonical_capture_and_replay_name(self) -> None:
         guide = SimpleNamespace(
@@ -6436,9 +6581,23 @@ class V2DocumentAdapterTests(unittest.TestCase):
         ]
         font.glyphs = [glyph]
         font.copy = lambda: copy.deepcopy(font)
-        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        class TrackingExecutor:
+            def __init__(self):
+                self.in_callback = False
+
+            def run(self, callback):
+                self.in_callback = True
+                try:
+                    return callback()
+                finally:
+                    self.in_callback = False
+
+        executor = TrackingExecutor()
+        host = GlyphsDocumentHost(_App(font), executor=executor)
         document_id = host.list_documents()[0].document_id
         before = host.capture_model(document_id)
+        phases = []
+        checkpoints = []
         request = PythonExecutionRequest(
             code="layer.paths[0].nodes[0].position = (25, 0)",
             reason="scoped staged path test",
@@ -6449,6 +6608,10 @@ class V2DocumentAdapterTests(unittest.TestCase):
             master_id="master-regular",
             layer_id="master-regular",
             expected_document_fingerprint=document_adapter.fingerprint_model(before),
+            progress_callback=lambda phase, _message, _cancellable: phases.append(
+                phase
+            ),
+            checkpoint_callback=lambda: checkpoints.append(True),
         )
 
         def scoped_archive(candidate, scoped_request):
@@ -6460,11 +6623,21 @@ class V2DocumentAdapterTests(unittest.TestCase):
             )
             return repr(native_layer_to_model(candidate_layer)).encode("utf-8")
 
+        real_compare = document_adapter._compare_native_archive_deltas
+
+        def compare_off_main(*args, **kwargs):
+            self.assertFalse(executor.in_callback)
+            return real_compare(*args, **kwargs)
+
         with mock.patch.object(
             document_adapter,
             "_serialized_review_scope",
             side_effect=scoped_archive,
             create=True,
+        ), mock.patch.object(
+            document_adapter,
+            "_compare_native_archive_deltas",
+            side_effect=compare_off_main,
         ):
             preview = host.preview_python(request, before)
 
@@ -6483,6 +6656,23 @@ class V2DocumentAdapterTests(unittest.TestCase):
             preview["writableChangeSet"].after_fingerprint,
             document_adapter.fingerprint_model(preview["afterModel"]),
         )
+        self.assertEqual(
+            phases,
+            [
+                "stabilizing",
+                "cloning",
+                "executing",
+                "comparing",
+                "replaying",
+                "verifying",
+                "checking_scope",
+            ],
+        )
+        self.assertGreaterEqual(len(checkpoints), 6)
+        self.assertIn("cloneCaptureMs", preview["stageTimings"])
+        self.assertIn("evaluationCaptureMs", preview["stageTimings"])
+        self.assertIn("replayCaptureMs", preview["stageTimings"])
+        self.assertIn("maxNativePhaseMs", preview["stageTimings"])
     def test_canonical_layer_records_native_width_ownership(self) -> None:
         path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
         component = _OutlineComponent("jdotless")
@@ -7312,6 +7502,11 @@ class V2DocumentAdapterTests(unittest.TestCase):
             document_id, change_set, operation_id="op_forward"
         )
 
+        # Native dirty accounting remains pending until settled verification.
+        self.assertFalse(font.parent.isDocumentEdited)
+        self.assertTrue(host.list_documents()[0].has_unsaved_changes)
+        host.commit_verified_change("op_forward")
+
         self.assertTrue(font.parent.isDocumentEdited)
         self.assertTrue(host.list_documents()[0].has_unsaved_changes)
 
@@ -7321,6 +7516,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
             operation_id="op_revert",
             removes_contribution_id="op_forward",
         )
+        host.commit_verified_change("op_revert")
 
         self.assertFalse(font.parent.isDocumentEdited)
         self.assertFalse(host.list_documents()[0].has_unsaved_changes)
@@ -7339,6 +7535,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         host.apply_verified_change_set(
             document_id, change_set, operation_id="op_forward"
         )
+        host.commit_verified_change("op_forward")
 
         self.assertFalse(font.parent.hasUnautosavedChanges)
         self.assertTrue(host.list_documents()[0].has_unsaved_changes)
@@ -7349,6 +7546,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
             operation_id="op_revert",
             removes_contribution_id="op_forward",
         )
+        host.commit_verified_change("op_revert")
 
         self.assertFalse(host.list_documents()[0].has_unsaved_changes)
 
@@ -7364,12 +7562,14 @@ class V2DocumentAdapterTests(unittest.TestCase):
         host.apply_verified_change_set(
             document_id, change_set, operation_id="op_forward"
         )
+        host.commit_verified_change("op_forward")
         host.apply_verified_change_set(
             document_id,
             change_set.inverse(),
             operation_id="op_revert",
             removes_contribution_id="op_forward",
         )
+        host.commit_verified_change("op_revert")
 
         self.assertTrue(font.parent.isDocumentEdited)
         self.assertNotIn(2, font.parent.change_counts)
@@ -7386,12 +7586,14 @@ class V2DocumentAdapterTests(unittest.TestCase):
         host.apply_verified_change_set(
             document_id, change_set, operation_id="op_forward"
         )
+        host.commit_verified_change("op_forward")
         host.apply_verified_change_set(
             document_id,
             change_set.inverse(),
             operation_id="op_revert",
             removes_contribution_id="op_forward",
         )
+        host.commit_verified_change("op_revert")
 
         self.assertTrue(font.parent.isDocumentEdited)
         self.assertFalse(host.list_documents()[0].has_unsaved_changes)
@@ -7415,12 +7617,14 @@ class V2DocumentAdapterTests(unittest.TestCase):
                 change_set,
                 operation_id="op_forward_{}".format(suffix),
             )
+            host.commit_verified_change("op_forward_{}".format(suffix))
             host.apply_verified_change_set(
                 document_id,
                 diff_models(host.capture_model(document_id), baseline),
                 operation_id="op_revert_{}".format(suffix),
                 removes_contribution_id="op_forward_{}".format(suffix),
             )
+            host.commit_verified_change("op_revert_{}".format(suffix))
 
             self.assertTrue(font.parent.isDocumentEdited)
             self.assertFalse(
@@ -7444,10 +7648,45 @@ class V2DocumentAdapterTests(unittest.TestCase):
         host.restore_verified_attempt(
             document_id, before, operation_id="op_forward"
         )
+        host.finalize_verified_failure(
+            "op_forward",
+            rollback_succeeded=True,
+            observed_fingerprint=fingerprint_model(before),
+        )
 
         self.assertIsNone(font.note)
         self.assertFalse(font.parent.isDocumentEdited)
-        self.assertEqual(font.parent.change_counts, [0, 1])
+        self.assertEqual(font.parent.change_counts, [])
+
+    def test_unverifiable_failed_attempt_forces_dirty_and_never_exposes_clean(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        after = copy.deepcopy(before)
+        after["font"]["note"] = "attempted edit"
+
+        host.apply_verified_change_set(
+            document_id,
+            diff_models(before, after),
+            operation_id="op_unverified",
+        )
+        font.note = "unrestored divergence"
+        observed = fingerprint_model(host.capture_model(document_id))
+        host.finalize_verified_failure(
+            "op_unverified",
+            rollback_succeeded=False,
+            observed_fingerprint=observed,
+        )
+
+        self.assertTrue(font.parent.isDocumentEdited)
+        self.assertTrue(host.list_documents()[0].has_unsaved_changes)
+        self.assertEqual(font.parent.change_counts, [0])
+        self.assertTrue(
+            host._document_mcp_contributions[document_id]["op_unverified"][
+                "failedVerification"
+            ]
+        )
 
     def test_failed_rollback_restoration_reinstates_dirty_contribution(self) -> None:
         font = _TransactionalFont()
@@ -7461,6 +7700,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         host.apply_verified_change_set(
             document_id, change_set, operation_id="op_forward"
         )
+        host.commit_verified_change("op_forward")
         host.apply_verified_change_set(
             document_id,
             change_set.inverse(),
@@ -7473,10 +7713,15 @@ class V2DocumentAdapterTests(unittest.TestCase):
             operation_id="op_revert_1",
             removes_contribution_id="op_forward",
         )
+        host.finalize_verified_failure(
+            "op_revert_1",
+            rollback_succeeded=True,
+            observed_fingerprint=fingerprint_model(after),
+        )
 
         self.assertEqual(font.note, "reviewed edit")
         self.assertTrue(font.parent.isDocumentEdited)
-        self.assertEqual(font.parent.change_counts, [0, 1, 0])
+        self.assertEqual(font.parent.change_counts, [0])
 
         host.apply_verified_change_set(
             document_id,
@@ -7484,8 +7729,9 @@ class V2DocumentAdapterTests(unittest.TestCase):
             operation_id="op_revert_2",
             removes_contribution_id="op_forward",
         )
+        host.commit_verified_change("op_revert_2")
         self.assertFalse(font.parent.isDocumentEdited)
-        self.assertEqual(font.parent.change_counts, [0, 1, 0, 1])
+        self.assertEqual(font.parent.change_counts, [0, 1])
 
     def test_non_linear_verified_reverts_remove_their_own_dirty_contributions(self) -> None:
         font = _TransactionalFont()
@@ -7499,6 +7745,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         host.apply_verified_change_set(
             document_id, change_a, operation_id="op_A"
         )
+        host.commit_verified_change("op_A")
 
         before_b = host.capture_model(document_id)
         after_b = copy.deepcopy(before_b)
@@ -7507,6 +7754,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         host.apply_verified_change_set(
             document_id, change_b, operation_id="op_B"
         )
+        host.commit_verified_change("op_B")
 
         current = host.capture_model(document_id)
         target_without_a = copy.deepcopy(current)
@@ -7517,6 +7765,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
             operation_id="op_revert_A",
             removes_contribution_id="op_A",
         )
+        host.commit_verified_change("op_revert_A")
         self.assertEqual(font.grid, 2)
         self.assertTrue(host.list_documents()[0].has_unsaved_changes)
 
@@ -7527,6 +7776,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
             operation_id="op_revert_B",
             removes_contribution_id="op_B",
         )
+        host.commit_verified_change("op_revert_B")
         self.assertEqual(host.capture_model(document_id), baseline)
         self.assertFalse(host.list_documents()[0].has_unsaved_changes)
         self.assertEqual(font.parent.change_counts, [0, 0, 1, 1])
