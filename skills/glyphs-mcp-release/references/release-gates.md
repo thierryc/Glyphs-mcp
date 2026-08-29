@@ -46,10 +46,12 @@ creation, or upload unless the user explicitly expands the scope.
 4. Run targeted tests for touched code, then the mandatory complete gate:
 
    ```bash
-   PYTHON_BIN=/Library/Frameworks/Python.framework/Versions/3.12/bin/python3 ./scripts/run_local_release_tests.sh
+   PYTHON_BIN=.venv-v2/bin/python ./scripts/run_local_release_tests.sh
    ```
 
-   Use another project-approved Python 3.11-3.14 interpreter only when the
+   `.venv-v2/bin/python` must identify as Python 3.14; it is the primary v2
+   release driver. Use another project-approved Python 3.11-3.14 interpreter
+   only when the
    exact path and reason are recorded. Before any test can be skipped, the gate
    requires that interpreter to have the exact `fontmake` version pinned in
    `requirements-dev.txt`; missing or mismatched source-build tooling fails

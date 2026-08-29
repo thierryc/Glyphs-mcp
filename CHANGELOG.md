@@ -52,6 +52,10 @@ runtime only for Glyphs 4.
 
 - Deterministic payload schema v2 contains separate Glyphs 3 and Glyphs 4
   plug-ins. Glyphs 3 is pinned to `v1.11.0`/`13ca805`; Glyphs 4 receives v2.
+- Python 3.14.6 is the primary v2 development and release driver. The isolated
+  v2 environment carries the exact pinned release dependencies, while Python
+  3.12 remains in the compatibility matrix and continues to serve the pinned
+  Glyphs 3/v1 runtime.
 - Installation, replacement rollback, update staging, preferences, receipts,
   and uninstall are target-addressed. Acting on one host never replaces the
   other host's plug-in.

@@ -376,7 +376,9 @@ resource registration is not part of the public 1.9 tool surface.
 ## Installer Notes
 
 - If you are unsure, accept the defaults: Glyphs Python and signed-release Copy.
-- Prefer python.org Python 3.12+ over Homebrew for fewer macOS compatibility issues.
+- For v2 development and release qualification, prefer python.org Python 3.14
+  over Homebrew for fewer macOS compatibility issues. Python 3.12 remains
+  supported and tested for the Glyphs 3/v1 runtime.
 - On Apple Silicon, avoid Rosetta-translated Python builds.
 - No `sudo` is required.
 - Verify the local endpoint with `curl -H 'Accept: application/json' http://127.0.0.1:9680/mcp/`.
@@ -434,14 +436,15 @@ This repo ships two plugin bundle locations:
 Developer test environment:
 
 ```bash
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements-dev.txt
-PYTHON_BIN=.venv/bin/python ./scripts/run_python_tests.sh
+python3.14 -m venv .venv-v2
+.venv-v2/bin/python -m pip install -r requirements-dev.txt
+PYTHON_BIN=.venv-v2/bin/python ./scripts/run_python_tests.sh
 ```
 
-The runner checks Python 3.11–3.14 and required development-only modules before
-starting. For a focused pytest run, use
-`PYTHON_BIN=.venv/bin/python ./scripts/run_python_tests.sh --pytest <tests...>`;
+Python 3.14 is the primary v2 driver. The runner still accepts Python 3.11–3.14
+and checks required development-only modules before starting; release coverage
+retains the Python 3.12/3.14 matrix. For a focused pytest run, use
+`PYTHON_BIN=.venv-v2/bin/python ./scripts/run_python_tests.sh --pytest <tests...>`;
 the wrapper disables unrelated globally installed pytest plug-ins so they
 cannot alter FastMCP/Pydantic import state. The release gate continues to use
 the canonical `unittest` suite.
@@ -456,7 +459,7 @@ git switch -c lit/release-X.Y.Z
 python3 scripts/bump_version.py --dry-run X.Y.Z
 python3 scripts/bump_version.py X.Y.Z
 
-# 2) Synchronize and verify the shared 10-skill agent package
+# 2) Synchronize and verify the shared 18-skill agent package
 ./scripts/sync_codex_plugin_skills.sh
 ./scripts/sync_codex_plugin_skills.sh --check
 
@@ -468,7 +471,7 @@ python3 scripts/bump_version.py X.Y.Z
 
 # 4) Run the full local release gate (Python 3.12/3.14 clean-install matrix,
 #    Python and Xcode tests, unsigned Debug build; package-index access required)
-./scripts/run_local_release_tests.sh
+PYTHON_BIN=.venv-v2/bin/python ./scripts/run_local_release_tests.sh
 
 # 5) Commit release artifacts
 git add README.md

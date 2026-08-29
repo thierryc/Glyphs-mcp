@@ -115,11 +115,18 @@ Glyphs version applicability, authority class, source URL, verification date,
 checksum, citations, and focused coding examples. Search ranking and
 pagination are deterministic.
 
+Create the isolated v2 development environment once from repository root:
+
+```bash
+python3.14 -m venv .venv-v2
+.venv-v2/bin/python -m pip install -r requirements-dev.txt
+```
+
 Build or verify it from repository root:
 
 ```bash
-python3.12 scripts/build_v2_knowledge.py
-python3.12 scripts/build_v2_knowledge.py --check
+.venv-v2/bin/python scripts/build_v2_knowledge.py
+.venv-v2/bin/python scripts/build_v2_knowledge.py --check
 ```
 
 Upstream sources are reviewed and pinned during builds. Runtime search never
@@ -130,11 +137,11 @@ fetches uncontrolled network content.
 Run the isolated v2 suite and deterministic generation checks:
 
 ```bash
-python3.12 -m pytest -q src/glyphs-mcp/tests/test_v2_*.py
-python3.12 scripts/build_v2_knowledge.py --check
-python3.12 scripts/render_v2_command_reference.py --check
+.venv-v2/bin/python -m pytest -q src/glyphs-mcp/tests/test_v2_*.py
+.venv-v2/bin/python scripts/build_v2_knowledge.py --check
+.venv-v2/bin/python scripts/render_v2_command_reference.py --check
 scripts/sync_codex_plugin_skills.sh --check
-python3.12 scripts/build_v2_runtime_payload.py
+.venv-v2/bin/python scripts/build_v2_runtime_payload.py
 git diff --check
 ```
 

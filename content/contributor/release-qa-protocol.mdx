@@ -19,14 +19,16 @@ From repository root:
 
 ```bash
 python3 scripts/bump_version.py --dry-run --installer-build 27 2.0.0
-PYTHON_BIN=python3.12 ./scripts/run_local_release_tests.sh
-python3.12 -m pytest -q src/glyphs-mcp/tests/test_v2_*.py
-python3.12 scripts/build_v2_knowledge.py --check
-python3.12 scripts/render_v2_command_reference.py --check
+PYTHON_BIN=.venv-v2/bin/python ./scripts/run_local_release_tests.sh
+.venv-v2/bin/python -m pytest -q src/glyphs-mcp/tests/test_v2_*.py
+.venv-v2/bin/python scripts/build_v2_knowledge.py --check
+.venv-v2/bin/python scripts/render_v2_command_reference.py --check
 scripts/sync_codex_plugin_skills.sh --check
 ```
 
-The consolidated gate verifies exact dependencies including `fontmake`,
+Python 3.14 is the primary v2 release driver. The consolidated gate retains
+the Python 3.12/3.14 compatibility matrix and verifies exact dependencies,
+including `fontmake`,
 schema-v6 classification, deterministic payloads, Knowledge freshness,
 generated documentation, authored/packaged skill equality, Python tests, Xcode
 tests, and unsigned candidate metadata. Network-backed upstream drift checks

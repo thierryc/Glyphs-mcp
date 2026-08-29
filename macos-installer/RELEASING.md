@@ -31,6 +31,20 @@ Authenticate GitHub CLI:
 gh auth login -h github.com
 ```
 
+### Python v2 release driver
+
+Use an isolated Python 3.14 environment for v2 preparation and the primary
+release-gate process:
+
+```bash
+python3.14 -m venv .venv-v2
+.venv-v2/bin/python -m pip install -r requirements-dev.txt
+```
+
+The gate verifies exact release dependency pins before testing and retains the
+Python 3.12/3.14 compatibility matrix. This does not change the pinned Glyphs
+3/v1 runtime or its selected Python 3.12 environment.
+
 ## Versioning (what to bump)
 
 The installer release version and target plug-in versions are separate fields.
@@ -59,7 +73,7 @@ Update:
 - `plugins/glyphs-mcp/.github/plugin/plugin.json`
 
 Set every manifest's `version` to `X.Y.Z`. Marketplace entries deliberately do
-not duplicate the package version. The 11 skills inherit the package version,
+not duplicate the package version. The 18 skills inherit the package version,
 and `.mcp.json` stays shared across hosts.
 
 4) **Docs/links** (if needed for the new tag):
@@ -85,7 +99,7 @@ python3 scripts/bump_version.py --dry-run X.Y.Z
 Run the same mandatory test gate used by the publisher:
 
 ```bash
-./scripts/run_local_release_tests.sh
+PYTHON_BIN=.venv-v2/bin/python ./scripts/run_local_release_tests.sh
 ```
 
 It runs the complete Python suite, the complete Xcode test suite, shell syntax checks, patch whitespace checks, and an unsigned Debug installer build. The Debug build is deliberately unsigned because it is only a local compilation check. Distribution artifacts are built separately in Release configuration and must have a valid Developer ID signature, hardened runtime, secure timestamp, notarization ticket, and Gatekeeper acceptance.
@@ -187,7 +201,7 @@ automatic or in-app installation.
 The local test gate is mandatory before publishing. It can also be run independently:
 
 ```bash
-./scripts/run_local_release_tests.sh
+PYTHON_BIN=.venv-v2/bin/python ./scripts/run_local_release_tests.sh
 ```
 
 For 1.5.4 and later, also run the installer ABI matrix before signing:

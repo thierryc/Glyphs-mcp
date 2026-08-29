@@ -17,9 +17,9 @@ Environment:
   PYTHON_BIN   Python 3.11-3.14 interpreter to use (default: python3)
 
 Set up an isolated environment first when needed:
-  python3.12 -m venv .venv
-  .venv/bin/python -m pip install -r requirements-dev.txt
-  PYTHON_BIN=.venv/bin/python ./scripts/run_python_tests.sh
+  python3.14 -m venv .venv-v2
+  .venv-v2/bin/python -m pip install -r requirements-dev.txt
+  PYTHON_BIN=.venv-v2/bin/python ./scripts/run_python_tests.sh
 EOF
 }
 

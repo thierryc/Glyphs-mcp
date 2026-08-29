@@ -47,6 +47,17 @@ the obsolete symmetric host QA protocol.
 Qualification results are recorded below only after the corresponding gate is
 run:
 
+- Python 3.14 primary-driver qualification: passed on August 29, 2026 from
+  branch `lit/v2` with the interpreter and documentation changes uncommitted.
+  The isolated `.venv-v2` used Python 3.14.6 with exact release dependencies
+  `fontmake==3.10.1` and `uharfbuzz==0.56.0`. The complete Python suite passed
+  1,546 tests with three expected environment-dependent skips; Knowledge,
+  generated command reference, runtime payload, skill synchronization, and
+  patch-whitespace checks passed. The consolidated release gate passed its
+  dependency preflight and then stopped, as designed, at the outstanding
+  committed Glyphs 4 native-export parity capture. This was not a complete
+  release qualification and performed no signing, installation, or external
+  release action.
 - Milestone 13 unsigned pre-integration qualification: passed on August 24,
   2026 from branch `lit/v2` with the Milestones 10–13 closure changes still
   uncommitted. The mandatory full-network gate found no upstream drift across

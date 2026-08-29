@@ -46,7 +46,7 @@ Validate changes with:
 ```bash
 scripts/sync_codex_plugin_skills.sh
 scripts/sync_codex_plugin_skills.sh --check
-python3.12 -m pytest -q src/glyphs-mcp/tests/test_v2_skill_contracts.py
+.venv-v2/bin/python -m pytest -q src/glyphs-mcp/tests/test_v2_skill_contracts.py
 ```
 
 ## Milestones

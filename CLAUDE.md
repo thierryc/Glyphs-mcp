@@ -3,13 +3,14 @@
 This guide briefs Claude Code on how to work with the Glyphs MCP repository.
 
 ## Project Overview
-- Glyphs MCP is a Model Context Protocol (MCP) server bundled as a Glyphs 3 plugin.
+- Glyphs MCP ships a pinned v1.11 MCP plug-in for Glyphs 3 and an isolated,
+  breaking v2 MCP plug-in for Glyphs 4.
 - It exposes GlyphsApp APIs as JSON-RPC tools over the MCP Streamable HTTP transport.
 - Python sources live in `src/glyphs-mcp/`; dependencies install into the user
   Scripts `site-packages` directory (not vendored into the plugin).
 
-## Capabilities Exposed to Agents
-The shipped tool set focuses on glyph inspection, editing, and project metadata:
+## Glyphs 3/v1 Capabilities Exposed to Agents
+The pinned Glyphs 3/v1 tool set focuses on glyph inspection, editing, and project metadata:
 - `list_open_fonts`, `get_font_masters`, `get_font_instances` for font-level information.
 - `get_glyph_details`, `get_glyph_paths`, `get_glyph_components`, `get_selected_glyphs` for glyph structure.
 - `create_glyph`, `delete_glyph`, `copy_glyph`, `add_component_to_glyph`, `add_anchor_to_glyph` for building glyphs.
@@ -18,6 +19,8 @@ The shipped tool set focuses on glyph inspection, editing, and project metadata:
 - `docs_search`, `docs_get` for on-demand access to bundled SDK/ObjectWrapper docs.
 
 Refer to `README.md` for the complete table of supported tools and descriptions.
+Use `src/glyphs-mcp-v2/README.md` for the generic 18-tool Glyphs 4/v2 contract;
+do not borrow v1 tools for v2 work.
 
 ## Repository Layout Highlights
 - `src/glyphs-mcp/` — MCP implementation, plugin bundle, and helper scripts.
@@ -26,7 +29,7 @@ Refer to `README.md` for the complete table of supported tools and descriptions.
 - `glyphs-build-env/` — Optional local virtual environment for development tooling.
 - `README.md` — High-level overview, tool catalog, and IDE configuration snippets.
 
-## Build & Run Workflow
+## Glyphs 3/v1 Build & Run Workflow
 1. Install dependencies using one option:
    - `src/glyphs-mcp/scripts/install_deps_glyphs_python.sh` (uses Glyphs’ Python → installs into `~/Library/Application Support/Glyphs 3/Scripts/site-packages`), or
    - `src/glyphs-mcp/scripts/install_deps_external_python.sh` (uses external Python → installs into that Python’s user site-packages)
@@ -39,13 +42,13 @@ After regenerating ObjectWrapper documentation, update the bundled copy with:
 python src/glyphs-mcp/scripts/copy_documentation.py
 ```
 
-The v2 foundation remains separate from the installed 1.x plug-in. Run its
-tests through the repository suite and assemble its two deterministic payload
-layouts without installing them:
+The v2 source remains isolated from the pinned 1.x source. Run its tests
+through the repository suite and assemble its two deterministic target
+layouts without modifying v1:
 
 ```bash
-PYTHONDONTWRITEBYTECODE=1 PYTHON_BIN=python3.12 ./scripts/run_python_tests.sh
-python3.12 scripts/build_v2_runtime_payload.py
+PYTHONDONTWRITEBYTECODE=1 PYTHON_BIN=.venv-v2/bin/python ./scripts/run_python_tests.sh
+.venv-v2/bin/python scripts/build_v2_runtime_payload.py
 ```
 
 Keep v2 environments and generated state inside `.venv-v2/`, `.cache/v2/`,

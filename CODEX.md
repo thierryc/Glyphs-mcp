@@ -3,7 +3,8 @@
 This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP.
 
 ## Mission Brief
-- Glyphs MCP is a Python-based MCP server packaged as a Glyphs 3 plugin.
+- Glyphs MCP ships a pinned v1.11 plug-in for Glyphs 3 and an isolated,
+  breaking v2 plug-in for Glyphs 4.
 - The server exposes GlyphsApp functionality as JSON-RPC tools via Streamable HTTP at `http://127.0.0.1:9680/mcp/`.
 - A plain browser `GET` to `/mcp/` returns JSON discovery; MCP clients connect using SSE (`Accept: text/event-stream`).
 - Dependencies follow the shared runtime path plan: embedded Glyphs Python uses
@@ -27,12 +28,16 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
   - `src/glyphs-mcp/scripts/install_deps_external_python.sh` (external Python → installs into that Python’s user site-packages)
 - Sync ObjectWrapper docs into the plugin: `python src/glyphs-mcp/scripts/copy_documentation.py`.
 - Run the complete 1.x + 2.0 Python suite without bytecode artifacts:
-  `PYTHONDONTWRITEBYTECODE=1 PYTHON_BIN=python3.12 ./scripts/run_python_tests.sh`.
+  `PYTHONDONTWRITEBYTECODE=1 PYTHON_BIN=.venv-v2/bin/python ./scripts/run_python_tests.sh`.
 - Assemble both v2 runtime payload layouts inside the worktree:
-  `python3.12 scripts/build_v2_runtime_payload.py`.
+  `.venv-v2/bin/python scripts/build_v2_runtime_payload.py`.
 - Start the server from Glyphs: restart the app, then **Edit → Start Glyphs MCP Server** (or enable auto-start in **Edit → Glyphs MCP Server Status…**).
 
-## MCP Tool Surface (selected)
+## Glyphs 3/v1 Tool Surface (selected)
+
+The Glyphs 4/v2 public contract is documented in
+[`src/glyphs-mcp-v2/README.md`](src/glyphs-mcp-v2/README.md) and generated from
+the v2 catalog. Do not mix the two host contracts.
 - Metadata: `list_open_fonts`, `get_font_glyphs`, `get_font_masters`, `get_font_instances`.
 - Glyph inspection: `get_glyph_details`, `get_glyph_paths`, `get_glyph_components`, `get_selected_glyphs`, `get_selected_nodes`, `list_style_sets`.
 - Curve geometry: `review_tunni_geometry`, `review_curve_quality`, grid-safe `apply_tunni_balance`, and the native curvature Reporter.
