@@ -24,22 +24,42 @@ class MasterCompatibilitySkillTests(unittest.TestCase):
         text = (CANONICAL / "SKILL.md").read_text(encoding="utf-8")
         normalized = " ".join(text.split())
         for required in (
-            "Diagnose before editing",
-            "review_master_compatibility",
-            "get_operation",
-            "review_start_node_alignment",
-            "apply_start_node_alignment",
-            "apply_compatibility_updates",
-            "execute_python",
-            "staged_document",
-            "Before adding an off-curve node",
-            "mastersCompatible == true",
-            "never claim the glyph is compatible",
-            "Never auto-save the font",
-            "Show Master Compatibility",
+            "surface: glyphs-mcp-v2",
+            "get_server_info",
+            "data.apiMajor == 2",
+            "search_knowledge",
+            "get_knowledge",
+            "list_documents",
+            "read_document",
+            "every interpolation-participating layer",
+            "geometry counts",
+            "alignment",
+            'execute_python(mode="read_only")',
+            "Classify the mismatch",
+            "Start-node placement is a semantic decision",
+            "explicit `move`, `set`, or `duplicate` mechanics",
+            'execute_python(mode="staged_document")',
+            "Preserve topology",
+            "preview_change",
+            "apply_change",
+            "re-read all participating layers",
+            "Never call `save_document` automatically",
         ):
             with self.subTest(required=required):
                 self.assertIn(required, normalized)
+
+        for removed_tool in (
+            "review_master_compatibility",
+            "apply_compatibility_updates",
+            "list_glyphs",
+            "list_layers",
+            "review_start_node_alignment",
+            "apply_start_node_alignment",
+            "get_glyph_paths",
+            "get_glyph_components",
+        ):
+            with self.subTest(removed_tool=removed_tool):
+                self.assertNotIn(removed_tool, normalized)
 
     def test_playbook_covers_safe_near_and_manual_outcomes(self) -> None:
         text = (CANONICAL / "references" / "compatibility-playbook.md").read_text(

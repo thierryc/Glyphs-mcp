@@ -34,7 +34,7 @@ from glyphs_mcp_v2.semantic import (  # noqa: E402
     diff_models,
     fingerprint_model,
 )
-from glyphs_mcp_v2.workflows import build_master_updates  # noqa: E402
+from glyphs_mcp_v2.structural_registry import build_master_updates  # noqa: E402
 
 
 def _layer(master_id: str, x: float = 0.0) -> dict:

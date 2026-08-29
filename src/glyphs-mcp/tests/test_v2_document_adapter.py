@@ -17,6 +17,22 @@ from types import SimpleNamespace
 from unittest import mock
 
 
+# PyObjC extension modules cannot be unloaded and imported again.  Load the
+# genuine bridge during collection, before reporter/startup tests temporarily
+# substitute an ``objc`` module, so those patches always restore this exact
+# package instead of leaving only ``objc._objc`` resident.
+if sys.platform == "darwin":
+    try:
+        import objc as _PYOBJC_RUNTIME  # type: ignore[import-not-found]
+        from AppKit import NSDocument as _NSDOCUMENT_RUNTIME  # type: ignore[import-not-found]
+    except Exception:  # pragma: no cover - exercised by non-PyObjC hosts
+        _PYOBJC_RUNTIME = None
+        _NSDOCUMENT_RUNTIME = None
+else:
+    _PYOBJC_RUNTIME = None
+    _NSDOCUMENT_RUNTIME = None
+
+
 REPO = Path(__file__).resolve().parents[3]
 V2_SOURCE = REPO / "src" / "glyphs-mcp-v2"
 if str(V2_SOURCE) not in sys.path:
@@ -28,8 +44,12 @@ from glyphs_mcp_v2.adapters.document import (  # noqa: E402
     native_layer_to_model,
 )
 from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
-from glyphs_mcp_v2.python_execution import PythonExecutionRequest  # noqa: E402
-from glyphs_mcp_v2.python_execution import PythonExecutionService  # noqa: E402
+from glyphs_mcp_v2.python_execution import (  # noqa: E402
+    ObservedLivePythonError,
+    PythonExecutionRequest,
+    PythonExecutionService,
+    SourceSaveForbiddenError,
+)
 from glyphs_mcp_v2.audit import AuditLog  # noqa: E402
 from glyphs_mcp_v2.operations import OperationStore  # noqa: E402
 from glyphs_mcp_v2.ports import HostAccessError  # noqa: E402
@@ -45,7 +65,10 @@ from glyphs_mcp_v2.semantic import ChangeSet, diff_models, fingerprint_model  # 
 from glyphs_mcp_v2.canonical_views import layer_components, layer_paths  # noqa: E402
 from glyphs_mcp_v2.canonical_schema import deterministic_occurrence_id  # noqa: E402
 from glyphs_mcp_v2.canonical_tree import CanonicalSnapshot  # noqa: E402
-from glyphs_mcp_v2.workflows import build_layer_updates, build_master_updates  # noqa: E402
+from glyphs_mcp_v2.structural_registry import (  # noqa: E402
+    build_layer_updates,
+    build_master_updates,
+)
 
 
 def _model_layer(model, glyph_name, layer_id):
@@ -298,25 +321,29 @@ class _CompileFont(_Font):
             raise self.preflight_error
 
 
-class OpenTypeCompileAdapterTests(unittest.TestCase):
-    def test_detached_preflight_completes_before_live_compile(self) -> None:
+class OpenTypeDiagnosticsAdapterTests(unittest.TestCase):
+    def test_diagnostics_compile_only_a_detached_copy(self) -> None:
         font = _CompileFont()
         host = GlyphsDocumentHost(_App(font), executor=_Immediate())
 
-        result = host.compile_opentype_features(host.document_id_for_font(font))
+        result = host.inspect_compilation_diagnostics(
+            host.document_id_for_font(font)
+        )
 
-        self.assertEqual(font.events, ["detached", "live"])
-        self.assertTrue(result["preflightSucceeded"])
-        self.assertTrue(result["liveSucceeded"])
+        self.assertEqual(font.events, ["detached"])
+        self.assertTrue(result["succeeded"])
+        self.assertFalse(result["liveAttempted"])
 
     def test_failed_detached_preflight_never_compiles_live_font(self) -> None:
         font = _CompileFont(preflight_error=RuntimeError("bad feature source"))
         host = GlyphsDocumentHost(_App(font), executor=_Immediate())
 
-        result = host.compile_opentype_features(host.document_id_for_font(font))
+        result = host.inspect_compilation_diagnostics(
+            host.document_id_for_font(font)
+        )
 
         self.assertEqual(font.events, ["detached"])
-        self.assertFalse(result["preflightSucceeded"])
+        self.assertFalse(result["succeeded"])
         self.assertFalse(result["liveAttempted"])
 
 
@@ -4760,6 +4787,10 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
     def test_save_reset_releases_only_that_documents_master_tombstones(self) -> None:
         host = object.__new__(GlyphsDocumentHost)
+        # Runtime-owned save cleanup is serialized through the adapter's native
+        # executor; keep this deliberately minimal fixture faithful to that
+        # production invariant.
+        host._executor = _Immediate()
         host._master_lifecycle_tombstones = {
             "op_a": {"documentId": "doc_a", "templates": {"m0": {}}},
             "op_b": {"documentId": "doc_b", "templates": {"m1": {}}},
@@ -6349,6 +6380,371 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(full_capture.call_count, 0)
         self.assertEqual(invalidate_unscoped.call_count, 1)
 
+    def test_live_python_runtime_guard_blocks_dynamic_working_source_saves(self) -> None:
+        class SaveCapableDocument(_EditableDocument):
+            def __init__(self):
+                super().__init__(edited=True)
+                self.save_calls = []
+
+            def saveDocument_(self, sender):
+                self.save_calls.append(("saveDocument_", sender))
+
+            def saveToURL_ofType_forSaveOperation_error_(
+                self, url, type_name, operation, error
+            ):
+                self.save_calls.append(
+                    ("saveToURL", url, type_name, operation, error)
+                )
+                return True, None
+
+            def performSelector_(self, selector):
+                name = str(selector).replace(":", "_")
+                return getattr(self, name)(None)
+
+            def methodForSelector_(self, selector):
+                name = str(selector).replace(":", "_")
+                return getattr(self, name)
+
+        class SaveCapableFont(_TransactionalFont):
+            def __init__(self):
+                super().__init__(edited=True)
+                self.parent = SaveCapableDocument()
+                self.font_save_calls = []
+
+            def save(self, *args, **kwargs):
+                self.font_save_calls.append((args, kwargs))
+
+        cases = (
+            (
+                "dynamic getattr",
+                "name = ''.join(['save', 'Document_']); "
+                "getattr(font.parent, name)(None)",
+            ),
+            (
+                "unbound reflection",
+                "name = ''.join(['save', 'Document_']); "
+                "vars(type(font.parent))[name](font.parent, None)",
+            ),
+            (
+                "perform selector",
+                "bridge = getattr(font.parent, "
+                "''.join(['perform', 'Selector_'])); "
+                "bridge(''.join(['save', 'Document:']))",
+            ),
+            (
+                "method for selector",
+                "resolver = getattr(font.parent, "
+                "''.join(['methodFor', 'Selector_'])); "
+                "method = resolver(''.join(['save', 'Document:'])); "
+                "method(None)",
+            ),
+            (
+                "dynamic GSFont convenience",
+                "getattr(font, ''.join(['sa', 've']))()",
+            ),
+            (
+                "caught and retried",
+                "method = getattr(font.parent, "
+                "''.join(['save', 'Document_']))\n"
+                "for attempt in range(2):\n"
+                "    try:\n"
+                "        method(None)\n"
+                "    except BaseException:\n"
+                "        pass\n",
+            ),
+        )
+        for label, code in cases:
+            with self.subTest(label=label):
+                font = SaveCapableFont()
+                host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+                document_id = host.list_documents()[0].document_id
+                request = PythonExecutionRequest(
+                    code=code,
+                    reason="adversarial runtime source-save check",
+                    intended_effect="files_or_external",
+                    execution_mode="live_open_world",
+                    document_id=document_id,
+                )
+
+                with self.assertRaises(ObservedLivePythonError) as blocked:
+                    host.run_live_python(request)
+
+                self.assertIsInstance(
+                    blocked.exception.cause, SourceSaveForbiddenError
+                )
+                self.assertEqual(font.parent.save_calls, [])
+                self.assertEqual(font.font_save_calls, [])
+
+    def test_live_python_runtime_guard_preserves_unrelated_save_methods(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        request = PythonExecutionRequest(
+            code=(
+                "class ExternalArtifact:\n"
+                "    def __init__(self):\n"
+                "        self.saved = False\n"
+                "    def save(self):\n"
+                "        self.saved = True\n"
+                "artifact = ExternalArtifact()\n"
+                "artifact.save()\n"
+                "print(artifact.saved)\n"
+            ),
+            reason="preserve unrelated open-world save methods",
+            intended_effect="files_or_external",
+            execution_mode="live_open_world",
+            document_id=document_id,
+        )
+
+        result = host.run_live_python(request)
+
+        self.assertEqual(result["stdout"].strip(), "True")
+
+    def test_live_python_runtime_guard_allows_detached_font_save(self) -> None:
+        saved = []
+
+        class CopyableFont(_TransactionalFont):
+            def copy(self):
+                return CopyableFont()
+
+            def save(self, destination):
+                saved.append((self, destination))
+
+        font = CopyableFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        request = PythonExecutionRequest(
+            code=(
+                "detached = font.copy()\n"
+                "detached.save('/tmp/Detached.glyphs')\n"
+            ),
+            reason="preserve detached external save semantics",
+            intended_effect="files_or_external",
+            execution_mode="live_open_world",
+            document_id=document_id,
+        )
+
+        host.run_live_python(request)
+
+        self.assertEqual(len(saved), 1)
+        self.assertIsNot(saved[0][0], font)
+
+    @unittest.skipUnless(
+        _PYOBJC_RUNTIME is not None and _NSDOCUMENT_RUNTIME is not None,
+        "PyObjC host boundary",
+    )
+    def test_runtime_guard_interposes_and_restores_objective_c_selector(self) -> None:
+        objc = _PYOBJC_RUNTIME
+        NSDocument = _NSDOCUMENT_RUNTIME
+        assert objc is not None and NSDocument is not None
+        document = NSDocument.alloc().init()
+        original_selector = NSDocument.writeToURL_ofType_
+        self.assertIsInstance(original_selector, objc.native_selector)
+        original_descriptor = vars(NSDocument)["writeToURL_ofType_"]
+        self.assertIsInstance(original_descriptor, objc.native_selector)
+        runtime = document_adapter._objective_c_runtime()
+        before = runtime.capture(
+            NSDocument,
+            "writeToURL_ofType_",
+            original_selector.selector,
+            class_method=False,
+            require_owned=True,
+        )
+        self.assertIsNotNone(before)
+        guard = document_adapter._WorkingSourceSaveRuntimeGuard(
+            [document],
+            native_identity=lambda value: ("python", id(value)),
+        )
+
+        with self.assertRaisesRegex(ValueError, "script failed"):
+            with guard:
+                during = runtime.capture(
+                    NSDocument,
+                    "writeToURL_ofType_",
+                    original_selector.selector,
+                    class_method=False,
+                    require_owned=True,
+                )
+                self.assertIsNotNone(during)
+                self.assertEqual(during.class_pointer, before.class_pointer)
+                self.assertEqual(during.method_pointer, before.method_pointer)
+                self.assertEqual(during.type_encoding, before.type_encoding)
+                self.assertNotEqual(
+                    during.implementation_pointer,
+                    before.implementation_pointer,
+                )
+                self.assertIs(
+                    vars(NSDocument)["writeToURL_ofType_"], original_descriptor
+                )
+                with self.assertRaises(SourceSaveForbiddenError):
+                    getattr(document, "".join(["writeTo", "URL_ofType_"]))(
+                        None, None
+                    )
+                raise ValueError("script failed")
+
+        after = runtime.capture(
+            NSDocument,
+            "writeToURL_ofType_",
+            original_selector.selector,
+            class_method=False,
+            require_owned=True,
+        )
+        self.assertEqual(after, before)
+        self.assertIs(
+            vars(NSDocument)["writeToURL_ofType_"], original_descriptor
+        )
+        self.assertEqual(
+            document_adapter._LIVE_SOURCE_SAVE_GUARD_MANAGER.snapshot().state,
+            "healthy",
+        )
+
+        # Exact IMP restoration is the primary proof. This genuine native call
+        # additionally proves the Python guard wrapper is no longer reachable;
+        # NSDocument itself rejects the deliberately invalid URL.
+        try:
+            document.writeToURL_ofType_(None, None)
+        except SourceSaveForbiddenError as exc:  # pragma: no cover - safety
+            self.fail("native save selector remained interposed: {!r}".format(exc))
+        except Exception:
+            pass
+
+    @unittest.skipUnless(
+        _PYOBJC_RUNTIME is not None and _NSDOCUMENT_RUNTIME is not None,
+        "PyObjC host boundary",
+    )
+    def test_runtime_guard_restores_pyobjc_python_method_descriptor(self) -> None:
+        objc = _PYOBJC_RUNTIME
+        NSDocument = _NSDOCUMENT_RUNTIME
+        assert objc is not None and NSDocument is not None
+        save_calls = []
+
+        class ManagedPythonSaveFixture(NSDocument):
+            @objc.python_method
+            def save(self):
+                save_calls.append(self)
+
+        document = ManagedPythonSaveFixture.alloc().init()
+        original = vars(ManagedPythonSaveFixture)["save"]
+        self.assertIsInstance(original, type(lambda: None))
+
+        manager = document_adapter._WorkingSourceSaveGuardManager()
+        with mock.patch.object(
+            document_adapter, "_LIVE_SOURCE_SAVE_GUARD_MANAGER", manager
+        ):
+            guard = document_adapter._WorkingSourceSaveRuntimeGuard(
+                [document],
+                native_identity=lambda value: ("python", id(value)),
+            )
+            with self.assertRaises(SourceSaveForbiddenError):
+                with guard:
+                    installed = vars(ManagedPythonSaveFixture)["save"]
+                    self.assertIsInstance(installed, type(lambda: None))
+                    self.assertIsNot(installed, original)
+                    # The descriptor wrapper remains the primary interlock
+                    # even if open-world code disables the profile callback.
+                    sys.setprofile(None)
+                    document.save()
+
+            self.assertIs(
+                vars(ManagedPythonSaveFixture)["save"], original
+            )
+            self.assertEqual(save_calls, [])
+            self.assertEqual(manager.snapshot().state, "healthy")
+
+            # A verified teardown must permit the next execution instead of
+            # leaving process-wide degraded state behind in Glyphs 4.
+            with document_adapter._WorkingSourceSaveRuntimeGuard(
+                [document],
+                native_identity=lambda value: ("python", id(value)),
+            ):
+                pass
+            self.assertIs(
+                vars(ManagedPythonSaveFixture)["save"], original
+            )
+            self.assertEqual(manager.snapshot().state, "healthy")
+
+    def test_runtime_guard_fails_closed_when_restoration_cannot_verify(self) -> None:
+        class RefuseRestore(type):
+            writes = 0
+
+            def __setattr__(owner, name, value):
+                if name == "saveDocument_":
+                    writes = type.__getattribute__(owner, "writes")
+                    type.__setattr__(owner, "writes", writes + 1)
+                    if writes >= 1:
+                        raise RuntimeError("restoration refused")
+                type.__setattr__(owner, name, value)
+
+        class SaveDocument(metaclass=RefuseRestore):
+            def saveDocument_(self, sender):
+                return sender
+
+        original = vars(SaveDocument)["saveDocument_"]
+        document = SaveDocument()
+        manager = document_adapter._WorkingSourceSaveGuardManager()
+        with mock.patch.object(
+            document_adapter, "_LIVE_SOURCE_SAVE_GUARD_MANAGER", manager
+        ):
+            guard = document_adapter._WorkingSourceSaveRuntimeGuard(
+                [document],
+                native_identity=lambda value: ("python", id(value)),
+            )
+            incident = None
+            try:
+                with self.assertRaises(
+                    document_adapter.ScriptingRuntimeUnavailableError
+                ) as failed:
+                    with guard:
+                        pass
+                self.assertIn("requires repair", str(failed.exception))
+                incident = manager.snapshot().current_incident
+                self.assertEqual(manager.snapshot().state, "recovery_required")
+                self.assertIsNotNone(incident)
+                recovery_guard = document_adapter._WorkingSourceSaveRuntimeGuard(
+                    [document],
+                    native_identity=lambda value: ("python", id(value)),
+                )
+                with self.assertRaisesRegex(
+                    document_adapter.ScriptingRuntimeUnavailableError,
+                    "repair the current incident",
+                ):
+                    with recovery_guard:
+                        pass
+            finally:
+                # Bypass the intentionally hostile metaclass so this
+                # regression cannot leak its interposition into later tests.
+                type.__setattr__(SaveDocument, "saveDocument_", original)
+                manager.repair(
+                    trigger="test_cleanup",
+                    expected_incident_id=(
+                        incident.incident_id if incident is not None else None
+                    ),
+                )
+
+        type.__setattr__(SaveDocument, "writes", 0)
+        manager = document_adapter._WorkingSourceSaveGuardManager()
+        with mock.patch.object(
+            document_adapter, "_LIVE_SOURCE_SAVE_GUARD_MANAGER", manager
+        ):
+            active_guard = document_adapter._WorkingSourceSaveRuntimeGuard(
+                [document],
+                native_identity=lambda value: ("python", id(value)),
+            )
+            try:
+                with self.assertRaisesRegex(ValueError, "active execution error"):
+                    with active_guard:
+                        raise ValueError("active execution error")
+                self.assertEqual(manager.snapshot().state, "recovery_required")
+            finally:
+                type.__setattr__(SaveDocument, "saveDocument_", original)
+                incident = manager.snapshot().current_incident
+                manager.repair(
+                    trigger="test_cleanup",
+                    expected_incident_id=(
+                        incident.incident_id if incident is not None else None
+                    ),
+                )
+
     def test_live_python_after_model_is_captured_after_main_queue_yields(self) -> None:
         font = _TransactionalFont()
 
@@ -6384,6 +6780,41 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(result["afterModel"]["font"]["familyName"], "Settled")
         self.assertEqual(font.familyName, "Settled")
         self.assertGreaterEqual(persistent_capture.call_count, 1)
+
+    def test_stable_capture_settlement_window_starts_after_initial_capture(self) -> None:
+        font = _TransactionalFont()
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        snapshot = host.capture_snapshot(document_id)
+        clock = [0.0]
+        capture_count = [0]
+
+        def slow_initial_capture(*_args, **_kwargs):
+            capture_count[0] += 1
+            if capture_count[0] == 1:
+                clock[0] = 1.0
+            return snapshot
+
+        def advance(seconds):
+            clock[0] += seconds
+
+        with mock.patch.object(
+            host,
+            "_capture_snapshot_coordinated",
+            side_effect=slow_initial_capture,
+        ), mock.patch.object(
+            document_adapter.time,
+            "monotonic",
+            side_effect=lambda: clock[0],
+        ), mock.patch.object(
+            document_adapter.time,
+            "sleep",
+            side_effect=advance,
+        ):
+            observed = host.capture_stable_snapshot(document_id)
+
+        self.assertIs(observed, snapshot)
+        self.assertEqual(capture_count[0], 2)
 
     def test_complete_staged_clone_capture_prefers_format_v4_source(self) -> None:
         font = _TransactionalFont()
@@ -6810,15 +7241,16 @@ class V2DocumentAdapterTests(unittest.TestCase):
             side_effect=archive,
         ):
             preview = service.execute(request).to_dict()
-        confirmed = service.execute(
-            PythonExecutionRequest(
-                review_id=preview["data"]["reviewId"], confirm=True
-            )
+        preview_id = preview["data"]["previewId"]
+        confirmed = service.apply_staged_preview(
+            service._reviews.get(preview_id),
+            operation_id="op_feature_delete",
+            reason="apply exact staged feature deletion",
         ).to_dict()
 
         self.assertTrue(confirmed["ok"])
         self.assertEqual(font.features, [])
-        rolled_back = service.rollback(
+        rolled_back = service.recover_checkpoint(
             execution_id=confirmed["data"]["executionId"],
             expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
             confirm=True,
@@ -7443,9 +7875,16 @@ class V2DocumentAdapterTests(unittest.TestCase):
         font.instances = instances
         host = GlyphsDocumentHost(_App(font), executor=_Immediate())
         document_id = host.list_documents()[0].document_id
-        objc = SimpleNamespace(pyobjc_id=lambda value: value.pointer)
 
-        with mock.patch.dict(sys.modules, {"objc": objc}):
+        # Keep this identity-mapping test independent of PyObjC module state.
+        # Removing a synthetic ``objc`` entry after Foundation has loaded the
+        # real extension makes a later import attempt an unsupported extension
+        # reload in a full-suite process.
+        with mock.patch.object(
+            host,
+            "_native_instance_key",
+            side_effect=lambda value: "objc:{}".format(value.pointer),
+        ):
             before = host.capture_model(document_id)
             instances.items.reverse()
             after = host.capture_model(document_id)
@@ -7596,6 +8035,30 @@ class V2DocumentAdapterTests(unittest.TestCase):
         host.commit_verified_change("op_revert")
 
         self.assertTrue(font.parent.isDocumentEdited)
+        self.assertFalse(host.list_documents()[0].has_unsaved_changes)
+
+        font.note = "manual later edit"
+        self.assertTrue(host.list_documents()[0].has_unsaved_changes)
+
+    def test_compensating_verified_change_back_to_baseline_is_not_phantom_dirty(self) -> None:
+        font = _TransactionalFont(sticky_after_undo=True)
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        baseline = host.capture_model(document_id)
+        changed = copy.deepcopy(baseline)
+        changed["font"]["note"] = "temporary qualification change"
+
+        forward = diff_models(baseline, changed)
+        host.apply_verified_change_set(
+            document_id, forward, operation_id="op_forward"
+        )
+        host.commit_verified_change("op_forward")
+        host.apply_verified_change_set(
+            document_id, forward.inverse(), operation_id="op_compensation"
+        )
+        host.commit_verified_change("op_compensation")
+
+        self.assertEqual(host.capture_model(document_id), baseline)
         self.assertFalse(host.list_documents()[0].has_unsaved_changes)
 
         font.note = "manual later edit"

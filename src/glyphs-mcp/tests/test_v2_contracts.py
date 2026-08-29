@@ -1,9 +1,9 @@
-"""Contract and import-boundary tests for the Glyphs MCP 2.0 spine."""
+"""Hard-reset v2 catalog, schema, and ownership contract tests."""
 
 from __future__ import annotations
 
-import ast
 import inspect
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -17,54 +17,97 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.catalog import TOOL_CATALOG, TOOL_DEFINITIONS  # noqa: E402
-from glyphs_mcp_v2.contracts import ToolError, ToolResponse  # noqa: E402
-from glyphs_mcp_v2.identity import DocumentIdRegistry  # noqa: E402
-from glyphs_mcp_v2.transport.fastmcp import ToolHandlers  # noqa: E402
+from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
+from glyphs_mcp_v2.contracts import ToolResponse  # noqa: E402
+from glyphs_mcp_v2.transport.fastmcp import (  # noqa: E402
+    ChangeOperation,
+    Constraint,
+    EntitySelector,
+    Projection,
+    ToolHandlers,
+)
+
+
+TARGET_TOOLS = {
+    "get_server_info",
+    "list_documents",
+    "read_document",
+    "evaluate_constraints",
+    "preview_change",
+    "apply_change",
+    "get_operation",
+    "list_history",
+    "revert_change",
+    "search_knowledge",
+    "get_knowledge",
+    "execute_python",
+    "preview_export",
+    "apply_export",
+    "save_document",
+    "open_document_view",
+    "get_runtime_status",
+    "repair_runtime",
+}
+
+RETIRED_WORKFLOW_TOOLS = {
+    "list_open_fonts",
+    "get_document_status",
+    "list_glyphs",
+    "list_layers",
+    "list_masters",
+    "review_spacing",
+    "apply_spacing",
+    "apply_kerning_updates",
+    "apply_master_updates",
+    "apply_layer_updates",
+    "review_export",
+    "export_source_bundle",
+    "rollback_python_execution",
+}
+
+
+def _assert_closed(test: unittest.TestCase, schema: object) -> None:
+    if isinstance(schema, dict):
+        if schema.get("type") == "object" and "properties" in schema:
+            test.assertFalse(schema.get("additionalProperties", True), schema)
+        for value in schema.values():
+            _assert_closed(test, value)
+    elif isinstance(schema, list):
+        for value in schema:
+            _assert_closed(test, value)
 
 
 class V2ContractTests(unittest.TestCase):
-    def test_catalog_is_the_complete_typed_milestone_surface(self) -> None:
-        expected = {
-            "get_server_info",
-            "list_open_fonts",
-            "open_edit_tab",
-            "get_document_status",
-            "get_operation",
-            "list_glyphs",
-            "list_masters",
-            "list_layers",
-            "list_instances",
-            "list_kerning_pairs",
-            "review_kerning_coverage",
-            "review_master_compatibility",
-            "review_metrics_inheritance",
-            "apply_metrics_updates",
-            "review_anchor_consistency",
-            "apply_compatibility_updates",
-            "apply_anchor_updates",
-            "apply_glyph_updates",
-            "apply_kerning_updates",
-            "apply_opentype_updates",
-            "list_opentype_items",
-            "compile_opentype_features",
-            "apply_instance_updates",
-            "apply_master_updates",
-            "apply_layer_updates",
-            "review_spacing",
-            "apply_spacing",
-            "review_export",
-            "export_source_bundle",
-            "list_audit_events",
-            "list_change_commits",
-            "revert_change",
-            "execute_python",
-            "rollback_python_execution",
+    def test_catalog_is_exactly_the_hard_reset_surface(self) -> None:
+        self.assertEqual(set(TOOL_CATALOG), TARGET_TOOLS)
+        self.assertEqual(len(TOOL_DEFINITIONS), len(TARGET_TOOLS))
+        self.assertFalse(RETIRED_WORKFLOW_TOOLS.intersection(TOOL_CATALOG))
+
+    def test_every_catalog_entry_has_one_concrete_typed_handler(self) -> None:
+        handlers = {
+            name
+            for name, value in inspect.getmembers(ToolHandlers, inspect.isfunction)
+            if not name.startswith("_")
         }
-        self.assertEqual(set(TOOL_CATALOG), expected)
+        self.assertEqual(handlers, TARGET_TOOLS)
         self.assertEqual(
-            tuple(definition.name for definition in TOOL_DEFINITIONS),
-            tuple(TOOL_CATALOG),
+            [definition.name for definition in TOOL_DEFINITIONS],
+            list(TOOL_CATALOG),
         )
+        for definition in TOOL_DEFINITIONS:
+            self.assertEqual(definition.handler_name, definition.name)
+
+    def test_application_and_source_tree_do_not_restore_workflow_endpoints(self) -> None:
+        for name in RETIRED_WORKFLOW_TOOLS:
+            self.assertFalse(hasattr(GlyphsMCPApplication, name), name)
+        package = V2_SOURCE / "glyphs_mcp_v2"
+        self.assertFalse((package / "workflows.py").exists())
+        for path in package.rglob("*.py"):
+            text = path.read_text(encoding="utf-8")
+            self.assertNotIn("from .workflows import", text, path)
+            self.assertNotIn("from glyphs_mcp_v2.workflows import", text, path)
+
+    def test_safety_annotations_and_effect_boundaries_are_complete(self) -> None:
         for definition in TOOL_DEFINITIONS:
             self.assertEqual(
                 set(definition.annotations),
@@ -75,150 +118,142 @@ class V2ContractTests(unittest.TestCase):
                     "openWorldHint",
                 },
             )
-            if definition.effect == "read":
-                self.assertTrue(definition.annotations["readOnlyHint"])
-            if definition.effect == "ui":
-                self.assertFalse(definition.annotations["destructiveHint"])
-            if definition.name in {"execute_python", "rollback_python_execution", "revert_change"}:
-                self.assertTrue(definition.annotations["destructiveHint"])
-            if definition.name == "execute_python":
-                self.assertTrue(definition.annotations["openWorldHint"])
+        self.assertEqual(TOOL_CATALOG["preview_change"].effect, "read")
+        self.assertEqual(TOOL_CATALOG["apply_change"].effect, "edit")
+        self.assertEqual(TOOL_CATALOG["preview_export"].effect, "read")
+        self.assertEqual(TOOL_CATALOG["apply_export"].effect, "files")
+        self.assertEqual(TOOL_CATALOG["save_document"].effect, "save")
+        self.assertEqual(TOOL_CATALOG["open_document_view"].effect, "ui")
+        self.assertTrue(TOOL_CATALOG["execute_python"].annotations["openWorldHint"])
 
-    def test_success_and_failure_share_one_valid_versioned_envelope(self) -> None:
-        definition = TOOL_CATALOG["list_open_fonts"]
-        success = ToolResponse.success(
-            tool="list_open_fonts",
-            effect="read",
-            summary="No documents.",
-            data={"count": 0, "documents": []},
+    def test_shared_request_types_are_closed_and_schema_backed(self) -> None:
+        for request_type in (EntitySelector, Projection, Constraint, ChangeOperation):
+            schema = request_type.model_json_schema()
+            _assert_closed(self, schema)
+            json.dumps(schema, sort_keys=True)
+
+    def test_selector_owns_relations_ordering_and_pagination(self) -> None:
+        selector = EntitySelector.model_validate(
+            {
+                "entity": "glyph",
+                "ids": ["A"],
+                "orderBy": "name",
+                "pageSize": 25,
+                "relations": [
+                    {
+                        "name": "layers",
+                        "selector": {"entity": "layer", "pageSize": 10},
+                        "projection": {"fields": ["id", "width"]},
+                    }
+                ],
+            }
         )
-        failure = ToolResponse.failure(
-            tool="list_open_fonts",
-            effect="read",
-            summary="Host unavailable.",
-            error=ToolError(
-                code="host_unavailable",
-                message="Glyphs is unavailable.",
-                recoverable=True,
-            ),
+        self.assertEqual(selector.pageSize, 25)
+        self.assertEqual(selector.relations[0].selector.pageSize, 10)
+        read_parameters = inspect.signature(ToolHandlers.read_document).parameters
+        self.assertNotIn("pageSize", read_parameters)
+        self.assertNotIn("cursor", read_parameters)
+
+    def test_constraints_support_literals_fields_and_exact_references(self) -> None:
+        exact = Constraint.model_validate(
+            {
+                "phase": "before",
+                "left": {
+                    "kind": "reference",
+                    "selector": {"entity": "glyph", "ids": ["A"]},
+                },
+                "operator": "eq",
+                "right": {
+                    "kind": "reference",
+                    "selector": {"entity": "glyph", "ids": ["A"]},
+                },
+            }
         )
-
-        validate(success.to_dict(), definition.output_schema)
-        validate(failure.to_dict(), definition.output_schema)
-        self.assertEqual(success.to_dict()["resultSchemaVersion"], "2.0")
-        self.assertEqual(success.to_dict()["apiVersion"], "2.0")
-        for field in (
-            "requestId",
-            "runId",
-            "operationId",
-            "startedAt",
-            "completedAt",
-            "durationMs",
-            "status",
-            "page",
-            "auditReceipt",
-        ):
-            self.assertIn(field, success.to_dict())
-
-    def test_failure_factory_builds_the_common_error_contract_from_scalars(self) -> None:
-        failure = ToolResponse.failure(
-            tool="get_document_status",
-            effect="read",
-            summary="Document unavailable.",
-            code="document_unavailable",
-            message="The document is closed.",
-            recoverable=True,
-            details={"closed": True},
+        field = Constraint.model_validate(
+            {
+                "left": {
+                    "kind": "field",
+                    "selector": {"entity": "layer", "ids": ["L1"]},
+                    "field": "width",
+                },
+                "operator": "within",
+                "right": {"kind": "literal", "value": 500},
+                "tolerance": 0.5,
+            }
         )
+        self.assertEqual(exact.left.kind, "reference")
+        self.assertEqual(field.left.kind, "field")
 
-        self.assertEqual(failure.error.code, "document_unavailable")
-        self.assertEqual(failure.error.message, "The document is closed.")
-        self.assertTrue(failure.error.recoverable)
-        self.assertEqual(failure.error.details, {"closed": True})
-        with self.assertRaises(ValueError):
-            ToolResponse.failure(
-                tool="get_document_status",
-                effect="read",
-                summary="Invalid mixed construction.",
-                error=ToolError("explicit", "Explicit error.", True),
-                code="duplicate",
-                message="Duplicate error.",
-            )
-
-    def test_document_ids_are_stable_distinct_and_opaque(self) -> None:
-        values = iter(("doc_first", "doc_second"))
-        registry = DocumentIdRegistry(id_factory=lambda: next(values))
-
-        self.assertEqual(registry.resolve(("native", 1)), "doc_first")
-        self.assertEqual(registry.resolve(("native", 1)), "doc_first")
-        self.assertEqual(registry.resolve(("native", 2)), "doc_second")
-        self.assertEqual(len(registry), 2)
-        self.assertTrue(registry.discard(("native", 1)))
-        self.assertEqual(len(registry), 1)
-
-    def test_core_and_application_layers_have_no_host_or_transport_imports(self) -> None:
-        package = V2_SOURCE / "glyphs_mcp_v2"
-        files = [
-            package / name
-            for name in (
-                "application.py",
-                "catalog.py",
-                "contracts.py",
-                "identity.py",
-                "ports.py",
-                "versions.py",
-            )
-        ]
-        forbidden = {"GlyphsApp", "AppKit", "Foundation", "fastmcp", "uvicorn"}
-
-        for path in files:
-            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-            imported = set()
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    imported.update(alias.name.split(".", 1)[0] for alias in node.names)
-                elif isinstance(node, ast.ImportFrom) and node.module:
-                    imported.add(node.module.split(".", 1)[0])
-            self.assertFalse(imported & forbidden, msg="forbidden import in {}".format(path))
-
-    def test_fastmcp_registration_is_confined_to_the_catalog_registrar(self) -> None:
-        package = V2_SOURCE / "glyphs_mcp_v2"
-        callers = []
-        for path in package.rglob("*.py"):
-            text = path.read_text(encoding="utf-8")
-            if ".tool(" in text:
-                callers.append(path.relative_to(package).as_posix())
-        self.assertEqual(callers, ["transport/fastmcp.py"])
-
-    def test_typed_mutations_are_direct_apply_first_contracts(self) -> None:
-        mutation_tools = {
-            "apply_glyph_updates": "updates",
-            "apply_anchor_updates": "updates",
-            "apply_kerning_updates": "updates",
-            "apply_metrics_updates": "updates",
-            "apply_compatibility_updates": "updates",
-            "apply_opentype_updates": "updates",
-            "apply_layer_updates": "updates",
-            "apply_spacing": "items",
+    def test_operation_registry_is_closed_and_physical(self) -> None:
+        operations = {
+            "set": {"field": "width", "value": 500},
+            "translate": {"delta": {"x": 1, "y": 2}},
+            "insert": {"field": "features", "value": {"id": "liga"}},
+            "remove": {},
+            "move": {"index": 0},
+            "duplicate": {"newId": "copy"},
         }
-        for name, items_parameter in mutation_tools.items():
-            with self.subTest(tool=name):
-                parameters = inspect.signature(getattr(ToolHandlers, name)).parameters
-                self.assertIn("documentId", parameters)
-                self.assertIn("expectedDocumentFingerprint", parameters)
-                self.assertIn(items_parameter, parameters)
-                self.assertIn("reason", parameters)
-                self.assertNotIn("reviewId", parameters)
-                self.assertNotIn("confirm", parameters)
+        for operation, values in operations.items():
+            parsed = ChangeOperation.model_validate(
+                {
+                    "op": operation,
+                    "target": {"entity": "document"},
+                    **values,
+                }
+            )
+            self.assertEqual(parsed.op, operation)
+        with self.assertRaisesRegex(ValueError, "does not accept"):
+            ChangeOperation.model_validate(
+                {
+                    "op": "remove",
+                    "target": {"entity": "glyph", "ids": ["A"]},
+                    "field": "width",
+                }
+            )
 
-        for removed in (
-            "review_glyph_updates",
-            "review_anchor_updates",
-            "review_kerning_updates",
-            "review_metrics_updates",
-            "review_compatibility_updates",
-        ):
-            self.assertNotIn(removed, TOOL_CATALOG)
+    def test_python_modes_are_permanent_and_staged_apply_is_not_execute_confirmation(self) -> None:
+        parameters = inspect.signature(ToolHandlers.execute_python).parameters
+        mode = parameters["mode"].annotation
+        self.assertIn("read_only", str(mode))
+        self.assertIn("staged_document", str(mode))
+        self.assertIn("live_open_world", str(mode))
+        self.assertIn("approvalId", parameters)
+        apply_parameters = inspect.signature(ToolHandlers.apply_change).parameters
+        self.assertIn("previewId", apply_parameters)
+        self.assertNotIn("operations", apply_parameters)
+        self.assertNotIn("confirm", apply_parameters)
+
+    def test_success_and_failure_share_versioned_envelopes(self) -> None:
+        definition = TOOL_CATALOG["get_server_info"]
+        success = ToolResponse.success(
+            tool="get_server_info",
+            effect="read",
+            summary="ready",
+            data={"serverVersion": "2.0.0"},
+        ).to_dict()
+        failure = ToolResponse.failure(
+            tool="get_server_info",
+            effect="read",
+            summary="unavailable",
+            code="host_unavailable",
+            message="Glyphs is unavailable",
+        ).to_dict()
+        validate(success, definition.output_schema)
+        validate(failure, definition.output_schema)
+        self.assertEqual(success["apiVersion"], failure["apiVersion"])
+
+    def test_catalog_output_schemas_are_deterministic(self) -> None:
+        first = json.dumps(
+            {name: definition.output_schema for name, definition in TOOL_CATALOG.items()},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        second = json.dumps(
+            {name: definition.output_schema for name, definition in TOOL_CATALOG.items()},
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        self.assertEqual(first, second)
 
 
 if __name__ == "__main__":

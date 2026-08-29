@@ -25,15 +25,29 @@ from .canonical_tree import (
 from .canonical_schema import CanonicalCoverage
 from .catalog import TOOL_CATALOG
 from .change_history import ActionCommit, ChangeHistory
+from .change_lifecycle import DocumentHistoryLifecycle
 from .change_trace import ActionTraceCoordinator
 from .contracts import API_MAJOR, API_VERSION, OperationMetadata, ToolResponse, ToolWarning
 from .exporting import ExportPublicationError, destination_matches
+from .generic_tools import (
+    COMPUTED_PROJECTIONS,
+    ENTITY_KINDS,
+    OPERATION_KINDS,
+    bind_relation_selector,
+    build_change_set as build_generic_change_set,
+    evaluate_constraints as evaluate_generic_constraints,
+    project_reference,
+    resolve_selector,
+)
+from .knowledge import (
+    get_knowledge as read_knowledge_entries,
+    knowledge_manifest,
+    search_knowledge as search_knowledge_corpus,
+)
 from .operations import OperationRecord, OperationStore
 from .mutation import (
     CanonicalTargetMismatchError,
-    MASTER_LIFECYCLE_CAPABILITY,
     MutationPlanner,
-    normalize_mutation_build,
     unsupported_change_diagnostics,
     writable_subset,
     lifecycle_capabilities,
@@ -41,6 +55,7 @@ from .mutation import (
 from .pagination import CursorError, paginate
 from .ports import HostAccessError, ReadOnlyHost
 from .python_execution import PythonExecutionRequest, PythonExecutionService
+from .runtime_safety import StaleScriptingRuntimeIncidentError
 from .semantic import (
     ChangeSet,
     diff_models,
@@ -48,37 +63,43 @@ from .semantic import (
     public_change_dict,
     revert_change_set_onto,
 )
+from .saving import DocumentSaveError, SAVE_OVERWRITE_POLICIES
+from .source_bundle import BUNDLE_LAYOUT_VERSION, ExportPlan, SourceBundleError
 from .transactions import StaleDocumentError, TransactionKernel, TransactionVerificationError
 from .versions import SERVER_NAME, SERVER_VERSION
-from .workflows import (
-    _copy_on_write_model,
-    build_glyph_updates,
-    build_instance_updates,
-    build_layer_updates,
-    build_master_updates,
-    build_opentype_updates,
-    list_glyphs as model_list_glyphs,
-    list_instances as model_list_instances,
-    list_layers as model_list_layers,
-    list_masters as model_list_masters,
-    list_kerning_pairs as model_list_kerning_pairs,
-    list_opentype_items as model_list_opentype_items,
-    review_anchor_consistency as model_review_anchor_consistency,
-    review_anchor_updates as build_anchor_updates,
-    review_compatibility_updates as build_compatibility_updates,
-    review_export as model_review_export,
-    review_kerning_coverage,
-    review_kerning_updates as build_kerning_updates,
-    review_master_compatibility as model_review_master_compatibility,
-    review_metrics_inheritance as model_review_metrics_inheritance,
-    review_metrics_updates as build_metrics_updates,
-    simulate_spacing,
-)
 
 
 REVIEW_TTL_SECONDS = 15 * 60
 RESULT_TTL_SECONDS = 60 * 60
-COMPLETE_CANONICAL_COVERAGE = CanonicalCoverage.complete().to_public_dict()
+PUBLIC_NORMALIZED_OPERATION_LIMIT = 100
+
+
+def _healthy_scripting_runtime_safety() -> dict[str, Any]:
+    return {
+        "state": "healthy",
+        "mode": "strict",
+        "strictInterlockAvailable": True,
+        "livePythonAvailable": True,
+        "stagedPythonAvailable": True,
+        "automaticRepairAvailable": False,
+        "incidentId": None,
+        "affectedSlotCount": 0,
+        "nextAction": "none",
+        "activeExecutionId": None,
+        "currentIncident": None,
+        "lastRepair": None,
+        "recentTransitions": [],
+    }
+
+
+def _scripting_runtime_safety(host: Any) -> dict[str, Any]:
+    reader = getattr(host, "scripting_runtime_safety_status", None)
+    value = reader() if callable(reader) else None
+    return (
+        dict(value)
+        if isinstance(value, Mapping)
+        else _healthy_scripting_runtime_safety()
+    )
 
 
 def _value(arguments: Mapping[str, Any], snake: str, camel: Optional[str] = None, default: Any = None) -> Any:
@@ -112,16 +133,24 @@ def _model_layer(glyph: Any, identity: Any) -> Mapping[str, Any] | None:
     return masters[0] if len(masters) == 1 else None
 
 
-def _model_layers(glyph: Any) -> tuple[Mapping[str, Any], ...]:
-    if not isinstance(glyph, Mapping):
-        return ()
-    layers = glyph.get("layers", ())
-    source = layers.values() if isinstance(layers, Mapping) else layers
-    return tuple(layer for layer in source if isinstance(layer, Mapping))
-
-
 def _iso_timestamp(value: float) -> str:
     return datetime.fromtimestamp(float(value), tz=timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _export_runtime_versions(host: Any) -> dict[str, Any]:
+    """Capture only runtime identity that can affect exported source bytes."""
+
+    runtime = host.runtime_snapshot()
+    public = runtime.to_dict() if hasattr(runtime, "to_dict") else dict(runtime)
+    return {
+        key: public.get(key)
+        for key in (
+            "application",
+            "applicationVersion",
+            "buildNumber",
+            "pythonVersion",
+        )
+    }
 
 
 def _public_payload(value: Any) -> Any:
@@ -140,7 +169,17 @@ def _public_payload(value: Any) -> Any:
         return {
             str(key): _public_payload(item)
             for key, item in value.items()
-            if str(key) not in {"code", "source", "inverse"}
+            if str(key)
+            not in {
+                "code",
+                "source",
+                "inverse",
+                "plan",
+                "beforeModel",
+                "expectedAfterModel",
+                "writableChangeSet",
+                "executionContext",
+            }
         }
     if isinstance(value, (list, tuple)):
         return [_public_payload(item) for item in value]
@@ -196,12 +235,20 @@ class GlyphsMCPApplication:
         self.activity = activity or default_activity_store()
         self._operations = operations or OperationStore()
         self._reviews = OperationStore()
+        # Generic document previews and staged-Python previews intentionally
+        # share one immutable process-local store.  ``apply_change`` is the
+        # sole consumer of staged document patches.
+        self._previews = self._reviews
         self._checkpoints = OperationStore(max_records=512)
         self._audit = audit or AuditLog()
         if history is None:
             history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
             history.reset_for_schema_change(5, 6)
         self.history = history
+        self.lifecycle = DocumentHistoryLifecycle(
+            self.history,
+            reset_tracking=getattr(host, "reset_verified_change_tracking", None),
+        )
         self._trace = ActionTraceCoordinator(self.history)
         self._transactions = (
             TransactionKernel(host, observer=self._trace, activity=self.activity)
@@ -310,9 +357,13 @@ class GlyphsMCPApplication:
             )
             commit = self._trace.finish_action(scope, response)
             if scope.document_id:
-                history_recorded = bool(scope.history_recorded and commit is not None)
+                history_recorded = bool(
+                    scope.history_recorded
+                    and commit is not None
+                    and not scope.history_boundary
+                )
                 warnings = response.warnings
-                if not history_recorded:
+                if not history_recorded and not scope.history_boundary:
                     warnings = warnings + (
                         ToolWarning(
                             code="history_not_recorded",
@@ -440,6 +491,175 @@ class GlyphsMCPApplication:
         self._trace.observe_model(document_id, model)
         return model
 
+    def _effective_glyph_metadata(
+        self, document_id: str, glyph_names: Sequence[str] = ()
+    ) -> Mapping[str, Mapping[str, Any]]:
+        inspector = getattr(self._host, "inspect_glyph_metadata", None)
+        if not callable(inspector):
+            return {}
+        try:
+            observed = inspector(document_id, tuple(glyph_names))
+        except HostAccessError:
+            return {}
+        return dict(observed) if isinstance(observed, Mapping) else {}
+
+    def _read_tree_references(
+        self,
+        model: Mapping[str, Any],
+        references: Sequence[Any],
+        selector: Mapping[str, Any],
+    ) -> tuple[Any, ...]:
+        values = list(references)
+        relations = selector.get("relations") or ()
+        if not isinstance(relations, (list, tuple)):
+            raise ValueError("selector.relations must be a list")
+        for reference in references:
+            for relation in relations:
+                if not isinstance(relation, Mapping):
+                    raise ValueError("selector relations must be objects")
+                child_selector = relation.get("selector")
+                if not isinstance(child_selector, Mapping):
+                    raise ValueError("relation.selector must be an object")
+                bound = bind_relation_selector(reference, child_selector)
+                children = resolve_selector(model, bound)
+                values.extend(
+                    self._read_tree_references(model, children, bound)
+                )
+        return tuple(values)
+
+    def _read_projection_fields(
+        self,
+        selector: Mapping[str, Any],
+        projection: Mapping[str, Any],
+    ) -> set[str]:
+        fields = {str(field) for field in projection.get("fields") or ()}
+        for relation in selector.get("relations") or ():
+            if not isinstance(relation, Mapping):
+                raise ValueError("selector relations must be objects")
+            child_selector = relation.get("selector")
+            child_projection = relation.get("projection")
+            if not isinstance(child_selector, Mapping) or not isinstance(
+                child_projection, Mapping
+            ):
+                raise ValueError("relations require selector and projection objects")
+            fields.update(
+                self._read_projection_fields(child_selector, child_projection)
+            )
+        return fields
+
+    def _selector_cursor_binding(
+        self, selector: Mapping[str, Any]
+    ) -> dict[str, Any]:
+        binding = {
+            key: copy.deepcopy(value)
+            for key, value in selector.items()
+            if key != "cursor"
+        }
+        relations = []
+        for relation in selector.get("relations") or ():
+            if not isinstance(relation, Mapping) or not isinstance(
+                relation.get("selector"), Mapping
+            ):
+                raise ValueError("relations require selector objects")
+            relations.append(
+                {
+                    **{
+                        key: copy.deepcopy(value)
+                        for key, value in relation.items()
+                        if key != "selector"
+                    },
+                    "selector": self._selector_cursor_binding(
+                        relation["selector"]
+                    ),
+                }
+            )
+        if relations:
+            binding["relations"] = relations
+        return binding
+
+    def _project_read_tree(
+        self,
+        *,
+        model: Mapping[str, Any],
+        reference: Any,
+        selector: Mapping[str, Any],
+        projection: Mapping[str, Any],
+        observations: Mapping[tuple[str, str], Mapping[str, Any]],
+        effective_metadata: Mapping[str, Mapping[str, Any]],
+        document_fingerprint: str,
+    ) -> dict[str, Any]:
+        item = project_reference(
+            reference,
+            projection,
+            observations=observations,
+            effective_metadata=effective_metadata,
+        )
+        relations = selector.get("relations") or ()
+        if not relations:
+            return item
+        related: dict[str, Any] = {}
+        for relation in relations:
+            if not isinstance(relation, Mapping):
+                raise ValueError("selector relations must be objects")
+            name = str(relation.get("name") or "")
+            child_selector = relation.get("selector")
+            child_projection = relation.get("projection")
+            if (
+                not name
+                or name in related
+                or not isinstance(child_selector, Mapping)
+                or not isinstance(child_projection, Mapping)
+            ):
+                raise ValueError(
+                    "relations require unique names, selectors, and projections"
+                )
+            bound = bind_relation_selector(reference, child_selector)
+            children = resolve_selector(model, bound)
+            projected = [
+                self._project_read_tree(
+                    model=model,
+                    reference=child,
+                    selector=bound,
+                    projection=child_projection,
+                    observations=observations,
+                    effective_metadata=effective_metadata,
+                    document_fingerprint=document_fingerprint,
+                )
+                for child in children
+            ]
+            scope_selector = self._selector_cursor_binding(bound)
+            relation_scope = fingerprint_model(
+                {
+                    "tool": "read_document.relation",
+                    "parent": reference.public_identity(),
+                    "name": name,
+                    "selector": scope_selector,
+                    "projection": child_projection,
+                    "canonicalModelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
+                }
+            )
+            page = paginate(
+                projected,
+                source_fingerprint=document_fingerprint,
+                cursor_scope=relation_scope,
+                page_size=int(bound.get("pageSize", 100)),
+                cursor=bound.get("cursor"),
+            )
+            partial_count = sum(
+                value.get("completeness") != "complete" for value in projected
+            )
+            related[name] = {
+                "selectedCount": len(projected),
+                "partialCount": partial_count,
+                "items": list(page.items),
+                "page": page.page.to_dict(),
+            }
+            if partial_count:
+                item["completeness"] = "partial"
+                item.setdefault("missingFields", []).append("relation:" + name)
+        item["relations"] = related
+        return item
+
     def _audited_edit_failure(
         self,
         *,
@@ -477,6 +697,54 @@ class GlyphsMCPApplication:
             audit_receipt=receipt.to_dict(),
         )
 
+    def _audited_save_failure(
+        self,
+        *,
+        document_id: str,
+        summary: str,
+        code: str,
+        message: str,
+        metadata: OperationMetadata,
+        reason: str,
+        recoverable: bool = True,
+        details: Optional[Mapping[str, Any]] = None,
+        data: Optional[Mapping[str, Any]] = None,
+    ) -> ToolResponse:
+        receipt = self._audit.record(
+            tool="save_document",
+            effect="save",
+            status="error",
+            document_id=document_id or None,
+            details={
+                "operationId": metadata.operation_id,
+                "errorCode": code,
+                "reason": reason,
+                **dict(details or {}),
+            },
+        )
+        if data:
+            try:
+                self._operations.create(
+                    kind="document_save_failure",
+                    operation_id=metadata.operation_id,
+                    ttl_seconds=RESULT_TTL_SECONDS,
+                    payload={"documentId": document_id, **dict(data)},
+                )
+            except Exception:
+                pass
+        return ToolResponse.failure(
+            tool="save_document",
+            effect="save",
+            summary=summary,
+            code=code,
+            message=message,
+            recoverable=recoverable,
+            details=details,
+            data=data,
+            metadata=metadata,
+            audit_receipt=receipt.to_dict(),
+        )
+
     def _page_items(
         self,
         *,
@@ -507,291 +775,10 @@ class GlyphsMCPApplication:
         public = {**dict(metadata or {}), item_key: list(first.items)}
         return operation, public, first.page.to_dict()
 
-    def _paged_analysis(
-        self,
-        *,
-        kind: str,
-        result: Mapping[str, Any],
-        item_key: str,
-        source_fingerprint: str,
-    ) -> tuple[dict[str, Any], Mapping[str, Any]]:
-        metadata = {key: copy.deepcopy(value) for key, value in result.items() if key != item_key}
-        operation, public, page = self._page_items(
-            kind=kind,
-            items=list(result.get(item_key) or []),
-            item_key=item_key,
-            source_fingerprint=source_fingerprint,
-            metadata=metadata,
-        )
-        public["operationId"] = operation.operation_id
-        return public, page
 
-    def _direct_apply(
-        self,
-        arguments: Mapping[str, Any],
-        *,
-        tool: str,
-        builder: Callable[[Mapping[str, Any], Sequence[Mapping[str, Any]]], Any],
-        item_key: str = "updates",
-    ) -> ToolResponse:
-        if self._transactions is None or self._mutation_planner is None:
-            raise HostAccessError("This host adapter does not support document transactions.")
-        metadata = OperationMetadata.create()
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        expected = str(
-            _value(
-                arguments,
-                "expected_document_fingerprint",
-                "expectedDocumentFingerprint",
-                "",
-            )
-            or ""
-        )
-        items = list(arguments.get(item_key) or [])
-        requested_count = len(items)
-        if not document_id or not expected:
-            raise ValueError("documentId and expectedDocumentFingerprint are required")
-        if not items:
-            raise ValueError("{} requires at least one explicit item".format(tool))
-        capture_started = time.perf_counter_ns()
-        before = self._document_model(document_id)
-        initial_capture_ms = (
-            time.perf_counter_ns() - capture_started
-        ) / 1_000_000
-        if fingerprint_model(before) != expected:
-            return self._audited_edit_failure(
-                tool=tool,
-                document_id=document_id,
-                summary="The document changed before detached mutation planning.",
-                code="stale_document",
-                message="Read the current document fingerprint and try again.",
-                metadata=metadata,
-            )
-        build = normalize_mutation_build(builder(before, items))
-        requested_model_diff = build.change_set
-        capabilities = tuple(
-            sorted(
-                set(build.capabilities)
-                | set(lifecycle_capabilities(requested_model_diff, tool=tool))
-            )
-        )
-        diagnostics = unsupported_change_diagnostics(
-            requested_model_diff,
-            limit=100,
-            capabilities=capabilities,
-        )
-        if diagnostics["unsupportedCount"]:
-            return self._audited_edit_failure(
-                tool=tool,
-                document_id=document_id,
-                summary="The requested batch contains fields outside this mutation milestone.",
-                code="unsupported_change",
-                message="Structural and unsupported fields were not mutated.",
-                metadata=metadata,
-                audit_details=diagnostics,
-                error_details=diagnostics,
-            )
-        requested = writable_subset(
-            before,
-            requested_model_diff,
-            capabilities=capabilities,
-        )
-        self._trace.bind_document(document_id)
-        if not requested.changes:
-            receipt = self._audit.record(
-                tool=tool,
-                effect="edit",
-                status="success",
-                document_id=document_id,
-                details={
-                    "operationId": metadata.operation_id,
-                    "reason": _value(arguments, "reason"),
-                    "beforeFingerprint": expected,
-                    "afterFingerprint": expected,
-                    "requestedChangeCount": requested_count,
-                    "observedChangeCount": 0,
-                    "affectedGlyphCount": 0,
-                    "canonicalCoverage": COMPLETE_CANONICAL_COVERAGE,
-                    "noDocumentChange": True,
-                },
-            )
-            return ToolResponse.success(
-                tool=tool,
-                effect="edit",
-                summary="The requested values already match the canonical document; no transaction ran.",
-                metadata=metadata,
-                audit_receipt=receipt.to_dict(),
-                data={
-                    "operationId": metadata.operation_id,
-                    "documentId": document_id,
-                    "beforeFingerprint": expected,
-                    "afterFingerprint": expected,
-                    "requestedChangeCount": requested_count,
-                    "observedChangeCount": 0,
-                    "affectedGlyphCount": 0,
-                    "canonicalCoverage": COMPLETE_CANONICAL_COVERAGE,
-                    "observedChangeSet": {
-                        "beforeFingerprint": expected,
-                        "afterFingerprint": expected,
-                        "changeCount": 0,
-                        "changes": [],
-                    },
-                    "fontSaved": False,
-                    "transactionCount": 0,
-                    "revert": {"available": False, "operationId": None},
-                },
-            )
-        try:
-            plan = self._mutation_planner.plan(
-                document_id=document_id,
-                expected_document_fingerprint=expected,
-                requested_change_set=requested,
-                operation_id=metadata.operation_id,
-                before_model=before,
-                capabilities=capabilities,
-                execution_context=build.execution_context,
-                initial_stage_timings={
-                    "initial_capture": initial_capture_ms
-                },
-            )
-            result = self._transactions.apply_plan(plan)
-        except StaleDocumentError:
-            return self._audited_edit_failure(
-                tool=tool,
-                document_id=document_id,
-                summary="The document changed before the verified transaction.",
-                code="stale_document",
-                message="The document changed.",
-                metadata=metadata,
-            )
-        except TransactionVerificationError as exc:
-            failure_data = {
-                **exc.to_public_dict(),
-                "verificationError": str(exc)[:2048],
-            }
-            return self._audited_edit_failure(
-                tool=tool,
-                document_id=document_id,
-                summary="The mutation failed complete read-back verification.",
-                code="transaction_failed",
-                message="The mutation was not verified.",
-                metadata=metadata,
-                audit_details=failure_data,
-                data=failure_data,
-            )
 
-        observed_items = [
-            public_change_dict(change) for change in plan.observed_change_set.changes
-        ]
-        changed_glyphs: list[str] = []
-        for change in plan.observed_change_set.changes:
-            if len(change.path) >= 2 and change.path[0] == "glyphs" and change.path[1] not in changed_glyphs:
-                changed_glyphs.append(change.path[1])
-        self._operations.create(
-            kind="mutation_diff",
-            operation_id=metadata.operation_id,
-            ttl_seconds=RESULT_TTL_SECONDS,
-            payload={
-                "items": observed_items,
-                "itemKey": "changes",
-                "sourceFingerprint": result.after_fingerprint,
-                "metadata": {
-                    "documentId": document_id,
-                    "operationId": metadata.operation_id,
-                    "beforeFingerprint": result.before_fingerprint,
-                    "afterFingerprint": result.after_fingerprint,
-                    "requestedChangeCount": requested_count,
-                    "observedChangeCount": result.observed_change_count,
-                    "affectedGlyphCount": len(changed_glyphs),
-                    "canonicalCoverage": result.coverage.to_public_dict(),
-                },
-            },
-        )
-        page = paginate(
-            observed_items,
-            source_fingerprint=result.after_fingerprint,
-            cursor_scope=metadata.operation_id,
-            page_size=100,
-        )
-        receipt = self._audit.record(
-            tool=tool,
-            effect="edit",
-            status="success",
-            document_id=document_id,
-            details={
-                "operationId": metadata.operation_id,
-                "reason": _value(arguments, "reason"),
-                "beforeFingerprint": result.before_fingerprint,
-                "afterFingerprint": result.after_fingerprint,
-                "requestedChangeCount": requested_count,
-                "observedChangeCount": result.observed_change_count,
-                "affectedGlyphCount": len(changed_glyphs),
-                "canonicalCoverage": result.coverage.to_public_dict(),
-            },
-        )
-        return ToolResponse.success(
-            tool=tool,
-            effect="edit",
-            summary="Applied one explicit batch through detached simulation and one verified transaction; the font was not saved.",
-            metadata=metadata,
-            audit_receipt=receipt.to_dict(),
-            page=page.page.to_dict(),
-            data={
-                "operationId": metadata.operation_id,
-                "documentId": document_id,
-                "beforeFingerprint": result.before_fingerprint,
-                "afterFingerprint": result.after_fingerprint,
-                "requestedChangeCount": requested_count,
-                "observedChangeCount": result.observed_change_count,
-                "affectedGlyphCount": len(changed_glyphs),
-                "canonicalCoverage": result.coverage.to_public_dict(),
-                "observedChangeSet": {
-                    "beforeFingerprint": result.before_fingerprint,
-                    "afterFingerprint": result.after_fingerprint,
-                    "changeCount": result.observed_change_count,
-                    "changes": list(page.items),
-                },
-                "fontSaved": False,
-                "sourceFileChanged": result.source_file_changed,
-                "transactionCount": 1,
-                "revert": {"available": True, "operationId": metadata.operation_id},
-            },
-        )
 
-    def get_server_info(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        runtime = self._host.runtime_snapshot()
-        return ToolResponse.success(
-            tool="get_server_info",
-            effect="read",
-            summary="Glyphs MCP {} is available with {} open document(s).".format(API_VERSION, runtime.open_document_count),
-            data={
-                "serverName": SERVER_NAME,
-                "serverVersion": SERVER_VERSION,
-                "apiMajor": API_MAJOR,
-                "apiVersion": API_VERSION,
-                "canonicalModelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
-                "capabilities": [
-                    "stable_document_ids",
-                    "typed_operation_envelopes",
-                    "fingerprint_bound_pagination",
-                    "verified_transactions",
-                    "staged_python",
-                    "python_rollback",
-                    "production_reviews",
-                    "canonical_change_history",
-                    "identity_structural_changes",
-                    "master_lifecycle",
-                    "layer_lifecycle",
-                    "contextual_kerning",
-                    "source_file_fingerprints",
-                    "opentype_inspection",
-                    "opentype_compile_preflight",
-                ],
-                "host": runtime.to_dict(),
-            },
-        )
-
-    def list_open_fonts(self, arguments: Mapping[str, Any]) -> ToolResponse:
+    def list_documents(self, arguments: Mapping[str, Any]) -> ToolResponse:
         documents = tuple(self._host.list_documents())
         warnings = tuple(
             ToolWarning(
@@ -803,15 +790,879 @@ class GlyphsMCPApplication:
             if document.has_unsaved_changes is None
         )
         return ToolResponse.success(
-            tool="list_open_fonts",
+            tool="list_documents",
             effect="read",
             status="warning" if warnings else "success",
             summary="Found {} open Glyphs document(s).".format(len(documents)),
             warnings=warnings,
-            data={"count": len(documents), "documents": [document.to_dict() for document in documents]},
+            data={
+                "count": len(documents),
+                "documents": [document.to_dict() for document in documents],
+            },
         )
 
-    def open_edit_tab(self, arguments: Mapping[str, Any]) -> ToolResponse:
+    def read_document(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        selector = arguments.get("selector")
+        projection = arguments.get("projection")
+        if not isinstance(selector, Mapping) or not isinstance(projection, Mapping):
+            raise ValueError("read_document requires selector and projection objects")
+        model = self._document_model(document_id)
+        document_fingerprint = fingerprint_model(model)
+        references = resolve_selector(model, selector)
+        all_references = self._read_tree_references(model, references, selector)
+        glyph_names = sorted(
+            {
+                reference.identity
+                if reference.kind == "glyph"
+                else str(reference.parent.get("glyphName") or "")
+                for reference in all_references
+                if reference.kind in {"glyph", "layer", "shape", "anchor"}
+            }
+            - {""}
+        )
+        observations: Mapping[tuple[str, str], Mapping[str, Any]] = {}
+        fields = self._read_projection_fields(selector, projection)
+        if fields.intersection(
+            {
+                "alignment",
+                "bounds",
+                "inheritance.metrics",
+                "spacing.horizontal",
+                "spacing.vertical",
+            }
+        ):
+            inspector = getattr(self._host, "inspect_layers", None)
+            if callable(inspector):
+                try:
+                    value = inspector(
+                        document_id,
+                        glyph_names,
+                        include_metrics=True,
+                        resolve_metrics="inheritance.metrics" in fields,
+                        include_geometry=True,
+                    )
+                    observations = dict(value) if isinstance(value, Mapping) else {}
+                except HostAccessError:
+                    observations = {}
+        if "compilation.diagnostics" in fields:
+            inspector = getattr(
+                self._host, "inspect_compilation_diagnostics", None
+            )
+            if callable(inspector):
+                try:
+                    diagnostics = inspector(document_id)
+                    if isinstance(diagnostics, Mapping):
+                        observations = {
+                            **dict(observations),
+                            (
+                                "__document__",
+                                "compilation.diagnostics",
+                            ): dict(diagnostics),
+                        }
+                except HostAccessError:
+                    pass
+        effective_metadata = (
+            self._effective_glyph_metadata(document_id, glyph_names)
+            if "metadata.effective" in fields
+            else {}
+        )
+        items = [
+            self._project_read_tree(
+                model=model,
+                reference=reference,
+                selector=selector,
+                projection=projection,
+                observations=observations,
+                effective_metadata=effective_metadata,
+                document_fingerprint=document_fingerprint,
+            )
+            for reference in references
+        ]
+        cursor_scope = fingerprint_model(
+            {
+                "tool": "read_document",
+                "documentId": document_id,
+                "selector": self._selector_cursor_binding(selector),
+                "projection": projection,
+                "canonicalModelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
+            }
+        )
+        page = paginate(
+            items,
+            source_fingerprint=document_fingerprint,
+            cursor_scope=cursor_scope,
+            page_size=int(selector.get("pageSize", 100)),
+            cursor=selector.get("cursor"),
+        )
+        partial_count = sum(item.get("completeness") != "complete" for item in items)
+        warnings = (
+            (
+                ToolWarning(
+                    code="incomplete_observation",
+                    message="One or more requested observations were unavailable.",
+                    target={"partialCount": partial_count},
+                ),
+            )
+            if partial_count
+            else ()
+        )
+        return ToolResponse.success(
+            tool="read_document",
+            effect="read",
+            status="warning" if warnings else "success",
+            summary="Returned {} of {} selected canonical entities.".format(
+                len(page.items), len(items)
+            ),
+            warnings=warnings,
+            page=page.page.to_dict(),
+            data={
+                "documentId": document_id,
+                "documentFingerprint": document_fingerprint,
+                "canonicalModelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
+                "selectedCount": len(items),
+                "partialCount": partial_count,
+                "items": list(page.items),
+            },
+        )
+
+    def evaluate_constraints(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        constraints = list(arguments.get("constraints") or ())
+        if not constraints:
+            raise ValueError("evaluate_constraints requires at least one constraint")
+        model = self._document_model(document_id)
+        phases = tuple(
+            phase
+            for phase in ("before", "after")
+            if any(str(item.get("phase") or "before") == phase for item in constraints)
+        )
+        results = [
+            evaluate_generic_constraints(model, constraints, phase=phase)
+            for phase in phases
+        ]
+        items = [item for result in results for item in result["items"]]
+        failed = sum(not item["passed"] for item in items)
+        return ToolResponse.success(
+            tool="evaluate_constraints",
+            effect="read",
+            status="warning" if failed else "success",
+            summary="Evaluated {} constraint(s); {} failed.".format(len(items), failed),
+            data={
+                "documentId": document_id,
+                "documentFingerprint": fingerprint_model(model),
+                "constraintCount": len(items),
+                "passedCount": len(items) - failed,
+                "failedCount": failed,
+                "passed": failed == 0,
+                "items": items,
+            },
+        )
+
+    def preview_change(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        if self._mutation_planner is None:
+            raise HostAccessError("This host adapter does not support detached mutation planning.")
+        metadata = OperationMetadata.create()
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        expected = str(
+            _value(
+                arguments,
+                "expected_document_fingerprint",
+                "expectedDocumentFingerprint",
+                "",
+            )
+            or ""
+        )
+        operations = list(arguments.get("operations") or ())
+        constraints = list(arguments.get("constraints") or ())
+        if not document_id or not expected:
+            raise ValueError("documentId and expectedDocumentFingerprint are required")
+        before = self._document_model(document_id)
+        if fingerprint_model(before) != expected:
+            return ToolResponse.failure(
+                tool="preview_change",
+                effect="read",
+                summary="The document changed before preview.",
+                code="stale_document",
+                message="Read the current document fingerprint and try again.",
+                metadata=metadata,
+            )
+        before_constraints = evaluate_generic_constraints(
+            before, constraints, phase="before"
+        )
+        if not before_constraints["passed"]:
+            return ToolResponse.success(
+                tool="preview_change",
+                effect="read",
+                status="review_required",
+                summary="The change was not previewed because a precondition failed.",
+                metadata=metadata,
+                data={
+                    "previewId": None,
+                    "documentId": document_id,
+                    "sourceFingerprint": expected,
+                    "proposedFingerprint": None,
+                    "applicable": False,
+                    "resolvedTargetCount": 0,
+                    "normalizedOperations": [],
+                    "normalizedOperationCount": 0,
+                    "normalizedOperationsTruncated": False,
+                    "changeSet": None,
+                    "constraints": {
+                        "before": before_constraints,
+                        "after": None,
+                    },
+                    "blockers": ["precondition_failed"],
+                    "fontSaved": False,
+                },
+            )
+        generic_build = build_generic_change_set(before, operations)
+        requested_change_set = generic_build.change_set
+        normalized_operations = list(generic_build.normalized_operations)
+        capabilities = tuple(
+            sorted(
+                set(generic_build.capabilities)
+                | set(
+                    lifecycle_capabilities(
+                        requested_change_set, tool="preview_change"
+                    )
+                )
+            )
+        )
+        diagnostics = unsupported_change_diagnostics(
+            requested_change_set,
+            limit=100,
+            capabilities=capabilities,
+        )
+        if diagnostics["unsupportedCount"]:
+            return ToolResponse.success(
+                tool="preview_change",
+                effect="read",
+                status="review_required",
+                summary="The requested operations include unsupported canonical writes.",
+                metadata=metadata,
+                data={
+                    "previewId": None,
+                    "documentId": document_id,
+                    "sourceFingerprint": expected,
+                    "proposedFingerprint": requested_change_set.after_fingerprint,
+                    "applicable": False,
+                    "resolvedTargetCount": sum(
+                        len(item.get("resolvedPaths") or ())
+                        for item in normalized_operations
+                    ),
+                    "normalizedOperations": normalized_operations[
+                        :PUBLIC_NORMALIZED_OPERATION_LIMIT
+                    ],
+                    "normalizedOperationCount": len(normalized_operations),
+                    "normalizedOperationsTruncated": len(normalized_operations)
+                    > PUBLIC_NORMALIZED_OPERATION_LIMIT,
+                    "changeSet": requested_change_set.to_dict(),
+                    "constraints": {"before": before_constraints, "after": None},
+                    "blockers": ["unsupported_change"],
+                    "diagnostics": diagnostics,
+                    "fontSaved": False,
+                },
+            )
+        writable = writable_subset(
+            before, requested_change_set, capabilities=capabilities
+        )
+        try:
+            plan = self._mutation_planner.plan(
+                document_id=document_id,
+                expected_document_fingerprint=expected,
+                requested_change_set=writable,
+                operation_id=metadata.operation_id,
+                before_model=before,
+                capabilities=capabilities,
+                execution_context=generic_build.execution_context,
+            )
+        except StaleDocumentError:
+            return ToolResponse.failure(
+                tool="preview_change",
+                effect="read",
+                summary="The document changed during detached preview.",
+                code="stale_document",
+                message="Read the current document fingerprint and try again.",
+                metadata=metadata,
+            )
+        after_constraints = evaluate_generic_constraints(
+            plan.expected_after_model, constraints, phase="after"
+        )
+        applicable = bool(after_constraints["passed"])
+        record = self._previews.create(
+            kind="change_preview",
+            ttl_seconds=REVIEW_TTL_SECONDS,
+            payload={
+                "documentId": document_id,
+                "source": "declarative",
+                "sourceFingerprint": expected,
+                "proposedFingerprint": plan.after_fingerprint,
+                "plan": plan,
+                "normalizedOperations": normalized_operations,
+                "constraints": {
+                    "before": before_constraints,
+                    "after": after_constraints,
+                },
+                "applicable": applicable,
+            },
+        )
+        changes = [public_change_dict(change) for change in plan.observed_change_set.changes]
+        first = paginate(
+            changes,
+            source_fingerprint=plan.after_fingerprint,
+            cursor_scope=record.operation_id,
+            page_size=100,
+        )
+        return ToolResponse.success(
+            tool="preview_change",
+            effect="read",
+            status="success" if applicable else "review_required",
+            summary=(
+                "Created an immutable verified change preview."
+                if applicable
+                else "The detached result failed one or more postconditions."
+            ),
+            metadata=metadata,
+            page=first.page.to_dict(),
+            data={
+                "previewId": record.operation_id,
+                "expiresAt": _iso_timestamp(record.expires_at),
+                "documentId": document_id,
+                "sourceFingerprint": expected,
+                "proposedFingerprint": plan.after_fingerprint,
+                "applicable": applicable,
+                "resolvedTargetCount": sum(
+                    len(item.get("resolvedPaths") or ())
+                    for item in normalized_operations
+                ),
+                "normalizedOperations": normalized_operations[
+                    :PUBLIC_NORMALIZED_OPERATION_LIMIT
+                ],
+                "normalizedOperationCount": len(normalized_operations),
+                "normalizedOperationsTruncated": len(normalized_operations)
+                > PUBLIC_NORMALIZED_OPERATION_LIMIT,
+                "changeSet": {
+                    "beforeFingerprint": plan.before_fingerprint,
+                    "afterFingerprint": plan.after_fingerprint,
+                    "changeCount": len(changes),
+                    "changes": list(first.items),
+                },
+                "constraints": {
+                    "before": before_constraints,
+                    "after": after_constraints,
+                },
+                "blockers": [] if applicable else ["postcondition_failed"],
+                "fontSaved": False,
+            },
+        )
+
+    def apply_change(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        if self._transactions is None:
+            raise HostAccessError("This host adapter does not support document transactions.")
+        metadata = OperationMetadata.create()
+        preview_id = str(_value(arguments, "preview_id", "previewId", "") or "")
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        expected = str(
+            _value(
+                arguments,
+                "expected_document_fingerprint",
+                "expectedDocumentFingerprint",
+                "",
+            )
+            or ""
+        )
+        if not preview_id or not document_id or not expected:
+            raise ValueError("previewId, documentId, and expectedDocumentFingerprint are required")
+        record = self._previews.get(preview_id)
+        if record is None or record.kind != "change_preview":
+            return ToolResponse.failure(
+                tool="apply_change",
+                effect="edit",
+                summary="The immutable preview is missing or expired.",
+                code="preview_unavailable",
+                message="Create a new preview and try again.",
+                metadata=metadata,
+            )
+        payload = record.payload
+        if (
+            str(payload.get("documentId") or "") != document_id
+            or str(payload.get("sourceFingerprint") or "") != expected
+        ):
+            return ToolResponse.failure(
+                tool="apply_change",
+                effect="edit",
+                summary="The preview belongs to another document state.",
+                code="preview_mismatch",
+                message="Apply the preview only to its exact source document and fingerprint.",
+                metadata=metadata,
+            )
+        if not bool(payload.get("applicable")):
+            return ToolResponse.failure(
+                tool="apply_change",
+                effect="edit",
+                summary="The preview has unresolved blockers.",
+                code="preview_blocked",
+                message="Resolve the failed constraints and create a new preview.",
+                metadata=metadata,
+            )
+        current = self._document_model(document_id)
+        if fingerprint_model(current) != expected:
+            return ToolResponse.failure(
+                tool="apply_change",
+                effect="edit",
+                summary="The document changed after preview.",
+                code="stale_document",
+                message="The exact preview was not applied.",
+                metadata=metadata,
+            )
+        if payload.get("source") == "python_staged":
+            if self._python is None:
+                raise HostAccessError("This host adapter does not support Python execution.")
+            staged_changes = payload.get("changeSet")
+            if isinstance(staged_changes, ChangeSet) and not staged_changes.changes:
+                self._previews.discard(preview_id)
+                receipt = self._audit.record(
+                    tool="apply_change",
+                    effect="edit",
+                    status="success",
+                    document_id=document_id,
+                    details={
+                        "operationId": metadata.operation_id,
+                        "previewId": preview_id,
+                        "source": "python_staged",
+                        "codeHash": payload.get("codeHash"),
+                        "observedChangeCount": 0,
+                    },
+                )
+                return ToolResponse.success(
+                    tool="apply_change",
+                    effect="edit",
+                    summary="The staged Python preview contains no document change; no transaction ran.",
+                    metadata=metadata,
+                    audit_receipt=receipt.to_dict(),
+                    data={
+                        "operationId": metadata.operation_id,
+                        "previewId": preview_id,
+                        "documentId": document_id,
+                        "beforeFingerprint": expected,
+                        "afterFingerprint": expected,
+                        "observedChangeCount": 0,
+                        "transactionCount": 0,
+                        "fontSaved": False,
+                        "sourceFileChanged": False,
+                        "revert": {"available": False, "operationId": None},
+                    },
+                )
+            response = self._python.apply_staged_preview(
+                record,
+                operation_id=metadata.operation_id,
+                reason=str(_value(arguments, "reason") or ""),
+            )
+            if response.ok:
+                self._previews.discard(preview_id)
+            source_data = dict(response.data)
+            data = {
+                **source_data,
+                "operationId": metadata.operation_id,
+                "previewId": preview_id,
+                "documentId": document_id,
+                "observedChangeCount": int(source_data.get("changeCount") or 0),
+                "revert": {
+                    "available": bool(
+                        (source_data.get("rollback") or {}).get("available")
+                    ),
+                    "operationId": metadata.operation_id if response.ok else None,
+                },
+            }
+            receipt = self._audit.record(
+                tool="apply_change",
+                effect="edit",
+                status=response.status,
+                document_id=document_id,
+                details={
+                    "operationId": metadata.operation_id,
+                    "previewId": preview_id,
+                    "source": "python_staged",
+                    "codeHash": payload.get("codeHash"),
+                    "beforeFingerprint": source_data.get("beforeFingerprint"),
+                    "afterFingerprint": source_data.get("afterFingerprint"),
+                    "observedChangeCount": data["observedChangeCount"],
+                    "errorCode": (
+                        response.error.code if response.error is not None else None
+                    ),
+                },
+            )
+            return replace(
+                response,
+                tool="apply_change",
+                effect="edit",
+                metadata=metadata,
+                data=data,
+                audit_receipt=receipt.to_dict(),
+            )
+        plan = payload.get("plan")
+        if plan is None or not hasattr(plan, "observed_change_set"):
+            return ToolResponse.failure(
+                tool="apply_change",
+                effect="edit",
+                summary="The stored preview is incomplete.",
+                code="preview_corrupt",
+                message="Create a new preview.",
+                recoverable=False,
+                metadata=metadata,
+            )
+        if not plan.observed_change_set.changes:
+            self._previews.discard(preview_id)
+            return ToolResponse.success(
+                tool="apply_change",
+                effect="edit",
+                summary="The preview contains no document change; no transaction ran.",
+                metadata=metadata,
+                data={
+                    "operationId": metadata.operation_id,
+                    "previewId": preview_id,
+                    "documentId": document_id,
+                    "beforeFingerprint": expected,
+                    "afterFingerprint": expected,
+                    "observedChangeCount": 0,
+                    "transactionCount": 0,
+                    "fontSaved": False,
+                    "revert": {"available": False, "operationId": None},
+                },
+            )
+        exact_plan = replace(plan, operation_id=metadata.operation_id)
+        self._trace.bind_document(document_id)
+        try:
+            result = self._transactions.apply_plan(exact_plan)
+        except StaleDocumentError:
+            return ToolResponse.failure(
+                tool="apply_change",
+                effect="edit",
+                summary="The document changed before the verified transaction.",
+                code="stale_document",
+                message="The exact preview was not applied.",
+                metadata=metadata,
+            )
+        except TransactionVerificationError as exc:
+            return self._audited_edit_failure(
+                tool="apply_change",
+                document_id=document_id,
+                summary="The exact preview failed read-back verification.",
+                code="transaction_failed",
+                message="The mutation was not verified.",
+                metadata=metadata,
+                audit_details=exc.to_public_dict(),
+                data=exc.to_public_dict(),
+            )
+        self._previews.discard(preview_id)
+        changes = [
+            public_change_dict(change)
+            for change in exact_plan.observed_change_set.changes
+        ]
+        self._operations.create(
+            kind="mutation_diff",
+            operation_id=metadata.operation_id,
+            ttl_seconds=RESULT_TTL_SECONDS,
+            payload={
+                "items": changes,
+                "itemKey": "changes",
+                "sourceFingerprint": result.after_fingerprint,
+                "metadata": {
+                    "documentId": document_id,
+                    "operationId": metadata.operation_id,
+                    "previewId": preview_id,
+                },
+            },
+        )
+        first = paginate(
+            changes,
+            source_fingerprint=result.after_fingerprint,
+            cursor_scope=metadata.operation_id,
+            page_size=100,
+        )
+        receipt = self._audit.record(
+            tool="apply_change",
+            effect="edit",
+            status="success",
+            document_id=document_id,
+            details={
+                "operationId": metadata.operation_id,
+                "previewId": preview_id,
+                "reason": _value(arguments, "reason"),
+                "beforeFingerprint": result.before_fingerprint,
+                "afterFingerprint": result.after_fingerprint,
+                "observedChangeCount": result.observed_change_count,
+                "previewSource": payload.get("source"),
+            },
+        )
+        return ToolResponse.success(
+            tool="apply_change",
+            effect="edit",
+            summary="Applied the exact immutable preview through one verified transaction; the font was not saved.",
+            metadata=metadata,
+            audit_receipt=receipt.to_dict(),
+            page=first.page.to_dict(),
+            data={
+                "operationId": metadata.operation_id,
+                "previewId": preview_id,
+                "documentId": document_id,
+                "beforeFingerprint": result.before_fingerprint,
+                "afterFingerprint": result.after_fingerprint,
+                "observedChangeCount": result.observed_change_count,
+                "observedChangeSet": {
+                    "changeCount": len(changes),
+                    "changes": list(first.items),
+                },
+                "canonicalCoverage": result.coverage.to_public_dict(),
+                "fontSaved": False,
+                "sourceFileChanged": result.source_file_changed,
+                "transactionCount": 1,
+                "revert": {
+                    "available": True,
+                    "operationId": metadata.operation_id,
+                },
+            },
+        )
+
+    def search_knowledge(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        result = search_knowledge_corpus(
+            str(arguments.get("query") or ""),
+            topics=list(arguments.get("topics") or ()),
+            authorities=list(arguments.get("authorities") or ()),
+            glyphs_versions=list(
+                _value(arguments, "glyphs_versions", "glyphsVersions", ()) or ()
+            ),
+        )
+        items = list(result.pop("items"))
+        source_fingerprint = str(result["manifest"]["corpusFingerprint"])
+        cursor_scope = fingerprint_model(
+            {
+                "tool": "search_knowledge",
+                "query": result["query"],
+                "filters": result["filters"],
+                "corpus": source_fingerprint,
+            }
+        )
+        page = paginate(
+            items,
+            source_fingerprint=source_fingerprint,
+            cursor_scope=cursor_scope,
+            page_size=int(_value(arguments, "page_size", "pageSize", 20)),
+            cursor=_value(arguments, "cursor"),
+        )
+        return ToolResponse.success(
+            tool="search_knowledge",
+            effect="read",
+            summary="Returned {} of {} pinned Knowledge match(es).".format(
+                len(page.items), len(items)
+            ),
+            page=page.page.to_dict(),
+            data={**result, "items": list(page.items)},
+        )
+
+    def get_knowledge(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        entry_ids = list(_value(arguments, "entry_ids", "entryIds", ()) or ())
+        result = read_knowledge_entries(entry_ids)
+        warnings = (
+            (
+                ToolWarning(
+                    code="knowledge_entries_missing",
+                    message="One or more requested Knowledge IDs were not found.",
+                    target={"missingIds": list(result["missingIds"])},
+                ),
+            )
+            if result["missingIds"]
+            else ()
+        )
+        return ToolResponse.success(
+            tool="get_knowledge",
+            effect="read",
+            status="warning" if warnings else "success",
+            summary="Returned {} of {} requested Knowledge entries.".format(
+                result["foundCount"], result["requestedCount"]
+            ),
+            warnings=warnings,
+            data=result,
+        )
+
+    def get_server_info(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        runtime = self._host.runtime_snapshot()
+        scripting_safety = _scripting_runtime_safety(self._host)
+        return ToolResponse.success(
+            tool="get_server_info",
+            effect="read",
+            summary="Glyphs MCP {} is available with {} open document(s).".format(API_VERSION, runtime.open_document_count),
+            data={
+                "serverName": SERVER_NAME,
+                "serverVersion": SERVER_VERSION,
+                "apiMajor": API_MAJOR,
+                "apiVersion": API_VERSION,
+                "canonicalModelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
+                "knowledge": knowledge_manifest(),
+                "registries": {
+                    "entities": sorted(ENTITY_KINDS),
+                    "computedProjections": sorted(COMPUTED_PROJECTIONS),
+                    "changeOperations": sorted(OPERATION_KINDS),
+                    "pythonModes": [
+                        "read_only",
+                        "staged_document",
+                        "live_open_world",
+                    ],
+                },
+                "capabilities": [
+                    "stable_document_ids",
+                    "generic_selectors",
+                    "generic_projections",
+                    "generic_constraints",
+                    "immutable_change_previews",
+                    "exact_preview_apply",
+                    "pinned_searchable_knowledge",
+                    "fingerprint_bound_pagination",
+                    "verified_transactions",
+                    "permanent_python_fallback",
+                    "staged_python_previews",
+                    "live_open_world_python",
+                    "canonical_change_history",
+                    "identity_structural_changes",
+                    "source_file_fingerprints",
+                    "recoverable_scripting_runtime",
+                ],
+                "host": runtime.to_dict(),
+                "scriptingRuntimeSafety": {
+                    key: scripting_safety[key]
+                    for key in (
+                        "state",
+                        "mode",
+                        "strictInterlockAvailable",
+                        "livePythonAvailable",
+                        "stagedPythonAvailable",
+                        "automaticRepairAvailable",
+                        "incidentId",
+                        "affectedSlotCount",
+                        "nextAction",
+                    )
+                },
+            },
+        )
+
+    def get_runtime_status(
+        self, arguments: Mapping[str, Any]
+    ) -> ToolResponse:
+        status = _scripting_runtime_safety(self._host)
+        return ToolResponse.success(
+            tool="get_runtime_status",
+            effect="read",
+            status="success" if status.get("state") == "healthy" else "warning",
+            summary=(
+                "The strict scripting interlock is healthy."
+                if status.get("state") == "healthy"
+                else "The strict scripting interlock requires recovery."
+            ),
+            data=status,
+        )
+
+    def repair_runtime(
+        self, arguments: Mapping[str, Any]
+    ) -> ToolResponse:
+        repair = getattr(self._host, "repair_scripting_runtime", None)
+        if not callable(repair):
+            raise HostAccessError(
+                "This host adapter does not expose scripting runtime repair."
+            )
+        expected_value = _value(
+            arguments, "expected_incident_id", "expectedIncidentId"
+        )
+        expected_incident_id = (
+            None if expected_value is None else str(expected_value or "")
+        )
+        if expected_incident_id == "":
+            raise ValueError("expectedIncidentId must be non-empty when supplied")
+        reason_value = _value(arguments, "reason")
+        reason = None if reason_value is None else str(reason_value or "").strip()
+        try:
+            result = repair(
+                expected_incident_id=expected_incident_id,
+                trigger="agent",
+            )
+        except StaleScriptingRuntimeIncidentError as exc:
+            status = _scripting_runtime_safety(self._host)
+            receipt = self._audit.record(
+                tool="repair_runtime",
+                effect="code",
+                status="error",
+                document_id=None,
+                details={
+                    "reason": reason,
+                    "expectedIncidentId": expected_incident_id,
+                    "errorCode": "stale_scripting_runtime_incident",
+                    "scriptingRuntimeSafety": status,
+                },
+            )
+            return ToolResponse.failure(
+                tool="repair_runtime",
+                effect="code",
+                summary="The scripting safety incident changed before repair.",
+                code="stale_scripting_runtime_incident",
+                message=str(exc),
+                data={"scriptingRuntimeSafety": status},
+                audit_receipt=receipt.to_dict(),
+            )
+        if not isinstance(result, Mapping):
+            raise HostAccessError("Scripting runtime repair returned no status.")
+        repair_value = result.get("repair")
+        status_value = result.get("scriptingRuntimeSafety")
+        if not isinstance(repair_value, Mapping) or not isinstance(
+            status_value, Mapping
+        ):
+            raise HostAccessError("Scripting runtime repair evidence is incomplete.")
+        repair_data = dict(repair_value)
+        status_data = dict(status_value)
+        outcome = str(repair_data.get("result") or "")
+        ok = status_data.get("state") == "healthy"
+        receipt = self._audit.record(
+            tool="repair_runtime",
+            effect="code",
+            status="success" if ok else "error",
+            document_id=None,
+            details={
+                "reason": reason,
+                "expectedIncidentId": expected_incident_id,
+                "repair": repair_data,
+                "scriptingRuntimeSafety": status_data,
+            },
+        )
+        data = {
+            "repair": repair_data,
+            "scriptingRuntimeSafety": status_data,
+        }
+        if ok:
+            return ToolResponse.success(
+                tool="repair_runtime",
+                effect="code",
+                summary=str(repair_data.get("message") or "Scripting runtime repaired."),
+                data=data,
+                audit_receipt=receipt.to_dict(),
+            )
+        return ToolResponse.failure(
+            tool="repair_runtime",
+            effect="code",
+            summary="Scripting runtime repair did not restore strict coverage.",
+            code=(
+                "scripting_runtime_busy"
+                if outcome == "busy"
+                else "scripting_runtime_repair_incomplete"
+            ),
+            message=str(
+                repair_data.get("message")
+                or "Strict scripting safety remains unavailable."
+            ),
+            data=data,
+            audit_receipt=receipt.to_dict(),
+        )
+
+
+    def open_document_view(self, arguments: Mapping[str, Any]) -> ToolResponse:
         document_id = str(
             _value(arguments, "document_id", "documentId", "") or ""
         )
@@ -844,7 +1695,7 @@ class GlyphsMCPApplication:
         missing = [name for name in glyph_names if name not in available_glyphs]
         if missing:
             return ToolResponse.failure(
-                tool="open_edit_tab",
+                tool="open_document_view",
                 effect="ui",
                 summary="The Edit tab was not opened because glyph targets are missing.",
                 code="target_not_found",
@@ -862,7 +1713,7 @@ class GlyphsMCPApplication:
             }
             if master_id not in master_ids:
                 return ToolResponse.failure(
-                    tool="open_edit_tab",
+                    tool="open_document_view",
                     effect="ui",
                     summary="The Edit tab was not opened because the master is missing.",
                     code="target_not_found",
@@ -907,7 +1758,7 @@ class GlyphsMCPApplication:
             else ()
         )
         return ToolResponse.success(
-            tool="open_edit_tab",
+            tool="open_document_view",
             effect="ui",
             status="warning" if changed else "success",
             summary="Opened {} glyph(s) in a Glyphs Edit tab.".format(
@@ -919,7 +1770,7 @@ class GlyphsMCPApplication:
                 "glyphNames": list(glyph_names),
                 "glyphCount": len(glyph_names),
                 "masterId": master_id,
-                "openedTab": True,
+                "openedView": True,
                 "beforeFingerprint": changes.before_fingerprint,
                 "afterFingerprint": changes.after_fingerprint,
                 "documentChanged": changed,
@@ -928,23 +1779,377 @@ class GlyphsMCPApplication:
             },
         )
 
-    def get_document_status(self, arguments: Mapping[str, Any]) -> ToolResponse:
+
+    def document_was_saved(
+        self,
+        document_id: str,
+        *,
+        correlation_token: str | None = None,
+    ) -> bool:
+        """Receive one native manual-save notification from the runtime observer."""
+
+        return self.lifecycle.document_was_saved(
+            str(document_id or ""),
+            make_copy=False,
+            succeeded=True,
+            correlation_token=correlation_token,
+        )
+
+    def document_was_closed(self, document_id: str) -> bool:
+        """Prune process-local state after a native document close."""
+
+        return self.lifecycle.document_was_closed(str(document_id or ""))
+
+    def save_document(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        # Save is a history boundary even when confirmation, stale-state, or
+        # native verification refuses it. Save attempts never become visible
+        # no-op commits and never emit history_not_recorded.
+        self._trace.mark_history_boundary()
+        metadata = OperationMetadata.create()
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        model = self._document_model(document_id)
-        snapshot = next((item for item in self._host.list_documents() if item.document_id == document_id), None)
-        if snapshot is None:
-            raise HostAccessError("The document is no longer open.")
-        return ToolResponse.success(
-            tool="get_document_status",
-            effect="read",
-            summary="Read the current document fingerprint and file state.",
-            data={
-                "document": snapshot.to_dict(),
-                "documentFingerprint": fingerprint_model(model),
-                "canonicalModelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
-                "reversibilityCoverage": REVERSIBILITY_COVERAGE,
-                "canonicalCoverage": COMPLETE_CANONICAL_COVERAGE,
+        expected = str(
+            _value(
+                arguments,
+                "expected_document_fingerprint",
+                "expectedDocumentFingerprint",
+                "",
+            )
+            or ""
+        )
+        reason = str(_value(arguments, "reason", default="") or "").strip()
+        if not document_id or not expected:
+            raise ValueError("documentId and expectedDocumentFingerprint are required")
+        if not reason:
+            raise ValueError("reason is required and must not be blank")
+        if not bool(arguments.get("confirm")):
+            return self._audited_save_failure(
+                document_id=document_id,
+                summary="The document was not saved because confirmation is missing.",
+                code="confirmation_required",
+                message="Call save_document with confirm=true after reading current fingerprints.",
+                metadata=metadata,
+                reason=reason,
+            )
+        overwrite_policy = str(
+            _value(arguments, "overwrite_policy", "overwritePolicy", "fail_if_exists")
+            or "fail_if_exists"
+        )
+        if overwrite_policy not in SAVE_OVERWRITE_POLICIES:
+            raise ValueError("overwritePolicy must be fail_if_exists or replace_if_match")
+
+        before = self._document_model(document_id)
+        before_fingerprint = fingerprint_model(before)
+        if before_fingerprint != expected:
+            return self._audited_save_failure(
+                document_id=document_id,
+                summary="The document changed before it could be saved.",
+                code="stale_document",
+                message="Read the current document fingerprint and try again.",
+                metadata=metadata,
+                reason=reason,
+                details={
+                    "expectedDocumentFingerprint": expected,
+                    "observedDocumentFingerprint": before_fingerprint,
+                },
+            )
+        saver = getattr(self._host, "save_document", None)
+        if not callable(saver):
+            raise HostAccessError("This host adapter does not implement document saves.")
+        try:
+            save_token = self.lifecycle.begin_tool_save(document_id)
+        except RuntimeError:
+            return self._audited_save_failure(
+                document_id=document_id,
+                summary="Another save is already active for this document.",
+                code="save_in_progress",
+                message="Wait for the active save to finish and try again.",
+                metadata=metadata,
+                reason=reason,
+            )
+
+        result: Mapping[str, Any]
+        try:
+            self.activity.advance_current(
+                "saving", "Saving the Glyphs document", cancellable=False
+            )
+            result = saver(
+                document_id,
+                expected_document_fingerprint=expected,
+                destination=_value(arguments, "destination"),
+                expected_source_fingerprint=_value(
+                    arguments,
+                    "expected_source_fingerprint",
+                    "expectedSourceFingerprint",
+                ),
+                overwrite_policy=overwrite_policy,
+                expected_destination_fingerprint=_value(
+                    arguments,
+                    "expected_destination_fingerprint",
+                    "expectedDestinationFingerprint",
+                ),
+                notification_correlation_token=save_token,
+            )
+        except DocumentSaveError as exc:
+            lifecycle = self.lifecycle.complete_tool_save(
+                document_id,
+                save_token,
+                verified=False,
+                expect_notification=exc.write_attempted,
+            )
+            failure_data = {
+                "saveAttempted": exc.write_attempted,
+                "saveVerified": False,
+                "fontSaved": False,
+                "stateMayHaveChanged": exc.write_attempted,
+                "notificationObserved": lifecycle["notificationObserved"],
+                **dict(exc.details),
+            }
+            return self._audited_save_failure(
+                document_id=document_id,
+                summary="The document save was refused or could not be verified.",
+                code=exc.code,
+                message=exc.message,
+                recoverable=exc.recoverable,
+                metadata=metadata,
+                reason=reason,
+                details=exc.details,
+                data=failure_data,
+            )
+        except Exception:
+            self.lifecycle.complete_tool_save(
+                document_id, save_token, verified=False
+            )
+            raise
+
+        saved_model = result.get("savedModel")
+        if not isinstance(saved_model, Mapping):
+            lifecycle = self.lifecycle.complete_tool_save(
+                document_id,
+                save_token,
+                verified=False,
+                expect_notification=bool(result.get("nativeSaveSucceeded")),
+            )
+            return self._audited_save_failure(
+                document_id=document_id,
+                summary="Glyphs returned from saving without canonical source proof.",
+                code="save_verification_failed",
+                message="The saved source could not be decoded and compared.",
+                recoverable=False,
+                metadata=metadata,
+                reason=reason,
+                data={
+                    "saveAttempted": True,
+                    "fontSaved": True,
+                    "saveVerified": False,
+                    "stateMayHaveChanged": True,
+                    "notificationObserved": lifecycle["notificationObserved"],
+                },
+            )
+        try:
+            after_fingerprint = fingerprint_model(saved_model)
+        except Exception as exc:
+            lifecycle = self.lifecycle.complete_tool_save(
+                document_id,
+                save_token,
+                verified=False,
+                expect_notification=bool(result.get("nativeSaveSucceeded")),
+            )
+            failure_data = {
+                key: _public_payload(value)
+                for key, value in result.items()
+                if key != "savedModel"
+            }
+            failure_data.update(
+                {
+                    "saveAttempted": True,
+                    "fontSaved": bool(result.get("nativeSaveSucceeded")),
+                    "saveVerified": False,
+                    "stateMayHaveChanged": True,
+                    "notificationObserved": lifecycle["notificationObserved"],
+                }
+            )
+            return self._audited_save_failure(
+                document_id=document_id,
+                summary="The saved canonical source proof is invalid.",
+                code="save_verification_failed",
+                message="The saved source could not be fingerprinted canonically.",
+                recoverable=False,
+                metadata=metadata,
+                reason=reason,
+                details={"exceptionType": type(exc).__name__},
+                data=failure_data,
+            )
+        document_changed = after_fingerprint != before_fingerprint
+        save_mode = str(result.get("saveMode") or "")
+        previous_file_path = str(result.get("previousFilePath") or "")
+        saved_file_path = str(result.get("filePath") or "")
+        requested_destination = str(
+            _value(arguments, "destination", default="") or ""
+        )
+
+        def same_reported_path(left: str, right: str) -> bool:
+            if not left or not right:
+                return False
+            # The adapter canonicalizes macOS' stable /tmp and /var aliases to
+            # /private/... before invoking NSDocument. Compare the resolved
+            # filesystem locations so a truthful native path does not turn a
+            # verified Save As into a false failure. User-controlled links are
+            # still rejected by the adapter before the native write.
+            return os.path.normcase(os.path.realpath(left)) == os.path.normcase(
+                os.path.realpath(right)
+            )
+
+        path_evidence_valid = bool(saved_file_path)
+        if save_mode == "save":
+            path_evidence_valid = bool(
+                path_evidence_valid
+                and previous_file_path
+                and same_reported_path(previous_file_path, saved_file_path)
+                and not bool(result.get("pathChanged"))
+            )
+        elif save_mode == "save_as":
+            path_evidence_valid = bool(
+                path_evidence_valid
+                and bool(result.get("pathChanged"))
+                and (
+                    not previous_file_path
+                    or not same_reported_path(previous_file_path, saved_file_path)
+                )
+            )
+        if requested_destination:
+            path_evidence_valid = bool(
+                path_evidence_valid
+                and same_reported_path(requested_destination, saved_file_path)
+            )
+        original_source_proven = bool(
+            save_mode != "save_as"
+            or not previous_file_path
+            or result.get("originalSourceUnchanged") is True
+        )
+        verification_failed = bool(
+            save_mode not in {"save", "save_as"}
+            or document_changed
+            or result.get("dirtyAfter") is not False
+            or not result.get("nativeSaveSucceeded")
+            or not result.get("savedSourceFingerprint")
+            or not path_evidence_valid
+            or (
+                save_mode == "save_as"
+                and result.get("destinationChanged") is not True
+            )
+            or not original_source_proven
+        )
+        if verification_failed:
+            lifecycle = self.lifecycle.complete_tool_save(
+                document_id,
+                save_token,
+                verified=False,
+                expect_notification=bool(result.get("nativeSaveSucceeded")),
+            )
+            failure_data = {
+                key: _public_payload(value)
+                for key, value in result.items()
+                if key != "savedModel"
+            }
+            failure_data.update(
+                {
+                    "beforeFingerprint": before_fingerprint,
+                    "afterFingerprint": after_fingerprint,
+                    "documentChanged": document_changed,
+                    "saveVerified": False,
+                    "fontSaved": bool(result.get("nativeSaveSucceeded")),
+                    "stateMayHaveChanged": True,
+                    "notificationObserved": lifecycle["notificationObserved"],
+                }
+            )
+            return self._audited_save_failure(
+                document_id=document_id,
+                summary="Glyphs saved bytes, but the complete save contract was not verified.",
+                code="save_verification_failed",
+                message="Inspect the current path, dirty state, and source fingerprints before retrying.",
+                recoverable=False,
+                metadata=metadata,
+                reason=reason,
+                data=failure_data,
+            )
+
+        lifecycle = self.lifecycle.complete_tool_save(
+            document_id,
+            save_token,
+            verified=True,
+            expect_notification=True,
+        )
+        public_result = {
+            key: _public_payload(value)
+            for key, value in result.items()
+            if key != "savedModel"
+        }
+        data = {
+            "operationId": metadata.operation_id,
+            "documentId": document_id,
+            **public_result,
+            "beforeFingerprint": before_fingerprint,
+            "afterFingerprint": after_fingerprint,
+            "saveAttempted": True,
+            "nativeSaveSucceeded": True,
+            "saveVerified": True,
+            "fontSaved": True,
+            "documentChanged": False,
+            "notificationObserved": lifecycle["notificationObserved"],
+            "historyReset": lifecycle["historyReset"],
+            "changeTrackingReset": lifecycle["changeTrackingReset"],
+            "historyRecorded": False,
+        }
+        self._operations.create(
+            kind="document_save",
+            operation_id=metadata.operation_id,
+            ttl_seconds=RESULT_TTL_SECONDS,
+            payload=data,
+        )
+        status = (
+            "success"
+            if lifecycle["historyReset"] and lifecycle["changeTrackingReset"]
+            else "warning"
+        )
+        warnings = ()
+        if status == "warning":
+            warnings = (
+                ToolWarning(
+                    code="save_history_cleanup_incomplete",
+                    message=(
+                        "The source was saved and verified, but process-local "
+                        "change-history cleanup did not complete."
+                    ),
+                    target={"documentId": document_id},
+                ),
+            )
+        receipt = self._audit.record(
+            tool="save_document",
+            effect="save",
+            status=status,
+            document_id=document_id,
+            details={
+                "operationId": metadata.operation_id,
+                "reason": reason,
+                "saveMode": data.get("saveMode"),
+                "beforeFingerprint": before_fingerprint,
+                "afterFingerprint": after_fingerprint,
+                "previousSourceFingerprint": data.get("previousSourceFingerprint"),
+                "savedSourceFingerprint": data.get("savedSourceFingerprint"),
+                "historyReset": data.get("historyReset"),
             },
+        )
+        return ToolResponse.success(
+            tool="save_document",
+            effect="save",
+            status=status,
+            summary=(
+                "Saved the Glyphs document synchronously and verified the published source."
+            ),
+            metadata=metadata,
+            warnings=warnings,
+            audit_receipt=receipt.to_dict(),
+            data=data,
         )
 
     def get_operation(self, arguments: Mapping[str, Any]) -> ToolResponse:
@@ -1026,608 +2231,239 @@ class GlyphsMCPApplication:
             page=page_data,
         )
 
-    def _list_model_items(
-        self,
-        *,
-        tool: str,
-        arguments: Mapping[str, Any],
-        producer: Callable[[Mapping[str, Any]], Sequence[Mapping[str, Any]]],
-        item_key: str,
-    ) -> ToolResponse:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def preview_export(self, arguments: Mapping[str, Any]) -> ToolResponse:
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
         model = self._document_model(document_id)
-        source_fingerprint = fingerprint_model(model)
-        items = list(producer(model))
-        cursor_scope = fingerprint_model(
-            {"tool": tool, "documentId": document_id, "items": items}
-        )
-        page = paginate(
-            items,
-            source_fingerprint=source_fingerprint,
-            cursor_scope=cursor_scope,
-            page_size=int(_value(arguments, "page_size", "pageSize", 100)),
-            cursor=_value(arguments, "cursor"),
-        )
-        return ToolResponse.success(
-            tool=tool,
-            effect="read",
-            summary="Returned {} of {} item(s).".format(len(page.items), len(items)),
-            page=page.page.to_dict(),
-            data={"documentId": document_id, "count": len(items), item_key: list(page.items)},
-        )
-
-    def list_glyphs(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        fields = _value(arguments, "fields", default=None)
-        include_links = bool(_value(arguments, "include_links", "includeLinks", False))
-        return self._list_model_items(
-            tool="list_glyphs",
-            arguments=arguments,
-            producer=lambda model: model_list_glyphs(
-                model, fields=fields, include_links=include_links
-            ),
-            item_key="glyphs",
-        )
-
-    def list_instances(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._list_model_items(tool="list_instances", arguments=arguments, producer=model_list_instances, item_key="instances")
-
-    def list_masters(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._list_model_items(
-            tool="list_masters",
-            arguments=arguments,
-            producer=model_list_masters,
-            item_key="masters",
-        )
-
-    def list_layers(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        glyph_names = _value(arguments, "glyph_names", "glyphNames", None)
-        roles = _value(arguments, "roles", default=None)
-        detail = str(_value(arguments, "detail", default="summary") or "summary")
-        model = self._document_model(document_id)
-        observations = {}
-        if detail != "summary":
-            inspector = getattr(self._host, "inspect_layers", None)
-            if callable(inspector):
-                observations = dict(
-                    inspector(
-                        document_id,
-                        tuple(glyph_names or ()),
-                        resolve_metrics=detail in {"metrics", "full"},
-                        include_geometry=detail in {"geometry", "full"},
-                    )
-                )
-        items = model_list_layers(
-            model,
-            glyph_names=glyph_names,
-            roles=roles,
-            detail=detail,
-            observations=observations,
-        )
-        source_fingerprint = fingerprint_model(model)
-        page = paginate(
-            items,
-            source_fingerprint=source_fingerprint,
-            cursor_scope=fingerprint_model(
-                {
-                    "tool": "list_layers",
-                    "documentId": document_id,
-                    "detail": detail,
-                    "items": items,
-                }
-            ),
-            page_size=int(_value(arguments, "page_size", "pageSize", 100)),
-            cursor=_value(arguments, "cursor"),
-        )
-        return ToolResponse.success(
-            tool="list_layers",
-            effect="read",
-            summary="Returned {} of {} layer(s) with {} detail.".format(
-                len(page.items), len(items), detail
-            ),
-            page=page.page.to_dict(),
-            data={
-                "documentId": document_id,
-                "count": len(items),
-                "detail": detail,
-                "layers": list(page.items),
-            },
-        )
-
-    def list_kerning_pairs(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        entry_kind = str(
-            _value(arguments, "entry_kind", "entryKind", "pair") or "pair"
-        ).lower()
-        return self._list_model_items(
-            tool="list_kerning_pairs",
-            arguments=arguments,
-            producer=lambda model: model_list_kerning_pairs(
-                model, entry_kind=entry_kind
-            ),
-            item_key="pairs",
-        )
-
-    def list_opentype_items(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._list_model_items(
-            tool="list_opentype_items",
-            arguments=arguments,
-            producer=lambda model: model_list_opentype_items(
-                model,
-                kinds=_value(arguments, "kinds", default=None),
-                tags=_value(arguments, "tags", default=None),
-                include_disabled=bool(
-                    _value(arguments, "include_disabled", "includeDisabled", True)
-                ),
-            ),
-            item_key="items",
-        )
-
-    def review_kerning_coverage(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        model = self._document_model(document_id)
-        result = review_kerning_coverage(
-            model,
-            mode=str(_value(arguments, "mode", default="class_representatives")),
-            eligible_count=_value(arguments, "eligible_count", "eligibleCount"),
-            measured_count=_value(arguments, "measured_count", "measuredCount"),
-            skipped_count=int(_value(arguments, "skipped_count", "skippedCount", 0)),
-        )
-        return ToolResponse.success(
-            tool="review_kerning_coverage",
-            effect="read",
-            status="success" if result["complete"] else "partial",
-            summary="Accounted for {} eligible kerning {} entry(s); {} remain untested.".format(
-                result["eligibleCount"],
-                result["entryKind"],
-                result["untestedCount"],
-            ),
-            data={
-                "documentId": document_id,
-                "documentFingerprint": fingerprint_model(model),
-                **result,
-            },
-        )
-
-    def review_master_compatibility(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        model = self._document_model(document_id)
-        result = model_review_master_compatibility(
-            model,
-            mode=str(_value(arguments, "mode", default="component_preserving")),
-            include_nonexporting=bool(_value(arguments, "include_nonexporting", "includeNonexporting", False)),
-        )
-        dependency_result = {
-            "componentDependencyCount": result.get("componentDependencyCount", 0),
-            "componentDependencies": result.get("componentDependencies", []),
-        }
-        dependency_public, dependency_page = self._paged_analysis(
-            kind="component_dependency_review",
-            result=dependency_result,
-            item_key="componentDependencies",
-            source_fingerprint=fingerprint_model(
-                {"document": model, "dependencies": dependency_result}
-            ),
-        )
-        result = {key: value for key, value in result.items() if key != "componentDependencies"}
-        public, page = self._paged_analysis(
-            kind="compatibility_review",
-            result=result,
-            item_key="findings",
-            source_fingerprint=fingerprint_model({"document": model, "review": result}),
-        )
-        public["componentDependencies"] = dependency_public["componentDependencies"]
-        public["componentDependencyOperationId"] = dependency_public["operationId"]
-        public["componentDependenciesPage"] = dependency_page
-        return ToolResponse.success(
-            tool="review_master_compatibility",
-            effect="read",
-            status="warning" if result["hasHardFailures"] else "success",
-            summary="Reviewed master compatibility across {} glyph(s).".format(result["reviewedGlyphCount"]),
-            data={"documentId": document_id, "documentFingerprint": fingerprint_model(model), **public},
-            page=page,
-        )
-
-    def review_metrics_inheritance(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        glyph_names = _value(arguments, "glyph_names", "glyphNames", None)
-        tolerance = float(_value(arguments, "tolerance", default=0.01))
-        model = self._document_model(document_id)
-        observations = {}
-        inspector = getattr(self._host, "inspect_layers", None)
-        if callable(inspector):
-            observations = dict(
-                inspector(
-                    document_id,
-                    tuple(glyph_names or ()),
-                    resolve_metrics=True,
-                )
-            )
-        result = model_review_metrics_inheritance(
-            model,
-            glyph_names=glyph_names,
-            tolerance=tolerance,
-            observations=observations,
-        )
-        metrics = list(result.pop("metrics"))
-        metrics_public, metrics_page = self._paged_analysis(
-            kind="metrics_resolution_review",
-            result={"metrics": metrics},
-            item_key="metrics",
-            source_fingerprint=fingerprint_model(
-                {"document": model, "metrics": metrics, "tolerance": tolerance}
-            ),
-        )
-        public, page = self._paged_analysis(
-            kind="metrics_review",
-            result=result,
-            item_key="findings",
-            source_fingerprint=fingerprint_model({"document": model, "review": result}),
-        )
-        public["metrics"] = metrics_public["metrics"]
-        public["metricsOperationId"] = metrics_public["operationId"]
-        public["metricsPage"] = metrics_page
-        return ToolResponse.success(
-            tool="review_metrics_inheritance",
-            effect="read",
-            status=(
-                "warning"
-                if result["findings"] or result["staleLayerCount"]
-                else "success"
-            ),
-            summary="Reviewed metrics inheritance across {} glyph(s).".format(result["reviewedGlyphCount"]),
-            data={"documentId": document_id, "documentFingerprint": fingerprint_model(model), **public},
-            page=page,
-        )
-
-    def review_anchor_consistency(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        model = self._document_model(document_id)
-        result = model_review_anchor_consistency(model)
-        public, page = self._paged_analysis(
-            kind="anchor_review",
-            result=result,
-            item_key="findings",
-            source_fingerprint=fingerprint_model({"document": model, "review": result}),
-        )
-        return ToolResponse.success(
-            tool="review_anchor_consistency",
-            effect="read",
-            status="warning" if result["findings"] else "success",
-            summary="Reviewed anchor consistency across {} glyph(s).".format(result["reviewedGlyphCount"]),
-            data={"documentId": document_id, "documentFingerprint": fingerprint_model(model), **public},
-            page=page,
-        )
-
-    def apply_compatibility_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(arguments, tool="apply_compatibility_updates", builder=build_compatibility_updates)
-
-    def apply_metrics_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(arguments, tool="apply_metrics_updates", builder=build_metrics_updates)
-
-    def apply_anchor_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(arguments, tool="apply_anchor_updates", builder=build_anchor_updates)
-
-    def apply_glyph_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(arguments, tool="apply_glyph_updates", builder=build_glyph_updates)
-
-    def apply_kerning_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(arguments, tool="apply_kerning_updates", builder=build_kerning_updates)
-
-    def apply_opentype_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(arguments, tool="apply_opentype_updates", builder=build_opentype_updates)
-
-    def compile_opentype_features(
-        self, arguments: Mapping[str, Any]
-    ) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        expected = str(
+        compatibility_mode = str(
             _value(
                 arguments,
-                "expected_document_fingerprint",
-                "expectedDocumentFingerprint",
-                "",
+                "compatibility_mode",
+                "compatibilityMode",
+                "component_preserving",
             )
-            or ""
-        )
-        if not document_id or not expected:
-            raise ValueError(
-                "documentId and expectedDocumentFingerprint are required"
-            )
-        before = self._document_model(document_id)
-        before_fingerprint = fingerprint_model(before)
-        if before_fingerprint != expected:
-            return ToolResponse.failure(
-                tool="compile_opentype_features",
-                effect="ui",
-                summary="The document changed before OpenType compilation.",
-                code="stale_document",
-                message="Read the current fingerprint and try again.",
-                data={
-                    "documentId": document_id,
-                    "observedAfterFingerprint": before_fingerprint,
-                    "stateMayHaveChanged": False,
-                },
-            )
-        capture_source = getattr(self._host, "capture_source_file_state", None)
-        source_before = capture_source(document_id) if callable(capture_source) else None
-        compiler = getattr(self._host, "compile_opentype_features", None)
-        if not callable(compiler):
-            raise HostAccessError(
-                "This host adapter does not compile OpenType features."
-            )
-        result = dict(compiler(document_id))
-        after = self._document_model(document_id)
-        after_fingerprint = fingerprint_model(after)
-        changes = diff_models(before, after)
-        self._trace.observe_transition(
-            document_id,
-            before,
-            after,
-            change_set=changes,
-        )
-        source_after = capture_source(document_id) if callable(capture_source) else None
-        source_file_changed = bool(
-            source_before is not None
-            and (
-                source_after is None
-                or source_before.get("contentFingerprint")
-                != source_after.get("contentFingerprint")
-                or source_before.get("exists") != source_after.get("exists")
-            )
-        )
-        state_changed = bool(changes.changes or source_file_changed)
-        if state_changed:
-            force_dirty = getattr(self._host, "force_document_dirty", None)
-            if callable(force_dirty):
-                try:
-                    force_dirty(document_id)
-                except Exception:
-                    pass
-        data = {
-            "documentId": document_id,
-            "beforeFingerprint": before_fingerprint,
-            "observedAfterFingerprint": after_fingerprint,
-            "observedChangeCount": len(changes.changes),
-            "stateMayHaveChanged": state_changed,
-            "sourceFileChanged": source_file_changed,
-            "fontSaved": False,
-            **result,
-        }
-        if not result.get("preflightSucceeded"):
-            return ToolResponse.failure(
-                tool="compile_opentype_features",
-                effect="ui",
-                summary="Detached OpenType compilation failed; the live font was not compiled.",
-                code="opentype_preflight_failed",
-                message=str(result.get("errorMessage") or "OpenType preflight failed."),
-                data=data,
-            )
-        if not result.get("liveSucceeded") or state_changed:
-            return ToolResponse.failure(
-                tool="compile_opentype_features",
-                effect="ui",
-                summary=(
-                    "OpenType compilation changed protected state."
-                    if state_changed
-                    else "Live OpenType compilation failed."
-                ),
-                code=(
-                    "opentype_state_changed"
-                    if state_changed
-                    else "opentype_compile_failed"
-                ),
-                message=str(
-                    result.get("errorMessage")
-                    or "Canonical document and source-file state must remain unchanged."
-                ),
-                data=data,
-            )
-        return ToolResponse.success(
-            tool="compile_opentype_features",
-            effect="ui",
-            summary="Compiled OpenType features after a detached preflight; canonical state and source bytes are unchanged.",
-            data=data,
         )
 
-    def apply_instance_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(arguments, tool="apply_instance_updates", builder=build_instance_updates)
-
-    def apply_master_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(
-            arguments,
-            tool="apply_master_updates",
-            builder=build_master_updates,
-        )
-
-    def apply_layer_updates(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        return self._direct_apply(
-            arguments,
-            tool="apply_layer_updates",
-            builder=build_layer_updates,
-        )
-
-    def review_spacing(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        model = self._document_model(document_id)
-        requested_items = list(arguments.get("items") or [])
-        if not requested_items:
-            names = set(_value(arguments, "glyph_names", "glyphNames", []) or [])
-            for name, glyph in model.get("glyphs", {}).items():
-                if names and name not in names:
-                    continue
-                for layer in _model_layers(glyph):
-                    if not bool(layer.get("isMasterLayer")):
-                        continue
-                    master_id = str(layer.get("masterId") or layer.get("id") or "")
-                    requested_items.append(
-                        {
-                            "glyphName": name,
-                            "masterId": master_id,
-                            "width": layer.get("width") or 0,
-                            "category": glyph.get("category"),
-                            "targetWidth": layer.get("width") or 0,
-                            "hostOwnsWidth": bool(layer.get("hasAlignedWidth")),
-                        }
-                    )
-        else:
-            for item in requested_items:
-                glyph = model.get("glyphs", {}).get(item.get("glyphName"))
-                layer = _model_layer(glyph, item.get("masterId"))
-                if isinstance(layer, Mapping):
-                    item["hostOwnsWidth"] = bool(layer.get("hasAlignedWidth"))
-        simulation = simulate_spacing(
-            requested_items,
-            max_iterations=int(_value(arguments, "max_iterations", "maxIterations", 5)),
-            tolerance=float(_value(arguments, "tolerance", default=1)),
-        )
-        simulation_public, _simulation_page = self._paged_analysis(
-            kind="spacing_analysis",
-            result=simulation,
-            item_key="items",
-            source_fingerprint=fingerprint_model({"document": model, "spacing": simulation}),
-        )
-        return ToolResponse.success(
-            tool="review_spacing",
-            effect="read",
-            status="warning" if simulation.get("actionableCount") else "success",
-            summary="Simulated spacing to a bounded fixed point; the document is unchanged.",
-            data={
-                "documentId": document_id,
-                "documentFingerprint": fingerprint_model(model),
-                "simulation": simulation_public,
-            },
-        )
-
-    def apply_spacing(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        def build(
-            model: Mapping[str, Any],
-            items: Sequence[Mapping[str, Any]],
-        ) -> ChangeSet:
-            for source in items:
-                glyph = model.get("glyphs", {}).get(source.get("glyphName"))
-                layer = _model_layer(glyph, source.get("masterId"))
-                if not isinstance(layer, Mapping):
-                    raise ValueError(
-                        "unknown spacing target: {}/{}".format(
-                            source.get("glyphName"), source.get("masterId")
-                        )
-                    )
-                if bool(layer.get("hasAlignedWidth")):
-                    raise ValueError(
-                        "spacing target has a Glyphs-owned automatically aligned width: {}/{}".format(
-                            source.get("glyphName"), source.get("masterId")
-                        )
-                    )
-            simulation = simulate_spacing(
-                items,
-                max_iterations=int(_value(arguments, "max_iterations", "maxIterations", 5)),
-                tolerance=float(_value(arguments, "tolerance", default=1)),
-            )
-            after = _copy_on_write_model(
-                model,
-                glyph_names=(
-                    str(item.get("glyphName") or "")
-                    for item in simulation["items"]
-                    if item.get("status") == "ready"
-                ),
-            )
-            for item in simulation["items"]:
-                if item.get("status") != "ready":
-                    continue
-                glyph = after.get("glyphs", {}).get(item.get("glyphName"))
-                layer = _model_layer(glyph, item.get("masterId"))
-                if not isinstance(layer, dict):
-                    raise ValueError(
-                        "unknown spacing target: {}/{}".format(
-                            item.get("glyphName"), item.get("masterId")
-                        )
-                    )
-                layer["width"] = item["proposedWidth"]
-            return diff_models(model, after)
-
-        return self._direct_apply(
-            arguments,
-            tool="apply_spacing",
-            builder=build,
-            item_key="items",
-        )
-
-    def review_export(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
-        model = self._document_model(document_id)
-        compatibility = model_review_master_compatibility(model, mode=str(_value(arguments, "compatibility_mode", "compatibilityMode", "component_preserving")))
         destination = str(_value(arguments, "destination", default="") or "")
         inspector = getattr(self._host, "inspect_export_destination", None)
         destination_state = inspector(destination) if callable(inspector) else dict(arguments.get("destination_state") or {"exists": False, "empty": True, "fingerprint": None})
-        result = model_review_export(
+        overwrite_policy = str(
+            _value(
+                arguments,
+                "overwrite_policy",
+                "overwritePolicy",
+                "fail_if_nonempty",
+            )
+        )
+        if overwrite_policy not in {"fail_if_nonempty", "replace_if_match"}:
+            raise ValueError("unsupported overwrite policy")
+        expected_destination_fingerprint = _value(
+            arguments,
+            "expected_destination_fingerprint",
+            "expectedDestinationFingerprint",
+        )
+        blocking_codes: list[str] = []
+        destination_exists = bool(destination_state.get("exists"))
+        destination_empty = bool(
+            destination_state.get("empty", not destination_exists)
+        )
+        if destination_exists and destination_state.get("kind") not in {
+            None,
+            "directory",
+        }:
+            blocking_codes.append("destination_not_directory")
+        if destination_exists and not destination_empty:
+            if overwrite_policy == "fail_if_nonempty":
+                blocking_codes.append("destination_not_empty")
+            elif (
+                not expected_destination_fingerprint
+                or expected_destination_fingerprint
+                != destination_state.get("fingerprint")
+            ):
+                blocking_codes.append("destination_fingerprint_mismatch")
+        result = {
+            "ready": not blocking_codes,
+            "blockingCodes": blocking_codes,
+            "overwritePolicy": overwrite_policy,
+        }
+        document_fingerprint = fingerprint_model(model)
+        runtime_versions = _export_runtime_versions(self._host)
+        capture_source = getattr(self._host, "capture_source_file_state", None)
+        source_state = capture_source(document_id) if callable(capture_source) else None
+        source_fingerprint = (
+            source_state.get("contentFingerprint")
+            if isinstance(source_state, Mapping)
+            and source_state.get("exists")
+            and source_state.get("readable")
+            else None
+        )
+        preflight = {
+            "status": "skipped",
+            "targetKinds": [],
+            "bundleFingerprint": None,
+            "manifestTreeSha256": None,
+            "manifestSha256": None,
+            "manifestSize": 0,
+            "manifestFileCount": 0,
+            "featureFileCount": 0,
+            "ufoCount": 0,
+            "designspaceFileCount": 0,
+            "masterUFOCount": 0,
+            "braceUFOCount": 0,
+            "supportFileCount": 0,
+            "error": None,
+        }
+        if result["ready"]:
+            preflight_exporter = getattr(self._host, "preflight_source_bundle", None)
+            if not callable(preflight_exporter):
+                raise HostAccessError(
+                    "This host adapter does not implement source-bundle preflight."
+                )
+            try:
+                preflight_result = dict(
+                    preflight_exporter(
+                        {
+                            "documentId": document_id,
+                            "documentFingerprint": document_fingerprint,
+                            "sourceFingerprint": source_fingerprint,
+                            "canonicalModel": model,
+                            "compatibilityMode": compatibility_mode,
+                            "runtimeVersions": runtime_versions,
+                        }
+                    )
+                )
+                preflight.update(
+                    {
+                        "status": "passed",
+                        "targetKinds": list(preflight_result.get("targetKinds") or []),
+                        "bundleFingerprint": preflight_result.get("bundleFingerprint"),
+                        "manifestTreeSha256": preflight_result.get("manifestTreeSha256"),
+                        "manifestSha256": preflight_result.get("manifestSha256"),
+                        "manifestSize": int(preflight_result.get("manifestSize") or 0),
+                        "manifestFileCount": int(preflight_result.get("manifestFileCount") or 0),
+                        "featureFileCount": int(
+                            preflight_result.get("preflight", {}).get("featureFileCount")
+                            or 0
+                        ),
+                        "ufoCount": int(
+                            preflight_result.get("preflight", {}).get("ufoCount") or 0
+                        ),
+                        "designspaceFileCount": len(
+                            preflight_result.get("designspaceFiles") or []
+                        ),
+                        "masterUFOCount": len(
+                            preflight_result.get("masterUFOs") or []
+                        ),
+                        "braceUFOCount": len(
+                            preflight_result.get("braceUFOs") or []
+                        ),
+                        "supportFileCount": len(
+                            preflight_result.get("supportFiles") or []
+                        ),
+                    }
+                )
+                required_preflight_values = (
+                    "bundleFingerprint",
+                    "manifestTreeSha256",
+                    "manifestSha256",
+                )
+                if any(not preflight[key] for key in required_preflight_values):
+                    raise SourceBundleError(
+                        "preflight_result_invalid",
+                        "Source-bundle preflight did not return its required fingerprints.",
+                    )
+            except SourceBundleError as exc:
+                preflight.update(
+                    {
+                        "status": "failed",
+                        "bundleFingerprint": None,
+                        "manifestTreeSha256": None,
+                        "manifestSha256": None,
+                        "error": exc.to_dict(),
+                    }
+                )
+                result["ready"] = False
+                result["blockingCodes"] = sorted(
+                    set(result.get("blockingCodes", ()))
+                    | {"source_bundle_preflight_failed"}
+                )
+        plan = ExportPlan(
+            document_id=document_id,
+            document_fingerprint=document_fingerprint,
+            destination=destination,
             destination_state=destination_state,
-            compatibility=compatibility,
-            overwrite_policy=str(_value(arguments, "overwrite_policy", "overwritePolicy", "fail_if_nonempty")),
-            expected_destination_fingerprint=_value(arguments, "expected_destination_fingerprint", "expectedDestinationFingerprint"),
-            acknowledged_finding_ids=list(_value(arguments, "acknowledged_finding_ids", "acknowledgedFindingIds", []) or []),
-        )
-        export_dependencies = {
-            "componentDependencyCount": compatibility.get("componentDependencyCount", 0),
-            "componentDependencies": compatibility.get("componentDependencies", []),
-        }
-        dependency_public, dependency_page = self._paged_analysis(
-            kind="export_component_dependencies",
-            result=export_dependencies,
-            item_key="componentDependencies",
-            source_fingerprint=fingerprint_model(
-                {"document": model, "dependencies": export_dependencies}
+            overwrite_policy=str(result["overwritePolicy"]),
+            compatibility_mode=compatibility_mode,
+            source_fingerprint=(
+                str(source_fingerprint) if source_fingerprint else None
             ),
+            runtime_versions=runtime_versions,
+            reviewed_bundle_fingerprint=preflight.get("bundleFingerprint"),
+            reviewed_manifest_tree_sha256=preflight.get("manifestTreeSha256"),
+            reviewed_manifest_sha256=preflight.get("manifestSha256"),
         )
-        compatibility_output = {
-            key: value for key, value in compatibility.items() if key != "componentDependencies"
-        }
-        compatibility_public, compatibility_page = self._paged_analysis(
-            kind="export_compatibility_review",
-            result=compatibility_output,
-            item_key="findings",
-            source_fingerprint=fingerprint_model({"document": model, "compatibility": compatibility}),
-        )
-        compatibility_public["componentDependencies"] = dependency_public["componentDependencies"]
-        compatibility_public["componentDependencyOperationId"] = dependency_public["operationId"]
-        compatibility_public["componentDependenciesPage"] = dependency_page
-        review = self._operations.create(
-            kind="export_review",
+        preview = self._operations.create(
+            kind="export_preview",
             ttl_seconds=REVIEW_TTL_SECONDS,
             payload={
-                "documentId": document_id,
-                "documentFingerprint": fingerprint_model(model),
-                "destination": destination,
-                "destinationState": destination_state,
-                "compatibility": compatibility,
+                **plan.to_payload(),
                 "review": result,
+                "preflight": preflight,
             },
         )
         return ToolResponse.success(
-            tool="review_export",
+            tool="preview_export",
             effect="read",
             status="review_required" if result["ready"] else "warning",
             summary="Export review is ready for confirmation." if result["ready"] else "Export review found blocking conditions.",
-            data={"reviewId": review.operation_id, "expiresAt": _iso_timestamp(review.expires_at), **result, "compatibility": compatibility_public},
-            page=compatibility_page,
+            data={
+                "previewId": preview.operation_id,
+                "expiresAt": _iso_timestamp(preview.expires_at),
+                **result,
+                "bundleLayoutVersion": BUNDLE_LAYOUT_VERSION,
+                "compatibilityMode": compatibility_mode,
+                "preflight": preflight,
+            },
         )
 
-    def export_source_bundle(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        review_id = str(_value(arguments, "review_id", "reviewId", "") or "")
-        if not bool(arguments.get("confirm")):
-            raise ValueError("confirm=true is required")
-        review = self._operations.consume(review_id)
-        if review is None or review.kind != "export_review":
+    def apply_export(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        preview_id = str(_value(arguments, "preview_id", "previewId", "") or "")
+        if not preview_id:
+            raise ValueError("previewId is required")
+        preview = self._operations.consume(preview_id)
+        if preview is None or preview.kind != "export_preview":
             return ToolResponse.failure(
-                tool="export_source_bundle",
+                tool="apply_export",
                 effect="files",
-                summary="The export review is missing, expired, or consumed.",
-                code="review_unavailable",
-                message="Export review unavailable.",
+                summary="The export preview is missing, expired, or consumed.",
+                code="preview_unavailable",
+                message="Export preview unavailable.",
             )
-        payload = review.payload
+        payload = preview.payload
         if not payload.get("review", {}).get("ready"):
             return ToolResponse.failure(
-                tool="export_source_bundle",
+                tool="apply_export",
                 effect="files",
                 summary="The reviewed export still has blocking conditions.",
                 code="export_blocked",
@@ -1636,19 +2472,48 @@ class GlyphsMCPApplication:
         current = self._document_model(str(payload["documentId"]))
         if fingerprint_model(current) != payload.get("documentFingerprint"):
             return ToolResponse.failure(
-                tool="export_source_bundle",
+                tool="apply_export",
                 effect="files",
                 summary="The document changed after export review.",
                 code="stale_document",
                 message="Export review is stale.",
             )
+        current_runtime_versions = _export_runtime_versions(self._host)
+        if current_runtime_versions != payload.get("runtimeVersions"):
+            return ToolResponse.failure(
+                tool="apply_export",
+                effect="files",
+                summary="The Glyphs runtime changed after export review.",
+                code="runtime_changed",
+                message="Create a new export review in the current runtime.",
+            )
+        reviewed_source_fingerprint = payload.get("sourceFingerprint")
+        if reviewed_source_fingerprint:
+            capture_source = getattr(self._host, "capture_source_file_state", None)
+            current_source = (
+                capture_source(str(payload["documentId"]))
+                if callable(capture_source)
+                else None
+            )
+            if (
+                not isinstance(current_source, Mapping)
+                or current_source.get("contentFingerprint")
+                != reviewed_source_fingerprint
+            ):
+                return ToolResponse.failure(
+                    tool="apply_export",
+                    effect="files",
+                    summary="The Glyphs source file changed after export review.",
+                    code="source_changed",
+                    message="Create a new export review for the current source bytes.",
+                )
         inspector = getattr(self._host, "inspect_export_destination", None)
         if not callable(inspector):
             raise HostAccessError("This host adapter does not inspect export destinations.")
         destination_state = inspector(str(payload.get("destination") or ""))
         if not destination_matches(destination_state, payload.get("destinationState", {})):
             return ToolResponse.failure(
-                tool="export_source_bundle",
+                tool="apply_export",
                 effect="files",
                 summary="The destination changed after export review; nothing was published.",
                 code="destination_changed",
@@ -1658,50 +2523,51 @@ class GlyphsMCPApplication:
         if not callable(exporter):
             raise HostAccessError("This host adapter does not implement source-bundle export.")
         try:
-            result = exporter(payload)
+            result = exporter(
+                {
+                    **dict(payload),
+                    # The reviewed model is never persisted as staging state.
+                    # Confirmation captures it again and hands this one immutable
+                    # snapshot to the deterministic regeneration call.
+                    "canonicalModel": current,
+                    "runtimeVersions": current_runtime_versions,
+                }
+            )
+        except SourceBundleError as exc:
+            return ToolResponse.failure(
+                tool="apply_export",
+                effect="files",
+                summary="The confirmed bundle failed deterministic regeneration.",
+                code=exc.code,
+                message=str(exc),
+                details=exc.target,
+            )
         except ExportPublicationError as exc:
             return ToolResponse.failure(
-                tool="export_source_bundle",
+                tool="apply_export",
                 effect="files",
                 summary="The staged bundle was not published.",
                 code="publication_refused",
                 message=str(exc),
             )
         receipt = self._audit.record(
-            tool="export_source_bundle",
+            tool="apply_export",
             effect="files",
             status="success",
             document_id=str(payload["documentId"]),
-            details={"reviewId": review_id, "destination": payload.get("destination"), "publishedFingerprint": result.get("publishedFingerprint")},
+            details={"previewId": preview_id, "destination": payload.get("destination"), "publishedFingerprint": result.get("publishedFingerprint")},
         )
+
         return ToolResponse.success(
-            tool="export_source_bundle",
+            tool="apply_export",
             effect="files",
             summary="Published the reviewed source bundle atomically.",
             audit_receipt=receipt.to_dict(),
-            data={"reviewId": review_id, **dict(result)},
+            data={"previewId": preview_id, **dict(result)},
         )
 
-    def list_audit_events(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        document_id = _value(arguments, "document_id", "documentId")
-        events = [event.to_dict() for event in self._audit.list_events(document_id=document_id)]
-        source_fingerprint = fingerprint_model({"events": events})
-        page = paginate(
-            events,
-            source_fingerprint=source_fingerprint,
-            cursor_scope="list_audit_events:{}".format(document_id or "*"),
-            page_size=int(_value(arguments, "page_size", "pageSize", 100)),
-            cursor=_value(arguments, "cursor"),
-        )
-        return ToolResponse.success(
-            tool="list_audit_events",
-            effect="read",
-            summary="Returned {} of {} audit event(s).".format(len(page.items), len(events)),
-            page=page.page.to_dict(),
-            data={"count": len(events), "events": list(page.items)},
-        )
 
-    def list_change_commits(self, arguments: Mapping[str, Any]) -> ToolResponse:
+    def list_history(self, arguments: Mapping[str, Any]) -> ToolResponse:
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
         if not document_id:
             raise ValueError("documentId is required")
@@ -1721,7 +2587,7 @@ class GlyphsMCPApplication:
         )
         public["operationId"] = operation.operation_id
         return ToolResponse.success(
-            tool="list_change_commits",
+            tool="list_history",
             effect="read",
             summary="Returned {} of {} MCP action commit(s) since the last save.".format(
                 len(public["commits"]), len(items)
@@ -1902,37 +2768,33 @@ class GlyphsMCPApplication:
     def execute_python(self, arguments: Mapping[str, Any]) -> ToolResponse:
         if self._python is None:
             raise HostAccessError("This host adapter does not support Python execution.")
+        mode = str(arguments.get("mode") or "read_only")
+        if mode not in {"read_only", "staged_document", "live_open_world"}:
+            raise ValueError("mode must be read_only, staged_document, or live_open_world")
+        intended_effect = {
+            "read_only": "read",
+            "staged_document": "document_edit",
+            "live_open_world": "files_or_external",
+        }[mode]
+        execution_mode = (
+            "live_open_world" if mode in {"read_only", "live_open_world"}
+            else "staged_document"
+        )
         request = PythonExecutionRequest(
             code=_value(arguments, "code"),
             reason=_value(arguments, "reason"),
-            intended_effect=str(_value(arguments, "intended_effect", "intendedEffect", "read")),
-            execution_mode=str(_value(arguments, "execution_mode", "executionMode", "staged_document")),
+            intended_effect=intended_effect,
+            execution_mode=execution_mode,
             document_id=_value(arguments, "document_id", "documentId"),
             glyph_name=_value(arguments, "glyph_name", "glyphName"),
             master_id=_value(arguments, "master_id", "masterId"),
             layer_id=_value(arguments, "layer_id", "layerId"),
             expected_document_fingerprint=_value(arguments, "expected_document_fingerprint", "expectedDocumentFingerprint"),
-            review_id=_value(arguments, "review_id", "reviewId"),
+            review_id=_value(arguments, "approval_id", "approvalId"),
             confirm=bool(arguments.get("confirm", False)),
             max_output_chars=int(_value(arguments, "max_output_chars", "maxOutputChars", 8 * 1024)),
             max_error_chars=int(_value(arguments, "max_error_chars", "maxErrorChars", 8 * 1024)),
         )
         return self._python.execute(request)
 
-    def rollback_python_execution(self, arguments: Mapping[str, Any]) -> ToolResponse:
-        if self._python is None:
-            raise HostAccessError("This host adapter does not support Python rollback.")
-        return self._python.rollback(
-            execution_id=str(_value(arguments, "execution_id", "executionId", "") or ""),
-            expected_after_fingerprint=str(_value(arguments, "expected_after_fingerprint", "expectedAfterFingerprint", "") or ""),
-            confirm=bool(arguments.get("confirm", False)),
-            strategy=str(arguments.get("strategy") or "auto"),
-        )
-
-
-# The old internal class name remains import-compatible for the already-committed
-# foundation tests. It is not a registered v2 API alias.
-ReadOnlyApplication = GlyphsMCPApplication
-
-
-__all__ = ["GlyphsMCPApplication", "ReadOnlyApplication"]
+__all__ = ["GlyphsMCPApplication"]

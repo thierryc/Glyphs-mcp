@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs MCP Variable Font"
+  short_description: "Audit axes, instances, mappings, and VF readiness."
+  default_prompt: "Use $glyphs-mcp-variable-font to audit this variable-font source without repairing or saving it."
+
+policy:
+  allow_implicit_invocation: true

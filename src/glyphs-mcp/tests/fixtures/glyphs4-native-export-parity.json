@@ -1,0 +1,68 @@
+{
+  "artifactRoot": null,
+  "artifacts": [],
+  "blocker": {
+    "code": "glyphs4_native_capture_required",
+    "message": "No authentic Glyphs 4 native-export observation has been committed for these four semantics.",
+    "requiredAction": "Run the committed harness inside Glyphs 4 build 4004 or newer with the approved disposable document open and clean, then commit its JSON and complete hashed artifact tree."
+  },
+  "captureHarness": {
+    "executionBoundary": "glyphs4_disposable_detached_export",
+    "path": "scripts/capture_glyphs4_native_export_parity.py",
+    "sha256": "4c526a931b64c10a97d598b276a1aa27a974cfc7b7b11926939c52ce5652743f"
+  },
+  "captureStatus": "capture_required",
+  "fixtureId": "glyphs4-native-export-parity-v1",
+  "probes": [
+    {
+      "id": "rtl_class_orientation",
+      "objective": "Characterize Glyphs native RTL group orientation through UFO and compiled GPOS output.",
+      "observation": null,
+      "requiredEvidence": [
+        "native directional storage",
+        "UFO groups and kerning",
+        "compiled kern GPOS"
+      ],
+      "status": "capture_required"
+    },
+    {
+      "id": "vertical_sign_yadvance",
+      "objective": "Characterize native vertical kerning sign and YAdvance shaping behavior.",
+      "observation": null,
+      "requiredEvidence": [
+        "compiled vkrn value records",
+        "HarfBuzz ttb vkrn on/off"
+      ],
+      "status": "capture_required"
+    },
+    {
+      "id": "contextual_boundary_semantics",
+      "objective": "Characterize both native context-key boundaries and their additive shaping scope.",
+      "observation": null,
+      "requiredEvidence": [
+        "native context storage",
+        "compiled contextual GPOS",
+        "positive and negative shaping controls"
+      ],
+      "status": "capture_required"
+    },
+    {
+      "id": "number_value_half_rounding",
+      "objective": "Characterize positive and negative half-unit Number Value rounding after native export.",
+      "observation": null,
+      "requiredEvidence": [
+        "native UFO feature source",
+        "compiled GPOS adjustments for four half ties"
+      ],
+      "status": "capture_required"
+    }
+  ],
+  "provenance": null,
+  "requiredHost": {
+    "application": "Glyphs",
+    "applicationMajor": 4,
+    "minimumBuild": 4004
+  },
+  "schemaVersion": 1,
+  "surface": "glyphs-mcp-v2"
+}

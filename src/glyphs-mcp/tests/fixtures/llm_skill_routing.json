@@ -4,91 +4,91 @@
     "prompt": "In the running Glyphs app, use Python to report the selected glyph and layer names. Do not change or save anything.",
     "expected_skill": "glyphs-mcp-scripting",
     "expected_action": "execute_read_only",
-    "expected_tools": ["list_open_fonts", "get_document_status", "execute_python"],
+    "expected_tools": ["list_documents", "read_document", "execute_python"],
     "approval": "not_required",
     "review_required": false,
     "expected_result": "Resolve the stable document context, run one bounded read-intent script, report scope violations, and leave the font unsaved.",
     "forbidden_skills": ["glyphs-mcp-development"],
-    "forbidden_tools": ["save_font"]
+    "forbidden_tools": ["save_document"]
   },
   {
     "id": "live-read-only-app-report",
     "prompt": "Vibe-code a small script inside Glyphs that reports the app version and number of open fonts without touching glyph data.",
     "expected_skill": "glyphs-mcp-scripting",
     "expected_action": "execute_read_only",
-    "expected_tools": ["get_server_info", "list_open_fonts", "execute_python"],
+    "expected_tools": ["get_server_info", "list_documents", "execute_python"],
     "approval": "not_required",
     "review_required": false,
     "expected_result": "Inspect the running app, use bounded read-intent Python, and report any observed document change without saving the font.",
     "forbidden_skills": ["glyphs-mcp-development"],
-    "forbidden_tools": ["save_font"]
+    "forbidden_tools": ["save_document"]
   },
   {
     "id": "live-mutation-preview",
     "prompt": "In the current Glyphs layer, write and run Python that adds com.example.qa to the layer userData.",
     "expected_skill": "glyphs-mcp-scripting",
     "expected_action": "preview_mutation",
-    "expected_tools": ["list_open_fonts", "get_document_status", "execute_python"],
+    "expected_tools": ["list_documents", "read_document", "execute_python"],
     "approval": "stop_before_execution",
     "review_required": true,
-    "expected_result": "Run the exact code only against a detached copy, return its fingerprint-bound semantic diff and review ID, and stop before confirmation.",
+    "expected_result": "Run the exact code only against a detached copy, return its fingerprint-bound semantic diff and immutable preview ID, and stop before applying the stored patch.",
     "forbidden_skills": ["glyphs-mcp-development"],
-    "forbidden_tools": ["save_font"]
+    "forbidden_tools": ["save_document"]
   },
   {
     "id": "live-external-side-effect-preview",
     "prompt": "Run a Glyphs Python script that writes a CSV report of the active font to my Desktop.",
     "expected_skill": "glyphs-mcp-scripting",
     "expected_action": "preview_external_effect",
-    "expected_tools": ["list_open_fonts", "get_document_status", "execute_python"],
+    "expected_tools": ["list_documents", "execute_python"],
     "approval": "stop_before_execution",
     "review_required": true,
-    "expected_result": "Store the exact live_open_world request and code hash, return a review ID, and stop before writing the file or saving the font.",
+    "expected_result": "Store the exact live_open_world request and code hash, return an approval ID, and stop before writing the file or saving the font.",
     "forbidden_skills": ["glyphs-mcp-development"],
-    "forbidden_tools": ["save_font"]
+    "forbidden_tools": ["save_document"]
   },
   {
     "id": "macro-panel-snippet-only",
     "prompt": "Give me a Macro Panel snippet that prints the selected layer width. Do not execute it.",
     "expected_skill": "glyphs-mcp-scripting",
     "expected_action": "return_snippet",
-    "expected_tools": ["list_open_fonts"],
+    "expected_tools": ["search_knowledge", "get_knowledge"],
     "approval": "not_required",
     "review_required": false,
     "expected_result": "Return a ready-to-paste context-aware Macro Panel snippet directly and do not call execute_python, mutate, or save anything.",
     "forbidden_skills": ["glyphs-mcp-development"],
-    "forbidden_tools": ["save_font"]
+    "forbidden_tools": ["save_document"]
   },
   {
     "id": "debug-live-read-only-script",
     "prompt": "Debug my read-only Glyphs Python idea for reporting component names in the selected layer, using the bundled API docs before trying it live.",
     "expected_skill": "glyphs-mcp-scripting",
     "expected_action": "debug_live_script",
-    "expected_tools": ["execute_python"],
+    "expected_tools": ["search_knowledge", "get_knowledge", "execute_python"],
     "approval": "not_required",
     "review_required": false,
     "expected_result": "Ground the component API in the bundled documentation, run a minimal bounded read-only reproducer, retry at most once on failure, and do not save.",
     "forbidden_skills": ["glyphs-mcp-development"],
-    "forbidden_tools": ["save_font"]
+    "forbidden_tools": ["save_document"]
   },
   {
     "id": "reusable-script-menu-file",
     "prompt": "Create a reusable Glyphs Script-menu Python file in this workspace that reports the current selection.",
     "expected_skill": "glyphs-mcp-development",
     "expected_action": "create_workspace_script",
-    "expected_tools": ["docs_search", "docs_get"],
+    "expected_tools": [],
     "approval": "not_applicable",
     "review_required": null,
     "expected_result": "Create and statically validate a reusable workspace .py artifact with MenuTitle and docstring metadata; do not install, execute, restart Glyphs, or save a font.",
     "forbidden_skills": ["glyphs-mcp-scripting"],
-    "forbidden_tools": ["execute_code", "execute_code_with_context", "execute_python", "save_font"]
+    "forbidden_tools": ["execute_code", "execute_code_with_context", "execute_python", "save_document"]
   },
   {
     "id": "reporter-plugin-bundle",
     "prompt": "Build a Glyphs Reporter plug-in in this workspace that draws an overlay for selected anchors.",
     "expected_skill": "glyphs-mcp-development",
     "expected_action": "create_workspace_plugin",
-    "expected_tools": ["docs_search", "docs_get"],
+    "expected_tools": [],
     "approval": "not_applicable",
     "review_required": null,
     "expected_result": "Scaffold the Reporter bundle from the pinned template, implement and statically validate it for Glyphs 3.5 and 4, and do not install or run it live.",
@@ -100,72 +100,72 @@
     "prompt": "Diagnose why my selected glyph is almost compatible across masters, safely fix what you can, and ask before adding off-curve nodes.",
     "expected_skill": "glyphs-mcp-master-compatibility",
     "expected_action": "use_domain_workflow",
-    "expected_tools": ["review_master_compatibility", "review_start_node_alignment", "apply_start_node_alignment", "apply_compatibility_updates", "execute_python"],
+    "expected_tools": ["search_knowledge", "get_knowledge", "read_document", "execute_python", "preview_change", "apply_change"],
     "approval": "domain_specific",
     "review_required": true,
-    "expected_result": "Diagnose detailed topology first, align semantic start nodes before other repairs, require permission for off-curve additions, stage any Python fallback, and report success only after mastersCompatible is true without saving.",
+    "expected_result": "Diagnose exact topology from generic evidence, require permission for off-curve additions, stage unsupported structural edits, apply one immutable patch, and verify compatibility without saving.",
     "forbidden_skills": ["glyphs-mcp-outlines-docs", "glyphs-mcp-scripting"],
-    "forbidden_tools": ["save_font"]
+    "forbidden_tools": ["save_document"]
   },
   {
     "id": "outline-start-node-domain-route",
     "prompt": "Fix the matching start nodes across the compatible masters of my selected Glyphs path. Do not use generated Python.",
     "expected_skill": "glyphs-mcp-outlines-docs",
     "expected_action": "use_domain_workflow",
-    "expected_tools": ["review_start_node_alignment", "apply_start_node_alignment"],
+    "expected_tools": ["search_knowledge", "get_knowledge", "read_document"],
     "approval": "domain_specific",
     "review_required": null,
-    "expected_result": "Use the typed joint start-node review, dry-run the fingerprinted plan, and stop for approval before confirmation; never substitute general live scripting or save.",
+    "expected_result": "Inspect the exact layers, explain that v2 has no typed start-node operation, and honor the ban on generated Python by stopping with precise manual directions without changing or saving the font.",
     "forbidden_skills": ["glyphs-mcp-scripting"],
-    "forbidden_tools": ["execute_code", "execute_code_with_context", "execute_python", "save_font"]
+    "forbidden_tools": ["execute_code", "execute_code_with_context", "execute_python", "save_document"]
   },
   {
     "id": "outline-specific-python-fallback",
     "prompt": "For the selected Glyphs nodes, use one small context script to collect handle diagnostics that the dedicated outline reads cannot return.",
     "expected_skill": "glyphs-mcp-outlines-docs",
     "expected_action": "use_domain_fallback",
-    "expected_tools": ["get_selected_nodes", "execute_code_with_context"],
+    "expected_tools": ["search_knowledge", "get_knowledge", "read_document", "execute_python"],
     "approval": "domain_specific",
     "review_required": false,
-    "expected_result": "Keep ownership in the outline skill, prove dedicated reads are insufficient, run only a minimal bounded glyph-scoped read-only fallback, and do not save.",
+    "expected_result": "Keep ownership in the outline skill, prove typed layer reads are insufficient, run only a minimal bounded read-intent v2 Python fallback, reject any observed mutation, and do not save.",
     "forbidden_skills": ["glyphs-mcp-scripting"],
-    "forbidden_tools": ["save_font"]
+    "forbidden_tools": ["save_document"]
   },
   {
     "id": "italic-first-pass-domain-route",
     "prompt": "Create a guarded italic first-pass candidate for the selected glyphs and corresponding masters, then stop before applying it.",
     "expected_skill": "glyphs-mcp-italic-first-pass",
     "expected_action": "use_domain_workflow",
-    "expected_tools": ["preview_italic_first_pass_candidate", "review_outline_candidate_session", "accept_outline_candidate_session"],
+    "expected_tools": ["search_knowledge", "get_knowledge", "read_document", "execute_python"],
     "approval": "domain_specific",
     "review_required": null,
-    "expected_result": "Use the typed italic candidate lifecycle, review and dry-run acceptance, stop before confirmation, and neither route to general scripting nor save.",
+    "expected_result": "Resolve explicit Roman-to-italic master pairs, stage one fingerprint-bound v2 Python construction, present its semantic diff, and stop before confirmation without saving.",
     "forbidden_skills": ["glyphs-mcp-scripting"],
-    "forbidden_tools": ["execute_code", "execute_code_with_context", "execute_python", "save_font"]
+    "forbidden_tools": ["execute_code", "execute_code_with_context", "save_document"]
   },
   {
     "id": "spacing-domain-route",
     "prompt": "Use Python to improve the sidebearings of my selected Glyphs letters, but show me the proposal before changing anything.",
     "expected_skill": "glyphs-mcp-spacing",
     "expected_action": "use_domain_workflow",
-    "expected_tools": ["review_spacing", "apply_spacing"],
+    "expected_tools": ["search_knowledge", "get_knowledge", "read_document", "execute_python"],
     "approval": "domain_specific",
     "review_required": null,
-    "expected_result": "Prefer the dedicated spacing review and dry-run workflow despite the Python wording, stop for approval before confirmation, and do not execute general code or save.",
+    "expected_result": "Use spacing expertise and generic evidence, honor the requested staged Python construction, inspect its immutable physical diff, and stop before apply without saving.",
     "forbidden_skills": ["glyphs-mcp-scripting"],
-    "forbidden_tools": ["execute_code", "execute_code_with_context", "execute_python", "save_font"]
+    "forbidden_tools": ["execute_code", "execute_code_with_context", "save_document"]
   },
   {
     "id": "context-kerning-domain-route",
     "prompt": "After normal spacing and pair kerning, add two Glyphs 4 contextual adjustments for L’A without changing L’O or l’A.",
     "expected_skill": "glyphs-mcp-kerning",
     "expected_action": "use_domain_workflow",
-    "expected_tools": ["list_kerning_pairs", "review_kerning_coverage", "apply_kerning_updates"],
+    "expected_tools": ["search_knowledge", "get_knowledge", "read_document", "preview_change", "apply_change"],
     "approval": "domain_specific",
     "review_required": true,
-    "expected_result": "Inspect exact contextual records and all relevant masters, propose the two independent L quoteright A boundaries with negative controls, stop for approval, then apply one verified batch and require exported proof without saving.",
+    "expected_result": "Inspect exact contextual records and masters, propose two explicit stored values with negative controls, stop for approval, then apply one verified generic batch and proof without saving.",
     "forbidden_skills": ["glyphs-mcp-scripting"],
-    "forbidden_tools": ["execute_code", "execute_code_with_context", "execute_python", "save_font"]
+    "forbidden_tools": ["execute_code", "execute_code_with_context", "execute_python", "save_document"]
   },
   {
     "id": "generic-python-negative-route",
@@ -178,5 +178,53 @@
     "expected_result": "Use no Glyphs skill and no Glyphs MCP tool because the request has no Glyphs app, font, glyph, or plug-in target.",
     "forbidden_skills": ["glyphs", "glyphs-mcp-scripting", "glyphs-mcp-development"],
     "forbidden_tools": []
+  },
+  {
+    "id": "color-font-audit-route",
+    "prompt": "Audit the COLR/CPAL, SVG, and sbix layers in this Glyphs color font, including palette references and monochrome fallbacks, without changing or exporting it.",
+    "expected_skill": "glyphs-mcp-color-font",
+    "expected_action": "use_domain_workflow",
+    "expected_tools": ["search_knowledge", "get_knowledge", "read_document", "execute_python"],
+    "approval": "domain_specific",
+    "review_required": false,
+    "expected_result": "Classify every color mechanism, verify source palettes, layers, metrics and fallbacks, use bounded read-only Python only for missing typed metadata, and mark compiled color tables untested without changing or saving the font.",
+    "forbidden_skills": ["glyphs-mcp-production-audit", "glyphs-mcp-scripting"],
+    "forbidden_tools": ["save_document"]
+  },
+  {
+    "id": "unicode-semantics-audit-route",
+    "prompt": "Check this modern text font for duplicate Unicode mappings, visible default ignorables, whitespace errors, and a drawn or advancing U+00AD soft hyphen without changing it.",
+    "expected_skill": "glyphs-mcp-unicode-semantics",
+    "expected_action": "use_domain_workflow",
+    "expected_tools": ["search_knowledge", "get_knowledge", "read_document"],
+    "approval": "domain_specific",
+    "review_required": false,
+    "expected_result": "Classify glyphs by current Unicode properties, treat a visible or advancing U+00AD as a blocker, distinguish source evidence from shaping and binary proof, and leave the document unchanged and unsaved.",
+    "forbidden_skills": ["glyphs-mcp-production-audit", "glyphs-mcp-icon-font"],
+    "forbidden_tools": ["save_document"]
+  },
+  {
+    "id": "variable-font-audit-route",
+    "prompt": "Audit this variable font's axes, origin, mappings, masters, named instances, brace and bracket layers, and fvar/avar/STAT readiness without repairing anything.",
+    "expected_skill": "glyphs-mcp-variable-font",
+    "expected_action": "use_domain_workflow",
+    "expected_tools": ["search_knowledge", "get_knowledge", "read_document", "preview_export", "execute_python"],
+    "approval": "domain_specific",
+    "review_required": false,
+    "expected_result": "Review the complete source design space and both compatibility modes, use bounded read-only Python only for unavailable mapping metadata, and mark compiled variable tables untested without repairing or saving the font.",
+    "forbidden_skills": ["glyphs-mcp-production-audit", "glyphs-mcp-scripting"],
+    "forbidden_tools": ["save_document"]
+  },
+  {
+    "id": "export-validation-audit-route",
+    "prompt": "Review this Glyphs source for export readiness and validate my existing OTF files with OTS and FontBakery universal, but do not export, version, or publish anything.",
+    "expected_skill": "glyphs-mcp-export-validation",
+    "expected_action": "use_domain_workflow",
+    "expected_tools": ["search_knowledge", "get_knowledge", "read_document", "preview_export"],
+    "approval": "domain_specific",
+    "review_required": false,
+    "expected_result": "Keep source readiness and existing-binary evidence separate, preserve every compiler and validator failure, record unavailable checks as SKIP, and leave export and release effects unperformed.",
+    "forbidden_skills": ["glyphs-mcp-production-audit", "glyphs-mcp-release"],
+    "forbidden_tools": ["apply_export", "save_document"]
   }
 ]

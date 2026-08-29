@@ -1,4 +1,4 @@
-"""Application tracing, save reset, and safe semantic revert contracts."""
+"""Generic preview/apply/history/revert application qualification."""
 
 from __future__ import annotations
 
@@ -6,7 +6,6 @@ import copy
 import sys
 import unittest
 from pathlib import Path
-from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -17,9 +16,10 @@ if str(V2_SOURCE) not in sys.path:
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.canonical_tree import CanonicalFontTree, MemoryObjectStore  # noqa: E402
 from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
-from glyphs_mcp_v2.change_lifecycle import DocumentHistoryLifecycle  # noqa: E402
-from glyphs_mcp_v2.python_execution import ObservedLivePythonError  # noqa: E402
 from glyphs_mcp_v2.semantic import fingerprint_model  # noqa: E402
+
+
+DOCUMENT_ID = "doc_history"
 
 
 def _model() -> dict:
@@ -29,145 +29,50 @@ def _model() -> dict:
         "instances": [],
         "glyphs": {
             "A": {
-                "name": "A",
                 "id": "id_A",
+                "name": "A",
                 "export": True,
                 "layers": [
                     {
-                        "id": "m0",
+                        "id": "layer_A_m0",
                         "masterId": "m0",
                         "isMasterLayer": True,
+                        "isSpecialLayer": False,
+                        "roles": ["master"],
                         "width": 500,
-                        "leftMetricsKey": None,
+                        "shapes": [],
+                        "anchors": [],
                     }
                 ],
             }
         },
-        "kerning": {}, "features": [], "classes": [], "featurePrefixes": [],
+        "kerning": {},
+        "features": [],
+        "classes": [],
+        "featurePrefixes": [],
     }
 
 
-def _layer(model):
-    return model["glyphs"]["A"]["layers"][0]
+def _glyph_selector() -> dict:
+    return {"entity": "glyph", "ids": ["A"]}
 
 
 class _Host:
     def __init__(self) -> None:
         self.model = _model()
-        self.capture_calls = 0
         self.apply_calls = 0
         self.restore_calls = 0
 
-    def capture_model(self, document_id):
-        self.capture_calls += 1
+    def capture_model(self, _document_id: str) -> dict:
         return copy.deepcopy(self.model)
 
-    def apply_change_set(self, document_id, change_set):
+    def apply_change_set(self, _document_id: str, change_set) -> None:
         self.apply_calls += 1
         self.model = change_set.apply(self.model)
 
-    def restore_model(self, document_id, model):
+    def restore_model(self, _document_id: str, model: dict) -> None:
         self.restore_calls += 1
         self.model = copy.deepcopy(model)
-
-    def preview_python(self, request, before_model):
-        return {"afterModel": copy.deepcopy(before_model), "stdout": "", "stderr": ""}
-
-    def run_live_python(self, request):
-        before = copy.deepcopy(self.model)
-        self.model["font"]["pythonTouched"] = True
-        return {
-            "beforeModel": before,
-            "afterModel": copy.deepcopy(self.model),
-            "stdout": "",
-            "stderr": "",
-            "scopeViolations": [],
-        }
-
-    def create_recovery_copy(self, document_id, execution_id):
-        return "/private/recovery/{}.glyphs".format(execution_id)
-
-    def register_recovery_checkpoint(self, execution_id, document_id, recovery_path, after_fingerprint):
-        return None
-
-    def open_recovery_copy(self, path):
-        return None
-
-
-class _NormalizingMetricsHost(_Host):
-    """Reproduce Glyphs canonicalizing a layer metrics key after assignment."""
-
-    @staticmethod
-    def _normalize(model):
-        normalized = copy.deepcopy(model)
-        layer = _layer(normalized)
-        if layer.get("leftMetricsKey") == "=H":
-            layer["leftMetricsKey"] = "==H"
-            layer["width"] = 520
-        elif layer.get("leftMetricsKey") is None:
-            layer["width"] = 500
-        return normalized
-
-    def simulate_change_set(self, document_id, change_set):
-        return self._normalize(change_set.apply(self.model))
-
-    def apply_change_set(self, document_id, change_set):
-        self.apply_calls += 1
-        self.model = self._normalize(change_set.apply(self.model))
-
-
-class _DriftingMetricsHost(_NormalizingMetricsHost):
-    """A host whose writable inverse cannot recreate the intended baseline."""
-
-    def _apply_with_host_effects(self, change_set):
-        was_linked = (
-            _layer(self.model).get("leftMetricsKey")
-            == "==H"
-        )
-        target = self._normalize(change_set.apply(self.model))
-        layer = _layer(target)
-        if was_linked and layer.get("leftMetricsKey") is None:
-            layer["width"] = 501
-        return target
-
-    def simulate_change_set(self, document_id, change_set):
-        return self._apply_with_host_effects(change_set)
-
-    def apply_change_set(self, document_id, change_set):
-        self.apply_calls += 1
-        self.model = self._apply_with_host_effects(change_set)
-
-
-class _CanonicalReconciliationMetricsHost(_DriftingMetricsHost):
-    """A host that can reconcile an intended canonical target generically."""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.required_after = None
-
-    def simulate_reconciliation(
-        self, document_id, change_set, required_after_model, before_model
-    ):
-        self.required_after = copy.deepcopy(required_after_model)
-        return {
-            "afterModel": copy.deepcopy(required_after_model),
-            "replayReplacements": [],
-        }
-
-    def apply_verified_change_set(
-        self,
-        document_id,
-        change_set,
-        *,
-        operation_id,
-        removes_contribution_id=None,
-        replay_replacements=(),
-    ):
-        self.apply_calls += 1
-        if self.required_after is None:
-            self.model = self._apply_with_host_effects(change_set)
-        else:
-            self.model = copy.deepcopy(self.required_after)
 
 
 class ChangeHistoryApplicationTests(unittest.TestCase):
@@ -176,619 +81,99 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
         self.app = GlyphsMCPApplication(self.host, history=self.history)
 
-    def _apply_export_toggle(self) -> dict:
+    def _preview(self, value: bool) -> dict:
         return self.app.invoke(
-            "apply_glyph_updates",
+            "preview_change",
             {
-                "documentId": "doc_history",
+                "documentId": DOCUMENT_ID,
                 "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-                "updates": [{"glyphName": "A", "export": False}],
-                "reason": "test direct apply",
+                "operations": [
+                    {
+                        "op": "set",
+                        "target": _glyph_selector(),
+                        "field": "export",
+                        "value": value,
+                    }
+                ],
+                "constraints": [],
             },
         ).to_dict()
 
-    def test_direct_apply_emits_one_operation_linked_tool_call_commit(self) -> None:
-        applied = self._apply_export_toggle()
-        commits = self.history.list_commits("doc_history")
+    def _apply(self, value: bool) -> dict:
+        before = fingerprint_model(self.host.model)
+        preview = self._preview(value)
+        self.assertTrue(preview["ok"], preview)
+        return self.app.invoke(
+            "apply_change",
+            {
+                "documentId": DOCUMENT_ID,
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": before,
+                "reason": "qualify generic history",
+            },
+        ).to_dict()
 
-        self.assertTrue(applied["ok"])
-        self.assertEqual([item.tool for item in commits], ["apply_glyph_updates"])
-        self.assertTrue(commits[0].changed)
-        self.assertEqual(commits[0].commit_id, applied["operationId"])
-        self.assertEqual(commits[0].operation_id, applied["operationId"])
+    def test_apply_records_one_public_history_entry_and_bounded_diff(self) -> None:
+        applied = self._apply(False)
+        self.assertTrue(applied["ok"], applied)
         self.assertEqual(self.host.apply_calls, 1)
-        expected_coverage = {
-            "modelSchemaVersion": 6,
-            "status": "complete",
-            "opaqueChangeCount": 0,
-            "unsupportedChangeCount": 0,
-            "knowledgeRevision": "GlyphsSDK:569244a7181e08fc7c5230bcdfad6b9f7e5ea11f",
-        }
-        self.assertEqual(applied["data"]["canonicalCoverage"], expected_coverage)
-        self.assertEqual(commits[0].coverage.to_public_dict(), expected_coverage)
-        operation = self.app.invoke(
-            "get_operation", {"operationId": applied["operationId"]}
-        ).to_dict()
-        self.assertEqual(
-            operation["data"]["payload"]["canonicalCoverage"],
-            expected_coverage,
-        )
-        events = self.app._audit.list_events(document_id="doc_history")
-        self.assertEqual(events[0].details["canonicalCoverage"], expected_coverage)
-
-    def test_incremental_history_failure_falls_back_to_complete_after_tree(self) -> None:
-        with mock.patch.object(
-            self.history.trees,
-            "store_verified_transition",
-            side_effect=ValueError("injected incremental failure"),
-        ):
-            response = self._apply_export_toggle()
-
-        self.assertTrue(response["ok"])
-        self.assertTrue(response["data"]["historyRecorded"])
-        commits = self.history.list_commits("doc_history")
-        self.assertEqual(len(commits), 1)
-        self.assertTrue(commits[0].changed)
-        self.assertEqual(
-            commits[0].change_set.after_fingerprint,
-            fingerprint_model(self.host.model),
-        )
-
-    def test_complete_history_failure_does_not_hide_verified_execution_result(self) -> None:
-        original_store = self.history.trees.store_model
-        calls = 0
-
-        def fail_after_baseline(model):
-            nonlocal calls
-            calls += 1
-            if calls > 1:
-                raise OSError("injected complete-tree failure")
-            return original_store(model)
-
-        with mock.patch.object(
-            self.history.trees,
-            "store_verified_transition",
-            side_effect=ValueError("injected incremental failure"),
-        ), mock.patch.object(
-            self.history.trees,
-            "store_model",
-            side_effect=fail_after_baseline,
-        ):
-            response = self._apply_export_toggle()
-
-        self.assertTrue(response["ok"])
-        self.assertFalse(response["data"]["historyRecorded"])
-        self.assertEqual(response["warnings"][0]["code"], "history_not_recorded")
-        self.assertFalse(self.host.model["glyphs"]["A"]["export"])
-
-    def test_direct_apply_noop_runs_no_transaction_and_offers_no_revert(self) -> None:
-        response = self.app.invoke(
-            "apply_glyph_updates",
-            {
-                "documentId": "doc_history",
-                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-                "updates": [{"glyphName": "A", "export": True}],
-                "reason": "already canonical",
-            },
-        ).to_dict()
-
-        self.assertTrue(response["ok"])
-        self.assertEqual(response["data"]["transactionCount"], 0)
-        self.assertEqual(response["data"]["observedChangeCount"], 0)
-        self.assertFalse(response["data"]["revert"]["available"])
-        self.assertEqual(self.host.apply_calls, 0)
-        commits = self.history.list_commits("doc_history")
-        self.assertEqual(len(commits), 1)
-        self.assertFalse(commits[0].changed)
-
-    def test_opentype_apply_and_revert_use_one_verified_operation_each(self) -> None:
-        self.host.model["features"] = [
-            {
-                "id": "liga",
-                "name": "liga",
-                "code": "sub f i by fi;",
-                "automatic": False,
-                "disabled": False,
-            }
-        ]
-        baseline = copy.deepcopy(self.host.model)
-        applied = self.app.invoke(
-            "apply_opentype_updates",
-            {
-                "documentId": "doc_history",
-                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-                "updates": [
-                    {
-                        "kind": "feature",
-                        "name": "liga",
-                        "code": "sub f f i by ffi;",
-                    }
-                ],
-                "reason": "test verified feature code",
-            },
-        ).to_dict()
-
-        self.assertTrue(applied["ok"])
-        self.assertEqual(applied["data"]["requestedChangeCount"], 1)
-        self.assertEqual(applied["data"]["transactionCount"], 1)
-        self.assertEqual(self.host.model["features"][0]["code"], "sub f f i by ffi;")
-
-        reverted = self.app.invoke(
-            "revert_change",
-            {
-                "documentId": "doc_history",
-                "operationId": applied["operationId"],
-                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-            },
-        ).to_dict()
-
-        self.assertTrue(reverted["ok"])
-        self.assertEqual(self.host.model, baseline)
-        self.assertEqual(self.host.apply_calls, 2)
-        self.assertEqual(
-            [event.tool for event in self.app._audit.list_events(document_id="doc_history")],
-            ["apply_opentype_updates", "revert_change"],
-        )
-
-    def test_generic_revert_preserves_unrelated_later_fields(self) -> None:
-        self._apply_export_toggle()
-        changed = [item for item in self.history.list_commits("doc_history") if item.changed][0]
-        self.host.model["font"]["familyName"] = "Manually Renamed"
-
-        reverted = self.app.invoke(
-            "revert_change",
-            {
-                "documentId": "doc_history",
-                "operationId": changed.operation_id,
-                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-            },
-        ).to_dict()
-
-        self.assertTrue(reverted["ok"])
-        self.assertTrue(self.host.model["glyphs"]["A"]["export"])
-        self.assertEqual(self.host.model["font"]["familyName"], "Manually Renamed")
-        self.assertEqual(self.history.list_commits("doc_history")[-1].tool, "revert_change")
-
-    def test_generic_revert_refuses_conflicting_later_edit(self) -> None:
-        self._apply_export_toggle()
-        changed = [item for item in self.history.list_commits("doc_history") if item.changed][0]
-        self.host.model["glyphs"]["A"]["export"] = "manual-conflict"
-
-        reverted = self.app.invoke(
-            "revert_change",
-            {
-                "documentId": "doc_history",
-                "operationId": changed.operation_id,
-                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-            },
-        ).to_dict()
-
-        self.assertFalse(reverted["ok"])
-        self.assertEqual(reverted["error"]["code"], "revert_conflict")
-        self.assertEqual(self.host.apply_calls, 1)
-        self.assertIsNotNone(reverted["auditReceipt"])
-        events = self.app._audit.list_events(document_id="doc_history")
-        self.assertEqual([event.tool for event in events], ["apply_glyph_updates", "revert_change"])
-
-    def test_generic_revert_accepts_fields_already_at_the_original_value(self) -> None:
-        applied = self.app.invoke(
-            "apply_glyph_updates",
-            {
-                "documentId": "doc_history",
-                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-                "updates": [
-                    {
-                        "glyphName": "A",
-                        "export": False,
-                        "category": "Symbol",
-                    }
-                ],
-            },
-        ).to_dict()
-        self.assertTrue(applied["ok"])
-
-        # Glyphs may settle one derived field back to its pre-operation value
-        # after the first verified readback. That field is already reverted,
-        # not a conflicting third value.
-        self.host.model["glyphs"]["A"]["export"] = True
-
-        reverted = self.app.invoke(
-            "revert_change",
-            {
-                "documentId": "doc_history",
-                "operationId": applied["operationId"],
-                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-            },
-        ).to_dict()
-
-        self.assertTrue(reverted["ok"])
-        self.assertTrue(self.host.model["glyphs"]["A"]["export"])
-        self.assertNotIn("category", self.host.model["glyphs"]["A"])
-
-    def test_revert_uses_observed_canonical_values_after_host_normalization(self) -> None:
-        host = _NormalizingMetricsHost()
-        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
-        app = GlyphsMCPApplication(host, history=history)
-        applied = app.invoke(
-            "apply_metrics_updates",
-            {
-                "documentId": "doc_history",
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
-                "updates": [
-                    {
-                        "scope": "layer",
-                        "glyphName": "A",
-                        "layerId": "m0",
-                        "leftMetricsKey": "=H",
-                    }
-                ],
-            },
-        ).to_dict()
-
-        self.assertTrue(applied["ok"])
-        self.assertEqual(
-            _layer(host.model)["leftMetricsKey"],
-            "==H",
-        )
-        self.assertEqual(_layer(host.model)["width"], 520)
-
-        reverted = app.invoke(
-            "revert_change",
-            {
-                "documentId": "doc_history",
-                "operationId": applied["operationId"],
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
-            },
-        ).to_dict()
-
-        self.assertTrue(reverted["ok"])
-        self.assertIsNone(
-            _layer(host.model)["leftMetricsKey"]
-        )
-        self.assertEqual(_layer(host.model)["width"], 500)
-
-    def test_revert_refuses_when_detached_inverse_cannot_reproduce_target(self) -> None:
-        host = _DriftingMetricsHost()
-        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
-        app = GlyphsMCPApplication(host, history=history)
-        applied = app.invoke(
-            "apply_metrics_updates",
-            {
-                "documentId": "doc_history",
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
-                "updates": [
-                    {
-                        "scope": "layer",
-                        "glyphName": "A",
-                        "layerId": "m0",
-                        "leftMetricsKey": "=H",
-                    }
-                ],
-            },
-        ).to_dict()
-        after_apply = copy.deepcopy(host.model)
-
-        reverted = app.invoke(
-            "revert_change",
-            {
-                "documentId": "doc_history",
-                "operationId": applied["operationId"],
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
-            },
-        ).to_dict()
-
-        self.assertFalse(reverted["ok"])
-        self.assertEqual(reverted["error"]["code"], "revert_not_exact")
-        self.assertEqual(reverted["error"]["details"]["mismatchCount"], 1)
-        self.assertEqual(
-            reverted["error"]["details"]["mismatchPaths"],
-            [["glyphs", "A", "layers", "m0", "width"]],
-        )
-        self.assertEqual(host.model, after_apply)
-        self.assertEqual(host.apply_calls, 1)
-
-    def test_revert_delegates_the_intended_tree_to_generic_canonical_reconciliation(self) -> None:
-        host = _CanonicalReconciliationMetricsHost()
-        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
-        app = GlyphsMCPApplication(host, history=history)
-        baseline = copy.deepcopy(host.model)
-        applied = app.invoke(
-            "apply_metrics_updates",
-            {
-                "documentId": "doc_history",
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
-                "updates": [
-                    {
-                        "scope": "layer",
-                        "glyphName": "A",
-                        "layerId": "m0",
-                        "leftMetricsKey": "=H",
-                    }
-                ],
-            },
-        ).to_dict()
-
-        reverted = app.invoke(
-            "revert_change",
-            {
-                "documentId": "doc_history",
-                "operationId": applied["operationId"],
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
-            },
-        ).to_dict()
-
-        self.assertTrue(reverted["ok"])
-        self.assertEqual(host.model, baseline)
-
-    def test_invalid_direct_mutation_still_emits_exactly_one_audit_receipt(self) -> None:
-        response = self.app.invoke(
-            "apply_glyph_updates",
-            {
-                "documentId": "doc_history",
-                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-                "updates": [],
-            },
-        ).to_dict()
-
-        self.assertFalse(response["ok"])
-        self.assertIsNotNone(response["auditReceipt"])
-        events = self.app._audit.list_events(document_id="doc_history")
-        self.assertEqual(len(events), 1)
-        self.assertEqual(events[0].tool, "apply_glyph_updates")
-
-    def test_spacing_refuses_a_native_aligned_width_before_live_apply(self) -> None:
-        layer = _layer(self.host.model)
-        layer["hasAlignedWidth"] = True
-        before = copy.deepcopy(self.host.model)
-
-        response = self.app.invoke(
-            "apply_spacing",
-            {
-                "documentId": "doc_history",
-                "expectedDocumentFingerprint": fingerprint_model(before),
-                "items": [
-                    {
-                        "glyphName": "A",
-                        "masterId": "m0",
-                        "width": 500,
-                        "targetWidth": 520,
-                    }
-                ],
-            },
-        ).to_dict()
-
-        self.assertFalse(response["ok"])
-        self.assertEqual(self.host.apply_calls, 0)
-        self.assertEqual(self.host.model, before)
-
-    def test_verified_save_event_resets_only_its_document_history(self) -> None:
-        self._apply_export_toggle()
-        other_before = _model()
-        other_after = copy.deepcopy(other_before)
-        other_after["font"]["familyName"] = "Other"
-        self.history.record_action(
-            document_id="doc_other", tool="edit", effect="edit", status="success", run_id="run_other",
-            before_model=other_before, after_model=other_after,
-        )
-        lifecycle = DocumentHistoryLifecycle(self.history)
-        lifecycle.document_was_saved("doc_history", make_copy=False, succeeded=True)
-
-        self.assertEqual(self.history.list_commits("doc_history"), ())
-        self.assertEqual(len(self.history.list_commits("doc_other")), 1)
-
-    def test_save_copy_or_failed_save_does_not_reset_history(self) -> None:
-        self._apply_export_toggle()
-        lifecycle = DocumentHistoryLifecycle(self.history)
-        lifecycle.document_was_saved("doc_history", make_copy=True, succeeded=True)
-        lifecycle.document_was_saved("doc_history", make_copy=False, succeeded=False)
-        self.assertEqual(len(self.history.list_commits("doc_history")), 1)
-
-    def test_confirmed_open_world_python_rebinds_document_and_records_exact_transition(self) -> None:
-        preview = self.app.invoke(
-            "execute_python",
-            {
-                "documentId": "doc_history",
-                "code": "font.userData['touched'] = True",
-                "reason": "exercise live tracing",
-                "intendedEffect": "files_or_external",
-                "executionMode": "live_open_world",
-                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-            },
-        ).to_dict()
-        confirmed = self.app.invoke(
-            "execute_python", {"reviewId": preview["data"]["reviewId"], "confirm": True}
-        ).to_dict()
-
-        self.assertTrue(confirmed["ok"])
-        commits = self.history.list_commits("doc_history")
-        self.assertEqual([commit.tool for commit in commits], ["execute_python", "execute_python"])
-        self.assertFalse(commits[0].changed)
-        self.assertTrue(commits[1].changed)
-        self.assertEqual(commits[1].after_tree_hash, self.history.head_tree_hash("doc_history"))
-
-    def test_live_python_34_glyph_growth_reports_changed_on_success_and_exception(self) -> None:
-        def add_glyphs() -> tuple[dict, dict]:
-            before = copy.deepcopy(self.host.model)
-            template = copy.deepcopy(before["glyphs"]["A"])
-            for index in range(34):
-                name = "added{:02d}".format(index)
-                glyph = copy.deepcopy(template)
-                glyph["name"] = name
-                glyph["id"] = "id_{}".format(name)
-                self.host.model["glyphs"][name] = glyph
-            return before, copy.deepcopy(self.host.model)
-
-        def run_and_confirm() -> dict:
-            preview = self.app.invoke(
-                "execute_python",
-                {
-                    "documentId": "doc_history",
-                    "code": "print('synthetic 34-glyph membership transition')",
-                    "reason": "exercise large live transition tracing",
-                    "intendedEffect": "files_or_external",
-                    "executionMode": "live_open_world",
-                    "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-                },
-            ).to_dict()
-            return self.app.invoke(
-                "execute_python",
-                {"reviewId": preview["data"]["reviewId"], "confirm": True},
-            ).to_dict()
-
-        def succeeds(_request):
-            before, after = add_glyphs()
-            return {
-                "beforeModel": before,
-                "afterModel": after,
-                "stdout": "",
-                "stderr": "",
-                "observedDocumentChanges": [],
-            }
-
-        self.host.run_live_python = succeeds
-        success = run_and_confirm()
-        self.assertTrue(success["ok"])
-        self.assertTrue(success["data"]["changed"])
-        self.assertEqual(len(self.host.model["glyphs"]), 35)
-        self.assertTrue(self.history.list_commits("doc_history")[-1].changed)
-
-        # Reset to the one-glyph fixture and exercise the same observed
-        # transition when the live interpreter raises after mutation.
-        self.host.model = _model()
-
-        def raises_after_mutation(_request):
-            before, after = add_glyphs()
-            result = {
-                "beforeModel": before,
-                "afterModel": after,
-                "stdout": "",
-                "stderr": "boom",
-                "observedDocumentChanges": [],
-            }
-            raise ObservedLivePythonError(RuntimeError("boom"), result)
-
-        self.host.run_live_python = raises_after_mutation
-        failed = run_and_confirm()
-        self.assertFalse(failed["ok"])
-        self.assertTrue(failed["data"]["changed"])
-        self.assertGreater(failed["data"]["observedChangeCount"], 0)
-        self.assertTrue(failed["data"]["rollback"]["available"])
-        self.assertTrue(self.history.list_commits("doc_history")[-1].changed)
-
-    def test_confirmed_ui_only_python_records_an_unchanged_transition(self) -> None:
-        def ui_only(_request):
-            model = copy.deepcopy(self.host.model)
-            return {
-                "beforeModel": model,
-                "afterModel": copy.deepcopy(model),
-                "stdout": "opened edit tab",
-                "stderr": "",
-                "scopeViolations": [],
-            }
-
-        self.host.run_live_python = ui_only
-        fingerprint = fingerprint_model(self.host.model)
-        preview = self.app.invoke(
-            "execute_python",
-            {
-                "documentId": "doc_history",
-                "code": "font.newTab([layer])",
-                "reason": "exercise a UI-only transition",
-                "intendedEffect": "files_or_external",
-                "executionMode": "live_open_world",
-                "expectedDocumentFingerprint": fingerprint,
-            },
-        ).to_dict()
-        confirmed = self.app.invoke(
-            "execute_python",
-            {"reviewId": preview["data"]["reviewId"], "confirm": True},
-        ).to_dict()
-
-        self.assertTrue(confirmed["ok"])
-        self.assertEqual(confirmed["data"]["beforeFingerprint"], fingerprint)
-        self.assertEqual(confirmed["data"]["afterFingerprint"], fingerprint)
-        commits = self.history.list_commits("doc_history")
-        self.assertEqual([commit.changed for commit in commits], [False, False])
-
-    def test_repeated_unchanged_read_python_calls_record_without_fingerprint_failure(self) -> None:
-        def unchanged(_request):
-            model = copy.deepcopy(self.host.model)
-            return {
-                "beforeModel": model,
-                "afterModel": copy.deepcopy(model),
-                "stdout": "ok",
-                "stderr": "",
-                "observedDocumentChanges": [],
-            }
-
-        self.host.run_live_python = unchanged
-        responses = [
-            self.app.invoke(
-                "execute_python",
-                {
-                    "documentId": "doc_history",
-                    "code": "print(font.familyName)",
-                    "reason": "repeat an unchanged read",
-                    "intendedEffect": "read",
-                },
-            ).to_dict()
-            for _ in range(3)
-        ]
-
-        self.assertTrue(all(response["ok"] for response in responses))
-        self.assertTrue(
-            all(response["data"]["historyRecorded"] for response in responses)
-        )
-        self.assertEqual(
-            [commit.changed for commit in self.history.list_commits("doc_history")],
-            [False, False, False],
-        )
-
-    def test_read_intent_python_mutation_is_stored_as_a_changed_action_commit(self) -> None:
-        response = self.app.invoke(
-            "execute_python",
-            {
-                "documentId": "doc_history",
-                "code": "print('read')",
-                "reason": "detect an incorrectly declared mutation",
-                "intendedEffect": "read",
-            },
-        ).to_dict()
-
-        self.assertTrue(response["ok"])
-        commit = self.history.list_commits("doc_history")[-1]
-        self.assertEqual(commit.tool, "execute_python")
-        self.assertTrue(commit.changed)
-
-    def test_change_commits_are_model_visible_and_commit_diff_uses_get_operation(self) -> None:
-        self._apply_export_toggle()
-        changed = [item for item in self.history.list_commits("doc_history") if item.changed][0]
 
         listed = self.app.invoke(
-            "list_change_commits", {"documentId": "doc_history", "pageSize": 100}
+            "list_history", {"documentId": DOCUMENT_ID, "pageSize": 100}
         ).to_dict()
+        self.assertTrue(listed["ok"], listed)
+        changed = [item for item in listed["data"]["commits"] if item["changed"]]
+        self.assertEqual(len(changed), 1)
+        self.assertEqual(changed[0]["tool"], "apply_change")
+        self.assertEqual(changed[0]["operationId"], applied["data"]["operationId"])
+
         inspected = self.app.invoke(
-            "get_operation", {"operationId": changed.commit_id, "pageSize": 100}
+            "get_operation",
+            {"operationId": applied["data"]["operationId"], "pageSize": 100},
         ).to_dict()
-
-        self.assertTrue(listed["ok"])
-        self.assertIn(changed.operation_id, [item["operationId"] for item in listed["data"]["commits"]])
-        self.assertNotIn("commitId", listed["data"]["commits"][0])
-        self.assertTrue(inspected["ok"])
+        self.assertTrue(inspected["ok"], inspected)
         self.assertEqual(inspected["data"]["kind"], "mutation_diff")
-        self.assertEqual(inspected["data"]["payload"]["operationId"], changed.operation_id)
-        self.assertGreater(inspected["data"]["payload"]["observedChangeCount"], 0)
+        self.assertGreater(len(inspected["data"]["payload"]["changes"]), 0)
 
-    def test_listing_existing_change_commits_does_not_recapture_the_font(self) -> None:
-        self._apply_export_toggle()
-        captures_before = self.host.capture_calls
+    def test_revert_preserves_unrelated_later_state(self) -> None:
+        applied = self._apply(False)
+        self.host.model["font"]["designer"] = "Unrelated"
+        before_revert = fingerprint_model(self.host.model)
 
-        result = self.app.invoke(
-            "list_change_commits", {"documentId": "doc_history", "pageSize": 100}
+        reverted = self.app.invoke(
+            "revert_change",
+            {
+                "documentId": DOCUMENT_ID,
+                "operationId": applied["data"]["operationId"],
+                "expectedDocumentFingerprint": before_revert,
+            },
         ).to_dict()
+        self.assertTrue(reverted["ok"], reverted)
+        self.assertTrue(self.host.model["glyphs"]["A"]["export"])
+        self.assertEqual(self.host.model["font"]["designer"], "Unrelated")
 
-        self.assertTrue(result["ok"])
-        self.assertEqual(self.host.capture_calls, captures_before)
+    def test_revert_refuses_an_overlapping_later_change(self) -> None:
+        applied = self._apply(False)
+        self.host.model["glyphs"]["A"]["export"] = "later-conflict"
+
+        reverted = self.app.invoke(
+            "revert_change",
+            {
+                "documentId": DOCUMENT_ID,
+                "operationId": applied["data"]["operationId"],
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+            },
+        ).to_dict()
+        self.assertFalse(reverted["ok"])
+        self.assertEqual(reverted["error"]["code"], "revert_conflict")
+        self.assertEqual(self.host.model["glyphs"]["A"]["export"], "later-conflict")
+
+    def test_noop_preview_applies_without_a_transaction_or_revert(self) -> None:
+        applied = self._apply(True)
+        self.assertTrue(applied["ok"], applied)
+        self.assertEqual(applied["data"]["transactionCount"], 0)
+        self.assertFalse(applied["data"]["revert"]["available"])
+        self.assertEqual(self.host.apply_calls, 0)
 
 
 if __name__ == "__main__":

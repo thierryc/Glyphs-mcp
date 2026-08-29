@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "managedSkills": [
+    {"name": "glyphs", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-color-font", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-development", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-export-validation", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-maintainer-feedback", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-master-compatibility", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-opentype-features", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-production-audit", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-unicode-semantics", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-variable-font", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-icon-font", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-italic-first-pass", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-kerning", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-litsquare-metadata", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-outlines-docs", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-release", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-scripting", "surface": "glyphs-mcp-v2"},
+    {"name": "glyphs-mcp-spacing", "surface": "glyphs-mcp-v2"}
+  ]
+}

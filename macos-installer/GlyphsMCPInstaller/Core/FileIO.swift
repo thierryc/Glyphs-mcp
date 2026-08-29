@@ -108,6 +108,16 @@ public struct InstallerPayload {
 
 	public typealias UpdatePolicy = InstallerTargetUpdatePolicy
 
+	private struct ManagedSkillManifest: Decodable {
+		struct Entry: Decodable {
+			let name: String
+			let surface: String
+		}
+
+		let schemaVersion: Int
+		let managedSkills: [Entry]
+	}
+
 	public struct TargetPlugin: Equatable, Sendable {
 		public let glyphsVersion: GlyphsMajorVersion
 		public let bundleURL: URL
@@ -178,12 +188,20 @@ public struct InstallerPayload {
 
 	public func managedSkillDirectories() -> [URL] {
 		guard let skillsDir else { return [] }
-		let prefix = "glyphs-mcp-"
+		let manifestURL = skillsDir.appendingPathComponent("manifest.json")
+		guard
+			let data = try? Data(contentsOf: manifestURL),
+			let manifest = try? JSONDecoder().decode(ManagedSkillManifest.self, from: data),
+			manifest.schemaVersion == 1,
+			!manifest.managedSkills.isEmpty
+		else { return [] }
+		let managedNames = Set(manifest.managedSkills.map(\.name))
+		guard managedNames.count == manifest.managedSkills.count else { return [] }
 		guard let entries = try? FileManager.default.contentsOfDirectory(at: skillsDir, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]) else {
 			return []
 		}
 		return entries
-			.filter { $0.lastPathComponent == "glyphs" || $0.lastPathComponent.hasPrefix(prefix) }
+			.filter { managedNames.contains($0.lastPathComponent) }
 			.filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false }
 			.sorted { $0.lastPathComponent < $1.lastPathComponent }
 	}

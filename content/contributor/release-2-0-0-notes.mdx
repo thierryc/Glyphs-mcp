@@ -1,57 +1,65 @@
 ---
 title: Glyphs MCP 2.0 release notes
-description: Canonical notes for the private v2.0.0 GitHub release draft.
+description: Canonical notes for the private hard-reset v2 release candidate.
 ---
 
 # Glyphs MCP 2.0.0
 
-Glyphs MCP 2.0 is a breaking, Glyphs 4-focused release built around verified
-apply-first automation. Typed edits are simulated on a detached font, applied
-once on Glyphs' main thread, read back completely, and recorded in a semantic
-Change Log without saving the font implicitly.
+Glyphs MCP 2.0 is a breaking, Glyphs 4-focused architectural reset. V1 and
+Glyphs 3 remain on the signed v1.11 runtime. V2 was not public before this
+reset, so removed tools have no aliases or transition wrappers.
 
 ## Highlights
 
-- Canonical schema v6 classifies all 293 properties and wildcard containers in
-  the pinned official Glyphs File Format v4 schema. It keeps saved semantic
-  font state separate from volatile provenance and editor UI-session state.
-- Exact semantic patches drive audit receipts, optional visual outline-delta
-  feedback, conflict-aware selective revert, and staged Python confirmation.
-- Staged Python runs against a detached clone by default. Confirmation replays
-  the verified stored patch instead of rerunning the script against the live
-  font.
-- The Target-aware installer carries separate, deterministic host payloads:
-  Glyphs 4 receives v2.0.0 while Glyphs 3.5 remains pinned to the signed v1.11
-  runtime. Installing or removing one target does not replace the other.
-- The compact Glyphs MCP inspector reports server and long-running operation
-  activity without turning the Change Log or Reporter into a mutation engine.
+- The model-visible surface is 18 generic tools for discovery, canonical
+  reads, constraints, immutable previews, verified apply, history, offline
+  Knowledge, permanent Python fallback, export/save, UI, and runtime repair.
+- Knowledge supplies pinned cited facts, managed skills supply type-design and
+  Glyphs expertise, and tools supply mechanics. Runtime mutation code contains
+  no spacing taste, category heuristics, or workflow solver.
+- Canonical schema v6 classifies the saved semantic state covered by the pinned
+  Glyphs File Format v4 source while keeping volatile provenance and UI-session
+  state outside fingerprints.
+- `EntitySelector`, `Projection`, `Constraint`, and `ChangeOperation` form one
+  closed reusable language across glyph, layer, master, kerning, OpenType,
+  instance, and export work.
+- `preview_change` stores exact identities, dependencies, fingerprints,
+  normalized physical operations, semantic diff, and constraint evidence.
+  `apply_change` consumes that patch without rerunning planning.
+- Staged Python runs once against a detached document and returns the same
+  immutable preview as declarative writes. Python remains permanently
+  available for unsupported reads, document edits, UI, APIs, files, and other
+  external effects.
+- Every document mutation uses snapshot, detached simulation, one live apply,
+  complete read-back, verification, rollback on failure, audit, history, and
+  conflict-aware revert. Nothing saves implicitly.
+- The offline Knowledge corpus is deterministic, searchable, version-aware,
+  and cited. Updates occur through reviewed builds rather than runtime network
+  access.
+- `skills/` is the only authored expertise source; the plug-in skill package is
+  generated and checked for exact equality.
 
-## Rollback boundaries
+## Effect boundaries
 
-Automatic revert covers canonical Glyphs document state when the current
-document still matches the verified operation lineage. Conflicting later edits
-are refused rather than overwritten. Native-only payloads are retained only
-when exact reversible adapter evidence is proven.
-
-Files, network calls, subprocesses, preferences, saves, opened or closed
-documents, and other external effects are not represented as reversible font
-changes. Open-world Python reports those effects as unverifiable or
-recovery-only instead of claiming transactionality.
+`save_document`, `apply_export`, `open_document_view`, `repair_runtime`, and
+`execute_python(mode="live_open_world")` are explicit boundaries. Files,
+network calls, subprocesses, preferences, saves, UI state, and other external
+effects are never described as transactionally reversible merely because a
+document checkpoint exists.
 
 The Change Log is process-local working history, not a replacement for source
-control or saved-file backups. No public Git comparison tool is included in
-this release.
+control or saved-file backups. Conflicting later edits are refused rather than
+overwritten.
 
-## Installation and upgrade
+## Qualification
 
-Install with the notarized Glyphs MCP Installer from the attached DMG. The
-installer selects the correct payload for each installed Glyphs major version.
-Existing development symlinks are preserved unless replacement is explicitly
-chosen.
+Release candidates must pass deterministic schema, selector, constraint,
+preview/apply equivalence, patch inversion, mutation, rollback, pagination,
+Knowledge, Python, routing, skill synchronization, and bundle tests. Separate
+disposable Glyphs 4 gates must restore exact canonical and native baselines and
+prove that no implicit save occurred. Source-level tests do not substitute for
+that live evidence.
 
-The release assets are accepted for publication only after Developer ID
-signature, notarization, stapling, Gatekeeper, checksum, deterministic-payload,
-and isolated simulated-install verification all pass for the exact signed tag.
-The private draft contains exactly `Glyphs-MCP-2.0.0.dmg`, its byte-identical
-`Glyphs-MCP-latest.dmg` alias, `GlyphsMCPInstaller.zip`, and `SHA256SUMS`; no
-standalone plug-in ZIP is published.
+Publication remains gated by Developer ID signature, notarization, stapling,
+Gatekeeper, checksums, deterministic payload assembly, and isolated simulated
+installation for the exact signed tag.

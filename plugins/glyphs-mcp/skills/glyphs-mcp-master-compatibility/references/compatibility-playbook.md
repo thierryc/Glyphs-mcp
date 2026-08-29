@@ -50,15 +50,17 @@ require inventing the design. Do not automate this class.
 ## Repair order
 
 1. For each corresponding closed-path set, establish the intended semantic
-   first node with `review_start_node_alignment`. Require one unambiguous shared
-   cyclic phase across all participating layers. Dry-run and apply the exact
-   fingerprinted `apply_start_node_alignment` plan. Never rotate open paths.
+   first node and require one unambiguous shared cyclic phase across all
+   participating layers. When generic operations cannot express the rotation,
+   stage one minimal fingerprint-bound `execute_python` edit, inspect its
+   immutable semantic preview, and apply only that stored patch after approval.
+   Never rotate open paths.
 2. Re-read before continuing. If compatibility is still false, repair only an
    unambiguous path/shape order or direction mismatch while preserving geometry
    and all node fields.
 3. Align component identities and order only when the corresponding component
    role is certain. Never decompose components merely to silence compatibility.
-4. Align anchor-name sets with `apply_anchor_updates` only when the missing or
+4. Align anchor-name sets with explicit generic operations only when the missing or
    extra semantic anchor is clear. Preserve intentional coordinates unless an
    anchor move was separately requested.
 5. For a localized on-curve count difference, insert a point only on the
@@ -69,10 +71,10 @@ require inventing the design. Do not automate this class.
    path and segment, before/after node-type sequence, proposed handle placement,
    geometry-preservation evidence, and why it is necessary. Continue only after
    explicit permission.
-7. Use `apply_compatibility_updates` for an explicit reviewed replacement. If a
-   narrow edit is not expressible there, use `execute_python` in
-   `staged_document` mode against the exact fingerprint. Review the semantic
-   diff and confirm the stored review; do not rerun modified code live.
+7. Use `preview_change` for an explicit reviewed replacement. If a narrow edit
+   is not expressible there, use `execute_python` in `staged_document` mode
+   against the exact fingerprint. Inspect the semantic preview and apply the
+   stored patch through `apply_change`; do not rerun modified code live.
 
 Stop after any unexpected coordinate, node type, connection, smoothness,
 orientation, name, anchor, component, shape-order, or open/closed-state change.

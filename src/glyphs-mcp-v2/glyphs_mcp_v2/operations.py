@@ -35,6 +35,8 @@ class OperationStore:
 
     @staticmethod
     def _prefix(kind: str) -> str:
+        if "preview" in kind:
+            return "preview_"
         if "review" in kind:
             return "review_"
         if "checkpoint" in kind:

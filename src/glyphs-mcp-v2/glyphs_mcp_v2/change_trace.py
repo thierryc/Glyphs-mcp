@@ -27,6 +27,7 @@ class _ActionScope:
     transaction_completed: bool = False
     history_recorded: bool = True
     history_warning: Optional[str] = None
+    history_boundary: bool = False
     commit: Optional[ActionCommit] = None
     context_token: Optional[Token] = None
 
@@ -57,6 +58,11 @@ class ActionTraceCoordinator:
         scope = _ACTIVE_SCOPE.get()
         if scope is not None and document_id:
             scope.document_id = document_id
+
+    def mark_history_boundary(self) -> None:
+        scope = _ACTIVE_SCOPE.get()
+        if scope is not None:
+            scope.history_boundary = True
 
     @staticmethod
     def _mark_history_failure(
@@ -266,6 +272,8 @@ class ActionTraceCoordinator:
     def finish_action(self, scope: _ActionScope, response: ToolResponse) -> Optional[ActionCommit]:
         try:
             if not scope.history_recorded:
+                return None
+            if scope.history_boundary:
                 return None
             document_id = scope.document_id
             if not document_id:

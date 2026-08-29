@@ -80,13 +80,13 @@ controls should include:
 
 ## Reading, coverage, and applying
 
-- `list_kerning_pairs(entryKind="pair")` returns directional pair records.
-- `list_kerning_pairs(entryKind="context")` returns context records.
-- `list_kerning_pairs(entryKind="all")` returns both in one bounded result.
-- `review_kerning_coverage(mode="context_sequences")` reports context entries,
+- `read_document` with `entity="kerning"` returns directional pair and context
+  records. Constrain direction, master, keys, or context identity in the
+  selector and follow pagination.
+- The skill derives coverage from the complete selected evidence, including
   editable exact-glyph records, raw-only records, and per-master counts.
-- `apply_kerning_updates` accepts ordinary pair records and exact context
-  records in one fingerprint-guarded transaction.
+- `preview_change` accepts explicit `set`, `insert`, and `remove` mechanics for
+  ordinary pairs and exact contexts in one fingerprint-guarded transaction.
 
 An existing raw context that uses bracket classes, feature-file marked glyphs,
 or other manual syntax is returned with `editable: false`, its exact

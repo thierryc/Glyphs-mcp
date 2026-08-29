@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs MCP Color Font"
+  short_description: "Audit color layers, palettes, and fallbacks."
+  default_prompt: "Use $glyphs-mcp-color-font to audit this color-font source without changing or saving it."
+
+policy:
+  allow_implicit_invocation: true

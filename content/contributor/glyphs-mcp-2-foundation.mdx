@@ -1,229 +1,132 @@
 ---
-title: Glyphs MCP 2.0 foundation
-description: Architecture, compatibility, and milestone record for the isolated 2.0 runtime.
+title: Glyphs MCP 2.0 hard-reset foundation
+description: Architecture and qualification record for the private generic v2 runtime.
 ---
 
-# Glyphs MCP 2.0 foundation
+# Glyphs MCP 2.0 hard-reset foundation
 
-Glyphs MCP 2.0 is a contract and architecture reset, rebased on signed release
-`v1.11.0`. The isolated runtime now covers typed discovery, bounded analysis,
-apply-first verified production mutations, staged export, model-visible Python fallback,
-and document rollback. It does not replace, load, or modify the installed 1.x
-plug-in during source development.
+Glyphs MCP 2.0 is a private breaking reset. V1 and Glyphs 3 remain unchanged;
+v2 has no public aliases, compatibility wrappers, or transition period.
 
-## Invariants
+## Ownership
 
-- `/mcp/` remains the canonical local endpoint.
-- The server advertises API major 2 independently from its package version.
-- Structured content is normative; text is a concise human fallback.
-- `documentId` is the durable process-local font target. `legacyIndex` is
-  informational during migration and must not become a stored identity.
-- Contracts and application services never import GlyphsApp, AppKit,
-  Foundation, FastMCP, or Uvicorn.
-- The Glyphs adapter captures complete immutable values on the main thread;
-  native objects never cross into application or transport layers.
-- Canonical state contains independently replayable authoritative values.
-  `LSB` and `RSB` remain useful native projections at workflow boundaries but
-  are not fingerprinted layer leaves: their setters mutate outline/width state,
-  and their getters may be recomputed from metrics and italic-master context.
-- Public MCP registration derives only from the typed v2 catalog.
-- Every typed mutation uses one shared prevalidate/snapshot/apply/read-back/
-  verify kernel, never saves implicitly, and emits one apply audit receipt.
+The architecture has three layers:
 
-## Implemented v2 surface
+1. **Knowledge supplies evidence:** pinned, searchable, cited, version-aware
+   font-design, font-engineering, Glyphs API, scripting, plug-in, and format
+   information.
+2. **Skills supply expertise:** typographic judgment, workflows, calculations,
+   exceptions, proofing, and the decision to use declarative mechanics or
+   Python.
+3. **Tools supply mechanics:** canonical reads, projections, constraints,
+   immutable previews, verified writes, history, and explicit external-effect
+   boundaries.
 
-The canonical package is `src/glyphs-mcp-v2/glyphs_mcp_v2`. It contains:
+The governing rule is permissive expression with strict structural integrity.
+Typographic heuristics are never mutation blockers. Locks, ambiguous
+identities, invalid ownership, stale fingerprints, unsupported replay, and
+failed complete read-back remain hard failures.
 
-- versioned result, warning, and error contracts;
-- stable document identity binding across fresh PyObjC proxies and first save;
-- immutable host and canonical document snapshots;
-- a recoverable main-thread execution port;
-- Glyphs 3.5/4 collection fallbacks;
-- catalog-generated schemas and safety annotations;
-- one catalog-driven FastMCP operation surface;
-- paginated glyph, instance, directional pair/context kerning, audit, review,
-  and Python-diff results;
-- direct glyph, anchor, directional pair/context kerning, spacing, metrics, and
-  compatibility batches with detached derived-effect simulation;
-- schema-v6 registry-driven complete saved semantic state, retaining the same
-  identity-aware collection and verified mutation kernel;
-- compatibility, metrics-inheritance, anchor, spacing, kerning-coverage, and
-  export analysis;
-- staged export with destination fingerprints and macOS atomic directory swap;
-- detached `GSFont.copy()` Python review, exact confirmation without rerunning
-  code, live open-world recovery, and inverse-patch rollback;
-- Git-like content-addressed unsaved-session action history, bounded commit
-  discovery, conflict-aware semantic revert, a passive Change Log, and an
-  independent drawing-only Edit View diff;
-- document-scoped cooperative activity state presented through one compact
-  Glyphs inspector or, while hidden, one delayed drawing-only capsule;
-- restart-safe Streamable HTTP application construction;
-- deterministic source and Plugin Manager payload assembly.
+## Frozen public surface
 
-The payload builder writes to `build/v2-runtime/` by default and rejects any
-output path outside this worktree. It does not create a live Glyphs link.
+The catalog contains exactly 18 tools:
 
-## Compatibility and migration
+- `get_server_info`, `list_documents`, `read_document`
+- `evaluate_constraints`
+- `preview_change`, `apply_change`
+- `get_operation`, `list_history`, `revert_change`
+- `search_knowledge`, `get_knowledge`
+- `execute_python`
+- `preview_export`, `apply_export`, `save_document`
+- `open_document_view`, `get_runtime_status`, `repair_runtime`
 
-The v2 runtime preserves sound capability names but does not claim exact 1.x
-wire compatibility. Migration will replace transient index targeting, legacy
-JSON result strings, inconsistent confirmation flags, and unstructured errors.
-Removed or redesigned capabilities receive documentation tombstones rather
-than ambiguous registered aliases.
+MCP discovery generated from the typed transport is the request-schema source
+of truth. Catalog definitions are the registration and output-contract source.
+The command reference is generated from that catalog. Architecture tests reject
+retired endpoint methods, a workflow-solver module, duplicated registration,
+and skill references to removed tools.
 
-The v2 tombstones are:
+## Reads and observations
 
-| 1.x name | v2 replacement |
-| --- | --- |
-| `ExportDesignspaceAndUFO` | `review_export`, then `export_source_bundle` |
-| `get_font_glyphs` | `list_glyphs` |
-| `get_font_kerning` | `list_kerning_pairs` |
-| `get_font_instances` | `list_instances` |
-| `glyphs-mcp-features` | `glyphs-mcp-opentype-features` |
-| mutation `review_*_updates` tools | direct `apply_*` with an expected document fingerprint |
+`EntitySelector` owns canonical kind, exact IDs or closed filters, parent
+relations, ordering, relations, and pagination. Cursors bind selector,
+projection, schema version, and document fingerprint. Mutation selectors are
+resolved to exact identities during preview.
 
-None of the old names is registered as a v2 alias. The 1.11 runtime retains its
-own tools until an installed runtime is explicitly upgraded and Glyphs is
-restarted.
+`Projection` returns requested canonical fields and registry-backed computed
+observations with provenance and completeness. Observations cover bounds,
+geometry, ownership, alignment, inheritance, grid, horizontal and vertical
+spacing, effective metadata, and detached compilation diagnostics.
 
-## Directional and contextual kerning
+## Constraints and verified changes
 
-Schema v6 represents pair kerning in independent `ltr`, `rtl`, and `vertical`
-domains. `list_kerning_pairs` accepts `entryKind="pair"`, `"context"`, or
-`"all"`; pair records include their direction, and cursors are bound to the
-filtered result. The default remains `pair`.
+One `Constraint` evaluator serves standalone checks, preconditions,
+postconditions, and read-back verification. Assertions compare literals,
+current fields, or exact references; they never choose a physical operation.
 
-Glyphs 4 `kerningContext` is modeled in its native orientation: outer context
-key -> inner master ID -> numeric value. Exact-glyph keys containing one `*`
-boundary are exposed as a glyph-name sequence and one-based boundary index.
-Class, bracket, or manually authored keys remain visible losslessly as raw,
-non-editable records.
+`ChangeOperation` contains only `set`, `translate`, `insert`, `remove`, `move`,
+and `duplicate`. Quantization is explicit. The private structural registry
+handles only Glyphs ownership invariants for masters and the master-layer
+prefix; it contains no design workflow.
 
-`apply_kerning_updates` accepts a union of pair updates and exact contextual
-updates in one verified batch. Untagged pair updates remain LTR-compatible.
-Context updates require an existing master, at least three existing exact glyph
-names, an interior boundary, and a finite value; `null` removes and zero is a
-stored value. The adapter applies context deltas through Glyphs 4's native
-setter/remover selectors and never replaces the complete context dictionary.
-Master duplication and deletion update the master value nested inside every
-context key. Unrelated contexts and every pair direction remain unchanged.
+`preview_change` stores exact targets, normalized operations, dependencies,
+source and proposed fingerprints, semantic diff, constraint evidence,
+warnings, and blockers. `apply_change` consumes that immutable patch without
+rerunning planning. Every document mutation passes through detached simulation,
+one live apply, complete read-back, verification, rollback on failure, audit,
+and history. No operation saves implicitly.
 
-Contextual values are additive to ordinary kerning. The managed kerning skill
-therefore routes work through spacing and ordinary pairs first, reserves the
-typed context contract for punctuation/apostrophe/space exceptions, and sends
-class-based or tokenized rules to the OpenType-features workflow.
+## Spacing reference
 
-## Python execution and rollback
+Spacing is an expertise workflow assembled from `read_document` projections,
+explicit arithmetic, constraints, `set`, and `translate`. Both axes, bearings,
+advance, origin, bounds, geometry translation, grid, metrics inheritance, and
+alignment are evidence—not hidden solver inputs. The spacing skill chooses
+references, preservation rules, exceptions, and proofs. Signed sidebearing
+guidance is cited Knowledge rather than runtime policy.
 
-Read-intent Python reports document and scope violations. Document edits default
-to a detached clone and return a deterministic paginated semantic diff. Native
-archive deltas from direct execution and independent canonical replay must be
-equivalent. Exact confirmation applies only the stored writable patch, verifies
-the complete observed result, and never reruns Python. Unsupported staged
-fields return bounded roots, counts, and paths.
+## Permanent Python
 
-`live_open_world` remains available for global Glyphs APIs, UI state, unsupported
-objects, files, processes, and networking. It uses exact preview, a full clone,
-and a private serialized checkpoint, but reports external effects as
-unverifiable and timeout enforcement as cooperative. Automatic rollback is
-available only for a complete supported observed document diff. Otherwise a
-separate recovery document can be opened. Later edits are never overwritten.
+Python is permanent, not a migration escape hatch:
 
-Git protects source history; it is not used for runtime rollback because it
-cannot represent unsaved live documents, multiple open fonts, or external
-effects.
+- `read_only` performs bounded inspection without document mutation.
+- `staged_document` runs once against a detached font and returns the generic
+  immutable preview. `apply_change` applies its stored patch without rerunning
+  code.
+- `live_open_world` covers unsupported Glyphs APIs, UI, files, processes, and
+  other external effects with explicit approval, effect classification,
+  checkpoints, and honest recovery evidence.
 
-Runtime action history follows Git's immutable-object and revert concepts but
-does not invoke Git. See [Canonical change history](./canonical-change-history)
-for its save lifetime, storage model, UI separation, and performance gates.
+Generic operations remain preferred when they fit. Skills use Python whenever
+they do not.
 
-`lit/next-1.x` remains eligible for critical defects, security and packaging
-hardening, Glyphs host compatibility, pure font engines, deterministic
-fixtures, SDK documentation, and contract-neutral Reporter models. V2 request
-and result contracts, stable IDs, registration, application services, and
-breaking catalog changes do not flow back to 1.x.
+## Knowledge and skills
 
-## Milestone order
+The offline Knowledge build records stable IDs, topics, applicable Glyphs
+versions, source URLs, authority class, verification dates, checksums,
+citations, compatibility notes, and focused code examples. Ranked search and
+pagination are deterministic; runtime retrieval never uses uncontrolled
+network access.
 
-1. Complete: stable IDs, contracts, transport, containment, and assembly.
-2. Complete for the production canonical model: snapshots, pagination,
-   fingerprints, semantic diffs, transactions, audit, Python, and rollback.
-3. Complete for the current production milestone: compatibility, metrics,
-   anchors, spacing, kerning, instances, export, and synchronized skills.
-4. Complete: the Glyphs 4 disposable qualification matrix exercises glyph,
-   OpenType, and instance structure, non-linear selective revert, atomic
-   refusal, and exact baseline cleanup through the public apply-first kernel.
-   Glyphs 3.5 remains on signed v1.11 until a later authorized live gate.
-5. Complete: canonical schema v3 represents ordered entity membership, scalar
-   updates, deletion, insertion, and reorder as identity-aware semantic
-   patches. Glyph collection, OpenType collection, and instance mutations use
-   the verified apply-first kernel and the same conflict-aware revert logic.
-6. Complete and live-qualified on the disposable Glyphs 4 font: canonical
-   schema v4 adds `list_masters` and one composite `apply_master_updates`
-   lifecycle for duplicate, update, move, delete, and exact reverse-order
-   revert. The qualification completed eight verified transactions, two atomic
-   refusals, and exact clean-baseline restoration without saving.
-7. Complete and live-qualified on Glyphs 4.0.1 build 4004: immutable canonical
-   snapshots, path-derived impact, independently reusable layer fragments,
-   streaming native verification, and internal stage timings retain the
-   schema-v4 proof while removing repeated whole-tree copies and hashes. The
-   guarded 383-glyph/five-master gate completed in 62.702 seconds, 56.8% faster
-   than the 145.163-second baseline and 9.298 seconds below the 72-second
-   target, with exact clean-baseline restoration and no save.
-8. Complete and live-qualified on Glyphs 4: canonical schema v5 adds ordered,
-   identity-addressed lifecycle support for intermediate, alternate, backup,
-   Smart, and color layers. Non-master layer order is assigned atomically with
-   Glyphs' native ordered collection; specialized Smart/color property editing
-   remains deferred.
-9. Complete and live-qualified on Glyphs 4.0.1 build 4004: staged-Python
-   structural replay uses schema-v5 canonical collections, one bounded
-   adapter-owned native-evidence registry, the shared verified transaction
-   kernel, and the existing Change Log/revert machinery. The guarded
-   383-glyph gate covered glyph, master, non-master layer, instance, feature,
-   class, and prefix lifecycle; confirmed four stored replays without rerunning
-   Python; exercised Python rollback and Change Log revert; restored the exact
-   canonical and native-archive fingerprints; retained no preview evidence;
-   and never saved. Cooperative phase feedback is also complete through the
-   unified `Glyphs MCP` inspector and its hidden-sidebar capsule.
-10. Complete and locally qualified: the target-aware installer payload schema
-    maps Glyphs 3 to pinned `v1.11.0`/`13ca805` and Glyphs 4 to the deterministic
-    v2 bundle. The macOS app, terminal installer, updater protocol v2, atomic
-    copy engine, reversible Glyphs 3 update pin, and release-verification
-    scripts all resolve a host-specific bundle. Installation, staging,
-    reinstall, and removal remain target-isolated; no live Glyphs folder was
-    changed for this milestone.
-11. Complete as an unsigned release-candidate baseline: the Glyphs 4 runtime
-    and installer source are aligned at `2.0.0` build `27`; Glyphs 3.5 remains
-    pinned to signed v1.11. The automated closure gate, installed Glyphs 3.5
-    build 3532 read-only gate, and disposable Glyphs 4 build 4004 matrix pass.
-    Schema v5
-    remains documented as `modeled_fields_only`, not arbitrary whole-font Git
-    history. Signing, notarization, tagging, upload, and publication remain
-    separate authorization boundaries.
-12. Complete and live-qualified on Glyphs 4.0.1 build 4004: canonical schema
-    v6 classifies all 293 properties and wildcard containers
-    in the pinned official Glyphs File Format v4 schema. One declarative
-    registry defines field roles, identities, ordering, shard impact, replay,
-    redaction and generated coverage; generic capture, replay and planning
-    boundaries consume those declarations rather than repeating field lists.
-    Ordered duplicate anchors, unified
-    interleaved shapes, complete component transform decomposition, remaining
-    layer content, root metadata, axes, parameters, metrics/stems/numbers,
-    directional kerning, OpenType state, Smart Glyph data and serializable user
-    data stay on the existing immutable snapshot and verified transaction
-    kernel. Flat, package and live inputs share one source-neutral seam. V5
-    history is not migrated; activation clears it with an explicit schema
-    reason. Offline and current-upstream knowledge audits pass with zero drift,
-    zero unclassified paths, and zero stale registry entries. The 383-glyph
-    master gate remains below 72 seconds; staged structural replay, native-copy
-    equivalence, deterministic dual-target payloads, the complete Python and
-    Xcode suites, and unsigned-candidate validation all pass without saving the
-    disposable font. The next phase is signed-release qualification, and it
-    still requires separate authorization.
+`skills/` is the only authored skill source.
+`plugins/glyphs-mcp/skills/` is generated and checked for exact equality. Every
+managed skill follows Knowledge → generic reads → expertise → declarative
+preview when expressible → Python fallback when necessary → verification, and
+never auto-saves.
 
-Every milestone must pass focused tests, the complete Python suite, catalog
-and schema gates, deterministic payload assembly, and `git diff --check`.
-Live Glyphs checks use disposable fonts and remain separate from ordinary
-source implementation. The guarded
-`glyphs_mcp_v2.live_gates.verify_copy_and_make_copy` helper refuses fonts that
-do not use the `Glyphs MCP V2 Disposable` family-name prefix.
+## Milestone record
+
+1. Architecture freeze: complete.
+2. Generic reads and observations: complete.
+3. Constraints, immutable previews, and verified writes: complete.
+4. Generic spacing reference implementation: complete.
+5. Permanent Python fallback: complete.
+6. Pinned offline Knowledge and complete skill/tool cutover: complete.
+7. Qualification: automated v2 schema, selector, constraint, preview, mutation,
+   rollback, pagination, Knowledge, Python, routing, property, and deterministic
+   generation tests pass. Disposable Glyphs 4 live gates remain a release
+   environment gate and must not be inferred from source-level tests.
+
+Release qualification must use disposable Glyphs 4 documents, restore exact
+canonical and native baselines, prove no implicit save, and confirm that the
+packaged catalog exposes only the frozen public surface.

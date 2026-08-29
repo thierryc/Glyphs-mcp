@@ -45,7 +45,7 @@ AGENT_PLUGIN_DOC_REPLACEMENTS = {
         re.compile(r"(Agent plugins are a separate, optional setup\. Version )\d+\.\d+\.\d+( includes one shared)"),
     ),
     Path("content/getting-started/codex-chatgpt-plugin-ui.mdx"): (
-        re.compile(r"(same\s+14 skills, localhost MCP configuration, and `)\d+\.\d+\.\d+(` package version)"),
+        re.compile(r"(same\s+\d+ skills, localhost MCP configuration, and `)\d+\.\d+\.\d+(` package version)"),
     ),
 }
 

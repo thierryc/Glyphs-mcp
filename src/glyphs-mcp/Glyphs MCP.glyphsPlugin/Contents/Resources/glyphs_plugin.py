@@ -82,9 +82,15 @@ from versioning import get_docs_url_latest, get_plugin_version, get_runtime_info
 try:
     from glyphs_mcp_v2.activity import default_activity_store
     from glyphs_mcp_v2.connection_status import default_connection_status_store
+    from glyphs_mcp_v2.runtime import (
+        automatic_repair_scripting_runtime,
+        scripting_runtime_safety_status,
+    )
 except Exception:
     default_activity_store = None
     default_connection_status_store = None
+    automatic_repair_scripting_runtime = None
+    scripting_runtime_safety_status = None
 
 
 AUTOSTART_DEFAULTS_KEY = "io.anotherplanet.glyphs-mcp.autostart"
@@ -967,6 +973,13 @@ class MCPBridgePlugin(GeneralPlugin):
         if is_thread_running(getattr(self, "_server_thread", None)):
             return False
 
+        # The application and native guard manager survive HTTP Stop/Start.
+        # Revalidate their process-local slots before creating a fresh ASGI app,
+        # while keeping the status and repair tools reachable if recovery is
+        # incomplete.
+        if automatic_repair_scripting_runtime is not None:
+            automatic_repair_scripting_runtime("automatic_server_start")
+
         if default_activity_store is not None:
             default_activity_store().reset_session()
         self._activity_request_generation = 0
@@ -1477,6 +1490,8 @@ class MCPBridgePlugin(GeneralPlugin):
         if default_activity_store is not None:
             default_activity_store().reset_session()
         self._activity_request_generation = 0
+        if automatic_repair_scripting_runtime is not None:
+            automatic_repair_scripting_runtime("automatic_server_stop")
         self._refresh_status_panel_if_visible()
 
     def ShowStatusWindow_(self, sender):
@@ -1489,6 +1504,39 @@ class MCPBridgePlugin(GeneralPlugin):
             self._begin_helper_probe()
         except Exception as e:
             self._show_error(tr("error.open_status_window", error=e))
+
+    def RepairScriptingRuntime_(self, sender):
+        """Run the same bounded native repair pass exposed to MCP agents."""
+
+        if automatic_repair_scripting_runtime is None:
+            self._show_error(tr("scripting_safety.unavailable"))
+            return
+        result = automatic_repair_scripting_runtime("manual_status_window")
+        status = None
+        if isinstance(result, dict):
+            status = result.get("scriptingRuntimeSafety")
+        if not isinstance(status, dict):
+            status = self._current_scripting_safety()
+        if isinstance(status, dict) and status.get("state") == "healthy":
+            self._activity_text = tr("scripting_safety.repaired")
+            self._activity_state = "ok"
+        elif isinstance(status, dict) and status.get("nextAction") == "restart_glyphs":
+            self._activity_text = tr("scripting_safety.restart_glyphs")
+            self._activity_state = "error"
+        else:
+            self._activity_text = tr("scripting_safety.repair_incomplete")
+            self._activity_state = "error"
+        self._refresh_status_panel_if_visible()
+
+    @objc.python_method
+    def _current_scripting_safety(self):
+        if scripting_runtime_safety_status is None:
+            return None
+        try:
+            value = scripting_runtime_safety_status()
+        except Exception:
+            return None
+        return dict(value) if isinstance(value, dict) else None
 
     @objc.python_method
     def _current_port(self):
@@ -1741,7 +1789,7 @@ class MCPBridgePlugin(GeneralPlugin):
             return
 
         width = 420
-        height = 380
+        height = 426
         rect = ((0, 0), (width, height))
         style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow
         panel = NSPanel.alloc().initWithContentRect_styleMask_backing_defer_(
@@ -1896,6 +1944,35 @@ class MCPBridgePlugin(GeneralPlugin):
             pass
         content.addSubview_(activity_value)
 
+        safety_y = activity_y + 40
+        safety_label = self._quiet_text_field(
+            ((margin, safety_y + 2), (102, row_h)),
+            tr("scripting_safety.label"),
+            selectable=False,
+            size=11,
+        )
+        content.addSubview_(safety_label)
+
+        safety_button_w = 72
+        safety_value_x = margin + 104
+        safety_value_w = width - margin * 2 - 104 - safety_button_w - 6
+        safety_value = self._quiet_text_field(
+            ((safety_value_x, safety_y + 2), (safety_value_w, row_h)),
+            tr("scripting_safety.healthy"),
+            selectable=True,
+            bold=True,
+            size=11,
+        )
+        content.addSubview_(safety_value)
+
+        safety_button = NSButton.alloc().initWithFrame_(
+            ((width - margin - safety_button_w, safety_y - 2), (safety_button_w, row_h + 8))
+        )
+        safety_button.setTitle_(tr("scripting_safety.repair"))
+        safety_button.setTarget_(self)
+        safety_button.setAction_(self.RepairScriptingRuntime_)
+        content.addSubview_(safety_button)
+
         port_label = self._quiet_text_field(
             ((margin, controls_y + 2), (34, row_h)),
             tr("port.label"),
@@ -2000,6 +2077,8 @@ class MCPBridgePlugin(GeneralPlugin):
         self._status_dot_field = status_dot
         self._server_button = server_button
         self._activity_field = activity_value
+        self._scripting_safety_field = safety_value
+        self._scripting_safety_button = safety_button
         self._endpoint_field = endpoint_value
         self._port_field = port_field
         self._autostart_checkbox = autostart_checkbox
@@ -2070,6 +2149,7 @@ class MCPBridgePlugin(GeneralPlugin):
         port = self._current_port()
         endpoint = endpoint_for(port)
         version = get_runtime_label()
+        scripting_safety = self._current_scripting_safety()
 
         try:
             dot = getattr(self, "_status_dot_field", None)
@@ -2130,6 +2210,42 @@ class MCPBridgePlugin(GeneralPlugin):
                 color = self._status_color(getattr(self, "_activity_state", "idle"))
                 if color is not None:
                     field.setTextColor_(color)
+        except Exception:
+            pass
+        try:
+            field = getattr(self, "_scripting_safety_field", None)
+            button = getattr(self, "_scripting_safety_button", None)
+            state = (
+                str(scripting_safety.get("state") or "healthy")
+                if isinstance(scripting_safety, dict)
+                else "healthy"
+            )
+            next_action = (
+                str(scripting_safety.get("nextAction") or "none")
+                if isinstance(scripting_safety, dict)
+                else "none"
+            )
+            if state == "healthy":
+                safety_text = tr("scripting_safety.healthy")
+                safety_color = self._status_color("running")
+            elif next_action == "restart_glyphs":
+                safety_text = tr("scripting_safety.restart_glyphs")
+                safety_color = self._status_color("error")
+            else:
+                safety_text = tr("scripting_safety.repair_needed")
+                safety_color = self._status_color("waiting")
+            if field is not None:
+                field.setStringValue_(safety_text)
+                field.setToolTip_(safety_text)
+                if safety_color is not None:
+                    field.setTextColor_(safety_color)
+            if button is not None:
+                button.setEnabled_(
+                    bool(
+                        isinstance(scripting_safety, dict)
+                        and scripting_safety.get("automaticRepairAvailable")
+                    )
+                )
         except Exception:
             pass
         try:

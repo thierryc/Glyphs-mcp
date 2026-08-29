@@ -298,7 +298,7 @@ class StagedStructuralReplayTests(unittest.TestCase):
         )
         self.assertIn(CANONICAL_V6_LIFECYCLE_CAPABILITY, capabilities)
 
-    def test_structural_confirmation_reuses_review_id_and_never_reruns_code(self) -> None:
+    def test_structural_apply_reuses_preview_patch_and_never_reruns_code(self) -> None:
         host = _StructuralPythonHost()
         service = PythonExecutionService(
             host=host,
@@ -317,7 +317,7 @@ class StagedStructuralReplayTests(unittest.TestCase):
             )
         ).to_dict()
 
-        self.assertEqual(preview["status"], "review_required")
+        self.assertEqual(preview["status"], "success")
         self.assertEqual(
             preview["data"]["canonicalCoverage"]["status"],
             "complete_with_opaque_preservation",
@@ -325,13 +325,17 @@ class StagedStructuralReplayTests(unittest.TestCase):
         self.assertGreater(
             preview["data"]["canonicalCoverage"]["opaqueChangeCount"], 0
         )
-        review_id = preview["data"]["reviewId"]
-        confirmed = service.execute(
-            PythonExecutionRequest(review_id=review_id, confirm=True)
+        preview_id = preview["data"]["previewId"]
+        record = service._reviews.get(preview_id)
+        self.assertIsNotNone(record)
+        confirmed = service.apply_staged_preview(
+            record,
+            operation_id="op_structural",
+            reason="apply exact staged structural patch",
         ).to_dict()
 
         self.assertTrue(confirmed["ok"])
-        self.assertEqual(confirmed["operationId"], review_id)
+        self.assertEqual(confirmed["operationId"], "op_structural")
         self.assertEqual(confirmed["data"]["transactionCount"], 1)
         self.assertFalse(confirmed["data"]["fontSaved"])
         self.assertEqual(
@@ -416,7 +420,7 @@ class StagedStructuralReplayTests(unittest.TestCase):
                 expected_document_fingerprint=fingerprint_model(host.model),
             )
         ).to_dict()
-        record = service._reviews.get(preview["data"]["reviewId"])
+        record = service._reviews.get(preview["data"]["previewId"])
 
         self.assertEqual(
             record.payload["executionContext"],

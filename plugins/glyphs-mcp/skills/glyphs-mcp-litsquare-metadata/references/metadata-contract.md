@@ -50,14 +50,27 @@ The following names and meanings are guidance for common workflows, not a contro
 
 One selected path reports its role. Multiple paths report their shared role only when all match; otherwise they report `Mixed` with counts.
 
-## Tool Transactions
+## Glyphs MCP v2 execution boundary
 
-- `get_litsquare_metadata` returns direct scopes, validation, provenance, and effective settings.
-- `get_selected_litsquare_path_roles` returns explicit path targets, expected roles, structural fingerprints, counts, descriptions, and centering data.
-- `patch_litsquare_metadata` uses RFC 7396 merge-patch semantics. JSON null deletes. It manages `updatedAt`, rejects direct schema changes, and supports `expected_updated_at` concurrency checks.
-- `set_litsquare_path_roles` accepts any non-empty string, an empty string, or null. Strings are trimmed and an empty result removes the attribute. Every target must retain its glyph, layer, index, fingerprint, and exact raw expected role.
+V2 exposes no dedicated LitSquare metadata tools. Read direct scopes,
+validation, provenance, effective settings, selected path targets, roles, and
+centering data with one bounded `execute_python` call using
+`intendedEffect=read`. Treat any observed document change as a failed read.
 
-Writes require exactly one of dry-run or confirmation. Confirmed multi-path writes are atomic: any moved, changed, missing, or differently assigned path rejects the full transaction. Writes form one Undo step, verify native readback, notify the Palette, do not save, and report `fontSaved: false`.
+For an authorized patch, use RFC 7396 merge-patch semantics in a minimal
+`execute_python` call with `intendedEffect=document_edit`,
+`executionMode=staged_document`, one exact document fingerprint, and explicit
+glyph/layer/path targets. JSON null deletes. The script manages `updatedAt`,
+rejects direct schema changes, trims role strings, and removes a role when the
+trimmed result is empty. It must verify each target's glyph, layer, path index,
+structural identity, and raw expected role before editing.
+
+Do not send legacy dry-run, confirmation, font-index, or metadata-tool
+arguments. The first staged call returns a semantic review; after explicit
+approval, confirm only its stored `reviewId` with `confirm=true`. Re-read native
+state after the transaction. Any moved, changed, missing, or differently
+assigned target blocks the whole patch. The edit forms one verified operation,
+does not save, and reports `fontSaved: false`.
 
 ## Palette Editing
 
@@ -103,15 +116,15 @@ The reporter can snapshot the selected-path union midpoint, the union midpoint
 of all layer paths and components, or the current `layer.width / 2`. Only the
 resulting x is stored; the source, bounds, and object identities are not.
 
-`get_icon_grid_horizontal_center` returns the direct policy and schema state,
-stored and resolved x, fallback state, advance and layer-content candidates,
-and a fingerprint covering only the explicit layer target and IconGrid root.
-`set_icon_grid_horizontal_center` accepts an explicit finite `center_x`.
-`reset_icon_grid_horizontal_center` removes only `centerX`, deleting the root
-when nothing meaningful remains. Neither mutation inspects or edits roles.
+A bounded v2 read script returns the direct policy and schema state, stored and
+resolved x, fallback state, advance and layer-content candidates, and a
+fingerprint covering only the explicit layer target and IconGrid root. A
+staged edit may set one explicit finite `centerX`, or remove only `centerX` and
+delete the root when nothing meaningful remains. Neither operation inspects or
+edits roles.
 
-Both mutations require a fresh `expected_state_fingerprint` and exactly one of
-dry-run or confirmation. Confirmed changes form one Undo step, verify native
-readback, redraw, publish `com.litsquare.icongrid.changed`, do not save, and
-report `fontSaved: false`. Future schemas are read-only. A malformed known-v1
-`centerX` may be safely removed while retaining unrelated fields.
+The staged script requires a fresh document fingerprint and exact expected
+IconGrid root. After confirmation of the stored review it verifies native
+readback, redraws, publishes `com.litsquare.icongrid.changed`, does not save,
+and reports `fontSaved: false`. Future schemas are read-only. A malformed
+known-v1 `centerX` may be safely removed while retaining unrelated fields.

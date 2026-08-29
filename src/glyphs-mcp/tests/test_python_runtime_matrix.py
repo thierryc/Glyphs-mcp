@@ -61,8 +61,12 @@ class PythonRequirementsTests(unittest.TestCase):
 
         self.assertIn("-r requirements.txt", development)
         self.assertIn("glyphsLib==6.10.1", development)
+        self.assertIn("fontmake==3.10.1", development)
+        self.assertIn("uharfbuzz==0.56.0", development)
         self.assertIn("pytest==8.4.2", development)
         self.assertNotIn("glyphsLib", runtime)
+        self.assertNotIn("fontmake", runtime)
+        self.assertNotIn("uharfbuzz", runtime)
         self.assertNotIn("pytest", runtime)
 
     def test_python_test_runner_preflights_and_isolates_optional_pytest(self) -> None:
@@ -70,6 +74,8 @@ class PythonRequirementsTests(unittest.TestCase):
 
         self.assertIn("requirements-dev.txt", runner)
         self.assertIn("Python 3.11-3.14", runner)
+        self.assertIn('"fontmake": "fontmake"', runner)
+        self.assertIn('"uharfbuzz": "uharfbuzz"', runner)
         self.assertIn("PYTEST_DISABLE_PLUGIN_AUTOLOAD=1", runner)
         self.assertIn("-m unittest discover", runner)
 

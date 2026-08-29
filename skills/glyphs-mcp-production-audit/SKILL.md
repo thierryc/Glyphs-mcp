@@ -1,36 +1,34 @@
 ---
 name: glyphs-mcp-production-audit
-description: Run a read-first production audit of a Glyphs source across compatibility, metrics inheritance, anchors, spacing, kerning coverage, instances, and export readiness using bounded v2 reviews and honest coverage accounting.
+description: Coordinate a read-only production audit from one source fingerprint by routing to focused Glyphs MCP expertise and aggregating blockers and gaps.
+metadata:
+  surface: glyphs-mcp-v2
 ---
 
 # Glyphs MCP production audit
 
-Build an evidence-backed production report without silently changing or saving the font.
-
-## Core rules
-
-- Resolve one stable `documentId` and record its starting fingerprint and dirty state.
-- Run independent reviews before proposing edits: `review_master_compatibility`, `review_metrics_inheritance`, `review_anchor_consistency`, `review_spacing`, `review_kerning_coverage`, and `review_export` when a destination is in scope.
-- Follow paginated results through `get_operation`; do not infer completeness from the first page.
-- Separate hard host/export failures from soft intentional design differences.
-- Report measured, skipped, untested, and eligible kerning counts. Never label sampled coverage exhaustive.
-- Do not apply, export, save, or run open-world Python unless the user separately requests the effect and confirms its review.
+Coordinate evidence; do not duplicate each domain's judgment.
 
 ## Workflow
 
-1. Capture server identity, document status, masters, instances, and glyph/kerning counts.
-2. Review compatibility in both `component_preserving` and `decomposed_export` modes when export behavior could differ.
-3. Review metrics-key/component inheritance and semantic anchor sets.
-4. Run bounded five-iteration spacing simulation at the one-unit default tolerance; treat valid zero-width marks as skips.
-5. Choose and state the kerning coverage mode. Use glyph expansion or class cross-product for an exhaustive claim.
-6. Review export with `fail_if_nonempty` unless replacement of an exact destination fingerprint is explicitly intended.
-7. Re-read the document fingerprint and report any drift during the audit.
+1. Call `get_server_info`, require `data.apiMajor == 2`, resolve one font with
+   `list_documents`, and retain the starting fingerprint.
+2. Use `read_document` only far enough to identify applicable axes, masters,
+   instances, glyph coverage, OpenType, color, variable, spacing, kerning,
+   Unicode, outline, and export domains. Follow selector-owned pagination and
+   record partial projections.
+3. Search `search_knowledge` for target- and version-specific requirements;
+   retrieve decisive entries with `get_knowledge`.
+4. Route detailed evidence and judgment to the applicable focused skills:
+   Unicode semantics, color, variable fonts, OpenType, interpolation,
+   outlines/anchors, spacing, kerning, and export validation.
+5. Use `execute_python(mode="read_only")` only when a focused audit requires a
+   bounded native observation that generic projections cannot supply. Treat
+   observed mutation as a failed audit.
+6. Re-read the fingerprint at the end. Do not call `preview_change`,
+   `apply_change`, `apply_export`, or `save_document` during coordination.
 
-## Output
-
-Summarize hard blockers, soft findings, coverage gaps, actionable reviewed batches, response operation IDs, and whether the font remained unsaved.
-
-## Deeper references
-
-- [Safety model](https://github.com/thierryc/Glyphs-mcp/blob/main/content/concepts/safety-model.mdx)
-- [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
+Aggregate each domain as PASS, WARN, FAIL, or SKIP with evidence IDs,
+citations, affected entities, coverage, and next action. A PASS requires
+complete evidence for the stated scope; missing binaries, platforms, tools,
+or native observations are SKIP or WARN, never an inferred pass.

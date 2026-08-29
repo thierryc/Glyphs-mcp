@@ -1,7 +1,7 @@
 interface:
   display_name: "Glyphs MCP Spacing"
-  short_description: "Review and apply v2 width-only spacing safely."
-  default_prompt: "Use $glyphs-mcp-spacing to review v2 width-only proposals, separate geometry translation from width changes, and apply only authorized eligible widths."
+  short_description: "Review and apply v2 grid-aware spacing safely."
+  default_prompt: "Use $glyphs-mcp-spacing to review exact-layer width and optional foreground-translation proposals, verify grid snapping and ownership guards, and apply only an authorized atomic batch."
 
 policy:
   allow_implicit_invocation: true

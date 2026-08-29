@@ -40,7 +40,7 @@ creation, or upload unless the user explicitly expands the scope.
    ```
 
    Confirm every directory under `skills/` that belongs to the product appears
-   in the sync list, terminal installer's `MANAGED_SKILL_NAMES`, packaged plug-in,
+   in `skills/manifest.json`, the terminal installer, packaged plug-in,
    docs table, and contract tests. Canonical and packaged trees must match.
 
 4. Run targeted tests for touched code, then the mandatory complete gate:
@@ -50,8 +50,11 @@ creation, or upload unless the user explicitly expands the scope.
    ```
 
    Use another project-approved Python 3.11-3.14 interpreter only when the
-   exact path and reason are recorded. The gate runs the complete Python suite,
-   Xcode tests, shell syntax, patch whitespace, and an unsigned Debug build.
+   exact path and reason are recorded. Before any test can be skipped, the gate
+   requires that interpreter to have the exact `fontmake` version pinned in
+   `requirements-dev.txt`; missing or mismatched source-build tooling fails
+   qualification. The gate then runs the complete Python suite, Xcode tests,
+   shell syntax, patch whitespace, and an unsigned Debug build.
    For schema v6 it also runs the offline knowledge/hash check and independent
    canonical audit. Set `GLYPHS_MCP_FULL_NETWORK=1` for the final release run;
    upstream GlyphsSDK drift then fails closed pending manual review.

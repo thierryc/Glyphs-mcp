@@ -1,4 +1,4 @@
-"""Typed OpenType inspection and compile-only workflow coverage."""
+"""Generic OpenType reads and detached compilation diagnostics."""
 
 from __future__ import annotations
 
@@ -14,8 +14,8 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
+from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
 from glyphs_mcp_v2.semantic import fingerprint_model  # noqa: E402
-from glyphs_mcp_v2.workflows import list_opentype_items  # noqa: E402
 
 
 def _model() -> dict:
@@ -30,23 +30,18 @@ def _model() -> dict:
                 "id": "ss01",
                 "name": "ss01",
                 "tag": "ss01",
-                "code": "sub [a b] by [a.ss01 b.ss01]; sub a' b by c;",
+                "code": "sub [a b] by [a.ss01 b.ss01];",
                 "automatic": False,
                 "disabled": False,
-                "notes": "Name: Rounded alternates",
-                "labels": [{"language": "dflt", "value": "Rounded"}],
             }
         ],
         "classes": [
             {
                 "id": "Uppercase",
                 "name": "Uppercase",
-                "tag": "Uppercase",
                 "code": "A B C",
                 "automatic": True,
                 "disabled": False,
-                "notes": None,
-                "labels": [],
             }
         ],
         "featurePrefixes": [],
@@ -54,120 +49,110 @@ def _model() -> dict:
 
 
 class _Host:
-    def __init__(self) -> None:
+    def __init__(self, diagnostics: dict | None = None) -> None:
         self.model = _model()
-        self.compile_result = {
-            "preflightSucceeded": True,
-            "liveAttempted": True,
-            "liveSucceeded": True,
-            "errorType": None,
-            "errorMessage": None,
-        }
-        self.force_dirty_calls = 0
-        self.source_state = {
-            "kind": "glyphs",
-            "exists": True,
-            "contentFingerprint": "sha256:source",
-        }
+        self.diagnostics = diagnostics
+        self.inspection_calls = 0
 
-    def capture_model(self, document_id):
+    def capture_model(self, _document_id: str) -> dict:
         return copy.deepcopy(self.model)
 
-    def compile_opentype_features(self, document_id):
-        return dict(self.compile_result)
-
-    def capture_source_file_state(self, document_id):
-        return dict(self.source_state)
-
-    def force_document_dirty(self, document_id):
-        self.force_dirty_calls += 1
+    def inspect_compilation_diagnostics(self, _document_id: str) -> dict:
+        self.inspection_calls += 1
+        return copy.deepcopy(
+            self.diagnostics
+            if self.diagnostics is not None
+            else {
+                "succeeded": True,
+                "errorType": None,
+                "errorMessage": None,
+                "detached": True,
+                "liveAttempted": False,
+            }
+        )
 
 
 class V2OpenTypeToolTests(unittest.TestCase):
-    def test_inspection_keeps_order_and_reports_unsupported_style_set_rules(self) -> None:
-        items = list_opentype_items(_model())
+    def test_canonical_feature_and_class_fields_are_generic_reads(self) -> None:
+        app = GlyphsMCPApplication(_Host())
+        feature = app.invoke(
+            "read_document",
+            {
+                "documentId": "doc_opentype",
+                "selector": {"entity": "feature", "ids": ["ss01"]},
+                "projection": {
+                    "fields": ["id", "name", "tag", "code", "automatic", "disabled"]
+                },
+            },
+        ).to_dict()
+        opentype_class = app.invoke(
+            "read_document",
+            {
+                "documentId": "doc_opentype",
+                "selector": {"entity": "class", "ids": ["Uppercase"]},
+                "projection": {"fields": ["id", "name", "code", "automatic"]},
+            },
+        ).to_dict()
 
-        self.assertEqual([item["kind"] for item in items], ["feature", "class"])
-        self.assertEqual(items[0]["order"], 0)
-        self.assertTrue(items[0]["stylisticSet"])
+        self.assertEqual(feature["data"]["items"][0]["values"]["tag"], "ss01")
         self.assertEqual(
-            items[0]["substitutions"],
-            [
-                {"source": "a", "replacement": "a.ss01"},
-                {"source": "b", "replacement": "b.ss01"},
-            ],
+            opentype_class["data"]["items"][0]["values"]["code"], "A B C"
         )
-        self.assertEqual(items[0]["unsupportedRuleCount"], 1)
-        self.assertTrue(items[0]["warnings"])
 
-    def test_compile_succeeds_only_when_canonical_and_source_state_are_unchanged(self) -> None:
+    def test_compilation_diagnostics_are_detached_evidence_not_an_effect(self) -> None:
         host = _Host()
         app = GlyphsMCPApplication(host)
         before = fingerprint_model(host.model)
-
         response = app.invoke(
-            "compile_opentype_features",
+            "read_document",
             {
                 "documentId": "doc_opentype",
-                "expectedDocumentFingerprint": before,
+                "selector": {"entity": "document", "ids": ["document"]},
+                "projection": {"fields": ["compilation.diagnostics"]},
             },
         ).to_dict()
 
-        self.assertTrue(response["ok"])
-        self.assertTrue(response["data"]["preflightSucceeded"])
-        self.assertTrue(response["data"]["liveSucceeded"])
-        self.assertEqual(response["data"]["observedAfterFingerprint"], before)
-        self.assertEqual(response["data"]["observedChangeCount"], 0)
-        self.assertFalse(response["data"]["sourceFileChanged"])
-        self.assertFalse(response["data"]["fontSaved"])
+        self.assertTrue(response["ok"], response)
+        item = response["data"]["items"][0]
+        self.assertTrue(item["values"]["compilation.diagnostics"]["succeeded"])
+        self.assertEqual(
+            item["provenance"]["compilation.diagnostics"], "detached-native"
+        )
+        self.assertFalse(
+            item["values"]["compilation.diagnostics"]["liveAttempted"]
+        )
+        self.assertEqual(host.inspection_calls, 1)
+        self.assertEqual(fingerprint_model(host.model), before)
 
-    def test_detached_compile_failure_never_attempts_live_compile(self) -> None:
-        host = _Host()
-        host.compile_result = {
-            "preflightSucceeded": False,
-            "liveAttempted": False,
-            "liveSucceeded": False,
-            "errorType": "FeatureError",
-            "errorMessage": "invalid feature source",
-        }
-        app = GlyphsMCPApplication(host)
-
-        response = app.invoke(
-            "compile_opentype_features",
+    def test_failed_detached_compilation_is_specific_complete_evidence(self) -> None:
+        host = _Host(
+            {
+                "succeeded": False,
+                "errorType": "FeatureError",
+                "errorMessage": "invalid feature source",
+                "detached": True,
+                "liveAttempted": False,
+            }
+        )
+        response = GlyphsMCPApplication(host).invoke(
+            "read_document",
             {
                 "documentId": "doc_opentype",
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "selector": {"entity": "document"},
+                "projection": {"fields": ["compilation.diagnostics"]},
             },
         ).to_dict()
 
-        self.assertFalse(response["ok"])
-        self.assertEqual(response["error"]["code"], "opentype_preflight_failed")
-        self.assertFalse(response["data"]["liveAttempted"])
+        item = response["data"]["items"][0]
+        self.assertEqual(item["completeness"], "complete")
+        self.assertFalse(item["values"]["compilation.diagnostics"]["succeeded"])
+        self.assertEqual(
+            item["values"]["compilation.diagnostics"]["errorType"], "FeatureError"
+        )
 
-    def test_compile_detects_unexpected_canonical_change_and_forces_dirty(self) -> None:
-        host = _Host()
-
-        def changed_compile(document_id):
-            host.model["font"]["familyName"] = "Unexpected"
-            return dict(host.compile_result)
-
-        host.compile_opentype_features = changed_compile
-        app = GlyphsMCPApplication(host)
-        before = fingerprint_model(host.model)
-
-        response = app.invoke(
-            "compile_opentype_features",
-            {
-                "documentId": "doc_opentype",
-                "expectedDocumentFingerprint": before,
-            },
-        ).to_dict()
-
-        self.assertFalse(response["ok"])
-        self.assertEqual(response["error"]["code"], "opentype_state_changed")
-        self.assertTrue(response["data"]["stateMayHaveChanged"])
-        self.assertEqual(response["data"]["observedChangeCount"], 1)
-        self.assertEqual(host.force_dirty_calls, 1)
+    def test_live_compile_endpoint_is_removed_in_favor_of_permanent_python(self) -> None:
+        self.assertNotIn("compile_opentype_features", TOOL_CATALOG)
+        self.assertIn("execute_python", TOOL_CATALOG)
 
 
 if __name__ == "__main__":

@@ -1,82 +1,52 @@
 ---
 name: glyphs-mcp-development
-description: Use this skill to create, extend, or review reusable workspace-first Glyphs Python scripts and Python plug-ins, including general, reporter, filter, palette, select-tool, and file-format plug-ins, while grounding API and template choices in the bundled Glyphs documentation.
+description: Create, extend, or review reusable workspace-first Glyphs Python scripts and plug-ins from pinned APIs and SDK templates.
+metadata:
+  surface: glyphs-mcp-v2
 ---
 
 # Glyphs MCP development
 
-Create workspace-first Glyphs scripts and plug-ins from pinned SDK templates.
+Create workspace artifacts; do not install or execute them implicitly.
 
-## Core rules
+## Evidence and architecture
 
-- Search with `docs_search`, then fetch only the relevant pages with `docs_get` before using unfamiliar Glyphs APIs or plug-in lifecycle methods.
-- Use `glyphs-mcp-scripting` instead when the request is to preview, run, or
-  debug a one-off script inside the live Glyphs app. Bring verified behavior
-  back here when it should become a reusable script or plug-in.
-- Target Glyphs 3.5 and Glyphs 4 unless the user explicitly requests one version.
-- Create files in the current workspace. Never write to a live Glyphs Scripts or Plugins folder without a separate explicit request.
-- Never install, execute, reload, restart Glyphs, or overwrite an existing artifact automatically.
-- Keep `Contents/MacOS/plugin` from the bundled SDK template unchanged and retain the bundled Apache 2.0 attribution.
-- Validate after scaffolding and after source edits.
-- When extending the v2 canonical change system, keep semantic diff mathematics
-  and process-local state free of GlyphsApp/AppKit imports; keep the native
-  adapter responsible for detached simulation and guarded mutation; keep
-  Reporter callbacks drawing-only. Add every public tool to `TOOL_CATALOG`, then register it only
-  with `glyphs_tool`; direct `mcp.tool` decorators are forbidden. Give it all
-  four safety hints, one visibility/effect class, concise routing metadata, and
-  an output schema when it belongs to a structured workflow. Import its module
-  through `mcp_tools.py`, and export every Reporter principal class through both
-  `plugin.py` and `Info.plist`.
-- Keep the MCP surface lean. Prefer a dedicated typed tool over an opaque action
-  multiplexer, but do not add a wrapper when the canonical mutation or history
-  lifecycle already expresses the same operation.
-- For candidate, curve, spacing, or kerning tools, preserve legacy JSON text and
-  add the validated structured-result envelope. Keep workflow details in typed
-  `data`; do not expand the common envelope with domain-specific fields.
+1. Before using the live plugin, call `get_server_info` and require
+   `data.apiMajor == 2`. Workspace-only scaffolding may proceed without a live
+   server but must not invent a callable tool.
+2. Use `search_knowledge` and `get_knowledge` for versioned Glyphs scripting,
+   plug-in APIs, SDK templates, and compatibility notes. The pinned local SDK
+   may supply complete templates and files; record its revision.
+3. Use `read_document` for live canonical context. Use
+   `execute_python(mode="read_only")` only to verify a bounded unfamiliar API.
+   A requested live test or edit follows `glyphs-mcp-scripting`, with detached
+   document patches applied through `apply_change`.
+4. Target Glyphs 3.5 and 4 unless the user narrows the versions. Keep native
+   compatibility notes explicit.
 
-## Workflow
+## Workspace rules
 
-1. Determine whether the artifact is a standalone script or a Python plug-in. For plug-ins, choose `general`, `reporter`, `filter`, `palette`, `select-tool`, or `file-format`.
-2. Resolve the human name, purpose, destination, and plug-in class/developer metadata. Use a workspace destination when none is specified.
-3. Search the bundled docs for the APIs and plug-in base class involved. Fetch the scripting or template guide plus only the API pages needed.
-4. Run `scripts/scaffold.py create` from this skill directory. It refuses existing outputs and live Glyphs installation folders by default.
-5. Edit the generated Python for the requested behavior. Prefer documented GlyphsApp APIs and keep Glyphs 3.5/4 compatibility explicit.
-6. For this repository, run the catalog, registration, routing, structured-result,
-   single-surface startup, and mirror tests before broader release gates.
-7. Run `scripts/scaffold.py validate <artifact> --target both`. Treat static validation as necessary but not equivalent to running inside Glyphs.
-8. Report the created path, documentation consulted, validation result, compatibility notes, and any separate manual install or runtime test the user may choose.
+- Determine script versus general, reporter, filter, palette, select-tool, or
+  file-format plug-in. Resolve name, purpose, class, developer, and destination.
+- Create files in the workspace. Never overwrite an existing artifact or write
+  to live Scripts/Plugins folders without a separate explicit request.
+- Keep the SDK's `Contents/MacOS/plugin` and Apache attribution unchanged.
+- Keep Reporter callbacks drawing-only. Separate reusable logic from Glyphs UI
+  glue and isolate version-specific API branches.
+- Run `scripts/scaffold.py create` and `scripts/scaffold.py validate <artifact>
+  --target both`; static validation is not a live Glyphs test.
 
-## Scaffold helper
+When changing this repository's v2 runtime, preserve the hard-reset layering:
+Knowledge owns pinned facts, skills own typographic workflows, and the public
+tool catalog stays limited to generic reads, constraints, previews, writes,
+history, Knowledge, permanent Python, export/save, UI, and runtime repair.
+Add mechanics through the shared registries and transaction kernel instead of
+adding domain workflow endpoints. Keep schemas single-source and generated,
+run the v2 contract/bundle tests, and sync packaged skill mirrors.
 
-Create a script:
+Never install, reload, restart Glyphs, run the artifact, mutate a document,
+export, or call `save_document` without the user's separate request. Report
+paths, cited APIs, SDK revision, validation, and remaining manual tests.
 
-```text
-python3 scripts/scaffold.py create script --name "My Script" --description "What it does" --destination .
-```
-
-Create a plug-in:
-
-```text
-python3 scripts/scaffold.py create reporter --name "My Reporter" --class-name MyReporter --developer "Your Name" --destination .
-```
-
-Validate an artifact:
-
-```text
-python3 scripts/scaffold.py validate "My Reporter.glyphsReporter" --target both
-```
-
-Use `--allow-live-install` only after the user explicitly asks to create directly in a Glyphs Scripts or Plugins folder. This flag does not install, reload, or execute the artifact.
-
-## Documentation queries
-
-- Scripts: `creating Glyphs scripts`, then the specific GlyphsApp class or method.
-- Plug-in overview: `Glyphs Python plug-in templates` and `Glyphs plug-in API`.
-- Plug-in types: `GeneralPlugin`, `ReporterPlugin`, `FilterWithoutDialog`, `PalettePlugin`, `SelectTool`, or `FileFormatPlugin`.
-
-## Deeper references
-
-- [Agent skills](https://github.com/thierryc/Glyphs-mcp/blob/main/content/concepts/agent-skills.mdx)
-- [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
-- [Tool catalog](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/Glyphs%20MCP.glyphsPlugin/Contents/Resources/tool_catalog.py)
-- [Scaffold helper](https://github.com/thierryc/Glyphs-mcp/blob/main/skills/glyphs-mcp-development/scripts/scaffold.py)
+Use the catalog returned by `get_server_info` as the live command contract and
+the local `scripts/scaffold.py` helper for reusable artifacts.

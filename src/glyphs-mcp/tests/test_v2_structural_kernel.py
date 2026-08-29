@@ -31,11 +31,7 @@ from glyphs_mcp_v2.semantic import (  # noqa: E402
     revert_change_set_onto,
     subset_change_set,
 )
-from glyphs_mcp_v2.workflows import (  # noqa: E402
-    build_glyph_updates,
-    build_instance_updates,
-    build_opentype_updates,
-)
+from glyphs_mcp_v2.generic_tools import build_change_set  # noqa: E402
 from glyphs_mcp_v2.mutation import master_owns_layer_order_change  # noqa: E402
 
 
@@ -395,108 +391,123 @@ class StructuralKernelTests(unittest.TestCase):
         self.assertIsNone(inverse)
         self.assertEqual(conflicts, (("glyphOrder", "$order"),))
 
-    def test_glyph_collection_create_and_delete_use_the_existing_domain_tool(self) -> None:
+    def test_glyph_collection_create_and_delete_use_generic_operations(self) -> None:
         before = _model()
-        created = build_glyph_updates(
+        created = build_change_set(
             before,
             [
                 {
-                    "action": "create",
-                    "glyphName": "B",
-                    "category": "Letter",
-                    "subCategory": "Uppercase",
-                    "unicode": "0042",
-                    "export": True,
+                    "op": "insert",
+                    "target": {"entity": "document", "ids": ["document"]},
+                    "field": "glyphs",
+                    "newId": "B",
+                    "value": {
+                        "id": "glyph_B",
+                        "name": "B",
+                        "category": "Letter",
+                        "subCategory": "Uppercase",
+                        "unicode": "0042",
+                        "export": True,
+                        "layers": [],
+                    },
                 }
             ],
-        ).apply(before)
+        ).change_set.apply(before)
         self.assertIn("B", created["glyphs"])
         self.assertEqual(created["glyphs"]["B"]["name"], "B")
 
-        deleted = build_glyph_updates(
-            created, [{"action": "delete", "glyphName": "B"}]
-        ).apply(created)
+        deleted = build_change_set(
+            created,
+            [{"op": "remove", "target": {"entity": "glyph", "ids": ["B"]}}],
+        ).change_set.apply(created)
         self.assertNotIn("B", deleted["glyphs"])
 
-    def test_opentype_collection_create_update_move_delete_share_one_builder(self) -> None:
+    def test_opentype_collection_lifecycle_uses_generic_operations(self) -> None:
         before = _model()
-        changed = build_opentype_updates(
+        changed = build_change_set(
             before,
             [
                 {
-                    "action": "create",
-                    "kind": "feature",
-                    "name": "kern",
-                    "code": "pos A V -80;",
-                    "automatic": False,
+                    "op": "insert",
+                    "target": {"entity": "document", "ids": ["document"]},
+                    "field": "features",
+                    "value": {
+                        "id": "kern",
+                        "name": "kern",
+                        "code": "pos A V -80;",
+                        "automatic": False,
+                        "disabled": False,
+                    },
+                    "index": 0,
                 },
-                {"action": "move", "kind": "feature", "name": "kern", "index": 0},
-                {"action": "update", "kind": "feature", "name": "liga", "disabled": True},
+                {
+                    "op": "set",
+                    "target": {"entity": "feature", "ids": ["liga"]},
+                    "field": "disabled",
+                    "value": True,
+                },
             ],
-        ).apply(before)
+        ).change_set.apply(before)
 
         self.assertEqual([item["id"] for item in changed["features"]], ["kern", "liga"])
         self.assertTrue(changed["features"][1]["disabled"])
-        deleted = build_opentype_updates(
-            changed, [{"action": "delete", "kind": "feature", "name": "kern"}]
-        ).apply(changed)
+        moved = build_change_set(
+            changed,
+            [{"op": "move", "target": {"entity": "feature", "ids": ["liga"]}, "index": 0}],
+        ).change_set.apply(changed)
+        self.assertEqual([item["id"] for item in moved["features"]], ["liga", "kern"])
+        deleted = build_change_set(
+            moved,
+            [{"op": "remove", "target": {"entity": "feature", "ids": ["kern"]}}],
+        ).change_set.apply(moved)
         self.assertEqual([item["id"] for item in deleted["features"]], ["liga"])
 
-    def test_instance_collection_has_one_direct_apply_contract(self) -> None:
-        self.assertIn("apply_instance_updates", TOOL_CATALOG)
+    def test_instance_collection_has_one_generic_apply_contract(self) -> None:
+        self.assertIn("preview_change", TOOL_CATALOG)
+        self.assertIn("apply_change", TOOL_CATALOG)
+        self.assertNotIn("apply_instance_updates", TOOL_CATALOG)
         before = _model()
-        changed = build_instance_updates(
+        changed = build_change_set(
             before,
             [
                 {
-                    "action": "create",
-                    "instanceId": "instance_bold",
-                    "name": "Bold",
-                    "type": "static",
-                    "included": True,
-                    "axes": [{"tag": "wght", "internal": 200, "external": 700}],
+                    "op": "insert",
+                    "target": {"entity": "document", "ids": ["document"]},
+                    "field": "instances",
+                    "value": {
+                        "id": "instance_bold",
+                        "name": "Bold",
+                        "type": "static",
+                        "included": True,
+                        "axes": [{"tag": "wght", "internal": 200, "external": 700}],
+                    },
                 },
                 {
-                    "action": "update",
-                    "instanceId": "instance_regular",
-                    "name": "Text",
-                    "included": False,
+                    "op": "set",
+                    "target": {"entity": "instance", "ids": ["instance_regular"]},
+                    "field": "name",
+                    "value": "Text",
+                },
+                {
+                    "op": "set",
+                    "target": {"entity": "instance", "ids": ["instance_regular"]},
+                    "field": "included",
+                    "value": False,
                 },
             ],
-        ).apply(before)
+        ).change_set.apply(before)
 
         self.assertEqual([item["id"] for item in changed["instances"]], ["instance_regular", "instance_bold"])
         self.assertEqual(changed["instances"][0]["name"], "Text")
         self.assertFalse(changed["instances"][0]["included"])
-        self.assertFalse(changed["instances"][0]["exports"])
-        regular_style_names = next(
-            item
-            for item in changed["instances"][0]["properties"]
-            if item["key"] == "styleNames"
-        )
-        self.assertEqual(
-            regular_style_names["values"],
-            [{"language": "dflt", "value": "Text"}],
-        )
         created = changed["instances"][1]
-        self.assertTrue(created["exports"])
-        self.assertEqual(created["weightClass"], 400)
-        self.assertEqual(created["widthClass"], 5)
-        self.assertEqual(
-            created["properties"],
-            [
-                {
-                    "id": "property:styleNames:0",
-                    "key": "styleNames",
-                    "value": None,
-                    "values": [{"language": "dflt", "value": "Bold"}],
-                }
-            ],
-        )
+        self.assertEqual(created["name"], "Bold")
+        self.assertTrue(created["included"])
 
-        deleted = build_instance_updates(
-            changed, [{"action": "delete", "instanceId": "instance_regular"}]
-        ).apply(changed)
+        deleted = build_change_set(
+            changed,
+            [{"op": "remove", "target": {"entity": "instance", "ids": ["instance_regular"]}}],
+        ).change_set.apply(changed)
         self.assertEqual([item["id"] for item in deleted["instances"]], ["instance_bold"])
 
     def test_structural_apply_and_revert_use_the_shared_transaction_kernel(self) -> None:
@@ -521,26 +532,47 @@ class StructuralKernelTests(unittest.TestCase):
         host = Host()
         app = GlyphsMCPApplication(host)
         baseline = copy.deepcopy(host.model)
-        response = app.invoke(
-            "apply_instance_updates",
+        before = fingerprint_model(host.model)
+        preview = app.invoke(
+            "preview_change",
             {
                 "documentId": "doc_structure",
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
-                "updates": [
+                "expectedDocumentFingerprint": before,
+                "operations": [
                     {
-                        "action": "create",
-                        "instanceId": "instance_bold",
-                        "name": "Bold",
-                        "axes": [{"tag": "wght", "internal": 200, "external": 700}],
+                        "op": "insert",
+                        "target": {"entity": "document", "ids": ["document"]},
+                        "field": "instances",
+                        "value": {
+                            "id": "instance_bold",
+                            "name": "Bold",
+                            "type": "static",
+                            "included": True,
+                            "inclusionReason": None,
+                            "interpolationSupported": True,
+                            "axes": [
+                                {"tag": "wght", "internal": 200, "external": 700}
+                            ],
+                        },
                     }
                 ],
-                "reason": "structural transaction test",
+                "constraints": [],
+            },
+        ).to_dict()
+        self.assertTrue(preview["ok"], preview)
+        response = app.invoke(
+            "apply_change",
+            {
+                "documentId": "doc_structure",
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": before,
+                "reason": "generic structural transaction test",
             },
         ).to_dict()
 
         self.assertTrue(response["ok"], response)
         self.assertEqual(host.apply_calls, 1)
-        operation_id = response["operationId"]
+        operation_id = response["data"]["operationId"]
         reverted = app.invoke(
             "revert_change",
             {

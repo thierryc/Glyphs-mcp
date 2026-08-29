@@ -25,11 +25,9 @@ from Foundation import NSIndexSet, NSObject, NSOperationQueue, NSThread
 from GlyphsApp import (  # type: ignore[import-not-found]
     DOCUMENTACTIVATED,
     DOCUMENTCLOSED,
-    DOCUMENTWASSAVED,
     Glyphs,
 )
 
-from .change_lifecycle import DocumentHistoryLifecycle
 from .change_log_model import ChangeLogModel
 from .runtime import active_history, active_host
 
@@ -49,22 +47,6 @@ def _quiet_field(frame, text="", size=11, bold=False):
     return field
 
 
-def _font_from_notification(notification):
-    try:
-        value = notification.object() if hasattr(notification, "object") else notification
-    except Exception:
-        value = notification
-    if value is None:
-        return None
-    font = getattr(value, "font", None)
-    if callable(font):
-        try:
-            font = font()
-        except Exception:
-            font = None
-    return font if font is not None else value if getattr(value, "glyphs", None) is not None else None
-
-
 class DocumentChangesPanelController(NSObject):
     """Display-only panel; it owns no editor navigation or Reporter state."""
 
@@ -81,13 +63,11 @@ class DocumentChangesPanelController(NSObject):
         self._callbacks = []
         history = active_history()
         self._model = ChangeLogModel(history) if history is not None else None
-        self._lifecycle = DocumentHistoryLifecycle(history) if history is not None else None
         if history is not None:
             self._unsubscribe = history.subscribe(self._history_changed)
         for callback, event in (
             (self.DocumentActivated_, DOCUMENTACTIVATED),
             (self.DocumentClosed_, DOCUMENTCLOSED),
-            (self.DocumentWasSaved_, DOCUMENTWASSAVED),
         ):
             try:
                 Glyphs.addCallback(callback, event)
@@ -121,35 +101,7 @@ class DocumentChangesPanelController(NSObject):
         self.refresh()
 
     def DocumentClosed_(self, notification):
-        font = _font_from_notification(notification)
-        host = active_host()
-        history = active_history()
-        if font is not None and host is not None and history is not None:
-            try:
-                document_id = host.document_id_for_font(font)
-                history.reset_after_save(document_id)
-                reset_tracking = getattr(host, "reset_verified_change_tracking", None)
-                if callable(reset_tracking):
-                    reset_tracking(document_id)
-            except Exception:
-                pass
         self.refresh()
-
-    def DocumentWasSaved_(self, notification):
-        font = _font_from_notification(notification)
-        host = active_host()
-        if font is None or host is None or self._lifecycle is None:
-            return
-        try:
-            document_id = host.document_id_for_font(font)
-        except Exception:
-            return
-        if self._lifecycle.document_was_saved(
-            document_id, make_copy=False, succeeded=True
-        ):
-            reset_tracking = getattr(host, "reset_verified_change_tracking", None)
-            if callable(reset_tracking):
-                reset_tracking(document_id)
 
     @objc.python_method
     def _history_changed(self, document_id):

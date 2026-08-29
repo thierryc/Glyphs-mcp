@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs MCP Unicode Semantics"
+  short_description: "Audit mappings and invisible glyph behavior."
+  default_prompt: "Use $glyphs-mcp-unicode-semantics to audit this font's Unicode mappings and semantic glyph behavior without changing it."
+
+policy:
+  allow_implicit_invocation: true

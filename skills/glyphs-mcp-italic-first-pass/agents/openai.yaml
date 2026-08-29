@@ -1,7 +1,7 @@
 interface:
   display_name: "Glyphs MCP Italic First Pass"
   short_description: "Create guarded first-pass italic or oblique glyphs."
-  default_prompt: "Use $glyphs-mcp-italic-first-pass to review an experimental Roman-to-italic construction draft in recommended Balanced mode, dry-run first, and only apply approved changes."
+  default_prompt: "Use $glyphs-mcp-italic-first-pass to stage a bounded Roman-to-italic construction draft, present its semantic diff, and confirm only the exact approved execution."
 
 policy:
   allow_implicit_invocation: true

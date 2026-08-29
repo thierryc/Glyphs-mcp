@@ -23,22 +23,28 @@ def _tree(root: Path) -> dict[str, bytes]:
 class KerningSkillTests(unittest.TestCase):
     def test_skill_routes_spacing_pairs_contexts_and_manual_feature_code(self) -> None:
         text = (CANONICAL / "SKILL.md").read_text(encoding="utf-8")
+        normalized = " ".join(text.split())
 
         for required in (
-            "Spacing -> Kerning -> Context Kerning",
-            'entryKind="pair"',
-            'entryKind="context"',
-            'mode="context_sequences"',
-            "boundary `1`",
-            "boundary `2`",
-            "L’O",
-            "l’A",
-            "additional to ordinary kerning",
-            "glyphs-mcp-spacing",
-            "glyphs-mcp-opentype-features",
-            "Never save the font automatically",
+            "search_knowledge",
+            "read_document",
+            'entity="kerning"',
+            "LTR, RTL, vertical, and context domains distinct",
+            "exact sequence, boundary, master",
+            "`set` an existing exact kerning scalar",
+            "`insert` a new exact pair/context mapping",
+            "`remove` an exact stored entry",
+            "before constraints",
+            "after constraints",
+            "preview_change",
+            "apply_change",
+            'execute_python(mode="staged_document")',
+            "Never call `save_document` automatically",
         ):
-            self.assertIn(required, text)
+            self.assertIn(required, normalized)
+
+        for retired_tool in ("review_kerning", "apply_kerning", "list_kerning"):
+            self.assertNotIn(retired_tool, text)
 
     def test_advanced_reference_is_linked_and_source_grounded(self) -> None:
         skill = (CANONICAL / "SKILL.md").read_text(encoding="utf-8")

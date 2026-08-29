@@ -19,12 +19,18 @@ from glyphs_mcp_v2.audit import AuditLog  # noqa: E402
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.operations import OperationStore  # noqa: E402
 from glyphs_mcp_v2.python_execution import (  # noqa: E402
+    ObservedLivePythonError,
     PythonExecutionRequest,
     PythonExecutionService,
     PythonPolicyError,
+    SourceSaveForbiddenError,
     validate_staged_code,
 )
 from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
+from glyphs_mcp_v2.runtime_safety import (  # noqa: E402
+    ScriptingRuntimeUnavailableError,
+    ScriptingSafetyStateMachine,
+)
 from glyphs_mcp_v2.transactions import (  # noqa: E402
     TransactionKernel,
     TransactionVerificationError,
@@ -229,6 +235,21 @@ class V2PythonExecutionTests(unittest.TestCase):
         )
         return service, host
 
+    def apply_staged(self, service, preview, *, reason=None):
+        """Exercise the same immutable-preview handoff used by apply_change."""
+
+        preview_id = preview["data"]["previewId"]
+        record = service._reviews.get(preview_id)
+        self.assertIsNotNone(record)
+        result = service.apply_staged_preview(
+            record,
+            operation_id="op_apply_{}".format(preview_id.removeprefix("preview_")),
+            reason=reason,
+        ).to_dict()
+        if result["ok"]:
+            service._reviews.discard(preview_id)
+        return result
+
     def test_staged_preview_does_not_mutate_and_confirmation_does_not_rerun_code(self) -> None:
         service, host = self.service()
         before = fingerprint_model(host.model)
@@ -243,14 +264,12 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
 
-        self.assertEqual(preview["status"], "review_required")
+        self.assertEqual(preview["status"], "success")
         self.assertEqual(host.model["font"]["familyName"], "Alpha")
         self.assertEqual(host.preview_calls, 1)
         self.assertNotIn("font.familyName", repr(preview["auditReceipt"]))
 
-        confirmed = service.execute(
-            PythonExecutionRequest(review_id=preview["data"]["reviewId"], confirm=True)
-        ).to_dict()
+        confirmed = self.apply_staged(service, preview)
         self.assertTrue(confirmed["ok"])
         self.assertEqual(host.model["font"]["familyName"], "Beta")
         self.assertEqual(host.preview_calls, 1)
@@ -284,7 +303,7 @@ class V2PythonExecutionTests(unittest.TestCase):
                 )
             ).to_dict()
 
-        self.assertEqual(preview["status"], "review_required")
+        self.assertEqual(preview["status"], "success")
         self.assertEqual(host.preview_calls, 1)
 
     def test_large_383_glyph_five_master_preview_records_phase_timings_without_refusal(self) -> None:
@@ -323,7 +342,7 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
 
-        self.assertEqual(preview["status"], "review_required")
+        self.assertEqual(preview["status"], "success")
         self.assertEqual(
             preview["data"]["stageTimings"]["maxNativePhaseMs"], 12.5
         )
@@ -361,9 +380,7 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
 
-        confirmed = service.execute(
-            PythonExecutionRequest(review_id=preview["data"]["reviewId"], confirm=True)
-        ).to_dict()
+        confirmed = self.apply_staged(service, preview)
 
         self.assertEqual(confirmed["error"]["code"], "transaction_failed")
         failure = confirmed["data"]["verificationFailure"]
@@ -393,14 +410,12 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
 
-        self.assertEqual(preview["status"], "review_required")
-        confirmed = service.execute(
-            PythonExecutionRequest(review_id=preview["data"]["reviewId"], confirm=True)
-        ).to_dict()
+        self.assertEqual(preview["status"], "success")
+        confirmed = self.apply_staged(service, preview)
         self.assertTrue(confirmed["ok"])
         self.assertEqual(host.model["features"][0]["code"], "sub f f i by ffi;")
 
-        rolled_back = service.rollback(
+        rolled_back = service.recover_checkpoint(
             execution_id=confirmed["data"]["executionId"],
             expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
             confirm=True,
@@ -419,11 +434,9 @@ class V2PythonExecutionTests(unittest.TestCase):
                 expected_document_fingerprint=fingerprint_model(host.model),
             )
         ).to_dict()
-        confirmed = service.execute(
-            PythonExecutionRequest(review_id=preview["data"]["reviewId"], confirm=True)
-        ).to_dict()
+        confirmed = self.apply_staged(service, preview)
 
-        rolled_back = service.rollback(
+        rolled_back = service.recover_checkpoint(
             execution_id=confirmed["data"]["executionId"],
             expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
             confirm=True,
@@ -431,7 +444,7 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertTrue(rolled_back["ok"])
         self.assertEqual(host.model["font"]["familyName"], "Alpha")
 
-        repeated = service.rollback(
+        repeated = service.recover_checkpoint(
             execution_id=confirmed["data"]["executionId"],
             expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
             confirm=True,
@@ -458,14 +471,10 @@ class V2PythonExecutionTests(unittest.TestCase):
                 expected_document_fingerprint=fingerprint_model(host.model),
             )
         ).to_dict()
-        confirmed = service.execute(
-            PythonExecutionRequest(
-                review_id=preview["data"]["reviewId"], confirm=True
-            )
-        ).to_dict()
+        confirmed = self.apply_staged(service, preview)
         after = copy.deepcopy(host.model)
 
-        rolled_back = service.rollback(
+        rolled_back = service.recover_checkpoint(
             execution_id=confirmed["data"]["executionId"],
             expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
             confirm=True,
@@ -495,13 +504,9 @@ class V2PythonExecutionTests(unittest.TestCase):
                 expected_document_fingerprint=fingerprint_model(host.model),
             )
         ).to_dict()
-        confirmed = service.execute(
-            PythonExecutionRequest(
-                review_id=preview["data"]["reviewId"], confirm=True
-            )
-        ).to_dict()
+        confirmed = self.apply_staged(service, preview)
 
-        rolled_back = service.rollback(
+        rolled_back = service.recover_checkpoint(
             execution_id=confirmed["data"]["executionId"],
             expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
             confirm=True,
@@ -526,12 +531,10 @@ class V2PythonExecutionTests(unittest.TestCase):
                 expected_document_fingerprint=fingerprint_model(host.model),
             )
         ).to_dict()
-        confirmed = service.execute(
-            PythonExecutionRequest(review_id=preview["data"]["reviewId"], confirm=True)
-        ).to_dict()
+        confirmed = self.apply_staged(service, preview)
         host.model["font"]["familyName"] = "User Edit"
 
-        result = service.rollback(
+        result = service.recover_checkpoint(
             execution_id=confirmed["data"]["executionId"],
             expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
             confirm=True,
@@ -555,14 +558,16 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertEqual(host.live_calls, 0)
 
         confirmed = service.execute(
-            PythonExecutionRequest(review_id=preview["data"]["reviewId"], confirm=True)
+            PythonExecutionRequest(
+                review_id=preview["data"]["approvalId"], confirm=True
+            )
         ).to_dict()
         self.assertEqual(host.live_calls, 1)
         self.assertFalse(confirmed["data"]["externalEffectsVerifiable"])
         self.assertEqual(confirmed["data"]["rollback"]["coverage"], "recovery_only")
         self.assertFalse(confirmed["data"]["transactional"])
 
-        recovery = service.rollback(
+        recovery = service.recover_checkpoint(
             execution_id=confirmed["data"]["executionId"],
             expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
             confirm=True,
@@ -583,6 +588,204 @@ class V2PythonExecutionTests(unittest.TestCase):
         ):
             with self.subTest(code=code), self.assertRaises(PythonPolicyError):
                 validate_staged_code(code)
+
+    def test_execute_python_cannot_reach_working_source_save_selectors(self) -> None:
+        service, host = self.service()
+        cases = (
+            "font.save()",
+            "font.parent.saveDocument_(None)",
+            (
+                "getattr(font.parent, "
+                "'saveToURL_ofType_forSaveOperation_error_')"
+                "('/tmp/Nope.glyphs', None, 0, None)"
+            ),
+            "name = 'save' + 'Document_'; getattr(font.parent, name)(None)",
+        )
+        for code in cases:
+            with self.subTest(code=code):
+                result = service.execute(
+                    PythonExecutionRequest(
+                        code=code,
+                        reason="attempt a forbidden source save",
+                        intended_effect="files_or_external",
+                        execution_mode="live_open_world",
+                        document_id="doc_alpha",
+                        expected_document_fingerprint=fingerprint_model(
+                            host.model
+                        ),
+                    )
+                ).to_dict()
+
+                self.assertFalse(result["ok"])
+                self.assertEqual(
+                    result["error"]["code"], "source_save_forbidden"
+                )
+        self.assertEqual(host.preview_calls, 0)
+        self.assertEqual(host.live_calls, 0)
+
+    def test_repairable_runtime_failure_emits_one_matching_agent_directive(self) -> None:
+        service, host = self.service()
+        machine = ScriptingSafetyStateMachine()
+        machine.begin_recovery(trigger="test")
+        incident = machine.mark_incident(
+            target_state="recovery_required",
+            phase="restore",
+            reason_code="guard_restoration_incomplete",
+            message="one manager hook remains installed",
+            trigger="test",
+        )
+
+        host.scripting_runtime_safety_status = lambda: machine.snapshot().to_dict()
+
+        def unavailable(_request):
+            host.live_calls += 1
+            raise ScriptingRuntimeUnavailableError(
+                "strict scripting safety is unavailable", machine.snapshot()
+            )
+
+        host.run_live_python = unavailable
+        result = service.execute(
+            PythonExecutionRequest(
+                code="print(font.familyName)",
+                reason="read after an interrupted live operation",
+                intended_effect="read",
+                document_id="doc_alpha",
+            )
+        ).to_dict()
+
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error"]["code"], "scripting_runtime_unavailable")
+        self.assertEqual(host.live_calls, 1)
+        self.assertEqual(
+            result["data"]["agentRecovery"],
+            {
+                "tool": "repair_runtime",
+                "arguments": {"expectedIncidentId": incident.incident_id},
+                "verifyWith": "get_runtime_status",
+                "retryOriginalCall": True,
+                "maxRepairAttempts": 1,
+            },
+        )
+
+    def test_active_runtime_reports_busy_without_a_repair_loop(self) -> None:
+        service, host = self.service()
+        machine = ScriptingSafetyStateMachine()
+        machine.begin("another_execution")
+        host.scripting_runtime_safety_status = lambda: machine.snapshot().to_dict()
+
+        def busy(_request):
+            raise ScriptingRuntimeUnavailableError(
+                "another live execution owns the guard", machine.snapshot()
+            )
+
+        host.run_live_python = busy
+        result = service.execute(
+            PythonExecutionRequest(
+                code="print('busy')",
+                reason="nested live execution",
+                intended_effect="read",
+                document_id="doc_alpha",
+            )
+        ).to_dict()
+
+        self.assertEqual(result["error"]["code"], "scripting_runtime_busy")
+        self.assertNotIn("agentRecovery", result["data"])
+
+    def test_runtime_source_save_guard_failure_keeps_observed_evidence(self) -> None:
+        service, host = self.service()
+        code = (
+            "name = ''.join(['save', 'Document_']); "
+            "getattr(font.parent, name)(None)"
+        )
+        preview = service.execute(
+            PythonExecutionRequest(
+                code=code,
+                reason="runtime-computed source save",
+                intended_effect="files_or_external",
+                execution_mode="live_open_world",
+                document_id="doc_alpha",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+
+        def blocked(_request):
+            before = copy.deepcopy(host.model)
+            raise ObservedLivePythonError(
+                SourceSaveForbiddenError("working-source save blocked"),
+                {
+                    "beforeModel": before,
+                    "afterModel": copy.deepcopy(before),
+                    "stdout": "",
+                    "stderr": "",
+                    "observedDocumentChanges": [],
+                },
+            )
+
+        host.run_live_python = blocked
+        confirmed = service.execute(
+            PythonExecutionRequest(
+                review_id=preview["data"]["approvalId"], confirm=True
+            )
+        ).to_dict()
+
+        self.assertFalse(confirmed["ok"])
+        self.assertEqual(
+            confirmed["error"]["code"], "source_save_forbidden"
+        )
+        self.assertFalse(confirmed["data"]["sourceFileChanged"])
+        self.assertFalse(confirmed["data"]["fontSaved"])
+        self.assertEqual(confirmed["data"]["observedChangeCount"], 0)
+
+        read_service, read_host = self.service()
+
+        def blocked_read(_request):
+            before = copy.deepcopy(read_host.model)
+            raise ObservedLivePythonError(
+                SourceSaveForbiddenError("working-source save blocked"),
+                {
+                    "beforeModel": before,
+                    "afterModel": copy.deepcopy(before),
+                    "stdout": "",
+                    "stderr": "",
+                    "observedDocumentChanges": [],
+                },
+            )
+
+        read_host.run_live_python = blocked_read
+        read_result = read_service.execute(
+            PythonExecutionRequest(
+                code=code,
+                reason="misdeclared runtime-computed source save",
+                intended_effect="read",
+                document_id="doc_alpha",
+            )
+        ).to_dict()
+        self.assertEqual(
+            read_result["error"]["code"], "source_save_forbidden"
+        )
+
+    def test_static_source_guard_allows_unrelated_and_detached_saves(self) -> None:
+        for code in (
+            "artifact.save()",
+            "font.copy().save('/tmp/Detached.glyphs', makeCopy=True)",
+        ):
+            with self.subTest(code=code):
+                service, host = self.service()
+                response = service.execute(
+                    PythonExecutionRequest(
+                        code=code,
+                        reason="unrelated external save method",
+                        intended_effect="files_or_external",
+                        execution_mode="live_open_world",
+                        document_id="doc_alpha",
+                        expected_document_fingerprint=fingerprint_model(
+                            host.model
+                        ),
+                    )
+                ).to_dict()
+
+                self.assertTrue(response["ok"])
+                self.assertEqual(response["status"], "review_required")
 
     def test_confirmation_ignores_substitute_code_and_large_diff_is_paginated(self) -> None:
         service, host = self.service()
@@ -618,13 +821,7 @@ class V2PythonExecutionTests(unittest.TestCase):
         ).to_dict()
         self.assertEqual(len(second["data"]["payload"]["changes"]), 100)
 
-        confirmed = service.execute(
-            PythonExecutionRequest(
-                review_id=preview["data"]["reviewId"],
-                confirm=True,
-                code="raise RuntimeError('substitute')",
-            )
-        ).to_dict()
+        confirmed = self.apply_staged(service, preview)
         self.assertTrue(confirmed["ok"])
         self.assertEqual(host.preview_calls, 1)
         self.assertEqual(len(host.model["glyphs"]), 225)
@@ -668,7 +865,7 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
 
-        self.assertEqual(result["status"], "review_required")
+        self.assertEqual(result["status"], "success")
         self.assertEqual(result["data"]["changeSet"]["changeCount"], 1)
         self.assertEqual(host.model["glyphs"], {})
 
@@ -909,7 +1106,9 @@ class V2PythonExecutionTests(unittest.TestCase):
         ).to_dict()
         host.raise_live = True
         failed = service.execute(
-            PythonExecutionRequest(review_id=preview["data"]["reviewId"], confirm=True)
+            PythonExecutionRequest(
+                review_id=preview["data"]["approvalId"], confirm=True
+            )
         ).to_dict()
         self.assertEqual(failed["error"]["code"], "python_execution_failed")
         self.assertEqual(failed["data"]["rollback"]["coverage"], "recovery_only")
@@ -921,7 +1120,7 @@ class V2PythonExecutionTests(unittest.TestCase):
             checkpoints=OperationStore(),
             audit=AuditLog(),
         )
-        recovered = restarted.rollback(
+        recovered = restarted.recover_checkpoint(
             execution_id=failed["data"]["executionId"],
             expected_after_fingerprint=failed["data"]["afterFingerprint"],
             confirm=True,
@@ -941,11 +1140,9 @@ class V2PythonExecutionTests(unittest.TestCase):
                 expected_document_fingerprint=fingerprint_model(host.model),
             )
         ).to_dict()
-        confirmed = service.execute(
-            PythonExecutionRequest(review_id=preview["data"]["reviewId"], confirm=True)
-        ).to_dict()
+        confirmed = self.apply_staged(service, preview)
         host.corrupt_apply = True
-        failed = service.rollback(
+        failed = service.recover_checkpoint(
             execution_id=confirmed["data"]["executionId"],
             expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
             confirm=True,
@@ -978,10 +1175,7 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
         clock.value += 901
-        expired_review = service.execute(
-            PythonExecutionRequest(review_id=preview["data"]["reviewId"], confirm=True)
-        ).to_dict()
-        self.assertEqual(expired_review["error"]["code"], "review_unavailable")
+        self.assertIsNone(service._reviews.get(preview["data"]["previewId"]))
 
         fresh = service.execute(
             PythonExecutionRequest(
@@ -992,11 +1186,9 @@ class V2PythonExecutionTests(unittest.TestCase):
                 expected_document_fingerprint=fingerprint_model(host.model),
             )
         ).to_dict()
-        confirmed = service.execute(
-            PythonExecutionRequest(review_id=fresh["data"]["reviewId"], confirm=True)
-        ).to_dict()
+        confirmed = self.apply_staged(service, fresh)
         clock.value += 3601
-        expired_rollback = service.rollback(
+        expired_rollback = service.recover_checkpoint(
             execution_id=confirmed["data"]["executionId"],
             expected_after_fingerprint=confirmed["data"]["afterFingerprint"],
             confirm=True,

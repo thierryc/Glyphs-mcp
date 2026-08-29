@@ -138,7 +138,12 @@ class V2BundleAssemblyTests(unittest.TestCase):
                     (resources / "glyphs_mcp_v2" / "connection_status.py").is_file()
                 )
                 inspector_source = inspector.read_text(encoding="utf-8")
-                self.assertIn('PALETTE_NAME = "Glyphs MCP"', inspector_source)
+                self.assertIn(
+                    'objectForInfoDictionaryKey_("CFBundleVersion")',
+                    inspector_source,
+                )
+                self.assertIn("from .versions import palette_display_name", inspector_source)
+                self.assertNotIn("from GlyphsApp", inspector_source)
                 self.assertIn("GlyphsMCPLitSquareMetadataPalette", inspector_source)
                 self.assertIn("default_connection_status_store", inspector_source)
 

@@ -166,8 +166,30 @@ def validate_payload(
         or set(manifest["targets"]) != {"3", "4"}
     ):
         raise RuntimeError("installer payload manifest schema is unsupported")
-    if not (root / "requirements.txt").is_file() or not (root / "skills").is_dir():
+    skills_root = root / "skills"
+    if not (root / "requirements.txt").is_file() or not skills_root.is_dir():
         raise RuntimeError("installer payload shared resources are missing")
+    skill_manifest_path = skills_root / "manifest.json"
+    try:
+        skill_manifest = json.loads(skill_manifest_path.read_text(encoding="utf-8"))
+        managed_skills = skill_manifest["managedSkills"]
+        managed_names = [str(item["name"]) for item in managed_skills]
+        surfaces = {str(item["surface"]) for item in managed_skills}
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise RuntimeError("installer managed skill manifest is malformed") from exc
+    if (
+        skill_manifest.get("schemaVersion") != 1
+        or not managed_names
+        or len(managed_names) != len(set(managed_names))
+        or not surfaces.issubset({"glyphs-mcp-v2", "workspace"})
+        or any(not (skills_root / name / "SKILL.md").is_file() for name in managed_names)
+    ):
+        raise RuntimeError("installer managed skill manifest contract is invalid")
+    packaged_skill_names = {
+        path.name for path in skills_root.iterdir() if path.is_dir()
+    }
+    if packaged_skill_names != set(managed_names):
+        raise RuntimeError("installer managed skill payload does not match its manifest")
 
     expected = {
         "3": {
@@ -238,7 +260,20 @@ def _copy_shared_payload(output: Path) -> None:
     if not REQUIREMENTS.is_file() or not SKILLS.is_dir():
         raise RuntimeError("installer requirements or skills are missing")
     shutil.copy2(REQUIREMENTS, output / "requirements.txt")
-    shutil.copytree(SKILLS, output / "skills", ignore=_ignore_generated)
+    destination = output / "skills"
+    destination.mkdir()
+    manifest_path = SKILLS / "manifest.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        names = tuple(str(item["name"]) for item in manifest["managedSkills"])
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise RuntimeError("managed skill manifest is malformed") from exc
+    shutil.copy2(manifest_path, destination / "manifest.json")
+    for name in names:
+        source = SKILLS / name
+        if not (source / "SKILL.md").is_file():
+            raise RuntimeError(f"managed skill is missing: {name}")
+        shutil.copytree(source, destination / name, ignore=_ignore_generated)
 
 
 def build(output_root: Path, *, allow_outside_worktree: bool = False) -> dict[str, Any]:

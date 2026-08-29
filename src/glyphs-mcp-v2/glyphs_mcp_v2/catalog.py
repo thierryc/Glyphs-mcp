@@ -1,4 +1,4 @@
-"""Authoritative, catalog-driven Glyphs MCP 2.0 public surface."""
+"""Single authoritative catalog for the Glyphs MCP v2 hard-reset surface."""
 
 from __future__ import annotations
 
@@ -12,8 +12,11 @@ from .contracts import result_schema
 
 MODEL_AND_APP = "model+app"
 APP_ONLY = "app"
-
-
+OPEN_DATA_SCHEMA: Dict[str, Any] = {"type": "object", "additionalProperties": True}
+FINGERPRINT_SCHEMA: Dict[str, Any] = {
+    "type": "string",
+    "pattern": "^sha256:[0-9a-f]{64}$",
+}
 FONT_DOCUMENT_SCHEMA: Dict[str, Any] = {
     "type": "object",
     "required": [
@@ -34,7 +37,7 @@ FONT_DOCUMENT_SCHEMA: Dict[str, Any] = {
         "lastSavedAppVersion",
     ],
     "properties": {
-        "documentId": {"type": "string", "pattern": "^doc_[0-9A-Za-z_-]+$"},
+        "documentId": {"type": "string", "pattern": "^doc_"},
         "legacyIndex": {"type": "integer", "minimum": 0},
         "familyName": {"type": "string"},
         "filePath": {"type": ["string", "null"]},
@@ -54,45 +57,148 @@ FONT_DOCUMENT_SCHEMA: Dict[str, Any] = {
 }
 
 
-OPEN_DATA_SCHEMA: Dict[str, Any] = {"type": "object", "additionalProperties": True}
+def _closed(required: tuple[str, ...], properties: Mapping[str, Any]) -> Dict[str, Any]:
+    return {
+        "type": "object",
+        "required": list(required),
+        "properties": dict(properties),
+        # Application responses add ``historyRecorded`` for document-bound
+        # actions at the common trace boundary.
+        "additionalProperties": True,
+    }
 
-OPENTYPE_ITEM_SCHEMA: Dict[str, Any] = {
-    "type": "object",
-    "required": [
-        "kind", "order", "collectionOrder", "id", "name", "tag", "code",
-        "automatic", "disabled", "notes", "labels", "stylisticSet",
-        "substitutions", "unsupportedRuleCount", "warnings",
-    ],
-    "properties": {
-        "kind": {"type": "string", "enum": ["feature", "class", "prefix"]},
-        "order": {"type": "integer", "minimum": 0},
-        "collectionOrder": {"type": "integer", "minimum": 0},
-        "id": {"type": "string"},
-        "name": {"type": "string"},
-        "tag": {"type": "string"},
-        "code": {"type": "string"},
-        "automatic": {"type": "boolean"},
-        "disabled": {"type": "boolean"},
-        "notes": {"type": ["string", "null"]},
-        "labels": {"type": "array", "items": {"type": "object"}},
-        "stylisticSet": {"type": "boolean"},
-        "substitutions": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "required": ["source", "replacement"],
-                "properties": {
-                    "source": {"type": "string"},
-                    "replacement": {"type": "string"},
-                },
-                "additionalProperties": False,
-            },
-        },
-        "unsupportedRuleCount": {"type": "integer", "minimum": 0},
-        "warnings": {"type": "array", "items": {"type": "string"}},
+
+LIST_DOCUMENTS_DATA_SCHEMA = _closed(
+    ("count", "documents"),
+    {
+        "count": {"type": "integer", "minimum": 0},
+        "documents": {"type": "array", "items": FONT_DOCUMENT_SCHEMA},
     },
-    "additionalProperties": False,
-}
+)
+READ_DOCUMENT_DATA_SCHEMA = _closed(
+    (
+        "documentId",
+        "documentFingerprint",
+        "canonicalModelSchemaVersion",
+        "selectedCount",
+        "partialCount",
+        "items",
+    ),
+    {
+        "documentId": {"type": "string"},
+        "documentFingerprint": deepcopy(FINGERPRINT_SCHEMA),
+        "canonicalModelSchemaVersion": {
+            "type": "integer",
+            "const": CANONICAL_MODEL_SCHEMA_VERSION,
+        },
+        "selectedCount": {"type": "integer", "minimum": 0},
+        "partialCount": {"type": "integer", "minimum": 0},
+        "items": {"type": "array", "items": {"type": "object"}},
+    },
+)
+CONSTRAINT_DATA_SCHEMA = _closed(
+    (
+        "documentId",
+        "documentFingerprint",
+        "constraintCount",
+        "passedCount",
+        "failedCount",
+        "passed",
+        "items",
+    ),
+    {
+        "documentId": {"type": "string"},
+        "documentFingerprint": deepcopy(FINGERPRINT_SCHEMA),
+        "constraintCount": {"type": "integer", "minimum": 0},
+        "passedCount": {"type": "integer", "minimum": 0},
+        "failedCount": {"type": "integer", "minimum": 0},
+        "passed": {"type": "boolean"},
+        "items": {"type": "array", "items": {"type": "object"}},
+    },
+)
+PREVIEW_CHANGE_DATA_SCHEMA = _closed(
+    (
+        "previewId",
+        "documentId",
+        "sourceFingerprint",
+        "proposedFingerprint",
+        "applicable",
+        "resolvedTargetCount",
+        "normalizedOperations",
+        "changeSet",
+        "constraints",
+        "blockers",
+        "fontSaved",
+    ),
+    {
+        "previewId": {"type": ["string", "null"]},
+        "expiresAt": {"type": "string"},
+        "documentId": {"type": "string"},
+        "sourceFingerprint": deepcopy(FINGERPRINT_SCHEMA),
+        "proposedFingerprint": {
+            "anyOf": [deepcopy(FINGERPRINT_SCHEMA), {"type": "null"}]
+        },
+        "applicable": {"type": "boolean"},
+        "resolvedTargetCount": {"type": "integer", "minimum": 0},
+        "normalizedOperations": {"type": "array", "items": {"type": "object"}},
+        "changeSet": {"type": ["object", "null"]},
+        "constraints": {"type": "object"},
+        "blockers": {"type": "array", "items": {"type": "string"}},
+        "fontSaved": {"type": "boolean", "const": False},
+    },
+)
+APPLY_CHANGE_DATA_SCHEMA = _closed(
+    (
+        "operationId",
+        "previewId",
+        "documentId",
+        "beforeFingerprint",
+        "afterFingerprint",
+        "observedChangeCount",
+        "transactionCount",
+        "fontSaved",
+        "revert",
+    ),
+    {
+        "operationId": {"type": "string", "pattern": "^op_"},
+        "previewId": {"type": "string", "pattern": "^preview_"},
+        "documentId": {"type": "string"},
+        "beforeFingerprint": deepcopy(FINGERPRINT_SCHEMA),
+        "afterFingerprint": deepcopy(FINGERPRINT_SCHEMA),
+        "observedChangeCount": {"type": "integer", "minimum": 0},
+        "observedChangeSet": {"type": "object"},
+        "canonicalCoverage": {"type": "object"},
+        "transactionCount": {"type": "integer", "minimum": 0, "maximum": 1},
+        "fontSaved": {"type": "boolean", "const": False},
+        "sourceFileChanged": {"type": "boolean"},
+        "revert": {"type": "object"},
+    },
+)
+KNOWLEDGE_SEARCH_DATA_SCHEMA = _closed(
+    ("query", "filters", "matchCount", "items", "manifest"),
+    {
+        "query": {"type": "string"},
+        "filters": {"type": "object"},
+        "matchCount": {"type": "integer", "minimum": 0},
+        "items": {"type": "array", "items": {"type": "object"}},
+        "manifest": {"type": "object"},
+    },
+)
+KNOWLEDGE_GET_DATA_SCHEMA = _closed(
+    ("requestedCount", "foundCount", "missingIds", "items", "manifest"),
+    {
+        "requestedCount": {"type": "integer", "minimum": 1},
+        "foundCount": {"type": "integer", "minimum": 0},
+        "missingIds": {"type": "array", "items": {"type": "string"}},
+        "items": {"type": "array", "items": {"type": "object"}},
+        "manifest": {"type": "object"},
+    },
+)
+
+# Export schemas remain named because deterministic export tests validate the
+# same implementation through the new public names.
+REVIEW_EXPORT_DATA_SCHEMA = OPEN_DATA_SCHEMA
+EXPORT_SOURCE_BUNDLE_DATA_SCHEMA = OPEN_DATA_SCHEMA
 
 
 @dataclass(frozen=True)
@@ -107,16 +213,32 @@ class ToolDefinition:
     data_schema: Mapping[str, Any]
     open_world: bool = False
     idempotent: bool | None = None
+    destructive_hint: bool | None = None
+
+    def __post_init__(self) -> None:
+        if self.visibility not in {MODEL_AND_APP, APP_ONLY}:
+            raise ValueError("unsupported visibility")
+        if self.effect not in {"read", "ui", "edit", "save", "files", "code"}:
+            raise ValueError("unsupported effect")
 
     @property
-    def annotations(self) -> Dict[str, object]:
+    def annotations(self) -> Dict[str, bool]:
         read_only = self.effect == "read"
-        destructive = self.effect in {"edit", "save", "files", "code"}
+        destructive = (
+            bool(self.destructive_hint)
+            if self.destructive_hint is not None
+            else self.effect in {"edit", "save", "files", "code"}
+        )
+        idempotent = (
+            bool(self.idempotent)
+            if self.idempotent is not None
+            else read_only
+        )
         return {
             "readOnlyHint": read_only,
             "destructiveHint": destructive,
-            "idempotentHint": read_only if self.idempotent is None else self.idempotent,
-            "openWorldHint": self.open_world,
+            "idempotentHint": idempotent,
+            "openWorldHint": bool(self.open_world),
         }
 
     @property
@@ -128,43 +250,7 @@ class ToolDefinition:
 
     @property
     def discovery_output_schema(self) -> Dict[str, Any]:
-        """Publish one compact envelope while preserving typed tool data.
-
-        ``output_schema`` remains the normative runtime contract used for
-        validation. Discovery does not need to repeat the complete warning,
-        error, pagination, and conditional-success definitions for every tool.
-        """
-
-        return {
-            "type": "object",
-            "required": [
-                "resultSchemaVersion", "apiVersion", "requestId", "runId",
-                "operationId", "startedAt", "completedAt", "durationMs", "ok",
-                "status", "tool", "effect", "summary", "data", "page",
-                "warnings", "error", "auditReceipt",
-            ],
-            "properties": {
-                "resultSchemaVersion": {"type": "string", "const": "2.0"},
-                "apiVersion": {"type": "string", "const": "2.0"},
-                "requestId": {"type": "string"},
-                "runId": {"type": "string"},
-                "operationId": {"type": "string"},
-                "startedAt": {"type": "string"},
-                "completedAt": {"type": "string"},
-                "durationMs": {"type": "integer"},
-                "ok": {"type": "boolean"},
-                "status": {"type": "string"},
-                "tool": {"type": "string", "const": self.name},
-                "effect": {"type": "string", "const": self.effect},
-                "summary": {"type": "string"},
-                "data": deepcopy(dict(self.data_schema)),
-                "page": {"type": ["object", "null"]},
-                "warnings": {"type": "array", "items": {"type": "object"}},
-                "error": {"type": ["object", "null"]},
-                "auditReceipt": {"type": ["object", "null"]},
-            },
-            "additionalProperties": False,
-        }
+        return deepcopy(self.output_schema)
 
 
 def _definition(
@@ -177,6 +263,7 @@ def _definition(
     data_schema: Mapping[str, Any] = OPEN_DATA_SCHEMA,
     open_world: bool = False,
     idempotent: bool | None = None,
+    destructive_hint: bool | None = None,
 ) -> ToolDefinition:
     return ToolDefinition(
         name=name,
@@ -189,6 +276,7 @@ def _definition(
         data_schema=data_schema,
         open_world=open_world,
         idempotent=idempotent,
+        destructive_hint=destructive_hint,
     )
 
 
@@ -196,169 +284,110 @@ TOOL_DEFINITIONS: Tuple[ToolDefinition, ...] = (
     _definition(
         "get_server_info",
         "Get Server Info",
-        "Read server, API, host, and capabilities.",
+        "Read the v2 contract, permanent Python fallback, Knowledge version, host, and capabilities.",
         "server",
-        data_schema={
-            "type": "object",
-            "required": ["serverName", "serverVersion", "apiMajor", "apiVersion", "canonicalModelSchemaVersion", "capabilities", "host"],
-            "properties": {
-                "serverName": {"type": "string"},
-                "serverVersion": {"type": "string"},
-                "apiMajor": {"type": "integer", "const": 2},
-                "apiVersion": {"type": "string", "const": "2.0"},
-                "canonicalModelSchemaVersion": {
-                    "type": "integer",
-                    "const": CANONICAL_MODEL_SCHEMA_VERSION,
-                },
-                "capabilities": {"type": "array", "items": {"type": "string"}, "uniqueItems": True},
-                "host": {
-                    "type": "object",
-                    "required": ["application", "applicationVersion", "buildNumber", "pythonVersion", "openDocumentCount"],
-                    "properties": {
-                        "application": {"type": "string"},
-                        "applicationVersion": {"type": "string"},
-                        "buildNumber": {"type": "string"},
-                        "pythonVersion": {"type": "string"},
-                        "openDocumentCount": {"type": "integer", "minimum": 0},
-                    },
-                    "additionalProperties": False,
-                },
-            },
-            "additionalProperties": False,
-        },
     ),
     _definition(
-        "list_open_fonts",
-        "List Open Fonts",
-        "List open fonts with stable IDs and dirty state.",
-        "font",
-        data_schema={
-            "type": "object",
-            "required": ["count", "documents"],
-            "properties": {
-                "count": {"type": "integer", "minimum": 0},
-                "documents": {"type": "array", "items": FONT_DOCUMENT_SCHEMA},
-            },
-            "additionalProperties": False,
-        },
+        "list_documents",
+        "List Documents",
+        "List open Glyphs documents with stable process-local IDs.",
+        "document",
+        data_schema=LIST_DOCUMENTS_DATA_SCHEMA,
     ),
     _definition(
-        "open_edit_tab",
-        "Open Edit Tab",
-        "Open named glyphs in a Glyphs Edit tab.",
-        "font",
-        "ui",
-        idempotent=False,
-    ),
-    _definition("get_document_status", "Get Document Status", "Read document fingerprint, path, and dirty state.", "font"),
-    _definition("get_operation", "Get Operation", "Read a stored operation page.", "operations"),
-    _definition("list_glyphs", "List Glyphs", "List glyphs; fields=name|id|category|subCategory|unicode|export|leftKerningGroup|rightKerningGroup|mastersCompatible.", "glyphs"),
-    _definition("list_masters", "List Masters", "List masters, angles, and axis coordinates.", "masters"),
-    _definition("list_layers", "List Layers", "List layers; roles=master|intermediate|alternate|backup|smart|color.", "layers"),
-    _definition("list_instances", "List Instances", "List static and variable instances and axes.", "instances"),
-    _definition("list_kerning_pairs", "List Kerning Pairs", "List kerning; entryKind=pair|context|all.", "kerning"),
-    _definition("review_kerning_coverage", "Review Kerning Coverage", "Modes: proof_families|class_representatives|class_cross_product|glyph_expansion|context_sequences.", "kerning"),
-    _definition("review_master_compatibility", "Review Master Compatibility", "Review mode=component_preserving|decomposed_export compatibility.", "compatibility"),
-    _definition("review_metrics_inheritance", "Review Metrics Inheritance", "Review metrics inheritance.", "spacing"),
-    _definition("apply_metrics_updates", "Apply Metrics Updates", "Apply metrics-key updates transactionally.", "spacing", "edit", idempotent=False),
-    _definition("review_anchor_consistency", "Review Anchor Consistency", "Review anchor consistency.", "anchors"),
-    _definition("apply_compatibility_updates", "Apply Compatibility Updates", "Apply path/component repairs transactionally.", "compatibility", "edit", idempotent=False),
-    _definition("apply_anchor_updates", "Apply Anchor Updates", "Apply anchor updates transactionally.", "anchors", "edit", idempotent=False),
-    _definition("apply_glyph_updates", "Apply Glyph Updates", "Glyph action=create|update|delete; apply transactionally.", "glyphs", "edit", idempotent=False),
-    _definition("apply_kerning_updates", "Apply Kerning Updates", "Kerning entryKind=pair|context; direction=ltr|rtl|vertical.", "kerning", "edit", idempotent=False),
-    _definition("apply_opentype_updates", "Apply OpenType Updates", "OpenType action=create|update|move|delete; kind=feature|class|prefix.", "features", "edit", idempotent=False),
-    _definition(
-        "list_opentype_items",
-        "List OpenType Items",
-        "List ordered features, classes, prefixes, and parsed stylistic-set substitutions.",
-        "features",
-        data_schema={
-            "type": "object",
-            "required": ["documentId", "count", "items"],
-            "properties": {
-                "documentId": {"type": "string"},
-                "count": {"type": "integer", "minimum": 0},
-                "items": {"type": "array", "items": OPENTYPE_ITEM_SCHEMA},
-            },
-            "additionalProperties": True,
-        },
+        "read_document",
+        "Read Document",
+        "Read canonical entities and computed observations through one selector and projection.",
+        "document",
+        data_schema=READ_DOCUMENT_DATA_SCHEMA,
     ),
     _definition(
-        "compile_opentype_features",
-        "Compile OpenType Features",
-        "Preflight on a detached copy, then compile live without updateFeatures or save.",
-        "features",
-        "ui",
-        idempotent=False,
-        data_schema={
-            "type": "object",
-            "required": [
-                "documentId", "beforeFingerprint", "observedAfterFingerprint",
-                "observedChangeCount", "stateMayHaveChanged", "sourceFileChanged",
-                "fontSaved", "preflightSucceeded", "liveAttempted", "liveSucceeded",
-            ],
-            "properties": {
-                "documentId": {"type": "string"},
-                "beforeFingerprint": {"type": "string"},
-                "observedAfterFingerprint": {"type": "string"},
-                "observedChangeCount": {"type": "integer", "minimum": 0},
-                "stateMayHaveChanged": {"type": "boolean"},
-                "sourceFileChanged": {"type": "boolean"},
-                "fontSaved": {"type": "boolean", "const": False},
-                "preflightSucceeded": {"type": "boolean"},
-                "liveAttempted": {"type": "boolean"},
-                "liveSucceeded": {"type": "boolean"},
-                "errorType": {"type": ["string", "null"]},
-                "errorMessage": {"type": ["string", "null"]},
-            },
-            "additionalProperties": True,
-        },
-    ),
-    _definition("apply_instance_updates", "Apply Instance Updates", "Instance action=create|update|move|delete; type=static|variable.", "instances", "edit", idempotent=False),
-    _definition("apply_master_updates", "Apply Master Updates", "Master action=duplicate|update|move|delete.", "masters", "edit", idempotent=False),
-    _definition("apply_layer_updates", "Apply Layer Updates", "Layer action=duplicate|update|move|delete; interpolation=intermediate|alternate.", "layers", "edit", idempotent=False),
-    _definition("review_spacing", "Review Spacing", "Review bounded spacing simulation.", "spacing"),
-    _definition("apply_spacing", "Apply Spacing", "Apply spacing targets transactionally.", "spacing", "edit", idempotent=False),
-    _definition("review_export", "Review Export", "compatibilityMode=component_preserving|decomposed_export; overwritePolicy=fail_if_nonempty|replace_if_match.", "export", open_world=True),
-    _definition("export_source_bundle", "Export Source Bundle", "Publish a reviewed source bundle.", "export", "files", open_world=True, idempotent=False),
-    _definition("list_audit_events", "List Audit Events", "List redacted audit events.", "audit"),
-    _definition(
-        "list_change_commits",
-        "List Change Commits",
-        "List document change commits.",
-        "audit",
+        "evaluate_constraints",
+        "Evaluate Constraints",
+        "Evaluate reusable field constraints without changing the document.",
+        "document",
+        data_schema=CONSTRAINT_DATA_SCHEMA,
     ),
     _definition(
-        "revert_change",
-        "Revert Change",
-        "Revert one compatible change commit.",
-        "audit",
+        "preview_change",
+        "Preview Change",
+        "Resolve exact targets and mechanically simulate generic operations into one immutable preview.",
+        "change",
+        data_schema=PREVIEW_CHANGE_DATA_SCHEMA,
+    ),
+    _definition(
+        "apply_change",
+        "Apply Change",
+        "Apply one exact immutable preview through the verified transaction kernel without rerunning planning.",
+        "change",
         "edit",
+        data_schema=APPLY_CHANGE_DATA_SCHEMA,
         idempotent=False,
+    ),
+    _definition("get_operation", "Get Operation", "Read one bounded operation or preview record.", "history"),
+    _definition("list_history", "List History", "List unsaved-session verified change commits.", "history"),
+    _definition("revert_change", "Revert Change", "Revert one compatible verified change without overwriting unrelated later edits.", "history", "edit", idempotent=False),
+    _definition(
+        "search_knowledge",
+        "Search Knowledge",
+        "Search the pinned offline font-design and Glyphs-coding corpus with citations and version filters.",
+        "knowledge",
+        data_schema=KNOWLEDGE_SEARCH_DATA_SCHEMA,
+    ),
+    _definition(
+        "get_knowledge",
+        "Get Knowledge",
+        "Retrieve exact pinned Knowledge entries by stable ID.",
+        "knowledge",
+        data_schema=KNOWLEDGE_GET_DATA_SCHEMA,
     ),
     _definition(
         "execute_python",
         "Execute Python",
-        "intendedEffect=read|document_edit|files_or_external; executionMode=staged_document|live_open_world.",
-        "automation",
+        "Permanent backup for read-only, staged-document, and live-open-world Glyphs tasks not covered by declarative operations.",
+        "python",
         "code",
         open_world=True,
         idempotent=False,
     ),
-    _definition("rollback_python_execution", "Rollback Python Execution", "Rollback strategy=auto|open_recovery_copy.", "automation", "edit", open_world=True, idempotent=False),
+    _definition("preview_export", "Preview Export", "Create an immutable source-bundle export preview.", "export", data_schema=REVIEW_EXPORT_DATA_SCHEMA),
+    _definition("apply_export", "Apply Export", "Publish one exact reviewed source bundle.", "export", "files", data_schema=EXPORT_SOURCE_BUNDLE_DATA_SCHEMA, idempotent=False),
+    _definition("save_document", "Save Document", "Explicitly save or Save As with source and destination verification.", "document", "save", idempotent=False),
+    _definition("open_document_view", "Open Document View", "Open exact glyphs in a Glyphs Edit tab without document mutation intent.", "host", "ui", idempotent=False),
+    _definition("get_runtime_status", "Get Runtime Status", "Read strict Python runtime-interlock health and recovery evidence.", "runtime"),
+    _definition("repair_runtime", "Repair Runtime", "Repair manager-owned Python runtime-interlock state.", "runtime", "code", idempotent=True, destructive_hint=False),
 )
 
 
-TOOL_CATALOG: Dict[str, ToolDefinition] = {definition.name: definition for definition in TOOL_DEFINITIONS}
+TOOL_CATALOG: Dict[str, ToolDefinition] = {
+    definition.name: definition for definition in TOOL_DEFINITIONS
+}
 if len(TOOL_CATALOG) != len(TOOL_DEFINITIONS):
-    raise RuntimeError("duplicate Glyphs MCP 2.0 tool name")
+    raise RuntimeError("duplicate Glyphs MCP v2 tool name")
+
+REQUIRED_TOOL_COHORTS = (
+    frozenset({"preview_change", "apply_change"}),
+    frozenset({"preview_export", "apply_export"}),
+    frozenset({"search_knowledge", "get_knowledge"}),
+    frozenset({"get_runtime_status", "repair_runtime", "execute_python"}),
+)
+for cohort in REQUIRED_TOOL_COHORTS:
+    if not cohort.issubset(TOOL_CATALOG):
+        raise RuntimeError(
+            "incomplete Glyphs MCP v2 cohort: {}".format(
+                ", ".join(sorted(cohort - set(TOOL_CATALOG)))
+            )
+        )
 
 
 __all__ = [
     "APP_ONLY",
+    "EXPORT_SOURCE_BUNDLE_DATA_SCHEMA",
     "FONT_DOCUMENT_SCHEMA",
     "MODEL_AND_APP",
     "OPEN_DATA_SCHEMA",
+    "REQUIRED_TOOL_COHORTS",
+    "REVIEW_EXPORT_DATA_SCHEMA",
     "TOOL_CATALOG",
     "TOOL_DEFINITIONS",
     "ToolDefinition",

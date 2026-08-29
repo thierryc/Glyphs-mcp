@@ -1,6 +1,6 @@
 interface:
   display_name: "Glyphs MCP Scripting"
-  short_description: "Run staged or open-world Glyphs Python with rollback."
-  default_prompt: "Use $glyphs-mcp-scripting when typed tools do not fit, defaulting document edits to staged execution."
+  short_description: "Run and recover staged or open-world Glyphs Python."
+  default_prompt: "Use $glyphs-mcp-scripting when typed tools do not fit, defaulting document edits to staged execution and repairing blocked live Python once when the runtime permits it."
 policy:
   allow_implicit_invocation: true

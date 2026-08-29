@@ -65,8 +65,10 @@ if not ((3, 11) <= sys.version_info[:2] <= (3, 14)):
 
 required = {
     "fastmcp": "fastmcp",
+    "fontmake": "fontmake",
     "glyphsLib": "glyphsLib",
     "jsonschema": "jsonschema",
+    "uharfbuzz": "uharfbuzz",
 }
 if os.environ["GLYPHS_MCP_TEST_RUNNER"] == "pytest":
     required["pytest"] = "pytest"

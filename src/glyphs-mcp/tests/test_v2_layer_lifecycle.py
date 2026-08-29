@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import copy
-import inspect
 import sys
 import unittest
 from pathlib import Path
@@ -39,11 +38,11 @@ from glyphs_mcp_v2.semantic import (  # noqa: E402
     revert_change_set_onto,
 )
 from glyphs_mcp_v2.diff_overlay import overlay_for_layer  # noqa: E402
-from glyphs_mcp_v2.transport.fastmcp import ToolHandlers  # noqa: E402
-from glyphs_mcp_v2.workflows import (  # noqa: E402
-    build_layer_updates,
-    list_layers,
+from glyphs_mcp_v2.generic_tools import (  # noqa: E402
+    project_reference,
+    resolve_selector,
 )
+from glyphs_mcp_v2.structural_registry import build_layer_updates  # noqa: E402
 
 
 def _layer(
@@ -162,13 +161,11 @@ def _model() -> dict:
 class LayerLifecycleTests(unittest.TestCase):
     def test_schema_v6_and_public_tools_are_explicit(self) -> None:
         self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 6)
-        self.assertIn("list_layers", TOOL_CATALOG)
-        self.assertIn("apply_layer_updates", TOOL_CATALOG)
-        parameters = inspect.signature(ToolHandlers.apply_layer_updates).parameters
-        self.assertEqual(
-            set(parameters),
-            {"self", "documentId", "expectedDocumentFingerprint", "updates", "reason"},
-        )
+        self.assertIn("read_document", TOOL_CATALOG)
+        self.assertIn("preview_change", TOOL_CATALOG)
+        self.assertIn("apply_change", TOOL_CATALOG)
+        self.assertNotIn("list_layers", TOOL_CATALOG)
+        self.assertNotIn("apply_layer_updates", TOOL_CATALOG)
 
     def test_nested_layer_collection_uses_registered_identity_semantics(self) -> None:
         self.assertTrue(is_identity_collection_path(("glyphs", "A", "layers")))
@@ -211,11 +208,26 @@ class LayerLifecycleTests(unittest.TestCase):
         self.assertEqual(reverted["glyphs"]["A"]["layers"][2]["width"], 640)
 
     def test_list_layers_filters_by_glyph_and_role_without_losing_order(self) -> None:
-        items = list_layers(_model(), glyph_names=["A"], roles=["intermediate", "alternate"])
+        references = resolve_selector(
+            _model(),
+            {
+                "entity": "layer",
+                "parent": {"glyphName": "A"},
+                "where": {"roles": ["intermediate", "alternate"]},
+                "orderBy": "canonical",
+            },
+        )
+        items = [
+            project_reference(
+                reference, {"fields": ["id", "name", "interpolation"]}
+            )
+            for reference in references
+        ]
 
         self.assertEqual([item["id"] for item in items], ["brace-125", "bracket-400"])
-        self.assertEqual([item["order"] for item in items], [1, 2])
-        self.assertEqual(items[0]["interpolation"]["coordinates"], {"wght": 125})
+        self.assertEqual(
+            items[0]["values"]["interpolation"]["coordinates"], {"wght": 125}
+        )
 
     def test_list_layers_full_detail_joins_observations_without_canonicalizing_them(self) -> None:
         model = _model()
@@ -250,21 +262,35 @@ class LayerLifecycleTests(unittest.TestCase):
             }
         }
 
-        item = list_layers(
+        reference = resolve_selector(
             model,
-            glyph_names=["A"],
-            roles=["master"],
-            detail="full",
-            observations=observations,
+            {
+                "entity": "layer",
+                "ids": ["m0"],
+                "parent": {"glyphName": "A"},
+            },
         )[0]
+        item = project_reference(
+            reference,
+            {
+                "fields": [
+                    "bounds",
+                    "spacing.horizontal",
+                    "inheritance.metrics",
+                    "alignment",
+                    "geometry.counts",
+                ]
+            },
+            observations=observations,
+        )
 
-        self.assertEqual(item["currentMetrics"]["leftBearing"], 45)
-        self.assertEqual(item["resolvedMetrics"]["width"], 620)
-        self.assertTrue(item["stale"])
-        self.assertTrue(item["hasAlignedWidth"])
-        self.assertEqual(item["bounds"]["height"], 700)
-        self.assertEqual(item["components"][0]["transform"], [1, 0, 0, 1, 12, 0])
-        self.assertTrue(item["components"][0]["automaticAlignment"])
+        values = item["values"]
+        self.assertEqual(values["spacing.horizontal"]["leadingBearing"], 45)
+        self.assertEqual(values["inheritance.metrics"]["resolved"]["width"], 620)
+        self.assertEqual(values["bounds"]["height"], 700)
+        self.assertTrue(values["alignment"]["hasAlignedWidth"])
+        self.assertEqual(values["alignment"]["automaticComponentCount"], 1)
+        self.assertEqual(values["geometry.counts"]["componentCount"], 1)
 
     def test_duplicate_update_move_delete_and_inverse_share_one_builder(self) -> None:
         before = _model()
@@ -507,35 +533,56 @@ class LayerLifecycleTests(unittest.TestCase):
         app = GlyphsMCPApplication(host)
         baseline = copy.deepcopy(host.model)
         listed = app.invoke(
-            "list_layers",
+            "read_document",
             {
                 "documentId": "doc_layers",
-                "glyphNames": ["A"],
-                "roles": ["intermediate", "alternate"],
-                "pageSize": 1,
+                "selector": {
+                    "entity": "layer",
+                    "parent": {"glyphName": "A"},
+                    "where": {"roles": ["intermediate", "alternate"]},
+                    "pageSize": 1,
+                },
+                "projection": {"fields": ["id", "name", "interpolation"]},
             },
         ).to_dict()
         self.assertTrue(listed["ok"])
         self.assertEqual(listed["page"]["totalItems"], 2)
-        self.assertEqual(len(listed["data"]["layers"]), 1)
+        self.assertEqual(len(listed["data"]["items"]), 1)
 
-        applied = app.invoke(
-            "apply_layer_updates",
+        before = fingerprint_model(host.model)
+        preview = app.invoke(
+            "preview_change",
             {
                 "documentId": "doc_layers",
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
-                "updates": [
+                "expectedDocumentFingerprint": before,
+                "operations": [
                     {
-                        "action": "duplicate",
-                        "glyphName": "A",
-                        "sourceLayerId": "brace-125",
-                        "layerId": "brace-150",
-                        "interpolation": {
-                            "kind": "intermediate",
-                            "coordinates": {"wght": 150},
+                        "op": "duplicate",
+                        "target": {
+                            "entity": "layer",
+                            "ids": ["brace-125"],
+                            "parent": {"glyphName": "A"},
+                        },
+                        "newId": "brace-150",
+                        "overrides": {
+                            "interpolation": {
+                                "kind": "intermediate",
+                                "coordinates": {"wght": 150},
+                            }
                         },
                     }
                 ],
+                "constraints": [],
+            },
+        ).to_dict()
+        self.assertTrue(preview["ok"], preview)
+        applied = app.invoke(
+            "apply_change",
+            {
+                "documentId": "doc_layers",
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": before,
+                "reason": "duplicate an exact layer",
             },
         ).to_dict()
         self.assertTrue(applied["ok"])
@@ -548,7 +595,7 @@ class LayerLifecycleTests(unittest.TestCase):
             "revert_change",
             {
                 "documentId": "doc_layers",
-                "operationId": applied["operationId"],
+                "operationId": applied["data"]["operationId"],
                 "expectedDocumentFingerprint": fingerprint_model(host.model),
             },
         ).to_dict()

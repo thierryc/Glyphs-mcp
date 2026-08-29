@@ -195,6 +195,10 @@ class ServerStartupTests(unittest.TestCase):
         events = []
         mcp = _FakeMCP(events)
         module = _load_plugin_module(mcp)
+        module.automatic_repair_scripting_runtime = (
+            lambda trigger: events.append(trigger)
+            or {"scriptingRuntimeSafety": {"state": "healthy"}}
+        )
         plugin = module.MCPBridgePlugin()
         failures = []
         polls = []
@@ -218,10 +222,40 @@ class ServerStartupTests(unittest.TestCase):
 
         self.assertTrue(result)
         self.assertEqual(len(mcp.http_calls), 1)
+        self.assertLess(
+            events.index("automatic_server_start"), events.index("http_app")
+        )
         self.assertLess(events.index("reset_sse"), events.index("http_app"))
         self.assertEqual(failures, [])
         self.assertEqual(polls, [True])
         self.assertTrue(plugin._server_thread.started)
+
+    def test_stop_start_repairs_without_rebuilding_application_state(self):
+        events = []
+        mcp = _FakeMCP(events)
+        mcp.history = ["review", "checkpoint", "rollback"]
+        module = _load_plugin_module(mcp)
+        module.automatic_repair_scripting_runtime = (
+            lambda trigger: events.append(trigger)
+            or {"scriptingRuntimeSafety": {"state": "healthy"}}
+        )
+        plugin = module.MCPBridgePlugin()
+        plugin._mark_server_starting = lambda: events.append("mark_starting")
+        plugin._http_middleware = lambda: []
+        plugin._begin_server_start_poll = lambda: None
+        plugin._refresh_status_panel_if_visible = lambda: None
+        plugin._handle_start_request_exception = lambda *_args, **_kwargs: None
+        plugin._cancel_server_start_poll = lambda: None
+
+        self.assertTrue(plugin._start_server_on_port(9680, None))
+        plugin._finish_stop_server()
+        self.assertTrue(plugin._start_server_on_port(9680, None))
+
+        self.assertIs(module.mcp, mcp)
+        self.assertEqual(mcp.history, ["review", "checkpoint", "rollback"])
+        self.assertEqual(events.count("automatic_server_start"), 2)
+        self.assertEqual(events.count("automatic_server_stop"), 1)
+        self.assertEqual(len(mcp.http_calls), 2)
 
     def test_connection_state_publishes_when_status_window_is_absent(self):
         module = _load_plugin_module(_FakeMCP([]))

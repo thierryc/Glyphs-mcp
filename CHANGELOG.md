@@ -36,6 +36,11 @@ runtime only for Glyphs 4.
 
 - `execute_python` retains an honest open-world escape hatch but defaults to
   staged document execution on a detached clone.
+- Replaced the permanent live-Python poison latch with an observable,
+  process-local safety state machine. Agents and the Glyphs status window can
+  inspect and repair manager-owned native hooks without restarting the HTTP
+  server; unresolved incidents block only live Python and preserve typed and
+  staged work.
 - Exact preview and confirmation bind immutable code and context. Confirmation
   replays the stored canonical patch and native evidence without rerunning
   Python against the live font.
@@ -51,7 +56,10 @@ runtime only for Glyphs 4.
   and uninstall are target-addressed. Acting on one host never replaces the
   other host's plug-in.
 - The macOS installer is version 2.0.0 build 27. Agent plug-in manifests and
-  the 13 managed v2 skills share version 2.0.0.
+  the 18 managed skills share version 2.0.0.
+- Added focused, discoverable v2 audit skills for color-font sources, Unicode
+  semantics, variable fonts, and export validation; the production-audit skill
+  now coordinates those domains instead of duplicating their rule sets.
 
 This entry records unsigned local candidate source. Schema-v5 qualification is
 the frozen regression baseline. Schema-v6 automated and disposable-host closure passed

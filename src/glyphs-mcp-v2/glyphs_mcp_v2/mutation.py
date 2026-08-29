@@ -6,7 +6,7 @@ import copy
 import re
 import time
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Mapping, Protocol, Sequence
+from typing import Any, Iterable, Mapping, Optional, Protocol, Sequence
 
 from .canonical_tree import CanonicalSnapshot
 from .canonical_schema import (
@@ -125,6 +125,44 @@ class MutationBuild:
     change_set: ChangeSet
     capabilities: tuple[str, ...] = ()
     execution_context: Mapping[str, Any] = field(default_factory=dict)
+    result_context: Optional["MutationResultContext"] = None
+    audit_details: Mapping[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class MutationResultContext:
+    """Bounded tool-specific evidence attached to a verified mutation.
+
+    The result never enters the canonical tree or native replay context. The
+    application stores the complete item list in the process-local operation
+    store and returns only its first page with the common mutation envelope.
+    """
+
+    kind: str
+    data_key: str
+    item_key: str
+    result: Mapping[str, Any]
+    page_size: int = 100
+
+
+class MutationRejected(ValueError):
+    """Fail a detached mutation plan before any native transaction starts."""
+
+    def __init__(
+        self,
+        *,
+        code: str,
+        summary: str,
+        message: str,
+        result_context: Optional[MutationResultContext] = None,
+        audit_details: Optional[Mapping[str, Any]] = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = str(code)
+        self.summary = str(summary)
+        self.message = str(message)
+        self.result_context = result_context
+        self.audit_details = dict(audit_details or {})
 
 
 def normalize_mutation_build(value: ChangeSet | MutationBuild) -> MutationBuild:
@@ -865,10 +903,6 @@ def lifecycle_capabilities(
     """Derive structural ownership from semantic paths for replay and revert."""
 
     capabilities: set[str] = set()
-    if tool == "apply_master_updates":
-        capabilities.add(MASTER_LIFECYCLE_CAPABILITY)
-    if tool == "apply_layer_updates":
-        capabilities.add(LAYER_LIFECYCLE_CAPABILITY)
     paths = tuple(change.path for change in change_set.changes)
     if any(path and path[0] in _V6_ROOT_COLLECTIONS | {"glyphOrder", "settings"} for path in paths):
         capabilities.add(CANONICAL_V6_LIFECYCLE_CAPABILITY)
@@ -1317,6 +1351,8 @@ __all__ = [
     "MutationPlanner",
     "MutationPlanningHost",
     "MutationBuild",
+    "MutationRejected",
+    "MutationResultContext",
     "CANONICAL_V6_LIFECYCLE_CAPABILITY",
     "LAYER_LIFECYCLE_CAPABILITY",
     "lifecycle_capabilities",

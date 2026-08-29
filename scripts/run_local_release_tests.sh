@@ -19,6 +19,14 @@ else
   python_bin="$(command -v "$python_bin")"
 fi
 
+echo "Checking exact release dependency pins…"
+"$python_bin" scripts/check_release_dependencies.py \
+  --requirements requirements-dev.txt \
+  fontmake uharfbuzz
+
+echo "Checking committed Glyphs 4 native-export parity evidence…"
+"$python_bin" scripts/validate_glyphs4_native_parity.py
+
 release_version="$("$python_bin" -c 'import sys; sys.path.insert(0, "src/glyphs-mcp-v2"); from glyphs_mcp_v2.versions import SERVER_VERSION; print(SERVER_VERSION)')"
 installer_build="$("$python_bin" -c 'import importlib.util, pathlib; p=pathlib.Path("scripts/release_security.py"); s=importlib.util.spec_from_file_location("release_security", p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); print(next(iter(m.read_xcode_versions(pathlib.Path("macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj"))[1])))')"
 
@@ -78,6 +86,7 @@ diff -qr "$payload_first" "$payload_second"
 
 echo "Checking canonical and packaged skill synchronization…"
 scripts/sync_codex_plugin_skills.sh --check
+"$python_bin" scripts/render_v2_command_reference.py --check
 if [[ ! -f "$skill_validator" ]]; then
   echo "Missing skill validator: $skill_validator" >&2
   echo "Set SKILL_VALIDATOR to the skill-creator quick_validate.py path." >&2

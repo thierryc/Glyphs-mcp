@@ -24,7 +24,7 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
   mirroring plist/package layout or claiming private PyObjC state is canonical.
 - The dual-target installer keeps Glyphs 3.5 on signed v1.11 and installs the
   isolated v2 runtime only for Glyphs 4.
-- Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot CLI receive the same 14
+- Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot CLI receive the same 18
   synchronized v2 skills.
 
 [Read the 1.9 roadmap →](ROADMAP.md) ·
@@ -45,9 +45,9 @@ transaction kernel, redacted audit receipts, and the main-thread Glyphs 3.5/4
 adapter are implemented without loading the runtime into the installed 1.x
 plug-in. The builder writes only to `build/v2-runtime/`.
 
-The v2 skill package contains 14 synchronized skills. It renames the broad
-`glyphs-mcp-features` workflow to `glyphs-mcp-opentype-features` and adds
-production-audit, maintainer-feedback, and master-compatibility workflows.
+The v2 skill package contains 18 synchronized skills. Alongside the general
+launcher and production-audit coordinator, focused skills own color fonts,
+Unicode semantics, variable fonts, and export validation.
 
 See the [2.0 foundation record](content/contributor/glyphs-mcp-2-foundation.mdx)
 for boundaries, migration policy, milestone order, and acceptance gates.
@@ -171,7 +171,7 @@ and structured-result fallbacks.
 
 ## Repo skills for Codex, Claude Code, Cursor, and GitHub Copilot
 
-This repo ships 14 managed workflow skills in `skills/` for common Glyphs MCP
+This repo ships 18 managed workflow skills in `skills/` for common Glyphs MCP
 tasks.
 The same source of truth is exposed through client-specific discovery paths:
 
@@ -237,8 +237,8 @@ Current repo skills focus on:
 - safe live vibe coding, Macro Panel snippets, and iterative script debugging
 - OpenType feature and stylistic-set inspection with Glyphs links
 - stable Unicode and PUA assignments for icon and symbol fonts
-- guarded kerning bumper reviews and applies
-- guarded spacing reviews and applies
+- scoped stored/effective kerning review, coverage evidence, and atomic applies
+- generic horizontal/vertical spacing measurement, constraint review, and atomic applies
 - diagnostic-first master compatibility repair with guarded topology changes
 - outlines, components, anchors, and docs lookup workflows
 - guarded roman-to-italic first-pass copy and slant workflows
@@ -263,9 +263,13 @@ Glyphs MCP exposes **87 active tools** through one catalog-driven surface:
 title and description, four MCP safety hints, a category, visibility, effect
 class, lifecycle state, and optional structured-output schema.
 
-The generated [command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set)
-is the authoritative list. README intentionally does not duplicate the full
-table. This catalog is shipped in this repo (version `1.11.0`). Typical
+The generated [Glyphs MCP v1.11 command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set-v1-11)
+is the authoritative list for this catalog. The
+[Glyphs MCP v2 command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set-v2)
+documents the separate Glyphs 4 surface. The unversioned
+[command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set)
+remains the v1.11 compatibility route. README intentionally does not duplicate
+either full table. This catalog is shipped in this repo (version `1.11.0`). Typical
 workflows begin with `list_open_fonts`, resolve explicit glyph
 and master targets, review or preview a detached candidate, dry-run changes,
 and ask for approval before confirmation. No edit tool saves implicitly.
@@ -337,9 +341,16 @@ The server endpoint is `http://127.0.0.1:9680/mcp/`.
 
 ### Tool discovery
 
-Glyphs MCP exposes one catalog-driven surface. MCP Apps-aware clients show 66
-substantive tools to the model and reserve 11 feedback or host-UI wrappers for
-the app. Per-tool safety annotations replace the former server profiles.
+Glyphs MCP exposes one catalog-driven surface per installed Glyphs major:
+
+- Glyphs 3 keeps the frozen v1.11 catalog: 87 active tools, with 76
+  model-visible tools and 11 app-only wrappers.
+- Glyphs 4 uses the v2 catalog: exactly 38 tools, all exposed to both the model
+  and the app.
+
+Read `get_server_info.data.apiMajor` before selecting the corresponding
+versioned command reference. Per-tool safety annotations replace the former
+server profiles.
 
 Tip: If your coding agent doesn't connect to Glyphs, start the MCP server first on a fresh Glyphs launch, then launch the coding agent afterwards.
 

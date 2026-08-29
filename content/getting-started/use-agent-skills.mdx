@@ -217,7 +217,7 @@ Enable **Install Glyphs MCP agent skills** for Codex and/or Claude Code. The ins
 
 Reload or restart the client after installation.
 
-For a manual global Cursor install, copy the 14 skill directories from
+For a manual global Cursor install, copy the 18 skill directories from
 `skills/` into `~/.cursor/skills/`, preserving each directory's `SKILL.md` and
 supporting files.
 
@@ -226,18 +226,22 @@ supporting files.
 | Skill | Use it for | Example prompt |
 | --- | --- | --- |
 | `glyphs` | General tasks, connection and context checks, and workflow routing | `Use $glyphs to inspect my current Glyphs context and help with this font task.` |
+| `glyphs-mcp-color-font` | Palette, SVG, bitmap color-layer, fallback, and color-export evidence review | `Use $glyphs-mcp-color-font to audit this color-font source without changing it.` |
 | `glyphs-mcp-development` | Reusable, documentation-grounded Glyphs Python scripts and six plug-in scaffolds | `Use $glyphs-mcp-development to create a reporter plug-in in this workspace.` |
+| `glyphs-mcp-export-validation` | Source export readiness and existing-binary validation | `Use $glyphs-mcp-export-validation to validate this source or existing font binary without exporting implicitly.` |
 | `glyphs-mcp-master-compatibility` | Diagnostic-first repair of glyph compatibility across masters | `Use $glyphs-mcp-master-compatibility to diagnose my selected glyph and safely make its masters compatible.` |
 | `glyphs-mcp-outlines-docs` | Outline edits and their specialized live-code fallback, plus selected nodes, components, anchors, and docs lookup | `Use the glyphs-mcp-outlines-docs skill to inspect selected nodes and fetch only the docs pages I need.` |
 | `glyphs-mcp-italic-first-pass` | Experimental Roman-to-italic construction drafts with a narrowly guarded Python fallback | `Use the glyphs-mcp-italic-first-pass skill to review selected glyphs in recommended Balanced mode before applying an italic first pass.` |
-| `glyphs-mcp-scripting` | Staged document Python, reviewed open-world fallback, and verified rollback | `Use $glyphs-mcp-scripting because the typed tools do not fit this document edit.` |
+| `glyphs-mcp-scripting` | Staged document Python, reviewed open-world fallback, native safety repair, and verified rollback | `Use $glyphs-mcp-scripting because the typed tools do not fit this document edit.` |
 | `glyphs-mcp-opentype-features` | Focused OpenType feature and stylistic-set inspection | `Use $glyphs-mcp-opentype-features to inspect the stylistic sets in this document.` |
-| `glyphs-mcp-production-audit` | Read-first compatibility, metrics, anchor, spacing, kerning, and export review | `Use $glyphs-mcp-production-audit to review this source without changing it.` |
+| `glyphs-mcp-production-audit` | Cross-domain audit routing and evidence aggregation | `Use $glyphs-mcp-production-audit to coordinate a production review without changing the source.` |
+| `glyphs-mcp-unicode-semantics` | Unicode mappings, controls, whitespace, marks, normalization, and fallback behavior | `Use $glyphs-mcp-unicode-semantics to audit this font's Unicode semantics without changing it.` |
+| `glyphs-mcp-variable-font` | Axes, masters, instances, mappings, special layers, and variable readiness | `Use $glyphs-mcp-variable-font to audit this variable-font source without repairing it.` |
 | `glyphs-mcp-maintainer-feedback` | Redacted reproducible reports for maintainers | `Use $glyphs-mcp-maintainer-feedback to prepare an issue-quality report.` |
 | `glyphs-mcp-icon-font` | Stable icon-font Unicode and PUA assignment workflows | `Use the glyphs-mcp-icon-font skill to audit this icon font and preserve its existing mappings.` |
 | `glyphs-mcp-kerning` | Kerning bumper review and approved applies | `Use the glyphs-mcp-kerning skill to review kerning collisions and do a dry run first.` |
 | `glyphs-mcp-litsquare-metadata` | LitSquare metadata, semantic path roles, and layer-specific IconGrid centering | `Use $glyphs-mcp-litsquare-metadata to inspect inherited LitSquare metadata without changing it.` |
-| `glyphs-mcp-spacing` | Spacing review and approved applies | `Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.` |
+| `glyphs-mcp-spacing` | Grid-aware width/foreground translation and atomic applies | `Use the glyphs-mcp-spacing skill to review exact-layer spacing and optional foreground translation before an approved atomic apply.` |
 | `glyphs-mcp-release` | Version, docs, packaging, validation, signing, and publication gates | `Use $glyphs-mcp-release to prepare version 2.0.0 and stop before external publication.` |
 
 ## Operating rules
@@ -258,4 +262,4 @@ supporting files.
 - [Agent skills](../concepts/agent-skills.mdx)
 - [Codex and ChatGPT plugin UI](./codex-chatgpt-plugin-ui.mdx)
 - [First session](../tutorial/first-session.mdx)
-- [Command set](../reference/command-set.mdx)
+- [Glyphs MCP v2 command set](../reference/command-set-v2.mdx)

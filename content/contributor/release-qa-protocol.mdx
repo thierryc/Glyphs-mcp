@@ -1,170 +1,154 @@
 ---
 title: Release QA protocol
-description: Asymmetric release validation for pinned Glyphs 3 and Glyphs MCP v2 on Glyphs 4.
+description: Asymmetric release validation for pinned Glyphs 3 and generic Glyphs MCP v2 on Glyphs 4.
 ---
 
 # Release QA protocol
 
-Run this protocol only after the complete local release gate passes. The 2.0
-installer intentionally ships two different runtimes:
+The installer intentionally ships two tracks:
 
-- Glyphs 3.5 -> pinned v1.11 from signed baseline `v1.11.0` / `13ca805`.
+- Glyphs 3.5 -> pinned v1.11 from signed `v1.11.0` / `13ca805`.
 - Glyphs 4 -> v2.0 from the deterministic generated bundle.
 
-Catalog equality is not an acceptance criterion. Each host must match its own
-declared runtime track, version, safety contract, and payload manifest.
+Catalog equality is not an acceptance criterion across those hosts. Each host
+must match its own runtime, safety contract, and payload manifest.
 
 ## Automated prerequisite
 
-From the repository root, run:
+From repository root:
 
 ```bash
 python3 scripts/bump_version.py --dry-run --installer-build 27 2.0.0
 PYTHON_BIN=python3.12 ./scripts/run_local_release_tests.sh
+python3.12 -m pytest -q src/glyphs-mcp/tests/test_v2_*.py
+python3.12 scripts/build_v2_knowledge.py --check
+python3.12 scripts/render_v2_command_reference.py --check
+scripts/sync_codex_plugin_skills.sh --check
 ```
 
-The consolidated gate runs shell and patch checks, the complete Python matrix,
-two byte-identical schema-v2 payload builds, source/package skill parity,
-canonical and packaged skill validation, the documentation production build,
-the complete Xcode suite, an unsigned Debug app build, and unsigned-candidate
-metadata validation. It also verifies pinned format hashes, generates the
-schema-v6 coverage report, requires zero unclassified official paths, and runs
-the independent flat/package source-seam audit. With
-`GLYPHS_MCP_FULL_NETWORK=1`, upstream knowledge drift blocks qualification. It
-does not sign, notarize, install, tag, upload, or publish anything.
+The consolidated gate verifies exact dependencies including `fontmake`,
+schema-v6 classification, deterministic payloads, Knowledge freshness,
+generated documentation, authored/packaged skill equality, Python tests, Xcode
+tests, and unsigned candidate metadata. Network-backed upstream drift checks
+run only when explicitly enabled. The gate does not sign, notarize, install,
+tag, upload, or publish.
 
-## Containment and evidence
+## Containment
 
-- Use only `Glyphs MCP V2 Disposable - Gee gee.glyphspackage` for Glyphs 4
-  mutation gates. Never open or save the production Gee gee source.
-- Record the disposable package tree hash, working path, canonical fingerprint,
-  native archive fingerprint, dirty state, and active master before each gate.
+- Use only a disposable Glyphs 4 copy whose family name starts with
+  `Glyphs MCP V2 Disposable`. Never open or save a production source.
+- Record package tree hash, source fingerprint, canonical fingerprint, native
+  archive fingerprint, working path, dirty state, and active master before
+  each mutation gate.
 - A Glyphs 3.5 check is read-only and must not mutate a document.
 - Every Glyphs 4 gate must restore its exact canonical and native baseline,
-  working path, dirty state, and active master before the next gate starts.
-- Run heavyweight gates separately. Return control to Glyphs between phases
-  and expose progress through the Glyphs MCP inspector; do not run one opaque,
-  monolithic qualification task.
-- No live installation is replaced by this protocol. Installer behavior is
-  exercised only against simulated target roots.
+  path, dirty state, and active master.
+- No live installation is replaced. Installer tests use simulated roots.
 - Treat a development symlink and its generated target as one effective live
-  installation. Rebuilding the target changes the code Glyphs will load even
-  when the symlink itself is unchanged.
-- Before either host matrix, verify that the resolved plug-in bundle already
-  has the required host version. Stop rather than qualifying a `dev` build as a
-  release or rebuilding a protected link target implicitly.
+  installation. Stop rather than qualifying a `dev` build as a release.
 
 ## Glyphs 3.5 pinned-runtime matrix
 
-Record Glyphs build, Python version, plug-in path, resolved link target, runtime
-version, and catalog counts.
+| ID | Action | Required result |
+| --- | --- | --- |
+| G3-1 | Launch with the pinned link. | Runtime is exactly v1.11; no v2 module loads. |
+| G3-2 | Start, stop, restart, and reconnect. | No duplicate server or stale event loop. |
+| G3-3 | Run server info, open-font listing, and a bounded read. | V1.11 result; document and source bytes unchanged. |
+| G3-4 | Inspect update state. | The pin prevents a v2 replacement. |
+
+Do not run v2 mutations, staged Python, or history gates on Glyphs 3.5.
+
+## Glyphs 4 generic v2 matrix
+
+Record Glyphs build, Python version, bundle hash, server version, catalog size,
+discovery payload size, and disposable `documentId`.
+
+### Runtime, reads, and constraints
 
 | ID | Action | Required result |
 | --- | --- | --- |
-| G3-1 | Launch Glyphs 3.5 with the pinned development link. | Runtime is exactly `1.11.0`; no v2 module is loaded. |
-| G3-2 | Start, stop, and restart the MCP server, reconnecting a fresh client each time. | No duplicate server, stale event loop, or reconnect failure. |
-| G3-3 | Call server info, open-font listing, and one bounded read-only font/glyph query. | Results match the v1.11 contract; document and file state remain unchanged. |
-| G3-4 | Inspect update state. | Glyphs 3 is pinned; no v2 notification, stage, or authorization can replace it. |
-| G3-5 | Stop the server and close any disposable document without saving. | Plug-in link and source bytes remain unchanged. |
+| G4-1 | Start, stop, restart, and reconnect. | API major 2 and exactly 18 public tools. |
+| G4-2 | Inspect discovery and generated docs. | Catalog, typed handlers, and command reference agree; retired workflow names are absent. |
+| G4-3 | Exercise paginated selectors, relations, canonical fields, and computed observations across all entity kinds. | Cursors are bound to selector, projection, schema, and fingerprint; provenance/completeness are explicit; reads do not mutate. |
+| G4-4 | Exercise literal, field, and exact-reference constraints before and after a detached candidate. | The same evaluator supplies standalone, preview, and read-back evidence. |
+| G4-5 | Call `get_runtime_status`; repair only if it reports a manager-owned incident. | `repair_runtime` is idempotent, status is re-read once, and no loop occurs. |
 
-Do not run v2 canonical mutations, staged Python, Change Log, or rollback gates
-on Glyphs 3.5. Those APIs do not belong to its pinned runtime.
+### Generic mutation and Python gates
 
-## Glyphs 4 v2 runtime matrix
+Run each existing disposable gate independently:
 
-Record Glyphs build, Python version, generated plug-in hash, runtime version,
-catalog size, discovery payload size, and selected disposable document ID.
+| ID | Gate | Required result |
+| --- | --- | --- |
+| G4-6 | `verify_generic_change_lifecycle` | Exact generic insert/set/move/duplicate/remove preview, apply, history, stale refusal, conflict-aware revert, and baseline restoration. |
+| G4-7 | `verify_generic_kerning_lifecycle` | Exact stored kerning read/write/revert with unrelated domains preserved. |
+| G4-8 | `verify_staged_python_preview_lifecycle` | Detached code runs once, returns a generic immutable preview, applies through `apply_change`, verifies, reverts, and never reruns code. |
+| G4-9 | `verify_open_document_view` | Exact glyph view opens without document mutation or save. |
+| G4-10 | `verify_copy_and_make_copy` | Detached native copy evidence preserves the source and does not become a working-font save path. |
 
-### Runtime and transport
+Add manual `execute_python` cases for unsupported API inspection, staged code
+that produces no changes, runtime error, stale preview, verification failure,
+and one explicitly approved `live_open_world` temporary-file effect. The live
+case must distinguish verified document effects from unverifiable external
+effects and report its checkpoint/recovery evidence. Remove the temporary file
+after evidence is recorded.
+
+Every successful document apply and revert reports one transaction, operation
+ID, audit receipt, and history entry. Stale dependencies, partial application,
+read-back mismatch, or rollback failure must fail atomically.
+
+### Persistence and export
 
 | ID | Action | Required result |
 | --- | --- | --- |
-| G4-1 | Start, stop, restart, and reconnect the server. | Every client receives v2.0 identity and the exact v2 catalog. |
-| G4-2 | Inspect complete discovery. | Payload is below 96 KiB; removed preparation and Candidate APIs are absent. |
-| G4-3 | Run bounded document, glyph, layer, master, instance, feature, pair/context kerning, and change-log reads. Exercise `entryKind=pair`, `context`, and `all`, plus `context_sequences` coverage. | Every response page is below 64 KiB, directions remain distinct, raw contexts remain visible, filtered cursors cannot cross scopes, and no read performs a mutation. |
-| G4-4 | Leave one connection idle, cancel one bounded call, then reconnect. | No per-second debug-ping flood, progressive slowdown, or poisoned server state. |
+| G4-11 | `save_document` Save As to a new absolute temporary destination. | Confirmed fingerprint-bound response reports `saveMode=save_as`; original bytes remain unchanged and no reversible history commit is created. |
+| G4-12 | Run `preview_export`, then `apply_export` for its exact immutable preview. | Destination and runtime drift are refused; deterministic regeneration and atomic publication match the preview. |
+| G4-13 | Reuse a consumed or stale change/export preview. | Refused without replaying planning, Python, or external publication. |
 
-### Verified apply-first kernel
+Run G4-11 with `overwritePolicy=fail_if_exists`. After recording its evidence,
+close the Save As document without further saving, remove the temporary
+destination, reopen the original disposable source, and prove clean baseline
+restoration.
 
-Run existing gates independently; do not reproduce their mutation logic in the
-release protocol.
+### Typographic proof
 
-| ID | Existing gate | Required result |
-| --- | --- | --- |
-| G4-5 | `verify_schema_v3_structural_kernel` | Glyph, OpenType, instance, selective-revert, and atomic-refusal domains pass; exact baseline restored. |
-| G4-6 | `verify_schema_v4_master_lifecycle` | Master duplicate/update/move/delete and reverse-order revert pass in at most 72 seconds. |
-| G4-7 | `verify_schema_v5_layer_lifecycle` | Intermediate, alternate, backup, Smart, and color layer lifecycle passes with unrelated shard reuse. |
-| G4-8 | `verify_staged_python_structural_replay` | Preview and confirmation cover glyph, master, layer, instance, feature, class, and prefix lifecycle without rerunning Python. |
-| G4-9 | `verify_copy_and_make_copy` | `save(path, makeCopy=True)` leaves the working path and dirty state unchanged. |
-| G4-10 | `verify_context_kerning` | Both `L quoteright A` boundaries apply atomically through native context deltas, list/read back exactly, preserve all pair domains, refuse a two-glyph context, and restore the exact canonical/native baseline without saving. |
-
-Each successful mutation and revert must report one live transaction, one
-canonical operation ID, one Change Log commit, and one audit receipt. Failed
-apply, verification, rollback, stale, or conflict cases must restore their
-exact pre-attempt content and dirty contribution.
-
-### Change feedback and visual state
-
-| ID | Action | Required result |
-| --- | --- | --- |
-| G4-11 | Apply a topology-compatible outline change. | Change Log lists its semantic targets and the Reporter shows the geometric before/current gap. |
-| G4-12 | Move one affected point manually. | Overlay updates against the fixed pre-agent baseline without full-font capture during drawing. |
-| G4-13 | Revert the operation exactly. | Overlay disappears and Change Log status updates; baseline and dirty state are exact. |
-| G4-14 | Revert an earlier operation while an unrelated later operation remains. | Later change is preserved; a conflicting later edit refuses atomically. |
-| G4-15 | Open and collapse the Glyphs MCP inspector during a long phase. | Compact activity feedback remains document-bound and the UI returns between gates. |
-
-### Exported contextual-kerning proof
-
-After G4-10 restores its baseline, make a separate disposable proof update for
-both `L’A` boundaries. Use illustrative values only if they are visibly
-appropriate for the disposable design.
-
-| ID | Action | Required result |
-| --- | --- | --- |
-| G4-16 | Compare `L’A` with `L’O`, `l’A`, standalone `’A`, and an unrelated apostrophe–`A` occurrence in Glyphs Context Kerning mode and normal Kerning & Spacing mode. | Only the complete positive context receives the extra boundary values; ordinary pair views remain unchanged. |
-| G4-17 | Export to a temporary destination and test Text Preview/CoreText plus one external shaping environment with `kern` on and off. | With `kern` on, both contextual deltas are additional to pair kerning; controls remain unchanged. With `kern` off, ordinary and contextual kerning disappear. |
-| G4-18 | For variable output, inspect named instances and intermediate slider positions; otherwise inspect every relevant static instance. | Interpolation is continuous and no master-specific context is missing. |
-
-Remove the temporary export, revert the proof operation, and re-confirm the
-canonical/native baseline. Do not record this gate as passed from stored-value
-readback alone.
+Tool qualification proves mechanics, not design quality. Use focused skills to
+proof spacing, kerning, interpolation, Unicode, OpenType, variable/color
+sources, and export artifacts. Record source, binary, shaping, and visual
+evidence separately. A stored-value read-back alone is not typographic proof.
 
 ## Simulated installer matrix
 
-Use temporary Glyphs Application Support roots. Do not target the live plug-in
-folders or alter the existing development symlinks.
+Use temporary Glyphs Application Support roots only.
 
 | ID | Action | Required result |
 | --- | --- | --- |
-| I-1 | Build the payload twice. | Complete file maps are byte-for-byte equal. |
-| I-2 | Inspect `payload.json`. | Schema 2 maps Glyphs 3 to `1.11.0`/`1.x`/`pinned` and Glyphs 4 to `2.0.0`/`2.x`/`release`. |
-| I-3 | Install and reinstall Glyphs 3 in a simulated root. | Glyphs 4 target remains byte-identical. |
-| I-4 | Install and reinstall Glyphs 4 in a simulated root. | Glyphs 3 target remains byte-identical. |
-| I-5 | Inject a replacement failure for either host. | That host restores its prior bundle; the other host is untouched. |
-| I-6 | Uninstall either host. | Other host, shared dependencies, skills, documents, and unrelated preferences remain. |
-| I-7 | Present protocol-v1 update state. | It cannot satisfy or authorize a protocol-v2 request. |
-| I-8 | Enable then remove the Glyphs 3 update pin. | Only installer-owned preference values are restored, and only while unchanged. |
-| I-9 | Start from development symlinks. | They remain unless replacement was explicitly selected. |
+| I-1 | Build the payload twice. | Complete file maps are byte-identical. |
+| I-2 | Inspect `payload.json`. | Glyphs 3 maps to pinned 1.11 and Glyphs 4 maps to 2.0. |
+| I-3 | Install/reinstall each target independently. | The other target remains byte-identical. |
+| I-4 | Inject replacement failure. | Prior target bundle restores; other target is untouched. |
+| I-5 | Uninstall either target. | Other runtimes, skills, documents, and unrelated preferences remain. |
+| I-6 | Start from development symlinks. | They remain unless replacement was explicitly selected. |
 
 ## Qualification record
 
-Record results in `release-build-notes.mdx` only after they were actually run:
+Record only evidence actually run:
 
 ```md
-- Candidate: 2.0.0 (installer build 27)
+- Candidate and installer build:
 - Branch and commit:
 - Automated tests and skips:
+- Knowledge/docs/skills generation checks:
 - Payload SHA-256 values:
 - Glyphs 3.5 build / Python / runtime / result:
 - Glyphs 4 build / Python / runtime / result:
-- Schema-v4 elapsed time:
-- Baseline canonical/native/file restoration:
+- Generic gate results:
+- Baseline canonical/native/source restoration:
 - Open blockers or accepted limitations:
 - Signing: not performed
 - Notarization: not performed
 - Publication: not performed
 ```
 
-Passing this protocol produces an unsigned local release candidate, not a
-publishable release. Merge, commit, signed tag, signing, notarization, GitHub
-draft creation, upload, and publication remain separately authorized actions.
+Passing this protocol produces an unsigned local candidate. Commit, merge,
+signed tag, signing, notarization, draft creation, upload, and publication
+remain separate authorized actions.

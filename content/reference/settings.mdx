@@ -10,8 +10,16 @@ Glyphs MCP has two configuration surfaces:
 
 ## Tool discovery
 
-Glyphs MCP exposes one catalog-driven registry. The generated
-[command set](./command-set.mdx) is the authoritative count and tool list.
+Each installed Glyphs major exposes one catalog-driven registry. Read
+`get_server_info.data.apiMajor` before selecting a contract:
+
+- Glyphs 4 / API major 2 exposes exactly 37 v2 tools; use the generated
+  [Glyphs MCP v2 command set](./command-set-v2.mdx).
+- Glyphs 3 / API major 1 keeps the frozen v1.11 surface; use the generated
+  [Glyphs MCP v1.11 command set](./command-set-v1-11.mdx). The unversioned
+  [compatibility route](./command-set.mdx) intentionally remains v1.11.
+
+Do not combine names or request shapes across those registries.
 Clients that honor MCP Apps visibility omit app-only wrappers from model
 routing. Every tool carries four MCP safety hints plus effect and lifecycle
 metadata; there is no profile selector or saved profile state.

@@ -32,6 +32,12 @@ if str(_resources_dir()) not in sys.path:
 
 from tool_catalog import active_entries, app_only_entries, model_entries
 
+V2_SOURCE = _repo_root() / "src" / "glyphs-mcp-v2"
+if str(V2_SOURCE) not in sys.path:
+    sys.path.insert(0, str(V2_SOURCE))
+
+from glyphs_mcp_v2.catalog import TOOL_CATALOG as V2_TOOL_CATALOG  # noqa: E402
+
 
 def _active_tool_names() -> set[str]:
     return {entry.name for entry in active_entries()}
@@ -100,6 +106,24 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         version_series = ".".join(self._plugin_version().split(".")[:2])
         self.assertIn("Glyphs MCP {} uses".format(version_series), text)
 
+    def test_versioned_command_references_are_split_and_current(self) -> None:
+        root = _repo_root() / "content" / "reference"
+        legacy = (root / "command-set.mdx").read_text(encoding="utf-8")
+        explicit_v1 = (root / "command-set-v1-11.mdx").read_text(encoding="utf-8")
+        v2 = (root / "command-set-v2.mdx").read_text(encoding="utf-8")
+
+        self.assertIn("title: Glyphs MCP v1.11 command set", explicit_v1)
+        self.assertIn("Glyphs MCP 1.11 uses", explicit_v1)
+        self.assertEqual(
+            sorted(name for name in _active_tool_names() if "`{}`".format(name) not in explicit_v1),
+            [],
+        )
+        self.assertIn("title: Command set", legacy)
+        self.assertIn("exactly {} tools".format(len(V2_TOOL_CATALOG)), v2)
+        self.assertEqual(len(V2_TOOL_CATALOG), 18)
+        missing = sorted(name for name in V2_TOOL_CATALOG if "`{}`".format(name) not in v2)
+        self.assertEqual(missing, [])
+
     def test_readme_command_set_mentions_all_tools(self) -> None:
         readme = _repo_root() / "README.md"
         self.assertTrue(readme.is_file(), f"Missing README: {readme}")
@@ -112,7 +136,21 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         self.assertIn("{} are model-visible".format(len(model_entries())), section)
         self.assertIn("{} are app-only".format(len(app_only_entries())), section)
         self.assertIn("authoritative list", section)
+        self.assertIn("/reference/command-set-v1-11", section)
+        self.assertIn("/reference/command-set-v2", section)
+        self.assertIn("unversioned", section)
+        self.assertIn("remains the v1.11 compatibility route", section)
         self.assertNotIn("| Tool |", section)
+
+    def test_v2_runtime_readme_documents_only_the_typed_save_boundary(self) -> None:
+        text = (_repo_root() / "src/glyphs-mcp-v2/README.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("`save_document`", text)
+        self.assertIn("Save As", text)
+        self.assertIn("`overwritePolicy=replace_if_match`", text)
+        self.assertNotIn("save(makeCopy=True)", text)
 
     def test_italic_first_pass_docs_cite_primary_symbol_sources(self) -> None:
         page = _repo_root() / "content" / "italic-first-pass.md"

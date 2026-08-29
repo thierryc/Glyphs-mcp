@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -26,7 +27,7 @@ class ReleaseSkillTests(unittest.TestCase):
         for required in (
             "scripts/bump_version.py",
             "scripts/sync_codex_plugin_skills.sh",
-            "MANAGED_SKILL_NAMES",
+            "skills/manifest.json",
             "quick_validate.py",
             "Never save an open font automatically",
             "does not authorize committing",
@@ -50,6 +51,8 @@ class ReleaseSkillTests(unittest.TestCase):
         text = (CANONICAL / "references" / "release-gates.md").read_text(encoding="utf-8")
         for required in (
             "run_local_release_tests.sh",
+            "requirements-dev.txt",
+            "fontmake",
             "release_security.py candidate",
             "quick_validate.py",
             "publish_release_assets.sh --tag vX.Y.Z --dry-run",
@@ -76,14 +79,19 @@ class ReleaseSkillTests(unittest.TestCase):
             "No live installation is replaced",
             "development symlink and its generated target",
             "Stop rather than qualifying a `dev` build",
+            "`save_document` Save As",
+            "`saveMode=save_as`",
+            "`overwritePolicy=fail_if_exists`",
         ):
             self.assertIn(required, protocol)
+        self.assertIn("verify_copy_and_make_copy", protocol)
+        self.assertNotIn("makeCopy=True", protocol)
 
         foundation = (REPO / "content/contributor/glyphs-mcp-2-foundation.mdx").read_text(
             encoding="utf-8"
         )
-        self.assertIn("11. Complete as an unsigned release-candidate baseline:", foundation)
-        self.assertNotIn("Milestone 11 is not complete", foundation)
+        self.assertIn("## Frozen public surface", foundation)
+        self.assertIn("Disposable Glyphs 4 live gates remain a release", foundation)
 
     def test_milestone_12_closure_records_current_unsigned_evidence(self) -> None:
         foundation = (REPO / "content/contributor/glyphs-mcp-2-foundation.mdx").read_text(
@@ -98,8 +106,8 @@ class ReleaseSkillTests(unittest.TestCase):
         )
         changelog = (REPO / "CHANGELOG.md").read_text(encoding="utf-8")
 
-        self.assertIn("12. Complete and live-qualified", foundation)
-        self.assertNotIn("Glyphs 4 build-4004 candidate gate remains pending", foundation)
+        self.assertIn("Qualification: automated v2 schema", foundation)
+        self.assertIn("must not be inferred from source-level tests", foundation)
         self.assertIn("1,357 Python tests with two expected skips", compact_build_notes)
         self.assertIn("112 Xcode test methods passed", compact_build_notes)
         self.assertIn(
@@ -121,17 +129,45 @@ class ReleaseSkillTests(unittest.TestCase):
         notes = notes_path.read_text(encoding="utf-8")
         for required in (
             "Glyphs 4",
-            "Glyphs 3.5",
+            "Glyphs 3",
             "schema v6",
-            "293",
-            "Target-aware installer",
-            "Rollback boundaries",
-            "Files, network calls, subprocesses",
-            "No public Git comparison tool",
+            "18 generic tools",
+            "Knowledge supplies pinned cited facts",
+            "`EntitySelector`, `Projection`, `Constraint`, and `ChangeOperation`",
+            "`preview_change`",
+            "`apply_change`",
+            "permanent Python fallback",
+            "network calls, subprocesses",
+            "`save_document`",
+            "`apply_export`",
+            "conflict-aware revert",
+            "no implicit save",
+            "Source-level tests do not substitute",
         ):
             self.assertIn(required, notes)
         self.assertNotIn("arbitrary-action Git history", notes)
         self.assertNotIn("byte-for-byte whole-font history", notes)
+
+    def test_release_preflight_requires_exact_source_build_dependency(self) -> None:
+        runner = (REPO / "scripts/run_local_release_tests.sh").read_text(
+            encoding="utf-8"
+        )
+        dependency_check = '"$python_bin" scripts/check_release_dependencies.py'
+        complete_suite = "GLYPHS_MCP_FULL_PYTHON_MATRIX=1"
+        self.assertIn(dependency_check, runner)
+        self.assertIn("--requirements requirements-dev.txt", runner)
+        self.assertIn("fontmake uharfbuzz", runner)
+        self.assertLess(runner.index(dependency_check), runner.index(complete_suite))
+
+    def test_changelog_managed_skill_count_matches_manifest(self) -> None:
+        manifest = json.loads((REPO / "skills/manifest.json").read_text(encoding="utf-8"))
+        changelog = (REPO / "CHANGELOG.md").read_text(encoding="utf-8")
+        current = changelog.split("## 2.0.0", 1)[1].split("\n## ", 1)[0]
+        expected = len(manifest["managedSkills"])
+
+        self.assertEqual(expected, 18)
+        self.assertIn("{} managed skills".format(expected), current)
+        self.assertNotRegex(current, r"\b13 managed(?: v2)? skills\b")
 
 
 if __name__ == "__main__":

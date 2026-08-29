@@ -27,6 +27,11 @@ from .mutation import (
     writable_subset,
 )
 from .semantic import ChangeSet, diff_models, fingerprint_model, public_change_dict
+from .runtime_safety import (
+    SourceSaveForbiddenError,
+    ScriptingRuntimeUnavailableError,
+    agent_recovery_directive,
+)
 from .transactions import StaleDocumentError, TransactionKernel, TransactionVerificationError
 
 if TYPE_CHECKING:
@@ -75,6 +80,138 @@ _FORBIDDEN_METHOD_NAMES = frozenset(
 )
 
 
+def _is_source_save_method(name: str) -> bool:
+    """Return whether one Python/Objective-C spelling can save an NSDocument."""
+
+    compact = str(name or "").replace("_", "").lower()
+    return bool(
+        compact == "save"
+        or compact.startswith("savedocument")
+        or compact.startswith("savetourl")
+        or compact.startswith("autosave")
+        or compact.startswith("writetourl")
+        or compact.startswith("writesafelytourl")
+    )
+
+
+def _static_string(
+    node: ast.AST,
+    assignments: Mapping[str, str],
+) -> Optional[str]:
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return node.value
+    if isinstance(node, ast.Name):
+        return assignments.get(node.id)
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = _static_string(node.left, assignments)
+        right = _static_string(node.right, assignments)
+        return left + right if left is not None and right is not None else None
+    if isinstance(node, ast.JoinedStr):
+        values = []
+        for value in node.values:
+            if not isinstance(value, ast.Constant) or not isinstance(value.value, str):
+                return None
+            values.append(value.value)
+        return "".join(values)
+    return None
+
+
+def _definitely_working_source_expression(node: ast.AST) -> bool:
+    """Recognize direct AST roots for an open Glyphs document/font.
+
+    Calls are deliberately not followed: ``font.copy().save()`` targets a
+    detached object and remains a legitimate open-world external operation.
+    Runtime identity interposition covers aliases and reflective expressions
+    that cannot be proven safely at this static review boundary.
+    """
+
+    if isinstance(node, ast.Name):
+        return node.id == "font"
+    if isinstance(node, ast.Subscript):
+        return _definitely_working_source_expression(node.value)
+    if isinstance(node, ast.Attribute):
+        if isinstance(node.value, ast.Name) and node.value.id == "Glyphs":
+            return node.attr in {
+                "currentDocument",
+                "documents",
+                "font",
+                "fonts",
+            }
+        return _definitely_working_source_expression(node.value)
+    return False
+
+
+def validate_no_source_save(code: str) -> None:
+    """Refuse statically addressable working-document save entry points.
+
+    This is a capability rule rather than an effect declaration: reviewed
+    ``live_open_world`` Python must still use the typed ``save_document`` tool.
+    Literal and constant-composed ``getattr`` spellings are covered so callers
+    cannot bypass the rule merely by avoiding attribute-call syntax.
+    """
+
+    if not isinstance(code, str) or not code.strip():
+        return
+    try:
+        tree = ast.parse(code, mode="exec")
+    except SyntaxError as exc:
+        raise PythonPolicyError("Python code is not syntactically valid") from exc
+    assignments: dict[str, str] = {}
+    changed = True
+    while changed:
+        changed = False
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+                continue
+            value_node = node.value
+            if value_node is None:
+                continue
+            value = _static_string(value_node, assignments)
+            if value is None:
+                continue
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            for target in targets:
+                if (
+                    isinstance(target, ast.Name)
+                    and assignments.get(target.id) != value
+                ):
+                    assignments[target.id] = value
+                    changed = True
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        method_name: Optional[str] = None
+        receiver: Optional[ast.AST] = None
+        if isinstance(node.func, ast.Attribute):
+            method_name = node.func.attr
+            receiver = node.func.value
+        elif isinstance(node.func, ast.Name):
+            method_name = node.func.id
+        if (
+            method_name is not None
+            and receiver is not None
+            and _is_source_save_method(method_name)
+            and _definitely_working_source_expression(receiver)
+        ):
+            raise PythonPolicyError(
+                "execute_python cannot save the working Glyphs source; use save_document"
+            )
+        if (
+            isinstance(node.func, ast.Name)
+            and node.func.id in {"getattr", "hasattr", "setattr"}
+            and len(node.args) >= 2
+        ):
+            dynamic_name = _static_string(node.args[1], assignments)
+            if (
+                dynamic_name is not None
+                and _is_source_save_method(dynamic_name)
+                and _definitely_working_source_expression(node.args[0])
+            ):
+                raise PythonPolicyError(
+                    "execute_python cannot access working-source save selectors; use save_document"
+                )
+
+
 def validate_staged_code(code: str) -> None:
     """Reject obvious live/global/external constructs; this is not a sandbox."""
     if not isinstance(code, str) or not code.strip():
@@ -83,6 +220,7 @@ def validate_staged_code(code: str) -> None:
         tree = ast.parse(code, mode="exec")
     except SyntaxError as exc:
         raise PythonPolicyError("Python code is not syntactically valid") from exc
+    validate_no_source_save(code)
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
@@ -410,6 +548,36 @@ class PythonExecutionService:
         self._trace = trace
         self._activity = activity
 
+    def _runtime_safety_evidence(
+        self, exc: BaseException | None = None
+    ) -> tuple[dict[str, Any], dict[str, Any] | None]:
+        snapshot = (
+            exc.snapshot
+            if isinstance(exc, ScriptingRuntimeUnavailableError)
+            else None
+        )
+        if snapshot is not None:
+            return snapshot.to_dict(), agent_recovery_directive(snapshot)
+        read_status = getattr(self._host, "scripting_runtime_safety_status", None)
+        value = read_status() if callable(read_status) else {}
+        status = dict(value) if isinstance(value, Mapping) else {}
+        incident = status.get("currentIncident")
+        incident_id = (
+            str(incident.get("incidentId") or "")
+            if isinstance(incident, Mapping)
+            else str(status.get("incidentId") or "")
+        )
+        directive = None
+        if incident_id and bool(status.get("automaticRepairAvailable")):
+            directive = {
+                "tool": "repair_runtime",
+                "arguments": {"expectedIncidentId": incident_id},
+                "verifyWith": "get_runtime_status",
+                "retryOriginalCall": True,
+                "maxRepairAttempts": 1,
+            }
+        return status, directive
+
     def _capture_document_state(self, document_id: str) -> Mapping[str, Any]:
         capture = getattr(self._host, "capture_stable_snapshot", None)
         if not callable(capture):
@@ -559,19 +727,43 @@ class PythonExecutionService:
             if not request.confirm:
                 return self._failure("confirmation_required", "confirm=true is required to consume a Python review.")
             record = self._reviews.consume(request.review_id)
-            if record is None or record.kind != "python_review":
-                return self._failure("review_unavailable", "The Python review is missing, expired, or already consumed.")
+            if record is None or record.kind != "python_live_approval":
+                return self._failure("review_unavailable", "The open-world Python approval is missing, expired, or already consumed.")
             stored = PythonExecutionRequest.from_stored_dict(record.payload["request"])
+            try:
+                validate_no_source_save(stored.code or "")
+            except PythonPolicyError as exc:
+                if isinstance(exc.__cause__, SyntaxError):
+                    return self._failure(
+                        "invalid_code",
+                        str(exc),
+                        details=_python_error_details(
+                            exc.__cause__,
+                            phase="compile",
+                            code=stored.code or "",
+                        ),
+                    )
+                return self._failure("source_save_forbidden", str(exc))
             if self._trace is not None and stored.document_id:
                 self._trace.bind_document(stored.document_id)
-            if stored.execution_mode == "staged_document":
-                return self._confirm_staged(
-                    stored, record.payload, review_id=record.operation_id
-                )
             return self._confirm_live(stored, record.payload, review_id=record.operation_id)
 
         if not request.code or not request.reason:
             return self._failure("invalid_request", "code and reason are required.")
+        try:
+            validate_no_source_save(request.code)
+        except PythonPolicyError as exc:
+            if isinstance(exc.__cause__, SyntaxError):
+                return self._failure(
+                    "invalid_code",
+                    str(exc),
+                    details=_python_error_details(
+                        exc.__cause__,
+                        phase="compile",
+                        code=request.code or "",
+                    ),
+                )
+            return self._failure("source_save_forbidden", str(exc))
         if not 1 <= int(request.max_output_chars) <= MAX_OUTPUT_CHARS:
             return self._failure(
                 "invalid_request",
@@ -638,6 +830,27 @@ class PythonExecutionService:
         except ObservedLivePythonError as observed_error:
             _debug_python_exception()
             result = observed_error.result
+            source_save_blocked = isinstance(
+                observed_error.cause, SourceSaveForbiddenError
+            )
+            runtime_unavailable = isinstance(
+                observed_error.cause, ScriptingRuntimeUnavailableError
+            )
+            runtime_safety, agent_recovery = self._runtime_safety_evidence(
+                observed_error.cause
+            )
+            runtime_busy = bool(
+                isinstance(
+                    observed_error.cause, ScriptingRuntimeUnavailableError
+                )
+                and runtime_safety.get("state") == "active"
+            )
+            runtime_unavailable = bool(
+                runtime_unavailable
+                or runtime_safety.get("state")
+                in {"degraded", "recovery_required"}
+            )
+            source_save_blocked = bool(source_save_blocked and not runtime_unavailable)
             if request.document_id and self._trace is not None:
                 before = result.get("beforeModel")
                 after = result.get("afterModel")
@@ -670,17 +883,50 @@ class PythonExecutionService:
                     "declaredEffect": "read",
                     "context": _context_details(request),
                     "observedDocumentChanges": observed_document_changes,
+                    "sourceSaveBlocked": source_save_blocked,
+                    "scriptingRuntimeUnavailable": runtime_unavailable,
+                    "scriptingRuntimeSafety": runtime_safety,
                     **details,
                 },
             )
             return self._failure(
-                "python_execution_failed",
-                "Python evaluation failed safely.",
+                (
+                    "source_save_forbidden"
+                    if source_save_blocked
+                    else (
+                        "scripting_runtime_busy"
+                        if runtime_busy
+                        else (
+                            "scripting_runtime_unavailable"
+                            if runtime_unavailable
+                            else "python_execution_failed"
+                        )
+                    )
+                ),
+                (
+                    "Python was stopped at the working-source save boundary."
+                    if source_save_blocked
+                    else (
+                        "Another live Python execution owns the scripting interlock."
+                        if runtime_busy
+                        else (
+                            "Strict scripting safety is unavailable."
+                            if runtime_unavailable
+                            else "Python evaluation failed safely."
+                        )
+                    )
+                ),
                 details=details,
                 data={
                     "codeHash": _code_hash(request.code or ""),
                     "observedDocumentChanges": observed_document_changes,
                     "transactional": False,
+                    "scriptingRuntimeSafety": runtime_safety,
+                    **(
+                        {"agentRecovery": agent_recovery}
+                        if agent_recovery is not None
+                        else {}
+                    ),
                     "rollback": {
                         "coverage": "unavailable",
                         "available": False,
@@ -696,6 +942,21 @@ class PythonExecutionService:
             )
         except Exception as exc:
             _debug_python_exception()
+            source_save_blocked = isinstance(exc, SourceSaveForbiddenError)
+            runtime_unavailable = isinstance(
+                exc, ScriptingRuntimeUnavailableError
+            )
+            runtime_safety, agent_recovery = self._runtime_safety_evidence(exc)
+            runtime_busy = bool(
+                isinstance(exc, ScriptingRuntimeUnavailableError)
+                and runtime_safety.get("state") == "active"
+            )
+            runtime_unavailable = bool(
+                runtime_unavailable
+                or runtime_safety.get("state")
+                in {"degraded", "recovery_required"}
+            )
+            source_save_blocked = bool(source_save_blocked and not runtime_unavailable)
             result: dict[str, Any] = {}
             if (
                 request.document_id
@@ -726,8 +987,32 @@ class PythonExecutionService:
                 exc, phase="evaluation", code=request.code or ""
             )
             return self._failure(
-                "python_execution_failed",
-                "Python evaluation failed safely.",
+                (
+                    "source_save_forbidden"
+                    if source_save_blocked
+                    else (
+                        "scripting_runtime_busy"
+                        if runtime_busy
+                        else (
+                            "scripting_runtime_unavailable"
+                            if runtime_unavailable
+                            else "python_execution_failed"
+                        )
+                    )
+                ),
+                (
+                    "Python was stopped at the working-source save boundary."
+                    if source_save_blocked
+                    else (
+                        "Another live Python execution owns the scripting interlock."
+                        if runtime_busy
+                        else (
+                            "Strict scripting safety is unavailable."
+                            if runtime_unavailable
+                            else "Python evaluation failed safely."
+                        )
+                    )
+                ),
                 details=details,
                 data={
                     "codeHash": _code_hash(request.code or ""),
@@ -735,6 +1020,12 @@ class PythonExecutionService:
                         result, request
                     ),
                     "transactional": False,
+                    "scriptingRuntimeSafety": runtime_safety,
+                    **(
+                        {"agentRecovery": agent_recovery}
+                        if agent_recovery is not None
+                        else {}
+                    ),
                     "rollback": {
                         "coverage": "unavailable",
                         "available": False,
@@ -1095,9 +1386,14 @@ class PythonExecutionService:
             coverage=canonical_coverage,
         )
         review = self._reviews.create(
-            kind="python_review",
+            kind="change_preview",
             ttl_seconds=REVIEW_TTL_SECONDS,
             payload={
+                "source": "python_staged",
+                "documentId": request.document_id,
+                "sourceFingerprint": before_fingerprint,
+                "proposedFingerprint": changes.after_fingerprint,
+                "applicable": True,
                 "request": request.to_stored_dict(),
                 "codeHash": _code_hash(request.code or ""),
                 "changeSet": changes,
@@ -1161,17 +1457,35 @@ class PythonExecutionService:
         return ToolResponse.success(
             tool="execute_python",
             effect="code",
-            status="review_required",
-            summary="Detached Python produced a reviewed semantic change set; the live document is unchanged.",
+            status="success",
+            summary="Detached Python produced an immutable semantic preview; the live document is unchanged.",
             audit_receipt=receipt.to_dict(),
             warnings=large_scope_warning,
             data={
-                "reviewId": review.operation_id,
+                "previewId": review.operation_id,
                 "expiresAt": _iso_timestamp(review.expires_at),
+                "documentId": request.document_id,
+                "sourceFingerprint": before_fingerprint,
+                "proposedFingerprint": changes.after_fingerprint,
+                "applicable": True,
+                "resolvedTargetCount": len(changes.changes),
+                "normalizedOperations": [],
                 "codeHash": _code_hash(request.code or ""),
                 "executionMode": "staged_document",
                 "liveDocumentChanged": False,
                 "changeSet": public_change_set,
+                "constraints": {
+                    "before": {
+                        "sourceFingerprintMatched": True,
+                        "scopeViolationCount": 0,
+                    },
+                    "after": {
+                        "nativeArchiveEquivalent": True,
+                        "semanticPatchReproducible": True,
+                    },
+                },
+                "blockers": [],
+                "fontSaved": False,
                 "operationId": diff_operation.operation_id,
                 "canonicalCoverage": canonical_coverage.to_public_dict(),
                 "stageTimings": dict(preview.get("stageTimings") or {}),
@@ -1187,7 +1501,7 @@ class PythonExecutionService:
         if fingerprint_model(current) != request.expected_document_fingerprint:
             return self._failure("stale_document", "The document changed before Python review.")
         review = self._reviews.create(
-            kind="python_review",
+            kind="python_live_approval",
             ttl_seconds=REVIEW_TTL_SECONDS,
             payload={
                 "request": request.to_stored_dict(),
@@ -1215,7 +1529,7 @@ class PythonExecutionService:
             summary="Open-world Python is approval-bound and has not executed.",
             audit_receipt=receipt.to_dict(),
             data={
-                "reviewId": review.operation_id,
+                "approvalId": review.operation_id,
                 "expiresAt": _iso_timestamp(review.expires_at),
                 "codeHash": _code_hash(request.code or ""),
                 "executionMode": "live_open_world",
@@ -1389,6 +1703,32 @@ class PythonExecutionService:
             },
         )
 
+    def apply_staged_preview(
+        self,
+        record: OperationRecord,
+        *,
+        operation_id: str,
+        reason: Optional[str] = None,
+    ) -> ToolResponse:
+        """Apply an immutable staged-Python patch without rerunning code."""
+
+        if (
+            record.kind != "change_preview"
+            or record.payload.get("source") != "python_staged"
+        ):
+            return self._failure(
+                "preview_mismatch",
+                "The preview is not a staged-Python document preview.",
+            )
+        stored = PythonExecutionRequest.from_stored_dict(record.payload["request"])
+        if reason is not None:
+            stored = replace(stored, reason=reason)
+        return self._confirm_staged(
+            stored,
+            record.payload,
+            review_id=operation_id,
+        )
+
     def _confirm_live(
         self,
         request: PythonExecutionRequest,
@@ -1422,6 +1762,18 @@ class PythonExecutionService:
             after: Mapping[str, Any],
             result: Optional[Mapping[str, Any]] = None,
         ) -> ToolResponse:
+            source_save_blocked = isinstance(exc, SourceSaveForbiddenError)
+            runtime_safety, agent_recovery = self._runtime_safety_evidence(exc)
+            runtime_busy = bool(
+                isinstance(exc, ScriptingRuntimeUnavailableError)
+                and runtime_safety.get("state") == "active"
+            )
+            runtime_unavailable = bool(
+                isinstance(exc, ScriptingRuntimeUnavailableError)
+                or runtime_safety.get("state")
+                in {"degraded", "recovery_required"}
+            )
+            source_save_blocked = bool(source_save_blocked and not runtime_unavailable)
             source_after = (
                 capture_source(request.document_id or "")
                 if callable(capture_source)
@@ -1494,12 +1846,39 @@ class PythonExecutionService:
                     "afterFingerprint": after_fingerprint,
                     "rollbackCoverage": "recovery_only",
                     "observedDocumentChanges": observed_document_changes,
+                    "sourceSaveBlocked": source_save_blocked,
+                    "scriptingRuntimeUnavailable": runtime_unavailable,
+                    "scriptingRuntimeSafety": runtime_safety,
                     **error_details,
                 },
             )
             return self._failure(
-                "python_execution_failed",
-                "Open-world Python failed safely.",
+                (
+                    "source_save_forbidden"
+                    if source_save_blocked
+                    else (
+                        "scripting_runtime_busy"
+                        if runtime_busy
+                        else (
+                            "scripting_runtime_safety_lost"
+                            if runtime_unavailable
+                            else "python_execution_failed"
+                        )
+                    )
+                ),
+                (
+                    "Open-world Python was stopped at the working-source save boundary."
+                    if source_save_blocked
+                    else (
+                        "Another live Python execution owns the scripting interlock."
+                        if runtime_busy
+                        else (
+                            "Open-world Python ended with degraded scripting safety."
+                            if runtime_unavailable
+                            else "Open-world Python failed safely."
+                        )
+                    )
+                ),
                 details=error_details,
                 data={
                     "stateMayHaveChanged": True,
@@ -1513,6 +1892,12 @@ class PythonExecutionService:
                     "sourceFileChanged": source_file_changed,
                     "fontSaved": False,
                     "observedDocumentChanges": observed_document_changes,
+                    "scriptingRuntimeSafety": runtime_safety,
+                    **(
+                        {"agentRecovery": agent_recovery}
+                        if agent_recovery is not None
+                        else {}
+                    ),
                     **_bounded_streams(
                         observed_result.get("stdout"),
                         observed_result.get("stderr"),
@@ -1708,7 +2093,7 @@ class PythonExecutionService:
         except Exception:
             return False
 
-    def _rollback_failure(
+    def _recovery_failure(
         self,
         *,
         code: str,
@@ -1719,14 +2104,14 @@ class PythonExecutionService:
         data: Optional[Mapping[str, Any]] = None,
     ) -> ToolResponse:
         receipt = self._audit.record(
-            tool="rollback_python_execution",
+            tool="recover_python_checkpoint",
             effect="edit",
             status="error",
             document_id=document_id,
             details={"executionId": execution_id, "errorCode": code, **dict(data or {})},
         )
         return ToolResponse.failure(
-            tool="rollback_python_execution",
+            tool="recover_python_checkpoint",
             effect="edit",
             summary=summary,
             code=code,
@@ -1736,7 +2121,7 @@ class PythonExecutionService:
             audit_receipt=receipt.to_dict(),
         )
 
-    def rollback(
+    def recover_checkpoint(
         self,
         *,
         execution_id: str,
@@ -1746,14 +2131,14 @@ class PythonExecutionService:
     ) -> ToolResponse:
         if not confirm:
             return ToolResponse.failure(
-                tool="rollback_python_execution",
+                tool="recover_python_checkpoint",
                 effect="edit",
                 summary="confirm=true is required for rollback.",
                 code="confirmation_required",
                 message="Rollback was not confirmed.",
             )
         if strategy not in {"auto", "open_recovery_copy"}:
-            return self._rollback_failure(
+            return self._recovery_failure(
                 code="invalid_strategy",
                 summary="Unknown rollback strategy.",
                 execution_id=execution_id,
@@ -1763,7 +2148,7 @@ class PythonExecutionService:
             finder = getattr(self._host, "find_recovery_checkpoint", None)
             persisted = finder(execution_id) if callable(finder) else None
             if not isinstance(persisted, Mapping):
-                return self._rollback_failure(
+                return self._recovery_failure(
                     code="checkpoint_unavailable",
                     summary="The Python checkpoint is missing, expired, or consumed.",
                     execution_id=execution_id,
@@ -1780,7 +2165,7 @@ class PythonExecutionService:
         if self._trace is not None and document_id:
             self._trace.bind_document(document_id)
         if expected_after_fingerprint != payload.get("afterFingerprint"):
-            return self._rollback_failure(
+            return self._recovery_failure(
                 code="stale_document",
                 summary="The requested rollback fingerprint does not match the checkpoint.",
                 execution_id=execution_id,
@@ -1789,7 +2174,7 @@ class PythonExecutionService:
         if strategy == "open_recovery_copy":
             path = payload.get("recoveryPath")
             if not path:
-                return self._rollback_failure(
+                return self._recovery_failure(
                     code="recovery_unavailable",
                     summary="This checkpoint has no serialized recovery copy.",
                     execution_id=execution_id,
@@ -1807,21 +2192,21 @@ class PythonExecutionService:
                         pass
                 self._host.open_recovery_copy(str(path))
             except Exception:
-                return self._rollback_failure(
+                return self._recovery_failure(
                     code="recovery_open_failed",
                     summary="Glyphs could not open the serialized recovery copy.",
                     execution_id=execution_id,
                     document_id=document_id,
                 )
             receipt = self._audit.record(
-                tool="rollback_python_execution",
+                tool="recover_python_checkpoint",
                 effect="edit",
                 status="success",
                 document_id=document_id,
                 details={"executionId": execution_id, "strategy": strategy, "workingDocumentReplaced": False},
             )
             return ToolResponse.success(
-                tool="rollback_python_execution",
+                tool="recover_python_checkpoint",
                 effect="edit",
                 summary="Opened the checkpoint as a separate recovery document.",
                 audit_receipt=receipt.to_dict(),
@@ -1830,7 +2215,7 @@ class PythonExecutionService:
         inverse = payload.get("inverse")
         required_before = payload.get("beforeModel")
         if not isinstance(inverse, ChangeSet) or not isinstance(required_before, Mapping):
-            return self._rollback_failure(
+            return self._recovery_failure(
                 code="automatic_rollback_unavailable",
                 summary="Automatic rollback is not covered; use open_recovery_copy instead.",
                 execution_id=execution_id,
@@ -1838,7 +2223,7 @@ class PythonExecutionService:
                 data={"coverage": payload.get("coverage")},
             )
         if fingerprint_model(required_before) != payload.get("beforeFingerprint"):
-            return self._rollback_failure(
+            return self._recovery_failure(
                 code="checkpoint_corrupt",
                 summary="The rollback checkpoint does not reproduce its declared baseline.",
                 execution_id=execution_id,
@@ -1848,7 +2233,7 @@ class PythonExecutionService:
         try:
             current = self._capture_document_state(document_id)
         except Exception:
-            return self._rollback_failure(
+            return self._recovery_failure(
                 code="document_unavailable",
                 summary="The original document is closed or replaced; rollback was not attempted.",
                 execution_id=execution_id,
@@ -1857,7 +2242,7 @@ class PythonExecutionService:
         if self._trace is not None:
             self._trace.observe_model(document_id, current)
         if fingerprint_model(current) != expected_after_fingerprint:
-            return self._rollback_failure(
+            return self._recovery_failure(
                 code="stale_document",
                 summary="The document changed after Python execution; rollback was not attempted.",
                 execution_id=execution_id,
@@ -1890,7 +2275,7 @@ class PythonExecutionService:
             result = self._transactions.apply_plan(plan)
         except CanonicalTargetMismatchError as exc:
             mismatch = exc.mismatch
-            return self._rollback_failure(
+            return self._recovery_failure(
                 code="rollback_not_exact",
                 summary="The detached inverse could not reproduce the checkpoint baseline; nothing was rolled back.",
                 execution_id=execution_id,
@@ -1911,7 +2296,7 @@ class PythonExecutionService:
             verification_failure = (
                 str(exc) or "transaction verification failed"
             )[:500]
-            return self._rollback_failure(
+            return self._recovery_failure(
                 code="rollback_failed",
                 summary="Python rollback failed verification.",
                 execution_id=execution_id,
@@ -1924,7 +2309,7 @@ class PythonExecutionService:
                 },
             )
         if result.after_fingerprint != payload.get("beforeFingerprint"):
-            return self._rollback_failure(
+            return self._recovery_failure(
                 code="rollback_not_exact",
                 summary="The verified rollback did not restore the checkpoint baseline.",
                 execution_id=execution_id,
@@ -1933,7 +2318,7 @@ class PythonExecutionService:
             )
         self._checkpoints.discard(execution_id)
         receipt = self._audit.record(
-            tool="rollback_python_execution",
+            tool="recover_python_checkpoint",
             effect="edit",
             status="success",
             document_id=document_id,
@@ -1946,7 +2331,7 @@ class PythonExecutionService:
             },
         )
         return ToolResponse.success(
-            tool="rollback_python_execution",
+            tool="recover_python_checkpoint",
             effect="edit",
             summary="The Python document change was rolled back and verified.",
             audit_receipt=receipt.to_dict(),
@@ -1970,8 +2355,10 @@ __all__ = [
     "PythonExecutionRequest",
     "PythonExecutionService",
     "PythonPolicyError",
+    "SourceSaveForbiddenError",
     "REVIEW_TTL_SECONDS",
     "ROLLBACK_TTL_SECONDS",
+    "validate_no_source_save",
     "validate_staged_code",
     "obvious_external_effects",
 ]

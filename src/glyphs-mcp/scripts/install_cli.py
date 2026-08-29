@@ -183,22 +183,24 @@ console = Console()
 PYTHON_BINARY_PATTERN = re.compile(r"^python3(\.\d+)?$")
 MIN_PY_VERSION = (3, 11, 0)  # Allow 3.11+, prefer 3.14+
 MAX_PY_VERSION_EXCLUSIVE = (3, 15, 0)  # Disallow 3.15+ until tested
-MANAGED_SKILL_NAMES = (
-    "glyphs",
-    "glyphs-mcp-development",
-    "glyphs-mcp-maintainer-feedback",
-    "glyphs-mcp-master-compatibility",
-    "glyphs-mcp-opentype-features",
-    "glyphs-mcp-production-audit",
-    "glyphs-mcp-icon-font",
-    "glyphs-mcp-italic-first-pass",
-    "glyphs-mcp-kerning",
-    "glyphs-mcp-litsquare-metadata",
-    "glyphs-mcp-outlines-docs",
-    "glyphs-mcp-release",
-    "glyphs-mcp-scripting",
-    "glyphs-mcp-spacing",
+MANAGED_SKILL_MANIFEST = (
+    Path(__file__).resolve().parents[3] / "skills" / "manifest.json"
 )
+
+
+def _managed_skill_names_from_manifest(path: Path) -> Tuple[str, ...]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        entries = payload["managedSkills"]
+        names = tuple(str(entry["name"]) for entry in entries)
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise RuntimeError("The managed skill manifest is missing or malformed.") from exc
+    if payload.get("schemaVersion") != 1 or not names or len(names) != len(set(names)):
+        raise RuntimeError("The managed skill manifest has an unsupported contract.")
+    return names
+
+
+MANAGED_SKILL_NAMES = _managed_skill_names_from_manifest(MANAGED_SKILL_MANIFEST)
 LEGACY_MANAGED_SKILL_NAMES = ("glyphs-mcp-connect", "glyphs-mcp-features")
 SKILL_OWNERSHIP_MARKER = ".glyphs-mcp-owner.json"
 SKILL_OWNERSHIP_SCHEMA_VERSION = 1
@@ -1870,10 +1872,11 @@ def managed_skill_directories(skills_root: Optional[Path] = None) -> List[Path]:
     root = skills_root or (repo_root() / "skills")
     if not root.is_dir():
         return []
+    managed_names = set(_managed_skill_names_from_manifest(root / "manifest.json"))
 
     managed: List[Path] = []
     for entry in sorted(root.iterdir()):
-        if entry.is_dir() and entry.name in MANAGED_SKILL_NAMES:
+        if entry.is_dir() and entry.name in managed_names:
             managed.append(entry)
     return managed
 

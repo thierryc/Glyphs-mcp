@@ -16,3 +16,6 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["glyphs_mcp_v2*"]
+
+[tool.setuptools.package-data]
+glyphs_mcp_v2 = ["knowledge_data/*.json"]

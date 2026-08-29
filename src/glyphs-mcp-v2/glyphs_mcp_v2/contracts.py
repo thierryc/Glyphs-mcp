@@ -296,7 +296,7 @@ def result_schema(data_schema: Mapping[str, Any]) -> Dict[str, Any]:
             "apiVersion": {"type": "string", "const": API_VERSION},
             "requestId": {"type": "string", "pattern": "^req_"},
             "runId": {"type": "string", "pattern": "^run_"},
-            "operationId": {"type": "string", "pattern": "^(op|review|exec)_"},
+            "operationId": {"type": "string", "pattern": "^(op|preview|review|exec)_"},
             "startedAt": {"type": "string"},
             "completedAt": {"type": "string"},
             "durationMs": {"type": "integer", "minimum": 0},

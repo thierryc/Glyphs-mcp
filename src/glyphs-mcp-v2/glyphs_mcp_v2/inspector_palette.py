@@ -24,7 +24,7 @@ from AppKit import (
     NSViewWidthSizable,
     NSVisualEffectView,
 )
-from Foundation import NSOperationQueue, NSThread, NSTimer
+from Foundation import NSBundle, NSOperationQueue, NSThread, NSTimer
 
 from glyphs_litsquare_palette import GlyphsMCPLitSquareMetadataPalette
 from i18n import tr
@@ -36,9 +36,15 @@ from .connection_status import (
     default_connection_status_store,
     indicator_presentation,
 )
+from .versions import palette_display_name
 
 
-PALETTE_NAME = "Glyphs MCP"
+# Glyphs owns the native palette header and accepts one plain string only. A
+# middle dot plus a parenthetical Glyphs build keeps both runtime identifiers
+# compact without depending on private sidebar view hierarchy or hard-coding.
+PALETTE_NAME = palette_display_name(
+    NSBundle.mainBundle().objectForInfoDictionaryKey_("CFBundleVersion")
+)
 COMPACT_METADATA_HEIGHT = 190
 STATUS_HEIGHT = 28
 PALETTE_HEIGHT = COMPACT_METADATA_HEIGHT + STATUS_HEIGHT

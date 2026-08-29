@@ -1,11 +1,22 @@
 ---
 name: glyphs-mcp-release
 description: Prepare, audit, build, sign, notarize, or publish a Glyphs MCP release. Use when asked to bump a release version, assemble release notes, synchronize bundled skills or plug-in mirrors, run release gates, prepare signed installer artifacts, create a release tag or draft, upload verified assets, or perform final publication checks in the Glyphs-mcp repository.
+metadata:
+  surface: glyphs-mcp-v2
 ---
 
 # Glyphs MCP Release
 
 Treat preparation, signed artifact production, asset upload, and public release as separate authorization boundaries.
+
+## Surface gate
+
+- Before any live Glyphs MCP release check, call `get_server_info` and require
+  `data.apiMajor == 2`. Stop if the server does not identify the Glyphs 4/v2
+  surface. Validate callable names only against
+  `content/reference/command-set-v2.mdx`; never borrow a v1.11 tool contract.
+  Repository-only preparation may proceed without a running server, but it
+  must not claim that the live Glyphs 4 gate passed.
 
 ## Establish the release state
 
@@ -18,10 +29,16 @@ Treat preparation, signed artifact production, asset upload, and public release 
 
 1. Run `scripts/bump_version.py --installer-build BUILD X.Y.Z`; verify the v2 source, installer marketing/build versions, agent manifests, and that both pinned Glyphs 3 plists remain at 1.11.0.
 2. Synchronize source and Plugin Manager runtime files using the repository packaging path appropriate to the change. Inspect the resulting diff; do not overwrite unrelated bundle work.
-3. Add every canonical skill to `scripts/sync_codex_plugin_skills.sh` and `MANAGED_SKILL_NAMES`, then run the synchronization script. Treat `skills/` as canonical and `plugins/glyphs-mcp/skills/` as generated.
+3. Register every packaged skill once in `skills/manifest.json`, then run
+   `scripts/sync_codex_plugin_skills.sh`. Treat `skills/` as canonical and
+   `plugins/glyphs-mcp/skills/` as generated; do not maintain parallel name
+   lists.
 4. Update `CHANGELOG.md`, public setup/skill documentation, command/reference pages, and `content/contributor/release-build-notes.mdx`. Keep claims tied to tests actually run.
 5. Update the production tool catalog, schemas, prompts, routing fixtures, and release-surface tests whenever a public tool or result contract changed.
 6. For v2, verify the pinned Glyphs format knowledge manifest and generated canonical coverage. Any upstream drift, hash mismatch, unclassified official path, or inaccurate completeness claim blocks signing; never auto-update the model during release preparation.
+7. Run the Knowledge build in drift-check mode. Verify `search_knowledge` and
+   `get_knowledge` citations/version filters from the packaged bundle; runtime
+   network access is a release blocker.
 
 ## Validate locally
 
@@ -29,6 +46,10 @@ Treat preparation, signed artifact production, asset upload, and public release 
 2. Build the documentation website and validate every canonical and packaged skill with `quick_validate.py`.
 3. Run release metadata, catalog/documentation, installer, plug-in mirror, and packaged-skill synchronization checks. Run `git diff --check` last.
 4. Perform the applicable asymmetric matrix from the release QA protocol: pinned v1.11 read-only checks in Glyphs 3.5 and v2 disposable mutation/revert gates in Glyphs 4.
+   The v2 matrix must use `read_document`, `preview_change`, exact
+   `apply_change`, `revert_change`, `preview_export`, and permanent
+   `execute_python` modes; no retired domain endpoint may appear in catalog,
+   skills, routing fixtures, or generated documentation.
 5. Never save an open font automatically. Snapshot document/file state for live read-only checks and report whether it remained unchanged.
 6. For staging-only updater releases, require **Prepare Update** wording, an explicit not-installed state, a trusted release link, and proof that the installed plug-in remains unchanged.
 

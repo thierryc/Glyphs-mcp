@@ -16,6 +16,7 @@ from glyphs_mcp_v2.activity import (  # noqa: E402
     ActivityCancelled,
     OperationActivityStore,
 )
+from glyphs_mcp_v2.versions import palette_display_name  # noqa: E402
 
 
 class _Clock:
@@ -265,6 +266,30 @@ class OperationActivityStoreTests(unittest.TestCase):
         )
         self.assertIn("self.scrollView.setFrame_", source)
         self.assertNotIn("PALETTE_HEIGHT = METADATA_HEIGHT + STATUS_HEIGHT", source)
+
+    def test_palette_header_discreetly_uses_the_runtime_version(self) -> None:
+        source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("from .versions import palette_display_name", source)
+        self.assertIn(
+            'objectForInfoDictionaryKey_("CFBundleVersion")',
+            source,
+        )
+        self.assertNotIn("from GlyphsApp", source)
+        self.assertNotIn("4004", source)
+
+    def test_palette_header_normalizes_the_glyphs_build_number(self) -> None:
+        self.assertEqual(
+            palette_display_name(4004.0),
+            "Glyphs MCP · 2.0.0 (4004)",
+        )
+        self.assertEqual(
+            palette_display_name("4004.1"),
+            "Glyphs MCP · 2.0.0 (4004.1)",
+        )
+        self.assertEqual(palette_display_name(None), "Glyphs MCP · 2.0.0")
 
     def test_terminal_errors_linger_briefly_then_return_to_ready(self) -> None:
         source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(

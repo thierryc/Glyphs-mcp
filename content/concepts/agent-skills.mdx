@@ -23,18 +23,22 @@ Skills help agents:
 | Skill | Use it for |
 | --- | --- |
 | `glyphs` | General Glyphs MCP tasks, context checks, and routing to focused workflows. |
+| `glyphs-mcp-color-font` | Read-only palette, SVG, bitmap color-layer, fallback, and color-export evidence review. |
 | `glyphs-mcp-development` | Reusable workspace Python scripts and six plug-in types. |
+| `glyphs-mcp-export-validation` | Source export readiness and existing-binary validation with explicit evidence levels. |
 | `glyphs-mcp-master-compatibility` | Diagnostic-first master compatibility repair with guarded topology changes and authoritative final verification. |
 | `glyphs-mcp-outlines-docs` | Outline work and its dedicated live-code fallback, selected nodes, components, anchors, and focused docs lookup. |
 | `glyphs-mcp-italic-first-pass` | Experimental Roman-to-italic construction drafts and their narrowly guarded Python fallback. |
-| `glyphs-mcp-scripting` | Staged-document and reviewed open-world Python fallback with explicit rollback coverage. |
+| `glyphs-mcp-scripting` | Staged-document and reviewed open-world Python fallback with explicit rollback coverage and one-shot native safety repair. |
 | `glyphs-mcp-opentype-features` | OpenType features and stylistic-set inspection. |
-| `glyphs-mcp-production-audit` | Read-first production readiness across compatibility, spacing, anchors, kerning, and export. |
+| `glyphs-mcp-production-audit` | Cross-domain production-audit routing and evidence aggregation. |
+| `glyphs-mcp-unicode-semantics` | Unicode mappings, invisible controls, whitespace, marks, normalization, and fallback behavior. |
+| `glyphs-mcp-variable-font` | Axes, masters, instances, mappings, special layers, and variable-export readiness. |
 | `glyphs-mcp-maintainer-feedback` | Redacted, reproducible maintainer reports with receipts and acceptance tests. |
 | `glyphs-mcp-icon-font` | Stable Unicode and PUA assignment workflows for icon and symbol fonts. |
 | `glyphs-mcp-kerning` | Kerning bumper review and approved apply steps. |
 | `glyphs-mcp-litsquare-metadata` | LitSquare metadata inspection, inheritance, safe patches, semantic path roles, and fixed layer-specific IconGrid centering. |
-| `glyphs-mcp-spacing` | Spacing review, dry-run, and approved apply steps. |
+| `glyphs-mcp-spacing` | Exact-layer width and optional foreground-translation review with atomic approved applies. |
 | `glyphs-mcp-release` | Version, documentation, package synchronization, release validation, signing, and publication gates. |
 
 The `glyphs` skill is a small general launcher. The remaining skills stay intentionally narrow and provide operating instructions for common focused workflows.
@@ -57,12 +61,12 @@ bridge, an explicit `.cursor/skills` project copy, or a manual
 The optional Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot plugins all
 carry the same synchronized `skills/` directory and `.mcp.json` connection.
 `scripts/sync_codex_plugin_skills.sh` keeps its historical filename, but now
-manages the shared agent package: it copies the fourteen canonical directories from
+manages the shared agent package: it copies the eighteen canonical directories from
 `skills/` into `plugins/glyphs-mcp/skills/`. Use its `--check` mode in release
 validation, and do not edit packaged copies independently.
 
 Each host manifest shares the Glyphs MCP release version. Skills inherit that
-package version instead of maintaining fourteen independent version fields, while
+package version instead of maintaining eighteen independent version fields, while
 the running MCP server reports the native Glyphs MCP plug-in version.
 
 ## When to invoke a skill
@@ -70,7 +74,7 @@ the running MCP server reports the native Glyphs MCP plug-in version.
 Name the skill when you want the agent to follow the workflow:
 
 ```text
-Use the glyphs-mcp-spacing skill to review spacing for the selected glyphs and do a dry run first.
+Use the glyphs-mcp-spacing skill to review exact-layer spacing and optional foreground translation before an approved atomic apply.
 ```
 
 Continue with [Use skills](../getting-started/use-agent-skills.mdx) for setup details.

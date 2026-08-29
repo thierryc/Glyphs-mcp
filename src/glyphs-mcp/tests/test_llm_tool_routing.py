@@ -23,6 +23,13 @@ if str(V2_SOURCE) not in sys.path:
 from glyphs_mcp_v2.catalog import TOOL_CATALOG as V2_TOOL_CATALOG  # noqa: E402
 
 
+SKILL_MANIFEST = json.loads(
+    (REPO_ROOT / "skills" / "manifest.json").read_text(encoding="utf-8")
+)
+SKILL_SURFACES = {
+    item["name"]: item["surface"] for item in SKILL_MANIFEST["managedSkills"]
+}
+
 TOOLISH = re.compile(
     r"^(?:accept|add|apply|clear|copy|create|delete|discard|docs|get|list|"
     r"materialize|open|preview|review|rollback|save|set|show|update|execute|export)_"
@@ -123,7 +130,10 @@ class LLMToolRoutingTests(unittest.TestCase):
                         REPO_ROOT / "skills" / expected_skill / "SKILL.md"
                     ).read_text(encoding="utf-8")
                     for name in fixture["expected_tools"]:
-                        self.assertIn(f"`{name}`", skill_text)
+                        self.assertRegex(
+                            skill_text,
+                            r"`{}(?:`|\()".format(re.escape(name)),
+                        )
                 for name in fixture["forbidden_skills"]:
                     self.assertIn(name, skill_names)
                 self.assertEqual(
@@ -161,6 +171,10 @@ class LLMToolRoutingTests(unittest.TestCase):
             "spacing-domain-route",
             "context-kerning-domain-route",
             "generic-python-negative-route",
+            "color-font-audit-route",
+            "unicode-semantics-audit-route",
+            "variable-font-audit-route",
+            "export-validation-audit-route",
         }
         self.assertEqual(set(by_id), required_cases)
 
@@ -181,7 +195,12 @@ class LLMToolRoutingTests(unittest.TestCase):
                 if action in {"preview_mutation", "preview_external_effect"}:
                     self.assertTrue(fixture["review_required"])
                     self.assertEqual(fixture["approval"], "stop_before_execution")
-                    self.assertIn("review id", fixture["expected_result"].lower())
+                    expected_token = (
+                        "preview id"
+                        if action == "preview_mutation"
+                        else "approval id"
+                    )
+                    self.assertIn(expected_token, fixture["expected_result"].lower())
                 if action in {"execute_read_only", "debug_live_script"}:
                     self.assertFalse(fixture["review_required"])
                     self.assertEqual(fixture["approval"], "not_required")
@@ -209,29 +228,76 @@ class LLMToolRoutingTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("Generic Python with no Glyphs app or font target", router)
         self.assertIn("staged_document", scripting)
-        self.assertIn("execute_python(reviewId=..., confirm=true)", scripting)
-        self.assertIn("stored patch without rerunning Python", scripting)
+        self.assertIn("approvalId", scripting)
+        self.assertIn("never rerun the code for confirmation", scripting)
+
+        focused_routes = {
+            "color-font-audit-route": "glyphs-mcp-color-font",
+            "unicode-semantics-audit-route": "glyphs-mcp-unicode-semantics",
+            "variable-font-audit-route": "glyphs-mcp-variable-font",
+            "export-validation-audit-route": "glyphs-mcp-export-validation",
+        }
+        for case, skill in focused_routes.items():
+            fixture = by_id[case]
+            self.assertEqual(fixture["expected_skill"], skill)
+            self.assertIn("glyphs-mcp-production-audit", fixture["forbidden_skills"])
+            self.assertFalse(fixture["review_required"])
+            self.assertIn("save_document", fixture["forbidden_tools"])
+
+        unicode_skill = (
+            REPO_ROOT / "skills/glyphs-mcp-unicode-semantics/SKILL.md"
+        ).read_text(encoding="utf-8")
+        color_skill = (
+            REPO_ROOT / "skills/glyphs-mcp-color-font/SKILL.md"
+        ).read_text(encoding="utf-8")
+        variable_skill = (
+            REPO_ROOT / "skills/glyphs-mcp-variable-font/SKILL.md"
+        ).read_text(encoding="utf-8")
+        export_skill = (
+            REPO_ROOT / "skills/glyphs-mcp-export-validation/SKILL.md"
+        ).read_text(encoding="utf-8")
+        production_skill = (
+            REPO_ROOT / "skills/glyphs-mcp-production-audit/SKILL.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Route icon PUA allocation", unicode_skill)
+        self.assertIn("when the font intentionally contains color artwork", (
+            REPO_ROOT / "skills/glyphs-mcp-color-font/references/color-font-audit.md"
+        ).read_text(encoding="utf-8"))
+        self.assertIn("Ordinary multiple-master static families", (
+            REPO_ROOT / "skills/glyphs-mcp-variable-font/references/variable-font-audit.md"
+        ).read_text(encoding="utf-8"))
+        self.assertIn("existing binaries", export_skill)
+        self.assertIn("`preview_export`", export_skill)
+        self.assertIn("`apply_export` only when", export_skill)
+        self.assertIn("color, variable", production_skill)
+        self.assertNotIn("SOFT HYPHEN", production_skill)
+        self.assertIn("COLR", color_skill)
+        self.assertIn("fvar", variable_skill)
 
     def test_canonical_and_packaged_skills_route_only_to_model_tools(self) -> None:
         roots = [REPO_ROOT / "skills", REPO_ROOT / "plugins/glyphs-mcp/skills"]
         violations = []
         checked = 0
         for root in roots:
+            self.assertEqual(
+                {path.parent.name for path in root.glob("*/SKILL.md")},
+                set(SKILL_SURFACES),
+            )
             for path in sorted(root.glob("*/SKILL.md")):
                 checked += 1
                 text = path.read_text(encoding="utf-8")
-                v2_only = "surface: glyphs-mcp-v2" in text
+                surface = SKILL_SURFACES[path.parent.name]
                 for name in BACKTICK_IDENTIFIER.findall(text):
                     if not TOOLISH.match(name):
                         continue
                     available = (
                         name in V2_TOOL_CATALOG
-                        if v2_only
+                        if surface == "glyphs-mcp-v2"
                         else self._is_model_tool(name)
                     )
                     if not available:
                         violations.append((str(path.relative_to(REPO_ROOT)), name))
-        self.assertGreaterEqual(checked, 18)
+        self.assertEqual(checked, 2 * len(SKILL_SURFACES))
         self.assertEqual(violations, [])
 
     def test_removed_and_app_only_names_never_appear_in_skills(self) -> None:

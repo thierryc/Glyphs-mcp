@@ -6,6 +6,7 @@ import builtins
 import base64
 import copy
 import contextlib
+import ctypes
 import difflib
 import gc
 import hashlib
@@ -14,11 +15,14 @@ import json
 import os
 import plistlib
 import re
+import sys
 import time
 import tempfile
+from collections import deque
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
-from threading import RLock, Thread
+from threading import Lock, RLock, Thread
 from typing import Any, Callable, Mapping, Optional, Sequence
 
 from ..canonical_collections import (
@@ -40,9 +44,20 @@ from ..canonical_sources import (
     canonical_record_value,
     canonical_root_from_serialized_records,
 )
-from ..exporting import inspect_destination, publish_staged_directory
+from ..exporting import inspect_destination, publish_staged_directory, resolve_destination
 from ..ports import HostAccessError
-from ..python_execution import ObservedLivePythonError, PythonExecutionRequest
+from ..python_execution import (
+    ObservedLivePythonError,
+    PythonExecutionRequest,
+)
+from ..runtime_safety import (
+    SafetyRepairReport,
+    SafetySlotSnapshot,
+    SourceSaveForbiddenError,
+    StaleScriptingRuntimeIncidentError,
+    ScriptingRuntimeUnavailableError,
+    ScriptingSafetyStateMachine,
+)
 from ..mutation import (
     CANONICAL_V6_LIFECYCLE_CAPABILITY,
     CanonicalImpact,
@@ -77,8 +92,15 @@ from ..semantic import (
     rebase_canonical_model,
     semantic_value_at,
 )
+from ..saving import DocumentSaveError
+from ..source_bundle import (
+    SourceBundleError,
+    preflight_source_bundle as build_source_bundle_preflight,
+    render_source_bundle,
+)
 from .glyphs import (
     GlyphsHostAdapter,
+    _is_objc_proxy,
     _maybe_call,
     _native_property,
     _native_unsaved_changes,
@@ -1181,6 +1203,44 @@ def _saved_package_mapping(
     return mapping
 
 
+def _saved_source_canonical_model(
+    path: Path,
+    *,
+    instance_ids: Optional[Sequence[str]] = None,
+) -> Mapping[str, Any] | None:
+    """Decode one saved flat/package source without touching live objects."""
+
+    suffix = path.suffix.lower()
+    if suffix == ".glyphspackage" and path.is_dir():
+        serialized = _saved_package_mapping(path)
+    elif suffix == ".glyphs" and path.is_file():
+        serialized = _native_openstep_property_list(path)
+    else:
+        return None
+    if not isinstance(serialized, Mapping):
+        return None
+    try:
+        model = dict(
+            SerializedMappingSource(
+                serialized,
+                copy_source=False,
+                document_path=path,
+            ).capture()
+        )
+    except Exception:
+        return None
+    identities = tuple(str(value) for value in (instance_ids or ()))
+    instances = model.get("instances")
+    if identities and isinstance(instances, list):
+        if len(identities) != len(instances):
+            return None
+        for index, instance in enumerate(instances):
+            if not isinstance(instance, dict):
+                return None
+            instance["id"] = identities[index]
+    return model
+
+
 def _saved_document_canonical_model(
     font: Any,
     *,
@@ -1206,26 +1266,12 @@ def _saved_document_canonical_model(
         unavailable("document is not authoritatively clean")
         return None
     path = Path(str(path_value))
-    if path.suffix == ".glyphspackage" and path.is_dir():
-        serialized = _saved_package_mapping(path)
-    elif path.suffix == ".glyphs" and path.is_file():
-        serialized = _native_openstep_property_list(path)
-    else:
+    if path.suffix.lower() not in {".glyphs", ".glyphspackage"}:
         unavailable("document path is not a supported Glyphs v4 source")
         return None
-    if not isinstance(serialized, Mapping):
-        unavailable("OpenStep source decoding failed")
-        return None
-    try:
-        model = dict(
-            SerializedMappingSource(
-                serialized,
-                copy_source=False,
-                document_path=path,
-            ).capture()
-        )
-    except Exception as exc:
-        unavailable("canonical conversion failed: {!r}".format(exc))
+    model = _saved_source_canonical_model(path, instance_ids=instance_ids)
+    if not isinstance(model, dict):
+        unavailable("OpenStep source decoding or canonical conversion failed")
         return None
     glyph_models = model.get("glyphs")
     if not isinstance(glyph_models, Mapping):
@@ -1249,21 +1295,6 @@ def _saved_document_canonical_model(
     if not _saved_model_matches_live_identity(native_glyphs, glyph_models):
         unavailable("live glyph identity proof disagrees with saved source")
         return None
-    identities = tuple(str(value) for value in (instance_ids or ()))
-    instances = model.get("instances")
-    if identities and isinstance(instances, list):
-        if len(identities) != len(instances):
-            unavailable(
-                "instance identity mismatch native={} saved={}".format(
-                    len(identities), len(instances)
-                )
-            )
-            return None
-        for index, instance in enumerate(instances):
-            if not isinstance(instance, dict):
-                unavailable("canonical instance record is not mutable")
-                return None
-            instance["id"] = identities[index]
     return model
 
 
@@ -7005,6 +7036,8 @@ def _apply_layer_canonical_pass(
             sync_metrics()
         for scalar in set(_LAYER_SCALARS) - {
             "width",
+            "vertOrigin",
+            "vertWidth",
             "leftMetricsKey",
             "rightMetricsKey",
             "widthMetricsKey",
@@ -7101,8 +7134,12 @@ def _apply_layer_canonical_pass(
                 layer, current_shapes, target_shapes
             ):
                 _replace_shapes(layer, target_shapes)
-        # Width is stable last: bearings and absolute outline replay can both
-        # invalidate an earlier assignment.
+        # Advance/origin metrics are stable last: bearings and absolute outline
+        # replay can invalidate an earlier assignment on either axis.
+        if current_layer.get("vertOrigin") != target_layer.get("vertOrigin"):
+            _set_native_property(layer, "vertOrigin", target_layer.get("vertOrigin"))
+        if current_layer.get("vertWidth") != target_layer.get("vertWidth"):
+            _set_native_property(layer, "vertWidth", target_layer.get("vertWidth"))
         if current_layer.get("width") != target_layer.get("width"):
             _set_native_property(layer, "width", target_layer.get("width"))
     finally:
@@ -8959,6 +8996,1746 @@ def _source_file_state(path: Path) -> Mapping[str, Any] | None:
     }
 
 
+def _normalized_source_file_state(path: Path) -> dict[str, Any]:
+    suffix = path.suffix.lower()
+    if suffix not in {".glyphs", ".glyphspackage"}:
+        raise DocumentSaveError(
+            "unsupported_source_format",
+            "Glyphs document saves require a .glyphs or .glyphspackage path.",
+        )
+    if path.is_symlink():
+        raise DocumentSaveError(
+            "invalid_destination",
+            "A Glyphs save path cannot be a symbolic link.",
+        )
+    kind = "glyphspackage" if suffix == ".glyphspackage" else "glyphs"
+    if path.exists():
+        if kind == "glyphs" and not path.is_file():
+            raise DocumentSaveError(
+                "destination_type_mismatch",
+                "A .glyphs destination must be a regular file.",
+            )
+        if kind == "glyphspackage" and not path.is_dir():
+            raise DocumentSaveError(
+                "destination_type_mismatch",
+                "A .glyphspackage destination must be a directory.",
+            )
+        if kind == "glyphspackage":
+            for candidate in path.rglob("*"):
+                if candidate.is_symlink():
+                    raise DocumentSaveError(
+                        "invalid_destination",
+                        "A .glyphspackage destination cannot contain symbolic links.",
+                    )
+                if not candidate.is_dir() and not candidate.is_file():
+                    raise DocumentSaveError(
+                        "destination_type_mismatch",
+                        "A .glyphspackage destination contains an unsupported filesystem object.",
+                    )
+    raw = _source_file_state(path)
+    if raw is None:
+        return {
+            "kind": kind,
+            "exists": path.exists(),
+            "readable": False,
+            "contentFingerprint": None,
+        }
+    return {
+        "kind": kind,
+        "exists": bool(raw.get("exists")),
+        "readable": bool(raw.get("readable")),
+        "contentFingerprint": raw.get("contentFingerprint"),
+    }
+
+
+def _same_save_path(left: Path | None, right: Path) -> bool:
+    """Compare logical document URLs, not filesystem inode aliases."""
+
+    if left is None:
+        return False
+    return left.resolve(strict=False) == right.resolve(strict=False)
+
+
+def _same_save_object(left: Path | None, right: Path) -> bool:
+    """Detect aliases when protecting another open document."""
+
+    if left is None:
+        return False
+    try:
+        if left.exists() and right.exists():
+            return os.path.samefile(str(left), str(right))
+    except OSError:
+        pass
+    return _same_save_path(left, right)
+
+
+def _validated_save_destination(value: str) -> Path:
+    """Resolve a save path without traversing links or nesting packages."""
+
+    raw = Path(str(value or ""))
+    if not raw.is_absolute():
+        raise DocumentSaveError(
+            "invalid_destination", "Save destinations must be explicit absolute paths."
+        )
+    if any(parent.suffix.lower() == ".glyphspackage" for parent in raw.parents):
+        raise DocumentSaveError(
+            "invalid_destination",
+            "A save destination cannot be nested inside a .glyphspackage.",
+        )
+    # ``resolve_destination`` normalizes the stable macOS /tmp and /var root
+    # aliases before rejecting arbitrary symlink ancestors. Performing a raw
+    # symlink walk here would incorrectly reject ordinary /var/folders paths.
+    try:
+        target = resolve_destination(str(raw))
+    except ValueError as exc:
+        raise DocumentSaveError("invalid_destination", str(exc)) from exc
+    if not target.parent.exists() or not target.parent.is_dir():
+        raise DocumentSaveError(
+            "destination_parent_unavailable",
+            "The save destination parent directory does not exist.",
+        )
+    if not os.access(str(target.parent), os.W_OK):
+        raise DocumentSaveError(
+            "destination_parent_unwritable",
+            "The save destination parent directory is not writable.",
+        )
+    return target
+
+
+def _native_save_error(result: Any) -> str | None:
+    success = result
+    error = None
+    if isinstance(result, tuple):
+        success = result[0] if result else False
+        error = result[1] if len(result) > 1 else None
+    if bool(success) and error is None:
+        return None
+    for name in (
+        "localizedRecoverySuggestion",
+        "localizedFailureReason",
+        "localizedDescription",
+    ):
+        value = _maybe_call(_safe_getattr(error, name)) if error is not None else None
+        if value:
+            return str(value)[:2048]
+    return "Glyphs reported that the native document save failed."
+
+
+_LIVE_SOURCE_SAVE_GUARD_LOCK = RLock()
+_GuardSlotKey = tuple[int, int, int, bytes, bytes, bool]
+_SOURCE_SAVE_REFLECTION_METHODS = frozenset(
+    {
+        "methodforselector",
+        "performselector",
+        "performselectorafterdelay",
+        "performselectorinbackground",
+        "performselectoronmainthread",
+        "performselectoronthread",
+        "performselectorwithobject",
+        "performselectorwithobjectafterdelay",
+        "performselectorwithobjectwithobject",
+    }
+)
+
+
+@dataclass(frozen=True)
+class _ObjectiveCMethodState:
+    owner: Any
+    python_name: str
+    selector_name: bytes
+    class_method: bool
+    class_pointer: int
+    method_pointer: int
+    implementation_pointer: int
+    type_encoding: bytes
+
+
+@dataclass(frozen=True)
+class _ObjectiveCMethodPatch:
+    original_state: _ObjectiveCMethodState
+    installed_implementation_pointer: int
+    slot: _GuardSlotKey
+    original_imp: Any
+    trampoline: Any
+    state: str = "residual_guard"
+    repairable: bool = True
+
+
+@dataclass(frozen=True)
+class _PythonMethodPatch:
+    owner: Any
+    name: str
+    original: Any
+    installed: Any
+    state: str = "residual_guard"
+    repairable: bool = True
+
+
+@dataclass(frozen=True)
+class _ProfileHookPatch:
+    original: Any
+    installed: Any
+    state: str
+    repairable: bool
+
+
+@dataclass
+class _RuntimeDispatchController:
+    original_imp: Any
+    method_name: str
+    reflection: bool
+    active_guard: Any = None
+
+
+class _ObjectiveCRuntime:
+    """Minimal typed bridge to the Objective-C method runtime."""
+
+    def __init__(self) -> None:
+        library = ctypes.CDLL(None)
+        pointer = ctypes.c_void_p
+        library.objc_getClass.argtypes = [ctypes.c_char_p]
+        library.objc_getClass.restype = pointer
+        library.sel_registerName.argtypes = [ctypes.c_char_p]
+        library.sel_registerName.restype = pointer
+        library.object_getClass.argtypes = [pointer]
+        library.object_getClass.restype = pointer
+        library.class_getInstanceMethod.argtypes = [pointer, pointer]
+        library.class_getInstanceMethod.restype = pointer
+        library.class_getClassMethod.argtypes = [pointer, pointer]
+        library.class_getClassMethod.restype = pointer
+        library.class_copyMethodList.argtypes = [
+            pointer,
+            ctypes.POINTER(ctypes.c_uint),
+        ]
+        library.class_copyMethodList.restype = ctypes.POINTER(pointer)
+        library.method_getImplementation.argtypes = [pointer]
+        library.method_getImplementation.restype = pointer
+        library.method_getTypeEncoding.argtypes = [pointer]
+        library.method_getTypeEncoding.restype = ctypes.c_char_p
+        library.method_setImplementation.argtypes = [pointer, pointer]
+        library.method_setImplementation.restype = pointer
+        library.free.argtypes = [pointer]
+        library.free.restype = None
+        self._library = library
+
+    def capture(
+        self,
+        owner: Any,
+        python_name: str,
+        selector_name: bytes,
+        *,
+        class_method: bool,
+        require_owned: bool = True,
+    ) -> _ObjectiveCMethodState | None:
+        owner_name = str(_safe_getattr(owner, "__name__") or "")
+        if not owner_name:
+            return None
+        class_pointer = int(
+            self._library.objc_getClass(owner_name.encode("utf-8")) or 0
+        )
+        selector_pointer = int(
+            self._library.sel_registerName(bytes(selector_name)) or 0
+        )
+        if not class_pointer or not selector_pointer:
+            return None
+        if class_method:
+            method_pointer = int(
+                self._library.class_getClassMethod(
+                    ctypes.c_void_p(class_pointer),
+                    ctypes.c_void_p(selector_pointer),
+                )
+                or 0
+            )
+            list_owner = int(
+                self._library.object_getClass(ctypes.c_void_p(class_pointer))
+                or 0
+            )
+        else:
+            method_pointer = int(
+                self._library.class_getInstanceMethod(
+                    ctypes.c_void_p(class_pointer),
+                    ctypes.c_void_p(selector_pointer),
+                )
+                or 0
+            )
+            list_owner = class_pointer
+        if not method_pointer or not list_owner:
+            return None
+        if require_owned:
+            count = ctypes.c_uint(0)
+            methods = self._library.class_copyMethodList(
+                ctypes.c_void_p(list_owner), ctypes.byref(count)
+            )
+            try:
+                owned = bool(methods) and any(
+                    int(methods[index] or 0) == method_pointer
+                    for index in range(int(count.value))
+                )
+            finally:
+                if methods:
+                    self._library.free(methods)
+            if not owned:
+                return None
+        implementation_pointer = int(
+            self._library.method_getImplementation(
+                ctypes.c_void_p(method_pointer)
+            )
+            or 0
+        )
+        raw_encoding = self._library.method_getTypeEncoding(
+            ctypes.c_void_p(method_pointer)
+        )
+        if not implementation_pointer or not raw_encoding:
+            return None
+        return _ObjectiveCMethodState(
+            owner=owner,
+            python_name=str(python_name),
+            selector_name=bytes(selector_name),
+            class_method=bool(class_method),
+            class_pointer=class_pointer,
+            method_pointer=method_pointer,
+            implementation_pointer=implementation_pointer,
+            type_encoding=bytes(raw_encoding),
+        )
+
+    def _matches(
+        self,
+        observed: _ObjectiveCMethodState | None,
+        state: _ObjectiveCMethodState,
+        implementation_pointer: int,
+    ) -> bool:
+        return bool(
+            observed is not None
+            and observed.class_pointer == state.class_pointer
+            and observed.method_pointer == state.method_pointer
+            and observed.implementation_pointer == implementation_pointer
+            and observed.type_encoding == state.type_encoding
+        )
+
+    def swap_and_verify(
+        self,
+        state: _ObjectiveCMethodState,
+        replacement_implementation_pointer: int,
+        *,
+        expected_current_implementation_pointer: int,
+    ) -> tuple[bool, int | None]:
+        """Atomically swap one IMP and prove both sides of the transition."""
+
+        before = self.capture(
+            state.owner,
+            state.python_name,
+            state.selector_name,
+            class_method=state.class_method,
+            require_owned=True,
+        )
+        if not self._matches(
+            before, state, expected_current_implementation_pointer
+        ):
+            return False, None
+        prior = int(
+            self._library.method_setImplementation(
+                ctypes.c_void_p(state.method_pointer),
+                ctypes.c_void_p(replacement_implementation_pointer),
+            )
+            or 0
+        )
+        try:
+            observed = self.capture(
+                state.owner,
+                state.python_name,
+                state.selector_name,
+                class_method=state.class_method,
+                require_owned=True,
+            )
+        except BaseException:
+            # The atomic exchange has already happened. Return its prior IMP
+            # so the caller can restore it before failing closed.
+            observed = None
+        return (
+            bool(
+                prior == expected_current_implementation_pointer
+                and self._matches(
+                    observed, state, replacement_implementation_pointer
+                )
+            ),
+            prior,
+        )
+
+    def set_and_verify(
+        self,
+        state: _ObjectiveCMethodState,
+        implementation_pointer: int,
+    ) -> bool:
+        """Unconditionally restore an observed prior IMP after a failed swap."""
+
+        self._library.method_setImplementation(
+            ctypes.c_void_p(state.method_pointer),
+            ctypes.c_void_p(implementation_pointer),
+        )
+        try:
+            observed = self.capture(
+                state.owner,
+                state.python_name,
+                state.selector_name,
+                class_method=state.class_method,
+                require_owned=True,
+            )
+        except BaseException:
+            observed = None
+        return self._matches(observed, state, implementation_pointer)
+
+    def restore_and_verify(
+        self,
+        state: _ObjectiveCMethodState,
+        *,
+        expected_current_implementation_pointer: int | None = None,
+    ) -> bool:
+        expected = (
+            state.implementation_pointer
+            if expected_current_implementation_pointer is None
+            else expected_current_implementation_pointer
+        )
+        verified, _prior = self.swap_and_verify(
+            state,
+            state.implementation_pointer,
+            expected_current_implementation_pointer=expected,
+        )
+        if verified:
+            return True
+        # A failed transition can still end at the exact captured baseline.
+        # Observe that final state before degrading the runtime. Never write
+        # the baseline unconditionally here: a third party may have taken
+        # ownership after the guard was installed.
+        try:
+            observed = self.capture(
+                state.owner,
+                state.python_name,
+                state.selector_name,
+                class_method=state.class_method,
+                require_owned=True,
+            )
+        except BaseException:
+            observed = None
+        return self._matches(
+            observed, state, state.implementation_pointer
+        )
+
+
+_OBJC_RUNTIME: _ObjectiveCRuntime | None = None
+_OBJC_TRAMPOLINES: dict[_GuardSlotKey, Any] = {}
+_OBJC_TRAMPOLINE_CLASS_SEQUENCE = 0
+
+
+def _objective_c_runtime() -> _ObjectiveCRuntime:
+    global _OBJC_RUNTIME
+    if _OBJC_RUNTIME is None:
+        _OBJC_RUNTIME = _ObjectiveCRuntime()
+    return _OBJC_RUNTIME
+
+
+class _WorkingSourceSaveGuardManager:
+    """Own process-wide guard health, dispatch, and bounded native repair."""
+
+    def __init__(self) -> None:
+        self._lock = _LIVE_SOURCE_SAVE_GUARD_LOCK
+        self._repair_lock = Lock()
+        self._machine = ScriptingSafetyStateMachine()
+        self._active_guard: Any = None
+        self._controllers: dict[_GuardSlotKey, _RuntimeDispatchController] = {}
+        self._objective_c_residuals: dict[
+            _GuardSlotKey, _ObjectiveCMethodPatch
+        ] = {}
+        self._python_residuals: dict[
+            tuple[Any, str], _PythonMethodPatch
+        ] = {}
+        self._profile_residual: _ProfileHookPatch | None = None
+
+    def snapshot(self) -> Any:
+        return self._machine.snapshot()
+
+    def is_active_guard(self, guard: Any) -> bool:
+        with self._lock:
+            return self._active_guard is guard and self._machine.state == "active"
+
+    def register_controller(
+        self,
+        slot: _GuardSlotKey,
+        *,
+        original_imp: Any,
+        method_name: str,
+        reflection: bool,
+        guard: Any,
+    ) -> None:
+        with self._lock:
+            controller = self._controllers.get(slot)
+            if controller is None:
+                controller = _RuntimeDispatchController(
+                    original_imp=original_imp,
+                    method_name=str(method_name),
+                    reflection=bool(reflection),
+                )
+                self._controllers[slot] = controller
+            else:
+                controller.original_imp = original_imp
+                controller.method_name = str(method_name)
+                controller.reflection = bool(reflection)
+            controller.active_guard = guard
+
+    def deactivate_controller(self, slot: _GuardSlotKey, guard: Any) -> None:
+        with self._lock:
+            controller = self._controllers.get(slot)
+            if controller is not None and controller.active_guard is guard:
+                controller.active_guard = None
+
+    def dispatch(self, slot: _GuardSlotKey, receiver: Any, *args: Any) -> Any:
+        with self._lock:
+            controller = self._controllers.get(slot)
+            guard = controller.active_guard if controller is not None else None
+            original_imp = controller.original_imp if controller is not None else None
+        if controller is None or not callable(original_imp):
+            raise SourceSaveForbiddenError(
+                "working-source save guard dispatch state is unavailable"
+            )
+        if guard is not None and self.is_active_guard(guard):
+            return guard._dispatch_objective_c(controller, receiver, *args)
+        # A residual trampoline can remain reachable directly or through a
+        # third-party swizzle. Outside an active lease it must behave exactly
+        # like the captured implementation so normal Glyphs saves keep working.
+        return original_imp(receiver, *args)
+
+    def begin(self, guard: Any) -> None:
+        with self._lock:
+            if self._active_guard is not None:
+                raise ScriptingRuntimeUnavailableError(
+                    "working-source save guard is already active",
+                    self._machine.snapshot(),
+                )
+        if self._machine.state != "healthy":
+            self.repair(trigger="automatic_preflight")
+        with self._lock:
+            snapshot = self._machine.snapshot()
+            if snapshot.state != "healthy":
+                raise ScriptingRuntimeUnavailableError(
+                    "strict scripting safety is unavailable; repair the current incident",
+                    snapshot,
+                )
+            self._active_guard = guard
+            self._machine.begin("guard_{}".format(id(guard)))
+
+    def begin_recovery(self, guard: Any) -> None:
+        with self._lock:
+            if self._active_guard is guard:
+                self._machine.begin_recovery(trigger="execution_teardown")
+
+    @staticmethod
+    def _objective_c_slot_snapshot(
+        patch: _ObjectiveCMethodPatch,
+        *,
+        state: str | None = None,
+        repairable: bool | None = None,
+    ) -> SafetySlotSnapshot:
+        owner = patch.original_state.owner
+        selector = patch.original_state.selector_name.decode(
+            "utf-8", errors="replace"
+        )
+        return SafetySlotSnapshot(
+            slot_id="objc_{}_{}".format(
+                patch.original_state.class_pointer,
+                patch.original_state.method_pointer,
+            ),
+            owner_class=str(_safe_getattr(owner, "__name__") or type(owner).__name__),
+            selector=selector,
+            kind="objective_c",
+            state=patch.state if state is None else state,
+            repairable=(
+                patch.repairable if repairable is None else repairable
+            ),
+        )
+
+    @staticmethod
+    def _python_slot_snapshot(
+        patch: _PythonMethodPatch,
+        *,
+        state: str | None = None,
+        repairable: bool | None = None,
+    ) -> SafetySlotSnapshot:
+        return SafetySlotSnapshot(
+            slot_id="python_{}_{}".format(id(patch.owner), patch.name),
+            owner_class=str(
+                _safe_getattr(patch.owner, "__name__")
+                or type(patch.owner).__name__
+            ),
+            selector=patch.name,
+            kind="python_descriptor",
+            state=patch.state if state is None else state,
+            repairable=(
+                patch.repairable if repairable is None else repairable
+            ),
+        )
+
+    @staticmethod
+    def _profile_slot_snapshot(patch: _ProfileHookPatch) -> SafetySlotSnapshot:
+        return SafetySlotSnapshot(
+            slot_id="profile_hook_main_thread",
+            owner_class="PythonRuntime",
+            selector="sys.setprofile",
+            kind="profile_hook",
+            state=patch.state,
+            repairable=patch.repairable,
+        )
+
+    def finish(
+        self,
+        guard: Any,
+        *,
+        objective_c_residuals: Sequence[_ObjectiveCMethodPatch] = (),
+        python_residuals: Sequence[_PythonMethodPatch] = (),
+        profile_residual: _ProfileHookPatch | None = None,
+        safety_failures: Sequence[str] = (),
+    ) -> Any:
+        with self._lock:
+            for patch in objective_c_residuals:
+                self._objective_c_residuals[patch.slot] = patch
+                self.deactivate_controller(patch.slot, guard)
+            for patch in python_residuals:
+                self._python_residuals[(patch.owner, patch.name)] = patch
+            if profile_residual is not None:
+                self._profile_residual = profile_residual
+            if self._active_guard is guard:
+                self._active_guard = None
+            affected = tuple(
+                self._objective_c_slot_snapshot(patch)
+                for patch in objective_c_residuals
+            ) + tuple(
+                self._python_slot_snapshot(patch)
+                for patch in python_residuals
+            )
+            if profile_residual is not None:
+                affected += (self._profile_slot_snapshot(profile_residual),)
+            has_owned_residual = bool(
+                any(
+                    patch.state != "external_owner"
+                    for patch in objective_c_residuals
+                )
+                or any(
+                    patch.state != "external_owner"
+                    for patch in python_residuals
+                )
+                or (
+                    profile_residual is not None
+                    and profile_residual.state != "external_owner"
+                )
+            )
+            if affected:
+                message = (
+                    str(safety_failures[0])
+                    if safety_failures
+                    else "One or more save-guard slots did not restore exactly."
+                )
+                self._machine.mark_incident(
+                    target_state=(
+                        "recovery_required" if has_owned_residual else "degraded"
+                    ),
+                    phase="restore",
+                    reason_code="guard_restoration_incomplete",
+                    message=message,
+                    affected_slots=affected,
+                    trigger="execution_teardown",
+                )
+            elif safety_failures:
+                self._machine.mark_incident(
+                    target_state="degraded",
+                    phase="restore",
+                    reason_code="guard_verification_unavailable",
+                    message=str(safety_failures[0]),
+                    affected_slots=(),
+                    trigger="execution_teardown",
+                )
+            else:
+                self._machine.mark_healthy(trigger="execution_teardown")
+            return self._machine.snapshot()
+
+    def repair(
+        self,
+        *,
+        trigger: str,
+        expected_incident_id: str | None = None,
+    ) -> SafetyRepairReport:
+        """Serialize one bounded repair pass and convert native faults to state."""
+
+        if not self._repair_lock.acquire(blocking=False):
+            snapshot = self._machine.snapshot()
+            report = SafetyRepairReport(
+                trigger=str(trigger),
+                attempted_at=datetime.now(timezone.utc).isoformat().replace(
+                    "+00:00", "Z"
+                ),
+                result="busy",
+                before_state=snapshot.state,
+                after_state=snapshot.state,
+                incident_id=(
+                    snapshot.current_incident.incident_id
+                    if snapshot.current_incident is not None
+                    else None
+                ),
+                repaired_slot_count=0,
+                remaining_slot_count=(
+                    len(self._objective_c_residuals)
+                    + len(self._python_residuals)
+                    + (1 if self._profile_residual is not None else 0)
+                ),
+                message="Another scripting runtime repair is active.",
+            )
+            self._machine.record_repair(report)
+            return report
+        try:
+            return self._repair_once(
+                trigger=trigger,
+                expected_incident_id=expected_incident_id,
+            )
+        except StaleScriptingRuntimeIncidentError:
+            raise
+        except BaseException as exc:
+            with self._lock:
+                before = self._machine.snapshot()
+                affected = (
+                    SafetySlotSnapshot(
+                        slot_id="native_runtime_verification",
+                        owner_class="ObjectiveCRuntime",
+                        selector="method_getImplementation",
+                        kind="objective_c",
+                        state="unverifiable",
+                        repairable=False,
+                    ),
+                )
+                if before.state != "recovering":
+                    self._machine.begin_recovery(trigger=str(trigger))
+                self._machine.mark_incident(
+                    target_state="recovery_required",
+                    phase="repair",
+                    reason_code="native_repair_unavailable",
+                    message="Native scripting repair failed: {}".format(
+                        type(exc).__name__
+                    ),
+                    affected_slots=affected,
+                    trigger=str(trigger),
+                )
+                after = self._machine.snapshot()
+                report = SafetyRepairReport(
+                    trigger=str(trigger),
+                    attempted_at=datetime.now(timezone.utc).isoformat().replace(
+                        "+00:00", "Z"
+                    ),
+                    result="incomplete",
+                    before_state=before.state,
+                    after_state=after.state,
+                    incident_id=(
+                        after.current_incident.incident_id
+                        if after.current_incident is not None
+                        else None
+                    ),
+                    repaired_slot_count=0,
+                    remaining_slot_count=1,
+                    message="Native scripting runtime recovery is unavailable.",
+                )
+                self._machine.record_repair(report)
+                return report
+        finally:
+            self._repair_lock.release()
+
+    def _repair_once(
+        self,
+        *,
+        trigger: str,
+        expected_incident_id: str | None = None,
+    ) -> SafetyRepairReport:
+        with self._lock:
+            before = self._machine.snapshot()
+            current_id = (
+                before.current_incident.incident_id
+                if before.current_incident is not None
+                else None
+            )
+            if expected_incident_id and expected_incident_id != current_id:
+                raise StaleScriptingRuntimeIncidentError(
+                    "stale scripting runtime incident: expected {} but current is {}".format(
+                        expected_incident_id, current_id or "none"
+                    )
+                )
+            if self._active_guard is not None:
+                report = SafetyRepairReport(
+                    trigger=str(trigger),
+                    attempted_at=datetime.now(timezone.utc).isoformat().replace(
+                        "+00:00", "Z"
+                    ),
+                    result="busy",
+                    before_state=before.state,
+                    after_state=before.state,
+                    incident_id=current_id,
+                    repaired_slot_count=0,
+                    remaining_slot_count=(
+                        len(self._objective_c_residuals)
+                        + len(self._python_residuals)
+                        + (1 if self._profile_residual is not None else 0)
+                    ),
+                    message="A live scripting guard is active.",
+                )
+                self._machine.record_repair(report)
+                return report
+            if (
+                before.state == "healthy"
+                and not self._objective_c_residuals
+                and not self._python_residuals
+                and self._profile_residual is None
+            ):
+                report = SafetyRepairReport(
+                    trigger=str(trigger),
+                    attempted_at=datetime.now(timezone.utc).isoformat().replace(
+                        "+00:00", "Z"
+                    ),
+                    result="not_needed",
+                    before_state="healthy",
+                    after_state="healthy",
+                    incident_id=None,
+                    repaired_slot_count=0,
+                    remaining_slot_count=0,
+                    message="The strict scripting interlock is healthy.",
+                )
+                self._machine.record_repair(report)
+                return report
+            self._machine.begin_recovery(trigger=str(trigger))
+
+        repaired = 0
+        remaining_objc: dict[_GuardSlotKey, _ObjectiveCMethodPatch] = {}
+        remaining_python: dict[tuple[Any, str], _PythonMethodPatch] = {}
+        remaining_profile: _ProfileHookPatch | None = None
+        affected: list[SafetySlotSnapshot] = []
+        runtime = _objective_c_runtime()
+
+        for slot, patch in tuple(self._objective_c_residuals.items()):
+            state = patch.original_state
+            try:
+                observed = runtime.capture(
+                    state.owner,
+                    state.python_name,
+                    state.selector_name,
+                    class_method=state.class_method,
+                    require_owned=True,
+                )
+            except BaseException:
+                observed = None
+            if runtime._matches(observed, state, state.implementation_pointer):
+                repaired += 1
+                self.deactivate_controller(slot, None)
+                continue
+            if runtime._matches(
+                observed, state, patch.installed_implementation_pointer
+            ):
+                try:
+                    restored = runtime.restore_and_verify(
+                        state,
+                        expected_current_implementation_pointer=(
+                            patch.installed_implementation_pointer
+                        ),
+                    )
+                except BaseException:
+                    restored = False
+                if restored:
+                    repaired += 1
+                    self.deactivate_controller(slot, None)
+                    continue
+                remaining_objc[slot] = patch
+                affected.append(
+                    self._objective_c_slot_snapshot(
+                        patch, state="residual_guard", repairable=True
+                    )
+                )
+                continue
+            if observed is not None:
+                # The public method is now owned by another implementation.
+                # Do not overwrite it. The retained controller safely forwards
+                # if that implementation still calls our old trampoline.
+                repaired += 1
+                self.deactivate_controller(slot, None)
+                continue
+            remaining_objc[slot] = patch
+            affected.append(
+                self._objective_c_slot_snapshot(
+                    patch, state="unverifiable", repairable=False
+                )
+            )
+
+        for key, patch in tuple(self._python_residuals.items()):
+            try:
+                current = vars(patch.owner).get(patch.name)
+            except Exception:
+                current = None
+            if current is patch.original:
+                repaired += 1
+                continue
+            if current is patch.installed:
+                try:
+                    restored = _WorkingSourceSaveRuntimeGuard._set_python_descriptor(
+                        patch.owner, patch.name, patch.original
+                    )
+                except BaseException:
+                    restored = False
+                if restored:
+                    repaired += 1
+                    continue
+                remaining_python[key] = patch
+                affected.append(
+                    self._python_slot_snapshot(
+                        patch, state="residual_guard", repairable=True
+                    )
+                )
+                continue
+            if current is not None:
+                repaired += 1
+                continue
+            remaining_python[key] = patch
+            affected.append(
+                self._python_slot_snapshot(
+                    patch, state="unverifiable", repairable=False
+                )
+            )
+
+        profile_patch = self._profile_residual
+        if profile_patch is not None:
+            try:
+                current_profile = sys.getprofile()
+                profile_verified = True
+            except BaseException:
+                current_profile = None
+                profile_verified = False
+            if not profile_verified:
+                remaining_profile = _ProfileHookPatch(
+                    original=profile_patch.original,
+                    installed=profile_patch.installed,
+                    state="unverifiable",
+                    repairable=False,
+                )
+                affected.append(self._profile_slot_snapshot(remaining_profile))
+            elif current_profile is profile_patch.original:
+                repaired += 1
+            elif current_profile is profile_patch.installed:
+                try:
+                    sys.setprofile(profile_patch.original)
+                    restored = sys.getprofile() is profile_patch.original
+                except BaseException:
+                    restored = False
+                if restored:
+                    repaired += 1
+                else:
+                    remaining_profile = _ProfileHookPatch(
+                        original=profile_patch.original,
+                        installed=profile_patch.installed,
+                        state="residual_guard",
+                        repairable=True,
+                    )
+                    affected.append(
+                        self._profile_slot_snapshot(remaining_profile)
+                    )
+            else:
+                # An external profiler deliberately took ownership. Preserve
+                # it and adopt it as the next lease's baseline.
+                repaired += 1
+
+        with self._lock:
+            self._objective_c_residuals = remaining_objc
+            self._python_residuals = remaining_python
+            self._profile_residual = remaining_profile
+            remaining = (
+                len(remaining_objc)
+                + len(remaining_python)
+                + (1 if remaining_profile is not None else 0)
+            )
+            if remaining:
+                self._machine.mark_incident(
+                    target_state="recovery_required",
+                    phase="repair",
+                    reason_code="guard_repair_incomplete",
+                    message="Strict scripting safety could not restore every owned slot.",
+                    affected_slots=tuple(affected),
+                    trigger=str(trigger),
+                )
+                result = "incomplete"
+                message = "Scripting runtime repair remains incomplete."
+            else:
+                self._machine.mark_healthy(trigger=str(trigger))
+                result = "repaired" if repaired else "revalidated"
+                message = "The strict scripting interlock is healthy."
+            after = self._machine.snapshot()
+            report = SafetyRepairReport(
+                trigger=str(trigger),
+                attempted_at=datetime.now(timezone.utc).isoformat().replace(
+                    "+00:00", "Z"
+                ),
+                result=result,
+                before_state=before.state,
+                after_state=after.state,
+                incident_id=current_id,
+                repaired_slot_count=repaired,
+                remaining_slot_count=remaining,
+                message=message,
+            )
+            self._machine.record_repair(report)
+            return report
+
+
+_LIVE_SOURCE_SAVE_GUARD_MANAGER = _WorkingSourceSaveGuardManager()
+
+
+def _objective_c_trampoline(
+    slot: _GuardSlotKey,
+) -> Any:
+    """Return one stable off-target PyObjC callback IMP for a guard slot.
+
+    Installing a Python selector directly on a real host class mutates
+    PyObjC's descriptor cache, which cannot be repaired by restoring only the
+    Objective-C IMP. Trampolines therefore live on private helper classes and
+    are reused across serialized guard executions; real host classes are
+    touched only through ``method_setImplementation``.
+    """
+
+    global _OBJC_TRAMPOLINE_CLASS_SEQUENCE
+    cached = _OBJC_TRAMPOLINES.get(slot)
+    if cached is not None:
+        return cached
+    import objc  # type: ignore[import-not-found]
+
+    _class_pointer, _method_pointer, _baseline_pointer, selector_name, signature, class_method = slot
+
+    def dispatch(receiver: Any, *args: Any) -> Any:
+        return _LIVE_SOURCE_SAVE_GUARD_MANAGER.dispatch(slot, receiver, *args)
+
+    NSObject = objc.lookUpClass("NSObject")
+    while True:
+        _OBJC_TRAMPOLINE_CLASS_SEQUENCE += 1
+        class_name = "GlyphsMCPSaveGuardIMP_{}_{}".format(
+            os.getpid(), _OBJC_TRAMPOLINE_CLASS_SEQUENCE
+        )
+        try:
+            objc.lookUpClass(class_name)
+        except objc.nosuchclass_error:
+            pass
+        else:
+            continue
+        try:
+            helper = type(class_name, (NSObject,), {})
+        except Exception as exc:
+            raise SourceSaveForbiddenError(
+                "working-source save guard could not allocate its private "
+                "Objective-C trampoline class"
+            ) from exc
+        break
+    replacement_selector = objc.selector(
+        dispatch,
+        selector=selector_name,
+        signature=signature,
+        isClassMethod=class_method,
+    )
+    objc.classAddMethod(helper, selector_name, replacement_selector)
+    state = _objective_c_runtime().capture(
+        helper,
+        "trampoline",
+        selector_name,
+        class_method=class_method,
+        require_owned=True,
+    )
+    if state is None:
+        raise SourceSaveForbiddenError(
+            "working-source save guard could not create a verifiable "
+            "Objective-C trampoline"
+        )
+    trampoline = {
+        "owner": helper,
+        "selector": replacement_selector,
+        "state": state,
+    }
+    _OBJC_TRAMPOLINES[slot] = trampoline
+    return trampoline
+
+
+def _runtime_selector_text(value: Any) -> str:
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    selector = _safe_getattr(value, "selector")
+    if isinstance(selector, bytes):
+        return selector.decode("utf-8", errors="replace")
+    if isinstance(selector, str):
+        return selector
+    return str(value or "")
+
+
+def _runtime_method_key(value: Any) -> str:
+    return re.sub(r"[^a-z0-9]", "", _runtime_selector_text(value).lower())
+
+
+def _is_working_source_save_operation(value: Any) -> bool:
+    """Recognize native/Python entry points that persist an open source.
+
+    Deliberately exclude read-only save-panel/autosaved-URL accessors and
+    ``saveDocumentToPDF:``. Open-world Python retains ordinary mutation and
+    unrelated external-file behavior; only working-font persistence is gated.
+    """
+
+    key = _runtime_method_key(value)
+    if not key:
+        return False
+    if key in {"save", "gsfontsave"} or key.endswith("gsfontsave"):
+        return True
+    if key.startswith("savedocumenttopdf"):
+        return False
+    return key.startswith(
+        (
+            "savedocument",
+            "saveifnecessary",
+            "savepresenteditemchanges",
+            "savetofile",
+            "savetopath",
+            "savetourl",
+            "writetofile",
+            "writetopath",
+            "writesafelytourl",
+            "writetourl",
+            "autosavedocument",
+            "autosavewith",
+        )
+    )
+
+
+def _is_source_save_reflection_method(value: Any) -> bool:
+    key = _runtime_method_key(value)
+    return key in _SOURCE_SAVE_REFLECTION_METHODS or key.startswith(
+        "performselector"
+    )
+
+
+class _WorkingSourceSaveRuntimeGuard:
+    """Temporarily interpose persistence selectors for the working document.
+
+    This is a capability interlock, not a Python sandbox. Native selectors are
+    replaced on their defining Objective-C classes and restored exactly in
+    ``finally``. Wrappers forward calls for every non-protected receiver, which
+    keeps other open-world mutation behavior intact. A process-local profile
+    callback is defense in depth for Python convenience methods and selectors
+    that a host class exposes dynamically rather than in its class dictionary.
+    """
+
+    def __init__(
+        self,
+        protected_objects: Sequence[Any],
+        *,
+        native_identity: Callable[[Any], Any],
+    ) -> None:
+        self._objects = tuple(
+            value for value in protected_objects if value is not None
+        )
+        self._native_identity = native_identity
+        self._protected_identities: set[Any] = set()
+        for value in self._objects:
+            try:
+                self._protected_identities.add(native_identity(value))
+            except Exception:
+                self._protected_identities.add(("python", id(value)))
+        self._patched: list[
+            tuple[
+                str,
+                Any,
+                str,
+                Any,
+                Any,
+                _ObjectiveCMethodPatch | _PythonMethodPatch | None,
+            ]
+        ] = []
+        self._patched_keys: set[tuple[Any, str]] = set()
+        self._prior_profile: Any = None
+        self._installed_profile: Any = None
+        self._blocked_operation: str | None = None
+        self._safety_failures: list[str] = []
+        self._entered = False
+
+    def _poison(self, message: str) -> None:
+        """Record an incident for bounded recovery after teardown."""
+
+        self._safety_failures.append(str(message))
+
+    def _identity(self, value: Any) -> Any:
+        try:
+            identity = self._native_identity(value)
+            hash(identity)
+            return identity
+        except Exception:
+            return ("python", id(value))
+
+    def _is_protected(self, value: Any) -> bool:
+        if value is None:
+            return False
+        return self._identity(value) in self._protected_identities
+
+    def _block(self, operation: Any) -> None:
+        name = _runtime_selector_text(operation) or "source-save selector"
+        self._blocked_operation = self._blocked_operation or name
+        raise SourceSaveForbiddenError(
+            "execute_python cannot invoke working-source save selector {!r}; "
+            "use save_document".format(name)
+        )
+
+    def _replacement(
+        self,
+        original: Any,
+        method_name: str,
+        *,
+        reflection: bool,
+    ) -> Callable[..., Any]:
+        guard = self
+
+        def guarded_method(receiver: Any, *args: Any, **kwargs: Any) -> Any:
+            if not _LIVE_SOURCE_SAVE_GUARD_MANAGER.is_active_guard(guard):
+                return original(receiver, *args, **kwargs)
+            if guard._is_protected(receiver):
+                if not reflection:
+                    guard._block(method_name)
+                selector_value = args[0] if args else None
+                if selector_value is None and kwargs:
+                    selector_value = next(iter(kwargs.values()), None)
+                if _is_working_source_save_operation(selector_value):
+                    guard._block(selector_value)
+            return original(receiver, *args, **kwargs)
+
+        guarded_method.__name__ = str(method_name)
+        guarded_method.__qualname__ = "working_source_save_guard.{}".format(
+            method_name
+        )
+        return guarded_method
+
+    @staticmethod
+    def _set_python_descriptor(owner: Any, name: str, value: Any) -> bool:
+        """Assign a Python method without promoting it to an ObjC selector.
+
+        PyObjC's class metaclass turns a bare function assigned with
+        ``setattr`` into an ``objc.python_selector``. Assigning the original
+        function the same way during teardown therefore cannot restore the
+        descriptor (and leaves a new Objective-C method behind). The
+        ``python_method`` marker preserves Python-only methods as their exact
+        original function objects across both sides of the interposition.
+        """
+
+        assignment = value
+        if _is_objc_proxy(owner):
+            try:
+                import objc  # type: ignore[import-not-found]
+
+                assignment = objc.python_method(value)
+            except Exception as exc:
+                raise RuntimeError(
+                    "save-guard could not preserve a PyObjC Python method"
+                ) from exc
+        setattr(owner, name, assignment)
+        try:
+            return vars(owner).get(name) is value
+        except Exception:
+            return False
+
+    def _dispatch_objective_c(
+        self,
+        controller: _RuntimeDispatchController,
+        receiver: Any,
+        *args: Any,
+    ) -> Any:
+        if self._is_protected(receiver):
+            if not controller.reflection:
+                self._block(controller.method_name)
+            selector_value = args[0] if args else None
+            if _is_working_source_save_operation(selector_value):
+                self._block(selector_value)
+        return controller.original_imp(receiver, *args)
+
+    def _patch_method(
+        self,
+        owner: Any,
+        name: str,
+        original: Any,
+        *,
+        reflection: bool,
+    ) -> None:
+        key = (owner, name)
+        if key in self._patched_keys or not callable(original):
+            return
+        selector_name = _safe_getattr(original, "selector")
+        signature = _safe_getattr(original, "signature")
+        if selector_name is not None and signature is not None:
+            try:
+                raw_selector = (
+                    selector_name.encode("utf-8")
+                    if isinstance(selector_name, str)
+                    else bytes(selector_name)
+                )
+                raw_signature = (
+                    signature.encode("utf-8")
+                    if isinstance(signature, str)
+                    else bytes(signature)
+                )
+                class_method = bool(
+                    _safe_getattr(original, "isClassMethod")
+                )
+                runtime = _objective_c_runtime()
+                original_state = runtime.capture(
+                    owner,
+                    name,
+                    raw_selector,
+                    class_method=class_method,
+                    require_owned=True,
+                )
+                if original_state is None:
+                    # The descriptor is inherited or lazily cached on this
+                    # Python class. Its actual defining Objective-C class is
+                    # visited separately through the MRO; never add a new
+                    # override that cannot be removed safely.
+                    return
+                original_imp = (
+                    owner.methodForSelector_(raw_selector)
+                    if class_method
+                    else owner.instanceMethodForSelector_(raw_selector)
+                )
+                slot: _GuardSlotKey = (
+                    original_state.class_pointer,
+                    original_state.method_pointer,
+                    original_state.implementation_pointer,
+                    raw_selector,
+                    raw_signature,
+                    class_method,
+                )
+                trampoline = _objective_c_trampoline(slot)
+                installed_pointer = int(
+                    trampoline["state"].implementation_pointer
+                )
+                if installed_pointer == original_state.implementation_pointer:
+                    raise SourceSaveForbiddenError(
+                        "working-source save guard trampoline unexpectedly "
+                        "matches the host implementation"
+                    )
+                _LIVE_SOURCE_SAVE_GUARD_MANAGER.register_controller(
+                    slot,
+                    original_imp=original_imp,
+                    method_name=name,
+                    reflection=reflection,
+                    guard=self,
+                )
+                objective_c_patch = _ObjectiveCMethodPatch(
+                    original_state=original_state,
+                    installed_implementation_pointer=installed_pointer,
+                    slot=slot,
+                    original_imp=original_imp,
+                    trampoline=trampoline,
+                )
+                installed, prior = runtime.swap_and_verify(
+                    original_state,
+                    installed_pointer,
+                    expected_current_implementation_pointer=(
+                        original_state.implementation_pointer
+                    ),
+                )
+                if not installed:
+                    _LIVE_SOURCE_SAVE_GUARD_MANAGER.deactivate_controller(
+                        slot, self
+                    )
+                    if prior is not None and not runtime.set_and_verify(
+                        original_state, prior
+                    ):
+                        self._patched.append(
+                            (
+                                "objc",
+                                owner,
+                                name,
+                                raw_selector,
+                                original,
+                                objective_c_patch,
+                            )
+                        )
+                        self._patched_keys.add(key)
+                        self._poison(
+                            "Objective-C selector installation could not "
+                            "restore the exact IMP observed by its atomic swap"
+                        )
+                    raise SourceSaveForbiddenError(
+                        "working-source save guard could not verify its "
+                        "Objective-C selector interposition"
+                    )
+                self._patched.append(
+                    (
+                        "objc",
+                        owner,
+                        name,
+                        raw_selector,
+                        original,
+                        objective_c_patch,
+                    )
+                )
+                self._patched_keys.add(key)
+                return
+            except SourceSaveForbiddenError:
+                raise
+            except Exception as exc:
+                raise SourceSaveForbiddenError(
+                    "working-source save guard could not install its "
+                    "Objective-C selector interposition"
+                ) from exc
+        replacement = self._replacement(
+            original, name, reflection=reflection
+        )
+        python_patch = _PythonMethodPatch(
+            owner=owner,
+            name=name,
+            original=original,
+            installed=replacement,
+        )
+        managed_owner = _is_objc_proxy(owner)
+        try:
+            installed = self._set_python_descriptor(
+                owner, name, replacement
+            )
+        except Exception as exc:
+            if managed_owner:
+                try:
+                    restored = self._set_python_descriptor(
+                        owner, name, original
+                    )
+                except Exception:
+                    restored = False
+                if not restored:
+                    self._patched.append(
+                        ("python", owner, name, None, original, python_patch)
+                    )
+                    self._patched_keys.add(key)
+                    self._poison(
+                        "PyObjC Python-method installation could not restore "
+                        "the exact original descriptor"
+                    )
+                raise SourceSaveForbiddenError(
+                    "working-source save guard could not install its "
+                    "PyObjC Python-method interposition"
+                ) from exc
+            raise SourceSaveForbiddenError(
+                "working-source save guard could not install its Python "
+                "method interposition"
+            ) from exc
+        if not installed:
+            try:
+                restored = self._set_python_descriptor(
+                    owner, name, original
+                )
+            except Exception:
+                restored = False
+            if not restored:
+                self._patched.append(
+                    ("python", owner, name, None, original, python_patch)
+                )
+                self._patched_keys.add(key)
+                self._poison(
+                    "Python descriptor installation could not restore the "
+                    "exact original method"
+                )
+            raise SourceSaveForbiddenError(
+                "working-source save guard could not verify its Python "
+                "method interposition"
+            )
+        self._patched.append(
+            ("python", owner, name, None, original, python_patch)
+        )
+        self._patched_keys.add(key)
+
+    def _install_class_interpositions(self) -> None:
+        for target in self._objects:
+            try:
+                hierarchy = tuple(type(target).__mro__)
+            except Exception:
+                hierarchy = (type(target),)
+            for owner in hierarchy:
+                # PyObjC discovers native selectors lazily. ``dir`` populates
+                # the class dictionary before we select defining methods only.
+                try:
+                    dir(owner)
+                    own_items = tuple(vars(owner).items())
+                except Exception:
+                    continue
+                for name, original in own_items:
+                    reflection = _is_source_save_reflection_method(name)
+                    if not reflection and not _is_working_source_save_operation(
+                        name
+                    ):
+                        continue
+                    self._patch_method(
+                        owner,
+                        str(name),
+                        original,
+                        reflection=reflection,
+                    )
+
+    def _profile(self, frame: Any, event: str, argument: Any) -> None:
+        if not _LIVE_SOURCE_SAVE_GUARD_MANAGER.is_active_guard(self):
+            prior = self._prior_profile
+            if callable(prior):
+                prior(frame, event, argument)
+            return
+        target = None
+        name = ""
+        if event == "call":
+            name = str(_safe_getattr(frame.f_code, "co_name") or "")
+            target = frame.f_locals.get("self")
+        elif event == "c_call":
+            name = str(_safe_getattr(argument, "__name__") or "")
+            target = _safe_getattr(argument, "__self__")
+        if (
+            name
+            and _is_working_source_save_operation(name)
+            and self._is_protected(target)
+        ):
+            self._block(name)
+        prior = self._prior_profile
+        if callable(prior):
+            prior(frame, event, argument)
+
+    def __enter__(self) -> "_WorkingSourceSaveRuntimeGuard":
+        _LIVE_SOURCE_SAVE_GUARD_MANAGER.begin(self)
+        self._entered = True
+        try:
+            self._prior_profile = sys.getprofile()
+            self._install_class_interpositions()
+            self._installed_profile = self._profile
+            sys.setprofile(self._installed_profile)
+            if sys.getprofile() is not self._installed_profile:
+                raise SourceSaveForbiddenError(
+                    "working-source save guard could not verify its profile hook"
+                )
+        except BaseException as exc:
+            # Installation failures do not become a permanent latch. They do
+            # become an observable degraded incident so an agent can run one
+            # native revalidation pass before retrying the interrupted call.
+            if isinstance(exc, SourceSaveForbiddenError):
+                self._poison(str(exc))
+            self.__exit__(*sys.exc_info())
+            raise
+        return self
+
+    def raise_if_blocked(self) -> None:
+        if self._blocked_operation is not None:
+            self._block(self._blocked_operation)
+
+    def __exit__(self, *_error: Any) -> None:
+        if not self._entered:
+            return
+        active_exception = bool(_error and _error[0] is not None)
+        restoration_errors: list[BaseException] = []
+        objective_c_residuals: list[_ObjectiveCMethodPatch] = []
+        python_residuals: list[_PythonMethodPatch] = []
+        profile_residual: _ProfileHookPatch | None = None
+        _LIVE_SOURCE_SAVE_GUARD_MANAGER.begin_recovery(self)
+        try:
+            try:
+                current_profile = sys.getprofile()
+                if current_profile is self._installed_profile:
+                    sys.setprofile(self._prior_profile)
+                    if sys.getprofile() is not self._prior_profile:
+                        profile_residual = _ProfileHookPatch(
+                            original=self._prior_profile,
+                            installed=self._installed_profile,
+                            state="residual_guard",
+                            repairable=True,
+                        )
+                        raise RuntimeError(
+                            "save-guard profile restoration did not verify"
+                        )
+                elif current_profile is not self._prior_profile:
+                    profile_residual = _ProfileHookPatch(
+                        original=self._prior_profile,
+                        installed=self._installed_profile,
+                        state="external_owner",
+                        repairable=True,
+                    )
+                    raise RuntimeError(
+                        "save-guard profile hook ownership changed during execution"
+                    )
+            except BaseException as exc:
+                if profile_residual is None:
+                    profile_residual = _ProfileHookPatch(
+                        original=self._prior_profile,
+                        installed=self._installed_profile,
+                        state="unverifiable",
+                        repairable=False,
+                    )
+                restoration_errors.append(exc)
+            for kind, owner, name, _selector_name, original, patch in reversed(
+                self._patched
+            ):
+                try:
+                    if kind == "objc":
+                        if not isinstance(patch, _ObjectiveCMethodPatch):
+                            raise RuntimeError(
+                                "save-guard Objective-C restoration state is missing"
+                            )
+                        if not _objective_c_runtime().restore_and_verify(
+                            patch.original_state,
+                            expected_current_implementation_pointer=(
+                                patch.installed_implementation_pointer
+                            ),
+                        ):
+                            raise RuntimeError(
+                                "save-guard Objective-C IMP restoration did not verify"
+                            )
+                    else:
+                        if not isinstance(patch, _PythonMethodPatch):
+                            raise RuntimeError(
+                                "save-guard Python restoration state is missing"
+                            )
+                        try:
+                            current = vars(owner).get(name)
+                        except Exception:
+                            current = None
+                        if current is original:
+                            restored = True
+                        elif current is patch.installed:
+                            restored = self._set_python_descriptor(
+                                owner, name, original
+                            )
+                        else:
+                            # Another owner replaced our wrapper. Do not
+                            # overwrite it. Record external ownership so one
+                            # native repair pass can adopt it as the next
+                            # baseline while inactive wrappers forward safely.
+                            external_patch = _PythonMethodPatch(
+                                owner=patch.owner,
+                                name=patch.name,
+                                original=patch.original,
+                                installed=patch.installed,
+                                state="external_owner",
+                                repairable=True,
+                            )
+                            python_residuals.append(external_patch)
+                            restoration_errors.append(
+                                RuntimeError(
+                                    "save-guard descriptor ownership changed during execution"
+                                )
+                            )
+                            continue
+                        if not restored:
+                            raise RuntimeError(
+                                "save-guard descriptor restoration did not verify"
+                            )
+                except BaseException as exc:
+                    if isinstance(patch, _ObjectiveCMethodPatch):
+                        state = patch.original_state
+                        try:
+                            runtime = _objective_c_runtime()
+                            observed = runtime.capture(
+                                state.owner,
+                                state.python_name,
+                                state.selector_name,
+                                class_method=state.class_method,
+                                require_owned=True,
+                            )
+                        except BaseException:
+                            observed = None
+                        if observed is not None and runtime._matches(
+                            observed, state, state.implementation_pointer
+                        ):
+                            _LIVE_SOURCE_SAVE_GUARD_MANAGER.deactivate_controller(
+                                patch.slot, self
+                            )
+                            continue
+                        if observed is not None and not runtime._matches(
+                            observed,
+                            state,
+                            patch.installed_implementation_pointer,
+                        ):
+                            residual_patch = _ObjectiveCMethodPatch(
+                                original_state=patch.original_state,
+                                installed_implementation_pointer=(
+                                    patch.installed_implementation_pointer
+                                ),
+                                slot=patch.slot,
+                                original_imp=patch.original_imp,
+                                trampoline=patch.trampoline,
+                                state="external_owner",
+                                repairable=True,
+                            )
+                        elif observed is None:
+                            residual_patch = _ObjectiveCMethodPatch(
+                                original_state=patch.original_state,
+                                installed_implementation_pointer=(
+                                    patch.installed_implementation_pointer
+                                ),
+                                slot=patch.slot,
+                                original_imp=patch.original_imp,
+                                trampoline=patch.trampoline,
+                                state="unverifiable",
+                                repairable=False,
+                            )
+                        else:
+                            residual_patch = patch
+                        restoration_errors.append(exc)
+                        objective_c_residuals.append(residual_patch)
+                    elif isinstance(patch, _PythonMethodPatch):
+                        try:
+                            current = vars(patch.owner).get(patch.name)
+                        except Exception:
+                            current = None
+                        if current is patch.original:
+                            continue
+                        if current is not None and current is not patch.installed:
+                            residual_patch = _PythonMethodPatch(
+                                owner=patch.owner,
+                                name=patch.name,
+                                original=patch.original,
+                                installed=patch.installed,
+                                state="external_owner",
+                                repairable=True,
+                            )
+                        elif current is None:
+                            residual_patch = _PythonMethodPatch(
+                                owner=patch.owner,
+                                name=patch.name,
+                                original=patch.original,
+                                installed=patch.installed,
+                                state="unverifiable",
+                                repairable=False,
+                            )
+                        else:
+                            residual_patch = patch
+                        restoration_errors.append(exc)
+                        python_residuals.append(residual_patch)
+                    else:
+                        restoration_errors.append(exc)
+                    continue
+                if isinstance(patch, _ObjectiveCMethodPatch):
+                    _LIVE_SOURCE_SAVE_GUARD_MANAGER.deactivate_controller(
+                        patch.slot, self
+                    )
+            if restoration_errors:
+                self._poison(
+                    "working-source save guard restoration failed: {}".format(
+                        restoration_errors[0]
+                    )
+                )
+        finally:
+            self._patched = []
+            self._patched_keys.clear()
+            self._entered = False
+            snapshot = _LIVE_SOURCE_SAVE_GUARD_MANAGER.finish(
+                self,
+                objective_c_residuals=objective_c_residuals,
+                python_residuals=python_residuals,
+                profile_residual=profile_residual,
+                safety_failures=tuple(self._safety_failures),
+            )
+        if snapshot.state != "healthy" and not active_exception:
+            raise ScriptingRuntimeUnavailableError(
+                "working-source save guard restoration requires repair",
+                snapshot,
+            ) from (restoration_errors[0] if restoration_errors else None)
+
+
 def _observed_layer_metrics(layer: Any) -> dict[str, Any]:
     def number(name: str) -> Any:
         value = _plain_scalar(_maybe_call(_safe_getattr(layer, name)))
@@ -8968,6 +10745,10 @@ def _observed_layer_metrics(layer: Any) -> dict[str, Any]:
         "width": number("width"),
         "leftBearing": number("LSB"),
         "rightBearing": number("RSB"),
+        "verticalOrigin": number("vertOrigin"),
+        "verticalAdvance": number("vertWidth"),
+        "topBearing": number("TSB"),
+        "bottomBearing": number("BSB"),
     }
 
 
@@ -9067,6 +10848,8 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         )
         self._native_lifecycle_tombstones: dict[str, Mapping[str, Any]] = {}
         self._verified_transaction_updates: dict[str, dict[str, Any]] = {}
+        self._save_notification_correlations: dict[str, deque[str]] = {}
+        self._save_notification_lock = RLock()
         self._detached_clone_projection_cache: dict[
             tuple[str, str], _DetachedCloneProjection
         ] = {}
@@ -9129,6 +10912,33 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         self._cleanup_all_recovery()
         return super().runtime_snapshot()
 
+    def scripting_runtime_safety_status(self) -> Mapping[str, Any]:
+        """Return a detached, thread-safe snapshot without probing native slots."""
+
+        return _LIVE_SOURCE_SAVE_GUARD_MANAGER.snapshot().to_dict()
+
+    def repair_scripting_runtime(
+        self,
+        *,
+        expected_incident_id: str | None = None,
+        trigger: str = "agent",
+    ) -> Mapping[str, Any]:
+        """Run one bounded native repair pass on Glyphs' main thread."""
+
+        def repair() -> Mapping[str, Any]:
+            report = _LIVE_SOURCE_SAVE_GUARD_MANAGER.repair(
+                trigger=str(trigger),
+                expected_incident_id=expected_incident_id,
+            )
+            return {
+                "repair": report.to_dict(),
+                "scriptingRuntimeSafety": (
+                    _LIVE_SOURCE_SAVE_GUARD_MANAGER.snapshot().to_dict()
+                ),
+            }
+
+        return self._executor.run(repair)
+
     def _font_for_document(self, document_id: str) -> Any:
         for font in self._collect_fonts():
             if self._identities.resolve(self._native_identity(font)) == document_id:
@@ -9137,6 +10947,25 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
     def document_id_for_font(self, font: Any) -> str:
         return self._identities.resolve(self._native_identity(font))
+
+    def consume_save_notification_correlation(
+        self, document_id: str
+    ) -> str | None:
+        """Return the opaque token owned by one native save notification."""
+
+        with self._save_notification_lock:
+            key = str(document_id or "")
+            pending = self._save_notification_correlations.get(key)
+            if not pending:
+                return None
+            token = pending.popleft()
+            if not pending:
+                self._save_notification_correlations.pop(key, None)
+            return token
+
+    def clear_save_notification_correlation(self, document_id: str) -> None:
+        with self._save_notification_lock:
+            self._save_notification_correlations.pop(str(document_id or ""), None)
 
     def native_font(self, document_id: str) -> Any:
         return self._font_for_document(document_id)
@@ -9155,6 +10984,627 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         return self._executor.run(capture)
 
+    def save_document(
+        self,
+        document_id: str,
+        *,
+        expected_document_fingerprint: str,
+        destination: Any = None,
+        expected_source_fingerprint: Any = None,
+        overwrite_policy: str = "fail_if_exists",
+        expected_destination_fingerprint: Any = None,
+        notification_correlation_token: Any = None,
+    ) -> Mapping[str, Any]:
+        """Synchronously save or Save As through NSDocument, then prove bytes."""
+
+        if overwrite_policy not in {"fail_if_exists", "replace_if_match"}:
+            raise DocumentSaveError(
+                "invalid_request", "Unsupported save overwrite policy."
+            )
+        if not expected_document_fingerprint:
+            raise DocumentSaveError(
+                "invalid_request", "expectedDocumentFingerprint is required."
+            )
+
+        def native_preflight() -> Mapping[str, Any]:
+            font = self._font_for_document(document_id)
+            snapshot = self._capture_cached_snapshot(document_id, font)
+            observed_fingerprint = snapshot.document_fingerprint
+            if observed_fingerprint != str(expected_document_fingerprint):
+                raise DocumentSaveError(
+                    "stale_document",
+                    "The Glyphs document changed before the native save fence.",
+                    details={
+                        "expectedDocumentFingerprint": str(
+                            expected_document_fingerprint
+                        ),
+                        "observedDocumentFingerprint": observed_fingerprint,
+                    },
+                )
+            path_value = _safe_getattr(font, "filepath")
+            generation = (
+                self._glyphs_change_generation.current()
+                if self._glyphs_change_generation is not None
+                else None
+            )
+            return {
+                "font": font,
+                "path": str(path_value) if path_value else None,
+                "dirty": _document_edited_state(font),
+                "documentFingerprint": observed_fingerprint,
+                "revision": _document_revision_token(
+                    font, notification_generation=generation
+                ),
+                "instanceIds": tuple(
+                    self._instance_ids_for_font(document_id, font)
+                ),
+                "openPaths": tuple(
+                    (
+                        self._identities.resolve(self._native_identity(candidate)),
+                        str(_safe_getattr(candidate, "filepath") or ""),
+                    )
+                    for candidate in self._collect_fonts()
+                ),
+            }
+
+        initial = self._executor.run(native_preflight)
+        if initial.get("dirty") is None:
+            raise DocumentSaveError(
+                "document_dirty_state_unavailable",
+                "Glyphs did not expose a reliable document dirty state.",
+            )
+        previous_path_value = str(initial["path"]) if initial.get("path") else None
+        previous_path = (
+            Path(previous_path_value).resolve(strict=False)
+            if previous_path_value is not None
+            else None
+        )
+        if destination in (None, ""):
+            if previous_path is None:
+                raise DocumentSaveError(
+                    "document_path_required",
+                    "A pathless document requires an explicit Save As destination.",
+                )
+            target = _validated_save_destination(previous_path_value or "")
+        else:
+            target = _validated_save_destination(str(destination))
+        if target.suffix.lower() not in {".glyphs", ".glyphspackage"}:
+            raise DocumentSaveError(
+                "unsupported_source_format",
+                "Save destinations must end in .glyphs or .glyphspackage.",
+            )
+        mode = "save" if _same_save_path(previous_path, target) else "save_as"
+        if mode == "save" and (
+            overwrite_policy != "fail_if_exists"
+            or expected_destination_fingerprint not in (None, "")
+        ):
+            raise DocumentSaveError(
+                "invalid_request",
+                "Current-path saves use expectedSourceFingerprint, not a destination overwrite policy.",
+            )
+
+        def reject_open_destination(
+            open_paths: Sequence[tuple[Any, Any]],
+        ) -> None:
+            for other_document_id, other_path_value in open_paths:
+                if not other_path_value or str(other_document_id) == document_id:
+                    continue
+                other_path = Path(str(other_path_value)).resolve(strict=False)
+                if _same_save_object(other_path, target):
+                    raise DocumentSaveError(
+                        "destination_open_in_glyphs",
+                        "The Save As destination belongs to another open Glyphs document.",
+                    )
+                if other_path.suffix.lower() == ".glyphspackage":
+                    try:
+                        target.relative_to(other_path)
+                    except ValueError:
+                        pass
+                    else:
+                        raise DocumentSaveError(
+                            "destination_open_in_glyphs",
+                            "The Save As destination is inside another open Glyphs package.",
+                        )
+                if target.suffix.lower() == ".glyphspackage":
+                    try:
+                        other_path.relative_to(target)
+                    except ValueError:
+                        pass
+                    else:
+                        raise DocumentSaveError(
+                            "destination_open_in_glyphs",
+                            "The Save As package contains another open Glyphs document.",
+                        )
+
+        reject_open_destination(initial["openPaths"])
+        if previous_path is not None and previous_path.suffix.lower() == ".glyphspackage":
+            try:
+                target.relative_to(previous_path)
+            except ValueError:
+                pass
+            else:
+                if not _same_save_path(previous_path, target):
+                    raise DocumentSaveError(
+                        "invalid_destination",
+                        "The Save As destination cannot be inside the current Glyphs package.",
+                    )
+
+        previous_state = (
+            _normalized_source_file_state(previous_path)
+            if previous_path is not None
+            else None
+        )
+        destination_before = _normalized_source_file_state(target)
+        previous_fingerprint = (
+            previous_state.get("contentFingerprint")
+            if previous_state is not None
+            else None
+        )
+        destination_before_fingerprint = destination_before.get(
+            "contentFingerprint"
+        )
+        if mode == "save":
+            if not previous_state or not previous_state.get("exists") or not previous_state.get("readable"):
+                raise DocumentSaveError(
+                    "source_file_unavailable",
+                    "The current Glyphs source is missing or unreadable.",
+                )
+            if not expected_source_fingerprint:
+                raise DocumentSaveError(
+                    "invalid_request",
+                    "expectedSourceFingerprint is required for a current-path save.",
+                )
+            if str(expected_source_fingerprint) != str(previous_fingerprint):
+                raise DocumentSaveError(
+                    "stale_source_file",
+                    "The current source file changed after it was inspected.",
+                    details={
+                        "observedSourceFingerprint": previous_fingerprint,
+                    },
+                )
+        else:
+            if previous_path is None and expected_source_fingerprint not in (None, ""):
+                raise DocumentSaveError(
+                    "invalid_request",
+                    "A pathless document has no expectedSourceFingerprint.",
+                )
+            if previous_state is not None:
+                if (
+                    not previous_state.get("exists")
+                    or not previous_state.get("readable")
+                    or not previous_fingerprint
+                ):
+                    raise DocumentSaveError(
+                        "source_file_unavailable",
+                        "The original Glyphs source is missing or unreadable.",
+                    )
+                if not expected_source_fingerprint:
+                    raise DocumentSaveError(
+                        "invalid_request",
+                        "expectedSourceFingerprint is required when Save As has an existing original source.",
+                    )
+            if expected_source_fingerprint not in (None, "") and (
+                previous_fingerprint != str(expected_source_fingerprint)
+            ):
+                raise DocumentSaveError(
+                    "stale_source_file",
+                    "The original source file changed after it was inspected.",
+                    details={
+                        "observedSourceFingerprint": previous_fingerprint,
+                    },
+                )
+            if overwrite_policy == "fail_if_exists":
+                if expected_destination_fingerprint not in (None, ""):
+                    raise DocumentSaveError(
+                        "invalid_request",
+                        "expectedDestinationFingerprint requires replace_if_match.",
+                    )
+                if destination_before.get("exists"):
+                    raise DocumentSaveError(
+                        "destination_exists",
+                        "The Save As destination already exists.",
+                        details={"destinationState": destination_before},
+                    )
+            else:
+                if not destination_before.get("exists"):
+                    raise DocumentSaveError(
+                        "destination_missing",
+                        "replace_if_match requires an existing destination.",
+                    )
+                if not destination_before.get("readable"):
+                    raise DocumentSaveError(
+                        "source_file_unavailable",
+                        "The replacement destination is unreadable.",
+                    )
+                if not expected_destination_fingerprint:
+                    raise DocumentSaveError(
+                        "invalid_request",
+                        "expectedDestinationFingerprint is required for replace_if_match.",
+                    )
+                if str(expected_destination_fingerprint) != str(
+                    destination_before_fingerprint
+                ):
+                    raise DocumentSaveError(
+                        "stale_destination",
+                        "The replacement destination fingerprint does not match.",
+                        details={"destinationState": destination_before},
+                    )
+
+        # Re-read immediately before entering the non-cancellable native call.
+        before_native = self._executor.run(native_preflight)
+        if (
+            before_native.get("revision") != initial.get("revision")
+            or before_native.get("path") != initial.get("path")
+            or before_native.get("documentFingerprint")
+            != str(expected_document_fingerprint)
+        ):
+            raise DocumentSaveError(
+                "stale_document",
+                "The Glyphs document changed during save preflight.",
+            )
+        destination_now = _normalized_source_file_state(target)
+        if destination_now != destination_before:
+            raise DocumentSaveError(
+                "stale_source_file" if mode == "save" else "stale_destination",
+                (
+                    "The current source file changed during save preflight."
+                    if mode == "save"
+                    else "The Save As destination changed during save preflight."
+                ),
+                details={
+                    (
+                        "observedSourceState"
+                        if mode == "save"
+                        else "destinationState"
+                    ): destination_now
+                },
+            )
+
+        def native_save() -> Mapping[str, Any]:
+            font = self._font_for_document(document_id)
+            self._canonical_model_cache.invalidate(document_id)
+            snapshot = self._capture_cached_snapshot(document_id, font)
+            observed_fingerprint = snapshot.document_fingerprint
+            if observed_fingerprint != str(expected_document_fingerprint):
+                raise DocumentSaveError(
+                    "stale_document",
+                    "The Glyphs document changed immediately before saving.",
+                    details={
+                        "expectedDocumentFingerprint": str(
+                            expected_document_fingerprint
+                        ),
+                        "observedDocumentFingerprint": observed_fingerprint,
+                    },
+                )
+            generation = (
+                self._glyphs_change_generation.current()
+                if self._glyphs_change_generation is not None
+                else None
+            )
+            revision = _document_revision_token(
+                font, notification_generation=generation
+            )
+            path_value = _safe_getattr(font, "filepath")
+            current_path = str(path_value) if path_value else None
+            if revision != before_native.get("revision") or current_path != before_native.get("path"):
+                raise DocumentSaveError(
+                    "stale_document",
+                    "The Glyphs document changed before the native save began.",
+                )
+            if mode == "save_as" and previous_path is not None and previous_state is not None:
+                original_now = _normalized_source_file_state(previous_path)
+                if original_now != previous_state:
+                    raise DocumentSaveError(
+                        "stale_source_file",
+                        "The original source file changed immediately before Save As.",
+                        details={"observedSourceState": original_now},
+                    )
+            destination_immediate = _normalized_source_file_state(target)
+            if destination_immediate != destination_before:
+                raise DocumentSaveError(
+                    "stale_source_file" if mode == "save" else "stale_destination",
+                    (
+                        "The current source file changed immediately before saving."
+                        if mode == "save"
+                        else "The Save As destination changed immediately before saving."
+                    ),
+                    details={
+                        (
+                            "observedSourceState"
+                            if mode == "save"
+                            else "destinationState"
+                        ): destination_immediate
+                    },
+                )
+            document = _maybe_call(_safe_getattr(font, "parent"))
+            selector = _safe_getattr(
+                document, "saveToURL_ofType_forSaveOperation_error_"
+            )
+            if not callable(selector):
+                raise DocumentSaveError(
+                    "native_save_failed",
+                    "Glyphs did not expose the synchronous NSDocument save selector.",
+                )
+            try:
+                from Foundation import NSURL  # type: ignore[import-not-found]
+                try:
+                    from AppKit import (  # type: ignore[import-not-found]
+                        NSSaveAsOperation,
+                        NSSaveOperation,
+                    )
+                except Exception:
+                    NSSaveOperation = 0
+                    NSSaveAsOperation = 1
+                type_name = (
+                    "com.glyphsapp.glyphspackage"
+                    if target.suffix.lower() == ".glyphspackage"
+                    else "com.schriftgestaltung.glyphs"
+                )
+                operation = (
+                    NSSaveOperation if mode == "save" else NSSaveAsOperation
+                )
+            except Exception as exc:
+                raise DocumentSaveError(
+                    "native_save_failed",
+                    "Glyphs native save constants are unavailable.",
+                    details={"exceptionType": type(exc).__name__},
+                ) from exc
+
+            # Ownership is mutable application state, not destination bytes.
+            # Re-query it in the same main-thread turn as the selector so an
+            # existing replacement cannot be adopted by another open document
+            # after the detached preflight.
+            reject_open_destination(
+                tuple(
+                    (
+                        self._identities.resolve(
+                            self._native_identity(candidate)
+                        ),
+                        str(_safe_getattr(candidate, "filepath") or ""),
+                    )
+                    for candidate in self._collect_fonts()
+                )
+            )
+            correlation_token = str(notification_correlation_token or "")
+            if correlation_token:
+                with self._save_notification_lock:
+                    pending = self._save_notification_correlations.setdefault(
+                        document_id, deque(maxlen=8)
+                    )
+                    if correlation_token not in pending:
+                        pending.append(correlation_token)
+
+            native_error_message = None
+            native_error_details: dict[str, Any] = {}
+            try:
+                result = selector(
+                    NSURL.fileURLWithPath_(str(target)),
+                    type_name,
+                    operation,
+                    None,
+                )
+            except Exception as exc:
+                native_error_message = (
+                    "Glyphs raised while performing the native document save."
+                )
+                native_error_details = {"exceptionType": type(exc).__name__}
+            else:
+                native_error_message = _native_save_error(result)
+            final_path_value = _safe_getattr(font, "filepath")
+            return {
+                "path": str(final_path_value) if final_path_value else None,
+                "dirty": _document_edited_state(font),
+                "nativeSaveSucceeded": native_error_message is None,
+                "nativeErrorMessage": native_error_message,
+                "nativeErrorDetails": native_error_details,
+            }
+
+        native_after = self._executor.run(native_save)
+        final_path = (
+            Path(str(native_after.get("path"))).resolve(strict=False)
+            if native_after.get("path")
+            else None
+        )
+        path_changed = bool(
+            final_path is not None
+            and (previous_path is None or not _same_save_path(previous_path, final_path))
+        )
+
+        def observed_source_state(path: Path | None) -> Mapping[str, Any] | None:
+            if path is None:
+                return None
+            try:
+                return _normalized_source_file_state(path)
+            except DocumentSaveError as exc:
+                return {
+                    "kind": (
+                        "glyphspackage"
+                        if path.suffix.lower() == ".glyphspackage"
+                        else "glyphs"
+                    ),
+                    "exists": bool(path.exists()),
+                    "readable": False,
+                    "contentFingerprint": None,
+                    "observationErrorCode": exc.code,
+                }
+            except Exception as exc:
+                return {
+                    "kind": (
+                        "glyphspackage"
+                        if path.suffix.lower() == ".glyphspackage"
+                        else "glyphs"
+                    ),
+                    "exists": bool(path.exists()),
+                    "readable": False,
+                    "contentFingerprint": None,
+                    "observationErrorType": type(exc).__name__,
+                }
+
+        saved_state = observed_source_state(target) or {}
+        original_after = (
+            observed_source_state(previous_path)
+            if previous_path is not None
+            else None
+        )
+        native_save_succeeded = native_after.get("nativeSaveSucceeded") is True
+        destination_state_changed = saved_state != destination_before
+        post_write_details = {
+            "nativeSaveSucceeded": native_save_succeeded,
+            "fontSaved": bool(
+                native_save_succeeded or destination_state_changed
+            ),
+            "saveMode": mode,
+            "expectedFilePath": str(target),
+            "observedFilePath": str(final_path) if final_path else None,
+            "pathChanged": path_changed,
+            "dirtyAfter": native_after.get("dirty"),
+            "destinationChanged": destination_state_changed,
+            "destinationStateBefore": destination_before,
+            "destinationStateAfter": saved_state,
+            "originalSourceStateBefore": previous_state,
+            "originalSourceStateAfter": original_after,
+            **dict(native_after.get("nativeErrorDetails") or {}),
+        }
+
+        if not native_save_succeeded:
+            raise DocumentSaveError(
+                "save_verification_failed",
+                str(
+                    native_after.get("nativeErrorMessage")
+                    or "The native save did not report verified success."
+                ),
+                recoverable=False,
+                details=post_write_details,
+                write_attempted=True,
+            )
+
+        def post_write(callback: Callable[[], Any]) -> Any:
+            try:
+                return callback()
+            except DocumentSaveError as exc:
+                raise DocumentSaveError(
+                    "save_verification_failed",
+                    exc.message,
+                    recoverable=False,
+                    details={
+                        **post_write_details,
+                        "verificationErrorCode": exc.code,
+                        **dict(exc.details),
+                    },
+                    write_attempted=True,
+                ) from exc
+            except Exception as exc:
+                raise DocumentSaveError(
+                    "save_verification_failed",
+                    "The native save succeeded, but post-save verification failed.",
+                    recoverable=False,
+                    details={
+                        **post_write_details,
+                        "exceptionType": type(exc).__name__,
+                    },
+                    write_attempted=True,
+                ) from exc
+
+        if final_path is None or not _same_save_path(final_path, target):
+            raise DocumentSaveError(
+                "save_verification_failed",
+                "Glyphs did not retain the expected document path after saving.",
+                recoverable=False,
+                details=post_write_details,
+                write_attempted=True,
+            )
+        if (
+            not saved_state.get("exists")
+            or not saved_state.get("readable")
+            or not saved_state.get("contentFingerprint")
+        ):
+            raise DocumentSaveError(
+                "save_verification_failed",
+                "The saved Glyphs source is missing or unreadable.",
+                recoverable=False,
+                details=post_write_details,
+                write_attempted=True,
+            )
+        original_source_unchanged: bool | None = None
+        if mode == "save_as" and previous_path is not None and previous_state is not None:
+            original_source_unchanged = original_after == previous_state
+        saved_model = post_write(
+            lambda: _saved_source_canonical_model(
+                target,
+                instance_ids=tuple(initial.get("instanceIds") or ()),
+            )
+        )
+        if not isinstance(saved_model, Mapping):
+            raise DocumentSaveError(
+                "save_verification_failed",
+                "The saved source could not be decoded through the canonical source adapter.",
+                recoverable=False,
+                details=post_write_details,
+                write_attempted=True,
+            )
+
+        def validate_live_identity() -> None:
+            font = self._font_for_document(document_id)
+            if _document_edited_state(font) is not False:
+                raise DocumentSaveError(
+                    "save_verification_failed",
+                    "Glyphs still reports unsaved document changes after saving.",
+                    recoverable=False,
+                    details={"nativeSaveSucceeded": True, "fontSaved": True},
+                    write_attempted=True,
+                )
+            saved_glyphs = saved_model.get("glyphs")
+            native_glyphs = {
+                str(_safe_getattr(glyph, "name") or ""): glyph
+                for glyph in _sequence_values(_safe_getattr(font, "glyphs"))
+                if str(_safe_getattr(glyph, "name") or "")
+            }
+            if not isinstance(saved_glyphs, Mapping) or set(saved_glyphs) != set(native_glyphs):
+                raise DocumentSaveError(
+                    "save_verification_failed",
+                    "The saved source does not preserve the open document glyph identities.",
+                    recoverable=False,
+                    details={"nativeSaveSucceeded": True, "fontSaved": True},
+                    write_attempted=True,
+                )
+            if not _saved_model_matches_live_identity(native_glyphs, saved_glyphs):
+                raise DocumentSaveError(
+                    "save_verification_failed",
+                    "The saved source disagrees with the open document identity evidence.",
+                    recoverable=False,
+                    details={"nativeSaveSucceeded": True, "fontSaved": True},
+                    write_attempted=True,
+                )
+
+        post_write(lambda: self._executor.run(validate_live_identity))
+        post_write(lambda: self._canonical_model_cache.invalidate(document_id))
+        saved_fingerprint = saved_state.get("contentFingerprint")
+        return {
+            "saveMode": mode,
+            "previousFilePath": str(previous_path) if previous_path else None,
+            "filePath": str(target),
+            "fileKind": saved_state["kind"],
+            "overwritePolicy": overwrite_policy,
+            "previousSourceFingerprint": previous_fingerprint,
+            "destinationBeforeFingerprint": destination_before_fingerprint,
+            "savedSourceFingerprint": saved_fingerprint,
+            "replacedDestinationFingerprint": (
+                destination_before_fingerprint
+                if mode == "save_as" and overwrite_policy == "replace_if_match"
+                else None
+            ),
+            "dirtyBefore": bool(initial.get("dirty")),
+            "dirtyAfter": False,
+            "pathChanged": path_changed,
+            "originalSourceUnchanged": original_source_unchanged,
+            "destinationChanged": (
+                destination_before_fingerprint != saved_fingerprint
+                or not destination_before.get("exists")
+            ),
+            "nativeSaveSucceeded": True,
+            "savedModel": saved_model,
+        }
+
     def force_document_dirty(self, document_id: str) -> None:
         """Keep an observed but unverified live mutation visibly dirty."""
 
@@ -9168,11 +11618,42 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         self._executor.run(force)
 
+    def inspect_glyph_metadata(
+        self,
+        document_id: str,
+        glyph_names: Sequence[str] = (),
+    ) -> Mapping[str, Mapping[str, Any]]:
+        """Read effective native GlyphData-backed values without canonicalizing them."""
+
+        def inspect() -> Mapping[str, Mapping[str, Any]]:
+            font = self._font_for_document(document_id)
+            requested = {str(name) for name in glyph_names if str(name)}
+            result: dict[str, Mapping[str, Any]] = {}
+            for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
+                name = str(_safe_getattr(glyph, "name") or "")
+                if not name or (requested and name not in requested):
+                    continue
+                result[name] = {
+                    "name": name,
+                    "export": bool(
+                        _maybe_call(_safe_getattr(glyph, "export", True))
+                    ),
+                    "category": _plain_scalar(_safe_getattr(glyph, "category")),
+                    "subCategory": _plain_scalar(
+                        _safe_getattr(glyph, "subCategory")
+                    ),
+                    "script": _plain_scalar(_safe_getattr(glyph, "script")),
+                }
+            return result
+
+        return self._executor.run(inspect)
+
     def inspect_layers(
         self,
         document_id: str,
         glyph_names: Sequence[str] = (),
         *,
+        include_metrics: bool = False,
         resolve_metrics: bool = False,
         include_geometry: bool = False,
     ) -> Mapping[tuple[str, str], Mapping[str, Any]]:
@@ -9212,6 +11693,8 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                             )
                         )
                     }
+                    if include_metrics or resolve_metrics:
+                        observation["currentMetrics"] = _observed_layer_metrics(layer)
                     if resolve_metrics:
                         detached_layer = clone_layers.get(layer_id)
                         if detached_layer is None:
@@ -9220,14 +11703,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                                     glyph_name, layer_id
                                 )
                             )
-                        current_metrics = _observed_layer_metrics(layer)
                         sync = _safe_getattr(detached_layer, "syncMetrics")
                         if not callable(sync):
                             raise HostAccessError(
                                 "Glyphs did not expose GSLayer.syncMetrics()"
                             )
                         sync()
-                        observation["currentMetrics"] = current_metrics
                         observation["resolvedMetrics"] = _observed_layer_metrics(
                             detached_layer
                         )
@@ -9238,12 +11719,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         return self._executor.run(inspect)
 
-    def compile_opentype_features(
+    def inspect_compilation_diagnostics(
         self, document_id: str
     ) -> Mapping[str, Any]:
-        """Compile a detached copy first, then compile the live font once."""
+        """Compile one detached font copy and report bounded diagnostics."""
 
-        def compile_features() -> Mapping[str, Any]:
+        def inspect() -> Mapping[str, Any]:
             font = self._font_for_document(document_id)
             copier = _safe_getattr(font, "copy")
             if not callable(copier):
@@ -9258,36 +11739,21 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 detached_compile()
             except Exception as error:
                 return {
-                    "preflightSucceeded": False,
+                    "succeeded": False,
+                    "errorType": type(error).__name__,
+                    "errorMessage": str(error)[:1000],
+                    "detached": True,
                     "liveAttempted": False,
-                    "liveSucceeded": False,
-                    "errorType": type(error).__name__,
-                    "errorMessage": str(error)[:1000],
                 }
-            live_compile = _safe_getattr(font, "compileFeatures")
-            if not callable(live_compile):
-                raise HostAccessError("Glyphs did not provide GSFont.compileFeatures()")
-            try:
-                live_compile()
-            except Exception as error:
-                self._canonical_model_cache.invalidate_unscoped()
-                return {
-                    "preflightSucceeded": True,
-                    "liveAttempted": True,
-                    "liveSucceeded": False,
-                    "errorType": type(error).__name__,
-                    "errorMessage": str(error)[:1000],
-                }
-            self._canonical_model_cache.invalidate_unscoped()
             return {
-                "preflightSucceeded": True,
-                "liveAttempted": True,
-                "liveSucceeded": True,
+                "succeeded": True,
                 "errorType": None,
                 "errorMessage": None,
+                "detached": True,
+                "liveAttempted": False,
             }
 
-        return self._executor.run(compile_features)
+        return self._executor.run(inspect)
 
     def open_edit_tab(
         self,
@@ -9714,9 +12180,14 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             )
 
         quiet_window_seconds = 0.100
-        deadline = time.monotonic() + 0.750
         previous = capture()
         previous_fingerprint = fingerprint_model(previous)
+        # The settlement budget measures change *after* the first complete
+        # observation. A forced persistent capture can legitimately exceed
+        # the quiet-window budget on a substantial font; starting the clock
+        # before it would skip the confirming readback and make a still-open
+        # document look as though it disappeared after live Python.
+        deadline = time.monotonic() + 0.750
         while time.monotonic() + quiet_window_seconds <= deadline:
             time.sleep(quiet_window_seconds)
             current = capture()
@@ -10847,8 +13318,31 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             stdout, stderr = io.StringIO(), io.StringIO()
             execution_error: BaseException | None = None
             try:
-                with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-                    exec(compile(request.code or "", "<glyphs-mcp-live>", "exec"), namespace, namespace)
+                protected_objects: list[Any] = []
+                for open_font in self._collect_fonts():
+                    protected_objects.append(open_font)
+                    protected_objects.append(
+                        _maybe_call(_safe_getattr(open_font, "parent"))
+                    )
+                with _WorkingSourceSaveRuntimeGuard(
+                    protected_objects,
+                    native_identity=self._native_identity,
+                ) as save_guard, contextlib.redirect_stdout(
+                    stdout
+                ), contextlib.redirect_stderr(stderr):
+                    exec(
+                        compile(
+                            request.code or "",
+                            "<glyphs-mcp-live>",
+                            "exec",
+                        ),
+                        namespace,
+                        namespace,
+                    )
+                    # A script can catch the immediate guard exception. The
+                    # attempt remains a failed capability request and must not
+                    # be reported as successful execution.
+                    save_guard.raise_if_blocked()
             except BaseException as exc:
                 execution_error = exc
             return {
@@ -10924,14 +13418,25 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             for record in pending.values()
         )
         overrides = getattr(self, "_document_dirty_overrides", {})
-        if active or has_pending:
+        baseline = getattr(self, "_document_mcp_baseline_dirty", {}).get(document_id)
+        baseline_fingerprint = getattr(
+            self, "_document_mcp_baseline_fingerprints", {}
+        ).get(document_id)
+        if (
+            not has_pending
+            and baseline_fingerprint
+            and current_fingerprint == baseline_fingerprint
+        ):
+            # Two independently verified operations may compensate exactly
+            # even when neither one is a formal revert of the other. Canonical
+            # baseline equivalence proves their net document delta is empty,
+            # so do not leave a phantom dirty state merely because both audit
+            # contributions remain addressable in process-local history.
+            overrides[document_id] = baseline
+        elif active or has_pending:
             overrides[document_id] = True
         else:
             native = _document_edited_state(font)
-            baseline = getattr(self, "_document_mcp_baseline_dirty", {}).get(document_id)
-            baseline_fingerprint = getattr(
-                self, "_document_mcp_baseline_fingerprints", {}
-            ).get(document_id)
             if (
                 baseline_fingerprint
                 and current_fingerprint == baseline_fingerprint
@@ -10959,19 +13464,31 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         if document_id not in overrides:
             return native_state
         override = overrides[document_id]
-        if override is not False or native_state is False:
-            return override
         baseline_fingerprint = getattr(
             self, "_document_mcp_baseline_fingerprints", {}
         ).get(document_id)
         if not baseline_fingerprint:
-            return native_state
+            return override
+        pending = getattr(self, "_document_mcp_pending_reverts", {})
+        has_pending = any(
+            str(record.get("documentId") or "") == document_id
+            for record in pending.values()
+        )
+        if has_pending:
+            return True
         if current_fingerprint is None:
             current_fingerprint = fingerprint_model(
                 self._capture_cached_model(document_id, font)
             )
         if current_fingerprint == baseline_fingerprint:
-            return False
+            baseline = getattr(self, "_document_mcp_baseline_dirty", {}).get(
+                document_id
+            )
+            overrides[document_id] = baseline
+            self._document_dirty_overrides = overrides
+            return baseline
+        if override is not False or native_state is False:
+            return override
         # The document diverged after the verified clean equivalence. Stop
         # overriding Glyphs so a later manual edit remains visibly dirty.
         overrides[document_id] = True
@@ -11514,6 +14031,15 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         self._executor.run(finalize)
 
     def reset_verified_change_tracking(self, document_id: str) -> None:
+        """Clear save-bound state on the adapter's native serialization lane."""
+
+        self._executor.run(
+            lambda: self._reset_verified_change_tracking_main_thread(document_id)
+        )
+
+    def _reset_verified_change_tracking_main_thread(
+        self, document_id: str
+    ) -> None:
         for attribute in (
             "_document_mcp_contributions",
             "_document_mcp_baseline_dirty",
@@ -11577,45 +14103,77 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
     def inspect_export_destination(self, destination: str) -> Mapping[str, Any]:
         return inspect_destination(destination)
 
+    def preflight_source_bundle(self, payload: Mapping[str, Any]) -> Mapping[str, Any]:
+        document_id = str(payload.get("documentId") or "")
+        model = payload.get("canonicalModel")
+        if not isinstance(model, Mapping):
+            raise SourceBundleError(
+                "canonical_model_required",
+                "Source-bundle preflight requires the captured canonical model.",
+            )
+
+        def preflight() -> Mapping[str, Any]:
+            return build_source_bundle_preflight(
+                font=self._font_for_document(document_id),
+                model=model,
+                compatibility_mode=str(
+                    payload.get("compatibilityMode") or "component_preserving"
+                ),
+                document_fingerprint=str(payload.get("documentFingerprint") or ""),
+                source_fingerprint=(
+                    str(payload.get("sourceFingerprint"))
+                    if payload.get("sourceFingerprint")
+                    else None
+                ),
+                runtime_versions=dict(payload.get("runtimeVersions") or {}),
+            )
+
+        return self._executor.run(preflight)
+
     def export_source_bundle(self, payload: Mapping[str, Any]) -> Mapping[str, Any]:
         document_id = str(payload.get("documentId") or "")
         destination = str(payload.get("destination") or "")
         expected_state = dict(payload.get("destinationState") or {})
+        model = payload.get("canonicalModel")
+        if not isinstance(model, Mapping):
+            raise SourceBundleError(
+                "canonical_model_required",
+                "Confirmed source export requires a freshly captured canonical model.",
+            )
 
         def produce(staged: Path) -> Mapping[str, Any]:
-            try:
-                from export_designspace_ufo import (  # type: ignore[import-not-found]
-                    ExportDesignspaceAndUFO,
-                    ExportOptions,
-                )
-            except Exception as exc:
-                raise HostAccessError("The reviewed source exporter is unavailable") from exc
-            font = self._font_for_document(document_id)
-            options = ExportOptions(
-                include_variable=True,
-                include_static=True,
-                include_build_script=False,
-                output_directory=str(staged),
-                open_destination=False,
+            result = render_source_bundle(
+                font=self._font_for_document(document_id),
+                model=model,
+                destination=staged,
+                compatibility_mode=str(
+                    payload.get("compatibilityMode") or "component_preserving"
+                ),
+                document_fingerprint=str(payload.get("documentFingerprint") or ""),
+                source_fingerprint=(
+                    str(payload.get("sourceFingerprint"))
+                    if payload.get("sourceFingerprint")
+                    else None
+                ),
+                runtime_versions=dict(payload.get("runtimeVersions") or {}),
             )
-            result = ExportDesignspaceAndUFO(font, options=options).run()
-
-            def relative(paths: Sequence[str]) -> list[str]:
-                values = []
-                for value in paths:
-                    try:
-                        values.append(str(Path(value).relative_to(staged)))
-                    except ValueError:
-                        raise HostAccessError("The exporter reported a path outside its staging directory")
-                return values
-
-            return {
-                "designspaceFiles": relative(result.designspace_files),
-                "masterUFOs": relative(result.master_ufos),
-                "braceUFOs": relative(result.brace_ufos),
-                "supportFiles": relative(result.support_files),
-                "buildHelperIncluded": False,
+            reviewed_values = {
+                "bundleFingerprint": payload.get("reviewedBundleFingerprint"),
+                "manifestTreeSha256": payload.get("reviewedManifestTreeSha256"),
+                "manifestSha256": payload.get("reviewedManifestSha256"),
             }
+            mismatches = {
+                key: {"reviewed": expected, "regenerated": result.get(key)}
+                for key, expected in reviewed_values.items()
+                if not expected or result.get(key) != expected
+            }
+            if mismatches:
+                raise SourceBundleError(
+                    "review_regeneration_mismatch",
+                    "Confirmed regeneration differs from the reviewed source bundle.",
+                    target={"fingerprints": mismatches},
+                )
+            return result
 
         return self._executor.run(
             lambda: publish_staged_directory(

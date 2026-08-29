@@ -172,6 +172,46 @@ STRINGS = {
     "autostart.short": {"en": "Auto-start", "fr": "Démarrage auto", "zh-Hans": "自动启动"},
     "activity.label": {"en": "Activity", "fr": "Activité", "zh-Hans": "活动"},
     "activity.idle": {"en": "Idle", "fr": "Inactif", "zh-Hans": "空闲"},
+    "scripting_safety.label": {
+        "en": "Scripting safety:",
+        "fr": "Sécurité script :",
+        "zh-Hans": "脚本安全：",
+    },
+    "scripting_safety.healthy": {
+        "en": "Healthy",
+        "fr": "Sain",
+        "zh-Hans": "正常",
+    },
+    "scripting_safety.repair_needed": {
+        "en": "Repair needed",
+        "fr": "Réparation requise",
+        "zh-Hans": "需要修复",
+    },
+    "scripting_safety.restart_glyphs": {
+        "en": "Restart Glyphs",
+        "fr": "Redémarrer Glyphs",
+        "zh-Hans": "重启 Glyphs",
+    },
+    "scripting_safety.repair": {
+        "en": "Repair",
+        "fr": "Réparer",
+        "zh-Hans": "修复",
+    },
+    "scripting_safety.repaired": {
+        "en": "Scripting safety was repaired.",
+        "fr": "La sécurité des scripts a été réparée.",
+        "zh-Hans": "脚本安全已修复。",
+    },
+    "scripting_safety.repair_incomplete": {
+        "en": "Scripting safety repair is incomplete.",
+        "fr": "La réparation de la sécurité des scripts est incomplète.",
+        "zh-Hans": "脚本安全修复未完成。",
+    },
+    "scripting_safety.unavailable": {
+        "en": "Scripting safety repair is unavailable in this runtime.",
+        "fr": "La réparation de la sécurité des scripts n’est pas disponible dans cet environnement.",
+        "zh-Hans": "此运行环境不支持脚本安全修复。",
+    },
     "palette.ready": {
         "en": "Ready",
         "de": "Bereit",

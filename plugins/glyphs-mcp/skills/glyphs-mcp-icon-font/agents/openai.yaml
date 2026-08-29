@@ -1,7 +1,7 @@
 interface:
   display_name: "Glyphs MCP Icon Font"
   short_description: "Review stable icon-font Unicode assignments."
-  default_prompt: "Use $glyphs-mcp-icon-font to audit this icon font, preserve existing mappings, review PUA proposals, and dry-run approved changes before applying them."
+  default_prompt: "Use $glyphs-mcp-icon-font to audit this icon font, preserve existing mappings, present the exact PUA proposal, and apply only an immutable generic preview after approval."
 
 policy:
   allow_implicit_invocation: true

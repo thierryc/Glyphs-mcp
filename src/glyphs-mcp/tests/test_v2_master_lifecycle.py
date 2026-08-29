@@ -29,10 +29,8 @@ from glyphs_mcp_v2.mutation import (  # noqa: E402
     mutation_scope,
 )
 from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
-from glyphs_mcp_v2.workflows import (  # noqa: E402
-    build_master_updates,
-    list_masters,
-)
+from glyphs_mcp_v2.generic_tools import resolve_selector  # noqa: E402
+from glyphs_mcp_v2.structural_registry import build_master_updates  # noqa: E402
 
 
 def _layer(master_id: str, name: str, x: float) -> dict:
@@ -135,11 +133,48 @@ def _layer_for(glyph: dict, identity: str) -> dict:
     return next(layer for layer in glyph["layers"] if layer["id"] == identity)
 
 
+def _duplicate_master(app, host, document_id: str) -> dict:
+    before = fingerprint_model(host.model)
+    preview = app.invoke(
+        "preview_change",
+        {
+            "documentId": document_id,
+            "expectedDocumentFingerprint": before,
+            "operations": [
+                {
+                    "op": "duplicate",
+                    "target": {
+                        "entity": "master",
+                        "ids": ["master_regular"],
+                    },
+                    "newId": "master_text",
+                    "overrides": {"name": "Text"},
+                }
+            ],
+            "constraints": [],
+        },
+    ).to_dict()
+    if not preview["ok"]:
+        return preview
+    return app.invoke(
+        "apply_change",
+        {
+            "documentId": document_id,
+            "previewId": preview["data"]["previewId"],
+            "expectedDocumentFingerprint": before,
+            "reason": "duplicate an exact master and its owned layers",
+        },
+    ).to_dict()
+
+
 class MasterLifecycleTests(unittest.TestCase):
     def test_schema_v6_and_master_tools_are_explicit(self) -> None:
         self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 6)
-        self.assertIn("list_masters", TOOL_CATALOG)
-        self.assertIn("apply_master_updates", TOOL_CATALOG)
+        self.assertIn("read_document", TOOL_CATALOG)
+        self.assertIn("preview_change", TOOL_CATALOG)
+        self.assertIn("apply_change", TOOL_CATALOG)
+        self.assertNotIn("list_masters", TOOL_CATALOG)
+        self.assertNotIn("apply_master_updates", TOOL_CATALOG)
 
     def test_master_builder_accepts_the_immutable_snapshot_mapping(self) -> None:
         snapshot = CanonicalSnapshot.from_model(_model())
@@ -155,7 +190,12 @@ class MasterLifecycleTests(unittest.TestCase):
         )
 
     def test_list_masters_preserves_canonical_order_and_axes(self) -> None:
-        items = list_masters(_model())
+        items = [
+            reference.value
+            for reference in resolve_selector(
+                _model(), {"entity": "master", "orderBy": "canonical"}
+            )
+        ]
 
         self.assertEqual([item["id"] for item in items], ["master_regular", "master_bold"])
         self.assertEqual(items[1]["axes"], [{"tag": "wght", "internal": 200}])
@@ -416,22 +456,7 @@ class MasterLifecycleTests(unittest.TestCase):
         baseline = _model()
         host = _Host(baseline)
         app = GlyphsMCPApplication(host)
-        response = app.invoke(
-            "apply_master_updates",
-            {
-                "documentId": "doc_master",
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
-                "updates": [
-                    {
-                        "action": "duplicate",
-                        "sourceMasterId": "master_regular",
-                        "masterId": "master_text",
-                        "name": "Text",
-                    }
-                ],
-                "reason": "schema-v4 transaction",
-            },
-        ).to_dict()
+        response = _duplicate_master(app, host, "doc_master")
 
         self.assertTrue(response["ok"], response)
         self.assertEqual(host.apply_calls, 1)
@@ -443,7 +468,7 @@ class MasterLifecycleTests(unittest.TestCase):
             "revert_change",
             {
                 "documentId": "doc_master",
-                "operationId": response["operationId"],
+                "operationId": response["data"]["operationId"],
                 "expectedDocumentFingerprint": fingerprint_model(host.model),
             },
         ).to_dict()
@@ -480,21 +505,7 @@ class MasterLifecycleTests(unittest.TestCase):
             "glyphs_mcp_v2.application.lifecycle_capabilities",
             return_value=("derived_capability",),
         ) as derive:
-            response = app.invoke(
-                "apply_master_updates",
-                {
-                    "documentId": "doc_master",
-                    "expectedDocumentFingerprint": fingerprint_model(host.model),
-                    "updates": [
-                        {
-                            "action": "duplicate",
-                            "sourceMasterId": "master_regular",
-                            "masterId": "master_text",
-                            "name": "Text",
-                        }
-                    ],
-                },
-            ).to_dict()
+            response = _duplicate_master(app, host, "doc_master")
 
         self.assertTrue(response["ok"], response)
         derive.assert_called_once()
@@ -509,27 +520,13 @@ class MasterLifecycleTests(unittest.TestCase):
     def test_master_revert_preserves_unrelated_edits_and_refuses_overlap(self) -> None:
         host = _Host(_model())
         app = GlyphsMCPApplication(host)
-        response = app.invoke(
-            "apply_master_updates",
-            {
-                "documentId": "doc_master",
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
-                "updates": [
-                    {
-                        "action": "duplicate",
-                        "sourceMasterId": "master_regular",
-                        "masterId": "master_text",
-                        "name": "Text",
-                    }
-                ],
-            },
-        ).to_dict()
+        response = _duplicate_master(app, host, "doc_master")
         host.model["font"]["note"] = "later unrelated edit"
         reverted = app.invoke(
             "revert_change",
             {
                 "documentId": "doc_master",
-                "operationId": response["operationId"],
+                "operationId": response["data"]["operationId"],
                 "expectedDocumentFingerprint": fingerprint_model(host.model),
             },
         ).to_dict()
@@ -539,28 +536,16 @@ class MasterLifecycleTests(unittest.TestCase):
 
         conflicting_host = _Host(_model())
         conflicting_app = GlyphsMCPApplication(conflicting_host)
-        created = conflicting_app.invoke(
-            "apply_master_updates",
-            {
-                "documentId": "doc_master_conflict",
-                "expectedDocumentFingerprint": fingerprint_model(conflicting_host.model),
-                "updates": [
-                    {
-                        "action": "duplicate",
-                        "sourceMasterId": "master_regular",
-                        "masterId": "master_text",
-                        "name": "Text",
-                    }
-                ],
-            },
-        ).to_dict()
+        created = _duplicate_master(
+            conflicting_app, conflicting_host, "doc_master_conflict"
+        )
         conflicting_host.model["masters"][-1]["name"] = "Manual Edit"
         before_conflict = copy.deepcopy(conflicting_host.model)
         refused = conflicting_app.invoke(
             "revert_change",
             {
                 "documentId": "doc_master_conflict",
-                "operationId": created["operationId"],
+                "operationId": created["data"]["operationId"],
                 "expectedDocumentFingerprint": fingerprint_model(conflicting_host.model),
             },
         ).to_dict()
@@ -587,24 +572,12 @@ class MasterLifecycleTests(unittest.TestCase):
         self.assertEqual(build.change_set.inverse().apply(after), before)
 
         host = _Host(before)
-        response = GlyphsMCPApplication(host).invoke(
-            "apply_master_updates",
-            {
-                "documentId": "doc_master_scale",
-                "expectedDocumentFingerprint": fingerprint_model(host.model),
-                "updates": [
-                    {
-                        "action": "duplicate",
-                        "sourceMasterId": "master_regular",
-                        "masterId": "master_text",
-                        "name": "Text",
-                    }
-                ],
-            },
-        ).to_dict()
+        response = _duplicate_master(
+            GlyphsMCPApplication(host), host, "doc_master_scale"
+        )
         self.assertTrue(response["ok"], response)
-        self.assertEqual(response["data"]["affectedGlyphCount"], 383)
         self.assertEqual(response["data"]["transactionCount"], 1)
+        self.assertGreater(response["data"]["observedChangeCount"], 383)
         self.assertEqual(host.apply_calls, 1)
         self.assertLess(len(json.dumps(response).encode("utf-8")), 64 * 1024)
 

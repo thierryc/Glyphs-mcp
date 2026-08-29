@@ -769,6 +769,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-development", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-scripting", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-development","surface":"workspace"},{"name":"glyphs-mcp-scripting","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-spacing","surface":"glyphs-mcp-v2"}]}"#.write(to: skillsDir.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 		try FileManager.default.createDirectory(at: codexSkill, withIntermediateDirectories: true, attributes: nil)
 
@@ -1443,6 +1444,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-scripting", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("glyphs-mcp-spacing", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: skillsDir.appendingPathComponent("other-skill", isDirectory: true), withIntermediateDirectories: true, attributes: nil)
+		try #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-development","surface":"workspace"},{"name":"glyphs-mcp-scripting","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-spacing","surface":"glyphs-mcp-v2"}]}"#.write(to: skillsDir.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)
 
 		let payload = InstallerPayload(payloadDir: payloadDir, pluginBundle: plugin, requirementsTxt: req, skillsDir: skillsDir)
@@ -1468,6 +1470,7 @@ openaiDeveloperDocs  https://developers.openai.com/mcp  -                     en
 		try FileManager.default.createDirectory(at: glyphs, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: scripting, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: spacing, withIntermediateDirectories: true, attributes: nil)
+		try #"{"schemaVersion":1,"managedSkills":[{"name":"glyphs","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-scripting","surface":"glyphs-mcp-v2"},{"name":"glyphs-mcp-spacing","surface":"glyphs-mcp-v2"}]}"#.write(to: skillsDir.appendingPathComponent("manifest.json"), atomically: true, encoding: .utf8)
 		try FileManager.default.createDirectory(at: legacyConnect, withIntermediateDirectories: true, attributes: nil)
 		try FileManager.default.createDirectory(at: unrelated, withIntermediateDirectories: true, attributes: nil)
 		try "mcp\n".write(to: req, atomically: true, encoding: .utf8)

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Glyphs MCP Export Validation"
+  short_description: "Validate source readiness and existing font binaries."
+  default_prompt: "Use $glyphs-mcp-export-validation to validate this source or existing font binary without exporting implicitly."
+
+policy:
+  allow_implicit_invocation: true

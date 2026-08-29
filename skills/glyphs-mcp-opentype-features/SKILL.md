@@ -1,54 +1,37 @@
 ---
 name: glyphs-mcp-opentype-features
-description: Inspect OpenType feature code, stylistic sets, character variants, prefixes, and classes in Glyphs; when explicitly requested, change their ordered collections through the verified apply-first v2 mutation contract.
+description: Inspect, reason about, compile-check, or safely change Glyphs OpenType features, classes, prefixes, stylistic sets, and character variants.
 metadata:
   surface: glyphs-mcp-v2
 ---
 
 # Glyphs MCP OpenType features
 
-Use this focused workflow for OpenType feature inspection and stylistic-set reporting.
-
-## Core rules
-
-- Resolve one explicit document with `list_open_fonts`; never use a legacy font index as authority.
-- Use `list_opentype_items` for ordered feature, class, and prefix inspection,
-  including parsed stylistic-set substitutions and unsupported-rule warnings.
-- When no typed tool covers the inspection, use `execute_python` with `intendedEffect=read`, a concise reason, explicit document context, and bounded output.
-- Consult the bundled Glyphs documentation before interpreting unfamiliar
-  feature APIs.
-- Report feature tags, disabled/automatic state, source classes or prefixes, substitutions, contextual rules, and unsupported constructs separately.
-- Do not mutate feature code, compile features, export, or save the font during inspection.
-- When compilation is explicitly requested, call
-  `compile_opentype_features` with documentId and expectedDocumentFingerprint. It
-  preflights `compileFeatures()` on one detached copy before compiling live and
-  must report unchanged canonical state and source bytes. It never calls
-  `updateFeatures()`, generates source, or saves.
-- When the user explicitly requests an edit, use `apply_opentype_updates` with
-  one stable document ID, the current fingerprint, explicit `create`, `update`,
-  `move`, or `delete` actions, unique kind/name targets, and a reason. Creation
-  and move may include an explicit collection index. Rename remains an explicit
-  delete/create operation so entity identity is never changed implicitly.
-- Custom code requires the resulting `automatic` state to be false. The typed
-  mutation applies immediately, verifies detached and live canonical state,
-  records one audit/change operation, never compiles, and never saves.
-- Do not use the removed glyphs-mcp-features or list_style_sets workflow in
-  v2; `list_opentype_items` replaces that inspection surface.
+Keep authored source, detached compilation evidence, live compilation, and
+exported binary behavior separate.
 
 ## Workflow
 
-1. Call `get_server_info` and `list_open_fonts`, then select the stable `documentId`.
-2. Inspect features, classes, and prefixes with `list_opentype_items`.
-3. If fallback Python is needed, run read-intent code only and check `observedDocumentChange` plus `scopeViolations` in the result.
-4. Group stylistic-set output by tag and name. Keep contextual or unsupported rules visible rather than guessing their expansion.
-5. Report any read-intent violation as a safety finding and do not rerun the script as a mutation.
-
-For an explicit edit, re-read the document fingerprint immediately before the
-single `apply_opentype_updates` call. Report its operation ID and revert
-availability; do not add a second approval or review-token flow.
-
-## Deeper references
-
-- [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
-- [Safety model](https://github.com/thierryc/Glyphs-mcp/blob/main/content/concepts/safety-model.mdx)
-- [Project briefing](https://github.com/thierryc/Glyphs-mcp/blob/main/CODEX.md)
+1. Call `get_server_info`, require `data.apiMajor == 2`, resolve one font with
+   `list_documents`, and retain its fingerprint.
+2. Search `search_knowledge` for current Glyphs feature syntax, API behavior,
+   Adobe feature-file semantics, and the relevant OpenType tables. Retrieve
+   decisive entries with `get_knowledge`.
+3. Use `read_document` with `feature`, `class`, and `prefix` selectors to inspect
+   ordered canonical source, automatic/disabled state, labels, and notes.
+   Request `compilation.diagnostics` on the document for a detached compile
+   check. A failed compile is complete failure evidence, not an incomplete read.
+4. Parse stylistic-set, character-variant, substitution, positioning, and
+   contextual behavior in the skill. Report unsupported or ambiguous source
+   constructs without silently simplifying them.
+5. Express exact collection edits with generic `insert`, `set`, `move`, and
+   `remove` operations plus before/after constraints. Call `preview_change`,
+   inspect ordering and semantic diff, then apply the exact preview once with
+   `apply_change`.
+6. Use `execute_python(mode="read_only")` for bounded native inspection that is
+   absent from projections. Use `staged_document` for unsupported source edits.
+   A live `compileFeatures()` request is an explicit UI/native effect and
+   belongs in `live_open_world` with recovery reporting; it must not save.
+7. Re-read source and detached compilation diagnostics after a change. Never
+   call `save_document`, export, or claim binary behavior without separate
+   shaping/table evidence.

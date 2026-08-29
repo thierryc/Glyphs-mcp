@@ -1,50 +1,50 @@
 ---
 name: glyphs
-description: Use this skill as the general Glyphs MCP entry point for inspecting or editing an open Glyphs font, checking the local server and font context, or choosing the safest focused Glyphs MCP workflow for a font task.
+description: Use this skill as the general Glyphs MCP entry point for inspecting or editing an open Glyphs font, gathering evidence, or routing to focused type-design expertise.
+metadata:
+  surface: glyphs-mcp-v2
 ---
 
 # Glyphs MCP
 
-Use this skill as the general launcher for Glyphs MCP tasks.
+Use Knowledge for facts, focused skills for judgment, and generic tools for mechanics.
+Generic Python with no Glyphs app or font target does not trigger this skill.
 
-## Core rules
+## Core workflow
 
-- Read the current server, font, master, glyph, layer, and selection context needed for the request before acting.
-- Prefer the narrowest dedicated MCP tool and focused workflow that fits the task.
-- Before mutation, review or dry-run when supported, explain the exact proposed change, and require explicit approval for confirm-gated actions.
-- Re-read affected state after mutation and report changed, skipped, and unresolved items.
-- Never auto-save the font.
+1. Call `get_server_info`; require `data.apiMajor == 2` and inspect the entity,
+   projection, operation, Knowledge, and permanent Python capabilities.
+2. Resolve one stable font with `list_documents`. Use `read_document` with an
+   exact `EntitySelector` and the smallest useful `Projection`; retain the
+   document fingerprint and follow selector-owned pagination.
+3. Use `search_knowledge` when a design, engineering, Glyphs API, scripting, or
+   file-format fact affects the decision. Retrieve selected evidence with
+   `get_knowledge` and retain its citation and version scope.
+4. Make typographic choices in the applicable focused skill. Tools must not be
+   treated as sources of design policy.
+5. When a requested edit is mechanically expressible, create explicit `set`,
+   `translate`, `insert`, `remove`, `move`, or `duplicate` operations and
+   before/after constraints. Call `preview_change`, explain the immutable
+   semantic patch, then apply its exact `previewId` once with `apply_change`.
+6. When the typed surface is insufficient, use the permanent `execute_python`
+   fallback: `read_only` for bounded inspection, `staged_document` for detached
+   edits applied through `apply_change`, and `live_open_world` only for explicit
+   unsupported UI, file, process, or other external effects.
+7. Re-read affected entities, inspect `list_history` or `get_operation` when
+   needed, and use `revert_change` for a compatible unsaved-session reversal.
+   Never save unless the user separately requests `save_document`.
 
-## Route focused work
+Incomplete observations are evidence gaps, not passes. Locks, structural
+invalidity, stale fingerprints, and failed read-back are hard failures.
 
-- OpenType features and stylistic sets: follow `glyphs-mcp-opentype-features`.
-- Live Python runs, Macro Panel snippets, and iterative script debugging: follow `glyphs-mcp-scripting`.
-- Reusable Python scripts and plug-in development: follow `glyphs-mcp-development`.
-- Icon-font Unicode or PUA assignments: follow `glyphs-mcp-icon-font`.
-- Directional pair and Glyphs 4 contextual kerning review, coverage, explicit
-  updates, and exported visual proof:
-  follow `glyphs-mcp-kerning`.
-- LitSquare metadata, inherited settings, or semantic path roles: follow `glyphs-mcp-litsquare-metadata`.
-- Spacing, sidebearings, and width review: follow `glyphs-mcp-spacing`.
-- Full glyph compatibility diagnosis and repair across masters: follow
-  `glyphs-mcp-master-compatibility`.
-- Outlines, components, anchors, selected nodes, or bundled docs: follow `glyphs-mcp-outlines-docs`.
-- Roman-to-italic or oblique first passes: follow `glyphs-mcp-italic-first-pass`.
-- Production-readiness audits: follow `glyphs-mcp-production-audit`.
-- Reproducible, redacted issue reports: follow `glyphs-mcp-maintainer-feedback`.
-- Generic Python with no Glyphs app or font target does not use a Glyphs skill.
-- For other tasks, use the smallest relevant Glyphs MCP tool set and keep the same review-first safety rules.
+## Focused expertise
 
-## Connection and context workflow
-
-1. If connection or font context is unknown, call `get_server_info`, then `list_open_fonts`.
-2. If no server is available, ask the user to start Glyphs and confirm the server is running from **Edit -> Glyphs MCP Server Status...**. Use the local endpoint `http://127.0.0.1:9680/mcp/`.
-3. Resolve the target font and current master or selection before continuing.
-4. Follow the matching focused workflow, or complete an unmatched task with dedicated tools.
-5. Summarize the result and any manual review still needed.
-
-## Deeper references
-
-- [First session](https://github.com/thierryc/Glyphs-mcp/blob/main/content/tutorial/first-session.mdx)
-- [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
-- [Project briefing](https://github.com/thierryc/Glyphs-mcp/blob/main/CODEX.md)
+- Spacing: `glyphs-mcp-spacing`
+- Kerning: `glyphs-mcp-kerning`
+- Outlines, anchors, and components: `glyphs-mcp-outlines-docs`
+- Interpolation compatibility: `glyphs-mcp-master-compatibility`
+- OpenType: `glyphs-mcp-opentype-features`
+- Unicode and icon encoding: `glyphs-mcp-unicode-semantics` or `glyphs-mcp-icon-font`
+- Variable/color sources and export: the corresponding audit skill
+- Python and unsupported Glyphs APIs: `glyphs-mcp-scripting`
+- Reusable scripts and plug-ins: `glyphs-mcp-development`
