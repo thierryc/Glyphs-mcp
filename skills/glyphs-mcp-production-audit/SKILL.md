@@ -1,6 +1,6 @@
 ---
 name: glyphs-mcp-production-audit
-description: Coordinate a read-only production audit from one source fingerprint by routing to focused Glyphs MCP expertise and aggregating blockers and gaps.
+description: Coordinate a read-only production audit from one live document fingerprint by routing to focused Glyphs MCP expertise and aggregating blockers and gaps.
 metadata:
   surface: glyphs-mcp-v2
 ---

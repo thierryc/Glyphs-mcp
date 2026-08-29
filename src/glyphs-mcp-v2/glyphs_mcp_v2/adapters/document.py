@@ -10898,18 +10898,67 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         return self._font_for_document(document_id)
 
     def capture_source_file_state(
-        self, document_id: str
+        self, document_id: str, *, include_model: bool = False
     ) -> Mapping[str, Any] | None:
-        """Observe source bytes without saving, restoring, or exposing a path."""
+        """Observe persistence evidence without saving or touching live content."""
 
         def capture() -> Mapping[str, Any] | None:
             font = self._font_for_document(document_id)
             path_value = _safe_getattr(font, "filepath")
             if not path_value:
                 return None
-            return _source_file_state(Path(str(path_value)))
+            path = Path(str(path_value))
+            raw = _source_file_state(path)
+            if raw is None:
+                return None
+            state = {**dict(raw), "filePath": str(path)}
+            if include_model and state.get("exists") and state.get("readable"):
+                live = self._capture_cached_model(document_id, font)
+                saved = _saved_source_canonical_model(
+                    path,
+                    instance_ids=collection_order(live.get("instances", [])),
+                )
+                if isinstance(saved, Mapping):
+                    state["savedModel"] = saved
+            return state
 
         return self._executor.run(capture)
+
+    def rebase_verified_change_tracking(
+        self,
+        operation_id: str,
+        *,
+        document_id: str,
+        baseline_fingerprint: str,
+        final_fingerprint: str,
+        keep_contribution: bool,
+    ) -> None:
+        """Rebase one pending MCP contribution after a native save boundary."""
+
+        def rebase() -> None:
+            pending = getattr(self, "_document_mcp_pending_reverts", {})
+            attempt = pending.get(operation_id)
+            self._reset_verified_change_tracking_main_thread(document_id)
+            if not keep_contribution or not isinstance(attempt, Mapping):
+                return
+            rebuilt = dict(attempt)
+            rebuilt.update(
+                {
+                    "documentId": document_id,
+                    "kind": "apply",
+                    "removedId": None,
+                    "record": {"nativeDirtyBefore": False},
+                    "nativeDirtyBefore": False,
+                    "verifiedDirtyBefore": False,
+                    "beforeFingerprint": baseline_fingerprint,
+                    "afterFingerprint": final_fingerprint,
+                }
+            )
+            refreshed = getattr(self, "_document_mcp_pending_reverts", {})
+            refreshed[operation_id] = rebuilt
+            self._document_mcp_pending_reverts = refreshed
+
+        self._executor.run(rebase)
 
     def save_document(
         self,
@@ -10917,9 +10966,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         *,
         expected_document_fingerprint: str,
         destination: Any = None,
-        expected_source_fingerprint: Any = None,
+        expected_source_file_fingerprint: Any = None,
         overwrite_policy: str = "fail_if_exists",
-        expected_destination_fingerprint: Any = None,
+        expected_destination_file_fingerprint: Any = None,
         notification_correlation_token: Any = None,
     ) -> Mapping[str, Any]:
         """Synchronously save or Save As through NSDocument, then prove bytes."""
@@ -11003,11 +11052,11 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         mode = "save" if _same_save_path(previous_path, target) else "save_as"
         if mode == "save" and (
             overwrite_policy != "fail_if_exists"
-            or expected_destination_fingerprint not in (None, "")
+            or expected_destination_file_fingerprint not in (None, "")
         ):
             raise DocumentSaveError(
                 "invalid_request",
-                "Current-path saves use expectedSourceFingerprint, not a destination overwrite policy.",
+                "Current-path saves use expectedSourceFileFingerprint, not a destination overwrite policy.",
             )
 
         def reject_open_destination(
@@ -11076,12 +11125,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "source_file_unavailable",
                     "The current Glyphs source is missing or unreadable.",
                 )
-            if not expected_source_fingerprint:
+            if not expected_source_file_fingerprint:
                 raise DocumentSaveError(
                     "invalid_request",
-                    "expectedSourceFingerprint is required for a current-path save.",
+                    "expectedSourceFileFingerprint is required for a current-path save.",
                 )
-            if str(expected_source_fingerprint) != str(previous_fingerprint):
+            if str(expected_source_file_fingerprint) != str(previous_fingerprint):
                 raise DocumentSaveError(
                     "stale_source_file",
                     "The current source file changed after it was inspected.",
@@ -11090,10 +11139,10 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     },
                 )
         else:
-            if previous_path is None and expected_source_fingerprint not in (None, ""):
+            if previous_path is None and expected_source_file_fingerprint not in (None, ""):
                 raise DocumentSaveError(
                     "invalid_request",
-                    "A pathless document has no expectedSourceFingerprint.",
+                    "A pathless document has no expectedSourceFileFingerprint.",
                 )
             if previous_state is not None:
                 if (
@@ -11105,13 +11154,13 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         "source_file_unavailable",
                         "The original Glyphs source is missing or unreadable.",
                     )
-                if not expected_source_fingerprint:
+                if not expected_source_file_fingerprint:
                     raise DocumentSaveError(
                         "invalid_request",
-                        "expectedSourceFingerprint is required when Save As has an existing original source.",
+                        "expectedSourceFileFingerprint is required when Save As has an existing original source.",
                     )
-            if expected_source_fingerprint not in (None, "") and (
-                previous_fingerprint != str(expected_source_fingerprint)
+            if expected_source_file_fingerprint not in (None, "") and (
+                previous_fingerprint != str(expected_source_file_fingerprint)
             ):
                 raise DocumentSaveError(
                     "stale_source_file",
@@ -11121,10 +11170,10 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     },
                 )
             if overwrite_policy == "fail_if_exists":
-                if expected_destination_fingerprint not in (None, ""):
+                if expected_destination_file_fingerprint not in (None, ""):
                     raise DocumentSaveError(
                         "invalid_request",
-                        "expectedDestinationFingerprint requires replace_if_match.",
+                        "expectedDestinationFileFingerprint requires replace_if_match.",
                     )
                 if destination_before.get("exists"):
                     raise DocumentSaveError(
@@ -11143,12 +11192,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         "source_file_unavailable",
                         "The replacement destination is unreadable.",
                     )
-                if not expected_destination_fingerprint:
+                if not expected_destination_file_fingerprint:
                     raise DocumentSaveError(
                         "invalid_request",
-                        "expectedDestinationFingerprint is required for replace_if_match.",
+                        "expectedDestinationFileFingerprint is required for replace_if_match.",
                     )
-                if str(expected_destination_fingerprint) != str(
+                if str(expected_destination_file_fingerprint) != str(
                     destination_before_fingerprint
                 ):
                     raise DocumentSaveError(
@@ -13081,8 +13130,13 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             namespace = self._context(clone, request)
             namespace["__builtins__"] = _STAGED_BUILTINS
             stdout, stderr = io.StringIO(), io.StringIO()
-            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            protected = [clone, _maybe_call(_safe_getattr(clone, "parent"))]
+            with _WorkingSourceSaveRuntimeGuard(
+                protected,
+                native_identity=self._native_identity,
+            ) as save_guard, contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 exec(compile(request.code or "", "<glyphs-mcp-staged>", "exec"), namespace, namespace)
+                save_guard.raise_if_blocked()
             after_instance_ids = _staged_instance_ids(
                 native_state["cloneInstancesBefore"],
                 native_state["beforeInstanceIds"],

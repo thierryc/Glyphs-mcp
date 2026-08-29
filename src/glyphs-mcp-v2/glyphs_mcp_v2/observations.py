@@ -84,6 +84,23 @@ def collect_native_observations(
             observations[("__document__", "compilation.diagnostics")] = dict(
                 diagnostics
             )
+    if "persistence" in requested:
+        capture_persistence = getattr(host, "capture_source_file_state", None)
+        try:
+            persistence = _inspect(
+                capture_persistence,
+                document_id,
+                include_model=True,
+                suppressed_errors=suppressed_errors,
+            )
+        except TypeError:
+            persistence = _inspect(
+                capture_persistence,
+                document_id,
+                suppressed_errors=suppressed_errors,
+            )
+        if isinstance(persistence, Mapping):
+            observations[("__document__", "persistence")] = dict(persistence)
     effective_metadata: Mapping[str, Mapping[str, Any]] = {}
     if "metadata.effective" in requested:
         metadata = _inspect(

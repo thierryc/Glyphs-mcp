@@ -243,9 +243,25 @@ def curated_entries() -> list[dict[str, Any]]:
         (
             "practice.python-fallback",
             "Choosing declarative tools or Python",
-            """Prefer generic reads, constraints, and immutable previews when canonical operations express the task. Use staged_document Python when a Glyphs API or multi-step transformation is not yet represented by generic operations; inspect its semantic preview and apply that stored patch without rerunning the code. Use read_only Python for bounded inspection. Reserve live_open_world for UI, files, processes, networking, unsupported native objects, or other effects that cannot be made transactional. Never save the working font from Python; use save_document explicitly.""",
+            """Prefer generic reads, constraints, and immutable previews when canonical operations express the task. Use staged_document Python when a Glyphs API or multi-step transformation is not yet represented by generic operations; inspect its semantic preview and apply that stored patch without rerunning the code. Document-bound read_only Python also runs on a detached font and proves that the live canonical fingerprint and dirty state did not change. Reserve live_open_world for live-only UI, files, processes, networking, unsupported native objects, or other effects that cannot be made transactional. Never save the working font from Python; use save_document explicitly.""",
             ["glyphs-python", "plugin-development"],
             ["execute_python", "staged_document", "live_open_world"],
+            "practice",
+        ),
+        (
+            "practice.save-tolerant-fingerprints",
+            "Separate live-document state from persisted file state",
+            """A Glyphs MCP live-document fingerprint identifies the canonical state currently open in Glyphs. A source-file fingerprint identifies the bytes at the document's working path, and a destination-file fingerprint identifies bytes that a Save As or export could replace. A native Glyphs Save is always allowed and a save-only event does not stale an immutable change preview. During a verified transaction, saved input leaves the complete edit unsaved, saved output leaves no unsaved history entry, and an intermediate save rebases history to the residual saved-to-live semantic diff. Only save_document uses source and destination fingerprints as overwrite preconditions; never pass a live-document fingerprint in their place.""",
+            ["file-format", "glyphs-python", "plugin-development"],
+            ["save epoch", "document fingerprint", "source file fingerprint", "save_document"],
+            "practice",
+        ),
+        (
+            "practice.generic-mechanics",
+            "Compose Glyphs work from generic mechanics",
+            """Use EntitySelector predicates to resolve canonical evidence, typed ordering for numeric or textual comparisons, and Projection reducers for count, minimum, maximum, sum, average, any, or all. Express writes as exact discriminated set, translate, insert, remove, move, or duplicate operations. A preview stores exact identities, normalized operations, a base live-document fingerprint, semantic diff, and constraint evidence. Apply the stored patch without replanning. Typographic preservation choices and exceptions remain agent decisions in skills, not tool-side mutation policy.""",
+            ["glyphs-python", "plugin-development", "spacing"],
+            ["EntitySelector", "reducers", "preview_change", "apply_change"],
             "practice",
         ),
     ]

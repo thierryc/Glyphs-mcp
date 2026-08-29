@@ -14,6 +14,9 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.semantic import ChangeSet, diff_models, fingerprint_model  # noqa: E402
+from glyphs_mcp_v2.canonical_tree import CanonicalFontTree, MemoryObjectStore  # noqa: E402
+from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
+from glyphs_mcp_v2.change_lifecycle import DocumentHistoryLifecycle  # noqa: E402
 from glyphs_mcp_v2.transactions import (  # noqa: E402
     StaleDocumentError,
     TransactionKernel,
@@ -52,9 +55,64 @@ class _DocumentAdapter:
             raise RuntimeError("restore failed")
         self.model = copy.deepcopy(model)
 
-    def capture_source_file_state(self, document_id):
-        return copy.deepcopy(self.source_state)
+    def capture_source_file_state(self, document_id, include_model=False):
+        result = copy.deepcopy(self.source_state)
+        if include_model and isinstance(result.get("savedModel"), dict):
+            result["savedModel"] = copy.deepcopy(result["savedModel"])
+        return result
 
+
+class _SaveTimingAdapter(_DocumentAdapter):
+    def __init__(self, model, lifecycle, mode) -> None:
+        super().__init__(model)
+        self.initial = copy.deepcopy(model)
+        self.lifecycle = lifecycle
+        self.mode = mode
+        self.save_index = 0
+
+    def _save(self, model):
+        self.save_index += 1
+        self.source_state = {
+            "kind": "glyphs",
+            "exists": True,
+            "readable": True,
+            "filePath": "/fonts/SaveTiming.glyphs",
+            "contentFingerprint": "sha256:save-{}".format(self.save_index),
+            "savedModel": copy.deepcopy(model),
+        }
+        self.lifecycle.document_was_saved(
+            "doc_alpha",
+            source_state=self.source_state,
+            saved_model=model,
+        )
+
+    def apply_change_set(self, document_id, change_set):
+        self.apply_calls += 1
+        if self.mode in {"saved_before", "multiple"}:
+            self._save(self.model)
+        if self.mode == "saved_intermediate":
+            middle = copy.deepcopy(self.model)
+            middle["font"]["familyName"] = "Middle"
+            self.model = middle
+            self._save(middle)
+        self.model = change_set.apply(
+            self.model if self.mode != "saved_intermediate" else self.initial
+        )
+        if self.mode in {"saved_after", "multiple"}:
+            self._save(self.model)
+        if self.mode == "delayed":
+            self.save_index += 1
+            self.source_state = {
+                "kind": "glyphs",
+                "exists": True,
+                "readable": True,
+                "filePath": "/fonts/SaveTiming.glyphs",
+                "contentFingerprint": "sha256:save-{}".format(self.save_index),
+                "savedModel": copy.deepcopy(self.model),
+            }
+        if self.mode == "failure_after_save":
+            self._save(self.model)
+            self.model["font"]["familyName"] = "Corrupt"
 
 class V2TransactionTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -173,21 +231,215 @@ class V2TransactionTests(unittest.TestCase):
             adapter.source_state["contentFingerprint"], "sha256:before"
         )
 
-    def test_unexpected_source_change_fails_and_is_never_claimed_as_rolled_back(self) -> None:
+    def test_source_change_is_reported_without_rolling_back_verified_live_state(self) -> None:
         adapter = _DocumentAdapter(self.before)
         adapter.change_source_on_apply = True
 
+        result = TransactionKernel(adapter).apply(
+            document_id="doc_alpha",
+            expected_fingerprint=fingerprint_model(self.before),
+            change_set=diff_models(self.before, self.after),
+        )
+
+        self.assertEqual(adapter.model, self.after)
+        self.assertTrue(result.source_file_changed)
+        self.assertEqual(
+            result.persistence_reconciliation["relationship"],
+            "source_changed_unclassified",
+        )
+
+    def test_unclassified_source_drift_does_not_erase_existing_history(self) -> None:
+        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        seed_after = copy.deepcopy(self.before)
+        seed_after["font"]["designer"] = "Earlier"
+        seed = history.record_action(
+            document_id="doc_alpha",
+            tool="apply_change",
+            effect="edit",
+            status="success",
+            run_id="run_seed",
+            before_model=self.before,
+            after_model=seed_after,
+        )
+        lifecycle = DocumentHistoryLifecycle(history)
+        adapter = _DocumentAdapter(self.before)
+        adapter.change_source_on_apply = True
+
+        result = TransactionKernel(
+            adapter, persistence=lifecycle
+        ).apply(
+            document_id="doc_alpha",
+            expected_fingerprint=fingerprint_model(self.before),
+            change_set=diff_models(self.before, self.after),
+        )
+
+        self.assertEqual(
+            result.persistence_reconciliation["relationship"],
+            "source_changed_unclassified",
+        )
+        self.assertFalse(result.persistence_reconciliation["saveObserved"])
+        self.assertEqual(
+            [commit.commit_id for commit in history.list_commits("doc_alpha")],
+            [seed.commit_id],
+        )
+
+    def _save_timing_transaction(self, mode, *, after=None):
+        resets = []
+        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        lifecycle = DocumentHistoryLifecycle(
+            history, reset_tracking=resets.append
+        )
+        adapter = _SaveTimingAdapter(self.before, lifecycle, mode)
+        target = copy.deepcopy(after or self.after)
+        result = TransactionKernel(
+            adapter, persistence=lifecycle
+        ).apply(
+            document_id="doc_alpha",
+            expected_fingerprint=fingerprint_model(self.before),
+            change_set=diff_models(self.before, target),
+        )
+        return result, adapter, lifecycle, resets, target
+
+    def test_save_before_mutation_keeps_the_complete_change_unsaved(self) -> None:
+        result, adapter, _lifecycle, resets, target = (
+            self._save_timing_transaction("saved_before")
+        )
+
+        self.assertEqual(adapter.model, target)
+        self.assertEqual(
+            result.persistence_reconciliation["relationship"], "saved_before"
+        )
+        self.assertEqual(result.history_change_count, 1)
+        self.assertTrue(result.revert_available)
+        self.assertEqual(resets, [])
+
+    def test_save_after_mutation_audits_without_unsaved_history(self) -> None:
+        result, adapter, _lifecycle, resets, target = (
+            self._save_timing_transaction("saved_after")
+        )
+
+        self.assertEqual(adapter.model, target)
+        self.assertEqual(
+            result.persistence_reconciliation["relationship"], "saved_after"
+        )
+        self.assertEqual(result.history_change_count, 0)
+        self.assertFalse(result.revert_available)
+        self.assertEqual(resets, [])
+
+    def test_intermediate_save_rebases_history_to_the_residual_change(self) -> None:
+        target = copy.deepcopy(self.after)
+        target["font"]["upm"] = 1200
+        result, adapter, _lifecycle, _resets, target = (
+            self._save_timing_transaction("saved_intermediate", after=target)
+        )
+
+        self.assertEqual(adapter.model, target)
+        self.assertEqual(
+            result.persistence_reconciliation["relationship"],
+            "saved_intermediate",
+        )
+        self.assertEqual(result.history_change_count, 2)
+        self.assertEqual(
+            result.persistence_reconciliation["residualSemanticDiff"][
+                "changeCount"
+            ],
+            2,
+        )
+        restored = result.inverse.apply(target)
+        self.assertEqual(restored["font"]["familyName"], "Middle")
+        self.assertEqual(restored["font"]["upm"], 1000)
+
+    def test_multiple_saves_are_all_retained_and_latest_is_the_baseline(self) -> None:
+        result, adapter, _lifecycle, _resets, target = (
+            self._save_timing_transaction("multiple")
+        )
+
+        reconciliation = result.persistence_reconciliation
+        self.assertEqual(adapter.model, target)
+        self.assertEqual(reconciliation["saveEventCount"], 2)
+        self.assertEqual(
+            [event["epoch"] for event in reconciliation["saveEvents"]],
+            [1, 2],
+        )
+        self.assertEqual(reconciliation["relationship"], "saved_after")
+        self.assertFalse(result.revert_available)
+
+    def test_delayed_callback_does_not_clear_reconciled_history(self) -> None:
+        result, adapter, lifecycle, resets, target = (
+            self._save_timing_transaction("delayed")
+        )
+
+        self.assertEqual(adapter.model, target)
+        self.assertEqual(
+            result.persistence_reconciliation["relationship"], "saved_after"
+        )
+        self.assertFalse(
+            lifecycle.document_was_saved(
+                "doc_alpha",
+                source_state=adapter.source_state,
+                saved_model=target,
+            )
+        )
+        self.assertEqual(resets, [])
+
+    def test_failed_verification_rolls_back_live_only_and_keeps_save_evidence(self) -> None:
+        resets = []
+        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        lifecycle = DocumentHistoryLifecycle(
+            history, reset_tracking=resets.append
+        )
+        adapter = _SaveTimingAdapter(
+            self.before, lifecycle, "failure_after_save"
+        )
+
         with self.assertRaises(TransactionVerificationError) as caught:
-            TransactionKernel(adapter).apply(
+            TransactionKernel(adapter, persistence=lifecycle).apply(
                 document_id="doc_alpha",
                 expected_fingerprint=fingerprint_model(self.before),
                 change_set=diff_models(self.before, self.after),
             )
 
+        self.assertTrue(caught.exception.rollback_succeeded)
         self.assertEqual(adapter.model, self.before)
-        self.assertTrue(caught.exception.source_file_changed)
-        self.assertFalse(caught.exception.rollback_succeeded)
-        self.assertTrue(caught.exception.state_may_have_changed)
+        reconciliation = caught.exception.persistence_reconciliation
+        self.assertTrue(reconciliation["saveObserved"])
+        self.assertEqual(reconciliation["relationship"], "saved_intermediate")
+        self.assertTrue(reconciliation["sourceFileChanged"])
+        self.assertEqual(reconciliation["residualChangeCount"], 1)
+        self.assertEqual(resets, [])
+
+    def test_unexpected_reconciliation_failure_never_leaves_a_save_fence(self) -> None:
+        class BrokenReconciliation(DocumentHistoryLifecycle):
+            def reconcile_transaction(self, *arguments, **keywords):
+                raise RuntimeError("persistence decoder failed")
+
+        resets = []
+        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        lifecycle = BrokenReconciliation(
+            history, reset_tracking=resets.append
+        )
+        adapter = _DocumentAdapter(self.before)
+
+        with self.assertRaises(TransactionVerificationError):
+            TransactionKernel(adapter, persistence=lifecycle).apply(
+                document_id="doc_alpha",
+                expected_fingerprint=fingerprint_model(self.before),
+                change_set=diff_models(self.before, self.after),
+            )
+
+        self.assertTrue(
+            lifecycle.document_was_saved(
+                "doc_alpha",
+                source_state={
+                    "kind": "glyphs",
+                    "exists": True,
+                    "readable": True,
+                    "contentFingerprint": "sha256:later-save",
+                },
+                saved_model=self.before,
+            )
+        )
+        self.assertEqual(resets, ["doc_alpha"])
 
     def test_duplicate_paths_are_invalid(self) -> None:
         with self.assertRaises(ValueError):

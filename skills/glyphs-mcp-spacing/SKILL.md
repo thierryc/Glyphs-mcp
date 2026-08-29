@@ -108,15 +108,21 @@ operands use explicit paths such as `observation.bounds.x`,
 `observation.spacing.horizontal.leadingBearing`, and
 `observation.alignment.configuredAutomaticComponentCount`. References in
 constraints must resolve exactly. Review the immutable preview for exact
-targets, source and proposed fingerprints, normalized operations, semantic
+targets, base-document and proposed fingerprints, normalized operations, semantic
 diff, constraint values, provenance, completeness, warnings, and blockers.
 
 After authorization, call `apply_change` with that `previewId`, its exact
-`documentId`, source fingerprint, and reason. Do not send the operations again:
+`documentId`, live document fingerprint, and reason. Do not send the operations again:
 apply must consume the stored patch and must not rerun planning. Re-read the
 same layers and verify bearings, advance/origin, bounds, grid evidence,
 geometry counts, and uniform translation. Use `revert_change` when the result
 should be undone. Never auto-save.
+
+The user may save in Glyphs before or during this workflow. A save-only event
+does not invalidate the preview; only a changed live canonical document does.
+Read the persistence reconciliation in apply/revert receipts: a saved final
+state has no unsaved revert entry, while an intermediate save rebases history
+to the exact residual diff. Never ask the user to postpone or disable Save.
 
 ## Python fallback
 

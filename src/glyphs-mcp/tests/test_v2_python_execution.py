@@ -79,9 +79,18 @@ class _PythonHost:
             after["features"][0]["code"] = "sub f f i by ffi;"
         result = {
             "afterModel": after,
-            "stdout": "previewed",
+            "stdout": self.stdout if request.intended_effect == "read" else "previewed",
             "stderr": "",
             "scopeViolations": list(self.preview_scope_violations),
+            "observedDocumentChanges": [
+                {
+                    "documentId": document_id,
+                    "beforeFingerprint": None,
+                    "afterFingerprint": None,
+                    "declared": document_id == request.document_id,
+                }
+                for document_id in self.preview_scope_violations
+            ],
             "nativeArchiveComparison": copy.deepcopy(
                 self.native_archive_comparison
             ),
@@ -623,7 +632,7 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertEqual(host.preview_calls, 0)
         self.assertEqual(host.live_calls, 0)
 
-    def test_repairable_runtime_failure_emits_one_matching_agent_directive(self) -> None:
+    def test_detached_read_does_not_depend_on_live_runtime_repair(self) -> None:
         service, host = self.service()
         machine = ScriptingSafetyStateMachine()
         machine.begin_recovery(trigger="test")
@@ -653,21 +662,12 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
 
-        self.assertFalse(result["ok"])
-        self.assertEqual(result["error"]["code"], "scripting_runtime_unavailable")
-        self.assertEqual(host.live_calls, 1)
-        self.assertEqual(
-            result["data"]["agentRecovery"],
-            {
-                "tool": "repair_runtime",
-                "arguments": {"expectedIncidentId": incident.incident_id},
-                "verifyWith": "get_runtime_status",
-                "retryOriginalCall": True,
-                "maxRepairAttempts": 1,
-            },
-        )
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["data"]["executionMode"], "detached_read_only")
+        self.assertEqual(host.live_calls, 0)
+        self.assertIsNotNone(incident.incident_id)
 
-    def test_active_runtime_reports_busy_without_a_repair_loop(self) -> None:
+    def test_active_live_runtime_does_not_block_detached_read(self) -> None:
         service, host = self.service()
         machine = ScriptingSafetyStateMachine()
         machine.begin("another_execution")
@@ -688,8 +688,9 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
 
-        self.assertEqual(result["error"]["code"], "scripting_runtime_busy")
-        self.assertNotIn("agentRecovery", result["data"])
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["data"]["executionMode"], "detached_read_only")
+        self.assertEqual(host.live_calls, 0)
 
     def test_runtime_source_save_guard_failure_keeps_observed_evidence(self) -> None:
         service, host = self.service()
@@ -738,7 +739,7 @@ class V2PythonExecutionTests(unittest.TestCase):
 
         read_service, read_host = self.service()
 
-        def blocked_read(_request):
+        def blocked_read(_request, _before):
             before = copy.deepcopy(read_host.model)
             raise ObservedLivePythonError(
                 SourceSaveForbiddenError("working-source save blocked"),
@@ -751,7 +752,7 @@ class V2PythonExecutionTests(unittest.TestCase):
                 },
             )
 
-        read_host.run_live_python = blocked_read
+        read_host.preview_python = blocked_read
         read_result = read_service.execute(
             PythonExecutionRequest(
                 code=code,
@@ -944,11 +945,11 @@ class V2PythonExecutionTests(unittest.TestCase):
 
     def test_read_intent_mutation_scope_and_output_truncation_are_reported(self) -> None:
         service, host = self.service()
-        host.scope_violations = ["doc_other"]
+        host.preview_scope_violations = ["doc_other"]
         host.stdout = "x" * 100
         result = service.execute(
             PythonExecutionRequest(
-                code="print('read')",
+                code="font.familyName = 'Beta'; print('read')",
                 reason="read test",
                 intended_effect="read",
                 document_id="doc_alpha",
@@ -956,8 +957,8 @@ class V2PythonExecutionTests(unittest.TestCase):
             )
         ).to_dict()
         codes = {warning["code"] for warning in result["warnings"]}
-        self.assertIn("read_intent_violated", codes)
-        self.assertIn("observed_undeclared_document_change", codes)
+        self.assertIn("read_intent_changed_detached_clone", codes)
+        self.assertIn("live_state_changed_concurrently", codes)
         self.assertEqual(result["data"]["stdout"], "x" * 20)
         self.assertTrue(result["data"]["stdoutTruncated"])
         self.assertFalse(result["data"]["stderrTruncated"])
@@ -967,26 +968,18 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertEqual(result["data"]["maxErrorCharsApplied"], 8192)
         self.assertEqual(
             result["data"]["observedDocumentChanges"],
-            [
-                {
-                    "documentId": "doc_alpha",
-                    "beforeFingerprint": mock.ANY,
-                    "afterFingerprint": mock.ANY,
-                    "declared": True,
-                },
-                {
-                    "documentId": "doc_other",
-                    "beforeFingerprint": None,
-                    "afterFingerprint": None,
-                    "declared": False,
-                },
-            ],
+            [{
+                "documentId": "doc_other",
+                "beforeFingerprint": None,
+                "afterFingerprint": None,
+                "declared": False,
+            }],
         )
 
     def test_python_error_is_sanitized_structured_and_bounded(self) -> None:
         service, host = self.service()
 
-        def fail(_request):
+        def fail(_request, _before):
             raise NameError(
                 "name 'missingGlyph' failed at /Users/private/font.glyphs "
                 "token=should-not-escape "
@@ -994,7 +987,7 @@ class V2PythonExecutionTests(unittest.TestCase):
                 name="missingGlyph",
             )
 
-        host.run_live_python = fail
+        host.preview_python = fail
         result = service.execute(
             PythonExecutionRequest(
                 code="print(missingGlyph)",
@@ -1050,21 +1043,18 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertEqual(details["line"], 1)
         self.assertTrue(details["codeHash"].startswith("sha256:"))
 
-    def test_observed_read_execution_does_not_recapture_the_document(self) -> None:
+    def test_detached_read_captures_live_state_only_for_purity_proof(self) -> None:
         service, host = self.service()
         host.observes_live_python_exceptions = True
         before = copy.deepcopy(host.model)
         after = copy.deepcopy(before)
-        host.run_live_python = lambda _request: {
-            "beforeModel": before,
+        host.preview_python = lambda _request, _before: {
             "afterModel": after,
             "stdout": "observed",
             "stderr": "",
-            "scopeViolations": [],
+            "observedDocumentChanges": [],
         }
-        host.capture_model = mock.Mock(
-            side_effect=AssertionError("read execution recaptured the document")
-        )
+        host.capture_model = mock.Mock(side_effect=lambda _document_id: copy.deepcopy(before))
 
         result = service.execute(
             PythonExecutionRequest(
@@ -1077,7 +1067,8 @@ class V2PythonExecutionTests(unittest.TestCase):
 
         self.assertTrue(result["ok"])
         self.assertEqual(result["data"]["stdout"], "observed")
-        host.capture_model.assert_not_called()
+        self.assertEqual(host.capture_model.call_count, 2)
+        self.assertFalse(result["data"]["liveDocumentChanged"])
 
     def test_obvious_external_effect_cannot_bypass_exact_review_as_read_intent(self) -> None:
         service, host = self.service()

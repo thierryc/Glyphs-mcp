@@ -27,6 +27,12 @@ Every managed skill follows the same sequence where applicable:
 7. Re-read and verify the result. Never save unless the user separately asks
    for `save_document`.
 
+Users may save natively between any two steps. Save-only events never stale an
+immutable preview; only a changed live canonical document does. Active
+transactions retain verified live results and rebase unsaved history against
+the latest decoded saved state. File overwrite checks remain exclusive to
+`save_document`.
+
 Staged Python is applied through `apply_change` and is never rerun. Live Python
 must distinguish verified document effects from unverifiable external effects
 and report checkpoints or recovery evidence.

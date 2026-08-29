@@ -23,9 +23,10 @@ The architecture has three layers:
    boundaries.
 
 The governing rule is permissive expression with strict structural integrity.
-Typographic heuristics are never mutation blockers. Locks, ambiguous
-identities, invalid ownership, stale fingerprints, unsupported replay, and
-failed complete read-back remain hard failures.
+Typographic heuristics, locks, alignment configuration, dirty state, and native
+Save are never mutation blockers. Ambiguous identities, invalid ownership,
+stale live-document fingerprints, unsupported replay, and failed complete
+read-back remain hard failures.
 
 ## Frozen public surface
 
@@ -49,7 +50,8 @@ and skill references to removed tools.
 ## Reads and observations
 
 `EntitySelector` owns canonical kind, exact IDs or closed filters, parent
-relations, ordering, relations, and pagination. Cursors bind selector,
+relations, a Boolean predicate AST, typed ordering, generic reducers, and
+pagination. Cursors bind selector,
 projection, schema version, and document fingerprint. Mutation selectors are
 resolved to exact identities during preview.
 
@@ -70,11 +72,35 @@ handles only Glyphs ownership invariants for masters and the master-layer
 prefix; it contains no design workflow.
 
 `preview_change` stores exact targets, normalized operations, dependencies,
-source and proposed fingerprints, semantic diff, constraint evidence,
+base live-document and proposed fingerprints, semantic diff, constraint evidence,
 warnings, and blockers. `apply_change` consumes that immutable patch without
 rerunning planning. Every document mutation passes through detached simulation,
 one live apply, complete read-back, verification, rollback on failure, audit,
 and history. No operation saves implicitly.
+
+## Save-tolerant persistence
+
+Live-document atomicity and file persistence are separate state domains. A
+user may invoke native Glyphs Save before, during, or after any agent action.
+Save remains available; a save-only event does not stale a preview, trigger a
+permanent incident, or cause the plug-in to undo the save.
+
+Each document has a monotonic save epoch and evidence ledger with native/tool
+origin, correlation, timestamps, saved canonical and source-file fingerprints,
+decoded saved state, provenance, and completeness. A verified transaction
+reconciles the latest saved snapshot:
+
+- saved input: retain the complete live change as unsaved history;
+- saved output: audit the operation with no unsaved revert entry;
+- saved intermediate: retain only the residual saved-to-live semantic diff;
+- unreadable or unexplained source drift: keep tools usable and report a
+  persistence warning.
+
+If live verification fails, roll back only the live document and report its
+divergence from the latest saved state. `save_document` alone checks file
+overwrite preconditions. `expectedDocumentFingerprint`,
+`expectedSourceFileFingerprint`, and
+`expectedDestinationFileFingerprint` are intentionally distinct.
 
 ## Spacing reference
 
@@ -89,7 +115,8 @@ guidance is cited Knowledge rather than runtime policy.
 
 Python is permanent, not a migration escape hatch:
 
-- `read_only` performs bounded inspection without document mutation.
+- `read_only` performs bounded inspection on a detached document and proves
+  that the live canonical fingerprint and dirty state did not change.
 - `staged_document` runs once against a detached font and returns the generic
   immutable preview. `apply_change` applies its stored patch without rerunning
   code.

@@ -23,6 +23,18 @@ BUNDLE_NAME = "Glyphs MCP.glyphsPlugin"
 PACKAGE_RELATIVE_TO_BUNDLE = Path("Contents/Resources/glyphs_mcp_v2")
 PINNED_FORMAT_ROOT = REPO_ROOT / "third_party" / "glyphs-file-format-v4"
 SHARED_RUNTIME_FILES = ("runtime_path_policy.py", "runtime_probe.py")
+V2_RESOURCE_ALLOWLIST = (
+    "debug_event_logging.py",
+    "glyphs_plugin.py",
+    "i18n.py",
+    "plugin.py",
+    "security.py",
+    "status_panel_helpers.py",
+    "update_checker.py",
+    "update_helper.py",
+    "utils.py",
+    "versioning.py",
+)
 
 V2_MCP_TOOLS = '''# encoding: utf-8
 
@@ -96,6 +108,24 @@ def _v2_version() -> str:
     raise RuntimeError("glyphs_mcp_v2.versions does not define a static SERVER_VERSION")
 
 
+def _copy_v2_bundle_skeleton(source: Path, destination: Path) -> None:
+    """Build a Glyphs 4 bundle from an explicit shared-runtime allowlist."""
+
+    contents = destination / "Contents"
+    resources = contents / "Resources"
+    macos = contents / "MacOS"
+    resources.mkdir(parents=True)
+    macos.mkdir(parents=True)
+    shutil.copy2(source / "Contents" / "Info.plist", contents / "Info.plist")
+    shutil.copy2(source / "Contents" / "MacOS" / "plugin", macos / "plugin")
+    canonical_resources = source / "Contents" / "Resources"
+    for name in V2_RESOURCE_ALLOWLIST:
+        candidate = canonical_resources / name
+        if not candidate.is_file():
+            raise FileNotFoundError("v2 shared runtime file is missing: {}".format(candidate))
+        shutil.copy2(candidate, resources / name)
+
+
 def _activate_v2_bundle(bundle: Path) -> Path:
     resources = bundle / "Contents" / "Resources"
     canonical_resources = SOURCE_BUNDLE / "Contents" / "Resources"
@@ -136,6 +166,10 @@ def _activate_v2_bundle(bundle: Path) -> Path:
 
     plugin_path = resources / "plugin.py"
     plugin_text = plugin_path.read_text(encoding="utf-8")
+    plugin_text = plugin_text.replace(
+        "    from glyphs_curve_reporter import GlyphsMCPCurvatureReporter\n",
+        "",
+    )
     start = plugin_text.find(LEGACY_IMPORT_BLOCK_START)
     end = plugin_text.find(LEGACY_IMPORT_BLOCK_END, start)
     if start < 0 or end < 0:
@@ -178,15 +212,6 @@ def _activate_v2_bundle(bundle: Path) -> Path:
     )
     glyphs_plugin_path.write_text(glyphs_plugin_text, encoding="utf-8")
 
-    for legacy_name in (
-        "glyphs_candidate_reporter.py",
-        "outline_candidate_state.py",
-        "mcp_tools_outline_candidates.py",
-    ):
-        legacy_path = resources / legacy_name
-        if legacy_path.exists():
-            legacy_path.unlink()
-
     plist_path = bundle / "Contents" / "Info.plist"
     with plist_path.open("rb") as plist_file:
         info = plistlib.load(plist_file)
@@ -194,12 +219,9 @@ def _activate_v2_bundle(bundle: Path) -> Path:
     info["CFBundleShortVersionString"] = version
     info["CFBundleVersion"] = version
     info["Principal Classes"] = [
-        "GlyphsMCPChangeDiffReporter"
-        if value == "GlyphsMCPCandidateReporter"
-        else "GlyphsMCPInspectorPalette"
-        if value == "GlyphsMCPLitSquareMetadataPalette"
-        else value
-        for value in info.get("Principal Classes", [])
+        "MCPBridgePlugin",
+        "GlyphsMCPChangeDiffReporter",
+        "GlyphsMCPInspectorPalette",
     ]
     with plist_path.open("wb") as plist_file:
         plistlib.dump(info, plist_file, sort_keys=True)
@@ -237,7 +259,7 @@ def build(output_root: Path) -> Dict[str, object]:
         layout = "plugin-manager" if name == "pluginManager" else "source"
         destination_bundle = output / layout / BUNDLE_NAME
         destination_bundle.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(source_bundle, destination_bundle, ignore=_ignore_generated)
+        _copy_v2_bundle_skeleton(source_bundle, destination_bundle)
         bundle_paths[name] = destination_bundle
         destinations[name] = _activate_v2_bundle(destination_bundle)
 

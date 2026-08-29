@@ -16,11 +16,15 @@ if str(V2_SOURCE) not in sys.path:
 
 from glyphs_mcp_v2.catalog import TOOL_DEFINITIONS  # noqa: E402
 from glyphs_mcp_v2.canonical_tree import CANONICAL_MODEL_SCHEMA_VERSION  # noqa: E402
-from glyphs_mcp_v2.generic_tools import (  # noqa: E402
+from glyphs_mcp_v2.mechanics_registry import (  # noqa: E402
     COMPUTED_PROJECTIONS,
     CONSTRAINT_OPERATORS,
     ENTITY_KINDS,
-    OPERATION_KINDS,
+    OPERATION_DEFINITIONS,
+    ORDER_TYPES,
+    PREDICATE_OPERATORS,
+    REDUCER_KINDS,
+    TRANSLATION_TARGETS,
 )
 
 
@@ -63,9 +67,13 @@ def render() -> str:
                 CANONICAL_MODEL_SCHEMA_VERSION
             ),
             "- Entity kinds: {}.".format(_codes(ENTITY_KINDS)),
-            "- Change operations: {}.".format(_codes(OPERATION_KINDS)),
+            "- Change operations: {}.".format(_codes(OPERATION_DEFINITIONS)),
             "- Constraint operators: {}.".format(_codes(CONSTRAINT_OPERATORS)),
             "- Computed projections: {}.".format(_codes(COMPUTED_PROJECTIONS)),
+            "- Selector predicates: {}.".format(_codes(PREDICATE_OPERATORS)),
+            "- Ordering modes: {}.".format(_codes(ORDER_TYPES)),
+            "- Reducers: {}.".format(_codes(REDUCER_KINDS)),
+            "- Translation targets: {}.".format(_codes(TRANSLATION_TARGETS)),
             "- Observation operands use `observation.<projection>.<path>`, for",
             "  example `observation.bounds.x` or",
             "  `observation.alignment.effectiveLayerAlignment`.",
@@ -76,10 +84,16 @@ def render() -> str:
             "- Knowledge supplies cited evidence, skills supply font-design and",
             "  Glyphs expertise, and tools supply generic mechanics.",
             "- Every document mutation is previewed against exact identities and a",
-            "  source fingerprint. `apply_change` consumes the stored patch without",
+            "  live-document fingerprint. `apply_change` consumes the stored patch without",
             "  rerunning planning or staged Python.",
+            "- Native Glyphs saves are always allowed. They do not stale a preview",
+            "  unless the live canonical document also changed. Active transactions",
+            "  reconcile saved-before, saved-after, and saved-intermediate states.",
+            "- `save_document` alone enforces source and destination file overwrite",
+            "  preconditions. Live-document and file fingerprints are distinct.",
             "- `execute_python` is a permanent fallback with `read_only`,",
-            "  `staged_document`, and `live_open_world` modes.",
+            "  `staged_document`, and `live_open_world` modes. Document-bound",
+            "  `read_only` code runs on a detached document and proves live purity.",
             "- Knowledge is pinned and searched offline; updates occur only through",
             "  reviewed deterministic builds.",
             "- Saving, export publication, UI actions, runtime repair, and open-world",

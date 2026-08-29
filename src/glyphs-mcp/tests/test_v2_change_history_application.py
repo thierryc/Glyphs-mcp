@@ -62,6 +62,14 @@ class _Host:
         self.model = _model()
         self.apply_calls = 0
         self.restore_calls = 0
+        self.source_state = {
+            "kind": "glyphs",
+            "exists": True,
+            "readable": True,
+            "filePath": "/fonts/HistoryApp.glyphs",
+            "contentFingerprint": "sha256:source-before",
+            "savedModel": copy.deepcopy(self.model),
+        }
 
     def capture_model(self, _document_id: str) -> dict:
         return copy.deepcopy(self.model)
@@ -73,6 +81,14 @@ class _Host:
     def restore_model(self, _document_id: str, model: dict) -> None:
         self.restore_calls += 1
         self.model = copy.deepcopy(model)
+
+    def capture_source_file_state(
+        self, _document_id: str, include_model: bool = False
+    ) -> dict:
+        state = copy.deepcopy(self.source_state)
+        if not include_model:
+            state.pop("savedModel", None)
+        return state
 
 
 class ChangeHistoryApplicationTests(unittest.TestCase):
@@ -174,6 +190,50 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertEqual(applied["data"]["transactionCount"], 0)
         self.assertFalse(applied["data"]["revert"]["available"])
         self.assertEqual(self.host.apply_calls, 0)
+
+    def test_manual_save_between_preview_and_apply_does_not_stale_preview(self) -> None:
+        before = fingerprint_model(self.host.model)
+        preview = self._preview(False)
+        self.assertEqual(preview["data"]["baseDocumentFingerprint"], before)
+        self.host.source_state.update(
+            contentFingerprint="sha256:source-after-manual-save",
+            savedModel=copy.deepcopy(self.host.model),
+        )
+        self.assertTrue(self.app.document_was_saved(DOCUMENT_ID))
+
+        applied = self.app.invoke(
+            "apply_change",
+            {
+                "documentId": DOCUMENT_ID,
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": before,
+                "reason": "apply after an independent user save",
+            },
+        ).to_dict()
+
+        self.assertTrue(applied["ok"], applied)
+        self.assertFalse(self.host.model["glyphs"]["A"]["export"])
+        self.assertEqual(
+            applied["data"]["persistenceReconciliation"]["relationship"],
+            "unchanged",
+        )
+
+    def test_only_a_changed_live_document_stales_the_preview(self) -> None:
+        preview = self._preview(False)
+        self.host.model["font"]["designer"] = "Concurrent user edit"
+
+        applied = self.app.invoke(
+            "apply_change",
+            {
+                "documentId": DOCUMENT_ID,
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": fingerprint_model(self.host.model),
+                "reason": "prove live-state staleness",
+            },
+        ).to_dict()
+
+        self.assertFalse(applied["ok"])
+        self.assertEqual(applied["error"]["code"], "preview_mismatch")
 
 
 if __name__ == "__main__":

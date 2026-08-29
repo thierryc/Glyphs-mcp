@@ -27,7 +27,7 @@ semantics.
    sequences by semantics rather than name.
 5. Use `execute_python(mode="read_only")` only for bounded Unicode/native data
    absent from projections. Do not use it to simulate shaping.
-6. Re-read the source fingerprint. Do not call `preview_change`,
+6. Re-read the live document fingerprint. Do not call `preview_change`,
    `apply_change`, `apply_export`, or `save_document` in this audit.
 
 A mapped U+00AD with contours, components, or nonzero advance is normally a

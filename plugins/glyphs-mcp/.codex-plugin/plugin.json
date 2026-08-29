@@ -20,7 +20,7 @@
   "interface": {
     "displayName": "Glyphs MCP",
     "shortDescription": "Review and control open Glyphs fonts from ChatGPT and Codex.",
-    "longDescription": "Connect ChatGPT and Codex to the local Glyphs MCP plug-in for read-only font feedback, bounded dry runs, explicit apply confirmation, and focused progress or error cards. Glyphs remains the editor.",
+    "longDescription": "Connect ChatGPT and Codex to the local Glyphs MCP plug-in for Knowledge-backed font work, generic reads, immutable previews, verified writes, save-tolerant history, and permanent Python fallback. Glyphs remains the editor.",
     "developerName": "Thierry Charbonnel",
     "category": "Creativity",
     "capabilities": [
@@ -30,9 +30,9 @@
     ],
     "websiteURL": "https://ap.cx/gmcp",
     "defaultPrompt": [
-      "Show the Glyphs MCP server and open-font status.",
-      "Review the selected glyph and explain any warnings.",
-      "Preview spacing changes for my selected glyphs."
+      "Show the Glyphs MCP server identity and open-document status.",
+      "Read an exact glyph or layer and explain the evidence.",
+      "Preview an explicit spacing change without saving."
     ],
     "brandColor": "#08C464",
     "composerIcon": "./assets/icon.png",

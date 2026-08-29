@@ -128,7 +128,7 @@ class SaveApplicationTests(unittest.TestCase):
         arguments = {
             "documentId": "doc_save",
             "expectedDocumentFingerprint": fingerprint_model(self.host.model),
-            "expectedSourceFingerprint": SOURCE_FINGERPRINT,
+            "expectedSourceFileFingerprint": SOURCE_FINGERPRINT,
             "confirm": True,
             "reason": "Publish the reviewed source",
         }
@@ -311,6 +311,82 @@ class SaveApplicationTests(unittest.TestCase):
                 )
 
 class SaveLifecycleTests(unittest.TestCase):
+    def test_manual_save_during_transaction_is_deferred_and_reconciled(self):
+        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        resets = []
+        lifecycle = DocumentHistoryLifecycle(history, reset_tracking=resets.append)
+        before = _model()
+        after = copy.deepcopy(before)
+        after["font"]["familyName"] = "After"
+        token = lifecycle.begin_transaction("doc_save")
+        state = {
+            "kind": "glyphs",
+            "exists": True,
+            "readable": True,
+            "contentFingerprint": SAVED_FINGERPRINT,
+            "filePath": "/fonts/SaveTest.glyphs",
+        }
+
+        self.assertFalse(
+            lifecycle.document_was_saved(
+                "doc_save", source_state=state, saved_model=after
+            )
+        )
+        self.assertEqual(resets, [])
+        reconciled = lifecycle.reconcile_transaction(
+            token,
+            before_model=before,
+            after_model=after,
+            source_before={
+                "kind": "glyphs",
+                "exists": True,
+                "contentFingerprint": SOURCE_FINGERPRINT,
+            },
+            source_after=state,
+            dirty_after=False,
+        )
+
+        self.assertEqual(reconciled.relationship, "saved_after")
+        self.assertEqual(reconciled.residual_change_count, 0)
+        self.assertFalse(reconciled.revert_available)
+        self.assertEqual(resets, [])
+
+    def test_intermediate_save_rebases_to_only_the_residual_delta(self):
+        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        lifecycle = DocumentHistoryLifecycle(history)
+        before = _model()
+        middle = copy.deepcopy(before)
+        middle["font"]["familyName"] = "Middle"
+        after = copy.deepcopy(before)
+        after["font"].update({"familyName": "After", "upm": 1200})
+        token = lifecycle.begin_transaction("doc_save")
+        state = {
+            "kind": "glyphs",
+            "exists": True,
+            "readable": True,
+            "contentFingerprint": SAVED_FINGERPRINT,
+        }
+        lifecycle.document_was_saved(
+            "doc_save", source_state=state, saved_model=middle
+        )
+
+        reconciled = lifecycle.reconcile_transaction(
+            token,
+            before_model=before,
+            after_model=after,
+            source_before={
+                "kind": "glyphs",
+                "exists": True,
+                "contentFingerprint": SOURCE_FINGERPRINT,
+            },
+            source_after=state,
+            dirty_after=True,
+        )
+
+        self.assertEqual(reconciled.relationship, "saved_intermediate")
+        self.assertEqual(reconciled.residual_change_count, 2)
+        self.assertTrue(reconciled.revert_available)
+
     def test_tool_save_notification_defers_reset_until_verified_completion(self):
         history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
         resets = []

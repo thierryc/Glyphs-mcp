@@ -19,6 +19,11 @@ if str(V2_SOURCE) not in sys.path:
 from glyphs_mcp_v2.catalog import TOOL_CATALOG, TOOL_DEFINITIONS  # noqa: E402
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.contracts import ToolResponse  # noqa: E402
+from glyphs_mcp_v2.mechanics_registry import (  # noqa: E402
+    ENTITY_KINDS,
+    OPERATION_DEFINITIONS,
+    public_mechanics_registry,
+)
 from glyphs_mcp_v2.transport.fastmcp import (  # noqa: E402
     ChangeOperation,
     Constraint,
@@ -228,7 +233,7 @@ class V2ContractTests(unittest.TestCase):
                 }
             )
             self.assertEqual(parsed.op, operation)
-        with self.assertRaisesRegex(ValueError, "does not accept"):
+        with self.assertRaisesRegex(ValueError, "Extra inputs are not permitted"):
             ChangeOperation.model_validate(
                 {
                     "op": "remove",
@@ -236,6 +241,26 @@ class V2ContractTests(unittest.TestCase):
                     "field": "width",
                 }
             )
+
+    def test_mechanics_registry_matches_transport_schemas(self) -> None:
+        selector_schema = EntitySelector.model_json_schema()["$defs"][
+            "EntitySelector"
+        ]
+        operation_schema = ChangeOperation.model_json_schema()
+        self.assertEqual(
+            set(selector_schema["properties"]["entity"]["enum"]),
+            set(ENTITY_KINDS),
+        )
+        self.assertEqual(
+            set(operation_schema["discriminator"]["mapping"]),
+            set(OPERATION_DEFINITIONS),
+        )
+        registry = public_mechanics_registry()
+        self.assertEqual(set(registry["entityCapabilities"]), set(ENTITY_KINDS))
+        self.assertEqual(
+            set(registry["translationTargets"]),
+            {"layer", "shape", "node", "anchor"},
+        )
 
     def test_python_modes_are_permanent_and_staged_apply_is_not_execute_confirmation(self) -> None:
         parameters = inspect.signature(ToolHandlers.execute_python).parameters

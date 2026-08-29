@@ -51,6 +51,13 @@ read-back constraints, and rollback determine mechanical feasibility. Add a
 registry capability or use permanent Python fallback instead of adding a
 task-specific public tool.
 
+Keep live-document atomicity separate from persistence. Native Glyphs Save is
+always available and may overlap any tool action; it is evidence to reconcile,
+not a transaction blocker or incident. A save-only file change must not stale
+an immutable preview. Keep file overwrite protection exclusively in
+`save_document`, with document, source-file, and destination-file fingerprints
+named and compared independently.
+
 Never install, reload, restart Glyphs, run the artifact, mutate a document,
 export, or call `save_document` without the user's separate request. Report
 paths, cited APIs, SDK revision, validation, and remaining manual tests.

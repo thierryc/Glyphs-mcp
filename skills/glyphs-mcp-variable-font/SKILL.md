@@ -26,7 +26,7 @@ Keep source design-space evidence distinct from compiled variation tables.
 5. Use `preview_export` to inspect source-bundle readiness for the intended
    variable target. Do not call `apply_export` unless the user separately asks
    for that exact external effect.
-6. Re-read the source fingerprint. Do not call `preview_change`,
+6. Re-read the live document fingerprint. Do not call `preview_change`,
    `apply_change`, or `save_document` during an audit.
 
 Use [the variable-font audit reference](references/variable-font-audit.md) for

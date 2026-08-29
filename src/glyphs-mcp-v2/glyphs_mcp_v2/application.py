@@ -30,14 +30,12 @@ from .change_trace import ActionTraceCoordinator
 from .contracts import API_MAJOR, API_VERSION, OperationMetadata, ToolResponse, ToolWarning
 from .exporting import ExportPublicationError, destination_matches
 from .generic_tools import (
-    COMPUTED_PROJECTIONS,
-    ENTITY_KINDS,
-    OPERATION_KINDS,
     bind_relation_selector,
     build_change_set as build_generic_change_set,
     constraint_observation_request,
     evaluate_constraints as evaluate_generic_constraints,
     project_reference,
+    reduce_references,
     resolve_selector,
 )
 from .knowledge import (
@@ -45,6 +43,7 @@ from .knowledge import (
     knowledge_manifest,
     search_knowledge as search_knowledge_corpus,
 )
+from .mechanics_registry import public_mechanics_registry
 from .operations import OperationRecord, OperationStore
 from .mutation import (
     CanonicalTargetMismatchError,
@@ -255,7 +254,12 @@ class GlyphsMCPApplication:
         )
         self._trace = ActionTraceCoordinator(self.history)
         self._transactions = (
-            TransactionKernel(host, observer=self._trace, activity=self.activity)
+            TransactionKernel(
+                host,
+                observer=self._trace,
+                activity=self.activity,
+                persistence=self.lifecycle,
+            )
             if hasattr(host, "capture_model")
             else None
         )
@@ -539,6 +543,39 @@ class GlyphsMCPApplication:
             )
         return fields
 
+    def _with_persistence_observation(
+        self,
+        document_id: str,
+        model: Mapping[str, Any],
+        observations: Mapping[tuple[str, str], Mapping[str, Any]],
+        *,
+        requested_fields: Sequence[str],
+        dirty: bool | None = None,
+    ) -> Mapping[tuple[str, str], Mapping[str, Any]]:
+        if "persistence" not in {str(value) for value in requested_fields}:
+            return observations
+        source = observations.get(("__document__", "persistence"))
+        if dirty is None:
+            try:
+                dirty = next(
+                    (
+                        document.has_unsaved_changes
+                        for document in self._host.list_documents()
+                        if document.document_id == document_id
+                    ),
+                    None,
+                )
+            except Exception:
+                dirty = None
+        merged = dict(observations)
+        merged[("__document__", "persistence")] = self.lifecycle.persistence_state(
+            document_id,
+            live_model=model,
+            source_state=source,
+            dirty=dirty,
+        )
+        return merged
+
     def _selector_cursor_binding(
         self, selector: Mapping[str, Any]
     ) -> dict[str, Any]:
@@ -645,6 +682,9 @@ class GlyphsMCPApplication:
                 "partialCount": partial_count,
                 "items": list(page.items),
                 "page": page.page.to_dict(),
+                "reducers": reduce_references(
+                    children, child_projection.get("reducers") or ()
+                ),
             }
             if partial_count:
                 item["completeness"] = "partial"
@@ -821,6 +861,12 @@ class GlyphsMCPApplication:
             glyph_names,
             suppressed_errors=(HostAccessError,),
         )
+        observations = self._with_persistence_observation(
+            document_id,
+            model,
+            observations,
+            requested_fields=tuple(fields),
+        )
         items = [
             self._project_read_tree(
                 model=model,
@@ -850,6 +896,9 @@ class GlyphsMCPApplication:
             cursor=selector.get("cursor"),
         )
         partial_count = sum(item.get("completeness") != "complete" for item in items)
+        reducers = reduce_references(
+            references, projection.get("reducers") or ()
+        )
         warnings = (
             (
                 ToolWarning(
@@ -876,6 +925,7 @@ class GlyphsMCPApplication:
                 "canonicalModelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
                 "selectedCount": len(items),
                 "partialCount": partial_count,
+                "reducers": reducers,
                 "items": list(page.items),
             },
         )
@@ -900,6 +950,12 @@ class GlyphsMCPApplication:
                 constraints,
                 phase=phase,
                 suppressed_errors=(HostAccessError,),
+            )
+            observations = self._with_persistence_observation(
+                document_id,
+                model,
+                observations,
+                requested_fields=tuple(_request.get("fields") or ()),
             )
             results.append(
                 evaluate_generic_constraints(
@@ -964,6 +1020,12 @@ class GlyphsMCPApplication:
             phase="before",
             suppressed_errors=(HostAccessError,),
         )
+        before_observations = self._with_persistence_observation(
+            document_id,
+            before,
+            before_observations,
+            requested_fields=tuple(_before_request.get("fields") or ()),
+        )
         before_constraints = evaluate_generic_constraints(
             before,
             constraints,
@@ -981,7 +1043,7 @@ class GlyphsMCPApplication:
                 data={
                     "previewId": None,
                     "documentId": document_id,
-                    "sourceFingerprint": expected,
+                    "baseDocumentFingerprint": expected,
                     "proposedFingerprint": None,
                     "applicable": False,
                     "resolvedTargetCount": 0,
@@ -1025,7 +1087,7 @@ class GlyphsMCPApplication:
                 data={
                     "previewId": None,
                     "documentId": document_id,
-                    "sourceFingerprint": expected,
+                    "baseDocumentFingerprint": expected,
                     "proposedFingerprint": requested_change_set.after_fingerprint,
                     "applicable": False,
                     "resolvedTargetCount": sum(
@@ -1080,7 +1142,7 @@ class GlyphsMCPApplication:
                 payload={
                     "documentId": document_id,
                     "source": "declarative",
-                    "sourceFingerprint": expected,
+                    "baseDocumentFingerprint": expected,
                     "proposedFingerprint": requested_change_set.after_fingerprint,
                     "normalizedOperations": normalized_operations,
                     "constraints": {"before": before_constraints, "after": None},
@@ -1098,7 +1160,7 @@ class GlyphsMCPApplication:
                     "previewId": record.operation_id,
                     "expiresAt": _iso_timestamp(record.expires_at),
                     "documentId": document_id,
-                    "sourceFingerprint": expected,
+                    "baseDocumentFingerprint": expected,
                     "proposedFingerprint": requested_change_set.after_fingerprint,
                     "applicable": False,
                     "resolvedTargetCount": sum(
@@ -1118,11 +1180,18 @@ class GlyphsMCPApplication:
                     "fontSaved": False,
                 },
             )
+        expected_observations = self._with_persistence_observation(
+            document_id,
+            plan.expected_after_model,
+            plan.expected_observations,
+            requested_fields=tuple(after_observation_request.get("fields") or ()),
+            dirty=bool(plan.observed_change_set.changes),
+        )
         after_constraints = evaluate_generic_constraints(
             plan.expected_after_model,
             constraints,
             phase="after",
-            observations=plan.expected_observations,
+            observations=expected_observations,
             effective_metadata=plan.expected_effective_metadata,
         )
         plan = replace(
@@ -1137,7 +1206,7 @@ class GlyphsMCPApplication:
             payload={
                 "documentId": document_id,
                 "source": "declarative",
-                "sourceFingerprint": expected,
+                "baseDocumentFingerprint": expected,
                 "proposedFingerprint": plan.after_fingerprint,
                 "plan": plan,
                 "normalizedOperations": normalized_operations,
@@ -1170,7 +1239,7 @@ class GlyphsMCPApplication:
                 "previewId": record.operation_id,
                 "expiresAt": _iso_timestamp(record.expires_at),
                 "documentId": document_id,
-                "sourceFingerprint": expected,
+                "baseDocumentFingerprint": expected,
                 "proposedFingerprint": plan.after_fingerprint,
                 "applicable": applicable,
                 "resolvedTargetCount": sum(
@@ -1228,7 +1297,7 @@ class GlyphsMCPApplication:
         payload = record.payload
         if (
             str(payload.get("documentId") or "") != document_id
-            or str(payload.get("sourceFingerprint") or "") != expected
+            or str(payload.get("baseDocumentFingerprint") or "") != expected
         ):
             return ToolResponse.failure(
                 tool="apply_change",
@@ -1425,7 +1494,12 @@ class GlyphsMCPApplication:
         receipt = self._audit.record(
             tool="apply_change",
             effect="edit",
-            status="success",
+            status=(
+                "warning"
+                if result.persistence_reconciliation.get("relationship")
+                in {"saved_intermediate", "source_changed_unclassified"}
+                else "success"
+            ),
             document_id=document_id,
             details={
                 "operationId": metadata.operation_id,
@@ -1435,14 +1509,35 @@ class GlyphsMCPApplication:
                 "afterFingerprint": result.after_fingerprint,
                 "observedChangeCount": result.observed_change_count,
                 "previewSource": payload.get("source"),
+                "persistenceReconciliation": dict(
+                    result.persistence_reconciliation
+                ),
             },
         )
+        persistence_warning = ()
+        if result.persistence_reconciliation.get("relationship") in {
+            "saved_intermediate",
+            "source_changed_unclassified",
+        }:
+            persistence_warning = (
+                ToolWarning(
+                    code="persistence_reconciled",
+                    message=(
+                        "The source changed while the transaction was active; "
+                        "the verified live result was kept and unsaved history "
+                        "was rebased to the observed disk state."
+                    ),
+                    target=dict(result.persistence_reconciliation),
+                ),
+            )
         return ToolResponse.success(
             tool="apply_change",
             effect="edit",
+            status="warning" if persistence_warning else "success",
             summary="Applied the exact immutable preview through one verified transaction; the font was not saved.",
             metadata=metadata,
             audit_receipt=receipt.to_dict(),
+            warnings=persistence_warning,
             page=first.page.to_dict(),
             data={
                 "operationId": metadata.operation_id,
@@ -1458,10 +1553,15 @@ class GlyphsMCPApplication:
                 "canonicalCoverage": result.coverage.to_public_dict(),
                 "fontSaved": False,
                 "sourceFileChanged": result.source_file_changed,
+                "persistenceReconciliation": dict(
+                    result.persistence_reconciliation
+                ),
                 "transactionCount": 1,
                 "revert": {
-                    "available": True,
-                    "operationId": metadata.operation_id,
+                    "available": result.revert_available,
+                    "operationId": (
+                        metadata.operation_id if result.revert_available else None
+                    ),
                 },
             },
         )
@@ -1543,9 +1643,7 @@ class GlyphsMCPApplication:
                 "runtimeIdentity": dict(loaded_runtime_identity()),
                 "knowledge": knowledge_manifest(),
                 "registries": {
-                    "entities": sorted(ENTITY_KINDS),
-                    "computedProjections": sorted(COMPUTED_PROJECTIONS),
-                    "changeOperations": sorted(OPERATION_KINDS),
+                    **public_mechanics_registry(),
                     "pythonModes": [
                         "read_only",
                         "staged_document",
@@ -1555,14 +1653,19 @@ class GlyphsMCPApplication:
                 "capabilities": [
                     "stable_document_ids",
                     "generic_selectors",
+                    "predicate_selectors",
                     "generic_projections",
+                    "generic_reducers",
                     "generic_constraints",
                     "immutable_change_previews",
                     "exact_preview_apply",
                     "pinned_searchable_knowledge",
                     "fingerprint_bound_pagination",
                     "verified_transactions",
+                    "save_tolerant_transactions",
+                    "persistence_observations",
                     "permanent_python_fallback",
+                    "detached_read_only_python",
                     "staged_python_previews",
                     "live_open_world_python",
                     "canonical_change_history",
@@ -1830,11 +1933,31 @@ class GlyphsMCPApplication:
     ) -> bool:
         """Receive one native manual-save notification from the runtime observer."""
 
+        source_state: Mapping[str, Any] | None = None
+        saved_model: Mapping[str, Any] | None = None
+        capture = getattr(self._host, "capture_source_file_state", None)
+        if callable(capture):
+            try:
+                try:
+                    observed = capture(
+                        str(document_id or ""), include_model=True
+                    )
+                except TypeError:
+                    observed = capture(str(document_id or ""))
+                if isinstance(observed, Mapping):
+                    source_state = dict(observed)
+                    candidate = source_state.pop("savedModel", None)
+                    if isinstance(candidate, Mapping):
+                        saved_model = candidate
+            except Exception:
+                pass
         return self.lifecycle.document_was_saved(
             str(document_id or ""),
             make_copy=False,
             succeeded=True,
             correlation_token=correlation_token,
+            source_state=source_state,
+            saved_model=saved_model,
         )
 
     def document_was_closed(self, document_id: str) -> bool:
@@ -1918,16 +2041,16 @@ class GlyphsMCPApplication:
                 document_id,
                 expected_document_fingerprint=expected,
                 destination=_value(arguments, "destination"),
-                expected_source_fingerprint=_value(
+                expected_source_file_fingerprint=_value(
                     arguments,
-                    "expected_source_fingerprint",
-                    "expectedSourceFingerprint",
+                    "expected_source_file_fingerprint",
+                    "expectedSourceFileFingerprint",
                 ),
                 overwrite_policy=overwrite_policy,
-                expected_destination_fingerprint=_value(
+                expected_destination_file_fingerprint=_value(
                     arguments,
-                    "expected_destination_fingerprint",
-                    "expectedDestinationFingerprint",
+                    "expected_destination_file_fingerprint",
+                    "expectedDestinationFileFingerprint",
                 ),
                 notification_correlation_token=save_token,
             )
@@ -2120,6 +2243,14 @@ class GlyphsMCPApplication:
             save_token,
             verified=True,
             expect_notification=True,
+            source_state={
+                "kind": result.get("fileKind"),
+                "exists": True,
+                "readable": True,
+                "contentFingerprint": result.get("savedSourceFingerprint"),
+                "filePath": result.get("filePath"),
+            },
+            saved_model=saved_model,
         )
         public_result = {
             key: _public_payload(value)
@@ -2772,10 +2903,14 @@ class GlyphsMCPApplication:
                 audit_details=failure_data,
                 data=failure_data,
             )
+        persistence_is_warning = (
+            result.persistence_reconciliation.get("relationship")
+            in {"saved_intermediate", "source_changed_unclassified"}
+        )
         receipt = self._audit.record(
             tool="revert_change",
             effect="edit",
-            status="success",
+            status="warning" if persistence_is_warning else "success",
             document_id=document_id,
             details={
                 "operationId": metadata.operation_id,
@@ -2784,14 +2919,31 @@ class GlyphsMCPApplication:
                 "afterFingerprint": result.after_fingerprint,
                 "changeCount": result.change_count,
                 "canonicalCoverage": result.coverage.to_public_dict(),
+                "persistenceReconciliation": dict(
+                    result.persistence_reconciliation
+                ),
             },
         )
+        persistence_warning = ()
+        if persistence_is_warning:
+            persistence_warning = (
+                ToolWarning(
+                    code="persistence_reconciled",
+                    message=(
+                        "The source changed while revert was active; the exact "
+                        "live result was kept and history was rebased."
+                    ),
+                    target=dict(result.persistence_reconciliation),
+                ),
+            )
         return ToolResponse.success(
             tool="revert_change",
             effect="edit",
+            status="warning" if persistence_warning else "success",
             summary="Reverted the selected change without overwriting unrelated later edits.",
             audit_receipt=receipt.to_dict(),
             metadata=metadata,
+            warnings=persistence_warning,
             data={
                 "operationId": metadata.operation_id,
                 "revertedOperationId": operation_id,
@@ -2803,6 +2955,9 @@ class GlyphsMCPApplication:
                 "canonicalCoverage": result.coverage.to_public_dict(),
                 "fontSaved": False,
                 "sourceFileChanged": result.source_file_changed,
+                "persistenceReconciliation": dict(
+                    result.persistence_reconciliation
+                ),
                 "transactionCount": 1,
             },
         )

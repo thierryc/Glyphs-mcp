@@ -21,6 +21,31 @@ This briefing gives the Codex CLI agent the context needed to work on Glyphs MCP
 - `.agents/skills` — Discovery bridge that exposes the repo-owned skills to Codex.
 - `README.md` — Current tool catalog, build steps, and IDE connection examples.
 
+## Glyphs 4/v2 agent contract
+
+V2 follows **Knowledge → Skills → Tools**. Knowledge supplies pinned,
+versioned evidence; skills make typographic and workflow decisions; the 18
+public tools provide generic selectors, observations, constraints, immutable
+previews, verified writes, history, explicit persistence/effect boundaries,
+and permanent Python fallback. Do not add a workflow-specific endpoint when a
+generic operation or staged Python patch can express the task.
+
+Use `get_server_info` as the live contract and code-identity check, then
+`list_documents` and `read_document`. Declarative edits use
+`preview_change` followed by `apply_change` of the stored patch. Document-bound
+`execute_python(mode="read_only")` runs detached; staged edits also run once on
+a detached document and are applied through `apply_change`; live-only APIs and
+external effects use `live_open_world`.
+
+Keep live-document and persistence state distinct. A user may save in Glyphs
+between any two agent actions or during a transaction. A save-only event never
+stales an immutable preview, blocks unrelated work, or authorizes undoing the
+save. Verified transactions reconcile the latest decoded saved state and keep
+only the residual unsaved diff in history. `save_document` alone protects file
+overwrites. Its `expectedDocumentFingerprint`,
+`expectedSourceFileFingerprint`, and
+`expectedDestinationFileFingerprint` are separate contracts.
+
 ## Everyday Commands
 - Activate tooling env: `source glyphs-build-env/bin/activate`.
 - Install dependencies:
@@ -62,6 +87,10 @@ the v2 catalog. Do not mix the two host contracts.
 Refer to `README.md` for the full command table and usage notes.
 
 ## Agent Execution Contract (Guide-Aligned)
+
+The following commands are the pinned Glyphs 3/v1 contract only. For Glyphs
+4/v2 use the generic contract above and
+[`src/glyphs-mcp-v2/README.md`](src/glyphs-mcp-v2/README.md).
 - Read current state before mutation (`get_selected_font_and_master`, `get_selected_glyphs`, `get_glyph_details`/`get_glyph_paths` as needed).
 - Prefer dedicated mutation tools first; use `execute_code_with_context` or `execute_code` for multi-step workflows where one script is more reliable.
 - For `execute_code*`, keep scripts minimal, validate targets first, and bound output with `max_output_chars` / `max_error_chars` when needed.

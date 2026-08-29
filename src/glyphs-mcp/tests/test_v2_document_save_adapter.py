@@ -130,7 +130,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                 result = host.save_document(
                     document_id,
                     expected_document_fingerprint=expected,
-                    expected_source_fingerprint=source_fingerprint,
+                    expected_source_file_fingerprint=source_fingerprint,
                 )
 
             self.assertEqual(result["saveMode"], "save")
@@ -160,7 +160,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                     document_id,
                     expected_document_fingerprint=expected,
                     destination=str(target),
-                    expected_source_fingerprint=source_fingerprint,
+                    expected_source_file_fingerprint=source_fingerprint,
                 )
 
             self.assertEqual(result["saveMode"], "save_as")
@@ -197,7 +197,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                             document_id,
                             expected_document_fingerprint=expected,
                             destination=str(target),
-                            expected_source_fingerprint=source_fingerprint,
+                            expected_source_file_fingerprint=source_fingerprint,
                         )
 
                     self.assertEqual(result["fileKind"], expected_kind)
@@ -230,7 +230,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                     pathless_id,
                     expected_document_fingerprint=pathless_expected,
                     destination=str(target),
-                    expected_source_fingerprint="sha256:" + "b" * 64,
+                    expected_source_file_fingerprint="sha256:" + "b" * 64,
                 )
             self.assertEqual(forbidden.exception.code, "invalid_request")
             self.assertEqual(pathless.parent.calls, [])
@@ -248,7 +248,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                     document_id,
                     expected_document_fingerprint=expected,
                     destination=str(target),
-                    expected_source_fingerprint="sha256:" + "b" * 64,
+                    expected_source_file_fingerprint="sha256:" + "b" * 64,
                 )
 
             self.assertEqual(
@@ -269,7 +269,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                 host.save_document(
                     document_id,
                     expected_document_fingerprint=expected,
-                    expected_source_fingerprint="sha256:" + "d" * 64,
+                    expected_source_file_fingerprint="sha256:" + "d" * 64,
                 )
             self.assertEqual(stale.exception.code, "stale_document")
             self.assertEqual(font.parent.calls, [])
@@ -281,7 +281,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                 host.save_document(
                     document_id,
                     expected_document_fingerprint=expected,
-                    expected_source_fingerprint="sha256:" + "d" * 64,
+                    expected_source_file_fingerprint="sha256:" + "d" * 64,
                 )
             self.assertEqual(
                 unknown.exception.code, "document_dirty_state_unavailable"
@@ -306,7 +306,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                         document_id,
                         expected_document_fingerprint=expected,
                         destination=str(target),
-                        expected_source_fingerprint=source_fingerprint,
+                        expected_source_file_fingerprint=source_fingerprint,
                     )
 
             error = failed.exception
@@ -333,7 +333,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                     host.save_document(
                         document_id,
                         expected_document_fingerprint=expected,
-                        expected_source_fingerprint=source_fingerprint,
+                        expected_source_file_fingerprint=source_fingerprint,
                         notification_correlation_token="save_exception",
                     )
 
@@ -366,7 +366,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                     host.save_document(
                         document_id,
                         expected_document_fingerprint=expected,
-                        expected_source_fingerprint=source_fingerprint,
+                        expected_source_file_fingerprint=source_fingerprint,
                     )
 
             self.assertEqual(
@@ -398,9 +398,9 @@ class NativeSaveAdapterTests(unittest.TestCase):
                     document_id,
                     expected_document_fingerprint=expected,
                     destination=str(target),
-                    expected_source_fingerprint=source_fingerprint,
+                    expected_source_file_fingerprint=source_fingerprint,
                     overwrite_policy="replace_if_match",
-                    expected_destination_fingerprint=destination_fingerprint,
+                    expected_destination_file_fingerprint=destination_fingerprint,
                 )
 
             self.assertEqual(
@@ -418,9 +418,9 @@ class NativeSaveAdapterTests(unittest.TestCase):
                     other_id,
                     expected_document_fingerprint=other_expected,
                     destination=str(other_target),
-                    expected_source_fingerprint=source_fingerprint,
+                    expected_source_file_fingerprint=source_fingerprint,
                     overwrite_policy="replace_if_match",
-                    expected_destination_fingerprint="sha256:" + "f" * 64,
+                    expected_destination_file_fingerprint="sha256:" + "f" * 64,
                 )
             self.assertEqual(stale.exception.code, "stale_destination")
             self.assertEqual(other_font.parent.calls, [])
@@ -453,7 +453,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                     host.save_document(
                         document_id,
                         expected_document_fingerprint=expected,
-                        expected_source_fingerprint=source_fingerprint,
+                        expected_source_file_fingerprint=source_fingerprint,
                     )
 
             self.assertEqual(raced.exception.code, "stale_source_file")
@@ -501,9 +501,9 @@ class NativeSaveAdapterTests(unittest.TestCase):
                         document_id,
                         expected_document_fingerprint=expected,
                         destination=str(target),
-                        expected_source_fingerprint=source_fingerprint,
+                        expected_source_file_fingerprint=source_fingerprint,
                         overwrite_policy="replace_if_match",
-                        expected_destination_fingerprint=destination_fingerprint,
+                        expected_destination_file_fingerprint=destination_fingerprint,
                     )
 
             self.assertEqual(
@@ -532,9 +532,9 @@ class NativeSaveAdapterTests(unittest.TestCase):
                     document_id,
                     expected_document_fingerprint=expected,
                     destination=str(target),
-                    expected_source_fingerprint=source_fingerprint,
+                    expected_source_file_fingerprint=source_fingerprint,
                     overwrite_policy="replace_if_match",
-                    expected_destination_fingerprint=destination_fingerprint,
+                    expected_destination_file_fingerprint=destination_fingerprint,
                 )
 
             self.assertEqual(result["saveMode"], "save_as")
@@ -569,7 +569,7 @@ class NativeSaveAdapterTests(unittest.TestCase):
                     host.save_document(
                         document_id,
                         expected_document_fingerprint=expected,
-                        expected_source_fingerprint=source_fingerprint,
+                        expected_source_file_fingerprint=source_fingerprint,
                     )
 
             self.assertEqual(failed.exception.code, "save_verification_failed")

@@ -25,6 +25,11 @@ Tools do not embed spacing taste, category heuristics, or hidden preservation
 choices. They do reject stale fingerprints, ambiguous identities, invalid
 ownership, unsupported replay, incomplete read-back, and unverified writes.
 
+There are three independent fingerprint domains. A live canonical document
+fingerprint controls preview/apply staleness. A source-file fingerprint
+identifies the current working file bytes. A destination-file fingerprint
+protects Save As or export overwrite. Never substitute one for another.
+
 ## Public contract
 
 The catalog contains exactly 18 tools:
@@ -53,13 +58,23 @@ confirmation. Existing destinations fail closed unless
 `overwritePolicy=replace_if_match` carries the matching destination
 fingerprint.
 
+Native Glyphs Save remains available at all times, including while a verified
+transaction is active. A save-only event does not stale an immutable preview
+and is never converted into a permanent runtime incident. The runtime records
+a per-document save epoch and evidence ledger, then reconciles a verified live
+result as saved-before, saved-after, saved-intermediate, or unclassified source
+drift. An intermediate save rebases history to the residual semantic diff.
+Verification failure rolls back only the live document; it never rewrites or
+auto-saves the source file.
+
 ## Shared mechanical model
 
-`EntitySelector` addresses canonical entity kinds by exact IDs or closed read
-filters, with parent relations, deterministic ordering, and fingerprint-bound
-pagination. It includes first-class nodes as well as layers, shapes, and
-anchors. Mutation selectors are resolved to exact canonical paths during
-preview.
+`EntitySelector` addresses canonical entity kinds by exact IDs, closed filters,
+or a compact Boolean predicate AST, with parent relations, typed deterministic
+ordering, and fingerprint-bound pagination. It includes first-class nodes as
+well as layers, shapes, and anchors. `Projection` can compute named generic
+reducers over the complete selected set. Mutation selectors are resolved to
+exact canonical paths during preview.
 
 `Projection` requests canonical fields or registry-backed observations. Every
 observation reports provenance and completeness. Current observations include
@@ -86,7 +101,7 @@ workflow solver.
 `preview_change` binds normalized operations to:
 
 - exact resolved targets;
-- the source document fingerprint;
+- the base live-document fingerprint;
 - schema and runtime dependencies;
 - before/after constraint evidence;
 - the semantic patch and proposed fingerprint;
@@ -95,7 +110,9 @@ workflow solver.
 `apply_change` consumes that stored patch. It does not rerun planning or code.
 Every live document write passes through snapshot, detached simulation, apply,
 complete read-back, verification, rollback on failure, audit, and history.
-Verified changes leave the font unsaved. `revert_change` performs a
+Verified changes normally leave the font unsaved; a concurrent native save may
+persist the input, output, or an intermediate state and is reported explicitly.
+`revert_change` performs a
 conflict-aware inverse against the current document instead of overwriting
 later unrelated edits.
 
@@ -104,7 +121,8 @@ later unrelated edits.
 `execute_python` is a permanent architectural capability, even as declarative
 coverage grows:
 
-- `read_only` performs bounded inspection without document mutation.
+- `read_only` performs bounded inspection on a detached document and proves
+  that the live canonical fingerprint and dirty state did not change.
 - `staged_document` runs against a detached document and returns the same
   immutable preview lifecycle as declarative operations. Confirmation occurs
   through `apply_change`; the code is never rerun.

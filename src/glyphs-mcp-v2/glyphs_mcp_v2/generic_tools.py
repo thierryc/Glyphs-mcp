@@ -16,51 +16,16 @@ from typing import Any, Iterable, Mapping, MutableMapping, Optional, Sequence
 
 from .canonical_collections import ORDER_TOKEN, entity_id, find_entity_index
 from .canonical_views import layer_anchors, layer_components, layer_paths
+from .mechanics_registry import (
+    COMPUTED_PROJECTIONS,
+    CONSTRAINT_OPERATORS,
+    ENTITY_KINDS,
+    OPERATION_DEFINITIONS,
+)
 from .semantic import ChangeSet, diff_models, semantic_value_at
 
 
-ENTITY_KINDS = frozenset(
-    {
-        "document",
-        "font",
-        "axis",
-        "master",
-        "instance",
-        "glyph",
-        "layer",
-        "shape",
-        "node",
-        "anchor",
-        "kerning",
-        "feature",
-        "class",
-        "prefix",
-        "metric",
-        "stem",
-        "number",
-    }
-)
-OPERATION_KINDS = frozenset(
-    {"set", "translate", "insert", "remove", "move", "duplicate"}
-)
-CONSTRAINT_OPERATORS = frozenset(
-    {"eq", "ne", "lt", "lte", "gt", "gte", "within", "in_range"}
-)
-COMPUTED_PROJECTIONS = frozenset(
-    {
-        "alignment",
-        "bounds",
-        "compilation.diagnostics",
-        "geometry.counts",
-        "geometry.transform",
-        "grid",
-        "inheritance.metrics",
-        "metadata.effective",
-        "ownership",
-        "spacing.horizontal",
-        "spacing.vertical",
-    }
-)
+OPERATION_KINDS = frozenset(OPERATION_DEFINITIONS)
 
 _ROOT_COLLECTIONS = {
     "axis": "axes",
@@ -160,6 +125,77 @@ def _matches_where(value: Any, where: Mapping[str, Any]) -> bool:
         elif actual != expected:
             return False
     return True
+
+
+def _reference_field(reference: EntityReference, field: str) -> tuple[bool, Any]:
+    name = str(field or "")
+    if name in {"id", "identity"}:
+        return True, reference.identity
+    if name == "entity":
+        return True, reference.kind
+    if name.startswith("parent."):
+        return _nested_value(reference.parent, name[len("parent.") :])
+    return _nested_value(reference.value, name)
+
+
+def _predicate_matches(reference: EntityReference, predicate: Mapping[str, Any]) -> bool:
+    source = _mapping(predicate, name="selector.predicate")
+    operator = str(source.get("op") or "")
+    if operator in {"and", "or"}:
+        items = source.get("items")
+        if not isinstance(items, (list, tuple)) or not items:
+            raise ValueError("Boolean predicates require non-empty items")
+        results = [
+            _predicate_matches(reference, _mapping(item, name="predicate item"))
+            for item in items
+        ]
+        return all(results) if operator == "and" else any(results)
+    if operator == "not":
+        item = source.get("item")
+        return not _predicate_matches(
+            reference, _mapping(item, name="predicate item")
+        )
+    field = str(source.get("field") or "")
+    if not field:
+        raise ValueError("predicate.field is required")
+    present, actual = _reference_field(reference, field)
+    if operator == "exists":
+        return present is bool(source.get("exists", True))
+    if operator not in {
+        "eq",
+        "ne",
+        "lt",
+        "lte",
+        "gt",
+        "gte",
+        "in",
+        "contains",
+    }:
+        raise ValueError("selector predicate operator is unsupported")
+    if not present:
+        return False
+    expected = source.get("value")
+    if operator == "eq":
+        return actual == expected
+    if operator == "ne":
+        return actual != expected
+    if operator in {"lt", "lte", "gt", "gte"}:
+        left = _finite_number(actual, name="predicate field")
+        right = _finite_number(expected, name="predicate value")
+        return {
+            "lt": left < right,
+            "lte": left <= right,
+            "gt": left > right,
+            "gte": left >= right,
+        }[operator]
+    if operator == "in":
+        if not isinstance(expected, (list, tuple)):
+            raise ValueError("predicate in requires a list value")
+        return actual in expected
+    try:
+        return expected in actual
+    except TypeError:
+        return False
 
 
 def _identity(value: Any, fallback: Any = "") -> str:
@@ -384,30 +420,105 @@ def resolve_selector(
     where = source.get("where") or {}
     if not isinstance(parent, Mapping) or not isinstance(where, Mapping):
         raise ValueError("selector.parent and selector.where must be objects")
+    predicate = source.get("predicate")
+    if predicate is not None and not isinstance(predicate, Mapping):
+        raise ValueError("selector.predicate must be an object")
     selected = [
         ref
         for ref in values
         if (not ids or ref.identity in ids)
         and all(str(ref.parent.get(str(key), "")) == str(value) for key, value in parent.items())
         and _matches_where(ref.value, where)
+        and (
+            predicate is None
+            or _predicate_matches(ref, predicate)
+        )
     ]
-    order_by = str(source.get("orderBy") or "identity")
-    reverse = bool(source.get("descending", False))
+    order_value = source.get("orderBy") or "identity"
+    if isinstance(order_value, Mapping):
+        order_by = str(order_value.get("field") or "identity")
+        order_type = str(order_value.get("type") or "auto")
+        reverse = bool(order_value.get("descending", False))
+    else:
+        order_by = str(order_value)
+        order_type = "text"
+        reverse = bool(source.get("descending", False))
     if order_by == "canonical":
         if reverse:
             selected.reverse()
     elif order_by == "identity":
         selected.sort(key=lambda ref: (ref.identity, ref.path), reverse=reverse)
     elif order_by:
+        def order_key(ref: EntityReference) -> tuple[Any, ...]:
+            present, value = _reference_field(ref, order_by)
+            if order_type == "number" and present:
+                try:
+                    value = _finite_number(value, name="numeric order field")
+                except ValueError:
+                    present = False
+                    value = Decimal(0)
+            elif order_type == "auto" and present and isinstance(value, (int, float, Decimal)) and not isinstance(value, bool):
+                value = _finite_number(value, name="numeric order field")
+            else:
+                value = str(value) if present else ""
+            return (not present, value, ref.identity)
         selected.sort(
-            key=lambda ref: (
-                _nested_value(ref.value, order_by)[1] is None,
-                str(_nested_value(ref.value, order_by)[1]),
-                ref.identity,
-            ),
+            key=order_key,
             reverse=reverse,
         )
     return tuple(selected)
+
+
+def reduce_references(
+    references: Sequence[EntityReference],
+    reducers: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Evaluate deterministic generic reducers over a resolved selector."""
+
+    result: dict[str, Any] = {}
+    for index, raw in enumerate(reducers):
+        reducer = _mapping(raw, name="projection.reducer")
+        name = str(reducer.get("name") or "reducer-{}".format(index + 1))
+        if name in result:
+            raise ValueError("projection reducer names must be unique")
+        operation = str(reducer.get("op") or "")
+        field = str(reducer.get("field") or "")
+        if operation == "count":
+            result[name] = len(references)
+            continue
+        if operation not in {"min", "max", "sum", "average", "any", "all"}:
+            raise ValueError("projection reducer operator is unsupported")
+        if not field:
+            raise ValueError("projection reducer field is required")
+        values = [
+            value
+            for reference in references
+            for present, value in [_reference_field(reference, field)]
+            if present
+        ]
+        if operation in {"any", "all"}:
+            result[name] = (
+                any(bool(value) for value in values)
+                if operation == "any"
+                else all(bool(value) for value in values)
+            )
+            continue
+        numbers = [
+            _finite_number(value, name="reducer field") for value in values
+        ]
+        if not numbers:
+            result[name] = None
+        elif operation == "min":
+            result[name] = _public_number(min(numbers))
+        elif operation == "max":
+            result[name] = _public_number(max(numbers))
+        elif operation == "sum":
+            result[name] = _public_number(sum(numbers, Decimal(0)))
+        else:
+            result[name] = _public_number(
+                sum(numbers, Decimal(0)) / Decimal(len(numbers))
+            )
+    return result
 
 
 def bind_relation_selector(
@@ -456,6 +567,8 @@ def _observation_for(
     observations: Mapping[tuple[str, str], Mapping[str, Any]],
     reference: EntityReference,
 ) -> Mapping[str, Any]:
+    if reference.kind in {"document", "font"}:
+        return observations.get(("__document__", "persistence"), {})
     if reference.kind != "layer":
         return {}
     return observations.get(
@@ -593,6 +706,13 @@ def project_reference(
                 else "unavailable"
             )
             if diagnostics is None:
+                missing.append(field)
+            continue
+        if field == "persistence":
+            raw = (observations or {}).get(("__document__", "persistence"))
+            values[field] = copy.deepcopy(raw) if isinstance(raw, Mapping) else None
+            provenance[field] = "native+process" if isinstance(raw, Mapping) else "unavailable"
+            if not isinstance(raw, Mapping):
                 missing.append(field)
             continue
         if field in {"spacing.horizontal", "spacing.vertical"}:
@@ -1539,5 +1659,6 @@ __all__ = [
     "constraint_observation_request",
     "evaluate_constraints",
     "project_reference",
+    "reduce_references",
     "resolve_selector",
 ]

@@ -779,6 +779,11 @@ class PythonExecutionService:
         if request.execution_mode not in {"staged_document", "live_open_world"}:
             return self._failure("invalid_execution_mode", "executionMode is not supported.")
         if request.intended_effect == "read":
+            if not request.document_id:
+                return self._failure(
+                    "document_context_required",
+                    "read_only requires a documentId so execution can use a detached clone; use live_open_world for global host inspection.",
+                )
             try:
                 external_findings = obvious_external_effects(request.code or "")
             except PythonPolicyError as exc:
@@ -811,6 +816,8 @@ class PythonExecutionService:
         return self._preview_live(request)
 
     def _execute_read(self, request: PythonExecutionRequest) -> ToolResponse:
+        if request.document_id:
+            return self._execute_detached_read(request)
         capture_source = getattr(self._host, "capture_source_file_state", None)
         source_before = (
             capture_source(request.document_id)
@@ -1159,6 +1166,189 @@ class PythonExecutionService:
             },
         )
 
+    def _execute_detached_read(
+        self, request: PythonExecutionRequest
+    ) -> ToolResponse:
+        """Run document-bound read Python on a clone and prove live purity."""
+
+        try:
+            validate_staged_code(request.code or "")
+        except PythonPolicyError as exc:
+            cause = exc.__cause__ if isinstance(exc.__cause__, BaseException) else exc
+            return self._failure(
+                "read_only_policy_violation",
+                str(exc),
+                details=_python_error_details(
+                    cause, phase="compile", code=request.code or ""
+                ),
+            )
+        document_id = request.document_id or ""
+        before = self._capture_document_state(document_id)
+        before_fingerprint = fingerprint_model(before)
+        if (
+            request.expected_document_fingerprint
+            and request.expected_document_fingerprint != before_fingerprint
+        ):
+            return self._failure(
+                "stale_document",
+                "The document changed before detached read-only execution.",
+            )
+        capture_source = getattr(self._host, "capture_source_file_state", None)
+        source_before = (
+            capture_source(document_id) if callable(capture_source) else None
+        )
+
+        def dirty_state() -> bool | None:
+            try:
+                return next(
+                    (
+                        document.has_unsaved_changes
+                        for document in self._host.list_documents()
+                        if document.document_id == document_id
+                    ),
+                    None,
+                )
+            except Exception:
+                return None
+
+        dirty_before = dirty_state()
+        try:
+            result = self._host.preview_python(request, before)
+        except Exception as exc:
+            _debug_python_exception()
+            cause = (
+                exc.cause
+                if isinstance(exc, ObservedLivePythonError)
+                else exc
+            )
+            return self._failure(
+                (
+                    "source_save_forbidden"
+                    if isinstance(cause, SourceSaveForbiddenError)
+                    else "python_execution_failed"
+                ),
+                (
+                    "Detached read-only Python was stopped at the source-save boundary."
+                    if isinstance(cause, SourceSaveForbiddenError)
+                    else "Detached read-only Python failed safely."
+                ),
+                details=_python_error_details(
+                    cause, phase="evaluation", code=request.code or ""
+                ),
+            )
+        after = result.get("afterModel")
+        if not isinstance(after, Mapping):
+            return self._failure(
+                "python_execution_failed",
+                "Detached read-only Python returned no canonical clone state.",
+                recoverable=False,
+            )
+        replay_context = dict(result.get("executionContext") or {})
+        self._release_replay_evidence(replay_context)
+        detached_changes = diff_models(before, after)
+        live_after = self._capture_document_state(document_id)
+        live_after_fingerprint = fingerprint_model(live_after)
+        live_changed = live_after_fingerprint != before_fingerprint
+        dirty_after = dirty_state()
+        source_after = (
+            capture_source(document_id) if callable(capture_source) else None
+        )
+        source_changed = bool(
+            source_before is not None
+            and (
+                source_after is None
+                or source_before.get("contentFingerprint")
+                != source_after.get("contentFingerprint")
+                or source_before.get("exists") != source_after.get("exists")
+            )
+        )
+        observed_document_changes = list(
+            result.get("observedDocumentChanges") or ()
+        )
+        warnings: list[ToolWarning] = []
+        if detached_changes.changes:
+            warnings.append(
+                ToolWarning(
+                    code="read_intent_changed_detached_clone",
+                    message=(
+                        "The code changed only its detached clone; the live "
+                        "document remained outside the execution context."
+                    ),
+                    target={"changeCount": len(detached_changes.changes)},
+                )
+            )
+        if live_changed or observed_document_changes:
+            warnings.append(
+                ToolWarning(
+                    code="live_state_changed_concurrently",
+                    message=(
+                        "Live document state changed while detached Python was "
+                        "running; read the document again before planning."
+                    ),
+                    target={"documentId": document_id},
+                )
+            )
+        if source_changed:
+            warnings.append(
+                ToolWarning(
+                    code="persistence_changed_during_read",
+                    message=(
+                        "The source file changed concurrently; detached Python "
+                        "did not write the working source."
+                    ),
+                    target={"documentId": document_id},
+                )
+            )
+        receipt = self._audit.record(
+            tool="execute_python",
+            effect="code",
+            status="warning" if warnings else "success",
+            document_id=document_id,
+            details={
+                "codeHash": _code_hash(request.code or ""),
+                "reason": request.reason,
+                "declaredEffect": "read",
+                "executionMode": "detached_read_only",
+                "beforeFingerprint": before_fingerprint,
+                "liveAfterFingerprint": live_after_fingerprint,
+                "detachedChangeCount": len(detached_changes.changes),
+                "sourceFileChanged": source_changed,
+            },
+        )
+        return ToolResponse.success(
+            tool="execute_python",
+            effect="code",
+            status="warning" if warnings else "success",
+            summary="Detached read-only Python completed; the live document was not an execution target.",
+            warnings=tuple(warnings),
+            audit_receipt=receipt.to_dict(),
+            data={
+                "codeHash": _code_hash(request.code or ""),
+                **_bounded_streams(
+                    result.get("stdout"),
+                    result.get("stderr"),
+                    max_output_chars=request.max_output_chars,
+                    max_error_chars=request.max_error_chars,
+                ),
+                "executionMode": "detached_read_only",
+                "baseDocumentFingerprint": before_fingerprint,
+                "liveAfterFingerprint": live_after_fingerprint,
+                "liveDocumentChanged": live_changed,
+                "detachedDocumentChanged": bool(detached_changes.changes),
+                "detachedChangeCount": len(detached_changes.changes),
+                "observedDocumentChanges": observed_document_changes,
+                "dirtyBefore": dirty_before,
+                "dirtyAfter": dirty_after,
+                "sourceFileChanged": source_changed,
+                "stateMayHaveChanged": live_changed,
+                "fontSaved": False,
+                "transactional": True,
+                "rollback": {"coverage": "not_needed", "available": False},
+                "timeoutEnforcement": "cooperative",
+                "stageTimings": dict(result.get("stageTimings") or {}),
+            },
+        )
+
     def _preview_staged(self, request: PythonExecutionRequest) -> ToolResponse:
         try:
             validate_staged_code(request.code or "")
@@ -1391,7 +1581,7 @@ class PythonExecutionService:
             payload={
                 "source": "python_staged",
                 "documentId": request.document_id,
-                "sourceFingerprint": before_fingerprint,
+                "baseDocumentFingerprint": before_fingerprint,
                 "proposedFingerprint": changes.after_fingerprint,
                 "applicable": True,
                 "request": request.to_stored_dict(),
@@ -1465,7 +1655,7 @@ class PythonExecutionService:
                 "previewId": review.operation_id,
                 "expiresAt": _iso_timestamp(review.expires_at),
                 "documentId": request.document_id,
-                "sourceFingerprint": before_fingerprint,
+                "baseDocumentFingerprint": before_fingerprint,
                 "proposedFingerprint": changes.after_fingerprint,
                 "applicable": True,
                 "resolvedTargetCount": len(changes.changes),
@@ -1476,7 +1666,7 @@ class PythonExecutionService:
                 "changeSet": public_change_set,
                 "constraints": {
                     "before": {
-                        "sourceFingerprintMatched": True,
+                        "baseDocumentFingerprintMatched": True,
                         "scopeViolationCount": 0,
                     },
                     "after": {
@@ -1628,27 +1818,36 @@ class PythonExecutionService:
             )
         finally:
             self._release_replay_evidence(execution_context)
-        checkpoint = self._checkpoints.create(
-            kind="python_checkpoint",
-            ttl_seconds=ROLLBACK_TTL_SECONDS,
-            payload={
-                "documentId": request.document_id,
-                "codeHash": payload.get("codeHash"),
-                "beforeFingerprint": transaction.before_fingerprint,
-                "afterFingerprint": transaction.after_fingerprint,
-                "beforeModel": before,
-                "inverse": transaction.inverse,
-                "contributionId": review_id,
-                "coverage": "document_inverse",
-                "recoveryPath": None,
-                "capabilities": capabilities,
-                "canonicalCoverage": transaction.coverage,
-            },
+        checkpoint = (
+            self._checkpoints.create(
+                kind="python_checkpoint",
+                ttl_seconds=ROLLBACK_TTL_SECONDS,
+                payload={
+                    "documentId": request.document_id,
+                    "codeHash": payload.get("codeHash"),
+                    "beforeFingerprint": transaction.before_fingerprint,
+                    "afterFingerprint": transaction.after_fingerprint,
+                    "beforeModel": before,
+                    "inverse": transaction.inverse,
+                    "contributionId": review_id,
+                    "coverage": "document_inverse",
+                    "recoveryPath": None,
+                    "capabilities": capabilities,
+                    "canonicalCoverage": transaction.coverage,
+                },
+            )
+            if transaction.revert_available
+            else None
         )
         receipt = self._audit.record(
             tool="execute_python",
             effect="code",
-            status="success",
+            status=(
+                "warning"
+                if transaction.persistence_reconciliation.get("relationship")
+                in {"saved_intermediate", "source_changed_unclassified"}
+                else "success"
+            ),
             document_id=request.document_id,
             details={
                 "codeHash": payload.get("codeHash"),
@@ -1662,16 +1861,36 @@ class PythonExecutionService:
                 "capabilities": list(capabilities),
                 "rollbackCoverage": "document_inverse",
                 "canonicalCoverage": transaction.coverage.to_public_dict(),
+                "persistenceReconciliation": dict(
+                    transaction.persistence_reconciliation
+                ),
             },
         )
+        persistence_warning = ()
+        if transaction.persistence_reconciliation.get("relationship") in {
+            "saved_intermediate",
+            "source_changed_unclassified",
+        }:
+            persistence_warning = (
+                ToolWarning(
+                    code="persistence_reconciled",
+                    message=(
+                        "The source changed while the staged patch was applied; "
+                        "the exact live result was kept and history was rebased."
+                    ),
+                    target=dict(transaction.persistence_reconciliation),
+                ),
+            )
         return ToolResponse.success(
             tool="execute_python",
             effect="code",
             summary="The reviewed Python change set was applied and verified without rerunning the script.",
+            status="warning" if persistence_warning else "success",
+            warnings=persistence_warning,
             audit_receipt=receipt.to_dict(),
             metadata=OperationMetadata.create(operation_id=review_id),
             data={
-                "executionId": checkpoint.operation_id,
+                "executionId": checkpoint.operation_id if checkpoint else None,
                 "codeHash": payload.get("codeHash"),
                 "beforeFingerprint": transaction.before_fingerprint,
                 "afterFingerprint": transaction.after_fingerprint,
@@ -1679,13 +1898,18 @@ class PythonExecutionService:
                 "transactionCount": 1,
                 "fontSaved": False,
                 "sourceFileChanged": transaction.source_file_changed,
+                "persistenceReconciliation": dict(
+                    transaction.persistence_reconciliation
+                ),
                 "transactional": True,
                 "externalEffectsVerifiable": True,
                 "canonicalCoverage": transaction.coverage.to_public_dict(),
                 "rollback": {
-                    "available": True,
+                    "available": transaction.revert_available,
                     "coverage": "document_inverse",
-                    "expiresAt": _iso_timestamp(checkpoint.expires_at),
+                    "expiresAt": (
+                        _iso_timestamp(checkpoint.expires_at) if checkpoint else None
+                    ),
                 },
                 "stageTimings": dict(payload.get("stageTimings") or {}),
                 "observedDocumentChanges": list(

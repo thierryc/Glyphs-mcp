@@ -12,7 +12,9 @@ single `skills/` directory and `.mcp.json`. Skills inherit the package version;
 the server reports pinned 1.11 in Glyphs 3.5 and v2.0 in Glyphs 4.
 
 Glyphs remains the editor. The embedded panel is limited to information,
-review, dry runs, confirmation, progress, completion, and error feedback. It
+generic read evidence, immutable preview review, explicit effect confirmation,
+progress, completion, and error feedback. Native Save remains available and is
+reconciled independently from live-document atomicity. The panel
 does not expose editable paths, coordinates, metrics fields, feature code, file
 navigation, arbitrary Python, tabs, or a replacement drawing canvas.
 

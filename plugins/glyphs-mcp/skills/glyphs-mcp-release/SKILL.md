@@ -51,6 +51,10 @@ Treat preparation, signed artifact production, asset upload, and public release 
    `execute_python` modes; no retired domain endpoint may appear in catalog,
    skills, routing fixtures, or generated documentation.
 5. Never save an open font automatically. Snapshot document/file state for live read-only checks and report whether it remained unchanged.
+   Also qualify native saves before, during, and after verified transactions:
+   Save must remain available, verified live edits must be retained, history
+   must rebase to the latest decoded saved state, and no source drift may leave
+   the server permanently blocked.
 6. For staging-only updater releases, require **Prepare Update** wording, an explicit not-installed state, a trusted release link, and proof that the installed plug-in remains unchanged.
 
 Use the exact commands and phase gates in [Release gates](references/release-gates.md).

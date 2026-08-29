@@ -2,38 +2,31 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any, Dict, List, Literal, Optional, Set
+from typing import Annotated, Any, Dict, List, Literal, Optional, Set, Union
 
 from fastmcp import FastMCP
 from fastmcp.tools.tool import ToolResult
-from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, RootModel, model_validator
 
 from ..application import GlyphsMCPApplication
 from ..catalog import MODEL_AND_APP, TOOL_DEFINITIONS, ToolDefinition
+from ..mechanics_registry import (
+    CONSTRAINT_OPERATORS as REGISTRY_CONSTRAINT_OPERATORS,
+    ENTITY_KINDS as REGISTRY_ENTITY_KINDS,
+    ORDER_TYPES as REGISTRY_ORDER_TYPES,
+    PREDICATE_OPERATORS as REGISTRY_PREDICATE_OPERATORS,
+    REDUCER_KINDS as REGISTRY_REDUCER_KINDS,
+)
 from ..versions import SERVER_NAME, SERVER_VERSION
 
 
 Sha256Fingerprint = Annotated[str, Field(pattern=r"^sha256:[0-9a-f]{64}$")]
 PageSize = Annotated[int, Field(ge=1, le=500)]
-EntityKind = Literal[
-    "document",
-    "font",
-    "axis",
-    "master",
-    "instance",
-    "glyph",
-    "layer",
-    "shape",
-    "node",
-    "anchor",
-    "kerning",
-    "feature",
-    "class",
-    "prefix",
-    "metric",
-    "stem",
-    "number",
-]
+EntityKind = Literal[*tuple(sorted(REGISTRY_ENTITY_KINDS))]
+PredicateOperator = Literal[*tuple(sorted(REGISTRY_PREDICATE_OPERATORS))]
+OrderType = Literal[*tuple(sorted(REGISTRY_ORDER_TYPES))]
+ReducerKind = Literal[*tuple(sorted(REGISTRY_REDUCER_KINDS))]
+ConstraintOperator = Literal[*tuple(sorted(REGISTRY_CONSTRAINT_OPERATORS))]
 
 
 def _compact_parameter_schema(value: Any) -> Any:
@@ -41,7 +34,7 @@ def _compact_parameter_schema(value: Any) -> Any:
         compact = {
             key: _compact_parameter_schema(item)
             for key, item in value.items()
-            if key not in {"title", "discriminator"}
+            if key != "title"
             and not (key == "default" and item is None)
         }
         if compact.get("type") == "object" and "properties" in compact:
@@ -57,9 +50,56 @@ class StrictInputModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class Predicate(StrictInputModel):
+    op: PredicateOperator
+    field: Optional[str] = None
+    value: Optional[JsonValue] = None
+    exists: Optional[bool] = None
+    items: Optional[List["Predicate"]] = None
+    item: Optional["Predicate"] = None
+
+    @model_validator(mode="after")
+    def closed_predicate_shape(self) -> "Predicate":
+        supplied = set(self.model_fields_set) - {"op"}
+        if self.op in {"and", "or"}:
+            if supplied != {"items"} or not self.items:
+                raise ValueError("Boolean predicates require only non-empty items")
+        elif self.op == "not":
+            if supplied != {"item"} or self.item is None:
+                raise ValueError("not predicates require only item")
+        elif self.op == "exists":
+            if not self.field or supplied - {"field", "exists"}:
+                raise ValueError("exists predicates require field and optional exists")
+        elif not self.field or supplied != {"field", "value"}:
+            raise ValueError("comparison predicates require only field and value")
+        return self
+
+
+Predicate.model_rebuild()
+
+
+class OrderSpec(StrictInputModel):
+    field: str = "identity"
+    type: OrderType = "auto"
+    descending: bool = False
+
+
+class Reducer(StrictInputModel):
+    name: str = Field(min_length=1, max_length=80)
+    op: ReducerKind
+    field: Optional[str] = None
+
+    @model_validator(mode="after")
+    def reducer_field(self) -> "Reducer":
+        if self.op != "count" and not self.field:
+            raise ValueError("non-count reducers require field")
+        return self
+
+
 class Projection(StrictInputModel):
     fields: List[str] = Field(min_length=1, max_length=64)
     includeProvenance: bool = True
+    reducers: Optional[List[Reducer]] = None
 
 
 class EntitySelector(StrictInputModel):
@@ -67,7 +107,8 @@ class EntitySelector(StrictInputModel):
     ids: Optional[List[str]] = None
     parent: Dict[str, JsonValue] = Field(default_factory=dict)
     where: Dict[str, JsonValue] = Field(default_factory=dict)
-    orderBy: str = "identity"
+    predicate: Optional[Predicate] = None
+    orderBy: Union[str, OrderSpec] = "identity"
     descending: bool = False
     pageSize: PageSize = 100
     cursor: Optional[str] = None
@@ -103,7 +144,7 @@ class Constraint(StrictInputModel):
     label: Optional[str] = None
     phase: Literal["before", "after"] = "before"
     left: LiteralOperand | FieldOperand | ReferenceOperand
-    operator: Literal["eq", "ne", "lt", "lte", "gt", "gte", "within", "in_range"]
+    operator: ConstraintOperator
     right: LiteralOperand | FieldOperand | ReferenceOperand
     tolerance: Optional[Annotated[float, Field(allow_inf_nan=False, ge=0)]] = None
 
@@ -113,46 +154,67 @@ class TranslationDelta(StrictInputModel):
     y: Annotated[float, Field(allow_inf_nan=False)] = 0
 
 
-class ChangeOperation(StrictInputModel):
-    op: Literal["set", "translate", "insert", "remove", "move", "duplicate"]
+class _OperationBase(StrictInputModel):
     target: EntitySelector
-    field: Optional[str] = None
-    value: Optional[JsonValue] = None
-    delta: Optional[TranslationDelta] = None
-    index: Optional[Annotated[int, Field(ge=0)]] = None
-    newId: Optional[str] = None
-    overrides: Optional[Dict[str, JsonValue]] = None
+
+
+class SetOperation(_OperationBase):
+    op: Literal["set"]
+    field: str = Field(min_length=1)
+    value: JsonValue
     quantizer: Literal["exact", "grid"] = "exact"
 
-    @model_validator(mode="after")
-    def closed_operation_shape(self) -> "ChangeOperation":
-        supplied = set(self.model_fields_set) - {"op", "target"}
-        allowed = {
-            "set": {"field", "value", "quantizer"},
-            "translate": {"delta", "quantizer"},
-            "insert": {"field", "value", "index", "newId"},
-            "remove": set(),
-            "move": {"index"},
-            "duplicate": {"newId", "overrides", "index"},
-        }[self.op]
-        unexpected = supplied - allowed
-        if unexpected:
-            raise ValueError(
-                "{} does not accept {}".format(
-                    self.op, ", ".join(sorted(unexpected))
-                )
-            )
-        if self.op == "set" and (not self.field or "value" not in supplied):
-            raise ValueError("set requires field and value")
-        if self.op == "translate" and self.delta is None:
-            raise ValueError("translate requires delta")
-        if self.op == "insert" and "value" not in supplied:
-            raise ValueError("insert requires value")
-        if self.op == "move" and self.index is None:
-            raise ValueError("move requires index")
-        if self.op == "duplicate" and not self.newId:
-            raise ValueError("duplicate requires newId")
-        return self
+
+class TranslateOperation(_OperationBase):
+    op: Literal["translate"]
+    delta: TranslationDelta
+    quantizer: Literal["exact", "grid"] = "exact"
+
+
+class InsertOperation(_OperationBase):
+    op: Literal["insert"]
+    value: JsonValue
+    field: Optional[str] = None
+    index: Optional[Annotated[int, Field(ge=0)]] = None
+    newId: Optional[str] = None
+
+
+class RemoveOperation(_OperationBase):
+    op: Literal["remove"]
+
+
+class MoveOperation(_OperationBase):
+    op: Literal["move"]
+    index: Annotated[int, Field(ge=0)]
+
+
+class DuplicateOperation(_OperationBase):
+    op: Literal["duplicate"]
+    newId: str = Field(min_length=1)
+    overrides: Optional[Dict[str, JsonValue]] = None
+    index: Optional[Annotated[int, Field(ge=0)]] = None
+
+
+OperationVariant = Annotated[
+    Union[
+        SetOperation,
+        TranslateOperation,
+        InsertOperation,
+        RemoveOperation,
+        MoveOperation,
+        DuplicateOperation,
+    ],
+    Field(discriminator="op"),
+]
+
+
+class ChangeOperation(RootModel[OperationVariant]):
+    @property
+    def op(self) -> str:
+        return self.root.op
+
+    def model_dump(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+        return self.root.model_dump(*args, **kwargs)
 
 
 def _transport_value(value: Any) -> Any:
@@ -301,9 +363,9 @@ class ToolHandlers:
         confirm: bool,
         reason: Annotated[str, Field(min_length=1, max_length=1000)],
         destination: Optional[str] = None,
-        expectedSourceFingerprint: Optional[Sha256Fingerprint] = None,
+        expectedSourceFileFingerprint: Optional[Sha256Fingerprint] = None,
         overwritePolicy: Literal["fail_if_exists", "replace_if_match"] = "fail_if_exists",
-        expectedDestinationFingerprint: Optional[Sha256Fingerprint] = None,
+        expectedDestinationFileFingerprint: Optional[Sha256Fingerprint] = None,
     ) -> ToolResult:
         return self._invoke("save_document", locals())
 

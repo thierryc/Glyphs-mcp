@@ -93,6 +93,7 @@ READ_DOCUMENT_DATA_SCHEMA = _closed(
         },
         "selectedCount": {"type": "integer", "minimum": 0},
         "partialCount": {"type": "integer", "minimum": 0},
+        "reducers": {"type": "object"},
         "items": {"type": "array", "items": {"type": "object"}},
     },
 )
@@ -120,7 +121,7 @@ PREVIEW_CHANGE_DATA_SCHEMA = _closed(
     (
         "previewId",
         "documentId",
-        "sourceFingerprint",
+        "baseDocumentFingerprint",
         "proposedFingerprint",
         "applicable",
         "resolvedTargetCount",
@@ -134,7 +135,7 @@ PREVIEW_CHANGE_DATA_SCHEMA = _closed(
         "previewId": {"type": ["string", "null"]},
         "expiresAt": {"type": "string"},
         "documentId": {"type": "string"},
-        "sourceFingerprint": deepcopy(FINGERPRINT_SCHEMA),
+        "baseDocumentFingerprint": deepcopy(FINGERPRINT_SCHEMA),
         "proposedFingerprint": {
             "anyOf": [deepcopy(FINGERPRINT_SCHEMA), {"type": "null"}]
         },
@@ -171,6 +172,7 @@ APPLY_CHANGE_DATA_SCHEMA = _closed(
         "transactionCount": {"type": "integer", "minimum": 0, "maximum": 1},
         "fontSaved": {"type": "boolean", "const": False},
         "sourceFileChanged": {"type": "boolean"},
+        "persistenceReconciliation": {"type": "object"},
         "revert": {"type": "object"},
     },
 )

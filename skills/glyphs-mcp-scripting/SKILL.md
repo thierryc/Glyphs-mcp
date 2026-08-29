@@ -20,8 +20,11 @@ whenever the typed surface is insufficient.
 3. Resolve exact document and entity context with `list_documents` and
    `read_document`.
 
-- `read_only`: bounded inspection with no document mutation. Treat any observed
-  canonical or source change as failure.
+- `read_only`: bounded inspection on a detached document. The runtime
+  proves that the live canonical fingerprint and dirty state did not change.
+  Code that mutates only the detached clone is reported as evidence and does
+  not affect the live font. Use `live_open_world` when the required API is
+  inherently live-only.
 - `staged_document`: execute once on a detached document. The result is an
   immutable `previewId` containing the exact code hash, scope, runtime,
   fingerprints, output, and semantic patch. Apply it through `apply_change`;
@@ -49,3 +52,9 @@ After an applied staged patch, re-read exact entities and use `list_history`,
 `get_operation`, or `revert_change` as needed. For an explicit working-font
 save, leave Python and call `save_document` with current fingerprints and user
 confirmation. `execute_python` is never a working-source save path.
+
+A user-initiated Glyphs Save is always allowed, including while a verified
+document transaction is active. Do not treat a source-file fingerprint change
+as live-document mutation. Continue from the receipt's persistence
+reconciliation and its residual unsaved diff; only a changed live canonical
+fingerprint stales an immutable preview.

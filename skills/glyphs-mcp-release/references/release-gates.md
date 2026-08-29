@@ -82,6 +82,17 @@ creation, or upload unless the user explicitly expands the scope.
    - Compare source and Plugin Manager runtime files byte-for-byte where they
      are required mirrors.
    - Compare canonical and packaged skill trees byte-for-byte.
+   - After local installation, compare the exact built Glyphs 4 bundle and
+     Codex cache with:
+
+     ```bash
+     .venv-v2/bin/python scripts/verify_v2_local_install.py \
+       --runtime-bundle "/path/to/Glyphs MCP.glyphsPlugin" \
+       --codex-cache "/path/to/codex/cache/glyphs-mcp/2.0.0"
+     ```
+
+     The same check runs inside `run_local_release_tests.sh` when
+     `GLYPHS_MCP_INSTALLED_V2_BUNDLE` and `GLYPHS_MCP_CODEX_CACHE` are set.
    - Run documentation, catalog/registration, release-security, installer, marketplace, and
      Plugin Manager contract tests.
    - Run `git diff --check` after the final documentation edits.

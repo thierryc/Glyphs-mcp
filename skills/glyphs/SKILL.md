@@ -34,18 +34,22 @@ Generic Python with no Glyphs app or font target does not trigger this skill.
    needed, and use `revert_change` for a compatible unsaved-session reversal.
    Never save unless the user separately requests `save_document`.
 
-Incomplete observations are evidence gaps, not passes. Locks and configured
-alignment are preserved document state, not policy failures. Structural
-invalidity, stale fingerprints, and failed read-back are hard failures.
+The user may save in Glyphs between any two actions. Treat that as normal
+persistence concurrency: only a changed live canonical fingerprint stales a
+preview. `apply_change` reconciles saved-before, saved-after, or intermediate
+states and reports residual unsaved work. Never prevent, undo, or repeat a Save.
+Keep `expectedDocumentFingerprint`, `expectedSourceFileFingerprint`, and
+`expectedDestinationFileFingerprint` distinct; only `save_document` protects
+file overwrites.
+
+Incomplete observations are evidence gaps, not passes. Locks and alignment are
+preserved state, not policy failures. Structural invalidity, stale live state,
+and failed read-back are hard failures. Source drift may warn but never blocks
+later document work.
 
 ## Focused expertise
 
-- Spacing: `glyphs-mcp-spacing`
-- Kerning: `glyphs-mcp-kerning`
-- Outlines, anchors, and components: `glyphs-mcp-outlines-docs`
-- Interpolation compatibility: `glyphs-mcp-master-compatibility`
-- OpenType: `glyphs-mcp-opentype-features`
-- Unicode and icon encoding: `glyphs-mcp-unicode-semantics` or `glyphs-mcp-icon-font`
-- Variable/color sources and export: the corresponding audit skill
-- Python and unsupported Glyphs APIs: `glyphs-mcp-scripting`
-- Reusable scripts and plug-ins: `glyphs-mcp-development`
+Route spacing to `glyphs-mcp-spacing`, kerning to `glyphs-mcp-kerning`, outlines to
+`glyphs-mcp-outlines-docs`, compatibility to `glyphs-mcp-master-compatibility`, and OpenType
+to `glyphs-mcp-opentype-features`; use the Unicode/icon, variable/color/export
+corresponding audit skill. Route Python to `glyphs-mcp-scripting`; Reusable scripts and plug-ins to `glyphs-mcp-development`.

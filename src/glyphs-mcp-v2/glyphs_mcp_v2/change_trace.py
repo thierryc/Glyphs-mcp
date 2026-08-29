@@ -233,11 +233,18 @@ class ActionTraceCoordinator:
         change_set: ChangeSet,
         writable_change_set: Optional[ChangeSet] = None,
         coverage: Optional[CanonicalCoverage] = None,
+        baseline_model: Optional[Mapping[str, Any]] = None,
+        record_in_history: bool = True,
     ) -> None:
-        before_tree_hash = token.before_tree_hash
+        resolved_before = baseline_model or before
+        before_tree_hash = (
+            token.before_tree_hash if baseline_model is None else None
+        )
         if before_tree_hash is None:
             try:
-                before_tree_hash = self._store_or_reuse(document_id, before)
+                before_tree_hash = self._store_or_reuse(
+                    document_id, resolved_before
+                )
                 if token.scope is not None:
                     token.scope.history_recorded = True
                     token.scope.history_warning = None
@@ -253,6 +260,8 @@ class ActionTraceCoordinator:
         if after_tree_hash is None:
             return
         if token.scope is not None:
+            if not record_in_history:
+                token.scope.history_boundary = True
             token.scope.document_id = document_id
             token.scope.before_tree_hash = before_tree_hash
             token.scope.after_tree_hash = after_tree_hash

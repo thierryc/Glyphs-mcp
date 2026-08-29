@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import copy
+import inspect
 import logging
 import os
 import time
 import traceback
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from threading import RLock
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Protocol
 from uuid import uuid4
@@ -50,6 +51,35 @@ def _verification_residual_summary(change_set: ChangeSet) -> list[dict[str, Any]
     ]
 
 
+def _stable_constraint_items(evidence: Mapping[str, Any]) -> tuple[Any, ...]:
+    """Exclude persistence values that a concurrent native Save may change.
+
+    Persistence remains available to reads and standalone constraints, but a
+    generic document mutation cannot own source bytes, dirty state, or the save
+    epoch. Only the live canonical fingerprint is stable transaction evidence.
+    """
+
+    stable: list[Any] = []
+    volatile_prefix = "observation.persistence."
+    stable_path = volatile_prefix + "liveDocumentFingerprint"
+    for item in evidence.get("items") or ():
+        if not isinstance(item, Mapping):
+            stable.append(item)
+            continue
+        fields = {
+            str(target.get("field") or "")
+            for target in (item.get("leftTarget"), item.get("rightTarget"))
+            if isinstance(target, Mapping)
+        }
+        if any(
+            field.startswith(volatile_prefix) and field != stable_path
+            for field in fields
+        ):
+            continue
+        stable.append(item)
+    return tuple(stable)
+
+
 class TransactionAdapter(Protocol):
     def capture_model(self, document_id: str) -> Mapping[str, Any]:
         ...
@@ -68,6 +98,8 @@ class TransactionObserver(Protocol):
         change_set: ChangeSet,
         writable_change_set: Optional[ChangeSet] = None,
         coverage: Optional[CanonicalCoverage] = None,
+        baseline_model: Optional[Mapping[str, Any]] = None,
+        record_in_history: bool = True,
     ) -> None:
         ...
 
@@ -89,6 +121,7 @@ class TransactionVerificationError(RuntimeError):
         observed_after_fingerprint: Optional[str] = None,
         observed_change_count: int = 0,
         source_file_changed: bool = False,
+        persistence_reconciliation: Optional[Mapping[str, Any]] = None,
         state_may_have_changed: Optional[bool] = None,
     ) -> None:
         super().__init__(message)
@@ -97,10 +130,11 @@ class TransactionVerificationError(RuntimeError):
         self.observed_after_fingerprint = observed_after_fingerprint
         self.observed_change_count = max(0, int(observed_change_count))
         self.source_file_changed = bool(source_file_changed)
+        self.persistence_reconciliation = dict(persistence_reconciliation or {})
         self.state_may_have_changed = (
             bool(state_may_have_changed)
             if state_may_have_changed is not None
-            else bool(not rollback_succeeded or source_file_changed)
+            else bool(not rollback_succeeded)
         )
 
     def to_public_dict(self) -> dict[str, Any]:
@@ -111,6 +145,7 @@ class TransactionVerificationError(RuntimeError):
             "observedAfterFingerprint": self.observed_after_fingerprint,
             "observedChangeCount": self.observed_change_count,
             "sourceFileChanged": self.source_file_changed,
+            "persistenceReconciliation": dict(self.persistence_reconciliation),
             "fontSaved": False,
         }
 
@@ -126,6 +161,9 @@ class TransactionResult:
     inverse: ChangeSet
     coverage: CanonicalCoverage = CanonicalCoverage.complete()
     source_file_changed: bool = False
+    persistence_reconciliation: Mapping[str, Any] = field(default_factory=dict)
+    history_change_count: int = 0
+    revert_available: bool = True
 
     @property
     def change_count(self) -> int:
@@ -151,10 +189,12 @@ class TransactionKernel:
         *,
         observer: Optional[TransactionObserver] = None,
         activity: Any = None,
+        persistence: Any = None,
     ) -> None:
         self._adapter = adapter
         self._observer = observer
         self._activity = activity
+        self._persistence = persistence
         self._diagnostic_timings: dict[str, Mapping[str, float]] = {}
         self._diagnostic_failures: dict[str, str] = {}
         self._timing_lock = RLock()
@@ -250,13 +290,53 @@ class TransactionKernel:
         return self._adapter.capture_model(document_id)
 
     def _capture_source_state(
-        self, document_id: str
+        self, document_id: str, *, include_model: bool = False
     ) -> Optional[Mapping[str, Any]]:
         capture = getattr(self._adapter, "capture_source_file_state", None)
         if not callable(capture):
             return None
-        value = capture(document_id)
+        try:
+            value = capture(document_id, include_model=include_model)
+        except TypeError:
+            value = capture(document_id)
         return dict(value) if isinstance(value, Mapping) else None
+
+    def _dirty_state(self, document_id: str) -> bool | None:
+        try:
+            for document in self._adapter.list_documents():  # type: ignore[attr-defined]
+                if str(getattr(document, "document_id", "")) == document_id:
+                    return getattr(document, "has_unsaved_changes", None)
+        except Exception:
+            pass
+        return None
+
+    def _commit_observer(
+        self,
+        token: Any,
+        document_id: str,
+        before: Mapping[str, Any],
+        after: Mapping[str, Any],
+        change_set: ChangeSet,
+        *,
+        writable_change_set: ChangeSet,
+        coverage: CanonicalCoverage,
+        baseline_model: Mapping[str, Any] | None = None,
+        record_in_history: bool = True,
+    ) -> None:
+        if self._observer is None:
+            return
+        commit = self._observer.commit_transaction
+        parameters = inspect.signature(commit).parameters
+        keywords: dict[str, Any] = {}
+        if "writable_change_set" in parameters:
+            keywords["writable_change_set"] = writable_change_set
+        if "coverage" in parameters:
+            keywords["coverage"] = coverage
+        if "baseline_model" in parameters:
+            keywords["baseline_model"] = baseline_model
+        if "record_in_history" in parameters:
+            keywords["record_in_history"] = record_in_history
+        commit(token, document_id, before, after, change_set, **keywords)
 
     @staticmethod
     def _source_state_changed(
@@ -330,13 +410,34 @@ class TransactionKernel:
         expected_after = self._retain_or_copy(plan.expected_after_model)
         source_before = self._capture_source_state(document_id)
         source_after = source_before
+        persistence_token = (
+            self._persistence.begin_transaction(document_id)
+            if self._persistence is not None
+            else None
+        )
+        persistence_reconciliation: Mapping[str, Any] = {
+            "relationship": "unchanged",
+            "saveObserved": False,
+            "saveEventCount": 0,
+            "saveEvents": [],
+            "sourceFileChanged": False,
+            "sourceFileFingerprintBefore": (
+                source_before.get("contentFingerprint")
+                if source_before is not None
+                else None
+            ),
+            "sourceFileFingerprintAfter": (
+                source_before.get("contentFingerprint")
+                if source_before is not None
+                else None
+            ),
+            "residualChangeCount": len(plan.observed_change_set.changes),
+            "documentDirtyAfter": self._dirty_state(document_id),
+            "evidenceCompleteness": "complete",
+        }
+        history_change_set = plan.observed_change_set
+        history_baseline = before
         trace_token = None
-        if self._observer is not None:
-            history_started = time.perf_counter_ns()
-            trace_token = self._observer.prepare_transaction(document_id, before)
-            timings["history"] += (
-                time.perf_counter_ns() - history_started
-            ) / 1_000_000
         begin_verified_transaction = getattr(
             self._adapter, "begin_verified_transaction", None
         )
@@ -346,6 +447,14 @@ class TransactionKernel:
         transaction_boundary_active = False
         failure_phase = "transaction_boundary"
         try:
+            if self._observer is not None:
+                history_started = time.perf_counter_ns()
+                trace_token = self._observer.prepare_transaction(
+                    document_id, before
+                )
+                timings["history"] += (
+                    time.perf_counter_ns() - history_started
+                ) / 1_000_000
             if callable(begin_verified_transaction) and callable(
                 end_verified_transaction
             ):
@@ -434,6 +543,19 @@ class TransactionKernel:
                     plan.verification_constraints,
                     phase="after",
                 )
+                if (
+                    self._persistence is not None
+                    and "persistence" in set(_request.get("fields") or ())
+                ):
+                    observations = dict(observations)
+                    observations[("__document__", "persistence")] = (
+                        self._persistence.persistence_state(
+                            document_id,
+                            live_model=actual_after,
+                            source_state=source_after,
+                            dirty=self._dirty_state(document_id),
+                        )
+                    )
                 live_evidence = evaluate_constraints(
                     actual_after,
                     plan.verification_constraints,
@@ -441,40 +563,78 @@ class TransactionKernel:
                     observations=observations,
                     effective_metadata=effective_metadata,
                 )
-                if live_evidence != plan.expected_constraint_evidence:
+                if _stable_constraint_items(live_evidence) != (
+                    _stable_constraint_items(plan.expected_constraint_evidence)
+                ):
                     raise RuntimeError(
                         "postcondition evidence did not match the immutable preview"
                     )
             source_after = self._capture_source_state(document_id)
             if self._source_state_changed(source_before, source_after):
-                raise RuntimeError(
-                    "the Glyphs source file changed during a verified mutation"
+                source_after = self._capture_source_state(
+                    document_id, include_model=True
                 )
+            if self._persistence is not None and persistence_token is not None:
+                resolved = self._persistence.reconcile_transaction(
+                    persistence_token,
+                    before_model=before,
+                    after_model=actual_after,
+                    source_before=source_before,
+                    source_after=source_after,
+                    dirty_after=self._dirty_state(document_id),
+                )
+                persistence_reconciliation = resolved.to_public_dict()
+                if isinstance(resolved.baseline_model, Mapping):
+                    history_baseline = resolved.baseline_model
+                    history_change_set = diff_models(
+                        history_baseline, actual_after
+                    )
+                else:
+                    history_change_set = plan.observed_change_set
+                rebase_tracking = getattr(
+                    self._adapter, "rebase_verified_change_tracking", None
+                )
+                if (
+                    callable(rebase_tracking)
+                    and isinstance(resolved.baseline_model, Mapping)
+                    and (resolved.save_observed or resolved.source_file_changed)
+                ):
+                    rebase_tracking(
+                        plan.operation_id,
+                        document_id=document_id,
+                        baseline_fingerprint=fingerprint_model(history_baseline),
+                        final_fingerprint=actual_fingerprint,
+                        keep_contribution=bool(history_change_set.changes),
+                    )
+            elif self._source_state_changed(source_before, source_after):
+                persistence_reconciliation = {
+                    **dict(persistence_reconciliation),
+                    "relationship": "source_changed_unclassified",
+                    "sourceFileChanged": True,
+                    "sourceFileFingerprintAfter": (
+                        source_after.get("contentFingerprint")
+                        if source_after is not None
+                        else None
+                    ),
+                    "evidenceCompleteness": "partial",
+                }
             timings["settled_verification"] += (
                 time.perf_counter_ns() - settled_started
             ) / 1_000_000
             if self._observer is not None:
                 history_started = time.perf_counter_ns()
                 failure_phase = "history"
-                commit = self._observer.commit_transaction
-                if "writable_change_set" in getattr(commit, "__annotations__", {}):
-                    commit(
-                        trace_token,
-                        document_id,
-                        before,
-                        actual_after,
-                        plan.observed_change_set,
-                        writable_change_set=plan.writable_change_set,
-                        coverage=plan.coverage,
-                    )
-                else:
-                    commit(
-                        trace_token,
-                        document_id,
-                        before,
-                        actual_after,
-                        plan.observed_change_set,
-                    )
+                self._commit_observer(
+                    trace_token,
+                    document_id,
+                    history_baseline,
+                    actual_after,
+                    history_change_set,
+                    writable_change_set=history_change_set,
+                    coverage=plan.coverage,
+                    baseline_model=history_baseline,
+                    record_in_history=bool(history_change_set.changes),
+                )
                 timings["history"] += (
                     time.perf_counter_ns() - history_started
                 ) / 1_000_000
@@ -533,7 +693,26 @@ class TransactionKernel:
             source_file_changed = self._source_state_changed(
                 source_before, source_final
             )
-            safe_restored = bool(rollback_succeeded and not source_file_changed)
+            if source_file_changed:
+                source_final = self._capture_source_state(
+                    document_id, include_model=True
+                )
+            if self._persistence is not None and persistence_token is not None:
+                try:
+                    resolved_failure = self._persistence.abort_transaction(
+                        persistence_token,
+                        before_model=before,
+                        restored_model=observed_after,
+                        source_before=source_before,
+                        source_after=source_final,
+                        dirty_after=self._dirty_state(document_id),
+                    )
+                    persistence_reconciliation = (
+                        resolved_failure.to_public_dict()
+                    )
+                except Exception:
+                    pass
+            safe_restored = bool(rollback_succeeded)
             observed_after_fingerprint = fingerprint_model(observed_after)
             observed_changes = diff_models(before, observed_after)
             finalize_failure = getattr(
@@ -552,27 +731,15 @@ class TransactionKernel:
             if self._observer is not None:
                 try:
                     if observed_changes.changes:
-                        commit = self._observer.commit_transaction
-                        if "writable_change_set" in getattr(
-                            commit, "__annotations__", {}
-                        ):
-                            commit(
-                                trace_token,
-                                document_id,
-                                before,
-                                observed_after,
-                                observed_changes,
-                                writable_change_set=observed_changes,
-                                coverage=plan.coverage,
-                            )
-                        else:
-                            commit(
-                                trace_token,
-                                document_id,
-                                before,
-                                observed_after,
-                                observed_changes,
-                            )
+                        self._commit_observer(
+                            trace_token,
+                            document_id,
+                            before,
+                            observed_after,
+                            observed_changes,
+                            writable_change_set=observed_changes,
+                            coverage=plan.coverage,
+                        )
                     else:
                         self._observer.abort_transaction(trace_token)
                 except Exception:
@@ -597,13 +764,22 @@ class TransactionKernel:
                 observed_after_fingerprint=observed_after_fingerprint,
                 observed_change_count=len(observed_changes.changes),
                 source_file_changed=source_file_changed,
+                persistence_reconciliation=persistence_reconciliation,
                 state_may_have_changed=bool(
-                    observed_changes.changes or source_file_changed or not safe_restored
+                    observed_changes.changes or not safe_restored
                 ),
             ) from exc
         finally:
-            if transaction_boundary_active:
-                end_verified_transaction(document_id)
+            try:
+                if transaction_boundary_active:
+                    end_verified_transaction(document_id)
+            finally:
+                if self._persistence is not None and persistence_token is not None:
+                    cancel = getattr(
+                        self._persistence, "cancel_transaction", None
+                    )
+                    if callable(cancel):
+                        cancel(persistence_token)
         from .mutation import writable_subset
 
         timings["total"] = float(plan.stage_timings.get("total", 0.0)) + (
@@ -623,11 +799,16 @@ class TransactionKernel:
             # derived effect makes the inverse stale before it is ever used.
             inverse=writable_subset(
                 actual_after,
-                plan.observed_change_set.inverse(),
+                history_change_set.inverse(),
                 capabilities=plan.capabilities,
             ),
             coverage=plan.coverage,
-            source_file_changed=False,
+            source_file_changed=bool(
+                persistence_reconciliation.get("sourceFileChanged")
+            ),
+            persistence_reconciliation=persistence_reconciliation,
+            history_change_count=len(history_change_set.changes),
+            revert_available=bool(history_change_set.changes),
         )
 
 

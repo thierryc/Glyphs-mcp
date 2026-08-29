@@ -104,6 +104,18 @@ class _FakeHost:
     def capture_model(self, _document_id):
         return copy.deepcopy(self.model)
 
+    def capture_source_file_state(self, _document_id, include_model=False):
+        state = {
+            "kind": "glyphs",
+            "exists": True,
+            "readable": True,
+            "contentFingerprint": "sha256:" + "a" * 64,
+            "filePath": "/tmp/Alpha.glyphs",
+        }
+        if include_model:
+            state["savedModel"] = copy.deepcopy(self.model)
+        return state
+
     def scripting_runtime_safety_status(self):
         return {
             "state": "healthy",
@@ -146,6 +158,8 @@ class V2ApplicationTests(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual(payload["data"]["apiMajor"], 2)
         self.assertIn("permanent_python_fallback", payload["data"]["capabilities"])
+        self.assertIn("save_tolerant_transactions", payload["data"]["capabilities"])
+        self.assertIn("detached_read_only_python", payload["data"]["capabilities"])
         self.assertEqual(
             payload["data"]["registries"]["pythonModes"],
             ["read_only", "staged_document", "live_open_world"],
@@ -214,6 +228,62 @@ class V2ApplicationTests(unittest.TestCase):
         self.assertTrue(second["ok"])
         self.assertNotEqual(
             second["data"]["items"][0]["id"], glyph["id"]
+        )
+
+    def test_generic_predicates_numeric_order_reducers_and_persistence(self) -> None:
+        host = _FakeHost()
+        host.model["glyphs"]["A"]["layers"][0]["width"] = 900
+        host.model["glyphs"]["B"]["layers"][0]["width"] = 120
+        app = GlyphsMCPApplication(host)
+        selected = app.invoke(
+            "read_document",
+            {
+                "documentId": "doc_alpha",
+                "selector": {
+                    "entity": "layer",
+                    "predicate": {
+                        "op": "gte",
+                        "field": "width",
+                        "value": 100,
+                    },
+                    "orderBy": {
+                        "field": "width",
+                        "type": "number",
+                        "descending": True,
+                    },
+                },
+                "projection": {
+                    "fields": ["id", "width"],
+                    "reducers": [
+                        {"name": "count", "op": "count"},
+                        {"name": "averageWidth", "op": "average", "field": "width"},
+                    ],
+                },
+            },
+        ).to_dict()
+
+        self.assertTrue(selected["ok"])
+        self.assertEqual(
+            [item["values"]["width"] for item in selected["data"]["items"]],
+            [900, 120],
+        )
+        self.assertEqual(selected["data"]["reducers"], {"count": 2, "averageWidth": 510})
+
+        persistence = app.invoke(
+            "read_document",
+            {
+                "documentId": "doc_alpha",
+                "selector": {"entity": "document"},
+                "projection": {"fields": ["persistence"]},
+            },
+        ).to_dict()
+        state = persistence["data"]["items"][0]["values"]["persistence"]
+        self.assertEqual(state["liveDocumentFingerprint"], persistence["data"]["documentFingerprint"])
+        self.assertEqual(state["sourceFileFingerprint"], "sha256:" + "a" * 64)
+        self.assertEqual(state["saveEpoch"], 0)
+        self.assertEqual(
+            state["lastSavedDocumentFingerprint"],
+            state["liveDocumentFingerprint"],
         )
 
     def test_constraint_failures_are_evidence_not_transport_errors(self) -> None:

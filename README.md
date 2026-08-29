@@ -15,6 +15,9 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 
 - Typed edits use one detached simulation and verified transaction kernel,
   complete read-back, atomic restoration, and no implicit save.
+- Native Glyphs Save remains available between and during agent actions.
+  Verified live edits reconcile saved-before, saved-after, and intermediate
+  disk states instead of treating source-file drift as a document failure.
 - A Git-like semantic Change Log supports exact, conflict-aware selective
   revert. The independent Reporter displays the geometric before/current gap.
 - Staged Python previews structural changes on a detached clone and confirms by
@@ -37,9 +40,10 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
 ## Glyphs MCP 2.0
 
 The `lit/v2` branch contains the isolated 2.0 release candidate at
-[`src/glyphs-mcp-v2`](src/glyphs-mcp-v2). Its single catalog-driven surface
-covers bounded reads, production analysis, direct apply-first verified
-mutations, staged export, model-visible Python fallback, and document rollback.
+[`src/glyphs-mcp-v2`](src/glyphs-mcp-v2). Its 18-tool catalog-driven surface
+provides generic selectors, observations, predicates, reducers, constraints,
+immutable previews, verified writes, history, Knowledge, staged export,
+save-tolerant persistence, and permanent Python fallback.
 Stable process-local document IDs, fingerprint-bound pagination, one shared
 transaction kernel, redacted audit receipts, and the main-thread Glyphs 3.5/4
 adapter are implemented without loading the runtime into the installed 1.x
@@ -345,7 +349,7 @@ Glyphs MCP exposes one catalog-driven surface per installed Glyphs major:
 
 - Glyphs 3 keeps the frozen v1.11 catalog: 87 active tools, with 76
   model-visible tools and 11 app-only wrappers.
-- Glyphs 4 uses the v2 catalog: exactly 38 tools, all exposed to both the model
+- Glyphs 4 uses the v2 catalog: exactly 18 tools, all exposed to both the model
   and the app.
 
 Read `get_server_info.data.apiMajor` before selecting the corresponding

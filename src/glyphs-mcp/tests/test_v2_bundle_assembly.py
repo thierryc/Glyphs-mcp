@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import os
 import plistlib
@@ -28,6 +29,29 @@ def _file_map(root: Path) -> dict[str, bytes]:
 
 
 class V2BundleAssemblyTests(unittest.TestCase):
+    def test_builder_uses_the_closed_shared_resource_allowlist(self) -> None:
+        specification = importlib.util.spec_from_file_location(
+            "build_v2_runtime_payload", BUILDER
+        )
+        self.assertIsNotNone(specification)
+        module = importlib.util.module_from_spec(specification)
+        specification.loader.exec_module(module)
+        self.assertEqual(
+            set(module.V2_RESOURCE_ALLOWLIST),
+            {
+                "debug_event_logging.py",
+                "glyphs_plugin.py",
+                "i18n.py",
+                "plugin.py",
+                "security.py",
+                "status_panel_helpers.py",
+                "update_checker.py",
+                "update_helper.py",
+                "utils.py",
+                "versioning.py",
+            },
+        )
+
     def test_builder_output_is_relocatable_and_byte_deterministic(self) -> None:
         temporary_root = REPO / ".tmp"
         temporary_root.mkdir(exist_ok=True)
@@ -116,6 +140,15 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 self.assertNotIn("import code_execution", plugin_entry)
                 self.assertNotIn("import documentation_resources", plugin_entry)
                 self.assertNotIn("import kerning_resources", plugin_entry)
+                for legacy_name in (
+                    "code_execution.py",
+                    "documentation_resources.py",
+                    "kerning_resources.py",
+                    "mcp_tools_font.py",
+                    "mcp_tools_spacing.py",
+                    "spacing.py",
+                ):
+                    self.assertFalse((resources / legacy_name).exists())
 
                 plugin_runtime = (resources / "glyphs_plugin.py").read_text(encoding="utf-8")
                 self.assertIn("get_mcp_tool_registry", plugin_runtime)

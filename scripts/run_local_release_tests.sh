@@ -87,6 +87,13 @@ diff -qr "$payload_first" "$payload_second"
 echo "Checking canonical and packaged skill synchronization…"
 scripts/sync_codex_plugin_skills.sh --check
 "$python_bin" scripts/render_v2_command_reference.py --check
+if [[ -n "${GLYPHS_MCP_INSTALLED_V2_BUNDLE:-}" && -n "${GLYPHS_MCP_CODEX_CACHE:-}" ]]; then
+  echo "Checking installed Glyphs 4 runtime and local Codex cache identity…"
+  "$python_bin" scripts/verify_v2_local_install.py \
+    --expected-runtime-bundle "$payload_first/Plugins/Glyphs4/Glyphs MCP.glyphsPlugin" \
+    --runtime-bundle "$GLYPHS_MCP_INSTALLED_V2_BUNDLE" \
+    --codex-cache "$GLYPHS_MCP_CODEX_CACHE"
+fi
 if [[ ! -f "$skill_validator" ]]; then
   echo "Missing skill validator: $skill_validator" >&2
   echo "Set SKILL_VALIDATOR to the skill-creator quick_validate.py path." >&2

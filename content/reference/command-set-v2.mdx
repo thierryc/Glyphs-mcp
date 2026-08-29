@@ -36,7 +36,11 @@ tool identity, effect, category, and intent.
 - Entity kinds: `anchor`, `axis`, `class`, `document`, `feature`, `font`, `glyph`, `instance`, `kerning`, `layer`, `master`, `metric`, `node`, `number`, `prefix`, `shape`, `stem`.
 - Change operations: `duplicate`, `insert`, `move`, `remove`, `set`, `translate`.
 - Constraint operators: `eq`, `gt`, `gte`, `in_range`, `lt`, `lte`, `ne`, `within`.
-- Computed projections: `alignment`, `bounds`, `compilation.diagnostics`, `geometry.counts`, `geometry.transform`, `grid`, `inheritance.metrics`, `metadata.effective`, `ownership`, `spacing.horizontal`, `spacing.vertical`.
+- Computed projections: `alignment`, `bounds`, `compilation.diagnostics`, `geometry.counts`, `geometry.transform`, `grid`, `inheritance.metrics`, `metadata.effective`, `ownership`, `persistence`, `spacing.horizontal`, `spacing.vertical`.
+- Selector predicates: `and`, `contains`, `eq`, `exists`, `gt`, `gte`, `in`, `lt`, `lte`, `ne`, `not`, `or`.
+- Ordering modes: `auto`, `number`, `text`.
+- Reducers: `all`, `any`, `average`, `count`, `max`, `min`, `sum`.
+- Translation targets: `anchor`, `layer`, `node`, `shape`.
 - Observation operands use `observation.<projection>.<path>`, for
   example `observation.bounds.x` or
   `observation.alignment.effectiveLayerAlignment`.
@@ -47,10 +51,16 @@ tool identity, effect, category, and intent.
 - Knowledge supplies cited evidence, skills supply font-design and
   Glyphs expertise, and tools supply generic mechanics.
 - Every document mutation is previewed against exact identities and a
-  source fingerprint. `apply_change` consumes the stored patch without
+  live-document fingerprint. `apply_change` consumes the stored patch without
   rerunning planning or staged Python.
+- Native Glyphs saves are always allowed. They do not stale a preview
+  unless the live canonical document also changed. Active transactions
+  reconcile saved-before, saved-after, and saved-intermediate states.
+- `save_document` alone enforces source and destination file overwrite
+  preconditions. Live-document and file fingerprints are distinct.
 - `execute_python` is a permanent fallback with `read_only`,
-  `staged_document`, and `live_open_world` modes.
+  `staged_document`, and `live_open_world` modes. Document-bound
+  `read_only` code runs on a detached document and proves live purity.
 - Knowledge is pinned and searched offline; updates occur only through
   reviewed deterministic builds.
 - Saving, export publication, UI actions, runtime repair, and open-world

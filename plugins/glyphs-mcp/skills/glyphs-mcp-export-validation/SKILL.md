@@ -25,7 +25,7 @@ Classify the task as source readiness, existing-binary validation, or both.
 5. For existing binaries, inspect only user-supplied artifacts. Run available
    sanitizers and target profiles; label unavailable tools, platforms,
    baselines, or test fonts as `SKIP`, never `PASS`.
-6. Re-read the source fingerprint after read-only validation. Do not apply
+6. Re-read the live document fingerprint after read-only validation. Do not apply
    document changes or call `save_document` as part of validation.
 
 Use [the export-validation reference](references/export-validation.md) for

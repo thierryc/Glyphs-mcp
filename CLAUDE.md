@@ -22,6 +22,23 @@ Refer to `README.md` for the complete table of supported tools and descriptions.
 Use `src/glyphs-mcp-v2/README.md` for the generic 18-tool Glyphs 4/v2 contract;
 do not borrow v1 tools for v2 work.
 
+## Glyphs 4/v2 strategy
+
+V2 assigns facts to pinned Knowledge, judgment to managed skills, and generic
+mechanics to tools. Start with `get_server_info`, then use
+`list_documents`/`read_document`, observation-backed constraints, immutable
+`preview_change`, and exact `apply_change`. Use detached `read_only` or
+`staged_document` Python whenever the declarative surface is insufficient;
+reserve `live_open_world` for live-only APIs and explicit external effects.
+Python 3.14 fallback is permanent.
+
+The user may save in Glyphs at any time. A save-only event does not invalidate
+a preview or block document work. Active transactions retain an exactly
+verified live result and reconcile history against the latest decoded saved
+state. Only `save_document` enforces source/destination overwrite protection;
+never confuse its file fingerprints with the live canonical document
+fingerprint.
+
 ## Repository Layout Highlights
 - `src/glyphs-mcp/` — MCP implementation, plugin bundle, and helper scripts.
 - `src/glyphs-mcp-v2/` — Isolated, unreleased 2.0 typed runtime foundation on `lit/v2`.
@@ -65,6 +82,9 @@ Keep v2 environments and generated state inside `.venv-v2/`, `.cache/v2/`,
 - Docs index: `glyphs://glyphs-mcp/docs/index.json`
 
 ## Agent Execution Contract (Guide-Aligned)
+
+The commands below describe Glyphs 3/v1. V2 agents must follow the generic
+strategy above and the v2 runtime contract.
 - Read context before any mutation (`get_selected_font_and_master`, `get_selected_glyphs`, plus glyph detail/path reads as required).
 - Prefer dedicated tools first; use `execute_code_with_context` or `execute_code` early for complex multi-step workflows when one scripted pass is more reliable.
 - In `execute_code*`, validate targets before edits, keep scripts focused, and cap output with `max_output_chars` / `max_error_chars` when needed.
