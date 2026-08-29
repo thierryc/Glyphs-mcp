@@ -29,7 +29,7 @@ scripts/sync_codex_plugin_skills.sh --check
 Python 3.14 is the primary v2 release driver. The consolidated gate retains
 the Python 3.12/3.14 compatibility matrix and verifies exact dependencies,
 including `fontmake`,
-schema-v6 classification, deterministic payloads, Knowledge freshness,
+schema-v7 classification, deterministic payloads, Knowledge freshness,
 generated documentation, authored/packaged skill equality, Python tests, Xcode
 tests, and unsigned candidate metadata. Network-backed upstream drift checks
 run only when explicitly enabled. The gate does not sign, notarize, install,
@@ -63,7 +63,9 @@ Do not run v2 mutations, staged Python, or history gates on Glyphs 3.5.
 ## Glyphs 4 generic v2 matrix
 
 Record Glyphs build, Python version, bundle hash, server version, catalog size,
-discovery payload size, and disposable `documentId`.
+discovery payload size, and disposable `documentId`. After each restart,
+require `get_server_info.data.runtimeIdentity.codeHash` to match the installed
+payload; the `2.0.0` label alone is not build evidence.
 
 ### Runtime, reads, and constraints
 

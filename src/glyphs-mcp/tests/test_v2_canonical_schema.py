@@ -1,4 +1,4 @@
-"""Canonical schema-v6 coverage, provenance, and representation gates."""
+"""Canonical schema coverage, provenance, and representation gates."""
 
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ class _Collection(list):
         return range(len(self))
 
 
-class SchemaV6Tests(unittest.TestCase):
+class CanonicalSchemaTests(unittest.TestCase):
     def test_font_scalars_share_one_registry_driven_replay_contract(self) -> None:
         self.assertEqual(
             CANONICAL_SCHEMA.role_for("document.date"), FieldRole.WRITABLE
@@ -213,13 +213,13 @@ class SchemaV6Tests(unittest.TestCase):
         audit = audit_official_schema(changed, CANONICAL_SCHEMA)
         self.assertIn("document.futureGlyphsField", audit.unclassified)
 
-    def test_model_schema_and_bounded_coverage_are_v6(self) -> None:
-        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 6)
+    def test_model_schema_and_bounded_coverage_match(self) -> None:
+        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 7)
         coverage = CanonicalCoverage.complete().to_public_dict()
         self.assertEqual(
             coverage,
             {
-                "modelSchemaVersion": 6,
+                "modelSchemaVersion": 7,
                 "status": CoverageStatus.COMPLETE.value,
                 "opaqueChangeCount": 0,
                 "unsupportedChangeCount": 0,
@@ -1003,7 +1003,7 @@ class SchemaV6Tests(unittest.TestCase):
             "001",
         )
 
-    def test_editor_derived_verdicts_do_not_change_document_identity(self) -> None:
+    def test_glyph_editor_verdicts_do_not_change_document_identity(self) -> None:
         before = SerializedMappingSource(
             {
                 "fontMaster": [{"id": "M1", "name": "Regular"}],
@@ -1017,7 +1017,6 @@ class SchemaV6Tests(unittest.TestCase):
         ).capture()
         after = copy.deepcopy(before)
         after["glyphs"]["A"]["mastersCompatible"] = False
-        after["glyphs"]["A"]["layers"][0]["hasAlignedWidth"] = True
 
         self.assertEqual(fingerprint_model(before), fingerprint_model(after))
         self.assertFalse(complete_models_equal(before, after))
@@ -1214,11 +1213,11 @@ class SchemaV6Tests(unittest.TestCase):
             SerializedMappingSource(explicit).capture(),
         )
 
-    def test_independent_schema_v6_audit_passes_offline(self) -> None:
+    def test_independent_canonical_schema_audit_passes_offline(self) -> None:
         result = subprocess.run(
             [
                 sys.executable,
-                str(REPO / "scripts" / "audit_canonical_schema_v6.py"),
+                str(REPO / "scripts" / "audit_canonical_schema.py"),
                 "--repo-root",
                 str(REPO),
             ],
@@ -1229,7 +1228,7 @@ class SchemaV6Tests(unittest.TestCase):
         )
         payload = json.loads(result.stdout)
         self.assertEqual(payload["status"], "passed")
-        self.assertEqual(payload["coverage"]["modelSchemaVersion"], 6)
+        self.assertEqual(payload["coverage"]["modelSchemaVersion"], 7)
         self.assertEqual(payload["coverage"]["unclassifiedPropertyCount"], 0)
         self.assertEqual(
             payload["flattenedFieldSpecCount"],

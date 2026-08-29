@@ -155,6 +155,10 @@ class V2ApplicationTests(unittest.TestCase):
             {"set", "translate", "insert", "remove", "move", "duplicate"},
         )
         self.assertFalse(payload["data"]["knowledge"]["runtimeNetworkRequired"])
+        identity = payload["data"]["runtimeIdentity"]
+        self.assertEqual(identity["version"], "2.0.0")
+        self.assertRegex(identity["runtimeId"], r"^2\.0\.0\+[0-9a-f]{12}$")
+        self.assertRegex(identity["codeHash"], r"^[0-9a-f]{64}$")
         validate(payload, TOOL_CATALOG["get_server_info"].output_schema)
 
     def test_list_documents_uses_stable_normative_ids(self) -> None:

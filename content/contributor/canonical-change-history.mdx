@@ -62,7 +62,7 @@ The tree descriptor carries two independent versions. `schemaVersion` describes
 the content-addressed storage layout. `modelSchemaVersion` describes the
 semantic font projection. They must never be treated as interchangeable. The
 descriptor declares `reversibilityCoverage: complete_semantic_state` for model
-schema v6. This means every saved-document property in the pinned official
+schema v7. This means every saved-document property in the pinned official
 Glyphs File Format v4 schema is classified and all canonical saved semantics
 participate in identity. It does not turn private native objects, volatile
 provenance, or UI session state into canonical content. Native archive evidence
@@ -77,12 +77,20 @@ principle on its name-keyed map. Master-owned layer membership is one bounded
 layer-entity change per glyph, and a duplicated master's kerning is one atomic
 partition; ordinary kerning batches remain one semantic change per pair.
 
-Schema v6 retains that collection kernel and adds a declarative per-field
+Schema v6 retained that collection kernel and added a declarative per-field
 registry aligned with the official v4 format. The registry declares official,
 native, serialized and canonical paths; normalization; role; identity; order;
 shard ownership; replay; and public redaction. A generated gate currently
 classifies all 293 official properties and wildcard containers; an upstream
 field can never default silently to opaque.
+
+Schema v7 keeps that coverage and makes the writable model authoritative:
+components store their official position, scale, angle, slant, and raw
+alignment mode once. Derived transforms and effective alignment are computed
+through projections and native observations instead of being duplicated as
+writable document fields. Nodes are first-class selectable entities, and the
+same registry-backed translation mechanics serve layers, shapes, nodes, and
+anchors.
 
 Master lifecycle replay also carries a small process-local execution context
 that identifies the native copy source. It is not font data and is never stored
@@ -93,7 +101,7 @@ hints, backgrounds, and other native fields that model schema v4 does not yet
 project. The tombstone is released after verified revert or successful save.
 
 The live adapter carries the same model as an immutable `CanonicalSnapshot`.
-Its exact schema-v6 document fingerprint is cached separately from an internal
+Its exact schema-v7 document fingerprint is cached separately from an internal
 content-tree hash. Root, glyph, and layer references are retained while native
 revision evidence agrees; a verified transition replaces only shards named by
 its semantic paths. A stable repeat capture therefore neither deep-copies nor

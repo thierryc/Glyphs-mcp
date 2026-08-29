@@ -15,13 +15,14 @@ Use [Release QA protocol](./release-qa-protocol.mdx) for the manual pre-publish 
 
 Version `2.0.0` (installer build `27`) uses an asymmetric host payload. Glyphs
 3.5 remains pinned to signed `v1.11.0` at `13ca805`; Glyphs 4 receives the
-generated schema-v6 v2 runtime. The two catalogs are intentionally different.
+generated schema-v7 v2 runtime. The two catalogs are intentionally different.
 
 Schema v5 is retained only as the `modeled_fields_only` unsigned regression
-baseline. Schema v6 is required before the signed 2.0 release: it classifies
+baseline. Schema v7 is required before the signed 2.0 release: it classifies
 the pinned official Glyphs File Format v4 schema completely, keeps the existing
 snapshot/transaction/revert kernel, and does not claim byte-for-byte ownership
-of private native or UI-session state.
+of private native or UI-session state. It also removes duplicated writable
+transform/alignment state and adds generic node-aware translation mechanics.
 
 Pinned knowledge dependencies live in
 `third_party/glyphs-file-format-v4/knowledge-dependencies.json`. Ordinary tests

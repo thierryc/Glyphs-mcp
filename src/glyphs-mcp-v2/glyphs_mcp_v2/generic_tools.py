@@ -9,12 +9,13 @@ the application and transaction kernel prove *what* will be written.
 from __future__ import annotations
 
 import copy
+import math
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Any, Iterable, Mapping, MutableMapping, Optional, Sequence
 
 from .canonical_collections import ORDER_TOKEN, entity_id, find_entity_index
-from .canonical_views import layer_anchors, layer_components, layer_paths, layer_shapes
+from .canonical_views import layer_anchors, layer_components, layer_paths
 from .semantic import ChangeSet, diff_models, semantic_value_at
 
 
@@ -28,6 +29,7 @@ ENTITY_KINDS = frozenset(
         "glyph",
         "layer",
         "shape",
+        "node",
         "anchor",
         "kerning",
         "feature",
@@ -50,6 +52,7 @@ COMPUTED_PROJECTIONS = frozenset(
         "bounds",
         "compilation.diagnostics",
         "geometry.counts",
+        "geometry.transform",
         "grid",
         "inheritance.metrics",
         "metadata.effective",
@@ -236,6 +239,29 @@ def _nested_references(
             source = layer.get("shapes", ())
         elif kind == "anchor":
             source = layer.get("anchors", ())
+        elif kind == "node":
+            for shape_id, shape in _collection_items(layer.get("shapes", ())):
+                if not isinstance(shape, Mapping) or str(shape.get("kind") or "") != "path":
+                    continue
+                path = shape.get("value")
+                if not isinstance(path, Mapping):
+                    continue
+                for node_id, node in _collection_items(path.get("nodes", ())):
+                    result.append(
+                        EntityReference(
+                            "node",
+                            node_id,
+                            layer_ref.path
+                            + ("shapes", shape_id, "value", "nodes", node_id),
+                            node,
+                            {
+                                **dict(layer_ref.parent),
+                                "layerId": layer_ref.identity,
+                                "shapeId": shape_id,
+                            },
+                        )
+                    )
+            continue
         else:
             continue
         for identity, item in _collection_items(source):
@@ -344,7 +370,7 @@ def resolve_selector(
         raise ValueError("selector.entity is unsupported")
     if kind == "layer":
         values = _layer_references(model)
-    elif kind in {"shape", "anchor"}:
+    elif kind in {"shape", "node", "anchor"}:
         values = _nested_references(model, kind)
     elif kind == "kerning":
         values = _kerning_references(model)
@@ -395,16 +421,25 @@ def bind_relation_selector(
     if parent_reference.kind == "glyph" and child_kind in {
         "layer",
         "shape",
+        "node",
         "anchor",
     }:
         implicit["glyphName"] = parent_reference.identity
     elif parent_reference.kind == "master" and child_kind in {"layer", "kerning"}:
         implicit["masterId"] = parent_reference.identity
-    elif parent_reference.kind == "layer" and child_kind in {"shape", "anchor"}:
+    elif parent_reference.kind == "layer" and child_kind in {"shape", "node", "anchor"}:
         implicit.update(
             {
                 "glyphName": str(parent_reference.parent.get("glyphName") or ""),
                 "layerId": parent_reference.identity,
+            }
+        )
+    elif parent_reference.kind == "shape" and child_kind == "node":
+        implicit.update(
+            {
+                "glyphName": str(parent_reference.parent.get("glyphName") or ""),
+                "layerId": str(parent_reference.parent.get("layerId") or ""),
+                "shapeId": parent_reference.identity,
             }
         )
     requested_parent = bound.get("parent") or {}
@@ -477,6 +512,38 @@ def _spacing_projection(
         "leadingBearing": leading,
         "trailingBearing": trailing,
     }
+
+
+def _affine_transform(value: Mapping[str, Any]) -> Optional[list[float]]:
+    """Derive one affine matrix from the authoritative saved decomposition."""
+
+    position = value.get("position")
+    scale = value.get("scale", (1, 1))
+    slant = value.get("slant", (0, 0))
+    if not all(
+        isinstance(item, (list, tuple)) and len(item) == 2
+        for item in (position, scale, slant)
+    ):
+        return None
+    try:
+        px, py = (float(position[0]), float(position[1]))
+        sx, sy = (float(scale[0]), float(scale[1]))
+        slant_x, slant_y = (float(slant[0]), float(slant[1]))
+        angle = math.radians(float(value.get("angle") or 0))
+    except (TypeError, ValueError):
+        return None
+    horizontal_slant = math.tan(math.radians(slant_x))
+    vertical_slant = math.tan(math.radians(slant_y))
+    cosine = math.cos(angle)
+    sine = math.sin(angle)
+    return [
+        sx * (cosine - sine * vertical_slant),
+        sx * (sine + cosine * vertical_slant),
+        sy * (horizontal_slant * cosine - sine),
+        sy * (horizontal_slant * sine + cosine),
+        px,
+        py,
+    ]
 
 
 def project_reference(
@@ -566,6 +633,20 @@ def project_reference(
                 }
                 provenance[field] = "derived"
             continue
+        if field == "geometry.transform":
+            shape = reference.value if reference.kind == "shape" else None
+            value = shape.get("value") if isinstance(shape, Mapping) else None
+            kind = str(shape.get("kind") or "") if isinstance(shape, Mapping) else ""
+            transform = (
+                _affine_transform(value)
+                if kind in {"component", "image"} and isinstance(value, Mapping)
+                else None
+            )
+            values[field] = transform
+            provenance[field] = "derived" if transform is not None else "unavailable"
+            if transform is None:
+                missing.append(field)
+            continue
         if field == "alignment":
             if reference.kind != "layer" or not isinstance(reference.value, Mapping):
                 values[field] = None
@@ -573,20 +654,25 @@ def project_reference(
                 missing.append(field)
             else:
                 components = layer_components(reference.value)
+                modes = [int(component.get("alignment", 0)) for component in components]
                 values[field] = {
                     "hasAlignedWidth": observation.get("hasAlignedWidth"),
-                    "automaticComponentCount": sum(
-                        bool(component.get("automaticAlignment"))
-                        for component in components
+                    "effectiveLayerAlignment": observation.get("isAligned"),
+                    "configuredAutomaticComponentCount": sum(
+                        mode != -1 for mode in modes
                     ),
+                    "modeCounts": {
+                        str(mode): sum(value == mode for value in modes)
+                        for mode in (-1, 0, 1, 3)
+                    },
                     "componentCount": len(components),
                 }
                 provenance[field] = (
                     "native+derived"
-                    if "hasAlignedWidth" in observation
+                    if {"hasAlignedWidth", "isAligned"}.issubset(observation)
                     else "derived"
                 )
-                if "hasAlignedWidth" not in observation:
+                if not {"hasAlignedWidth", "isAligned"}.issubset(observation):
                     missing.append(field)
             continue
         if field == "inheritance.metrics":
@@ -662,12 +748,83 @@ def project_reference(
     }
 
 
+def _observation_field(field: str) -> Optional[tuple[str, str]]:
+    prefix = "observation."
+    if not str(field).startswith(prefix):
+        return None
+    requested = str(field)[len(prefix) :]
+    for projection in sorted(COMPUTED_PROJECTIONS, key=len, reverse=True):
+        if requested == projection:
+            return projection, ""
+        if requested.startswith(projection + "."):
+            return projection, requested[len(projection) + 1 :]
+    raise ValueError("observation field uses an unsupported projection")
+
+
+def constraint_observation_request(
+    model: Mapping[str, Any],
+    constraints: Sequence[Mapping[str, Any]],
+    *,
+    phase: str,
+) -> dict[str, Any]:
+    """Return the exact observation scope needed by one constraint phase."""
+
+    fields: set[str] = set()
+    glyph_names: set[str] = set()
+    for raw in constraints:
+        constraint = _mapping(raw, name="constraint")
+        if str(constraint.get("phase") or "before") != phase:
+            continue
+        for side in ("left", "right"):
+            operand = constraint.get(side)
+            if not isinstance(operand, Mapping) or str(operand.get("kind") or "") != "field":
+                continue
+            observed = _observation_field(str(operand.get("field") or ""))
+            if observed is None:
+                continue
+            fields.add(observed[0])
+            selector = operand.get("selector")
+            if not isinstance(selector, Mapping):
+                continue
+            for reference in resolve_selector(model, selector):
+                glyph_name = (
+                    reference.identity
+                    if reference.kind == "glyph"
+                    else str(reference.parent.get("glyphName") or "")
+                )
+                if glyph_name:
+                    glyph_names.add(glyph_name)
+    return {
+        "fields": tuple(sorted(fields)),
+        "glyphNames": tuple(sorted(glyph_names)),
+        "includeGeometry": bool(
+            fields.intersection({"bounds", "spacing.horizontal", "spacing.vertical"})
+        ),
+        "includeMetrics": bool(
+            fields.intersection(
+                {"spacing.horizontal", "spacing.vertical", "inheritance.metrics"}
+            )
+        ),
+        "resolveMetrics": "inheritance.metrics" in fields,
+    }
+
+
 def _selector_operand(
-    model: Mapping[str, Any], operand: Mapping[str, Any]
-) -> tuple[bool, Any, Optional[dict[str, Any]]]:
+    model: Mapping[str, Any],
+    operand: Mapping[str, Any],
+    *,
+    observations: Mapping[tuple[str, str], Mapping[str, Any]],
+    effective_metadata: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
     kind = str(operand.get("kind") or "")
     if kind == "literal":
-        return True, copy.deepcopy(operand.get("value")), None
+        return {
+            "present": True,
+            "value": copy.deepcopy(operand.get("value")),
+            "target": None,
+            "provenance": "literal",
+            "completeness": "complete",
+        }
     if kind == "reference":
         selector = operand.get("selector")
         if not isinstance(selector, Mapping):
@@ -676,7 +833,13 @@ def _selector_operand(
         if len(references) != 1:
             raise ValueError("reference operands must resolve exactly one entity")
         identity = references[0].public_identity()
-        return True, identity, identity
+        return {
+            "present": True,
+            "value": identity,
+            "target": identity,
+            "provenance": "canonical",
+            "completeness": "complete",
+        }
     if kind != "field":
         raise ValueError(
             "constraint operands require kind=literal, kind=field, or kind=reference"
@@ -688,8 +851,39 @@ def _selector_operand(
     references = resolve_selector(model, selector)
     if len(references) != 1:
         raise ValueError("field operands must resolve exactly one entity")
-    present, value = _nested_value(references[0].value, field)
-    return present, value, references[0].public_identity()
+    reference = references[0]
+    target = {**reference.public_identity(), "field": field}
+    observed = _observation_field(field)
+    if observed is None:
+        present, value = _nested_value(reference.value, field)
+        return {
+            "present": present,
+            "value": value,
+            "target": target,
+            "provenance": "canonical" if present else "unavailable",
+            "completeness": "complete" if present else "unavailable",
+        }
+    projection, nested = observed
+    item = project_reference(
+        reference,
+        {"fields": [projection], "includeProvenance": True},
+        observations=observations,
+        effective_metadata=effective_metadata,
+    )
+    projected = item.get("values", {}).get(projection)
+    present, value = _nested_value(projected, nested)
+    provenance = str(item.get("provenance", {}).get(projection) or "unavailable")
+    return {
+        "present": present and provenance != "unavailable" and value is not None,
+        "value": value,
+        "target": target,
+        "provenance": provenance,
+        "completeness": (
+            "complete"
+            if present and provenance != "unavailable" and value is not None
+            else "unavailable"
+        ),
+    }
 
 
 def _compare(left: Any, operator: str, right: Any, tolerance: Any) -> bool:
@@ -720,7 +914,12 @@ def _compare(left: Any, operator: str, right: Any, tolerance: Any) -> bool:
 
 
 def evaluate_constraints(
-    model: Mapping[str, Any], constraints: Sequence[Mapping[str, Any]], *, phase: str
+    model: Mapping[str, Any],
+    constraints: Sequence[Mapping[str, Any]],
+    *,
+    phase: str,
+    observations: Optional[Mapping[tuple[str, str], Mapping[str, Any]]] = None,
+    effective_metadata: Optional[Mapping[str, Mapping[str, Any]]] = None,
 ) -> dict[str, Any]:
     items: list[dict[str, Any]] = []
     for index, raw in enumerate(constraints):
@@ -733,12 +932,22 @@ def evaluate_constraints(
             raise ValueError("constraint.operator is unsupported")
         label = str(constraint.get("label") or "constraint-{}".format(index + 1))
         try:
-            left_present, left, left_target = _selector_operand(
-                model, _mapping(constraint.get("left"), name="constraint.left")
+            left_evidence = _selector_operand(
+                model,
+                _mapping(constraint.get("left"), name="constraint.left"),
+                observations=observations or {},
+                effective_metadata=effective_metadata or {},
             )
-            right_present, right, right_target = _selector_operand(
-                model, _mapping(constraint.get("right"), name="constraint.right")
+            right_evidence = _selector_operand(
+                model,
+                _mapping(constraint.get("right"), name="constraint.right"),
+                observations=observations or {},
+                effective_metadata=effective_metadata or {},
             )
+            left_present = bool(left_evidence["present"])
+            right_present = bool(right_evidence["present"])
+            left = left_evidence["value"]
+            right = right_evidence["value"]
             passed = bool(
                 left_present
                 and right_present
@@ -748,7 +957,11 @@ def evaluate_constraints(
         except (TypeError, ValueError) as exc:
             left_present = right_present = False
             left = right = None
-            left_target = right_target = None
+            left_evidence = right_evidence = {
+                "target": None,
+                "provenance": "unavailable",
+                "completeness": "unavailable",
+            }
             passed = False
             error = str(exc)
         items.append(
@@ -761,8 +974,12 @@ def evaluate_constraints(
                 "rightPresent": right_present,
                 "left": copy.deepcopy(left),
                 "right": copy.deepcopy(right),
-                "leftTarget": left_target,
-                "rightTarget": right_target,
+                "leftTarget": left_evidence["target"],
+                "rightTarget": right_evidence["target"],
+                "leftProvenance": left_evidence["provenance"],
+                "rightProvenance": right_evidence["provenance"],
+                "leftCompleteness": left_evidence["completeness"],
+                "rightCompleteness": right_evidence["completeness"],
                 "error": error,
             }
         )
@@ -857,67 +1074,108 @@ def _quantize(value: Any, model: Mapping[str, Any], quantizer: str) -> Any:
     return _public_number((number / step).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * step)
 
 
-def _assert_translatable(layer: Mapping[str, Any]) -> None:
-    if bool(layer.get("locked")):
-        raise ValueError("locked layer geometry cannot be translated")
-    for shape in layer_shapes(layer):
-        if bool(shape.get("locked")):
-            raise ValueError("locked shape geometry cannot be translated")
-        if str(shape.get("kind") or "") not in {"path", "component"}:
-            raise ValueError("unsupported foreground shapes cannot be translated")
-    for path in layer_paths(layer):
-        for node in path.get("nodes") or ():
-            if not isinstance(node, Mapping) or bool(node.get("locked")):
-                raise ValueError("locked or unverifiable nodes cannot be translated")
-    for component in layer_components(layer):
-        if bool(component.get("locked")):
-            raise ValueError("locked component geometry cannot be translated")
-        if bool(component.get("automaticAlignment")):
-            raise ValueError("automatic component alignment must be cleared explicitly")
-    for anchor in layer_anchors(layer):
-        if bool(anchor.get("locked")):
-            raise ValueError("locked anchors cannot be translated")
+def _translate_node(
+    node: MutableMapping[str, Any], x: Decimal, y: Decimal
+) -> list[tuple[str, ...]]:
+    touched: list[tuple[str, ...]] = []
+    if x:
+        node["x"] = _public_number(
+            _finite_number(node.get("x"), name="node x") + x
+        )
+        touched.append(("x",))
+    if y:
+        node["y"] = _public_number(
+            _finite_number(node.get("y"), name="node y") + y
+        )
+        touched.append(("y",))
+    return touched
 
 
-def _translate_layer(layer: MutableMapping[str, Any], x: Any, y: Any) -> None:
-    x_number = _finite_number(x, name="translation x")
-    y_number = _finite_number(y, name="translation y")
-    _assert_translatable(layer)
-    for path in layer_paths(layer):
-        for node in path.get("nodes") or ():
+def _translate_position(
+    value: MutableMapping[str, Any], x: Decimal, y: Decimal
+) -> list[tuple[str, ...]]:
+    position = list(value.get("position") or ())
+    if len(position) != 2:
+        raise ValueError("translation target position is incomplete")
+    if x:
+        position[0] = _public_number(
+            _finite_number(position[0], name="position x") + x
+        )
+    if y:
+        position[1] = _public_number(
+            _finite_number(position[1], name="position y") + y
+        )
+    value["position"] = position
+    return [("position",)]
+
+
+def _translate_shape(
+    shape: MutableMapping[str, Any], x: Decimal, y: Decimal
+) -> list[tuple[str, ...]]:
+    kind = str(shape.get("kind") or "")
+    value = shape.get("value")
+    if not isinstance(value, MutableMapping):
+        raise ValueError("shape value must be a writable object")
+    if kind == "path":
+        touched: list[tuple[str, ...]] = []
+        for node_id, node in _collection_items(value.get("nodes", ())):
             if not isinstance(node, MutableMapping):
                 raise ValueError("path nodes must be writable objects")
-            node["x"] = _public_number(_finite_number(node.get("x"), name="node x") + x_number)
-            node["y"] = _public_number(_finite_number(node.get("y"), name="node y") + y_number)
-    for component in layer_components(layer):
-        if not isinstance(component, MutableMapping):
-            raise ValueError("components must be writable objects")
-        position = list(component.get("position") or ())
-        transform = list(component.get("transform") or ())
-        if len(position) != 2 or len(transform) != 6:
-            raise ValueError("component transform is incomplete")
-        position[0] = _public_number(_finite_number(position[0], name="component x") + x_number)
-        position[1] = _public_number(_finite_number(position[1], name="component y") + y_number)
-        transform[4] = _public_number(_finite_number(transform[4], name="component transform x") + x_number)
-        transform[5] = _public_number(_finite_number(transform[5], name="component transform y") + y_number)
-        component["position"] = position
-        component["transform"] = transform
-    anchors = layer.get("anchors")
-    for _identity_value, anchor in _collection_items(anchors):
-        if isinstance(anchor, MutableMapping):
-            position = list(anchor.get("position") or ())
-            if len(position) != 2:
-                raise ValueError("anchor position is incomplete")
-            position[0] = _public_number(_finite_number(position[0], name="anchor x") + x_number)
-            position[1] = _public_number(_finite_number(position[1], name="anchor y") + y_number)
-            anchor["position"] = position
-        elif isinstance(anchors, MutableMapping):
-            position = list(anchor or ())
-            if len(position) != 2:
-                raise ValueError("anchor position is incomplete")
-            position[0] = _public_number(_finite_number(position[0], name="anchor x") + x_number)
-            position[1] = _public_number(_finite_number(position[1], name="anchor y") + y_number)
-            anchors[_identity_value] = position
+            touched.extend(
+                ("value", "nodes", node_id) + path
+                for path in _translate_node(node, x, y)
+            )
+        return touched
+    if kind in {"component", "image"}:
+        return [("value",) + path for path in _translate_position(value, x, y)]
+    return []
+
+
+def _translate_anchor(
+    anchor: MutableMapping[str, Any], x: Decimal, y: Decimal
+) -> list[tuple[str, ...]]:
+    return _translate_position(anchor, x, y)
+
+
+def _translate_layer(
+    layer: MutableMapping[str, Any], x: Decimal, y: Decimal
+) -> list[tuple[str, ...]]:
+    touched: list[tuple[str, ...]] = []
+    for shape_id, shape in _collection_items(layer.get("shapes", ())):
+        if not isinstance(shape, MutableMapping):
+            raise ValueError("layer shapes must be writable objects")
+        touched.extend(
+            ("shapes", shape_id) + path
+            for path in _translate_shape(shape, x, y)
+        )
+    for anchor_id, anchor in _collection_items(layer.get("anchors", ())):
+        if not isinstance(anchor, MutableMapping):
+            raise ValueError("layer anchors must be writable objects")
+        touched.extend(
+            ("anchors", anchor_id) + path
+            for path in _translate_anchor(anchor, x, y)
+        )
+    return touched
+
+
+_TRANSLATORS = {
+    "layer": _translate_layer,
+    "shape": _translate_shape,
+    "node": _translate_node,
+    "anchor": _translate_anchor,
+}
+
+
+def _translate_reference(
+    reference: EntityReference, x: Decimal, y: Decimal
+) -> list[tuple[str, ...]]:
+    translator = _TRANSLATORS.get(reference.kind)
+    if translator is None or not isinstance(reference.value, MutableMapping):
+        raise ValueError("{} entities have no translatable coordinates".format(reference.kind))
+    touched = translator(reference.value, x, y)
+    if not touched:
+        raise ValueError("translation target contains no coordinate-bearing geometry")
+    return touched
 
 
 def _collection_for_insert(
@@ -1119,25 +1377,29 @@ def build_change_set(
             delta = _mapping(operation.get("delta") or {}, name="operation.delta")
             x = _quantize(delta.get("x", 0), candidate, quantizer)
             y = _quantize(delta.get("y", 0), candidate, quantizer)
+            x_number = _finite_number(x, name="translation x")
+            y_number = _finite_number(y, name="translation y")
+            if not x_number and not y_number:
+                raise ValueError("translation delta must change at least one axis")
             for reference in references:
-                if reference.kind != "layer":
-                    raise ValueError("translate operations target layers")
                 refreshed = resolve_selector(
                     candidate,
                     {
-                        "entity": "layer",
+                        "entity": reference.kind,
                         "ids": [reference.identity],
-                        "parent": {
-                            "glyphName": reference.parent.get("glyphName", "")
-                        },
+                        "parent": dict(reference.parent),
                     },
                 )
                 if len(refreshed) != 1 or not isinstance(
                     refreshed[0].value, MutableMapping
                 ):
                     raise ValueError("translation target disappeared")
-                _translate_layer(refreshed[0].value, x, y)
-                resolved_paths.append(list(reference.path))
+                resolved_paths.extend(
+                    list(refreshed[0].path + path)
+                    for path in _translate_reference(
+                        refreshed[0], x_number, y_number
+                    )
+                )
             normalized_values.update(
                 {"delta": {"x": x, "y": y}, "quantizer": quantizer}
             )
@@ -1274,6 +1536,7 @@ __all__ = [
     "OPERATION_KINDS",
     "build_change_set",
     "bind_relation_selector",
+    "constraint_observation_request",
     "evaluate_constraints",
     "project_reference",
     "resolve_selector",

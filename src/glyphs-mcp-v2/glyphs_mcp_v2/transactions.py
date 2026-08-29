@@ -14,6 +14,7 @@ from uuid import uuid4
 
 from .canonical_tree import CanonicalSnapshot
 from .canonical_schema import CanonicalCoverage
+from .observations import collect_constraint_context
 from .semantic import ChangeSet, complete_models_equal, diff_models, fingerprint_model
 
 if TYPE_CHECKING:
@@ -423,6 +424,27 @@ class TransactionKernel:
                         _verification_residual_summary(residual),
                     )
                 )
+            if plan.verification_constraints:
+                from .generic_tools import evaluate_constraints
+
+                observations, effective_metadata, _request = collect_constraint_context(
+                    self._adapter,
+                    document_id,
+                    actual_after,
+                    plan.verification_constraints,
+                    phase="after",
+                )
+                live_evidence = evaluate_constraints(
+                    actual_after,
+                    plan.verification_constraints,
+                    phase="after",
+                    observations=observations,
+                    effective_metadata=effective_metadata,
+                )
+                if live_evidence != plan.expected_constraint_evidence:
+                    raise RuntimeError(
+                        "postcondition evidence did not match the immutable preview"
+                    )
             source_after = self._capture_source_state(document_id)
             if self._source_state_changed(source_before, source_after):
                 raise RuntimeError(

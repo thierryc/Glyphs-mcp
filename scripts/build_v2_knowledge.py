@@ -262,6 +262,63 @@ def curated_entries() -> list[dict[str, Any]]:
         )
         for identity, title, body, topics, keywords, authority in values
     ]
+    alignment = _entry(
+        identity="glyphs4.component-alignment-state",
+        title="Configured and effective component alignment in Glyphs 4",
+        body=(
+            "Glyphs file-format v4 stores the component alignment mode as an integer: "
+            "-1 disables automatic positioning, 0 requests contextual/default alignment, "
+            "1 forces alignment, and 3 requests horizontal-only alignment. The "
+            "GSComponent.automaticAlignment convenience getter reports whether the raw "
+            "mode is non-negative; it does not prove that alignment is effective in the "
+            "current layer. GSLayer.isAligned is the native layer-level observation that "
+            "reports whether components are effectively auto-aligned. Under the normal "
+            "eligibility rules, automatic alignment is enabled by default for "
+            "component-only layers and disabled when paths are present; the font-wide "
+            "Disable Automatic Alignment setting can also affect eligibility. Preserve "
+            "the raw mode during ordinary geometry translation and use detached native "
+            "read-back plus GSLayer.isAligned when effective behavior matters."
+        ),
+        source_url="https://docu.glyphsapp.com/",
+        source_path="GlyphsSDK/ObjectWrapper/GlyphsApp/__init__.py:10889",
+        authority="authoritative",
+        topics=["glyphs-python", "file-format", "outlines", "spacing"],
+        keywords=[
+            "GSLayer.isAligned",
+            "GSComponent.alignment",
+            "automaticAlignment",
+            "component alignment",
+        ],
+        glyphs_versions=["4"],
+        examples=[
+            "print({'effectiveLayerAlignment': bool(layer.isAligned), 'modes': [int(component.alignment) for component in layer.components]})"
+        ],
+        compatibility_notes=(
+            "The pinned Glyphs 4 schema defines modes -1, 0, 1, and 3. "
+            "Use GSLayer.isAligned for effective state rather than inferring it from mode 0."
+        ),
+    )
+    alignment["citations"] = [
+        {
+            "url": "https://docu.glyphsapp.com/",
+            "path": "GlyphsSDK/ObjectWrapper/GlyphsApp/__init__.py:10889",
+            "revision": GLYPHS_SDK_REVISION,
+            "verifiedAt": VERIFIED_AT,
+        },
+        {
+            "url": "https://github.com/schriftgestalt/GlyphsSDK/tree/Glyphs4/GlyphsFileFormat/Schemas",
+            "path": "GlyphsSDK/GlyphsFileFormat/Schemas/glyphs-4.schema.json:394",
+            "revision": GLYPHS_SDK_REVISION,
+            "verifiedAt": VERIFIED_AT,
+        },
+        {
+            "url": "https://handbook.glyphsapp.com/components/",
+            "path": "Documentations/Markdown/058_reusing-shapes_components.md",
+            "revision": CORPUS_VERSION,
+            "verifiedAt": VERIFIED_AT,
+        },
+    ]
+    entries.append(alignment)
     entries.extend(
         (
             _entry(

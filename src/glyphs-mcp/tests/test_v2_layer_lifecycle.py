@@ -61,7 +61,6 @@ def _layer(
         "roles": list(roles),
         "isMasterLayer": "master" in roles,
         "isSpecialLayer": bool(set(roles) & {"intermediate", "alternate", "smart"}),
-        "hasAlignedWidth": False,
         "interpolation": copy.deepcopy(interpolation),
         "attributes": {},
         "width": 600,
@@ -159,8 +158,8 @@ def _model() -> dict:
 
 
 class LayerLifecycleTests(unittest.TestCase):
-    def test_schema_v6_and_public_tools_are_explicit(self) -> None:
-        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 6)
+    def test_schema_v7_and_public_tools_are_explicit(self) -> None:
+        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 7)
         self.assertIn("read_document", TOOL_CATALOG)
         self.assertIn("preview_change", TOOL_CATALOG)
         self.assertIn("apply_change", TOOL_CATALOG)
@@ -235,8 +234,11 @@ class LayerLifecycleTests(unittest.TestCase):
         layer["components"] = [
             {
                 "name": "A.base",
-                "transform": [1, 0, 0, 1, 12, 0],
-                "automaticAlignment": True,
+                "position": [12, 0],
+                "scale": [1, 1],
+                "angle": 0,
+                "slant": [0, 0],
+                "alignment": 0,
             }
         ]
         observations = {
@@ -259,6 +261,7 @@ class LayerLifecycleTests(unittest.TestCase):
                 },
                 "stale": True,
                 "hasAlignedWidth": True,
+                "isAligned": False,
             }
         }
 
@@ -289,7 +292,8 @@ class LayerLifecycleTests(unittest.TestCase):
         self.assertEqual(values["inheritance.metrics"]["resolved"]["width"], 620)
         self.assertEqual(values["bounds"]["height"], 700)
         self.assertTrue(values["alignment"]["hasAlignedWidth"])
-        self.assertEqual(values["alignment"]["automaticComponentCount"], 1)
+        self.assertEqual(values["alignment"]["configuredAutomaticComponentCount"], 1)
+        self.assertFalse(values["alignment"]["effectiveLayerAlignment"])
         self.assertEqual(values["geometry.counts"]["componentCount"], 1)
 
     def test_duplicate_update_move_delete_and_inverse_share_one_builder(self) -> None:

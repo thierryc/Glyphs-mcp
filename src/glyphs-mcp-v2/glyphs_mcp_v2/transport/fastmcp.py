@@ -24,6 +24,7 @@ EntityKind = Literal[
     "glyph",
     "layer",
     "shape",
+    "node",
     "anchor",
     "kerning",
     "feature",

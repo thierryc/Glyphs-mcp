@@ -814,6 +814,11 @@ class _OutlinePath:
 class _OutlineComponent:
     def __init__(self, name):
         self.componentName = name
+        self.position = (0, 0)
+        self.scale = (1, 1)
+        self.rotation = 0
+        self.slant = (0, 0)
+        self.alignment = 0
         self.transform = (1, 0, 0, 1, 0, 0)
         self.automaticAlignment = True
 
@@ -1204,7 +1209,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(captured["masterId"], "master-2")
         self.assertEqual(captured["piece"], {"Width": 75})
 
-    def test_component_capture_derives_alignment_from_saved_fields(self) -> None:
+    def test_component_capture_keeps_only_authoritative_saved_fields(self) -> None:
         component = SimpleNamespace(
             componentName="A",
             position=(0, 0),
@@ -1228,8 +1233,8 @@ class V2DocumentAdapterTests(unittest.TestCase):
         captured = document_adapter._component_model(component)
 
         self.assertEqual(captured["alignment"], 0)
-        self.assertTrue(captured["automaticAlignment"])
-        self.assertEqual(captured["transform"], [1.0, 0.0, 0.0, 1.0, 0.0, 0.0])
+        self.assertNotIn("automaticAlignment", captured)
+        self.assertNotIn("transform", captured)
 
     def test_registered_mapping_field_replays_through_read_only_native_proxy(self) -> None:
         class Component:
@@ -2699,7 +2704,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
             "glyphs": {
                 "A": {
                     "name": "A",
-                    "layers": [{"id": "M1", "hasAlignedWidth": False}],
+                    "layers": [{"id": "M1"}],
                 }
             },
         }
@@ -2708,7 +2713,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
             "glyphs": {
                 "A": {
                     "name": "A",
-                    "layers": [{"id": "M1", "hasAlignedWidth": True}],
+                    "layers": [{"id": "M1"}],
                 }
             },
         }
@@ -2738,7 +2743,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
                     "A": {
                         "name": "A",
                         "mastersCompatible": True,
-                        "layers": [{"id": "M1", "hasAlignedWidth": True}],
+                        "layers": [{"id": "M1"}],
                     },
                     "B": {"name": "B", "layers": []},
                 },
@@ -7104,15 +7109,34 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertIn("evaluationCaptureMs", preview["stageTimings"])
         self.assertIn("replayCaptureMs", preview["stageTimings"])
         self.assertIn("maxNativePhaseMs", preview["stageTimings"])
-    def test_canonical_layer_records_native_width_ownership(self) -> None:
+    def test_canonical_layer_excludes_native_alignment_observations(self) -> None:
         path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
         component = _OutlineComponent("jdotless")
         layer = _OutlineLayer(path, component)
 
         model = native_layer_to_model(layer)
 
-        self.assertTrue(model["hasAlignedWidth"])
-        self.assertTrue(layer_components(model)[0]["automaticAlignment"])
+        self.assertNotIn("hasAlignedWidth", model)
+        self.assertEqual(layer_components(model)[0]["alignment"], 0)
+        self.assertNotIn("automaticAlignment", layer_components(model)[0])
+
+    def test_layer_observation_reports_native_effective_alignment(self) -> None:
+        path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
+        component = _OutlineComponent("acute")
+        layer = _OutlineLayer(path, component)
+        layer.isAligned = True
+        glyph = SimpleNamespace(name="Aacute", layers=[layer])
+        font = _TransactionalFont()
+        font.glyphs = [glyph]
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+
+        observations = host.inspect_layers(document_id, ("Aacute",))
+
+        self.assertTrue(observations[("Aacute", "master-regular")]["isAligned"])
+        self.assertTrue(
+            observations[("Aacute", "master-regular")]["hasAlignedWidth"]
+        )
 
     def test_staged_feature_addition_uses_opaque_native_replay_evidence(self) -> None:
         class Feature:
@@ -7373,7 +7397,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(layer.LSB, 73)
         self.assertEqual((layer.begin_count, layer.end_count), (1, 1))
 
-    def test_topology_compatible_component_delta_updates_transform_in_place(self) -> None:
+    def test_topology_compatible_component_delta_updates_position_in_place(self) -> None:
         path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
         component = _OutlineComponent("acute")
         layer = _OutlineLayer(path, component)
@@ -7381,11 +7405,11 @@ class V2DocumentAdapterTests(unittest.TestCase):
         font = SimpleNamespace(glyphs={"Aacute": glyph})
         before_component = {
             "name": "acute",
-            "transform": [1, 0, 0, 1, 12, 20],
+            "position": [12, 20],
         }
-        component.transform = tuple(before_component["transform"])
+        component.position = tuple(before_component["position"])
         after_component = copy.deepcopy(before_component)
-        after_component["transform"][4] = 37
+        after_component["position"][0] = 37
         current = {
             "glyphs": {
                 "Aacute": {
@@ -7411,7 +7435,7 @@ class V2DocumentAdapterTests(unittest.TestCase):
 
         self.assertIs(layer.components[0], component)
         self.assertEqual(component.componentName, "acute")
-        self.assertEqual(tuple(component.transform), (1, 0, 0, 1, 37, 20))
+        self.assertEqual(tuple(component.position), (37, 20))
         self.assertEqual((layer.begin_count, layer.end_count), (1, 1))
 
     def test_width_is_finalized_after_topology_compatible_outline_replay(self) -> None:
@@ -7499,12 +7523,12 @@ class V2DocumentAdapterTests(unittest.TestCase):
         target_layer = copy.deepcopy(current_layer)
         layer_paths(target_layer)[0]["nodes"][0]["x"] = 0
         layer_paths(target_layer)[0]["nodes"][1]["x"] = 100
-        layer_components(target_layer)[0]["transform"][4] = 20
+        layer_components(target_layer)[0]["position"][0] = 20
         current = {"glyphs": {"L": {"layers": {"master-regular": current_layer}}}}
         target = {"glyphs": {"L": {"layers": {"master-regular": target_layer}}}}
         replacement_path = _OutlinePath([_OutlineNode(0, 0), _OutlineNode(100, 0)])
         replacement_component = _OutlineComponent("acute")
-        replacement_component.transform = (1, 0, 0, 1, 20, 0)
+        replacement_component.position = (20, 0)
 
         with mock.patch.object(document_adapter, "_new_path", return_value=replacement_path), mock.patch.object(
             document_adapter, "_new_component", return_value=replacement_component

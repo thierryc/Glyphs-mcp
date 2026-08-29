@@ -1,10 +1,10 @@
 """Read-only projections over canonical layer collections.
 
-Schema v6 stores anchors and shapes as ordered identity-aware collections.
+Schema v7 stores anchors and shapes as ordered identity-aware collections.
 Keeping these projections here prevents workflows, the Reporter, and native
 replay from growing their own schema-specific interpretations.  The v5
 fallbacks are intentionally read-only and exist only for process-local test
-fixtures and stale-history diagnostics; v6 capture never emits them.
+fixtures and stale-history diagnostics; v7 capture never emits them.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from typing import Any
 
 
 _GLYPH_DERIVED_IDENTITY_FIELDS = frozenset({"mastersCompatible", "lastChange"})
-_LAYER_DERIVED_IDENTITY_FIELDS = frozenset({"hasAlignedWidth", "pathSignature"})
+_LAYER_DERIVED_IDENTITY_FIELDS = frozenset({"pathSignature"})
 
 
 def is_semantic_identity_path(path: Sequence[str]) -> bool:

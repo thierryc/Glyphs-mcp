@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent, read-only closure audit for canonical schema v6."""
+"""Independent, read-only closure audit for the canonical model schema."""
 
 from __future__ import annotations
 
@@ -72,7 +72,7 @@ def audit(repo: Path, *, check_upstream: bool) -> dict[str, object]:
         raise RuntimeError("flat/package canonical source fingerprints diverged")
 
     changed_model = copy.deepcopy(dict(flat_model))
-    changed_model["font"]["note"] = "independent v6 audit"
+    changed_model["font"]["note"] = "independent canonical audit"
     changed_model["glyphOrder"] = list(reversed(changed_model["glyphOrder"]))
     transition = diff_models(flat_model, changed_model)
     if transition.apply(flat_model) != changed_model:

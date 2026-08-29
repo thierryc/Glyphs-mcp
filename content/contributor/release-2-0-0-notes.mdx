@@ -14,15 +14,23 @@ reset, so removed tools have no aliases or transition wrappers.
 - The model-visible surface is 18 generic tools for discovery, canonical
   reads, constraints, immutable previews, verified apply, history, offline
   Knowledge, permanent Python fallback, export/save, UI, and runtime repair.
+- `get_server_info` reports the exact loaded `runtimeId` and full code hash, so
+  private builds can be distinguished without changing semantic version
+  `2.0.0`.
 - Knowledge supplies pinned cited facts, managed skills supply type-design and
   Glyphs expertise, and tools supply mechanics. Runtime mutation code contains
   no spacing taste, category heuristics, or workflow solver.
-- Canonical schema v6 classifies the saved semantic state covered by the pinned
+- Canonical schema v7 classifies the saved semantic state covered by the pinned
   Glyphs File Format v4 source while keeping volatile provenance and UI-session
-  state outside fingerprints.
+  state outside fingerprints. Authoritative component fields are stored once;
+  transforms and effective alignment are computed observations.
 - `EntitySelector`, `Projection`, `Constraint`, and `ChangeOperation` form one
   closed reusable language across glyph, layer, master, kerning, OpenType,
   instance, and export work.
+- One registry-backed translation mechanism serves layers, shapes, nodes, and
+  anchors. Locks and alignment modes are preserved as document state; detached
+  native execution and exact verification decide whether a requested effect is
+  feasible.
 - `preview_change` stores exact identities, dependencies, fingerprints,
   normalized physical operations, semantic diff, and constraint evidence.
   `apply_change` consumes that patch without rerunning planning.

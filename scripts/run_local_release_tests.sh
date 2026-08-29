@@ -51,13 +51,13 @@ echo "Checking target-aware version migration without changing the worktree…"
 
 echo "Checking pinned Glyphs format knowledge dependencies offline…"
 "$python_bin" scripts/release_security.py knowledge --repo-root "$repo_root"
-"$python_bin" scripts/audit_canonical_schema_v6.py --repo-root "$repo_root"
+"$python_bin" scripts/audit_canonical_schema.py --repo-root "$repo_root"
 if [[ "${GLYPHS_MCP_FULL_NETWORK:-0}" == "1" ]]; then
   echo "Comparing pinned Glyphs format dependencies with upstream heads…"
   "$python_bin" scripts/release_security.py knowledge \
     --repo-root "$repo_root" \
     --check-upstream
-  "$python_bin" scripts/audit_canonical_schema_v6.py \
+  "$python_bin" scripts/audit_canonical_schema.py \
     --repo-root "$repo_root" \
     --check-upstream
 fi

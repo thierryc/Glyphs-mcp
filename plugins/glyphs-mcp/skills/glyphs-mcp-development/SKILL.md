@@ -44,6 +44,13 @@ Add mechanics through the shared registries and transaction kernel instead of
 adding domain workflow endpoints. Keep schemas single-source and generated,
 run the v2 contract/bundle tests, and sync packaged skill mirrors.
 
+Do not encode workflow policy as mutation guards. Locks, component alignment
+configuration, glyph categories, and other design metadata are preserved by
+generic operations; detached native replay, requested-effect comparison,
+read-back constraints, and rollback determine mechanical feasibility. Add a
+registry capability or use permanent Python fallback instead of adding a
+task-specific public tool.
+
 Never install, reload, restart Glyphs, run the artifact, mutate a document,
 export, or call `save_document` without the user's separate request. Report
 paths, cited APIs, SDK revision, validation, and remaining manual tests.

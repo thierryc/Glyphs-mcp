@@ -154,6 +154,19 @@ class V2ContractTests(unittest.TestCase):
         self.assertNotIn("pageSize", read_parameters)
         self.assertNotIn("cursor", read_parameters)
 
+        node = EntitySelector.model_validate(
+            {
+                "entity": "node",
+                "ids": ["node:line:0"],
+                "parent": {
+                    "glyphName": "A",
+                    "layerId": "M1",
+                    "shapeId": "shape:path:0",
+                },
+            }
+        )
+        self.assertEqual(node.entity, "node")
+
     def test_constraints_support_literals_fields_and_exact_references(self) -> None:
         exact = Constraint.model_validate(
             {
@@ -183,6 +196,19 @@ class V2ContractTests(unittest.TestCase):
         )
         self.assertEqual(exact.left.kind, "reference")
         self.assertEqual(field.left.kind, "field")
+        observation = Constraint.model_validate(
+            {
+                "phase": "after",
+                "left": {
+                    "kind": "field",
+                    "selector": {"entity": "layer", "ids": ["L1"]},
+                    "field": "observation.spacing.horizontal.leadingBearing",
+                },
+                "operator": "eq",
+                "right": {"kind": "literal", "value": 40},
+            }
+        )
+        self.assertEqual(observation.left.field, "observation.spacing.horizontal.leadingBearing")
 
     def test_operation_registry_is_closed_and_physical(self) -> None:
         operations = {

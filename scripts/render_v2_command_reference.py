@@ -15,6 +15,17 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.catalog import TOOL_DEFINITIONS  # noqa: E402
+from glyphs_mcp_v2.canonical_tree import CANONICAL_MODEL_SCHEMA_VERSION  # noqa: E402
+from glyphs_mcp_v2.generic_tools import (  # noqa: E402
+    COMPUTED_PROJECTIONS,
+    CONSTRAINT_OPERATORS,
+    ENTITY_KINDS,
+    OPERATION_KINDS,
+)
+
+
+def _codes(values: object) -> str:
+    return ", ".join("`{}`".format(value) for value in sorted(values))
 
 
 def render() -> str:
@@ -45,6 +56,19 @@ def render() -> str:
         )
     lines.extend(
         [
+            "",
+            "## Shared mechanical vocabulary",
+            "",
+            "- Canonical model schema: `{}`.".format(
+                CANONICAL_MODEL_SCHEMA_VERSION
+            ),
+            "- Entity kinds: {}.".format(_codes(ENTITY_KINDS)),
+            "- Change operations: {}.".format(_codes(OPERATION_KINDS)),
+            "- Constraint operators: {}.".format(_codes(CONSTRAINT_OPERATORS)),
+            "- Computed projections: {}.".format(_codes(COMPUTED_PROJECTIONS)),
+            "- Observation operands use `observation.<projection>.<path>`, for",
+            "  example `observation.bounds.x` or",
+            "  `observation.alignment.effectiveLayerAlignment`.",
             "",
             "## Surface invariants",
             "",

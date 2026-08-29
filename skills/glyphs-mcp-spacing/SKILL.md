@@ -34,6 +34,18 @@ reject categories, or solve an underdetermined spacing request.
 Treat projected `leadingBearing` and `trailingBearing` as observations; writes
 still use the explicit physical operations below.
 
+The alignment projection separates configured component modes from effective
+native state:
+
+- `configuredAutomaticComponentCount` counts raw modes other than `-1`;
+- `modeCounts` reports raw `-1`, `0`, `1`, and `3` values;
+- `effectiveLayerAlignment` comes from native `GSLayer.isAligned`;
+- `hasAlignedWidth` remains a separate native observation.
+
+Mode `0` is contextual configuration, not proof that alignment is active. A
+mixed path/component layer can retain mode `0` while its complete foreground is
+translated normally.
+
 Partial observations are not proof. If bounds or metrics are unavailable, use
 bounded `execute_python(mode="read_only")` inspection or stop rather than
 inventing a value.
@@ -76,22 +88,28 @@ invariants in the explanation and preview.
 Express the result with `preview_change` using only physical operations:
 
 - `set` `width`, `vertOrigin`, or `vertWidth` for advances and origin;
-- `translate` the exact layer by explicit x/y deltas;
+- `translate` exact layers, shapes, nodes, or anchors by explicit x/y deltas;
 - when intentionally changing metrics inheritance or component alignment,
-  use explicit `set` operations for those canonical fields before translation.
+  use explicit `set` operations for those authoritative canonical fields.
 
 Use `quantizer="exact"` for an unsnapped value or `quantizer="grid"` for an
 explicit mechanical grid choice. The normalized preview must show the applied
-value or delta. Translation moves paths, components, and explicit anchors
-uniformly. Locks, structurally invalid geometry, and automatic component
-alignment remain hard integrity failures; glyph category, script, mark status,
-or a negative bearing do not.
+value or delta. Layer translation moves paths, components, images, and explicit
+anchors through the same coordinate registry. Locks and configured alignment
+modes are preserved metadata, not refusal policy. Detached native execution
+and exact read-back decide whether Glyphs can reproduce the requested result;
+structural invalidity, a missing coordinate payload, or a native rewrite of a
+requested effect blocks the preview. Glyph category, script, mark status, or a
+negative bearing never does.
 
 Add before constraints for the physical values the arithmetic assumed and
-after constraints for the physical fields it intends to write. References in
+after constraints for canonical fields and computed observations. Observation
+operands use explicit paths such as `observation.bounds.x`,
+`observation.spacing.horizontal.leadingBearing`, and
+`observation.alignment.configuredAutomaticComponentCount`. References in
 constraints must resolve exactly. Review the immutable preview for exact
 targets, source and proposed fingerprints, normalized operations, semantic
-diff, constraint evidence, warnings, and blockers.
+diff, constraint values, provenance, completeness, warnings, and blockers.
 
 After authorization, call `apply_change` with that `previewId`, its exact
 `documentId`, source fingerprint, and reason. Do not send the operations again:
@@ -102,8 +120,11 @@ should be undone. Never auto-save.
 
 ## Python fallback
 
-Generic reads and operations are preferred when they express the task. Python
-is permanent and available whenever they do not:
+Generic reads and operations are preferred when they express the task. A
+configured or effective alignment state is not by itself a reason to switch to
+Python: first request the physical operation and let detached verification
+decide. Python is permanent and available whenever generic mechanics do not
+express the task:
 
 - use `read_only` for bounded unsupported inspection;
 - use `staged_document` for unsupported structural or algorithmic document

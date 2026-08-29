@@ -57,13 +57,13 @@ creation, or upload unless the user explicitly expands the scope.
    `requirements-dev.txt`; missing or mismatched source-build tooling fails
    qualification. The gate then runs the complete Python suite, Xcode tests,
    shell syntax, patch whitespace, and an unsigned Debug build.
-   For schema v6 it also runs the offline knowledge/hash check and independent
-   canonical audit. Set `GLYPHS_MCP_FULL_NETWORK=1` for the final release run;
+   It also runs the offline knowledge/hash check and independent canonical
+   audit. Set `GLYPHS_MCP_FULL_NETWORK=1` for the final release run;
    upstream GlyphsSDK drift then fails closed pending manual review.
 
    ```bash
    python3 scripts/release_security.py knowledge --repo-root .
-   python3 scripts/audit_canonical_schema_v6.py --repo-root .
+   python3 scripts/audit_canonical_schema.py --repo-root .
    ```
 
 5. Build and validate documentation:

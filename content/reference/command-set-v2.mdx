@@ -11,7 +11,7 @@ tool identity, effect, category, and intent.
 
 | Tool | Effect | Category | Purpose |
 | --- | --- | --- | --- |
-| `get_server_info` | `read` | `server` | Read the v2 contract, permanent Python fallback, Knowledge version, host, and capabilities. |
+| `get_server_info` | `read` | `server` | Read the v2 contract, exact loaded-code identity, permanent Python fallback, Knowledge version, host, and capabilities. |
 | `list_documents` | `read` | `document` | List open Glyphs documents with stable process-local IDs. |
 | `read_document` | `read` | `document` | Read canonical entities and computed observations through one selector and projection. |
 | `evaluate_constraints` | `read` | `document` | Evaluate reusable field constraints without changing the document. |
@@ -29,6 +29,17 @@ tool identity, effect, category, and intent.
 | `open_document_view` | `ui` | `host` | Open exact glyphs in a Glyphs Edit tab without document mutation intent. |
 | `get_runtime_status` | `read` | `runtime` | Read strict Python runtime-interlock health and recovery evidence. |
 | `repair_runtime` | `code` | `runtime` | Repair manager-owned Python runtime-interlock state. |
+
+## Shared mechanical vocabulary
+
+- Canonical model schema: `7`.
+- Entity kinds: `anchor`, `axis`, `class`, `document`, `feature`, `font`, `glyph`, `instance`, `kerning`, `layer`, `master`, `metric`, `node`, `number`, `prefix`, `shape`, `stem`.
+- Change operations: `duplicate`, `insert`, `move`, `remove`, `set`, `translate`.
+- Constraint operators: `eq`, `gt`, `gte`, `in_range`, `lt`, `lte`, `ne`, `within`.
+- Computed projections: `alignment`, `bounds`, `compilation.diagnostics`, `geometry.counts`, `geometry.transform`, `grid`, `inheritance.metrics`, `metadata.effective`, `ownership`, `spacing.horizontal`, `spacing.vertical`.
+- Observation operands use `observation.<projection>.<path>`, for
+  example `observation.bounds.x` or
+  `observation.alignment.effectiveLayerAlignment`.
 
 ## Surface invariants
 

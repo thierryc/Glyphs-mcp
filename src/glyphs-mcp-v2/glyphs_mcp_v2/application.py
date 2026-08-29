@@ -35,6 +35,7 @@ from .generic_tools import (
     OPERATION_KINDS,
     bind_relation_selector,
     build_change_set as build_generic_change_set,
+    constraint_observation_request,
     evaluate_constraints as evaluate_generic_constraints,
     project_reference,
     resolve_selector,
@@ -48,13 +49,16 @@ from .operations import OperationRecord, OperationStore
 from .mutation import (
     CanonicalTargetMismatchError,
     MutationPlanner,
+    RequestedEffectMismatchError,
     unsupported_change_diagnostics,
     writable_subset,
     lifecycle_capabilities,
 )
+from .observations import collect_constraint_context, collect_native_observations
 from .pagination import CursorError, paginate
 from .ports import HostAccessError, ReadOnlyHost
 from .python_execution import PythonExecutionRequest, PythonExecutionService
+from .runtime_identity import loaded_runtime_identity
 from .runtime_safety import StaleScriptingRuntimeIncidentError
 from .semantic import (
     ChangeSet,
@@ -243,7 +247,7 @@ class GlyphsMCPApplication:
         self._audit = audit or AuditLog()
         if history is None:
             history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
-            history.reset_for_schema_change(5, 6)
+            history.reset_for_schema_change(6, 7)
         self.history = history
         self.lifecycle = DocumentHistoryLifecycle(
             self.history,
@@ -490,18 +494,6 @@ class GlyphsMCPApplication:
         )
         self._trace.observe_model(document_id, model)
         return model
-
-    def _effective_glyph_metadata(
-        self, document_id: str, glyph_names: Sequence[str] = ()
-    ) -> Mapping[str, Mapping[str, Any]]:
-        inspector = getattr(self._host, "inspect_glyph_metadata", None)
-        if not callable(inspector):
-            return {}
-        try:
-            observed = inspector(document_id, tuple(glyph_names))
-        except HostAccessError:
-            return {}
-        return dict(observed) if isinstance(observed, Mapping) else {}
 
     def _read_tree_references(
         self,
@@ -817,55 +809,17 @@ class GlyphsMCPApplication:
                 if reference.kind == "glyph"
                 else str(reference.parent.get("glyphName") or "")
                 for reference in all_references
-                if reference.kind in {"glyph", "layer", "shape", "anchor"}
+                if reference.kind in {"glyph", "layer", "shape", "node", "anchor"}
             }
             - {""}
         )
-        observations: Mapping[tuple[str, str], Mapping[str, Any]] = {}
         fields = self._read_projection_fields(selector, projection)
-        if fields.intersection(
-            {
-                "alignment",
-                "bounds",
-                "inheritance.metrics",
-                "spacing.horizontal",
-                "spacing.vertical",
-            }
-        ):
-            inspector = getattr(self._host, "inspect_layers", None)
-            if callable(inspector):
-                try:
-                    value = inspector(
-                        document_id,
-                        glyph_names,
-                        include_metrics=True,
-                        resolve_metrics="inheritance.metrics" in fields,
-                        include_geometry=True,
-                    )
-                    observations = dict(value) if isinstance(value, Mapping) else {}
-                except HostAccessError:
-                    observations = {}
-        if "compilation.diagnostics" in fields:
-            inspector = getattr(
-                self._host, "inspect_compilation_diagnostics", None
-            )
-            if callable(inspector):
-                try:
-                    diagnostics = inspector(document_id)
-                    if isinstance(diagnostics, Mapping):
-                        observations = {
-                            **dict(observations),
-                            (
-                                "__document__",
-                                "compilation.diagnostics",
-                            ): dict(diagnostics),
-                        }
-                except HostAccessError:
-                    pass
-        effective_metadata = (
-            self._effective_glyph_metadata(document_id, glyph_names)
-            if "metadata.effective" in fields
-            else {}
+        observations, effective_metadata = collect_native_observations(
+            self._host,
+            document_id,
+            fields,
+            glyph_names,
+            suppressed_errors=(HostAccessError,),
         )
         items = [
             self._project_read_tree(
@@ -937,10 +891,25 @@ class GlyphsMCPApplication:
             for phase in ("before", "after")
             if any(str(item.get("phase") or "before") == phase for item in constraints)
         )
-        results = [
-            evaluate_generic_constraints(model, constraints, phase=phase)
-            for phase in phases
-        ]
+        results = []
+        for phase in phases:
+            observations, effective_metadata, _request = collect_constraint_context(
+                self._host,
+                document_id,
+                model,
+                constraints,
+                phase=phase,
+                suppressed_errors=(HostAccessError,),
+            )
+            results.append(
+                evaluate_generic_constraints(
+                    model,
+                    constraints,
+                    phase=phase,
+                    observations=observations,
+                    effective_metadata=effective_metadata,
+                )
+            )
         items = [item for result in results for item in result["items"]]
         failed = sum(not item["passed"] for item in items)
         return ToolResponse.success(
@@ -987,8 +956,20 @@ class GlyphsMCPApplication:
                 message="Read the current document fingerprint and try again.",
                 metadata=metadata,
             )
+        before_observations, before_metadata, _before_request = collect_constraint_context(
+            self._host,
+            document_id,
+            before,
+            constraints,
+            phase="before",
+            suppressed_errors=(HostAccessError,),
+        )
         before_constraints = evaluate_generic_constraints(
-            before, constraints, phase="before"
+            before,
+            constraints,
+            phase="before",
+            observations=before_observations,
+            effective_metadata=before_metadata,
         )
         if not before_constraints["passed"]:
             return ToolResponse.success(
@@ -1067,6 +1048,12 @@ class GlyphsMCPApplication:
         writable = writable_subset(
             before, requested_change_set, capabilities=capabilities
         )
+        after_observation_request = constraint_observation_request(
+            requested_change_set.apply(before), constraints, phase="after"
+        )
+        execution_context = dict(generic_build.execution_context)
+        if after_observation_request["fields"]:
+            execution_context["constraintObservations"] = after_observation_request
         try:
             plan = self._mutation_planner.plan(
                 document_id=document_id,
@@ -1075,7 +1062,7 @@ class GlyphsMCPApplication:
                 operation_id=metadata.operation_id,
                 before_model=before,
                 capabilities=capabilities,
-                execution_context=generic_build.execution_context,
+                execution_context=execution_context,
             )
         except StaleDocumentError:
             return ToolResponse.failure(
@@ -1086,8 +1073,62 @@ class GlyphsMCPApplication:
                 message="Read the current document fingerprint and try again.",
                 metadata=metadata,
             )
+        except RequestedEffectMismatchError as exc:
+            record = self._previews.create(
+                kind="change_preview",
+                ttl_seconds=REVIEW_TTL_SECONDS,
+                payload={
+                    "documentId": document_id,
+                    "source": "declarative",
+                    "sourceFingerprint": expected,
+                    "proposedFingerprint": requested_change_set.after_fingerprint,
+                    "normalizedOperations": normalized_operations,
+                    "constraints": {"before": before_constraints, "after": None},
+                    "applicable": False,
+                    "diagnostics": exc.to_public_dict(),
+                },
+            )
+            return ToolResponse.success(
+                tool="preview_change",
+                effect="read",
+                status="review_required",
+                summary="Detached native execution did not preserve every requested effect.",
+                metadata=metadata,
+                data={
+                    "previewId": record.operation_id,
+                    "expiresAt": _iso_timestamp(record.expires_at),
+                    "documentId": document_id,
+                    "sourceFingerprint": expected,
+                    "proposedFingerprint": requested_change_set.after_fingerprint,
+                    "applicable": False,
+                    "resolvedTargetCount": sum(
+                        len(item.get("resolvedPaths") or ())
+                        for item in normalized_operations
+                    ),
+                    "normalizedOperations": normalized_operations[
+                        :PUBLIC_NORMALIZED_OPERATION_LIMIT
+                    ],
+                    "normalizedOperationCount": len(normalized_operations),
+                    "normalizedOperationsTruncated": len(normalized_operations)
+                    > PUBLIC_NORMALIZED_OPERATION_LIMIT,
+                    "changeSet": requested_change_set.to_dict(),
+                    "constraints": {"before": before_constraints, "after": None},
+                    "blockers": ["requested_effect_mismatch"],
+                    "diagnostics": exc.to_public_dict(),
+                    "fontSaved": False,
+                },
+            )
         after_constraints = evaluate_generic_constraints(
-            plan.expected_after_model, constraints, phase="after"
+            plan.expected_after_model,
+            constraints,
+            phase="after",
+            observations=plan.expected_observations,
+            effective_metadata=plan.expected_effective_metadata,
+        )
+        plan = replace(
+            plan,
+            verification_constraints=tuple(copy.deepcopy(constraints)),
+            expected_constraint_evidence=copy.deepcopy(after_constraints),
         )
         applicable = bool(after_constraints["passed"])
         record = self._previews.create(
@@ -1499,6 +1540,7 @@ class GlyphsMCPApplication:
                 "apiMajor": API_MAJOR,
                 "apiVersion": API_VERSION,
                 "canonicalModelSchemaVersion": CANONICAL_MODEL_SCHEMA_VERSION,
+                "runtimeIdentity": dict(loaded_runtime_identity()),
                 "knowledge": knowledge_manifest(),
                 "registries": {
                     "entities": sorted(ENTITY_KINDS),

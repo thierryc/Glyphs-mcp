@@ -42,6 +42,11 @@ The generated command reference is
 [`content/reference/command-set-v2.mdx`](../../content/reference/command-set-v2.mdx).
 MCP discovery is the source of truth for request schemas.
 
+`get_server_info.data.runtimeIdentity` identifies the code actually loaded by
+Glyphs. Check its full `codeHash` or compact `runtimeId` after restarting the
+app; the semantic `serverVersion` remains `2.0.0` across private hard-reset
+builds and is not sufficient to prove that a new payload loaded.
+
 `save_document` is the only working-source persistence boundary. It supports a
 verified normal save or explicit Save As and requires current fingerprints and
 confirmation. Existing destinations fail closed unless
@@ -52,7 +57,8 @@ fingerprint.
 
 `EntitySelector` addresses canonical entity kinds by exact IDs or closed read
 filters, with parent relations, deterministic ordering, and fingerprint-bound
-pagination. Mutation selectors are resolved to exact canonical paths during
+pagination. It includes first-class nodes as well as layers, shapes, and
+anchors. Mutation selectors are resolved to exact canonical paths during
 preview.
 
 `Projection` requests canonical fields or registry-backed observations. Every
@@ -67,6 +73,9 @@ literals, exact references, or current fields. They never choose an operation.
 
 `ChangeOperation` contains only `set`, `translate`, `insert`, `remove`, `move`,
 and `duplicate`. Coordinate quantization is explicit (`exact` or `grid`).
+Translation uses one registry for layer, shape, node, and anchor targets;
+locks and alignment modes remain unchanged while detached native execution and
+exact read-back determine feasibility.
 Ownership-sensitive master and layer membership uses a private structural
 registry because Glyphs owns master layers with their master and reserves the
 master-layer prefix. This registry enforces structure; it does not contain a
@@ -138,6 +147,7 @@ Run the isolated v2 suite and deterministic generation checks:
 
 ```bash
 .venv-v2/bin/python -m pytest -q src/glyphs-mcp/tests/test_v2_*.py
+.venv-v2/bin/python scripts/audit_canonical_schema.py --repo-root .
 .venv-v2/bin/python scripts/build_v2_knowledge.py --check
 .venv-v2/bin/python scripts/render_v2_command_reference.py --check
 scripts/sync_codex_plugin_skills.sh --check

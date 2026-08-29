@@ -1,4 +1,4 @@
-"""Declarative Glyphs-format coverage contract for canonical model schema v6.
+"""Declarative Glyphs-format coverage contract for the canonical model.
 
 This module is pure Python.  It classifies the pinned public Glyphs v4 file
 format without importing GlyphsApp and gives the native adapter one compact
@@ -14,7 +14,7 @@ from typing import Any, Iterable, Mapping
 from urllib.parse import quote
 
 
-MODEL_SCHEMA_VERSION = 6
+MODEL_SCHEMA_VERSION = 7
 GLYPHS_FORMAT_REVISION = "569244a7181e08fc7c5230bcdfad6b9f7e5ea11f"
 GLYPHS_FORMAT_SCHEMA_SHA256 = (
     "3be341e85a574b563a8df2851fe48225e6700c24a827d572c1ad1ec909aa09b0"
@@ -993,7 +993,7 @@ def render_canonical_coverage_markdown(schema: Mapping[str, Any]) -> str:
         "- `{}`: {}".format(name, count)
         for name, count in sorted(summary["roles"].items())
     )
-    return """# Glyphs MCP canonical schema v6 coverage
+    return """# Glyphs MCP canonical schema v{modelSchemaVersion} coverage
 
 This report is generated from the pinned official Glyphs File Format v4 JSON
 schema. It describes registry classification, not a byte-for-byte mirror of

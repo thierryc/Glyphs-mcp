@@ -19,13 +19,13 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
   revert. The independent Reporter displays the geometric before/current gap.
 - Staged Python previews structural changes on a detached clone and confirms by
   replaying its stored canonical patch without rerunning code on the live font.
-- Canonical schema v6 classifies every property in the pinned official Glyphs
-  File Format v4 schema and models complete saved semantic font state without
-  mirroring plist/package layout or claiming private PyObjC state is canonical.
+- Canonical schema v7 classifies every property in the pinned official Glyphs
+  File Format v4 schema, stores authoritative component fields once, and
+  exposes derived transform and alignment state as verified observations.
 - The dual-target installer keeps Glyphs 3.5 on signed v1.11 and installs the
   isolated v2 runtime only for Glyphs 4.
 - Codex/ChatGPT, Claude Code, Cursor, and GitHub Copilot CLI receive the same 18
-  synchronized v2 skills.
+  synchronized v2 skills, including the general launcher and focused workflows.
 
 [Read the 1.9 roadmap →](ROADMAP.md) ·
 [Read the changelog →](CHANGELOG.md) ·

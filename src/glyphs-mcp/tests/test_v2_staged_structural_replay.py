@@ -22,7 +22,7 @@ from glyphs_mcp_v2.adapters.document import (  # noqa: E402
     native_font_to_model,
 )
 from glyphs_mcp_v2.mutation import (  # noqa: E402
-    CANONICAL_V6_LIFECYCLE_CAPABILITY,
+    CANONICAL_LIFECYCLE_CAPABILITY,
     LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
     StructuralReplayValidationError,
@@ -296,7 +296,7 @@ class StagedStructuralReplayTests(unittest.TestCase):
         capabilities = staged_lifecycle_capabilities(
             before, after, diff_models(before, after)
         )
-        self.assertIn(CANONICAL_V6_LIFECYCLE_CAPABILITY, capabilities)
+        self.assertIn(CANONICAL_LIFECYCLE_CAPABILITY, capabilities)
 
     def test_structural_apply_reuses_preview_patch_and_never_reruns_code(self) -> None:
         host = _StructuralPythonHost()

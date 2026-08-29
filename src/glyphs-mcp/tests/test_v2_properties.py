@@ -47,7 +47,20 @@ def _layer(identity: str, width: int, x: int) -> dict:
                         {"id": "n1", "x": x + 100, "y": 700, "type": "line"},
                     ],
                 },
-            }
+            },
+            {
+                "id": "component-{}".format(identity),
+                "kind": "component",
+                "value": {
+                    "name": "base",
+                    "position": [x + 25, 0],
+                    "scale": [1, 1],
+                    "angle": 0,
+                    "slant": [0, 0],
+                    "alignment": 0,
+                    "locked": True,
+                },
+            },
         ],
     }
 
@@ -95,6 +108,53 @@ class _Host:
 
 
 class GenericChangeProperties(unittest.TestCase):
+    def test_translation_composes_inverts_and_preserves_metadata(self) -> None:
+        generator = random.Random(20260830)
+        selector = {
+            "entity": "layer",
+            "ids": ["l0"],
+            "parent": {"glyphName": "g0"},
+        }
+        for _case in range(100):
+            before = _model(1)
+            first = {"x": generator.randint(-50, 50), "y": generator.randint(-50, 50)}
+            second = {"x": generator.randint(-50, 50), "y": generator.randint(-50, 50)}
+            if first == {"x": 0, "y": 0}:
+                first["x"] = 1
+            if second == {"x": 0, "y": 0}:
+                second["y"] = 1
+            after_first = build_change_set(
+                before,
+                [{"op": "translate", "target": selector, "delta": first}],
+            ).change_set.apply(before)
+            sequential = build_change_set(
+                after_first,
+                [{"op": "translate", "target": selector, "delta": second}],
+            ).change_set.apply(after_first)
+            combined = {"x": first["x"] + second["x"], "y": first["y"] + second["y"]}
+            if combined == {"x": 0, "y": 0}:
+                self.assertEqual(sequential, before)
+            else:
+                direct = build_change_set(
+                    before,
+                    [{"op": "translate", "target": selector, "delta": combined}],
+                ).change_set.apply(before)
+                self.assertEqual(sequential, direct)
+            restored = build_change_set(
+                after_first,
+                [
+                    {
+                        "op": "translate",
+                        "target": selector,
+                        "delta": {"x": -first["x"], "y": -first["y"]},
+                    }
+                ],
+            ).change_set.apply(after_first)
+            self.assertEqual(restored, before)
+            component = sequential["glyphs"]["g0"]["layers"][0]["shapes"][1]["value"]
+            self.assertEqual(component["alignment"], 0)
+            self.assertTrue(component["locked"])
+
     def test_independent_operation_permutations_normalize_to_one_target(self) -> None:
         model = _model(4)
         operations = [

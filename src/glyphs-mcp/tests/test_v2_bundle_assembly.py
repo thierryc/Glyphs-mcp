@@ -149,13 +149,13 @@ class V2BundleAssemblyTests(unittest.TestCase):
 
                 format_docs = resources / "MCP Documentation" / "docs" / "file-format"
                 pinned_specification = format_docs / "GlyphsFileFormatv4.md"
-                coverage_report = format_docs / "canonical-schema-v6-coverage.md"
+                coverage_report = format_docs / "canonical-schema-v7-coverage.md"
                 self.assertEqual(
                     pinned_specification.read_bytes(),
                     (REPO / "third_party/glyphs-file-format-v4/GlyphsFileFormatv4.md").read_bytes(),
                 )
                 coverage = coverage_report.read_text(encoding="utf-8")
-                self.assertIn("Model schema: `6`", coverage)
+                self.assertIn("Model schema: `7`", coverage)
                 self.assertIn("Status: `complete`", coverage)
                 self.assertIn("Unclassified: 0", coverage)
 

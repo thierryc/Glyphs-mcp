@@ -59,7 +59,7 @@ from ..runtime_safety import (
     ScriptingSafetyStateMachine,
 )
 from ..mutation import (
-    CANONICAL_V6_LIFECYCLE_CAPABILITY,
+    CANONICAL_LIFECYCLE_CAPABILITY,
     CanonicalImpact,
     LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
@@ -305,23 +305,6 @@ def _native_property_list_mapping_items(
         (str(key), getter(key))
         for key in sorted(keys, key=str)
     ]
-
-
-def _component_transform(component: Any) -> list[float]:
-    transform = _safe_getattr(component, "transform")
-    if transform is None:
-        return [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
-    for names in (("m11", "m12", "m21", "m22", "tX", "tY"), ("a", "b", "c", "d", "tx", "ty")):
-        values = [_safe_getattr(transform, name) for name in names]
-        if all(value is not None for value in values):
-            try:
-                return [float(value) for value in values]
-            except Exception:
-                pass
-    try:
-        return [float(transform[index]) for index in range(6)]
-    except Exception:
-        return [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
 
 
 def _is_component(value: Any) -> bool:
@@ -1663,9 +1646,6 @@ def _layer_model(
             _maybe_call(_safe_getattr(layer, "isSpecialLayer", False))
         )
         or bool(set(roles) & {"intermediate", "alternate", "smart"}),
-        "hasAlignedWidth": bool(
-            _maybe_call(_safe_getattr(layer, "hasAlignedWidth", False))
-        ),
         "interpolation": interpolation,
         "attributes": canonical_attributes,
         "anchors": _anchor_model(layer),
@@ -2148,8 +2128,6 @@ def _layer_matches_model(layer: Any, expected: Mapping[str, Any]) -> bool:
         != bool(expected.get("isMasterLayer", False))
         or bool(_maybe_call(_safe_getattr(layer, "isSpecialLayer", False)))
         != bool(expected.get("isSpecialLayer", False))
-        or bool(_maybe_call(_safe_getattr(layer, "hasAlignedWidth", False)))
-        != bool(expected.get("hasAlignedWidth", False))
     ):
         return False
     for name in _LAYER_SCALARS:
@@ -2176,17 +2154,7 @@ def _layer_matches_model(layer: Any, expected: Mapping[str, Any]) -> bool:
     ):
         return False
     for native, modeled in zip(components, expected_components):
-        if not isinstance(modeled, Mapping) or (
-            str(_safe_getattr(native, "componentName") or "")
-            != str(modeled.get("name") or "")
-            or _component_transform(native) != modeled.get("transform")
-            or bool(
-                _maybe_call(
-                    _safe_getattr(native, "automaticAlignment", False)
-                )
-            )
-            != bool(modeled.get("automaticAlignment", False))
-        ):
+        if not isinstance(modeled, Mapping) or _component_model(native) != modeled:
             return False
     return True
 
@@ -5377,17 +5345,6 @@ def _new_component(spec: Mapping[str, Any]) -> Any:
                 field,
                 spec.get(field),
             )
-    transform = spec.get("transform")
-    if isinstance(transform, Sequence) and len(transform) == 6:
-        _set_native_property(
-            component, "transform", tuple(float(value) for value in transform)
-        )
-    if "automaticAlignment" in spec:
-        _set_native_property(
-            component,
-            "automaticAlignment",
-            bool(spec.get("automaticAlignment")),
-        )
     return component
 
 
@@ -5527,9 +5484,6 @@ def _update_components_in_place(
         or len(current_specs) != len(target_specs)
     ):
         return False
-    updates: list[
-        tuple[Any, tuple[float, ...], Optional[bool], Mapping[str, Any], Mapping[str, Any]]
-    ] = []
     for native, current, target in zip(
         native_components, current_specs, target_specs
     ):
@@ -5538,33 +5492,6 @@ def _update_components_in_place(
         native_name = str(_safe_getattr(native, "componentName") or "")
         if current_name != target_name or native_name != current_name:
             return False
-        transform = target.get("transform")
-        if not isinstance(transform, Sequence) or len(transform) != 6:
-            return False
-        try:
-            alignment = (
-                bool(target.get("automaticAlignment"))
-                if "automaticAlignment" in target
-                else None
-            )
-            updates.append(
-                (
-                    native,
-                    tuple(float(value) for value in transform),
-                    alignment,
-                    current,
-                    target,
-                )
-            )
-        except (TypeError, ValueError):
-            return False
-    for native, transform, alignment, current, target in updates:
-        if tuple(_component_transform(native)) != transform:
-            _set_native_property(native, "transform", transform)
-        if alignment is not None and bool(
-            _maybe_call(_safe_getattr(native, "automaticAlignment", False))
-        ) != alignment:
-            _set_native_property(native, "automaticAlignment", alignment)
         for field in (
             "position",
             "scale",
@@ -11627,26 +11554,31 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         def inspect() -> Mapping[str, Mapping[str, Any]]:
             font = self._font_for_document(document_id)
-            requested = {str(name) for name in glyph_names if str(name)}
-            result: dict[str, Mapping[str, Any]] = {}
-            for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
-                name = str(_safe_getattr(glyph, "name") or "")
-                if not name or (requested and name not in requested):
-                    continue
-                result[name] = {
-                    "name": name,
-                    "export": bool(
-                        _maybe_call(_safe_getattr(glyph, "export", True))
-                    ),
-                    "category": _plain_scalar(_safe_getattr(glyph, "category")),
-                    "subCategory": _plain_scalar(
-                        _safe_getattr(glyph, "subCategory")
-                    ),
-                    "script": _plain_scalar(_safe_getattr(glyph, "script")),
-                }
-            return result
+            return self._inspect_glyph_metadata_in_font(font, glyph_names)
 
         return self._executor.run(inspect)
+
+    @staticmethod
+    def _inspect_glyph_metadata_in_font(
+        font: Any,
+        glyph_names: Sequence[str] = (),
+    ) -> Mapping[str, Mapping[str, Any]]:
+        """Collect effective GlyphData-backed values from any font instance."""
+
+        requested = {str(name) for name in glyph_names if str(name)}
+        result: dict[str, Mapping[str, Any]] = {}
+        for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
+            name = str(_safe_getattr(glyph, "name") or "")
+            if not name or (requested and name not in requested):
+                continue
+            result[name] = {
+                "name": name,
+                "export": bool(_maybe_call(_safe_getattr(glyph, "export", True))),
+                "category": _plain_scalar(_safe_getattr(glyph, "category")),
+                "subCategory": _plain_scalar(_safe_getattr(glyph, "subCategory")),
+                "script": _plain_scalar(_safe_getattr(glyph, "script")),
+            }
+        return result
 
     def inspect_layers(
         self,
@@ -11661,63 +11593,81 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         def inspect() -> Mapping[tuple[str, str], Mapping[str, Any]]:
             font = self._font_for_document(document_id)
-            requested = {str(name) for name in glyph_names if str(name)}
-            clone = None
-            if resolve_metrics:
-                copier = _safe_getattr(font, "copy")
-                if not callable(copier):
-                    raise HostAccessError("Glyphs did not provide GSFont.copy()")
-                clone = copier()
-                if clone is None:
-                    raise HostAccessError("Glyphs returned no detached font copy")
-            result: dict[tuple[str, str], Mapping[str, Any]] = {}
-            for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
-                glyph_name = str(_safe_getattr(glyph, "name") or "")
-                if not glyph_name or (requested and glyph_name not in requested):
-                    continue
-                clone_glyph = (
-                    _lookup_by_name(_safe_getattr(clone, "glyphs"), glyph_name)
-                    if clone is not None
-                    else None
-                )
-                clone_layers = (
-                    _native_layer_index(clone_glyph)
-                    if clone_glyph is not None
-                    else {}
-                )
-                for layer_id, layer in _native_layer_index(glyph).items():
-                    observation: dict[str, Any] = {
-                        "hasAlignedWidth": bool(
-                            _maybe_call(
-                                _safe_getattr(layer, "hasAlignedWidth", False)
-                            )
-                        )
-                    }
-                    if include_metrics or resolve_metrics:
-                        observation["currentMetrics"] = _observed_layer_metrics(layer)
-                    if resolve_metrics:
-                        detached_layer = clone_layers.get(layer_id)
-                        if detached_layer is None:
-                            raise HostAccessError(
-                                "The detached font omitted layer {}/{}".format(
-                                    glyph_name, layer_id
-                                )
-                            )
-                        sync = _safe_getattr(detached_layer, "syncMetrics")
-                        if not callable(sync):
-                            raise HostAccessError(
-                                "Glyphs did not expose GSLayer.syncMetrics()"
-                            )
-                        sync()
-                        observation["resolvedMetrics"] = _observed_layer_metrics(
-                            detached_layer
-                        )
-                    if include_geometry:
-                        observation["bounds"] = _observed_layer_bounds(layer)
-                    result[(glyph_name, layer_id)] = observation
-            return result
+            return self._inspect_layers_in_font(
+                font,
+                glyph_names,
+                include_metrics=include_metrics,
+                resolve_metrics=resolve_metrics,
+                include_geometry=include_geometry,
+            )
 
         return self._executor.run(inspect)
+
+    def _inspect_layers_in_font(
+        self,
+        font: Any,
+        glyph_names: Sequence[str] = (),
+        *,
+        include_metrics: bool = False,
+        resolve_metrics: bool = False,
+        include_geometry: bool = False,
+    ) -> Mapping[tuple[str, str], Mapping[str, Any]]:
+        """Collect the same observations from a live font or detached clone."""
+
+        requested = {str(name) for name in glyph_names if str(name)}
+        metrics_clone = None
+        if resolve_metrics:
+            copier = _safe_getattr(font, "copy")
+            if not callable(copier):
+                raise HostAccessError("Glyphs did not provide GSFont.copy()")
+            metrics_clone = copier()
+            if metrics_clone is None:
+                raise HostAccessError("Glyphs returned no detached font copy")
+        result: dict[tuple[str, str], Mapping[str, Any]] = {}
+        for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
+            glyph_name = str(_safe_getattr(glyph, "name") or "")
+            if not glyph_name or (requested and glyph_name not in requested):
+                continue
+            clone_glyph = (
+                _lookup_by_name(_safe_getattr(metrics_clone, "glyphs"), glyph_name)
+                if metrics_clone is not None
+                else None
+            )
+            clone_layers = (
+                _native_layer_index(clone_glyph) if clone_glyph is not None else {}
+            )
+            for layer_id, layer in _native_layer_index(glyph).items():
+                observation: dict[str, Any] = {
+                    "hasAlignedWidth": bool(
+                        _maybe_call(_safe_getattr(layer, "hasAlignedWidth", False))
+                    ),
+                    "isAligned": bool(
+                        _maybe_call(_safe_getattr(layer, "isAligned", False))
+                    ),
+                }
+                if include_metrics or resolve_metrics:
+                    observation["currentMetrics"] = _observed_layer_metrics(layer)
+                if resolve_metrics:
+                    detached_layer = clone_layers.get(layer_id)
+                    if detached_layer is None:
+                        raise HostAccessError(
+                            "The detached font omitted layer {}/{}".format(
+                                glyph_name, layer_id
+                            )
+                        )
+                    sync = _safe_getattr(detached_layer, "syncMetrics")
+                    if not callable(sync):
+                        raise HostAccessError(
+                            "Glyphs did not expose GSLayer.syncMetrics()"
+                        )
+                    sync()
+                    observation["resolvedMetrics"] = _observed_layer_metrics(
+                        detached_layer
+                    )
+                if include_geometry:
+                    observation["bounds"] = _observed_layer_bounds(layer)
+                result[(glyph_name, layer_id)] = observation
+        return result
 
     def inspect_compilation_diagnostics(
         self, document_id: str
@@ -11732,28 +11682,34 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             clone = copier()
             if clone is None:
                 raise HostAccessError("Glyphs returned no detached font copy")
-            detached_compile = _safe_getattr(clone, "compileFeatures")
-            if not callable(detached_compile):
-                raise HostAccessError("Glyphs did not provide GSFont.compileFeatures()")
-            try:
-                detached_compile()
-            except Exception as error:
-                return {
-                    "succeeded": False,
-                    "errorType": type(error).__name__,
-                    "errorMessage": str(error)[:1000],
-                    "detached": True,
-                    "liveAttempted": False,
-                }
+            return self._inspect_compilation_in_font(clone)
+
+        return self._executor.run(inspect)
+
+    @staticmethod
+    def _inspect_compilation_in_font(font: Any) -> Mapping[str, Any]:
+        """Compile the supplied detached font and return bounded diagnostics."""
+
+        detached_compile = _safe_getattr(font, "compileFeatures")
+        if not callable(detached_compile):
+            raise HostAccessError("Glyphs did not provide GSFont.compileFeatures()")
+        try:
+            detached_compile()
+        except Exception as error:
             return {
-                "succeeded": True,
-                "errorType": None,
-                "errorMessage": None,
+                "succeeded": False,
+                "errorType": type(error).__name__,
+                "errorMessage": str(error)[:1000],
                 "detached": True,
                 "liveAttempted": False,
             }
-
-        return self._executor.run(inspect)
+        return {
+            "succeeded": True,
+            "errorType": None,
+            "errorMessage": None,
+            "detached": True,
+            "liveAttempted": False,
+        }
 
     def open_edit_tab(
         self,
@@ -12358,7 +12314,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         # structural check prevents normalization from inventing collection
         # membership or order evidence.
         normalization_capabilities = (
-            CANONICAL_V6_LIFECYCLE_CAPABILITY,
+            CANONICAL_LIFECYCLE_CAPABILITY,
             MASTER_LIFECYCLE_CAPABILITY,
             LAYER_LIFECYCLE_CAPABILITY,
         )
@@ -12521,6 +12477,45 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     **dict(resolved_context.get("nativeReplayTemplates") or {}),
                     **native_restore_templates,
                 }
+
+            def requested_observations() -> Mapping[
+                tuple[str, str], Mapping[str, Any]
+            ]:
+                request = resolved_context.get("constraintObservations")
+                if not isinstance(request, Mapping) or not request.get("fields"):
+                    return {}
+                fields = {str(value) for value in request.get("fields") or ()}
+                observations = dict(
+                    self._inspect_layers_in_font(
+                        clone,
+                        tuple(str(value) for value in request.get("glyphNames") or ()),
+                        include_metrics=bool(request.get("includeMetrics")),
+                        resolve_metrics=bool(request.get("resolveMetrics")),
+                        include_geometry=bool(request.get("includeGeometry")),
+                    )
+                ) if fields.intersection({
+                    "alignment",
+                    "bounds",
+                    "inheritance.metrics",
+                    "spacing.horizontal",
+                    "spacing.vertical",
+                }) else {}
+                if "compilation.diagnostics" in fields:
+                    observations[("__document__", "compilation.diagnostics")] = dict(
+                        self._inspect_compilation_in_font(clone)
+                    )
+                return observations
+
+            def requested_effective_metadata() -> Mapping[str, Mapping[str, Any]]:
+                request = resolved_context.get("constraintObservations")
+                if not isinstance(request, Mapping) or "metadata.effective" not in {
+                    str(value) for value in request.get("fields") or ()
+                }:
+                    return {}
+                return self._inspect_glyph_metadata_in_font(
+                    clone,
+                    tuple(str(value) for value in request.get("glyphNames") or ()),
+                )
 
             timings = {
                 "clone": 0.0,
@@ -12717,6 +12712,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             ):
                 return {
                     "afterModel": preferred,
+                    "observations": requested_observations(),
                     "replayReplacements": [],
                     "stageTimings": timings,
                 }
@@ -12729,6 +12725,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             if not replacements:
                 return {
                     "afterModel": preferred,
+                    "observations": requested_observations(),
                     "replayReplacements": [],
                     "stageTimings": timings,
                 }
@@ -12759,6 +12756,8 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             )
             return {
                 "afterModel": canonical,
+                "observations": requested_observations(),
+                "effectiveMetadata": requested_effective_metadata(),
                 "replayReplacements": [list(path) for path in replacements],
                 "stageTimings": timings,
             }
@@ -12811,7 +12810,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
     ) -> bool:
         master_lifecycle = MASTER_LIFECYCLE_CAPABILITY in capabilities
         layer_lifecycle = LAYER_LIFECYCLE_CAPABILITY in capabilities
-        v6_lifecycle = CANONICAL_V6_LIFECYCLE_CAPABILITY in capabilities
+        canonical_lifecycle = CANONICAL_LIFECYCLE_CAPABILITY in capabilities
         structural_master_ids = {
             change.path[1]
             for change in change_set.changes
@@ -12828,7 +12827,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 "customParameters", "properties", "userData"
             }:
                 continue
-            if path[0] in {"axes", "metrics", "stems", "numbers", "glyphOrder", "settings"} and v6_lifecycle:
+            if path[0] in {"axes", "metrics", "stems", "numbers", "glyphOrder", "settings"} and canonical_lifecycle:
                 continue
             if path[0] == "kerning":
                 continue

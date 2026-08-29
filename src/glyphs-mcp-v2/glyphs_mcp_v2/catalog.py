@@ -284,7 +284,7 @@ TOOL_DEFINITIONS: Tuple[ToolDefinition, ...] = (
     _definition(
         "get_server_info",
         "Get Server Info",
-        "Read the v2 contract, permanent Python fallback, Knowledge version, host, and capabilities.",
+        "Read the v2 contract, exact loaded-code identity, permanent Python fallback, Knowledge version, host, and capabilities.",
         "server",
     ),
     _definition(

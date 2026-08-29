@@ -25,6 +25,21 @@ def _file_map(root: Path) -> dict[str, bytes]:
     }
 
 
+def _managed_skill_map(root: Path) -> dict[str, bytes]:
+    manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+    names = [str(item["name"]) for item in manifest["managedSkills"]]
+    files = {"manifest.json": (root / "manifest.json").read_bytes()}
+    for name in names:
+        files.update(
+            {
+                "{}/{}".format(name, path.relative_to(root / name).as_posix()): path.read_bytes()
+                for path in (root / name).rglob("*")
+                if path.is_file()
+            }
+        )
+    return files
+
+
 class V2InstallerPayloadTests(unittest.TestCase):
     def _build(self, output: Path) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
@@ -85,6 +100,11 @@ class V2InstallerPayloadTests(unittest.TestCase):
                 expected = (canonical / name).read_bytes()
                 self.assertEqual((resources3 / name).read_bytes(), expected)
                 self.assertEqual((resources4 / name).read_bytes(), expected)
+
+            self.assertEqual(
+                _managed_skill_map(first / manifest["skillsPath"]),
+                _managed_skill_map(REPO / "skills"),
+            )
 
             verified = subprocess.run(
                 [

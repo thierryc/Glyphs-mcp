@@ -15,7 +15,7 @@ class SpacingSkillTests(unittest.TestCase):
         self.canonical = _repo_root() / "skills" / "glyphs-mcp-spacing"
         self.packaged = _repo_root() / "plugins" / "glyphs-mcp" / "skills" / "glyphs-mcp-spacing"
 
-    def test_skill_contains_guarded_procedural_workflow(self) -> None:
+    def test_skill_contains_generic_verified_workflow(self) -> None:
         text = (self.canonical / "SKILL.md").read_text(encoding="utf-8")
         for required in (
             "surface: glyphs-mcp-v2",
@@ -29,7 +29,10 @@ class SpacingSkillTests(unittest.TestCase):
             "leadingBearing",
             "trailingBearing",
             "translation",
-            "Translation moves paths, components",
+            "Layer translation moves paths, components",
+            "configuredAutomaticComponentCount",
+            "effectiveLayerAlignment",
+            "Locks and configured alignment",
             "preview_change",
             "apply_change",
             "revert_change",
@@ -51,7 +54,7 @@ class SpacingSkillTests(unittest.TestCase):
             "get_document_status",
         ):
             self.assertNotIn(retired, text)
-        self.assertLessEqual(len(text.splitlines()), 130)
+        self.assertLessEqual(len(text.splitlines()), 160)
 
     def test_obsolete_negative_sidebearing_reference_is_removed(self) -> None:
         text = (self.canonical / "SKILL.md").read_text(encoding="utf-8")

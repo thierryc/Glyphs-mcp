@@ -34,7 +34,8 @@ Generic Python with no Glyphs app or font target does not trigger this skill.
    needed, and use `revert_change` for a compatible unsaved-session reversal.
    Never save unless the user separately requests `save_document`.
 
-Incomplete observations are evidence gaps, not passes. Locks, structural
+Incomplete observations are evidence gaps, not passes. Locks and configured
+alignment are preserved document state, not policy failures. Structural
 invalidity, stale fingerprints, and failed read-back are hard failures.
 
 ## Focused expertise

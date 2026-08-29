@@ -392,7 +392,7 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         requested_after = copy.deepcopy(before)
         requested_after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
 
-        with self.assertRaisesRegex(ValueError, "no document change"):
+        with self.assertRaisesRegex(ValueError, "did not preserve 1 requested effect"):
             MutationPlanner(host).plan(
                 document_id="doc_kernel",
                 expected_document_fingerprint=fingerprint_model(before),

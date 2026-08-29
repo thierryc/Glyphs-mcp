@@ -130,7 +130,7 @@ class ReleaseSkillTests(unittest.TestCase):
         for required in (
             "Glyphs 4",
             "Glyphs 3",
-            "schema v6",
+            "schema v7",
             "18 generic tools",
             "Knowledge supplies pinned cited facts",
             "`EntitySelector`, `Projection`, `Constraint`, and `ChangeOperation`",

@@ -15,12 +15,18 @@ runtime only for Glyphs 4.
 - Typed edits apply immediately through one shared transaction kernel: stale
   checks, detached simulation, one main-thread apply, complete read-back,
   atomic restoration on failure, one audit receipt, and no implicit save.
-- Canonical schema v6 classifies all 293 properties and wildcard containers in
+- Canonical schema v7 classifies all 293 properties and wildcard containers in
   the pinned official Glyphs File Format v4 schema. Axes, font metadata and
   settings, ordered parameters, metrics/stems/numbers, complete master,
   instance, glyph and layer state, directional kerning, OpenType collections,
   unified shapes, duplicate anchors, Smart Glyph data, and serializable user
   data share the existing immutable snapshot and verified replay kernel.
+- Layers, shapes, nodes, and anchors share one registry-backed translation
+  mechanism. Locks and alignment modes remain document state; exact detached
+  execution and read-back determine whether a requested effect is applicable.
+- Component position, scale, angle, slant, and raw alignment are authoritative.
+  Geometry transforms and effective layer alignment are derived observations,
+  not duplicate writable state.
 - Every operation reports bounded canonical coverage. Typed mutations require
   `complete`; staged structural Python may use
   `complete_with_opaque_preservation` only when native archive equivalence and

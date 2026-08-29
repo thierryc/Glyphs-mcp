@@ -2,7 +2,7 @@
 
 Parsing bytes is deliberately outside this module. Callers provide either a
 live ``GSFont`` or an already-decoded flat/package mapping; both normalize to
-the same schema-v6 semantic tree before hashing or diffing.
+the same schema-v7 semantic tree before hashing or diffing.
 """
 
 from __future__ import annotations
@@ -718,33 +718,12 @@ def _path(item: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _component_transform(item: Mapping[str, Any]) -> list[float]:
-    position = _point(item.get("pos"))
-    scale = _point(item.get("scale"), (1.0, 1.0))
-    angle = math.radians(float(item.get("angle") or 0.0))
-    slant = _point(item.get("slant"))
-    horizontal_slant = math.tan(math.radians(float(slant[0])))
-    vertical_slant = math.tan(math.radians(float(slant[1])))
-    cosine = math.cos(angle)
-    sine = math.sin(angle)
-    sx, sy = float(scale[0]), float(scale[1])
-    return [
-        sx * (cosine - sine * vertical_slant),
-        sx * (sine + cosine * vertical_slant),
-        sy * (horizontal_slant * cosine - sine),
-        sy * (horizontal_slant * sine + cosine),
-        position[0],
-        position[1],
-    ]
-
-
 def canonical_component(item: Mapping[str, Any]) -> dict[str, Any]:
     """Normalize one component from official format-v4 saved fields.
 
-    Live PyObjC getters and decoded files converge here. In particular,
-    ``automaticAlignment`` and the affine matrix are projections of the
-    authoritative saved decomposition; transient clone getters never acquire
-    their own semantic identity.
+    Live PyObjC getters and decoded files converge on the authoritative saved
+    decomposition. Effective alignment and affine transforms are observations,
+    not independently writable document state.
     """
 
     alignment = _number(item.get("alignment", 0))
@@ -754,8 +733,6 @@ def canonical_component(item: Mapping[str, Any]) -> dict[str, Any]:
         "scale": _point(item.get("scale"), (1.0, 1.0)),
         "angle": _number(item.get("angle", 0)),
         "slant": _point(item.get("slant")),
-        "transform": _component_transform(item),
-        "automaticAlignment": alignment != -1,
         "alignment": alignment,
         "anchor": _text(item.get("anchor")),
         "locked": _bool(item.get("locked")),
@@ -908,7 +885,6 @@ def _layer(
         "roles": roles,
         "isMasterLayer": is_master,
         "isSpecialLayer": bool(interpolation) or roles[0] == "color",
-        "hasAlignedWidth": False,
         "interpolation": interpolation,
         "attributes": attributes,
         "anchors": _anchors(item.get("anchors")),

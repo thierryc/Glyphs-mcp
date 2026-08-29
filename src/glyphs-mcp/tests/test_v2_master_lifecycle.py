@@ -40,7 +40,6 @@ def _layer(master_id: str, name: str, x: float) -> dict:
         "name": name,
         "isMasterLayer": True,
         "isSpecialLayer": False,
-        "hasAlignedWidth": False,
         "width": 600,
         "LSB": 50,
         "RSB": 50,
@@ -168,8 +167,8 @@ def _duplicate_master(app, host, document_id: str) -> dict:
 
 
 class MasterLifecycleTests(unittest.TestCase):
-    def test_schema_v6_and_master_tools_are_explicit(self) -> None:
-        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 6)
+    def test_schema_and_master_tools_are_explicit(self) -> None:
+        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 7)
         self.assertIn("read_document", TOOL_CATALOG)
         self.assertIn("preview_change", TOOL_CATALOG)
         self.assertIn("apply_change", TOOL_CATALOG)

@@ -1,4 +1,4 @@
-"""Canonical structural contracts shared by schema-v6 document changes."""
+"""Canonical structural contracts shared by document changes."""
 
 from __future__ import annotations
 
@@ -79,8 +79,8 @@ def _model() -> dict:
 
 
 class StructuralKernelTests(unittest.TestCase):
-    def test_schema_v6_is_explicit(self) -> None:
-        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 6)
+    def test_schema_version_is_explicit(self) -> None:
+        self.assertEqual(CANONICAL_MODEL_SCHEMA_VERSION, 7)
 
     def test_identity_collection_diff_is_entity_based_and_reproducible(self) -> None:
         before = _model()

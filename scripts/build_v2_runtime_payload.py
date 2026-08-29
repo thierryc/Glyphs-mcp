@@ -126,7 +126,7 @@ def _activate_v2_bundle(bundle: Path) -> Path:
     schema = json.loads(
         (PINNED_FORMAT_ROOT / "glyphs-4.schema.json").read_text(encoding="utf-8")
     )
-    (documentation / "canonical-schema-v6-coverage.md").write_text(
+    (documentation / "canonical-schema-v7-coverage.md").write_text(
         render_canonical_coverage_markdown(schema),
         encoding="utf-8",
     )

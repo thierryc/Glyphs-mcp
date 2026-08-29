@@ -28,6 +28,7 @@ from .semantic import (
     diff_models,
     fingerprint_model,
     rebase_canonical_model,
+    semantic_value_at,
     subset_change_set,
 )
 
@@ -88,8 +89,8 @@ _OPENTYPE_WRITABLE = frozenset().union(
 _INSTANCE_WRITABLE = frozenset({"name", "type", "included", "axes"})
 MASTER_LIFECYCLE_CAPABILITY = "master_lifecycle"
 LAYER_LIFECYCLE_CAPABILITY = "layer_lifecycle"
-CANONICAL_V6_LIFECYCLE_CAPABILITY = "canonical_v6_lifecycle"
-_V6_ROOT_COLLECTIONS = frozenset({"axes", "metrics", "stems", "numbers"})
+CANONICAL_LIFECYCLE_CAPABILITY = "canonical_lifecycle"
+_CANONICAL_ROOT_COLLECTIONS = frozenset({"axes", "metrics", "stems", "numbers"})
 
 
 def _layer_entities(glyph: Any) -> tuple[list[str], dict[str, Mapping[str, Any]]]:
@@ -97,7 +98,7 @@ def _layer_entities(glyph: Any) -> tuple[list[str], dict[str, Mapping[str, Any]]
     indexed = indexed_entities(layers)
     if indexed is None:
         # Schema-v4 models are accepted only as an internal migration input;
-        # every schema-v6 native capture and public operation emits a list.
+        # every current native capture and public operation emits a list.
         if isinstance(layers, Mapping):
             order = [str(key) for key in layers]
             entities = {
@@ -413,7 +414,7 @@ def classify_change_path(path: tuple[str, ...]) -> str:
         "customParameters", "properties", "userData"
     }:
         return "writable"
-    if path[0] in _V6_ROOT_COLLECTIONS:
+    if path[0] in _CANONICAL_ROOT_COLLECTIONS:
         return "writable"
     if path[0] in {"glyphOrder", "settings"}:
         return "writable"
@@ -623,7 +624,7 @@ def _change_classification(
                 "isSpecialLayer",
             }:
                 return "writable" if path[4] in {"name", "masterId", "interpolation"} else "derived"
-    if CANONICAL_V6_LIFECYCLE_CAPABILITY in capabilities and path[0] in {
+    if CANONICAL_LIFECYCLE_CAPABILITY in capabilities and path[0] in {
         "axes", "metrics", "stems", "numbers", "glyphOrder", "settings"
     }:
         return "writable"
@@ -904,8 +905,8 @@ def lifecycle_capabilities(
 
     capabilities: set[str] = set()
     paths = tuple(change.path for change in change_set.changes)
-    if any(path and path[0] in _V6_ROOT_COLLECTIONS | {"glyphOrder", "settings"} for path in paths):
-        capabilities.add(CANONICAL_V6_LIFECYCLE_CAPABILITY)
+    if any(path and path[0] in _CANONICAL_ROOT_COLLECTIONS | {"glyphOrder", "settings"} for path in paths):
+        capabilities.add(CANONICAL_LIFECYCLE_CAPABILITY)
     if any(path and path[0] == "masters" for path in paths):
         capabilities.add(MASTER_LIFECYCLE_CAPABILITY)
     structural_master_ids = _master_structural_ids(change_set)
@@ -968,7 +969,7 @@ def staged_lifecycle_capabilities(
     removed_masters = before_masters - after_masters
     capabilities = set(lifecycle_capabilities(change_set))
     if before_tags != after_tags or before.get("axes") != after.get("axes"):
-        capabilities.add(CANONICAL_V6_LIFECYCLE_CAPABILITY)
+        capabilities.add(CANONICAL_LIFECYCLE_CAPABILITY)
 
     before_glyphs = before.get("glyphs", {})
     after_glyphs = after.get("glyphs", {})
@@ -1035,6 +1036,14 @@ class VerifiedMutationPlan:
     replay_replacements: tuple[tuple[str, ...], ...] = ()
     capabilities: tuple[str, ...] = ()
     execution_context: Mapping[str, Any] = field(default_factory=dict)
+    expected_observations: Mapping[tuple[str, str], Mapping[str, Any]] = field(
+        default_factory=dict
+    )
+    expected_effective_metadata: Mapping[str, Mapping[str, Any]] = field(
+        default_factory=dict
+    )
+    verification_constraints: tuple[Mapping[str, Any], ...] = ()
+    expected_constraint_evidence: Mapping[str, Any] = field(default_factory=dict)
     coverage: CanonicalCoverage = CanonicalCoverage.complete()
     stage_timings: Mapping[str, float] = field(
         default_factory=dict, compare=False, repr=False
@@ -1047,6 +1056,49 @@ class VerifiedMutationPlan:
     @property
     def after_fingerprint(self) -> str:
         return self.observed_change_set.after_fingerprint
+
+
+class RequestedEffectMismatchError(ValueError):
+    """Detached native execution did not preserve every requested effect."""
+
+    def __init__(self, mismatches: Sequence[Mapping[str, Any]]) -> None:
+        self.mismatches = tuple(copy.deepcopy(dict(item)) for item in mismatches)
+        super().__init__(
+            "detached native execution did not preserve {} requested effect(s)".format(
+                len(self.mismatches)
+            )
+        )
+
+    def to_public_dict(self) -> dict[str, Any]:
+        return {
+            "mismatchCount": len(self.mismatches),
+            "mismatches": [copy.deepcopy(dict(item)) for item in self.mismatches[:12]],
+            "truncated": len(self.mismatches) > 12,
+        }
+
+
+def _requested_effect_mismatches(
+    requested: ChangeSet, observed_after: Mapping[str, Any]
+) -> tuple[Mapping[str, Any], ...]:
+    mismatches: list[Mapping[str, Any]] = []
+    for change in requested.changes:
+        present, value = semantic_value_at(observed_after, change.path)
+        if present == change.after_present and (
+            not present or value == change.after
+        ):
+            continue
+        mismatches.append(
+            {
+                "path": list(change.path),
+                "requestedPresent": change.after_present,
+                "observedPresent": present,
+                "requested": copy.deepcopy(change.after)
+                if change.after_present
+                else "<missing>",
+                "observed": copy.deepcopy(value) if present else "<missing>",
+            }
+        )
+    return tuple(mismatches)
 
 
 def _unicode_owners(model: Mapping[str, Any]) -> dict[str, frozenset[str]]:
@@ -1179,6 +1231,8 @@ class MutationPlanner:
         if dirty_state_intent == "forward":
             _reject_new_duplicate_unicodes(before, requested_target)
         replay_replacements: tuple[tuple[str, ...], ...] = ()
+        simulation_observations: Mapping[tuple[str, str], Mapping[str, Any]] = {}
+        simulation_effective_metadata: Mapping[str, Mapping[str, Any]] = {}
         normalized_capabilities = tuple(sorted(set(str(value) for value in capabilities)))
         normalized_context = copy.deepcopy(dict(execution_context or {}))
         verified_simulator = getattr(
@@ -1231,6 +1285,12 @@ class MutationPlanner:
                 tuple(str(part) for part in path)
                 for path in simulation.get("replayReplacements", ())
             )
+            simulation_observations = copy.deepcopy(
+                dict(simulation.get("observations") or {})
+            )
+            simulation_effective_metadata = copy.deepcopy(
+                dict(simulation.get("effectiveMetadata") or {})
+            )
         elif required_after_model is not None and callable(reconciler):
             simulation_started = time.perf_counter_ns()
             simulation = reconciler(
@@ -1257,6 +1317,12 @@ class MutationPlanner:
             replay_replacements = tuple(
                 tuple(str(part) for part in path)
                 for path in simulation.get("replayReplacements", ())
+            )
+            simulation_observations = copy.deepcopy(
+                dict(simulation.get("observations") or {})
+            )
+            simulation_effective_metadata = copy.deepcopy(
+                dict(simulation.get("effectiveMetadata") or {})
             )
         else:
             simulation_started = time.perf_counter_ns()
@@ -1295,6 +1361,11 @@ class MutationPlanner:
                 required_after_model,
                 expected_after,
             )
+        requested_mismatches = _requested_effect_mismatches(
+            requested_change_set, expected_after
+        )
+        if requested_mismatches:
+            raise RequestedEffectMismatchError(requested_mismatches)
         if dirty_state_intent == "forward":
             _reject_new_duplicate_unicodes(before, expected_after)
         # The requested patch already proves the exact canonical target. When
@@ -1339,6 +1410,8 @@ class MutationPlanner:
             replay_replacements=replay_replacements,
             capabilities=normalized_capabilities,
             execution_context=normalized_context,
+            expected_observations=simulation_observations,
+            expected_effective_metadata=simulation_effective_metadata,
             coverage=coverage or CanonicalCoverage.complete(),
             stage_timings=stage_timings,
         )
@@ -1353,7 +1426,8 @@ __all__ = [
     "MutationBuild",
     "MutationRejected",
     "MutationResultContext",
-    "CANONICAL_V6_LIFECYCLE_CAPABILITY",
+    "RequestedEffectMismatchError",
+    "CANONICAL_LIFECYCLE_CAPABILITY",
     "LAYER_LIFECYCLE_CAPABILITY",
     "lifecycle_capabilities",
     "MASTER_LIFECYCLE_CAPABILITY",

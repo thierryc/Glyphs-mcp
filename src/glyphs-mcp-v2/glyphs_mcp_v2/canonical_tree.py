@@ -33,7 +33,7 @@ from .semantic import (
 
 
 TREE_SCHEMA_VERSION = 1
-CANONICAL_MODEL_SCHEMA_VERSION = 6
+CANONICAL_MODEL_SCHEMA_VERSION = 7
 REVERSIBILITY_COVERAGE = "complete_semantic_state"
 SHARDED_MAPPING_ROOTS = frozenset({"glyphs", "kerning"})
 
@@ -366,7 +366,7 @@ class _ImmutableMapping(Mapping[str, Any]):
 class CanonicalSnapshot(Mapping[str, Any]):
     """Immutable canonical model view with reusable content shards.
 
-    The public document fingerprint remains the schema-v6 canonical JSON
+    The public document fingerprint remains the schema-v7 canonical JSON
     fingerprint. ``content_tree_hash`` is an internal Merkle-style identity
     used to share unchanged roots and glyph entities without serializing them
     again. Native revision evidence is opaque to the core and never contributes
