@@ -39,6 +39,38 @@ visual Reporter.
 
 The Change Log and saved-source Reporter neither own nor drive each other.
 
+## Main-thread and background boundary
+
+In this Reporter path, Glyphs objects never enter a background worker. Reporter
+callbacks capture only the current document, glyph, and layer identities, then
+copy visual primitives through main-queue slices budgeted to 2 ms. A slice
+reschedules unfinished work;
+it never traverses a complete font from a save or drawing callback.
+
+One process-local `BackgroundWorkCoordinator` owns separate bounded lanes for
+saved-source and visual work. Submission appends to a latest-wins queue and
+wakes the worker through a non-blocking pipe. Saturation replaces obsolete work
+instead of waiting for capacity or growing memory. File enumeration, reads,
+signatures, SHA-256, OpenStep decode, canonical snapshots, segment preparation,
+and difference bands run only after the callback returns. Published snapshots
+and `LayerDiffPlan` values are immutable and generation-bound; an older job can
+never replace newer document or path state.
+
+A save barrier invalidates pending work for the affected source path before the
+native save. The host-thread closure performs only revision/path checks, open-
+document ownership checks, the `NSDocument` save selector, and dirty-state
+readback. Source verification runs on the requesting MCP worker. Optional
+Reporter/history refresh resumes from the newest generation after a 250 ms
+quiet window and is not part of save success. Drawing reads the last atomically
+published plan—or draws nothing—without a future, join, file access, or lock.
+
+There is no periodic source scan. Open, completed save, Save As, close, revert,
+and source replacement events enqueue refreshes. **Edit → Refresh Changes Since
+Save** is an explicit asynchronous retry for external edits and works while the
+MCP server is stopped. Decode or I/O failure records stale/unavailable state,
+retains the last valid snapshot, and never turns a successful save into a
+Reporter failure.
+
 ## CanonicalFontTree storage
 
 The native adapter first detaches Glyphs objects into JSON-safe canonical data
@@ -147,11 +179,14 @@ ordinary MCP responses and the capability manifest do not expose profiling
 fields.
 
 History and pagination use the observed operation diff. The Reporter instead
-reads one immutable decoded disk baseline maintained by a background cache.
-Reporter redraws perform only a saved glyph/layer lookup plus a lightweight
-projection of the current layer's identity, width, path geometry, and anchor
-positions. They do not read or hash files, construct a complete live canonical
-font, inspect backgrounds or metadata, write, prune, or mutate a Glyphs object.
+reads one immutable decoded disk baseline from the shared saved-source store.
+Its drawing callback performs only identity lookup and renders a previously
+completed plan. Geometry-only live projection is incremental on the main queue;
+saved segment preparation and correspondence happen once per source
+fingerprint, glyph, layer, and live generation on the background worker. The
+Reporter does not read or hash files, decode source, construct a complete live
+canonical font, inspect backgrounds or metadata, write, prune, or mutate a
+Glyphs object while drawing.
 
 ## Revert semantics
 
@@ -178,10 +213,18 @@ native user history is never globally cleared.
   no more than four new content objects.
 - A detached 1,000-glyph, five-master snapshot must complete within the bounded
   scale test without touching native Glyphs objects.
-- Repeated Reporter reads reuse the cached saved source and perform no file I/O,
-  content hashing, or full-tree diff.
-- The Change Log has no polling timer and refreshes only from history or document
-  lifecycle callbacks.
+- Save callback overhead stays below 5 ms at p95 in the controlled harness and
+  performs no file read, hash, decode, canonical capture, diff, worker wait, or
+  blocking lock acquisition.
+- Every Reporter host-projection slice stays within its 2 ms budget and resumes
+  incrementally for large layers.
+- Repeated Reporter reads reuse cached saved segments by source fingerprint,
+  glyph, and layer and perform no file I/O, content hashing, or full-tree diff.
+- The Change Log and saved-source service have no polling timer. Lifecycle
+  notifications and explicit manual refresh are their only refresh triggers.
+- Queue-pressure gates cover saturation, latest-wins replacement, save-start
+  cancellation, post-save debounce, stale publication refusal, and non-waiting
+  teardown.
 - Closing a document removes its process-local history and saved-source cache.
   Saving refreshes only the exact saved document baseline.
 - The explicit Glyphs 4 schema-v3 qualification gate composes the public typed

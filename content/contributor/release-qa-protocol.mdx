@@ -35,6 +35,12 @@ tests, and unsigned candidate metadata. Network-backed upstream drift checks
 run only when explicitly enabled. The gate does not sign, notarize, install,
 tag, upload, or publish.
 
+The v2 test pass also enforces the performance boundary: save callbacks may
+only capture identifiers/generations and submit through the non-blocking
+coordinator; p95 callback overhead must remain below 5 ms; Reporter host
+projection slices are budgeted to 2 ms; and queue saturation, cancellation,
+debounce, stale results, and teardown are exercised explicitly.
+
 ## Containment
 
 - Use only a disposable Glyphs 4 copy whose family name starts with
@@ -107,6 +113,16 @@ read-back mismatch, or rollback failure must fail atomically.
 | G4-11 | `save_document` Save As to a new absolute temporary destination. | Confirmed fingerprint-bound response reports `saveMode=save_as`; original bytes remain unchanged and no reversible history commit is created. |
 | G4-12 | Run `preview_export`, then `apply_export` for its exact immutable preview. | Destination and runtime drift are refused; deterministic regeneration and atomic publication match the preview. |
 | G4-13 | Reuse a consumed or stale change/export preview. | Refused without replaying planning, Python, or external publication. |
+
+### Save and Reporter responsiveness
+
+| ID | Action | Required result |
+| --- | --- | --- |
+| G4-14 | Save the disposable large font while **Changes Since Save** is enabled. | The native save completes without waiting for source decode or diff work; callback overhead is below the 5 ms p95 harness budget. |
+| G4-15 | Edit outlines and anchors rapidly during queued Reporter work. | Glyphs remains interactive; obsolete generations do not publish; added, removed, and moved anchors appear when the newest plan completes. |
+| G4-16 | Save during an active diff, then redraw immediately. | The save barrier cancels/defers optional work; the Reporter draws the last completed plan or nothing and updates later without delaying save. |
+| G4-17 | Modify the source externally and choose **Edit → Refresh Changes Since Save** with the server stopped. | The command returns immediately, refreshes asynchronously, and retains the last valid overlay with a stale/unavailable state if decode fails. |
+| G4-18 | Close/Save As the document and unload the Reporter during active work. | Path associations and document state are evicted atomically; callbacks and queued generations are invalidated; shutdown never waits for a worker. |
 
 Run G4-11 with `overwritePolicy=fail_if_exists`. After recording its evidence,
 close the Save As document without further saving, remove the temporary

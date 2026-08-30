@@ -39,6 +39,20 @@ runtime only for Glyphs 4.
   includes manual and MCP edits, tracks external source changes, and remains
   available while the MCP server is stopped. The Change Log remains
   independent textual feedback.
+- Saved-source refresh, hashing, decode, canonicalization, geometry
+  preparation, and diff generation now use bounded latest-wins background
+  queues. Save callbacks only publish identifiers and generations; a save
+  barrier cancels obsolete visual work and holds optional work for a 250 ms
+  quiet window after completion. Reporter drawing uses only the last immutable
+  completed plan and never waits for a worker.
+- Removed periodic saved-source polling. Open, save, Save As, close, and revert
+  lifecycle events drive refresh, while **Edit → Refresh Changes Since Save**
+  enqueues a manual refresh for external edits and remains available when the
+  MCP server is stopped.
+- Flat and package sources share one stable one-pass reader and content-
+  addressed snapshot store. Verified save snapshots feed the Reporter
+  directly, identical history snapshots are reused, inactive save history is
+  pruned, and asynchronous failures retain the last valid visual result.
 
 ### Python and structural replay
 

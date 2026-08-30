@@ -38,6 +38,15 @@ and structural replay for glyph, master, layer, instance, feature, class, and
 prefix lifecycle. Every supported live mutation uses the same detached
 simulation and verified transaction kernel and never saves implicitly.
 
+The saved-source and outline-delta implementation now has an explicit
+performance boundary. A bounded latest-wins coordinator isolates source reads,
+hashing, decode, canonicalization, segment preparation, history maintenance,
+and visual diff generation from Glyphs callbacks. Save barriers invalidate
+obsolete work and impose a 250 ms post-save quiet window; Reporter projection
+uses 2 ms main-queue slices and drawing consumes only immutable completed
+plans. Refresh is lifecycle-driven with an asynchronous **Edit → Refresh
+Changes Since Save** command; no periodic source polling remains.
+
 Milestone 10 established deterministic schema-v2 installer payloads and
 target-isolated install, update, rollback, preference, and uninstall behavior.
 Milestone 11 makes version migration target-aware, adds unsigned-candidate
