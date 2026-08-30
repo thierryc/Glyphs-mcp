@@ -221,6 +221,21 @@ def _append_glyph(
     return glyph
 
 
+def _fresh_probe_font_and_master(GSFont: Any, GSFontMaster: Any) -> tuple[Any, Any]:
+    """Return a fresh font and its single master without duplicating host defaults."""
+
+    font = GSFont()
+    existing_masters = list(font.masters)
+    if len(existing_masters) > 1:
+        raise CaptureError("a fresh Glyphs font unexpectedly contains multiple masters")
+    if existing_masters:
+        master = existing_masters[0]
+    else:
+        master = GSFontMaster()
+        font.masters.append(master)
+    return font, master
+
+
 def _build_probe_font() -> tuple[Any, dict[str, Any]]:
     _progress("constructing detached probe font")
     try:
@@ -242,16 +257,14 @@ def _build_probe_font() -> tuple[Any, dict[str, Any]]:
     except Exception as exc:
         raise CaptureError("capture must run inside Glyphs 4") from exc
 
-    font = GSFont()
+    font, master = _fresh_probe_font_and_master(GSFont, GSFontMaster)
     font.familyName = "Glyphs MCP Native Export Parity"
     font.upm = 1000
-    master = GSFontMaster()
     master.id = "11111111-1111-4111-8111-111111111111"
     master.name = "Regular"
     # Glyphs 4 resolves the default ascender/descender through font-owned
     # metric IDs. Attach the master before assigning those values so the
     # native setters never receive a nil metric key.
-    font.masters.append(master)
     master.ascender = 800
     master.descender = -200
     _progress("created detached master")

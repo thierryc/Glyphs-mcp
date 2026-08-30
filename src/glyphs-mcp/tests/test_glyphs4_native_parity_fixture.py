@@ -30,7 +30,16 @@ def _load_validator():
     return module
 
 
+def _load_capture():
+    spec = importlib.util.spec_from_file_location("glyphs4_native_parity_capture", CAPTURE_PATH)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 VALIDATOR = _load_validator()
+CAPTURE = _load_capture()
 
 
 def _json_bytes(value) -> bytes:
@@ -126,6 +135,38 @@ def _captured_fixture(root: Path) -> tuple[Path, dict]:
 
 
 class Glyphs4NativeParityFixtureTests(unittest.TestCase):
+    def test_capture_reuses_the_master_created_by_a_fresh_glyphs_font(self) -> None:
+        default_master = object()
+
+        class FakeFont:
+            def __init__(self) -> None:
+                self.masters = [default_master]
+
+        class UnexpectedMaster:
+            def __init__(self) -> None:
+                raise AssertionError("the host default master must be reused")
+
+        font, master = CAPTURE._fresh_probe_font_and_master(FakeFont, UnexpectedMaster)
+
+        self.assertIs(master, default_master)
+        self.assertEqual(font.masters, [default_master])
+
+    def test_capture_adds_one_master_when_the_host_creates_none(self) -> None:
+        created_master = object()
+
+        class FakeFont:
+            def __init__(self) -> None:
+                self.masters = []
+
+        class FakeMaster:
+            def __new__(cls):
+                return created_master
+
+        font, master = CAPTURE._fresh_probe_font_and_master(FakeFont, FakeMaster)
+
+        self.assertIs(master, created_master)
+        self.assertEqual(font.masters, [created_master])
+
     def test_pending_fixture_is_valid_as_a_capture_plan_only(self) -> None:
         fixture = VALIDATOR.validate_fixture(FIXTURE, require_captured=False)
         self.assertEqual(fixture["captureStatus"], "capture_required")
