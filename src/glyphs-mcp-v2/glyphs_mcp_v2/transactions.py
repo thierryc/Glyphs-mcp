@@ -17,6 +17,7 @@ from .canonical_tree import CanonicalSnapshot
 from .canonical_schema import CanonicalCoverage
 from .observations import collect_constraint_context
 from .semantic import ChangeSet, complete_models_equal, diff_models, fingerprint_model
+from .saved_source import source_state_changed
 
 if TYPE_CHECKING:
     from .mutation import VerifiedMutationPlan
@@ -343,16 +344,7 @@ class TransactionKernel:
         before: Optional[Mapping[str, Any]],
         after: Optional[Mapping[str, Any]],
     ) -> bool:
-        if before is None:
-            return False
-        if after is None:
-            return True
-        return (
-            before.get("contentFingerprint")
-            != after.get("contentFingerprint")
-            or before.get("kind") != after.get("kind")
-            or before.get("exists") != after.get("exists")
-        )
+        return source_state_changed(before, after)
 
     @staticmethod
     def _retain_or_copy(model: Mapping[str, Any]) -> Mapping[str, Any]:

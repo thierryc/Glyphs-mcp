@@ -311,6 +311,53 @@ class SaveApplicationTests(unittest.TestCase):
                 )
 
 class SaveLifecycleTests(unittest.TestCase):
+    def test_inactive_history_retains_only_latest_content_addressed_snapshot(self):
+        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        lifecycle = DocumentHistoryLifecycle(history)
+        model = _model()
+        state = {
+            "kind": "glyphs",
+            "exists": True,
+            "readable": True,
+            "contentFingerprint": SOURCE_FINGERPRINT,
+        }
+
+        lifecycle.document_was_saved(
+            "doc_save", source_state=state, saved_model=model
+        )
+        first = lifecycle._events["doc_save"][-1].saved_model
+        lifecycle.document_was_saved(
+            "doc_save", source_state=state, saved_model=model
+        )
+        events = tuple(lifecycle._events["doc_save"])
+
+        self.assertEqual(len(events), 1)
+        self.assertIs(events[0].saved_model, first)
+        self.assertEqual(len(lifecycle._saved_snapshots), 1)
+
+    def test_active_transaction_retains_only_events_newer_than_its_epoch(self):
+        history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
+        lifecycle = DocumentHistoryLifecycle(history)
+        before = _model()
+        lifecycle.document_was_saved(
+            "doc_save",
+            source_state={"contentFingerprint": "sha256:initial"},
+            saved_model=before,
+        )
+        token = lifecycle.begin_transaction("doc_save")
+        for index in range(3):
+            model = copy.deepcopy(before)
+            model["font"]["familyName"] = "Saved {}".format(index)
+            lifecycle.document_was_saved(
+                "doc_save",
+                source_state={"contentFingerprint": "sha256:{}".format(index)},
+                saved_model=model,
+            )
+
+        self.assertEqual(len(lifecycle._events["doc_save"]), 3)
+        lifecycle.cancel_transaction(token)
+        self.assertEqual(len(lifecycle._events["doc_save"]), 1)
+
     def test_manual_save_during_transaction_is_deferred_and_reconciled(self):
         history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
         resets = []

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -18,7 +19,12 @@ if str(V2_SOURCE) not in sys.path:
 
 from glyphs_mcp_v2.adapters import document as document_adapter  # noqa: E402
 from glyphs_mcp_v2.adapters.document import GlyphsDocumentHost  # noqa: E402
+from glyphs_mcp_v2.saved_source import SavedSourceRead  # noqa: E402
 from glyphs_mcp_v2.saving import DocumentSaveError  # noqa: E402
+
+
+FLAT_FIXTURE = REPO / "GlyphsSDK/GlyphsFileFormat/GlyphsFileFormatv3.glyphs"
+PACKAGE_FIXTURE = REPO / "GlyphsSDK/GlyphsFileFormat/GlyphsFileFormatv3.glyphspackage"
 
 
 class _Immediate:
@@ -46,10 +52,9 @@ class _SaveDocument:
         self.calls.append((str(url), type_name, operation, error))
         target = Path(str(url))
         if target.suffix.lower() == ".glyphspackage":
-            target.mkdir(exist_ok=True)
-            (target / "fontinfo.plist").write_bytes(b"verified native save")
+            shutil.copytree(PACKAGE_FIXTURE, target, dirs_exist_ok=True)
         else:
-            target.write_bytes(b"verified native save")
+            target.write_bytes(FLAT_FIXTURE.read_bytes())
         if self.update_path:
             self.font.filepath = str(target)
         self.hasUnautosavedChanges = False
@@ -142,6 +147,39 @@ class NativeSaveAdapterTests(unittest.TestCase):
             font.save.assert_not_called()
             font.copy.assert_not_called()
             font.parent.saveDocument_.assert_not_called()
+
+    def test_verified_snapshot_avoids_canonical_recapture_on_the_save_lane(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory).resolve() / "Current.glyphs"
+            source.write_bytes(b"before")
+            font = _SaveFont(source)
+            host, document_id, expected, capture = self._host(font)
+            expected_snapshot = SimpleNamespace(
+                document_fingerprint=expected,
+                native_revision_evidence={
+                    "document": document_adapter._document_revision_token(
+                        font,
+                        notification_generation=None,
+                    )
+                },
+            )
+            capture.side_effect = AssertionError(
+                "save lane must reuse the verified snapshot"
+            )
+            source_fingerprint = document_adapter._normalized_source_file_state(
+                source
+            )["contentFingerprint"]
+
+            with mock.patch.dict(sys.modules, _native_modules()):
+                result = host.save_document(
+                    document_id,
+                    expected_document_fingerprint=expected,
+                    expected_source_file_fingerprint=source_fingerprint,
+                    expected_snapshot=expected_snapshot,
+                )
+
+            self.assertTrue(result["nativeSaveSucceeded"])
+            capture.assert_not_called()
 
     def test_save_as_changes_normal_path_once_and_preserves_original_source(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -551,19 +589,23 @@ class NativeSaveAdapterTests(unittest.TestCase):
             source_fingerprint = document_adapter._normalized_source_file_state(
                 source
             )["contentFingerprint"]
-            actual = document_adapter._normalized_source_file_state
-
-            def unreadable_after_write(path):
-                state = dict(actual(path))
-                if font.parent.hasUnautosavedChanges is False:
-                    state["readable"] = False
-                    state["contentFingerprint"] = None
-                return state
+            unreadable = SavedSourceRead(
+                path=str(source),
+                state={
+                    "kind": "glyphs",
+                    "exists": True,
+                    "readable": False,
+                    "contentFingerprint": None,
+                    "filePath": str(source),
+                },
+                snapshot=None,
+                error="source_unreadable",
+            )
 
             with mock.patch.dict(sys.modules, _native_modules()), mock.patch.object(
-                document_adapter,
-                "_normalized_source_file_state",
-                side_effect=unreadable_after_write,
+                document_adapter._SAVED_SOURCE_READER,
+                "read",
+                return_value=unreadable,
             ):
                 with self.assertRaises(DocumentSaveError) as failed:
                     host.save_document(
@@ -590,6 +632,13 @@ class NativeSaveAdapterTests(unittest.TestCase):
         self.assertNotIn("saveDocument_", method_source)
         self.assertNotIn("makeCopy", method_source)
         self.assertNotIn("capture_stable_snapshot", method_source)
+        native_source = method_source.split("        def native_save()", 1)[1]
+        native_source = native_source.split(
+            "        native_after = self._executor.run(native_save)", 1
+        )[0]
+        self.assertNotIn("_capture_cached_snapshot", native_source)
+        self.assertNotIn("_normalized_source_file_state", native_source)
+        self.assertNotIn("_SAVED_SOURCE_READER", native_source)
 
     def test_destination_validation_rejects_links_packages_and_unwritable_parent(self):
         with tempfile.TemporaryDirectory() as directory:

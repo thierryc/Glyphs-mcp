@@ -255,14 +255,21 @@ class McpToolRegistrationTextTests(unittest.TestCase):
         plugin_path = resources / "glyphs_plugin.py"
         text = plugin_path.read_text(encoding="utf-8", errors="replace")
 
-        self.assertEqual(text.count("NSMenuItem.new()"), 2)
-        self.assertEqual(text.count("Glyphs.menu[EDIT_MENU].append("), 2)
+        self.assertEqual(text.count("NSMenuItem.new()"), 3)
+        self.assertEqual(text.count("Glyphs.menu[EDIT_MENU].append("), 3)
         self.assertIn("self.name_menu = tr(\"menu.main\")", text)
         self.assertIn("self.name_changes = tr(\"menu.changes\")", text)
+        self.assertIn("self.name_refresh_changes = tr(\"menu.refresh_changes\")", text)
         self.assertIn("newMenuItem.setTitle_(self.name_menu)", text)
         self.assertIn("newMenuItem.setAction_(self.ShowStatusWindow_)", text)
         self.assertIn("changesMenuItem.setTitle_(self.name_changes)", text)
         self.assertIn("changesMenuItem.setAction_(self.ShowChangesWindow_)", text)
+        self.assertIn(
+            "refreshChangesMenuItem.setAction_(self.RefreshChangesSinceSave_)",
+            text,
+        )
+        self.assertIn("def validateMenuItem_(self, menu_item):", text)
+        self.assertIn("return bool(self._active_saved_source_path())", text)
         self.assertIn("DocumentChangesPanelController", text)
         self.assertNotIn("status_item = NSMenuItem.new()", text)
         self.assertNotIn("self.statusMenuItem", text)

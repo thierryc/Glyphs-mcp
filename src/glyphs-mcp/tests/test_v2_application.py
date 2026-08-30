@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import copy
+import statistics
 import sys
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -18,6 +20,7 @@ if str(V2_SOURCE) not in sys.path:
 
 from glyphs_mcp_v2.activity import OperationActivityStore  # noqa: E402
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
+from glyphs_mcp_v2.background_work import BackgroundWorkCoordinator  # noqa: E402
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
 from glyphs_mcp_v2.contracts import ToolResponse  # noqa: E402
 from glyphs_mcp_v2.generic_tools import (  # noqa: E402
@@ -184,6 +187,70 @@ class _FakeHost:
 
 
 class V2ApplicationTests(unittest.TestCase):
+    def test_manual_save_callback_only_records_identity_and_enqueues_refresh(self) -> None:
+        host = _FakeHost()
+        capture_calls = []
+        host.capture_source_file_state = lambda *_args, **_kwargs: capture_calls.append(1)
+
+        class _SavedSources:
+            def __init__(self):
+                self.paths = []
+
+            def resume_after_save(self, path):
+                self.paths.append(path)
+
+        saved_sources = _SavedSources()
+        application = GlyphsMCPApplication(host, saved_sources=saved_sources)
+        durations = []
+        for _index in range(100):
+            started = time.perf_counter_ns()
+            application.document_was_saved(
+                "doc_alpha", source_path="/fonts/Family.glyphs"
+            )
+            durations.append((time.perf_counter_ns() - started) / 1_000_000)
+
+        self.assertEqual(capture_calls, [])
+        self.assertEqual(len(saved_sources.paths), 100)
+        self.assertLess(statistics.quantiles(durations, n=20)[18], 5.0)
+
+    def test_live_manual_save_history_runs_after_the_callback_returns(self) -> None:
+        coordinator = BackgroundWorkCoordinator(thread_name="history-boundary")
+        started = threading.Event()
+        release = threading.Event()
+        thread_ids = []
+
+        class _SavedSources:
+            def __init__(self):
+                self.coordinator = coordinator
+
+            def resume_after_save(self, _path):
+                return None
+
+        application = GlyphsMCPApplication(
+            _FakeHost(), saved_sources=_SavedSources()
+        )
+
+        def record(*_args, **_kwargs):
+            thread_ids.append(threading.current_thread().ident)
+            started.set()
+            release.wait(1.0)
+            return True
+
+        application.lifecycle.document_was_saved = record
+        try:
+            before = time.perf_counter_ns()
+            accepted = application.document_was_saved(
+                "doc_alpha", source_path="/fonts/Family.glyphs"
+            )
+            elapsed_ms = (time.perf_counter_ns() - before) / 1_000_000
+            self.assertTrue(accepted)
+            self.assertLess(elapsed_ms, 5.0)
+            self.assertTrue(started.wait(1.0))
+            self.assertEqual(thread_ids, [coordinator.worker.ident])
+        finally:
+            release.set()
+            coordinator.close(wait=True)
+
     def test_server_info_declares_generic_registries_and_permanent_python(self) -> None:
         payload = GlyphsMCPApplication(_FakeHost()).invoke(
             "get_server_info"

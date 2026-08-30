@@ -20,7 +20,10 @@ from glyphs_mcp_v2.diff_geometry import (  # noqa: E402
     DifferenceTopologyError,
     difference_bands,
 )
-from glyphs_mcp_v2.diff_overlay import overlay_for_layer  # noqa: E402
+from glyphs_mcp_v2.diff_overlay import (  # noqa: E402
+    SavedLayerGeometryCache,
+    overlay_for_layer,
+)
 
 
 def _model(x: float = 0.0) -> dict:
@@ -123,8 +126,8 @@ class ChangeFeedbackTests(unittest.TestCase):
         )
 
         self.assertTrue(overlay.visible)
-        self.assertEqual(overlay.baseline_anchors["anchor:top:0"], [250, 700])
-        self.assertEqual(overlay.current_anchors["anchor:top:0"], [260, 710])
+        self.assertEqual(overlay.baseline_anchors["anchor:top:0"], (250, 700))
+        self.assertEqual(overlay.current_anchors["anchor:top:0"], (260, 710))
         self.assertEqual(overlay.baseline_width, 500)
         self.assertEqual(overlay.current_width, 540)
 
@@ -155,6 +158,58 @@ class ChangeFeedbackTests(unittest.TestCase):
         )
 
         self.assertFalse(overlay.visible)
+
+    def test_added_and_removed_anchors_remain_explicit_in_the_plan(self) -> None:
+        saved = copy.deepcopy(self.before)
+        saved_layer = saved["glyphs"]["A"]["layers"]["m0"]
+        saved_layer["anchors"] = {"old": [100, 200]}
+        live = copy.deepcopy(saved_layer)
+        live["anchors"] = {"new": [300, 400]}
+
+        plan = overlay_for_layer(
+            baseline_model=saved,
+            glyph_name="A",
+            layer_key="m0",
+            live_layer=live,
+        )
+
+        self.assertEqual(set(plan.baseline_anchors), {"anchor:old:0"})
+        self.assertEqual(set(plan.current_anchors), {"anchor:new:0"})
+
+    def test_topology_mismatch_retains_saved_ghost_without_bands(self) -> None:
+        live = copy.deepcopy(self.before["glyphs"]["A"]["layers"]["m0"])
+        live["paths"][0]["nodes"].pop()
+
+        plan = overlay_for_layer(
+            baseline_model=self.before,
+            glyph_name="A",
+            layer_key="m0",
+            live_layer=live,
+        )
+
+        self.assertTrue(plan.visible)
+        self.assertFalse(plan.topology_compatible)
+        self.assertFalse(plan.bands)
+        self.assertTrue(plan.baseline_segments)
+
+    def test_saved_segments_are_reused_by_source_glyph_and_layer(self) -> None:
+        cache = SavedLayerGeometryCache()
+        first = cache.get_or_prepare(
+            source_fingerprint="sha256:saved",
+            baseline_model=self.before,
+            glyph_name="A",
+            layer_key="m0",
+        )
+        second = cache.get_or_prepare(
+            source_fingerprint="sha256:saved",
+            baseline_model=self.before,
+            glyph_name="A",
+            layer_key="m0",
+        )
+
+        self.assertIsNotNone(first)
+        self.assertIs(first, second)
+        self.assertIs(first.segments, second.segments)
 
     def test_difference_geometry_builds_only_the_gap_between_old_and_live_paths(self) -> None:
         baseline = self.before["glyphs"]["A"]["layers"]["m0"]["paths"]
@@ -203,16 +258,29 @@ class ChangeFeedbackTests(unittest.TestCase):
             "active_host",
         ):
             self.assertNotIn(forbidden, reporter_source)
-        self.assertIn("native_layer_overlay_state", reporter_source)
-        self.assertIn("self._baseline_cache.snapshot", reporter_source)
+        self.assertIn("NativeLayerOverlayProjector", reporter_source)
+        self.assertIn("self._saved_sources.store.snapshot", reporter_source)
         self.assertIn('self.menuName = "Changes Since Save"', reporter_source)
-        self.assertIn("_draw_difference", reporter_source)
-        self.assertIn("_stroke_saved_paths", reporter_source)
+        self.assertIn("_draw_difference(plan.bands)", reporter_source)
+        self.assertIn("_stroke_saved_segments", reporter_source)
+        self.assertIn("_stroke_added_anchor(current, radius)", reporter_source)
         self.assertIn(".fill()", reporter_source)
+        self.assertNotIn("NSTimer", reporter_source)
+        self.assertNotIn("pollSavedSources_", reporter_source)
         self.assertNotIn("TARGET_STALE_RGBA", reporter_source)
         foreground_source = reporter_source.split("def foreground(self, layer):", 1)[1]
-        foreground_source = foreground_source.split("def __file__", 1)[0]
-        for forbidden in (".refresh(", "_source_file_state", "_saved_source_canonical_model"):
+        foreground_source = foreground_source.split("def _teardown", 1)[0]
+        for forbidden in (
+            ".refresh(",
+            "_source_file_state",
+            "_saved_source_canonical_model",
+            "native_layer_overlay_state",
+            "build_layer_diff_plan",
+            "difference_bands",
+            "path_segments",
+            ".result(",
+            ".join(",
+        ):
             self.assertNotIn(forbidden, foreground_source)
 
 

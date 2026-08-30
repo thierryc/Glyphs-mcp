@@ -94,6 +94,7 @@ from ..semantic import (
     semantic_value_at,
 )
 from ..saving import DocumentSaveError
+from ..saved_source import SavedSourceReader
 from ..source_bundle import (
     SourceBundleError,
     preflight_source_bundle as build_source_bundle_preflight,
@@ -681,6 +682,9 @@ _NATIVE_PROPERTY_LIST_FLATTENER_LOCK = RLock()
 _MISSING_PERSISTENT_FIELD = object()
 
 
+_SAVED_SOURCE_READER = SavedSourceReader()
+
+
 def _persistent_record_field(value: Any, name: str) -> Any:
     """Read one authoritative saved field from a native record, if exposed."""
 
@@ -1192,37 +1196,13 @@ def _saved_source_canonical_model(
     *,
     instance_ids: Optional[Sequence[str]] = None,
 ) -> Mapping[str, Any] | None:
-    """Decode one saved flat/package source without touching live objects."""
+    """Decode through the neutral stable reader without touching live objects."""
 
-    suffix = path.suffix.lower()
-    if suffix == ".glyphspackage" and path.is_dir():
-        serialized = _saved_package_mapping(path)
-    elif suffix == ".glyphs" and path.is_file():
-        serialized = _native_openstep_property_list(path)
-    else:
-        return None
-    if not isinstance(serialized, Mapping):
-        return None
-    try:
-        model = dict(
-            SerializedMappingSource(
-                serialized,
-                copy_source=False,
-                document_path=path,
-            ).capture()
-        )
-    except Exception:
-        return None
-    identities = tuple(str(value) for value in (instance_ids or ()))
-    instances = model.get("instances")
-    if identities and isinstance(instances, list):
-        if len(identities) != len(instances):
-            return None
-        for index, instance in enumerate(instances):
-            if not isinstance(instance, dict):
-                return None
-            instance["id"] = identities[index]
-    return model
+    result = _SAVED_SOURCE_READER.read(
+        path,
+        instance_ids=tuple(str(value) for value in (instance_ids or ())),
+    )
+    return result.snapshot.model if result.snapshot is not None else None
 
 
 def _saved_document_canonical_model(
@@ -1707,48 +1687,120 @@ def native_layer_to_model(
     return _layer_model(layer, axis_tags=axis_tags)
 
 
+class NativeLayerOverlayProjector:
+    """Incrementally copy one layer's visual primitives on the host thread."""
+
+    def __init__(self, layer: Any) -> None:
+        layer_id = str(
+            _safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""
+        )
+        self._result = {
+            "id": layer_id,
+            "masterId": str(_safe_getattr(layer, "associatedMasterId") or layer_id),
+            "width": _plain_scalar(_safe_getattr(layer, "width")),
+            "anchors": [],
+            "shapes": [],
+        }
+        self._paths = tuple(
+            shape for shape in _layer_shapes(layer) if _is_path(shape)
+        )
+        self._anchors = tuple(
+            _sequence_values(_safe_getattr(layer, "anchors"))
+        )
+        self._path_index = 0
+        self._node_index = 0
+        self._active_path: dict[str, Any] | None = None
+        self._active_nodes: tuple[Any, ...] = ()
+        self._anchor_index = 0
+        self._anchor_occurrences: dict[str, int] = {}
+        self.complete = False
+
+    def step(
+        self,
+        *,
+        budget_seconds: float = 0.002,
+        clock: Callable[[], float] = time.perf_counter,
+    ) -> bool:
+        """Copy at least one primitive and yield once the time budget expires."""
+
+        if self.complete:
+            return True
+        deadline = clock() + max(0.0, float(budget_seconds))
+        progressed = False
+        while self._path_index < len(self._paths):
+            native_path = self._paths[self._path_index]
+            if self._active_path is None:
+                self._active_path = {
+                    "closed": bool(_safe_getattr(native_path, "closed", True)),
+                    "nodes": [],
+                }
+                self._active_nodes = tuple(
+                    _sequence_values(_safe_getattr(native_path, "nodes"))
+                )
+                self._node_index = 0
+            while self._node_index < len(self._active_nodes):
+                node = self._active_nodes[self._node_index]
+                position = _point(_safe_getattr(node, "position"))
+                self._active_path["nodes"].append(
+                    {
+                        "x": position[0],
+                        "y": position[1],
+                        "type": str(_safe_getattr(node, "type") or "line").lower(),
+                    }
+                )
+                self._node_index += 1
+                progressed = True
+                if clock() >= deadline:
+                    return False
+            self._result["shapes"].append(
+                {
+                    "id": deterministic_occurrence_id(
+                        "shape", "path", self._path_index
+                    ),
+                    "kind": "path",
+                    "value": self._active_path,
+                }
+            )
+            self._active_path = None
+            self._active_nodes = ()
+            self._path_index += 1
+            if progressed and clock() >= deadline:
+                return False
+
+        while self._anchor_index < len(self._anchors):
+            anchor = self._anchors[self._anchor_index]
+            name = str(_safe_getattr(anchor, "name") or "")
+            occurrence = self._anchor_occurrences.get(name, 0)
+            self._anchor_occurrences[name] = occurrence + 1
+            self._result["anchors"].append(
+                {
+                    "id": deterministic_occurrence_id(
+                        "anchor", name, occurrence
+                    ),
+                    "name": name,
+                    "position": _point(_safe_getattr(anchor, "position")),
+                }
+            )
+            self._anchor_index += 1
+            progressed = True
+            if clock() >= deadline:
+                return False
+        self.complete = True
+        return True
+
+    def result(self) -> dict[str, Any]:
+        if not self.complete:
+            raise RuntimeError("layer overlay projection is incomplete")
+        return self._result
+
+
 def native_layer_overlay_state(layer: Any) -> dict[str, Any]:
-    """Project only the native values consumed by the drawing-only Reporter.
+    """Project only the native values consumed by the drawing-only Reporter."""
 
-    This intentionally does not capture canonical backgrounds, annotations,
-    guides, hints, images, components, attributes, or user data. The
-    saved-source cache owns the detached disk baseline; drawing needs only
-    current path geometry, anchor positions, and width to show the live gap.
-    """
-
-    layer_id = str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or "")
-    master_id = str(_safe_getattr(layer, "associatedMasterId") or layer_id)
-    paths = []
-    for shape in _layer_shapes(layer):
-        if not _is_path(shape):
-            continue
-        paths.append(
-            {
-                "id": deterministic_occurrence_id("shape", "path", len(paths)),
-                "kind": "path",
-                "value": _path_model(shape),
-            }
-        )
-    anchors = []
-    occurrences: dict[str, int] = {}
-    for anchor in _sequence_values(_safe_getattr(layer, "anchors")):
-        name = str(_safe_getattr(anchor, "name") or "")
-        occurrence = occurrences.get(name, 0)
-        occurrences[name] = occurrence + 1
-        anchors.append(
-            {
-                "id": deterministic_occurrence_id("anchor", name, occurrence),
-                "name": name,
-                "position": _point(_safe_getattr(anchor, "position")),
-            }
-        )
-    return {
-        "id": layer_id,
-        "masterId": master_id,
-        "width": _plain_scalar(_safe_getattr(layer, "width")),
-        "anchors": anchors,
-        "shapes": paths,
-    }
+    projector = NativeLayerOverlayProjector(layer)
+    while not projector.step(budget_seconds=float("inf")):
+        pass
+    return projector.result()
 
 
 def _canonical_layer_projection(
@@ -10747,7 +10799,6 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         self._native_lifecycle_tombstones: dict[str, Mapping[str, Any]] = {}
         self._verified_transaction_updates: dict[str, dict[str, Any]] = {}
         self._save_notification_correlations: dict[str, deque[str]] = {}
-        self._save_notification_lock = RLock()
         self._detached_clone_projection_cache: dict[
             tuple[str, str], _DetachedCloneProjection
         ] = {}
@@ -10851,49 +10902,60 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
     ) -> str | None:
         """Return the opaque token owned by one native save notification."""
 
-        with self._save_notification_lock:
-            key = str(document_id or "")
-            pending = self._save_notification_correlations.get(key)
-            if not pending:
-                return None
-            token = pending.popleft()
-            if not pending:
-                self._save_notification_correlations.pop(key, None)
-            return token
+        key = str(document_id or "")
+        pending = self._save_notification_correlations.get(key)
+        if not pending:
+            return None
+        token = pending.popleft()
+        if not pending:
+            self._save_notification_correlations.pop(key, None)
+        return token
 
     def clear_save_notification_correlation(self, document_id: str) -> None:
-        with self._save_notification_lock:
-            self._save_notification_correlations.pop(str(document_id or ""), None)
+        self._save_notification_correlations.pop(str(document_id or ""), None)
 
     def native_font(self, document_id: str) -> Any:
         return self._font_for_document(document_id)
 
+    def source_path_for_document(self, document_id: str) -> str | None:
+        """Capture only the current source-path identifier on the host lane."""
+
+        def capture() -> str | None:
+            value = _safe_getattr(self._font_for_document(document_id), "filepath")
+            return str(value) if value else None
+
+        return self._executor.run(capture)
+
     def capture_source_file_state(
         self, document_id: str, *, include_model: bool = False
     ) -> Mapping[str, Any] | None:
-        """Observe persistence evidence without saving or touching live content."""
+        """Observe persistence evidence with filesystem work off the host lane."""
 
-        def capture() -> Mapping[str, Any] | None:
+        def capture_identity() -> tuple[str, tuple[str, ...]] | None:
             font = self._font_for_document(document_id)
             path_value = _safe_getattr(font, "filepath")
             if not path_value:
                 return None
-            path = Path(str(path_value))
-            raw = _source_file_state(path)
-            if raw is None:
-                return None
-            state = {**dict(raw), "filePath": str(path)}
-            if include_model and state.get("exists") and state.get("readable"):
-                live = self._capture_cached_model(document_id, font)
-                saved = _saved_source_canonical_model(
-                    path,
-                    instance_ids=collection_order(live.get("instances", [])),
-                )
-                if isinstance(saved, Mapping):
-                    state["savedModel"] = saved
-            return state
+            instance_ids = tuple(
+                str(_safe_getattr(instance, "id") or "")
+                for instance in _sequence_values(_safe_getattr(font, "instances"))
+            )
+            return str(path_value), instance_ids
 
-        return self._executor.run(capture)
+        identity = self._executor.run(capture_identity)
+        if identity is None:
+            return None
+        path_value, instance_ids = identity
+        path = Path(path_value)
+        if include_model:
+            observed = _SAVED_SOURCE_READER.read(path, instance_ids=instance_ids)
+            state = dict(observed.state)
+            if observed.snapshot is not None:
+                state["savedModel"] = observed.snapshot.model
+                state["savedSnapshot"] = observed.snapshot
+            return state
+        raw = _source_file_state(path)
+        return {**dict(raw), "filePath": str(path)} if raw is not None else None
 
     def rebase_verified_change_tracking(
         self,
@@ -10941,8 +11003,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         overwrite_policy: str = "fail_if_exists",
         expected_destination_file_fingerprint: Any = None,
         notification_correlation_token: Any = None,
+        expected_snapshot: CanonicalSnapshot | None = None,
     ) -> Mapping[str, Any]:
-        """Synchronously save or Save As through NSDocument, then prove bytes."""
+        """Invoke NSDocument on the host thread, then prove bytes off-thread."""
 
         if overwrite_policy not in {"fail_if_exists", "replace_if_match"}:
             raise DocumentSaveError(
@@ -10955,8 +11018,27 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         def native_preflight() -> Mapping[str, Any]:
             font = self._font_for_document(document_id)
-            snapshot = self._capture_cached_snapshot(document_id, font)
-            observed_fingerprint = snapshot.document_fingerprint
+            generation = (
+                self._glyphs_change_generation.current()
+                if self._glyphs_change_generation is not None
+                else None
+            )
+            revision = _document_revision_token(
+                font, notification_generation=generation
+            )
+            if expected_snapshot is not None:
+                observed_fingerprint = expected_snapshot.document_fingerprint
+                expected_revision = expected_snapshot.native_revision_evidence.get(
+                    "document"
+                )
+                if expected_revision is not None and revision != expected_revision:
+                    raise DocumentSaveError(
+                        "stale_document",
+                        "The Glyphs document changed before the native save fence.",
+                    )
+            else:
+                snapshot = self._capture_cached_snapshot(document_id, font)
+                observed_fingerprint = snapshot.document_fingerprint
             if observed_fingerprint != str(expected_document_fingerprint):
                 raise DocumentSaveError(
                     "stale_document",
@@ -10969,19 +11051,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     },
                 )
             path_value = _safe_getattr(font, "filepath")
-            generation = (
-                self._glyphs_change_generation.current()
-                if self._glyphs_change_generation is not None
-                else None
-            )
             return {
                 "font": font,
                 "path": str(path_value) if path_value else None,
                 "dirty": _document_edited_state(font),
                 "documentFingerprint": observed_fingerprint,
-                "revision": _document_revision_token(
-                    font, notification_generation=generation
-                ),
+                "revision": revision,
                 "instanceIds": tuple(
                     self._instance_ids_for_font(document_id, font)
                 ),
@@ -11055,6 +11130,44 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 if target.suffix.lower() == ".glyphspackage":
                     try:
                         other_path.relative_to(target)
+                    except ValueError:
+                        pass
+                    else:
+                        raise DocumentSaveError(
+                            "destination_open_in_glyphs",
+                            "The Save As package contains another open Glyphs document.",
+                        )
+
+        def reject_open_destination_by_path(
+            open_paths: Sequence[tuple[Any, Any]],
+        ) -> None:
+            """Protect live ownership using identifier-only host-thread reads."""
+
+            target_path = Path(os.path.abspath(str(target)))
+            for other_document_id, other_path_value in open_paths:
+                if not other_path_value or str(other_document_id) == document_id:
+                    continue
+                other_path = Path(os.path.abspath(str(other_path_value)))
+                if os.path.normcase(str(other_path)) == os.path.normcase(
+                    str(target_path)
+                ):
+                    raise DocumentSaveError(
+                        "destination_open_in_glyphs",
+                        "The Save As destination belongs to another open Glyphs document.",
+                    )
+                if other_path.suffix.lower() == ".glyphspackage":
+                    try:
+                        target_path.relative_to(other_path)
+                    except ValueError:
+                        pass
+                    else:
+                        raise DocumentSaveError(
+                            "destination_open_in_glyphs",
+                            "The Save As destination is inside another open Glyphs package.",
+                        )
+                if target_path.suffix.lower() == ".glyphspackage":
+                    try:
+                        other_path.relative_to(target_path)
                     except ValueError:
                         pass
                     else:
@@ -11206,23 +11319,18 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     ): destination_now
                 },
             )
+        if mode == "save_as" and previous_path is not None and previous_state is not None:
+            original_now = _normalized_source_file_state(previous_path)
+            if original_now != previous_state:
+                raise DocumentSaveError(
+                    "stale_source_file",
+                    "The original source file changed immediately before Save As.",
+                    details={"observedSourceState": original_now},
+                )
+        reject_open_destination(before_native["openPaths"])
 
         def native_save() -> Mapping[str, Any]:
             font = self._font_for_document(document_id)
-            self._canonical_model_cache.invalidate(document_id)
-            snapshot = self._capture_cached_snapshot(document_id, font)
-            observed_fingerprint = snapshot.document_fingerprint
-            if observed_fingerprint != str(expected_document_fingerprint):
-                raise DocumentSaveError(
-                    "stale_document",
-                    "The Glyphs document changed immediately before saving.",
-                    details={
-                        "expectedDocumentFingerprint": str(
-                            expected_document_fingerprint
-                        ),
-                        "observedDocumentFingerprint": observed_fingerprint,
-                    },
-                )
             generation = (
                 self._glyphs_change_generation.current()
                 if self._glyphs_change_generation is not None
@@ -11238,31 +11346,17 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "stale_document",
                     "The Glyphs document changed before the native save began.",
                 )
-            if mode == "save_as" and previous_path is not None and previous_state is not None:
-                original_now = _normalized_source_file_state(previous_path)
-                if original_now != previous_state:
-                    raise DocumentSaveError(
-                        "stale_source_file",
-                        "The original source file changed immediately before Save As.",
-                        details={"observedSourceState": original_now},
-                    )
-            destination_immediate = _normalized_source_file_state(target)
-            if destination_immediate != destination_before:
-                raise DocumentSaveError(
-                    "stale_source_file" if mode == "save" else "stale_destination",
+            reject_open_destination_by_path(
+                tuple(
                     (
-                        "The current source file changed immediately before saving."
-                        if mode == "save"
-                        else "The Save As destination changed immediately before saving."
-                    ),
-                    details={
-                        (
-                            "observedSourceState"
-                            if mode == "save"
-                            else "destinationState"
-                        ): destination_immediate
-                    },
+                        self._identities.resolve(
+                            self._native_identity(candidate)
+                        ),
+                        str(_safe_getattr(candidate, "filepath") or ""),
+                    )
+                    for candidate in self._collect_fonts()
                 )
+            )
             document = _maybe_call(_safe_getattr(font, "parent"))
             selector = _safe_getattr(
                 document, "saveToURL_ofType_forSaveOperation_error_"
@@ -11297,29 +11391,13 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     details={"exceptionType": type(exc).__name__},
                 ) from exc
 
-            # Ownership is mutable application state, not destination bytes.
-            # Re-query it in the same main-thread turn as the selector so an
-            # existing replacement cannot be adopted by another open document
-            # after the detached preflight.
-            reject_open_destination(
-                tuple(
-                    (
-                        self._identities.resolve(
-                            self._native_identity(candidate)
-                        ),
-                        str(_safe_getattr(candidate, "filepath") or ""),
-                    )
-                    for candidate in self._collect_fonts()
-                )
-            )
             correlation_token = str(notification_correlation_token or "")
             if correlation_token:
-                with self._save_notification_lock:
-                    pending = self._save_notification_correlations.setdefault(
-                        document_id, deque(maxlen=8)
-                    )
-                    if correlation_token not in pending:
-                        pending.append(correlation_token)
+                pending = self._save_notification_correlations.setdefault(
+                    document_id, deque(maxlen=8)
+                )
+                if correlation_token not in pending:
+                    pending.append(correlation_token)
 
             native_error_message = None
             native_error_details: dict[str, Any] = {}
@@ -11387,7 +11465,15 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "observationErrorType": type(exc).__name__,
                 }
 
-        saved_state = observed_source_state(target) or {}
+        saved_read = _SAVED_SOURCE_READER.read(
+            target,
+            instance_ids=tuple(initial.get("instanceIds") or ()),
+        )
+        saved_state = {
+            key: value
+            for key, value in dict(saved_read.state).items()
+            if key != "filePath"
+        }
         original_after = (
             observed_source_state(previous_path)
             if previous_path is not None
@@ -11475,11 +11561,10 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         original_source_unchanged: bool | None = None
         if mode == "save_as" and previous_path is not None and previous_state is not None:
             original_source_unchanged = original_after == previous_state
-        saved_model = post_write(
-            lambda: _saved_source_canonical_model(
-                target,
-                instance_ids=tuple(initial.get("instanceIds") or ()),
-            )
+        saved_model = (
+            saved_read.snapshot.model
+            if saved_read.snapshot is not None
+            else None
         )
         if not isinstance(saved_model, Mapping):
             raise DocumentSaveError(
@@ -11490,7 +11575,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 write_attempted=True,
             )
 
-        def validate_live_identity() -> None:
+        def validate_native_save_state() -> None:
             font = self._font_for_document(document_id)
             if _document_edited_state(font) is not False:
                 raise DocumentSaveError(
@@ -11500,30 +11585,8 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     details={"nativeSaveSucceeded": True, "fontSaved": True},
                     write_attempted=True,
                 )
-            saved_glyphs = saved_model.get("glyphs")
-            native_glyphs = {
-                str(_safe_getattr(glyph, "name") or ""): glyph
-                for glyph in _sequence_values(_safe_getattr(font, "glyphs"))
-                if str(_safe_getattr(glyph, "name") or "")
-            }
-            if not isinstance(saved_glyphs, Mapping) or set(saved_glyphs) != set(native_glyphs):
-                raise DocumentSaveError(
-                    "save_verification_failed",
-                    "The saved source does not preserve the open document glyph identities.",
-                    recoverable=False,
-                    details={"nativeSaveSucceeded": True, "fontSaved": True},
-                    write_attempted=True,
-                )
-            if not _saved_model_matches_live_identity(native_glyphs, saved_glyphs):
-                raise DocumentSaveError(
-                    "save_verification_failed",
-                    "The saved source disagrees with the open document identity evidence.",
-                    recoverable=False,
-                    details={"nativeSaveSucceeded": True, "fontSaved": True},
-                    write_attempted=True,
-                )
 
-        post_write(lambda: self._executor.run(validate_live_identity))
+        post_write(lambda: self._executor.run(validate_native_save_state))
         post_write(lambda: self._canonical_model_cache.invalidate(document_id))
         saved_fingerprint = saved_state.get("contentFingerprint")
         return {
@@ -11550,6 +11613,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             ),
             "nativeSaveSucceeded": True,
             "savedModel": saved_model,
+            "savedSnapshot": saved_read.snapshot,
         }
 
     def force_document_dirty(self, document_id: str) -> None:
@@ -14473,6 +14537,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
 __all__ = [
     "GlyphsDocumentHost",
+    "NativeLayerOverlayProjector",
     "native_font_to_model",
     "native_layer_overlay_state",
     "native_layer_to_model",

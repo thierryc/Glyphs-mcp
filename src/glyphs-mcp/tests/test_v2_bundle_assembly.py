@@ -179,6 +179,9 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 self.assertIn("glyphs_mcp_v2.change_log_panel", changes_bridge)
                 self.assertTrue((resources / "glyphs_mcp_v2" / "change_diff_reporter.py").is_file())
                 self.assertTrue((resources / "glyphs_mcp_v2" / "saved_baseline.py").is_file())
+                self.assertTrue((resources / "glyphs_mcp_v2" / "saved_source.py").is_file())
+                self.assertTrue((resources / "glyphs_mcp_v2" / "background_work.py").is_file())
+                self.assertIn("RefreshChangesSinceSave_", plugin_runtime)
                 for curve_reporter_dependency in (
                     "curve_overlay_model.py",
                     "glyphs_curve_reporter.py",

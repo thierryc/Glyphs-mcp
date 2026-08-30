@@ -20,6 +20,7 @@ from .canonical_tree import (
     CANONICAL_MODEL_SCHEMA_VERSION,
     REVERSIBILITY_COVERAGE,
     CanonicalFontTree,
+    CanonicalSnapshot,
     MemoryObjectStore,
 )
 from .canonical_schema import CanonicalCoverage
@@ -68,6 +69,7 @@ from .semantic import (
     revert_change_set_onto,
 )
 from .saving import DocumentSaveError, SAVE_OVERWRITE_POLICIES
+from .saved_source import SavedSourceService, SavedSourceSnapshot
 from .source_bundle import BUNDLE_LAYOUT_VERSION, ExportPlan, SourceBundleError
 from .transactions import StaleDocumentError, TransactionKernel, TransactionVerificationError
 from .versions import SERVER_NAME, SERVER_VERSION
@@ -234,6 +236,7 @@ class GlyphsMCPApplication:
         audit: Optional[AuditLog] = None,
         history: Optional[ChangeHistory] = None,
         activity: Optional[OperationActivityStore] = None,
+        saved_sources: SavedSourceService | None = None,
     ) -> None:
         self._host = host
         self.activity = activity or default_activity_store()
@@ -245,6 +248,7 @@ class GlyphsMCPApplication:
         self._previews = self._reviews
         self._checkpoints = OperationStore(max_records=512)
         self._audit = audit or AuditLog()
+        self._saved_sources = saved_sources
         if history is None:
             history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
             history.reset_for_schema_change(6, 7)
@@ -2049,40 +2053,53 @@ class GlyphsMCPApplication:
         document_id: str,
         *,
         correlation_token: str | None = None,
+        source_path: str | None = None,
     ) -> bool:
-        """Receive one native manual-save notification from the runtime observer."""
+        """Enqueue native-save convenience work without delaying Glyphs."""
 
-        source_state: Mapping[str, Any] | None = None
-        saved_model: Mapping[str, Any] | None = None
-        capture = getattr(self._host, "capture_source_file_state", None)
-        if callable(capture):
-            try:
-                try:
-                    observed = capture(
-                        str(document_id or ""), include_model=True
-                    )
-                except TypeError:
-                    observed = capture(str(document_id or ""))
-                if isinstance(observed, Mapping):
-                    source_state = dict(observed)
-                    candidate = source_state.pop("savedModel", None)
-                    if isinstance(candidate, Mapping):
-                        saved_model = candidate
-            except Exception:
-                pass
-        return self.lifecycle.document_was_saved(
-            str(document_id or ""),
-            make_copy=False,
-            succeeded=True,
-            correlation_token=correlation_token,
-            source_state=source_state,
-            saved_model=saved_model,
-        )
+        identity = str(document_id or "")
+
+        def record(_context=None) -> bool:
+            return self.lifecycle.document_was_saved(
+                identity,
+                make_copy=False,
+                succeeded=True,
+                correlation_token=correlation_token,
+                source_state=(
+                    {"filePath": source_path} if source_path else None
+                ),
+                saved_model=None,
+            )
+
+        if self._saved_sources is not None and source_path:
+            self._saved_sources.resume_after_save(source_path)
+        coordinator = getattr(self._saved_sources, "coordinator", None)
+        if coordinator is not None:
+            key = (source_path, identity) if source_path else identity
+            return bool(
+                coordinator.submit(
+                    "history",
+                    key,
+                    record,
+                    delay=0.25,
+                )
+            )
+        return record()
 
     def document_was_closed(self, document_id: str) -> bool:
-        """Prune process-local state after a native document close."""
+        """Enqueue process-local pruning after a native document close."""
 
-        return self.lifecycle.document_was_closed(str(document_id or ""))
+        identity = str(document_id or "")
+        coordinator = getattr(self._saved_sources, "coordinator", None)
+        if coordinator is not None:
+            return bool(
+                coordinator.submit(
+                    "cleanup",
+                    ("document", identity),
+                    lambda _context: self.lifecycle.document_was_closed(identity),
+                )
+            )
+        return self.lifecycle.document_was_closed(identity)
 
     def save_document(self, arguments: Mapping[str, Any]) -> ToolResponse:
         # Save is a history boundary even when confirmation, stale-state, or
@@ -2139,6 +2156,23 @@ class GlyphsMCPApplication:
         saver = getattr(self._host, "save_document", None)
         if not callable(saver):
             raise HostAccessError("This host adapter does not implement document saves.")
+        if self._saved_sources is not None:
+            barrier_paths = {
+                str(value)
+                for value in (
+                    _value(arguments, "destination"),
+                    (
+                        getattr(self._host, "source_path_for_document")(document_id)
+                        if callable(
+                            getattr(self._host, "source_path_for_document", None)
+                        )
+                        else None
+                    ),
+                )
+                if value
+            }
+            for barrier_path in barrier_paths:
+                self._saved_sources.pause_for_save(barrier_path)
         try:
             save_token = self.lifecycle.begin_tool_save(document_id)
         except RuntimeError:
@@ -2172,6 +2206,9 @@ class GlyphsMCPApplication:
                     "expectedDestinationFileFingerprint",
                 ),
                 notification_correlation_token=save_token,
+                expected_snapshot=(
+                    before if isinstance(before, CanonicalSnapshot) else None
+                ),
             )
         except DocumentSaveError as exc:
             lifecycle = self.lifecycle.complete_tool_save(
@@ -2206,6 +2243,7 @@ class GlyphsMCPApplication:
             raise
 
         saved_model = result.get("savedModel")
+        saved_snapshot = result.get("savedSnapshot")
         if not isinstance(saved_model, Mapping):
             lifecycle = self.lifecycle.complete_tool_save(
                 document_id,
@@ -2241,7 +2279,7 @@ class GlyphsMCPApplication:
             failure_data = {
                 key: _public_payload(value)
                 for key, value in result.items()
-                if key != "savedModel"
+                if key not in {"savedModel", "savedSnapshot"}
             }
             failure_data.update(
                 {
@@ -2333,7 +2371,7 @@ class GlyphsMCPApplication:
             failure_data = {
                 key: _public_payload(value)
                 for key, value in result.items()
-                if key != "savedModel"
+                if key not in {"savedModel", "savedSnapshot"}
             }
             failure_data.update(
                 {
@@ -2357,6 +2395,16 @@ class GlyphsMCPApplication:
                 data=failure_data,
             )
 
+        if (
+            self._saved_sources is not None
+            and isinstance(saved_snapshot, SavedSourceSnapshot)
+            and saved_snapshot.source_fingerprint
+            == result.get("savedSourceFingerprint")
+        ):
+            self._saved_sources.publish_verified(saved_snapshot)
+            self._saved_sources.coordinator.resume_after_save(
+                saved_snapshot.path, delay=0.25
+            )
         lifecycle = self.lifecycle.complete_tool_save(
             document_id,
             save_token,
@@ -2374,7 +2422,7 @@ class GlyphsMCPApplication:
         public_result = {
             key: _public_payload(value)
             for key, value in result.items()
-            if key != "savedModel"
+            if key not in {"savedModel", "savedSnapshot"}
         }
         data = {
             "operationId": metadata.operation_id,

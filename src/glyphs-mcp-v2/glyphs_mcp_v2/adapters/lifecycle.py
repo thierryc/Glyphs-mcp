@@ -78,20 +78,40 @@ class GlyphsDocumentLifecycleObserver:
             return None
 
     def document_was_saved_(self, notification: Any) -> None:
-        document_id = self._document_id(notification)
+        font = _font_from_notification(notification)
+        document_id = self._document_id(font)
         if document_id is None:
             return
+        path_value = getattr(font, "filepath", None) if font is not None else None
+        if callable(path_value):
+            try:
+                path_value = path_value()
+            except Exception:
+                path_value = None
+        source_path = str(path_value) if path_value else None
         try:
             consume = getattr(
                 self._host, "consume_save_notification_correlation", None
             )
             token = consume(document_id) if callable(consume) else None
             if token:
-                self._application.document_was_saved(
-                    document_id, correlation_token=str(token)
-                )
+                try:
+                    self._application.document_was_saved(
+                        document_id,
+                        correlation_token=str(token),
+                        source_path=source_path,
+                    )
+                except TypeError:
+                    self._application.document_was_saved(
+                        document_id, correlation_token=str(token)
+                    )
             else:
-                self._application.document_was_saved(document_id)
+                try:
+                    self._application.document_was_saved(
+                        document_id, source_path=source_path
+                    )
+                except TypeError:
+                    self._application.document_was_saved(document_id)
         except Exception:
             pass
 

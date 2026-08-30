@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import time
 from collections import deque
 from dataclasses import dataclass, field
@@ -11,6 +10,8 @@ from typing import Any, Callable, Mapping, Optional
 from uuid import uuid4
 
 from .change_history import ChangeHistory
+from .canonical_tree import CanonicalSnapshot
+from .saved_source import source_state_changed
 from .semantic import ChangeSet, diff_models, fingerprint_model, public_change_dict
 
 
@@ -136,9 +137,10 @@ class DocumentHistoryLifecycle:
         self._pending_notifications: dict[str, deque[str]] = {}
         self._events: dict[str, deque[SaveEvent]] = {}
         self._epochs: dict[str, int] = {}
-        self._active_transactions: dict[str, set[str]] = {}
+        self._active_transactions: dict[str, dict[str, int]] = {}
         self._pending_source_notifications: dict[str, deque[str]] = {}
         self._last_saved_document_fingerprint: dict[str, str] = {}
+        self._saved_snapshots: dict[str, CanonicalSnapshot] = {}
         self._lock = RLock()
 
     def begin_transaction(self, document_id: str) -> TransactionSaveToken:
@@ -146,11 +148,12 @@ class DocumentHistoryLifecycle:
             raise ValueError("document_id is required")
         with self._lock:
             token = "txn_save_{}".format(uuid4().hex)
-            self._active_transactions.setdefault(document_id, set()).add(token)
+            start_epoch = self._epochs.get(document_id, 0)
+            self._active_transactions.setdefault(document_id, {})[token] = start_epoch
             return TransactionSaveToken(
                 token=token,
                 document_id=document_id,
-                start_epoch=self._epochs.get(document_id, 0),
+                start_epoch=start_epoch,
             )
 
     def _finish_transaction_token(self, token: TransactionSaveToken) -> None:
@@ -158,9 +161,10 @@ class DocumentHistoryLifecycle:
             active = self._active_transactions.get(token.document_id)
             if active is None:
                 return
-            active.discard(token.token)
+            active.pop(token.token, None)
             if not active:
                 self._active_transactions.pop(token.document_id, None)
+            self._prune_events_locked(token.document_id)
 
     def cancel_transaction(self, token: TransactionSaveToken) -> None:
         """Idempotently release a transaction fence after unexpected failure."""
@@ -172,14 +176,37 @@ class DocumentHistoryLifecycle:
         before: Mapping[str, Any] | None,
         after: Mapping[str, Any] | None,
     ) -> bool:
-        if before is None:
-            return after is not None
-        if after is None:
-            return True
-        return any(
-            before.get(key) != after.get(key)
-            for key in ("kind", "exists", "contentFingerprint")
+        return source_state_changed(
+            before,
+            after,
+            absent_before_is_change=True,
         )
+
+    def _prune_events_locked(self, document_id: str) -> None:
+        events = self._events.get(document_id)
+        if events:
+            active = self._active_transactions.get(document_id, {})
+            if not active:
+                self._events[document_id] = deque(
+                    (events[-1],), maxlen=_MAX_SAVE_EVENTS
+                )
+            else:
+                earliest = min(active.values())
+                retained = tuple(event for event in events if event.epoch > earliest)
+                self._events[document_id] = deque(
+                    retained, maxlen=_MAX_SAVE_EVENTS
+                )
+        retained_fingerprints = {
+            event.saved_document_fingerprint
+            for values in self._events.values()
+            for event in values
+            if event.saved_document_fingerprint
+        }
+        self._saved_snapshots = {
+            fingerprint: snapshot
+            for fingerprint, snapshot in self._saved_snapshots.items()
+            if fingerprint in retained_fingerprints
+        }
 
     def _append_event(
         self,
@@ -195,12 +222,20 @@ class DocumentHistoryLifecycle:
         saved_fingerprint = None
         copied_model: Mapping[str, Any] | None = None
         if isinstance(saved_model, Mapping):
-            copied_model = copy.deepcopy(dict(saved_model))
             try:
+                copied_model = (
+                    saved_model
+                    if isinstance(saved_model, CanonicalSnapshot)
+                    else CanonicalSnapshot.from_model(saved_model)
+                )
                 saved_fingerprint = fingerprint_model(copied_model)
             except Exception:
                 copied_model = None
         with self._lock:
+            if saved_fingerprint and isinstance(copied_model, CanonicalSnapshot):
+                copied_model = self._saved_snapshots.setdefault(
+                    saved_fingerprint, copied_model
+                )
             events = self._events.setdefault(
                 document_id, deque(maxlen=_MAX_SAVE_EVENTS)
             )
@@ -246,6 +281,7 @@ class DocumentHistoryLifecycle:
             events.append(event)
             if saved_fingerprint:
                 self._last_saved_document_fingerprint[document_id] = saved_fingerprint
+            self._prune_events_locked(document_id)
             return event, False
 
     def persistence_state(
@@ -580,6 +616,7 @@ class DocumentHistoryLifecycle:
             self._active_transactions.pop(document_id, None)
             self._pending_source_notifications.pop(document_id, None)
             self._last_saved_document_fingerprint.pop(document_id, None)
+            self._prune_events_locked(document_id)
         return bool(self._reset(document_id)["historyReset"])
 
 

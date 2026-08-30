@@ -86,11 +86,13 @@ try:
         automatic_repair_scripting_runtime,
         scripting_runtime_safety_status,
     )
+    from glyphs_mcp_v2.saved_source import default_saved_source_service
 except Exception:
     default_activity_store = None
     default_connection_status_store = None
     automatic_repair_scripting_runtime = None
     scripting_runtime_safety_status = None
+    default_saved_source_service = None
 
 
 AUTOSTART_DEFAULTS_KEY = "io.anotherplanet.glyphs-mcp.autostart"
@@ -322,11 +324,17 @@ class MCPBridgePlugin(GeneralPlugin):
         self._preparation_version = None
         self._preparation_glyphs_major = None
         self._changes_controller = DocumentChangesPanelController.alloc().initWithPlugin_(self)
+        self._saved_source_service = (
+            default_saved_source_service()
+            if default_saved_source_service is not None
+            else None
+        )
 
         # Localized menu titles (via Glyphs.localize in i18n.tr)
         self.name_menu = tr("menu.main")
         self.name_autostart = tr("menu.autostart")
         self.name_changes = tr("menu.changes")
+        self.name_refresh_changes = tr("menu.refresh_changes")
         self._activity_text = tr("activity.idle")
         self._activity_state = "idle"
         self._activity_request_generation = 0
@@ -945,6 +953,13 @@ class MCPBridgePlugin(GeneralPlugin):
         changesMenuItem.setAction_(self.ShowChangesWindow_)
         self.changesMenuItem = changesMenuItem
         Glyphs.menu[EDIT_MENU].append(changesMenuItem)
+        if self._saved_source_service is not None:
+            refreshChangesMenuItem = NSMenuItem.new()
+            refreshChangesMenuItem.setTitle_(self.name_refresh_changes)
+            refreshChangesMenuItem.setTarget_(self)
+            refreshChangesMenuItem.setAction_(self.RefreshChangesSinceSave_)
+            self.refreshChangesMenuItem = refreshChangesMenuItem
+            Glyphs.menu[EDIT_MENU].append(refreshChangesMenuItem)
         self._refresh_update_menu_item()
         self._schedule_automatic_update_check()
 
@@ -963,6 +978,36 @@ class MCPBridgePlugin(GeneralPlugin):
             controller = DocumentChangesPanelController.alloc().initWithPlugin_(self)
             self._changes_controller = controller
         controller.show()
+
+    @objc.python_method
+    def _active_saved_source_path(self):
+        font = getattr(Glyphs, "font", None)
+        if callable(font):
+            font = font()
+        path = getattr(font, "filepath", None) if font is not None else None
+        if callable(path):
+            path = path()
+        text = str(path or "")
+        if text.lower().endswith((".glyphs", ".glyphspackage")):
+            return text
+        return None
+
+    def validateMenuItem_(self, menu_item):
+        if menu_item is getattr(self, "refreshChangesMenuItem", None):
+            return bool(self._active_saved_source_path())
+        return True
+
+    def RefreshChangesSinceSave_(self, sender):
+        if self._saved_source_service is None:
+            return
+        try:
+            path = self._active_saved_source_path()
+            if path:
+                self._saved_source_service.request_refresh(
+                    str(path), force=True
+                )
+        except Exception:
+            pass
 
     @objc.python_method
     def _start_server_on_port(self, port, sender, notify=True):

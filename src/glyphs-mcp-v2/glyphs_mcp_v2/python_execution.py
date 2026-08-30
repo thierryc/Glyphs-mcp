@@ -36,6 +36,7 @@ from .mutation import (
     writable_subset,
 )
 from .semantic import ChangeSet, diff_models, fingerprint_model, public_change_dict
+from .saved_source import source_state_changed
 from .runtime_safety import (
     SourceSaveForbiddenError,
     ScriptingRuntimeUnavailableError,
@@ -450,13 +451,7 @@ def _source_state_changed(
     before: Mapping[str, Any] | None,
     after: Mapping[str, Any] | None,
 ) -> bool:
-    if before is None:
-        return False
-    return bool(
-        after is None
-        or before.get("contentFingerprint") != after.get("contentFingerprint")
-        or before.get("exists") != after.get("exists")
-    )
+    return source_state_changed(before, after)
 
 
 def _observed_document_changes(

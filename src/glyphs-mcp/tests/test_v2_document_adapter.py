@@ -40,6 +40,7 @@ if str(V2_SOURCE) not in sys.path:
 
 from glyphs_mcp_v2.adapters.document import (  # noqa: E402
     GlyphsDocumentHost,
+    NativeLayerOverlayProjector,
     native_font_to_model,
     native_layer_to_model,
 )
@@ -89,6 +90,34 @@ def _remove_model_layer(model, glyph_name, layer_id):
 class _Immediate:
     def run(self, callback):
         return callback()
+
+
+class LayerOverlayProjectionTests(unittest.TestCase):
+    def test_large_layer_projection_yields_between_two_millisecond_slices(self) -> None:
+        nodes = [
+            SimpleNamespace(position=(float(index), 0.0), type="line")
+            for index in range(12)
+        ]
+        layer = SimpleNamespace(
+            layerId="m0",
+            associatedMasterId="m0",
+            width=500,
+            shapes=[SimpleNamespace(nodes=nodes, closed=True)],
+            anchors=[],
+        )
+        ticks = iter(index * 0.001 for index in range(200))
+        projector = NativeLayerOverlayProjector(layer)
+        slice_count = 0
+
+        while not projector.step(
+            budget_seconds=0.002,
+            clock=lambda: next(ticks),
+        ):
+            slice_count += 1
+
+        result = projector.result()
+        self.assertGreater(slice_count, 1)
+        self.assertEqual(len(result["shapes"][0]["value"]["nodes"]), 12)
 
 
 class FontUpdateSuspensionTests(unittest.TestCase):

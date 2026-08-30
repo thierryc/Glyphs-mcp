@@ -42,6 +42,14 @@ STRINGS = {
         "pt": "Alterações do Glyphs MCP…",
         "zh-Hans": "Glyphs MCP 更改…",
     },
+    "menu.refresh_changes": {
+        "en": "Refresh Changes Since Save",
+        "de": "Änderungen seit dem Speichern aktualisieren",
+        "fr": "Actualiser les modifications depuis l’enregistrement",
+        "es": "Actualizar cambios desde el guardado",
+        "pt": "Atualizar alterações desde o salvamento",
+        "zh-Hans": "刷新自保存以来的更改",
+    },
     # One-document MCP change overview
     "changes.title": {
         "en": "Glyphs MCP Changes",

@@ -1,38 +1,42 @@
 # encoding: utf-8
 
-"""Drawing-only Edit View comparison with the latest source saved on disk."""
+"""Non-blocking Edit View comparison with the latest saved source."""
 
 from __future__ import annotations
 
-from concurrent.futures import Future, ThreadPoolExecutor
-from threading import RLock
+import time
 
 import objc
 from AppKit import NSBezierPath, NSColor, NSGraphicsContext, NSPoint
-from Foundation import NSOperationQueue, NSTimer
+from Foundation import NSNotificationCenter, NSOperationQueue
 from GlyphsApp import (  # type: ignore[import-not-found]
     DOCUMENTACTIVATED,
     DOCUMENTCLOSED,
     DOCUMENTOPENED,
     DOCUMENTWASSAVED,
+    UPDATEINTERFACE,
     Glyphs,
 )
 from GlyphsApp.plugins import ReporterPlugin  # type: ignore[import-not-found]
 
-from .adapters.document import native_layer_overlay_state
-from .diff_geometry import (
-    DifferenceTopologyError,
-    difference_bands,
-    path_segments,
+from .adapters.document import NativeLayerOverlayProjector
+from .diff_overlay import (
+    LayerDiffPlan,
+    LayerVisualState,
+    SavedLayerGeometryCache,
+    build_layer_diff_plan,
 )
-from .diff_overlay import overlay_for_layer
-from .saved_baseline import SavedBaselineCache, normalize_source_path
+from .saved_source import (
+    SavedSourceRefresh,
+    default_saved_source_service,
+    normalize_source_path,
+)
 
 
 SAVED_RGBA = (1.0, 0.32, 0.06, 0.82)
 DIFFERENCE_RGBA = (1.0, 0.58, 0.08, 0.46)
 METRIC_RGBA = (1.0, 0.58, 0.08, 0.34)
-SOURCE_POLL_SECONDS = 2.0
+NATIVE_WILL_SAVE_NOTIFICATION = "NSDocumentWillSaveNotification"
 
 
 def _native_value(value):
@@ -41,6 +45,22 @@ def _native_value(value):
 
 def _font_source_path(font):
     return normalize_source_path(_native_value(getattr(font, "filepath", None)))
+
+
+def _notification_source_path(notification):
+    try:
+        source = _native_value(getattr(notification, "object", None))
+    except Exception:
+        return None
+    candidates = (
+        source,
+        _native_value(getattr(source, "font", None)) if source is not None else None,
+    )
+    for candidate in candidates:
+        path = _font_source_path(candidate) if candidate is not None else None
+        if path is not None:
+            return path
+    return None
 
 
 def _point(value):
@@ -72,8 +92,7 @@ def _append_segments(path, segments, *, reverse=False, move=True):
             path.lineToPoint_(_point(end))
 
 
-def _draw_difference(baseline_paths, current_paths):
-    bands = difference_bands(baseline_paths, current_paths)
+def _draw_difference(bands):
     if not bands:
         return 0
     difference_path = NSBezierPath.bezierPath()
@@ -96,15 +115,14 @@ def _draw_difference(baseline_paths, current_paths):
     return len(bands)
 
 
-def _stroke_saved_paths(paths, width):
+def _stroke_saved_segments(segment_paths, closed_paths, width):
     outline = NSBezierPath.bezierPath()
     path_count = 0
-    for path_data in paths:
-        segments = path_segments(path_data)
+    for index, segments in enumerate(segment_paths):
         if not segments:
             continue
         _append_segments(outline, segments)
-        if bool(path_data.get("closed")):
+        if index < len(closed_paths) and closed_paths[index]:
             outline.closePath()
         path_count += 1
     if not path_count:
@@ -115,14 +133,22 @@ def _stroke_saved_paths(paths, width):
     return path_count
 
 
-def _stroke_saved_anchor(position, radius):
-    _set_color(SAVED_RGBA)
+def _stroke_anchor(position, radius, rgba):
+    _set_color(rgba)
     x, y = float(position[0]), float(position[1])
     marker = NSBezierPath.bezierPathWithOvalInRect_(
         ((x - radius, y - radius), (radius * 2.0, radius * 2.0))
     )
     marker.setLineWidth_(max(radius / 2.5, 0.8))
     marker.stroke()
+
+
+def _stroke_saved_anchor(position, radius):
+    _stroke_anchor(position, radius, SAVED_RGBA)
+
+
+def _stroke_added_anchor(position, radius):
+    _stroke_anchor(position, radius, DIFFERENCE_RGBA)
 
 
 def _draw_anchor_delta(baseline, current, width):
@@ -155,59 +181,72 @@ def _draw_metric_delta(baseline, current, width):
 
 
 class GlyphsMCPChangeDiffReporter(ReporterPlugin):
-    """Draw the gap between the live layer and its latest saved source."""
+    """Draw only immutable plans prepared outside the drawing callback."""
 
     @objc.python_method
     def settings(self):
         self.menuName = "Changes Since Save"
-        self._baseline_cache = SavedBaselineCache()
-        self._baseline_executor = None
-        self._baseline_inflight = set()
-        self._baseline_pending = {}
-        self._baseline_active_paths = set()
-        self._baseline_lock = RLock()
-        self._baseline_callbacks = []
-        self._baseline_timer = None
+        self._saved_sources = default_saved_source_service()
+        self._plan_cache = {}
+        self._projection_versions = {}
+        self._projection_pending = set()
+        self._saved_geometry_cache = SavedLayerGeometryCache()
+        self._active_paths = set()
+        self._callbacks = []
+        self._unsubscribe_saved_sources = None
+        self._native_notification_center = None
+        self._interface_generation = 0
+        self._disposed = False
+        self._last_projection_duration_ms = 0.0
 
     @objc.python_method
     def start(self):
-        self._baseline_executor = ThreadPoolExecutor(
-            max_workers=1,
-            thread_name_prefix="glyphs-mcp-saved-baseline",
+        self._unsubscribe_saved_sources = self._saved_sources.subscribe(
+            self._saved_source_updated
         )
         for callback, event in (
             (self.DocumentChanged_, DOCUMENTOPENED),
             (self.DocumentChanged_, DOCUMENTACTIVATED),
             (self.DocumentSaved_, DOCUMENTWASSAVED),
             (self.DocumentChanged_, DOCUMENTCLOSED),
+            (self.InterfaceChanged_, UPDATEINTERFACE),
         ):
             try:
                 Glyphs.addCallback(callback, event)
-                self._baseline_callbacks.append(callback)
+                self._callbacks.append((callback, event))
             except Exception:
                 pass
         try:
-            self._baseline_timer = (
-                NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(
-                    SOURCE_POLL_SECONDS,
-                    self,
-                    "pollSavedSources:",
-                    None,
-                    True,
-                )
+            center = NSNotificationCenter.defaultCenter()
+            center.addObserver_selector_name_object_(
+                self,
+                "DocumentWillSave:",
+                NATIVE_WILL_SAVE_NOTIFICATION,
+                None,
             )
+            self._native_notification_center = center
         except Exception:
-            self._baseline_timer = None
+            self._native_notification_center = None
         self._refresh_open_fonts(force=True)
+
+    def DocumentWillSave_(self, notification):
+        path = _notification_source_path(notification)
+        paths = (path,) if path is not None else tuple(self._active_paths)
+        for path in paths:
+            self._saved_sources.pause_for_save(path)
 
     def DocumentChanged_(self, _notification):
         self._refresh_open_fonts(force=False)
 
-    def DocumentSaved_(self, _notification):
-        self._refresh_open_fonts(force=True)
-
-    def pollSavedSources_(self, _timer):
+    def DocumentSaved_(self, notification):
         self._refresh_open_fonts(force=False)
+        path = _notification_source_path(notification)
+        paths = (path,) if path is not None else tuple(self._active_paths)
+        for path in paths:
+            self._saved_sources.resume_after_save(path)
+
+    def InterfaceChanged_(self, _notification):
+        self._interface_generation += 1
 
     @objc.python_method
     def _refresh_open_fonts(self, *, force):
@@ -216,61 +255,42 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
             for font in list(getattr(Glyphs, "fonts", ()) or ())
             if (path := _font_source_path(font)) is not None
         }
-        with self._baseline_lock:
-            self._baseline_active_paths = set(paths)
-        if self._baseline_cache.retain_only(paths):
+        self._active_paths = set(paths)
+
+        def retained(changed):
+            if not changed or self._disposed:
+                return
+            self._plan_cache = {
+                key: value for key, value in self._plan_cache.items() if key[0] in paths
+            }
             self._request_redraw()
+
+        self._saved_sources.request_retain_only(paths, completed=retained)
         for path in sorted(paths):
-            self._schedule_refresh(path, force=bool(force))
+            self._saved_sources.request_refresh(path, force=bool(force))
 
     @objc.python_method
-    def _schedule_refresh(self, path, *, force):
-        executor = self._baseline_executor
-        if executor is None:
+    def _saved_source_updated(self, result: SavedSourceRefresh):
+        if self._disposed:
             return
-        with self._baseline_lock:
-            if path not in self._baseline_active_paths:
-                return
-            if path in self._baseline_inflight:
-                self._baseline_pending[path] = bool(
-                    force or self._baseline_pending.get(path, False)
-                )
-                return
-            self._baseline_inflight.add(path)
-        future = executor.submit(
-            self._baseline_cache.refresh,
-            path,
-            force=bool(force),
-        )
-        future.add_done_callback(
-            lambda completed, source_path=path: self._refresh_finished(
-                source_path, completed
-            )
-        )
-
-    @objc.python_method
-    def _refresh_finished(self, path, future: Future):
-        try:
-            changed = bool(future.result())
-        except Exception:
-            changed = False
-        with self._baseline_lock:
-            self._baseline_inflight.discard(path)
-            pending = path in self._baseline_pending
-            force = self._baseline_pending.pop(path, False)
-            active = path in self._baseline_active_paths
-            active_paths = set(self._baseline_active_paths)
-        if not active:
-            self._baseline_cache.retain_only(active_paths)
-            changed = False
-        if changed:
-            self._request_redraw()
-        if pending and active:
-            self._schedule_refresh(path, force=force)
+        self._plan_cache = {
+            key: value for key, value in self._plan_cache.items() if key[0] != result.path
+        }
+        self._projection_versions = {
+            key: value
+            for key, value in self._projection_versions.items()
+            if key[0] != result.path
+        }
+        self._request_redraw()
 
     @objc.python_method
     def _request_redraw(self):
+        if self._disposed:
+            return
+
         def redraw():
+            if self._disposed:
+                return
             try:
                 Glyphs.redraw()
             except Exception:
@@ -279,68 +299,201 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
         NSOperationQueue.mainQueue().addOperationWithBlock_(redraw)
 
     @objc.python_method
-    def foreground(self, layer):
-        if NSGraphicsContext.currentContext() is None or layer is None:
-            return
+    def _layer_request(self, layer):
         glyph = getattr(layer, "parent", None)
         font = getattr(glyph, "parent", None) if glyph is not None else None
         glyph_name = str(getattr(glyph, "name", "") or "")
         source_path = _font_source_path(font)
-        snapshot = self._baseline_cache.snapshot(source_path)
-        if snapshot is None or not glyph_name:
+        layer_key = str(
+            getattr(layer, "layerId", None)
+            or getattr(layer, "id", None)
+            or getattr(layer, "associatedMasterId", None)
+            or ""
+        )
+        if not source_path or not glyph_name or not layer_key:
+            return None
+        return (source_path, glyph_name, layer_key)
+
+    @objc.python_method
+    def _schedule_projection(self, key, layer, snapshot):
+        version = (snapshot.source_fingerprint, self._interface_generation)
+        if self._projection_versions.get(key) == version or key in self._projection_pending:
             return
-        try:
-            layer_model = native_layer_overlay_state(layer)
-            overlay = None
-            for layer_key in dict.fromkeys(
-                str(value or "")
-                for value in (layer_model.get("id"), layer_model.get("masterId"))
-                if value
-            ):
-                candidate = overlay_for_layer(
-                    baseline_model=snapshot.model,
-                    glyph_name=glyph_name,
-                    layer_key=layer_key,
-                    live_layer=layer_model,
+        self._projection_pending.add(key)
+        projector = [None]
+
+        def capture_plain_layer():
+            if self._disposed or key not in self._projection_pending:
+                return
+            current = self._saved_sources.store.snapshot(key[0])
+            if current is None or current.source_fingerprint != snapshot.source_fingerprint:
+                self._projection_pending.discard(key)
+                return
+            started = time.perf_counter_ns()
+            try:
+                if projector[0] is None:
+                    projector[0] = NativeLayerOverlayProjector(layer)
+                complete = projector[0].step(budget_seconds=0.002)
+            except Exception:
+                self._projection_pending.discard(key)
+                return
+            self._last_projection_duration_ms = (
+                time.perf_counter_ns() - started
+            ) / 1_000_000
+            if not complete:
+                NSOperationQueue.mainQueue().addOperationWithBlock_(
+                    capture_plain_layer
                 )
-                if candidate.visible:
-                    overlay = candidate
-                    break
-        except Exception:
+                return
+            layer_model = projector[0].result()
+
+            def prepare(_context):
+                live_state = LayerVisualState.from_layer(layer_model)
+                candidates = tuple(
+                    dict.fromkeys(
+                        str(value or "")
+                        for value in (
+                            layer_model.get("id"),
+                            layer_model.get("masterId"),
+                            key[2],
+                        )
+                        if value
+                    )
+                )
+                plan = LayerDiffPlan(visible=False)
+                for layer_key in candidates:
+                    saved_geometry = self._saved_geometry_cache.get_or_prepare(
+                        source_fingerprint=snapshot.source_fingerprint,
+                        baseline_model=snapshot.model,
+                        glyph_name=key[1],
+                        layer_key=layer_key,
+                    )
+                    candidate = build_layer_diff_plan(
+                        baseline_model=snapshot.model,
+                        glyph_name=key[1],
+                        layer_key=layer_key,
+                        live_state=live_state,
+                        saved_geometry=saved_geometry,
+                    )
+                    if candidate.visible:
+                        return candidate
+                    plan = candidate
+                return plan
+
+            def completed(plan):
+                if self._disposed:
+                    return
+                previous = self._plan_cache.get(key)
+                values = dict(self._plan_cache)
+                values[key] = plan
+                self._plan_cache = values
+                self._projection_versions[key] = version
+                self._projection_pending.discard(key)
+                if plan != previous:
+                    self._request_redraw()
+
+            def failed(_error):
+                self._projection_pending.discard(key)
+
+            accepted = self._saved_sources.coordinator.submit(
+                "diff",
+                key,
+                prepare,
+                completed=completed,
+                failed=failed,
+            )
+            if accepted is None:
+                self._projection_pending.discard(key)
+
+        NSOperationQueue.mainQueue().addOperationWithBlock_(capture_plain_layer)
+
+    @objc.python_method
+    def foreground(self, layer):
+        if NSGraphicsContext.currentContext() is None or layer is None:
             return
-        if overlay is None or not overlay.visible:
+        key = self._layer_request(layer)
+        if key is None:
+            return
+        snapshot = self._saved_sources.store.snapshot(key[0])
+        if snapshot is None:
+            return
+        self._schedule_projection(key, layer, snapshot)
+        plan = self._plan_cache.get(key)
+        if plan is None or not plan.visible:
             return
         try:
             scale = float(self.getScale() or 1.0)
         except Exception:
             scale = 1.0
         outline_width = max(1.2 / max(scale, 0.01), 0.5)
-        try:
-            _draw_difference(overlay.baseline_paths, overlay.current_paths)
-        except (DifferenceTopologyError, ValueError):
-            pass
-        try:
-            _stroke_saved_paths(overlay.baseline_paths, outline_width)
-        except ValueError:
-            pass
+        _draw_difference(plan.bands)
+        _stroke_saved_segments(
+            plan.baseline_segments,
+            tuple(bool(path.get("closed")) for path in plan.baseline_paths),
+            outline_width,
+        )
         radius = max(4.0 / max(scale, 0.01), 2.0)
-        for name, position in overlay.baseline_anchors.items():
-            current = overlay.current_anchors.get(name)
-            if current == position:
+        for name in sorted(set(plan.baseline_anchors) | set(plan.current_anchors)):
+            baseline = plan.baseline_anchors.get(name)
+            current = plan.current_anchors.get(name)
+            if baseline == current:
                 continue
-            _stroke_saved_anchor(position, radius)
-            if current is not None:
-                _draw_anchor_delta(position, current, outline_width)
+            if baseline is not None:
+                _stroke_saved_anchor(baseline, radius)
+            elif current is not None:
+                _stroke_added_anchor(current, radius)
+            if baseline is not None and current is not None:
+                _draw_anchor_delta(baseline, current, outline_width)
         if (
-            overlay.baseline_width is not None
-            and overlay.current_width is not None
-            and overlay.baseline_width != overlay.current_width
+            plan.baseline_width is not None
+            and plan.current_width is not None
+            and plan.baseline_width != plan.current_width
         ):
             _draw_metric_delta(
-                overlay.baseline_width,
-                overlay.current_width,
+                plan.baseline_width,
+                plan.current_width,
                 outline_width,
             )
+
+    @objc.python_method
+    def _teardown(self):
+        if self._disposed:
+            return
+        self._disposed = True
+        for callback, event in tuple(self._callbacks):
+            try:
+                Glyphs.removeCallback(callback, event)
+            except TypeError:
+                try:
+                    Glyphs.removeCallback(callback)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+        self._callbacks = []
+        center = self._native_notification_center
+        if center is not None:
+            try:
+                center.removeObserver_(self)
+            except Exception:
+                pass
+        self._native_notification_center = None
+        unsubscribe = self._unsubscribe_saved_sources
+        self._unsubscribe_saved_sources = None
+        if callable(unsubscribe):
+            unsubscribe()
+        for key in tuple(self._projection_pending):
+            self._saved_sources.coordinator.invalidate(key)
+        self._projection_pending.clear()
+        self._plan_cache = {}
+        self._projection_versions = {}
+        self._saved_geometry_cache.clear()
+
+    def __del__(self):
+        try:
+            self._teardown()
+        except Exception:
+            pass
 
     @objc.python_method
     def __file__(self):
