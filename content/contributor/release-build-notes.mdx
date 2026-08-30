@@ -57,6 +57,16 @@ the obsolete symmetric host QA protocol.
 Qualification results are recorded below only after the corresponding gate is
 run:
 
+- Native-parity closure qualification: passed on August 30, 2026 from branch
+  `lit/v2` at `544b5bd8`. Glyphs 4.0.1 build 4004 produced the committed native
+  OTF/UFO/shaping evidence, including explicit absence of `kerning.plist` in
+  this host export and ties-to-even Number Value observations. The consolidated
+  release gate then passed 1,621 Python tests with two expected skips, clean
+  Python 3.12/3.14 runtime checks, deterministic byte-identical dual-target
+  payload builds, all macOS installer tests, the documentation production
+  build, command/skill synchronization, and unsigned-candidate validation. The
+  result remained `signed:false`, `notarized:false`, and `publishable:false`;
+  no artifact was published.
 - Python 3.14 primary-driver qualification: passed on August 29, 2026 from
   branch `lit/v2` with the interpreter and documentation changes uncommitted.
   The isolated `.venv-v2` used Python 3.14.6 with exact release dependencies
