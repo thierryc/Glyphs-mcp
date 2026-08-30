@@ -1,6 +1,6 @@
 ---
 title: Canonical change history
-description: Git-like unsaved-session history, rollback, Change Log, and visual diff architecture for Glyphs MCP 2.0.
+description: Git-like unsaved-session history, rollback, Change Log, and saved-source visual diff architecture for Glyphs MCP 2.0.
 ---
 
 # Canonical change history
@@ -11,10 +11,10 @@ commits, a working-tree head, semantic diffs, and conflict-aware revert—withou
 running Git or treating an unsaved Glyphs document as a filesystem repository.
 
 The history has one lifetime: the current unsaved editing session. A successful
-normal save clears that document's commits, overlay reference, and unreachable
-objects. Saving a copy or a failed save does not clear it. Long-term comparison
-against a saved file, Time Machine, or a repository commit is a separate future
-adapter that can feed the same canonical tree and diff engine.
+normal save clears that document's commits and unreachable objects. Saving a
+copy or a failed save does not clear it. The visual diff is independent of this
+history and uses the current source on disk; a repository commit can later feed
+the same saved-baseline projection through a separate adapter.
 
 ## One source, two independent projections
 
@@ -23,22 +23,21 @@ result, timestamp, changed glyphs or document roots, and semantic before/after
 values. Selecting a row changes only the panel text. It never opens a tab,
 changes a master or selection, activates a Reporter, or modifies editor state.
 
-The **Glyphs MCP Changes** Reporter is a drawing-only Edit View projection of
-the latest contiguous agent session. It reads a cached net semantic diff rather
-than the selected Change Log row. The applied Glyphs outline stays normal; the
-pre-agent outline is the fixed baseline and the current native layer is the
-live comparison. The Reporter fills only the warm translucent geometric band
-between those two shapes; it never traces or recolors the complete outline. If
-the user moves another node afterward, the band updates on the next Glyphs
-redraw to include that movement relative to the same baseline. Reverting the
-layer to the baseline naturally leaves no visible band.
+The **Changes Since Save** Reporter is a drawing-only Edit View projection of
+the latest valid `.glyphs` or `.glyphspackage` source on disk. It is independent
+of both the Change Log selection and the MCP server. The applied Glyphs outline
+stays normal; a warm saved-outline ghost shows the disk baseline and an exact
+translucent band fills the gap when the saved and live path topology is
+compatible. If topology differs, the saved ghost remains visible without an
+approximate fill. Manual and MCP edits are treated identically, and returning a
+layer to its saved geometry naturally leaves no visible overlay.
 
 Topology-compatible paths are paired exactly by path, segment, and node order.
-If later editing changes that topology, the Reporter draws no approximate band;
-the complete semantic change remains available in the Change Log.
+Saved anchor positions and width are also projected when those values differ.
+Components, hints, images, and other non-outline semantics remain outside this
+visual Reporter.
 
-Both views are projections of the same operation and `CanonicalFontTree`
-data, but neither owns or drives the other.
+The Change Log and saved-source Reporter neither own nor drive each other.
 
 ## CanonicalFontTree storage
 
@@ -147,12 +146,12 @@ diagnostics. The schema-v4 live gate includes them in its explicit result, but
 ordinary MCP responses and the capability manifest do not expose profiling
 fields.
 
-History, pagination, and the Reporter use the observed diff. The latest-session
-diff is cached when operations are recorded, so Reporter redraws perform only
-affected-glyph and affected-layer lookups plus a lightweight projection of the
-current layer's identity, width, path geometry, and anchor positions. They do
-not construct a canonical layer, inspect backgrounds or metadata, hash or
-capture the font, write, prune, or mutate a Glyphs object.
+History and pagination use the observed operation diff. The Reporter instead
+reads one immutable decoded disk baseline maintained by a background cache.
+Reporter redraws perform only a saved glyph/layer lookup plus a lightweight
+projection of the current layer's identity, width, path geometry, and anchor
+positions. They do not read or hash files, construct a complete live canonical
+font, inspect backgrounds or metadata, write, prune, or mutate a Glyphs object.
 
 ## Revert semantics
 
@@ -179,12 +178,12 @@ native user history is never globally cleared.
   no more than four new content objects.
 - A detached 1,000-glyph, five-master snapshot must complete within the bounded
   scale test without touching native Glyphs objects.
-- Repeated Reporter reads reuse the cached session diff and perform no full-tree
-  diff.
+- Repeated Reporter reads reuse the cached saved source and perform no file I/O,
+  content hashing, or full-tree diff.
 - The Change Log has no polling timer and refreshes only from history or document
   lifecycle callbacks.
-- Closing a document removes only its process-local history. Saving clears only
-  the exact saved document.
+- Closing a document removes its process-local history and saved-source cache.
+  Saving refreshes only the exact saved document baseline.
 - The explicit Glyphs 4 schema-v3 qualification gate composes the public typed
   tools and `revert_change`; it owns no mutation or rollback implementation of
   its own. It must restore the exact disposable baseline after normal and

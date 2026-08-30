@@ -34,9 +34,11 @@ runtime only for Glyphs 4.
 - Every successful action enters a Git-like, process-local Change Log. Exact
   semantic inverse patches support non-linear selective revert while refusing
   conflicts with later manual or agent edits.
-- The drawing-only Reporter compares the current layer with the fixed
-  pre-session baseline and updates after manual point movement. The Change Log
-  remains independent textual feedback.
+- The drawing-only **Changes Since Save** Reporter compares the current layer
+  with the latest decoded `.glyphs` or `.glyphspackage` source on disk. It
+  includes manual and MCP edits, tracks external source changes, and remains
+  available while the MCP server is stopped. The Change Log remains
+  independent textual feedback.
 
 ### Python and structural replay
 

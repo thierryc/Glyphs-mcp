@@ -1711,9 +1711,9 @@ def native_layer_overlay_state(layer: Any) -> dict[str, Any]:
     """Project only the native values consumed by the drawing-only Reporter.
 
     This intentionally does not capture canonical backgrounds, annotations,
-    guides, hints, images, components, attributes, or user data. The semantic
-    history already owns the verified baseline; drawing needs only current
-    path geometry, anchor positions, and width to show the live gap.
+    guides, hints, images, components, attributes, or user data. The
+    saved-source cache owns the detached disk baseline; drawing needs only
+    current path geometry, anchor positions, and width to show the live gap.
     """
 
     layer_id = str(_safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or "")

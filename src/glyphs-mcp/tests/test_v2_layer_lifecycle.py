@@ -21,11 +21,8 @@ from glyphs_mcp_v2.canonical_collections import (  # noqa: E402
 )
 from glyphs_mcp_v2.canonical_tree import (  # noqa: E402
     CANONICAL_MODEL_SCHEMA_VERSION,
-    CanonicalFontTree,
     CanonicalSnapshot,
-    MemoryObjectStore,
 )
-from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
 from glyphs_mcp_v2.mutation import (  # noqa: E402
     CanonicalImpact,
@@ -450,25 +447,12 @@ class LayerLifecycleTests(unittest.TestCase):
         self.assertLess(len(str(public)), 2048)
 
     def test_non_master_layer_uses_the_existing_live_overlay_projection(self) -> None:
-        trees = CanonicalFontTree(MemoryObjectStore())
-        history = ChangeHistory(trees, id_factory=lambda: "commit_layer")
         before = _model()
         after = copy.deepcopy(before)
         after["glyphs"]["A"]["layers"][1]["paths"][0]["nodes"][0]["x"] = 25
-        history.record_action(
-            document_id="doc_layers",
-            tool="apply_layer_updates",
-            effect="edit",
-            status="success",
-            run_id="run_layers",
-            reason="Intermediate optical correction",
-            before_model=before,
-            after_model=after,
-        )
 
         overlay = overlay_for_layer(
-            trees=trees,
-            session=history.latest_session_diff("doc_layers"),
+            baseline_model=before,
             glyph_name="A",
             layer_key="brace-125",
             live_layer=after["glyphs"]["A"]["layers"][1],

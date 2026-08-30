@@ -19,7 +19,8 @@ A Model Context Protocol server for [Glyphs](https://glyphsapp.com) that exposes
   Verified live edits reconcile saved-before, saved-after, and intermediate
   disk states instead of treating source-file drift as a document failure.
 - A Git-like semantic Change Log supports exact, conflict-aware selective
-  revert. The independent Reporter displays the geometric before/current gap.
+  revert. The independent **Changes Since Save** Reporter compares the live
+  layer with the latest `.glyphs` or `.glyphspackage` source on disk.
 - Staged Python previews structural changes on a detached clone and confirms by
   replaying its stored canonical patch without rerunning code on the live font.
 - Canonical schema v7 classifies every property in the pinned official Glyphs

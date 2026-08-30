@@ -594,26 +594,6 @@ class ChangeHistoryTests(unittest.TestCase):
 
         self.assertTrue(tree_hash.startswith("sha256:"))
 
-    def test_latest_session_diff_collapses_tool_calls_to_one_net_comparison(self) -> None:
-        middle = copy.deepcopy(self.after)
-        middle["glyphs"]["g0001"]["export"] = False
-        final = copy.deepcopy(middle)
-        final["glyphs"]["g0000"]["layers"]["m0"]["width"] = 500
-        self.history.record_action(
-            document_id="doc_a", tool="first", effect="edit", status="success", run_id="run_1",
-            before_model=self.before, after_model=middle,
-        )
-        self.history.record_action(
-            document_id="doc_a", tool="second", effect="edit", status="success", run_id="run_1",
-            before_model=middle, after_model=final,
-        )
-
-        session = self.history.latest_session_diff("doc_a")
-        self.assertIsNotNone(session)
-        self.assertEqual(session.run_id, "run_1")
-        self.assertEqual(len(session.change_set.changes), 1)
-        self.assertEqual(session.change_set.changes[0].path[:3], ("glyphs", "g0001", "export"))
-
     def test_verified_patch_composition_preserves_unrelated_changes_and_cancellation(self) -> None:
         middle = copy.deepcopy(self.before)
         middle["glyphs"]["g0000"]["layers"]["m0"]["width"] = 520
@@ -685,61 +665,6 @@ class ChangeHistoryTests(unittest.TestCase):
         self.assertEqual(composed.changes[0].before, self.before["glyphs"]["g0000"])
         self.assertEqual(composed.apply(self.before), final)
 
-    def test_master_lifecycle_session_composes_without_tree_diff_or_tree_reads(self) -> None:
-        class CountingTree(CanonicalFontTree):
-            def __init__(self):
-                super().__init__(MemoryObjectStore())
-                self.diff_calls = 0
-                self.glyph_reads = 0
-
-            def diff(self, before_tree_hash, after_tree_hash):
-                self.diff_calls += 1
-                raise AssertionError("session composition rebuilt a tree diff")
-
-            def glyph(self, tree_hash, glyph_name):
-                self.glyph_reads += 1
-                raise AssertionError("session composition read a glyph shard")
-
-        trees = CountingTree()
-        history = ChangeHistory(trees)
-        baseline = _model(glyph_count=383, master_count=5)
-        middle = copy.deepcopy(baseline)
-        added_master = {"id": "m5", "name": "M5"}
-        middle["masters"].append(added_master)
-        for glyph in middle["glyphs"].values():
-            glyph["layers"]["m5"] = _layer("m5")
-        forward = diff_models(baseline, middle)
-        inverse = diff_models(middle, baseline)
-
-        history.record_action(
-            document_id="doc_scale",
-            tool="duplicate_master",
-            effect="edit",
-            status="success",
-            run_id="run_scale",
-            before_model=baseline,
-            after_model=middle,
-            change_set=forward,
-        )
-        history.record_action(
-            document_id="doc_scale",
-            tool="delete_master",
-            effect="edit",
-            status="success",
-            run_id="run_scale",
-            before_model=middle,
-            after_model=baseline,
-            change_set=inverse,
-        )
-
-        session = history.latest_session_diff("doc_scale")
-        self.assertIsNotNone(session)
-        self.assertEqual(session.change_set.changes, ())
-        self.assertEqual(session.change_set.before_fingerprint, fingerprint_model(baseline))
-        self.assertEqual(session.change_set.after_fingerprint, fingerprint_model(baseline))
-        self.assertEqual(trees.diff_calls, 0)
-        self.assertEqual(trees.glyph_reads, 0)
-
     def test_master_membership_and_order_compose_to_the_exact_lifecycle_delta(self) -> None:
         baseline = _model(glyph_count=3, master_count=3)
         added = copy.deepcopy(baseline)
@@ -764,39 +689,7 @@ class ChangeHistoryTests(unittest.TestCase):
         self.assertEqual(composed, diff_models(baseline, restored))
         self.assertEqual(composed.apply(baseline), restored)
 
-    def test_latest_agent_session_spans_distinct_tool_run_ids_until_an_external_boundary(self) -> None:
-        middle = copy.deepcopy(self.before)
-        middle["glyphs"]["g0000"]["export"] = False
-        final = copy.deepcopy(middle)
-        final["glyphs"]["g0001"]["export"] = False
-        self.history.record_action(
-            document_id="doc_a", tool="first", effect="edit", status="success", run_id="run_1",
-            before_model=self.before, after_model=middle,
-        )
-        self.history.record_action(
-            document_id="doc_a", tool="second", effect="edit", status="success", run_id="run_2",
-            before_model=middle, after_model=final,
-        )
-
-        session = self.history.latest_session_diff("doc_a")
-        self.assertIsNotNone(session)
-        self.assertEqual(session.commit_ids, ("c1", "c2"))
-        self.assertEqual(len(session.change_set.changes), 2)
-
-        manual = copy.deepcopy(final)
-        manual["font"]["note"] = "manual"
-        after_manual = copy.deepcopy(manual)
-        after_manual["glyphs"]["g0002"]["export"] = False
-        self.history.record_action(
-            document_id="doc_a", tool="third", effect="edit", status="success", run_id="run_3",
-            before_model=manual, after_model=after_manual,
-        )
-        session = self.history.latest_session_diff("doc_a")
-        self.assertIsNotNone(session)
-        self.assertEqual(session.commit_ids, ("c4",))
-        self.assertEqual(session.change_set.changes[0].path[:3], ("glyphs", "g0002", "export"))
-
-    def test_save_resets_visible_history_and_overlay_ref(self) -> None:
+    def test_save_resets_visible_history(self) -> None:
         self.history.record_action(
             document_id="doc_a", tool="edit", effect="edit", status="success", run_id="run_1",
             before_model=self.before, after_model=self.after,
@@ -804,7 +697,6 @@ class ChangeHistoryTests(unittest.TestCase):
         self.history.reset_after_save("doc_a")
 
         self.assertEqual(self.history.list_commits("doc_a"), ())
-        self.assertIsNone(self.history.latest_session_diff("doc_a"))
         self.assertIsNone(self.history.head_tree_hash("doc_a"))
 
     def test_manual_working_tree_gap_is_preserved_as_hidden_boundary(self) -> None:
@@ -825,36 +717,6 @@ class ChangeHistoryTests(unittest.TestCase):
         all_commits = self.history.list_commits("doc_a", include_external=True)
         self.assertEqual(len(all_commits), 3)
         self.assertEqual(all_commits[1].source, "external")
-
-    def test_verified_change_set_is_reused_and_reporter_reads_a_cached_session_diff(self) -> None:
-        class CountingTree(CanonicalFontTree):
-            def __init__(self):
-                super().__init__(MemoryObjectStore())
-                self.diff_calls = 0
-
-            def diff(self, before_tree_hash, after_tree_hash):
-                self.diff_calls += 1
-                return super().diff(before_tree_hash, after_tree_hash)
-
-        trees = CountingTree()
-        history = ChangeHistory(trees)
-        verified = diff_models(self.before, self.after)
-        history.record_action(
-            document_id="doc_fast",
-            tool="apply_spacing",
-            effect="edit",
-            status="success",
-            run_id="run_fast",
-            before_model=self.before,
-            after_model=self.after,
-            change_set=verified,
-        )
-
-        first = history.latest_session_diff("doc_fast")
-        second = history.latest_session_diff("doc_fast")
-        self.assertIs(first, second)
-        self.assertEqual(first.change_set, verified)
-        self.assertEqual(trees.diff_calls, 0)
 
     def test_action_trace_reuses_head_and_stores_only_verified_transition(self) -> None:
         class CountingTree(CanonicalFontTree):

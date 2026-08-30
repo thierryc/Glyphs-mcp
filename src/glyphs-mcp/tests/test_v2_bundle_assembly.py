@@ -146,6 +146,7 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 )
                 self.assertIn("GlyphsMCPCurvatureReporter", plugin_entry)
                 self.assertIn("GlyphsMCPChangeDiffReporter", plugin_entry)
+                self.assertIn("Changes Since Save (unavailable)", plugin_entry)
                 self.assertIn("GlyphsMCPInspectorPalette", plugin_entry)
                 self.assertNotIn("GlyphsMCPCandidateReporter", plugin_entry)
                 self.assertNotIn("GlyphsMCPLitSquareMetadataPalette", plugin_entry)
@@ -177,6 +178,7 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 changes_bridge = (resources / "document_changes_panel.py").read_text(encoding="utf-8")
                 self.assertIn("glyphs_mcp_v2.change_log_panel", changes_bridge)
                 self.assertTrue((resources / "glyphs_mcp_v2" / "change_diff_reporter.py").is_file())
+                self.assertTrue((resources / "glyphs_mcp_v2" / "saved_baseline.py").is_file())
                 for curve_reporter_dependency in (
                     "curve_overlay_model.py",
                     "glyphs_curve_reporter.py",

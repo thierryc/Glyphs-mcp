@@ -184,7 +184,10 @@ def _activate_v2_bundle(bundle: Path) -> Path:
         "from glyphs_mcp_v2.change_diff_reporter import GlyphsMCPChangeDiffReporter",
     )
     plugin_text = plugin_text.replace("GlyphsMCPCandidateReporter", "GlyphsMCPChangeDiffReporter")
-    plugin_text = plugin_text.replace("Glyphs MCP Candidate (unavailable)", "Glyphs MCP Changes (unavailable)")
+    plugin_text = plugin_text.replace(
+        "Glyphs MCP Candidate (unavailable)",
+        "Changes Since Save (unavailable)",
+    )
     plugin_text = plugin_text.replace(
         "from glyphs_litsquare_palette import GlyphsMCPLitSquareMetadataPalette",
         "from glyphs_mcp_v2.inspector_palette import GlyphsMCPInspectorPalette",

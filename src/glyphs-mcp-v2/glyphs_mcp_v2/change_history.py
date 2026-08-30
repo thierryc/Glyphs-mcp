@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import time
 from dataclasses import dataclass, field
 from threading import RLock
@@ -11,7 +10,7 @@ from uuid import uuid4
 
 from .canonical_tree import CanonicalFontTree
 from .canonical_schema import CanonicalCoverage
-from .semantic import ChangeCompositionError, ChangeSet, compose_change_sets
+from .semantic import ChangeSet
 
 
 @dataclass(frozen=True)
@@ -50,22 +49,10 @@ class ActionCommit:
         return tuple(result)
 
 
-@dataclass(frozen=True)
-class SessionDiff:
-    document_id: str
-    run_id: str
-    before_tree_hash: str
-    after_tree_hash: str
-    commit_ids: tuple[str, ...]
-    change_set: ChangeSet
-
-
 @dataclass
 class _DocumentState:
     commits: list[ActionCommit] = field(default_factory=list)
     head_tree_hash: Optional[str] = None
-    baseline_tree_hash: Optional[str] = None
-    latest_session: Optional[SessionDiff] = None
 
 
 class ChangeHistory:
@@ -101,7 +88,8 @@ class ChangeHistory:
 
         Action history is intentionally not migrated across model schemas.
         Content objects are pruned after refs are removed, and listeners are
-        notified so Change Log and Reporter views clear immediately.
+        notified so Change Log views clear immediately. The saved-source
+        Reporter is deliberately independent of this process-local history.
         """
 
         previous = int(previous_version)
@@ -195,40 +183,6 @@ class ChangeHistory:
         state.commits.append(commit)
         state.head_tree_hash = after_tree_hash
         self._commits[commit.commit_id] = commit
-        if source == "external":
-            state.latest_session = None
-        elif commit.changed:
-            previous = state.latest_session
-            if previous is None:
-                session_change_set = commit.change_set
-            else:
-                try:
-                    session_change_set = compose_change_sets(
-                        previous.change_set,
-                        commit.change_set,
-                    )
-                except ChangeCompositionError:
-                    # Consecutive append-only identity edits can omit order
-                    # patches individually while requiring one in their net
-                    # diff. Fall back only for that under-specified case.
-                    session_change_set = self.trees.diff(
-                        previous.before_tree_hash,
-                        commit.after_tree_hash,
-                    )
-            state.latest_session = SessionDiff(
-                document_id=document_id,
-                run_id=run_id,
-                before_tree_hash=(
-                    commit.before_tree_hash if previous is None else previous.before_tree_hash
-                ),
-                after_tree_hash=commit.after_tree_hash,
-                commit_ids=(
-                    (commit.commit_id,)
-                    if previous is None
-                    else previous.commit_ids + (commit.commit_id,)
-                ),
-                change_set=session_change_set,
-            )
         return commit
 
     def record_action(
@@ -266,8 +220,6 @@ class ChangeHistory:
                 after_tree_hash = before_tree_hash
             if before_tree_hash is None or after_tree_hash is None:
                 raise ValueError("the first document action requires a canonical model")
-            if state.baseline_tree_hash is None:
-                state.baseline_tree_hash = before_tree_hash
             if state.head_tree_hash is not None and state.head_tree_hash != before_tree_hash:
                 self._append(
                     state=state,
@@ -318,11 +270,6 @@ class ChangeHistory:
             state = self._documents.get(document_id)
             return state.head_tree_hash if state is not None else None
 
-    def latest_session_diff(self, document_id: str) -> Optional[SessionDiff]:
-        with self._lock:
-            state = self._documents.get(document_id)
-            return state.latest_session if state is not None else None
-
     def reset_after_save(self, document_id: str) -> None:
         with self._lock:
             state = self._documents.pop(document_id, None)
@@ -338,11 +285,11 @@ class ChangeHistory:
             retained.update(
                 tree_hash
                 for other in self._documents.values()
-                for tree_hash in (other.head_tree_hash, other.baseline_tree_hash)
+                for tree_hash in (other.head_tree_hash,)
                 if tree_hash
             )
         self.trees.prune(retained)
         self._notify(document_id)
 
 
-__all__ = ["ActionCommit", "ChangeHistory", "SessionDiff"]
+__all__ = ["ActionCommit", "ChangeHistory"]

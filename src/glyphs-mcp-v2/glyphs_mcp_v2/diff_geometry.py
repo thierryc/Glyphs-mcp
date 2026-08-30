@@ -52,7 +52,9 @@ def _geometry_matches(first: Mapping[str, Any], second: Mapping[str, Any]) -> bo
     )
 
 
-def _segments(path: Mapping[str, Any]) -> tuple[PathSegment, ...]:
+def path_segments(path: Mapping[str, Any]) -> tuple[PathSegment, ...]:
+    """Return the exact drawable segments for one canonical path."""
+
     nodes = list(path.get("nodes") or [])
     oncurves = [
         index
@@ -106,8 +108,8 @@ def difference_bands(
             continue
         if not _topology_matches(before_path, live_path):
             raise DifferenceTopologyError("outline node topology differs")
-        before_segments = _segments(before_path)
-        live_segments = _segments(live_path)
+        before_segments = path_segments(before_path)
+        live_segments = path_segments(live_path)
         if (
             not before_segments
             or len(before_segments) != len(live_segments)
@@ -130,4 +132,5 @@ __all__ = [
     "DifferenceTopologyError",
     "PathSegment",
     "difference_bands",
+    "path_segments",
 ]

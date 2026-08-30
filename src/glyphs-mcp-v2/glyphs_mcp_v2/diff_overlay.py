@@ -1,4 +1,4 @@
-"""Pure latest-session overlay projection with no Glyphs or AppKit imports."""
+"""Pure saved-source overlay projection with no Glyphs or AppKit imports."""
 
 from __future__ import annotations
 
@@ -6,16 +6,13 @@ import copy
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Optional
 
-from .canonical_tree import CanonicalFontTree
 from .canonical_collections import find_entity_index
 from .canonical_views import layer_anchors, layer_paths
-from .change_history import SessionDiff
 
 
 @dataclass(frozen=True)
 class LayerOverlay:
     visible: bool
-    includes_later_edits: bool
     glyph_name: Optional[str] = None
     layer_key: Optional[str] = None
     baseline_paths: tuple[Mapping[str, Any], ...] = ()
@@ -29,7 +26,6 @@ class LayerOverlay:
 def _empty() -> LayerOverlay:
     return LayerOverlay(
         visible=False,
-        includes_later_edits=False,
         baseline_anchors={},
         current_anchors={},
     )
@@ -60,60 +56,49 @@ def _anchor_positions(layer: Mapping[str, Any]) -> dict[str, Any]:
 
 def overlay_for_layer(
     *,
-    trees: CanonicalFontTree,
-    session: Optional[SessionDiff],
+    baseline_model: Optional[Mapping[str, Any]],
     glyph_name: str,
     layer_key: str,
     live_layer: Mapping[str, Any],
 ) -> LayerOverlay:
-    if session is None or not glyph_name or not layer_key:
+    """Compare one live layer directly with the decoded source on disk."""
+
+    if not isinstance(baseline_model, Mapping) or not glyph_name or not layer_key:
         return _empty()
-    relevant = tuple(
-        change
-        for change in session.change_set.changes
-        if len(change.path) >= 4
-        and change.path[0] == "glyphs"
-        and change.path[1] == glyph_name
-        and change.path[2] == "layers"
-        and change.path[3] == layer_key
-    )
-    affected = bool(relevant)
-    if not affected:
+    glyphs = baseline_model.get("glyphs")
+    if not isinstance(glyphs, Mapping):
         return _empty()
-    before = _layer(trees.glyph(session.before_tree_hash, glyph_name), layer_key)
-    target = _layer(trees.glyph(session.after_tree_hash, glyph_name), layer_key)
-    if before is None or target is None:
+    baseline = _layer(glyphs.get(glyph_name), layer_key)
+    if baseline is None:
         return _empty()
-    recorded_visual_changed = (
-        layer_paths(before) != layer_paths(target)
-        or layer_anchors(before) != layer_anchors(target)
-        or before.get("width") != target.get("width")
-    )
-    if not recorded_visual_changed:
+
+    baseline_paths = tuple(layer_paths(baseline))
+    current_paths = tuple(layer_paths(live_layer))
+    baseline_anchors = _anchor_positions(baseline)
+    current_anchors = _anchor_positions(live_layer)
+    if (
+        baseline_paths == current_paths
+        and baseline_anchors == current_anchors
+        and baseline.get("width") == live_layer.get("width")
+    ):
         return _empty()
-    live_visual_changed = (
-        layer_paths(before) != layer_paths(live_layer)
-        or layer_anchors(before) != layer_anchors(live_layer)
-        or before.get("width") != live_layer.get("width")
-    )
-    if not live_visual_changed:
-        return _empty()
-    includes_later_edits = (
-        layer_paths(target) != layer_paths(live_layer)
-        or layer_anchors(target) != layer_anchors(live_layer)
-        or target.get("width") != live_layer.get("width")
-    )
+
     return LayerOverlay(
         visible=True,
-        includes_later_edits=includes_later_edits,
         glyph_name=glyph_name,
         layer_key=layer_key,
-        baseline_paths=tuple(copy.deepcopy(list(layer_paths(before)))),
-        current_paths=tuple(copy.deepcopy(list(layer_paths(live_layer)))),
-        baseline_anchors=_anchor_positions(before),
-        current_anchors=_anchor_positions(live_layer),
-        baseline_width=float(before["width"]) if before.get("width") is not None else None,
-        current_width=float(live_layer["width"]) if live_layer.get("width") is not None else None,
+        baseline_paths=tuple(copy.deepcopy(list(baseline_paths))),
+        current_paths=tuple(copy.deepcopy(list(current_paths))),
+        baseline_anchors=baseline_anchors,
+        current_anchors=current_anchors,
+        baseline_width=(
+            float(baseline["width"]) if baseline.get("width") is not None else None
+        ),
+        current_width=(
+            float(live_layer["width"])
+            if live_layer.get("width") is not None
+            else None
+        ),
     )
 
 

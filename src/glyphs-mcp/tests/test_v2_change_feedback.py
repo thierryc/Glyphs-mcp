@@ -1,4 +1,4 @@
-"""Passive Change Log and independent latest-session overlay contracts."""
+"""Passive Change Log and independent saved-source overlay contracts."""
 
 from __future__ import annotations
 
@@ -71,48 +71,90 @@ class ChangeFeedbackTests(unittest.TestCase):
         self.assertIn("A / m0 / paths / 0 / nodes / 0 / x", detail)
         self.assertIn("0 → 20", detail)
 
-    def test_overlay_uses_latest_session_not_change_log_selection(self) -> None:
-        session = self.history.latest_session_diff("doc_feedback")
+    def test_overlay_compares_the_live_layer_with_the_saved_source(self) -> None:
         overlay = overlay_for_layer(
-            trees=self.trees,
-            session=session,
+            baseline_model=self.before,
             glyph_name="A",
             layer_key="m0",
             live_layer=self.after["glyphs"]["A"]["layers"]["m0"],
         )
 
         self.assertTrue(overlay.visible)
-        self.assertFalse(overlay.includes_later_edits)
         self.assertEqual(overlay.baseline_paths[0]["nodes"][0]["x"], 0)
         self.assertEqual(overlay.current_paths[0]["nodes"][0]["x"], 20)
 
-    def test_later_relevant_edit_updates_live_delta_from_original_baseline(self) -> None:
+    def test_manual_edit_updates_the_live_delta_from_disk(self) -> None:
         live = copy.deepcopy(self.after["glyphs"]["A"]["layers"]["m0"])
         live["paths"][0]["nodes"][0]["x"] = 35
         overlay = overlay_for_layer(
-            trees=self.trees,
-            session=self.history.latest_session_diff("doc_feedback"),
+            baseline_model=self.before,
             glyph_name="A",
             layer_key="m0",
             live_layer=live,
         )
         self.assertTrue(overlay.visible)
-        self.assertTrue(overlay.includes_later_edits)
         self.assertEqual(overlay.baseline_paths[0]["nodes"][0]["x"], 0)
         self.assertEqual(overlay.current_paths[0]["nodes"][0]["x"], 35)
 
-    def test_later_unrelated_layer_edit_does_not_mark_overlay_stale(self) -> None:
-        live = copy.deepcopy(self.after["glyphs"]["A"]["layers"]["m0"])
-        live["name"] = "User label unrelated to the recorded node move"
+    def test_unrelated_layer_metadata_draws_nothing(self) -> None:
+        live = copy.deepcopy(self.before["glyphs"]["A"]["layers"]["m0"])
+        live["name"] = "User label unrelated to visual geometry"
         overlay = overlay_for_layer(
-            trees=self.trees,
-            session=self.history.latest_session_diff("doc_feedback"),
+            baseline_model=self.before,
             glyph_name="A",
             layer_key="m0",
             live_layer=live,
         )
+        self.assertFalse(overlay.visible)
+
+    def test_anchor_and_width_changes_are_projected(self) -> None:
+        saved = copy.deepcopy(self.before)
+        layer = saved["glyphs"]["A"]["layers"]["m0"]
+        layer["anchors"] = {"top": [250, 700]}
+        live = copy.deepcopy(layer)
+        live["anchors"]["top"] = [260, 710]
+        live["width"] = 540
+
+        overlay = overlay_for_layer(
+            baseline_model=saved,
+            glyph_name="A",
+            layer_key="m0",
+            live_layer=live,
+        )
+
         self.assertTrue(overlay.visible)
-        self.assertFalse(overlay.includes_later_edits)
+        self.assertEqual(overlay.baseline_anchors["anchor:top:0"], [250, 700])
+        self.assertEqual(overlay.current_anchors["anchor:top:0"], [260, 710])
+        self.assertEqual(overlay.baseline_width, 500)
+        self.assertEqual(overlay.current_width, 540)
+
+    def test_nonvisual_saved_anchor_fields_do_not_create_a_difference(self) -> None:
+        saved = copy.deepcopy(self.before)
+        saved_layer = saved["glyphs"]["A"]["layers"]["m0"]
+        saved_layer["anchors"] = [
+            {
+                "id": "anchor:top:0",
+                "name": "top",
+                "position": [250, 700],
+                "orientation": 0,
+                "locked": False,
+                "attributes": {},
+                "userData": {},
+            }
+        ]
+        live = copy.deepcopy(saved_layer)
+        live["anchors"] = [
+            {"id": "anchor:top:0", "name": "top", "position": [250, 700]}
+        ]
+
+        overlay = overlay_for_layer(
+            baseline_model=saved,
+            glyph_name="A",
+            layer_key="m0",
+            live_layer=live,
+        )
+
+        self.assertFalse(overlay.visible)
 
     def test_difference_geometry_builds_only_the_gap_between_old_and_live_paths(self) -> None:
         baseline = self.before["glyphs"]["A"]["layers"]["m0"]["paths"]
@@ -137,8 +179,7 @@ class ChangeFeedbackTests(unittest.TestCase):
 
     def test_unrelated_layer_draws_nothing(self) -> None:
         overlay = overlay_for_layer(
-            trees=self.trees,
-            session=self.history.latest_session_diff("doc_feedback"),
+            baseline_model=self.before,
             glyph_name="B",
             layer_key="m0",
             live_layer={},
@@ -158,13 +199,21 @@ class ChangeFeedbackTests(unittest.TestCase):
             "fingerprint_model",
             "diff_models",
             "capture_snapshot",
+            "active_history",
+            "active_host",
         ):
             self.assertNotIn(forbidden, reporter_source)
         self.assertIn("native_layer_overlay_state", reporter_source)
+        self.assertIn("self._baseline_cache.snapshot", reporter_source)
+        self.assertIn('self.menuName = "Changes Since Save"', reporter_source)
         self.assertIn("_draw_difference", reporter_source)
+        self.assertIn("_stroke_saved_paths", reporter_source)
         self.assertIn(".fill()", reporter_source)
-        self.assertNotIn("_stroke_paths", reporter_source)
         self.assertNotIn("TARGET_STALE_RGBA", reporter_source)
+        foreground_source = reporter_source.split("def foreground(self, layer):", 1)[1]
+        foreground_source = foreground_source.split("def __file__", 1)[0]
+        for forbidden in (".refresh(", "_source_file_state", "_saved_source_canonical_model"):
+            self.assertNotIn(forbidden, foreground_source)
 
 
 if __name__ == "__main__":
