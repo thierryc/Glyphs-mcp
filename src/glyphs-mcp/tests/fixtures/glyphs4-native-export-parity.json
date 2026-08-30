@@ -9,7 +9,7 @@
   "captureHarness": {
     "executionBoundary": "glyphs4_disposable_detached_export",
     "path": "scripts/capture_glyphs4_native_export_parity.py",
-    "sha256": "47a3dfeb0a0002fcac310491c165d622afbe899a45ea5e8d7d01312a9ced269f"
+    "sha256": "933e1b2694095728ae501f2dd93089bbf7dc4a38b03cb96a8e91cf30bc660175"
   },
   "captureStatus": "capture_required",
   "fixtureId": "glyphs4-native-export-parity-v1",

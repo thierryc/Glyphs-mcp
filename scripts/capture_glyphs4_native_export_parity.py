@@ -422,6 +422,23 @@ def _build_probe_font() -> tuple[Any, dict[str, Any]]:
     return font, inputs
 
 
+def _resolve_native_otf(artifact_root: Path, last_exported_path: Any) -> Path:
+    """Resolve the new in-root OTF without trusting a stale native pointer."""
+
+    reported = Path(str(last_exported_path or ""))
+    if reported.is_file():
+        try:
+            reported.resolve().relative_to(artifact_root.resolve())
+        except ValueError:
+            pass
+        else:
+            return reported
+    otfs = sorted(artifact_root.glob("*.otf"))
+    if len(otfs) != 1:
+        raise CaptureError("native OTF export did not create exactly one font")
+    return otfs[0]
+
+
 def _export_native(font: Any, artifact_root: Path) -> tuple[Path, Path]:
     try:
         from GlyphsApp import OTF, UFO  # type: ignore[import-not-found]
@@ -449,16 +466,7 @@ def _export_native(font: Any, artifact_root: Path) -> tuple[Path, Path]:
     )
     if result not in (None, True):
         raise CaptureError("native OTF export failed: " + str(result))
-    exported = Path(str(instance.lastExportedFilePath or ""))
-    if not exported.is_file():
-        otfs = sorted(artifact_root.glob("*.otf"))
-        if len(otfs) != 1:
-            raise CaptureError("native OTF export did not create exactly one font")
-        exported = otfs[0]
-    try:
-        exported.resolve().relative_to(artifact_root.resolve())
-    except ValueError as exc:
-        raise CaptureError("native exporter wrote outside the capture root") from exc
+    exported = _resolve_native_otf(artifact_root, instance.lastExportedFilePath)
     return ufo_candidates[0], exported
 
 

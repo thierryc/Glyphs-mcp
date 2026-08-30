@@ -167,6 +167,18 @@ class Glyphs4NativeParityFixtureTests(unittest.TestCase):
         self.assertIs(master, created_master)
         self.assertEqual(font.masters, [created_master])
 
+    def test_capture_ignores_a_stale_out_of_root_native_export_pointer(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as stale:
+            root = Path(tmp)
+            expected = root / "GlyphsMCPNativeExportParity-Regular.otf"
+            expected.write_bytes(b"new native export")
+            stale_path = Path(stale) / "EarlierExport.otf"
+            stale_path.write_bytes(b"old native export")
+
+            resolved = CAPTURE._resolve_native_otf(root, stale_path)
+
+        self.assertEqual(resolved, expected)
+
     def test_pending_fixture_is_valid_as_a_capture_plan_only(self) -> None:
         fixture = VALIDATOR.validate_fixture(FIXTURE, require_captured=False)
         self.assertEqual(fixture["captureStatus"], "capture_required")
