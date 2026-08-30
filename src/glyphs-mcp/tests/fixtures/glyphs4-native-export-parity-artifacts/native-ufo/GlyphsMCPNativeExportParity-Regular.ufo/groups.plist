@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>public.kern1.rtl_second_left</key>
+    <array>
+      <string>beh-ar</string>
+    </array>
+    <key>public.kern1.vertical_first_bottom</key>
+    <array>
+      <string>verticalA</string>
+    </array>
+    <key>public.kern2.rtl_first_right</key>
+    <array>
+      <string>alef-ar</string>
+    </array>
+    <key>public.kern2.vertical_second_top</key>
+    <array>
+      <string>verticalB</string>
+    </array>
+  </dict>
+</plist>

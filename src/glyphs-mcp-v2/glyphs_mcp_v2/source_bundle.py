@@ -11,7 +11,7 @@ from __future__ import annotations
 import ast
 import copy
 from dataclasses import dataclass, field
-from decimal import Decimal, DivisionByZero, InvalidOperation, ROUND_HALF_UP
+from decimal import Decimal, DivisionByZero, InvalidOperation, ROUND_HALF_EVEN
 import hashlib
 import io
 import json
@@ -345,10 +345,10 @@ def _decimal_expression(expression: str, values: Mapping[str, Any]) -> int:
             "number_value_invalid",
             "Number Value arithmetic produced a non-finite result.",
         )
-    # Glyphs resolves feature metrics to integer design units.  ROUND_HALF_UP
-    # is deterministic for both signs and matches the editor/export behavior
-    # at exact half-unit boundaries (away from zero).
-    integral = result.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
+    # Glyphs 4 resolves Number Value feature metrics to integer design units
+    # with ties-to-even rounding. The committed native-export parity fixture
+    # covers positive and negative 0.5 and 2.5 boundaries.
+    integral = result.quantize(Decimal("1"), rounding=ROUND_HALF_EVEN)
     return int(integral)
 
 

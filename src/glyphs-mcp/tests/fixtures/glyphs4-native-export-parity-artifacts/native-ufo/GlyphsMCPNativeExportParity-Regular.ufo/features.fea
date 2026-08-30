@@ -1,0 +1,12 @@
+feature cpsp {
+pos A <$gmcpPositiveTwoHalf 0 0 0>;
+pos B <$gmcpNegativeTwoHalf 0 0 0>;
+pos C <$gmcpPositiveHalf 0 0 0>;
+pos D <$gmcpNegativeHalf 0 0 0>;
+} cpsp;
+
+feature kern {
+# automatic
+# Automatic Code
+} kern;
+

@@ -47,12 +47,29 @@ def _json_bytes(value) -> bytes:
     return (json.dumps(value, sort_keys=True, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
 
 
-def _pending_fixture() -> dict:
+def _committed_fixture() -> dict:
     return json.loads(FIXTURE.read_text(encoding="utf-8"))
 
 
+def _capture_required_fixture() -> dict:
+    payload = _committed_fixture()
+    payload["captureStatus"] = "capture_required"
+    payload["blocker"] = {
+        "code": "glyphs4_native_capture_required",
+        "message": "Authentic Glyphs 4 native-export observations are not committed.",
+        "requiredAction": "Run the committed host capture harness and commit its hashed artifacts.",
+    }
+    payload["artifactRoot"] = None
+    payload["artifacts"] = []
+    payload["provenance"] = None
+    for probe in payload["probes"]:
+        probe["status"] = "capture_required"
+        probe["observation"] = None
+    return payload
+
+
 def _captured_fixture(root: Path) -> tuple[Path, dict]:
-    payload = _pending_fixture()
+    payload = _committed_fixture()
     payload["captureStatus"] = "captured"
     payload["blocker"] = None
     payload["artifactRoot"] = "glyphs4-native-export-parity-artifacts"
@@ -97,10 +114,10 @@ def _captured_fixture(root: Path) -> tuple[Path, dict]:
         },
         "number_value_half_rounding": {
             "compiledAdjustments": [
-                {"glyph": "A", "XPlacement": 3},
-                {"glyph": "B", "XPlacement": -3},
-                {"glyph": "C", "XPlacement": 1},
-                {"glyph": "D", "XPlacement": -1},
+                {"glyph": "A", "XPlacement": 2},
+                {"glyph": "B", "XPlacement": -2},
+                {"glyph": "C", "XPlacement": 0},
+                {"glyph": "D", "XPlacement": 0},
             ],
             "exportedFeatureSource": "pos A <$positiveTwoHalf 0 0 0>;",
             "nativeInput": [
@@ -197,18 +214,30 @@ class Glyphs4NativeParityFixtureTests(unittest.TestCase):
             self.assertEqual(call.kwargs["env"]["LANG"], "en_US.UTF-8")
             self.assertEqual(call.kwargs["env"]["LC_ALL"], "en_US.UTF-8")
 
-    def test_pending_fixture_is_valid_as_a_capture_plan_only(self) -> None:
-        fixture = VALIDATOR.validate_fixture(FIXTURE, require_captured=False)
-        self.assertEqual(fixture["captureStatus"], "capture_required")
-        self.assertTrue(all(probe["observation"] is None for probe in fixture["probes"]))
+    def test_committed_fixture_contains_captured_native_evidence(self) -> None:
+        fixture = VALIDATOR.validate_fixture(FIXTURE, require_captured=True)
+        self.assertEqual(fixture["captureStatus"], "captured")
+        self.assertIsNone(fixture["blocker"])
+        self.assertTrue(all(probe["observation"] for probe in fixture["probes"]))
 
-    def test_release_qualification_refuses_pending_fixture(self) -> None:
-        with self.assertRaises(VALIDATOR.FixtureValidationError) as caught:
-            VALIDATOR.validate_fixture(FIXTURE, require_captured=True)
+    def test_release_qualification_accepts_the_committed_fixture(self) -> None:
+        fixture = VALIDATOR.validate_fixture(FIXTURE, require_captured=True)
+        self.assertTrue(fixture["artifacts"])
+        self.assertEqual(fixture["provenance"]["host"]["build"], "4004.0")
+
+    def test_capture_required_fixture_is_valid_only_as_a_plan(self) -> None:
+        payload = _capture_required_fixture()
+        with tempfile.TemporaryDirectory() as tmp:
+            fixture_path = Path(tmp) / "fixture.json"
+            fixture_path.write_bytes(_json_bytes(payload))
+            fixture = VALIDATOR.validate_fixture(fixture_path, require_captured=False)
+            self.assertEqual(fixture["captureStatus"], "capture_required")
+            with self.assertRaises(VALIDATOR.FixtureValidationError) as caught:
+                VALIDATOR.validate_fixture(fixture_path, require_captured=True)
         self.assertEqual(caught.exception.code, "glyphs4_native_capture_required")
 
     def test_capture_plan_refuses_a_pre_4004_host_contract(self) -> None:
-        payload = _pending_fixture()
+        payload = _capture_required_fixture()
         payload["requiredHost"]["minimumBuild"] = 4000
         with tempfile.TemporaryDirectory() as tmp:
             fixture_path = Path(tmp) / "fixture.json"
@@ -287,7 +316,7 @@ class Glyphs4NativeParityFixtureTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "artifact_invalid")
 
     def test_harness_hash_drift_is_a_blocker(self) -> None:
-        payload = _pending_fixture()
+        payload = _committed_fixture()
         payload["captureHarness"]["sha256"] = "0" * 64
         with tempfile.TemporaryDirectory() as tmp:
             fixture_path = Path(tmp) / "fixture.json"
@@ -333,7 +362,7 @@ class Glyphs4NativeParityFixtureTests(unittest.TestCase):
         )
 
     def test_authentic_number_observations_drive_the_v2_rounding_contract(self) -> None:
-        payload = _pending_fixture()
+        payload = _committed_fixture()
         if payload["captureStatus"] != "captured":
             self.assertIsNone(payload["provenance"])
             return

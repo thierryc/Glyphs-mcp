@@ -407,7 +407,7 @@ class V2FeatureNormalizationTests(unittest.TestCase):
                 values_by_master=values,
                 master_id="m1",
             ),
-            "pos A V 21;",
+            "pos A V 20;",
         )
         self.assertEqual(
             resolve_number_values(
@@ -415,7 +415,7 @@ class V2FeatureNormalizationTests(unittest.TestCase):
                 values_by_master=values,
                 master_id="m2",
             ),
-            "pos A V -21;",
+            "pos A V -20;",
         )
         with self.assertRaises(SourceBundleError) as raised:
             resolve_number_values(
@@ -446,7 +446,7 @@ class V2FeatureNormalizationTests(unittest.TestCase):
         Parser(io.StringIO(static), glyphNames=glyphs).parse()
         Parser(io.StringIO(inline), glyphNames=glyphs).parse()
         Parser(io.StringIO(materialized), glyphNames=glyphs).parse()
-        self.assertIn("pos A V 21;", static)
+        self.assertIn("pos A V 20;", static)
         m1_location = "@GMCP_location_m1_{}".format(
             hashlib.sha256(b"m1").hexdigest()[:8]
         )
@@ -1321,7 +1321,7 @@ class V2SourceBundleTests(unittest.TestCase):
                     _feature_pair_x_advance(font, "test", "A", "V")
                     for font in standalone_fonts
                 ],
-                [21, 41],
+                [20, 40],
             )
             self.assertEqual(
                 [
@@ -1375,7 +1375,7 @@ class V2SourceBundleTests(unittest.TestCase):
             static_fonts = list((build / "static").glob("*.ttf"))
             self.assertEqual([path.name for path in static_fonts], ["BundleTest-Medium.ttf"])
             medium = static_fonts[0]
-            self.assertEqual(_feature_pair_x_advance(medium, "test", "A", "V"), 31)
+            self.assertEqual(_feature_pair_x_advance(medium, "test", "A", "V"), 30)
             self.assertEqual(_feature_pair_x_advance(medium, "kern", "A", "V"), -50)
             baseline = _shape_advances(
                 medium, "AV", features={"test": False, "kern": False}
@@ -1386,7 +1386,7 @@ class V2SourceBundleTests(unittest.TestCase):
             kerned = _shape_advances(
                 medium, "AV", features={"test": False, "kern": True}
             )
-            self.assertEqual(test_positioned[0][0] - baseline[0][0], 31)
+            self.assertEqual(test_positioned[0][0] - baseline[0][0], 30)
             self.assertEqual(kerned[0][0] - baseline[0][0], -50)
 
             variable_fonts = list((build / "variable").glob("*.ttf"))

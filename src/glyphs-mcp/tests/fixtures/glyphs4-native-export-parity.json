@@ -1,63 +1,614 @@
 {
-  "artifactRoot": null,
-  "artifacts": [],
-  "blocker": {
-    "code": "glyphs4_native_capture_required",
-    "message": "No authentic Glyphs 4 native-export observation has been committed for these four semantics.",
-    "requiredAction": "Run the committed harness inside Glyphs 4 build 4004 or newer with the approved disposable document open and clean, then commit its JSON and complete hashed artifact tree."
-  },
+  "artifactRoot": "glyphs4-native-export-parity-artifacts",
+  "artifacts": [
+    {
+      "byteSize": 1848,
+      "relativePath": "GlyphsMCPNativeExportParity-Regular.otf",
+      "sha256": "4f65e14bd92494c57b3fc47b7af3afed7e60ffc4ec4ac15f1e0c65d582b4de33"
+    },
+    {
+      "byteSize": 8845,
+      "relativePath": "native-observations.json",
+      "sha256": "dc429dc777766226ac03b328f121ff668c93d408291b61fe90625f1ebc2a07b7"
+    },
+    {
+      "byteSize": 215,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/features.fea",
+      "sha256": "293d7176a42dc449641c879a1a440bca8bd604c2c73dfd42e83887e9837c48a3"
+    },
+    {
+      "byteSize": 854,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/fontinfo.plist",
+      "sha256": "d175142d9ad33ae5ccbd7291d0ca9a4a869efe12260e85983b65b74c7b0f7422"
+    },
+    {
+      "byteSize": 503,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/A_.glif",
+      "sha256": "c8a3c191ea9843666ba5d73a15e2816dc62153a5d17c029b11665ccab970add9"
+    },
+    {
+      "byteSize": 503,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/B_.glif",
+      "sha256": "9d84ab31cd759d1b03c9caa5805f133ee1f68080ead4ca0ad7f37a7a9c582b76"
+    },
+    {
+      "byteSize": 505,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/C_.glif",
+      "sha256": "d0c2bc319960a58512d1823b96354e28c14283f308c9ccbe2765a94041ca6406"
+    },
+    {
+      "byteSize": 505,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/D_.glif",
+      "sha256": "14530b3dd54f1203b45beab503c7a9e513a7c297fd673f4c608e3d3f7f19947b"
+    },
+    {
+      "byteSize": 505,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/L_.glif",
+      "sha256": "95f0bd6a804becdca480729ec9fc8fedfa37cfefa4e31bb106af4f12ce52b035"
+    },
+    {
+      "byteSize": 505,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/O_.glif",
+      "sha256": "f2e8fda3618d0e1f4dbb13baf017a4a83b85d090db20d0247bd24e5cba6153b4"
+    },
+    {
+      "byteSize": 485,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/_notdef.glif",
+      "sha256": "fdc1e0812a1bf4d3bfe0b7e3d060ae64d278098c34c209e9a8dbbeef30bf66e4"
+    },
+    {
+      "byteSize": 511,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/alef-ar.glif",
+      "sha256": "1534cef3cf263fa7979c8f3981f2026b7c39cf45781173fce60c027fdf2c05cd"
+    },
+    {
+      "byteSize": 510,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/beh-ar.glif",
+      "sha256": "9cdc9e72f2f830e6397b51f84eb59285f4cf4574393721fb3c8179e36fe392eb"
+    },
+    {
+      "byteSize": 869,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/contents.plist",
+      "sha256": "5ceb6cb984b5c1043f9ef63a58ba6846961ea3e81d9f13b0f7ebfd5712735983"
+    },
+    {
+      "byteSize": 505,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/l.glif",
+      "sha256": "6a9975bfd7d6b3b7a297fa7c6d2d68cffe03db29c2cac28cf2c849fd98648f9d"
+    },
+    {
+      "byteSize": 514,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/quoteright.glif",
+      "sha256": "fe37bc65dd1dbac6697bf4c216b2e4f5b5167eafd079066a0165684c216be407"
+    },
+    {
+      "byteSize": 513,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/verticalA_.glif",
+      "sha256": "e21e37c3281da65e395b36e838d31ddaf27dd39f12132300321ab46adfc8696d"
+    },
+    {
+      "byteSize": 513,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/glyphs/verticalB_.glif",
+      "sha256": "ce9c3bfc98bd09f6205e3bfc4dc981006777529359ffdd474877895a6d29988e"
+    },
+    {
+      "byteSize": 605,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/groups.plist",
+      "sha256": "8e18129dec45a53579083acf61ae7e35c70e98dc21c5b4866f77a6c7a59919db"
+    },
+    {
+      "byteSize": 287,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/layercontents.plist",
+      "sha256": "a13ddf884de30309bc36869760d222267e2adbc05f5e04e482c013b1ff5ece86"
+    },
+    {
+      "byteSize": 1942,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/lib.plist",
+      "sha256": "3bc50eef2b0e797eee2eab36a9273218c13f17cfbb34997a14af44b17318da89"
+    },
+    {
+      "byteSize": 328,
+      "relativePath": "native-ufo/GlyphsMCPNativeExportParity-Regular.ufo/metainfo.plist",
+      "sha256": "c7e4cb1606f6267b350b8c0582517e92426cb235a55a055d08fe19f95d9561d2"
+    }
+  ],
+  "blocker": null,
   "captureHarness": {
     "executionBoundary": "glyphs4_disposable_detached_export",
     "path": "scripts/capture_glyphs4_native_export_parity.py",
     "sha256": "7dca632b5ed0dd806af6df2ade0f56c21b4f72f7b200174c581cdd74dd6e8e15"
   },
-  "captureStatus": "capture_required",
+  "captureStatus": "captured",
   "fixtureId": "glyphs4-native-export-parity-v1",
   "probes": [
     {
       "id": "rtl_class_orientation",
       "objective": "Characterize Glyphs native RTL group orientation through UFO and compiled GPOS output.",
-      "observation": null,
+      "observation": {
+        "compiledGpos": {
+          "feature": "kern",
+          "matches": [
+            {
+              "lookupIndex": 2,
+              "value1": {
+                "XAdvance": -73,
+                "XPlacement": -73,
+                "YAdvance": 0,
+                "YPlacement": 0
+              },
+              "value2": {
+                "XAdvance": 0,
+                "XPlacement": 0,
+                "YAdvance": 0,
+                "YPlacement": 0
+              }
+            }
+          ]
+        },
+        "nativeInput": {
+          "direction": "rtl",
+          "firstGlyph": "alef-ar",
+          "firstKey": "@MMK_L_rtl_first_right",
+          "secondGlyph": "beh-ar",
+          "secondKey": "@MMK_R_rtl_second_left",
+          "value": -73
+        },
+        "nativeStorage": {
+          "11111111-1111-4111-8111-111111111111": {
+            "@MMK_L_rtl_first_right": {
+              "@MMK_R_rtl_second_left": -73.0
+            }
+          }
+        },
+        "ufoGroups": {
+          "public.kern1.rtl_second_left": [
+            "beh-ar"
+          ],
+          "public.kern1.vertical_first_bottom": [
+            "verticalA"
+          ],
+          "public.kern2.rtl_first_right": [
+            "alef-ar"
+          ],
+          "public.kern2.vertical_second_top": [
+            "verticalB"
+          ]
+        },
+        "ufoKerning": [],
+        "ufoKerningFilePresent": false
+      },
       "requiredEvidence": [
         "native directional storage",
         "UFO groups and kerning",
         "compiled kern GPOS"
       ],
-      "status": "capture_required"
+      "status": "captured"
     },
     {
       "id": "vertical_sign_yadvance",
       "objective": "Characterize native vertical kerning sign and YAdvance shaping behavior.",
-      "observation": null,
+      "observation": {
+        "compiledGpos": {
+          "feature": "vkrn",
+          "xAdvance": 0,
+          "yAdvance": -61
+        },
+        "harfbuzz": {
+          "vkrnOff": [
+            {
+              "ax": 0,
+              "ay": -1000,
+              "cl": 0,
+              "dx": -300,
+              "dy": -750,
+              "g": "verticalA"
+            },
+            {
+              "ax": 0,
+              "ay": -1000,
+              "cl": 1,
+              "dx": -300,
+              "dy": -750,
+              "g": "verticalB"
+            }
+          ],
+          "vkrnOn": [
+            {
+              "ax": 0,
+              "ay": -939,
+              "cl": 0,
+              "dx": -300,
+              "dy": -750,
+              "g": "verticalA"
+            },
+            {
+              "ax": 0,
+              "ay": -1000,
+              "cl": 1,
+              "dx": -300,
+              "dy": -750,
+              "g": "verticalB"
+            }
+          ]
+        },
+        "nativeInput": {
+          "direction": "vertical",
+          "firstGlyph": "verticalA",
+          "firstKey": "@MMK_T_vertical_first_bottom",
+          "secondGlyph": "verticalB",
+          "secondKey": "@MMK_B_vertical_second_top",
+          "value": -61
+        }
+      },
       "requiredEvidence": [
         "compiled vkrn value records",
         "HarfBuzz ttb vkrn on/off"
       ],
-      "status": "capture_required"
+      "status": "captured"
     },
     {
       "id": "contextual_boundary_semantics",
       "objective": "Characterize both native context-key boundaries and their additive shaping scope.",
-      "observation": null,
+      "observation": {
+        "compiledGpos": {
+          "features": [
+            {
+              "lookupIndexes": [
+                0
+              ],
+              "tag": "cpsp"
+            },
+            {
+              "lookupIndexes": [
+                1,
+                2
+              ],
+              "tag": "kern"
+            },
+            {
+              "lookupIndexes": [
+                3
+              ],
+              "tag": "vkrn"
+            }
+          ],
+          "lookupTypes": [
+            1,
+            8,
+            2,
+            2,
+            1
+          ]
+        },
+        "harfbuzz": {
+          "negativeControls": [
+            {
+              "kernOff": [
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 0,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "L"
+                },
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 1,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "quoteright"
+                },
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 2,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "O"
+                }
+              ],
+              "kernOn": [
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 0,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "L"
+                },
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 1,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "quoteright"
+                },
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 2,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "O"
+                }
+              ],
+              "text": "L’O"
+            },
+            {
+              "kernOff": [
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 0,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "l"
+                },
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 1,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "quoteright"
+                },
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 2,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "A"
+                }
+              ],
+              "kernOn": [
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 0,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "l"
+                },
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 1,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "quoteright"
+                },
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 2,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "A"
+                }
+              ],
+              "text": "l’A"
+            },
+            {
+              "kernOff": [
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 0,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "quoteright"
+                },
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 1,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "A"
+                }
+              ],
+              "kernOn": [
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 0,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "quoteright"
+                },
+                {
+                  "ax": 600,
+                  "ay": 0,
+                  "cl": 1,
+                  "dx": 0,
+                  "dy": 0,
+                  "g": "A"
+                }
+              ],
+              "text": "’A"
+            }
+          ],
+          "positiveKernOff": [
+            {
+              "ax": 600,
+              "ay": 0,
+              "cl": 0,
+              "dx": 0,
+              "dy": 0,
+              "g": "L"
+            },
+            {
+              "ax": 600,
+              "ay": 0,
+              "cl": 1,
+              "dx": 0,
+              "dy": 0,
+              "g": "quoteright"
+            },
+            {
+              "ax": 600,
+              "ay": 0,
+              "cl": 2,
+              "dx": 0,
+              "dy": 0,
+              "g": "A"
+            }
+          ],
+          "positiveKernOn": [
+            {
+              "ax": 559,
+              "ay": 0,
+              "cl": 0,
+              "dx": 0,
+              "dy": 0,
+              "g": "L"
+            },
+            {
+              "ax": 623,
+              "ay": 0,
+              "cl": 1,
+              "dx": 0,
+              "dy": 0,
+              "g": "quoteright"
+            },
+            {
+              "ax": 600,
+              "ay": 0,
+              "cl": 2,
+              "dx": 0,
+              "dy": 0,
+              "g": "A"
+            }
+          ]
+        },
+        "nativeInput": {
+          "boundaries": [
+            {
+              "boundaryIndex": 1,
+              "nativeKey": "L * quoteright A",
+              "value": -41
+            },
+            {
+              "boundaryIndex": 2,
+              "nativeKey": "L quoteright * A",
+              "value": 23
+            }
+          ],
+          "nativeStorage": {
+            "L * quoteright A": {
+              "11111111-1111-4111-8111-111111111111": -41.0
+            },
+            "L quoteright * A": {
+              "11111111-1111-4111-8111-111111111111": 23.0
+            }
+          },
+          "sequence": [
+            "L",
+            "quoteright",
+            "A"
+          ]
+        }
+      },
       "requiredEvidence": [
         "native context storage",
         "compiled contextual GPOS",
         "positive and negative shaping controls"
       ],
-      "status": "capture_required"
+      "status": "captured"
     },
     {
       "id": "number_value_half_rounding",
       "objective": "Characterize positive and negative half-unit Number Value rounding after native export.",
-      "observation": null,
+      "observation": {
+        "compiledAdjustments": [
+          {
+            "XAdvance": 0,
+            "XPlacement": 2,
+            "YAdvance": 0,
+            "YPlacement": 0,
+            "glyph": "A",
+            "lookupIndex": 0
+          },
+          {
+            "XAdvance": 0,
+            "XPlacement": -2,
+            "YAdvance": 0,
+            "YPlacement": 0,
+            "glyph": "B",
+            "lookupIndex": 0
+          },
+          {
+            "XAdvance": 0,
+            "XPlacement": 0,
+            "YAdvance": 0,
+            "YPlacement": 0,
+            "glyph": "C",
+            "lookupIndex": 0
+          },
+          {
+            "XAdvance": 0,
+            "XPlacement": 0,
+            "YAdvance": 0,
+            "YPlacement": 0,
+            "glyph": "D",
+            "lookupIndex": 0
+          }
+        ],
+        "exportedFeatureSource": "feature cpsp {\npos A <$gmcpPositiveTwoHalf 0 0 0>;\npos B <$gmcpNegativeTwoHalf 0 0 0>;\npos C <$gmcpPositiveHalf 0 0 0>;\npos D <$gmcpNegativeHalf 0 0 0>;\n} cpsp;\n\nfeature kern {\n# automatic\n# Automatic Code\n} kern;\n\n",
+        "nativeInput": [
+          {
+            "glyph": "A",
+            "name": "gmcpPositiveTwoHalf",
+            "value": 2.5
+          },
+          {
+            "glyph": "B",
+            "name": "gmcpNegativeTwoHalf",
+            "value": -2.5
+          },
+          {
+            "glyph": "C",
+            "name": "gmcpPositiveHalf",
+            "value": 0.5
+          },
+          {
+            "glyph": "D",
+            "name": "gmcpNegativeHalf",
+            "value": -0.5
+          }
+        ]
+      },
       "requiredEvidence": [
         "native UFO feature source",
         "compiled GPOS adjustments for four half ties"
       ],
-      "status": "capture_required"
+      "status": "captured"
     }
   ],
-  "provenance": null,
+  "provenance": {
+    "capturedAt": "2026-08-30T15:12:31.912009Z",
+    "harnessSha256": "7dca632b5ed0dd806af6df2ade0f56c21b4f72f7b200174c581cdd74dd6e8e15",
+    "host": {
+      "application": "Glyphs",
+      "build": "4004.0",
+      "version": "4.0.1"
+    },
+    "pythonVersion": "3.14.6",
+    "repositoryCommit": "355134afa0f0f16c1f0d470050caa007b1ee69a3",
+    "sourceBoundary": "detached_in_memory_probe",
+    "workingDocument": {
+      "changed": false,
+      "disposable": true,
+      "familyName": "Glyphs MCP V2 Disposable Native Capture",
+      "saved": false,
+      "sourceTreeSha256After": "8c1d1857ad78d896ad3575374e2d7de069d496fbe31a5dbec75ebc04ad0f81af",
+      "sourceTreeSha256Before": "8c1d1857ad78d896ad3575374e2d7de069d496fbe31a5dbec75ebc04ad0f81af"
+    }
+  },
   "requiredHost": {
     "application": "Glyphs",
     "applicationMajor": 4,

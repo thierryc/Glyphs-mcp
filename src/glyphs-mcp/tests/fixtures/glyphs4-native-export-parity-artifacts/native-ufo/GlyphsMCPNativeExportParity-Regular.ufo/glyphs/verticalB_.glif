@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="verticalB" format="2">
+  <advance width="600" height="1000"/>
+  <unicode hex="E001"/>
+  <outline>
+    <contour>
+      <point x="39" y="500" type="line"/>
+      <point x="39" y="0" type="line"/>
+      <point x="339" y="0" type="line"/>
+      <point x="339" y="500" type="line"/>
+    </contour>
+  </outline>
+  <lib>
+    <dict>
+      <key>com.schriftgestaltung.Glyphs.lastChange</key>
+      <string>2026-08-30 15:12:31 +0000</string>
+    </dict>
+  </lib>
+</glyph>

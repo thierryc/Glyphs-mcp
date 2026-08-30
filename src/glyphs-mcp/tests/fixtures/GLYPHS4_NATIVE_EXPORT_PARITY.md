@@ -1,9 +1,10 @@
 # Glyphs 4 native-export parity fixture
 
-`glyphs4-native-export-parity.json` is deliberately committed in
-`capture_required` state. It contains no claimed native observations. The v2
-release gate must fail until an authentic capture and its complete artifact
-tree are committed.
+`glyphs4-native-export-parity.json` contains the committed native observations
+captured on August 30, 2026 with Glyphs 4.0.1 build 4004 and Python 3.14.6.
+The capture is bound to repository commit
+`355134afa0f0f16c1f0d470050caa007b1ee69a3`, the exact harness hash, the
+complete artifact inventory, and unchanged disposable working-source hashes.
 
 The four required probes are:
 
@@ -31,11 +32,17 @@ Copy the generated JSON and artifact directory beside this file, then run:
 python3 scripts/validate_glyphs4_native_parity.py
 ```
 
-`--schema-only` exists solely to validate this pending plan. It must never be
+`--schema-only` exists solely to validate an uncaptured plan. It must never be
 used by a release workflow. The default validator rejects pending evidence,
 harness drift, unsupported hosts, missing provenance, links or special files,
 artifact inventory drift, weak contextual controls, missing vertical shaping,
 and incomplete half-tie coverage.
+
+The build-4004 observation records that the native UFO contains the expected
+directional group orientation but omits `kerning.plist` for the RTL/vertical-
+only probe. Compiled GPOS retains the RTL and vertical adjustments. Number
+Value half ties use ties-to-even rounding: `2.5` becomes `2`, `-2.5` becomes
+`-2`, and both `0.5` and `-0.5` become `0`.
 
 The capture is characterization evidence, not a recommendation about optical
 kerning quality. No observation should be inferred from Glyphs documentation,

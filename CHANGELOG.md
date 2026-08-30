@@ -56,6 +56,10 @@ runtime only for Glyphs 4.
 
 ### Python and structural replay
 
+- Committed hashed Glyphs 4.0.1 build-4004 native-export parity evidence for
+  RTL groups, vertical shaping, contextual boundaries, and Number Value half
+  ties. Source-bundle Number Value resolution now matches native ties-to-even
+  rounding for positive and negative half units.
 - `execute_python` retains an honest open-world escape hatch but defaults to
   staged document execution on a detached clone.
 - Replaced the permanent live-Python poison latch with an observable,
