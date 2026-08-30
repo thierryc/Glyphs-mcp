@@ -153,6 +153,10 @@ class V2TransportTests(unittest.TestCase):
                 self.assertIn("pageSize", selector_definition["properties"])
                 self.assertIn("cursor", selector_definition["properties"])
                 self.assertIn("relations", selector_definition["properties"])
+                view_schema = tools["open_document_view"].inputSchema
+                activation = view_schema["properties"]["activateDocument"]
+                self.assertEqual(activation["type"], "boolean")
+                self.assertFalse(activation["default"])
 
         asyncio.run(exercise())
 
@@ -257,6 +261,14 @@ class V2TransportTests(unittest.TestCase):
                         ],
                     },
                 )
+                await client.call_tool(
+                    "open_document_view",
+                    {
+                        "documentId": "doc_test",
+                        "glyphNames": ["A"],
+                        "activateDocument": True,
+                    },
+                )
 
         asyncio.run(exercise())
         tool, arguments = application.calls[0]
@@ -264,6 +276,9 @@ class V2TransportTests(unittest.TestCase):
         self.assertIs(type(arguments["operations"][0]), dict)
         self.assertEqual(arguments["operations"][0]["value"], 520)
         self.assertNotIn("numeric", arguments["operations"][0])
+        tool, arguments = application.calls[1]
+        self.assertEqual(tool, "open_document_view")
+        self.assertIs(arguments["activateDocument"], True)
 
     def test_client_reconnect_and_http_endpoint_remain_stable(self) -> None:
         server = create_server(GlyphsMCPApplication(_EmptyHost()))

@@ -374,6 +374,7 @@ class ToolHandlers:
         documentId: str,
         glyphNames: Annotated[List[str], Field(min_length=1, max_length=64)],
         masterId: Optional[str] = None,
+        activateDocument: bool = False,
     ) -> ToolResult:
         return self._invoke("open_document_view", locals())
 

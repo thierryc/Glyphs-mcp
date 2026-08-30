@@ -355,7 +355,7 @@ TOOL_DEFINITIONS: Tuple[ToolDefinition, ...] = (
     _definition("preview_export", "Preview Export", "Create an immutable source-bundle export preview.", "export", data_schema=REVIEW_EXPORT_DATA_SCHEMA),
     _definition("apply_export", "Apply Export", "Publish one exact reviewed source bundle.", "export", "files", data_schema=EXPORT_SOURCE_BUNDLE_DATA_SCHEMA, idempotent=False),
     _definition("save_document", "Save Document", "Explicitly save or Save As with source and destination verification.", "document", "save", idempotent=False),
-    _definition("open_document_view", "Open Document View", "Open exact glyphs in a Glyphs Edit tab without document mutation intent.", "host", "ui", idempotent=False),
+    _definition("open_document_view", "Open Document View", "Open exact glyphs in a Glyphs Edit tab, optionally activating and verifying the target document, without document mutation intent.", "host", "ui", idempotent=False),
     _definition("get_runtime_status", "Get Runtime Status", "Read strict Python runtime-interlock health and recovery evidence.", "runtime"),
     _definition("repair_runtime", "Repair Runtime", "Repair manager-owned Python runtime-interlock state.", "runtime", "code", idempotent=True, destructive_hint=False),
 )

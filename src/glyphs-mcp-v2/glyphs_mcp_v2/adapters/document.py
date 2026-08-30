@@ -11731,14 +11731,126 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             "liveAttempted": False,
         }
 
+    def _document_activation_state_on_main(
+        self, document_id: str, font: Any
+    ) -> Mapping[str, Any]:
+        """Compare both public Glyphs active-document signals by native identity."""
+
+        current_document = _maybe_call(
+            _safe_getattr(self._app, "currentDocument")
+        )
+        current_font = _maybe_call(_safe_getattr(current_document, "font"))
+        active_font = _maybe_call(_safe_getattr(self._app, "font"))
+
+        def matches(candidate: Any) -> bool:
+            if candidate is None:
+                return False
+            try:
+                return self._native_identity(candidate) == self._native_identity(
+                    font
+                )
+            except Exception:
+                return candidate is font
+
+        def resolved_document_id(candidate: Any) -> str | None:
+            if candidate is None:
+                return None
+            try:
+                return self._identities.resolve(self._native_identity(candidate))
+            except Exception:
+                return None
+
+        current_document_id = resolved_document_id(current_font)
+        active_font_document_id = resolved_document_id(active_font)
+        current_matches = matches(current_font)
+        active_font_matches = matches(active_font)
+        return {
+            "documentId": document_id,
+            "active": current_matches and active_font_matches,
+            "activeDocumentId": current_document_id,
+            "activeFontDocumentId": active_font_document_id,
+            "currentDocumentMatchesTarget": current_matches,
+            "activeFontMatchesTarget": active_font_matches,
+            "signalsAgree": current_document_id == active_font_document_id,
+        }
+
+    def document_activation_state(self, document_id: str) -> Mapping[str, Any]:
+        """Read bounded active-document evidence on Glyphs' main thread."""
+
+        def capture() -> Mapping[str, Any]:
+            font = self._font_for_document(document_id)
+            return self._document_activation_state_on_main(document_id, font)
+
+        return self._executor.run(capture)
+
+    @staticmethod
+    def _activation_error(method: str, error: Exception) -> str:
+        return "{} failed with {}: {}".format(
+            method, type(error).__name__, str(error)[:500]
+        )
+
+    def _activate_font_window(self, font: Any) -> Mapping[str, Any]:
+        """Bring one already-open font window forward without touching font data."""
+
+        methods: list[str] = []
+        errors: list[str] = []
+        document = _maybe_call(_safe_getattr(font, "parent"))
+        controller = _maybe_call(_safe_getattr(document, "windowController"))
+
+        showed_window = False
+        show_window = _safe_getattr(controller, "showWindow_")
+        if callable(show_window):
+            try:
+                show_window(None)
+                methods.append("document.windowController.showWindow_")
+                showed_window = True
+            except Exception as error:
+                errors.append(
+                    self._activation_error(
+                        "document.windowController.showWindow_", error
+                    )
+                )
+
+        if not showed_window:
+            show_font = _safe_getattr(font, "show")
+            if callable(show_font):
+                try:
+                    show_font()
+                    methods.append("font.show")
+                    showed_window = True
+                except Exception as error:
+                    errors.append(self._activation_error("font.show", error))
+
+        window = _maybe_call(_safe_getattr(controller, "window"))
+        make_key = _safe_getattr(window, "makeKeyAndOrderFront_")
+        if callable(make_key):
+            try:
+                make_key(None)
+                methods.append("window.makeKeyAndOrderFront_")
+            except Exception as error:
+                errors.append(
+                    self._activation_error("window.makeKeyAndOrderFront_", error)
+                )
+
+        if not methods and not errors:
+            errors.append(
+                "Glyphs did not expose a document window activation method."
+            )
+        return {
+            "activationAttempted": True,
+            "activationMethods": methods,
+            "activationErrors": errors,
+        }
+
     def open_edit_tab(
         self,
         document_id: str,
         glyph_names: Sequence[str],
         *,
         master_id: Optional[str] = None,
+        activate_document: bool = False,
     ) -> Mapping[str, Any]:
-        """Resolve every target, then open one Glyphs Edit tab on main."""
+        """Resolve every target, open one Edit tab, and optionally activate it."""
 
         def open_tab() -> Mapping[str, Any]:
             font = self._font_for_document(document_id)
@@ -11769,9 +11881,19 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             if not callable(opener):
                 raise HostAccessError("Glyphs did not provide GSFont.newTab().")
             opener(resolved)
+            activation = (
+                self._activate_font_window(font)
+                if activate_document
+                else {
+                    "activationAttempted": False,
+                    "activationMethods": [],
+                    "activationErrors": [],
+                }
+            )
             return {
                 "glyphNames": list(glyph_names),
                 "masterId": master_id,
+                **activation,
             }
 
         return self._executor.run(open_tab)

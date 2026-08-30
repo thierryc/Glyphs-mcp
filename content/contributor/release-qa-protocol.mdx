@@ -86,7 +86,7 @@ Run each existing disposable gate independently:
 | G4-6 | `verify_generic_change_lifecycle` | Exact generic insert/set/move/duplicate/remove preview, apply, history, stale refusal, conflict-aware revert, and baseline restoration. |
 | G4-7 | `verify_generic_kerning_lifecycle` | Exact stored kerning read/write/revert with unrelated domains preserved. |
 | G4-8 | `verify_staged_python_preview_lifecycle` | Detached code runs once, returns a generic immutable preview, applies through `apply_change`, verifies, reverts, and never reruns code. |
-| G4-9 | `verify_open_document_view` | Exact glyph view opens without document mutation or save. |
+| G4-9 | `verify_open_document_view` | With two disposable documents open, the exact glyph view opens, the requested document becomes active and is identity-verified, and neither document is mutated or saved. |
 | G4-10 | `verify_copy_and_make_copy` | Detached native copy evidence preserves the source and does not become a working-font save path. |
 
 Add manual `execute_python` cases for unsupported API inspection, staged code

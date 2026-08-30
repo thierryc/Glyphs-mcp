@@ -492,7 +492,9 @@ class GlyphsMCPApplication:
         if not callable(capture):
             capture = getattr(self._host, "capture_model", None)
         if not callable(capture):
-            raise HostAccessError("This host adapter does not expose document snapshots.")
+            raise HostAccessError(
+                "This host adapter does not expose document snapshots."
+            )
         captured = capture(document_id)
         model = (
             captured
@@ -1671,6 +1673,7 @@ class GlyphsMCPApplication:
                     "identity_structural_changes",
                     "source_file_fingerprints",
                     "recoverable_scripting_runtime",
+                    "verified_document_activation",
                 ],
                 "host": runtime.to_dict(),
                 "scriptingRuntimeSafety": {
@@ -1824,6 +1827,11 @@ class GlyphsMCPApplication:
         master_id = None if master_value is None else str(master_value)
         if master_id == "":
             raise ValueError("masterId must be non-empty when supplied")
+        activate_document = _value(
+            arguments, "activate_document", "activateDocument", False
+        )
+        if not isinstance(activate_document, bool):
+            raise ValueError("activateDocument must be a boolean")
 
         before = self._document_model(document_id)
         glyphs = before.get("glyphs", {})
@@ -1868,7 +1876,64 @@ class GlyphsMCPApplication:
         opener = getattr(self._host, "open_edit_tab", None)
         if not callable(opener):
             raise HostAccessError("This host adapter cannot open Glyphs Edit tabs.")
-        opener(document_id, glyph_names, master_id=master_id)
+        activation_reader = getattr(self._host, "document_activation_state", None)
+        if not callable(activation_reader):
+            raise HostAccessError(
+                "This host adapter cannot verify the active Glyphs document."
+            )
+
+        def activation_state() -> dict[str, Any]:
+            value = activation_reader(document_id)
+            if not isinstance(value, Mapping):
+                raise HostAccessError(
+                    "The host adapter returned invalid document activation evidence."
+                )
+            active = value.get("active")
+            if not isinstance(active, bool):
+                raise HostAccessError(
+                    "The host adapter did not verify the active Glyphs document."
+                )
+            for field in (
+                "currentDocumentMatchesTarget",
+                "activeFontMatchesTarget",
+                "signalsAgree",
+            ):
+                if not isinstance(value.get(field), bool):
+                    raise HostAccessError(
+                        "The host adapter returned incomplete document activation "
+                        "evidence."
+                    )
+            if active != bool(
+                value["currentDocumentMatchesTarget"]
+                and value["activeFontMatchesTarget"]
+            ):
+                raise HostAccessError(
+                    "The host adapter returned inconsistent document activation "
+                    "evidence."
+                )
+            active_document_id = value.get("activeDocumentId")
+            if active_document_id is not None and not isinstance(
+                active_document_id, str
+            ):
+                raise HostAccessError(
+                    "The host adapter returned an invalid active document ID."
+                )
+            return dict(value)
+
+        activation_before = activation_state()
+        open_evidence = opener(
+            document_id,
+            glyph_names,
+            master_id=master_id,
+            activate_document=activate_document,
+        )
+        if open_evidence is None:
+            open_evidence = {}
+        if not isinstance(open_evidence, Mapping):
+            raise HostAccessError(
+                "The host adapter returned invalid Edit-tab evidence."
+            )
+        activation_after = activation_state()
 
         capture = getattr(self._host, "capture_stable_snapshot", None)
         if not callable(capture):
@@ -1901,26 +1966,81 @@ class GlyphsMCPApplication:
             if changed
             else ()
         )
+        data = {
+            "documentId": document_id,
+            "glyphNames": list(glyph_names),
+            "glyphCount": len(glyph_names),
+            "masterId": master_id,
+            "openedView": True,
+            "activationRequested": activate_document,
+            "activationAttempted": bool(
+                open_evidence.get("activationAttempted", False)
+            ),
+            "activationMethods": list(
+                open_evidence.get("activationMethods") or ()
+            ),
+            "activationErrors": list(
+                open_evidence.get("activationErrors") or ()
+            ),
+            "activeBefore": activation_before["active"],
+            "activeAfter": activation_after["active"],
+            "activeDocumentIdBefore": activation_before.get("activeDocumentId"),
+            "activeDocumentIdAfter": activation_after.get("activeDocumentId"),
+            "currentDocumentMatchedBefore": activation_before[
+                "currentDocumentMatchesTarget"
+            ],
+            "currentDocumentMatchedAfter": activation_after[
+                "currentDocumentMatchesTarget"
+            ],
+            "activeFontMatchedBefore": activation_before[
+                "activeFontMatchesTarget"
+            ],
+            "activeFontMatchedAfter": activation_after[
+                "activeFontMatchesTarget"
+            ],
+            "activationSignalsAgreedBefore": activation_before["signalsAgree"],
+            "activationSignalsAgreedAfter": activation_after["signalsAgree"],
+            "activationVerified": (
+                activation_after["active"] if activate_document else None
+            ),
+            "beforeFingerprint": changes.before_fingerprint,
+            "afterFingerprint": changes.after_fingerprint,
+            "documentChanged": changed,
+            "observedChangeCount": len(changes.changes),
+            "fontSaved": False,
+        }
+        if activate_document and not activation_after["active"]:
+            return ToolResponse.failure(
+                tool="open_document_view",
+                effect="ui",
+                summary=(
+                    "The Edit tab opened, but Glyphs did not activate the "
+                    "requested document."
+                ),
+                code="document_activation_failed",
+                message=(
+                    "Glyphs.currentDocument did not resolve to the requested "
+                    "document after the activation attempt."
+                ),
+                details={
+                    "documentId": document_id,
+                    "activeDocumentId": activation_after.get("activeDocumentId"),
+                },
+                warnings=warnings,
+                data=data,
+            )
+
         return ToolResponse.success(
             tool="open_document_view",
             effect="ui",
             status="warning" if changed else "success",
-            summary="Opened {} glyph(s) in a Glyphs Edit tab.".format(
-                len(glyph_names)
-            ),
+            summary=(
+                "Opened {} glyph(s) and activated the target Glyphs document."
+                if activate_document
+                else "Opened {} glyph(s) in a Glyphs Edit tab."
+            ).format(len(glyph_names)),
             warnings=warnings,
-            data={
-                "documentId": document_id,
-                "glyphNames": list(glyph_names),
-                "glyphCount": len(glyph_names),
-                "masterId": master_id,
-                "openedView": True,
-                "beforeFingerprint": changes.before_fingerprint,
-                "afterFingerprint": changes.after_fingerprint,
-                "documentChanged": changed,
-                "observedChangeCount": len(changes.changes),
-                "fontSaved": False,
-            },
+            data=data,
         )
 
 

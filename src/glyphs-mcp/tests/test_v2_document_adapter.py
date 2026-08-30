@@ -1006,6 +1006,106 @@ class V2DocumentAdapterTests(unittest.TestCase):
         self.assertEqual(result["glyphNames"], ["A"])
         self.assertEqual(result["masterId"], "m1")
 
+    def test_open_edit_tab_can_make_the_exact_document_current_and_verify_it(self) -> None:
+        target = _TransactionalFont()
+        target.familyName = "Target"
+        other = _TransactionalFont()
+        other.familyName = "Disposable"
+        master = SimpleNamespace(id="m1")
+        layer = SimpleNamespace(
+            layerId="m1", associatedMasterId="m1", parent=None
+        )
+        glyph = SimpleNamespace(name="A", id="gA", layers=[layer])
+        layer.parent = glyph
+        target.masters = [master]
+        target.selectedFontMaster = master
+        target.selectedLayers = []
+        target.glyphs = [glyph]
+        opened = []
+        events = []
+        target.newTab = lambda layers: opened.append(list(layers))
+
+        app = _App(target)
+        app.fonts = [target, other]
+
+        class Window:
+            def __init__(self, document, font):
+                self.document = document
+                self.font = font
+
+            def makeKeyAndOrderFront_(self, _sender):
+                events.append("make-key")
+                app.currentDocument = self.document
+                app.font = self.font
+
+        class Controller:
+            def __init__(self, document, font):
+                self._window = Window(document, font)
+
+            def showWindow_(self, _sender):
+                events.append("show-window")
+
+            def window(self):
+                return self._window
+
+        class Document:
+            def __init__(self, font):
+                self.font = font
+                self.isDocumentEdited = False
+                self.hasUnautosavedChanges = False
+                self._controller = Controller(self, font)
+
+            def windowController(self):
+                return self._controller
+
+        target_document = Document(target)
+        other_document = Document(other)
+        target.parent = target_document
+        other.parent = other_document
+        app.documents = [target_document, other_document]
+        app.currentDocument = other_document
+        app.font = other
+
+        host = GlyphsDocumentHost(app, executor=_Immediate())
+        document_id = host.document_id_for_font(target)
+
+        before = host.document_activation_state(document_id)
+        preserved = host.open_edit_tab(
+            document_id,
+            ("A",),
+            master_id="m1",
+            activate_document=False,
+        )
+        still_inactive = host.document_activation_state(document_id)
+        activated = host.open_edit_tab(
+            document_id,
+            ("A",),
+            master_id="m1",
+            activate_document=True,
+        )
+        after = host.document_activation_state(document_id)
+
+        self.assertFalse(before["active"])
+        self.assertEqual(
+            before["activeDocumentId"], host.document_id_for_font(other)
+        )
+        self.assertFalse(preserved["activationAttempted"])
+        self.assertFalse(still_inactive["active"])
+        self.assertTrue(activated["activationAttempted"])
+        self.assertEqual(
+            activated["activationMethods"],
+            [
+                "document.windowController.showWindow_",
+                "window.makeKeyAndOrderFront_",
+            ],
+        )
+        self.assertEqual(activated["activationErrors"], [])
+        self.assertTrue(after["active"])
+        self.assertEqual(after["activeDocumentId"], document_id)
+        self.assertTrue(after["signalsAgree"])
+        self.assertEqual(events, ["show-window", "make-key"])
+        self.assertEqual(opened, [[layer], [layer]])
+
     def test_master_value_stores_follow_root_definition_identity(self) -> None:
         class NativeStore(dict):
             """Model Glyphs' NSDictionary-backed master value stores."""

@@ -91,6 +91,9 @@ class _FakeHost:
         )
         self.model = _model()
         self.opened = []
+        self.activation_requests = []
+        self.active_document_id = "doc_alpha"
+        self.activation_succeeds = True
         self.repair_calls = []
 
     def runtime_snapshot(self) -> HostRuntimeSnapshot:
@@ -149,8 +152,35 @@ class _FakeHost:
             "scriptingRuntimeSafety": self.scripting_runtime_safety_status(),
         }
 
-    def open_edit_tab(self, document_id, glyph_names, *, master_id=None):
+    def document_activation_state(self, document_id):
+        active = self.active_document_id == document_id
+        return {
+            "documentId": document_id,
+            "active": active,
+            "activeDocumentId": self.active_document_id,
+            "activeFontDocumentId": self.active_document_id,
+            "currentDocumentMatchesTarget": active,
+            "activeFontMatchesTarget": active,
+            "signalsAgree": True,
+        }
+
+    def open_edit_tab(
+        self,
+        document_id,
+        glyph_names,
+        *,
+        master_id=None,
+        activate_document=False,
+    ):
         self.opened.append((document_id, tuple(glyph_names), master_id))
+        self.activation_requests.append(activate_document)
+        if activate_document and self.activation_succeeds:
+            self.active_document_id = document_id
+        return {
+            "activationAttempted": activate_document,
+            "activationMethods": ["fake.activate"] if activate_document else [],
+            "activationErrors": [],
+        }
 
 
 class V2ApplicationTests(unittest.TestCase):
@@ -163,6 +193,7 @@ class V2ApplicationTests(unittest.TestCase):
         self.assertEqual(payload["data"]["apiMajor"], 2)
         self.assertIn("permanent_python_fallback", payload["data"]["capabilities"])
         self.assertIn("save_tolerant_transactions", payload["data"]["capabilities"])
+        self.assertIn("verified_document_activation", payload["data"]["capabilities"])
         self.assertIn("detached_read_only_python", payload["data"]["capabilities"])
         self.assertEqual(
             payload["data"]["registries"]["pythonModes"],
@@ -537,8 +568,100 @@ class V2ApplicationTests(unittest.TestCase):
         self.assertEqual(host.repair_calls, [(None, "agent")])
         self.assertTrue(opened["ok"])
         self.assertEqual(host.opened, [("doc_alpha", ("A", "B"), "m1")])
+        self.assertEqual(host.activation_requests, [False])
         self.assertFalse(opened["data"]["documentChanged"])
+        self.assertFalse(opened["data"]["activationRequested"])
+        self.assertIsNone(opened["data"]["activationVerified"])
         self.assertEqual(opened["tool"], "open_document_view")
+
+    def test_open_document_view_can_activate_and_verify_the_exact_document(self) -> None:
+        host = _FakeHost()
+        host.active_document_id = "doc_disposable"
+        payload = GlyphsMCPApplication(host).invoke(
+            "open_document_view",
+            {
+                "documentId": "doc_alpha",
+                "glyphNames": ["A"],
+                "activateDocument": True,
+            },
+        ).to_dict()
+
+        self.assertTrue(payload["ok"])
+        self.assertEqual(host.activation_requests, [True])
+        self.assertTrue(payload["data"]["activationRequested"])
+        self.assertTrue(payload["data"]["activationAttempted"])
+        self.assertTrue(payload["data"]["activationVerified"])
+        self.assertFalse(payload["data"]["activeBefore"])
+        self.assertTrue(payload["data"]["activeAfter"])
+        self.assertFalse(payload["data"]["currentDocumentMatchedBefore"])
+        self.assertTrue(payload["data"]["currentDocumentMatchedAfter"])
+        self.assertTrue(payload["data"]["activeFontMatchedAfter"])
+        self.assertTrue(payload["data"]["activationSignalsAgreedAfter"])
+        self.assertEqual(
+            payload["data"]["activeDocumentIdBefore"], "doc_disposable"
+        )
+        self.assertEqual(payload["data"]["activeDocumentIdAfter"], "doc_alpha")
+        self.assertFalse(payload["data"]["documentChanged"])
+
+    def test_open_document_view_verifies_an_already_active_document(self) -> None:
+        host = _FakeHost()
+        payload = GlyphsMCPApplication(host).invoke(
+            "open_document_view",
+            {
+                "documentId": "doc_alpha",
+                "glyphNames": ["A"],
+                "activateDocument": True,
+            },
+        ).to_dict()
+
+        self.assertTrue(payload["ok"])
+        self.assertTrue(payload["data"]["activeBefore"])
+        self.assertTrue(payload["data"]["activeAfter"])
+        self.assertTrue(payload["data"]["currentDocumentMatchedAfter"])
+        self.assertTrue(payload["data"]["activeFontMatchedAfter"])
+        self.assertTrue(payload["data"]["activationVerified"])
+        self.assertEqual(payload["data"]["activeDocumentIdBefore"], "doc_alpha")
+        self.assertEqual(payload["data"]["activeDocumentIdAfter"], "doc_alpha")
+
+    def test_open_document_view_reports_a_failed_activation_after_opening(self) -> None:
+        host = _FakeHost()
+        host.active_document_id = "doc_disposable"
+        host.activation_succeeds = False
+        payload = GlyphsMCPApplication(host).invoke(
+            "open_document_view",
+            {
+                "documentId": "doc_alpha",
+                "glyphNames": ["A"],
+                "activateDocument": True,
+            },
+        ).to_dict()
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["error"]["code"], "document_activation_failed")
+        self.assertTrue(payload["data"]["openedView"])
+        self.assertTrue(payload["data"]["activationAttempted"])
+        self.assertFalse(payload["data"]["activationVerified"])
+        self.assertFalse(payload["data"]["activeAfter"])
+        self.assertEqual(
+            payload["data"]["activeDocumentIdAfter"], "doc_disposable"
+        )
+        self.assertFalse(payload["data"]["documentChanged"])
+
+    def test_open_document_view_rejects_non_boolean_activation(self) -> None:
+        payload = GlyphsMCPApplication(_FakeHost()).invoke(
+            "open_document_view",
+            {
+                "documentId": "doc_alpha",
+                "glyphNames": ["A"],
+                "activateDocument": "yes",
+            },
+        ).to_dict()
+
+        self.assertFalse(payload["ok"])
+        self.assertEqual(payload["error"]["code"], "invalid_request")
+        self.assertIn(
+            "activateDocument must be a boolean", payload["error"]["message"]
+        )
 
     def test_host_failures_are_normalized_without_transport_exceptions(self) -> None:
         class BrokenHost(_FakeHost):

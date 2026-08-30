@@ -106,6 +106,7 @@ class _Host:
         self.apply_calls = 0
         self.restore_calls = 0
         self.open_calls: list[tuple[str, tuple[str, ...], str | None]] = []
+        self.active_document_id = "doc_background"
 
     def document_id_for_font(self, _font) -> str:
         return "doc_live_gate"
@@ -134,9 +135,36 @@ class _Host:
         self.restore_calls += 1
         self.model = copy.deepcopy(model)
 
-    def open_edit_tab(self, document_id, glyph_names, *, master_id=None):
+    def document_activation_state(self, document_id):
+        active = self.active_document_id == document_id
+        return {
+            "documentId": document_id,
+            "active": active,
+            "activeDocumentId": self.active_document_id,
+            "activeFontDocumentId": self.active_document_id,
+            "currentDocumentMatchesTarget": active,
+            "activeFontMatchesTarget": active,
+            "signalsAgree": True,
+        }
+
+    def open_edit_tab(
+        self,
+        document_id,
+        glyph_names,
+        *,
+        master_id=None,
+        activate_document=False,
+    ):
         self.open_calls.append((document_id, tuple(glyph_names), master_id))
-        return {"openedTab": True, "glyphNames": list(glyph_names)}
+        if activate_document:
+            self.active_document_id = document_id
+        return {
+            "openedTab": True,
+            "glyphNames": list(glyph_names),
+            "activationAttempted": activate_document,
+            "activationMethods": ["fake.activate"] if activate_document else [],
+            "activationErrors": [],
+        }
 
 
 class _PythonHost(_Host):
@@ -184,6 +212,7 @@ class V2LiveGateGuardTests(unittest.TestCase):
 
         self.assertEqual(host.open_calls, [("doc_live_gate", ("A",), "m0")])
         self.assertTrue(result["openedView"])
+        self.assertTrue(result["activeDocumentVerified"])
         self.assertTrue(result["documentUnchanged"])
 
     def test_ui_gate_refuses_non_disposable_fonts_before_effect(self) -> None:

@@ -315,6 +315,7 @@ def verify_open_document_view(
     arguments: dict[str, Any] = {
         "documentId": document_id,
         "glyphNames": list(requested),
+        "activateDocument": True,
     }
     if master_id:
         arguments["masterId"] = master_id
@@ -323,12 +324,15 @@ def verify_open_document_view(
     after_fingerprint = fingerprint_model(_capture(host, document_id))
     if after_fingerprint != baseline_fingerprint:
         raise AssertionError("open_document_view changed the canonical document")
+    if not data.get("activationVerified") or not data.get("activeAfter"):
+        raise AssertionError("open_document_view did not activate the exact document")
     return {
         "documentId": document_id,
         "familyName": family_name,
         "glyphNames": list(requested),
         "documentFingerprint": baseline_fingerprint,
         "openedView": bool(data.get("openedView") or data.get("openedTab")),
+        "activeDocumentVerified": True,
         "documentUnchanged": True,
     }
 
