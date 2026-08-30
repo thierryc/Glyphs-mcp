@@ -25,6 +25,7 @@ from glyphs_mcp_v2.mechanics_registry import (  # noqa: E402
     ORDER_TYPES,
     PREDICATE_OPERATORS,
     REDUCER_KINDS,
+    SCALAR_VALUE_FIELDS,
     TRANSLATION_TARGETS,
 )
 
@@ -78,6 +79,13 @@ def render() -> str:
             "- Ordering modes: {}.".format(_codes(ORDER_TYPES)),
             "- Reducers: {}.".format(_codes(REDUCER_KINDS)),
             "- Translation targets: {}.".format(_codes(TRANSLATION_TARGETS)),
+            "- Scalar entity value fields: {}.".format(
+                ", ".join(
+                    "`{}` -> `{}`".format(entity, field)
+                    for entity, field in sorted(SCALAR_VALUE_FIELDS.items())
+                )
+            ),
+            "  Scalar reads include this field when projection fields are omitted.",
             "- Observation operands use `observation.<projection>.<path>`, for",
             "  example `observation.bounds.x` or",
             "  `observation.alignment.effectiveLayerAlignment`.",
@@ -94,6 +102,9 @@ def render() -> str:
             "  constructors, denied capabilities, and contract fingerprint used by the",
             "  runtime. Detached execution is not a security sandbox; the discarded",
             "  clone and verified application are the safety boundary.",
+            "- A stale optional document fingerprint on `read_only` rebases to the",
+            "  latest stable snapshot and returns `read_rebased_to_current_document`;",
+            "  staged writes retain strict live-document fingerprint preconditions.",
             "- `staged_symbol_unavailable`, `staged_import_unavailable`, and",
             "  `staged_assertion_failed` distinguish contract mismatch and script",
             "  validation from unclassified Python or host failures.",

@@ -20,6 +20,10 @@ from glyphs_mcp_v2.activity import OperationActivityStore  # noqa: E402
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
 from glyphs_mcp_v2.contracts import ToolResponse  # noqa: E402
+from glyphs_mcp_v2.generic_tools import (  # noqa: E402
+    build_change_set,
+    evaluate_constraints,
+)
 from glyphs_mcp_v2.ports import (  # noqa: E402
     FontSnapshot,
     HostAccessError,
@@ -183,6 +187,16 @@ class V2ApplicationTests(unittest.TestCase):
             set(payload["data"]["registries"]["changeOperations"]),
             {"set", "translate", "insert", "remove", "move", "duplicate"},
         )
+        self.assertEqual(
+            payload["data"]["registries"]["scalarValueFields"],
+            {"kerning": "value"},
+        )
+        self.assertEqual(
+            payload["data"]["registries"]["entityCapabilities"]["kerning"][
+                "scalarValueField"
+            ],
+            "value",
+        )
         self.assertFalse(payload["data"]["knowledge"]["runtimeNetworkRequired"])
         identity = payload["data"]["runtimeIdentity"]
         self.assertEqual(identity["version"], "2.0.0")
@@ -315,6 +329,163 @@ class V2ApplicationTests(unittest.TestCase):
             state["lastSavedDocumentFingerprint"],
             state["liveDocumentFingerprint"],
         )
+
+    def test_scalar_kerning_values_are_read_ordered_reduced_and_writable(self) -> None:
+        host = _FakeHost()
+        host.model["kerning"] = {
+            "ltr": {
+                "m1": {
+                    "@MMK_L_R": {
+                        "@MMK_R_A": -84,
+                        "@MMK_R_O": -36,
+                    }
+                }
+            },
+            "rtl": {},
+            "vertical": {},
+            "context": {},
+        }
+        selector = {
+            "entity": "kerning",
+            "parent": {"masterId": "m1", "left": "@MMK_L_R"},
+            "predicate": {"op": "lte", "field": "value", "value": -30},
+            "orderBy": {"field": "value", "type": "number"},
+        }
+        payload = GlyphsMCPApplication(host).invoke(
+            "read_document",
+            {
+                "documentId": "doc_alpha",
+                "selector": selector,
+                "projection": {
+                    "fields": [
+                        "value",
+                        "parent.direction",
+                        "parent.masterId",
+                        "parent.left",
+                        "parent.right",
+                    ],
+                    "reducers": [
+                        {"name": "count", "op": "count"},
+                        {"name": "minimum", "op": "min", "field": "value"},
+                        {"name": "maximum", "op": "max", "field": "value"},
+                    ],
+                },
+            },
+        ).to_dict()
+
+        self.assertTrue(payload["ok"])
+        self.assertEqual(
+            [item["values"]["value"] for item in payload["data"]["items"]],
+            [-84, -36],
+        )
+        self.assertTrue(
+            all(
+                item["completeness"] == "complete"
+                and item["values"]["parent.left"] == "@MMK_L_R"
+                and item["values"]["parent.direction"] == "ltr"
+                for item in payload["data"]["items"]
+            )
+        )
+        self.assertEqual(
+            payload["data"]["reducers"],
+            {"count": 2, "minimum": -84, "maximum": -36},
+        )
+
+        default_projection = GlyphsMCPApplication(host).invoke(
+            "read_document",
+            {
+                "documentId": "doc_alpha",
+                "selector": {
+                    "entity": "kerning",
+                    "parent": {
+                        "masterId": "m1",
+                        "left": "@MMK_L_R",
+                        "right": "@MMK_R_A",
+                    },
+                },
+                "projection": {},
+            },
+        ).to_dict()
+        self.assertTrue(default_projection["ok"])
+        self.assertEqual(
+            default_projection["data"]["items"][0]["values"]["value"],
+            -84,
+        )
+
+        build = build_change_set(
+            host.model,
+            [
+                {
+                    "op": "set",
+                    "target": {
+                        "entity": "kerning",
+                        "parent": {
+                            "direction": "ltr",
+                            "masterId": "m1",
+                            "left": "@MMK_L_R",
+                            "right": "@MMK_R_A",
+                        },
+                    },
+                    "field": "value",
+                    "value": -96,
+                }
+            ],
+        )
+        after = build.change_set.apply(host.model)
+        self.assertEqual(
+            after["kerning"]["ltr"]["m1"]["@MMK_L_R"]["@MMK_R_A"],
+            -96,
+        )
+        evidence = evaluate_constraints(
+            after,
+            [
+                {
+                    "phase": "after",
+                    "left": {
+                        "kind": "field",
+                        "selector": {
+                            "entity": "kerning",
+                            "parent": {
+                                "masterId": "m1",
+                                "left": "@MMK_L_R",
+                                "right": "@MMK_R_A",
+                            },
+                        },
+                        "field": "value",
+                    },
+                    "operator": "eq",
+                    "right": {"kind": "literal", "value": -96},
+                }
+            ],
+            phase="after",
+        )
+        self.assertTrue(evidence["passed"])
+
+    def test_document_reads_prefer_a_stable_snapshot_boundary(self) -> None:
+        class StableHost(_FakeHost):
+            def __init__(self) -> None:
+                super().__init__()
+                self.stable_capture_count = 0
+
+            def capture_snapshot(self, _document_id):
+                raise AssertionError("the unstable capture path must not be used")
+
+            def capture_stable_snapshot(self, _document_id):
+                self.stable_capture_count += 1
+                return copy.deepcopy(self.model)
+
+        host = StableHost()
+        payload = GlyphsMCPApplication(host).invoke(
+            "read_document",
+            {
+                "documentId": "doc_alpha",
+                "selector": {"entity": "font"},
+                "projection": {"fields": ["familyName"]},
+            },
+        ).to_dict()
+
+        self.assertTrue(payload["ok"])
+        self.assertEqual(host.stable_capture_count, 1)
 
     def test_constraint_failures_are_evidence_not_transport_errors(self) -> None:
         payload = GlyphsMCPApplication(_FakeHost()).invoke(

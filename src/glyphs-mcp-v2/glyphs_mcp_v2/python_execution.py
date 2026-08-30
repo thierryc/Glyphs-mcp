@@ -1384,14 +1384,12 @@ class PythonExecutionService:
         document_id = request.document_id or ""
         before = self._capture_document_state(document_id)
         before_fingerprint = fingerprint_model(before)
-        if (
-            request.expected_document_fingerprint
-            and request.expected_document_fingerprint != before_fingerprint
-        ):
-            return self._failure(
-                "stale_document",
-                "The document changed before detached read-only execution.",
-            )
+        requested_fingerprint = request.expected_document_fingerprint
+        requested_fingerprint_matched = (
+            None
+            if not requested_fingerprint
+            else requested_fingerprint == before_fingerprint
+        )
         source_before = self._source_file_state(document_id)
         dirty_before = self._document_dirty_state(document_id)
         try:
@@ -1459,6 +1457,21 @@ class PythonExecutionService:
             result.get("observedDocumentChanges") or ()
         )
         warnings: list[ToolWarning] = []
+        if requested_fingerprint_matched is False:
+            warnings.append(
+                ToolWarning(
+                    code="read_rebased_to_current_document",
+                    message=(
+                        "The supplied document fingerprint was stale; detached "
+                        "read-only Python used the latest stable live snapshot."
+                    ),
+                    target={
+                        "documentId": document_id,
+                        "expectedDocumentFingerprint": requested_fingerprint,
+                        "baseDocumentFingerprint": before_fingerprint,
+                    },
+                )
+            )
         if detached_changes.changes:
             warnings.append(
                 ToolWarning(
@@ -1504,6 +1517,8 @@ class PythonExecutionService:
                 "executionMode": "detached_read_only",
                 "beforeFingerprint": before_fingerprint,
                 "liveAfterFingerprint": live_after_fingerprint,
+                "expectedDocumentFingerprint": requested_fingerprint,
+                "expectedDocumentFingerprintMatched": requested_fingerprint_matched,
                 "detachedChangeCount": len(detached_changes.changes),
                 "sourceFileChanged": source_changed,
             },
@@ -1525,6 +1540,8 @@ class PythonExecutionService:
                 ),
                 "executionMode": "detached_read_only",
                 "baseDocumentFingerprint": before_fingerprint,
+                "expectedDocumentFingerprint": requested_fingerprint,
+                "expectedDocumentFingerprintMatched": requested_fingerprint_matched,
                 "liveAfterFingerprint": live_after_fingerprint,
                 "liveDocumentChanged": live_changed,
                 "detachedDocumentChanged": bool(detached_changes.changes),

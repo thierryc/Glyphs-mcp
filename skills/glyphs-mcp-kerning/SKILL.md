@@ -18,12 +18,18 @@ exceptions, proof strings, and contextual intent.
    groups, exceptions, contextual storage, and OpenType behavior. Retrieve
    decisive entries with `get_knowledge`.
 3. Use `read_document` with `entity="kerning"` plus exact master, direction,
-   left/right, or context parent filters. Read glyph metadata separately when
-   group resolution or proof selection needs it. Keep LTR, RTL, vertical, and
-   context domains distinct; unresolved native keys remain evidence.
+   left/right, or context parent filters. Project the numeric scalar as
+   `value`; project identity dimensions as `parent.direction`,
+   `parent.masterId`, `parent.left`, `parent.right`, or `parent.contextKey`.
+   Numeric ordering, predicates, reducers, and constraints also use `value`.
+   Read glyph metadata separately when group resolution or proof selection
+   needs it. Keep LTR, RTL, vertical, and context domains distinct; unresolved
+   native keys remain evidence.
 4. Use `execute_python(mode="read_only")` for effective pair resolution or
-   Glyphs-native context details not represented by canonical reads. Bound the
-   requested pairs and reject observed mutation.
+   Glyphs-native context details not represented by canonical reads, not for
+   stored numeric values. A stale optional fingerprint rebases this detached
+   read to the latest stable snapshot and reports that fact as warning evidence.
+   Bound the requested pairs and reject observed live mutation.
 
 ## Decisions and writes
 
@@ -34,7 +40,7 @@ sequence, boundary, master, and intended additive value.
 
 Express approved storage changes as explicit generic mechanics:
 
-- `set` an existing exact kerning scalar;
+- `set` the `value` field of an existing exact kerning scalar;
 - `insert` a new exact pair/context mapping;
 - `remove` an exact stored entry.
 

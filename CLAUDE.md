@@ -31,11 +31,17 @@ mechanics to tools. Start with `get_server_info`, then use
 `staged_document` Python whenever the declarative surface is insufficient;
 reserve `live_open_world` for live-only APIs and explicit external effects.
 Python 3.14 fallback is permanent.
+Registry-backed scalar entities expose their stored number through `value`;
+kerning reads, numeric filters, reducers, constraints, and exact writes use
+that field directly rather than requiring Python. Scalar reads include the
+advertised value when projection fields are omitted.
 Generate detached code only after reading
 `get_server_info.data.registries.pythonExecution.detachedNamespace`; it is the
 runtime source of truth for built-ins, imports, injected context, constructors,
 and denials. Treat `staged_assertion_failed` as the script rejecting its own
-candidate rather than evidence that detached cloning failed.
+candidate rather than evidence that detached cloning failed. An optional stale
+fingerprint on `read_only` rebases to the latest stable snapshot and returns
+warning evidence; staged writes still require an exact live fingerprint.
 
 The user may save in Glyphs at any time. A save-only event does not invalidate
 a preview or block document work. Active transactions retain an exactly

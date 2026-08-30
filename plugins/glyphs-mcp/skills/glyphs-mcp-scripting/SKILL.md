@@ -27,8 +27,10 @@ whenever the typed surface is insufficient.
 - `read_only`: bounded inspection on a detached document. The runtime
   proves that the live canonical fingerprint and dirty state did not change.
   Code that mutates only the detached clone is reported as evidence and does
-  not affect the live font. Use `live_open_world` when the required API is
-  inherently live-only.
+  not affect the live font. An optional stale document fingerprint is not a
+  write-safety blocker: execution rebases to the latest stable snapshot and
+  returns `read_rebased_to_current_document` with the actual base fingerprint.
+  Use `live_open_world` when the required API is inherently live-only.
 - `staged_document`: execute once on a detached document. The result is an
   immutable `previewId` containing the exact code hash, scope, runtime,
   fingerprints, output, and semantic patch. Apply it through `apply_change`;

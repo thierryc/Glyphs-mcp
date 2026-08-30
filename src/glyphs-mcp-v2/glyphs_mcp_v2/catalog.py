@@ -346,7 +346,7 @@ TOOL_DEFINITIONS: Tuple[ToolDefinition, ...] = (
     _definition(
         "execute_python",
         "Execute Python",
-        "Permanent backup for Glyphs tasks not covered by declarative operations. Consult get_server_info.data.registries.pythonExecution before generating detached read-only or staged-document code; live-open-world remains an explicit external-effect boundary.",
+        "Permanent backup for Glyphs tasks not covered by declarative operations. Consult get_server_info.data.registries.pythonExecution before generating detached read-only or staged-document code. A stale optional fingerprint rebases read-only execution to the latest stable snapshot; staged writes remain strict. Live-open-world remains an explicit external-effect boundary.",
         "python",
         "code",
         open_world=True,

@@ -55,6 +55,12 @@ pagination. Cursors bind selector,
 projection, schema version, and document fingerprint. Mutation selectors are
 resolved to exact identities during preview.
 
+Registry-backed scalar entities expose their stored scalar through an
+advertised generic field. Kerning uses `value`, so the same field supports
+projection, numeric predicates and ordering, reducers, constraints, and exact
+`set` operations without a workflow endpoint or Python fallback. It is also
+included by default when a scalar projection omits its field list.
+
 `Projection` returns requested canonical fields and registry-backed computed
 observations with provenance and completeness. Observations cover bounds,
 geometry, ownership, alignment, inheritance, grid, horizontal and vertical
@@ -122,7 +128,10 @@ Python is permanent, not a migration escape hatch:
   fingerprint from the same source used by execution.
 
 - `read_only` performs bounded inspection on a detached document and proves
-  that the live canonical fingerprint and dirty state did not change.
+  that the live canonical fingerprint and dirty state did not change. Its
+  optional expected fingerprint is advisory: a mismatch rebases the read to
+  the latest stable snapshot and returns `read_rebased_to_current_document`
+  evidence. Mutation previews and staged writes remain fingerprint-strict.
 - `staged_document` runs once against a detached font and returns the generic
   immutable preview. `apply_change` applies its stored patch without rerunning
   code.

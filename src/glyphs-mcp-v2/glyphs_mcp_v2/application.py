@@ -486,7 +486,9 @@ class GlyphsMCPApplication:
     def _document_model(self, document_id: str) -> Mapping[str, Any]:
         if not document_id:
             raise ValueError("documentId is required")
-        capture = getattr(self._host, "capture_snapshot", None)
+        capture = getattr(self._host, "capture_stable_snapshot", None)
+        if not callable(capture):
+            capture = getattr(self._host, "capture_snapshot", None)
         if not callable(capture):
             capture = getattr(self._host, "capture_model", None)
         if not callable(capture):

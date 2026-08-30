@@ -76,6 +76,12 @@ well as layers, shapes, and anchors. `Projection` can compute named generic
 reducers over the complete selected set. Mutation selectors are resolved to
 exact canonical paths during preview.
 
+Canonical scalar entities expose their stored scalar through the
+registry-backed `value` field. Kerning reads, numeric ordering, reducers,
+constraints, and exact `set` operations therefore use the same field instead
+of a Python fallback. An omitted projection field list includes the advertised
+scalar value by default.
+
 `Projection` requests canonical fields or registry-backed observations. Every
 observation reports provenance and completeness. Current observations include
 bounds, geometry counts, ownership, alignment, metrics inheritance, grid,
@@ -127,7 +133,9 @@ coverage grows:
   available constructors, explicit denials, and a contract fingerprint.
 
 - `read_only` performs bounded inspection on a detached document and proves
-  that the live canonical fingerprint and dirty state did not change.
+  that the live canonical fingerprint and dirty state did not change. If its
+  optional expected fingerprint is stale, it rebases to the latest stable
+  snapshot and returns warning evidence rather than blocking the read.
 - `staged_document` runs against a detached document and returns the same
   immutable preview lifecycle as declarative operations. Confirmation occurs
   through `apply_change`; the code is never rerun.

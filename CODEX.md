@@ -36,6 +36,11 @@ Use `get_server_info` as the live contract and code-identity check, then
 `execute_python(mode="read_only")` runs detached; staged edits also run once on
 a detached document and are applied through `apply_change`; live-only APIs and
 external effects use `live_open_world`.
+Stored scalar entities use their advertised generic `value` field; for
+example, kerning projections, reducers, constraints, and exact writes all use
+`value`, and scalar reads include it by default when fields are omitted. A
+stale optional fingerprint never blocks detached read-only Python:
+it rebases to the latest stable snapshot and reports warning evidence.
 Before generating detached code, inspect
 `data.registries.pythonExecution.detachedNamespace` for its effective Python
 3.14 built-ins, imports, context, constructors, denials, and contract

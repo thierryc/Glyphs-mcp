@@ -55,6 +55,7 @@ RELATION_DEFINITIONS: Mapping[str, tuple[str, ...]] = {
     "layer": ("shape", "node", "anchor"),
     "shape": ("node",),
 }
+SCALAR_VALUE_FIELDS: Mapping[str, str] = {"kerning": "value"}
 
 
 def _entity_capability(kind: str) -> dict[str, Any]:
@@ -75,12 +76,15 @@ def _entity_capability(kind: str) -> dict[str, Any]:
         "shape": {"geometry.transform", "ownership"},
     }
     observations = sorted(observations_by_kind.get(kind, {"ownership"}))
-    return {
+    capability = {
         "operations": sorted(operations),
         "writableFields": "canonical-existing-fields",
         "observations": observations,
         "relations": list(RELATION_DEFINITIONS.get(kind, ())),
     }
+    if kind in SCALAR_VALUE_FIELDS:
+        capability["scalarValueField"] = SCALAR_VALUE_FIELDS[kind]
+    return capability
 
 
 def public_mechanics_registry() -> dict[str, Any]:
@@ -103,6 +107,7 @@ def public_mechanics_registry() -> dict[str, Any]:
             kind: list(children)
             for kind, children in sorted(RELATION_DEFINITIONS.items())
         },
+        "scalarValueFields": dict(sorted(SCALAR_VALUE_FIELDS.items())),
     }
 
 
@@ -115,6 +120,7 @@ __all__ = [
     "PREDICATE_OPERATORS",
     "REDUCER_KINDS",
     "RELATION_DEFINITIONS",
+    "SCALAR_VALUE_FIELDS",
     "TRANSLATION_TARGETS",
     "public_mechanics_registry",
 ]

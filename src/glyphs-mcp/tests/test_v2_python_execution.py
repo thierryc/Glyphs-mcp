@@ -667,6 +667,36 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertEqual(host.live_calls, 0)
         self.assertIsNotNone(incident.incident_id)
 
+    def test_detached_read_rebases_a_stale_optional_fingerprint(self) -> None:
+        service, host = self.service()
+        current_fingerprint = fingerprint_model(host.model)
+
+        result = service.execute(
+            PythonExecutionRequest(
+                code="print(font.familyName)",
+                reason="inspect the latest stable document",
+                intended_effect="read",
+                document_id="doc_alpha",
+                expected_document_fingerprint="sha256:" + "0" * 64,
+            )
+        ).to_dict()
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["status"], "warning")
+        self.assertEqual(
+            [warning["code"] for warning in result["warnings"]],
+            ["read_rebased_to_current_document"],
+        )
+        self.assertEqual(
+            result["data"]["baseDocumentFingerprint"], current_fingerprint
+        )
+        self.assertFalse(
+            result["data"]["expectedDocumentFingerprintMatched"]
+        )
+        self.assertFalse(result["data"]["liveDocumentChanged"])
+        self.assertEqual(host.preview_calls, 1)
+        self.assertEqual(host.live_calls, 0)
+
     def test_active_live_runtime_does_not_block_detached_read(self) -> None:
         service, host = self.service()
         machine = ScriptingSafetyStateMachine()

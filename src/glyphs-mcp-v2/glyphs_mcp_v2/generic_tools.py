@@ -21,6 +21,7 @@ from .mechanics_registry import (
     CONSTRAINT_OPERATORS,
     ENTITY_KINDS,
     OPERATION_DEFINITIONS,
+    SCALAR_VALUE_FIELDS,
 )
 from .semantic import ChangeSet, diff_models, semantic_value_at
 
@@ -135,6 +136,11 @@ def _reference_field(reference: EntityReference, field: str) -> tuple[bool, Any]
         return True, reference.kind
     if name.startswith("parent."):
         return _nested_value(reference.parent, name[len("parent.") :])
+    if (
+        SCALAR_VALUE_FIELDS.get(reference.kind) == name
+        and not isinstance(reference.value, Mapping)
+    ):
+        return True, copy.deepcopy(reference.value)
     return _nested_value(reference.value, name)
 
 
@@ -667,7 +673,12 @@ def project_reference(
     effective_metadata: Optional[Mapping[str, Mapping[str, Any]]] = None,
 ) -> dict[str, Any]:
     source = _mapping(projection, name="projection")
-    fields_value = source.get("fields") or ["id", "name"]
+    scalar_value_field = SCALAR_VALUE_FIELDS.get(reference.kind)
+    fields_value = source.get("fields") or (
+        ["id", scalar_value_field]
+        if scalar_value_field
+        else ["id", "name"]
+    )
     if not isinstance(fields_value, (list, tuple)) or not fields_value:
         raise ValueError("projection.fields must contain at least one field")
     fields = tuple(dict.fromkeys(str(field) for field in fields_value))
@@ -852,7 +863,7 @@ def project_reference(
             if metadata is None:
                 missing.append(field)
             continue
-        present, value = _nested_value(reference.value, field)
+        present, value = _reference_field(reference, field)
         if not present and field == "id":
             present, value = True, reference.identity
         values[field] = value if present else None
@@ -975,7 +986,7 @@ def _selector_operand(
     target = {**reference.public_identity(), "field": field}
     observed = _observation_field(field)
     if observed is None:
-        present, value = _nested_value(reference.value, field)
+        present, value = _reference_field(reference, field)
         return {
             "present": present,
             "value": value,
@@ -1486,7 +1497,12 @@ def build_change_set(
                 else copy.deepcopy(raw_value)
             )
             for reference in references:
-                path = reference.path + tuple(field_name.split("."))
+                path = (
+                    reference.path
+                    if SCALAR_VALUE_FIELDS.get(reference.kind) == field_name
+                    and not isinstance(reference.value, Mapping)
+                    else reference.path + tuple(field_name.split("."))
+                )
                 _set_path(candidate, path, value)
                 resolved_paths.append(list(path))
             normalized_values.update(
