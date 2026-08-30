@@ -39,9 +39,16 @@ class V2BundleAssemblyTests(unittest.TestCase):
         self.assertEqual(
             set(module.V2_RESOURCE_ALLOWLIST),
             {
+                "curve_overlay_model.py",
                 "debug_event_logging.py",
+                "glyphs_curve_reporter.py",
+                "glyphs_litsquare_adapter.py",
+                "glyphs_litsquare_palette.py",
                 "glyphs_plugin.py",
                 "i18n.py",
+                "litsquare_metadata.py",
+                "mcp_tool_helpers.py",
+                "outline_geometry_engine.py",
                 "plugin.py",
                 "security.py",
                 "status_panel_helpers.py",
@@ -133,6 +140,11 @@ class V2BundleAssemblyTests(unittest.TestCase):
 
                 plugin_entry = (resources / "plugin.py").read_text(encoding="utf-8")
                 self.assertIn("from mcp_tools import mcp", plugin_entry)
+                self.assertIn(
+                    "from glyphs_curve_reporter import GlyphsMCPCurvatureReporter",
+                    plugin_entry,
+                )
+                self.assertIn("GlyphsMCPCurvatureReporter", plugin_entry)
                 self.assertIn("GlyphsMCPChangeDiffReporter", plugin_entry)
                 self.assertIn("GlyphsMCPInspectorPalette", plugin_entry)
                 self.assertNotIn("GlyphsMCPCandidateReporter", plugin_entry)
@@ -165,8 +177,31 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 changes_bridge = (resources / "document_changes_panel.py").read_text(encoding="utf-8")
                 self.assertIn("glyphs_mcp_v2.change_log_panel", changes_bridge)
                 self.assertTrue((resources / "glyphs_mcp_v2" / "change_diff_reporter.py").is_file())
+                for curve_reporter_dependency in (
+                    "curve_overlay_model.py",
+                    "glyphs_curve_reporter.py",
+                    "mcp_tool_helpers.py",
+                    "outline_geometry_engine.py",
+                ):
+                    self.assertTrue(
+                        (resources / curve_reporter_dependency).is_file(),
+                        msg="missing curve Reporter dependency: {}".format(
+                            curve_reporter_dependency
+                        ),
+                    )
                 inspector = resources / "glyphs_mcp_v2" / "inspector_palette.py"
                 self.assertTrue(inspector.is_file())
+                for palette_dependency in (
+                    "glyphs_litsquare_adapter.py",
+                    "glyphs_litsquare_palette.py",
+                    "litsquare_metadata.py",
+                ):
+                    self.assertTrue(
+                        (resources / palette_dependency).is_file(),
+                        msg="missing inspector palette dependency: {}".format(
+                            palette_dependency
+                        ),
+                    )
                 self.assertTrue(
                     (resources / "glyphs_mcp_v2" / "connection_status.py").is_file()
                 )
@@ -192,6 +227,7 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 self.assertIn("Status: `complete`", coverage)
                 self.assertIn("Unclassified: 0", coverage)
 
+                self.assertIn("GlyphsMCPCurvatureReporter", info["Principal Classes"])
                 self.assertIn("GlyphsMCPChangeDiffReporter", info["Principal Classes"])
                 self.assertIn("GlyphsMCPInspectorPalette", info["Principal Classes"])
                 self.assertNotIn("GlyphsMCPCandidateReporter", info["Principal Classes"])

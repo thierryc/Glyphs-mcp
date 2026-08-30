@@ -24,9 +24,16 @@ PACKAGE_RELATIVE_TO_BUNDLE = Path("Contents/Resources/glyphs_mcp_v2")
 PINNED_FORMAT_ROOT = REPO_ROOT / "third_party" / "glyphs-file-format-v4"
 SHARED_RUNTIME_FILES = ("runtime_path_policy.py", "runtime_probe.py")
 V2_RESOURCE_ALLOWLIST = (
+    "curve_overlay_model.py",
     "debug_event_logging.py",
+    "glyphs_curve_reporter.py",
+    "glyphs_litsquare_adapter.py",
+    "glyphs_litsquare_palette.py",
     "glyphs_plugin.py",
     "i18n.py",
+    "litsquare_metadata.py",
+    "mcp_tool_helpers.py",
+    "outline_geometry_engine.py",
     "plugin.py",
     "security.py",
     "status_panel_helpers.py",
@@ -166,10 +173,6 @@ def _activate_v2_bundle(bundle: Path) -> Path:
 
     plugin_path = resources / "plugin.py"
     plugin_text = plugin_path.read_text(encoding="utf-8")
-    plugin_text = plugin_text.replace(
-        "    from glyphs_curve_reporter import GlyphsMCPCurvatureReporter\n",
-        "",
-    )
     start = plugin_text.find(LEGACY_IMPORT_BLOCK_START)
     end = plugin_text.find(LEGACY_IMPORT_BLOCK_END, start)
     if start < 0 or end < 0:
@@ -220,6 +223,7 @@ def _activate_v2_bundle(bundle: Path) -> Path:
     info["CFBundleVersion"] = version
     info["Principal Classes"] = [
         "MCPBridgePlugin",
+        "GlyphsMCPCurvatureReporter",
         "GlyphsMCPChangeDiffReporter",
         "GlyphsMCPInspectorPalette",
     ]
