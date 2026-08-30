@@ -205,13 +205,30 @@ def _validate_observations(probes: Mapping[str, Mapping[str, Any]]) -> None:
     rtl = _mapping(probes["rtl_class_orientation"]["observation"], "$.probes.rtl.observation")
     _closed(
         rtl,
-        required={"nativeInput", "nativeStorage", "ufoGroups", "ufoKerning", "compiledGpos"},
+        required={
+            "nativeInput",
+            "nativeStorage",
+            "ufoGroups",
+            "ufoKerning",
+            "ufoKerningFilePresent",
+            "compiledGpos",
+        },
         path="$.probes.rtl.observation",
     )
     if not _mapping(rtl["ufoGroups"], "$.probes.rtl.observation.ufoGroups"):
         _fail("observation_invalid", "RTL capture contains no exported UFO groups")
-    if not _sequence(rtl["ufoKerning"], "$.probes.rtl.observation.ufoKerning"):
-        _fail("observation_invalid", "RTL capture contains no exported UFO kerning")
+    ufo_kerning = _sequence(rtl["ufoKerning"], "$.probes.rtl.observation.ufoKerning")
+    kerning_file_present = rtl["ufoKerningFilePresent"]
+    if not isinstance(kerning_file_present, bool):
+        _fail(
+            "schema_invalid",
+            "$.probes.rtl.observation.ufoKerningFilePresent must be boolean",
+        )
+    if not kerning_file_present and ufo_kerning:
+        _fail(
+            "observation_invalid",
+            "RTL capture claims UFO kerning without an exported kerning file",
+        )
     if not _mapping(rtl["compiledGpos"], "$.probes.rtl.observation.compiledGpos"):
         _fail("observation_invalid", "RTL capture contains no compiled GPOS evidence")
 

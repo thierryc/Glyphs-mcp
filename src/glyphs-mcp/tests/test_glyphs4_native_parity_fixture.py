@@ -11,6 +11,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 REPO = Path(__file__).resolve().parents[3]
@@ -74,6 +75,7 @@ def _captured_fixture(root: Path) -> tuple[Path, dict]:
             "nativeStorage": {"master": {"first": {"second": -73}}},
             "ufoGroups": {"public.kern1.rtl": ["alef-ar"], "public.kern2.rtl": ["beh-ar"]},
             "ufoKerning": [{"first": "public.kern1.rtl", "second": "public.kern2.rtl", "value": -73}],
+            "ufoKerningFilePresent": True,
         },
         "vertical_sign_yadvance": {
             "compiledGpos": {"feature": "vkrn", "xAdvance": 0, "yAdvance": -61},
@@ -178,6 +180,22 @@ class Glyphs4NativeParityFixtureTests(unittest.TestCase):
             resolved = CAPTURE._resolve_native_otf(root, stale_path)
 
         self.assertEqual(resolved, expected)
+
+    def test_capture_shapes_with_an_explicit_utf8_locale(self) -> None:
+        completed = mock.Mock(stdout="[]")
+        with mock.patch.object(CAPTURE.subprocess, "run", return_value=completed) as run:
+            CAPTURE._hb_shape(
+                Path("/usr/local/bin/hb-shape"),
+                Path("/tmp/probe.otf"),
+                "\ue000\ue001",
+                feature="vkrn",
+                direction="ttb",
+            )
+
+        self.assertEqual(run.call_count, 2)
+        for call in run.call_args_list:
+            self.assertEqual(call.kwargs["env"]["LANG"], "en_US.UTF-8")
+            self.assertEqual(call.kwargs["env"]["LC_ALL"], "en_US.UTF-8")
 
     def test_pending_fixture_is_valid_as_a_capture_plan_only(self) -> None:
         fixture = VALIDATOR.validate_fixture(FIXTURE, require_captured=False)

@@ -7,8 +7,8 @@ tree are committed.
 
 The four required probes are:
 
-- RTL class orientation from native directional storage, exported UFO groups
-  and kerning, and compiled `kern` GPOS;
+- RTL class orientation from native directional storage, exported UFO groups,
+  explicit kerning-file presence or absence, and compiled `kern` GPOS;
 - vertical sign and YAdvance behavior from compiled `vkrn` plus HarfBuzz
   `ttb` shaping with the feature on and off;
 - both contextual-kerning boundaries with one positive sequence and at least

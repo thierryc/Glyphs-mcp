@@ -470,14 +470,17 @@ def _export_native(font: Any, artifact_root: Path) -> tuple[Path, Path]:
     return ufo_candidates[0], exported
 
 
-def _ufo_observation(ufo: Path) -> tuple[dict[str, Any], list[dict[str, Any]], str]:
+def _ufo_observation(
+    ufo: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]], bool, str]:
     groups_path = ufo / "groups.plist"
     kerning_path = ufo / "kerning.plist"
     features_path = ufo / "features.fea"
-    if not groups_path.is_file() or not kerning_path.is_file() or not features_path.is_file():
-        raise CaptureError("native UFO lacks groups.plist, kerning.plist, or features.fea")
+    if not groups_path.is_file() or not features_path.is_file():
+        raise CaptureError("native UFO lacks groups.plist or features.fea")
     groups = plistlib.loads(groups_path.read_bytes())
-    kerning = plistlib.loads(kerning_path.read_bytes())
+    kerning_file_present = kerning_path.is_file()
+    kerning = plistlib.loads(kerning_path.read_bytes()) if kerning_file_present else {}
     flat_kerning: list[dict[str, Any]] = []
     for first, seconds in sorted(kerning.items(), key=lambda item: str(item[0])):
         for second, value in sorted(seconds.items(), key=lambda item: str(item[0])):
@@ -491,6 +494,7 @@ def _ufo_observation(ufo: Path) -> tuple[dict[str, Any], list[dict[str, Any]], s
             for name, members in sorted(groups.items(), key=lambda item: str(item[0]))
         },
         flat_kerning,
+        kerning_file_present,
         feature_code,
     )
 
@@ -604,9 +608,24 @@ def _hb_shape(executable: Path, font_path: Path, text: str, *, feature: str, dir
         str(font_path),
         text,
     ]
-    enabled = subprocess.run(command, check=True, capture_output=True, text=True)
+    environment = dict(os.environ)
+    environment["LANG"] = "en_US.UTF-8"
+    environment["LC_ALL"] = "en_US.UTF-8"
+    enabled = subprocess.run(
+        command,
+        check=True,
+        capture_output=True,
+        text=True,
+        env=environment,
+    )
     command[2] = "--features={}={}".format(feature, 0)
-    disabled = subprocess.run(command, check=True, capture_output=True, text=True)
+    disabled = subprocess.run(
+        command,
+        check=True,
+        capture_output=True,
+        text=True,
+        env=environment,
+    )
     return json.loads(enabled.stdout), json.loads(disabled.stdout)
 
 
@@ -694,7 +713,12 @@ def capture(
         _progress("starting native UFO and OTF export")
         ufo, otf = _export_native(probe_font, artifact_root)
         _progress("finished native UFO and OTF export")
-        ufo_groups, ufo_kerning, exported_feature_source = _ufo_observation(ufo)
+        (
+            ufo_groups,
+            ufo_kerning,
+            ufo_kerning_file_present,
+            exported_feature_source,
+        ) = _ufo_observation(ufo)
 
         try:
             from fontTools.ttLib import TTFont
@@ -754,6 +778,7 @@ def capture(
                 "nativeStorage": _native_mapping(probe_font.kerningRTL),
                 "ufoGroups": ufo_groups,
                 "ufoKerning": ufo_kerning,
+                "ufoKerningFilePresent": ufo_kerning_file_present,
                 "compiledGpos": rtl_gpos,
             },
             "vertical_sign_yadvance": {
