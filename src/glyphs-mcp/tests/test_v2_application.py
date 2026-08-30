@@ -164,6 +164,21 @@ class V2ApplicationTests(unittest.TestCase):
             payload["data"]["registries"]["pythonModes"],
             ["read_only", "staged_document", "live_open_world"],
         )
+        detached = payload["data"]["registries"]["pythonExecution"][
+            "detachedNamespace"
+        ]
+        self.assertEqual(detached["appliesToModes"], ["read_only", "staged_document"])
+        self.assertEqual(detached["baselinePython"], "3.14")
+        self.assertIn("repr", detached["builtins"])
+        self.assertIn("RuntimeError", detached["builtins"])
+        self.assertEqual(
+            detached["importRoots"],
+            ["functools", "itertools", "json", "math", "re", "statistics"],
+        )
+        self.assertFalse(detached["securitySandbox"])
+        self.assertRegex(
+            detached["contractFingerprint"], r"^sha256:[0-9a-f]{64}$"
+        )
         self.assertEqual(
             set(payload["data"]["registries"]["changeOperations"]),
             {"set", "translate", "insert", "remove", "move", "duplicate"},
@@ -174,6 +189,21 @@ class V2ApplicationTests(unittest.TestCase):
         self.assertRegex(identity["runtimeId"], r"^2\.0\.0\+[0-9a-f]{12}$")
         self.assertRegex(identity["codeHash"], r"^[0-9a-f]{64}$")
         validate(payload, TOOL_CATALOG["get_server_info"].output_schema)
+
+    def test_server_info_advertises_only_host_available_detached_constructors(self) -> None:
+        host = _FakeHost()
+        host.detached_python_constructor_names = lambda: (
+            "GSLayer",
+            "GSGlyph",
+        )
+
+        payload = GlyphsMCPApplication(host).invoke("get_server_info").to_dict()
+
+        detached = payload["data"]["registries"]["pythonExecution"][
+            "detachedNamespace"
+        ]
+        self.assertEqual(detached["constructors"], ["GSGlyph", "GSLayer"])
+        self.assertNotIn("Glyphs", detached["constructors"])
 
     def test_list_documents_uses_stable_normative_ids(self) -> None:
         payload = GlyphsMCPApplication(_FakeHost()).invoke(

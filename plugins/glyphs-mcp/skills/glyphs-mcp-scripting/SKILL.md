@@ -13,8 +13,12 @@ whenever the typed surface is insufficient.
 
 ## Select a mode
 
-1. Call `get_server_info`, require `data.apiMajor == 2`, and confirm all three
-   Python modes. Use `get_runtime_status` when runtime health affects the task.
+1. Call `get_server_info`, require `data.apiMajor == 2`, and inspect
+   `data.registries.pythonExecution.detachedNamespace` before generating
+   detached code. It is the machine-readable source for built-ins, imports,
+   injected context, constructors, denials, and contract identity. Confirm all
+   three Python modes. Use `get_runtime_status` when runtime health affects the
+   task.
 2. Search `search_knowledge` for unfamiliar Glyphs APIs and retrieve the exact
    cited/versioned entries with `get_knowledge` before writing code.
 3. Resolve exact document and entity context with `list_documents` and
@@ -41,12 +45,23 @@ loop repairs. Escalate restart/manual recovery when reported.
 
 ## Code and safety contract
 
-Keep code minimal, deterministic, scoped, and bounded. Do not send removed
-legacy arguments; use the contract in
+Detached Python exposes a near-standard reviewed Python 3.14 built-in set, not
+a security sandbox. It intentionally omits external-effect, dynamic-code,
+interactive, and process-control entry points, and imports only the roots
+advertised by the runtime. Keep code minimal, deterministic, scoped, and
+bounded. Do not send removed legacy arguments; use the contract in
 `content/reference/command-set-v2.mdx`. Never call `exit()`, `quit()`, or
-`sys.exit()`. Do not save, close, install, reload, restart, touch files, launch
-processes, or use networking unless the user explicitly requested those open
-world effects.
+`sys.exit()`. Do not save, close, install, reload,
+restart, touch files, launch processes, or use networking unless the user
+explicitly requested those open-world effects.
+
+Interpret detached failures precisely: `staged_symbol_unavailable` and
+`staged_import_unavailable` mean the generated code exceeded the advertised
+namespace; `staged_assertion_failed` means the script rejected its own
+detached candidate and is not evidence of a clone or recalculation failure.
+Unclassified failures retain their mode-specific Python error. Read the
+returned contract fingerprint, line, code hash, live-state proof, dirty state,
+and stage timings before revising code.
 
 After an applied staged patch, re-read exact entities and use `list_history`,
 `get_operation`, or `revert_change` as needed. For an explicit working-font

@@ -16,6 +16,15 @@ from .activity import ActivityCancelled, OperationActivityStore
 from .audit import AuditLog
 from .canonical_schema import CanonicalCoverage, CoverageStatus
 from .contracts import OperationMetadata, ToolResponse, ToolWarning
+from .detached_python import (
+    ALLOWED_IMPORT_ROOTS,
+    DANGEROUS_IMPORT_ROOTS,
+    HOST_EFFECT_METHOD_NAMES,
+    POLICY_FORBIDDEN_CALL_NAMES,
+    StagedImportUnavailable,
+    detached_python_registry_for_host,
+    unavailable_standard_builtin_names,
+)
 from .operations import OperationRecord, OperationStore
 from .pagination import paginate
 from .mutation import (
@@ -44,6 +53,7 @@ DIFF_TTL_SECONDS = 60 * 60
 DEFAULT_OUTPUT_CHARS = 8 * 1024
 MAX_OUTPUT_CHARS = 8 * 1024
 MAX_ERROR_MESSAGE_CHARS = 500
+DETACHED_SOURCE_NAME = "<glyphs-mcp-staged>"
 _ABSOLUTE_PATH = re.compile(
     r"(?<![A-Za-z0-9_])(?:/Users|/private|/var|/tmp)/[^\s\"']+"
 )
@@ -56,28 +66,6 @@ _LOGGER = logging.getLogger(__name__)
 
 class PythonPolicyError(ValueError):
     pass
-
-
-_FORBIDDEN_IMPORT_ROOTS = frozenset(
-    {
-        "GlyphsApp",
-        "os",
-        "pathlib",
-        "shutil",
-        "socket",
-        "subprocess",
-        "sys",
-        "tempfile",
-        "urllib",
-        "http",
-    }
-)
-_FORBIDDEN_CALL_NAMES = frozenset(
-    {"open", "exec", "eval", "compile", "__import__", "exit", "quit"}
-)
-_FORBIDDEN_METHOD_NAMES = frozenset(
-    {"save", "close", "show", "write", "unlink", "remove", "system", "popen"}
-)
 
 
 def _is_source_save_method(name: str) -> bool:
@@ -224,46 +212,19 @@ def validate_staged_code(code: str) -> None:
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name.split(".", 1)[0] in _FORBIDDEN_IMPORT_ROOTS:
+                if alias.name.split(".", 1)[0] in DANGEROUS_IMPORT_ROOTS:
                     raise PythonPolicyError("staged code cannot import {}".format(alias.name))
         elif isinstance(node, ast.ImportFrom):
             root = (node.module or "").split(".", 1)[0]
-            if root in _FORBIDDEN_IMPORT_ROOTS:
+            if root in DANGEROUS_IMPORT_ROOTS:
                 raise PythonPolicyError("staged code cannot import {}".format(node.module))
         elif isinstance(node, ast.Name) and node.id == "Glyphs":
             raise PythonPolicyError("staged code cannot access the live Glyphs singleton")
         elif isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name) and node.func.id in _FORBIDDEN_CALL_NAMES:
+            if isinstance(node.func, ast.Name) and node.func.id in POLICY_FORBIDDEN_CALL_NAMES:
                 raise PythonPolicyError("staged code cannot call {}".format(node.func.id))
-            if isinstance(node.func, ast.Attribute) and node.func.attr in _FORBIDDEN_METHOD_NAMES:
+            if isinstance(node.func, ast.Attribute) and node.func.attr in HOST_EFFECT_METHOD_NAMES:
                 raise PythonPolicyError("staged code cannot call .{}()".format(node.func.attr))
-
-
-def obvious_external_effects(code: str) -> tuple[str, ...]:
-    """Identify constructs that cannot safely use the direct read-intent path."""
-    try:
-        tree = ast.parse(code, mode="exec")
-    except SyntaxError as exc:
-        raise PythonPolicyError("Python code is not syntactically valid") from exc
-    findings: set[str] = set()
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            findings.update(
-                alias.name.split(".", 1)[0]
-                for alias in node.names
-                if alias.name.split(".", 1)[0] in _FORBIDDEN_IMPORT_ROOTS
-            )
-        elif isinstance(node, ast.ImportFrom):
-            root = (node.module or "").split(".", 1)[0]
-            if root in _FORBIDDEN_IMPORT_ROOTS:
-                findings.add(root)
-        elif isinstance(node, ast.Call):
-            if isinstance(node.func, ast.Name) and node.func.id in _FORBIDDEN_CALL_NAMES:
-                findings.add(node.func.id)
-            elif isinstance(node.func, ast.Attribute) and node.func.attr in _FORBIDDEN_METHOD_NAMES:
-                findings.add("." + node.func.attr)
-    return tuple(sorted(findings))
-
 
 def _code_hash(code: str) -> str:
     return "sha256:{}".format(hashlib.sha256(code.encode("utf-8")).hexdigest())
@@ -306,14 +267,110 @@ def _sanitized_exception_message(exc: BaseException) -> str:
     return message[:MAX_ERROR_MESSAGE_CHARS]
 
 
+def _staged_exception_line(exc: BaseException) -> Optional[int]:
+    current = exc.__traceback__
+    staged_line: Optional[int] = None
+    while current is not None:
+        if current.tb_frame.f_code.co_filename == DETACHED_SOURCE_NAME:
+            staged_line = current.tb_lineno
+        current = current.tb_next
+    return staged_line
+
+
 def _exception_line(exc: BaseException) -> Optional[int]:
     line = getattr(exc, "lineno", None)
     if isinstance(line, int) and line > 0:
         return line
+    staged_line = _staged_exception_line(exc)
+    if staged_line is not None:
+        return staged_line
     current = exc.__traceback__
     while current is not None and current.tb_next is not None:
         current = current.tb_next
     return current.tb_lineno if current is not None else None
+
+
+def _script_explicitly_raises_assertion(code: str, line: Optional[int]) -> bool:
+    """Recognize assertions authored in the detached script, not host assertions."""
+
+    if line is None:
+        return False
+    try:
+        tree = ast.parse(code or "", mode="exec")
+    except SyntaxError:
+        return False
+    for node in ast.walk(tree):
+        if not (
+            int(getattr(node, "lineno", -1))
+            <= line
+            <= int(getattr(node, "end_lineno", getattr(node, "lineno", -1)))
+        ):
+            continue
+        if isinstance(node, ast.Assert):
+            return True
+        if not isinstance(node, ast.Raise) or node.exc is None:
+            continue
+        raised = node.exc.func if isinstance(node.exc, ast.Call) else node.exc
+        if isinstance(raised, ast.Name) and raised.id == "AssertionError":
+            return True
+        if isinstance(raised, ast.Attribute) and raised.attr == "AssertionError":
+            return True
+    return False
+
+
+def _classify_detached_error(
+    exc: BaseException,
+    *,
+    code: str,
+    generic_code: str,
+    generic_message: str,
+    contract: Mapping[str, Any],
+) -> tuple[str, str, dict[str, Any]]:
+    """Return a structural detached failure without parsing exception strings."""
+
+    evidence: dict[str, Any] = {
+        "detachedPythonContractFingerprint": contract["contractFingerprint"],
+        "detachedPythonContractPath": (
+            "get_server_info.data.registries.pythonExecution.detachedNamespace"
+        ),
+    }
+    if isinstance(exc, StagedImportUnavailable):
+        evidence.update(
+            {
+                "import": str(exc.requested_import)[:240],
+                "importRoot": str(exc.import_root)[:120],
+                "allowedImportRoots": sorted(ALLOWED_IMPORT_ROOTS),
+            }
+        )
+        return (
+            "staged_import_unavailable",
+            "The detached Python import is outside the advertised import roots.",
+            evidence,
+        )
+    if isinstance(exc, NameError):
+        symbol = str(getattr(exc, "name", "") or "")
+        if symbol in unavailable_standard_builtin_names():
+            evidence.update(
+                {
+                    "symbol": symbol[:120],
+                    "availableBuiltins": list(contract["builtins"]),
+                }
+            )
+            return (
+                "staged_symbol_unavailable",
+                "The standard Python symbol is intentionally unavailable in detached execution.",
+                evidence,
+            )
+    if isinstance(exc, AssertionError):
+        line = _staged_exception_line(exc)
+        if _script_explicitly_raises_assertion(code, line):
+            evidence["assertionOrigin"] = "staged_script"
+            return (
+                "staged_assertion_failed",
+                "The detached script rejected its own candidate.",
+                evidence,
+            )
+    return generic_code, generic_message, evidence
 
 
 def _python_error_details(
@@ -387,6 +444,19 @@ def _context_details(request: "PythonExecutionRequest") -> dict[str, Any]:
         "masterId": request.master_id,
         "layerId": request.layer_id,
     }
+
+
+def _source_state_changed(
+    before: Mapping[str, Any] | None,
+    after: Mapping[str, Any] | None,
+) -> bool:
+    if before is None:
+        return False
+    return bool(
+        after is None
+        or before.get("contentFingerprint") != after.get("contentFingerprint")
+        or before.get("exists") != after.get("exists")
+    )
 
 
 def _observed_document_changes(
@@ -587,6 +657,161 @@ class PythonExecutionService:
         value = capture(document_id)
         return value if isinstance(value, Mapping) else dict(value)
 
+    def _document_dirty_state(self, document_id: str) -> bool | None:
+        try:
+            return next(
+                (
+                    document.has_unsaved_changes
+                    for document in self._host.list_documents()
+                    if document.document_id == document_id
+                ),
+                None,
+            )
+        except Exception:
+            return None
+
+    def _source_file_state(
+        self, document_id: str
+    ) -> Mapping[str, Any] | None:
+        capture = getattr(self._host, "capture_source_file_state", None)
+        if not callable(capture):
+            return None
+        try:
+            value = capture(document_id)
+        except Exception:
+            return None
+        return dict(value) if isinstance(value, Mapping) else None
+
+    def _detached_contract(self) -> Mapping[str, Any]:
+        return detached_python_registry_for_host(self._host)["pythonExecution"][
+            "detachedNamespace"
+        ]
+
+    def _detached_policy_failure(
+        self, request: PythonExecutionRequest
+    ) -> ToolResponse | None:
+        try:
+            validate_staged_code(request.code or "")
+        except PythonPolicyError as exc:
+            cause = (
+                exc.__cause__
+                if isinstance(exc.__cause__, BaseException)
+                else exc
+            )
+            return self._failure(
+                "staged_policy_violation",
+                str(exc),
+                recoverable=True,
+                details=_python_error_details(
+                    cause, phase="compile", code=request.code or ""
+                ),
+            )
+        return None
+
+    def _detached_failure(
+        self,
+        request: PythonExecutionRequest,
+        exc: BaseException,
+        *,
+        before_model: Mapping[str, Any],
+        dirty_before: bool | None,
+        source_before: Mapping[str, Any] | None,
+        phase: str,
+        generic_code: str,
+        generic_message: str,
+    ) -> ToolResponse:
+        """Return classified failure evidence and prove the live state when possible."""
+
+        observed_result: Mapping[str, Any] = {}
+        cause = exc
+        if isinstance(exc, ObservedLivePythonError):
+            cause = exc.cause
+            observed_result = exc.result
+        code, message, contract_evidence = _classify_detached_error(
+            cause,
+            code=request.code or "",
+            generic_code=generic_code,
+            generic_message=generic_message,
+            contract=self._detached_contract(),
+        )
+        details = _python_error_details(
+            cause, phase=phase, code=request.code or ""
+        )
+        details.update(contract_evidence)
+        document_id = request.document_id or ""
+        base_fingerprint = fingerprint_model(before_model)
+        live_after_fingerprint: str | None = None
+        evidence_complete = True
+        try:
+            live_after_fingerprint = fingerprint_model(
+                self._capture_document_state(document_id)
+            )
+        except BaseException:
+            evidence_complete = False
+        dirty_after = self._document_dirty_state(document_id)
+        source_after = self._source_file_state(document_id)
+        source_changed = _source_state_changed(source_before, source_after)
+        live_changed = bool(
+            live_after_fingerprint is not None
+            and live_after_fingerprint != base_fingerprint
+        )
+        if live_after_fingerprint is None:
+            state_may_have_changed = True
+            safety_statement = (
+                "No preview was created and the detached clone was discarded; "
+                "live-state read-back was incomplete."
+            )
+        elif live_changed:
+            state_may_have_changed = True
+            safety_statement = (
+                "No preview was created and the detached clone was discarded; "
+                "the live document changed concurrently and must be read again."
+            )
+        else:
+            state_may_have_changed = False
+            safety_statement = (
+                "No preview was created, the detached clone was discarded, and "
+                "the live document fingerprint is unchanged."
+            )
+        observed_changes = _observed_document_changes(observed_result, request)
+        stage_timings = dict(
+            getattr(exc, "stage_timings", {})
+            or getattr(cause, "stage_timings", {})
+            or observed_result.get("stageTimings", {})
+            or {}
+        )
+        return self._failure(
+            code,
+            message,
+            details=details,
+            data={
+                "codeHash": _code_hash(request.code or ""),
+                "previewCreated": False,
+                "detachedCloneDiscarded": True,
+                "liveDocumentWasExecutionTarget": False,
+                "baseDocumentFingerprint": base_fingerprint,
+                "liveAfterFingerprint": live_after_fingerprint,
+                "liveDocumentChanged": live_changed,
+                "dirtyBefore": dirty_before,
+                "dirtyAfter": dirty_after,
+                "sourceFileChanged": source_changed,
+                "fontSaved": False,
+                "stateMayHaveChanged": state_may_have_changed,
+                "safetyEvidenceComplete": evidence_complete,
+                "safetyStatement": safety_statement,
+                "observedDocumentChanges": observed_changes,
+                "transactional": True,
+                "rollback": {"coverage": "not_needed", "available": False},
+                "stageTimings": stage_timings,
+                **_bounded_streams(
+                    observed_result.get("stdout"),
+                    observed_result.get("stderr"),
+                    max_output_chars=request.max_output_chars,
+                    max_error_chars=request.max_error_chars,
+                ),
+            },
+        )
+
     @staticmethod
     def _replay_context(value: Mapping[str, Any]) -> dict[str, Any]:
         context = value.get("executionContext")
@@ -784,27 +1009,9 @@ class PythonExecutionService:
                     "document_context_required",
                     "read_only requires a documentId so execution can use a detached clone; use live_open_world for global host inspection.",
                 )
-            try:
-                external_findings = obvious_external_effects(request.code or "")
-            except PythonPolicyError as exc:
-                cause = (
-                    exc.__cause__
-                    if isinstance(exc.__cause__, BaseException)
-                    else exc
-                )
-                return self._failure(
-                    "invalid_code",
-                    str(exc),
-                    details=_python_error_details(
-                        cause, phase="compile", code=request.code or ""
-                    ),
-                )
-            if external_findings:
-                return self._failure(
-                    "effect_review_required",
-                    "The code contains obvious external or lifecycle effects; declare files_or_external and use live_open_world review.",
-                    data={"constructs": list(external_findings)},
-                )
+            policy_failure = self._detached_policy_failure(request)
+            if policy_failure is not None:
+                return policy_failure
             return self._execute_read(request)
         if not request.document_id or not request.expected_document_fingerprint:
             return self._failure(
@@ -812,6 +1019,9 @@ class PythonExecutionService:
                 "Document mutations and external execution require an explicit document and fingerprint.",
             )
         if request.execution_mode == "staged_document":
+            policy_failure = self._detached_policy_failure(request)
+            if policy_failure is not None:
+                return policy_failure
             return self._preview_staged(request)
         return self._preview_live(request)
 
@@ -1171,17 +1381,6 @@ class PythonExecutionService:
     ) -> ToolResponse:
         """Run document-bound read Python on a clone and prove live purity."""
 
-        try:
-            validate_staged_code(request.code or "")
-        except PythonPolicyError as exc:
-            cause = exc.__cause__ if isinstance(exc.__cause__, BaseException) else exc
-            return self._failure(
-                "read_only_policy_violation",
-                str(exc),
-                details=_python_error_details(
-                    cause, phase="compile", code=request.code or ""
-                ),
-            )
         document_id = request.document_id or ""
         before = self._capture_document_state(document_id)
         before_fingerprint = fingerprint_model(before)
@@ -1193,75 +1392,69 @@ class PythonExecutionService:
                 "stale_document",
                 "The document changed before detached read-only execution.",
             )
-        capture_source = getattr(self._host, "capture_source_file_state", None)
-        source_before = (
-            capture_source(document_id) if callable(capture_source) else None
-        )
-
-        def dirty_state() -> bool | None:
-            try:
-                return next(
-                    (
-                        document.has_unsaved_changes
-                        for document in self._host.list_documents()
-                        if document.document_id == document_id
-                    ),
-                    None,
-                )
-            except Exception:
-                return None
-
-        dirty_before = dirty_state()
+        source_before = self._source_file_state(document_id)
+        dirty_before = self._document_dirty_state(document_id)
         try:
             result = self._host.preview_python(request, before)
-        except Exception as exc:
+        except ActivityCancelled:
+            raise
+        except BaseException as exc:
             _debug_python_exception()
             cause = (
                 exc.cause
                 if isinstance(exc, ObservedLivePythonError)
                 else exc
             )
-            return self._failure(
-                (
+            return self._detached_failure(
+                request,
+                exc,
+                before_model=before,
+                dirty_before=dirty_before,
+                source_before=source_before,
+                phase="evaluation",
+                generic_code=(
                     "source_save_forbidden"
                     if isinstance(cause, SourceSaveForbiddenError)
                     else "python_execution_failed"
                 ),
-                (
+                generic_message=(
                     "Detached read-only Python was stopped at the source-save boundary."
                     if isinstance(cause, SourceSaveForbiddenError)
                     else "Detached read-only Python failed safely."
                 ),
-                details=_python_error_details(
-                    cause, phase="evaluation", code=request.code or ""
+            )
+        replay_context: dict[str, Any] = {}
+        try:
+            after = result.get("afterModel")
+            if not isinstance(after, Mapping):
+                raise ValueError(
+                    "detached read-only Python returned no canonical clone state"
+                )
+            replay_context = dict(result.get("executionContext") or {})
+            self._release_replay_evidence(replay_context)
+            detached_changes = diff_models(before, after)
+        except ActivityCancelled:
+            raise
+        except BaseException as exc:
+            self._release_replay_evidence(replay_context)
+            return self._detached_failure(
+                request,
+                ObservedLivePythonError(exc, result),
+                before_model=before,
+                dirty_before=dirty_before,
+                source_before=source_before,
+                phase="verification",
+                generic_code="python_execution_failed",
+                generic_message=(
+                    "Detached read-only Python returned invalid verification evidence."
                 ),
             )
-        after = result.get("afterModel")
-        if not isinstance(after, Mapping):
-            return self._failure(
-                "python_execution_failed",
-                "Detached read-only Python returned no canonical clone state.",
-                recoverable=False,
-            )
-        replay_context = dict(result.get("executionContext") or {})
-        self._release_replay_evidence(replay_context)
-        detached_changes = diff_models(before, after)
         live_after = self._capture_document_state(document_id)
         live_after_fingerprint = fingerprint_model(live_after)
         live_changed = live_after_fingerprint != before_fingerprint
-        dirty_after = dirty_state()
-        source_after = (
-            capture_source(document_id) if callable(capture_source) else None
-        )
-        source_changed = bool(
-            source_before is not None
-            and (
-                source_after is None
-                or source_before.get("contentFingerprint")
-                != source_after.get("contentFingerprint")
-                or source_before.get("exists") != source_after.get("exists")
-            )
-        )
+        dirty_after = self._document_dirty_state(document_id)
+        source_after = self._source_file_state(document_id)
+        source_changed = _source_state_changed(source_before, source_after)
         observed_document_changes = list(
             result.get("observedDocumentChanges") or ()
         )
@@ -1350,24 +1543,15 @@ class PythonExecutionService:
         )
 
     def _preview_staged(self, request: PythonExecutionRequest) -> ToolResponse:
-        try:
-            validate_staged_code(request.code or "")
-        except PythonPolicyError as exc:
-            cause = exc.__cause__ if isinstance(exc.__cause__, BaseException) else exc
-            return self._failure(
-                "staged_policy_violation",
-                str(exc),
-                recoverable=True,
-                details=_python_error_details(
-                    cause, phase="compile", code=request.code or ""
-                ),
-            )
         before = self._capture_document_state(request.document_id or "")
         if self._trace is not None and request.document_id:
             self._trace.observe_model(request.document_id, before)
         before_fingerprint = fingerprint_model(before)
         if before_fingerprint != request.expected_document_fingerprint:
             return self._failure("stale_document", "The document changed before staged execution.")
+        document_id = request.document_id or ""
+        dirty_before = self._document_dirty_state(document_id)
+        source_before = self._source_file_state(document_id)
         phase = {"value": "setup"}
 
         def progress(name: str, message: str, cancellable: bool = True) -> None:
@@ -1404,19 +1588,17 @@ class PythonExecutionService:
                 changes = diff_models(before, after)
         except ActivityCancelled:
             raise
-        except Exception as exc:
+        except BaseException as exc:
             _debug_python_exception()
-            return self._failure(
-                "python_preview_failed",
-                "Detached Python preview failed safely.",
-                details=_python_error_details(
-                    exc, phase=phase["value"], code=request.code or ""
-                ),
-                data={
-                    "stageTimings": dict(
-                        getattr(exc, "stage_timings", {}) or {}
-                    )
-                },
+            return self._detached_failure(
+                request,
+                exc,
+                before_model=before,
+                dirty_before=dirty_before,
+                source_before=source_before,
+                phase=phase["value"],
+                generic_code="python_preview_failed",
+                generic_message="Detached Python preview failed safely.",
             )
         observed_document_changes = _observed_document_changes(preview, request)
         undeclared_document_changes = [
@@ -2584,5 +2766,4 @@ __all__ = [
     "ROLLBACK_TTL_SECONDS",
     "validate_no_source_save",
     "validate_staged_code",
-    "obvious_external_effects",
 ]

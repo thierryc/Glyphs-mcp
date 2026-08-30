@@ -44,6 +44,7 @@ from ..canonical_sources import (
     canonical_record_value,
     canonical_root_from_serialized_records,
 )
+from ..detached_python import NATIVE_CONSTRUCTOR_NAMES, build_detached_namespace
 from ..exporting import inspect_destination, publish_staged_directory, resolve_destination
 from ..ports import HostAccessError
 from ..python_execution import (
@@ -6147,30 +6148,16 @@ def _apply_property_collection(
 
 
 def _staged_native_types() -> dict[str, Any]:
-    """Expose constructors only; never inject the live Glyphs singleton."""
+    """Resolve the registry-owned constructors at the native adapter boundary."""
 
     try:
-        from GlyphsApp import (  # type: ignore[import-not-found]
-            GSClass,
-            GSFeature,
-            GSFeaturePrefix,
-            GSFontMaster,
-            GSGlyph,
-            GSInstance,
-            GSLayer,
-            MGOrderedDictionary,
-        )
+        import GlyphsApp  # type: ignore[import-not-found]
     except Exception:
         return {}
     return {
-        "GSClass": GSClass,
-        "GSFeature": GSFeature,
-        "GSFeaturePrefix": GSFeaturePrefix,
-        "GSFontMaster": GSFontMaster,
-        "GSGlyph": GSGlyph,
-        "GSInstance": GSInstance,
-        "GSLayer": GSLayer,
-        "MGOrderedDictionary": MGOrderedDictionary,
+        name: constructor
+        for name in NATIVE_CONSTRUCTOR_NAMES
+        if (constructor := getattr(GlyphsApp, name, None)) is not None
     }
 
 
@@ -7829,22 +7816,6 @@ def _apply_target_model(
             current.get("settings", {}),
             target.get("settings", {}),
         )
-
-
-def _safe_import(name: str, globals_value: Any = None, locals_value: Any = None, fromlist: Any = (), level: int = 0) -> Any:
-    if name.split(".", 1)[0] not in {"math", "re", "json", "statistics", "itertools", "functools"}:
-        raise ImportError("staged Python cannot import {}".format(name))
-    return builtins.__import__(name, globals_value, locals_value, fromlist, level)
-
-
-_STAGED_BUILTINS = {
-    "__import__": _safe_import, "abs": abs, "all": all, "any": any, "bool": bool,
-    "dict": dict, "enumerate": enumerate, "float": float, "getattr": getattr,
-    "hasattr": hasattr, "int": int, "isinstance": isinstance, "len": len, "list": list,
-    "max": max, "min": min, "print": print, "range": range, "round": round,
-    "set": set, "setattr": setattr, "sorted": sorted, "str": str, "sum": sum,
-    "tuple": tuple, "zip": zip, "Exception": Exception, "ValueError": ValueError,
-}
 
 
 def _save_font_copy(font: Any, destination: Path) -> None:
@@ -12986,6 +12957,10 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             return False
         return True
 
+    @staticmethod
+    def detached_python_constructor_names() -> tuple[str, ...]:
+        return tuple(sorted(_staged_native_types()))
+
     def _context(self, font: Any, request: PythonExecutionRequest) -> dict[str, Any]:
         glyph = _lookup_by_name(_safe_getattr(font, "glyphs"), request.glyph_name) if request.glyph_name else None
         if request.glyph_name and glyph is None:
@@ -12998,14 +12973,16 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         layer = _lookup_layer(glyph, request.layer_id or request.master_id or "") if glyph is not None and (request.layer_id or request.master_id) else None
         if glyph is not None and (request.layer_id or request.master_id) and layer is None:
             raise HostAccessError("The Python layer does not exist")
-        return {
-            "font": font,
-            "glyph": glyph,
-            "master": master,
-            "layer": layer,
-            "selectedLayers": [layer] if layer is not None else [],
-            **_staged_native_types(),
-        }
+        return build_detached_namespace(
+            {
+                "font": font,
+                "glyph": glyph,
+                "master": master,
+                "layer": layer,
+                "selectedLayers": [layer] if layer is not None else [],
+            },
+            constructors=_staged_native_types(),
+        )
 
     def preview_python(self, request: PythonExecutionRequest, before_model: Mapping[str, Any]) -> Mapping[str, Any]:
         """Run staged Python in short native phases and compare off-main-thread."""
@@ -13128,7 +13105,6 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         def execute_and_capture() -> Mapping[str, Any]:
             clone = native_state["clone"]
             namespace = self._context(clone, request)
-            namespace["__builtins__"] = _STAGED_BUILTINS
             stdout, stderr = io.StringIO(), io.StringIO()
             protected = [clone, _maybe_call(_safe_getattr(clone, "parent"))]
             with _WorkingSourceSaveRuntimeGuard(

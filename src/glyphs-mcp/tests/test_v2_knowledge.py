@@ -118,6 +118,24 @@ class V2KnowledgeTests(unittest.TestCase):
             result["items"][2]["examples"][0],
         )
 
+    def test_metrics_key_guidance_is_specific_cited_and_searchable(self) -> None:
+        result = search_knowledge(
+            "GSLayer syncMetrics same master metrics key",
+            topics=["spacing"],
+            glyphs_versions=["4"],
+        )
+
+        self.assertEqual(
+            result["items"][0]["id"],
+            "glyphs4.metrics-key-resolution",
+        )
+        entry = get_knowledge(["glyphs4.metrics-key-resolution"])["items"][0]
+        self.assertEqual(entry["glyphsVersions"], ["4"])
+        self.assertGreaterEqual(len(entry["citations"]), 3)
+        self.assertIn("GSLayer.syncMetrics()", entry["body"])
+        self.assertIn("associated master", entry["body"])
+        self.assertIn("inheritance.metrics", entry["body"])
+
     def test_build_check_rejects_source_or_generated_drift(self) -> None:
         result = subprocess.run(
             [sys.executable, "scripts/build_v2_knowledge.py", "--check"],

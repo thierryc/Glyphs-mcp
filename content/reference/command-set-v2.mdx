@@ -22,7 +22,7 @@ tool identity, effect, category, and intent.
 | `revert_change` | `edit` | `history` | Revert one compatible verified change without overwriting unrelated later edits. |
 | `search_knowledge` | `read` | `knowledge` | Search the pinned offline font-design and Glyphs-coding corpus with citations and version filters. |
 | `get_knowledge` | `read` | `knowledge` | Retrieve exact pinned Knowledge entries by stable ID. |
-| `execute_python` | `code` | `python` | Permanent backup for read-only, staged-document, and live-open-world Glyphs tasks not covered by declarative operations. |
+| `execute_python` | `code` | `python` | Permanent backup for Glyphs tasks not covered by declarative operations. Consult get_server_info.data.registries.pythonExecution before generating detached read-only or staged-document code; live-open-world remains an explicit external-effect boundary. |
 | `preview_export` | `read` | `export` | Create an immutable source-bundle export preview. |
 | `apply_export` | `files` | `export` | Publish one exact reviewed source bundle. |
 | `save_document` | `save` | `document` | Explicitly save or Save As with source and destination verification. |
@@ -44,6 +44,19 @@ tool identity, effect, category, and intent.
 - Observation operands use `observation.<projection>.<path>`, for
   example `observation.bounds.x` or
   `observation.alignment.effectiveLayerAlignment`.
+
+## Detached Python contract
+
+- Inspect `get_server_info.data.registries.pythonExecution.detachedNamespace`
+  before generating `read_only` or `staged_document` code.
+- Reviewed baseline: Python `3.14`; import roots: `functools`, `itertools`, `json`, `math`, `re`, `statistics`.
+- The registry publishes the exact built-ins, injected context, available
+  constructors, denied capabilities, and contract fingerprint used by the
+  runtime. Detached execution is not a security sandbox; the discarded
+  clone and verified application are the safety boundary.
+- `staged_symbol_unavailable`, `staged_import_unavailable`, and
+  `staged_assertion_failed` distinguish contract mismatch and script
+  validation from unclassified Python or host failures.
 
 ## Surface invariants
 

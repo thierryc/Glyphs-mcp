@@ -115,6 +115,12 @@ guidance is cited Knowledge rather than runtime policy.
 
 Python is permanent, not a migration escape hatch:
 
+- Agents inspect
+  `get_server_info.data.registries.pythonExecution.detachedNamespace` before
+  generating detached code. The registry publishes the effective Python 3.14
+  namespace, import roots, context, constructors, denials, and contract
+  fingerprint from the same source used by execution.
+
 - `read_only` performs bounded inspection on a detached document and proves
   that the live canonical fingerprint and dirty state did not change.
 - `staged_document` runs once against a detached font and returns the generic
@@ -126,6 +132,11 @@ Python is permanent, not a migration escape hatch:
 
 Generic operations remain preferred when they fit. Skills use Python whenever
 they do not.
+
+Detached Python is not a security sandbox. The clone and verified application
+are the safety boundary. Unavailable symbols/imports and script assertions use
+structured errors; every failed detached run reports whether a preview was
+created and whether the live fingerprint or dirty state changed.
 
 ## Knowledge and skills
 

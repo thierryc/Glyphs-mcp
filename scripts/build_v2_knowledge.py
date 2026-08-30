@@ -335,6 +335,65 @@ def curated_entries() -> list[dict[str, Any]]:
         },
     ]
     entries.append(alignment)
+    metrics_keys = _entry(
+        identity="glyphs4.metrics-key-resolution",
+        title="Metrics keys resolve through native layer context in Glyphs 4",
+        body=(
+            "Glyph and layer metrics keys can reference another glyph by name or "
+            "formula for left bearing, right bearing, or width. They are not "
+            "synchronized automatically after the referenced glyph changes; "
+            "GSLayer.syncMetrics() performs the native update. A normal glyph-level "
+            "key applies across the font's masters, while a key prefixed with == is "
+            "a local layer exception. Consequently each layer resolves the linked "
+            "value in its own associated master or interpolation context, so the same "
+            "key may produce different numeric values in different masters. Inspect "
+            "inheritance.metrics keys, current values, and detached resolved values "
+            "before asserting a result. If a retained key resolves to a value that "
+            "differs from a proposed number, choose explicitly between preserving the "
+            "key, changing or removing it, or changing the referenced glyph."
+        ),
+        source_url="https://handbook.glyphsapp.com/spacing/",
+        source_path="Documentations/Markdown/055_spacing-and-kerning_spacing.md:62",
+        authority="practice",
+        topics=["glyphs-python", "spacing"],
+        keywords=[
+            "GSLayer.syncMetrics",
+            "inheritance.metrics",
+            "leftMetricsKey",
+            "local metrics key",
+            "metrics key",
+            "same master",
+        ],
+        glyphs_versions=["4"],
+        examples=[
+            "print({'key': layer.leftMetricsKey, 'current': layer.LSB})\nlayer.syncMetrics()\nprint({'resolved': layer.LSB, 'masterId': layer.associatedMasterId})"
+        ],
+        compatibility_notes=(
+            "Verified against the pinned Glyphs 4 ObjectWrapper and handbook. "
+            "Resolve on a detached font because syncMetrics() changes the candidate layer."
+        ),
+    )
+    metrics_keys["citations"] = [
+        {
+            "url": "https://handbook.glyphsapp.com/spacing/",
+            "path": "Documentations/Markdown/055_spacing-and-kerning_spacing.md:62",
+            "revision": CORPUS_VERSION,
+            "verifiedAt": VERIFIED_AT,
+        },
+        {
+            "url": "https://docu.glyphsapp.com/",
+            "path": "GlyphsSDK/ObjectWrapper/GlyphsApp/__init__.py:9681",
+            "revision": GLYPHS_SDK_REVISION,
+            "verifiedAt": VERIFIED_AT,
+        },
+        {
+            "url": "https://docu.glyphsapp.com/",
+            "path": "GlyphsSDK/ObjectWrapper/GlyphsApp/__init__.py:11035",
+            "revision": GLYPHS_SDK_REVISION,
+            "verifiedAt": VERIFIED_AT,
+        },
+    ]
+    entries.append(metrics_keys)
     entries.extend(
         (
             _entry(

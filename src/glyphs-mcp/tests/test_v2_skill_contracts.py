@@ -156,6 +156,13 @@ class V2SkillContractTests(unittest.TestCase):
         for mode in ("read_only", "staged_document", "live_open_world"):
             self.assertIn("`{}`".format(mode), scripting)
         self.assertIn("never rerun the code", scripting)
+        self.assertIn("data.registries.pythonExecution.detachedNamespace", scripting)
+        self.assertIn("`staged_assertion_failed`", scripting)
+
+        spacing = self._text("glyphs-mcp-spacing")
+        self.assertIn("`inheritance.metrics` separates configured keys", spacing)
+        self.assertIn("change or remove the key", spacing)
+        self.assertIn("never make it", spacing)
 
     def test_python_and_generic_transport_have_no_legacy_arguments(self) -> None:
         execute = inspect.signature(ToolHandlers.execute_python).parameters

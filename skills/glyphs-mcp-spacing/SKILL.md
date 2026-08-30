@@ -50,6 +50,13 @@ Partial observations are not proof. If bounds or metrics are unavailable, use
 bounded `execute_python(mode="read_only")` inspection or stop rather than
 inventing a value.
 
+`inheritance.metrics` separates configured keys, stored measurements, and
+values resolved by native `GSLayer.syncMetrics()` on a detached copy. Keys use
+the layer's associated master/interpolation context; a layer key can override
+the glyph key. When a retained key and numeric target disagree, choose to
+preserve the resolved value, change or remove the key, or change its reference.
+Tools expose and verify that choice, never make it.
+
 ## Physical model
 
 Let the foreground bounds be `(x, y, w, h)`, horizontal advance be `a`,

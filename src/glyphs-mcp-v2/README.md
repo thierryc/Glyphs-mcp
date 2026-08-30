@@ -121,6 +121,11 @@ later unrelated edits.
 `execute_python` is a permanent architectural capability, even as declarative
 coverage grows:
 
+- Before generating detached code, inspect
+  `get_server_info.data.registries.pythonExecution.detachedNamespace`. It
+  publishes the reviewed Python 3.14 built-ins, import roots, injected context,
+  available constructors, explicit denials, and a contract fingerprint.
+
 - `read_only` performs bounded inspection on a detached document and proves
   that the live canonical fingerprint and dirty state did not change.
 - `staged_document` runs against a detached document and returns the same
@@ -134,6 +139,11 @@ coverage grows:
 Skills prefer declarative operations when they fit because they are easier to
 inspect and reverse. They use Python whenever the typed mechanics cannot
 express the task. Python is not deprecated and must not be removed.
+Detached execution is not described as a security sandbox: its safety boundary
+is the discarded clone plus exact preview/application verification. Structured
+errors distinguish unavailable symbols and imports, script-rejected candidates,
+and unclassified host failures while proving the live fingerprint and dirty
+state whenever execution fails.
 
 ## Knowledge builds
 

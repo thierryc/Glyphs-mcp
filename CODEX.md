@@ -36,6 +36,11 @@ Use `get_server_info` as the live contract and code-identity check, then
 `execute_python(mode="read_only")` runs detached; staged edits also run once on
 a detached document and are applied through `apply_change`; live-only APIs and
 external effects use `live_open_world`.
+Before generating detached code, inspect
+`data.registries.pythonExecution.detachedNamespace` for its effective Python
+3.14 built-ins, imports, context, constructors, denials, and contract
+fingerprint. A staged assertion failure means the script rejected its own
+candidate; it is not automatically a host or clone failure.
 
 Keep live-document and persistence state distinct. A user may save in Glyphs
 between any two agent actions or during a transaction. A save-only event never

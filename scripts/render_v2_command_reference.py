@@ -16,6 +16,7 @@ if str(V2_SOURCE) not in sys.path:
 
 from glyphs_mcp_v2.catalog import TOOL_DEFINITIONS  # noqa: E402
 from glyphs_mcp_v2.canonical_tree import CANONICAL_MODEL_SCHEMA_VERSION  # noqa: E402
+from glyphs_mcp_v2.detached_python import detached_python_registry  # noqa: E402
 from glyphs_mcp_v2.mechanics_registry import (  # noqa: E402
     COMPUTED_PROJECTIONS,
     CONSTRAINT_OPERATORS,
@@ -33,6 +34,9 @@ def _codes(values: object) -> str:
 
 
 def render() -> str:
+    python_contract = detached_python_registry()["pythonExecution"][
+        "detachedNamespace"
+    ]
     lines = [
         "---",
         'title: "Glyphs MCP v2 command set"',
@@ -77,6 +81,22 @@ def render() -> str:
             "- Observation operands use `observation.<projection>.<path>`, for",
             "  example `observation.bounds.x` or",
             "  `observation.alignment.effectiveLayerAlignment`.",
+            "",
+            "## Detached Python contract",
+            "",
+            "- Inspect `get_server_info.data.registries.pythonExecution.detachedNamespace`",
+            "  before generating `read_only` or `staged_document` code.",
+            "- Reviewed baseline: Python `{}`; import roots: {}.".format(
+                python_contract["baselinePython"],
+                _codes(python_contract["importRoots"]),
+            ),
+            "- The registry publishes the exact built-ins, injected context, available",
+            "  constructors, denied capabilities, and contract fingerprint used by the",
+            "  runtime. Detached execution is not a security sandbox; the discarded",
+            "  clone and verified application are the safety boundary.",
+            "- `staged_symbol_unavailable`, `staged_import_unavailable`, and",
+            "  `staged_assertion_failed` distinguish contract mismatch and script",
+            "  validation from unclassified Python or host failures.",
             "",
             "## Surface invariants",
             "",

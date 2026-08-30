@@ -28,6 +28,7 @@ from .change_history import ActionCommit, ChangeHistory
 from .change_lifecycle import DocumentHistoryLifecycle
 from .change_trace import ActionTraceCoordinator
 from .contracts import API_MAJOR, API_VERSION, OperationMetadata, ToolResponse, ToolWarning
+from .detached_python import detached_python_registry_for_host
 from .exporting import ExportPublicationError, destination_matches
 from .generic_tools import (
     bind_relation_selector,
@@ -1644,11 +1645,7 @@ class GlyphsMCPApplication:
                 "knowledge": knowledge_manifest(),
                 "registries": {
                     **public_mechanics_registry(),
-                    "pythonModes": [
-                        "read_only",
-                        "staged_document",
-                        "live_open_world",
-                    ],
+                    **detached_python_registry_for_host(self._host),
                 },
                 "capabilities": [
                     "stable_document_ids",

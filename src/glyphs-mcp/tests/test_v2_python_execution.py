@@ -1070,7 +1070,7 @@ class V2PythonExecutionTests(unittest.TestCase):
         self.assertEqual(host.capture_model.call_count, 2)
         self.assertFalse(result["data"]["liveDocumentChanged"])
 
-    def test_obvious_external_effect_cannot_bypass_exact_review_as_read_intent(self) -> None:
+    def test_dangerous_effect_cannot_bypass_detached_policy_as_read_intent(self) -> None:
         service, host = self.service()
         result = service.execute(
             PythonExecutionRequest(
@@ -1080,7 +1080,7 @@ class V2PythonExecutionTests(unittest.TestCase):
                 document_id="doc_alpha",
             )
         ).to_dict()
-        self.assertEqual(result["error"]["code"], "effect_review_required")
+        self.assertEqual(result["error"]["code"], "staged_policy_violation")
         self.assertEqual(host.live_calls, 0)
 
     def test_live_exception_keeps_recovery_and_restart_is_recovery_only(self) -> None:

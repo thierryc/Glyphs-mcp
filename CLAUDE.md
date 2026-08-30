@@ -31,6 +31,11 @@ mechanics to tools. Start with `get_server_info`, then use
 `staged_document` Python whenever the declarative surface is insufficient;
 reserve `live_open_world` for live-only APIs and explicit external effects.
 Python 3.14 fallback is permanent.
+Generate detached code only after reading
+`get_server_info.data.registries.pythonExecution.detachedNamespace`; it is the
+runtime source of truth for built-ins, imports, injected context, constructors,
+and denials. Treat `staged_assertion_failed` as the script rejecting its own
+candidate rather than evidence that detached cloning failed.
 
 The user may save in Glyphs at any time. A save-only event does not invalidate
 a preview or block document work. Active transactions retain an exactly

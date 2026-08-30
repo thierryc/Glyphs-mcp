@@ -16,6 +16,9 @@ This project assumes the **Glyphs MCP** plug-in is installed and the server is r
   constraints, immutable `preview_change`, exact `apply_change`, verification,
   and `revert_change`. Use permanent Python fallback when generic mechanics
   are insufficient.
+- Before generating detached v2 Python, inspect
+  `get_server_info.data.registries.pythonExecution.detachedNamespace` for the
+  effective Python 3.14 namespace and its contract fingerprint.
 - A user may save in Glyphs at any time. A save-only event never stales a v2
   preview or blocks unrelated work. Keep live-document fingerprints separate
   from source/destination file fingerprints; file overwrite protection belongs
