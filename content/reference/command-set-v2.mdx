@@ -34,13 +34,14 @@ tool identity, effect, category, and intent.
 
 - Canonical model schema: `7`.
 - Entity kinds: `anchor`, `axis`, `class`, `document`, `feature`, `font`, `glyph`, `instance`, `kerning`, `layer`, `master`, `metric`, `node`, `number`, `prefix`, `shape`, `stem`.
-- Change operations: `duplicate`, `insert`, `move`, `remove`, `set`, `translate`.
+- Change operations: `duplicate`, `insert`, `move`, `remove`, `set`, `transform`, `translate`.
 - Constraint operators: `eq`, `gt`, `gte`, `in_range`, `lt`, `lte`, `ne`, `within`.
-- Computed projections: `alignment`, `bounds`, `compilation.diagnostics`, `geometry.counts`, `geometry.transform`, `grid`, `inheritance.metrics`, `metadata.effective`, `ownership`, `persistence`, `spacing.horizontal`, `spacing.vertical`.
+- Computed projections: `alignment`, `bounds`, `collection.index`, `compilation.diagnostics`, `geometry.counts`, `geometry.transform`, `grid`, `inheritance.metrics`, `metadata.effective`, `ownership`, `persistence`, `spacing.horizontal`, `spacing.vertical`.
 - Selector predicates: `and`, `contains`, `eq`, `exists`, `gt`, `gte`, `in`, `lt`, `lte`, `ne`, `not`, `or`.
 - Ordering modes: `auto`, `number`, `text`.
 - Reducers: `all`, `any`, `average`, `count`, `max`, `min`, `sum`.
 - Translation targets: `anchor`, `layer`, `node`, `shape`.
+- Transform targets: `anchor`, `layer`, `node`, `shape`.
 - Scalar entity value fields: `kerning` -> `value`.
   Scalar reads include this field when projection fields are omitted.
 - Observation operands use `observation.<projection>.<path>`, for
@@ -62,6 +63,19 @@ tool identity, effect, category, and intent.
 - `staged_symbol_unavailable`, `staged_import_unavailable`, and
   `staged_assertion_failed` distinguish contract mismatch and script
   validation from unclassified Python or host failures.
+
+## Declarative transaction modes
+
+- `preview_change.verificationMode` defaults to `semantic`;
+  `strict_archive` enables the slower direct-plus-replay archive gate.
+- `preview_change.transactionMode` defaults to `verified`;
+  `snapshot_backed_recovery` binds exact document/source fingerprints
+  and requires `apply_change.confirmRecovery=true`.
+- Declarative previews and applies return stage timings, equivalence
+  evidence, bounded normalized paths and numeric deltas, rollback
+  classification, and recovery evidence.
+- An indeterminate transaction quarantines that document from every
+  later edit until a saved source or verified recovery copy is reopened.
 
 ## Surface invariants
 

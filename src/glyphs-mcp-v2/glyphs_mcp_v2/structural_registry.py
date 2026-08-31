@@ -122,6 +122,28 @@ def _duplicate_kerning_partition(
                 master_values[new_id] = copy.deepcopy(master_values[source_id])
 
 
+def _sync_italic_angle_metric(
+    model: Mapping[str, Any], master: dict[str, Any], angle: float
+) -> None:
+    """Keep Glyphs' registered italic-angle metric and convenience scalar aligned."""
+
+    metrics = _items(model.get("metrics", []))
+    italic_ids = {
+        str(metric.get("id") or "")
+        for metric in metrics
+        if metric.get("type") in {9, "9", "italic angle"}
+    }
+    italic_ids.discard("")
+    if not italic_ids:
+        return
+    values = master.get("metricValues", [])
+    if not isinstance(values, list):
+        return
+    for value in values:
+        if isinstance(value, dict) and str(value.get("id") or "") in italic_ids:
+            value["pos"] = float(angle)
+
+
 def _remove_kerning_partition(kerning: dict[str, Any], master_id: str) -> None:
     directional = any(
         domain in kerning for domain in ("ltr", "rtl", "vertical", "context")
@@ -193,6 +215,9 @@ def build_master_updates(
                 raise ValueError("duplicated master name cannot be empty")
             if "italicAngle" in update:
                 duplicate["italicAngle"] = float(update["italicAngle"])
+                _sync_italic_angle_metric(
+                    model, duplicate, float(update["italicAngle"])
+                )
             if "axes" in update:
                 expected_tags = [
                     str(axis.get("tag") or "") for axis in duplicate.get("axes", [])
@@ -295,6 +320,7 @@ def build_master_updates(
             item["name"] = name
         if "italicAngle" in supplied:
             item["italicAngle"] = float(update["italicAngle"])
+            _sync_italic_angle_metric(model, item, float(update["italicAngle"]))
         if "axes" in supplied:
             expected_tags = [str(axis.get("tag") or "") for axis in item.get("axes", [])]
             item["axes"] = _master_axes(update["axes"], expected_tags=expected_tags)

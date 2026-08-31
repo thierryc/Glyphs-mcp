@@ -28,14 +28,38 @@ A mechanical construction is a draft, never a finished italic.
 
 ## Construction lifecycle
 
-Generic `translate` and `set` operations may express positioning and explicit
-metrics, but an affine shear is not part of the typed operation registry. Use
-`execute_python(mode="staged_document")` for that unsupported construction on
-a detached font. Keep exact document/master/glyph/layer scope, return the
-immutable semantic preview, and apply it only through `apply_change`.
+Build the complete pass as one declarative `preview_change` transaction:
+
+1. Use consecutive generic `duplicate` operations for every target master.
+   Give each duplicate its final identity, name, collection index,
+   `italicAngle`, and axis coordinates. A master duplicate owns every master
+   layer plus LTR, RTL, vertical, and contextual kerning.
+2. Use generic `move` and `set` operations only for final order or canonical
+   values not already supplied by duplicate overrides.
+3. Apply one generic `transform` to the exact target layers. For a baseline
+   shear use matrix `[1, 0, tan(angle), 1, 0, 0]`, `origin=[0, 0]` (or
+   the designer-approved baseline pivot), `include=[paths, anchors,
+   components]`, `componentComposition=conjugate`, and
+   `alignmentPolicy=explicit_noncommuting`. Choose `quantizer=grid` only when
+   the requested source policy requires Glyphs grid snapping.
+4. Add after-constraints for master order and locations, layer coverage,
+   widths/origins, topology, compatibility, component references, alignment,
+   and kerning. Use semantic verification unless the user explicitly requests
+   the slower `strict_archive` diagnostic gate.
+5. Apply that immutable preview once through `apply_change`. Snapshot-backed
+   recovery is exceptional: it requires a preview created with
+   `transactionMode=snapshot_backed_recovery` and an explicit
+   `confirmRecovery=true` on apply. An indeterminate document is quarantined;
+   stop editing and follow the returned recovery instructions.
+
+Use `execute_python(mode="staged_document")` only when a required construction
+cannot be represented by `duplicate`, `move`, `set`, and `transform`. State the
+unsupported capability before falling back and retain the same exact scope and
+postconditions. Do not use staged Python merely to make a large affine batch.
 
 After application, use `read_document` to inspect the exact layers and proof
 strings. Check overshoot, rhythm, joins, counters, diagonals, punctuation,
 marks, components, interpolation, and spacing. Report the angle, pivot,
-translated distances, exceptions, and limitations. Never call `save_document`
-automatically.
+translated distances, `stageTimings`, equivalence evidence, normalized numeric
+deltas, rollback classification, exceptions, and limitations. Never call
+`save_document` automatically.

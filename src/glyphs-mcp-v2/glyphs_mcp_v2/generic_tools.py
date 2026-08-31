@@ -23,7 +23,12 @@ from .mechanics_registry import (
     OPERATION_DEFINITIONS,
     SCALAR_VALUE_FIELDS,
 )
-from .semantic import ChangeSet, diff_models, semantic_value_at
+from .semantic import (
+    ChangeSet,
+    diff_models,
+    rebase_canonical_model,
+    semantic_value_at,
+)
 
 
 OPERATION_KINDS = frozenset(OPERATION_DEFINITIONS)
@@ -48,6 +53,7 @@ class EntityReference:
     path: tuple[str, ...]
     value: Any
     parent: Mapping[str, str]
+    collection_index: Optional[int] = None
 
     def public_identity(self) -> dict[str, Any]:
         return {
@@ -229,18 +235,22 @@ def _root_references(
         return [EntityReference(kind, "font", ("font",), model.get("font", {}), {})]
     if kind == "glyph":
         result = []
-        for name, glyph in _collection_items(model.get("glyphs", {})):
+        for index, (name, glyph) in enumerate(_collection_items(model.get("glyphs", {}))):
             glyph_name = str(glyph.get("name") or name) if isinstance(glyph, Mapping) else name
             result.append(
-                EntityReference(kind, glyph_name, ("glyphs", name), glyph, {})
+                EntityReference(
+                    kind, glyph_name, ("glyphs", name), glyph, {}, index
+                )
             )
         return result
     root = _ROOT_COLLECTIONS.get(kind)
     if root is None:
         return []
     return [
-        EntityReference(kind, identity, (root, identity), item, {})
-        for identity, item in _collection_items(model.get(root, ()))
+        EntityReference(kind, identity, (root, identity), item, {}, index)
+        for index, (identity, item) in enumerate(
+            _collection_items(model.get(root, ()))
+        )
     ]
 
 
@@ -250,7 +260,9 @@ def _layer_references(model: Mapping[str, Any]) -> list[EntityReference]:
         glyph = glyph_ref.value
         if not isinstance(glyph, Mapping):
             continue
-        for layer_id, layer in _collection_items(glyph.get("layers", ())):
+        for index, (layer_id, layer) in enumerate(
+            _collection_items(glyph.get("layers", ()))
+        ):
             parent = {
                 "glyphName": glyph_ref.identity,
                 "masterId": str(layer.get("masterId") or "")
@@ -264,6 +276,7 @@ def _layer_references(model: Mapping[str, Any]) -> list[EntityReference]:
                     glyph_ref.path + ("layers", layer_id),
                     layer,
                     parent,
+                    index,
                 )
             )
     return result
@@ -288,7 +301,9 @@ def _nested_references(
                 path = shape.get("value")
                 if not isinstance(path, Mapping):
                     continue
-                for node_id, node in _collection_items(path.get("nodes", ())):
+                for index, (node_id, node) in enumerate(
+                    _collection_items(path.get("nodes", ()))
+                ):
                     result.append(
                         EntityReference(
                             "node",
@@ -301,12 +316,13 @@ def _nested_references(
                                 "layerId": layer_ref.identity,
                                 "shapeId": shape_id,
                             },
+                            index,
                         )
                     )
             continue
         else:
             continue
-        for identity, item in _collection_items(source):
+        for index, (identity, item) in enumerate(_collection_items(source)):
             result.append(
                 EntityReference(
                     kind,
@@ -317,6 +333,7 @@ def _nested_references(
                         **dict(layer_ref.parent),
                         "layerId": layer_ref.identity,
                     },
+                    index,
                 )
             )
     return result
@@ -690,6 +707,14 @@ def project_reference(
         if field == "canonicalPath":
             values[field] = list(reference.path)
             provenance[field] = "canonical"
+            continue
+        if field == "collection.index":
+            values[field] = reference.collection_index
+            provenance[field] = (
+                "canonical" if reference.collection_index is not None else "unavailable"
+            )
+            if reference.collection_index is None:
+                missing.append(field)
             continue
         if field == "ownership":
             values[field] = dict(reference.parent)
@@ -1309,6 +1334,323 @@ def _translate_reference(
     return touched
 
 
+_AFFINE_EPSILON = 1e-12
+
+
+def _matrix_values(value: Any, *, name: str = "transform matrix") -> tuple[float, ...]:
+    if not isinstance(value, (list, tuple)) or len(value) != 6:
+        raise ValueError("{} must contain six finite numbers".format(name))
+    return tuple(float(_finite_number(item, name=name)) for item in value)
+
+
+def _matrix_multiply(
+    left: Sequence[float], right: Sequence[float]
+) -> tuple[float, float, float, float, float, float]:
+    la, lb, lc, ld, ltx, lty = left
+    ra, rb, rc, rd, rtx, rty = right
+    return (
+        la * ra + lc * rb,
+        lb * ra + ld * rb,
+        la * rc + lc * rd,
+        lb * rc + ld * rd,
+        la * rtx + lc * rty + ltx,
+        lb * rtx + ld * rty + lty,
+    )
+
+
+def _matrix_inverse(
+    value: Sequence[float],
+) -> tuple[float, float, float, float, float, float]:
+    a, b, c, d, tx, ty = value
+    determinant = a * d - b * c
+    if abs(determinant) <= _AFFINE_EPSILON:
+        raise ValueError("conjugate transforms require an invertible matrix")
+    return (
+        d / determinant,
+        -b / determinant,
+        -c / determinant,
+        a / determinant,
+        (c * ty - d * tx) / determinant,
+        (b * tx - a * ty) / determinant,
+    )
+
+
+def _matrix_about_origin(
+    value: Sequence[float], origin: Any
+) -> tuple[float, float, float, float, float, float]:
+    if isinstance(origin, Mapping):
+        raw_x, raw_y = origin.get("x", 0), origin.get("y", 0)
+    elif isinstance(origin, (list, tuple)) and len(origin) == 2:
+        raw_x, raw_y = origin
+    else:
+        raise ValueError("transform.origin must contain two finite numbers")
+    ox = float(_finite_number(raw_x, name="transform origin x"))
+    oy = float(_finite_number(raw_y, name="transform origin y"))
+    return _matrix_multiply(
+        (1.0, 0.0, 0.0, 1.0, ox, oy),
+        _matrix_multiply(
+            value,
+            (1.0, 0.0, 0.0, 1.0, -ox, -oy),
+        ),
+    )
+
+
+def _matrices_close(left: Sequence[float], right: Sequence[float]) -> bool:
+    return all(
+        math.isclose(a, b, rel_tol=1e-12, abs_tol=_AFFINE_EPSILON)
+        for a, b in zip(left, right)
+    )
+
+
+def _clean_float(value: float) -> int | float:
+    if abs(value) <= _AFFINE_EPSILON:
+        return 0
+    nearest = round(value)
+    if math.isclose(value, nearest, rel_tol=0.0, abs_tol=_AFFINE_EPSILON):
+        return int(nearest)
+    return float(value)
+
+
+def _decompose_component_matrix(
+    value: Sequence[float],
+) -> dict[str, Any]:
+    """Return Glyphs' saved component decomposition for one affine matrix.
+
+    The representation is intentionally deterministic: vertical slant is zero,
+    reflections are carried by the y scale, and horizontal slant owns the
+    remaining shear.  This spans every nonsingular two-dimensional matrix and
+    reconstructs the exact matrix within normal IEEE-754 round-trip precision.
+    """
+
+    a, b, c, d, tx, ty = value
+    scale_x = math.hypot(a, b)
+    determinant = a * d - b * c
+    if scale_x <= _AFFINE_EPSILON or abs(determinant) <= _AFFINE_EPSILON:
+        raise ValueError("component transforms must remain invertible")
+    cosine = a / scale_x
+    sine = b / scale_x
+    scale_y = determinant / scale_x
+    horizontal_slant = (c * cosine + d * sine) / scale_y
+    return {
+        "position": [_clean_float(tx), _clean_float(ty)],
+        "scale": [_clean_float(scale_x), _clean_float(scale_y)],
+        "angle": _clean_float(math.degrees(math.atan2(sine, cosine))),
+        "slant": [
+            _clean_float(math.degrees(math.atan(horizontal_slant))),
+            0,
+        ],
+    }
+
+
+def _transform_xy(
+    x_value: Any,
+    y_value: Any,
+    matrix: Sequence[float],
+    model: Mapping[str, Any],
+    quantizer: str,
+) -> tuple[int | float, int | float]:
+    x = float(_finite_number(x_value, name="transform x"))
+    y = float(_finite_number(y_value, name="transform y"))
+    a, b, c, d, tx, ty = matrix
+    transformed_x = _quantize(a * x + c * y + tx, model, quantizer)
+    transformed_y = _quantize(b * x + d * y + ty, model, quantizer)
+    return transformed_x, transformed_y
+
+
+def _transform_node(
+    node: MutableMapping[str, Any],
+    matrix: Sequence[float],
+    model: Mapping[str, Any],
+    quantizer: str,
+) -> list[tuple[str, ...]]:
+    x, y = _transform_xy(node.get("x"), node.get("y"), matrix, model, quantizer)
+    node["x"], node["y"] = x, y
+    return [("x",), ("y",)]
+
+
+def _transform_position(
+    value: MutableMapping[str, Any],
+    matrix: Sequence[float],
+    model: Mapping[str, Any],
+    quantizer: str,
+) -> list[tuple[str, ...]]:
+    position = value.get("position")
+    if not isinstance(position, (list, tuple)) or len(position) != 2:
+        raise ValueError("transform target position is incomplete")
+    x, y = _transform_xy(position[0], position[1], matrix, model, quantizer)
+    value["position"] = [x, y]
+    return [("position",)]
+
+
+def _transform_component(
+    value: MutableMapping[str, Any],
+    matrix: Sequence[float],
+    model: Mapping[str, Any],
+    quantizer: str,
+    composition: str,
+    alignment_policy: str,
+) -> list[tuple[str, ...]]:
+    current = _affine_transform(value)
+    if current is None:
+        raise ValueError("component has no complete affine decomposition")
+    if composition == "prepend":
+        transformed = _matrix_multiply(matrix, current)
+    elif composition == "append":
+        transformed = _matrix_multiply(current, matrix)
+    elif composition == "conjugate":
+        transformed = _matrix_multiply(
+            _matrix_multiply(matrix, current), _matrix_inverse(matrix)
+        )
+    elif composition == "unchanged":
+        transformed = tuple(current)
+    else:
+        raise ValueError("componentComposition is unsupported")
+
+    touched: list[tuple[str, ...]] = []
+    if composition != "unchanged":
+        decomposed = _decompose_component_matrix(transformed)
+        position = decomposed["position"]
+        position[0] = _quantize(position[0], model, quantizer)
+        position[1] = _quantize(position[1], model, quantizer)
+        for field_name in ("position", "scale", "angle", "slant"):
+            value[field_name] = decomposed[field_name]
+            touched.append((field_name,))
+
+    alignment = int(value.get("alignment", -1))
+    make_explicit = alignment_policy == "explicit_all"
+    if alignment_policy == "explicit_noncommuting":
+        make_explicit = not _matrices_close(
+            _matrix_multiply(matrix, current),
+            _matrix_multiply(current, matrix),
+        )
+    elif alignment_policy not in {"preserve", "explicit_all"}:
+        raise ValueError("alignmentPolicy is unsupported")
+    if make_explicit and alignment != -1:
+        value["alignment"] = -1
+        touched.append(("alignment",))
+    return touched
+
+
+def _transform_shape(
+    shape: MutableMapping[str, Any],
+    matrix: Sequence[float],
+    model: Mapping[str, Any],
+    quantizer: str,
+    composition: str,
+    alignment_policy: str,
+) -> list[tuple[str, ...]]:
+    kind = str(shape.get("kind") or "")
+    value = shape.get("value")
+    if not isinstance(value, MutableMapping):
+        raise ValueError("shape value must be a writable object")
+    if kind == "path":
+        touched: list[tuple[str, ...]] = []
+        for node_id, node in _collection_items(value.get("nodes", ())):
+            if not isinstance(node, MutableMapping):
+                raise ValueError("path nodes must be writable objects")
+            touched.extend(
+                ("value", "nodes", node_id) + path
+                for path in _transform_node(node, matrix, model, quantizer)
+            )
+        return touched
+    if kind == "component":
+        return [
+            ("value",) + path
+            for path in _transform_component(
+                value,
+                matrix,
+                model,
+                quantizer,
+                composition,
+                alignment_policy,
+            )
+        ]
+    raise ValueError("transform supports only path and component shapes")
+
+
+def _transform_layer(
+    layer: MutableMapping[str, Any],
+    matrix: Sequence[float],
+    model: Mapping[str, Any],
+    quantizer: str,
+    include: Sequence[str],
+    composition: str,
+    alignment_policy: str,
+) -> list[tuple[str, ...]]:
+    requested = set(include)
+    if not requested or not requested.issubset({"paths", "anchors", "components"}):
+        raise ValueError("transform.include contains an unsupported geometry kind")
+    touched: list[tuple[str, ...]] = []
+    for shape_id, shape in _collection_items(layer.get("shapes", ())):
+        if not isinstance(shape, MutableMapping):
+            raise ValueError("layer shapes must be writable objects")
+        kind = str(shape.get("kind") or "")
+        if kind == "path" and "paths" in requested:
+            touched.extend(
+                ("shapes", shape_id) + path
+                for path in _transform_shape(
+                    shape, matrix, model, quantizer, composition, alignment_policy
+                )
+            )
+        elif kind == "component" and "components" in requested:
+            touched.extend(
+                ("shapes", shape_id) + path
+                for path in _transform_shape(
+                    shape, matrix, model, quantizer, composition, alignment_policy
+                )
+            )
+    if "anchors" in requested:
+        for anchor_id, anchor in _collection_items(layer.get("anchors", ())):
+            if not isinstance(anchor, MutableMapping):
+                raise ValueError("layer anchors must be writable objects")
+            touched.extend(
+                ("anchors", anchor_id) + path
+                for path in _transform_position(anchor, matrix, model, quantizer)
+            )
+    return touched
+
+
+def _transform_reference(
+    reference: EntityReference,
+    matrix: Sequence[float],
+    model: Mapping[str, Any],
+    quantizer: str,
+    include: Sequence[str],
+    composition: str,
+    alignment_policy: str,
+) -> list[tuple[str, ...]]:
+    if not isinstance(reference.value, MutableMapping):
+        raise ValueError("transform target is not writable geometry")
+    if reference.kind == "layer":
+        touched = _transform_layer(
+            reference.value,
+            matrix,
+            model,
+            quantizer,
+            include,
+            composition,
+            alignment_policy,
+        )
+    elif reference.kind == "shape":
+        touched = _transform_shape(
+            reference.value,
+            matrix,
+            model,
+            quantizer,
+            composition,
+            alignment_policy,
+        )
+    elif reference.kind == "node":
+        touched = _transform_node(reference.value, matrix, model, quantizer)
+    elif reference.kind == "anchor":
+        touched = _transform_position(reference.value, matrix, model, quantizer)
+    else:
+        raise ValueError("{} entities have no affine geometry".format(reference.kind))
+    if not touched:
+        raise ValueError("transform target contains no selected geometry")
+    return touched
+
+
 def _collection_for_insert(
     candidate: MutableMapping[str, Any], target: EntityReference, field: str
 ) -> Any:
@@ -1357,6 +1699,73 @@ def _merge_execution_context(
             if key in target and target[key] != value:
                 raise ValueError("conflicting execution context")
             target[str(key)] = copy.deepcopy(value)
+
+
+def _copy_on_write_candidate(
+    model: Mapping[str, Any], references: Sequence[EntityReference]
+) -> MutableMapping[str, Any]:
+    """Detach only roots/layers addressed by one direct generic operation."""
+
+    if any(not reference.path for reference in references):
+        return copy.deepcopy(dict(model))
+    result: MutableMapping[str, Any] = dict(model)
+    glyph_references = [
+        reference
+        for reference in references
+        if reference.path and reference.path[0] == "glyphs"
+    ]
+    if glyph_references:
+        source_glyphs = model.get("glyphs", {})
+        if not isinstance(source_glyphs, Mapping):
+            raise ValueError("glyphs must be a canonical mapping")
+        glyphs: MutableMapping[str, Any] = dict(source_glyphs)
+        result["glyphs"] = glyphs
+        by_glyph: dict[str, list[EntityReference]] = {}
+        for reference in glyph_references:
+            if len(reference.path) < 2:
+                raise ValueError("glyph operation path is incomplete")
+            by_glyph.setdefault(str(reference.path[1]), []).append(reference)
+        for glyph_name, scoped in by_glyph.items():
+            source_glyph = source_glyphs.get(glyph_name)
+            if not isinstance(source_glyph, Mapping):
+                raise ValueError("glyph target disappeared")
+            if any(reference.kind == "glyph" for reference in scoped):
+                glyphs[glyph_name] = copy.deepcopy(dict(source_glyph))
+                continue
+            glyph = dict(source_glyph)
+            source_layers = source_glyph.get("layers", ())
+            layer_ids = {
+                str(reference.path[3])
+                for reference in scoped
+                if len(reference.path) >= 4
+                and reference.path[2] == "layers"
+            }
+            if isinstance(source_layers, Mapping):
+                layers: Any = dict(source_layers)
+                for layer_id in layer_ids:
+                    if layer_id not in source_layers:
+                        raise ValueError("layer target disappeared")
+                    layers[layer_id] = copy.deepcopy(source_layers[layer_id])
+            elif isinstance(source_layers, (list, tuple)):
+                layers = list(source_layers)
+                for layer_id in layer_ids:
+                    index = find_entity_index(layers, layer_id)
+                    if index is None:
+                        raise ValueError("layer target disappeared")
+                    layers[index] = copy.deepcopy(layers[index])
+            else:
+                raise ValueError("glyph layers must be a canonical collection")
+            glyph["layers"] = layers
+            glyphs[glyph_name] = glyph
+    for root in {
+        str(reference.path[0])
+        for reference in references
+        if reference.path and reference.path[0] != "glyphs"
+    }:
+        if root not in model:
+            raise ValueError("operation root disappeared")
+        result[root] = copy.deepcopy(model[root])
+    return result
 
 
 def _structural_lifecycle_build(
@@ -1432,6 +1841,81 @@ def _numeric_value(value: Any) -> bool:
     return isinstance(value, (int, float, Decimal)) and not isinstance(value, bool)
 
 
+def _batched_master_duplicates(
+    candidate: Mapping[str, Any],
+    operations: Sequence[Mapping[str, Any]],
+    start: int,
+) -> tuple[Any, tuple[dict[str, Any], ...], int] | None:
+    """Build one consecutive master-duplication run through one registry pass."""
+
+    updates: list[dict[str, Any]] = []
+    sources: list[tuple[Mapping[str, Any], EntityReference]] = []
+    cursor = start
+    while cursor < len(operations):
+        operation = _mapping(operations[cursor], name="operation")
+        if str(operation.get("op") or "") != "duplicate":
+            break
+        selector = _mapping(operation.get("target"), name="operation.target")
+        references = resolve_selector(candidate, selector)
+        if len(references) != 1 or references[0].kind != "master":
+            break
+        new_id = str(operation.get("newId") or "")
+        if not new_id:
+            raise ValueError("duplicate requires one source and newId")
+        overrides = operation.get("overrides") or {}
+        if not isinstance(overrides, Mapping):
+            raise ValueError("duplicate.overrides must be an object")
+        unsupported = set(overrides) - {"name", "italicAngle", "axes"}
+        if unsupported:
+            raise ValueError(
+                "master duplicate overrides are limited to name, italicAngle, and axes"
+            )
+        update: dict[str, Any] = {
+            "action": "duplicate",
+            "sourceMasterId": references[0].identity,
+            "masterId": new_id,
+        }
+        for name in ("name", "italicAngle", "axes"):
+            if name in overrides:
+                update[name] = copy.deepcopy(overrides[name])
+        if operation.get("index") is not None:
+            update["index"] = int(operation["index"])
+        updates.append(update)
+        sources.append((operation, references[0]))
+        cursor += 1
+    if len(updates) < 2:
+        return None
+
+    from .structural_registry import build_master_updates
+
+    build = build_master_updates(candidate, updates)
+    normalized: list[dict[str, Any]] = []
+    for offset, ((operation, source), update) in enumerate(zip(sources, updates)):
+        new_id = str(update["masterId"])
+        paths = [
+            list(change.path)
+            for change in build.change_set.changes
+            if new_id in change.path or change.path == ("masters", ORDER_TOKEN)
+        ]
+        normalized.append(
+            {
+                "index": start + offset,
+                "op": "duplicate",
+                "target": copy.deepcopy(dict(operation["target"])),
+                "resolvedPaths": paths,
+                "newId": new_id,
+                "overrides": copy.deepcopy(dict(operation.get("overrides") or {})),
+                **(
+                    {"index": int(operation["index"])}
+                    if operation.get("index") is not None
+                    else {}
+                ),
+                "batchSize": len(updates),
+            }
+        )
+    return build, tuple(normalized), cursor
+
+
 def build_change_set(
     model: Mapping[str, Any], operations: Sequence[Mapping[str, Any]]
 ) -> GenericMutationBuild:
@@ -1439,11 +1923,13 @@ def build_change_set(
 
     if not operations:
         raise ValueError("preview_change requires at least one operation")
-    candidate: MutableMapping[str, Any] = copy.deepcopy(dict(model))
+    candidate: Mapping[str, Any] = model
     normalized: list[dict[str, Any]] = []
     capabilities: set[str] = set()
     execution_context: dict[str, Any] = {}
-    for index, raw in enumerate(operations):
+    index = 0
+    while index < len(operations):
+        raw = operations[index]
         operation = _mapping(raw, name="operation")
         kind = str(operation.get("op") or "")
         if kind not in OPERATION_KINDS:
@@ -1465,10 +1951,25 @@ def build_change_set(
             raise ValueError(
                 "master and layer removals require one exact target per operation"
             )
+
+        batch = _batched_master_duplicates(candidate, operations, index)
+        if batch is not None:
+            structural_batch, batch_normalized, next_index = batch
+            candidate = structural_batch.change_set.apply(candidate)
+            capabilities.update(structural_batch.capabilities)
+            _merge_execution_context(
+                execution_context, structural_batch.execution_context
+            )
+            normalized.extend(batch_normalized)
+            index = next_index
+            continue
         resolved_paths: list[list[str]] = []
         normalized_values: dict[str, Any] = {}
 
         structural = _structural_lifecycle_build(candidate, operation, references)
+        if structural is None:
+            candidate = _copy_on_write_candidate(candidate, references)
+            references = resolve_selector(candidate, selector)
         if structural is not None:
             candidate = structural.change_set.apply(candidate)
             capabilities.update(structural.capabilities)
@@ -1518,26 +2019,61 @@ def build_change_set(
             if not x_number and not y_number:
                 raise ValueError("translation delta must change at least one axis")
             for reference in references:
-                refreshed = resolve_selector(
-                    candidate,
-                    {
-                        "entity": reference.kind,
-                        "ids": [reference.identity],
-                        "parent": dict(reference.parent),
-                    },
-                )
-                if len(refreshed) != 1 or not isinstance(
-                    refreshed[0].value, MutableMapping
-                ):
+                if not isinstance(reference.value, MutableMapping):
                     raise ValueError("translation target disappeared")
                 resolved_paths.extend(
-                    list(refreshed[0].path + path)
+                    list(reference.path + path)
                     for path in _translate_reference(
-                        refreshed[0], x_number, y_number
+                        reference, x_number, y_number
                     )
                 )
             normalized_values.update(
                 {"delta": {"x": x, "y": y}, "quantizer": quantizer}
+            )
+        elif kind == "transform":
+            quantizer = str(operation.get("quantizer") or "exact")
+            origin = operation.get("origin", [0, 0])
+            matrix = _matrix_about_origin(
+                _matrix_values(operation.get("matrix")),
+                origin,
+            )
+            include_value = operation.get("include") or (
+                "paths", "anchors", "components"
+            )
+            if not isinstance(include_value, (list, tuple)):
+                raise ValueError("transform.include must be a list")
+            include = tuple(dict.fromkeys(str(value) for value in include_value))
+            composition = str(operation.get("componentComposition") or "prepend")
+            alignment_policy = str(operation.get("alignmentPolicy") or "preserve")
+            if composition == "conjugate":
+                _matrix_inverse(matrix)
+            for reference in references:
+                resolved_paths.extend(
+                    list(reference.path + path)
+                    for path in _transform_reference(
+                        reference,
+                        matrix,
+                        candidate,
+                        quantizer,
+                        include,
+                        composition,
+                        alignment_policy,
+                    )
+                )
+            normalized_values.update(
+                {
+                    "matrix": [_clean_float(value) for value in matrix],
+                    "origin": copy.deepcopy(list(origin))
+                    if isinstance(origin, (list, tuple))
+                    else [
+                        copy.deepcopy(origin.get("x", 0)),
+                        copy.deepcopy(origin.get("y", 0)),
+                    ],
+                    "quantizer": quantizer,
+                    "include": list(include),
+                    "componentComposition": composition,
+                    "alignmentPolicy": alignment_policy,
+                }
             )
         elif kind == "remove":
             for reference in sorted(references, key=lambda ref: ref.path, reverse=True):
@@ -1655,8 +2191,16 @@ def build_change_set(
                 **normalized_values,
             }
         )
+        index += 1
+    candidate = rebase_canonical_model(model, candidate)
+    if "master_lifecycle" in capabilities:
+        from .mutation import master_lifecycle_diff
+
+        final_change_set = master_lifecycle_diff(model, candidate)
+    else:
+        final_change_set = diff_models(model, candidate)
     return GenericMutationBuild(
-        change_set=diff_models(model, candidate),
+        change_set=final_change_set,
         normalized_operations=tuple(normalized),
         capabilities=tuple(sorted(capabilities)),
         execution_context=execution_context,

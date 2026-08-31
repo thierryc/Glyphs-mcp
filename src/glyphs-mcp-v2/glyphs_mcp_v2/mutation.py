@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import math
 import re
 import time
 from dataclasses import dataclass, field
@@ -1044,6 +1045,7 @@ class VerifiedMutationPlan:
     )
     verification_constraints: tuple[Mapping[str, Any], ...] = ()
     expected_constraint_evidence: Mapping[str, Any] = field(default_factory=dict)
+    verification_evidence: Mapping[str, Any] = field(default_factory=dict)
     coverage: CanonicalCoverage = CanonicalCoverage.complete()
     stage_timings: Mapping[str, float] = field(
         default_factory=dict, compare=False, repr=False
@@ -1077,15 +1079,116 @@ class RequestedEffectMismatchError(ValueError):
         }
 
 
+class VerificationEquivalenceError(ValueError):
+    """A diagnostic verification mode found an unregistered native delta."""
+
+    def __init__(self, evidence: Mapping[str, Any]) -> None:
+        self.evidence = copy.deepcopy(dict(evidence))
+        super().__init__("strict native-archive equivalence was not proved")
+
+    def to_public_dict(self) -> dict[str, Any]:
+        return copy.deepcopy(dict(self.evidence))
+
+
+def _registered_canonical_equivalent(
+    path: tuple[str, ...],
+    requested: Any,
+    observed: Any,
+    normalized: list[dict[str, Any]],
+) -> bool:
+    if requested == observed:
+        return True
+    if isinstance(requested, Mapping) and isinstance(observed, Mapping):
+        if set(requested) != set(observed):
+            return False
+        automatic_component = bool(
+            "shapes" in path
+            and "alignment" in requested
+            and int(requested.get("alignment", -1)) != -1
+        )
+        for key in requested:
+            child_path = path + (str(key),)
+            if (
+                automatic_component
+                and key == "position"
+                and requested[key] != observed[key]
+            ):
+                normalized.append(
+                    {
+                        "path": list(child_path),
+                        "direct": copy.deepcopy(requested[key]),
+                        "observed": copy.deepcopy(observed[key]),
+                        "rule": "automatic_alignment_derived_position",
+                    }
+                )
+                continue
+            if not _registered_canonical_equivalent(
+                child_path, requested[key], observed[key], normalized
+            ):
+                return False
+        return True
+    if isinstance(requested, (list, tuple)) and isinstance(
+        observed, (list, tuple)
+    ):
+        return len(requested) == len(observed) and all(
+            _registered_canonical_equivalent(
+                path + (str(index),), left, right, normalized
+            )
+            for index, (left, right) in enumerate(zip(requested, observed))
+        )
+    if (
+        isinstance(requested, (int, float))
+        and not isinstance(requested, bool)
+        and isinstance(observed, (int, float))
+        and not isinstance(observed, bool)
+        and "shapes" in path
+        and set(path[-3:]).intersection(
+            {"position", "scale", "angle", "slant"}
+        )
+    ):
+        left, right = float(requested), float(observed)
+        if math.isfinite(left) and math.isfinite(right):
+            absolute_delta = abs(left - right)
+            ulp = max(math.ulp(left), math.ulp(right), math.ulp(1.0))
+            if absolute_delta <= max(1e-12, 16 * ulp):
+                normalized.append(
+                    {
+                        "path": list(path),
+                        "direct": left,
+                        "observed": right,
+                        "absoluteDelta": absolute_delta,
+                        "maximumUlps": absolute_delta / ulp,
+                        "rule": "component_decomposition_round_trip",
+                    }
+                )
+                return True
+    return False
+
+
 def _requested_effect_mismatches(
-    requested: ChangeSet, observed_after: Mapping[str, Any]
-) -> tuple[Mapping[str, Any], ...]:
+    requested: ChangeSet,
+    observed_after: Mapping[str, Any],
+    *,
+    semantic_equivalence: bool = False,
+) -> tuple[tuple[Mapping[str, Any], ...], tuple[Mapping[str, Any], ...]]:
     mismatches: list[Mapping[str, Any]] = []
+    normalized: list[Mapping[str, Any]] = []
     for change in requested.changes:
         present, value = semantic_value_at(observed_after, change.path)
         if present == change.after_present and (
             not present or value == change.after
         ):
+            continue
+        local_normalized: list[dict[str, Any]] = []
+        if (
+            semantic_equivalence
+            and present
+            and change.after_present
+            and _registered_canonical_equivalent(
+                change.path, change.after, value, local_normalized
+            )
+        ):
+            normalized.extend(local_normalized)
             continue
         mismatches.append(
             {
@@ -1098,7 +1201,7 @@ def _requested_effect_mismatches(
                 "observed": copy.deepcopy(value) if present else "<missing>",
             }
         )
-    return tuple(mismatches)
+    return tuple(mismatches), tuple(normalized)
 
 
 def _unicode_owners(model: Mapping[str, Any]) -> dict[str, frozenset[str]]:
@@ -1233,8 +1336,16 @@ class MutationPlanner:
         replay_replacements: tuple[tuple[str, ...], ...] = ()
         simulation_observations: Mapping[tuple[str, str], Mapping[str, Any]] = {}
         simulation_effective_metadata: Mapping[str, Mapping[str, Any]] = {}
-        normalized_capabilities = tuple(sorted(set(str(value) for value in capabilities)))
         normalized_context = copy.deepcopy(dict(execution_context or {}))
+        verification_evidence: Mapping[str, Any] = {
+            "mode": str(normalized_context.get("verificationMode") or "semantic"),
+            "canonicalEquivalent": True,
+            "equivalenceClass": "exact_canonical",
+            "nativeArchiveEquivalent": None,
+            "normalizedPaths": [],
+            "maximumAbsoluteDelta": 0.0,
+        }
+        normalized_capabilities = tuple(sorted(set(str(value) for value in capabilities)))
         verified_simulator = getattr(
             self._host, "simulate_verified_change_set", None
         )
@@ -1290,6 +1401,9 @@ class MutationPlanner:
             )
             simulation_effective_metadata = copy.deepcopy(
                 dict(simulation.get("effectiveMetadata") or {})
+            )
+            verification_evidence = copy.deepcopy(
+                dict(simulation.get("verificationEvidence") or verification_evidence)
             )
         elif required_after_model is not None and callable(reconciler):
             simulation_started = time.perf_counter_ns()
@@ -1361,11 +1475,36 @@ class MutationPlanner:
                 required_after_model,
                 expected_after,
             )
-        requested_mismatches = _requested_effect_mismatches(
-            requested_change_set, expected_after
+        requested_mismatches, normalized_requested = _requested_effect_mismatches(
+            requested_change_set,
+            expected_after,
+            semantic_equivalence=(
+                str(normalized_context.get("verificationMode") or "semantic")
+                == "semantic"
+            ),
         )
         if requested_mismatches:
             raise RequestedEffectMismatchError(requested_mismatches)
+        if normalized_requested:
+            maximum_delta = max(
+                (
+                    float(item.get("absoluteDelta") or 0.0)
+                    for item in normalized_requested
+                ),
+                default=0.0,
+            )
+            verification_evidence = {
+                **dict(verification_evidence),
+                "canonicalEquivalent": True,
+                "equivalenceClass": "registered_normalization",
+                "normalizedPaths": [
+                    copy.deepcopy(dict(item))
+                    for item in normalized_requested[:100]
+                ],
+                "normalizedPathCount": len(normalized_requested),
+                "normalizedPathsTruncated": len(normalized_requested) > 100,
+                "maximumAbsoluteDelta": maximum_delta,
+            }
         if dirty_state_intent == "forward":
             _reject_new_duplicate_unicodes(before, expected_after)
         # The requested patch already proves the exact canonical target. When
@@ -1412,6 +1551,7 @@ class MutationPlanner:
             execution_context=normalized_context,
             expected_observations=simulation_observations,
             expected_effective_metadata=simulation_effective_metadata,
+            verification_evidence=verification_evidence,
             coverage=coverage or CanonicalCoverage.complete(),
             stage_timings=stage_timings,
         )
@@ -1427,6 +1567,7 @@ __all__ = [
     "MutationRejected",
     "MutationResultContext",
     "RequestedEffectMismatchError",
+    "VerificationEquivalenceError",
     "CANONICAL_LIFECYCLE_CAPABILITY",
     "LAYER_LIFECYCLE_CAPABILITY",
     "lifecycle_capabilities",

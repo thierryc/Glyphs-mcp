@@ -403,6 +403,73 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         self.assertEqual(host.clone_calls, 1)
         self.assertEqual(host.apply_calls, 0)
 
+    def test_semantic_plan_accepts_only_registered_component_round_trip(self) -> None:
+        class RoundTripHost(_DerivedHost):
+            delta = 7e-15
+
+            def simulate_change_set(self, document_id, change_set):
+                self.clone_calls += 1
+                after = self._derive(change_set.apply(self.model))
+                component = after["glyphs"]["A"]["layers"]["m0"]["shapes"][0]
+                component["value"]["angle"] += self.delta
+                return after
+
+        host = RoundTripHost()
+        host.model["glyphs"]["A"]["layers"]["m0"]["shapes"] = [
+            {
+                "id": "component:0",
+                "kind": "component",
+                "value": {
+                    "ref": "A",
+                    "position": [0, 0],
+                    "scale": [1, 1],
+                    "angle": 0.0,
+                    "slant": [0.0, 0.0],
+                    "alignment": -1,
+                },
+            }
+        ]
+        before = host.capture_model("doc_kernel")
+        requested_after = copy.deepcopy(before)
+        requested_after["glyphs"]["A"]["layers"]["m0"]["shapes"][0][
+            "value"
+        ]["angle"] = 12.0
+        requested = diff_models(before, requested_after)
+
+        semantic = MutationPlanner(host).plan(
+            document_id="doc_kernel",
+            expected_document_fingerprint=fingerprint_model(before),
+            requested_change_set=requested,
+            operation_id="op_semantic_round_trip",
+            execution_context={"verificationMode": "semantic"},
+        )
+        self.assertEqual(
+            semantic.verification_evidence["equivalenceClass"],
+            "registered_normalization",
+        )
+        self.assertEqual(
+            semantic.verification_evidence["normalizedPathCount"], 1
+        )
+
+        with self.assertRaisesRegex(ValueError, "did not preserve"):
+            MutationPlanner(host).plan(
+                document_id="doc_kernel",
+                expected_document_fingerprint=fingerprint_model(before),
+                requested_change_set=requested,
+                operation_id="op_strict_round_trip",
+                execution_context={"verificationMode": "strict_archive"},
+            )
+
+        host.delta = 1.0
+        with self.assertRaisesRegex(ValueError, "did not preserve"):
+            MutationPlanner(host).plan(
+                document_id="doc_kernel",
+                expected_document_fingerprint=fingerprint_model(before),
+                requested_change_set=requested,
+                operation_id="op_one_unit_change",
+                execution_context={"verificationMode": "semantic"},
+            )
+
     def test_plan_applies_once_and_verifies_complete_derived_readback(self) -> None:
         host = _DerivedHost()
         before = host.capture_model("doc_kernel")

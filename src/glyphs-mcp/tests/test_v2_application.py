@@ -283,7 +283,10 @@ class V2ApplicationTests(unittest.TestCase):
         )
         self.assertEqual(
             set(payload["data"]["registries"]["changeOperations"]),
-            {"set", "translate", "insert", "remove", "move", "duplicate"},
+            {
+                "set", "translate", "transform", "insert", "remove", "move",
+                "duplicate",
+            },
         )
         self.assertEqual(
             payload["data"]["registries"]["scalarValueFields"],

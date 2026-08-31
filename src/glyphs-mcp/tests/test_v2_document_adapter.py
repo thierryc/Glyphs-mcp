@@ -989,6 +989,53 @@ class _RecoveryHost(GlyphsDocumentHost):
 
 
 class V2DocumentAdapterTests(unittest.TestCase):
+    def test_native_copy_falls_back_after_wrapper_copy_failure(self) -> None:
+        duplicate = SimpleNamespace(marker="copy")
+
+        class CopySurface:
+            def copy(self):
+                raise RuntimeError("wrapper copy unavailable")
+
+            def mutableCopy(self):
+                return duplicate
+
+        self.assertIs(
+            document_adapter._copy_native_object(CopySurface(), kind="master"),
+            duplicate,
+        )
+
+    def test_native_copy_uses_keyed_archive_after_wrapper_fallbacks(self) -> None:
+        duplicate = SimpleNamespace(marker="archive")
+
+        class CopySurface:
+            def copy(self):
+                raise RuntimeError("copy unavailable")
+
+            def mutableCopy(self):
+                raise RuntimeError("mutable copy unavailable")
+
+            def mutableCopyWithZone_(self, _zone):
+                raise RuntimeError("zoned copy unavailable")
+
+        foundation = SimpleNamespace(
+            NSKeyedArchiver=SimpleNamespace(
+                archivedDataWithRootObject_requiringSecureCoding_error_=(
+                    lambda value, secure, error: (b"archive", None)
+                )
+            ),
+            NSKeyedUnarchiver=SimpleNamespace(
+                unarchiveTopLevelObjectWithData_error_=(
+                    lambda data, error: (duplicate, None)
+                )
+            ),
+        )
+        with mock.patch.dict(sys.modules, {"Foundation": foundation}):
+            copied = document_adapter._copy_native_object(
+                CopySurface(), kind="master"
+            )
+
+        self.assertIs(copied, duplicate)
+
     def test_open_edit_tab_resolves_all_layers_before_main_thread_open(self) -> None:
         font = _TransactionalFont()
         master = SimpleNamespace(id="m1")
@@ -8581,6 +8628,64 @@ class V2DocumentAdapterTests(unittest.TestCase):
             encode(explicit_master_default),
         )
         self.assertFalse(meaningful_master["equivalent"])
+
+    def test_native_archive_proof_accepts_only_registered_float_round_trip(self) -> None:
+        direct = {
+            "files": [
+                {
+                    "path": "glyphs/A.glyph",
+                    "value": {
+                        "layers": [
+                            {
+                                "shapes": [
+                                    {
+                                        "ref": "acute",
+                                        "angle": 12.0,
+                                        "slant": [3.0, 0.0],
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                }
+            ]
+        }
+        replay = copy.deepcopy(direct)
+        replay["files"][0]["value"]["layers"][0]["shapes"][0][
+            "angle"
+        ] += 7e-15
+        encode = lambda value: json.dumps(
+            value, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+
+        semantic = document_adapter._compare_native_archive_deltas(
+            encode(direct), encode(direct), encode(direct), encode(replay)
+        )
+        strict = document_adapter._compare_native_archive_deltas(
+            encode(direct),
+            encode(direct),
+            encode(direct),
+            encode(replay),
+            semantic_float_equivalence=False,
+        )
+
+        self.assertTrue(semantic["equivalent"])
+        self.assertEqual(semantic["normalizedMismatchCount"], 1)
+        self.assertLessEqual(semantic["maximumAbsoluteDelta"], 1e-12)
+        self.assertFalse(strict["equivalent"])
+
+        replay["files"][0]["value"]["layers"][0]["shapes"][0]["angle"] = 13
+        one_degree = document_adapter._compare_native_archive_deltas(
+            encode(direct), encode(direct), encode(direct), encode(replay)
+        )
+        self.assertFalse(one_degree["equivalent"])
+
+        private = copy.deepcopy(direct)
+        private["files"][0]["value"]["privateState"] = 1
+        unknown = document_adapter._compare_native_archive_deltas(
+            encode(direct), encode(direct), encode(direct), encode(private)
+        )
+        self.assertFalse(unknown["equivalent"])
 
     def test_native_archive_equivalence_is_pairwise_for_wrapped_omission_defaults(
         self,

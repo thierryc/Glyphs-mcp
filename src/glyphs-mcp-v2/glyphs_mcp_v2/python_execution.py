@@ -1657,6 +1657,15 @@ class PythonExecutionService:
                     or len(list(archive_comparison.get("mismatchLocations") or [])) > 100,
                     "directDeltaCount": int(archive_comparison.get("directDeltaCount") or 0),
                     "replayDeltaCount": int(archive_comparison.get("replayDeltaCount") or 0),
+                    "normalizedMismatchCount": int(
+                        archive_comparison.get("normalizedMismatchCount") or 0
+                    ),
+                    "normalizedPaths": list(
+                        archive_comparison.get("normalizedPaths") or []
+                    )[:100],
+                    "maximumAbsoluteDelta": float(
+                        archive_comparison.get("maximumAbsoluteDelta") or 0
+                    ),
                 }
                 if isinstance(archive_comparison, Mapping)
                 else {
@@ -1867,6 +1876,27 @@ class PythonExecutionService:
                         "nativeArchiveEquivalent": True,
                         "semanticPatchReproducible": True,
                     },
+                },
+                "verification": {
+                    "mode": "semantic",
+                    "canonicalEquivalent": True,
+                    "nativeArchiveEquivalent": True,
+                    "equivalenceClass": (
+                        "registered_normalization"
+                        if isinstance(archive_comparison, Mapping)
+                        and int(archive_comparison.get("normalizedMismatchCount") or 0)
+                        else "exact"
+                    ),
+                    "normalizedPaths": list(
+                        archive_comparison.get("normalizedPaths") or []
+                    )[:100]
+                    if isinstance(archive_comparison, Mapping)
+                    else [],
+                    "maximumAbsoluteDelta": float(
+                        archive_comparison.get("maximumAbsoluteDelta") or 0
+                    )
+                    if isinstance(archive_comparison, Mapping)
+                    else 0,
                 },
                 "blockers": [],
                 "fontSaved": False,

@@ -18,6 +18,7 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
+from glyphs_mcp_v2.canonical_tree import CanonicalSnapshot  # noqa: E402
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
 from glyphs_mcp_v2.generic_tools import (  # noqa: E402
     build_change_set,
@@ -228,6 +229,14 @@ class _Host:
         self.model = copy.deepcopy(model)
         self.apply_calls = 0
         self.restore_calls = 0
+        self.recovery_calls = []
+        self.source_state = {
+            "kind": "glyphs",
+            "exists": True,
+            "readable": True,
+            "contentFingerprint": "sha256:source-before",
+            "filePath": "/private/source/test.glyphs",
+        }
 
     def capture_model(self, _document_id: str) -> dict:
         return copy.deepcopy(self.model)
@@ -239,6 +248,13 @@ class _Host:
     def restore_model(self, _document_id: str, model: dict) -> None:
         self.restore_calls += 1
         self.model = copy.deepcopy(model)
+
+    def create_recovery_copy(self, document_id: str, execution_id: str) -> str:
+        self.recovery_calls.append((document_id, execution_id))
+        return "/private/recovery/{}.glyphs".format(execution_id)
+
+    def capture_source_file_state(self, _document_id: str, include_model=False):
+        return copy.deepcopy(self.source_state)
 
     def inspect_layers(self, _document_id, glyph_names=(), **_kwargs):
         names = set(glyph_names)
@@ -279,6 +295,23 @@ class _ObservationDriftHost(_Host):
                 observations[key] = value
                 break
         return observations
+
+
+class _RecoveryFailureHost(_Host):
+    def __init__(self, model):
+        super().__init__(model)
+        self.opened_recovery = []
+
+    def apply_change_set(self, document_id, change_set):
+        super().apply_change_set(document_id, change_set)
+        self.model["glyphs"]["A"]["layers"][0]["width"] += 1
+
+    def restore_model(self, document_id, model):
+        self.restore_calls += 1
+        raise RuntimeError("restore failed")
+
+    def open_recovery_copy(self, path):
+        self.opened_recovery.append(path)
 
 
 class _RichObservationHost(_Host):
@@ -581,6 +614,141 @@ class V2SpacingGeometryTests(unittest.TestCase):
         layer = build.change_set.apply(model)["glyphs"]["acutecomb"]["layers"][0]
         self.assertEqual(layer["shapes"][0]["value"]["nodes"][0]["x"], -30)
 
+    def test_affine_shear_uses_pivot_grid_and_component_conjugation(self) -> None:
+        model = _model()
+        model["glyphs"]["A"]["layers"][0]["shapes"][1]["value"]["alignment"] = 0
+        build = build_change_set(
+            model,
+            [
+                {
+                    "op": "transform",
+                    "target": _selector(),
+                    "matrix": [1, 0, 0.5, 1, 0, 0],
+                    "origin": [0, 100],
+                    "quantizer": "grid",
+                    "include": ["paths", "anchors", "components"],
+                    "componentComposition": "conjugate",
+                    "alignmentPolicy": "explicit_noncommuting",
+                }
+            ],
+        )
+        layer = build.change_set.apply(model)["glyphs"]["A"]["layers"][0]
+
+        self.assertEqual(layer["shapes"][0]["value"]["nodes"][1]["x"], 750)
+        self.assertEqual(layer["anchors"][0]["position"], [550, 700])
+        component = layer["shapes"][1]["value"]
+        self.assertEqual(component["position"], [35, 30])
+        self.assertEqual(component["alignment"], -1)
+        self.assertEqual(build.normalized_operations[0]["origin"], [0, 100])
+
+    def test_affine_include_and_alignment_modes_are_explicit(self) -> None:
+        model = _model()
+        before_layer = copy.deepcopy(model["glyphs"]["A"]["layers"][0])
+        after = build_change_set(
+            model,
+            [
+                {
+                    "op": "transform",
+                    "target": _selector(),
+                    "matrix": [1, 0, 0.25, 1, 0, 0],
+                    "include": ["paths"],
+                    "componentComposition": "unchanged",
+                    "alignmentPolicy": "preserve",
+                }
+            ],
+        ).change_set.apply(model)
+        layer = after["glyphs"]["A"]["layers"][0]
+
+        self.assertNotEqual(layer["shapes"][0], before_layer["shapes"][0])
+        self.assertEqual(layer["shapes"][1], before_layer["shapes"][1])
+        self.assertEqual(layer["anchors"], before_layer["anchors"])
+
+    def test_affine_builder_retains_untouched_snapshot_glyph_shards(self) -> None:
+        snapshot = CanonicalSnapshot.from_model(_model())
+        source_x = snapshot["glyphs"]["A"]["layers"][0]["shapes"][0][
+            "value"
+        ]["nodes"][0]["x"]
+        build = build_change_set(
+            snapshot,
+            [
+                {
+                    "op": "transform",
+                    "target": _selector(),
+                    "matrix": [1, 0, 0.2, 1, 0, 0],
+                    "include": ["paths"],
+                }
+            ],
+        )
+        after = build.change_set.apply(snapshot)
+
+        self.assertEqual(
+            snapshot["glyphs"]["A"]["layers"][0]["shapes"][0]["value"][
+                "nodes"
+            ][0]["x"],
+            source_x,
+        )
+        self.assertGreaterEqual(after.reused_glyph_count, 1)
+
+    def test_affine_reflection_round_trips_and_singular_conjugation_refuses(self) -> None:
+        model = _model()
+        component = model["glyphs"]["A"]["layers"][0]["shapes"][1]["value"]
+        component["scale"] = [-1, 2]
+        transformed = build_change_set(
+            model,
+            [
+                {
+                    "op": "transform",
+                    "target": {
+                        "entity": "shape",
+                        "ids": ["shape:component:0"],
+                        "parent": {"glyphName": "A", "layerId": "A-master"},
+                    },
+                    "matrix": [1, 0, 0.2, 1, 3, 4],
+                    "componentComposition": "prepend",
+                }
+            ],
+        ).change_set.apply(model)
+        reference = resolve_selector(
+            transformed,
+            {
+                "entity": "shape",
+                "ids": ["shape:component:0"],
+                "parent": {"glyphName": "A", "layerId": "A-master"},
+            },
+        )[0]
+        matrix = project_reference(
+            reference, {"fields": ["geometry.transform"]}
+        )["values"]["geometry.transform"]
+        for observed, expected in zip(
+            matrix, [-1.0, 0.0, 0.4, 2.0, 29.0, 34.0]
+        ):
+            self.assertAlmostEqual(observed, expected, places=12)
+
+        with self.assertRaisesRegex(ValueError, "invertible"):
+            build_change_set(
+                model,
+                [
+                    {
+                        "op": "transform",
+                        "target": _selector(),
+                        "matrix": [0, 0, 0, 1, 0, 0],
+                        "componentComposition": "conjugate",
+                    }
+                ],
+            )
+
+    def test_collection_index_projection_reports_canonical_order(self) -> None:
+        model = _model()
+        model["masters"].append({"id": "M2", "name": "Bold", "axes": []})
+        reference = resolve_selector(
+            model, {"entity": "master", "ids": ["M2"]}
+        )[0]
+        projected = project_reference(
+            reference, {"fields": ["collection.index", "axes"]}
+        )
+        self.assertEqual(projected["values"]["collection.index"], 1)
+        self.assertEqual(projected["values"]["axes"], [])
+
     def test_locks_and_alignment_modes_are_preserved_metadata(self) -> None:
         model = _model()
         layer = model["glyphs"]["A"]["layers"][0]
@@ -723,6 +891,143 @@ class V2SpacingGeometryTests(unittest.TestCase):
         ).to_dict()
         self.assertTrue(reverted["ok"])
         self.assertEqual(fingerprint_model(host.model), before)
+
+    def test_snapshot_backed_recovery_requires_confirmation_and_receipt(self) -> None:
+        host = _Host(_model())
+        app = GlyphsMCPApplication(host)
+        before = fingerprint_model(host.model)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": before,
+                "operations": [
+                    {
+                        "op": "set",
+                        "target": _selector(),
+                        "field": "width",
+                        "value": 510,
+                    }
+                ],
+                "transactionMode": "snapshot_backed_recovery",
+            },
+        ).to_dict()
+        self.assertTrue(preview["ok"], preview)
+        self.assertTrue(preview["data"]["recovery"]["requiredConfirmation"])
+
+        refused = app.invoke(
+            "apply_change",
+            {
+                "documentId": "doc_spacing",
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": before,
+                "reason": "exercise bounded recovery",
+            },
+        ).to_dict()
+        self.assertEqual(refused["error"]["code"], "confirmation_required")
+        self.assertEqual(host.apply_calls, 0)
+
+        applied = app.invoke(
+            "apply_change",
+            {
+                "documentId": "doc_spacing",
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": before,
+                "reason": "exercise bounded recovery",
+                "confirmRecovery": True,
+            },
+        ).to_dict()
+        self.assertTrue(applied["ok"], applied)
+        self.assertEqual(len(host.recovery_calls), 1)
+        self.assertTrue(applied["data"]["recovery"]["snapshotCreated"])
+        self.assertNotIn("recoveryPath", applied["data"]["recovery"])
+        self.assertEqual(host.apply_calls, 1)
+
+    def test_snapshot_backed_recovery_refuses_stale_source_state(self) -> None:
+        host = _Host(_model())
+        app = GlyphsMCPApplication(host)
+        before = fingerprint_model(host.model)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": before,
+                "operations": [
+                    {
+                        "op": "set",
+                        "target": _selector(),
+                        "field": "width",
+                        "value": 510,
+                    }
+                ],
+                "transactionMode": "snapshot_backed_recovery",
+            },
+        ).to_dict()
+        host.source_state["contentFingerprint"] = "sha256:source-after"
+
+        applied = app.invoke(
+            "apply_change",
+            {
+                "documentId": "doc_spacing",
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": before,
+                "reason": "must bind source state",
+                "confirmRecovery": True,
+            },
+        ).to_dict()
+
+        self.assertFalse(applied["ok"])
+        self.assertEqual(applied["error"]["code"], "stale_source")
+        self.assertEqual(host.recovery_calls, [])
+        self.assertEqual(host.apply_calls, 0)
+
+    def test_snapshot_backed_failure_opens_one_recovery_and_quarantines(self) -> None:
+        host = _RecoveryFailureHost(_model())
+        app = GlyphsMCPApplication(host)
+        before = fingerprint_model(host.model)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": before,
+                "operations": [
+                    {
+                        "op": "set",
+                        "target": _selector(),
+                        "field": "width",
+                        "value": 510,
+                    }
+                ],
+                "transactionMode": "snapshot_backed_recovery",
+            },
+        ).to_dict()
+        failed = app.invoke(
+            "apply_change",
+            {
+                "documentId": "doc_spacing",
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": before,
+                "reason": "exercise indeterminate recovery",
+                "confirmRecovery": True,
+            },
+        ).to_dict()
+
+        self.assertFalse(failed["ok"])
+        self.assertEqual(failed["data"]["rollbackClassification"], "indeterminate")
+        self.assertTrue(failed["data"]["recovery"]["recoveryAttempted"])
+        self.assertTrue(failed["data"]["recovery"]["recoveryCopyOpened"])
+        self.assertEqual(len(host.opened_recovery), 1)
+        blocked = app.invoke(
+            "apply_change",
+            {
+                "documentId": "doc_spacing",
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "reason": "must be quarantined",
+                "confirmRecovery": True,
+            },
+        ).to_dict()
+        self.assertEqual(blocked["error"]["code"], "document_quarantined")
 
     def test_black_condensed_y_spacing_is_previewed_applied_and_reverted(self) -> None:
         host = _Host(_black_y_model())

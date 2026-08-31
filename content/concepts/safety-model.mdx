@@ -14,6 +14,25 @@ Glyphs MCP is designed for human-controlled font editing. The server gives agent
 - **No auto-save**: the plug-in does not save fonts unless `save_font` is called.
 - **Prefer dedicated tools**: use specific tools before free-form code.
 
+## V2 verified transactions
+
+V2 declarative edits use one cached canonical baseline, one detached preview,
+one atomic apply, and one settled read-back. `verificationMode=semantic` is the
+default: exact canonical target equality remains mandatory, while only
+registered native omission defaults, identity-addressed storage order, derived
+grid/alignment effects, and bounded component-decomposition round trips may be
+treated as equivalent. Use `strict_archive` when diagnosing native archive
+spelling; it is slower and intentionally more protective.
+
+`transactionMode=snapshot_backed_recovery` is not an “unsafe transaction.” It
+does not permit broader writes or bypass verification. It binds the preview to
+the exact document and source fingerprints, requires `confirmRecovery=true`,
+creates one private full native snapshot, and then runs the same verified
+mutation. Every attempt is classified as exactly committed, exactly restored,
+or indeterminate. After an indeterminate recovery-mode apply, v2 makes one
+bounded attempt to open the verified recovery copy and leaves the original
+quarantined. Continue only in that copy or reopen the saved source.
+
 For Tunni balancing, review the exact glyph/master/path first, then pass only
 the approved curve end-node indices to `apply_tunni_balance`. The apply tool
 resolves the target, snapshots and recomputes current geometry in the same

@@ -171,6 +171,29 @@ class TranslateOperation(_OperationBase):
     quantizer: Literal["exact", "grid"] = "exact"
 
 
+class TransformOperation(_OperationBase):
+    op: Literal["transform"]
+    matrix: Annotated[
+        List[Annotated[float, Field(allow_inf_nan=False)]],
+        Field(min_length=6, max_length=6),
+    ]
+    origin: Annotated[
+        List[Annotated[float, Field(allow_inf_nan=False)]],
+        Field(min_length=2, max_length=2),
+    ] = Field(default_factory=lambda: [0, 0])
+    quantizer: Literal["exact", "grid"] = "exact"
+    include: Annotated[
+        List[Literal["paths", "anchors", "components"]],
+        Field(min_length=1),
+    ] = Field(default_factory=lambda: ["paths", "anchors", "components"])
+    componentComposition: Literal[
+        "prepend", "append", "conjugate", "unchanged"
+    ] = "prepend"
+    alignmentPolicy: Literal[
+        "preserve", "explicit_noncommuting", "explicit_all"
+    ] = "preserve"
+
+
 class InsertOperation(_OperationBase):
     op: Literal["insert"]
     value: JsonValue
@@ -199,6 +222,7 @@ OperationVariant = Annotated[
     Union[
         SetOperation,
         TranslateOperation,
+        TransformOperation,
         InsertOperation,
         RemoveOperation,
         MoveOperation,
@@ -273,6 +297,10 @@ class ToolHandlers:
         expectedDocumentFingerprint: Sha256Fingerprint,
         operations: List[ChangeOperation],
         constraints: Optional[List[Constraint]] = None,
+        verificationMode: Literal["semantic", "strict_archive"] = "semantic",
+        transactionMode: Literal[
+            "verified", "snapshot_backed_recovery"
+        ] = "verified",
     ) -> ToolResult:
         return self._invoke("preview_change", locals())
 
@@ -282,6 +310,7 @@ class ToolHandlers:
         previewId: str,
         expectedDocumentFingerprint: Sha256Fingerprint,
         reason: Annotated[str, Field(min_length=1, max_length=1000)],
+        confirmRecovery: bool = False,
     ) -> ToolResult:
         return self._invoke("apply_change", locals())
 

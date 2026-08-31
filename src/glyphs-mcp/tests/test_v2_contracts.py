@@ -219,6 +219,7 @@ class V2ContractTests(unittest.TestCase):
         operations = {
             "set": {"field": "width", "value": 500},
             "translate": {"delta": {"x": 1, "y": 2}},
+            "transform": {"matrix": [1, 0, 0.2, 1, 0, 0]},
             "insert": {"field": "features", "value": {"id": "liga"}},
             "remove": {},
             "move": {"index": 0},
@@ -261,6 +262,10 @@ class V2ContractTests(unittest.TestCase):
             set(registry["translationTargets"]),
             {"layer", "shape", "node", "anchor"},
         )
+        self.assertEqual(
+            set(registry["transformTargets"]),
+            {"layer", "shape", "node", "anchor"},
+        )
 
     def test_python_modes_are_permanent_and_staged_apply_is_not_execute_confirmation(self) -> None:
         parameters = inspect.signature(ToolHandlers.execute_python).parameters
@@ -272,7 +277,10 @@ class V2ContractTests(unittest.TestCase):
         apply_parameters = inspect.signature(ToolHandlers.apply_change).parameters
         self.assertIn("previewId", apply_parameters)
         self.assertNotIn("operations", apply_parameters)
-        self.assertNotIn("confirm", apply_parameters)
+        self.assertIn("confirmRecovery", apply_parameters)
+        preview_parameters = inspect.signature(ToolHandlers.preview_change).parameters
+        self.assertIn("verificationMode", preview_parameters)
+        self.assertIn("transactionMode", preview_parameters)
 
     def test_success_and_failure_share_versioned_envelopes(self) -> None:
         definition = TOOL_CATALOG["get_server_info"]

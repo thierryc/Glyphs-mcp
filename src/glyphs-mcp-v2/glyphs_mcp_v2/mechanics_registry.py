@@ -15,7 +15,7 @@ ENTITY_KINDS = frozenset(
 )
 COMPUTED_PROJECTIONS = frozenset(
     {
-        "alignment", "bounds", "compilation.diagnostics", "geometry.counts",
+        "alignment", "bounds", "collection.index", "compilation.diagnostics", "geometry.counts",
         "geometry.transform", "grid", "inheritance.metrics",
         "metadata.effective", "ownership", "persistence",
         "spacing.horizontal", "spacing.vertical",
@@ -24,6 +24,13 @@ COMPUTED_PROJECTIONS = frozenset(
 OPERATION_DEFINITIONS: Mapping[str, Mapping[str, Any]] = {
     "set": {"required": ["target", "field", "value"], "optional": ["quantizer"]},
     "translate": {"required": ["target", "delta"], "optional": ["quantizer"]},
+    "transform": {
+        "required": ["target", "matrix"],
+        "optional": [
+            "origin", "quantizer", "include", "componentComposition",
+            "alignmentPolicy",
+        ],
+    },
     "insert": {
         "required": ["target", "value"],
         "optional": ["field", "index", "newId"],
@@ -49,6 +56,7 @@ CONSTRAINT_OPERATORS = frozenset(
     {"eq", "ne", "lt", "lte", "gt", "gte", "within", "in_range"}
 )
 TRANSLATION_TARGETS = frozenset({"layer", "shape", "node", "anchor"})
+TRANSFORM_TARGETS = frozenset({"layer", "shape", "node", "anchor"})
 RELATION_DEFINITIONS: Mapping[str, tuple[str, ...]] = {
     "glyph": ("layer", "shape", "node", "anchor"),
     "master": ("layer", "kerning"),
@@ -64,6 +72,8 @@ def _entity_capability(kind: str) -> dict[str, Any]:
         operations.add("insert")
     if kind in TRANSLATION_TARGETS:
         operations.add("translate")
+    if kind in TRANSFORM_TARGETS:
+        operations.add("transform")
     observations_by_kind = {
         "document": {"compilation.diagnostics", "persistence"},
         "font": {"compilation.diagnostics", "persistence"},
@@ -100,6 +110,7 @@ def public_mechanics_registry() -> dict[str, Any]:
         "reducers": sorted(REDUCER_KINDS),
         "constraintOperators": sorted(CONSTRAINT_OPERATORS),
         "translationTargets": sorted(TRANSLATION_TARGETS),
+        "transformTargets": sorted(TRANSFORM_TARGETS),
         "entityCapabilities": {
             kind: _entity_capability(kind) for kind in sorted(ENTITY_KINDS)
         },
@@ -122,5 +133,6 @@ __all__ = [
     "RELATION_DEFINITIONS",
     "SCALAR_VALUE_FIELDS",
     "TRANSLATION_TARGETS",
+    "TRANSFORM_TARGETS",
     "public_mechanics_registry",
 ]

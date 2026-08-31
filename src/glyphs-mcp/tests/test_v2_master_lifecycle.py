@@ -29,7 +29,7 @@ from glyphs_mcp_v2.mutation import (  # noqa: E402
     mutation_scope,
 )
 from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
-from glyphs_mcp_v2.generic_tools import resolve_selector  # noqa: E402
+from glyphs_mcp_v2.generic_tools import build_change_set, resolve_selector  # noqa: E402
 from glyphs_mcp_v2.structural_registry import build_master_updates  # noqa: E402
 
 
@@ -240,6 +240,33 @@ class MasterLifecycleTests(unittest.TestCase):
             after["kerning"]["master_text"], before["kerning"]["master_regular"]
         )
         self.assertEqual(build.change_set.inverse().apply(after), before)
+
+    def test_duplicate_keeps_registered_italic_metric_in_sync(self) -> None:
+        before = _model()
+        before["metrics"] = [{"id": "metric:italic", "type": "italic angle"}]
+        for master in before["masters"]:
+            master["metricValues"] = [
+                {"id": "metric:italic", "pos": 0, "over": 0}
+            ]
+
+        after = build_master_updates(
+            before,
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": "master_regular",
+                    "masterId": "master_italic",
+                    "name": "Italic",
+                    "italicAngle": 12,
+                }
+            ],
+        ).change_set.apply(before)
+        italic = next(
+            master for master in after["masters"] if master["id"] == "master_italic"
+        )
+
+        self.assertEqual(italic["italicAngle"], 12)
+        self.assertEqual(italic["metricValues"][0]["pos"], 12)
 
     def test_update_move_delete_share_the_same_builder(self) -> None:
         before = _model()
@@ -460,7 +487,8 @@ class MasterLifecycleTests(unittest.TestCase):
         self.assertTrue(response["ok"], response)
         self.assertEqual(host.apply_calls, 1)
         self.assertEqual(response["data"]["transactionCount"], 1)
-        self.assertNotIn("stageTimings", response["data"])
+        self.assertIn("stageTimings", response["data"])
+        self.assertIn("live_apply", response["data"]["stageTimings"])
         self.assertLess(len(json.dumps(response).encode("utf-8")), 64 * 1024)
 
         reverted = app.invoke(
@@ -599,6 +627,128 @@ class MasterLifecycleTests(unittest.TestCase):
 
         self.assertLess(elapsed, 2.0)
         self.assertEqual(len(build.change_set.changes), 1002)
+        self.assertEqual(build.change_set.inverse().apply(after), before)
+
+    def test_nine_consecutive_master_duplicates_use_one_structural_batch(self) -> None:
+        before = _model(24)
+        source_partition = copy.deepcopy(before["kerning"]["master_regular"])
+        before["kerning"] = {
+            "ltr": {"master_regular": copy.deepcopy(source_partition)},
+            "rtl": {"master_regular": copy.deepcopy(source_partition)},
+            "vertical": {"master_regular": copy.deepcopy(source_partition)},
+            "context": {
+                "top": {"master_regular": copy.deepcopy(source_partition)}
+            },
+        }
+        operations = [
+            {
+                "op": "duplicate",
+                "target": {"entity": "master", "ids": ["master_regular"]},
+                "newId": "italic_{:02d}".format(index),
+                "index": len(before["masters"]) + index,
+                "overrides": {
+                    "name": "Italic {:02d}".format(index),
+                    "italicAngle": 12,
+                },
+            }
+            for index in range(9)
+        ]
+
+        build = build_change_set(before, operations)
+        after = build.change_set.apply(before)
+
+        self.assertEqual(
+            [master["id"] for master in after["masters"][-9:]],
+            ["italic_{:02d}".format(index) for index in range(9)],
+        )
+        self.assertTrue(
+            all(item["batchSize"] == 9 for item in build.normalized_operations)
+        )
+        self.assertTrue(
+            all(
+                any(
+                    layer["id"] == "italic_{:02d}".format(index)
+                    for layer in after["glyphs"]["glyph0000"]["layers"]
+                )
+                for index in range(9)
+            )
+        )
+        for domain in ("ltr", "rtl", "vertical"):
+            self.assertTrue(
+                all(
+                    after["kerning"][domain]["italic_{:02d}".format(index)]
+                    == source_partition
+                    for index in range(9)
+                )
+            )
+        self.assertTrue(
+            all(
+                after["kerning"]["context"]["top"][
+                    "italic_{:02d}".format(index)
+                ]
+                == source_partition
+                for index in range(9)
+            )
+        )
+        self.assertEqual(build.change_set.inverse().apply(after), before)
+
+    def test_422_glyph_nine_master_affine_plan_is_one_bounded_build(self) -> None:
+        model = _model(422)
+        for glyph in model["glyphs"].values():
+            for layer in glyph["layers"]:
+                layer["shapes"] = [
+                    {
+                        "id": "shape:path:0",
+                        "kind": "path",
+                        "value": copy.deepcopy(layer["paths"][0]),
+                    }
+                ]
+        before = CanonicalSnapshot.from_model(model)
+        italic_ids = ["italic_{:02d}".format(index) for index in range(9)]
+        operations = [
+            {
+                "op": "duplicate",
+                "target": {"entity": "master", "ids": ["master_regular"]},
+                "newId": master_id,
+                "index": 2 + index,
+                "overrides": {
+                    "name": "Italic {:02d}".format(index),
+                    "italicAngle": 12,
+                },
+            }
+            for index, master_id in enumerate(italic_ids)
+        ]
+        operations.append(
+            {
+                "op": "transform",
+                "target": {
+                    "entity": "layer",
+                    "where": {"masterId": italic_ids},
+                },
+                "matrix": [1, 0, 0.2125565617, 1, 0, 0],
+                "origin": [0, 0],
+                "quantizer": "grid",
+                "include": ["paths", "anchors", "components"],
+                "componentComposition": "conjugate",
+                "alignmentPolicy": "explicit_noncommuting",
+            }
+        )
+
+        started = time.perf_counter()
+        build = build_change_set(before, operations)
+        elapsed = time.perf_counter() - started
+        after = build.change_set.apply(before)
+
+        self.assertLess(elapsed, 10.0)
+        self.assertEqual(
+            sum(
+                layer["masterId"] in italic_ids
+                for glyph in after["glyphs"].values()
+                for layer in glyph["layers"]
+            ),
+            3_798,
+        )
+        self.assertEqual(build.normalized_operations[-1]["op"], "transform")
         self.assertEqual(build.change_set.inverse().apply(after), before)
 
 

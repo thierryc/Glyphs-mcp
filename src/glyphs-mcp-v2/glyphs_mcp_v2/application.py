@@ -51,6 +51,7 @@ from .mutation import (
     CanonicalTargetMismatchError,
     MutationPlanner,
     RequestedEffectMismatchError,
+    VerificationEquivalenceError,
     unsupported_change_diagnostics,
     writable_subset,
     lifecycle_capabilities,
@@ -71,13 +72,76 @@ from .semantic import (
 from .saving import DocumentSaveError, SAVE_OVERWRITE_POLICIES
 from .saved_source import SavedSourceService, SavedSourceSnapshot
 from .source_bundle import BUNDLE_LAYOUT_VERSION, ExportPlan, SourceBundleError
-from .transactions import StaleDocumentError, TransactionKernel, TransactionVerificationError
+from .transactions import (
+    DocumentQuarantinedError,
+    StaleDocumentError,
+    TransactionKernel,
+    TransactionVerificationError,
+)
 from .versions import SERVER_NAME, SERVER_VERSION
 
 
 REVIEW_TTL_SECONDS = 15 * 60
 RESULT_TTL_SECONDS = 60 * 60
 PUBLIC_NORMALIZED_OPERATION_LIMIT = 100
+
+
+def _recovery_source_identity(host: Any, document_id: str) -> Mapping[str, Any]:
+    """Return bounded exact persistence evidence without exposing a source path."""
+
+    capture = getattr(host, "capture_source_file_state", None)
+    if not callable(capture):
+        return {"available": False, "fingerprint": None}
+    try:
+        state = capture(document_id, include_model=False)
+    except TypeError:
+        state = capture(document_id)
+    if not isinstance(state, Mapping):
+        return {"available": False, "fingerprint": None}
+    bounded = {
+        str(key): copy.deepcopy(value)
+        for key, value in state.items()
+        if key not in {"savedModel", "savedSnapshot"}
+    }
+    return {
+        "available": True,
+        "fingerprint": fingerprint_model(bounded),
+        "contentFingerprint": bounded.get("contentFingerprint"),
+        "kind": bounded.get("kind"),
+        "exists": bounded.get("exists"),
+        "readable": bounded.get("readable"),
+    }
+
+
+def _normalized_delta_evidence(
+    change_set: ChangeSet, *, limit: int = 20
+) -> Mapping[str, Any]:
+    """Return bounded canonical paths and exact numeric deltas for review."""
+
+    paths = [list(change.path) for change in change_set.changes]
+    numeric = [
+        {
+            "path": list(change.path),
+            "before": change.before,
+            "after": change.after,
+            "delta": change.after - change.before,
+        }
+        for change in change_set.changes
+        if change.before_present
+        and change.after_present
+        and isinstance(change.before, (int, float))
+        and not isinstance(change.before, bool)
+        and isinstance(change.after, (int, float))
+        and not isinstance(change.after, bool)
+    ]
+    return {
+        "normalizedPaths": paths[:limit],
+        "normalizedPathCount": len(paths),
+        "normalizedPathsTruncated": len(paths) > limit,
+        "numericDeltas": numeric[:limit],
+        "numericDeltaCount": len(numeric),
+        "numericDeltasTruncated": len(numeric) > limit,
+    }
 
 
 def _healthy_scripting_runtime_safety() -> dict[str, Any]:
@@ -439,8 +503,46 @@ class GlyphsMCPApplication:
                 message="The requested operation is not part of this runtime.",
                 recoverable=False,
             )
+        values = dict(arguments or {})
+        document_id = str(
+            values.get("documentId") or values.get("document_id") or ""
+        )
+        mutates_document = definition.effect == "edit" or (
+            handler_name == "execute_python"
+            and str(values.get("mode") or values.get("executionMode") or "")
+            != "read_only"
+        )
+        if (
+            document_id
+            and mutates_document
+            and self._transactions is not None
+            and self._transactions.document_transaction_state(document_id).get("state")
+            == "indeterminate"
+        ):
+            state = self._transactions.document_transaction_state(document_id)
+            return ToolResponse.failure(
+                tool=handler_name,
+                effect=definition.effect,
+                summary="The document is quarantined after an indeterminate transaction.",
+                code="document_quarantined",
+                message=(
+                    "Reopen the saved source or a verified recovery copy before "
+                    "performing another document edit."
+                ),
+                recoverable=False,
+                details={"transactionState": state},
+            )
         try:
-            return handler(dict(arguments or {}))
+            return handler(values)
+        except DocumentQuarantinedError as exc:
+            return ToolResponse.failure(
+                tool=handler_name,
+                effect=definition.effect,
+                summary="The document is quarantined after an indeterminate transaction.",
+                code="document_quarantined",
+                message=str(exc),
+                recoverable=False,
+            )
         except CursorError as exc:
             return ToolResponse.failure(
                 tool=handler_name,
@@ -1009,6 +1111,18 @@ class GlyphsMCPApplication:
         )
         operations = list(arguments.get("operations") or ())
         constraints = list(arguments.get("constraints") or ())
+        verification_mode = str(
+            _value(arguments, "verification_mode", "verificationMode", "semantic")
+            or "semantic"
+        )
+        transaction_mode = str(
+            _value(arguments, "transaction_mode", "transactionMode", "verified")
+            or "verified"
+        )
+        if verification_mode not in {"semantic", "strict_archive"}:
+            raise ValueError("verificationMode is unsupported")
+        if transaction_mode not in {"verified", "snapshot_backed_recovery"}:
+            raise ValueError("transactionMode is unsupported")
         if not document_id or not expected:
             raise ValueError("documentId and expectedDocumentFingerprint are required")
         before = self._document_model(document_id)
@@ -1123,6 +1237,12 @@ class GlyphsMCPApplication:
             requested_change_set.apply(before), constraints, phase="after"
         )
         execution_context = dict(generic_build.execution_context)
+        execution_context.update(
+            {
+                "verificationMode": verification_mode,
+                "transactionMode": transaction_mode,
+            }
+        )
         if after_observation_request["fields"]:
             execution_context["constraintObservations"] = after_observation_request
         try:
@@ -1189,6 +1309,55 @@ class GlyphsMCPApplication:
                     "fontSaved": False,
                 },
             )
+        except VerificationEquivalenceError as exc:
+            evidence = exc.to_public_dict()
+            record = self._previews.create(
+                kind="change_preview",
+                ttl_seconds=REVIEW_TTL_SECONDS,
+                payload={
+                    "documentId": document_id,
+                    "source": "declarative",
+                    "baseDocumentFingerprint": expected,
+                    "proposedFingerprint": requested_change_set.after_fingerprint,
+                    "normalizedOperations": normalized_operations,
+                    "constraints": {"before": before_constraints, "after": None},
+                    "applicable": False,
+                    "verificationMode": verification_mode,
+                    "transactionMode": transaction_mode,
+                    "verification": evidence,
+                },
+            )
+            return ToolResponse.success(
+                tool="preview_change",
+                effect="read",
+                status="review_required",
+                summary="Strict native-archive equivalence was not proved.",
+                metadata=metadata,
+                data={
+                    "previewId": record.operation_id,
+                    "expiresAt": _iso_timestamp(record.expires_at),
+                    "documentId": document_id,
+                    "baseDocumentFingerprint": expected,
+                    "proposedFingerprint": requested_change_set.after_fingerprint,
+                    "applicable": False,
+                    "resolvedTargetCount": sum(
+                        len(item.get("resolvedPaths") or ())
+                        for item in normalized_operations
+                    ),
+                    "normalizedOperations": normalized_operations[
+                        :PUBLIC_NORMALIZED_OPERATION_LIMIT
+                    ],
+                    "normalizedOperationCount": len(normalized_operations),
+                    "normalizedOperationsTruncated": len(normalized_operations)
+                    > PUBLIC_NORMALIZED_OPERATION_LIMIT,
+                    "changeSet": requested_change_set.to_dict(),
+                    "constraints": {"before": before_constraints, "after": None},
+                    "blockers": ["strict_archive_mismatch"],
+                    "verification": evidence,
+                    "transactionMode": transaction_mode,
+                    "fontSaved": False,
+                },
+            )
         expected_observations = self._with_persistence_observation(
             document_id,
             plan.expected_after_model,
@@ -1209,6 +1378,11 @@ class GlyphsMCPApplication:
             expected_constraint_evidence=copy.deepcopy(after_constraints),
         )
         applicable = bool(after_constraints["passed"])
+        recovery_source = (
+            _recovery_source_identity(self._host, document_id)
+            if transaction_mode == "snapshot_backed_recovery"
+            else {"available": False, "fingerprint": None}
+        )
         record = self._previews.create(
             kind="change_preview",
             ttl_seconds=REVIEW_TTL_SECONDS,
@@ -1224,9 +1398,13 @@ class GlyphsMCPApplication:
                     "after": after_constraints,
                 },
                 "applicable": applicable,
+                "verificationMode": verification_mode,
+                "transactionMode": transaction_mode,
+                "recoverySource": recovery_source,
             },
         )
         changes = [public_change_dict(change) for change in plan.observed_change_set.changes]
+        delta_evidence = _normalized_delta_evidence(plan.observed_change_set)
         first = paginate(
             changes,
             source_fingerprint=plan.after_fingerprint,
@@ -1272,6 +1450,17 @@ class GlyphsMCPApplication:
                     "after": after_constraints,
                 },
                 "blockers": [] if applicable else ["postcondition_failed"],
+                "verification": copy.deepcopy(dict(plan.verification_evidence)),
+                "transactionMode": transaction_mode,
+                "stageTimings": dict(plan.stage_timings),
+                **delta_evidence,
+                "rollback": {"classification": "not_started"},
+                "recovery": {
+                    "requiredConfirmation": transaction_mode
+                    == "snapshot_backed_recovery",
+                    "snapshotCreated": False,
+                    "source": recovery_source,
+                },
                 "fontSaved": False,
             },
         )
@@ -1325,6 +1514,45 @@ class GlyphsMCPApplication:
                 message="Resolve the failed constraints and create a new preview.",
                 metadata=metadata,
             )
+        transaction_mode = str(payload.get("transactionMode") or "verified")
+        confirm_recovery = bool(
+            _value(arguments, "confirm_recovery", "confirmRecovery", False)
+        )
+        if transaction_mode == "snapshot_backed_recovery" and not confirm_recovery:
+            return ToolResponse.failure(
+                tool="apply_change",
+                effect="edit",
+                summary="Snapshot-backed recovery was not confirmed.",
+                code="confirmation_required",
+                message="confirmRecovery=true is required for this recovery preview.",
+                metadata=metadata,
+            )
+        if transaction_mode == "verified" and confirm_recovery:
+            raise ValueError(
+                "confirmRecovery is valid only for snapshot-backed recovery previews"
+            )
+        preview_recovery_source = dict(payload.get("recoverySource") or {})
+        if transaction_mode == "snapshot_backed_recovery":
+            current_recovery_source = _recovery_source_identity(
+                self._host, document_id
+            )
+            if current_recovery_source != preview_recovery_source:
+                return ToolResponse.failure(
+                    tool="apply_change",
+                    effect="edit",
+                    summary="The source changed after the recovery preview.",
+                    code="stale_source",
+                    message="Create a new snapshot-backed recovery preview.",
+                    metadata=metadata,
+                    data={
+                        "expectedSourceFingerprint": preview_recovery_source.get(
+                            "fingerprint"
+                        ),
+                        "observedSourceFingerprint": current_recovery_source.get(
+                            "fingerprint"
+                        ),
+                    },
+                )
         current = self._document_model(document_id)
         if fingerprint_model(current) != expected:
             return ToolResponse.failure(
@@ -1452,6 +1680,75 @@ class GlyphsMCPApplication:
             )
         exact_plan = replace(plan, operation_id=metadata.operation_id)
         self._trace.bind_document(document_id)
+        recovery_evidence = {
+            "mode": transaction_mode,
+            "confirmed": confirm_recovery,
+            "snapshotCreated": False,
+            "snapshotKind": None,
+            "snapshotEvidence": None,
+            "source": preview_recovery_source,
+            "documentFingerprint": expected,
+            "recoveryReceipt": None,
+            "recoveryAttempted": False,
+            "recoveryCopyOpened": False,
+            "nextAction": None,
+        }
+        recovery_path = None
+        if transaction_mode == "snapshot_backed_recovery":
+            create_recovery = getattr(self._host, "create_recovery_copy", None)
+            if not callable(create_recovery):
+                return ToolResponse.failure(
+                    tool="apply_change",
+                    effect="edit",
+                    summary="A native recovery snapshot is unavailable.",
+                    code="recovery_unavailable",
+                    message=(
+                        "This host cannot create the required full native snapshot; "
+                        "the document was not changed."
+                    ),
+                    metadata=metadata,
+                )
+            recovery_path = create_recovery(document_id, metadata.operation_id)
+            evidence_reader = getattr(self._host, "recovery_copy_evidence", None)
+            snapshot_evidence = (
+                dict(evidence_reader(recovery_path))
+                if callable(evidence_reader)
+                else None
+            )
+            source_after_snapshot = _recovery_source_identity(
+                self._host, document_id
+            )
+            if source_after_snapshot != preview_recovery_source:
+                return ToolResponse.failure(
+                    tool="apply_change",
+                    effect="edit",
+                    summary="The source changed while creating the recovery snapshot.",
+                    code="stale_source",
+                    message="The document was not edited; create a new preview.",
+                    metadata=metadata,
+                )
+            recovery_evidence.update(
+                {
+                    "snapshotCreated": True,
+                    "snapshotKind": "native_font_copy",
+                    "snapshotEvidence": snapshot_evidence,
+                    "recoveryReceipt": fingerprint_model(
+                        {
+                            "operationId": metadata.operation_id,
+                            "documentFingerprint": expected,
+                            "sourceFingerprint": preview_recovery_source.get(
+                                "fingerprint"
+                            ),
+                            "snapshotKind": "native_font_copy",
+                            "snapshotFingerprint": (
+                                snapshot_evidence.get("snapshotFingerprint")
+                                if snapshot_evidence is not None
+                                else None
+                            ),
+                        }
+                    ),
+                }
+            )
         try:
             result = self._transactions.apply_plan(exact_plan)
         except StaleDocumentError:
@@ -1464,6 +1761,43 @@ class GlyphsMCPApplication:
                 metadata=metadata,
             )
         except TransactionVerificationError as exc:
+            transaction_state = dict(
+                self._transactions.document_transaction_state(document_id)
+            )
+            if (
+                transaction_mode == "snapshot_backed_recovery"
+                and transaction_state.get("state") == "indeterminate"
+                and recovery_path
+            ):
+                recovery_evidence["recoveryAttempted"] = True
+                opener = getattr(self._host, "open_recovery_copy", None)
+                if callable(opener):
+                    try:
+                        opener(recovery_path)
+                        recovery_evidence["recoveryCopyOpened"] = True
+                        recovery_evidence["nextAction"] = (
+                            "Continue only in the opened verified recovery copy; "
+                            "the original document remains quarantined."
+                        )
+                    except Exception as recovery_exc:
+                        recovery_evidence["recoveryError"] = type(
+                            recovery_exc
+                        ).__name__
+                if not recovery_evidence.get("nextAction"):
+                    recovery_evidence["nextAction"] = (
+                        "Close the quarantined document without saving and reopen "
+                        "the saved source or its private verified recovery copy."
+                    )
+            failure_data = {
+                **exc.to_public_dict(),
+                "stageTimings": dict(
+                    self._transactions.diagnostic_stage_timings(
+                        metadata.operation_id
+                    )
+                ),
+                "transactionState": transaction_state,
+                "recovery": recovery_evidence,
+            }
             return self._audited_edit_failure(
                 tool="apply_change",
                 document_id=document_id,
@@ -1471,14 +1805,17 @@ class GlyphsMCPApplication:
                 code="transaction_failed",
                 message="The mutation was not verified.",
                 metadata=metadata,
-                audit_details=exc.to_public_dict(),
-                data=exc.to_public_dict(),
+                audit_details=failure_data,
+                data=failure_data,
             )
         self._previews.discard(preview_id)
         changes = [
             public_change_dict(change)
             for change in exact_plan.observed_change_set.changes
         ]
+        delta_evidence = _normalized_delta_evidence(
+            exact_plan.observed_change_set
+        )
         self._operations.create(
             kind="mutation_diff",
             operation_id=metadata.operation_id,
@@ -1566,6 +1903,20 @@ class GlyphsMCPApplication:
                     result.persistence_reconciliation
                 ),
                 "transactionCount": 1,
+                "transactionState": dict(
+                    self._transactions.document_transaction_state(document_id)
+                ),
+                "stageTimings": dict(
+                    self._transactions.diagnostic_stage_timings(
+                        metadata.operation_id
+                    )
+                ),
+                **delta_evidence,
+                "rollback": {"classification": "not_needed"},
+                "verification": copy.deepcopy(
+                    dict(exact_plan.verification_evidence)
+                ),
+                "recovery": recovery_evidence,
                 "revert": {
                     "available": result.revert_available,
                     "operationId": (
@@ -1701,16 +2052,31 @@ class GlyphsMCPApplication:
         self, arguments: Mapping[str, Any]
     ) -> ToolResponse:
         status = _scripting_runtime_safety(self._host)
+        transaction_states = (
+            self._transactions.transaction_states()
+            if self._transactions is not None
+            else {}
+        )
+        has_quarantine = any(
+            value.get("state") == "indeterminate"
+            for value in transaction_states.values()
+        )
         return ToolResponse.success(
             tool="get_runtime_status",
             effect="read",
-            status="success" if status.get("state") == "healthy" else "warning",
+            status=(
+                "success"
+                if status.get("state") == "healthy" and not has_quarantine
+                else "warning"
+            ),
             summary=(
-                "The strict scripting interlock is healthy."
+                "A document is quarantined after an indeterminate transaction."
+                if has_quarantine
+                else "The strict scripting interlock is healthy."
                 if status.get("state") == "healthy"
                 else "The strict scripting interlock requires recovery."
             ),
-            data=status,
+            data={**status, "documentTransactions": transaction_states},
         )
 
     def repair_runtime(

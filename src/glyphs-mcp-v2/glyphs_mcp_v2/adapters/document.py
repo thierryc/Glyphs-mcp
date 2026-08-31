@@ -12,6 +12,7 @@ import gc
 import hashlib
 import io
 import json
+import math
 import os
 import plistlib
 import re
@@ -65,6 +66,7 @@ from ..mutation import (
     LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
     MutationScope,
+    VerificationEquivalenceError,
     is_structural_change_path,
     master_owns_layer_order_change,
     staged_lifecycle_capabilities,
@@ -6560,15 +6562,81 @@ def _apply_instance_collection(
 
 
 def _copy_native_object(value: Any, *, kind: str) -> Any:
+    failures: list[Exception] = []
     copier = _safe_getattr(value, "copy")
     if callable(copier):
-        copied = copier()
-        if copied is not None:
-            return copied
+        try:
+            copied = copier()
+            if copied is not None and copied is not value:
+                return copied
+        except Exception as exc:
+            failures.append(exc)
+    mutable_copier = _safe_getattr(value, "mutableCopy")
+    if callable(mutable_copier):
+        try:
+            copied = mutable_copier()
+            if copied is not None and copied is not value:
+                return copied
+        except Exception as exc:
+            failures.append(exc)
+    zoned_copier = _safe_getattr(value, "mutableCopyWithZone_")
+    if callable(zoned_copier):
+        try:
+            copied = zoned_copier(None)
+            if copied is not None and copied is not value:
+                return copied
+        except Exception as exc:
+            failures.append(exc)
+    # Glyphs 3.5 and 4 expose different wrapper-copy behavior for masters and
+    # layers.  A keyed archive is the final native fallback before Python's
+    # shallow-copy protocol; it preserves private Objective-C payload that a
+    # wrapper-only copy may omit.
     try:
-        return copy.copy(value)
+        from Foundation import NSKeyedArchiver, NSKeyedUnarchiver  # type: ignore[import-not-found]
+
+        data = None
+        modern_archive = _safe_getattr(
+            NSKeyedArchiver,
+            "archivedDataWithRootObject_requiringSecureCoding_error_",
+        )
+        if callable(modern_archive):
+            archived = modern_archive(value, False, None)
+            data = archived[0] if isinstance(archived, tuple) else archived
+        if data is None:
+            legacy_archive = _safe_getattr(
+                NSKeyedArchiver, "archivedDataWithRootObject_"
+            )
+            if callable(legacy_archive):
+                data = legacy_archive(value)
+        copied = None
+        if data is not None:
+            modern_unarchive = _safe_getattr(
+                NSKeyedUnarchiver, "unarchiveTopLevelObjectWithData_error_"
+            )
+            if callable(modern_unarchive):
+                unarchived = modern_unarchive(data, None)
+                copied = (
+                    unarchived[0] if isinstance(unarchived, tuple) else unarchived
+                )
+            if copied is None:
+                legacy_unarchive = _safe_getattr(
+                    NSKeyedUnarchiver, "unarchiveObjectWithData_"
+                )
+                if callable(legacy_unarchive):
+                    copied = legacy_unarchive(data)
+        if copied is not None and copied is not value:
+            return copied
     except Exception as exc:
-        raise HostAccessError("Glyphs could not copy native {} state".format(kind)) from exc
+        failures.append(exc)
+    try:
+        copied = copy.copy(value)
+        if copied is not None and copied is not value:
+            return copied
+    except Exception as exc:
+        failures.append(exc)
+    raise HostAccessError("Glyphs could not copy native {} state".format(kind)) from (
+        failures[-1] if failures else None
+    )
 
 
 def _set_native_scalar_if_changed(value: Any, name: str, target: Any) -> bool:
@@ -8141,6 +8209,8 @@ def _native_archive_tree_mismatches(
     *,
     limit: int,
     align_identity_collections: bool = True,
+    semantic_float_equivalence: bool = True,
+    normalized: Optional[list[dict[str, Any]]] = None,
 ) -> tuple[list[dict[str, Any]], bool]:
     """Locate native proof differences by semantic plist path.
 
@@ -8152,6 +8222,43 @@ def _native_archive_tree_mismatches(
 
     maximum = max(0, min(100, int(limit)))
     found: list[dict[str, Any]] = []
+
+    def registered_float_equivalent(
+        path: tuple[str | int, ...], left: Any, right: Any
+    ) -> bool:
+        if (
+            not semantic_float_equivalence
+            or isinstance(left, bool)
+            or isinstance(right, bool)
+            or not isinstance(left, (int, float))
+            or not isinstance(right, (int, float))
+        ):
+            return False
+        field_names = {str(part) for part in path[-3:]}
+        if (
+            "shapes" not in {str(part) for part in path}
+            or not field_names.intersection({"angle", "slant", "scale"})
+        ):
+            return False
+        left_number, right_number = float(left), float(right)
+        if not math.isfinite(left_number) or not math.isfinite(right_number):
+            return False
+        absolute_delta = abs(left_number - right_number)
+        ulp = max(math.ulp(left_number), math.ulp(right_number), math.ulp(1.0))
+        if absolute_delta > max(1e-12, 16 * ulp):
+            return False
+        if normalized is not None:
+            normalized.append(
+                {
+                    "path": list(path),
+                    "direct": left_number,
+                    "replay": right_number,
+                    "absoluteDelta": absolute_delta,
+                    "maximumUlps": absolute_delta / ulp,
+                    "rule": "component_decomposition_round_trip",
+                }
+            )
+        return True
 
     def record(path: tuple[str | int, ...], left: Any, right: Any) -> None:
         if len(found) > maximum:
@@ -8166,6 +8273,8 @@ def _native_archive_tree_mismatches(
 
     def walk(path: tuple[str | int, ...], left: Any, right: Any) -> None:
         if len(found) > maximum or left == right:
+            return
+        if registered_float_equivalent(path, left, right):
             return
         if (left is _NATIVE_ARCHIVE_MISSING) != (
             right is _NATIVE_ARCHIVE_MISSING
@@ -8478,6 +8587,7 @@ def _compare_native_archive_deltas(
     replay_after: bytes,
     *,
     limit: int = 100,
+    semantic_float_equivalence: bool = True,
 ) -> dict[str, Any]:
     """Compare native archive effects, not unrelated identities of two clones."""
 
@@ -8499,6 +8609,7 @@ def _compare_native_archive_deltas(
     replay = _archive_delta(replay_before, replay_after)
     count = max(len(direct), len(replay))
     mismatches: list[dict[str, Any]] = []
+    normalized: list[dict[str, Any]] = []
     tree_truncated = False
     if not baseline_equivalent:
         direct_baseline_tree = _decoded_native_archive_tree(direct_before)
@@ -8508,6 +8619,8 @@ def _compare_native_archive_deltas(
                 direct_baseline_tree,
                 replay_baseline_tree,
                 limit=limit,
+                semantic_float_equivalence=semantic_float_equivalence,
+                normalized=normalized,
             )
             baseline_equivalent = not baseline_mismatches and not baseline_truncated
             tree_truncated = tree_truncated or baseline_truncated
@@ -8531,6 +8644,8 @@ def _compare_native_archive_deltas(
                 direct_tree,
                 replay_tree,
                 limit=limit,
+                semantic_float_equivalence=semantic_float_equivalence,
+                normalized=normalized,
             )
             final_equivalent = not final_mismatches and not final_truncated
             tree_truncated = tree_truncated or final_truncated
@@ -8561,6 +8676,11 @@ def _compare_native_archive_deltas(
         "baselineEquivalent": baseline_equivalent,
         "finalEquivalent": final_equivalent,
         "normalizedCloneUuidCount": normalized_count,
+        "normalizedMismatchCount": len(normalized),
+        "normalizedPaths": normalized[: max(0, min(100, int(limit)))],
+        "maximumAbsoluteDelta": max(
+            (float(item["absoluteDelta"]) for item in normalized), default=0.0
+        ),
     }
 
 
@@ -8569,6 +8689,7 @@ def _compare_native_archives(
     replay: bytes,
     *,
     limit: int = 100,
+    semantic_float_equivalence: bool = True,
 ) -> dict[str, Any]:
     """Compare two native states with the reviewed pairwise equivalence rules.
 
@@ -8590,16 +8711,24 @@ def _compare_native_archives(
     direct_tree = _decoded_native_archive_tree(direct)
     replay_tree = _decoded_native_archive_tree(replay)
     if direct_tree is not None and replay_tree is not None:
+        normalized: list[dict[str, Any]] = []
         mismatches, truncated = _native_archive_tree_mismatches(
             direct_tree,
             replay_tree,
             limit=limit,
+            semantic_float_equivalence=semantic_float_equivalence,
+            normalized=normalized,
         )
         return {
             "equivalent": not mismatches and not truncated,
             "mismatchCount": len(mismatches),
             "mismatchLocations": mismatches,
             "truncated": truncated,
+            "normalizedMismatchCount": len(normalized),
+            "normalizedPaths": normalized[: max(0, min(100, int(limit)))],
+            "maximumAbsoluteDelta": max(
+                (float(item["absoluteDelta"]) for item in normalized), default=0.0
+            ),
         }
     maximum = max(0, min(100, int(limit)))
     mismatch = {
@@ -12675,6 +12804,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 removes_contribution_id, native=False
             )
             resolved_context = dict(execution_context or {})
+            verification_mode = str(
+                resolved_context.get("verificationMode") or "semantic"
+            )
             native_restore_templates = self._native_restore_templates(
                 removes_contribution_id, native=False
             )
@@ -12732,6 +12864,10 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             clone = copier()
             timings["clone"] += (time.perf_counter_ns() - started) / 1_000_000
             debug_simulation("clone_created")
+            strict_verifier = None
+            strict_direct_before_archive = None
+            strict_replay_before_archive = None
+            strict_verifier_projection = None
 
             def capture_root_evidence(
                 current_impact: CanonicalImpact,
@@ -12859,6 +12995,41 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 raise HostAccessError(
                     "Detached GSFont.copy() did not reproduce the canonical source"
                 )
+            if verification_mode == "strict_archive":
+                strict_started = time.perf_counter_ns()
+                strict_verifier = copier()
+                if strict_verifier is None:
+                    raise HostAccessError(
+                        "Glyphs returned no verifier clone for strict archive mode"
+                    )
+                strict_direct_before_archive = _serialized_font_archive(clone)
+                strict_replay_before_archive = _serialized_font_archive(
+                    strict_verifier
+                )
+                strict_verifier_before = self._capture_detached_model(
+                    strict_verifier,
+                    source,
+                    instance_ids=source_instance_ids,
+                    document_path=_canonical_document_path(source),
+                )
+                (
+                    strict_verifier_before,
+                    strict_verifier_projection,
+                ) = self._reconcile_detached_clone(
+                    strict_verifier,
+                    source,
+                    strict_verifier_before,
+                    instance_ids=source_instance_ids,
+                    allow_cached_projection=False,
+                    observed_is_complete=True,
+                )
+                if fingerprint_model(strict_verifier_before) != change_set.before_fingerprint:
+                    raise HostAccessError(
+                        "The strict verifier clone did not reproduce the canonical source"
+                    )
+                timings["verification"] += (
+                    time.perf_counter_ns() - strict_started
+                ) / 1_000_000
             # Clone normalization is a precondition, not part of the planned
             # mutation. All proof evidence starts only after it succeeds, so
             # copy/reconciliation artifacts cannot be misclassified as host
@@ -12870,6 +13041,104 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             ) / 1_000_000
             requested_target = change_set.apply(clone_before)
             target = required if required is not None else requested_target
+
+            def finish(result: Mapping[str, Any]) -> Mapping[str, Any]:
+                completed = dict(result)
+                after_model = completed["afterModel"]
+                evidence: dict[str, Any] = {
+                    "mode": verification_mode,
+                    "canonicalEquivalent": True,
+                    "equivalenceClass": "exact_canonical",
+                    "nativeArchiveEquivalent": None,
+                    "normalizedPaths": [],
+                    "maximumAbsoluteDelta": 0.0,
+                }
+                if verification_mode != "strict_archive":
+                    completed["verificationEvidence"] = evidence
+                    return completed
+                if (
+                    strict_verifier is None
+                    or strict_direct_before_archive is None
+                    or strict_replay_before_archive is None
+                    or strict_verifier_projection is None
+                ):
+                    raise HostAccessError("Strict archive verifier state is incomplete")
+                strict_started = time.perf_counter_ns()
+                replay_change = diff_models(source, after_model)
+                replay_templates = _added_native_replay_templates(
+                    clone, source, after_model, replay_change
+                )
+                strict_context = dict(resolved_context)
+                strict_context.update(
+                    {
+                        "nativeReplayTemplates": replay_templates,
+                        "reuseNativeReplayTemplates": True,
+                    }
+                )
+                _apply_target_model(
+                    strict_verifier,
+                    source,
+                    after_model,
+                    replay_change,
+                    capabilities=capabilities,
+                    execution_context=strict_context,
+                    master_restore_templates=restore_templates,
+                    layer_restore_templates=layer_restore_templates,
+                )
+                verifier_after = self._capture_detached_model(
+                    strict_verifier,
+                    after_model,
+                    instance_ids=collection_order(after_model.get("instances", [])),
+                    document_path=_canonical_document_path(after_model),
+                )
+                verifier_after = strict_verifier_projection.normalize(
+                    verifier_after,
+                    protected_paths=tuple(
+                        change.path for change in replay_change.changes
+                    ),
+                )
+                verifier_after = rebase_canonical_model(source, verifier_after)
+                canonical_equivalent = complete_models_equal(
+                    verifier_after, after_model
+                )
+                archive_comparison = _compare_native_archive_deltas(
+                    strict_direct_before_archive,
+                    _serialized_font_archive(clone),
+                    strict_replay_before_archive,
+                    _serialized_font_archive(strict_verifier),
+                    limit=100,
+                    semantic_float_equivalence=False,
+                )
+                evidence.update(
+                    {
+                        "canonicalEquivalent": canonical_equivalent,
+                        "equivalenceClass": (
+                            "strict_archive_exact"
+                            if canonical_equivalent
+                            and bool(archive_comparison.get("equivalent"))
+                            else "strict_archive_mismatch"
+                        ),
+                        "nativeArchiveEquivalent": bool(
+                            archive_comparison.get("equivalent")
+                        ),
+                        "normalizedPaths": list(
+                            archive_comparison.get("normalizedPaths") or ()
+                        ),
+                        "maximumAbsoluteDelta": float(
+                            archive_comparison.get("maximumAbsoluteDelta") or 0.0
+                        ),
+                        "archive": archive_comparison,
+                    }
+                )
+                timings["verification"] += (
+                    time.perf_counter_ns() - strict_started
+                ) / 1_000_000
+                if not canonical_equivalent or not bool(
+                    archive_comparison.get("equivalent")
+                ):
+                    raise VerificationEquivalenceError(evidence)
+                completed["verificationEvidence"] = evidence
+                return completed
             apply_started = time.perf_counter_ns()
             _apply_target_model(
                 clone,
@@ -12916,12 +13185,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             if required is None or fingerprint_model(preferred) == fingerprint_model(
                 required
             ):
-                return {
+                return finish({
                     "afterModel": preferred,
                     "observations": requested_observations(),
                     "replayReplacements": [],
                     "stageTimings": timings,
-                }
+                })
 
             replacements = _canonical_replacement_roots(
                 source,
@@ -12929,12 +13198,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 preferred,
             )
             if not replacements:
-                return {
+                return finish({
                     "afterModel": preferred,
                     "observations": requested_observations(),
                     "replayReplacements": [],
                     "stageTimings": timings,
-                }
+                })
             residual = diff_models(preferred, required)
             residual_impact = CanonicalImpact.from_change_set(preferred, residual)
             apply_started = time.perf_counter_ns()
@@ -12960,13 +13229,13 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 tuple(change.path for change in residual.changes),
                 root_evidence_after,
             )
-            return {
+            return finish({
                 "afterModel": canonical,
                 "observations": requested_observations(),
                 "effectiveMetadata": requested_effective_metadata(),
                 "replayReplacements": [list(path) for path in replacements],
                 "stageTimings": timings,
-            }
+            })
 
         return self._executor.run(
             lambda: _run_with_cyclic_gc_suspended(simulate)
@@ -14456,6 +14725,26 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             self._cleanup_recovery(root, document_id)
             return str(path)
         return self._executor.run(save)
+
+    def recovery_copy_evidence(self, path: str) -> Mapping[str, Any]:
+        """Fingerprint one private recovery copy without revealing its path."""
+
+        resolved, root = Path(path).resolve(), self._recovery_root().resolve()
+        try:
+            resolved.relative_to(root)
+        except ValueError as exc:
+            raise HostAccessError(
+                "Recovery paths must remain in the private v2 cache"
+            ) from exc
+        state = _source_file_state(resolved)
+        if not isinstance(state, Mapping) or not state.get("contentFingerprint"):
+            raise HostAccessError("The native recovery snapshot was not fingerprinted")
+        return {
+            "kind": state.get("kind"),
+            "exists": state.get("exists"),
+            "readable": state.get("readable"),
+            "snapshotFingerprint": state.get("contentFingerprint"),
+        }
 
     def open_recovery_copy(self, path: str) -> None:
         resolved, root = Path(path).resolve(), self._recovery_root().resolve()

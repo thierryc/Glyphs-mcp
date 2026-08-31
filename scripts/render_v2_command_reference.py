@@ -26,6 +26,7 @@ from glyphs_mcp_v2.mechanics_registry import (  # noqa: E402
     PREDICATE_OPERATORS,
     REDUCER_KINDS,
     SCALAR_VALUE_FIELDS,
+    TRANSFORM_TARGETS,
     TRANSLATION_TARGETS,
 )
 
@@ -79,6 +80,7 @@ def render() -> str:
             "- Ordering modes: {}.".format(_codes(ORDER_TYPES)),
             "- Reducers: {}.".format(_codes(REDUCER_KINDS)),
             "- Translation targets: {}.".format(_codes(TRANSLATION_TARGETS)),
+            "- Transform targets: {}.".format(_codes(TRANSFORM_TARGETS)),
             "- Scalar entity value fields: {}.".format(
                 ", ".join(
                     "`{}` -> `{}`".format(entity, field)
@@ -108,6 +110,19 @@ def render() -> str:
             "- `staged_symbol_unavailable`, `staged_import_unavailable`, and",
             "  `staged_assertion_failed` distinguish contract mismatch and script",
             "  validation from unclassified Python or host failures.",
+            "",
+            "## Declarative transaction modes",
+            "",
+            "- `preview_change.verificationMode` defaults to `semantic`;",
+            "  `strict_archive` enables the slower direct-plus-replay archive gate.",
+            "- `preview_change.transactionMode` defaults to `verified`;",
+            "  `snapshot_backed_recovery` binds exact document/source fingerprints",
+            "  and requires `apply_change.confirmRecovery=true`.",
+            "- Declarative previews and applies return stage timings, equivalence",
+            "  evidence, bounded normalized paths and numeric deltas, rollback",
+            "  classification, and recovery evidence.",
+            "- An indeterminate transaction quarantines that document from every",
+            "  later edit until a saved source or verified recovery copy is reopened.",
             "",
             "## Surface invariants",
             "",

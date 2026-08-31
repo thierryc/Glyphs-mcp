@@ -6,6 +6,7 @@ import copy
 import inspect
 import logging
 import os
+import sys
 import time
 import traceback
 from dataclasses import dataclass, field
@@ -112,6 +113,10 @@ class StaleDocumentError(RuntimeError):
     pass
 
 
+class DocumentQuarantinedError(RuntimeError):
+    pass
+
+
 class TransactionVerificationError(RuntimeError):
     def __init__(
         self,
@@ -124,6 +129,7 @@ class TransactionVerificationError(RuntimeError):
         source_file_changed: bool = False,
         persistence_reconciliation: Optional[Mapping[str, Any]] = None,
         state_may_have_changed: Optional[bool] = None,
+        resolution_classification: Optional[str] = None,
     ) -> None:
         super().__init__(message)
         self.rollback_succeeded = rollback_succeeded
@@ -137,12 +143,23 @@ class TransactionVerificationError(RuntimeError):
             if state_may_have_changed is not None
             else bool(not rollback_succeeded)
         )
+        self.resolution_classification = str(
+            resolution_classification
+            or (
+                "exact_restored"
+                if self.rollback_succeeded
+                else "indeterminate"
+                if self.rollback_attempted
+                else "not_attempted"
+            )
+        )
 
     def to_public_dict(self) -> dict[str, Any]:
         return {
             "stateMayHaveChanged": self.state_may_have_changed,
             "rollbackAttempted": self.rollback_attempted,
             "rollbackSucceeded": self.rollback_succeeded,
+            "rollbackClassification": self.resolution_classification,
             "observedAfterFingerprint": self.observed_after_fingerprint,
             "observedChangeCount": self.observed_change_count,
             "sourceFileChanged": self.source_file_changed,
@@ -198,7 +215,44 @@ class TransactionKernel:
         self._persistence = persistence
         self._diagnostic_timings: dict[str, Mapping[str, float]] = {}
         self._diagnostic_failures: dict[str, str] = {}
+        self._document_states: dict[str, dict[str, Any]] = {}
         self._timing_lock = RLock()
+
+    def document_transaction_state(self, document_id: str) -> Mapping[str, Any]:
+        with self._timing_lock:
+            return dict(
+                self._document_states.get(
+                    document_id,
+                    {
+                        "state": "stable",
+                        "operationId": None,
+                        "observedFingerprint": None,
+                        "recoveryRequired": False,
+                    },
+                )
+            )
+
+    def transaction_states(self) -> Mapping[str, Mapping[str, Any]]:
+        with self._timing_lock:
+            return {
+                key: dict(value) for key, value in self._document_states.items()
+            }
+
+    def _set_document_state(
+        self,
+        document_id: str,
+        state: str,
+        *,
+        operation_id: str | None,
+        observed_fingerprint: str | None = None,
+    ) -> None:
+        with self._timing_lock:
+            self._document_states[document_id] = {
+                "state": state,
+                "operationId": operation_id,
+                "observedFingerprint": observed_fingerprint,
+                "recoveryRequired": state == "indeterminate",
+            }
 
     def diagnostic_stage_timings(
         self, operation_id: str
@@ -387,6 +441,11 @@ class TransactionKernel:
         document_id = plan.document_id
         if not document_id:
             raise ValueError("document_id is required")
+        if self.document_transaction_state(document_id).get("state") == "indeterminate":
+            raise DocumentQuarantinedError(
+                "the document is quarantined after an indeterminate transaction; "
+                "reopen a verified recovery copy or the saved source before editing"
+            )
         if self._activity is not None:
             self._activity.checkpoint_current()
         capture_started = time.perf_counter_ns()
@@ -438,6 +497,12 @@ class TransactionKernel:
         )
         transaction_boundary_active = False
         failure_phase = "transaction_boundary"
+        self._set_document_state(
+            document_id,
+            "applying",
+            operation_id=plan.operation_id,
+            observed_fingerprint=current_fingerprint,
+        )
         try:
             if self._observer is not None:
                 history_started = time.perf_counter_ns()
@@ -704,8 +769,24 @@ class TransactionKernel:
                     )
                 except Exception:
                     pass
-            safe_restored = bool(rollback_succeeded)
             observed_after_fingerprint = fingerprint_model(observed_after)
+            exact_before = bool(
+                rollback_succeeded
+                and observed_after_fingerprint == current_fingerprint
+                and complete_models_equal(observed_after, before)
+            )
+            exact_after = bool(
+                observed_after_fingerprint == plan.after_fingerprint
+                and complete_models_equal(observed_after, expected_after)
+            )
+            safe_restored = exact_before
+            resolution_classification = (
+                "exact_restored"
+                if exact_before
+                else "exact_committed"
+                if exact_after
+                else "indeterminate"
+            )
             observed_changes = diff_models(before, observed_after)
             finalize_failure = getattr(
                 self._adapter, "finalize_verified_failure", None
@@ -749,6 +830,18 @@ class TransactionKernel:
                     failure_message,
                     str(rollback_error) or type(rollback_error).__name__,
                 )
+            self._set_document_state(
+                document_id,
+                (
+                    "restored"
+                    if exact_before
+                    else "committed"
+                    if exact_after
+                    else "indeterminate"
+                ),
+                operation_id=plan.operation_id,
+                observed_fingerprint=observed_after_fingerprint,
+            )
             raise TransactionVerificationError(
                 failure_message,
                 rollback_succeeded=safe_restored,
@@ -760,24 +853,109 @@ class TransactionKernel:
                 state_may_have_changed=bool(
                     observed_changes.changes or not safe_restored
                 ),
+                resolution_classification=resolution_classification,
             ) from exc
         finally:
+            active_failure = sys.exc_info()[0] is not None
+            cleanup_errors: list[Exception] = []
             try:
                 if transaction_boundary_active:
-                    end_verified_transaction(document_id)
+                    try:
+                        end_verified_transaction(document_id)
+                    except Exception as cleanup_exc:
+                        cleanup_errors.append(cleanup_exc)
             finally:
                 if self._persistence is not None and persistence_token is not None:
                     cancel = getattr(
                         self._persistence, "cancel_transaction", None
                     )
                     if callable(cancel):
-                        cancel(persistence_token)
+                        try:
+                            cancel(persistence_token)
+                        except Exception as cleanup_exc:
+                            cleanup_errors.append(cleanup_exc)
+            if cleanup_errors:
+                self._store_failure_traceback(
+                    plan.operation_id,
+                    "\n".join(
+                        "transaction cleanup failed: {}".format(error)
+                        for error in cleanup_errors
+                    ),
+                )
+                if not active_failure:
+                    try:
+                        observed_cleanup = self._retain_or_copy(
+                            self._capture_verified_state(document_id)
+                        )
+                        observed_cleanup_fingerprint = fingerprint_model(
+                            observed_cleanup
+                        )
+                        exact_after_cleanup = bool(
+                            observed_cleanup_fingerprint == plan.after_fingerprint
+                            and complete_models_equal(
+                                observed_cleanup, expected_after
+                            )
+                        )
+                        exact_before_cleanup = bool(
+                            observed_cleanup_fingerprint == current_fingerprint
+                            and complete_models_equal(observed_cleanup, before)
+                        )
+                    except Exception:
+                        observed_cleanup_fingerprint = None
+                        exact_after_cleanup = False
+                        exact_before_cleanup = False
+                    cleanup_classification = (
+                        "exact_committed"
+                        if exact_after_cleanup
+                        else "exact_restored"
+                        if exact_before_cleanup
+                        else "indeterminate"
+                    )
+                    self._set_document_state(
+                        document_id,
+                        "committed"
+                        if exact_after_cleanup
+                        else "restored"
+                        if exact_before_cleanup
+                        else "indeterminate",
+                        operation_id=plan.operation_id,
+                        observed_fingerprint=observed_cleanup_fingerprint,
+                    )
+                    timings["total"] = float(
+                        plan.stage_timings.get("total", 0.0)
+                    ) + (
+                        time.perf_counter_ns() - transaction_started
+                    ) / 1_000_000
+                    self._store_stage_timings(plan.operation_id, timings)
+                    raise TransactionVerificationError(
+                        "transaction cleanup failed: {}".format(
+                            str(cleanup_errors[0])
+                            or type(cleanup_errors[0]).__name__
+                        ),
+                        rollback_succeeded=exact_before_cleanup,
+                        rollback_attempted=False,
+                        observed_after_fingerprint=observed_cleanup_fingerprint,
+                        observed_change_count=len(
+                            diff_models(before, observed_cleanup).changes
+                        )
+                        if observed_cleanup_fingerprint is not None
+                        else 0,
+                        state_may_have_changed=not exact_before_cleanup,
+                        resolution_classification=cleanup_classification,
+                    )
         from .mutation import writable_subset
 
         timings["total"] = float(plan.stage_timings.get("total", 0.0)) + (
             time.perf_counter_ns() - transaction_started
         ) / 1_000_000
         self._store_stage_timings(plan.operation_id, timings)
+
+        self._set_document_state(
+            document_id,
+            "committed",
+            operation_id=plan.operation_id,
+            observed_fingerprint=plan.after_fingerprint,
+        )
 
         return TransactionResult(
             document_id=document_id,
@@ -805,6 +983,7 @@ class TransactionKernel:
 
 
 __all__ = [
+    "DocumentQuarantinedError",
     "StaleDocumentError",
     "TransactionAdapter",
     "TransactionKernel",

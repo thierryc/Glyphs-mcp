@@ -18,6 +18,7 @@ from glyphs_mcp_v2.canonical_tree import CanonicalFontTree, MemoryObjectStore  #
 from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
 from glyphs_mcp_v2.change_lifecycle import DocumentHistoryLifecycle  # noqa: E402
 from glyphs_mcp_v2.transactions import (  # noqa: E402
+    DocumentQuarantinedError,
     StaleDocumentError,
     TransactionKernel,
     TransactionVerificationError,
@@ -170,6 +171,9 @@ class V2TransactionTests(unittest.TestCase):
         self.assertIn("'expected': 'Beta'", str(caught.exception))
         self.assertEqual(adapter.model, self.before)
         self.assertEqual(adapter.restore_calls, 1)
+        self.assertEqual(
+            kernel.document_transaction_state("doc_alpha")["state"], "restored"
+        )
 
     def test_live_apply_failure_names_its_transaction_phase(self) -> None:
         class FailingApplyAdapter(_DocumentAdapter):
@@ -199,9 +203,10 @@ class V2TransactionTests(unittest.TestCase):
         adapter = _DocumentAdapter(self.before)
         adapter.corrupt_apply = True
         adapter.fail_restore = True
+        kernel = TransactionKernel(adapter)
 
         with self.assertRaises(TransactionVerificationError) as caught:
-            TransactionKernel(adapter).apply(
+            kernel.apply(
                 document_id="doc_alpha",
                 expected_fingerprint=fingerprint_model(self.before),
                 change_set=diff_models(self.before, self.after),
@@ -216,6 +221,49 @@ class V2TransactionTests(unittest.TestCase):
         )
         self.assertIn("rollback failed: restore failed", str(caught.exception))
         self.assertEqual(adapter.restore_calls, 1)
+        self.assertEqual(
+            kernel.document_transaction_state("doc_alpha")["state"],
+            "indeterminate",
+        )
+        with self.assertRaises(DocumentQuarantinedError):
+            kernel.apply(
+                document_id="doc_alpha",
+                expected_fingerprint=fingerprint_model(adapter.model),
+                change_set=diff_models(adapter.model, self.after),
+            )
+        self.assertEqual(adapter.apply_calls, 1)
+
+    def test_failed_restore_that_proves_exact_after_is_classified_committed(self) -> None:
+        class FailingObserver:
+            def prepare_transaction(self, document_id, before):
+                return "trace"
+
+            def commit_transaction(self, *arguments, **keywords):
+                raise RuntimeError("history write failed")
+
+            def abort_transaction(self, token):
+                pass
+
+        adapter = _DocumentAdapter(self.before)
+        adapter.fail_restore = True
+        kernel = TransactionKernel(adapter, observer=FailingObserver())
+
+        with self.assertRaises(TransactionVerificationError) as caught:
+            kernel.apply(
+                document_id="doc_alpha",
+                expected_fingerprint=fingerprint_model(self.before),
+                change_set=diff_models(self.before, self.after),
+            )
+
+        self.assertEqual(adapter.model, self.after)
+        self.assertEqual(
+            caught.exception.to_public_dict()["rollbackClassification"],
+            "exact_committed",
+        )
+        self.assertEqual(
+            kernel.document_transaction_state("doc_alpha")["state"],
+            "committed",
+        )
 
     def test_verified_mutation_observes_unchanged_source_content(self) -> None:
         adapter = _DocumentAdapter(self.before)
@@ -561,6 +609,34 @@ class V2TransactionTests(unittest.TestCase):
                 "capture",
                 "end",
             ],
+        )
+
+    def test_transaction_boundary_cleanup_failure_is_exactly_classified(self) -> None:
+        class CleanupFailureAdapter(_DocumentAdapter):
+            def begin_verified_transaction(self, document_id):
+                pass
+
+            def end_verified_transaction(self, document_id):
+                raise RuntimeError("interface resume failed")
+
+        adapter = CleanupFailureAdapter(self.before)
+        kernel = TransactionKernel(adapter)
+
+        with self.assertRaises(TransactionVerificationError) as caught:
+            kernel.apply(
+                document_id="doc_alpha",
+                expected_fingerprint=fingerprint_model(self.before),
+                change_set=diff_models(self.before, self.after),
+            )
+
+        self.assertEqual(adapter.model, self.after)
+        self.assertEqual(
+            caught.exception.to_public_dict()["rollbackClassification"],
+            "exact_committed",
+        )
+        self.assertEqual(
+            kernel.document_transaction_state("doc_alpha")["state"],
+            "committed",
         )
 
 
