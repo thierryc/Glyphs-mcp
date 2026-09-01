@@ -2893,7 +2893,7 @@ def validate_source_bundle(root: Path, *, model: Mapping[str, Any]) -> dict[str,
     }
 
 
-def _default_native_renderer(
+def native_source_renderer(
     font: Any,
     *,
     target_kind: str,
@@ -3964,7 +3964,7 @@ def render_source_bundle(
             target={"path": str(destination)},
         )
     destination.mkdir(parents=True)
-    renderer = native_renderer or _default_native_renderer
+    renderer = native_renderer or native_source_renderer
     glyph_order, _aliases, glyphs = _glyph_inventory(model)
     decompose_glyphs = [
         name for name in glyph_order if glyphs[name].get("export") is not False
@@ -4227,6 +4227,7 @@ __all__ = [
     "SourceBundleError",
     "build_feature_source",
     "normalize_feature_code",
+    "native_source_renderer",
     "preflight_source_bundle",
     "render_source_bundle",
     "resolve_number_values",

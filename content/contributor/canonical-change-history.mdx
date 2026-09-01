@@ -43,7 +43,9 @@ The Change Log and saved-source Reporter neither own nor drive each other.
 
 In this Reporter path, Glyphs objects never enter a background worker. Reporter
 callbacks capture only the current document, glyph, and layer identities, then
-copy visual primitives through main-queue slices budgeted to 2 ms. A slice
+wait for a 25 ms latest-wins interface quiet window before copying visual
+primitives through main-queue slices budgeted to 2 ms. Rapid selection changes
+therefore retire obsolete captures before they touch native geometry. A slice
 reschedules unfinished work;
 it never traverses a complete font from a save or drawing callback.
 

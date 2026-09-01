@@ -26,6 +26,7 @@ SHARED_RUNTIME_FILES = ("runtime_path_policy.py", "runtime_probe.py")
 V2_RESOURCE_ALLOWLIST = (
     "curve_overlay_model.py",
     "debug_event_logging.py",
+    "export_designspace_ufo.py",
     "glyphs_curve_reporter.py",
     "glyphs_litsquare_adapter.py",
     "glyphs_litsquare_palette.py",

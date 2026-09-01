@@ -8,7 +8,7 @@ only the generated evidence identifier.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from threading import RLock
 from types import MappingProxyType
 from typing import Any, Callable, Mapping, Optional, Sequence
@@ -75,8 +75,8 @@ class NativeReplayEvidenceStore:
         templates: Mapping[Sequence[str], Any],
         ttl_seconds: float,
     ) -> NativeReplayEvidence:
-        if not document_id or not before_fingerprint or not after_fingerprint:
-            raise ValueError("native replay evidence requires document fingerprints")
+        if not document_id or not before_fingerprint:
+            raise ValueError("native replay evidence requires a document baseline")
         ttl = float(ttl_seconds)
         if ttl <= 0:
             raise ValueError("ttl_seconds must be positive")
@@ -113,6 +113,38 @@ class NativeReplayEvidenceStore:
             if overflow > 0:
                 self._evict_oldest_locked(tuple(self._records.values()), overflow)
             return record
+
+    def bind(
+        self,
+        evidence_id: str,
+        *,
+        document_id: str,
+        before_fingerprint: str,
+        after_fingerprint: str,
+        capabilities: Sequence[str],
+    ) -> Optional[NativeReplayEvidence]:
+        """Bind prepared templates to the immutable patch they will replay."""
+
+        with self._lock:
+            self._purge_locked()
+            record = self._records.get(str(evidence_id))
+            if (
+                record is None
+                or record.document_id != str(document_id)
+                or record.before_fingerprint != str(before_fingerprint)
+                or record.after_fingerprint
+                or not after_fingerprint
+            ):
+                return None
+            bound = replace(
+                record,
+                after_fingerprint=str(after_fingerprint),
+                capabilities=tuple(
+                    sorted(set(str(value) for value in capabilities))
+                ),
+            )
+            self._records[bound.evidence_id] = bound
+            return bound
 
     def resolve(
         self, evidence_id: str, *, document_id: str

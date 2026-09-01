@@ -28,6 +28,7 @@ from glyphs_mcp_v2.mechanics_registry import (  # noqa: E402
     SCALAR_VALUE_FIELDS,
     TRANSFORM_TARGETS,
     TRANSLATION_TARGETS,
+    public_mechanics_registry,
 )
 
 
@@ -39,6 +40,7 @@ def render() -> str:
     python_contract = detached_python_registry()["pythonExecution"][
         "detachedNamespace"
     ]
+    geometry_contract = public_mechanics_registry()["geometryExecution"]
     lines = [
         "---",
         'title: "Glyphs MCP v2 command set"',
@@ -91,6 +93,20 @@ def render() -> str:
             "- Observation operands use `observation.<projection>.<path>`, for",
             "  example `observation.bounds.x` or",
             "  `observation.alignment.effectiveLayerAlignment`.",
+            "",
+            "## Floating-point geometry contract",
+            "",
+            "- Coordinate policy: `{}`; supported quantizers: {}.".format(
+                geometry_contract["coordinatePolicy"],
+                _codes(geometry_contract["quantizers"]),
+            ),
+            "- Existing and newly created Glyphs 4 layers run with native layer",
+            "  rounding temporarily disabled. Structural operations and Python use",
+            "  temporary grid zero as a fallback, restored before canonical read-back.",
+            "- The runtime preserves the user's grid, subdivision, and global automatic-",
+            "  alignment setting on success, failure, cancellation, and rollback.",
+            "  Component alignment remains preserved unless an operation explicitly",
+            "  requests an alignment policy override.",
             "",
             "## Detached Python contract",
             "",

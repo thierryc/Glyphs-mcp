@@ -128,6 +128,7 @@ class TransactionVerificationError(RuntimeError):
         observed_change_count: int = 0,
         source_file_changed: bool = False,
         persistence_reconciliation: Optional[Mapping[str, Any]] = None,
+        failure_evidence: Optional[Mapping[str, Any]] = None,
         state_may_have_changed: Optional[bool] = None,
         resolution_classification: Optional[str] = None,
     ) -> None:
@@ -138,6 +139,7 @@ class TransactionVerificationError(RuntimeError):
         self.observed_change_count = max(0, int(observed_change_count))
         self.source_file_changed = bool(source_file_changed)
         self.persistence_reconciliation = dict(persistence_reconciliation or {})
+        self.failure_evidence = dict(failure_evidence or {})
         self.state_may_have_changed = (
             bool(state_may_have_changed)
             if state_may_have_changed is not None
@@ -164,6 +166,7 @@ class TransactionVerificationError(RuntimeError):
             "observedChangeCount": self.observed_change_count,
             "sourceFileChanged": self.source_file_changed,
             "persistenceReconciliation": dict(self.persistence_reconciliation),
+            "failureEvidence": dict(self.failure_evidence),
             "fontSaved": False,
         }
 
@@ -189,15 +192,23 @@ class TransactionResult:
 
 
 class TransactionKernel:
-    _MAX_POST_SETTLE_RECONCILIATION_PASSES = 3
     stage_timing_names = (
         "initial_capture",
+        "baseline_capture",
         "clone",
+        "replay",
+        "canonical_comparison",
+        "native_comparison",
         "detached_apply",
         "verification",
+        "apply",
+        "readback",
+        "rollback",
         "live_apply",
         "settled_verification",
         "history",
+        "max_native_phase",
+        "native_phase_count",
         "total",
     )
 
@@ -450,9 +461,11 @@ class TransactionKernel:
             self._activity.checkpoint_current()
         capture_started = time.perf_counter_ns()
         before = self._retain_or_copy(self._capture_state(document_id))
-        timings["initial_capture"] += (
+        capture_ms = (
             time.perf_counter_ns() - capture_started
         ) / 1_000_000
+        timings["initial_capture"] += capture_ms
+        timings["baseline_capture"] += capture_ms
         current_fingerprint = fingerprint_model(before)
         if current_fingerprint != plan.before_fingerprint:
             raise StaleDocumentError("document fingerprint changed before the transaction")
@@ -544,9 +557,17 @@ class TransactionKernel:
                 )
             else:
                 self._adapter.apply_change_set(document_id, plan.writable_change_set)
-            timings["live_apply"] += (
+            live_apply_ms = (
                 time.perf_counter_ns() - live_apply_started
             ) / 1_000_000
+            timings["live_apply"] += live_apply_ms
+            timings["apply"] += live_apply_ms
+            settle_verified_transaction = getattr(
+                self._adapter, "settle_verified_transaction", None
+            )
+            if callable(settle_verified_transaction):
+                failure_phase = "transaction_settlement"
+                settle_verified_transaction(document_id)
             if self._activity is not None:
                 self._activity.advance_current(
                     "verifying", "Verifying the result", cancellable=False
@@ -557,31 +578,15 @@ class TransactionKernel:
                 self._capture_verified_state(document_id, expected_after)
             )
             actual_fingerprint = fingerprint_model(actual_after)
-            reconcile = getattr(self._adapter, "reconcile_verified_state", None)
-            if (
-                actual_fingerprint != plan.after_fingerprint
-                and callable(reconcile)
-                and fingerprint_model(expected_after) == plan.after_fingerprint
-            ):
-                for _ in range(self._MAX_POST_SETTLE_RECONCILIATION_PASSES):
-                    reconcile(
-                        document_id,
-                        actual_after,
-                        expected_after,
-                        capabilities=plan.capabilities,
-                        execution_context=plan.execution_context,
-                    )
-                    actual_after = self._retain_or_copy(
-                        self._capture_verified_state(document_id, expected_after)
-                    )
-                    actual_fingerprint = fingerprint_model(actual_after)
-                    if actual_fingerprint == plan.after_fingerprint:
-                        break
-            if (
-                actual_fingerprint != plan.after_fingerprint
-                or fingerprint_model(expected_after) != plan.after_fingerprint
-                or not complete_models_equal(actual_after, expected_after)
-            ):
+            expected_fingerprint_valid = (
+                fingerprint_model(expected_after) == plan.after_fingerprint
+            )
+            readback_verified = bool(
+                expected_fingerprint_valid
+                and actual_fingerprint == plan.after_fingerprint
+                and complete_models_equal(actual_after, expected_after)
+            )
+            if not readback_verified:
                 residual = diff_models(actual_after, expected_after)
                 raise RuntimeError(
                     "document read-back did not match the detached verified plan "
@@ -675,9 +680,11 @@ class TransactionKernel:
                     ),
                     "evidenceCompleteness": "partial",
                 }
-            timings["settled_verification"] += (
+            readback_ms = (
                 time.perf_counter_ns() - settled_started
             ) / 1_000_000
+            timings["settled_verification"] += readback_ms
+            timings["readback"] += readback_ms
             if self._observer is not None:
                 history_started = time.perf_counter_ns()
                 failure_phase = "history"
@@ -706,6 +713,7 @@ class TransactionKernel:
             rollback_succeeded = False
             rollback_error: Exception | None = None
             observed_after = before
+            rollback_started = time.perf_counter_ns()
             try:
                 if self._activity is not None:
                     self._activity.advance_current(
@@ -746,6 +754,9 @@ class TransactionKernel:
                     )
                 except Exception:
                     observed_after = before
+            timings["rollback"] += (
+                time.perf_counter_ns() - rollback_started
+            ) / 1_000_000
             source_final = self._capture_source_state(document_id)
             source_file_changed = self._source_state_changed(
                 source_before, source_final
@@ -850,6 +861,16 @@ class TransactionKernel:
                 observed_change_count=len(observed_changes.changes),
                 source_file_changed=source_file_changed,
                 persistence_reconciliation=persistence_reconciliation,
+                failure_evidence={
+                    "phase": failure_phase,
+                    "causeType": type(exc).__name__,
+                    "causeSummary": (str(exc) or type(exc).__name__)[:4096],
+                    "rollbackErrorType": (
+                        type(rollback_error).__name__
+                        if rollback_error is not None
+                        else None
+                    ),
+                },
                 state_may_have_changed=bool(
                     observed_changes.changes or not safe_restored
                 ),
@@ -954,16 +975,16 @@ class TransactionKernel:
             document_id,
             "committed",
             operation_id=plan.operation_id,
-            observed_fingerprint=plan.after_fingerprint,
+            observed_fingerprint=actual_fingerprint,
         )
 
         return TransactionResult(
             document_id=document_id,
             operation_id=plan.operation_id,
             before_fingerprint=current_fingerprint,
-            after_fingerprint=plan.after_fingerprint,
+            after_fingerprint=actual_fingerprint,
             requested_change_count=len(plan.writable_change_set.changes),
-            observed_change_count=len(plan.observed_change_set.changes),
+            observed_change_count=len(history_change_set.changes),
             # A rollback patch must start at the complete observed after-state,
             # not the writable-only intermediate target. Otherwise any Glyphs-
             # derived effect makes the inverse stale before it is ever used.

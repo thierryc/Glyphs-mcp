@@ -10,7 +10,7 @@ typographic heuristic, transport, or host API policy.
 from __future__ import annotations
 
 import copy
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Optional, Sequence
 
 from .canonical_collections import (
     find_entity_index,
@@ -165,8 +165,167 @@ def _remove_kerning_partition(kerning: dict[str, Any], master_id: str) -> None:
                     contexts.pop(context_key, None)
 
 
+def _copy_materialized_kerning_partition(
+    kerning: dict[str, Any], source: Mapping[str, Any], master_id: str
+) -> None:
+    """Copy only one captured native master partition into canonical kerning."""
+
+    directional = any(
+        domain in source for domain in ("ltr", "rtl", "vertical", "context")
+    )
+    if not directional:
+        if master_id in source:
+            kerning[master_id] = copy.deepcopy(source[master_id])
+        return
+    for domain in ("ltr", "rtl", "vertical"):
+        values = source.get(domain)
+        if not isinstance(values, Mapping) or master_id not in values:
+            continue
+        destination = kerning.setdefault(domain, {})
+        if not isinstance(destination, dict):
+            raise ValueError("canonical kerning domain must be a mapping")
+        destination[master_id] = copy.deepcopy(values[master_id])
+    contexts = source.get("context")
+    if not isinstance(contexts, Mapping):
+        return
+    destination_contexts = kerning.setdefault("context", {})
+    if not isinstance(destination_contexts, dict):
+        raise ValueError("canonical contextual kerning must be a mapping")
+    for context_key, values in contexts.items():
+        if not isinstance(values, Mapping) or master_id not in values:
+            continue
+        destination = destination_contexts.setdefault(str(context_key), {})
+        if not isinstance(destination, dict):
+            raise ValueError("canonical contextual kerning partition must be a mapping")
+        destination[master_id] = copy.deepcopy(values[master_id])
+
+
+def build_materializations(
+    model: Mapping[str, Any],
+    materializations: Sequence[Mapping[str, Any]],
+    *,
+    cancellation_checkpoint: Optional[Callable[[], None]] = None,
+) -> MutationBuild:
+    """Attach exact detached-native entities captured for generic materialization.
+
+    This registry never interpolates. The adapter prepares authoritative master
+    and layer payloads on a detached Glyphs clone; this pure builder validates
+    their ownership and turns them into the ordinary master-lifecycle patch.
+    """
+
+    if not materializations:
+        raise ValueError("materialize requires at least one prepared target")
+    source_masters = model.get("masters", [])
+    if not isinstance(source_masters, (list, tuple)):
+        raise ValueError("masters must be an ordered canonical collection")
+    masters = [copy.deepcopy(dict(master)) for master in source_masters]
+    current_order, current_by_id = require_indexed_entities(masters, "masters")
+    source_glyphs = model.get("glyphs", {})
+    if not isinstance(source_glyphs, Mapping):
+        raise ValueError("glyphs must be keyed by name")
+    glyphs = dict(source_glyphs)
+    source_kerning = model.get("kerning", {})
+    if not isinstance(source_kerning, Mapping):
+        raise ValueError("kerning must be a canonical mapping")
+    kerning = copy.deepcopy(dict(source_kerning))
+    added: dict[str, dict[str, Any]] = {}
+    layers_by_master: dict[str, Mapping[str, Any]] = {}
+    final_order: list[str] | None = None
+
+    for item in materializations:
+        if cancellation_checkpoint is not None:
+            cancellation_checkpoint()
+        master = item.get("master")
+        layers = item.get("layers")
+        order = item.get("masterOrder")
+        if not isinstance(master, Mapping) or not isinstance(layers, Mapping):
+            raise ValueError("materialize requires an authoritative master and layers")
+        master_id = str(master.get("id") or "")
+        if not master_id or master_id in current_by_id or master_id in added:
+            raise ValueError("materialize requires one unique new master identity")
+        if not isinstance(order, Sequence) or isinstance(order, (str, bytes)):
+            raise ValueError("materialize requires the authoritative master order")
+        normalized_order = [str(identity) for identity in order]
+        if final_order is None:
+            final_order = normalized_order
+        elif final_order != normalized_order:
+            raise ValueError("materialized targets disagree on master order")
+        added[master_id] = copy.deepcopy(dict(master))
+        layers_by_master[master_id] = layers
+        captured_kerning = item.get("kerning")
+        if isinstance(captured_kerning, Mapping):
+            _copy_materialized_kerning_partition(
+                kerning, captured_kerning, master_id
+            )
+
+    target_ids = set(current_order) | set(added)
+    if (
+        final_order is None
+        or set(final_order) != target_ids
+        or len(final_order) != len(target_ids)
+    ):
+        raise ValueError("authoritative materialized master order is incomplete")
+    masters_by_id = {**current_by_id, **added}
+    masters = [copy.deepcopy(dict(masters_by_id[identity])) for identity in final_order]
+
+    for glyph_name, glyph in source_glyphs.items():
+        if cancellation_checkpoint is not None:
+            cancellation_checkpoint()
+        if not isinstance(glyph, Mapping):
+            raise ValueError("glyph {} is not canonical".format(glyph_name))
+        layers = _canonical_layers(glyph, deep=False)
+        prefix_length = _master_layer_prefix_length(layers)
+        existing_prefix = {
+            str(layer.get("masterId") or layer.get("id") or ""): layer
+            for layer in layers[:prefix_length]
+        }
+        for master_id, captured in layers_by_master.items():
+            layer = captured.get(str(glyph_name))
+            if not isinstance(layer, Mapping):
+                raise ValueError(
+                    "materialized master {} has no layer for glyph {}".format(
+                        master_id, glyph_name
+                    )
+                )
+            normalized = copy.deepcopy(dict(layer))
+            if (
+                str(normalized.get("id") or "") != master_id
+                or str(normalized.get("masterId") or "") != master_id
+                or not bool(normalized.get("isMasterLayer"))
+            ):
+                raise ValueError("materialized layers must be owned by their new master")
+            existing_prefix[master_id] = normalized
+        if set(existing_prefix) != target_ids:
+            raise ValueError(
+                "glyph {} does not contain one layer per target master".format(
+                    glyph_name
+                )
+            )
+        glyph_copy = dict(glyph)
+        glyph_copy["layers"] = [
+            existing_prefix[identity] for identity in final_order
+        ] + layers[prefix_length:]
+        glyphs[str(glyph_name)] = glyph_copy
+
+    after = dict(model)
+    after["masters"] = masters
+    after["glyphs"] = glyphs
+    after["kerning"] = kerning
+    changes = master_lifecycle_request_diff(model, after)
+    if not changes.changes:
+        raise ValueError("materialize must produce a document change")
+    return MutationBuild(
+        change_set=changes,
+        capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+        execution_context={"materializedMasterIds": tuple(added)},
+    )
+
+
 def build_master_updates(
-    model: Mapping[str, Any], updates: Sequence[Mapping[str, Any]]
+    model: Mapping[str, Any],
+    updates: Sequence[Mapping[str, Any]],
+    *,
+    cancellation_checkpoint: Optional[Callable[[], None]] = None,
 ) -> MutationBuild:
     """Build master operations plus their mechanically owned structures."""
 
@@ -191,6 +350,8 @@ def build_master_updates(
     seen: set[tuple[str, str]] = set()
 
     for update in updates:
+        if cancellation_checkpoint is not None:
+            cancellation_checkpoint()
         action = str(update.get("action") or "update").lower()
         master_id = str(update.get("masterId") or "")
         target = (action, master_id)
@@ -231,6 +392,8 @@ def build_master_updates(
             source_map[master_id] = source_id
 
             for glyph_name, glyph in list(glyphs.items()):
+                if cancellation_checkpoint is not None:
+                    cancellation_checkpoint()
                 if not isinstance(glyph, Mapping):
                     raise ValueError("glyph {} is not canonical".format(glyph_name))
                 layers = _canonical_layers(glyph, deep=False)
@@ -527,4 +690,8 @@ def build_layer_updates(
     )
 
 
-__all__ = ["build_layer_updates", "build_master_updates"]
+__all__ = [
+    "build_layer_updates",
+    "build_master_updates",
+    "build_materializations",
+]

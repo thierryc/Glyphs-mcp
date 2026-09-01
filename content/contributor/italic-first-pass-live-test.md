@@ -1,5 +1,15 @@
 # Nine-master first-italic-pass live test
 
+> Historical measurement: the grid-snapping workarounds recorded here are
+> superseded by v2's central floating-point execution scope. Current operations
+> use exact-only geometry, preserve global automatic alignment, and treat
+> native grid rounding as a blocker.
+
+> A fresh retest of the implemented generic mechanics is recorded in
+> [large-affine-live-retest-2026-08-30.md](./large-affine-live-retest-2026-08-30.md).
+> The new runtime loaded correctly, but the live `<120s` release gate still
+> failed before apply.
+
 ## Result
 
 On 2026-08-30, Glyphs MCP 2.0.0 was tested against the open disposable
@@ -211,8 +221,8 @@ Implemented:
    apply requires `confirmRecovery=true`, creates and fingerprints one full
    native snapshot, and returns a recovery receipt.
 3. Registered semantic equivalence is the default. It accepts reviewed
-   omission defaults, identity-addressed storage order, derived grid/alignment
-   effects, and bounded component-decomposition round trips. The observed
+   omission defaults, identity-addressed storage order, explicitly requested
+   component-alignment effects, and bounded component-decomposition round trips. The observed
    `~7e-15` angle/slant deltas pass with evidence; unknown private state and
    one-unit geometry changes still block. `strict_archive` remains available
    as the deliberately expensive diagnostic gate.
@@ -234,12 +244,13 @@ Implemented without italic-specific endpoints:
    vertical, and contextual kerning. Shard-backed canonical snapshots retain
    unchanged glyph data across planning and validation.
 2. Generic `transform` accepts CoreGraphics-order matrices, an optional pivot,
-   exact or grid quantization, selected paths/anchors/components, component
+   exact-only floating-point geometry, selected paths/anchors/components, component
    prepend/append/conjugate/unchanged composition, and explicit alignment
    policies. It supports layer, path/component shape, node, and anchor targets,
    preserves live component references, rejects unsupported shapes and
-   singular conjugation, and disables automatic alignment only for requested
-   noncommuting transforms.
+   singular conjugation, and applies component-level alignment overrides only
+   for explicitly requested noncommuting transforms. It never changes the
+   font-wide automatic-alignment setting.
 3. `collection.index`, parent-scoped layer reads, axes, alignment, and
    component transforms are available through ordinary projections.
 4. Preview/apply return stage timings, equivalence evidence, bounded normalized
@@ -248,7 +259,7 @@ Implemented without italic-specific endpoints:
 The reference pass is now one immutable operation list composed of
 `duplicate`, `move`, `set`, and `transform`, using a baseline pivot,
 `componentComposition=conjugate`, `alignmentPolicy=explicit_noncommuting`, and
-the selected grid policy. Staged Python is only an unsupported-capability
+exact floating-point geometry. Staged Python is only an unsupported-capability
 fallback.
 
 Acceptance checks: one semantic preview, one atomic apply, one validation read,

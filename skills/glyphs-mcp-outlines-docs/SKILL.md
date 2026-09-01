@@ -31,6 +31,12 @@ layer. Generic `insert`, `set`, `move`, and `remove` cover explicit canonical
 shape/anchor mechanics when their full values are known. Node-level and other
 unsupported edits use `execute_python(mode="staged_document")`.
 
+Preserve fractional node, anchor, component, width, and transform values
+exactly. Do not round coordinates, snap to the font grid, change the grid or
+subdivision, or change global automatic alignment; the v2 runtime manages
+precision centrally. Component-level alignment changes require an explicit,
+reviewed alignment policy.
+
 Always add physical before/after constraints, inspect the immutable
 `preview_change` or staged Python preview, and apply it only through
 `apply_change`. Re-read exact affected entities and proof interpolation,

@@ -36,6 +36,12 @@ unsupported structural edits belong in
 smooth flags, winding, component identity, anchors, and non-target metadata
 unless the user explicitly approves otherwise.
 
+Master duplication and materialization must retain fractional widths,
+coordinates, anchors, and component transforms in existing and newly created
+layers. Verify those values exactly. Never round or grid-snap them, and never
+change the grid, subdivision, or global automatic-alignment setting; the v2
+runtime manages its temporary precision state centrally.
+
 Create `preview_change` when generic operations suffice. Inspect the immutable
 preview, its exact layer identities, before/after
 constraints, and semantic diff. Apply once through `apply_change`, then re-read

@@ -5,10 +5,11 @@
 from __future__ import annotations
 
 import time
+from collections import OrderedDict
 
 import objc
 from AppKit import NSBezierPath, NSColor, NSGraphicsContext, NSPoint
-from Foundation import NSNotificationCenter, NSOperationQueue
+from Foundation import NSNotificationCenter, NSObject, NSOperationQueue
 from GlyphsApp import (  # type: ignore[import-not-found]
     DOCUMENTACTIVATED,
     DOCUMENTCLOSED,
@@ -26,6 +27,7 @@ from .diff_overlay import (
     SavedLayerGeometryCache,
     build_layer_diff_plan,
 )
+from .projection_queue import ProjectionRequestQueue
 from .saved_source import (
     SavedSourceRefresh,
     default_saved_source_service,
@@ -37,6 +39,8 @@ SAVED_RGBA = (1.0, 0.32, 0.06, 0.82)
 DIFFERENCE_RGBA = (1.0, 0.58, 0.08, 0.46)
 METRIC_RGBA = (1.0, 0.58, 0.08, 0.34)
 NATIVE_WILL_SAVE_NOTIFICATION = "NSDocumentWillSaveNotification"
+PROJECTION_SETTLE_DELAY_SECONDS = 0.025
+PLAN_CACHE_CAPACITY = 128
 
 
 def _native_value(value):
@@ -187,9 +191,13 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
     def settings(self):
         self.menuName = "Changes Since Save"
         self._saved_sources = default_saved_source_service()
-        self._plan_cache = {}
+        self._plan_cache = OrderedDict()
         self._projection_versions = {}
-        self._projection_pending = set()
+        self._projection_pending = {}
+        self._projection_requests = ProjectionRequestQueue(
+            delay_seconds=PROJECTION_SETTLE_DELAY_SECONDS
+        )
+        self._projection_flush_scheduled = False
         self._saved_geometry_cache = SavedLayerGeometryCache()
         self._active_paths = set()
         self._callbacks = []
@@ -197,6 +205,8 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
         self._native_notification_center = None
         self._interface_generation = 0
         self._disposed = False
+        self._redraw_scheduled = False
+        self._suppressed_plan_key = None
         self._last_projection_duration_ms = 0.0
 
     @objc.python_method
@@ -246,7 +256,12 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
             self._saved_sources.resume_after_save(path)
 
     def InterfaceChanged_(self, _notification):
-        self._interface_generation += 1
+        self._interface_generation = self._projection_requests.note_interface_change()
+        for key, version in tuple(self._projection_pending.items()):
+            if version[1] == self._interface_generation:
+                continue
+            self._projection_pending.pop(key, None)
+            self._saved_sources.coordinator.invalidate(key, kind="diff")
 
     @objc.python_method
     def _refresh_open_fonts(self, *, force):
@@ -258,12 +273,25 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
         self._active_paths = set(paths)
 
         def retained(changed):
-            if not changed or self._disposed:
+            if not changed:
                 return
-            self._plan_cache = {
-                key: value for key, value in self._plan_cache.items() if key[0] in paths
-            }
-            self._request_redraw()
+
+            def publish_retention():
+                if self._disposed:
+                    return
+                self._plan_cache = OrderedDict(
+                    (key, value)
+                    for key, value in self._plan_cache.items()
+                    if key[0] in paths
+                )
+                self._projection_versions = {
+                    key: value
+                    for key, value in self._projection_versions.items()
+                    if key[0] in paths
+                }
+                self._request_redraw()
+
+            NSOperationQueue.mainQueue().addOperationWithBlock_(publish_retention)
 
         self._saved_sources.request_retain_only(paths, completed=retained)
         for path in sorted(paths):
@@ -271,24 +299,33 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
 
     @objc.python_method
     def _saved_source_updated(self, result: SavedSourceRefresh):
-        if self._disposed:
-            return
-        self._plan_cache = {
-            key: value for key, value in self._plan_cache.items() if key[0] != result.path
-        }
-        self._projection_versions = {
-            key: value
-            for key, value in self._projection_versions.items()
-            if key[0] != result.path
-        }
-        self._request_redraw()
+        path = result.path
+
+        def publish_update():
+            if self._disposed:
+                return
+            self._plan_cache = OrderedDict(
+                (key, value)
+                for key, value in self._plan_cache.items()
+                if key[0] != path
+            )
+            self._projection_versions = {
+                key: value
+                for key, value in self._projection_versions.items()
+                if key[0] != path
+            }
+            self._request_redraw()
+
+        NSOperationQueue.mainQueue().addOperationWithBlock_(publish_update)
 
     @objc.python_method
     def _request_redraw(self):
-        if self._disposed:
+        if self._disposed or self._redraw_scheduled:
             return
+        self._redraw_scheduled = True
 
         def redraw():
+            self._redraw_scheduled = False
             if self._disposed:
                 return
             try:
@@ -317,17 +354,80 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
     @objc.python_method
     def _schedule_projection(self, key, layer, snapshot):
         version = (snapshot.source_fingerprint, self._interface_generation)
-        if self._projection_versions.get(key) == version or key in self._projection_pending:
+        if (
+            self._projection_versions.get(key) == version
+            or self._projection_pending.get(key) == version
+        ):
             return
-        self._projection_pending.add(key)
+        queued = self._projection_requests.defer(
+            key,
+            version=version,
+            payload=(key, layer, snapshot),
+        )
+        if queued:
+            self._arm_projection_flush()
+
+    @objc.python_method
+    def _arm_projection_flush(self):
+        if self._disposed or self._projection_flush_scheduled:
+            return
+        self._projection_flush_scheduled = True
+        self.performSelector_withObject_afterDelay_(
+            "flushDeferredProjections:",
+            None,
+            self._projection_requests.remaining_delay(),
+        )
+
+    @objc.typedSelector(b"v@:@")
+    def flushDeferredProjections_(self, _sender):
+        self._projection_flush_scheduled = False
+        if self._disposed:
+            return
+        remaining, requests = self._projection_requests.drain_ready()
+        if remaining > 0.0:
+            self._arm_projection_flush()
+            return
+        try:
+            active_key = self._layer_request(self.activeLayer())
+        except Exception:
+            active_key = None
+        for key, layer, snapshot in requests:
+            if key != active_key:
+                continue
+            version = (snapshot.source_fingerprint, self._interface_generation)
+            if (
+                self._projection_versions.get(key) == version
+                or self._projection_pending.get(key) == version
+            ):
+                continue
+            self._begin_projection(key, layer, snapshot, version)
+
+    @objc.python_method
+    def _discard_projection(self, key, version):
+        if self._projection_pending.get(key) == version:
+            self._projection_pending.pop(key, None)
+
+    @objc.python_method
+    def _begin_projection(self, key, layer, snapshot, version):
+        if self._disposed or version[1] != self._interface_generation:
+            return
+        self._projection_pending[key] = version
         projector = [None]
 
         def capture_plain_layer():
-            if self._disposed or key not in self._projection_pending:
+            if (
+                self._disposed
+                or self._projection_pending.get(key) != version
+                or version[1] != self._interface_generation
+            ):
+                self._discard_projection(key, version)
                 return
             current = self._saved_sources.store.snapshot(key[0])
             if current is None or current.source_fingerprint != snapshot.source_fingerprint:
-                self._projection_pending.discard(key)
+                self._discard_projection(key, version)
+                return
+            if self._layer_request(layer) != key:
+                self._discard_projection(key, version)
                 return
             started = time.perf_counter_ns()
             try:
@@ -335,7 +435,7 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
                     projector[0] = NativeLayerOverlayProjector(layer)
                 complete = projector[0].step(budget_seconds=0.002)
             except Exception:
-                self._projection_pending.discard(key)
+                self._discard_projection(key, version)
                 return
             self._last_projection_duration_ms = (
                 time.perf_counter_ns() - started
@@ -347,7 +447,9 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
                 return
             layer_model = projector[0].result()
 
-            def prepare(_context):
+            def prepare(context):
+                if context.cancelled():
+                    return None
                 live_state = LayerVisualState.from_layer(layer_model)
                 candidates = tuple(
                     dict.fromkeys(
@@ -362,6 +464,8 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
                 )
                 plan = LayerDiffPlan(visible=False)
                 for layer_key in candidates:
+                    if context.cancelled():
+                        return None
                     saved_geometry = self._saved_geometry_cache.get_or_prepare(
                         source_fingerprint=snapshot.source_fingerprint,
                         baseline_model=snapshot.model,
@@ -381,19 +485,43 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
                 return plan
 
             def completed(plan):
-                if self._disposed:
-                    return
-                previous = self._plan_cache.get(key)
-                values = dict(self._plan_cache)
-                values[key] = plan
-                self._plan_cache = values
-                self._projection_versions[key] = version
-                self._projection_pending.discard(key)
-                if plan != previous:
-                    self._request_redraw()
+                def publish():
+                    current = self._saved_sources.store.snapshot(key[0])
+                    if (
+                        self._disposed
+                        or plan is None
+                        or self._projection_pending.get(key) != version
+                        or version[1] != self._interface_generation
+                        or current is None
+                        or current.source_fingerprint != version[0]
+                    ):
+                        self._discard_projection(key, version)
+                        return
+                    previous = self._plan_cache.get(key)
+                    was_suppressed = self._suppressed_plan_key == key
+                    values = OrderedDict(self._plan_cache)
+                    values.pop(key, None)
+                    values[key] = plan
+                    expired = []
+                    while len(values) > PLAN_CACHE_CAPACITY:
+                        expired_key, _expired_plan = values.popitem(last=False)
+                        expired.append(expired_key)
+                    self._plan_cache = values
+                    self._projection_versions[key] = version
+                    for expired_key in expired:
+                        self._projection_versions.pop(expired_key, None)
+                    self._discard_projection(key, version)
+                    if was_suppressed:
+                        self._suppressed_plan_key = None
+                    if plan != previous or was_suppressed:
+                        self._request_redraw()
+
+                NSOperationQueue.mainQueue().addOperationWithBlock_(publish)
 
             def failed(_error):
-                self._projection_pending.discard(key)
+                NSOperationQueue.mainQueue().addOperationWithBlock_(
+                    lambda: self._discard_projection(key, version)
+                )
 
             accepted = self._saved_sources.coordinator.submit(
                 "diff",
@@ -403,7 +531,7 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
                 failed=failed,
             )
             if accepted is None:
-                self._projection_pending.discard(key)
+                self._discard_projection(key, version)
 
         NSOperationQueue.mainQueue().addOperationWithBlock_(capture_plain_layer)
 
@@ -418,6 +546,9 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
         if snapshot is None:
             return
         self._schedule_projection(key, layer, snapshot)
+        if self._projection_requests.remaining_delay() > 0.0:
+            self._suppressed_plan_key = key
+            return
         plan = self._plan_cache.get(key)
         if plan is None or not plan.visible:
             return
@@ -478,6 +609,10 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
             except Exception:
                 pass
         self._native_notification_center = None
+        try:
+            NSObject.cancelPreviousPerformRequestsWithTarget_(self)
+        except Exception:
+            pass
         unsubscribe = self._unsubscribe_saved_sources
         self._unsubscribe_saved_sources = None
         if callable(unsubscribe):
@@ -485,7 +620,10 @@ class GlyphsMCPChangeDiffReporter(ReporterPlugin):
         for key in tuple(self._projection_pending):
             self._saved_sources.coordinator.invalidate(key)
         self._projection_pending.clear()
-        self._plan_cache = {}
+        self._projection_requests.clear()
+        self._projection_flush_scheduled = False
+        self._suppressed_plan_key = None
+        self._plan_cache = OrderedDict()
         self._projection_versions = {}
         self._saved_geometry_cache.clear()
 

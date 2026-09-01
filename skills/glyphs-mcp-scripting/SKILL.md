@@ -51,7 +51,13 @@ Detached Python exposes a near-standard reviewed Python 3.14 built-in set, not
 a security sandbox. It intentionally omits external-effect, dynamic-code,
 interactive, and process-control entry points, and imports only the roots
 advertised by the runtime. Keep code minimal, deterministic, scoped, and
-bounded. Do not send removed legacy arguments; use the contract in
+bounded. Preserve every fractional coordinate and verify exact geometry; do
+not round coordinates, snap to a grid, set `font.grid`, change
+`gridSubDivision`, or modify `font.disablesAutomaticAlignment`. The runtime
+owns its temporary rounding suppression and restores those protected settings;
+an attempted script change is reported as a failure. The global automatic
+alignment setting therefore remains unchanged. Component-level alignment
+changes remain explicit, reviewed opt-ins. Do not send removed legacy arguments; use the contract in
 `content/reference/command-set-v2.mdx`. Never call `exit()`, `quit()`, or
 `sys.exit()`. Do not save, close, install, reload,
 restart, touch files, launch processes, or use networking unless the user

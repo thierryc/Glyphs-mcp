@@ -17,6 +17,7 @@ from glyphs_mcp_v2.semantic import ChangeSet, diff_models, fingerprint_model  # 
 from glyphs_mcp_v2.canonical_tree import CanonicalFontTree, MemoryObjectStore  # noqa: E402
 from glyphs_mcp_v2.change_history import ChangeHistory  # noqa: E402
 from glyphs_mcp_v2.change_lifecycle import DocumentHistoryLifecycle  # noqa: E402
+from glyphs_mcp_v2.mutation import VerifiedMutationPlan  # noqa: E402
 from glyphs_mcp_v2.transactions import (  # noqa: E402
     DocumentQuarantinedError,
     StaleDocumentError,
@@ -171,6 +172,9 @@ class V2TransactionTests(unittest.TestCase):
         self.assertIn("'expected': 'Beta'", str(caught.exception))
         self.assertEqual(adapter.model, self.before)
         self.assertEqual(adapter.restore_calls, 1)
+        evidence = caught.exception.to_public_dict()["failureEvidence"]
+        self.assertEqual(evidence["phase"], "settled_verification")
+        self.assertEqual(evidence["causeType"], "RuntimeError")
         self.assertEqual(
             kernel.document_transaction_state("doc_alpha")["state"], "restored"
         )
@@ -532,7 +536,7 @@ class V2TransactionTests(unittest.TestCase):
         self.assertEqual(observer.committed[0][3], self.after)
         self.assertEqual(adapter.apply_calls, 1)
 
-    def test_live_interface_updates_stay_suspended_through_settled_verification(self) -> None:
+    def test_live_interface_updates_resume_before_settled_verification(self) -> None:
         class SuspendingAdapter(_DocumentAdapter):
             def __init__(self, model) -> None:
                 super().__init__(model)
@@ -549,6 +553,9 @@ class V2TransactionTests(unittest.TestCase):
                 self.events.append("apply")
                 return super().apply_change_set(document_id, change_set)
 
+            def settle_verified_transaction(self, document_id):
+                self.events.append("settle")
+
             def end_verified_transaction(self, document_id):
                 self.events.append("end")
 
@@ -561,8 +568,39 @@ class V2TransactionTests(unittest.TestCase):
 
         self.assertEqual(
             adapter.events,
-            ["capture", "capture", "begin", "apply", "capture", "end"],
+            [
+                "capture",
+                "capture",
+                "begin",
+                "apply",
+                "settle",
+                "capture",
+                "end",
+            ],
         )
+
+    def test_readback_observes_state_derived_when_native_batch_settles(self) -> None:
+        class SettlingAdapter(_DocumentAdapter):
+            def begin_verified_transaction(self, document_id):
+                self.pending = None
+
+            def apply_change_set(self, document_id, change_set):
+                self.apply_calls += 1
+                self.pending = change_set
+
+            def settle_verified_transaction(self, document_id):
+                self.model = self.pending.apply(self.model)
+
+            def end_verified_transaction(self, document_id):
+                pass
+
+        result = TransactionKernel(SettlingAdapter(self.before)).apply(
+            document_id="doc_alpha",
+            expected_fingerprint=fingerprint_model(self.before),
+            change_set=diff_models(self.before, self.after),
+        )
+
+        self.assertEqual(result.after_fingerprint, fingerprint_model(self.after))
 
     def test_live_interface_updates_resume_after_failed_verification_and_restore(self) -> None:
         class SuspendingAdapter(_DocumentAdapter):
@@ -585,6 +623,9 @@ class V2TransactionTests(unittest.TestCase):
                 self.events.append("restore")
                 return super().restore_model(document_id, model)
 
+            def settle_verified_transaction(self, document_id):
+                self.events.append("settle")
+
             def end_verified_transaction(self, document_id):
                 self.events.append("end")
 
@@ -604,6 +645,7 @@ class V2TransactionTests(unittest.TestCase):
                 "capture",
                 "begin",
                 "apply",
+                "settle",
                 "capture",
                 "restore",
                 "capture",

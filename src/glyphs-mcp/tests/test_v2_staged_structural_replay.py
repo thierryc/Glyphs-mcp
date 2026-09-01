@@ -253,6 +253,38 @@ class StagedStructuralReplayTests(unittest.TestCase):
         )
         self.assertTrue(context["reuseNativeReplayTemplates"])
 
+    def test_prepared_evidence_is_bound_in_place_to_one_patch(self) -> None:
+        store = NativeReplayEvidenceStore()
+        prepared = store.create(
+            document_id="doc_a",
+            before_fingerprint="before",
+            after_fingerprint="",
+            capabilities=(),
+            templates={("masters", "m1"): object()},
+            ttl_seconds=60,
+        )
+
+        bound = store.bind(
+            prepared.evidence_id,
+            document_id="doc_a",
+            before_fingerprint="before",
+            after_fingerprint="after",
+            capabilities=(MASTER_LIFECYCLE_CAPABILITY,),
+        )
+
+        self.assertIsNotNone(bound)
+        self.assertEqual(bound.evidence_id, prepared.evidence_id)
+        self.assertEqual(bound.after_fingerprint, "after")
+        self.assertIsNone(
+            store.bind(
+                prepared.evidence_id,
+                document_id="doc_a",
+                before_fingerprint="before",
+                after_fingerprint="another",
+                capabilities=(),
+            )
+        )
+
     def test_lifecycle_capabilities_are_composed_and_master_layers_are_owned(self) -> None:
         before = _model()
         after = copy.deepcopy(before)

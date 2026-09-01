@@ -26,8 +26,8 @@ reject categories, or solve an underdetermined spacing request.
    may be used for audits, but previewed mutations must resolve to exact layer
    identities. Request the relevant canonical fields plus `bounds`,
    `spacing.horizontal`, `spacing.vertical`, `geometry.counts`, `alignment`,
-   `inheritance.metrics`, `ownership`, and provenance. Read the font `grid`
-   projection separately when snapping matters.
+   `inheritance.metrics`, `ownership`, and provenance. The font `grid`
+   projection is descriptive evidence only; it does not quantize v2 geometry.
 5. Compare masters, special layers, styles, or other documents as evidence.
    Turn cross-document references into explicit numeric values before preview.
 
@@ -99,15 +99,15 @@ Express the result with `preview_change` using only physical operations:
 - when intentionally changing metrics inheritance or component alignment,
   use explicit `set` operations for those authoritative canonical fields.
 
-Use `quantizer="exact"` for an unsnapped value or `quantizer="grid"` for an
-explicit mechanical grid choice. The normalized preview must show the applied
-value or delta. Layer translation moves paths, components, images, and explicit
-anchors through the same coordinate registry. Locks and configured alignment
-modes are preserved metadata, not refusal policy. Detached native execution
-and exact read-back decide whether Glyphs can reproduce the requested result;
-structural invalidity, a missing coordinate payload, or a native rewrite of a
-requested effect blocks the preview. Glyph category, script, mark status, or a
-negative bearing never does.
+Use `quantizer="exact"` or omit it; `exact` is the only supported value. Keep
+all fractional widths, bearings, translations, bounds, node, anchor, and
+component coordinates through preview, apply, and read-back. This floating-point geometry
+policy is the default for every operation. The runtime owns
+rounding suppression centrally. Never round coordinates, snap them to the font
+grid, change `font.grid`/`gridSubDivision`, or change the global automatic-
+alignment setting to manage precision. Layer translation moves paths and
+components through the shared coordinate registry. Metadata is not refusal
+policy; category and signed bearings do not block.
 
 Add before constraints for the physical values the arithmetic assumed and
 after constraints for canonical fields and computed observations. Observation
@@ -130,6 +130,36 @@ does not invalidate the preview; only a changed live canonical document does.
 Read the persistence reconciliation in apply/revert receipts: a saved final
 state has no unsaved revert entry, while an intermediate save rebases history
 to the exact residual diff. Never ask the user to postpone or disable Save.
+
+## Reviewable settlement and completion
+
+Keep identity, ownership, topology, geometry counts, operation scope,
+fractional geometry, and explicit alignment or metrics configuration exact.
+Native grid rounding, integer replacement of a fraction, or a fractional
+request disappearing into a zero-change preview is a blocker. Registered
+component-alignment behavior and machine-scale component decomposition may be
+reported separately, but never justify snapping ordinary geometry.
+
+A registered non-rounding native effect is a review item when the semantic
+preview captures it, evidence for every affected field is complete, safety
+invariants still hold, and `apply_change` can verify the exact preview with
+rollback and revert evidence. Unregistered geometry deviation remains a
+blocker. Continue safe authorized batches and never auto-save.
+
+If a preview has `applicable=false`, do not apply it. Classify each failed
+condition as a safety invariant or a design comparison. Stop for a safety
+failure. When only an unnecessarily exact design comparison failed, replace it
+with a justified tolerance, create a new immutable preview, and continue.
+Also stop for stale or ambiguous state, incomplete read-back, out-of-scope
+effects, material deviation in spacing or geometry, unavailable rollback or
+recovery, or any data-loss or irreversible-effect risk.
+
+After the safe work is complete, re-read the affected layers and report each
+review item with glyph, layer/master, intended value, observed value, signed
+delta, tolerance or native-settlement reason, and preview/apply operation IDs.
+Group affected glyph names into bounded `open_document_view` calls, separated
+by master when useful, so the user can inspect relevant comparison tabs. A
+review tab is proofing assistance, not implicit approval of the discrepancy.
 
 ## Python fallback
 

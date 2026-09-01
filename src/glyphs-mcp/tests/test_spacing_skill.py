@@ -29,15 +29,21 @@ class SpacingSkillTests(unittest.TestCase):
             "leadingBearing",
             "trailingBearing",
             "translation",
-            "Layer translation moves paths, components",
+            "Layer translation moves paths and",
             "configuredAutomaticComponentCount",
             "effectiveLayerAlignment",
-            "Locks and configured alignment",
+            "Metadata is not refusal",
+            "Reviewable settlement and completion",
+            "Native grid rounding",
+            "Unregistered geometry deviation remains a",
+            "If a preview has `applicable=false`, do not apply it",
+            "open_document_view",
+            "material deviation in spacing or geometry",
             "preview_change",
             "apply_change",
             "revert_change",
             "quantizer=\"exact\"",
-            "quantizer=\"grid\"",
+            "floating-point geometry",
             "staged_document",
             "live_open_world",
             "Signed sidebearings are legal",
@@ -52,9 +58,11 @@ class SpacingSkillTests(unittest.TestCase):
             "apply_spacing",
             "list_layers",
             "get_document_status",
+            "quantizer=\"grid\"",
+            "snap to the grid",
         ):
             self.assertNotIn(retired, text)
-        self.assertLessEqual(len(text.splitlines()), 160)
+        self.assertLessEqual(len(text.splitlines()), 195)
 
     def test_obsolete_negative_sidebearing_reference_is_removed(self) -> None:
         text = (self.canonical / "SKILL.md").read_text(encoding="utf-8")

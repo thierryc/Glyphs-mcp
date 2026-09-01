@@ -224,6 +224,10 @@ class V2ContractTests(unittest.TestCase):
             "remove": {},
             "move": {"index": 0},
             "duplicate": {"newId": "copy"},
+            "materialize": {
+                "destinationEntity": "master",
+                "newId": "materialized",
+            },
         }
         for operation, values in operations.items():
             parsed = ChangeOperation.model_validate(
@@ -240,6 +244,15 @@ class V2ContractTests(unittest.TestCase):
                     "op": "remove",
                     "target": {"entity": "glyph", "ids": ["A"]},
                     "field": "width",
+                }
+            )
+        with self.assertRaisesRegex(ValueError, "Input should be 'exact'"):
+            ChangeOperation.model_validate(
+                {
+                    "op": "translate",
+                    "target": {"entity": "layer", "ids": ["L1"]},
+                    "delta": {"x": 0.25, "y": 0},
+                    "quantizer": "grid",
                 }
             )
 
@@ -265,6 +278,15 @@ class V2ContractTests(unittest.TestCase):
         self.assertEqual(
             set(registry["transformTargets"]),
             {"layer", "shape", "node", "anchor"},
+        )
+        self.assertEqual(registry["geometryExecution"]["quantizers"], ["exact"])
+        self.assertEqual(
+            registry["geometryExecution"]["nativeLayerRounding"],
+            "temporarily_disabled",
+        )
+        self.assertTrue(registry["geometryExecution"]["restoresGrid"])
+        self.assertTrue(
+            registry["geometryExecution"]["preservesGlobalAutomaticAlignment"]
         )
 
     def test_python_modes_are_permanent_and_staged_apply_is_not_execute_confirmation(self) -> None:

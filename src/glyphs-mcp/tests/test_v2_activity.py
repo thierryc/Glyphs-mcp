@@ -162,6 +162,24 @@ class OperationActivityStoreTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(store.current("doc_alpha").summary, "Done")
 
+    def test_operation_summaries_are_bounded_and_link_public_identity(self) -> None:
+        store = OperationActivityStore(id_factory=lambda: "activity_linked")
+        token = store.begin(
+            document_id="doc_alpha",
+            tool="preview_change",
+            title="Preview",
+            cancellable=True,
+            operation_id="op_linked",
+        )
+
+        active = store.operation_summaries(active_limit=1, recent_limit=1)
+        self.assertEqual(active["activeCount"], 1)
+        self.assertEqual(active["active"][0]["operationId"], "op_linked")
+        store.complete(token, ok=True, summary="Done")
+        recent = store.operation_summaries(active_limit=1, recent_limit=1)
+        self.assertEqual(recent["recentCount"], 1)
+        self.assertEqual(recent["recent"][0]["operationId"], "op_linked")
+
     def test_live_lease_never_expires_and_released_orphan_clears_at_thirty_seconds(self) -> None:
         clock = _Clock()
         ids = iter(("activity_live", "activity_orphan"))

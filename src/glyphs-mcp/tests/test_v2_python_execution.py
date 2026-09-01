@@ -154,6 +154,65 @@ class _PrecomputedPreviewHost(_PythonHost):
         return result
 
 
+class _AlignedPythonHost(_PythonHost):
+    def __init__(self) -> None:
+        super().__init__()
+        self.model["masters"] = [{"id": "M1", "name": "Regular"}]
+        self.model["glyphs"] = {
+            "A": {
+                "id": "glyph:A",
+                "name": "A",
+                "layers": [
+                    {
+                        "id": "M1",
+                        "masterId": "M1",
+                        "isMasterLayer": True,
+                        "shapes": [
+                            {
+                                "id": "component:0",
+                                "kind": "component",
+                                "value": {
+                                    "name": "H",
+                                    "position": [0, 0],
+                                    "scale": [1, 1],
+                                    "angle": 0,
+                                    "slant": [0, 0],
+                                    "alignment": 0,
+                                },
+                            }
+                        ],
+                        "width": 500,
+                    }
+                ],
+            }
+        }
+
+    def inspect_layers(self, _document_id, glyph_names=(), **_kwargs):
+        if glyph_names and "A" not in set(glyph_names):
+            return {}
+        return {
+            ("A", "M1"): {
+                "hasAlignedWidth": True,
+                "isAligned": True,
+            }
+        }
+
+    def preview_python(self, request, before_model):
+        result = super().preview_python(request, before_model)
+        layer = result["afterModel"]["glyphs"]["A"]["layers"][0]
+        if "addPath" in request.code:
+            layer["shapes"].append(
+                {
+                    "id": "path:0",
+                    "kind": "path",
+                    "value": {"closed": True, "nodes": []},
+                }
+            )
+        if "explicitAlignment" in request.code:
+            layer["shapes"][0]["value"]["alignment"] = -1
+        return result
+
+
 class _DriftingRollbackPythonHost(_PythonHost):
     """A writable inverse derives a state different from its checkpoint."""
 
@@ -314,6 +373,53 @@ class V2PythonExecutionTests(unittest.TestCase):
 
         self.assertEqual(preview["status"], "success")
         self.assertEqual(host.preview_calls, 1)
+
+    def test_staged_native_metadata_change_is_reviewable(self) -> None:
+        host = _AlignedPythonHost()
+        service = PythonExecutionService(
+            host=host,
+            transactions=TransactionKernel(host),
+            reviews=OperationStore(),
+            checkpoints=OperationStore(),
+            audit=AuditLog(),
+        )
+        preview = service.execute(
+            PythonExecutionRequest(
+                code="# addPath",
+                reason="review the complete staged native result",
+                intended_effect="document_edit",
+                execution_mode="staged_document",
+                document_id="doc_alpha",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+
+        self.assertTrue(preview["ok"])
+        self.assertEqual(preview["status"], "success")
+        self.assertEqual(preview["data"]["blockers"], [])
+
+    def test_staged_explicit_alignment_change_is_allowed(self) -> None:
+        host = _AlignedPythonHost()
+        service = PythonExecutionService(
+            host=host,
+            transactions=TransactionKernel(host),
+            reviews=OperationStore(),
+            checkpoints=OperationStore(),
+            audit=AuditLog(),
+        )
+        preview = service.execute(
+            PythonExecutionRequest(
+                code="# explicitAlignment",
+                reason="explicitly disable component alignment",
+                intended_effect="document_edit",
+                execution_mode="staged_document",
+                document_id="doc_alpha",
+                expected_document_fingerprint=fingerprint_model(host.model),
+            )
+        ).to_dict()
+
+        self.assertTrue(preview["ok"])
+        self.assertTrue(preview["data"]["applicable"])
 
     def test_large_383_glyph_five_master_preview_records_phase_timings_without_refusal(self) -> None:
         service, host = self.service()

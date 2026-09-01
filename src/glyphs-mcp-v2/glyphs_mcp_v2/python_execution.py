@@ -35,6 +35,7 @@ from .mutation import (
     unsupported_change_diagnostics,
     writable_subset,
 )
+from .ports import HostAccessError
 from .semantic import ChangeSet, diff_models, fingerprint_model, public_change_dict
 from .saved_source import source_state_changed
 from .runtime_safety import (
@@ -520,6 +521,7 @@ class PythonExecutionRequest:
     master_id: Optional[str] = None
     layer_id: Optional[str] = None
     expected_document_fingerprint: Optional[str] = None
+    operation_id: Optional[str] = field(default=None, repr=False, compare=False)
     review_id: Optional[str] = None
     confirm: bool = False
     max_output_chars: int = DEFAULT_OUTPUT_CHARS
@@ -949,7 +951,10 @@ class PythonExecutionService:
             record = self._reviews.consume(request.review_id)
             if record is None or record.kind != "python_live_approval":
                 return self._failure("review_unavailable", "The open-world Python approval is missing, expired, or already consumed.")
-            stored = PythonExecutionRequest.from_stored_dict(record.payload["request"])
+            stored = replace(
+                PythonExecutionRequest.from_stored_dict(record.payload["request"]),
+                operation_id=request.operation_id,
+            )
             try:
                 validate_no_source_save(stored.code or "")
             except PythonPolicyError as exc:
@@ -1657,15 +1662,6 @@ class PythonExecutionService:
                     or len(list(archive_comparison.get("mismatchLocations") or [])) > 100,
                     "directDeltaCount": int(archive_comparison.get("directDeltaCount") or 0),
                     "replayDeltaCount": int(archive_comparison.get("replayDeltaCount") or 0),
-                    "normalizedMismatchCount": int(
-                        archive_comparison.get("normalizedMismatchCount") or 0
-                    ),
-                    "normalizedPaths": list(
-                        archive_comparison.get("normalizedPaths") or []
-                    )[:100],
-                    "maximumAbsoluteDelta": float(
-                        archive_comparison.get("maximumAbsoluteDelta") or 0
-                    ),
                 }
                 if isinstance(archive_comparison, Mapping)
                 else {
@@ -1881,22 +1877,7 @@ class PythonExecutionService:
                     "mode": "semantic",
                     "canonicalEquivalent": True,
                     "nativeArchiveEquivalent": True,
-                    "equivalenceClass": (
-                        "registered_normalization"
-                        if isinstance(archive_comparison, Mapping)
-                        and int(archive_comparison.get("normalizedMismatchCount") or 0)
-                        else "exact"
-                    ),
-                    "normalizedPaths": list(
-                        archive_comparison.get("normalizedPaths") or []
-                    )[:100]
-                    if isinstance(archive_comparison, Mapping)
-                    else [],
-                    "maximumAbsoluteDelta": float(
-                        archive_comparison.get("maximumAbsoluteDelta") or 0
-                    )
-                    if isinstance(archive_comparison, Mapping)
-                    else 0,
+                    "equivalenceClass": "exact",
                 },
                 "blockers": [],
                 "fontSaved": False,
@@ -1997,7 +1978,7 @@ class PythonExecutionService:
                 )
         plan = VerifiedMutationPlan(
             document_id=request.document_id or "",
-            operation_id=review_id,
+            operation_id=request.operation_id or review_id,
             before_model=before,
             expected_after_model=dict(expected_after),
             writable_change_set=writable,
@@ -2169,8 +2150,11 @@ class PythonExecutionService:
                 "The preview is not a staged-Python document preview.",
             )
         stored = PythonExecutionRequest.from_stored_dict(record.payload["request"])
-        if reason is not None:
-            stored = replace(stored, reason=reason)
+        stored = replace(
+            stored,
+            operation_id=operation_id,
+            **({"reason": reason} if reason is not None else {}),
+        )
         return self._confirm_staged(
             stored,
             record.payload,

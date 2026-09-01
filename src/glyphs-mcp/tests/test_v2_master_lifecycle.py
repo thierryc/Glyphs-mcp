@@ -26,7 +26,6 @@ from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
 from glyphs_mcp_v2.mutation import (  # noqa: E402
     MASTER_LIFECYCLE_CAPABILITY,
     CanonicalImpact,
-    mutation_scope,
 )
 from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
 from glyphs_mcp_v2.generic_tools import build_change_set, resolve_selector  # noqa: E402
@@ -241,6 +240,247 @@ class MasterLifecycleTests(unittest.TestCase):
         )
         self.assertEqual(build.change_set.inverse().apply(after), before)
 
+    def test_four_materializations_preserve_instances_and_exact_native_payloads(self) -> None:
+        before = _model(4)
+        before["instances"] = [
+            {
+                "id": "instance_{:02d}".format(index),
+                "name": "Instance {:02d}".format(index),
+                "type": "static",
+                "included": True,
+                "axes": [{"tag": "wght", "internal": 120 + index * 10}],
+            }
+            for index in range(4)
+        ]
+        original_partition = copy.deepcopy(before["kerning"])
+        before["kerning"] = {
+            "ltr": copy.deepcopy(original_partition),
+            "rtl": copy.deepcopy(original_partition),
+            "vertical": copy.deepcopy(original_partition),
+            "context": {"top": copy.deepcopy(original_partition)},
+        }
+        new_ids = ["master_cross_{:02d}".format(index) for index in range(4)]
+        master_order = ["master_regular", *new_ids, "master_bold"]
+        captured_kerning = {
+            domain: {
+                new_id: {"glyph_glyph0000": {"glyph_glyph0001": -20 - index}}
+                for index, new_id in enumerate(new_ids)
+            }
+            for domain in ("ltr", "rtl", "vertical")
+        }
+        captured_kerning["context"] = {
+            "top": {
+                new_id: {"glyph_glyph0000": {"glyph_glyph0001": -30 - index}}
+                for index, new_id in enumerate(new_ids)
+            }
+        }
+        operations = []
+        for index, new_id in enumerate(new_ids):
+            master = {
+                "id": new_id,
+                "name": "Cross {:02d}".format(index),
+                "italicAngle": 0,
+                "axes": [{"tag": "wght", "internal": 120 + index * 10}],
+                "metricValues": [{"id": "metric:x", "pos": index, "over": 0}],
+                "stemValues": [{"id": "stem:x", "value": 10 + index}],
+                "numberValues": [{"id": "number:x", "value": 20 + index}],
+            }
+            layers = {
+                glyph_name: _layer(
+                    new_id, master["name"], 100.375 + index
+                )
+                for glyph_name in before["glyphs"]
+            }
+            for layer in layers.values():
+                layer["width"] = 600.625 + index
+            operations.append(
+                {
+                    "op": "materialize",
+                    "target": {
+                        "entity": "instance",
+                        "ids": ["instance_{:02d}".format(index)],
+                    },
+                    "destinationEntity": "master",
+                    "newId": new_id,
+                    "_materialized": {
+                        "sourceInstanceId": "instance_{:02d}".format(index),
+                        "master": master,
+                        "layers": layers,
+                        "masterOrder": master_order,
+                        "kerning": captured_kerning,
+                    },
+                }
+            )
+
+        build = build_change_set(before, operations)
+        after = build.change_set.apply(before)
+
+        self.assertEqual(build.capabilities, (MASTER_LIFECYCLE_CAPABILITY,))
+        self.assertEqual(after["instances"], before["instances"])
+        self.assertEqual(
+            [master["id"] for master in after["masters"]], master_order
+        )
+        self.assertEqual(after["font"], before["font"])
+        for glyph in after["glyphs"].values():
+            self.assertEqual(
+                [layer["id"] for layer in glyph["layers"][:6]], master_order
+            )
+            for index, new_id in enumerate(new_ids):
+                materialized = _layer_for(glyph, new_id)
+                self.assertEqual(materialized["width"], 600.625 + index)
+                self.assertEqual(
+                    materialized["paths"][0]["nodes"][0]["x"],
+                    100.375 + index,
+                )
+        for domain in ("ltr", "rtl", "vertical"):
+            for new_id in new_ids:
+                self.assertEqual(
+                    after["kerning"][domain][new_id],
+                    captured_kerning[domain][new_id],
+                )
+        for new_id in new_ids:
+            self.assertEqual(
+                after["kerning"]["context"]["top"][new_id],
+                captured_kerning["context"]["top"][new_id],
+            )
+        self.assertEqual(build.change_set.inverse().apply(after), before)
+        self.assertTrue(
+            all(
+                item["op"] == "materialize"
+                and item["resolvedTargetCount"] == 1
+                and item["changedTargetCount"] == 1
+                for item in build.normalized_operations
+            )
+        )
+
+    def test_materialization_requires_authoritative_detached_payload(self) -> None:
+        before = _model()
+        before["instances"] = [{"id": "instance_regular", "name": "Regular"}]
+
+        with self.assertRaisesRegex(ValueError, "detached-native preparation"):
+            build_change_set(
+                before,
+                [
+                    {
+                        "op": "materialize",
+                        "target": {
+                            "entity": "instance",
+                            "ids": ["instance_regular"],
+                        },
+                        "destinationEntity": "master",
+                        "newId": "master_from_instance",
+                    }
+                ],
+            )
+
+    def test_application_prepares_materialization_without_exposing_native_payload(self) -> None:
+        before = _model()
+        before["instances"] = [
+            {"id": "instance_regular", "name": "Regular", "type": "static"}
+        ]
+
+        class MaterializeHost(_Host):
+            def __init__(self, model):
+                super().__init__(model)
+                self.prepared = 0
+                self.finalized = 0
+
+            def prepare_generic_operations(
+                self,
+                document_id,
+                before_model,
+                operations,
+                cancellation_checkpoint=None,
+            ):
+                self.prepared += 1
+                operation = copy.deepcopy(operations[0])
+                operation["_materialized"] = {
+                    "sourceInstanceId": "instance_regular",
+                    "master": {
+                        "id": "master_materialized",
+                        "name": "Materialized",
+                        "italicAngle": 0,
+                        "axes": [{"tag": "wght", "internal": 150}],
+                    },
+                    "layers": {
+                        name: _layer(
+                            "master_materialized", "Materialized", 15.375
+                        )
+                        for name in before_model["glyphs"]
+                    },
+                    "masterOrder": [
+                        "master_regular",
+                        "master_materialized",
+                        "master_bold",
+                    ],
+                    "kerning": before_model["kerning"],
+                }
+                return {
+                    "operations": [operation],
+                    "executionContext": {
+                        "nativeReplayPreparationId": "prepared-one"
+                    },
+                }
+
+            def finalize_generic_operation_preparation(
+                self,
+                document_id,
+                preparation_id,
+                **kwargs,
+            ):
+                self.finalized += 1
+                return {"nativeReplayEvidenceId": "evidence-one"}
+
+        host = MaterializeHost(before)
+        app = GlyphsMCPApplication(host)
+        fingerprint = fingerprint_model(before)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_materialize",
+                "expectedDocumentFingerprint": fingerprint,
+                "operations": [
+                    {
+                        "op": "materialize",
+                        "target": {
+                            "entity": "instance",
+                            "ids": ["instance_regular"],
+                        },
+                        "destinationEntity": "master",
+                        "newId": "master_materialized",
+                    }
+                ],
+                "constraints": [],
+            },
+        ).to_dict()
+
+        self.assertTrue(preview["ok"], preview)
+        self.assertEqual(host.prepared, 1)
+        self.assertEqual(host.finalized, 1)
+        self.assertNotIn(
+            "_materialized", preview["data"]["normalizedOperations"][0]
+        )
+        applied = app.invoke(
+            "apply_change",
+            {
+                "documentId": "doc_materialize",
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": fingerprint,
+                "reason": "materialize one generic source instance",
+            },
+        ).to_dict()
+        self.assertTrue(applied["ok"], applied)
+        self.assertEqual(
+            [master["id"] for master in host.model["masters"]],
+            ["master_regular", "master_materialized", "master_bold"],
+        )
+        for glyph in host.model["glyphs"].values():
+            self.assertEqual(
+                _layer_for(glyph, "master_materialized")["paths"][0]
+                ["nodes"][0]["x"],
+                15.375,
+            )
+
     def test_duplicate_keeps_registered_italic_metric_in_sync(self) -> None:
         before = _model()
         before["metrics"] = [{"id": "metric:italic", "type": "italic angle"}]
@@ -337,10 +577,8 @@ class MasterLifecycleTests(unittest.TestCase):
             ],
         )
 
-        scope = mutation_scope(before, build.change_set)
         impact = CanonicalImpact.from_change_set(before, build.change_set)
-        self.assertEqual(scope.roots, ("glyphs", "kerning", "masters"))
-        self.assertEqual(len(scope.glyph_names), 40)
+        self.assertEqual(impact.roots, ("glyphs", "kerning", "masters"))
         self.assertEqual(len(impact.glyph_names), 40)
         self.assertTrue(
             all(impact.layer_ids(name) == ("master_text",) for name in impact.glyph_names)
@@ -694,8 +932,12 @@ class MasterLifecycleTests(unittest.TestCase):
 
     def test_422_glyph_nine_master_affine_plan_is_one_bounded_build(self) -> None:
         model = _model(422)
-        for glyph in model["glyphs"].values():
-            for layer in glyph["layers"]:
+        for glyph_index, glyph in enumerate(model["glyphs"].values()):
+            for layer_index, layer in enumerate(glyph["layers"]):
+                if (glyph_index + layer_index) % 97 == 0:
+                    layer["shapes"] = []
+                    layer["anchors"] = []
+                    continue
                 layer["shapes"] = [
                     {
                         "id": "shape:path:0",
@@ -703,6 +945,30 @@ class MasterLifecycleTests(unittest.TestCase):
                         "value": copy.deepcopy(layer["paths"][0]),
                     }
                 ]
+                layer["shapes"][0]["value"]["nodes"][1]["y"] = 700
+                if (glyph_index + layer_index) % 11 == 0:
+                    layer["anchors"] = [
+                        {
+                            "id": "anchor:top:0",
+                            "name": "top",
+                            "position": [300, 700],
+                        }
+                    ]
+                if (glyph_index + layer_index) % 13 == 0:
+                    layer["shapes"].append(
+                        {
+                            "id": "shape:component:0",
+                            "kind": "component",
+                            "value": {
+                                "name": "glyph0000",
+                                "position": [20, 30],
+                                "scale": [1, 1],
+                                "angle": 0,
+                                "slant": [0, 0],
+                                "alignment": -1,
+                            },
+                        }
+                    )
         before = CanonicalSnapshot.from_model(model)
         italic_ids = ["italic_{:02d}".format(index) for index in range(9)]
         operations = [
@@ -727,7 +993,7 @@ class MasterLifecycleTests(unittest.TestCase):
                 },
                 "matrix": [1, 0, 0.2125565617, 1, 0, 0],
                 "origin": [0, 0],
-                "quantizer": "grid",
+                "quantizer": "exact",
                 "include": ["paths", "anchors", "components"],
                 "componentComposition": "conjugate",
                 "alignmentPolicy": "explicit_noncommuting",
@@ -750,6 +1016,27 @@ class MasterLifecycleTests(unittest.TestCase):
         )
         self.assertEqual(build.normalized_operations[-1]["op"], "transform")
         self.assertEqual(build.change_set.inverse().apply(after), before)
+
+    def test_large_glyph_replay_is_partitioned_into_bounded_shards(self) -> None:
+        before = _model(41)
+        after = copy.deepcopy(before)
+        for glyph in after["glyphs"].values():
+            glyph["layers"][0]["width"] += 10
+        changes = diff_models(before, after)
+
+        shards = document_adapter._sharded_replay_change_sets(changes)
+        shard_names = [
+            {
+                change.path[1]
+                for change in shard.changes
+                if len(change.path) >= 2 and change.path[0] == "glyphs"
+            }
+            for shard in shards
+        ]
+
+        self.assertEqual(len(shards), 3)
+        self.assertTrue(all(1 <= len(names) <= 16 for names in shard_names))
+        self.assertEqual(sum(len(shard.changes) for shard in shards), 41)
 
 
 if __name__ == "__main__":

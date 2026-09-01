@@ -19,10 +19,21 @@ Glyphs MCP is designed for human-controlled font editing. The server gives agent
 V2 declarative edits use one cached canonical baseline, one detached preview,
 one atomic apply, and one settled read-back. `verificationMode=semantic` is the
 default: exact canonical target equality remains mandatory, while only
-registered native omission defaults, identity-addressed storage order, derived
-grid/alignment effects, and bounded component-decomposition round trips may be
-treated as equivalent. Use `strict_archive` when diagnosing native archive
+registered native omission defaults, identity-addressed storage order,
+explicitly requested component-alignment effects, and bounded
+component-decomposition round trips may be treated as equivalent. Native grid
+rounding is never an acceptable settlement. Use `strict_archive` when diagnosing native archive
 spelling; it is slower and intentionally more protective.
+
+V2 preserves editable geometry as floating point. During any applicable tool
+or Python execution, the adapter temporarily enables Glyphs 4's per-layer
+rounding-suppression flag. Structural operations, Python, and hosts without
+that flag also use a temporary zero grid. The original grid, subdivision,
+global automatic-alignment setting, and layer flags are restored on success,
+failure, cancellation, rollback, and settlement errors. New layers are
+rescanned before read-back, and execution fails before mutation if neither
+rounding control is available. Agents and scripts must not change the grid or
+global automatic-alignment setting to manage precision themselves.
 
 `transactionMode=snapshot_backed_recovery` is not an “unsafe transaction.” It
 does not permit broader writes or bypass verification. It binds the preview to

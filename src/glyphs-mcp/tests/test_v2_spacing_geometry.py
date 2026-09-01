@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import asyncio
 import copy
 import math
 import sys
+import time
 import unittest
 from pathlib import Path
+from threading import Event
 
 from jsonschema import validate
 from pydantic import ValidationError
@@ -18,6 +21,7 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
+from glyphs_mcp_v2.activity import ActivityCancelled  # noqa: E402
 from glyphs_mcp_v2.canonical_tree import CanonicalSnapshot  # noqa: E402
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
 from glyphs_mcp_v2.generic_tools import (  # noqa: E402
@@ -26,7 +30,7 @@ from glyphs_mcp_v2.generic_tools import (  # noqa: E402
     resolve_selector,
 )
 from glyphs_mcp_v2.semantic import fingerprint_model  # noqa: E402
-from glyphs_mcp_v2.transport.fastmcp import ChangeOperation  # noqa: E402
+from glyphs_mcp_v2.transport.fastmcp import ChangeOperation, ToolHandlers  # noqa: E402
 
 
 def _path(*, locked: bool = False) -> dict:
@@ -194,12 +198,16 @@ def _bounds(model: dict) -> dict:
             xs = [node["x"] for node in nodes]
             ys = [node["y"] for node in nodes]
             result[(name, layer["id"])] = {
-                "bounds": {
-                    "x": min(xs),
-                    "y": min(ys),
-                    "width": max(xs) - min(xs),
-                    "height": max(ys) - min(ys),
-                },
+                "bounds": (
+                    {
+                        "x": min(xs),
+                        "y": min(ys),
+                        "width": max(xs) - min(xs),
+                        "height": max(ys) - min(ys),
+                    }
+                    if nodes
+                    else None
+                ),
                 "currentMetrics": {
                     "width": layer["width"],
                     "verticalOrigin": layer["vertOrigin"],
@@ -283,6 +291,113 @@ class _NativeRewriteHost(_Host):
         return {"afterModel": after, "observations": _bounds(after)}
 
 
+class _NativeGridHost(_Host):
+    @staticmethod
+    def _snap(model: dict) -> dict:
+        result = copy.deepcopy(model)
+        layer = result["glyphs"]["A"]["layers"][0]
+        for shape in layer["shapes"]:
+            value = shape["value"]
+            if shape["kind"] == "path":
+                for node in value["nodes"]:
+                    node["x"] = round(node["x"])
+                    node["y"] = round(node["y"])
+            elif shape["kind"] == "component":
+                value["position"] = [round(value) for value in value["position"]]
+        for anchor in layer["anchors"]:
+            anchor["position"] = [round(value) for value in anchor["position"]]
+        return result
+
+    def simulate_verified_change_set(
+        self, _document_id, change_set, before_model, **_kwargs
+    ):
+        after = self._snap(change_set.apply(before_model))
+        return {"afterModel": after, "observations": _bounds(after)}
+
+    def apply_change_set(self, _document_id: str, change_set) -> None:
+        self.apply_calls += 1
+        self.model = self._snap(change_set.apply(self.model))
+
+
+def _aligned_inheritance_model() -> dict:
+    model = _model()
+    model["glyphs"]["H"] = _glyph("H")
+    model["glyphs"]["H"]["layers"][0]["shapes"] = [_path()]
+    aligned = model["glyphs"]["A"]["layers"][0]
+    aligned["shapes"] = [_component(alignment=0)]
+    aligned["width"] = 500
+    return model
+
+
+class _AlignedInheritanceHost(_Host):
+    @staticmethod
+    def _inherit(model: dict) -> dict:
+        result = copy.deepcopy(model)
+        result["glyphs"]["A"]["layers"][0]["width"] = result["glyphs"]["H"][
+            "layers"
+        ][0]["width"]
+        return result
+
+    def inspect_layers(self, document_id, glyph_names=(), **kwargs):
+        observations = dict(
+            super().inspect_layers(document_id, glyph_names, **kwargs)
+        )
+        key = ("A", "A-master")
+        if key in observations:
+            observations[key] = {
+                **dict(observations[key]),
+                "hasAlignedWidth": True,
+                "isAligned": True,
+            }
+        return observations
+
+    def simulate_verified_change_set(
+        self, _document_id, change_set, before_model, **_kwargs
+    ):
+        after = self._inherit(change_set.apply(before_model))
+        return {"afterModel": after, "observations": _bounds(after)}
+
+    def apply_change_set(self, _document_id: str, change_set) -> None:
+        self.apply_calls += 1
+        self.model = self._inherit(change_set.apply(self.model))
+
+
+class _AlignedLossHost(_AlignedInheritanceHost):
+    def simulate_verified_change_set(
+        self, _document_id, change_set, before_model, **_kwargs
+    ):
+        after = change_set.apply(before_model)
+        after["glyphs"]["A"]["layers"][0]["shapes"][0]["value"][
+            "alignment"
+        ] = -1
+        return {"afterModel": after, "observations": _bounds(after)}
+
+
+class _AlignedPositionHost(_AlignedInheritanceHost):
+    @staticmethod
+    def _restore_position(model: dict, before_model: dict) -> dict:
+        result = copy.deepcopy(model)
+        result["glyphs"]["A"]["layers"][0]["shapes"][0]["value"][
+            "position"
+        ] = copy.deepcopy(
+            before_model["glyphs"]["A"]["layers"][0]["shapes"][0]["value"][
+                "position"
+            ]
+        )
+        return result
+
+    def simulate_verified_change_set(
+        self, _document_id, change_set, before_model, **_kwargs
+    ):
+        after = self._restore_position(change_set.apply(before_model), before_model)
+        return {"afterModel": after, "observations": _bounds(after)}
+
+    def apply_change_set(self, _document_id: str, change_set) -> None:
+        self.apply_calls += 1
+        before = copy.deepcopy(self.model)
+        self.model = self._restore_position(change_set.apply(self.model), before)
+
+
 class _ObservationDriftHost(_Host):
     def inspect_layers(self, document_id, glyph_names=(), **kwargs):
         observations = dict(super().inspect_layers(document_id, glyph_names, **kwargs))
@@ -356,6 +471,29 @@ class _RichObservationHost(_Host):
             for name, value in self.metadata.items()
             if not requested or name in requested
         }
+
+
+class _CancellablePreviewHost(_Host):
+    def __init__(self, model):
+        super().__init__(model)
+        self.started = Event()
+
+    def simulate_verified_change_set(
+        self,
+        _document_id,
+        _change_set,
+        _before_model,
+        *,
+        cancellation_checkpoint=None,
+        **_kwargs,
+    ):
+        self.started.set()
+        deadline = time.monotonic() + 2.0
+        while time.monotonic() < deadline:
+            if cancellation_checkpoint is not None:
+                cancellation_checkpoint()
+            time.sleep(0.002)
+        raise RuntimeError("test cancellation did not reach detached work")
 
 
 class V2SpacingGeometryTests(unittest.TestCase):
@@ -583,21 +721,30 @@ class V2SpacingGeometryTests(unittest.TestCase):
             0,
         )
 
-    def test_grid_quantization_is_explicit_and_visible(self) -> None:
-        for requested, expected in ((0.25, 0.5), (-0.25, -0.5)):
-            with self.subTest(requested=requested):
-                build = build_change_set(
-                    _model(grid=1, subdivision=2),
-                    [
-                        {
-                            "op": "translate",
-                            "target": _selector(),
-                            "delta": {"x": requested, "y": 0},
-                            "quantizer": "grid",
-                        }
-                    ],
-                )
-                self.assertEqual(build.normalized_operations[0]["delta"]["x"], expected)
+    def test_grid_quantizer_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "grid snapping is unsupported"):
+            build_change_set(
+                _model(grid=1, subdivision=2),
+                [
+                    {
+                        "op": "translate",
+                        "target": _selector(),
+                        "delta": {"x": 0.25, "y": 0},
+                        "quantizer": "grid",
+                    }
+                ],
+            )
+
+    def test_grid_projection_is_descriptive_not_a_quantization_step(self) -> None:
+        model = _model(grid=1, subdivision=4)
+        reference = resolve_selector(model, {"entity": "font"})[0]
+        projected = project_reference(reference, {"fields": ["grid"]})
+
+        self.assertEqual(
+            projected["values"]["grid"],
+            {"grid": 1, "subdivision": 4},
+        )
+        self.assertNotIn("step", projected["values"]["grid"])
 
     def test_no_category_or_negative_bearing_policy_is_embedded(self) -> None:
         model = _model()
@@ -614,7 +761,7 @@ class V2SpacingGeometryTests(unittest.TestCase):
         layer = build.change_set.apply(model)["glyphs"]["acutecomb"]["layers"][0]
         self.assertEqual(layer["shapes"][0]["value"]["nodes"][0]["x"], -30)
 
-    def test_affine_shear_uses_pivot_grid_and_component_conjugation(self) -> None:
+    def test_affine_shear_uses_pivot_and_component_conjugation(self) -> None:
         model = _model()
         model["glyphs"]["A"]["layers"][0]["shapes"][1]["value"]["alignment"] = 0
         build = build_change_set(
@@ -625,7 +772,7 @@ class V2SpacingGeometryTests(unittest.TestCase):
                     "target": _selector(),
                     "matrix": [1, 0, 0.5, 1, 0, 0],
                     "origin": [0, 100],
-                    "quantizer": "grid",
+                    "quantizer": "exact",
                     "include": ["paths", "anchors", "components"],
                     "componentComposition": "conjugate",
                     "alignmentPolicy": "explicit_noncommuting",
@@ -640,6 +787,34 @@ class V2SpacingGeometryTests(unittest.TestCase):
         self.assertEqual(component["position"], [35, 30])
         self.assertEqual(component["alignment"], -1)
         self.assertEqual(build.normalized_operations[0]["origin"], [0, 100])
+
+    def test_fractional_scale_and_recenter_preserve_all_geometry_fractions(self) -> None:
+        model = _model()
+        after = build_change_set(
+            model,
+            [
+                {
+                    "op": "transform",
+                    "target": _selector(),
+                    "matrix": [1.125, 0, 0, 0.875, 0.375, -0.625],
+                    "origin": [12.25, -3.5],
+                    "quantizer": "exact",
+                    "include": ["paths", "anchors", "components"],
+                    "componentComposition": "prepend",
+                    "alignmentPolicy": "preserve",
+                }
+            ],
+        ).change_set.apply(model)
+        layer = after["glyphs"]["A"]["layers"][0]
+
+        node = layer["shapes"][0]["value"]["nodes"][0]
+        anchor = layer["anchors"][0]["position"]
+        component = layer["shapes"][1]["value"]
+        self.assertEqual((node["x"], node["y"]), (55.09375, -1.0625))
+        self.assertEqual(anchor, [280.09375, 611.4375])
+        self.assertEqual(component["position"], [21.34375, 25.1875])
+        self.assertEqual(component["scale"], [1.125, 0.875])
+        self.assertEqual(component["alignment"], -1)
 
     def test_affine_include_and_alignment_modes_are_explicit(self) -> None:
         model = _model()
@@ -662,6 +837,334 @@ class V2SpacingGeometryTests(unittest.TestCase):
         self.assertNotEqual(layer["shapes"][0], before_layer["shapes"][0])
         self.assertEqual(layer["shapes"][1], before_layer["shapes"][1])
         self.assertEqual(layer["anchors"], before_layer["anchors"])
+
+    def test_affine_collection_skips_empty_members_and_reports_target_counts(self) -> None:
+        model = _model()
+        empty = _glyph("space")
+        empty["layers"][0]["shapes"] = []
+        empty["layers"][0]["anchors"] = []
+        model["glyphs"]["space"] = empty
+        operation = {
+            "op": "transform",
+            "target": {"entity": "layer", "parent": {"masterId": "M1"}},
+            "matrix": [1, 0, 0.2, 1, 0, 0],
+            "include": ["paths", "anchors", "components"],
+        }
+
+        build = build_change_set(model, [operation])
+        evidence = build.normalized_operations[0]
+        after = build.change_set.apply(model)
+
+        self.assertEqual(evidence["resolvedTargetCount"], 3)
+        self.assertEqual(evidence["changedTargetCount"], 2)
+        self.assertEqual(evidence["skippedTargetCount"], 1)
+        self.assertEqual(after["glyphs"]["space"], model["glyphs"]["space"])
+
+        host = _Host(model)
+        preview = GlyphsMCPApplication(host).invoke(
+            "preview_change",
+            {
+                "documentId": "doc_empty_collection",
+                "expectedDocumentFingerprint": fingerprint_model(model),
+                "operations": [operation],
+                "constraints": [],
+            },
+        ).to_dict()
+        self.assertTrue(preview["ok"])
+        self.assertEqual(preview["data"]["resolvedTargetCount"], 3)
+        self.assertEqual(preview["data"]["changedTargetCount"], 2)
+        self.assertEqual(preview["data"]["skippedTargetCount"], 1)
+        validate(preview, TOOL_CATALOG["preview_change"].output_schema)
+
+    def test_affine_all_empty_collection_is_a_no_op_error(self) -> None:
+        model = _model()
+        for glyph in model["glyphs"].values():
+            glyph["layers"][0]["shapes"] = []
+            glyph["layers"][0]["anchors"] = []
+
+        with self.assertRaisesRegex(ValueError, "no geometry change"):
+            build_change_set(
+                model,
+                [
+                    {
+                        "op": "transform",
+                        "target": {
+                            "entity": "layer",
+                            "parent": {"masterId": "M1"},
+                        },
+                        "matrix": [1, 0, 0.2, 1, 0, 0],
+                    }
+                ],
+            )
+
+        with self.assertRaisesRegex(ValueError, "no geometry change"):
+            build_change_set(
+                _model(),
+                [
+                    {
+                        "op": "transform",
+                        "target": _selector(),
+                        "matrix": [1, 0, 0, 1, 0, 0],
+                    }
+                ],
+            )
+
+    def test_normalized_target_counts_distinguish_noop_set_targets(self) -> None:
+        build = build_change_set(
+            _model(),
+            [
+                {
+                    "op": "set",
+                    "target": _selector(),
+                    "field": "width",
+                    "value": 500,
+                }
+            ],
+        )
+        evidence = build.normalized_operations[0]
+        self.assertEqual(evidence["resolvedTargetCount"], 1)
+        self.assertEqual(evidence["changedTargetCount"], 0)
+        self.assertEqual(evidence["skippedTargetCount"], 1)
+
+    def test_zero_translation_is_skipped_without_blocking_width_change(self) -> None:
+        host = _Host(_model())
+        app = GlyphsMCPApplication(host)
+        before = fingerprint_model(host.model)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": before,
+                "operations": [
+                    {
+                        "op": "translate",
+                        "target": _selector(),
+                        "delta": {"x": 0, "y": 0},
+                    },
+                    {
+                        "op": "set",
+                        "target": _selector(),
+                        "field": "width",
+                        "value": 510,
+                    },
+                ],
+            },
+        ).to_dict()
+
+        self.assertTrue(preview["ok"])
+        self.assertTrue(preview["data"]["applicable"])
+        self.assertEqual(preview["data"]["changeSet"]["changeCount"], 1)
+        self.assertEqual(preview["data"]["resolvedTargetCount"], 2)
+        self.assertEqual(preview["data"]["changedTargetCount"], 1)
+        self.assertEqual(preview["data"]["skippedTargetCount"], 1)
+        operations = preview["data"]["normalizedOperations"]
+        self.assertEqual(operations[0]["resolvedPaths"], [])
+        self.assertEqual(operations[0]["changedTargetCount"], 0)
+        self.assertEqual(operations[0]["skippedTargetCount"], 1)
+        self.assertEqual(operations[1]["changedTargetCount"], 1)
+        self.assertEqual(fingerprint_model(host.model), before)
+
+        noop_preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": before,
+                "operations": [
+                    {
+                        "op": "translate",
+                        "target": _selector(),
+                        "delta": {"x": 0, "y": 0},
+                    }
+                ],
+            },
+        ).to_dict()
+        self.assertTrue(noop_preview["ok"])
+        self.assertTrue(noop_preview["data"]["applicable"])
+        self.assertEqual(noop_preview["data"]["changeSet"]["changeCount"], 0)
+
+    def test_fractional_translation_is_not_snapped_or_skipped(self) -> None:
+        build = build_change_set(
+            _model(grid=1, subdivision=1),
+            [
+                {
+                    "op": "translate",
+                    "target": _selector(),
+                    "delta": {"x": 0.25, "y": 0},
+                    "quantizer": "exact",
+                }
+            ],
+        )
+
+        evidence = build.normalized_operations[0]
+        self.assertEqual(evidence["delta"], {"x": 0.25, "y": 0})
+        self.assertEqual(evidence["changedTargetCount"], 1)
+        self.assertEqual(evidence["skippedTargetCount"], 0)
+        self.assertTrue(build.change_set.changes)
+        after = build.change_set.apply(_model(grid=1, subdivision=1))
+        self.assertEqual(
+            after["glyphs"]["A"]["layers"][0]["shapes"][0]["value"]["nodes"][0]["x"],
+            50.25,
+        )
+
+    def test_cancellation_checkpoints_cover_duplication_transform_and_comparison(self) -> None:
+        model = _model()
+        before = fingerprint_model(model)
+
+        for name, operations, cancel_after in (
+            (
+                "duplication",
+                [
+                    {
+                        "op": "duplicate",
+                        "target": {"entity": "master", "ids": ["M1"]},
+                        "newId": "M2",
+                        "overrides": {"name": "Copy"},
+                    }
+                ],
+                2,
+            ),
+            (
+                "transform",
+                [
+                    {
+                        "op": "transform",
+                        "target": {
+                            "entity": "layer",
+                            "parent": {"masterId": "M1"},
+                        },
+                        "matrix": [1, 0, 0.2, 1, 0, 0],
+                    }
+                ],
+                2,
+            ),
+        ):
+            with self.subTest(phase=name):
+                calls = 0
+
+                def cancel() -> None:
+                    nonlocal calls
+                    calls += 1
+                    if calls >= cancel_after:
+                        raise ActivityCancelled("cancel {}".format(name))
+
+                with self.assertRaises(ActivityCancelled):
+                    build_change_set(
+                        model,
+                        operations,
+                        cancellation_checkpoint=cancel,
+                    )
+                self.assertEqual(fingerprint_model(model), before)
+
+    def test_transport_cancellation_receipt_and_health_are_bounded(self) -> None:
+        host = _CancellablePreviewHost(_model())
+        app = GlyphsMCPApplication(host)
+        handlers = ToolHandlers(app)
+        before = fingerprint_model(host.model)
+        arguments = {
+            "documentId": "doc_cancellable",
+            "expectedDocumentFingerprint": before,
+            "operations": [
+                {
+                    "op": "set",
+                    "target": _selector(),
+                    "field": "width",
+                    "value": 510,
+                }
+            ],
+        }
+
+        async def exercise() -> None:
+            task = asyncio.create_task(
+                handlers._invoke("preview_change", arguments)
+            )
+            started = await asyncio.to_thread(host.started.wait, 1.0)
+            self.assertTrue(started)
+            active = app.activity.operation_summaries()["active"]
+            operation_id = next(
+                item["operationId"]
+                for item in active
+                if item["tool"] == "preview_change"
+            )
+
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+
+            health_started = time.perf_counter()
+            health = await asyncio.wait_for(
+                handlers.get_runtime_status(), timeout=1.0
+            )
+            self.assertLess(time.perf_counter() - health_started, 1.0)
+            self.assertTrue(health.structured_content["ok"])
+
+            deadline = time.monotonic() + 5.0
+            while app._operations.get(operation_id) is None:
+                self.assertLess(time.monotonic(), deadline)
+                await asyncio.sleep(0.01)
+            receipt = app.invoke(
+                "get_operation", {"operationId": operation_id}
+            ).to_dict()
+            self.assertTrue(receipt["ok"])
+            payload = receipt["data"]["payload"]
+            self.assertEqual(payload["classification"], "cancelled")
+            self.assertEqual(
+                payload["response"]["operationId"], operation_id
+            )
+            self.assertIn("total", payload["stageTimings"])
+
+        asyncio.run(exercise())
+        self.assertEqual(fingerprint_model(host.model), before)
+        self.assertEqual(host.apply_calls, 0)
+
+    def test_affine_anchor_and_component_only_layers_are_not_empty(self) -> None:
+        for include, shapes, anchors in (
+            ("anchors", [], [_layer("tmp", "M1")["anchors"][0]]),
+            ("components", [_component()], []),
+        ):
+            with self.subTest(include=include):
+                model = _model()
+                layer = model["glyphs"]["A"]["layers"][0]
+                layer["shapes"] = shapes
+                layer["anchors"] = anchors
+                build = build_change_set(
+                    model,
+                    [
+                        {
+                            "op": "transform",
+                            "target": _selector(),
+                            "matrix": [1, 0, 0, 1, 5, 7],
+                            "include": [include],
+                        }
+                    ],
+                )
+                evidence = build.normalized_operations[0]
+                self.assertEqual(evidence["changedTargetCount"], 1)
+                self.assertEqual(evidence["skippedTargetCount"], 0)
+
+    def test_affine_unsupported_shape_and_invalid_matrix_remain_blocking(self) -> None:
+        model = _model()
+        model["glyphs"]["A"]["layers"][0]["shapes"].append(
+            {
+                "id": "shape:image:0",
+                "kind": "image",
+                "value": {"position": [0, 0]},
+            }
+        )
+        target = {
+            "entity": "shape",
+            "ids": ["shape:image:0"],
+            "parent": {"glyphName": "A", "layerId": "A-master"},
+        }
+        with self.assertRaisesRegex(ValueError, "only path and component"):
+            build_change_set(
+                model,
+                [{"op": "transform", "target": target, "matrix": [1, 0, 0, 1, 1, 0]}],
+            )
+        with self.assertRaisesRegex(ValueError, "six finite numbers"):
+            build_change_set(
+                model,
+                [{"op": "transform", "target": _selector(), "matrix": [1, 0, 0]}],
+            )
 
     def test_affine_builder_retains_untouched_snapshot_glyph_shards(self) -> None:
         snapshot = CanonicalSnapshot.from_model(_model())
@@ -1119,7 +1622,7 @@ class V2SpacingGeometryTests(unittest.TestCase):
         self.assertTrue(reverted["ok"])
         self.assertEqual(host.model, before_model)
 
-    def test_native_rewrite_returns_an_immutable_non_applicable_preview(self) -> None:
+    def test_native_rewrite_cannot_replace_requested_geometry(self) -> None:
         host = _NativeRewriteHost(_model())
         app = GlyphsMCPApplication(host)
         before = fingerprint_model(host.model)
@@ -1138,8 +1641,321 @@ class V2SpacingGeometryTests(unittest.TestCase):
         self.assertFalse(preview["data"]["applicable"])
         self.assertIsNotNone(preview["data"]["previewId"])
         self.assertEqual(preview["data"]["blockers"], ["requested_effect_mismatch"])
-        self.assertEqual(preview["data"]["diagnostics"]["mismatchCount"], 1)
         self.assertEqual(fingerprint_model(host.model), before)
+
+    def test_native_grid_rounding_blocks_exact_translation(self) -> None:
+        host = _NativeGridHost(_model())
+        app = GlyphsMCPApplication(host)
+        before = fingerprint_model(host.model)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": before,
+                "operations": [
+                    {
+                        "op": "translate",
+                        "target": _selector(),
+                        "delta": {"x": 10.49, "y": 0},
+                        "quantizer": "exact",
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertTrue(preview["ok"])
+        self.assertFalse(preview["data"]["applicable"])
+        self.assertEqual(preview["data"]["blockers"], ["requested_effect_mismatch"])
+        self.assertEqual(fingerprint_model(host.model), before)
+        self.assertEqual(host.apply_calls, 0)
+
+    def test_native_grid_rounding_cannot_create_zero_change_preview(self) -> None:
+        host = _NativeGridHost(_model())
+        app = GlyphsMCPApplication(host)
+        before = fingerprint_model(host.model)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": before,
+                "operations": [
+                    {
+                        "op": "translate",
+                        "target": _selector(),
+                        "delta": {"x": 0.49, "y": 0},
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertTrue(preview["ok"])
+        self.assertFalse(preview["data"]["applicable"])
+        self.assertEqual(preview["data"]["blockers"], ["requested_effect_mismatch"])
+        self.assertIsNotNone(preview["data"]["previewId"])
+        self.assertEqual(host.apply_calls, 0)
+
+    def test_native_noop_is_an_applicable_zero_change_preview(self) -> None:
+        host = _AlignedInheritanceHost(_aligned_inheritance_model())
+        app = GlyphsMCPApplication(host)
+        before = fingerprint_model(host.model)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": before,
+                "operations": [
+                    {
+                        "op": "set",
+                        "target": _selector("A"),
+                        "field": "width",
+                        "value": 700,
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertTrue(preview["ok"])
+        self.assertTrue(preview["data"]["applicable"])
+        self.assertEqual(preview["data"]["changeSet"]["changeCount"], 0)
+        evidence = preview["data"]["verification"]
+        self.assertEqual(evidence["settlement"], "native")
+        self.assertFalse(evidence["requestedTargetMatched"])
+
+        applied = app.invoke(
+            "apply_change",
+            {
+                "documentId": "doc_spacing",
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": before,
+                "reason": "retain inherited aligned width",
+            },
+        ).to_dict()
+        self.assertTrue(applied["ok"])
+        self.assertEqual(host.apply_calls, 0)
+        self.assertEqual(fingerprint_model(host.model), before)
+
+    def test_base_and_aligned_composite_batch_applies_inherited_native_width(self) -> None:
+        host = _AlignedInheritanceHost(_aligned_inheritance_model())
+        app = GlyphsMCPApplication(host)
+        before = fingerprint_model(host.model)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": before,
+                "operations": [
+                    {
+                        "op": "set",
+                        "target": _selector("H"),
+                        "field": "width",
+                        "value": 600,
+                    },
+                    {
+                        "op": "set",
+                        "target": _selector("A"),
+                        "field": "width",
+                        "value": 700,
+                    },
+                ],
+            },
+        ).to_dict()
+
+        self.assertTrue(preview["data"]["applicable"])
+        applied = app.invoke(
+            "apply_change",
+            {
+                "documentId": "doc_spacing",
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": before,
+                "reason": "space base and inherit aligned composite width",
+            },
+        ).to_dict()
+        self.assertTrue(applied["ok"])
+        self.assertEqual(host.model["glyphs"]["H"]["layers"][0]["width"], 600)
+        self.assertEqual(host.model["glyphs"]["A"]["layers"][0]["width"], 600)
+        self.assertEqual(
+            host.model["glyphs"]["A"]["layers"][0]["shapes"][0]["value"][
+                "alignment"
+            ],
+            0,
+        )
+
+    def test_aligned_component_position_rewrite_keeps_native_position(self) -> None:
+        host = _AlignedPositionHost(_aligned_inheritance_model())
+        app = GlyphsMCPApplication(host)
+        before = fingerprint_model(host.model)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": before,
+                "operations": [
+                    {
+                        "op": "translate",
+                        "target": _selector("A"),
+                        "delta": {"x": 10, "y": 0},
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertTrue(preview["data"]["applicable"])
+        self.assertEqual(preview["data"]["verification"]["settlement"], "native")
+        applied = app.invoke(
+            "apply_change",
+            {
+                "documentId": "doc_spacing",
+                "previewId": preview["data"]["previewId"],
+                "expectedDocumentFingerprint": before,
+                "reason": "move authored anchors while preserving aligned components",
+            },
+        ).to_dict()
+        self.assertTrue(applied["ok"])
+        layer = host.model["glyphs"]["A"]["layers"][0]
+        self.assertEqual(layer["shapes"][0]["value"]["position"], [20, 30])
+        self.assertEqual(layer["anchors"][0]["position"], [260, 700])
+
+    def test_independent_aligned_width_postcondition_remains_exact(self) -> None:
+        host = _AlignedInheritanceHost(_aligned_inheritance_model())
+        app = GlyphsMCPApplication(host)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "operations": [
+                    {
+                        "op": "set",
+                        "target": _selector("A"),
+                        "field": "width",
+                        "value": 700,
+                    }
+                ],
+                "constraints": [
+                    {
+                        "phase": "after",
+                        "left": {
+                            "kind": "field",
+                            "selector": _selector("A"),
+                            "field": "width",
+                        },
+                        "operator": "eq",
+                        "right": {"kind": "literal", "value": 700},
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertFalse(preview["data"]["applicable"])
+        self.assertEqual(preview["data"]["blockers"], ["postcondition_failed"])
+
+    def test_explicit_transform_alignment_policy_is_allowed(self) -> None:
+        host = _AlignedInheritanceHost(_aligned_inheritance_model())
+        app = GlyphsMCPApplication(host)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "operations": [
+                    {
+                        "op": "transform",
+                        "target": _selector("A"),
+                        "matrix": [1, 0, 0.25, 1, 0, 0],
+                        "include": ["components"],
+                        "alignmentPolicy": "explicit_noncommuting",
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertTrue(preview["data"]["applicable"])
+        expected = app._previews.get(preview["data"]["previewId"]).payload[
+            "plan"
+        ].expected_after_model
+        self.assertEqual(
+            expected["glyphs"]["A"]["layers"][0]["shapes"][0]["value"][
+                "alignment"
+            ],
+            -1,
+        )
+
+    def test_font_wide_alignment_setting_is_protected(self) -> None:
+        model = _aligned_inheritance_model()
+        model["settings"] = {"disablesAutomaticAlignment": False}
+        host = _AlignedInheritanceHost(model)
+        app = GlyphsMCPApplication(host)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "operations": [
+                    {
+                        "op": "set",
+                        "target": {"entity": "document"},
+                        "field": "settings.disablesAutomaticAlignment",
+                        "value": True,
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertFalse(preview["ok"])
+        self.assertEqual(preview["error"]["code"], "invalid_request")
+        self.assertIn("protected", preview["error"]["message"])
+
+    def test_strict_archive_keeps_aligned_width_divergence_exact(self) -> None:
+        host = _AlignedInheritanceHost(_aligned_inheritance_model())
+        app = GlyphsMCPApplication(host)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "verificationMode": "strict_archive",
+                "operations": [
+                    {
+                        "op": "set",
+                        "target": _selector("A"),
+                        "field": "width",
+                        "value": 700,
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertFalse(preview["data"]["applicable"])
+        self.assertEqual(preview["data"]["blockers"], ["strict_archive_mismatch"])
+
+    def test_native_metadata_settlement_is_reviewable(self) -> None:
+        host = _AlignedLossHost(_aligned_inheritance_model())
+        app = GlyphsMCPApplication(host)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_spacing",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "operations": [
+                    {
+                        "op": "set",
+                        "target": _selector("A"),
+                        "field": "width",
+                        "value": 700,
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertTrue(preview["data"]["applicable"])
+        self.assertEqual(preview["data"]["blockers"], [])
+        self.assertEqual(preview["data"]["verification"]["settlement"], "native")
+        plan = app._previews.get(preview["data"]["previewId"]).payload["plan"]
+        self.assertEqual(
+            plan.expected_after_model["glyphs"]["A"]["layers"][0]["shapes"][0]
+            ["value"]["alignment"],
+            -1,
+        )
 
     def test_apply_rolls_back_when_observation_evidence_drifts(self) -> None:
         host = _ObservationDriftHost(_model())

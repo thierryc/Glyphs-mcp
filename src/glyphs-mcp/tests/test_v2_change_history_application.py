@@ -150,6 +150,12 @@ class ChangeHistoryApplicationTests(unittest.TestCase):
         self.assertTrue(inspected["ok"], inspected)
         self.assertEqual(inspected["data"]["kind"], "mutation_diff")
         self.assertGreater(len(inspected["data"]["payload"]["changes"]), 0)
+        receipt = inspected["data"]["payload"]["invocationReceipt"]
+        self.assertEqual(receipt["classification"], "success")
+        self.assertEqual(
+            receipt["response"]["operationId"],
+            applied["data"]["operationId"],
+        )
 
     def test_revert_preserves_unrelated_later_state(self) -> None:
         applied = self._apply(False)

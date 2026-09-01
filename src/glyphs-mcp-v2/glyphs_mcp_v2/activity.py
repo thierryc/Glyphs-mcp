@@ -26,6 +26,7 @@ class ActivityCancelled(RuntimeError):
 @dataclass(frozen=True)
 class ActivityToken:
     activity_id: str
+    operation_id: str
     document_id: Optional[str]
     session_generation: int
     command_generation: int
@@ -51,6 +52,7 @@ class ActivitySnapshot:
     session_generation: int = 0
     command_generation: int = 0
     summary: Optional[str] = None
+    operation_id: str = ""
 
     @property
     def active(self) -> bool:
@@ -81,6 +83,7 @@ def _idle_snapshot(document_id: Optional[str], now: float) -> ActivitySnapshot:
         session_generation=0,
         command_generation=0,
         summary=None,
+        operation_id="",
     )
 
 
@@ -175,6 +178,7 @@ class OperationActivityStore:
         tool: str,
         title: str,
         cancellable: bool = False,
+        operation_id: Optional[str] = None,
     ) -> ActivityToken:
         now = float(self._clock())
         activity_id = str(self._id_factory() or "activity_{}".format(uuid4().hex))
@@ -186,6 +190,7 @@ class OperationActivityStore:
             self._next_command_generation += 1
             token = ActivityToken(
                 activity_id=activity_id,
+                operation_id=str(operation_id or ""),
                 document_id=document_id,
                 session_generation=self._session_generation,
                 command_generation=command_generation,
@@ -208,6 +213,7 @@ class OperationActivityStore:
                 sequence=self._sequence(),
                 session_generation=token.session_generation,
                 command_generation=token.command_generation,
+                operation_id=token.operation_id,
             )
             self._records[activity_id] = snapshot
             self._active_by_document.setdefault(document_id, []).append(activity_id)
@@ -313,6 +319,17 @@ class OperationActivityStore:
         token = self._current_token.get()
         if token is not None:
             self.checkpoint(token)
+
+    def checkpoint_callback(self) -> Callable[[], None]:
+        """Capture the current token for work that crosses thread contexts."""
+
+        token = self._current_token.get()
+
+        def checkpoint() -> None:
+            if token is not None:
+                self.checkpoint(token)
+
+        return checkpoint
 
     def complete(
         self,
@@ -513,6 +530,71 @@ class OperationActivityStore:
         now = float(self._clock())
         with self._lock:
             return self._current_locked(document_id, now)
+
+    @staticmethod
+    def _public_summary(snapshot: ActivitySnapshot, now: float) -> dict:
+        observed = replace(snapshot, observed_at=now)
+        return {
+            "activityId": observed.activity_id,
+            "operationId": observed.operation_id or None,
+            "documentId": observed.document_id,
+            "tool": observed.tool,
+            "phase": observed.phase,
+            "state": observed.state,
+            "cancellable": observed.cancellable,
+            "cancelRequested": observed.cancel_requested,
+            "elapsedMs": round(observed.elapsed_seconds * 1000, 3),
+            "summary": observed.summary,
+        }
+
+    def operation_summaries(
+        self,
+        *,
+        active_limit: int = 16,
+        recent_limit: int = 16,
+        exclude_operation_id: Optional[str] = None,
+    ) -> dict:
+        """Return bounded process state using only the activity-store lock."""
+
+        now = float(self._clock())
+        active_bound = max(0, min(int(active_limit), 64))
+        recent_bound = max(0, min(int(recent_limit), 64))
+        excluded = str(exclude_operation_id or "")
+        with self._lock:
+            active = sorted(
+                (
+                    value
+                    for value in self._records.values()
+                    if value.active and value.operation_id != excluded
+                ),
+                key=lambda value: value.sequence,
+                reverse=True,
+            )
+            recent = sorted(
+                (
+                    value
+                    for value in self._records.values()
+                    if not value.active
+                    and value.state in TERMINAL_STATES
+                    and value.operation_id != excluded
+                ),
+                key=lambda value: value.sequence,
+                reverse=True,
+            )
+        return {
+            "activeCount": len(active),
+            "active": [
+                self._public_summary(value, now)
+                for value in active[:active_bound]
+            ],
+            "activeTruncated": len(active) > active_bound,
+            "recentCount": len(recent),
+            "recent": [
+                self._public_summary(value, now)
+                for value in recent[:recent_bound]
+            ],
+            "recentTruncated": len(recent) > recent_bound,
+        }
 
     def dismiss(self, document_id: Optional[str]) -> ActivitySnapshot:
         now = float(self._clock())

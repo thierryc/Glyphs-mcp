@@ -285,12 +285,20 @@ class V2ApplicationTests(unittest.TestCase):
             set(payload["data"]["registries"]["changeOperations"]),
             {
                 "set", "translate", "transform", "insert", "remove", "move",
-                "duplicate",
+                "duplicate", "materialize",
             },
         )
         self.assertEqual(
             payload["data"]["registries"]["scalarValueFields"],
             {"kerning": "value"},
+        )
+        self.assertEqual(
+            payload["data"]["registries"]["geometryExecution"]["quantizers"],
+            ["exact"],
+        )
+        self.assertTrue(
+            payload["data"]["registries"]["geometryExecution"]
+            ["preservesGlobalAutomaticAlignment"]
         )
         self.assertEqual(
             payload["data"]["registries"]["entityCapabilities"]["kerning"][
@@ -643,6 +651,47 @@ class V2ApplicationTests(unittest.TestCase):
         self.assertFalse(opened["data"]["activationRequested"])
         self.assertIsNone(opened["data"]["activationVerified"])
         self.assertEqual(opened["tool"], "open_document_view")
+
+    def test_top_level_operation_id_resolves_terminal_receipt(self) -> None:
+        app = GlyphsMCPApplication(_FakeHost())
+        response = app.invoke("get_server_info").to_dict()
+        receipt = app.invoke(
+            "get_operation", {"operationId": response["operationId"]}
+        ).to_dict()
+
+        self.assertTrue(receipt["ok"])
+        self.assertEqual(receipt["data"]["kind"], "invocation_receipt")
+        payload = receipt["data"]["payload"]
+        self.assertEqual(payload["classification"], "success")
+        self.assertEqual(
+            payload["response"]["operationId"], response["operationId"]
+        )
+        self.assertIn("total", payload["stageTimings"])
+        self.assertEqual(payload["rollback"]["classification"], "not_started")
+
+        failed = app.invoke("missing_tool").to_dict()
+        failed_receipt = app.invoke(
+            "get_operation", {"operationId": failed["operationId"]}
+        ).to_dict()
+        self.assertEqual(
+            failed_receipt["data"]["payload"]["classification"],
+            "typed_failure",
+        )
+
+        class TimeoutHost(_FakeHost):
+            def runtime_snapshot(self):
+                raise TimeoutError("bounded host timeout")
+
+        timeout_app = GlyphsMCPApplication(TimeoutHost())
+        timed_out = timeout_app.invoke("get_server_info").to_dict()
+        timeout_receipt = timeout_app.invoke(
+            "get_operation", {"operationId": timed_out["operationId"]}
+        ).to_dict()
+        self.assertEqual(timed_out["error"]["code"], "timeout")
+        self.assertEqual(
+            timeout_receipt["data"]["payload"]["classification"],
+            "timeout",
+        )
 
     def test_open_document_view_can_activate_and_verify_the_exact_document(self) -> None:
         host = _FakeHost()

@@ -24,6 +24,7 @@ from glyphs_mcp_v2.diff_overlay import (  # noqa: E402
     SavedLayerGeometryCache,
     overlay_for_layer,
 )
+from glyphs_mcp_v2.projection_queue import ProjectionRequestQueue  # noqa: E402
 
 
 def _model(x: float = 0.0) -> dict:
@@ -211,6 +212,62 @@ class ChangeFeedbackTests(unittest.TestCase):
         self.assertIs(first, second)
         self.assertIs(first.segments, second.segments)
 
+    def test_projection_requests_wait_for_the_latest_interface_quiet_window(self) -> None:
+        now = [10.0]
+        queue = ProjectionRequestQueue(
+            delay_seconds=0.025,
+            clock=lambda: now[0],
+        )
+
+        first_generation = queue.note_interface_change()
+        queue.defer("A", version=("saved", first_generation), payload="old A")
+        now[0] += 0.010
+        remaining, ready = queue.drain_ready()
+        self.assertAlmostEqual(remaining, 0.015)
+        self.assertEqual(ready, ())
+
+        second_generation = queue.note_interface_change()
+        queue.defer("B", version=("saved", second_generation), payload="new B")
+        now[0] += 0.025
+        remaining, ready = queue.drain_ready()
+        self.assertEqual(remaining, 0.0)
+        self.assertEqual(ready, ("new B",))
+
+    def test_projection_candidate_survives_additional_interface_notifications(self) -> None:
+        now = [10.0]
+        queue = ProjectionRequestQueue(
+            delay_seconds=0.025,
+            clock=lambda: now[0],
+        )
+        generation = queue.note_interface_change()
+        queue.defer("A", version=("saved", generation), payload="current A")
+
+        now[0] += 0.010
+        queue.note_interface_change()
+        now[0] += 0.025
+
+        remaining, ready = queue.drain_ready()
+        self.assertEqual(remaining, 0.0)
+        self.assertEqual(ready, ("current A",))
+
+    def test_projection_requests_coalesce_repeated_paints_for_one_layer(self) -> None:
+        queue = ProjectionRequestQueue(delay_seconds=0.0, clock=lambda: 0.0)
+        generation = queue.note_interface_change()
+        version = ("saved", generation)
+
+        self.assertTrue(queue.defer("A", version=version, payload="first"))
+        self.assertFalse(queue.defer("A", version=version, payload="duplicate"))
+        self.assertTrue(
+            queue.defer(
+                "A",
+                version=("new saved", generation),
+                payload="latest",
+            )
+        )
+
+        _remaining, ready = queue.drain_ready()
+        self.assertEqual(ready, ("latest",))
+
     def test_difference_geometry_builds_only_the_gap_between_old_and_live_paths(self) -> None:
         baseline = self.before["glyphs"]["A"]["layers"]["m0"]["paths"]
         live = copy.deepcopy(self.after["glyphs"]["A"]["layers"]["m0"]["paths"])
@@ -265,6 +322,10 @@ class ChangeFeedbackTests(unittest.TestCase):
         self.assertIn("_stroke_saved_segments", reporter_source)
         self.assertIn("_stroke_added_anchor(current, radius)", reporter_source)
         self.assertIn(".fill()", reporter_source)
+        self.assertIn("PROJECTION_SETTLE_DELAY_SECONDS = 0.025", reporter_source)
+        self.assertIn("ProjectionRequestQueue", reporter_source)
+        self.assertIn("performSelector_withObject_afterDelay_", reporter_source)
+        self.assertIn("self._projection_requests.remaining_delay()", reporter_source)
         self.assertNotIn("NSTimer", reporter_source)
         self.assertNotIn("pollSavedSources_", reporter_source)
         self.assertNotIn("TARGET_STALE_RGBA", reporter_source)

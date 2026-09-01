@@ -41,6 +41,10 @@ OPERATION_DEFINITIONS: Mapping[str, Mapping[str, Any]] = {
         "required": ["target", "newId"],
         "optional": ["overrides", "index"],
     },
+    "materialize": {
+        "required": ["target", "destinationEntity", "newId"],
+        "optional": ["overrides", "index"],
+    },
 }
 PREDICATE_OPERATORS = frozenset(
     {
@@ -74,6 +78,8 @@ def _entity_capability(kind: str) -> dict[str, Any]:
         operations.add("translate")
     if kind in TRANSFORM_TARGETS:
         operations.add("transform")
+    if kind == "instance":
+        operations.add("materialize")
     observations_by_kind = {
         "document": {"compilation.diagnostics", "persistence"},
         "font": {"compilation.diagnostics", "persistence"},
@@ -119,6 +125,14 @@ def public_mechanics_registry() -> dict[str, Any]:
             for kind, children in sorted(RELATION_DEFINITIONS.items())
         },
         "scalarValueFields": dict(sorted(SCALAR_VALUE_FIELDS.items())),
+        "geometryExecution": {
+            "coordinatePolicy": "floating_point",
+            "quantizers": ["exact"],
+            "nativeLayerRounding": "temporarily_disabled",
+            "structuralFallback": "temporary_grid_zero",
+            "restoresGrid": True,
+            "preservesGlobalAutomaticAlignment": True,
+        },
     }
 
 

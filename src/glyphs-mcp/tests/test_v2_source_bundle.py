@@ -46,6 +46,7 @@ from glyphs_mcp_v2.source_bundle import (  # noqa: E402
     SOURCE_KERNING_LIB_KEY,
     SourceBundleError,
     build_feature_source,
+    native_source_renderer,
     render_source_bundle,
     resolve_number_values,
     select_variable_blocks,
@@ -669,6 +670,26 @@ class V2FeatureNormalizationTests(unittest.TestCase):
 
 
 class V2SourceBundleTests(unittest.TestCase):
+    def test_native_renderer_absence_is_classified(self) -> None:
+        real_import = __import__
+
+        def unavailable(name, *args, **kwargs):
+            if name == "export_designspace_ufo":
+                raise ImportError("renderer omitted")
+            return real_import(name, *args, **kwargs)
+
+        with mock.patch("builtins.__import__", side_effect=unavailable):
+            with self.assertRaises(SourceBundleError) as raised:
+                native_source_renderer(
+                    object(),
+                    target_kind="static",
+                    destination=Path("/tmp/unused-native-renderer"),
+                    compatibility_mode="component_preserving",
+                    decompose_glyphs=(),
+                )
+
+        self.assertEqual(raised.exception.code, "native_renderer_unavailable")
+
     def test_export_error_keeps_private_target_evidence_without_public_schema_coupling(self) -> None:
         error = SourceBundleError(
             "render_failed",

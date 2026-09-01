@@ -15,8 +15,8 @@ tool identity, effect, category, and intent.
 | `list_documents` | `read` | `document` | List open Glyphs documents with stable process-local IDs. |
 | `read_document` | `read` | `document` | Read canonical entities and computed observations through one selector and projection. |
 | `evaluate_constraints` | `read` | `document` | Evaluate reusable field constraints without changing the document. |
-| `preview_change` | `read` | `change` | Resolve exact targets and mechanically simulate generic operations into one immutable preview. |
-| `apply_change` | `edit` | `change` | Apply one exact immutable preview through the verified transaction kernel without rerunning planning. |
+| `preview_change` | `read` | `change` | Resolve exact targets and mechanically simulate generic operations with floating-point geometry into one immutable preview. |
+| `apply_change` | `edit` | `change` | Apply one exact immutable preview through the floating-geometry verified transaction kernel without rerunning planning. |
 | `get_operation` | `read` | `history` | Read one bounded operation or preview record. |
 | `list_history` | `read` | `history` | List unsaved-session verified change commits. |
 | `revert_change` | `edit` | `history` | Revert one compatible verified change without overwriting unrelated later edits. |
@@ -34,7 +34,7 @@ tool identity, effect, category, and intent.
 
 - Canonical model schema: `7`.
 - Entity kinds: `anchor`, `axis`, `class`, `document`, `feature`, `font`, `glyph`, `instance`, `kerning`, `layer`, `master`, `metric`, `node`, `number`, `prefix`, `shape`, `stem`.
-- Change operations: `duplicate`, `insert`, `move`, `remove`, `set`, `transform`, `translate`.
+- Change operations: `duplicate`, `insert`, `materialize`, `move`, `remove`, `set`, `transform`, `translate`.
 - Constraint operators: `eq`, `gt`, `gte`, `in_range`, `lt`, `lte`, `ne`, `within`.
 - Computed projections: `alignment`, `bounds`, `collection.index`, `compilation.diagnostics`, `geometry.counts`, `geometry.transform`, `grid`, `inheritance.metrics`, `metadata.effective`, `ownership`, `persistence`, `spacing.horizontal`, `spacing.vertical`.
 - Selector predicates: `and`, `contains`, `eq`, `exists`, `gt`, `gte`, `in`, `lt`, `lte`, `ne`, `not`, `or`.
@@ -47,6 +47,17 @@ tool identity, effect, category, and intent.
 - Observation operands use `observation.<projection>.<path>`, for
   example `observation.bounds.x` or
   `observation.alignment.effectiveLayerAlignment`.
+
+## Floating-point geometry contract
+
+- Coordinate policy: `floating_point`; supported quantizers: `exact`.
+- Existing and newly created Glyphs 4 layers run with native layer
+  rounding temporarily disabled. Structural operations and Python use
+  temporary grid zero as a fallback, restored before canonical read-back.
+- The runtime preserves the user's grid, subdivision, and global automatic-
+  alignment setting on success, failure, cancellation, and rollback.
+  Component alignment remains preserved unless an operation explicitly
+  requests an alignment policy override.
 
 ## Detached Python contract
 

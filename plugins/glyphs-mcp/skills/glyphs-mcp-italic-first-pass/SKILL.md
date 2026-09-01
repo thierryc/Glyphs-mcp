@@ -40,8 +40,11 @@ Build the complete pass as one declarative `preview_change` transaction:
    shear use matrix `[1, 0, tan(angle), 1, 0, 0]`, `origin=[0, 0]` (or
    the designer-approved baseline pivot), `include=[paths, anchors,
    components]`, `componentComposition=conjugate`, and
-   `alignmentPolicy=explicit_noncommuting`. Choose `quantizer=grid` only when
-   the requested source policy requires Glyphs grid snapping.
+   `alignmentPolicy=explicit_noncommuting`, with `quantizer=exact` (the
+   default). Preserve fractional shear results exactly; do not round or snap
+   coordinates, change the grid, or change global automatic alignment. The
+   runtime manages precision centrally. Component alignment overrides remain
+   explicit opt-ins such as this reviewed noncommuting transform.
 4. Add after-constraints for master order and locations, layer coverage,
    widths/origins, topology, compatibility, component references, alignment,
    and kerning. Use semantic verification unless the user explicitly requests

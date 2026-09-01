@@ -44,12 +44,22 @@ Add mechanics through the shared registries and transaction kernel instead of
 adding domain workflow endpoints. Keep schemas single-source and generated,
 run the v2 contract/bundle tests, and sync packaged skill mirrors.
 
+Keep floating-point precision adapter-owned and plugin-wide. All geometry-
+capable declarative, structural, transaction, staged-Python, and live-Python
+paths must use the central nest-safe scope, exact-only quantization, and exact
+fractional read-back. Feature-detect `GSLayer.temporarilyDisableRounding`;
+use temporary grid zero only for structural/Python execution or as its fallback,
+and restore grid, subdivision, global automatic alignment, layer flags, and
+update suspension on every exit. Never add local coordinate rounding, grid
+snapping, epsilon-to-integer cleanup, or tool-specific precision toggles.
+
 Do not encode workflow policy as mutation guards. Locks, component alignment
 configuration, glyph categories, and other design metadata are preserved by
-generic operations; detached native replay, requested-effect comparison,
-read-back constraints, and rollback determine mechanical feasibility. Add a
-registry capability or use permanent Python fallback instead of adding a
-task-specific public tool.
+generic operations. The detached native result is the preview; constraints,
+exact live read-back, and rollback provide the generic safety boundary. Native
+rounding cannot replace a requested fractional effect or turn it into a no-op.
+Use
+permanent Python fallback instead of adding a task-specific public tool.
 
 Keep live-document atomicity separate from persistence. Native Glyphs Save is
 always available and may overlap any tool action; it is evidence to reconcile,

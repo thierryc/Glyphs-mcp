@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any, Dict, List, Literal, Optional, Set, Union
 
+import anyio
 from fastmcp import FastMCP
 from fastmcp.tools.tool import ToolResult
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, RootModel, model_validator
@@ -162,13 +163,13 @@ class SetOperation(_OperationBase):
     op: Literal["set"]
     field: str = Field(min_length=1)
     value: JsonValue
-    quantizer: Literal["exact", "grid"] = "exact"
+    quantizer: Literal["exact"] = "exact"
 
 
 class TranslateOperation(_OperationBase):
     op: Literal["translate"]
     delta: TranslationDelta
-    quantizer: Literal["exact", "grid"] = "exact"
+    quantizer: Literal["exact"] = "exact"
 
 
 class TransformOperation(_OperationBase):
@@ -181,7 +182,7 @@ class TransformOperation(_OperationBase):
         List[Annotated[float, Field(allow_inf_nan=False)]],
         Field(min_length=2, max_length=2),
     ] = Field(default_factory=lambda: [0, 0])
-    quantizer: Literal["exact", "grid"] = "exact"
+    quantizer: Literal["exact"] = "exact"
     include: Annotated[
         List[Literal["paths", "anchors", "components"]],
         Field(min_length=1),
@@ -218,6 +219,14 @@ class DuplicateOperation(_OperationBase):
     index: Optional[Annotated[int, Field(ge=0)]] = None
 
 
+class MaterializeOperation(_OperationBase):
+    op: Literal["materialize"]
+    destinationEntity: Literal["master"]
+    newId: str = Field(min_length=1)
+    overrides: Optional[Dict[str, JsonValue]] = None
+    index: Optional[Annotated[int, Field(ge=0)]] = None
+
+
 OperationVariant = Annotated[
     Union[
         SetOperation,
@@ -227,6 +236,7 @@ OperationVariant = Annotated[
         RemoveOperation,
         MoveOperation,
         DuplicateOperation,
+        MaterializeOperation,
     ],
     Field(discriminator="op"),
 ]
@@ -259,22 +269,43 @@ class ToolHandlers:
     def __init__(self, application: GlyphsMCPApplication) -> None:
         self._application = application
 
-    def _invoke(self, tool: str, arguments: Dict[str, Any]) -> ToolResult:
-        response = self._application.invoke(
-            tool,
-            {
-                key: _transport_value(value)
-                for key, value in arguments.items()
-                if key != "self" and value is not None
-            },
+    async def _invoke(self, tool: str, arguments: Dict[str, Any]) -> ToolResult:
+        values = {
+            key: _transport_value(value)
+            for key, value in arguments.items()
+            if key != "self" and value is not None
+        }
+        create_context = getattr(
+            self._application, "create_invocation_context", None
         )
+        context = create_context(tool, values) if callable(create_context) else None
+        try:
+            response = await anyio.to_thread.run_sync(
+                lambda: (
+                    self._application.invoke(
+                        tool,
+                        values,
+                        invocation_context=context,
+                    )
+                    if context is not None
+                    else self._application.invoke(tool, values)
+                ),
+                abandon_on_cancel=True,
+            )
+        except BaseException as exc:
+            cancelled_type = anyio.get_cancelled_exc_class()
+            if context is not None and isinstance(exc, cancelled_type):
+                context.request_cancel(classification="cancelled")
+            elif context is not None and isinstance(exc, TimeoutError):
+                context.request_cancel(classification="timeout")
+            raise
         return ToolResult(content=response.summary, structured_content=response.to_dict())
 
     async def get_server_info(self) -> ToolResult:
-        return self._invoke("get_server_info", {})
+        return await self._invoke("get_server_info", {})
 
     async def list_documents(self) -> ToolResult:
-        return self._invoke("list_documents", {})
+        return await self._invoke("list_documents", {})
 
     async def read_document(
         self,
@@ -282,14 +313,14 @@ class ToolHandlers:
         selector: EntitySelector,
         projection: Projection,
     ) -> ToolResult:
-        return self._invoke("read_document", locals())
+        return await self._invoke("read_document", locals())
 
     async def evaluate_constraints(
         self,
         documentId: str,
         constraints: List[Constraint],
     ) -> ToolResult:
-        return self._invoke("evaluate_constraints", locals())
+        return await self._invoke("evaluate_constraints", locals())
 
     async def preview_change(
         self,
@@ -302,7 +333,7 @@ class ToolHandlers:
             "verified", "snapshot_backed_recovery"
         ] = "verified",
     ) -> ToolResult:
-        return self._invoke("preview_change", locals())
+        return await self._invoke("preview_change", locals())
 
     async def apply_change(
         self,
@@ -312,7 +343,7 @@ class ToolHandlers:
         reason: Annotated[str, Field(min_length=1, max_length=1000)],
         confirmRecovery: bool = False,
     ) -> ToolResult:
-        return self._invoke("apply_change", locals())
+        return await self._invoke("apply_change", locals())
 
     async def get_operation(
         self,
@@ -320,14 +351,14 @@ class ToolHandlers:
         pageSize: PageSize = 100,
         cursor: Optional[str] = None,
     ) -> ToolResult:
-        return self._invoke("get_operation", locals())
+        return await self._invoke("get_operation", locals())
 
     async def list_history(
         self,
         documentId: str,
         pageSize: PageSize = 100,
     ) -> ToolResult:
-        return self._invoke("list_history", locals())
+        return await self._invoke("list_history", locals())
 
     async def revert_change(
         self,
@@ -335,7 +366,7 @@ class ToolHandlers:
         operationId: str,
         expectedDocumentFingerprint: Sha256Fingerprint,
     ) -> ToolResult:
-        return self._invoke("revert_change", locals())
+        return await self._invoke("revert_change", locals())
 
     async def search_knowledge(
         self,
@@ -346,13 +377,13 @@ class ToolHandlers:
         pageSize: Annotated[int, Field(ge=1, le=100)] = 20,
         cursor: Optional[str] = None,
     ) -> ToolResult:
-        return self._invoke("search_knowledge", locals())
+        return await self._invoke("search_knowledge", locals())
 
     async def get_knowledge(
         self,
         entryIds: Annotated[List[str], Field(min_length=1, max_length=20)],
     ) -> ToolResult:
-        return self._invoke("get_knowledge", locals())
+        return await self._invoke("get_knowledge", locals())
 
     async def execute_python(
         self,
@@ -369,7 +400,7 @@ class ToolHandlers:
         maxOutputChars: Annotated[int, Field(ge=1, le=8192)] = 8192,
         maxErrorChars: Annotated[int, Field(ge=1, le=8192)] = 8192,
     ) -> ToolResult:
-        return self._invoke("execute_python", locals())
+        return await self._invoke("execute_python", locals())
 
     async def preview_export(
         self,
@@ -380,10 +411,10 @@ class ToolHandlers:
         expectedDestinationFingerprint: Optional[Sha256Fingerprint] = None,
         acknowledgedFindingIds: Optional[List[str]] = None,
     ) -> ToolResult:
-        return self._invoke("preview_export", locals())
+        return await self._invoke("preview_export", locals())
 
     async def apply_export(self, previewId: str) -> ToolResult:
-        return self._invoke("apply_export", locals())
+        return await self._invoke("apply_export", locals())
 
     async def save_document(
         self,
@@ -396,7 +427,7 @@ class ToolHandlers:
         overwritePolicy: Literal["fail_if_exists", "replace_if_match"] = "fail_if_exists",
         expectedDestinationFileFingerprint: Optional[Sha256Fingerprint] = None,
     ) -> ToolResult:
-        return self._invoke("save_document", locals())
+        return await self._invoke("save_document", locals())
 
     async def open_document_view(
         self,
@@ -405,17 +436,17 @@ class ToolHandlers:
         masterId: Optional[str] = None,
         activateDocument: bool = False,
     ) -> ToolResult:
-        return self._invoke("open_document_view", locals())
+        return await self._invoke("open_document_view", locals())
 
     async def get_runtime_status(self) -> ToolResult:
-        return self._invoke("get_runtime_status", {})
+        return await self._invoke("get_runtime_status", {})
 
     async def repair_runtime(
         self,
         expectedIncidentId: Optional[str] = None,
         reason: Optional[str] = None,
     ) -> ToolResult:
-        return self._invoke("repair_runtime", locals())
+        return await self._invoke("repair_runtime", locals())
 
 
 class CatalogRegistrar:

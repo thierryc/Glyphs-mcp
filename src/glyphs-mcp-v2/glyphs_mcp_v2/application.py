@@ -6,6 +6,7 @@ import copy
 import os
 import time
 import traceback
+from contextvars import ContextVar
 from dataclasses import replace
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence
@@ -45,6 +46,7 @@ from .knowledge import (
     knowledge_manifest,
     search_knowledge as search_knowledge_corpus,
 )
+from .invocation import InvocationContext
 from .mechanics_registry import public_mechanics_registry
 from .operations import OperationRecord, OperationStore
 from .mutation import (
@@ -141,6 +143,21 @@ def _normalized_delta_evidence(
         "numericDeltas": numeric[:limit],
         "numericDeltaCount": len(numeric),
         "numericDeltasTruncated": len(numeric) > limit,
+    }
+
+
+def _normalized_target_evidence(
+    operations: Sequence[Mapping[str, Any]],
+) -> Mapping[str, int]:
+    """Aggregate entity counts without confusing targets with field paths."""
+
+    return {
+        name: sum(int(item.get(name) or 0) for item in operations)
+        for name in (
+            "resolvedTargetCount",
+            "changedTargetCount",
+            "skippedTargetCount",
+        )
     }
 
 
@@ -304,6 +321,12 @@ class GlyphsMCPApplication:
     ) -> None:
         self._host = host
         self.activity = activity or default_activity_store()
+        self._invocation_context: ContextVar[Optional[InvocationContext]] = (
+            ContextVar(
+                "glyphs_mcp_v2_invocation_context_{}".format(id(self)),
+                default=None,
+            )
+        )
         self._operations = operations or OperationStore()
         self._reviews = OperationStore()
         # Generic document previews and staged-Python previews intentionally
@@ -359,18 +382,80 @@ class GlyphsMCPApplication:
             if callable(getattr(self, definition.handler_name, None))
         }
 
+    def create_invocation_context(
+        self,
+        handler_name: str,
+        arguments: Optional[Mapping[str, Any]] = None,
+    ) -> InvocationContext:
+        values = dict(arguments or {})
+        document_id = str(
+            values.get("documentId") or values.get("document_id") or ""
+        ) or None
+        return InvocationContext(
+            tool=str(handler_name or "unknown"),
+            document_id=document_id,
+        )
+
+    def _current_invocation(self) -> Optional[InvocationContext]:
+        return self._invocation_context.get()
+
+    def _invocation_metadata(self) -> OperationMetadata:
+        context = self._current_invocation()
+        return context.metadata if context is not None else OperationMetadata.create()
+
+    def _store_invocation_receipt(
+        self,
+        context: InvocationContext,
+        response: ToolResponse,
+    ) -> None:
+        evidence = dict(context.evidence())
+        response_payload = response.to_dict()
+        response_data = dict(response.data)
+        timings = dict(response_data.get("stageTimings") or {})
+        timings.setdefault("total", float(response.metadata.duration_ms))
+        self._operations.upsert(
+            operation_id=context.operation_id,
+            kind="invocation_receipt",
+            ttl_seconds=RESULT_TTL_SECONDS,
+            preserve_existing=True,
+            payload={
+                "documentId": context.document_id,
+                "tool": response.tool,
+                "effect": response.effect,
+                "classification": evidence["classification"],
+                "terminalStage": evidence["terminalStage"],
+                "stageTimings": timings,
+                "cancelRequested": evidence["cancelRequested"],
+                "rollback": copy.deepcopy(
+                    response_data.get("rollback")
+                    or {
+                        "classification": response_data.get(
+                            "rollbackClassification", "not_started"
+                        )
+                    }
+                ),
+                "recovery": copy.deepcopy(
+                    response_data.get("recovery") or {"attempted": False}
+                ),
+                "response": response_payload,
+            },
+        )
+
     def invoke(
         self,
         handler_name: str,
         arguments: Optional[Mapping[str, Any]] = None,
+        *,
+        invocation_context: Optional[InvocationContext] = None,
     ) -> ToolResponse:
         started_at = datetime.now(timezone.utc)
         started_clock = time.perf_counter_ns()
         values = dict(arguments or {})
         definition = TOOL_CATALOG.get(handler_name)
-        document_id = str(
-            values.get("documentId") or values.get("document_id") or ""
-        ) or None
+        context = invocation_context or self.create_invocation_context(
+            handler_name, values
+        )
+        document_id = context.document_id
         activity_token = self.activity.begin(
             document_id=document_id,
             tool=handler_name or "unknown",
@@ -379,15 +464,32 @@ class GlyphsMCPApplication:
                 if definition is not None
                 else str(handler_name or "Glyphs MCP")
             ),
+            cancellable=True,
+            operation_id=context.operation_id,
         )
+        context.attach_activity(self.activity, activity_token)
+        invocation_scope = self._invocation_context.set(context)
         terminalized = False
         try:
+            context.checkpoint()
             scope = self._trace.start_action(
                 handler_name or "unknown",
                 definition.effect if definition is not None else "read",
                 values,
             )
             response = self._invoke_untraced(handler_name, values)
+            try:
+                context.checkpoint()
+            except ActivityCancelled as exc:
+                response = ToolResponse.failure(
+                    tool=handler_name or "unknown",
+                    effect=definition.effect if definition is not None else "read",
+                    summary="The operation was cancelled before live mutation.",
+                    code="cancelled",
+                    message=str(exc) or "The operation was cancelled.",
+                    metadata=context.metadata,
+                )
+            response = replace(response, metadata=context.metadata)
             if (
                 definition is not None
                 and definition.effect == "edit"
@@ -456,6 +558,12 @@ class GlyphsMCPApplication:
                     data={**dict(response.data), "historyRecorded": history_recorded},
                     warnings=warnings,
                 )
+            visible = self.activity.current(document_id)
+            terminal_stage = (
+                visible.phase
+                if visible.operation_id == context.operation_id
+                else "dispatch"
+            )
             self.activity.complete(
                 activity_token,
                 ok=response.ok,
@@ -465,6 +573,19 @@ class GlyphsMCPApplication:
                     and response.error.code == "cancelled"
                 ),
             )
+            classification = (
+                "success"
+                if response.ok
+                else "timeout"
+                if response.error is not None
+                and response.error.code == "timeout"
+                else "cancelled"
+                if response.error is not None
+                and response.error.code == "cancelled"
+                else "typed_failure"
+            )
+            context.finish(classification, stage=terminal_stage)
+            self._store_invocation_receipt(context, response)
             terminalized = True
             return response
         except BaseException as exc:
@@ -483,9 +604,41 @@ class GlyphsMCPApplication:
                     ),
                     cancelled=cancelled,
                 )
+                context.finish(
+                    "cancelled" if cancelled else "internal_failure",
+                    stage=self.activity.current(document_id).phase,
+                )
+                completed_at = datetime.now(timezone.utc)
+                failure = ToolResponse.failure(
+                    tool=handler_name or "unknown",
+                    effect=definition.effect if definition is not None else "read",
+                    summary=(
+                        "Invocation cancelled"
+                        if cancelled
+                        else "Invocation ended unexpectedly"
+                    ),
+                    code="cancelled" if cancelled else "internal_error",
+                    message=(
+                        "The operation was cancelled."
+                        if cancelled
+                        else "The operation ended before returning verified state."
+                    ),
+                    recoverable=cancelled,
+                    details={"exceptionType": type(exc).__name__},
+                    metadata=context.metadata.with_timing(
+                        started_at=started_at,
+                        completed_at=completed_at,
+                        duration_ms=(
+                            time.perf_counter_ns() - started_clock
+                        )
+                        // 1_000_000,
+                    ),
+                )
+                self._store_invocation_receipt(context, failure)
             raise
         finally:
             self.activity.release(activity_token)
+            self._invocation_context.reset(invocation_scope)
 
     def _invoke_untraced(
         self,
@@ -566,6 +719,14 @@ class GlyphsMCPApplication:
                 summary="The operation was cancelled before live mutation.",
                 code="cancelled",
                 message=str(exc) or "The operation was cancelled.",
+            )
+        except TimeoutError as exc:
+            return ToolResponse.failure(
+                tool=handler_name,
+                effect=definition.effect,
+                summary="The operation timed out before returning verified state.",
+                code="timeout",
+                message=str(exc) or "The operation timed out.",
             )
         except (ValueError, TypeError) as exc:
             if os.environ.get("GLYPHS_MCP_DEBUG_CAPTURE"):
@@ -816,7 +977,7 @@ class GlyphsMCPApplication:
         error_details: Optional[Mapping[str, Any]] = None,
         data: Optional[Mapping[str, Any]] = None,
     ) -> ToolResponse:
-        resolved_metadata = metadata or OperationMetadata.create()
+        resolved_metadata = metadata or self._invocation_metadata()
         receipt = self._audit.record(
             tool=tool,
             effect="edit",
@@ -917,8 +1078,6 @@ class GlyphsMCPApplication:
         )
         public = {**dict(metadata or {}), item_key: list(first.items)}
         return operation, public, first.page.to_dict()
-
-
 
 
     def list_documents(self, arguments: Mapping[str, Any]) -> ToolResponse:
@@ -1098,7 +1257,7 @@ class GlyphsMCPApplication:
     def preview_change(self, arguments: Mapping[str, Any]) -> ToolResponse:
         if self._mutation_planner is None:
             raise HostAccessError("This host adapter does not support detached mutation planning.")
-        metadata = OperationMetadata.create()
+        metadata = self._invocation_metadata()
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
         expected = str(
             _value(
@@ -1170,6 +1329,8 @@ class GlyphsMCPApplication:
                     "proposedFingerprint": None,
                     "applicable": False,
                     "resolvedTargetCount": 0,
+                    "changedTargetCount": 0,
+                    "skippedTargetCount": 0,
                     "normalizedOperations": [],
                     "normalizedOperationCount": 0,
                     "normalizedOperationsTruncated": False,
@@ -1182,7 +1343,41 @@ class GlyphsMCPApplication:
                     "fontSaved": False,
                 },
             )
-        generic_build = build_generic_change_set(before, operations)
+        invocation = self._current_invocation()
+        preparation_context: dict[str, Any] = {}
+        if any(
+            str(operation.get("op") or "") == "materialize"
+            for operation in operations
+            if isinstance(operation, Mapping)
+        ):
+            prepare = getattr(self._host, "prepare_generic_operations", None)
+            if not callable(prepare):
+                raise HostAccessError(
+                    "This host adapter cannot prepare native materialization."
+                )
+            prepared = prepare(
+                document_id,
+                before,
+                operations,
+                cancellation_checkpoint=(
+                    invocation.checkpoint if invocation is not None else None
+                ),
+            )
+            if not isinstance(prepared, Mapping) or not isinstance(
+                prepared.get("operations"), Sequence
+            ):
+                raise HostAccessError(
+                    "The host returned an invalid materialization preparation."
+                )
+            operations = list(prepared["operations"])
+            preparation_context = dict(prepared.get("executionContext") or {})
+        generic_build = build_generic_change_set(
+            before,
+            operations,
+            cancellation_checkpoint=(
+                invocation.checkpoint if invocation is not None else None
+            ),
+        )
         requested_change_set = generic_build.change_set
         normalized_operations = list(generic_build.normalized_operations)
         capabilities = tuple(
@@ -1213,10 +1408,7 @@ class GlyphsMCPApplication:
                     "baseDocumentFingerprint": expected,
                     "proposedFingerprint": requested_change_set.after_fingerprint,
                     "applicable": False,
-                    "resolvedTargetCount": sum(
-                        len(item.get("resolvedPaths") or ())
-                        for item in normalized_operations
-                    ),
+                    **_normalized_target_evidence(normalized_operations),
                     "normalizedOperations": normalized_operations[
                         :PUBLIC_NORMALIZED_OPERATION_LIMIT
                     ],
@@ -1230,6 +1422,29 @@ class GlyphsMCPApplication:
                     "fontSaved": False,
                 },
             )
+        preparation_id = str(
+            preparation_context.pop("nativeReplayPreparationId", "") or ""
+        )
+        if preparation_id:
+            finalize = getattr(
+                self._host, "finalize_generic_operation_preparation", None
+            )
+            if not callable(finalize):
+                raise HostAccessError(
+                    "This host adapter cannot qualify native materialization evidence."
+                )
+            finalized = finalize(
+                document_id,
+                preparation_id,
+                before_fingerprint=expected,
+                after_fingerprint=requested_change_set.after_fingerprint,
+                capabilities=capabilities,
+            )
+            if not isinstance(finalized, Mapping):
+                raise HostAccessError(
+                    "The host returned invalid native materialization evidence."
+                )
+            preparation_context.update(dict(finalized))
         writable = writable_subset(
             before, requested_change_set, capabilities=capabilities
         )
@@ -1237,6 +1452,7 @@ class GlyphsMCPApplication:
             requested_change_set.apply(before), constraints, phase="after"
         )
         execution_context = dict(generic_build.execution_context)
+        execution_context.update(preparation_context)
         execution_context.update(
             {
                 "verificationMode": verification_mode,
@@ -1292,10 +1508,7 @@ class GlyphsMCPApplication:
                     "baseDocumentFingerprint": expected,
                     "proposedFingerprint": requested_change_set.after_fingerprint,
                     "applicable": False,
-                    "resolvedTargetCount": sum(
-                        len(item.get("resolvedPaths") or ())
-                        for item in normalized_operations
-                    ),
+                    **_normalized_target_evidence(normalized_operations),
                     "normalizedOperations": normalized_operations[
                         :PUBLIC_NORMALIZED_OPERATION_LIMIT
                     ],
@@ -1340,10 +1553,7 @@ class GlyphsMCPApplication:
                     "baseDocumentFingerprint": expected,
                     "proposedFingerprint": requested_change_set.after_fingerprint,
                     "applicable": False,
-                    "resolvedTargetCount": sum(
-                        len(item.get("resolvedPaths") or ())
-                        for item in normalized_operations
-                    ),
+                    **_normalized_target_evidence(normalized_operations),
                     "normalizedOperations": normalized_operations[
                         :PUBLIC_NORMALIZED_OPERATION_LIMIT
                     ],
@@ -1429,10 +1639,7 @@ class GlyphsMCPApplication:
                 "baseDocumentFingerprint": expected,
                 "proposedFingerprint": plan.after_fingerprint,
                 "applicable": applicable,
-                "resolvedTargetCount": sum(
-                    len(item.get("resolvedPaths") or ())
-                    for item in normalized_operations
-                ),
+                **_normalized_target_evidence(normalized_operations),
                 "normalizedOperations": normalized_operations[
                     :PUBLIC_NORMALIZED_OPERATION_LIMIT
                 ],
@@ -1468,7 +1675,7 @@ class GlyphsMCPApplication:
     def apply_change(self, arguments: Mapping[str, Any]) -> ToolResponse:
         if self._transactions is None:
             raise HostAccessError("This host adapter does not support document transactions.")
-        metadata = OperationMetadata.create()
+        metadata = self._invocation_metadata()
         preview_id = str(_value(arguments, "preview_id", "previewId", "") or "")
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
         expected = str(
@@ -2052,6 +2259,12 @@ class GlyphsMCPApplication:
         self, arguments: Mapping[str, Any]
     ) -> ToolResponse:
         status = _scripting_runtime_safety(self._host)
+        invocation = self._current_invocation()
+        operation_activity = self.activity.operation_summaries(
+            exclude_operation_id=(
+                invocation.operation_id if invocation is not None else None
+            )
+        )
         transaction_states = (
             self._transactions.transaction_states()
             if self._transactions is not None
@@ -2076,7 +2289,11 @@ class GlyphsMCPApplication:
                 if status.get("state") == "healthy"
                 else "The strict scripting interlock requires recovery."
             ),
-            data={**status, "documentTransactions": transaction_states},
+            data={
+                **status,
+                "documentTransactions": transaction_states,
+                "operations": operation_activity,
+            },
         )
 
     def repair_runtime(
@@ -2472,7 +2689,7 @@ class GlyphsMCPApplication:
         # native verification refuses it. Save attempts never become visible
         # no-op commits and never emit history_not_recorded.
         self._trace.mark_history_boundary()
-        metadata = OperationMetadata.create()
+        metadata = self._invocation_metadata()
         document_id = str(_value(arguments, "document_id", "documentId", "") or "")
         expected = str(
             _value(
@@ -2920,6 +3137,15 @@ class GlyphsMCPApplication:
             public_payload = {
                 **dict(payload.get("metadata") or {}),
                 str(payload.get("itemKey") or "items"): list(page.items),
+                **(
+                    {
+                        "invocationReceipt": _public_payload(
+                            payload["invocationReceipt"]
+                        )
+                    }
+                    if isinstance(payload.get("invocationReceipt"), Mapping)
+                    else {}
+                ),
             }
         else:
             public_payload = _public_payload(payload)
@@ -2936,27 +3162,6 @@ class GlyphsMCPApplication:
             },
             page=page_data,
         )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     def preview_export(self, arguments: Mapping[str, Any]) -> ToolResponse:
@@ -3372,7 +3577,7 @@ class GlyphsMCPApplication:
             inverse,
             capabilities=revert_capabilities,
         )
-        metadata = OperationMetadata.create()
+        metadata = self._invocation_metadata()
         try:
             plan = self._mutation_planner.plan(
                 document_id=document_id,
@@ -3515,6 +3720,7 @@ class GlyphsMCPApplication:
             reason=_value(arguments, "reason"),
             intended_effect=intended_effect,
             execution_mode=execution_mode,
+            operation_id=self._invocation_metadata().operation_id,
             document_id=_value(arguments, "document_id", "documentId"),
             glyph_name=_value(arguments, "glyph_name", "glyphName"),
             master_id=_value(arguments, "master_id", "masterId"),

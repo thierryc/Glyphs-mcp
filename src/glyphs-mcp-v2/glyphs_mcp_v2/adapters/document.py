@@ -24,7 +24,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock, RLock, Thread
-from typing import Any, Callable, Mapping, Optional, Sequence
+from typing import Any, Callable, Iterable, Mapping, Optional, Sequence
+from uuid import uuid4
 
 from ..canonical_collections import (
     canonical_glyph_id,
@@ -34,6 +35,7 @@ from ..canonical_collections import (
     indexed_entities,
     require_indexed_entities,
 )
+from ..affine import require_component_matrix
 from ..canonical_tree import CanonicalSnapshot
 from ..canonical_sources import (
     SerializedMappingSource,
@@ -62,6 +64,7 @@ from ..runtime_safety import (
 )
 from ..mutation import (
     CANONICAL_LIFECYCLE_CAPABILITY,
+    COMPLETE_NATIVE_VERIFICATION,
     CanonicalImpact,
     LAYER_LIFECYCLE_CAPABILITY,
     MASTER_LIFECYCLE_CAPABILITY,
@@ -99,6 +102,7 @@ from ..saving import DocumentSaveError
 from ..saved_source import SavedSourceReader
 from ..source_bundle import (
     SourceBundleError,
+    native_source_renderer,
     preflight_source_bundle as build_source_bundle_preflight,
     render_source_bundle,
 )
@@ -112,6 +116,7 @@ from .glyphs import (
     _sequence_values,
     _set_native_property,
 )
+from .geometry_precision import FloatingGeometryScope
 
 
 _FONT_SCALARS = CANONICAL_FONT_SCALAR_FIELDS
@@ -884,7 +889,7 @@ def _run_with_cyclic_gc_suspended(callback: Callable[[], Any]) -> Any:
 
 
 def _run_with_font_updates_suspended(font: Any, callback: Callable[[], Any]) -> Any:
-    """Bracket one live native write with Glyphs' documented UI suspension."""
+    """Bracket one native write batch with Glyphs' documented UI suspension."""
 
     disable = _safe_getattr(font, "disableUpdateInterface")
     enable = _safe_getattr(font, "enableUpdateInterface")
@@ -896,6 +901,89 @@ def _run_with_font_updates_suspended(font: Any, callback: Callable[[], Any]) -> 
     finally:
         if suspended:
             enable()
+
+
+def _change_set_requires_grid_zero(
+    change_set: ChangeSet,
+    capabilities: Sequence[str] = (),
+) -> bool:
+    """Return whether replay can attach freshly-created layer geometry."""
+
+    structural_capabilities = {
+        CANONICAL_LIFECYCLE_CAPABILITY,
+        LAYER_LIFECYCLE_CAPABILITY,
+        MASTER_LIFECYCLE_CAPABILITY,
+    }
+    if structural_capabilities.intersection(str(value) for value in capabilities):
+        return True
+    return any(is_structural_change_path(change.path) for change in change_set.changes)
+
+
+def _set_precision_restoration_target(
+    scope: FloatingGeometryScope,
+    font: Any,
+    target: Mapping[str, Any],
+) -> None:
+    font_target = target.get("font", {})
+    if not isinstance(font_target, Mapping):
+        return
+    values: dict[str, Any] = {}
+    if "grid" in font_target:
+        values["grid"] = font_target["grid"]
+    if "gridSubDivision" in font_target:
+        values["subdivision"] = font_target["gridSubDivision"]
+    if values:
+        scope.set_restoration_target(font, **values)
+
+
+def _run_with_floating_geometry(
+    font: Any,
+    callback: Callable[[], Any],
+    *,
+    require_grid_zero: bool,
+    target: Mapping[str, Any] | None = None,
+) -> Any:
+    """Run one detached/native write and restore execution settings exactly."""
+
+    scope = FloatingGeometryScope(
+        (font,), require_grid_zero=require_grid_zero
+    ).begin()
+    try:
+        result = _run_with_font_updates_suspended(font, callback)
+        scope.rescan_layers()
+        if target is not None:
+            _set_precision_restoration_target(scope, font, target)
+        scope.prepare_for_readback()
+        return result
+    finally:
+        scope.end()
+
+
+def _run_python_with_floating_geometry(
+    font: Any,
+    execute: Callable[[], Any],
+    readback: Callable[[Any], Any],
+) -> Any:
+    """Execute detached Python at grid zero and capture before flag cleanup."""
+
+    scope = FloatingGeometryScope((font,), require_grid_zero=True).begin()
+    try:
+        result = _run_with_font_updates_suspended(font, execute)
+        protected_changes = scope.protected_setting_changes()
+        scope.rescan_layers()
+        scope.prepare_for_readback()
+        if protected_changes:
+            raise HostAccessError(
+                "detached Python attempted to change protected execution settings: {}".format(
+                    ", ".join(
+                        str(change.get("setting"))
+                        for change in protected_changes
+                    )
+                )
+            )
+        return readback(result)
+    finally:
+        scope.end()
 
 
 def _native_property_list_flattener() -> Callable[..., Any] | None:
@@ -1236,7 +1324,7 @@ def _saved_document_canonical_model(
         unavailable("document path is not a supported Glyphs v4 source")
         return None
     model = _saved_source_canonical_model(path, instance_ids=instance_ids)
-    if not isinstance(model, dict):
+    if not isinstance(model, Mapping):
         unavailable("OpenStep source decoding or canonical conversion failed")
         return None
     glyph_models = model.get("glyphs")
@@ -1276,9 +1364,11 @@ def _saved_model_matches_live_identity(
         native = native_glyphs.get(str(name))
         if native is None:
             return False
-        if bool(_maybe_call(_safe_getattr(native, "export", True))) != bool(
-            saved.get("export", True)
-        ):
+        native_export = bool(
+            _maybe_call(_safe_getattr(native, "export", True))
+        )
+        saved_export = bool(saved.get("export", True))
+        if native_export != saved_export:
             return False
         saved_unicode = saved.get("unicode")
         if saved_unicode is None:
@@ -1286,14 +1376,21 @@ def _saved_model_matches_live_identity(
         native_unicode = _maybe_call(_safe_getattr(native, "unicode"))
         if native_unicode in (None, ""):
             return False
-        text = str(native_unicode).strip().upper()
-        if text.startswith("U+"):
-            text = text[2:]
-        try:
-            text = "{:04X}".format(int(text, 16))
-        except ValueError:
-            pass
-        if text != str(saved_unicode):
+        candidates: set[str] = set()
+        if isinstance(native_unicode, int) and not isinstance(native_unicode, bool):
+            candidates.add("{:04X}".format(native_unicode))
+        else:
+            text = str(native_unicode).strip().upper()
+            if text.startswith("U+"):
+                text = text[2:]
+            candidates.add(text)
+            try:
+                candidates.add("{:04X}".format(int(text, 16)))
+            except ValueError:
+                pass
+            if text.isdecimal():
+                candidates.add("{:04X}".format(int(text, 10)))
+        if str(saved_unicode).upper() not in candidates:
             return False
     return True
 
@@ -3417,6 +3514,7 @@ def _project_persistent_layer_order(
 
 
 _PERSISTENT_VERIFICATION_GLYPH_THRESHOLD = 32
+_NATIVE_REPLAY_GLYPH_SHARD_SIZE = 16
 
 
 def _impact_prefers_persistent_verification(impact: CanonicalImpact) -> bool:
@@ -3434,6 +3532,47 @@ def _impact_prefers_persistent_verification(impact: CanonicalImpact) -> bool:
         or "glyphOrder" in impact.roots
         or ("glyphs" in impact.roots and not impact.glyph_names)
     )
+
+
+def _sharded_replay_change_sets(
+    change_set: ChangeSet,
+    *,
+    glyph_shard_size: int = _NATIVE_REPLAY_GLYPH_SHARD_SIZE,
+) -> tuple[ChangeSet, ...]:
+    """Partition one replay into a root phase and bounded glyph phases."""
+
+    shard_size = max(1, min(int(glyph_shard_size), 64))
+    root_changes = tuple(
+        change
+        for change in change_set.changes
+        if not change.path or change.path[0] != "glyphs"
+    )
+    glyph_changes: dict[str, list[Any]] = {}
+    for change in change_set.changes:
+        if len(change.path) >= 2 and change.path[0] == "glyphs":
+            glyph_changes.setdefault(str(change.path[1]), []).append(change)
+
+    def subset(changes: Iterable[Any]) -> ChangeSet:
+        return ChangeSet.from_changes(
+            before_fingerprint=change_set.before_fingerprint,
+            after_fingerprint=change_set.after_fingerprint,
+            changes=changes,
+        )
+
+    result: list[ChangeSet] = []
+    if root_changes:
+        result.append(subset(root_changes))
+    glyph_names = sorted(glyph_changes)
+    for offset in range(0, len(glyph_names), shard_size):
+        names = glyph_names[offset : offset + shard_size]
+        result.append(
+            subset(
+                change
+                for name in names
+                for change in glyph_changes[name]
+            )
+        )
+    return tuple(result) or (change_set,)
 
 
 def _glyph_layer_structure(glyph: Any) -> tuple[tuple[str, str], ...]:
@@ -3587,6 +3726,32 @@ class _PersistentCaptureDraft:
     capture_source: str
     root_evidence: Mapping[str, Any]
     document_path: Any
+    native_projection_model: Mapping[str, Any] | None
+
+
+def _project_native_transition_onto_snapshot(
+    snapshot: CanonicalSnapshot,
+    native_before: Mapping[str, Any],
+    native_after: Mapping[str, Any],
+) -> CanonicalSnapshot:
+    """Express one native serializer delta in the established canonical form.
+
+    A clean saved source and Glyphs' live format-v4 serializer can spell the
+    same state differently: the live serializer may materialize defaults or
+    derived values that the saved source omits.  Those pre-existing spelling
+    differences are not changes made by the transaction.  Diffing two native
+    observations first isolates the actual live transition; replaying only
+    that transition onto the immutable canonical snapshot preserves the
+    established source-neutral spelling without hiding an unexpected native
+    side effect.
+    """
+
+    artifacts = diff_models(native_before, snapshot)
+    normalized = _CanonicalArtifactProjection(artifacts).normalize(native_after)
+    projected = rebase_canonical_model(snapshot, normalized)
+    if not isinstance(projected, CanonicalSnapshot):
+        raise HostAccessError("native transition projection lost snapshot identity")
+    return projected
 
 
 class _RevisionBoundGlyphModelCache:
@@ -3683,6 +3848,23 @@ class _RevisionBoundGlyphModelCache:
             bulk_verification = _impact_prefers_persistent_verification(impact)
             if bulk_verification:
                 document["forcePersistentVerification"] = True
+                if font is not None:
+                    instance_ids = collection_order(
+                        document["snapshot"].root_shards.get("instances", ())
+                    )
+                    with _suspend_cyclic_gc_for_bulk_capture():
+                        native_projection_baseline = _native_persistent_font_model(
+                            font,
+                            instance_ids=instance_ids,
+                        )
+                    if native_projection_baseline is not None:
+                        _project_persistent_layer_order(
+                            native_projection_baseline,
+                            document["snapshot"],
+                        )
+                        document["nativeProjectionBaseline"] = (
+                            native_projection_baseline
+                        )
             if font is not None and impact.glyph_names and not bulk_verification:
                 native_glyphs = {
                     str(_safe_getattr(glyph, "name") or ""): glyph
@@ -3767,6 +3949,11 @@ class _RevisionBoundGlyphModelCache:
                     and draft.capture_source == "glyphs_format_v4_mapping"
                 ),
                 "rootEvidence": dict(draft.root_evidence),
+                "nativeProjectionBaseline": (
+                    draft.native_projection_model
+                    if draft.capture_source == "glyphs_format_v4_mapping"
+                    else None
+                ),
             }
         return snapshot
 
@@ -3839,6 +4026,11 @@ class _RevisionBoundGlyphModelCache:
                 previous.get("forcePersistentVerification", False)
                 if previous is not None
                 else False
+            )
+            native_projection_baseline = (
+                previous.get("nativeProjectionBaseline")
+                if previous is not None
+                else None
             )
             streaming_capture = bool(
                 previous_snapshot is not None
@@ -3927,6 +4119,7 @@ class _RevisionBoundGlyphModelCache:
                 if persistent_model is not None:
                     capture_source = "glyphs_format_v4_mapping"
             if persistent_model is not None:
+                native_projection_model = persistent_model
                 persistent_glyphs = persistent_model.get("glyphs", {})
                 reference_glyphs = (
                     expected.glyph_shards
@@ -3939,6 +4132,18 @@ class _RevisionBoundGlyphModelCache:
                     persistent_model,
                     {"glyphs": reference_glyphs},
                 )
+                if (
+                    previous_snapshot is not None
+                    and isinstance(native_projection_baseline, Mapping)
+                    and capture_source == "glyphs_format_v4_mapping"
+                ):
+                    projected = _project_native_transition_onto_snapshot(
+                        previous_snapshot,
+                        native_projection_baseline,
+                        persistent_model,
+                    )
+                    persistent_model = projected.materialize()
+                    persistent_glyphs = persistent_model.get("glyphs", {})
                 current_glyphs: dict[str, dict[str, Any]] = {}
                 for native_glyph in _sequence_values(_safe_getattr(font, "glyphs")):
                     name = str(_safe_getattr(native_glyph, "name") or "")
@@ -4010,6 +4215,7 @@ class _RevisionBoundGlyphModelCache:
                     capture_source=capture_source,
                     root_evidence=root_evidence,
                     document_path=_safe_getattr(font, "filepath"),
+                    native_projection_model=native_projection_model,
                 )
                 if defer_persistent_assembly:
                     debug("persistent_draft_captured", glyphCount=len(current_glyphs))
@@ -4683,6 +4889,7 @@ def _scoped_font_model(
     before_root_evidence: Mapping[str, Any] | None = None,
     current_root_evidence: Mapping[str, Any] | None = None,
     allow_observed_root_expansion: bool = False,
+    defer_snapshot_assembly: bool = False,
 ) -> Mapping[str, Any]:
     """Refresh one canonical tree from native state without rebuilding every glyph."""
 
@@ -4875,7 +5082,7 @@ def _scoped_font_model(
                 glyph,
                 layer_order_reference=reference,
             )
-    if isinstance(base_model, CanonicalSnapshot):
+    if isinstance(base_model, CanonicalSnapshot) and not defer_snapshot_assembly:
         return CanonicalSnapshot.from_shards(
             {name: value for name, value in result.items() if name != "glyphs"},
             result["glyphs"],
@@ -5368,6 +5575,10 @@ def _replace_paths(layer: Any, specs: Sequence[Mapping[str, Any]]) -> None:
 
 def _new_component(spec: Mapping[str, Any]) -> Any:
     try:
+        require_component_matrix(spec)
+    except ValueError as exc:
+        raise HostAccessError(str(exc)) from exc
+    try:
         from GlyphsApp import GSComponent  # type: ignore[import-not-found]
     except Exception as exc:
         raise HostAccessError("GSComponent is unavailable") from exc
@@ -5547,6 +5758,14 @@ def _update_components_in_place(
         native_name = str(_safe_getattr(native, "componentName") or "")
         if current_name != target_name or native_name != current_name:
             return False
+        if any(
+            current.get(field) != target.get(field)
+            for field in ("position", "scale", "angle", "slant")
+        ):
+            try:
+                require_component_matrix(target)
+            except ValueError as exc:
+                raise HostAccessError(str(exc)) from exc
         for field in (
             "position",
             "scale",
@@ -7225,38 +7444,24 @@ def _reconcile_layer_to_canonical_target(
     *,
     layer_root: Sequence[str],
     replacement_roots: Sequence[Sequence[str]] = (),
-    axis_tags: Optional[Mapping[str, str]] = None,
-    max_passes: int = 1,
 ) -> None:
-    """Converge one native layer through a bounded canonical fixed point.
+    """Apply one canonical layer target for the outer readback to verify.
 
-    Glyphs may derive metrics after geometry or attachment changes. Structural
-    creation and ordinary field updates therefore share the same local
-    read/apply boundary. The outer document transaction remains responsible
-    for rejecting any layer that does not converge to its complete target.
+    Structural creation and ordinary field updates share this local boundary.
+    The transaction owns settlement, verification, and rollback.
     """
 
     state = copy.deepcopy(dict(current_layer))
     target = copy.deepcopy(dict(target_layer))
-    seen: set[str] = set()
-    for _ in range(max(1, min(3, int(max_passes)))):
-        if state == target:
-            return
-        state_fingerprint = fingerprint_model(state)
-        if state_fingerprint in seen:
-            return
-        seen.add(state_fingerprint)
-        _apply_layer_canonical_pass(
-            layer,
-            state,
-            target,
-            layer_root=layer_root,
-            replacement_roots=replacement_roots,
-        )
-        updated = _layer_model(layer, axis_tags=axis_tags)
-        if updated == state:
-            return
-        state = updated
+    if state == target:
+        return
+    _apply_layer_canonical_pass(
+        layer,
+        state,
+        target,
+        layer_root=layer_root,
+        replacement_roots=replacement_roots,
+    )
 
 
 def _apply_master_store_models(
@@ -7353,6 +7558,7 @@ def _apply_master_collection(
     }
     templates = dict(restore_templates or {})
     template_evidence_ids: set[str] = set()
+    pending_master_layers: dict[str, dict[str, Any]] = {}
     glyphs = {
         str(_safe_getattr(glyph, "name") or ""): glyph
         for glyph in _sequence_values(_safe_getattr(font, "glyphs"))
@@ -7368,21 +7574,8 @@ def _apply_master_collection(
         template_master = None
         template_layers: Mapping[str, Any] = {}
         if isinstance(template, Mapping):
-            template_master = template.get(
-                "nativeMaster" if reuse_native_templates else "master"
-            )
-            if template_master is None:
-                # The generic path-keyed tombstone store has already selected
-                # either its detached copy or exact native payload. Its
-                # composite master evidence therefore uses the neutral
-                # ``master``/``layers`` keys, while the legacy compatibility
-                # view retains ``nativeMaster``/``nativeLayers``.
-                template_master = template.get("master")
-            template_layers = template.get(
-                "nativeLayers" if reuse_native_templates else "layers"
-            )
-            if template_layers is None:
-                template_layers = template.get("layers", {})
+            template_master = template.get("master")
+            template_layers = template.get("layers", {})
             if not isinstance(template_layers, Mapping):
                 template_layers = {}
         reuse_template = bool(
@@ -7411,6 +7604,7 @@ def _apply_master_collection(
         native_by_id[identity] = master
 
         stored_layers = template_layers
+        pending_layers: dict[str, Any] = {}
         for glyph_name, glyph in glyphs.items():
             source_layer = (
                 stored_layers.get(glyph_name)
@@ -7435,12 +7629,8 @@ def _apply_master_collection(
                 if reuse_template
                 else _copy_native_object(source_layer, kind="master layer")
             )
-            # A master layer's displayed name is derived from its associated
-            # master. Persisting the same text on GSLayer creates a redundant
-            # native ``name`` field and makes replay differ from a native
-            # master duplication. Attachment below establishes the derived
-            # value; special-layer names remain owned by layer lifecycle.
-            _set_glyph_master_layer(glyph, identity, copied_layer)
+            pending_layers[glyph_name] = copied_layer
+        pending_master_layers[identity] = pending_layers
 
     removed_master_ids = [
         identity for identity in current_order if identity not in target_entities
@@ -7464,6 +7654,13 @@ def _apply_master_collection(
         notification_owner=font,
         notification_key="fontMasters",
     )
+    # Glyphs derives one default layer per glyph while a master is attached or
+    # reordered. Establish the exact owned layers only after that root
+    # lifecycle has settled; otherwise the final order projection can replace
+    # authoritative replay evidence with fresh empty defaults.
+    for identity in target_order:
+        for glyph_name, layer in pending_master_layers.get(identity, {}).items():
+            _set_glyph_master_layer(glyphs[glyph_name], identity, layer)
     for identity in target_order:
         native = native_by_id[identity]
         after = target_entities[identity]
@@ -7644,11 +7841,14 @@ def _apply_target_model(
     replay_replacements: Sequence[Sequence[str]] = (),
     capabilities: Sequence[str] = (),
     execution_context: Mapping[str, Any] | None = None,
-    master_restore_templates: Mapping[str, Mapping[str, Any]] | None = None,
-    layer_restore_templates: Mapping[str, Any] | None = None,
-    reuse_native_master_templates: bool = False,
-    reuse_native_layer_templates: bool = False,
+    master_structural_ids: Sequence[str] = (),
+    cancellation_checkpoint: Optional[Callable[[], None]] = None,
 ) -> None:
+    def checkpoint() -> None:
+        if cancellation_checkpoint is not None:
+            cancellation_checkpoint()
+
+    checkpoint()
     context = dict(execution_context or {})
     raw_templates = context.get("nativeReplayTemplates") or {}
     native_templates = {
@@ -7661,14 +7861,6 @@ def _apply_target_model(
         native_templates, "masters"
     )
     contextual_layer_templates = _native_layer_templates(native_templates)
-    resolved_master_templates = {
-        **contextual_master_templates,
-        **dict(master_restore_templates or {}),
-    }
-    resolved_layer_templates = {
-        **contextual_layer_templates,
-        **dict(layer_restore_templates or {}),
-    }
     replacement_roots = {tuple(str(part) for part in path) for path in replay_replacements}
     changed_roots = {change.path[0] for change in change_set.changes}
     affected_glyph_ids = change_set.affected_identities(("glyphs",))
@@ -7693,6 +7885,7 @@ def _apply_target_model(
         and isinstance(target_glyphs, Mapping)
         and set(current_glyphs) != set(target_glyphs)
     ):
+        checkpoint()
         _apply_glyph_membership(
             font,
             current_glyphs,
@@ -7702,6 +7895,7 @@ def _apply_target_model(
         )
 
     if "axes" in changed_roots:
+        checkpoint()
         _apply_axis_collection(
             font,
             current.get("axes", []),
@@ -7710,8 +7904,11 @@ def _apply_target_model(
             reuse_native_templates=reuse_native_templates,
         )
 
-    master_structural_ids: set[str] = set()
+    master_structural_ids = {
+        str(identity) for identity in master_structural_ids
+    }
     if "masters" in changed_roots:
+        checkpoint()
         current_master_ids = {
             str(master.get("id") or "")
             for master in current.get("masters", [])
@@ -7722,20 +7919,19 @@ def _apply_target_model(
             for master in target.get("masters", [])
             if isinstance(master, Mapping)
         }
-        master_structural_ids = current_master_ids.symmetric_difference(
-            target_master_ids
+        master_structural_ids.update(
+            current_master_ids.symmetric_difference(target_master_ids)
         )
         _apply_master_collection(
             font,
             current.get("masters", []),
             target.get("masters", []),
             execution_context=context,
-            restore_templates=resolved_master_templates,
-            reuse_native_templates=(
-                reuse_native_master_templates or reuse_native_templates
-            ),
+            restore_templates=contextual_master_templates,
+            reuse_native_templates=reuse_native_templates,
         )
     if "font" in changed_roots:
+        checkpoint()
         font_changes = change_set.changes_under(("font",))
         whole_font = any(len(change.path) == 1 for change in font_changes)
         changed_font_fields = {
@@ -7769,6 +7965,7 @@ def _apply_target_model(
             )
         )
         for name in replay_glyph_names:
+            checkpoint()
             glyph_changes = change_set.changes_under(("glyphs", name))
             whole_glyph = affected_glyph_ids is None or any(
                 len(change.path) == 2 for change in glyph_changes
@@ -7884,10 +8081,8 @@ def _apply_target_model(
                 current_glyph,
                 target_glyphs[name],
                 execution_context=context,
-                restore_templates=resolved_layer_templates,
-                reuse_native_templates=(
-                    reuse_native_layer_templates or reuse_native_templates
-                ),
+                restore_templates=contextual_layer_templates,
+                reuse_native_templates=reuse_native_templates,
                 replacement_roots=replacement_roots,
                 excluded_ids=master_structural_ids,
                 allow_master_membership_change=bool(master_structural_ids),
@@ -7897,10 +8092,13 @@ def _apply_target_model(
     # rewrite the complete collection; the streaming verifier checks order
     # independently and a real order delta is reconciled through this branch.
     if "glyphOrder" in changed_roots:
+        checkpoint()
         _apply_glyph_order(font, target.get("glyphOrder", list(target_glyphs)))
     if "kerning" in changed_roots:
+        checkpoint()
         _replace_kerning(font, target.get("kerning", []))
     if "instances" in changed_roots:
+        checkpoint()
         _apply_instance_collection(
             font,
             current.get("instances", []),
@@ -7914,6 +8112,7 @@ def _apply_target_model(
         ("featurePrefixes", "featurePrefixes"),
     ):
         if root in changed_roots:
+            checkpoint()
             _apply_code_collection(
                 font,
                 attribute,
@@ -7923,6 +8122,7 @@ def _apply_target_model(
                 reuse_native_templates=reuse_native_templates,
             )
     if changed_roots.intersection({"metrics", "stems", "numbers"}):
+        checkpoint()
         _apply_font_record_roots(
             font,
             current,
@@ -7931,6 +8131,7 @@ def _apply_target_model(
             reuse_native_templates=reuse_native_templates,
         )
     if "settings" in changed_roots:
+        checkpoint()
         _apply_settings_model(
             font,
             current.get("settings", {}),
@@ -8209,8 +8410,7 @@ def _native_archive_tree_mismatches(
     *,
     limit: int,
     align_identity_collections: bool = True,
-    semantic_float_equivalence: bool = True,
-    normalized: Optional[list[dict[str, Any]]] = None,
+    cancellation_checkpoint: Optional[Callable[[], None]] = None,
 ) -> tuple[list[dict[str, Any]], bool]:
     """Locate native proof differences by semantic plist path.
 
@@ -8222,43 +8422,13 @@ def _native_archive_tree_mismatches(
 
     maximum = max(0, min(100, int(limit)))
     found: list[dict[str, Any]] = []
+    visited = 0
 
-    def registered_float_equivalent(
-        path: tuple[str | int, ...], left: Any, right: Any
-    ) -> bool:
-        if (
-            not semantic_float_equivalence
-            or isinstance(left, bool)
-            or isinstance(right, bool)
-            or not isinstance(left, (int, float))
-            or not isinstance(right, (int, float))
-        ):
-            return False
-        field_names = {str(part) for part in path[-3:]}
-        if (
-            "shapes" not in {str(part) for part in path}
-            or not field_names.intersection({"angle", "slant", "scale"})
-        ):
-            return False
-        left_number, right_number = float(left), float(right)
-        if not math.isfinite(left_number) or not math.isfinite(right_number):
-            return False
-        absolute_delta = abs(left_number - right_number)
-        ulp = max(math.ulp(left_number), math.ulp(right_number), math.ulp(1.0))
-        if absolute_delta > max(1e-12, 16 * ulp):
-            return False
-        if normalized is not None:
-            normalized.append(
-                {
-                    "path": list(path),
-                    "direct": left_number,
-                    "replay": right_number,
-                    "absoluteDelta": absolute_delta,
-                    "maximumUlps": absolute_delta / ulp,
-                    "rule": "component_decomposition_round_trip",
-                }
-            )
-        return True
+    def checkpoint() -> None:
+        nonlocal visited
+        visited += 1
+        if cancellation_checkpoint is not None and visited % 256 == 0:
+            cancellation_checkpoint()
 
     def record(path: tuple[str | int, ...], left: Any, right: Any) -> None:
         if len(found) > maximum:
@@ -8272,9 +8442,8 @@ def _native_archive_tree_mismatches(
         )
 
     def walk(path: tuple[str | int, ...], left: Any, right: Any) -> None:
+        checkpoint()
         if len(found) > maximum or left == right:
-            return
-        if registered_float_equivalent(path, left, right):
             return
         if (left is _NATIVE_ARCHIVE_MISSING) != (
             right is _NATIVE_ARCHIVE_MISSING
@@ -8290,9 +8459,6 @@ def _native_archive_tree_mismatches(
             decoded_right = _decoded_native_package_data(right)
             if decoded_left is not None and decoded_right is not None:
                 if decoded_left == decoded_right:
-                    # The semantic tree is byte-for-byte identical after
-                    # parsing, so this is only an unexplained storage spelling
-                    # difference and remains strict.
                     record(
                         path + ("$data",),
                         left.get("$data"),
@@ -8301,7 +8467,7 @@ def _native_archive_tree_mismatches(
                     return
                 walk(path + ("$decoded",), decoded_left, decoded_right)
                 # A changed decoded tree may converge only through explicit
-                # registry-owned omission defaults encountered by ``walk``.
+                # schema-owned omission defaults encountered by ``walk``.
                 # Unknown fields and equal decoded trees never reach this
                 # zero-mismatch case.
                 return
@@ -8587,10 +8753,12 @@ def _compare_native_archive_deltas(
     replay_after: bytes,
     *,
     limit: int = 100,
-    semantic_float_equivalence: bool = True,
+    cancellation_checkpoint: Optional[Callable[[], None]] = None,
 ) -> dict[str, Any]:
     """Compare native archive effects, not unrelated identities of two clones."""
 
+    if cancellation_checkpoint is not None:
+        cancellation_checkpoint()
     (
         direct_before,
         direct_after,
@@ -8603,13 +8771,14 @@ def _compare_native_archive_deltas(
         replay_before,
         replay_after,
     )
+    if cancellation_checkpoint is not None:
+        cancellation_checkpoint()
     baseline_equivalent = direct_before == replay_before
     final_equivalent = direct_after == replay_after
     direct = _archive_delta(direct_before, direct_after)
     replay = _archive_delta(replay_before, replay_after)
     count = max(len(direct), len(replay))
     mismatches: list[dict[str, Any]] = []
-    normalized: list[dict[str, Any]] = []
     tree_truncated = False
     if not baseline_equivalent:
         direct_baseline_tree = _decoded_native_archive_tree(direct_before)
@@ -8619,8 +8788,7 @@ def _compare_native_archive_deltas(
                 direct_baseline_tree,
                 replay_baseline_tree,
                 limit=limit,
-                semantic_float_equivalence=semantic_float_equivalence,
-                normalized=normalized,
+                cancellation_checkpoint=cancellation_checkpoint,
             )
             baseline_equivalent = not baseline_mismatches and not baseline_truncated
             tree_truncated = tree_truncated or baseline_truncated
@@ -8644,8 +8812,7 @@ def _compare_native_archive_deltas(
                 direct_tree,
                 replay_tree,
                 limit=limit,
-                semantic_float_equivalence=semantic_float_equivalence,
-                normalized=normalized,
+                cancellation_checkpoint=cancellation_checkpoint,
             )
             final_equivalent = not final_mismatches and not final_truncated
             tree_truncated = tree_truncated or final_truncated
@@ -8676,11 +8843,6 @@ def _compare_native_archive_deltas(
         "baselineEquivalent": baseline_equivalent,
         "finalEquivalent": final_equivalent,
         "normalizedCloneUuidCount": normalized_count,
-        "normalizedMismatchCount": len(normalized),
-        "normalizedPaths": normalized[: max(0, min(100, int(limit)))],
-        "maximumAbsoluteDelta": max(
-            (float(item["absoluteDelta"]) for item in normalized), default=0.0
-        ),
     }
 
 
@@ -8689,7 +8851,6 @@ def _compare_native_archives(
     replay: bytes,
     *,
     limit: int = 100,
-    semantic_float_equivalence: bool = True,
 ) -> dict[str, Any]:
     """Compare two native states with the reviewed pairwise equivalence rules.
 
@@ -8711,24 +8872,16 @@ def _compare_native_archives(
     direct_tree = _decoded_native_archive_tree(direct)
     replay_tree = _decoded_native_archive_tree(replay)
     if direct_tree is not None and replay_tree is not None:
-        normalized: list[dict[str, Any]] = []
         mismatches, truncated = _native_archive_tree_mismatches(
             direct_tree,
             replay_tree,
             limit=limit,
-            semantic_float_equivalence=semantic_float_equivalence,
-            normalized=normalized,
         )
         return {
             "equivalent": not mismatches and not truncated,
             "mismatchCount": len(mismatches),
             "mismatchLocations": mismatches,
             "truncated": truncated,
-            "normalizedMismatchCount": len(normalized),
-            "normalizedPaths": normalized[: max(0, min(100, int(limit)))],
-            "maximumAbsoluteDelta": max(
-                (float(item["absoluteDelta"]) for item in normalized), default=0.0
-            ),
         }
     maximum = max(0, min(100, int(limit)))
     mismatch = {
@@ -10859,14 +11012,14 @@ def _observed_layer_bounds(layer: Any) -> Mapping[str, float] | None:
 
 
 @dataclass(frozen=True)
-class _DetachedCloneProjection:
-    """Three-way projection for state changed only by ``GSFont.copy()``.
+class _CanonicalArtifactProjection:
+    """Three-way projection for artifacts introduced at a native boundary.
 
-    The source and untouched clone establish the adapter-owned artifact set.
-    Later clone captures project an artifact back to the source value only
-    while its native value still equals that untouched-clone value. Explicit
-    requested paths are protected. An unexpected third value is retained so
-    verification observes it instead of silently normalizing a side effect.
+    A canonical source and its untouched native representation establish the
+    adapter-owned artifact set. Later captures project an artifact back to the
+    source value only while its native value still equals that untouched
+    representation. Explicit requested paths are protected. An unexpected
+    third value remains visible to verification.
 
     No native setter is called here. This is important because replaying an
     unrelated clone artifact can trigger Glyphs derivation, modal validation,
@@ -10920,8 +11073,6 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         self._glyphs_change_generation = _GlyphsChangeGeneration.install(self._app)
         self._instance_identity_maps: dict[str, dict[str, str]] = {}
         self._instance_identity_counters: dict[str, int] = {}
-        self._master_lifecycle_tombstones: dict[str, Mapping[str, Any]] = {}
-        self._layer_lifecycle_tombstones: dict[str, Mapping[str, Any]] = {}
         self._native_replay_evidence = NativeReplayEvidenceStore(
             max_records=32, max_records_per_document=8
         )
@@ -10929,12 +11080,281 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         self._verified_transaction_updates: dict[str, dict[str, Any]] = {}
         self._save_notification_correlations: dict[str, deque[str]] = {}
         self._detached_clone_projection_cache: dict[
-            tuple[str, str], _DetachedCloneProjection
+            tuple[str, str], _CanonicalArtifactProjection
         ] = {}
         self._detached_clone_projection_order: list[tuple[str, str]] = []
 
     def release_staged_replay_evidence(self, evidence_id: str) -> None:
         self._native_replay_evidence.discard(str(evidence_id))
+
+    def prepare_generic_operations(
+        self,
+        document_id: str,
+        before_model: Mapping[str, Any],
+        operations: Sequence[Mapping[str, Any]],
+        *,
+        cancellation_checkpoint: Optional[Callable[[], None]] = None,
+    ) -> Mapping[str, Any]:
+        """Prepare exact instance-to-master payloads on one detached clone."""
+
+        materialize_indices = [
+            index
+            for index, operation in enumerate(operations)
+            if isinstance(operation, Mapping)
+            and str(operation.get("op") or "") == "materialize"
+        ]
+        if not materialize_indices:
+            return {"operations": list(operations), "executionContext": {}}
+        if materialize_indices != list(range(len(materialize_indices))):
+            raise ValueError(
+                "materialize operations must form one consecutive leading batch"
+            )
+
+        def checkpoint() -> None:
+            if cancellation_checkpoint is not None:
+                cancellation_checkpoint()
+
+        checkpoint()
+
+        def prepare_native() -> Mapping[str, Any]:
+            from ..generic_tools import resolve_selector
+
+            font = self._font_for_document(document_id)
+            copier = _safe_getattr(font, "copy")
+            if not callable(copier):
+                raise HostAccessError("Glyphs did not provide GSFont.copy()")
+            clone = copier()
+            if clone is None:
+                raise HostAccessError("Glyphs returned no detached font copy")
+            instance_ids = collection_order(before_model.get("instances", []))
+            clone_before = self._capture_detached_model(
+                clone,
+                before_model,
+                instance_ids=instance_ids,
+            )
+            clone_before, projection = self._reconcile_detached_clone(
+                clone,
+                before_model,
+                clone_before,
+                document_id=document_id,
+                instance_ids=instance_ids,
+                allow_cached_projection=False,
+            )
+            if fingerprint_model(clone_before) != fingerprint_model(before_model):
+                raise HostAccessError(
+                    "detached materialization baseline differs from the live document"
+                )
+            native_instances = _sequence_values(_safe_getattr(clone, "instances"))
+            if len(native_instances) != len(instance_ids):
+                raise HostAccessError("detached instance identity count is invalid")
+            instance_index = {
+                identity: index for index, identity in enumerate(instance_ids)
+            }
+            prepared = [copy.deepcopy(dict(operation)) for operation in operations]
+            source_ids: dict[int, str] = {}
+            new_ids: set[str] = set()
+
+            for operation_index in materialize_indices:
+                checkpoint()
+                operation = prepared[operation_index]
+                if str(operation.get("destinationEntity") or "") != "master":
+                    raise ValueError(
+                        "materialize currently supports destinationEntity=master"
+                    )
+                references = resolve_selector(
+                    before_model, dict(operation.get("target") or {})
+                )
+                if len(references) != 1 or references[0].kind != "instance":
+                    raise ValueError(
+                        "materialize requires exactly one source instance"
+                    )
+                source_id = references[0].identity
+                new_id = str(operation.get("newId") or "")
+                if not new_id or new_id in new_ids or _master_by_id(clone, new_id):
+                    raise ValueError(
+                        "materialize requires one unique new master identity"
+                    )
+                overrides = operation.get("overrides") or {}
+                if not isinstance(overrides, Mapping):
+                    raise ValueError("materialize.overrides must be an object")
+                unsupported = set(overrides) - {"name", "italicAngle", "axes"}
+                if unsupported:
+                    raise ValueError(
+                        "materialize overrides are limited to name, italicAngle, and axes"
+                    )
+                source_index = instance_index.get(source_id)
+                if source_index is None:
+                    raise HostAccessError("materialized source instance disappeared")
+                instance = native_instances[source_index]
+                before_masters = _sequence_values(_safe_getattr(clone, "masters"))
+                before_native_ids = {id(master) for master in before_masters}
+                add_as_master = _safe_getattr(instance, "addAsMaster")
+                if not callable(add_as_master):
+                    raise HostAccessError(
+                        "Glyphs does not expose instance-to-master materialization"
+                    )
+                with FloatingGeometryScope(
+                    (clone,), require_grid_zero=True
+                ) as precision:
+                    _run_with_font_updates_suspended(clone, add_as_master)
+                    precision.rescan_layers()
+                    precision.prepare_for_readback()
+                after_masters = _sequence_values(_safe_getattr(clone, "masters"))
+                additions = [
+                    master for master in after_masters if id(master) not in before_native_ids
+                ]
+                if len(additions) != 1:
+                    raise HostAccessError(
+                        "Glyphs did not create exactly one materialized master"
+                    )
+                master = additions[0]
+                generated_id = str(_safe_getattr(master, "id") or "")
+                native_glyphs = _sequence_values(_safe_getattr(clone, "glyphs"))
+                generated_layers: dict[str, Any] = {}
+                for glyph in native_glyphs:
+                    glyph_name = str(_safe_getattr(glyph, "name") or "")
+                    layer = _lookup_layer(glyph, generated_id)
+                    if not glyph_name or layer is None:
+                        raise HostAccessError(
+                            "Glyphs omitted a layer from the materialized master"
+                        )
+                    generated_layers[glyph_name] = layer
+                _set_native_property(master, "id", new_id)
+                for layer in generated_layers.values():
+                    _set_native_property(layer, "layerId", new_id)
+                    _set_native_property(layer, "associatedMasterId", new_id)
+                if "name" in overrides:
+                    name = str(overrides.get("name") or "")
+                    if not name:
+                        raise ValueError("materialized master name cannot be empty")
+                    _set_native_property(master, "name", name)
+                if "italicAngle" in overrides:
+                    _set_native_property(
+                        master, "italicAngle", float(overrides["italicAngle"])
+                    )
+                if "axes" in overrides:
+                    raw_axes = overrides["axes"]
+                    if not isinstance(raw_axes, Sequence) or isinstance(
+                        raw_axes, (str, bytes)
+                    ):
+                        raise ValueError("materialized master axes must be a sequence")
+                    positions = [
+                        float(dict(axis).get("internal"))
+                        for axis in raw_axes
+                        if isinstance(axis, Mapping)
+                    ]
+                    if len(positions) != len(raw_axes):
+                        raise ValueError(
+                            "materialized master axes require internal coordinates"
+                        )
+                    if _safe_getattr(master, "internalAxesValues") is not None:
+                        _set_native_property(master, "internalAxesValues", positions)
+                    else:
+                        _set_native_property(master, "axes", positions)
+                if operation.get("index") is not None:
+                    target_index = min(
+                        int(operation["index"]), len(after_masters) - 1
+                    )
+                    reordered = [value for value in after_masters if value is not master]
+                    reordered.insert(target_index, master)
+                    _replace_native_collection_order(
+                        _safe_getattr(clone, "masters"),
+                        reordered,
+                        identity_storage=_maybe_call(
+                            _safe_getattr(clone, "fontMasters")
+                        ),
+                        notification_owner=clone,
+                        notification_key="fontMasters",
+                    )
+                source_ids[operation_index] = source_id
+                new_ids.add(new_id)
+
+            raw_after = self._capture_detached_model(
+                clone,
+                before_model,
+                instance_ids=instance_ids,
+            )
+            after_model = projection.normalize(raw_after)
+            master_order = collection_order(after_model.get("masters", []))
+            masters = {
+                str(master.get("id") or ""): master
+                for master in after_model.get("masters", [])
+                if isinstance(master, Mapping)
+            }
+            glyphs = after_model.get("glyphs", {})
+            if not isinstance(glyphs, Mapping):
+                raise HostAccessError("materialized glyph capture is invalid")
+            for operation_index in materialize_indices:
+                operation = prepared[operation_index]
+                new_id = str(operation["newId"])
+                master = masters.get(new_id)
+                if not isinstance(master, Mapping):
+                    raise HostAccessError("materialized master capture is unavailable")
+                layers: dict[str, Any] = {}
+                for glyph_name, glyph in glyphs.items():
+                    if not isinstance(glyph, Mapping):
+                        raise HostAccessError("materialized glyph capture is invalid")
+                    layer_index = find_entity_index(glyph.get("layers", []), new_id)
+                    if layer_index is None:
+                        raise HostAccessError(
+                            "materialized layer capture is unavailable"
+                        )
+                    layers[str(glyph_name)] = copy.deepcopy(
+                        glyph["layers"][layer_index]
+                    )
+                operation["_materialized"] = {
+                    "sourceInstanceId": source_ids[operation_index],
+                    "master": copy.deepcopy(dict(master)),
+                    "layers": layers,
+                    "masterOrder": list(master_order),
+                    "kerning": copy.deepcopy(after_model.get("kerning", {})),
+                }
+            changes = diff_models(before_model, after_model)
+            templates = _added_native_replay_templates(
+                clone, before_model, after_model, changes
+            )
+            return {"operations": prepared, "templates": templates}
+
+        prepared_result = self._executor.run(
+            lambda: _run_with_cyclic_gc_suspended(prepare_native)
+        )
+        checkpoint()
+        preparation = self._native_replay_evidence.create(
+            document_id=document_id,
+            before_fingerprint=fingerprint_model(before_model),
+            after_fingerprint="",
+            capabilities=(),
+            templates=prepared_result["templates"],
+            ttl_seconds=15 * 60,
+        )
+        return {
+            "operations": prepared_result["operations"],
+            "executionContext": {
+                "nativeReplayPreparationId": preparation.evidence_id,
+            },
+        }
+
+    def finalize_generic_operation_preparation(
+        self,
+        document_id: str,
+        preparation_id: str,
+        *,
+        before_fingerprint: str,
+        after_fingerprint: str,
+        capabilities: Sequence[str],
+    ) -> Mapping[str, Any]:
+        """Bind prepared native templates to the immutable patch fingerprints."""
+
+        evidence = self._native_replay_evidence.bind(
+            preparation_id,
+            document_id=document_id,
+            before_fingerprint=before_fingerprint,
+            after_fingerprint=after_fingerprint,
+            capabilities=capabilities,
+        )
+        if evidence is None:
+            raise HostAccessError("native materialization preparation is stale")
+        return {"nativeReplayEvidenceId": evidence.evidence_id}
 
     def validate_staged_replay_evidence(
         self,
@@ -12244,15 +12664,6 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             }
         return result
 
-    def _master_restore_templates(
-        self, contribution_id: Optional[str]
-    ) -> Mapping[str, Mapping[str, Any]]:
-        if not contribution_id:
-            return {}
-        record = self._master_lifecycle_tombstones.get(str(contribution_id), {})
-        templates = record.get("templates", {}) if isinstance(record, Mapping) else {}
-        return templates if isinstance(templates, Mapping) else {}
-
     def _capture_removed_layer_templates(
         self,
         font: Any,
@@ -12297,25 +12708,6 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "native": native,
                 }
         return result
-
-    def _layer_restore_templates(
-        self,
-        contribution_id: Optional[str],
-        *,
-        native: bool,
-    ) -> Mapping[str, Any]:
-        if not contribution_id:
-            return {}
-        record = self._layer_lifecycle_tombstones.get(str(contribution_id), {})
-        templates = record.get("templates", {}) if isinstance(record, Mapping) else {}
-        if not isinstance(templates, Mapping):
-            return {}
-        key = "native" if native else "copy"
-        return {
-            str(identity): value.get(key)
-            for identity, value in templates.items()
-            if isinstance(value, Mapping) and value.get(key) is not None
-        }
 
     def _capture_removed_native_templates(
         self,
@@ -12544,7 +12936,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         instance_ids: Sequence[str] = (),
         allow_cached_projection: bool = True,
         observed_is_complete: bool = False,
-    ) -> tuple[Mapping[str, Any], _DetachedCloneProjection]:
+    ) -> tuple[Mapping[str, Any], _CanonicalArtifactProjection]:
         """Project an untouched ``GSFont.copy()`` onto its canonical source.
 
         Glyphs can omit writable saved values while cloning (for example a
@@ -12576,7 +12968,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 # state through Glyphs' native format-v4 serializer. Repeated
                 # states (notably selective reverts) reuse the immutable
                 # projection. A different third value is never normalized by
-                # ``_DetachedCloneProjection``.
+                # ``_CanonicalArtifactProjection``.
                 complete_observed = _native_persistent_font_model(
                     font,
                     instance_ids=instance_ids,
@@ -12621,7 +13013,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 after_fingerprint=source_fingerprint,
                 changes=(),
             )
-            return source, _DetachedCloneProjection(empty)
+            return source, _CanonicalArtifactProjection(empty)
 
         if reconciliation is None:
             reconciliation = diff_models(
@@ -12673,7 +13065,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 )
             )
 
-        projection = _DetachedCloneProjection(reconciliation)
+        projection = _CanonicalArtifactProjection(reconciliation)
         if isinstance(source, CanonicalSnapshot):
             # ``diff_models`` proves the complete forward transition and an
             # inverse is exact by construction. Later clone captures still use
@@ -12736,6 +13128,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         capabilities: Sequence[str] = (),
         execution_context: Mapping[str, Any] | None = None,
         removes_contribution_id: Optional[str] = None,
+        cancellation_checkpoint: Optional[Callable[[], None]] = None,
+        impact: CanonicalImpact | None = None,
+        verification_tier: str = "scoped_native",
     ) -> Mapping[str, Any]:
         """Replay one canonical patch on a clone using one bounded verifier.
 
@@ -12748,6 +13143,93 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         def simulate() -> Mapping[str, Any]:
             simulation_started = time.perf_counter()
+            simulation_started_ns = time.perf_counter_ns()
+            timings = {
+                "baseline_capture": 0.0,
+                "clone": 0.0,
+                "replay": 0.0,
+                "canonical_comparison": 0.0,
+                "native_comparison": 0.0,
+                "readback": 0.0,
+                "detached_apply": 0.0,
+                "verification": 0.0,
+                "max_native_phase": 0.0,
+                "native_phase_count": 0.0,
+                "total": 0.0,
+            }
+
+            def checkpoint() -> None:
+                if cancellation_checkpoint is not None:
+                    cancellation_checkpoint()
+
+            checkpoint()
+
+            def native_phase(name: str, callback: Callable[[], Any]) -> Any:
+                """Run one native-only phase and checkpoint on both sides."""
+
+                checkpoint()
+                started = time.perf_counter_ns()
+                try:
+                    return self._executor.run(
+                        lambda: _run_with_cyclic_gc_suspended(callback)
+                    )
+                finally:
+                    elapsed = (
+                        time.perf_counter_ns() - started
+                    ) / 1_000_000
+                    timings[name] = timings.get(name, 0.0) + elapsed
+                    timings["max_native_phase"] = max(
+                        timings["max_native_phase"], elapsed
+                    )
+                    timings["native_phase_count"] += 1.0
+                    checkpoint()
+
+            def native_cleanup_phase(
+                name: str, callback: Callable[[], Any]
+            ) -> Any:
+                """Run precision setup/cleanup even after cancellation."""
+
+                started = time.perf_counter_ns()
+                try:
+                    return self._executor.run(
+                        lambda: _run_with_cyclic_gc_suspended(callback)
+                    )
+                finally:
+                    elapsed = (
+                        time.perf_counter_ns() - started
+                    ) / 1_000_000
+                    timings[name] = timings.get(name, 0.0) + elapsed
+                    timings["max_native_phase"] = max(
+                        timings["max_native_phase"], elapsed
+                    )
+                    timings["native_phase_count"] += 1.0
+
+            def canonical_phase(callback: Callable[[], Any]) -> Any:
+                checkpoint()
+                started = time.perf_counter_ns()
+                try:
+                    return callback()
+                finally:
+                    timings["canonical_comparison"] += (
+                        time.perf_counter_ns() - started
+                    ) / 1_000_000
+                    checkpoint()
+
+            def completed_timings() -> dict[str, float]:
+                timings["detached_apply"] = timings["replay"]
+                timings["verification"] = sum(
+                    timings[name]
+                    for name in (
+                        "baseline_capture",
+                        "canonical_comparison",
+                        "native_comparison",
+                        "readback",
+                    )
+                )
+                timings["total"] = (
+                    time.perf_counter_ns() - simulation_started_ns
+                ) / 1_000_000
+                return dict(timings)
 
             def debug_simulation(stage: str, **details: Any) -> None:
                 if not os.environ.get("GLYPHS_MCP_DEBUG_CAPTURE"):
@@ -12770,12 +13252,24 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 change_set, capabilities=capabilities
             ):
                 raise HostAccessError("The change set contains unsupported native write paths")
-            font = self._font_for_document(document_id)
-            copier = _safe_getattr(font, "copy")
-            if not callable(copier):
-                raise HostAccessError("Glyphs did not provide GSFont.copy()")
+            def create_clone() -> tuple[Callable[[], Any], Any]:
+                font = self._font_for_document(document_id)
+                copier = _safe_getattr(font, "copy")
+                if not callable(copier):
+                    raise HostAccessError("Glyphs did not provide GSFont.copy()")
+                clone = copier()
+                if clone is None:
+                    raise HostAccessError("Glyphs returned no detached font copy")
+                return copier, clone
+
+            copier, clone = native_phase("clone", create_clone)
             source = _retain_canonical_model(before_model)
-            impact = CanonicalImpact.from_change_set(source, change_set)
+            resolved_impact = impact or CanonicalImpact.from_change_set(
+                source, change_set
+            )
+            complete_verification = (
+                verification_tier == COMPLETE_NATIVE_VERIFICATION
+            )
             before_impact = CanonicalImpact.from_change_set(
                 source,
                 ChangeSet.from_changes(
@@ -12797,13 +13291,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 else None
             )
             source_instance_ids = collection_order(source.get("instances", []))
-            restore_templates = self._master_restore_templates(
-                removes_contribution_id
+            resolved_context = self._resolved_replay_context(
+                document_id, execution_context
             )
-            layer_restore_templates = self._layer_restore_templates(
-                removes_contribution_id, native=False
-            )
-            resolved_context = dict(execution_context or {})
             verification_mode = str(
                 resolved_context.get("verificationMode") or "semantic"
             )
@@ -12823,26 +13313,34 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 if not isinstance(request, Mapping) or not request.get("fields"):
                     return {}
                 fields = {str(value) for value in request.get("fields") or ()}
-                observations = dict(
-                    self._inspect_layers_in_font(
-                        clone,
-                        tuple(str(value) for value in request.get("glyphNames") or ()),
-                        include_metrics=bool(request.get("includeMetrics")),
-                        resolve_metrics=bool(request.get("resolveMetrics")),
-                        include_geometry=bool(request.get("includeGeometry")),
-                    )
-                ) if fields.intersection({
-                    "alignment",
-                    "bounds",
-                    "inheritance.metrics",
-                    "spacing.horizontal",
-                    "spacing.vertical",
-                }) else {}
-                if "compilation.diagnostics" in fields:
-                    observations[("__document__", "compilation.diagnostics")] = dict(
-                        self._inspect_compilation_in_font(clone)
-                    )
-                return observations
+                def inspect() -> Mapping[
+                    tuple[str, str], Mapping[str, Any]
+                ]:
+                    observations = dict(
+                        self._inspect_layers_in_font(
+                            clone,
+                            tuple(
+                                str(value)
+                                for value in request.get("glyphNames") or ()
+                            ),
+                            include_metrics=bool(request.get("includeMetrics")),
+                            resolve_metrics=bool(request.get("resolveMetrics")),
+                            include_geometry=bool(request.get("includeGeometry")),
+                        )
+                    ) if fields.intersection({
+                        "alignment",
+                        "bounds",
+                        "inheritance.metrics",
+                        "spacing.horizontal",
+                        "spacing.vertical",
+                    }) else {}
+                    if "compilation.diagnostics" in fields:
+                        observations[
+                            ("__document__", "compilation.diagnostics")
+                        ] = dict(self._inspect_compilation_in_font(clone))
+                    return observations
+
+                return native_phase("readback", inspect)
 
             def requested_effective_metadata() -> Mapping[str, Mapping[str, Any]]:
                 request = resolved_context.get("constraintObservations")
@@ -12850,19 +13348,17 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     str(value) for value in request.get("fields") or ()
                 }:
                     return {}
-                return self._inspect_glyph_metadata_in_font(
-                    clone,
-                    tuple(str(value) for value in request.get("glyphNames") or ()),
+                return native_phase(
+                    "readback",
+                    lambda: self._inspect_glyph_metadata_in_font(
+                        clone,
+                        tuple(
+                            str(value)
+                            for value in request.get("glyphNames") or ()
+                        ),
+                    ),
                 )
 
-            timings = {
-                "clone": 0.0,
-                "detached_apply": 0.0,
-                "verification": 0.0,
-            }
-            started = time.perf_counter_ns()
-            clone = copier()
-            timings["clone"] += (time.perf_counter_ns() - started) / 1_000_000
             debug_simulation("clone_created")
             strict_verifier = None
             strict_direct_before_archive = None
@@ -12885,11 +13381,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     if root not in {"glyphs", "glyphOrder"}
                 }
 
-            clone_initial_root_evidence = capture_root_evidence(
-                before_impact, source
+            clone_initial_root_evidence = native_phase(
+                "baseline_capture",
+                lambda: capture_root_evidence(before_impact, source),
             )
 
-            clone_projection: _DetachedCloneProjection
+            clone_projection: _CanonicalArtifactProjection
 
             def capture_after(
                 base: Mapping[str, Any],
@@ -12903,27 +13400,32 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 Mapping[str, tuple[Any, ...]],
                 Mapping[str, Any],
             ]:
-                verification_started = time.perf_counter_ns()
-                revisions_after = _glyph_revision_index(clone)
-                root_evidence_after = capture_root_evidence(
-                    current_impact, target
-                )
-                changed_glyphs = _changed_revision_glyphs(
-                    revisions_start, revisions_after
-                )
-                unproved_glyphs = _unproved_revision_glyphs(
-                    clone,
-                    base,
-                    target,
-                    current_impact,
-                    changed_glyphs,
-                )
-                current_scope = MutationScope(
-                    current_impact.roots, current_impact.glyph_names
-                )
-                captured = None
-                if _impact_prefers_persistent_verification(current_impact):
-                    with _suspend_cyclic_gc_for_bulk_capture():
+                def capture_native() -> tuple[
+                    Mapping[str, Any],
+                    Mapping[str, tuple[Any, ...]],
+                    Mapping[str, Any],
+                ]:
+                    revisions_after = _glyph_revision_index(clone)
+                    root_evidence_after = capture_root_evidence(
+                        current_impact, target
+                    )
+                    changed_glyphs = _changed_revision_glyphs(
+                        revisions_start, revisions_after
+                    )
+                    unproved_glyphs = _unproved_revision_glyphs(
+                        clone,
+                        base,
+                        target,
+                        current_impact,
+                        changed_glyphs,
+                    )
+                    current_scope = MutationScope(
+                        current_impact.roots, current_impact.glyph_names
+                    )
+                    captured = None
+                    if complete_verification or _impact_prefers_persistent_verification(
+                        current_impact
+                    ):
                         captured = _native_persistent_font_model(
                             clone,
                             instance_ids=collection_order(
@@ -12931,36 +13433,61 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                             ),
                             document_path=_canonical_document_path(target),
                         )
-                    if captured is not None:
-                        _project_persistent_layer_order(captured, target)
-                if captured is None:
-                    captured = _scoped_font_model(
-                        clone,
-                        base,
-                        current_scope,
-                        impact=current_impact,
-                        extra_glyph_names=unproved_glyphs,
-                        instance_ids=collection_order(target.get("instances", [])),
-                        expected_model=target,
-                        before_root_evidence=root_evidence_start,
-                        current_root_evidence=root_evidence_after,
-                        allow_observed_root_expansion=required is None,
-                    )
-                captured = clone_projection.normalize(
-                    captured,
-                    protected_paths=protected_paths,
+                        if captured is not None:
+                            _project_persistent_layer_order(captured, target)
+                    if captured is None:
+                        captured = _scoped_font_model(
+                            clone,
+                            base,
+                            current_scope,
+                            impact=current_impact,
+                            extra_glyph_names=unproved_glyphs,
+                            instance_ids=collection_order(
+                                target.get("instances", [])
+                            ),
+                            expected_model=target,
+                            before_root_evidence=root_evidence_start,
+                            current_root_evidence=root_evidence_after,
+                            allow_observed_root_expansion=required is None,
+                            defer_snapshot_assembly=True,
+                        )
+                    return captured, revisions_after, root_evidence_after
+
+                captured, revisions_after, root_evidence_after = native_phase(
+                    "readback", capture_native
                 )
-                captured = rebase_canonical_model(base, captured)
-                timings["verification"] += (
-                    time.perf_counter_ns() - verification_started
-                ) / 1_000_000
+
+                def normalize_capture() -> Mapping[str, Any]:
+                    normalized = clone_projection.normalize(
+                        captured,
+                        protected_paths=protected_paths,
+                    )
+                    return rebase_canonical_model(base, normalized)
+
+                captured = canonical_phase(normalize_capture)
                 return captured, revisions_after, root_evidence_after
 
-            verification_started = time.perf_counter_ns()
             clone_before_is_complete = False
             clone_before = None
-            if _impact_prefers_persistent_verification(impact):
-                with _suspend_cyclic_gc_for_bulk_capture():
+            source_projection_key = (
+                str(document_id),
+                fingerprint_model(source),
+            )
+            projection_is_cached = bool(
+                isinstance(source, CanonicalSnapshot)
+                and source_projection_key
+                in self._detached_clone_projection_cache
+            )
+
+            def capture_clone_before() -> tuple[Mapping[str, Any], bool]:
+                clone_before = None
+                complete = False
+                if (
+                    complete_verification
+                    or _impact_prefers_persistent_verification(resolved_impact)
+                    or isinstance(source, CanonicalSnapshot)
+                    and not projection_is_cached
+                ):
                     clone_before = _native_persistent_font_model(
                         clone,
                         instance_ids=source_instance_ids,
@@ -12968,93 +13495,189 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     )
                 if clone_before is not None:
                     _project_persistent_layer_order(clone_before, source)
-                    clone_before = rebase_canonical_model(source, clone_before)
-                    clone_before_is_complete = True
-            if clone_before is None:
-                clone_before = _scoped_font_model(
-                    clone,
-                    source,
-                    before_scope,
-                    impact=before_impact,
-                    instance_ids=source_instance_ids,
-                    expected_model=source,
-                    before_root_evidence=clone_initial_root_evidence,
-                    current_root_evidence=clone_initial_root_evidence,
+                    complete = True
+                if clone_before is None:
+                    clone_before = _scoped_font_model(
+                        clone,
+                        source,
+                        before_scope,
+                        impact=before_impact,
+                        instance_ids=source_instance_ids,
+                        expected_model=source,
+                        before_root_evidence=clone_initial_root_evidence,
+                        current_root_evidence=clone_initial_root_evidence,
+                        defer_snapshot_assembly=True,
+                    )
+                return clone_before, complete
+
+            clone_before, clone_before_is_complete = native_phase(
+                "baseline_capture", capture_clone_before
+            )
+            if clone_before_is_complete:
+                clone_before = canonical_phase(
+                    lambda: rebase_canonical_model(source, clone_before)
                 )
             debug_simulation("clone_captured")
-            clone_before, clone_projection = self._reconcile_detached_clone(
-                clone,
-                source,
-                clone_before,
-                document_id=document_id,
-                instance_ids=source_instance_ids,
-                observed_is_complete=clone_before_is_complete,
+            clone_before, clone_projection = canonical_phase(
+                lambda: self._reconcile_detached_clone(
+                    clone,
+                    source,
+                    clone_before,
+                    document_id=document_id,
+                    instance_ids=source_instance_ids,
+                    observed_is_complete=clone_before_is_complete,
+                )
             )
             debug_simulation("clone_reconciled")
+            checkpoint()
             if fingerprint_model(clone_before) != change_set.before_fingerprint:
                 raise HostAccessError(
                     "Detached GSFont.copy() did not reproduce the canonical source"
                 )
             if verification_mode == "strict_archive":
-                strict_started = time.perf_counter_ns()
-                strict_verifier = copier()
-                if strict_verifier is None:
-                    raise HostAccessError(
-                        "Glyphs returned no verifier clone for strict archive mode"
+                def prepare_strict_verifier() -> tuple[
+                    Any, bytes, bytes, Mapping[str, Any]
+                ]:
+                    verifier = copier()
+                    if verifier is None:
+                        raise HostAccessError(
+                            "Glyphs returned no verifier clone for strict archive mode"
+                        )
+                    return (
+                        verifier,
+                        _serialized_font_archive(clone),
+                        _serialized_font_archive(verifier),
+                        self._capture_detached_model(
+                            verifier,
+                            source,
+                            instance_ids=source_instance_ids,
+                            document_path=_canonical_document_path(source),
+                        ),
                     )
-                strict_direct_before_archive = _serialized_font_archive(clone)
-                strict_replay_before_archive = _serialized_font_archive(
-                    strict_verifier
-                )
-                strict_verifier_before = self._capture_detached_model(
+
+                (
                     strict_verifier,
-                    source,
-                    instance_ids=source_instance_ids,
-                    document_path=_canonical_document_path(source),
+                    strict_direct_before_archive,
+                    strict_replay_before_archive,
+                    strict_verifier_before,
+                ) = native_phase(
+                    "native_comparison", prepare_strict_verifier
                 )
                 (
                     strict_verifier_before,
                     strict_verifier_projection,
-                ) = self._reconcile_detached_clone(
-                    strict_verifier,
-                    source,
-                    strict_verifier_before,
-                    instance_ids=source_instance_ids,
-                    allow_cached_projection=False,
-                    observed_is_complete=True,
+                ) = canonical_phase(
+                    lambda: self._reconcile_detached_clone(
+                        strict_verifier,
+                        source,
+                        strict_verifier_before,
+                        instance_ids=source_instance_ids,
+                        allow_cached_projection=False,
+                        observed_is_complete=True,
+                    )
                 )
                 if fingerprint_model(strict_verifier_before) != change_set.before_fingerprint:
                     raise HostAccessError(
                         "The strict verifier clone did not reproduce the canonical source"
                     )
-                timings["verification"] += (
-                    time.perf_counter_ns() - strict_started
-                ) / 1_000_000
             # Clone normalization is a precondition, not part of the planned
             # mutation. All proof evidence starts only after it succeeds, so
             # copy/reconciliation artifacts cannot be misclassified as host
             # effects of the requested change.
-            clone_root_evidence_before = capture_root_evidence(impact, source)
-            revisions_before = _glyph_revision_index(clone)
-            timings["verification"] += (
-                time.perf_counter_ns() - verification_started
-            ) / 1_000_000
-            requested_target = change_set.apply(clone_before)
+            (
+                clone_root_evidence_before,
+                revisions_before,
+            ) = native_phase(
+                "baseline_capture",
+                lambda: (
+                    capture_root_evidence(resolved_impact, source),
+                    _glyph_revision_index(clone),
+                ),
+            )
+            requested_target = canonical_phase(
+                lambda: change_set.apply(clone_before)
+            )
             target = required if required is not None else requested_target
+
+            def apply_detached_change(
+                detached_font: Any,
+                current: Mapping[str, Any],
+                intended: Mapping[str, Any],
+                requested: ChangeSet,
+                *,
+                context: Mapping[str, Any],
+                replay_replacements: Sequence[Sequence[str]] = (),
+            ) -> FloatingGeometryScope:
+                """Replay glyph work in bounded native phases."""
+
+                current_master_ids = set(
+                    collection_order(current.get("masters", []))
+                )
+                intended_master_ids = set(
+                    collection_order(intended.get("masters", []))
+                )
+                structural_master_ids = tuple(
+                    sorted(current_master_ids ^ intended_master_ids)
+                )
+
+                def replay(part: ChangeSet) -> None:
+                    _apply_target_model(
+                        detached_font,
+                        current,
+                        intended,
+                        part,
+                        replay_replacements=replay_replacements,
+                        capabilities=capabilities,
+                        execution_context=context,
+                        master_structural_ids=structural_master_ids,
+                        cancellation_checkpoint=checkpoint,
+                    )
+
+                checkpoint()
+                precision = native_cleanup_phase(
+                    "replay",
+                    lambda: FloatingGeometryScope((detached_font,)).begin()
+                )
+                try:
+                    for shard in _sharded_replay_change_sets(requested):
+                        def replay_shard(shard: ChangeSet = shard) -> None:
+                            if _change_set_requires_grid_zero(
+                                shard, capabilities
+                            ):
+                                precision.require_grid_zero()
+                            _run_with_font_updates_suspended(
+                                detached_font, lambda: replay(shard)
+                            )
+                            precision.rescan_layers()
+
+                        native_phase("replay", replay_shard)
+
+                    def prepare_readback() -> None:
+                        _set_precision_restoration_target(
+                            precision, detached_font, intended
+                        )
+                        precision.rescan_layers()
+                        precision.prepare_for_readback()
+
+                    native_phase("replay", prepare_readback)
+                    return precision
+                except BaseException:
+                    native_cleanup_phase("replay", precision.end)
+                    raise
 
             def finish(result: Mapping[str, Any]) -> Mapping[str, Any]:
                 completed = dict(result)
                 after_model = completed["afterModel"]
                 evidence: dict[str, Any] = {
                     "mode": verification_mode,
+                    "tier": verification_tier,
                     "canonicalEquivalent": True,
                     "equivalenceClass": "exact_canonical",
                     "nativeArchiveEquivalent": None,
-                    "normalizedPaths": [],
-                    "maximumAbsoluteDelta": 0.0,
                 }
                 if verification_mode != "strict_archive":
                     completed["verificationEvidence"] = evidence
+                    completed["stageTimings"] = completed_timings()
                     return completed
                 if (
                     strict_verifier is None
@@ -13063,10 +13686,14 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     or strict_verifier_projection is None
                 ):
                     raise HostAccessError("Strict archive verifier state is incomplete")
-                strict_started = time.perf_counter_ns()
-                replay_change = diff_models(source, after_model)
-                replay_templates = _added_native_replay_templates(
-                    clone, source, after_model, replay_change
+                replay_change = canonical_phase(
+                    lambda: diff_models(source, after_model)
+                )
+                replay_templates = native_phase(
+                    "native_comparison",
+                    lambda: _added_native_replay_templates(
+                        clone, source, after_model, replay_change
+                    ),
                 )
                 strict_context = dict(resolved_context)
                 strict_context.update(
@@ -13075,40 +13702,68 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         "reuseNativeReplayTemplates": True,
                     }
                 )
-                _apply_target_model(
+                strict_precision = apply_detached_change(
                     strict_verifier,
                     source,
                     after_model,
                     replay_change,
-                    capabilities=capabilities,
-                    execution_context=strict_context,
-                    master_restore_templates=restore_templates,
-                    layer_restore_templates=layer_restore_templates,
+                    context=strict_context,
                 )
-                verifier_after = self._capture_detached_model(
-                    strict_verifier,
-                    after_model,
-                    instance_ids=collection_order(after_model.get("instances", [])),
-                    document_path=_canonical_document_path(after_model),
+                try:
+                    verifier_after = native_phase(
+                        "readback",
+                        lambda: self._capture_detached_model(
+                            strict_verifier,
+                            after_model,
+                            instance_ids=collection_order(
+                                after_model.get("instances", [])
+                            ),
+                            document_path=_canonical_document_path(after_model),
+                        ),
+                    )
+                finally:
+                    native_cleanup_phase("readback", strict_precision.end)
+                def compare_verifier_after() -> tuple[Mapping[str, Any], bool]:
+                    normalized = rebase_canonical_model(
+                        source,
+                        strict_verifier_projection.normalize(
+                            verifier_after,
+                            protected_paths=tuple(
+                                change.path for change in replay_change.changes
+                            ),
+                        ),
+                    )
+                    return normalized, complete_models_equal(
+                        normalized, after_model
+                    )
+
+                verifier_after, canonical_equivalent = canonical_phase(
+                    compare_verifier_after
                 )
-                verifier_after = strict_verifier_projection.normalize(
-                    verifier_after,
-                    protected_paths=tuple(
-                        change.path for change in replay_change.changes
+                (
+                    strict_direct_after_archive,
+                    strict_replay_after_archive,
+                ) = native_phase(
+                    "native_comparison",
+                    lambda: (
+                        _serialized_font_archive(clone),
+                        _serialized_font_archive(strict_verifier),
                     ),
                 )
-                verifier_after = rebase_canonical_model(source, verifier_after)
-                canonical_equivalent = complete_models_equal(
-                    verifier_after, after_model
+                native_comparison_started = time.perf_counter_ns()
+                archive_comparison = canonical_phase(
+                    lambda: _compare_native_archive_deltas(
+                        strict_direct_before_archive,
+                        strict_direct_after_archive,
+                        strict_replay_before_archive,
+                        strict_replay_after_archive,
+                        limit=100,
+                        cancellation_checkpoint=checkpoint,
+                    )
                 )
-                archive_comparison = _compare_native_archive_deltas(
-                    strict_direct_before_archive,
-                    _serialized_font_archive(clone),
-                    strict_replay_before_archive,
-                    _serialized_font_archive(strict_verifier),
-                    limit=100,
-                    semantic_float_equivalence=False,
-                )
+                timings["native_comparison"] += (
+                    time.perf_counter_ns() - native_comparison_started
+                ) / 1_000_000
                 evidence.update(
                     {
                         "canonicalEquivalent": canonical_equivalent,
@@ -13121,47 +13776,36 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         "nativeArchiveEquivalent": bool(
                             archive_comparison.get("equivalent")
                         ),
-                        "normalizedPaths": list(
-                            archive_comparison.get("normalizedPaths") or ()
-                        ),
-                        "maximumAbsoluteDelta": float(
-                            archive_comparison.get("maximumAbsoluteDelta") or 0.0
-                        ),
                         "archive": archive_comparison,
                     }
                 )
-                timings["verification"] += (
-                    time.perf_counter_ns() - strict_started
-                ) / 1_000_000
                 if not canonical_equivalent or not bool(
                     archive_comparison.get("equivalent")
                 ):
                     raise VerificationEquivalenceError(evidence)
                 completed["verificationEvidence"] = evidence
+                completed["stageTimings"] = completed_timings()
                 return completed
-            apply_started = time.perf_counter_ns()
-            _apply_target_model(
+            clone_precision = apply_detached_change(
                 clone,
                 clone_before,
                 target,
                 change_set,
-                capabilities=capabilities,
-                execution_context=resolved_context,
-                master_restore_templates=restore_templates,
-                layer_restore_templates=layer_restore_templates,
+                context=resolved_context,
             )
             debug_simulation("requested_patch_applied")
-            timings["detached_apply"] += (
-                time.perf_counter_ns() - apply_started
-            ) / 1_000_000
-            preferred, revisions_after, root_evidence_after = capture_after(
-                source,
-                target,
-                impact,
-                revisions_before,
-                tuple(change.path for change in change_set.changes),
-                clone_root_evidence_before,
-            )
+            try:
+                preferred, revisions_after, root_evidence_after = capture_after(
+                    source,
+                    target,
+                    resolved_impact,
+                    revisions_before,
+                    tuple(change.path for change in change_set.changes),
+                    clone_root_evidence_before,
+                )
+            finally:
+                native_cleanup_phase("readback", clone_precision.end)
+            checkpoint()
             debug_simulation(
                 "requested_patch_verified",
                 requestedAfter=change_set.after_fingerprint,
@@ -13204,31 +13848,31 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "replayReplacements": [],
                     "stageTimings": timings,
                 })
-            residual = diff_models(preferred, required)
-            residual_impact = CanonicalImpact.from_change_set(preferred, residual)
-            apply_started = time.perf_counter_ns()
-            _apply_target_model(
+            residual = canonical_phase(
+                lambda: diff_models(preferred, required)
+            )
+            residual_impact = canonical_phase(
+                lambda: CanonicalImpact.from_change_set(preferred, residual)
+            )
+            residual_precision = apply_detached_change(
                 clone,
                 preferred,
                 required,
                 residual,
                 replay_replacements=replacements,
-                capabilities=capabilities,
-                execution_context=resolved_context,
-                master_restore_templates=restore_templates,
-                layer_restore_templates=layer_restore_templates,
+                context=resolved_context,
             )
-            timings["detached_apply"] += (
-                time.perf_counter_ns() - apply_started
-            ) / 1_000_000
-            canonical, _, _ = capture_after(
-                preferred,
-                required,
-                residual_impact,
-                revisions_after,
-                tuple(change.path for change in residual.changes),
-                root_evidence_after,
-            )
+            try:
+                canonical, _, _ = capture_after(
+                    preferred,
+                    required,
+                    residual_impact,
+                    revisions_after,
+                    tuple(change.path for change in residual.changes),
+                    root_evidence_after,
+                )
+            finally:
+                native_cleanup_phase("readback", residual_precision.end)
             return finish({
                 "afterModel": canonical,
                 "observations": requested_observations(),
@@ -13237,9 +13881,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 "stageTimings": timings,
             })
 
-        return self._executor.run(
-            lambda: _run_with_cyclic_gc_suspended(simulate)
-        )
+        return simulate()
 
     def simulate_verified_change_set(
         self,
@@ -13251,6 +13893,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         capabilities: Sequence[str] = (),
         execution_context: Mapping[str, Any] | None = None,
         removes_contribution_id: Optional[str] = None,
+        cancellation_checkpoint: Optional[Callable[[], None]] = None,
+        impact: CanonicalImpact | None = None,
+        verification_tier: str = "scoped_native",
     ) -> Mapping[str, Any]:
         """One capability-aware detached simulation entry point."""
 
@@ -13262,6 +13907,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             capabilities=capabilities,
             execution_context=execution_context,
             removes_contribution_id=removes_contribution_id,
+            cancellation_checkpoint=cancellation_checkpoint,
+            impact=impact,
+            verification_tier=verification_tier,
         )
 
     def simulate_reconciliation(
@@ -13562,48 +14210,69 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             namespace = self._context(clone, request)
             stdout, stderr = io.StringIO(), io.StringIO()
             protected = [clone, _maybe_call(_safe_getattr(clone, "parent"))]
-            with _WorkingSourceSaveRuntimeGuard(
-                protected,
-                native_identity=self._native_identity,
-            ) as save_guard, contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-                exec(compile(request.code or "", "<glyphs-mcp-staged>", "exec"), namespace, namespace)
-                save_guard.raise_if_blocked()
-            after_instance_ids = _staged_instance_ids(
-                native_state["cloneInstancesBefore"],
-                native_state["beforeInstanceIds"],
-                _sequence_values(_safe_getattr(clone, "instances")),
-                code_hash=hashlib.sha256(
-                    (request.code or "").encode("utf-8")
-                ).hexdigest(),
-            )
-            if request.glyph_name:
-                clone_revisions_after = _glyph_revision_index(clone)
-                after_model = _scoped_font_model(
-                    clone,
-                    before_model,
-                    MutationScope(("glyphs",), (request.glyph_name,)),
-                    extra_glyph_names=_changed_revision_glyphs(
-                        native_state["cloneRevisionsBefore"],
-                        clone_revisions_after,
+
+            def execute_code() -> tuple[str, str]:
+                with _WorkingSourceSaveRuntimeGuard(
+                    protected,
+                    native_identity=self._native_identity,
+                ) as save_guard, contextlib.redirect_stdout(
+                    stdout
+                ), contextlib.redirect_stderr(stderr):
+                    exec(
+                        compile(
+                            request.code or "",
+                            "<glyphs-mcp-staged>",
+                            "exec",
+                        ),
+                        namespace,
+                        namespace,
+                    )
+                    save_guard.raise_if_blocked()
+                return stdout.getvalue(), stderr.getvalue()
+
+            def capture_after(output: tuple[str, str]) -> Mapping[str, Any]:
+                after_instance_ids = _staged_instance_ids(
+                    native_state["cloneInstancesBefore"],
+                    native_state["beforeInstanceIds"],
+                    _sequence_values(_safe_getattr(clone, "instances")),
+                    code_hash=hashlib.sha256(
+                        (request.code or "").encode("utf-8")
+                    ).hexdigest(),
+                )
+                if request.glyph_name:
+                    clone_revisions_after = _glyph_revision_index(clone)
+                    after_model = _scoped_font_model(
+                        clone,
+                        before_model,
+                        MutationScope(("glyphs",), (request.glyph_name,)),
+                        extra_glyph_names=_changed_revision_glyphs(
+                            native_state["cloneRevisionsBefore"],
+                            clone_revisions_after,
+                        ),
+                        instance_ids=after_instance_ids,
+                        expected_model=before_model,
+                    )
+                else:
+                    # Open-world staged requests retain the conservative full-tree
+                    # fallback because no smaller correctness boundary was declared.
+                    after_model = self._capture_detached_model(
+                        clone,
+                        before_model,
+                        instance_ids=after_instance_ids,
+                    )
+                return {
+                    "afterModel": after_model,
+                    "afterInstanceIds": after_instance_ids,
+                    "stdout": output[0],
+                    "stderr": output[1],
+                    "directAfterArchive": _serialized_review_scope(
+                        clone, request
                     ),
-                    instance_ids=after_instance_ids,
-                    expected_model=before_model,
-                )
-            else:
-                # Open-world staged requests retain the conservative full-tree
-                # fallback because no smaller correctness boundary was declared.
-                after_model = self._capture_detached_model(
-                    clone,
-                    before_model,
-                    instance_ids=after_instance_ids,
-                )
-            return {
-                "afterModel": after_model,
-                "afterInstanceIds": after_instance_ids,
-                "stdout": stdout.getvalue(),
-                "stderr": stderr.getvalue(),
-                "directAfterArchive": _serialized_review_scope(clone, request),
-            }
+                }
+
+            return _run_python_with_floating_geometry(
+                clone, execute_code, capture_after
+            )
 
         execution = native_phase("evaluationCaptureMs", execute_and_capture)
         notify("comparing", "Comparing canonical staged changes")
@@ -13653,34 +14322,42 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 local_templates = _added_native_replay_templates(
                     clone, before_model, after_model, changes
                 )
-                _apply_target_model(
-                    verifier,
-                    before_model,
-                    writable_target,
-                    writable_changes,
-                    capabilities=capabilities,
-                    execution_context={
-                        "nativeReplayTemplates": local_templates,
-                        "reuseNativeReplayTemplates": True,
-                    },
+
+                def apply_replay() -> None:
+                    _apply_target_model(
+                        verifier,
+                        before_model,
+                        writable_target,
+                        writable_changes,
+                        capabilities=capabilities,
+                        execution_context={
+                            "nativeReplayTemplates": local_templates,
+                            "reuseNativeReplayTemplates": True,
+                        },
+                    )
+
+                def capture_replay(_result: Any) -> Mapping[str, Any]:
+                    captured_verifier_model = self._capture_detached_model(
+                        verifier,
+                        after_model,
+                        instance_ids=execution["afterInstanceIds"],
+                        document_path=_canonical_document_path(before_model),
+                    )
+                    local_retained_templates = _added_native_replay_templates(
+                        clone, before_model, after_model, changes
+                    )
+                    return {
+                        "templates": local_templates,
+                        "retainedTemplates": local_retained_templates,
+                        "verifierModel": captured_verifier_model,
+                        "replayAfterArchive": _serialized_review_scope(
+                            verifier, request
+                        ),
+                    }
+
+                return _run_python_with_floating_geometry(
+                    verifier, apply_replay, capture_replay
                 )
-                captured_verifier_model = self._capture_detached_model(
-                    verifier,
-                    after_model,
-                    instance_ids=execution["afterInstanceIds"],
-                    document_path=_canonical_document_path(before_model),
-                )
-                local_retained_templates = _added_native_replay_templates(
-                    clone, before_model, after_model, changes
-                )
-                return {
-                    "templates": local_templates,
-                    "retainedTemplates": local_retained_templates,
-                    "verifierModel": captured_verifier_model,
-                    "replayAfterArchive": _serialized_review_scope(
-                        verifier, request
-                    ),
-                }
 
             replay = native_phase("replayCaptureMs", replay_and_capture)
             templates = replay["templates"]
@@ -13697,24 +14374,20 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         checkpoint()
         started = time.perf_counter_ns()
         if verifier_model is not None:
-            if fingerprint_model(verifier_model) != fingerprint_model(after_model):
-                canonical_mismatch = diff_models(after_model, verifier_model)
-                mismatch_locations = [
-                    {
-                        "path": list(change.path),
-                        "expectedPresent": change.before_present,
-                        "observedPresent": change.after_present,
-                        "expected": repr(change.before)[:500],
-                        "observed": repr(change.after)[:500],
-                    }
-                    for change in canonical_mismatch.changes[:100]
-                ]
+            if not complete_models_equal(after_model, verifier_model):
+                residual = diff_models(after_model, verifier_model)
                 archive_comparison = {
                     "equivalent": False,
-                    "mismatchCount": len(canonical_mismatch.changes),
-                    "mismatchLocations": mismatch_locations,
-                    "truncated": len(canonical_mismatch.changes)
-                    > len(mismatch_locations),
+                    "mismatchCount": len(residual.changes),
+                    "mismatchLocations": [
+                        {
+                            "path": list(change.path),
+                            "direct": _bounded_native_archive_value(change.before),
+                            "replay": _bounded_native_archive_value(change.after),
+                        }
+                        for change in residual.changes[:100]
+                    ],
+                    "truncated": len(residual.changes) > 100,
                     "directDeltaCount": 0,
                     "replayDeltaCount": 0,
                 }
@@ -13801,9 +14474,21 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             namespace.update({"Glyphs": self._app, "__builtins__": builtins.__dict__})
             stdout, stderr = io.StringIO(), io.StringIO()
             execution_error: BaseException | None = None
+            open_fonts = tuple(self._collect_fonts())
+            precision = FloatingGeometryScope(
+                open_fonts, require_grid_zero=True
+            ).begin()
+            suspended_fonts: list[Any] = []
+            protected_setting_changes: tuple[Mapping[str, Any], ...] = ()
             try:
+                for open_font in open_fonts:
+                    disable = _safe_getattr(open_font, "disableUpdateInterface")
+                    enable = _safe_getattr(open_font, "enableUpdateInterface")
+                    if callable(disable) and callable(enable):
+                        disable()
+                        suspended_fonts.append(open_font)
                 protected_objects: list[Any] = []
-                for open_font in self._collect_fonts():
+                for open_font in open_fonts:
                     protected_objects.append(open_font)
                     protected_objects.append(
                         _maybe_call(_safe_getattr(open_font, "parent"))
@@ -13829,12 +14514,39 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     save_guard.raise_if_blocked()
             except BaseException as exc:
                 execution_error = exc
+            finally:
+                try:
+                    for open_font in reversed(suspended_fonts):
+                        enable = _safe_getattr(
+                            open_font, "enableUpdateInterface"
+                        )
+                        if callable(enable):
+                            enable()
+                    protected_setting_changes = (
+                        precision.protected_setting_changes()
+                    )
+                    precision.rescan_layers()
+                    precision.prepare_for_readback()
+                except BaseException:
+                    precision.end()
+                    raise
+            if protected_setting_changes and execution_error is None:
+                execution_error = HostAccessError(
+                    "live Python attempted to change protected execution settings: {}".format(
+                        ", ".join(
+                            str(change.get("setting"))
+                            for change in protected_setting_changes
+                        )
+                    )
+                )
             return {
                 "activeDocumentId": active_document_id,
                 "beforeModel": before,
                 "stdout": stdout.getvalue(),
                 "stderr": stderr.getvalue(),
                 "executionError": execution_error,
+                "geometryPrecision": precision,
+                "protectedSettingChanges": protected_setting_changes,
             }
 
         execution = self._executor.run(run)
@@ -13843,8 +14555,13 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         # yield the main queue, and require stable observations before claiming
         # the final scope or fingerprint. This boundary applies equally to
         # direct scripts and scripts that compose nested verified operations.
+        precision = execution.get("geometryPrecision")
         self._canonical_model_cache.invalidate_unscoped()
-        live_after_models = self._stable_open_models()
+        try:
+            live_after_models = self._stable_open_models()
+        finally:
+            if isinstance(precision, FloatingGeometryScope):
+                self._executor.run(precision.end)
         active_document_id = str(execution.get("activeDocumentId") or "")
         after = live_after_models.get(active_document_id, {})
         live_after = {
@@ -13871,6 +14588,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             "stdout": execution.get("stdout", ""),
             "stderr": execution.get("stderr", ""),
             "observedDocumentChanges": observed_document_changes,
+            "protectedSettingChanges": list(
+                execution.get("protectedSettingChanges") or ()
+            ),
         }
         execution_error = execution.get("executionError")
         if isinstance(execution_error, BaseException):
@@ -14044,32 +14764,6 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "documentId": document_id,
                     "templates": removed_templates,
                 }
-                # Keep the established private compatibility views while the
-                # single path-keyed store owns the retained objects.
-                master_templates = {}
-                layer_templates = {}
-                for path, retained in removed_templates.items():
-                    if len(path) == 2 and path[0] == "masters":
-                        copied = retained.get("copy", {})
-                        native = retained.get("native", {})
-                        master_templates[path[1]] = {
-                            "master": copied.get("master"),
-                            "layers": copied.get("layers", {}),
-                            "nativeMaster": native.get("master"),
-                            "nativeLayers": native.get("layers", {}),
-                        }
-                    elif len(path) == 4 and path[0] == "glyphs":
-                        layer_templates["{}/{}".format(path[1], path[3])] = retained
-                if master_templates:
-                    self._master_lifecycle_tombstones[operation_id] = {
-                        "documentId": document_id,
-                        "templates": master_templates,
-                    }
-                if layer_templates:
-                    self._layer_lifecycle_tombstones[operation_id] = {
-                        "documentId": document_id,
-                        "templates": layer_templates,
-                    }
             self._canonical_model_cache.invalidate_impact(
                 document_id,
                 CanonicalImpact.from_change_set(current, change_set),
@@ -14084,23 +14778,31 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     replay_replacements=replay_replacements,
                     capabilities=capabilities,
                     execution_context=resolved_context,
-                    master_restore_templates=self._master_restore_templates(
-                        removes_contribution_id
-                    ),
-                    layer_restore_templates=self._layer_restore_templates(
-                        removes_contribution_id, native=True
-                    ),
-                    reuse_native_master_templates=True,
-                    reuse_native_layer_templates=True,
                 )
 
             update_boundary = self._verified_transaction_updates.get(document_id)
             if update_boundary and update_boundary.get("font") is font:
+                precision = update_boundary.get("geometryPrecision")
+                if not isinstance(precision, FloatingGeometryScope):
+                    raise HostAccessError(
+                        "The verified transaction lost its geometry precision scope"
+                    )
+                if _change_set_requires_grid_zero(change_set, capabilities):
+                    precision.require_grid_zero()
                 apply_target()
+                precision.rescan_layers()
+                _set_precision_restoration_target(precision, font, target)
             else:
                 # Preserve the adapter's standalone safety when a caller does
                 # not use the complete TransactionKernel boundary.
-                _run_with_font_updates_suspended(font, apply_target)
+                _run_with_floating_geometry(
+                    font,
+                    apply_target,
+                    require_grid_zero=_change_set_requires_grid_zero(
+                        change_set, capabilities
+                    ),
+                    target=target,
+                )
             if any(change.path[0] == "instances" for change in change_set.changes):
                 self._bind_instance_ids(
                     document_id,
@@ -14135,12 +14837,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         self._executor.run(lambda: _run_with_cyclic_gc_suspended(apply))
 
     def begin_verified_transaction(self, document_id: str) -> None:
-        """Suspend Glyphs redraw until live verification or restore finishes.
+        """Open one logical transaction and suspend its native write batch.
 
         This is an adapter-owned transaction boundary, not a second mutation
-        engine. Native setters, settled canonical read-back, and emergency
-        restoration stay inside one balanced host UI suspension so expensive
-        Font/Edit View rendering cannot interleave with correctness proof.
+        engine. Native setters run in one UI suspension; the batch is released
+        before stable read-back so Glyphs can settle its derived state while
+        the logical transaction and recovery boundary remain active.
         """
 
         def begin() -> None:
@@ -14149,16 +14851,28 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 existing["depth"] = int(existing.get("depth", 1)) + 1
                 return
             font = self._font_for_document(document_id)
+            precision = FloatingGeometryScope((font,)).begin()
             disable = _safe_getattr(font, "disableUpdateInterface")
             enable = _safe_getattr(font, "enableUpdateInterface")
             suspended = callable(disable) and callable(enable)
-            if suspended:
-                disable()
-            self._verified_transaction_updates[document_id] = {
-                "font": font,
-                "depth": 1,
-                "suspended": suspended,
-            }
+            interface_suspended = False
+            try:
+                if suspended:
+                    disable()
+                    interface_suspended = True
+                self._verified_transaction_updates[document_id] = {
+                    "font": font,
+                    "depth": 1,
+                    "suspended": interface_suspended,
+                    "geometryPrecision": precision,
+                }
+            except BaseException:
+                try:
+                    if interface_suspended and callable(enable):
+                        enable()
+                finally:
+                    precision.end()
+                raise
 
         _VERIFIED_TRANSACTION_GC.begin()
         try:
@@ -14166,6 +14880,25 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         except Exception:
             _VERIFIED_TRANSACTION_GC.end()
             raise
+
+    def settle_verified_transaction(self, document_id: str) -> None:
+        """Release native batching before the transaction's stable read-back."""
+
+        def settle() -> None:
+            existing = self._verified_transaction_updates.get(document_id)
+            if existing is None:
+                return
+            if existing.get("suspended"):
+                enable = _safe_getattr(existing.get("font"), "enableUpdateInterface")
+                if callable(enable):
+                    enable()
+                existing["suspended"] = False
+            precision = existing.get("geometryPrecision")
+            if isinstance(precision, FloatingGeometryScope):
+                precision.rescan_layers()
+                precision.prepare_for_readback()
+
+        self._executor.run(settle)
 
     def end_verified_transaction(self, document_id: str) -> None:
         """Balance :meth:`begin_verified_transaction` on the main thread."""
@@ -14179,106 +14912,24 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 existing["depth"] = depth
                 return
             self._verified_transaction_updates.pop(document_id, None)
-            if existing.get("suspended"):
-                enable = _safe_getattr(existing.get("font"), "enableUpdateInterface")
-                if callable(enable):
-                    enable()
+            precision = existing.get("geometryPrecision")
+            try:
+                if existing.get("suspended"):
+                    enable = _safe_getattr(existing.get("font"), "enableUpdateInterface")
+                    if callable(enable):
+                        enable()
+                    existing["suspended"] = False
+                if isinstance(precision, FloatingGeometryScope):
+                    precision.rescan_layers()
+                    precision.prepare_for_readback()
+            finally:
+                if isinstance(precision, FloatingGeometryScope):
+                    precision.end()
 
         try:
             self._executor.run(end)
         finally:
             _VERIFIED_TRANSACTION_GC.end()
-
-    def reconcile_verified_state(
-        self,
-        document_id: str,
-        actual_model: Mapping[str, Any],
-        expected_model: Mapping[str, Any],
-        *,
-        capabilities: Sequence[str] = (),
-        execution_context: Mapping[str, Any] | None = None,
-    ) -> None:
-        """Converge writable drift that Glyphs derives after one UI turn.
-
-        This remains inside the original verified transaction: it owns no
-        dirty contribution, operation, audit event, or history entry. The
-        complete settled tree is compared with the detached canonical target,
-        and any non-writable residual refuses the transaction atomically.
-        """
-
-        expected = _retain_canonical_model(expected_model)
-        actual_fingerprint = fingerprint_model(actual_model)
-
-        def reconcile() -> None:
-            font = self._font_for_document(document_id)
-            current = self._capture_cached_model(document_id, font)
-            if fingerprint_model(current) != actual_fingerprint:
-                raise HostAccessError(
-                    "the document changed during post-settle reconciliation"
-                )
-            residual = diff_models(current, expected)
-            if not residual.changes:
-                return
-            if os.environ.get("GLYPHS_MCP_DEBUG_CAPTURE"):
-                print(
-                    "[Glyphs MCP][VerifiedReconciliation] residualCount={} "
-                    "changes={}".format(
-                        len(residual.changes),
-                        [
-                            {
-                                "path": list(change.path),
-                                "before": repr(change.before)[:160],
-                                "after": repr(change.after)[:160],
-                            }
-                            for change in residual.changes[:20]
-                        ],
-                    ),
-                    flush=True,
-                )
-            writable = writable_subset(
-                current,
-                residual,
-                capabilities=capabilities,
-            )
-            if fingerprint_model(writable.apply(current)) != fingerprint_model(
-                expected
-            ):
-                writable_paths = {change.path for change in writable.changes}
-                non_writable_paths = [
-                    list(change.path)
-                    for change in residual.changes
-                    if change.path not in writable_paths
-                ]
-                raise HostAccessError(
-                    "the settled canonical residual contains non-writable state "
-                    "({} residual changes; first non-writable paths: {})".format(
-                        len(residual.changes), non_writable_paths[:12]
-                    )
-                )
-            self._canonical_model_cache.invalidate_impact(
-                document_id,
-                CanonicalImpact.from_change_set(current, writable),
-                font=font,
-            )
-            resolved_context = self._resolved_replay_context(
-                document_id, execution_context
-            )
-            _apply_target_model(
-                font,
-                current,
-                expected,
-                writable,
-                capabilities=capabilities,
-                execution_context=resolved_context,
-            )
-            if any(change.path[0] == "instances" for change in writable.changes):
-                self._bind_instance_ids(
-                    document_id,
-                    font,
-                    collection_order(expected.get("instances", [])),
-                )
-
-        self._executor.run(reconcile)
 
     def commit_verified_change(self, operation_id: str) -> None:
         """Commit one pending native dirty contribution after exact verification."""
@@ -14304,13 +14955,8 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     )
                 active.pop(removed_id, None)
                 self._native_change_count(font, _NS_CHANGE_UNDONE)
-                for tombstones in (
-                    self._master_lifecycle_tombstones,
-                    self._layer_lifecycle_tombstones,
-                    self._native_lifecycle_tombstones,
-                ):
-                    tombstones.pop(removed_id, None)
-                    tombstones.pop(operation_id, None)
+                self._native_lifecycle_tombstones.pop(removed_id, None)
+                self._native_lifecycle_tombstones.pop(operation_id, None)
             else:
                 if not active:
                     # Commit the effective pre-operation state, not a possibly
@@ -14361,18 +15007,6 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 CanonicalImpact.from_change_set(current, restoration),
                 font=font,
             )
-            restore_templates = self._master_restore_templates(operation_id)
-            if not restore_templates:
-                restore_templates = self._master_restore_templates(
-                    removes_contribution_id
-                )
-            layer_restore_templates = self._layer_restore_templates(
-                operation_id, native=True
-            )
-            if not layer_restore_templates:
-                layer_restore_templates = self._layer_restore_templates(
-                    removes_contribution_id, native=True
-                )
             resolved_context = self._resolved_replay_context(
                 document_id, execution_context, native_restore=True
             )
@@ -14388,18 +15022,38 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     **dict(resolved_context.get("nativeReplayTemplates") or {}),
                     **native_restore_templates,
                 }
-            _apply_target_model(
-                font,
-                current,
-                model,
-                restoration,
-                capabilities=capabilities,
-                execution_context=resolved_context,
-                master_restore_templates=restore_templates,
-                layer_restore_templates=layer_restore_templates,
-                reuse_native_master_templates=True,
-                reuse_native_layer_templates=True,
+            def apply_restoration() -> None:
+                _apply_target_model(
+                    font,
+                    current,
+                    model,
+                    restoration,
+                    capabilities=capabilities,
+                    execution_context=resolved_context,
+                )
+
+            boundary = self._verified_transaction_updates.get(document_id)
+            precision = (
+                boundary.get("geometryPrecision")
+                if isinstance(boundary, Mapping)
+                else None
             )
+            if isinstance(precision, FloatingGeometryScope):
+                if _change_set_requires_grid_zero(restoration, capabilities):
+                    precision.require_grid_zero()
+                apply_restoration()
+                precision.rescan_layers()
+                _set_precision_restoration_target(precision, font, model)
+                precision.prepare_for_readback()
+            else:
+                _run_with_floating_geometry(
+                    font,
+                    apply_restoration,
+                    require_grid_zero=_change_set_requires_grid_zero(
+                        restoration, capabilities
+                    ),
+                    target=model,
+                )
             if any(change.path[0] == "instances" for change in restoration.changes):
                 self._bind_instance_ids(
                     document_id,
@@ -14418,19 +15072,37 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         CanonicalImpact.from_change_set(preferred, residual),
                         font=font,
                     )
-                    _apply_target_model(
-                        font,
-                        preferred,
-                        model,
-                        residual,
-                        replay_replacements=replacements,
-                        capabilities=capabilities,
-                        execution_context=resolved_context,
-                        master_restore_templates=restore_templates,
-                        layer_restore_templates=layer_restore_templates,
-                        reuse_native_master_templates=True,
-                        reuse_native_layer_templates=True,
-                    )
+                    def apply_residual() -> None:
+                        _apply_target_model(
+                            font,
+                            preferred,
+                            model,
+                            residual,
+                            replay_replacements=replacements,
+                            capabilities=capabilities,
+                            execution_context=resolved_context,
+                        )
+
+                    if isinstance(precision, FloatingGeometryScope):
+                        if _change_set_requires_grid_zero(
+                            residual, capabilities
+                        ):
+                            precision.require_grid_zero()
+                        apply_residual()
+                        precision.rescan_layers()
+                        _set_precision_restoration_target(
+                            precision, font, model
+                        )
+                        precision.prepare_for_readback()
+                    else:
+                        _run_with_floating_geometry(
+                            font,
+                            apply_residual,
+                            require_grid_zero=_change_set_requires_grid_zero(
+                                residual, capabilities
+                            ),
+                            target=model,
+                        )
                     if any(
                         change.path[0] == "instances" for change in residual.changes
                     ):
@@ -14502,12 +15174,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 if _document_edited_state(font) is not True:
                     self._native_change_count(font, _NS_CHANGE_DONE)
                 overrides[document_id] = True
-            for tombstones in (
-                self._master_lifecycle_tombstones,
-                self._layer_lifecycle_tombstones,
-                self._native_lifecycle_tombstones,
-            ):
-                tombstones.pop(operation_id, None)
+            self._native_lifecycle_tombstones.pop(operation_id, None)
             self._document_mcp_contributions = contributions
             self._document_mcp_pending_reverts = pending
             self._document_dirty_overrides = overrides
@@ -14541,17 +15208,6 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         overrides = getattr(self, "_document_dirty_overrides", {})
         overrides.pop(document_id, None)
         self._document_dirty_overrides = overrides
-        self._master_lifecycle_tombstones = {
-            operation_id: record
-            for operation_id, record in self._master_lifecycle_tombstones.items()
-            if str(record.get("documentId") or "") != document_id
-        }
-        layer_tombstones = getattr(self, "_layer_lifecycle_tombstones", {})
-        self._layer_lifecycle_tombstones = {
-            operation_id: record
-            for operation_id, record in layer_tombstones.items()
-            if str(record.get("documentId") or "") != document_id
-        }
         native_tombstones = getattr(self, "_native_lifecycle_tombstones", {})
         self._native_lifecycle_tombstones = {
             operation_id: record
@@ -14610,6 +15266,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     else None
                 ),
                 runtime_versions=dict(payload.get("runtimeVersions") or {}),
+                native_renderer=native_source_renderer,
             )
 
         return self._executor.run(preflight)
@@ -14640,6 +15297,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     else None
                 ),
                 runtime_versions=dict(payload.get("runtimeVersions") or {}),
+                native_renderer=native_source_renderer,
             )
             reviewed_values = {
                 "bundleFingerprint": payload.get("reviewedBundleFingerprint"),

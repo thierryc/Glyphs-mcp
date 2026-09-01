@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import copy
+import inspect
 import math
 import re
 import time
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Mapping, Optional, Protocol, Sequence
+from typing import Any, Callable, Iterable, Mapping, Optional, Protocol, Sequence
 
 from .canonical_tree import CanonicalSnapshot
 from .canonical_schema import (
@@ -92,6 +93,8 @@ MASTER_LIFECYCLE_CAPABILITY = "master_lifecycle"
 LAYER_LIFECYCLE_CAPABILITY = "layer_lifecycle"
 CANONICAL_LIFECYCLE_CAPABILITY = "canonical_lifecycle"
 _CANONICAL_ROOT_COLLECTIONS = frozenset({"axes", "metrics", "stems", "numbers"})
+SCOPED_NATIVE_VERIFICATION = "scoped_native"
+COMPLETE_NATIVE_VERIFICATION = "complete_native"
 
 
 def _layer_entities(glyph: Any) -> tuple[list[str], dict[str, Mapping[str, Any]]]:
@@ -890,13 +893,18 @@ class CanonicalImpact:
         )
 
 
-def mutation_scope(
-    model: Mapping[str, Any], change_set: ChangeSet
-) -> MutationScope:
-    """Compatibility view over the path-derived canonical impact."""
+def select_verification_tier(
+    *,
+    execution_context: Mapping[str, Any] | None = None,
+) -> str:
+    """Use one native preview path, with full archives only when requested."""
 
-    impact = CanonicalImpact.from_change_set(model, change_set)
-    return MutationScope(impact.roots, impact.glyph_names)
+    mode = str(dict(execution_context or {}).get("verificationMode") or "semantic")
+    return (
+        COMPLETE_NATIVE_VERIFICATION
+        if mode == "strict_archive"
+        else SCOPED_NATIVE_VERIFICATION
+    )
 
 
 def lifecycle_capabilities(
@@ -1050,6 +1058,18 @@ class VerifiedMutationPlan:
     stage_timings: Mapping[str, float] = field(
         default_factory=dict, compare=False, repr=False
     )
+    impact: CanonicalImpact | None = field(default=None, compare=False, repr=False)
+    verification_tier: str = field(default="", compare=False)
+
+    def __post_init__(self) -> None:
+        impact = self.impact or CanonicalImpact.from_change_set(
+            self.before_model, self.writable_change_set
+        )
+        tier = self.verification_tier or select_verification_tier(
+            execution_context=self.execution_context,
+        )
+        object.__setattr__(self, "impact", impact)
+        object.__setattr__(self, "verification_tier", tier)
 
     @property
     def before_fingerprint(self) -> str:
@@ -1074,13 +1094,15 @@ class RequestedEffectMismatchError(ValueError):
     def to_public_dict(self) -> dict[str, Any]:
         return {
             "mismatchCount": len(self.mismatches),
-            "mismatches": [copy.deepcopy(dict(item)) for item in self.mismatches[:12]],
+            "mismatches": [
+                copy.deepcopy(dict(item)) for item in self.mismatches[:12]
+            ],
             "truncated": len(self.mismatches) > 12,
         }
 
 
 class VerificationEquivalenceError(ValueError):
-    """A diagnostic verification mode found an unregistered native delta."""
+    """Strict archive verification found a native mismatch."""
 
     def __init__(self, evidence: Mapping[str, Any]) -> None:
         self.evidence = copy.deepcopy(dict(evidence))
@@ -1088,6 +1110,62 @@ class VerificationEquivalenceError(ValueError):
 
     def to_public_dict(self) -> dict[str, Any]:
         return copy.deepcopy(dict(self.evidence))
+
+
+def _automatic_alignment_equivalent(
+    model: Mapping[str, Any],
+    path: tuple[str, ...],
+    requested: Any,
+    observed: Any,
+    normalized: list[dict[str, Any]],
+) -> bool:
+    """Allow only the native geometry explicitly owned by auto alignment."""
+
+    if len(path) >= 5 and path[:1] == ("glyphs",) and path[2] == "layers":
+        layer_path = path[:4]
+        present, layer = semantic_value_at(model, layer_path)
+        if present and isinstance(layer, Mapping):
+            automatic_components = [
+                component
+                for component in layer_components(layer)
+                if int(component.get("alignment", -1)) != -1
+            ]
+            if path[-1] == "width" and automatic_components:
+                normalized.append(
+                    {
+                        "path": list(path),
+                        "direct": copy.deepcopy(requested),
+                        "observed": copy.deepcopy(observed),
+                        "rule": "automatic_alignment_derived_width",
+                    }
+                )
+                return True
+            if "shapes" in path and "position" in path:
+                shape_index = path.index("shapes")
+                if len(path) > shape_index + 1:
+                    shape_path = path[: shape_index + 2]
+                    shape_present, shape = semantic_value_at(model, shape_path)
+                    component = (
+                        shape.get("value")
+                        if shape_present
+                        and isinstance(shape, Mapping)
+                        and shape.get("kind") == "component"
+                        else None
+                    )
+                    if (
+                        isinstance(component, Mapping)
+                        and int(component.get("alignment", -1)) != -1
+                    ):
+                        normalized.append(
+                            {
+                                "path": list(path),
+                                "direct": copy.deepcopy(requested),
+                                "observed": copy.deepcopy(observed),
+                                "rule": "automatic_alignment_derived_position",
+                            }
+                        )
+                        return True
+    return False
 
 
 def _registered_canonical_equivalent(
@@ -1184,8 +1262,17 @@ def _requested_effect_mismatches(
             semantic_equivalence
             and present
             and change.after_present
-            and _registered_canonical_equivalent(
-                change.path, change.after, value, local_normalized
+            and (
+                _automatic_alignment_equivalent(
+                    observed_after,
+                    change.path,
+                    change.after,
+                    value,
+                    local_normalized,
+                )
+                or _registered_canonical_equivalent(
+                    change.path, change.after, value, local_normalized
+                )
             )
         ):
             normalized.extend(local_normalized)
@@ -1281,9 +1368,18 @@ class MutationPlanner:
         plan_started = time.perf_counter_ns()
         stage_timings = {
             "initial_capture": 0.0,
+            "baseline_capture": 0.0,
             "clone": 0.0,
+            "replay": 0.0,
+            "canonical_comparison": 0.0,
+            "native_comparison": 0.0,
             "detached_apply": 0.0,
             "verification": 0.0,
+            "apply": 0.0,
+            "readback": 0.0,
+            "rollback": 0.0,
+            "max_native_phase": 0.0,
+            "native_phase_count": 0.0,
             **{
                 str(name): float(value)
                 for name, value in dict(initial_stage_timings or {}).items()
@@ -1307,9 +1403,11 @@ class MutationPlanner:
                 if callable(snapshot_capture)
                 else self._host.capture_model(document_id)
             )
-            stage_timings["initial_capture"] += (
+            capture_ms = (
                 time.perf_counter_ns() - capture_started
             ) / 1_000_000
+            stage_timings["initial_capture"] += capture_ms
+            stage_timings["baseline_capture"] += capture_ms
         before = (
             captured
             if isinstance(captured, CanonicalSnapshot)
@@ -1342,10 +1440,16 @@ class MutationPlanner:
             "canonicalEquivalent": True,
             "equivalenceClass": "exact_canonical",
             "nativeArchiveEquivalent": None,
-            "normalizedPaths": [],
-            "maximumAbsoluteDelta": 0.0,
         }
         normalized_capabilities = tuple(sorted(set(str(value) for value in capabilities)))
+        impact = CanonicalImpact.from_change_set(before, requested_change_set)
+        verification_tier = select_verification_tier(
+            execution_context=normalized_context,
+        )
+        verification_evidence = {
+            **dict(verification_evidence),
+            "tier": verification_tier,
+        }
         verified_simulator = getattr(
             self._host, "simulate_verified_change_set", None
         )
@@ -1359,20 +1463,49 @@ class MutationPlanner:
                 )
                 self._activity.checkpoint_current()
             simulation_started = time.perf_counter_ns()
-            simulation = verified_simulator(
-                document_id,
-                requested_change_set,
-                before,
-                required_after_model=(
+            cancellation_checkpoint = (
+                self._activity.checkpoint_callback()
+                if self._activity is not None
+                else None
+            )
+            simulation_options = {
+                "required_after_model": (
                     required_after_model
                     if isinstance(required_after_model, CanonicalSnapshot)
                     else copy.deepcopy(dict(required_after_model))
                     if required_after_model is not None
                     else None
                 ),
-                capabilities=normalized_capabilities,
-                execution_context=normalized_context,
-                removes_contribution_id=removes_contribution_id,
+                "capabilities": normalized_capabilities,
+                "execution_context": normalized_context,
+                "removes_contribution_id": removes_contribution_id,
+            }
+            try:
+                simulator_parameters = inspect.signature(
+                    verified_simulator
+                ).parameters.values()
+            except (TypeError, ValueError):
+                simulator_parameters = ()
+            accepts_options = any(
+                parameter.kind == inspect.Parameter.VAR_KEYWORD
+                for parameter in simulator_parameters
+            )
+            parameter_names = {
+                parameter.name for parameter in simulator_parameters
+            }
+            if accepts_options or "impact" in parameter_names:
+                simulation_options["impact"] = impact
+            if accepts_options or "verification_tier" in parameter_names:
+                simulation_options["verification_tier"] = verification_tier
+            if accepts_options or "cancellation_checkpoint" in parameter_names:
+                simulation_options["cancellation_checkpoint"] = (
+                    cancellation_checkpoint
+                )
+            simulation = verified_simulator(
+                document_id,
+                requested_change_set,
+                before,
+                **simulation_options,
             )
             if not isinstance(simulation, Mapping) or not isinstance(
                 simulation.get("afterModel"), Mapping
@@ -1380,7 +1513,18 @@ class MutationPlanner:
                 raise ValueError("verified canonical simulation returned an invalid result")
             provided_timings = simulation.get("stageTimings", {})
             if isinstance(provided_timings, Mapping):
-                for name in ("clone", "detached_apply", "verification"):
+                for name in (
+                    "baseline_capture",
+                    "clone",
+                    "replay",
+                    "canonical_comparison",
+                    "native_comparison",
+                    "detached_apply",
+                    "verification",
+                    "readback",
+                    "max_native_phase",
+                    "native_phase_count",
+                ):
                     stage_timings[name] += float(provided_timings.get(name, 0.0))
             else:
                 stage_timings["clone"] += (
@@ -1405,6 +1549,10 @@ class MutationPlanner:
             verification_evidence = copy.deepcopy(
                 dict(simulation.get("verificationEvidence") or verification_evidence)
             )
+            verification_evidence = {
+                **dict(verification_evidence),
+                "tier": verification_tier,
+            }
         elif required_after_model is not None and callable(reconciler):
             simulation_started = time.perf_counter_ns()
             simulation = reconciler(
@@ -1475,13 +1623,18 @@ class MutationPlanner:
                 required_after_model,
                 expected_after,
             )
-        requested_mismatches, normalized_requested = _requested_effect_mismatches(
-            requested_change_set,
-            expected_after,
-            semantic_equivalence=(
-                str(normalized_context.get("verificationMode") or "semantic")
-                == "semantic"
-            ),
+        semantic_mode = (
+            str(normalized_context.get("verificationMode") or "semantic")
+            == "semantic"
+        )
+        requested_mismatches, normalized_requested = (
+            _requested_effect_mismatches(
+                requested_change_set,
+                expected_after,
+                semantic_equivalence=True,
+            )
+            if semantic_mode
+            else ((), ())
         )
         if requested_mismatches:
             raise RequestedEffectMismatchError(requested_mismatches)
@@ -1505,6 +1658,32 @@ class MutationPlanner:
                 "normalizedPathsTruncated": len(normalized_requested) > 100,
                 "maximumAbsoluteDelta": maximum_delta,
             }
+        requested_target_matched = complete_models_equal(
+            requested_target, expected_after
+        )
+        if (
+            str(normalized_context.get("verificationMode") or "semantic")
+            == "strict_archive"
+            and not requested_target_matched
+        ):
+            mismatch = diff_models(requested_target, expected_after)
+            raise VerificationEquivalenceError(
+                {
+                    "mode": "strict_archive",
+                    "canonicalEquivalent": False,
+                    "mismatchCount": len(mismatch.changes),
+                    "mismatchLocations": [
+                        {"path": list(change.path)}
+                        for change in mismatch.changes[:100]
+                    ],
+                    "truncated": len(mismatch.changes) > 100,
+                }
+            )
+        verification_evidence = {
+            **dict(verification_evidence),
+            "requestedTargetMatched": requested_target_matched,
+            "settlement": "exact" if requested_target_matched else "native",
+        }
         if dirty_state_intent == "forward":
             _reject_new_duplicate_unicodes(before, expected_after)
         # The requested patch already proves the exact canonical target. When
@@ -1520,10 +1699,6 @@ class MutationPlanner:
             else diff_models(before, expected_after)
         )
         observed.apply(before)
-        if requested_change_set.changes and not observed.changes:
-            raise ValueError(
-                "detached simulation normalized the requested mutation to no document change"
-            )
         if isinstance(before, CanonicalSnapshot) and not isinstance(
             expected_after, CanonicalSnapshot
         ):
@@ -1554,11 +1729,14 @@ class MutationPlanner:
             verification_evidence=verification_evidence,
             coverage=coverage or CanonicalCoverage.complete(),
             stage_timings=stage_timings,
+            impact=impact,
+            verification_tier=verification_tier,
         )
 
 
 __all__ = [
     "CanonicalImpact",
+    "COMPLETE_NATIVE_VERIFICATION",
     "CanonicalTargetMismatchError",
     "MutationScope",
     "MutationPlanner",
@@ -1567,6 +1745,7 @@ __all__ = [
     "MutationRejected",
     "MutationResultContext",
     "RequestedEffectMismatchError",
+    "SCOPED_NATIVE_VERIFICATION",
     "VerificationEquivalenceError",
     "CANONICAL_LIFECYCLE_CAPABILITY",
     "LAYER_LIFECYCLE_CAPABILITY",
@@ -1577,11 +1756,11 @@ __all__ = [
     "VerifiedMutationPlan",
     "classify_change_path",
     "is_structural_change_path",
-    "mutation_scope",
     "master_lifecycle_diff",
     "master_owns_layer_order_change",
     "master_lifecycle_request_diff",
     "normalize_mutation_build",
+    "select_verification_tier",
     "unsupported_change_diagnostics",
     "writable_subset",
 ]

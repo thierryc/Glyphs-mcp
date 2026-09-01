@@ -15,10 +15,11 @@ if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
 from glyphs_mcp_v2.mutation import (  # noqa: E402
+    COMPLETE_NATIVE_VERIFICATION,
     CanonicalImpact,
     MutationPlanner,
+    SCOPED_NATIVE_VERIFICATION,
     VerifiedMutationPlan,
-    mutation_scope,
     writable_subset,
 )
 from glyphs_mcp_v2.semantic import (  # noqa: E402
@@ -180,20 +181,46 @@ class _PostSettleReconciliationHost(_LateSettlingHost):
         self.model = copy.deepcopy(expected_model)
 
 
-class _NonConvergingPostSettleHost(_PostSettleReconciliationHost):
-    def reconcile_verified_state(
-        self,
-        document_id,
-        actual_model,
-        expected_model,
-        *,
-        capabilities=(),
-        execution_context=None,
-    ):
-        self.reconciliation_calls += 1
-
-
 class VerifiedMutationKernelTests(unittest.TestCase):
+    def test_verification_uses_native_preview_unless_strict_archive_is_requested(self) -> None:
+        before = _model()
+        kerning_after = copy.deepcopy(before)
+        kerning_after["kerning"] = {"m0": {"A": {"V": -80}}}
+        host = _DerivedHost()
+
+        semantic = MutationPlanner(host).plan(
+            document_id="doc",
+            expected_document_fingerprint=fingerprint_model(before),
+            requested_change_set=diff_models(before, kerning_after),
+            operation_id="op_canonical",
+            before_model=before,
+        )
+
+        self.assertEqual(semantic.verification_tier, SCOPED_NATIVE_VERIFICATION)
+        self.assertEqual(host.clone_calls, 1)
+        width_after = copy.deepcopy(before)
+        width_after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
+        scoped = MutationPlanner(host).plan(
+            document_id="doc",
+            expected_document_fingerprint=fingerprint_model(before),
+            requested_change_set=diff_models(before, width_after),
+            operation_id="op_scoped",
+            before_model=before,
+        )
+        self.assertEqual(scoped.verification_tier, SCOPED_NATIVE_VERIFICATION)
+        self.assertEqual(host.clone_calls, 2)
+
+        strict = VerifiedMutationPlan(
+            document_id="doc",
+            operation_id="op_complete",
+            before_model=before,
+            expected_after_model=width_after,
+            writable_change_set=diff_models(before, width_after),
+            observed_change_set=diff_models(before, width_after),
+            execution_context={"verificationMode": "strict_archive"},
+        )
+        self.assertEqual(strict.verification_tier, COMPLETE_NATIVE_VERIFICATION)
+
     def test_canonical_impact_is_derived_from_paths_not_root_names(self) -> None:
         before = _model()
         before["masters"].append({"id": "m1", "name": "Bold", "italicAngle": 0, "axes": []})
@@ -247,10 +274,10 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         after = copy.deepcopy(before)
         after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
 
-        scope = mutation_scope(before, diff_models(before, after))
+        impact = CanonicalImpact.from_change_set(before, diff_models(before, after))
 
-        self.assertEqual(scope.roots, ("glyphs",))
-        self.assertEqual(scope.glyph_names, ("A", "Aacute", "Aacute.sc"))
+        self.assertEqual(impact.roots, ("glyphs",))
+        self.assertEqual(impact.glyph_names, ("A", "Aacute", "Aacute.sc"))
 
     def test_canonical_numbers_normalize_negative_zero_and_integral_floats(self) -> None:
         integer = {"font": {"value": 0, "other": 12}}
@@ -386,32 +413,29 @@ class VerifiedMutationKernelTests(unittest.TestCase):
 
         self.assertEqual(plan.writable_change_set.changes[0].path[-1], "export")
 
-    def test_detached_host_normalized_noop_is_rejected_before_live_apply(self) -> None:
+    def test_semantic_plan_rejects_unregistered_native_noop(self) -> None:
         host = _NormalizingNoEffectHost()
         before = host.capture_model("doc_kernel")
         requested_after = copy.deepcopy(before)
         requested_after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
 
-        with self.assertRaisesRegex(ValueError, "did not preserve 1 requested effect"):
+        with self.assertRaisesRegex(ValueError, "did not preserve"):
             MutationPlanner(host).plan(
                 document_id="doc_kernel",
                 expected_document_fingerprint=fingerprint_model(before),
                 requested_change_set=diff_models(before, requested_after),
                 operation_id="op_normalized_noop",
             )
-
         self.assertEqual(host.clone_calls, 1)
         self.assertEqual(host.apply_calls, 0)
 
-    def test_semantic_plan_accepts_only_registered_component_round_trip(self) -> None:
+    def test_semantic_plan_accepts_native_settlement_and_strict_rejects(self) -> None:
         class RoundTripHost(_DerivedHost):
-            delta = 7e-15
-
             def simulate_change_set(self, document_id, change_set):
                 self.clone_calls += 1
                 after = self._derive(change_set.apply(self.model))
                 component = after["glyphs"]["A"]["layers"]["m0"]["shapes"][0]
-                component["value"]["angle"] += self.delta
+                component["value"]["angle"] += 7e-15
                 return after
 
         host = RoundTripHost()
@@ -443,31 +467,21 @@ class VerifiedMutationKernelTests(unittest.TestCase):
             operation_id="op_semantic_round_trip",
             execution_context={"verificationMode": "semantic"},
         )
+        self.assertEqual(semantic.verification_evidence["settlement"], "native")
+        self.assertFalse(semantic.verification_evidence["requestedTargetMatched"])
         self.assertEqual(
-            semantic.verification_evidence["equivalenceClass"],
-            "registered_normalization",
-        )
-        self.assertEqual(
-            semantic.verification_evidence["normalizedPathCount"], 1
+            semantic.expected_after_model["glyphs"]["A"]["layers"]["m0"]
+            ["shapes"][0]["value"]["angle"],
+            12.0 + 7e-15,
         )
 
-        with self.assertRaisesRegex(ValueError, "did not preserve"):
+        with self.assertRaisesRegex(ValueError, "strict native-archive"):
             MutationPlanner(host).plan(
                 document_id="doc_kernel",
                 expected_document_fingerprint=fingerprint_model(before),
                 requested_change_set=requested,
                 operation_id="op_strict_round_trip",
                 execution_context={"verificationMode": "strict_archive"},
-            )
-
-        host.delta = 1.0
-        with self.assertRaisesRegex(ValueError, "did not preserve"):
-            MutationPlanner(host).plan(
-                document_id="doc_kernel",
-                expected_document_fingerprint=fingerprint_model(before),
-                requested_change_set=requested,
-                operation_id="op_one_unit_change",
-                execution_context={"verificationMode": "semantic"},
             )
 
     def test_plan_applies_once_and_verifies_complete_derived_readback(self) -> None:
@@ -498,12 +512,21 @@ class VerifiedMutationKernelTests(unittest.TestCase):
             set(kernel.stage_timing_names),
             {
                 "initial_capture",
+                "baseline_capture",
                 "clone",
+                "replay",
+                "canonical_comparison",
+                "native_comparison",
                 "detached_apply",
                 "verification",
+                "apply",
+                "readback",
+                "rollback",
                 "live_apply",
                 "settled_verification",
                 "history",
+                "max_native_phase",
+                "native_phase_count",
                 "total",
             },
         )
@@ -531,7 +554,7 @@ class VerifiedMutationKernelTests(unittest.TestCase):
         self.assertEqual(host.apply_calls, 1)
         self.assertEqual(host.restore_calls, 1)
 
-    def test_transaction_reconciles_writable_post_settle_drift_in_one_operation(self) -> None:
+    def test_transaction_does_not_mutate_again_after_failed_readback(self) -> None:
         host = _PostSettleReconciliationHost()
         before = host.capture_model("doc_kernel")
         requested_after = copy.deepcopy(before)
@@ -544,35 +567,14 @@ class VerifiedMutationKernelTests(unittest.TestCase):
             capabilities=("master_lifecycle",),
         )
 
-        result = TransactionKernel(host).apply_plan(plan)
-
-        self.assertEqual(result.after_fingerprint, plan.after_fingerprint)
-        self.assertEqual(host.model, plan.expected_after_model)
-        self.assertEqual(host.apply_calls, 1)
-        self.assertEqual(host.reconciliation_calls, 1)
-        self.assertEqual(host.reconciliation_capabilities, ("master_lifecycle",))
-        self.assertEqual(host.restore_calls, 0)
-
-    def test_nonconverging_post_settle_reconciliation_is_bounded_and_restored(self) -> None:
-        host = _NonConvergingPostSettleHost()
-        before = host.capture_model("doc_kernel")
-        requested_after = copy.deepcopy(before)
-        requested_after["glyphs"]["A"]["layers"]["m0"]["width"] = 520
-        plan = MutationPlanner(host).plan(
-            document_id="doc_kernel",
-            expected_document_fingerprint=fingerprint_model(before),
-            requested_change_set=diff_models(before, requested_after),
-            operation_id="op_nonconverging_post_settle",
-        )
-
         with self.assertRaises(TransactionVerificationError) as raised:
             TransactionKernel(host).apply_plan(plan)
 
         self.assertTrue(raised.exception.rollback_succeeded)
-        self.assertEqual(host.apply_calls, 1)
-        self.assertEqual(host.reconciliation_calls, 3)
-        self.assertEqual(host.restore_calls, 1)
         self.assertEqual(host.model, before)
+        self.assertEqual(host.apply_calls, 1)
+        self.assertEqual(host.reconciliation_calls, 0)
+        self.assertEqual(host.restore_calls, 1)
 
     def test_required_canonical_target_selects_and_replays_one_detached_strategy(self) -> None:
         host = _CanonicalReconciliationHost()

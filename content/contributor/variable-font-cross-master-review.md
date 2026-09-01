@@ -1,5 +1,10 @@
 # Variable-font cross-master and italic-axis review
 
+> Historical measurement: coordinate snapping and grid-normalization advice in
+> the recorded run is superseded. Current v2 execution preserves floating-point
+> geometry centrally, leaves global automatic alignment unchanged, and rejects
+> native grid rounding as requested-effect mismatch.
+
 ## Outcome
 
 On 2026-08-30, Glyphs MCP 2.0.0 was tested against the disposable
@@ -263,8 +268,8 @@ exposed these critical failures:
    creates one fingerprinted full native snapshot, and returns an opaque
    recovery receipt. It does not relax mutation or verification rules.
 3. **Registered semantic equivalence.** Semantic verification is the default
-   and accepts only reviewed defaults, identity-addressed ordering, derived
-   grid/alignment effects, and bounded IEEE-754 component decomposition.
+   and accepts only reviewed defaults, identity-addressed ordering, explicitly
+   requested component-alignment effects, and bounded IEEE-754 component decomposition.
    Unknown private fields and one-unit geometry differences block. Optional
    `strict_archive` retains the diagnostic byte-sensitive replay path.
 4. **Complete master lifecycle.** Generic duplicate now copies every owned
@@ -285,7 +290,7 @@ preview composes:
 1. consecutive generic `duplicate` operations for the nine target masters;
 2. generic `move`/`set` operations for final order and locations;
 3. one generic `transform` over target layers using the baseline pivot,
-   selected grid policy, `componentComposition=conjugate`, and
+   exact floating-point geometry, `componentComposition=conjugate`, and
    `alignmentPolicy=explicit_noncommuting`;
 4. after-constraints and one validation read for coverage, widths/origins,
    topology, compatibility, kerning, axis locations, component references,

@@ -41,6 +41,7 @@ class V2BundleAssemblyTests(unittest.TestCase):
             {
                 "curve_overlay_model.py",
                 "debug_event_logging.py",
+                "export_designspace_ufo.py",
                 "glyphs_curve_reporter.py",
                 "glyphs_litsquare_adapter.py",
                 "glyphs_litsquare_palette.py",

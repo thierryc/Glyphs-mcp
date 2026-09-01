@@ -93,6 +93,46 @@ class OperationStore:
             self._purge_locked()
             return record
 
+    def upsert(
+        self,
+        *,
+        operation_id: str,
+        kind: str,
+        payload: Mapping[str, Any],
+        ttl_seconds: float,
+        preserve_existing: bool = False,
+    ) -> OperationRecord:
+        """Store a record while optionally enriching an existing artifact."""
+
+        identity = str(operation_id or "")
+        if not identity or not kind:
+            raise ValueError("operation_id and kind are required")
+        ttl = float(ttl_seconds)
+        if ttl <= 0:
+            raise ValueError("ttl_seconds must be positive")
+        with self._lock:
+            self._purge_locked()
+            existing = self._records.get(identity)
+            created = existing.created_at if existing is not None else self._clock()
+            resolved_kind = kind
+            resolved_payload = copy.deepcopy(dict(payload))
+            if existing is not None and preserve_existing:
+                resolved_kind = existing.kind
+                resolved_payload = copy.deepcopy(dict(existing.payload))
+                resolved_payload["invocationReceipt"] = copy.deepcopy(
+                    dict(payload)
+                )
+            record = OperationRecord(
+                operation_id=identity,
+                kind=resolved_kind,
+                payload=resolved_payload,
+                created_at=created,
+                expires_at=self._clock() + ttl,
+            )
+            self._records[identity] = record
+            self._purge_locked()
+            return self._copy(record)
+
     def get(self, operation_id: str) -> Optional[OperationRecord]:
         with self._lock:
             self._purge_locked()

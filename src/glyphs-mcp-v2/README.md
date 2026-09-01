@@ -92,8 +92,9 @@ diagnostics.
 preconditions, postconditions, and read-back verification. Constraints compare
 literals, exact references, or current fields. They never choose an operation.
 
-`ChangeOperation` contains only `set`, `translate`, `insert`, `remove`, `move`,
-and `duplicate`. Coordinate quantization is explicit (`exact` or `grid`).
+`ChangeOperation` contains only `set`, `translate`, `transform`, `insert`,
+`remove`, `move`, `duplicate`, and `materialize`. Geometry is floating-point and the optional `quantizer` is
+exact-only; `grid` is rejected rather than silently snapping a request.
 Translation uses one registry for layer, shape, node, and anchor targets;
 locks and alignment modes remain unchanged while detached native execution and
 exact read-back determine feasibility.
@@ -101,6 +102,38 @@ Ownership-sensitive master and layer membership uses a private structural
 registry because Glyphs owns master layers with their master and reserves the
 master-layer prefix. This registry enforces structure; it does not contain a
 workflow solver.
+
+## Floating-point geometry execution
+
+Every v2/Glyphs 4 tool or script that can mutate geometry runs inside one
+adapter-owned, nest-safe precision scope. Existing foreground and background
+layers are feature-detected for Glyphs 4's internal
+`GSLayer.temporarilyDisableRounding` flag, their prior values are retained,
+and rounding is disabled until stable canonical read-back completes. The scope
+rescans after master or layer creation so new layers receive the same policy.
+
+Structural operations, staged or live Python, and hosts without the native
+layer flag additionally run with `GSFont.grid = 0`. The entry grid and
+`gridSubDivision` are restored before canonical read-back; an intentional grid
+change in a reviewed declarative patch becomes the restoration target. Python
+always restores its entry settings and reports an attempted grid, subdivision,
+or `disablesAutomaticAlignment` change as a protected-setting violation. Live
+Python protects every font open when execution begins.
+
+Restoration is ordered and unconditional: native update batching is released
+while the zero-grid fallback is still active, newly created layers are
+rescanned, grid/subdivision and global automatic-alignment state are restored,
+canonical state is read, and only then are layer rounding flags restored. The
+same cleanup runs for exceptions, cancellation, rollback, settlement failure,
+and nested execution. If neither the layer flag nor a writable grid fallback
+is available, v2 fails before mutation.
+
+The runtime never changes `font.disablesAutomaticAlignment` as mutation policy.
+Component `alignmentPolicy` defaults to `preserve`; its component-level
+overrides remain explicit opt-ins. Ordinary IEEE-754 representation still
+applies, and export formats may impose their own coordinate limits, especially
+integer TrueType outlines, but editable document geometry is not intentionally
+rounded or snapped by v2.
 
 ## Immutable preview and verified apply
 

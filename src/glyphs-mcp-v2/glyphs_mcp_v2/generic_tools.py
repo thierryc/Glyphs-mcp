@@ -9,11 +9,19 @@ the application and transaction kernel prove *what* will be written.
 from __future__ import annotations
 
 import copy
-import math
 from dataclasses import dataclass, field
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-from typing import Any, Iterable, Mapping, MutableMapping, Optional, Sequence
+from decimal import Decimal, InvalidOperation
+from typing import Any, Callable, Iterable, Mapping, MutableMapping, Optional, Sequence
 
+from .affine import (
+    clean_float as _clean_float,
+    component_matrix as _affine_transform,
+    decompose_component_matrix as _decompose_component_matrix,
+    matrices_close as _matrices_close,
+    matrix_about_origin as _matrix_about_origin,
+    matrix_inverse as _matrix_inverse,
+    matrix_multiply as _matrix_multiply,
+)
 from .canonical_collections import ORDER_TOKEN, entity_id, find_entity_index
 from .canonical_views import layer_anchors, layer_components, layer_paths
 from .mechanics_registry import (
@@ -650,38 +658,6 @@ def _spacing_projection(
     }
 
 
-def _affine_transform(value: Mapping[str, Any]) -> Optional[list[float]]:
-    """Derive one affine matrix from the authoritative saved decomposition."""
-
-    position = value.get("position")
-    scale = value.get("scale", (1, 1))
-    slant = value.get("slant", (0, 0))
-    if not all(
-        isinstance(item, (list, tuple)) and len(item) == 2
-        for item in (position, scale, slant)
-    ):
-        return None
-    try:
-        px, py = (float(position[0]), float(position[1]))
-        sx, sy = (float(scale[0]), float(scale[1]))
-        slant_x, slant_y = (float(slant[0]), float(slant[1]))
-        angle = math.radians(float(value.get("angle") or 0))
-    except (TypeError, ValueError):
-        return None
-    horizontal_slant = math.tan(math.radians(slant_x))
-    vertical_slant = math.tan(math.radians(slant_y))
-    cosine = math.cos(angle)
-    sine = math.sin(angle)
-    return [
-        sx * (cosine - sine * vertical_slant),
-        sx * (sine + cosine * vertical_slant),
-        sy * (horizontal_slant * cosine - sine),
-        sy * (horizontal_slant * sine + cosine),
-        px,
-        py,
-    ]
-
-
 def project_reference(
     reference: EntityReference,
     projection: Mapping[str, Any],
@@ -868,11 +844,9 @@ def project_reference(
                 )
                 if not isinstance(font, Mapping):
                     font = {}
-                step = _grid_step({"font": font})
                 values[field] = {
                     "grid": font.get("grid"),
                     "subdivision": font.get("gridSubDivision"),
-                    "step": _public_number(step) if step is not None else None,
                 }
                 provenance[field] = "derived"
             continue
@@ -1205,29 +1179,11 @@ def _remove_path(model: MutableMapping[str, Any], path: Sequence[str]) -> None:
     raise ValueError("canonical remove target is not writable")
 
 
-def _grid_step(model: Mapping[str, Any]) -> Optional[Decimal]:
-    font = model.get("font", {})
-    if not isinstance(font, Mapping):
-        return None
-    grid = _finite_number(font.get("grid", 0), name="font grid")
-    subdivision = _finite_number(font.get("gridSubDivision", 1), name="font grid subdivision")
-    if grid <= 0:
-        return None
-    if subdivision <= 0:
-        raise ValueError("font grid subdivision must be positive")
-    return grid / subdivision
-
-
 def _quantize(value: Any, model: Mapping[str, Any], quantizer: str) -> Any:
     number = _finite_number(value, name="operation value")
-    if quantizer == "exact":
-        return _public_number(number)
-    if quantizer != "grid":
-        raise ValueError("quantizer must be exact or grid")
-    step = _grid_step(model)
-    if step is None:
-        return _public_number(number)
-    return _public_number((number / step).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * step)
+    if quantizer != "exact":
+        raise ValueError("quantizer must be exact; grid snapping is unsupported")
+    return _public_number(number)
 
 
 def _translate_node(
@@ -1334,112 +1290,10 @@ def _translate_reference(
     return touched
 
 
-_AFFINE_EPSILON = 1e-12
-
-
 def _matrix_values(value: Any, *, name: str = "transform matrix") -> tuple[float, ...]:
     if not isinstance(value, (list, tuple)) or len(value) != 6:
         raise ValueError("{} must contain six finite numbers".format(name))
     return tuple(float(_finite_number(item, name=name)) for item in value)
-
-
-def _matrix_multiply(
-    left: Sequence[float], right: Sequence[float]
-) -> tuple[float, float, float, float, float, float]:
-    la, lb, lc, ld, ltx, lty = left
-    ra, rb, rc, rd, rtx, rty = right
-    return (
-        la * ra + lc * rb,
-        lb * ra + ld * rb,
-        la * rc + lc * rd,
-        lb * rc + ld * rd,
-        la * rtx + lc * rty + ltx,
-        lb * rtx + ld * rty + lty,
-    )
-
-
-def _matrix_inverse(
-    value: Sequence[float],
-) -> tuple[float, float, float, float, float, float]:
-    a, b, c, d, tx, ty = value
-    determinant = a * d - b * c
-    if abs(determinant) <= _AFFINE_EPSILON:
-        raise ValueError("conjugate transforms require an invertible matrix")
-    return (
-        d / determinant,
-        -b / determinant,
-        -c / determinant,
-        a / determinant,
-        (c * ty - d * tx) / determinant,
-        (b * tx - a * ty) / determinant,
-    )
-
-
-def _matrix_about_origin(
-    value: Sequence[float], origin: Any
-) -> tuple[float, float, float, float, float, float]:
-    if isinstance(origin, Mapping):
-        raw_x, raw_y = origin.get("x", 0), origin.get("y", 0)
-    elif isinstance(origin, (list, tuple)) and len(origin) == 2:
-        raw_x, raw_y = origin
-    else:
-        raise ValueError("transform.origin must contain two finite numbers")
-    ox = float(_finite_number(raw_x, name="transform origin x"))
-    oy = float(_finite_number(raw_y, name="transform origin y"))
-    return _matrix_multiply(
-        (1.0, 0.0, 0.0, 1.0, ox, oy),
-        _matrix_multiply(
-            value,
-            (1.0, 0.0, 0.0, 1.0, -ox, -oy),
-        ),
-    )
-
-
-def _matrices_close(left: Sequence[float], right: Sequence[float]) -> bool:
-    return all(
-        math.isclose(a, b, rel_tol=1e-12, abs_tol=_AFFINE_EPSILON)
-        for a, b in zip(left, right)
-    )
-
-
-def _clean_float(value: float) -> int | float:
-    if abs(value) <= _AFFINE_EPSILON:
-        return 0
-    nearest = round(value)
-    if math.isclose(value, nearest, rel_tol=0.0, abs_tol=_AFFINE_EPSILON):
-        return int(nearest)
-    return float(value)
-
-
-def _decompose_component_matrix(
-    value: Sequence[float],
-) -> dict[str, Any]:
-    """Return Glyphs' saved component decomposition for one affine matrix.
-
-    The representation is intentionally deterministic: vertical slant is zero,
-    reflections are carried by the y scale, and horizontal slant owns the
-    remaining shear.  This spans every nonsingular two-dimensional matrix and
-    reconstructs the exact matrix within normal IEEE-754 round-trip precision.
-    """
-
-    a, b, c, d, tx, ty = value
-    scale_x = math.hypot(a, b)
-    determinant = a * d - b * c
-    if scale_x <= _AFFINE_EPSILON or abs(determinant) <= _AFFINE_EPSILON:
-        raise ValueError("component transforms must remain invertible")
-    cosine = a / scale_x
-    sine = b / scale_x
-    scale_y = determinant / scale_x
-    horizontal_slant = (c * cosine + d * sine) / scale_y
-    return {
-        "position": [_clean_float(tx), _clean_float(ty)],
-        "scale": [_clean_float(scale_x), _clean_float(scale_y)],
-        "angle": _clean_float(math.degrees(math.atan2(sine, cosine))),
-        "slant": [
-            _clean_float(math.degrees(math.atan(horizontal_slant))),
-            0,
-        ],
-    }
 
 
 def _transform_xy(
@@ -1463,9 +1317,17 @@ def _transform_node(
     model: Mapping[str, Any],
     quantizer: str,
 ) -> list[tuple[str, ...]]:
+    before_x, before_y = node.get("x"), node.get("y")
     x, y = _transform_xy(node.get("x"), node.get("y"), matrix, model, quantizer)
     node["x"], node["y"] = x, y
-    return [("x",), ("y",)]
+    return [
+        path
+        for path, before, after in (
+            (("x",), before_x, x),
+            (("y",), before_y, y),
+        )
+        if before != after
+    ]
 
 
 def _transform_position(
@@ -1479,7 +1341,7 @@ def _transform_position(
         raise ValueError("transform target position is incomplete")
     x, y = _transform_xy(position[0], position[1], matrix, model, quantizer)
     value["position"] = [x, y]
-    return [("position",)]
+    return [("position",)] if tuple(position) != (x, y) else []
 
 
 def _transform_component(
@@ -1513,8 +1375,10 @@ def _transform_component(
         position[0] = _quantize(position[0], model, quantizer)
         position[1] = _quantize(position[1], model, quantizer)
         for field_name in ("position", "scale", "angle", "slant"):
-            value[field_name] = decomposed[field_name]
-            touched.append((field_name,))
+            field_value = decomposed[field_name]
+            if value.get(field_name) != field_value:
+                value[field_name] = field_value
+                touched.append((field_name,))
 
     alignment = int(value.get("alignment", -1))
     make_explicit = alignment_policy == "explicit_all"
@@ -1646,8 +1510,6 @@ def _transform_reference(
         touched = _transform_position(reference.value, matrix, model, quantizer)
     else:
         raise ValueError("{} entities have no affine geometry".format(reference.kind))
-    if not touched:
-        raise ValueError("transform target contains no selected geometry")
     return touched
 
 
@@ -1772,6 +1634,7 @@ def _structural_lifecycle_build(
     candidate: Mapping[str, Any],
     operation: Mapping[str, Any],
     references: Sequence[EntityReference],
+    cancellation_checkpoint: Optional[Callable[[], None]] = None,
 ) -> Optional[Any]:
     """Route ownership-sensitive operations through the structural registry."""
 
@@ -1805,7 +1668,11 @@ def _structural_lifecycle_build(
                     update[name] = copy.deepcopy(overrides[name])
         if kind in {"duplicate", "move"} and operation.get("index") is not None:
             update["index"] = int(operation["index"])
-        return build_master_updates(candidate, [update])
+        return build_master_updates(
+            candidate,
+            [update],
+            cancellation_checkpoint=cancellation_checkpoint,
+        )
     if reference.kind == "layer":
         from .structural_registry import build_layer_updates
 
@@ -1845,6 +1712,7 @@ def _batched_master_duplicates(
     candidate: Mapping[str, Any],
     operations: Sequence[Mapping[str, Any]],
     start: int,
+    cancellation_checkpoint: Optional[Callable[[], None]] = None,
 ) -> tuple[Any, tuple[dict[str, Any], ...], int] | None:
     """Build one consecutive master-duplication run through one registry pass."""
 
@@ -1888,7 +1756,11 @@ def _batched_master_duplicates(
 
     from .structural_registry import build_master_updates
 
-    build = build_master_updates(candidate, updates)
+    build = build_master_updates(
+        candidate,
+        updates,
+        cancellation_checkpoint=cancellation_checkpoint,
+    )
     normalized: list[dict[str, Any]] = []
     for offset, ((operation, source), update) in enumerate(zip(sources, updates)):
         new_id = str(update["masterId"])
@@ -1903,6 +1775,9 @@ def _batched_master_duplicates(
                 "op": "duplicate",
                 "target": copy.deepcopy(dict(operation["target"])),
                 "resolvedPaths": paths,
+                "resolvedTargetCount": 1,
+                "changedTargetCount": 1,
+                "skippedTargetCount": 0,
                 "newId": new_id,
                 "overrides": copy.deepcopy(dict(operation.get("overrides") or {})),
                 **(
@@ -1916,8 +1791,92 @@ def _batched_master_duplicates(
     return build, tuple(normalized), cursor
 
 
+def _batched_materializations(
+    candidate: Mapping[str, Any],
+    operations: Sequence[Mapping[str, Any]],
+    start: int,
+    cancellation_checkpoint: Optional[Callable[[], None]] = None,
+) -> tuple[Any, tuple[dict[str, Any], ...], int] | None:
+    """Build one adapter-prepared instance-to-master materialization run."""
+
+    first = _mapping(operations[start], name="operation")
+    if str(first.get("op") or "") != "materialize":
+        return None
+    prepared: list[Mapping[str, Any]] = []
+    sources: list[tuple[Mapping[str, Any], EntityReference]] = []
+    cursor = start
+    while cursor < len(operations):
+        operation = _mapping(operations[cursor], name="operation")
+        if str(operation.get("op") or "") != "materialize":
+            break
+        if str(operation.get("destinationEntity") or "") != "master":
+            raise ValueError("materialize currently supports destinationEntity=master")
+        references = resolve_selector(
+            candidate,
+            _mapping(operation.get("target"), name="operation.target"),
+        )
+        if len(references) != 1 or references[0].kind != "instance":
+            raise ValueError("materialize requires exactly one source instance")
+        new_id = str(operation.get("newId") or "")
+        if not new_id:
+            raise ValueError("materialize requires newId")
+        payload = operation.get("_materialized")
+        if not isinstance(payload, Mapping):
+            raise ValueError(
+                "materialize requires detached-native preparation by the host adapter"
+            )
+        if str(payload.get("sourceInstanceId") or "") != references[0].identity:
+            raise ValueError("materialized payload does not match its source instance")
+        if str(dict(payload.get("master") or {}).get("id") or "") != new_id:
+            raise ValueError("materialized payload does not match newId")
+        prepared.append(payload)
+        sources.append((operation, references[0]))
+        cursor += 1
+
+    from .structural_registry import build_materializations
+
+    build = build_materializations(
+        candidate,
+        prepared,
+        cancellation_checkpoint=cancellation_checkpoint,
+    )
+    normalized: list[dict[str, Any]] = []
+    for offset, (operation, source) in enumerate(sources):
+        new_id = str(operation["newId"])
+        paths = [
+            list(change.path)
+            for change in build.change_set.changes
+            if new_id in change.path or change.path == ("masters", ORDER_TOKEN)
+        ]
+        normalized.append(
+            {
+                "index": start + offset,
+                "op": "materialize",
+                "target": copy.deepcopy(dict(operation["target"])),
+                "resolvedPaths": paths,
+                "resolvedTargetCount": 1,
+                "changedTargetCount": 1,
+                "skippedTargetCount": 0,
+                "destinationEntity": "master",
+                "newId": new_id,
+                "overrides": copy.deepcopy(dict(operation.get("overrides") or {})),
+                **(
+                    {"index": int(operation["index"])}
+                    if operation.get("index") is not None
+                    else {}
+                ),
+                "batchSize": len(prepared),
+                "source": source.public_identity(),
+            }
+        )
+    return build, tuple(normalized), cursor
+
+
 def build_change_set(
-    model: Mapping[str, Any], operations: Sequence[Mapping[str, Any]]
+    model: Mapping[str, Any],
+    operations: Sequence[Mapping[str, Any]],
+    *,
+    cancellation_checkpoint: Optional[Callable[[], None]] = None,
 ) -> GenericMutationBuild:
     """Apply mechanical operations to a detached copy and return exact intent."""
 
@@ -1929,6 +1888,8 @@ def build_change_set(
     execution_context: dict[str, Any] = {}
     index = 0
     while index < len(operations):
+        if cancellation_checkpoint is not None:
+            cancellation_checkpoint()
         raw = operations[index]
         operation = _mapping(raw, name="operation")
         kind = str(operation.get("op") or "")
@@ -1952,7 +1913,29 @@ def build_change_set(
                 "master and layer removals require one exact target per operation"
             )
 
-        batch = _batched_master_duplicates(candidate, operations, index)
+        materialized = _batched_materializations(
+            candidate,
+            operations,
+            index,
+            cancellation_checkpoint,
+        )
+        if materialized is not None:
+            structural_batch, batch_normalized, next_index = materialized
+            candidate = structural_batch.change_set.apply(candidate)
+            capabilities.update(structural_batch.capabilities)
+            _merge_execution_context(
+                execution_context, structural_batch.execution_context
+            )
+            normalized.extend(batch_normalized)
+            index = next_index
+            continue
+
+        batch = _batched_master_duplicates(
+            candidate,
+            operations,
+            index,
+            cancellation_checkpoint,
+        )
         if batch is not None:
             structural_batch, batch_normalized, next_index = batch
             candidate = structural_batch.change_set.apply(candidate)
@@ -1965,8 +1948,16 @@ def build_change_set(
             continue
         resolved_paths: list[list[str]] = []
         normalized_values: dict[str, Any] = {}
+        resolved_target_count = len(references)
+        changed_target_count = resolved_target_count
+        skipped_target_count = 0
 
-        structural = _structural_lifecycle_build(candidate, operation, references)
+        structural = _structural_lifecycle_build(
+            candidate,
+            operation,
+            references,
+            cancellation_checkpoint,
+        )
         if structural is None:
             candidate = _copy_on_write_candidate(candidate, references)
             references = resolve_selector(candidate, selector)
@@ -1989,14 +1980,18 @@ def build_change_set(
             if not field_name or field_name == "*":
                 raise ValueError("set operations require one canonical field")
             quantizer = str(operation.get("quantizer") or "exact")
+            if quantizer != "exact":
+                raise ValueError(
+                    "quantizer must be exact; grid snapping is unsupported"
+                )
             raw_value = operation.get("value")
-            if quantizer == "grid" and not _numeric_value(raw_value):
-                raise ValueError("grid quantization requires a numeric set value")
             value = (
                 _quantize(raw_value, candidate, quantizer)
                 if _numeric_value(raw_value)
                 else copy.deepcopy(raw_value)
             )
+            changed_target_count = 0
+            skipped_target_count = 0
             for reference in references:
                 path = (
                     reference.path
@@ -2004,8 +1999,17 @@ def build_change_set(
                     and not isinstance(reference.value, Mapping)
                     else reference.path + tuple(field_name.split("."))
                 )
+                if path == ("settings", "disablesAutomaticAlignment"):
+                    raise ValueError(
+                        "the global automatic-alignment setting is protected"
+                    )
+                present, before_value = semantic_value_at(candidate, path)
                 _set_path(candidate, path, value)
-                resolved_paths.append(list(path))
+                if present and before_value == value:
+                    skipped_target_count += 1
+                else:
+                    changed_target_count += 1
+                    resolved_paths.append(list(path))
             normalized_values.update(
                 {"field": field_name, "value": copy.deepcopy(value), "quantizer": quantizer}
             )
@@ -2017,16 +2021,18 @@ def build_change_set(
             x_number = _finite_number(x, name="translation x")
             y_number = _finite_number(y, name="translation y")
             if not x_number and not y_number:
-                raise ValueError("translation delta must change at least one axis")
-            for reference in references:
-                if not isinstance(reference.value, MutableMapping):
-                    raise ValueError("translation target disappeared")
-                resolved_paths.extend(
-                    list(reference.path + path)
-                    for path in _translate_reference(
-                        reference, x_number, y_number
+                changed_target_count = 0
+                skipped_target_count = resolved_target_count
+            else:
+                for reference in references:
+                    if not isinstance(reference.value, MutableMapping):
+                        raise ValueError("translation target disappeared")
+                    resolved_paths.extend(
+                        list(reference.path + path)
+                        for path in _translate_reference(
+                            reference, x_number, y_number
+                        )
                     )
-                )
             normalized_values.update(
                 {"delta": {"x": x, "y": y}, "quantizer": quantizer}
             )
@@ -2047,18 +2053,30 @@ def build_change_set(
             alignment_policy = str(operation.get("alignmentPolicy") or "preserve")
             if composition == "conjugate":
                 _matrix_inverse(matrix)
+            changed_target_count = 0
+            skipped_target_count = 0
             for reference in references:
+                if cancellation_checkpoint is not None:
+                    cancellation_checkpoint()
+                touched = _transform_reference(
+                    reference,
+                    matrix,
+                    candidate,
+                    quantizer,
+                    include,
+                    composition,
+                    alignment_policy,
+                )
+                if not touched:
+                    skipped_target_count += 1
+                    continue
+                changed_target_count += 1
                 resolved_paths.extend(
-                    list(reference.path + path)
-                    for path in _transform_reference(
-                        reference,
-                        matrix,
-                        candidate,
-                        quantizer,
-                        include,
-                        composition,
-                        alignment_policy,
-                    )
+                    list(reference.path + path) for path in touched
+                )
+            if not changed_target_count:
+                raise ValueError(
+                    "transform target set produces no geometry change"
                 )
             normalized_values.update(
                 {
@@ -2188,6 +2206,9 @@ def build_change_set(
                 "op": kind,
                 "target": copy.deepcopy(dict(selector)),
                 "resolvedPaths": resolved_paths,
+                "resolvedTargetCount": resolved_target_count,
+                "changedTargetCount": changed_target_count,
+                "skippedTargetCount": skipped_target_count,
                 **normalized_values,
             }
         )

@@ -103,6 +103,38 @@ class V2SkillContractTests(unittest.TestCase):
                     violations.append((skill, tool))
         self.assertEqual(violations, [])
 
+    def test_geometry_skills_require_exact_fractional_geometry(self) -> None:
+        precision_skills = {
+            "glyphs",
+            "glyphs-mcp-development",
+            "glyphs-mcp-scripting",
+            "glyphs-mcp-spacing",
+            "glyphs-mcp-italic-first-pass",
+            "glyphs-mcp-outlines-docs",
+            "glyphs-mcp-master-compatibility",
+        }
+        for skill in precision_skills:
+            text = self._text(skill).lower()
+            normalized = " ".join(text.replace("automatic-", "automatic ").split())
+            with self.subTest(skill=skill):
+                self.assertIn("fraction", normalized)
+                self.assertIn("grid", normalized)
+                self.assertIn("automatic alignment", normalized)
+
+        violations: list[tuple[str, str]] = []
+        quantizer_grid = re.compile(
+            r"`?quantizer`?\s*=\s*(?:[\"'])?grid\b", re.IGNORECASE
+        )
+        positive_snapping = re.compile(
+            r"\b(?:choose|use|apply|prefer|require)\b[^.\n]{0,80}"
+            r"\b(?:grid[- ](?:snap|quant)|snap[^.\n]{0,30}\bgrid)"
+        )
+        for skill in self.skills:
+            text = self._tree_text(skill)
+            if quantizer_grid.search(text) or positive_snapping.search(text):
+                violations.append((skill, "conflicting snapping directive"))
+        self.assertEqual(violations, [])
+
     def test_toolish_skill_references_exist_in_the_catalog(self) -> None:
         toolish = re.compile(
             r"^(?:apply|evaluate|execute|get|list|open|preview|repair|revert|save|search)_"
