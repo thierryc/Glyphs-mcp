@@ -229,6 +229,8 @@ class ServerStartupTests(unittest.TestCase):
         self.assertEqual(failures, [])
         self.assertEqual(polls, [True])
         self.assertTrue(plugin._server_thread.started)
+        self.assertFalse(plugin._server.config.kwargs["access_log"])
+        self.assertEqual(plugin._server.config.kwargs["log_level"], "warning")
 
     def test_stop_start_repairs_without_rebuilding_application_state(self):
         events = []

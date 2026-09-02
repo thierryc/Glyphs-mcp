@@ -1045,6 +1045,8 @@ class MCPBridgePlugin(GeneralPlugin):
                 port=port,
                 timeout_graceful_shutdown=0,
                 lifespan="on",
+                access_log=False,
+                log_level="warning",
             )
             self._server = uvicorn.Server(config)
             self._server_thread = threading.Thread(
