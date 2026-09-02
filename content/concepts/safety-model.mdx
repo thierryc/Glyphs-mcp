@@ -25,15 +25,24 @@ component-decomposition round trips may be treated as equivalent. Native grid
 rounding is never an acceptable settlement. Use `strict_archive` when diagnosing native archive
 spelling; it is slower and intentionally more protective.
 
-V2 preserves editable geometry as floating point. During any applicable tool
-or Python execution, the adapter temporarily enables Glyphs 4's per-layer
-rounding-suppression flag. Structural operations, Python, and hosts without
-that flag also use a temporary zero grid. The original grid, subdivision,
-global automatic-alignment setting, and layer flags are restored on success,
-failure, cancellation, rollback, and settlement errors. New layers are
-rescanned before read-back, and execution fails before mutation if neither
-rounding control is available. Agents and scripts must not change the grid or
-global automatic-alignment setting to manage precision themselves.
+V2 preserves editable geometry as floating point. During every transformation,
+resize, or path edit, the adapter temporarily enables Glyphs 4's per-layer
+rounding-suppression flag and owns a zero effective grid. This includes direct
+component edits and source path, anchor, width, or metrics changes that affect
+components transitively. Native update batching is released while grid remains
+zero; the full dependency closure must then agree across two host-turn
+observations within the 100 ms quiet window and 750 ms settlement budget.
+
+Only after settlement does the adapter read-verify restoration of the exact
+entry grid, subdivision, and global automatic-alignment setting. The same
+cleanup applies on success, failure, cancellation, abort, rollback, and
+settlement errors, with new layers rescanned before read-back. A reviewed grid
+or subdivision edit is isolated after restoration as an ordinary document
+mutation. The tool-owned temporary zero never enters preview changes, canonical
+targets, history, dirty accounting, rollback diffs, or persistence evidence.
+Agents and scripts must never edit grid settings to implement this policy;
+execution fails before mutation when the runtime cannot prove its precision
+scope and exact restoration.
 
 `transactionMode=snapshot_backed_recovery` is not an “unsafe transaction.” It
 does not permit broader writes or bypass verification. It binds the preview to

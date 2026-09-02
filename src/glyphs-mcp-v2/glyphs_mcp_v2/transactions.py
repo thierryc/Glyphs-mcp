@@ -508,6 +508,9 @@ class TransactionKernel:
         end_verified_transaction = getattr(
             self._adapter, "end_verified_transaction", None
         )
+        settle_verified_transaction = getattr(
+            self._adapter, "settle_verified_transaction", None
+        )
         transaction_boundary_active = False
         failure_phase = "transaction_boundary"
         self._set_document_state(
@@ -562,9 +565,6 @@ class TransactionKernel:
             ) / 1_000_000
             timings["live_apply"] += live_apply_ms
             timings["apply"] += live_apply_ms
-            settle_verified_transaction = getattr(
-                self._adapter, "settle_verified_transaction", None
-            )
             if callable(settle_verified_transaction):
                 failure_phase = "transaction_settlement"
                 settle_verified_transaction(document_id)
@@ -737,6 +737,8 @@ class TransactionKernel:
                     )
                 else:
                     self._adapter.restore_model(document_id, before)
+                if callable(settle_verified_transaction):
+                    settle_verified_transaction(document_id)
                 restored = self._retain_or_copy(
                     self._capture_verified_state(document_id, before)
                 )

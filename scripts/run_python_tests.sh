@@ -64,6 +64,7 @@ if not ((3, 11) <= sys.version_info[:2] <= (3, 14)):
     raise SystemExit(2)
 
 required = {
+    "dulwich": "dulwich",
     "fastmcp": "fastmcp",
     "fontmake": "fontmake",
     "glyphsLib": "glyphsLib",

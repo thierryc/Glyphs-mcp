@@ -271,13 +271,13 @@ Glyphs MCP exposes **87 active tools** through one catalog-driven surface:
 title and description, four MCP safety hints, a category, visibility, effect
 class, lifecycle state, and optional structured-output schema.
 
-The generated [Glyphs MCP v1.11 command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set-v1-11)
-is the authoritative list for this catalog. The
-[Glyphs MCP v2 command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set-v2)
-documents the separate Glyphs 4 surface. The unversioned
-[command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set)
-remains the v1.11 compatibility route. README intentionally does not duplicate
-either full table. This catalog is shipped in this repo (version `1.11.0`). Typical
+The generated [v1.11 command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set-v1-11)
+is the authoritative list for Glyphs 3; the unversioned
+[compatibility route](https://thierryc.github.io/Glyphs-mcp/reference/command-set)
+remains the v1.11 compatibility route. Glyphs 4 uses the generated
+[v2 command reference](https://thierryc.github.io/Glyphs-mcp/reference/command-set-v2).
+README intentionally does not duplicate the full table. The Glyphs 3 catalog
+is shipped in this repo (version `1.11.0`). Typical
 workflows begin with `list_open_fonts`, resolve explicit glyph
 and master targets, review or preview a detached candidate, dry-run changes,
 and ask for approval before confirmation. No edit tool saves implicitly.
@@ -353,7 +353,7 @@ Glyphs MCP exposes one catalog-driven surface per installed Glyphs major:
 
 - Glyphs 3 keeps the frozen v1.11 catalog: 87 active tools, with 76
   model-visible tools and 11 app-only wrappers.
-- Glyphs 4 uses the v2 catalog: exactly 18 tools, all exposed to both the model
+- Glyphs 4 uses the v2 catalog: exactly 20 tools, all exposed to both the model
   and the app.
 
 Read `get_server_info.data.apiMajor` before selecting the corresponding

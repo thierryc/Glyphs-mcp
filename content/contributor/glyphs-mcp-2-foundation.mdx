@@ -30,7 +30,7 @@ read-back remain hard failures.
 
 ## Frozen public surface
 
-The catalog contains exactly 18 tools:
+The catalog contains exactly 20 tools:
 
 - `get_server_info`, `list_documents`, `read_document`
 - `evaluate_constraints`
@@ -39,7 +39,8 @@ The catalog contains exactly 18 tools:
 - `search_knowledge`, `get_knowledge`
 - `execute_python`
 - `preview_export`, `apply_export`, `save_document`
-- `open_document_view`, `get_runtime_status`, `repair_runtime`
+- `open_document_view`, `read_document_view`, `configure_document_view`,
+  `get_runtime_status`, `repair_runtime`
 
 MCP discovery generated from the typed transport is the request-schema source
 of truth. Catalog definitions are the registration and output-contract source.
@@ -146,6 +147,31 @@ Detached Python is not a security sandbox. The clone and verified application
 are the safety boundary. Unavailable symbols/imports and script assertions use
 structured errors; every failed detached run reports whether a preview was
 created and whether the live fingerprint or dirty state changed.
+
+## Optional visual-work coordination
+
+The process-local `VisualWorkGate` separates MCP execution from optional
+Reporter work without importing Glyphs or AppKit. Every application invocation
+holds an `mcp_operation` lease across handler success, typed failure,
+cancellation, and exceptions. Bundled cooperative scripts may use
+`default_visual_work_gate().hold("python_script")`; arbitrary Script-menu and
+Macro-window Python remain outside the public SDK's observable surface.
+
+“Changes Against Reference” stays checked while the gate is active, but its
+foreground callback exits before controller or layer traversal. Suspension
+invalidates capture epochs and background diff generations, clears published
+plans, and redraws only affected Edit views. The current active view is rebuilt
+after a distinct 250 ms inactivity window, provided the user has not disabled
+the Reporter. Native capture uses one 1 ms slice per 16 ms cadence, with a 2 ms
+diagnostic threshold; background geometry checks cancellation between paths
+and nodes and cannot publish or cache partial results.
+
+`read_document_view.data.reporter.performance` exposes cumulative policy,
+counters, and completed timings for the loaded Reporter. It omits live paused
+state because that read is itself an MCP invocation and temporarily holds the
+gate. Glyphs 3.5 and 4 use the same public Reporter and main-queue APIs; this
+coordination does not depend on native Reporter deactivation or private Script
+and Macro hooks.
 
 ## Knowledge and skills
 

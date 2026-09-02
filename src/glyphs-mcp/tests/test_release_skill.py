@@ -101,7 +101,7 @@ class ReleaseSkillTests(unittest.TestCase):
             encoding="utf-8"
         )
         compact_build_notes = " ".join(build_notes.split())
-        checkpoint = (REPO / "build/milestone-12-session-checkpoint.md").read_text(
+        protocol = (REPO / "content/contributor/release-qa-protocol.mdx").read_text(
             encoding="utf-8"
         )
         changelog = (REPO / "CHANGELOG.md").read_text(encoding="utf-8")
@@ -118,9 +118,9 @@ class ReleaseSkillTests(unittest.TestCase):
             "sha256:e12de192ebc7bf025147b20f0e1d6f8a85ce8f8c72348712617641c787a681c0",
             build_notes,
         )
-        self.assertIn("Milestone 12 is complete locally", checkpoint)
-        self.assertIn("Signing: not performed", checkpoint)
-        self.assertIn("Publication: not performed", checkpoint)
+        self.assertIn("`signed:false`, `notarized:false`, and `publishable:false`", build_notes)
+        self.assertIn("Signing: not performed", protocol)
+        self.assertIn("Publication: not performed", protocol)
         self.assertNotIn("schema-v6 automated and disposable-host\nclosure must pass", changelog)
         self.assertIn("Schema-v6 automated and disposable-host closure passed", changelog)
 
@@ -157,6 +157,8 @@ class ReleaseSkillTests(unittest.TestCase):
         self.assertIn(dependency_check, runner)
         self.assertIn("--requirements requirements-dev.txt", runner)
         self.assertIn("fontmake uharfbuzz", runner)
+        self.assertIn("--requirements requirements.txt", runner)
+        self.assertIn("dulwich urllib3", runner)
         self.assertLess(runner.index(dependency_check), runner.index(complete_suite))
 
     def test_changelog_managed_skill_count_matches_manifest(self) -> None:

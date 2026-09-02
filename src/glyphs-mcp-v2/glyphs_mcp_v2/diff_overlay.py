@@ -7,11 +7,12 @@ import json
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Any, Mapping, Optional
+from typing import Any, Callable, Mapping, Optional
 
 from .canonical_collections import find_entity_index
 from .canonical_views import layer_anchors, layer_paths
 from .diff_geometry import (
+    DiffPreparationCancelled,
     DifferenceBand,
     DifferenceTopologyError,
     PathSegment,
@@ -20,56 +21,76 @@ from .diff_geometry import (
 )
 
 
-def _visual_path(path: Mapping[str, Any]) -> Mapping[str, Any]:
+def _checkpoint(cancelled: Callable[[], bool] | None) -> None:
+    if cancelled is not None and cancelled():
+        raise DiffPreparationCancelled("difference preparation was cancelled")
+
+
+def _visual_path(
+    path: Mapping[str, Any],
+    *,
+    cancelled: Callable[[], bool] | None = None,
+) -> Mapping[str, Any]:
+    nodes = []
+    for node in path.get("nodes") or ():
+        _checkpoint(cancelled)
+        if not isinstance(node, Mapping):
+            continue
+        nodes.append(
+            MappingProxyType(
+                {
+                    "x": float(node.get("x", 0.0)),
+                    "y": float(node.get("y", 0.0)),
+                    "type": str(node.get("type") or "line"),
+                }
+            )
+        )
     return MappingProxyType(
         {
             "closed": bool(path.get("closed")),
-            "nodes": tuple(
-                MappingProxyType(
-                    {
-                        "x": float(node.get("x", 0.0)),
-                        "y": float(node.get("y", 0.0)),
-                        "type": str(node.get("type") or "line"),
-                    }
-                )
-                for node in path.get("nodes") or ()
-                if isinstance(node, Mapping)
-            ),
+            "nodes": tuple(nodes),
         }
     )
 
 
-def _visual_json(paths, anchors, width):
+def _visual_json(paths, anchors, width, *, cancelled=None):
+    public_paths = []
+    for path in paths:
+        _checkpoint(cancelled)
+        nodes = []
+        for node in path.get("nodes") or ():
+            _checkpoint(cancelled)
+            nodes.append(
+                {
+                    "x": float(node.get("x", 0.0)),
+                    "y": float(node.get("y", 0.0)),
+                    "type": str(node.get("type") or "line"),
+                }
+            )
+        public_paths.append(
+            {"closed": bool(path.get("closed")), "nodes": tuple(nodes)}
+        )
     return {
-        "paths": tuple(
-            {
-                "closed": bool(path.get("closed")),
-                "nodes": tuple(
-                    {
-                        "x": float(node.get("x", 0.0)),
-                        "y": float(node.get("y", 0.0)),
-                        "type": str(node.get("type") or "line"),
-                    }
-                    for node in path.get("nodes") or ()
-                ),
-            }
-            for path in paths
-        ),
+        "paths": tuple(public_paths),
         "anchors": dict(anchors),
         "width": width,
     }
 
 
-def _anchor_positions(layer: Mapping[str, Any]) -> Mapping[str, tuple[float, float]]:
-    return MappingProxyType(
-        {
-            str(anchor.get("id") or "anchor:{}".format(index)): (
-                float((anchor.get("position") or (0.0, 0.0))[0]),
-                float((anchor.get("position") or (0.0, 0.0))[1]),
-            )
-            for index, anchor in enumerate(layer_anchors(layer))
-        }
-    )
+def _anchor_positions(
+    layer: Mapping[str, Any],
+    *,
+    cancelled: Callable[[], bool] | None = None,
+) -> Mapping[str, tuple[float, float]]:
+    positions = {}
+    for index, anchor in enumerate(layer_anchors(layer)):
+        _checkpoint(cancelled)
+        position = anchor.get("position") or (0.0, 0.0)
+        positions[str(anchor.get("id") or "anchor:{}".format(index))] = (
+            float(position[0]),
+            float(position[1]),
+        )
+    return MappingProxyType(positions)
 
 
 @dataclass(frozen=True)
@@ -82,17 +103,28 @@ class LayerVisualState:
     fingerprint: str = ""
 
     @classmethod
-    def from_layer(cls, layer: Mapping[str, Any]) -> "LayerVisualState":
-        paths = tuple(_visual_path(path) for path in layer_paths(layer))
-        anchors = _anchor_positions(layer)
+    def from_layer(
+        cls,
+        layer: Mapping[str, Any],
+        *,
+        cancelled: Callable[[], bool] | None = None,
+    ) -> "LayerVisualState":
+        paths = []
+        for path in layer_paths(layer):
+            _checkpoint(cancelled)
+            paths.append(_visual_path(path, cancelled=cancelled))
+        frozen_paths = tuple(paths)
+        anchors = _anchor_positions(layer, cancelled=cancelled)
         width = float(layer["width"]) if layer.get("width") is not None else None
+        _checkpoint(cancelled)
         encoded = json.dumps(
-            _visual_json(paths, anchors, width),
+            _visual_json(frozen_paths, anchors, width, cancelled=cancelled),
             sort_keys=True,
             separators=(",", ":"),
         ).encode("utf-8")
+        _checkpoint(cancelled)
         return cls(
-            paths=paths,
+            paths=frozen_paths,
             anchors=anchors,
             width=width,
             fingerprint="sha256:{}".format(hashlib.sha256(encoded).hexdigest()),
@@ -145,7 +177,9 @@ class SavedLayerGeometryCache:
         baseline_model: Optional[Mapping[str, Any]],
         glyph_name: str,
         layer_key: str,
+        cancelled: Callable[[], bool] | None = None,
     ) -> SavedLayerGeometry | None:
+        _checkpoint(cancelled)
         key = (str(source_fingerprint), str(glyph_name), str(layer_key))
         cached = self._values.get(key)
         if cached is not None:
@@ -159,11 +193,16 @@ class SavedLayerGeometryCache:
         layer = _layer(glyphs.get(glyph_name), layer_key)
         if layer is None:
             return None
-        state = LayerVisualState.from_layer(layer)
+        state = LayerVisualState.from_layer(layer, cancelled=cancelled)
+        segments = []
+        for path in state.paths:
+            _checkpoint(cancelled)
+            segments.append(path_segments(path, cancelled=cancelled))
         prepared = SavedLayerGeometry(
             state=state,
-            segments=tuple(path_segments(path) for path in state.paths),
+            segments=tuple(segments),
         )
+        _checkpoint(cancelled)
         self._values[key] = prepared
         while len(self._values) > self.capacity:
             self._values.popitem(last=False)
@@ -198,9 +237,11 @@ def build_layer_diff_plan(
     layer_key: str,
     live_state: LayerVisualState,
     saved_geometry: SavedLayerGeometry | None = None,
+    cancelled: Callable[[], bool] | None = None,
 ) -> LayerDiffPlan:
     """Prepare every geometry comparison away from the drawing callback."""
 
+    _checkpoint(cancelled)
     if not glyph_name or not layer_key:
         return _empty()
     if saved_geometry is None:
@@ -212,8 +253,14 @@ def build_layer_diff_plan(
         baseline_layer = _layer(glyphs.get(glyph_name), layer_key)
         if baseline_layer is None:
             return _empty()
-        baseline = LayerVisualState.from_layer(baseline_layer)
-        saved_segments = tuple(path_segments(path) for path in baseline.paths)
+        baseline = LayerVisualState.from_layer(
+            baseline_layer, cancelled=cancelled
+        )
+        segments = []
+        for path in baseline.paths:
+            _checkpoint(cancelled)
+            segments.append(path_segments(path, cancelled=cancelled))
+        saved_segments = tuple(segments)
     else:
         baseline = saved_geometry.state
         saved_segments = saved_geometry.segments
@@ -225,7 +272,9 @@ def build_layer_diff_plan(
         return _empty()
 
     try:
-        bands = difference_bands(baseline.paths, live_state.paths)
+        bands = difference_bands(
+            baseline.paths, live_state.paths, cancelled=cancelled
+        )
         topology_compatible = True
     except DifferenceTopologyError:
         bands = ()

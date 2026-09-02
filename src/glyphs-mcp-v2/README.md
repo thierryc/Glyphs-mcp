@@ -32,7 +32,7 @@ protects Save As or export overwrite. Never substitute one for another.
 
 ## Public contract
 
-The catalog contains exactly 18 tools:
+The catalog contains exactly 20 tools:
 
 - discovery: `get_server_info`, `list_documents`, `read_document`
 - constraints: `evaluate_constraints`
@@ -41,7 +41,8 @@ The catalog contains exactly 18 tools:
 - Knowledge: `search_knowledge`, `get_knowledge`
 - permanent fallback: `execute_python`
 - persistence/export: `preview_export`, `apply_export`, `save_document`
-- host/runtime: `open_document_view`, `get_runtime_status`, `repair_runtime`
+- host/runtime: `open_document_view`, `read_document_view`,
+  `configure_document_view`, `get_runtime_status`, `repair_runtime`
 
 The generated command reference is
 [`content/reference/command-set-v2.mdx`](../../content/reference/command-set-v2.mdx).
@@ -51,6 +52,15 @@ MCP discovery is the source of truth for request schemas.
 Glyphs. Check its full `codeHash` or compact `runtimeId` after restarting the
 app; the semantic `serverVersion` remains `2.0.0` across private hard-reset
 builds and is not sufficient to prove that a new payload loaded.
+
+The application-wide “Changes Against Reference” Reporter pauses optional
+capture and diff work during every active MCP invocation, including all Python
+modes. Its menu activation is preserved, the overlay stays hidden until 250 ms
+of MCP inactivity, and an idle server has no effect. Cooperative bundled
+scripts can hold the same UI-neutral `VisualWorkGate` with the `python_script`
+reason. `read_document_view.data.reporter.performance` reports cumulative
+scheduling counters and completed timings without exposing transient paused
+state.
 
 `save_document` is the only working-source persistence boundary. It supports a
 verified normal save or explicit Save As and requires current fingerprints and
@@ -84,17 +94,28 @@ scalar value by default.
 
 `Projection` requests canonical fields or registry-backed observations. Every
 observation reports provenance and completeness. Current observations include
-bounds, geometry counts, ownership, alignment, metrics inheritance, grid,
-horizontal and vertical spacing, effective metadata, and detached compilation
-diagnostics.
+bounds, geometry counts, ownership, aggregate master-layer coverage, alignment,
+metrics inheritance, grid, horizontal and vertical spacing, effective metadata,
+and detached compilation diagnostics. Document-level `masterLayerCoverage`
+reports missing, duplicate, unknown-associated-master, mis-keyed, and
+master-layer-prefix violations so a constraint can prove the complete
+ownership set rather than the existence of one target layer. Glyphs may
+legitimately present that complete prefix in an order different from the root
+master collection, so relative master-layer order is not a violation.
 
 `Constraint` is the same assertion language for standalone evaluation,
 preconditions, postconditions, and read-back verification. Constraints compare
 literals, exact references, or current fields. They never choose an operation.
 
 `ChangeOperation` contains only `set`, `translate`, `transform`, `insert`,
-`remove`, `move`, `duplicate`, and `materialize`. Geometry is floating-point and the optional `quantizer` is
-exact-only; `grid` is rejected rather than silently snapping a request.
+`remove`, `move`, `duplicate`, and `materialize`. `duplicate` copies an existing
+master; `materialize` asks Glyphs to interpolate a static instance into a new
+master on a detached clone. Both take the final `newId`. Native materialization
+evidence may retain Glyphs' generated temporary identity while detached, but
+replay sets the final master identity before attaching the master and replaces
+Glyphs-created default layers only after the root collection settles. Geometry
+is floating-point and the optional `quantizer` is exact-only; `grid` is
+rejected rather than silently snapping a request.
 Translation uses one registry for layer, shape, node, and anchor targets;
 locks and alignment modes remain unchanged while detached native execution and
 exact read-back determine feasibility.
@@ -112,21 +133,30 @@ layers are feature-detected for Glyphs 4's internal
 and rounding is disabled until stable canonical read-back completes. The scope
 rescans after master or layer creation so new layers receive the same policy.
 
-Structural operations, staged or live Python, and hosts without the native
-layer flag additionally run with `GSFont.grid = 0`. The entry grid and
-`gridSubDivision` are restored before canonical read-back; an intentional grid
-change in a reviewed declarative patch becomes the restoration target. Python
-always restores its entry settings and reports an attempted grid, subdivision,
-or `disablesAutomaticAlignment` change as a protected-setting violation. Live
-Python protects every font open when execution begins.
+Every transformation, including structural operations and staged or live
+Python, runs with `GSFont.grid = 0`. The entry grid and `gridSubDivision` are
+snapshotted immutably and restored exactly on success, failure, cancellation,
+abort, rollback, or settlement failure. Python reports an attempted grid,
+subdivision, or `disablesAutomaticAlignment` change as a protected-setting
+violation. Live Python protects every font open when execution begins.
 
 Restoration is ordered and unconditional: native update batching is released
-while the zero-grid fallback is still active, newly created layers are
-rescanned, grid/subdivision and global automatic-alignment state are restored,
-canonical state is read, and only then are layer rounding flags restored. The
-same cleanup runs for exceptions, cancellation, rollback, settlement failure,
-and nested execution. If neither the layer flag nor a writable grid fallback
-is available, v2 fails before mutation.
+while the tool-owned zero grid is still active, newly created layers are
+rescanned, and the direct plus transitive component dependency closure is read
+on separate host turns until two observations agree within the 100 ms quiet
+window and 750 ms budget. Only then are the exact entry grid, subdivision, and
+global automatic-alignment state restored and canonical state read; layer
+rounding flags are cleaned up last. The same cleanup runs for exceptions,
+cancellation, rollback, settlement failure, and nested execution. If neither
+the layer flag nor a writable grid fallback is available, v2 fails before
+mutation.
+
+The temporary zero is runtime execution state, never a requested or observed
+font change. When a reviewed declarative patch intentionally changes `grid` or
+`gridSubDivision`, v2 first completes component work at zero, restores the exact
+entry settings, and then applies the explicit settings as an isolated ordinary
+document mutation. The temporary value therefore cannot enter preview,
+history, dirty-state accounting, rollback diffs, or persistence reconciliation.
 
 The runtime never changes `font.disablesAutomaticAlignment` as mutation policy.
 Component `alignmentPolicy` defaults to `preserve`; its component-level

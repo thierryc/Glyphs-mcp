@@ -17,7 +17,7 @@ COMPUTED_PROJECTIONS = frozenset(
     {
         "alignment", "bounds", "collection.index", "compilation.diagnostics", "geometry.counts",
         "geometry.transform", "grid", "inheritance.metrics",
-        "metadata.effective", "ownership", "persistence",
+        "masterLayerCoverage", "metadata.effective", "ownership", "persistence",
         "spacing.horizontal", "spacing.vertical",
     }
 )
@@ -81,7 +81,9 @@ def _entity_capability(kind: str) -> dict[str, Any]:
     if kind == "instance":
         operations.add("materialize")
     observations_by_kind = {
-        "document": {"compilation.diagnostics", "persistence"},
+        "document": {
+            "compilation.diagnostics", "masterLayerCoverage", "persistence"
+        },
         "font": {"compilation.diagnostics", "persistence"},
         "glyph": {"metadata.effective", "ownership"},
         "layer": {
@@ -129,8 +131,14 @@ def public_mechanics_registry() -> dict[str, Any]:
             "coordinatePolicy": "floating_point",
             "quantizers": ["exact"],
             "nativeLayerRounding": "temporarily_disabled",
-            "structuralFallback": "temporary_grid_zero",
+            "gridDuringTransformation": 0,
+            "componentDependencyResolution": "transitive_before_grid_restore",
+            "gridRestoration": "exact_entry_on_success_failure_cancellation_or_abort",
             "restoresGrid": True,
+            "restoresGridSubDivision": True,
+            "temporarySettingsOwnership": "tool",
+            "temporarySettingsInRequestedChangeSet": False,
+            "explicitGridChangeOrdering": "isolated_after_component_settlement",
             "preservesGlobalAutomaticAlignment": True,
         },
     }

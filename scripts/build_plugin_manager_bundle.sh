@@ -539,7 +539,7 @@ if [[ "$vendor_mode" == "1" ]]; then
     find "$out_dir" -name "._*" -print0 2>/dev/null | xargs -0 rm -f 2>/dev/null || true
 
     # Verify core imports for this target.
-    PYTHONPATH="$out_dir" run_py "$target" -c "import fastmcp, mcp, pydantic_core; print('OK')" >/dev/null
+    PYTHONPATH="$out_dir" run_py "$target" -c "import dulwich, fastmcp, mcp, pydantic_core, urllib3; print('OK')" >/dev/null
 
     py_version="$(run_py "$target" -c 'import sys; print(sys.version.split()[0])')"
     py_machine="$(run_py "$target" -c 'import platform; print(platform.machine())')"

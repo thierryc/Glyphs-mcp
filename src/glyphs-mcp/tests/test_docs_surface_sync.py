@@ -120,9 +120,17 @@ class DocsSurfaceSyncTests(unittest.TestCase):
         )
         self.assertIn("title: Command set", legacy)
         self.assertIn("exactly {} tools".format(len(V2_TOOL_CATALOG)), v2)
-        self.assertEqual(len(V2_TOOL_CATALOG), 18)
+        self.assertEqual(len(V2_TOOL_CATALOG), 20)
         missing = sorted(name for name in V2_TOOL_CATALOG if "`{}`".format(name) not in v2)
         self.assertEqual(missing, [])
+        for guarantee in (
+            "transitive_before_grid_restore",
+            "exact_entry_on_success_failure_cancellation_or_abort",
+            "isolated_after_component_settlement",
+            "Temporary settings ownership is `tool`",
+            "requested change set: `false`",
+        ):
+            self.assertIn(guarantee, v2)
 
     def test_readme_command_set_mentions_all_tools(self) -> None:
         readme = _repo_root() / "README.md"

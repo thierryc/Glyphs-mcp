@@ -18,10 +18,17 @@ V2_SOURCE = REPO / "src" / "glyphs-mcp-v2"
 if str(V2_SOURCE) not in sys.path:
     sys.path.insert(0, str(V2_SOURCE))
 
-from glyphs_mcp_v2.activity import OperationActivityStore  # noqa: E402
+from glyphs_mcp_v2.activity import (  # noqa: E402
+    ActivityCancelled,
+    OperationActivityStore,
+)
 from glyphs_mcp_v2.application import GlyphsMCPApplication  # noqa: E402
 from glyphs_mcp_v2.background_work import BackgroundWorkCoordinator  # noqa: E402
 from glyphs_mcp_v2.catalog import TOOL_CATALOG  # noqa: E402
+from glyphs_mcp_v2.comparison_reference import (  # noqa: E402
+    ComparisonReferencePreferences,
+    ComparisonReferenceService,
+)
 from glyphs_mcp_v2.contracts import ToolResponse  # noqa: E402
 from glyphs_mcp_v2.generic_tools import (  # noqa: E402
     build_change_set,
@@ -32,6 +39,8 @@ from glyphs_mcp_v2.ports import (  # noqa: E402
     HostAccessError,
     HostRuntimeSnapshot,
 )
+from glyphs_mcp_v2.saved_source import SavedSourceService  # noqa: E402
+from glyphs_mcp_v2.visual_work import VisualWorkGate  # noqa: E402
 
 
 def _model() -> dict:
@@ -98,6 +107,7 @@ class _FakeHost:
         self.active_document_id = "doc_alpha"
         self.activation_succeeds = True
         self.repair_calls = []
+        self.reporter_active = False
 
     def runtime_snapshot(self) -> HostRuntimeSnapshot:
         return HostRuntimeSnapshot(
@@ -125,6 +135,25 @@ class _FakeHost:
         if include_model:
             state["savedModel"] = copy.deepcopy(self.model)
         return state
+
+    def comparison_reference_reporter_state(self):
+        return {
+            "available": True,
+            "active": self.reporter_active,
+            "applicationWide": True,
+            "reporterClass": "GlyphsMCPChangeDiffReporter",
+            "menuName": "Show Changes Against Reference",
+            "performance": {
+                "scope": "application",
+                "policy": {"mcpPauseEnabled": True},
+                "counters": {"suspensions": 2},
+                "timingsMs": {"completedSuspension": 12.5},
+            },
+        }
+
+    def set_comparison_reference_reporter_active(self, enabled):
+        self.reporter_active = bool(enabled)
+        return self.comparison_reference_reporter_state()
 
     def scripting_runtime_safety_status(self):
         return {
@@ -187,6 +216,100 @@ class _FakeHost:
 
 
 class V2ApplicationTests(unittest.TestCase):
+    def _comparison_application(self):
+        host = _FakeHost()
+        saved = SavedSourceService(
+            coordinator=BackgroundWorkCoordinator(thread_name="app-saved-reference")
+        )
+        references = ComparisonReferenceService(
+            saved_sources=saved,
+            preferences=ComparisonReferencePreferences({}),
+            coordinator=BackgroundWorkCoordinator(thread_name="app-git-reference"),
+        )
+        self.addCleanup(references.close)
+        self.addCleanup(saved.coordinator.close, wait=True)
+        return host, GlyphsMCPApplication(
+            host,
+            saved_sources=saved,
+            comparison_references=references,
+        )
+
+    def test_read_document_view_reports_reference_activation_and_no_mutation(self) -> None:
+        _host, app = self._comparison_application()
+
+        payload = app.invoke(
+            "read_document_view", {"documentId": "doc_alpha"}
+        ).to_dict()
+
+        self.assertTrue(payload["ok"])
+        self.assertEqual(
+            payload["data"]["comparisonReference"]["reference"]["kind"],
+            "last_saved",
+        )
+        self.assertTrue(payload["data"]["reporter"]["applicationWide"])
+        self.assertTrue(
+            payload["data"]["reporter"]["performance"]["policy"][
+                "mcpPauseEnabled"
+            ]
+        )
+        self.assertEqual(
+            payload["data"]["reporter"]["performance"]["scope"],
+            "application",
+        )
+        self.assertNotIn(
+            "currentlyPaused",
+            payload["data"]["reporter"]["performance"],
+        )
+        self.assertFalse(payload["data"]["documentChanged"])
+        self.assertFalse(payload["data"]["sourceFileChanged"])
+        self.assertTrue(payload["data"]["unchangedProof"]["document"]["unchanged"])
+        self.assertTrue(payload["data"]["unchangedProof"]["sourceFile"]["unchanged"])
+        self.assertFalse(payload["data"]["fontSaved"])
+        validate(payload, TOOL_CATALOG["read_document_view"].output_schema)
+
+    def test_configure_document_view_changes_only_explicit_reporter_state(self) -> None:
+        host, app = self._comparison_application()
+
+        payload = app.invoke(
+            "configure_document_view",
+            {
+                "documentId": "doc_alpha",
+                "comparisonReference": {"kind": "last_saved"},
+                "showChangesAgainstReference": True,
+            },
+        ).to_dict()
+
+        self.assertTrue(payload["ok"])
+        self.assertTrue(host.reporter_active)
+        self.assertTrue(payload["data"]["reporter"]["active"])
+        self.assertEqual(
+            payload["data"]["comparisonReference"]["origin"], "agent"
+        )
+        self.assertEqual(
+            payload["warnings"][0]["code"],
+            "reporter_activation_is_application_wide",
+        )
+        self.assertFalse(payload["data"]["documentChanged"])
+        self.assertFalse(payload["data"]["sourceFileChanged"])
+        validate(payload, TOOL_CATALOG["configure_document_view"].output_schema)
+
+    def test_configure_document_view_rejects_empty_and_conflicting_requests(self) -> None:
+        _host, app = self._comparison_application()
+        empty = app.invoke(
+            "configure_document_view", {"documentId": "doc_alpha"}
+        ).to_dict()
+        conflict = app.invoke(
+            "configure_document_view",
+            {
+                "documentId": "doc_alpha",
+                "comparisonReference": {"kind": "last_saved"},
+                "refreshComparisonReference": True,
+            },
+        ).to_dict()
+
+        self.assertEqual(empty["error"]["code"], "invalid_request")
+        self.assertEqual(conflict["error"]["code"], "invalid_request")
+
     def test_manual_save_callback_only_records_identity_and_enqueues_refresh(self) -> None:
         host = _FakeHost()
         capture_calls = []
@@ -822,6 +945,61 @@ class V2ApplicationTests(unittest.TestCase):
         ).to_dict()
         self.assertFalse(payload["ok"])
         self.assertEqual(payload["error"]["code"], "unknown_tool")
+
+    def test_every_invocation_path_holds_and_releases_visual_work(self) -> None:
+        gate = VisualWorkGate()
+        observed = []
+        gate.subscribe(observed.append)
+        app = GlyphsMCPApplication(_FakeHost(), visual_work=gate)
+
+        def response(*, ok=True):
+            self.assertTrue(gate.current().suspended)
+            if ok:
+                return ToolResponse.success(
+                    tool="get_server_info",
+                    effect="read",
+                    summary="Measured.",
+                    data={},
+                )
+            return ToolResponse.failure(
+                tool="get_server_info",
+                effect="read",
+                summary="Typed failure.",
+                code="test_failure",
+                message="Expected failure.",
+            )
+
+        app._handlers["get_server_info"] = lambda _arguments: response()
+        self.assertTrue(app.invoke("get_server_info").ok)
+        self.assertFalse(gate.current().suspended)
+
+        app._handlers["get_server_info"] = lambda _arguments: response(ok=False)
+        self.assertFalse(app.invoke("get_server_info").ok)
+        self.assertFalse(gate.current().suspended)
+
+        def cancelled(_arguments):
+            self.assertTrue(gate.current().suspended)
+            raise ActivityCancelled("cancelled")
+
+        app._handlers["get_server_info"] = cancelled
+        cancelled_response = app.invoke("get_server_info")
+        self.assertEqual(cancelled_response.error.code, "cancelled")
+        self.assertFalse(gate.current().suspended)
+
+        def unexpected(_arguments):
+            self.assertTrue(gate.current().suspended)
+            raise KeyboardInterrupt("unexpected")
+
+        app._handlers["get_server_info"] = unexpected
+        with self.assertRaises(KeyboardInterrupt):
+            app.invoke("get_server_info")
+        self.assertFalse(gate.current().suspended)
+
+        self.assertFalse(app.invoke("removed_tool").ok)
+        self.assertFalse(gate.current().suspended)
+        self.assertEqual(len(observed), 10)
+        self.assertTrue(all(item.suspended for item in observed[::2]))
+        self.assertTrue(all(not item.suspended for item in observed[1::2]))
 
 
 if __name__ == "__main__":

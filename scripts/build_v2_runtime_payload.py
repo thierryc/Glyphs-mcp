@@ -187,14 +187,33 @@ def _activate_v2_bundle(bundle: Path) -> Path:
     plugin_text = plugin_text.replace("GlyphsMCPCandidateReporter", "GlyphsMCPChangeDiffReporter")
     plugin_text = plugin_text.replace(
         "Glyphs MCP Candidate (unavailable)",
-        "Changes Since Save (unavailable)",
+        "Changes Against Reference (unavailable)",
     )
     plugin_text = plugin_text.replace(
         "from glyphs_litsquare_palette import GlyphsMCPLitSquareMetadataPalette",
-        "from glyphs_mcp_v2.inspector_palette import GlyphsMCPInspectorPalette",
+        "from glyphs_mcp_v2.inspector_palette import (\n"
+        "            GlyphsMCPComparisonReferencePalette,\n"
+        "            GlyphsMCPInspectorPalette,\n"
+        "        )",
     )
     plugin_text = plugin_text.replace(
         "GlyphsMCPLitSquareMetadataPalette", "GlyphsMCPInspectorPalette"
+    )
+    plugin_text = plugin_text.replace(
+        "GlyphsMCPInspectorPalette = None\n",
+        "GlyphsMCPInspectorPalette = None\n"
+        "GlyphsMCPComparisonReferencePalette = None\n",
+        1,
+    )
+    plugin_text = plugin_text.replace(
+        "        GlyphsMCPInspectorPalette = _make_unavailable_litsquare_palette()\n",
+        "        GlyphsMCPInspectorPalette = _make_unavailable_litsquare_palette()\n"
+        "\n"
+        "        class GlyphsMCPComparisonReferencePalette(GlyphsMCPInspectorPalette):\n"
+        "            def settings(self):\n"
+        "                GlyphsMCPInspectorPalette.settings(self)\n"
+        "                self.name = 'Comparison Reference (unavailable)'\n",
+        1,
     )
     plugin_text = plugin_text.replace(
         "Glyphs MCP Metadata Inspector (unavailable)", "Glyphs MCP (unavailable)"
@@ -229,6 +248,7 @@ def _activate_v2_bundle(bundle: Path) -> Path:
         "MCPBridgePlugin",
         "GlyphsMCPCurvatureReporter",
         "GlyphsMCPChangeDiffReporter",
+        "GlyphsMCPComparisonReferencePalette",
         "GlyphsMCPInspectorPalette",
     ]
     with plist_path.open("wb") as plist_file:

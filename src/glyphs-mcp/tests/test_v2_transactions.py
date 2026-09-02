@@ -648,6 +648,7 @@ class V2TransactionTests(unittest.TestCase):
                 "settle",
                 "capture",
                 "restore",
+                "settle",
                 "capture",
                 "end",
             ],

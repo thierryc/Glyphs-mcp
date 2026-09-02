@@ -97,6 +97,32 @@ READ_DOCUMENT_DATA_SCHEMA = _closed(
         "items": {"type": "array", "items": {"type": "object"}},
     },
 )
+DOCUMENT_VIEW_DATA_SCHEMA = _closed(
+    (
+        "documentId",
+        "comparisonReference",
+        "reporter",
+        "documentFingerprint",
+        "sourceFileFingerprint",
+        "documentChanged",
+        "sourceFileChanged",
+        "unchangedProof",
+        "fontSaved",
+    ),
+    {
+        "documentId": {"type": "string"},
+        "comparisonReference": {"type": "object"},
+        "reporter": {"type": "object"},
+        "documentFingerprint": deepcopy(FINGERPRINT_SCHEMA),
+        "sourceFileFingerprint": {
+            "anyOf": [deepcopy(FINGERPRINT_SCHEMA), {"type": "null"}]
+        },
+        "documentChanged": {"type": "boolean"},
+        "sourceFileChanged": {"type": "boolean"},
+        "unchangedProof": {"type": "object"},
+        "fontSaved": {"type": "boolean", "const": False},
+    },
+)
 CONSTRAINT_DATA_SCHEMA = _closed(
     (
         "documentId",
@@ -306,6 +332,24 @@ TOOL_DEFINITIONS: Tuple[ToolDefinition, ...] = (
         "Read canonical entities and computed observations through one selector and projection.",
         "document",
         data_schema=READ_DOCUMENT_DATA_SCHEMA,
+    ),
+    _definition(
+        "read_document_view",
+        "Read Document View",
+        "Read Show Changes Against Reference activation and the complete pinned comparison-reference state.",
+        "document",
+        data_schema=DOCUMENT_VIEW_DATA_SCHEMA,
+    ),
+    _definition(
+        "configure_document_view",
+        "Configure Document View",
+        "Set or explicitly refresh a Last Saved, local Git, or public GitHub comparison reference and optionally change the application-wide Reporter activation.",
+        "document",
+        "ui",
+        data_schema=DOCUMENT_VIEW_DATA_SCHEMA,
+        open_world=True,
+        idempotent=False,
+        destructive_hint=False,
     ),
     _definition(
         "evaluate_constraints",

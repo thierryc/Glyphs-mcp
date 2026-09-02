@@ -102,10 +102,15 @@ Express the result with `preview_change` using only physical operations:
 Use `quantizer="exact"` or omit it; `exact` is the only supported value. Keep
 all fractional widths, bearings, translations, bounds, node, anchor, and
 component coordinates through preview, apply, and read-back. This floating-point geometry
-policy is the default for every operation. The runtime owns
-rounding suppression centrally. Never round coordinates, snap them to the font
-grid, change `font.grid`/`gridSubDivision`, or change the global automatic-
-alignment setting to manage precision. Layer translation moves paths and
+policy is the default; the runtime owns rounding suppression centrally. Before a transformation, it snapshots
+`font.grid` and `gridSubDivision`, set the effective Glyphs grid to zero, and
+keep it zero until direct and transitive component dependencies settle across
+host turns. It must then restore and read-verify both exact entry settings on
+success, failure, cancellation, or abort, including rollback and settlement
+failure. An explicit reviewed grid edit is isolated after settlement; temporary zero never enters preview, history, dirty accounting, rollback, or persistence evidence.
+Agents and scripts must never perform or retain that settings change; never
+round coordinates, snap them to the font grid, or change the global
+automatic-alignment setting to manage precision. Layer translation moves paths and
 components through the shared coordinate registry. Metadata is not refusal
 policy; category and signed bearings do not block.
 

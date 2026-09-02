@@ -23,6 +23,9 @@ echo "Checking exact release dependency pins…"
 "$python_bin" scripts/check_release_dependencies.py \
   --requirements requirements-dev.txt \
   fontmake uharfbuzz
+"$python_bin" scripts/check_release_dependencies.py \
+  --requirements requirements.txt \
+  dulwich urllib3
 
 echo "Checking committed Glyphs 4 native-export parity evidence…"
 "$python_bin" scripts/validate_glyphs4_native_parity.py

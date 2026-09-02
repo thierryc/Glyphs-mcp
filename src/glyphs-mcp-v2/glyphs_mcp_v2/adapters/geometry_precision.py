@@ -1,10 +1,10 @@
 """Temporary Glyphs 4 execution policy for exact floating-point geometry.
 
 Glyphs rounds some layer-owned scalar setters against ``GSFont.grid``.  The
-native ``GSLayer.temporarilyDisableRounding`` flag is the narrowest control,
-but it is transient and is neither copied with ``GSFont.copy()`` nor inherited
-by newly-created layers.  This scope therefore combines that flag with a
-short-lived grid-zero fallback for structural and open-world execution.
+native ``GSLayer.temporarilyDisableRounding`` flag is transient and is
+neither copied with ``GSFont.copy()`` nor inherited by newly-created layers.
+Every scope therefore combines that flag with a short-lived zero grid before
+any transformation executes.
 
 The scope owns execution state only.  It never changes the canonical target,
 never disables automatic alignment, and restores all protected host settings
@@ -124,11 +124,10 @@ class _FontState:
     original_grid: Any
     original_subdivision: Any
     original_auto_alignment: Any
-    restore_grid: Any
-    restore_subdivision: Any
     layers: dict[int, _LayerState] = field(default_factory=dict)
     grid_zero: bool = False
     grid_available: bool = False
+    execution_settings_owned: bool = True
 
 
 class FloatingGeometryScope:
@@ -144,7 +143,7 @@ class FloatingGeometryScope:
         self,
         fonts: Iterable[Any],
         *,
-        require_grid_zero: bool = False,
+        require_grid_zero: bool = True,
     ) -> None:
         unique: list[Any] = []
         seen: set[int] = set()
@@ -154,7 +153,9 @@ class FloatingGeometryScope:
             seen.add(id(font))
             unique.append(font)
         self._fonts = tuple(unique)
-        self._require_grid_zero = bool(require_grid_zero)
+        # Retain the argument for call-site compatibility, but zero-grid
+        # execution is now an invariant for every geometry-capable scope.
+        self._require_grid_zero = True
         self._states: dict[int, _FontState] = {}
         self._active = False
         self._prepared_for_readback = False
@@ -179,8 +180,6 @@ class FloatingGeometryScope:
                     original_grid=grid,
                     original_subdivision=subdivision,
                     original_auto_alignment=auto_alignment,
-                    restore_grid=grid,
-                    restore_subdivision=subdivision,
                     grid_available=grid is not _MISSING,
                 )
                 self._states[id(font)] = state
@@ -210,9 +209,15 @@ class FloatingGeometryScope:
         return missing
 
     def _enable_grid_zero(self, state: _FontState) -> None:
-        if state.grid_zero:
-            return
-        if not state.grid_available or not _write_property(state.font, "grid", 0):
+        observed = _read_property(state.font, "grid")
+        try:
+            already_zero = float(observed) == 0.0
+        except (TypeError, ValueError):
+            already_zero = False
+        if not already_zero and (
+            not state.grid_available
+            or not _write_property(state.font, "grid", 0)
+        ):
             raise HostAccessError(
                 "Glyphs exposes neither layer rounding suppression nor a writable grid fallback"
             )
@@ -224,6 +229,7 @@ class FloatingGeometryScope:
         if not accepted:
             raise HostAccessError("Glyphs rejected the temporary zero-grid precision scope")
         state.grid_zero = True
+        state.execution_settings_owned = True
         self._prepared_for_readback = False
 
     def require_grid_zero(self) -> None:
@@ -240,21 +246,21 @@ class FloatingGeometryScope:
             if missing and not state.grid_zero:
                 self._enable_grid_zero(state)
 
-    def set_restoration_target(
-        self,
-        font: Any,
-        *,
-        grid: Any = _MISSING,
-        subdivision: Any = _MISSING,
-    ) -> None:
-        state = self._states.get(id(font))
-        if state is None:
-            raise RuntimeError("font is outside the floating geometry scope")
-        if grid is not _MISSING:
-            state.restore_grid = grid
-        if subdivision is not _MISSING:
-            state.restore_subdivision = subdivision
-        self._prepared_for_readback = False
+    def release_execution_settings_ownership(self) -> None:
+        """Retain reviewed settings written after exact entry restoration.
+
+        Callers may use this only after component settlement, exact entry
+        restoration, and verified application of an explicit document-level
+        grid change. Until then, cleanup continues to own and restore the
+        immutable entry settings on every exit path.
+        """
+
+        if not self._active or not self._prepared_for_readback:
+            raise RuntimeError(
+                "execution settings can be released only after entry restoration"
+            )
+        for state in self._states.values():
+            state.execution_settings_owned = False
 
     def protected_setting_changes(self) -> tuple[Mapping[str, Any], ...]:
         """Report script attempts to change protected execution settings."""
@@ -266,7 +272,7 @@ class FloatingGeometryScope:
             current_auto_alignment = _read_property(
                 state.font, "disablesAutomaticAlignment"
             )
-            expected_grid = 0 if state.grid_zero else state.restore_grid
+            expected_grid = 0 if state.grid_zero else state.original_grid
             if (
                 expected_grid is not _MISSING
                 and current_grid is not _MISSING
@@ -318,10 +324,10 @@ class FloatingGeometryScope:
     def _restore_execution_settings(self, state: _FontState) -> None:
         errors: list[BaseException] = []
         for name, target, label in (
-            ("grid", state.restore_grid, "document grid"),
+            ("grid", state.original_grid, "document grid"),
             (
                 "gridSubDivision",
-                state.restore_subdivision,
+                state.original_subdivision,
                 "grid subdivision",
             ),
             (
@@ -355,7 +361,8 @@ class FloatingGeometryScope:
 
     def _restore_state(self, state: _FontState) -> None:
         try:
-            self._restore_execution_settings(state)
+            if state.execution_settings_owned:
+                self._restore_execution_settings(state)
         finally:
             for layer_state in reversed(tuple(state.layers.values())):
                 _set_layer_rounding(layer_state.layer, layer_state.original)

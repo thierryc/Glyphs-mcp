@@ -14,6 +14,8 @@ tool identity, effect, category, and intent.
 | `get_server_info` | `read` | `server` | Read the v2 contract, exact loaded-code identity, permanent Python fallback, Knowledge version, host, and capabilities. |
 | `list_documents` | `read` | `document` | List open Glyphs documents with stable process-local IDs. |
 | `read_document` | `read` | `document` | Read canonical entities and computed observations through one selector and projection. |
+| `read_document_view` | `read` | `document` | Read Show Changes Against Reference activation and the complete pinned comparison-reference state. |
+| `configure_document_view` | `ui` | `document` | Set or explicitly refresh a Last Saved, local Git, or public GitHub comparison reference and optionally change the application-wide Reporter activation. |
 | `evaluate_constraints` | `read` | `document` | Evaluate reusable field constraints without changing the document. |
 | `preview_change` | `read` | `change` | Resolve exact targets and mechanically simulate generic operations with floating-point geometry into one immutable preview. |
 | `apply_change` | `edit` | `change` | Apply one exact immutable preview through the floating-geometry verified transaction kernel without rerunning planning. |
@@ -36,7 +38,7 @@ tool identity, effect, category, and intent.
 - Entity kinds: `anchor`, `axis`, `class`, `document`, `feature`, `font`, `glyph`, `instance`, `kerning`, `layer`, `master`, `metric`, `node`, `number`, `prefix`, `shape`, `stem`.
 - Change operations: `duplicate`, `insert`, `materialize`, `move`, `remove`, `set`, `transform`, `translate`.
 - Constraint operators: `eq`, `gt`, `gte`, `in_range`, `lt`, `lte`, `ne`, `within`.
-- Computed projections: `alignment`, `bounds`, `collection.index`, `compilation.diagnostics`, `geometry.counts`, `geometry.transform`, `grid`, `inheritance.metrics`, `metadata.effective`, `ownership`, `persistence`, `spacing.horizontal`, `spacing.vertical`.
+- Computed projections: `alignment`, `bounds`, `collection.index`, `compilation.diagnostics`, `geometry.counts`, `geometry.transform`, `grid`, `inheritance.metrics`, `masterLayerCoverage`, `metadata.effective`, `ownership`, `persistence`, `spacing.horizontal`, `spacing.vertical`.
 - Selector predicates: `and`, `contains`, `eq`, `exists`, `gt`, `gte`, `in`, `lt`, `lte`, `ne`, `not`, `or`.
 - Ordering modes: `auto`, `number`, `text`.
 - Reducers: `all`, `any`, `average`, `count`, `max`, `min`, `sum`.
@@ -47,17 +49,45 @@ tool identity, effect, category, and intent.
 - Observation operands use `observation.<projection>.<path>`, for
   example `observation.bounds.x` or
   `observation.alignment.effectiveLayerAlignment`.
+- `observation.masterLayerCoverage.violationCount` is a document-level
+  aggregate for missing, duplicate, unknown-associated-master, mis-keyed,
+  or master-layer-prefix violations. Relative master-layer order may
+  legitimately differ from root master order. Zero proves ownership;
+  source/target geometry and metrics still require separate constraints.
+- Use `duplicate` for an existing master source and `materialize` for a
+  static instance source. Supply the final `newId`; never rename an
+  attached master after Glyphs has created dependent layers.
 
 ## Floating-point geometry contract
 
 - Coordinate policy: `floating_point`; supported quantizers: `exact`.
 - Existing and newly created Glyphs 4 layers run with native layer
-  rounding temporarily disabled. Structural operations and Python use
-  temporary grid zero as a fallback, restored before canonical read-back.
-- The runtime preserves the user's grid, subdivision, and global automatic-
-  alignment setting on success, failure, cancellation, and rollback.
+  rounding temporarily disabled, and every transformation runs with
+  tool-owned grid `0`.
+- Direct and transitive component dependencies settle before exact entry
+  grid restoration (`transitive_before_grid_restore`).
+- Grid restoration is `exact_entry_on_success_failure_cancellation_or_abort` and includes `gridSubDivision`: `true`.
+- Temporary settings ownership is `tool`.
+  Temporary settings appear in the requested change set: `false`.
+  Explicit grid edits are `isolated_after_component_settlement`.
+- The runtime preserves global automatic-alignment state on every exit.
   Component alignment remains preserved unless an operation explicitly
   requests an alignment policy override.
+
+## Changes Against Reference performance
+
+- An idle MCP server leaves the application-wide Reporter working normally.
+  Every active invocation, including all `execute_python` modes, hides its
+  overlay without changing the user's Reporter activation.
+- Projection work resumes only after 250 ms of MCP inactivity. Normal
+  interface settling uses 25 ms; repeated events within 75 ms use 100 ms.
+- Native capture advances by one 1 ms slice every 16 ms. Slices over 2 ms
+  are recorded diagnostically because one native property read cannot be
+  preempted.
+- `read_document_view.data.reporter.performance` reports cumulative policy,
+  counters, and completed timings for the loaded Reporter instance. It
+  intentionally omits live paused state because the read itself acquires
+  the visual-work gate.
 
 ## Detached Python contract
 
@@ -90,7 +120,7 @@ tool identity, effect, category, and intent.
 
 ## Surface invariants
 
-- The catalog contains exactly 18 tools.
+- The catalog contains exactly 20 tools.
 - Knowledge supplies cited evidence, skills supply font-design and
   Glyphs expertise, and tools supply generic mechanics.
 - Every document mutation is previewed against exact identities and a

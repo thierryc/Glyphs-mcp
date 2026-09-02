@@ -38,9 +38,20 @@ unless the user explicitly approves otherwise.
 
 Master duplication and materialization must retain fractional widths,
 coordinates, anchors, and component transforms in existing and newly created
-layers. Verify those values exactly. Never round or grid-snap them, and never
-change the grid, subdivision, or global automatic-alignment setting; the v2
-runtime manages its temporary precision state centrally.
+layers. Use `duplicate` for a master source and `materialize` for a static
+instance source, always with the final `newId`. A master identity is an
+ownership root: never rename it after dependent layers exist. Require baseline
+and after `observation.masterLayerCoverage.violationCount == 0`, then verify
+source and target widths, origins, `observation.geometry.counts`, components,
+anchors, metrics keys, and topology exactly; layer existence alone is
+insufficient.
+Never round or grid-snap them, and never change the grid, subdivision, or
+global automatic-alignment setting; the v2
+runtime manages its temporary precision state centrally. It owns grid zero
+through settlement of every direct and transitive component dependency,
+restores the exact entry grid and subdivision before read-back, and isolates an
+explicit reviewed grid edit afterward. Agents and scripts must never edit grid
+settings to implement this policy.
 
 Create `preview_change` when generic operations suffice. Inspect the immutable
 preview, its exact layer identities, before/after

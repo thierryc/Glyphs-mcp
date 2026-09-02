@@ -20,8 +20,8 @@ SDK = REPO / "GlyphsSDK"
 GLYPHS_API = SDK / "ObjectWrapper/GlyphsApp"
 SCHEMAS = SDK / "GlyphsFileFormat/Schemas"
 GLYPHS_SDK_REVISION = "0f5422db727b78cb42abfb386f33ae0b382b0c4d"
-CORPUS_VERSION = "2026.08.29"
-VERIFIED_AT = "2026-08-29"
+CORPUS_VERSION = "2026.09.02"
+VERIFIED_AT = "2026-09-02"
 
 
 def _sha(value: str) -> str:
@@ -259,9 +259,12 @@ def curated_entries() -> list[dict[str, Any]]:
         (
             "practice.generic-mechanics",
             "Compose Glyphs work from generic mechanics",
-            """Use EntitySelector predicates to resolve canonical evidence, typed ordering for numeric or textual comparisons, and Projection reducers for count, minimum, maximum, sum, average, any, or all. Express writes as exact discriminated set, translate, insert, remove, move, or duplicate operations. A preview stores exact identities, normalized operations, a base live-document fingerprint, semantic diff, and constraint evidence. Apply the stored patch without replanning. Typographic preservation choices and exceptions remain agent decisions in skills, not tool-side mutation policy.""",
+            """Use EntitySelector predicates to resolve canonical evidence, typed ordering for numeric or textual comparisons, and Projection reducers for count, minimum, maximum, sum, average, any, or all. Express writes as exact discriminated set, translate, transform, insert, remove, move, duplicate, or materialize operations. Duplicate when the source is an existing entity; materialize an instance when Glyphs must authoritatively interpolate a new master. Supply the final newId in that operation. A master identity is an ownership root, so never attach it under a temporary ID and rename it after dependent layers exist. Require masterLayerCoverage on the baseline and proposed result, then compare exact source/target fields and geometry counts to prove content as well as existence. A preview stores exact identities, normalized operations, a base live-document fingerprint, semantic diff, and constraint evidence. Apply the stored patch without replanning. Typographic preservation choices and exceptions remain agent decisions in skills, not tool-side mutation policy.""",
             ["glyphs-python", "plugin-development", "spacing"],
-            ["EntitySelector", "reducers", "preview_change", "apply_change"],
+            [
+                "EntitySelector", "reducers", "preview_change", "apply_change",
+                "materialize", "masterLayerCoverage", "master identity",
+            ],
             "practice",
         ),
     ]

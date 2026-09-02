@@ -235,7 +235,8 @@ class OperationActivityStoreTests(unittest.TestCase):
         source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
             encoding="utf-8"
         )
-        document_scope = source.split("def _document_id(self):", 1)[1].split(
+        inspector_scope = source.split("class GlyphsMCPInspectorPalette", 1)[1]
+        document_scope = inspector_scope.split("def _document_id(self):", 1)[1].split(
             "def _activity_changed", 1
         )[0]
         self.assertIn("font = self._font()", document_scope)
@@ -255,7 +256,8 @@ class OperationActivityStoreTests(unittest.TestCase):
         source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
             encoding="utf-8"
         )
-        document_scope = source.split("def _document_id(self):", 1)[1].split(
+        inspector_scope = source.split("class GlyphsMCPInspectorPalette", 1)[1]
+        document_scope = inspector_scope.split("def _document_id(self):", 1)[1].split(
             "def _activity_changed", 1
         )[0]
         self.assertIn("self._activity_document_id = document_id", document_scope)
@@ -267,7 +269,8 @@ class OperationActivityStoreTests(unittest.TestCase):
         source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
             encoding="utf-8"
         )
-        document_scope = source.split("def _document_id(self):", 1)[1].split(
+        inspector_scope = source.split("class GlyphsMCPInspectorPalette", 1)[1]
+        document_scope = inspector_scope.split("def _document_id(self):", 1)[1].split(
             "def _activity_changed", 1
         )[0]
         self.assertIn("font = self._font() or _font_from_window(window)", document_scope)
@@ -295,8 +298,17 @@ class OperationActivityStoreTests(unittest.TestCase):
             'objectForInfoDictionaryKey_("CFBundleVersion")',
             source,
         )
-        self.assertNotIn("from GlyphsApp", source)
         self.assertNotIn("4004", source)
+
+    def test_comparison_reference_is_a_separate_native_palette_section(self) -> None:
+        source = (V2_SOURCE / "glyphs_mcp_v2" / "inspector_palette.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("class GlyphsMCPComparisonReferencePalette", source)
+        self.assertIn('self.name = "Comparison Reference"', source)
+        self.assertIn("REFERENCE_PALETTE_HEIGHT = 52", source)
+        inspector_scope = source.split("class GlyphsMCPInspectorPalette", 1)[1]
+        self.assertNotIn("_reference_", inspector_scope)
 
     def test_palette_header_normalizes_the_glyphs_build_number(self) -> None:
         self.assertEqual(

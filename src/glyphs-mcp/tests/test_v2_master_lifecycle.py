@@ -8,6 +8,7 @@ import sys
 import time
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 
@@ -28,7 +29,12 @@ from glyphs_mcp_v2.mutation import (  # noqa: E402
     CanonicalImpact,
 )
 from glyphs_mcp_v2.semantic import diff_models, fingerprint_model  # noqa: E402
-from glyphs_mcp_v2.generic_tools import build_change_set, resolve_selector  # noqa: E402
+from glyphs_mcp_v2.generic_tools import (  # noqa: E402
+    build_change_set,
+    evaluate_constraints,
+    project_reference,
+    resolve_selector,
+)
 from glyphs_mcp_v2.structural_registry import build_master_updates  # noqa: E402
 
 
@@ -131,6 +137,11 @@ def _layer_for(glyph: dict, identity: str) -> dict:
     return next(layer for layer in glyph["layers"] if layer["id"] == identity)
 
 
+class _Immediate:
+    def run(self, callback):
+        return callback()
+
+
 def _duplicate_master(app, host, document_id: str) -> dict:
     before = fingerprint_model(host.model)
     preview = app.invoke(
@@ -197,6 +208,84 @@ class MasterLifecycleTests(unittest.TestCase):
 
         self.assertEqual([item["id"] for item in items], ["master_regular", "master_bold"])
         self.assertEqual(items[1]["axes"], [{"tag": "wght", "internal": 200}])
+
+    def test_master_layer_coverage_is_constraintable_and_detects_orphans(self) -> None:
+        model = _model()
+        reference = resolve_selector(model, {"entity": "document"})[0]
+        coverage = project_reference(
+            reference, {"fields": ["masterLayerCoverage"]}
+        )["values"]["masterLayerCoverage"]
+
+        self.assertTrue(coverage["valid"])
+        self.assertEqual(coverage["violationCount"], 0)
+        self.assertEqual(coverage["expectedMasterLayerCount"], 4)
+        self.assertEqual(coverage["observedMasterLayerCount"], 4)
+
+        host_ordered = copy.deepcopy(model)
+        for glyph in host_ordered["glyphs"].values():
+            glyph["layers"][:2] = reversed(glyph["layers"][:2])
+        host_ordered_coverage = project_reference(
+            resolve_selector(host_ordered, {"entity": "document"})[0],
+            {"fields": ["masterLayerCoverage"]},
+        )["values"]["masterLayerCoverage"]
+        self.assertTrue(host_ordered_coverage["valid"])
+
+        unassociated = copy.deepcopy(model)
+        unassociated["glyphs"]["glyph0000"]["layers"].append(
+            {
+                "id": "detached-non-master-layer",
+                "masterId": "",
+                "isMasterLayer": False,
+                "isSpecialLayer": False,
+            }
+        )
+        unassociated_coverage = project_reference(
+            resolve_selector(unassociated, {"entity": "document"})[0],
+            {"fields": ["masterLayerCoverage"]},
+        )["values"]["masterLayerCoverage"]
+        self.assertTrue(unassociated_coverage["valid"])
+
+        prefix_broken = copy.deepcopy(unassociated)
+        prefix_broken["glyphs"]["glyph0000"]["layers"].append(
+            prefix_broken["glyphs"]["glyph0000"]["layers"].pop(0)
+        )
+        prefix_coverage = project_reference(
+            resolve_selector(prefix_broken, {"entity": "document"})[0],
+            {"fields": ["masterLayerCoverage"]},
+        )["values"]["masterLayerCoverage"]
+        self.assertEqual(
+            prefix_coverage["masterLayerPrefixViolationGlyphCount"], 1
+        )
+        self.assertFalse(prefix_coverage["valid"])
+
+        orphaned = copy.deepcopy(model)
+        orphaned_layer = _layer("temporary-master", "Temporary", 40)
+        orphaned["glyphs"]["glyph0000"]["layers"].append(orphaned_layer)
+        constraint = {
+            "phase": "after",
+            "left": {
+                "kind": "field",
+                "selector": {"entity": "document"},
+                "field": "observation.masterLayerCoverage.violationCount",
+            },
+            "operator": "eq",
+            "right": {"kind": "literal", "value": 0},
+        }
+        evidence = evaluate_constraints(
+            orphaned, [constraint], phase="after"
+        )
+        broken = project_reference(
+            resolve_selector(orphaned, {"entity": "document"})[0],
+            {"fields": ["masterLayerCoverage"]},
+        )["values"]["masterLayerCoverage"]
+
+        self.assertFalse(evidence["passed"])
+        self.assertEqual(broken["unknownAssociatedMasterCount"], 1)
+        self.assertGreater(broken["violationCount"], 0)
+        self.assertEqual(
+            broken["samples"]["unknownAssociatedMaster"],
+            ["glyph0000/temporary-master"],
+        )
 
     def test_duplicate_is_one_build_with_derived_layers_and_kerning(self) -> None:
         before = _model()
@@ -481,6 +570,176 @@ class MasterLifecycleTests(unittest.TestCase):
                 15.375,
             )
 
+    def test_native_materialization_keeps_temporary_identity_attached_only_to_clone(self) -> None:
+        before = _model(1)
+        before["instances"] = [
+            {
+                "id": "instance_regular",
+                "name": "Regular",
+                "type": "static",
+                "included": True,
+                "axes": [],
+            }
+        ]
+        generated_id = "temporary-native-master"
+        final_id = "approved-master-id"
+        after_native = copy.deepcopy(before)
+        after_native["masters"].append(
+            {
+                "id": generated_id,
+                "name": "Materialized",
+                "italicAngle": 0,
+                "axes": [{"tag": "wght", "internal": 150}],
+            }
+        )
+        native_layer_model = _layer(generated_id, "Materialized", 17.375)
+        after_native["glyphs"]["glyph0000"]["layers"].append(
+            copy.deepcopy(native_layer_model)
+        )
+        after_native["kerning"][generated_id] = {
+            "glyph_glyph0000": {"glyph_glyph0000": -25}
+        }
+
+        class GuardedMaster:
+            def __init__(self):
+                self._id = generated_id
+                self.name = "Materialized"
+                self.italicAngle = 0
+                self.axes = [150]
+                self.attached = True
+                self.attached_id_writes = 0
+
+            @property
+            def id(self):
+                return self._id
+
+            @id.setter
+            def id(self, value):
+                if self.attached:
+                    self.attached_id_writes += 1
+                    raise AssertionError("an attached master identity was renamed")
+                self._id = str(value)
+
+            def copy(self):
+                duplicate = GuardedMaster()
+                duplicate.attached = False
+                return duplicate
+
+        class NativeLayer:
+            def __init__(self):
+                self.layerId = generated_id
+                self.associatedMasterId = generated_id
+
+            def copy(self):
+                return copy.deepcopy(self)
+
+        native_master = GuardedMaster()
+        native_glyph = SimpleNamespace(
+            name="glyph0000", layers={generated_id: NativeLayer()}
+        )
+        clone = SimpleNamespace(
+            masters=[
+                SimpleNamespace(id="master_regular"),
+                SimpleNamespace(id="master_bold"),
+            ],
+            glyphs=[native_glyph],
+            instances=[],
+        )
+
+        def add_as_master():
+            clone.masters.append(native_master)
+
+        clone.instances = [SimpleNamespace(addAsMaster=add_as_master)]
+        source_font = SimpleNamespace(copy=lambda: clone)
+
+        class Projection:
+            @staticmethod
+            def normalize(model):
+                return model
+
+        class Precision:
+            def __init__(self, *_args, **_kwargs):
+                pass
+
+            def begin(self):
+                return self
+
+            def rescan_layers(self):
+                pass
+
+            def prepare_for_readback(self):
+                pass
+
+            def end(self):
+                pass
+
+        host = document_adapter.GlyphsDocumentHost(
+            SimpleNamespace(fonts=[], documents=[]), executor=_Immediate()
+        )
+        operation = {
+            "op": "materialize",
+            "target": {"entity": "instance", "ids": ["instance_regular"]},
+            "destinationEntity": "master",
+            "newId": final_id,
+        }
+        with mock.patch.object(
+            host, "_font_for_document", return_value=source_font
+        ), mock.patch.object(
+            host,
+            "_capture_detached_model",
+            side_effect=[copy.deepcopy(before), copy.deepcopy(after_native)],
+        ), mock.patch.object(
+            host,
+            "_reconcile_detached_clone",
+            return_value=(copy.deepcopy(before), Projection()),
+        ), mock.patch.object(
+            document_adapter, "FloatingGeometryScope", Precision
+        ), mock.patch.object(
+            document_adapter,
+            "_run_with_font_updates_suspended",
+            side_effect=lambda _font, callback: callback(),
+        ), mock.patch.object(
+            document_adapter,
+            "_settle_component_dependencies",
+            return_value={},
+        ):
+            prepared = host.prepare_generic_operations(
+                "doc_materialize", before, [operation]
+            )
+
+        payload = prepared["operations"][0]["_materialized"]
+        self.assertEqual(native_master.id, generated_id)
+        self.assertEqual(native_master.attached_id_writes, 0)
+        self.assertEqual(payload["master"]["id"], final_id)
+        self.assertEqual(payload["masterOrder"][-1], final_id)
+        self.assertEqual(payload["layers"]["glyph0000"]["id"], final_id)
+        self.assertEqual(
+            payload["layers"]["glyph0000"]["masterId"], final_id
+        )
+        self.assertIn(final_id, payload["kerning"])
+        self.assertNotIn(generated_id, payload["kerning"])
+        evidence = host._native_replay_evidence.resolve(
+            prepared["executionContext"]["nativeReplayPreparationId"],
+            document_id="doc_materialize",
+        )
+        self.assertIsNotNone(evidence)
+        self.assertEqual(
+            evidence.templates[("masters", final_id)]["master"].id,
+            generated_id,
+        )
+
+    def test_materialized_kerning_identity_remap_rejects_collisions(self) -> None:
+        with self.assertRaisesRegex(
+            document_adapter.HostAccessError, "identity collides"
+        ):
+            document_adapter._remap_materialized_kerning_master_ids(
+                {
+                    "temporary-master": {"left": {"right": -25}},
+                    "approved-master": {"left": {"right": -50}},
+                },
+                {"temporary-master": "approved-master"},
+            )
+
     def test_duplicate_keeps_registered_italic_metric_in_sync(self) -> None:
         before = _model()
         before["metrics"] = [{"id": "metric:italic", "type": "italic angle"}]
@@ -740,6 +999,52 @@ class MasterLifecycleTests(unittest.TestCase):
         self.assertTrue(reverted["ok"], reverted)
         self.assertEqual(host.apply_calls, 2)
         self.assertEqual(host.model, baseline)
+
+    def test_master_layer_coverage_blocks_preview_before_live_mutation(self) -> None:
+        faulty = _model()
+        faulty["glyphs"]["glyph0000"]["layers"].append(
+            _layer("temporary-master", "Temporary", 40)
+        )
+        host = _Host(faulty)
+        app = GlyphsMCPApplication(host)
+        preview = app.invoke(
+            "preview_change",
+            {
+                "documentId": "doc_faulty_coverage",
+                "expectedDocumentFingerprint": fingerprint_model(host.model),
+                "operations": [
+                    {
+                        "op": "set",
+                        "target": {
+                            "entity": "master",
+                            "ids": ["master_regular"],
+                        },
+                        "field": "name",
+                        "value": "Regular Reviewed",
+                    }
+                ],
+                "constraints": [
+                    {
+                        "phase": "after",
+                        "left": {
+                            "kind": "field",
+                            "selector": {"entity": "document"},
+                            "field": (
+                                "observation.masterLayerCoverage.violationCount"
+                            ),
+                        },
+                        "operator": "eq",
+                        "right": {"kind": "literal", "value": 0},
+                    }
+                ],
+            },
+        ).to_dict()
+
+        self.assertTrue(preview["ok"], preview)
+        self.assertFalse(preview["data"]["applicable"])
+        self.assertIn("postcondition_failed", preview["data"]["blockers"])
+        self.assertEqual(host.apply_calls, 0)
+        self.assertEqual(host.model, faulty)
 
     def test_direct_apply_composes_capabilities_from_the_semantic_patch(self) -> None:
         class CapabilityHost(_Host):

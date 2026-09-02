@@ -57,7 +57,11 @@ not round coordinates, snap to a grid, set `font.grid`, change
 owns its temporary rounding suppression and restores those protected settings;
 an attempted script change is reported as a failure. The global automatic
 alignment setting therefore remains unchanged. Component-level alignment
-changes remain explicit, reviewed opt-ins. Do not send removed legacy arguments; use the contract in
+changes remain explicit, reviewed opt-ins. For every direct or transitive
+component effect, the runtime keeps its tool-owned zero grid active through
+dependency settlement and restores the exact entry grid and subdivision before
+read-back. Scripts must never implement this by editing grid settings; explicit
+reviewed grid edits are isolated by the runtime after settlement. Do not send removed legacy arguments; use the contract in
 `content/reference/command-set-v2.mdx`. Never call `exit()`, `quit()`, or
 `sys.exit()`. Do not save, close, install, reload,
 restart, touch files, launch processes, or use networking unless the user

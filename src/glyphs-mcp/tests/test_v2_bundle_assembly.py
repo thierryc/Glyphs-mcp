@@ -147,7 +147,10 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 )
                 self.assertIn("GlyphsMCPCurvatureReporter", plugin_entry)
                 self.assertIn("GlyphsMCPChangeDiffReporter", plugin_entry)
-                self.assertIn("Changes Since Save (unavailable)", plugin_entry)
+                self.assertIn(
+                    "Changes Against Reference (unavailable)", plugin_entry
+                )
+                self.assertIn("GlyphsMCPComparisonReferencePalette", plugin_entry)
                 self.assertIn("GlyphsMCPInspectorPalette", plugin_entry)
                 self.assertNotIn("GlyphsMCPCandidateReporter", plugin_entry)
                 self.assertNotIn("GlyphsMCPLitSquareMetadataPalette", plugin_entry)
@@ -181,7 +184,14 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 self.assertTrue((resources / "glyphs_mcp_v2" / "change_diff_reporter.py").is_file())
                 self.assertTrue((resources / "glyphs_mcp_v2" / "saved_baseline.py").is_file())
                 self.assertTrue((resources / "glyphs_mcp_v2" / "saved_source.py").is_file())
+                self.assertTrue(
+                    (resources / "glyphs_mcp_v2" / "comparison_reference.py").is_file()
+                )
+                self.assertTrue(
+                    (resources / "glyphs_mcp_v2" / "comparison_reference_ui.py").is_file()
+                )
                 self.assertTrue((resources / "glyphs_mcp_v2" / "background_work.py").is_file())
+                self.assertTrue((resources / "glyphs_mcp_v2" / "visual_work.py").is_file())
                 self.assertIn("RefreshChangesSinceSave_", plugin_runtime)
                 for curve_reporter_dependency in (
                     "curve_overlay_model.py",
@@ -220,6 +230,10 @@ class V2BundleAssemblyTests(unittest.TestCase):
                 self.assertNotIn("from GlyphsApp", inspector_source)
                 self.assertIn("GlyphsMCPLitSquareMetadataPalette", inspector_source)
                 self.assertIn("default_connection_status_store", inspector_source)
+                self.assertIn(
+                    "class GlyphsMCPComparisonReferencePalette", inspector_source
+                )
+                self.assertNotIn("Show Overlay", inspector_source)
 
                 format_docs = resources / "MCP Documentation" / "docs" / "file-format"
                 pinned_specification = format_docs / "GlyphsFileFormatv4.md"
@@ -235,7 +249,16 @@ class V2BundleAssemblyTests(unittest.TestCase):
 
                 self.assertIn("GlyphsMCPCurvatureReporter", info["Principal Classes"])
                 self.assertIn("GlyphsMCPChangeDiffReporter", info["Principal Classes"])
+                self.assertIn(
+                    "GlyphsMCPComparisonReferencePalette", info["Principal Classes"]
+                )
                 self.assertIn("GlyphsMCPInspectorPalette", info["Principal Classes"])
+                self.assertLess(
+                    info["Principal Classes"].index(
+                        "GlyphsMCPComparisonReferencePalette"
+                    ),
+                    info["Principal Classes"].index("GlyphsMCPInspectorPalette"),
+                )
                 self.assertNotIn("GlyphsMCPCandidateReporter", info["Principal Classes"])
                 self.assertNotIn("GlyphsMCPLitSquareMetadataPalette", info["Principal Classes"])
 

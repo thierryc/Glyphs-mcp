@@ -20,6 +20,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT_ROOT = REPO_ROOT / "build" / "installer-payload" / "Payload"
 V2_BUILDER_PATH = REPO_ROOT / "scripts" / "build_v2_runtime_payload.py"
 REQUIREMENTS = REPO_ROOT / "requirements.txt"
+RUNTIME_DEPENDENCY_PROVENANCE = (
+    REPO_ROOT / "third_party" / "python-runtime-dependencies.json"
+)
 SKILLS = REPO_ROOT / "skills"
 PLUGIN_NAME = "Glyphs MCP.glyphsPlugin"
 GLYPHS3_TAG = "v1.11.0"
@@ -257,9 +260,17 @@ def validate_payload(
 
 
 def _copy_shared_payload(output: Path) -> None:
-    if not REQUIREMENTS.is_file() or not SKILLS.is_dir():
+    if (
+        not REQUIREMENTS.is_file()
+        or not RUNTIME_DEPENDENCY_PROVENANCE.is_file()
+        or not SKILLS.is_dir()
+    ):
         raise RuntimeError("installer requirements or skills are missing")
     shutil.copy2(REQUIREMENTS, output / "requirements.txt")
+    shutil.copy2(
+        RUNTIME_DEPENDENCY_PROVENANCE,
+        output / "python-runtime-dependencies.json",
+    )
     destination = output / "skills"
     destination.mkdir()
     manifest_path = SKILLS / "manifest.json"

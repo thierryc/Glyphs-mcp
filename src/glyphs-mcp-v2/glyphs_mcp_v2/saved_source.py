@@ -285,11 +285,67 @@ class SavedSourceReader:
                 snapshot=None,
                 error="source_changed_during_read",
             )
-        fingerprint = _content_fingerprint(kind, files)
+        return self.decode_files(
+            path=normalized,
+            kind=kind,
+            files=files,
+            signature=after,
+            instance_ids=instance_ids,
+        )
+
+    def decode_files(
+        self,
+        *,
+        path: Any,
+        kind: str,
+        files: Mapping[str, bytes],
+        signature: SourceSignature,
+        instance_ids: Sequence[str] = (),
+    ) -> SavedSourceRead:
+        """Decode one already captured immutable Glyphs source byte map.
+
+        Git-backed comparison references use this entry point so their blobs
+        share the exact canonical decoder and content fingerprint semantics of
+        the saved-file service without materialising an untrusted checkout.
+        """
+
+        normalized = normalize_source_path(path)
+        resolved_kind = str(kind or "")
+        if normalized is None or resolved_kind not in {"glyphs", "glyphspackage"}:
+            return SavedSourceRead(
+                path=str(path or ""),
+                state={"exists": False, "readable": False},
+                snapshot=None,
+                error="unsupported_source_format",
+            )
+        if resolved_kind == "glyphs":
+            valid_files = set(files) == {""}
+        else:
+            valid_files = bool(files) and all(
+                isinstance(name, str) and name and not name.startswith("/")
+                for name in files
+            )
+        if not valid_files or any(
+            not isinstance(value, bytes) for value in files.values()
+        ):
+            return SavedSourceRead(
+                path=normalized,
+                state={
+                    "kind": resolved_kind,
+                    "exists": True,
+                    "readable": False,
+                    "contentFingerprint": None,
+                    "filePath": normalized,
+                },
+                snapshot=None,
+                error="source_unreadable",
+            )
+
+        fingerprint = _content_fingerprint(resolved_kind, files)
         try:
             serialized = (
                 self._decoder(files[""])
-                if kind == "glyphs"
+                if resolved_kind == "glyphs"
                 else _package_mapping(files, self._decoder)
             )
             if not isinstance(serialized, Mapping):
@@ -298,7 +354,7 @@ class SavedSourceReader:
                 SerializedMappingSource(
                     serialized,
                     copy_source=False,
-                    document_path=source,
+                    document_path=Path(normalized),
                 ).capture()
             )
             identities = tuple(str(value) for value in instance_ids)
@@ -328,13 +384,13 @@ class SavedSourceReader:
         snapshot = SavedSourceSnapshot(
             path=normalized,
             source_fingerprint=fingerprint,
-            signature=after,
+            signature=signature,
             canonical=canonical,
         )
         return SavedSourceRead(
             path=normalized,
             state={
-                "kind": kind,
+                "kind": resolved_kind,
                 "exists": True,
                 "readable": True,
                 "contentFingerprint": fingerprint,

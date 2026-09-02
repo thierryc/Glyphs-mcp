@@ -37,6 +37,8 @@ TARGET_TOOLS = {
     "get_server_info",
     "list_documents",
     "read_document",
+    "read_document_view",
+    "configure_document_view",
     "evaluate_constraints",
     "preview_change",
     "apply_change",
@@ -284,7 +286,34 @@ class V2ContractTests(unittest.TestCase):
             registry["geometryExecution"]["nativeLayerRounding"],
             "temporarily_disabled",
         )
+        self.assertEqual(
+            registry["geometryExecution"]["gridDuringTransformation"], 0
+        )
+        self.assertEqual(
+            registry["geometryExecution"]["gridRestoration"],
+            "exact_entry_on_success_failure_cancellation_or_abort",
+        )
         self.assertTrue(registry["geometryExecution"]["restoresGrid"])
+        self.assertTrue(
+            registry["geometryExecution"]["restoresGridSubDivision"]
+        )
+        self.assertEqual(
+            registry["geometryExecution"]["componentDependencyResolution"],
+            "transitive_before_grid_restore",
+        )
+        self.assertEqual(
+            registry["geometryExecution"]["temporarySettingsOwnership"],
+            "tool",
+        )
+        self.assertFalse(
+            registry["geometryExecution"][
+                "temporarySettingsInRequestedChangeSet"
+            ]
+        )
+        self.assertEqual(
+            registry["geometryExecution"]["explicitGridChangeOrdering"],
+            "isolated_after_component_settlement",
+        )
         self.assertTrue(
             registry["geometryExecution"]["preservesGlobalAutomaticAlignment"]
         )

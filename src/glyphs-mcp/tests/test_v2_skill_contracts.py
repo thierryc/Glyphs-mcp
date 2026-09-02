@@ -120,6 +120,10 @@ class V2SkillContractTests(unittest.TestCase):
                 self.assertIn("fraction", normalized)
                 self.assertIn("grid", normalized)
                 self.assertIn("automatic alignment", normalized)
+                self.assertIn("transitive component", normalized)
+                self.assertIn("exact entry", normalized)
+                self.assertIn("never", normalized)
+                self.assertIn("scripts", normalized)
 
         violations: list[tuple[str, str]] = []
         quantizer_grid = re.compile(
@@ -195,6 +199,34 @@ class V2SkillContractTests(unittest.TestCase):
         self.assertIn("`inheritance.metrics` separates configured keys", spacing)
         self.assertIn("change or remove the key", spacing)
         self.assertIn("never make it", spacing)
+
+        italic = self._text("glyphs-mcp-italic-first-pass")
+        italic_flat = " ".join(italic.split())
+        for directive in (
+            "`materialize` when the source is an interpolated static instance",
+            "master identity is an ownership root",
+            "before- and after-constraints",
+            "`observation.masterLayerCoverage.violationCount == 0`",
+            "`observation.geometry.counts`",
+            "runtime/deployment skew",
+        ):
+            self.assertIn(directive, italic_flat)
+        self.assertIn(
+            "never attach a master under a temporary ID", italic_flat
+        )
+
+        compatibility = self._text("glyphs-mcp-master-compatibility")
+        compatibility_flat = " ".join(compatibility.split())
+        self.assertIn(
+            "`materialize` for a static instance source", compatibility_flat
+        )
+        self.assertIn(
+            "master identity is an ownership root", compatibility_flat
+        )
+        self.assertIn(
+            "`observation.masterLayerCoverage.violationCount == 0`",
+            compatibility_flat,
+        )
 
     def test_python_and_generic_transport_have_no_legacy_arguments(self) -> None:
         execute = inspect.signature(ToolHandlers.execute_python).parameters

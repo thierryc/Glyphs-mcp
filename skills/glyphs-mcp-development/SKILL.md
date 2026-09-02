@@ -48,9 +48,16 @@ Keep floating-point precision adapter-owned and plugin-wide. All geometry-
 capable declarative, structural, transaction, staged-Python, and live-Python
 paths must use the central nest-safe scope, exact-only quantization, and exact
 fractional read-back. Feature-detect `GSLayer.temporarilyDisableRounding`;
-use temporary grid zero only for structural/Python execution or as its fallback,
-and restore grid, subdivision, global automatic alignment, layer flags, and
-update suspension on every exit. Never add local coordinate rounding, grid
+snapshot grid and subdivision and set the grid to zero before every
+transformation. Release update suspension while grid remains zero, settle the
+direct and transitive component dependency closure across host turns, then
+read-verify the exact entry grid, subdivision, and global automatic-alignment
+settings on every success, failure, cancellation, abort, rollback, or
+settlement-failure exit. Apply an explicit reviewed grid edit only in an
+isolated post-settlement phase; the temporary zero must never enter canonical
+changes, history, dirty accounting, rollback, or persistence evidence. Agents
+and scripts must never implement the scope by editing grid settings. Restore
+layer flags and update suspension on every exit. Never add local coordinate rounding, grid
 snapping, epsilon-to-integer cleanup, or tool-specific precision toggles.
 
 Do not encode workflow policy as mutation guards. Locks, component alignment

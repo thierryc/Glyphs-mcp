@@ -29,6 +29,11 @@ from .catalog import TOOL_CATALOG
 from .change_history import ActionCommit, ChangeHistory
 from .change_lifecycle import DocumentHistoryLifecycle
 from .change_trace import ActionTraceCoordinator
+from .comparison_reference import (
+    ComparisonReferenceError,
+    ComparisonReferenceService,
+    ComparisonReferenceSpec,
+)
 from .contracts import API_MAJOR, API_VERSION, OperationMetadata, ToolResponse, ToolWarning
 from .detached_python import detached_python_registry_for_host
 from .exporting import ExportPublicationError, destination_matches
@@ -81,6 +86,7 @@ from .transactions import (
     TransactionVerificationError,
 )
 from .versions import SERVER_NAME, SERVER_VERSION
+from .visual_work import VisualWorkGate, default_visual_work_gate
 
 
 REVIEW_TTL_SECONDS = 15 * 60
@@ -317,10 +323,13 @@ class GlyphsMCPApplication:
         audit: Optional[AuditLog] = None,
         history: Optional[ChangeHistory] = None,
         activity: Optional[OperationActivityStore] = None,
+        visual_work: Optional[VisualWorkGate] = None,
         saved_sources: SavedSourceService | None = None,
+        comparison_references: ComparisonReferenceService | None = None,
     ) -> None:
         self._host = host
         self.activity = activity or default_activity_store()
+        self.visual_work = visual_work or default_visual_work_gate()
         self._invocation_context: ContextVar[Optional[InvocationContext]] = (
             ContextVar(
                 "glyphs_mcp_v2_invocation_context_{}".format(id(self)),
@@ -336,6 +345,7 @@ class GlyphsMCPApplication:
         self._checkpoints = OperationStore(max_records=512)
         self._audit = audit or AuditLog()
         self._saved_sources = saved_sources
+        self._comparison_references = comparison_references
         if history is None:
             history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
             history.reset_for_schema_change(6, 7)
@@ -442,6 +452,20 @@ class GlyphsMCPApplication:
         )
 
     def invoke(
+        self,
+        handler_name: str,
+        arguments: Optional[Mapping[str, Any]] = None,
+        *,
+        invocation_context: Optional[InvocationContext] = None,
+    ) -> ToolResponse:
+        with self.visual_work.hold("mcp_operation"):
+            return self._invoke_with_visual_work(
+                handler_name,
+                arguments,
+                invocation_context=invocation_context,
+            )
+
+    def _invoke_with_visual_work(
         self,
         handler_name: str,
         arguments: Optional[Mapping[str, Any]] = None,
@@ -1078,6 +1102,314 @@ class GlyphsMCPApplication:
         )
         public = {**dict(metadata or {}), item_key: list(first.items)}
         return operation, public, first.page.to_dict()
+
+    def _comparison_document_binding(self, document_id: str) -> str:
+        service = self._comparison_references
+        if service is None:
+            raise ComparisonReferenceError(
+                "reference_service_unavailable",
+                "This Glyphs runtime does not include the comparison reference service.",
+                recoverable=False,
+            )
+        source_reader = getattr(self._host, "source_path_for_document", None)
+        source_path = source_reader(document_id) if callable(source_reader) else None
+        if source_path is None:
+            for document in self._host.list_documents():
+                if str(document.document_id) == document_id:
+                    source_path = document.file_path
+                    break
+        identity_reader = getattr(
+            self._host, "comparison_reference_identity_for_document", None
+        )
+        native_identity = (
+            identity_reader(document_id) if callable(identity_reader) else None
+        )
+        return service.bind_document(
+            document_id,
+            source_path=source_path,
+            native_identity=native_identity,
+        )
+
+    def _comparison_reporter_state(self) -> dict[str, Any]:
+        reader = getattr(self._host, "comparison_reference_reporter_state", None)
+        state = dict(reader()) if callable(reader) else {}
+        active = bool(state.get("active", state.get("enabled", False)))
+        return {
+            "available": bool(state.get("available", False)),
+            "active": active,
+            "showChangesAgainstReference": active,
+            "applicationWide": True,
+            "reporterClass": str(
+                state.get("reporterClass") or "GlyphsMCPChangeDiffReporter"
+            ),
+            "menuName": str(
+                state.get("menuName") or "Show Changes Against Reference"
+            ),
+            **{
+                str(key): copy.deepcopy(value)
+                for key, value in state.items()
+                if key
+                not in {
+                    "active",
+                    "enabled",
+                    "available",
+                    "reporterClass",
+                    "menuName",
+                }
+            },
+        }
+
+    def _document_view_evidence(self, document_id: str) -> tuple[str, str | None]:
+        document_fingerprint = fingerprint_model(self._document_model(document_id))
+        source = _recovery_source_identity(self._host, document_id)
+        source_fingerprint = source.get("contentFingerprint")
+        return (
+            document_fingerprint,
+            str(source_fingerprint) if source_fingerprint else None,
+        )
+
+    def _document_view_data(
+        self,
+        document_id: str,
+        *,
+        document_fingerprint: str,
+        source_file_fingerprint: str | None,
+        before_document_fingerprint: str | None = None,
+        before_source_file_fingerprint: str | None = None,
+        document_changed: bool = False,
+        source_file_changed: bool = False,
+    ) -> dict[str, Any]:
+        service = self._comparison_references
+        status = (
+            service.status_for_document(document_id)
+            if service is not None
+            else None
+        )
+        return {
+            "documentId": document_id,
+            "comparisonReference": status.to_dict() if status is not None else {
+                "state": "unavailable",
+                "ready": False,
+                "reference": {"kind": "last_saved"},
+                "resolved": None,
+                "sourceFingerprint": None,
+                "stale": False,
+                "offlineStatus": "not_applicable",
+                "error": {
+                    "code": "reference_service_unavailable",
+                    "message": "The comparison reference service is unavailable.",
+                },
+                "origin": "default",
+            },
+            "reporter": self._comparison_reporter_state(),
+            "documentFingerprint": document_fingerprint,
+            "sourceFileFingerprint": source_file_fingerprint,
+            "documentChanged": bool(document_changed),
+            "sourceFileChanged": bool(source_file_changed),
+            "unchangedProof": {
+                "document": {
+                    "beforeFingerprint": before_document_fingerprint
+                    or document_fingerprint,
+                    "afterFingerprint": document_fingerprint,
+                    "unchanged": not bool(document_changed),
+                },
+                "sourceFile": {
+                    "beforeFingerprint": (
+                        before_source_file_fingerprint
+                        if before_source_file_fingerprint is not None
+                        else source_file_fingerprint
+                    ),
+                    "afterFingerprint": source_file_fingerprint,
+                    "unchanged": not bool(source_file_changed),
+                },
+            },
+            "fontSaved": False,
+        }
+
+    def read_document_view(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        if not document_id:
+            raise ValueError("documentId is required")
+        document_fingerprint, source_fingerprint = self._document_view_evidence(
+            document_id
+        )
+        try:
+            self._comparison_document_binding(document_id)
+        except ComparisonReferenceError as error:
+            return ToolResponse.failure(
+                tool="read_document_view",
+                effect="read",
+                summary="The comparison reference state is unavailable.",
+                code=error.code,
+                message=error.message,
+                recoverable=error.recoverable,
+                data=self._document_view_data(
+                    document_id,
+                    document_fingerprint=document_fingerprint,
+                    source_file_fingerprint=source_fingerprint,
+                ),
+            )
+        return ToolResponse.success(
+            tool="read_document_view",
+            effect="read",
+            summary="Read the document's pinned comparison reference and application-wide Reporter state.",
+            data=self._document_view_data(
+                document_id,
+                document_fingerprint=document_fingerprint,
+                source_file_fingerprint=source_fingerprint,
+            ),
+        )
+
+    def configure_document_view(self, arguments: Mapping[str, Any]) -> ToolResponse:
+        document_id = str(_value(arguments, "document_id", "documentId", "") or "")
+        if not document_id:
+            raise ValueError("documentId is required")
+        reference_present = any(
+            key in arguments for key in ("comparisonReference", "comparison_reference")
+        )
+        show_present = any(
+            key in arguments
+            for key in (
+                "showChangesAgainstReference",
+                "show_changes_against_reference",
+            )
+        )
+        refresh = _value(
+            arguments,
+            "refresh_comparison_reference",
+            "refreshComparisonReference",
+            False,
+        )
+        if type(refresh) is not bool:
+            raise ValueError("refreshComparisonReference must be a boolean")
+        if not reference_present and not refresh and not show_present:
+            raise ValueError("At least one configuration field is required")
+        if reference_present and refresh:
+            raise ValueError(
+                "comparisonReference and refreshComparisonReference cannot be supplied together"
+            )
+        timeout = _value(arguments, "timeout_seconds", "timeoutSeconds", 60)
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)):
+            raise ValueError("timeoutSeconds must be a number from 5 through 120")
+        timeout = float(timeout)
+        if timeout < 5 or timeout > 120:
+            raise ValueError("timeoutSeconds must be from 5 through 120")
+        show = _value(
+            arguments,
+            "show_changes_against_reference",
+            "showChangesAgainstReference",
+            None,
+        )
+        if show_present and type(show) is not bool:
+            raise ValueError("showChangesAgainstReference must be a boolean")
+        configuration_origin = str(
+            arguments.get("_configurationOrigin") or "agent"
+        )
+
+        before_document, before_source = self._document_view_evidence(document_id)
+        try:
+            self._comparison_document_binding(document_id)
+            service = self._comparison_references
+            if service is None:
+                raise ComparisonReferenceError(
+                    "reference_service_unavailable",
+                    "The comparison reference service is unavailable.",
+                    recoverable=False,
+                )
+            if reference_present:
+                raw_reference = _value(
+                    arguments, "comparison_reference", "comparisonReference"
+                )
+                if not isinstance(raw_reference, Mapping):
+                    raise ComparisonReferenceError(
+                        "invalid_reference", "comparisonReference must be an object."
+                    )
+                service.configure_wait(
+                    document_id,
+                    ComparisonReferenceSpec.from_mapping(raw_reference),
+                    timeout_seconds=timeout,
+                    origin=configuration_origin,
+                )
+            elif refresh:
+                service.refresh_wait(
+                    document_id,
+                    timeout_seconds=timeout,
+                    origin=configuration_origin,
+                )
+
+            if show_present:
+                setter = getattr(
+                    self._host, "set_comparison_reference_reporter_active", None
+                )
+                if not callable(setter):
+                    raise ComparisonReferenceError(
+                        "reporter_control_unavailable",
+                        "Glyphs does not expose Reporter activation in this runtime.",
+                    )
+                reporter_result = dict(setter(bool(show)))
+                observed = bool(
+                    reporter_result.get(
+                        "active", reporter_result.get("enabled", False)
+                    )
+                )
+                if not reporter_result.get("available"):
+                    raise ComparisonReferenceError(
+                        "reporter_unavailable",
+                        "Show Changes Against Reference is not loaded; restart Glyphs after installing the plug-in.",
+                    )
+                if observed is not bool(show):
+                    raise ComparisonReferenceError(
+                        "reporter_state_verification_failed",
+                        "Glyphs did not report the requested Reporter activation state.",
+                    )
+        except ComparisonReferenceError as error:
+            after_document, after_source = self._document_view_evidence(document_id)
+            return ToolResponse.failure(
+                tool="configure_document_view",
+                effect="ui",
+                summary="The document view configuration was not fully applied.",
+                code=error.code,
+                message=error.message,
+                recoverable=error.recoverable,
+                data=self._document_view_data(
+                    document_id,
+                    document_fingerprint=after_document,
+                    source_file_fingerprint=after_source,
+                    before_document_fingerprint=before_document,
+                    before_source_file_fingerprint=before_source,
+                    document_changed=before_document != after_document,
+                    source_file_changed=before_source != after_source,
+                ),
+            )
+
+        after_document, after_source = self._document_view_evidence(document_id)
+        warnings = (
+            (
+                ToolWarning(
+                    code="reporter_activation_is_application_wide",
+                    message="Reporter activation applies to every open Glyphs document.",
+                    target={"documentId": document_id},
+                ),
+            )
+            if show_present
+            else ()
+        )
+        return ToolResponse.success(
+            tool="configure_document_view",
+            effect="ui",
+            status="warning" if warnings else "success",
+            summary="Configured the pinned comparison reference and document view state.",
+            warnings=warnings,
+            data=self._document_view_data(
+                document_id,
+                document_fingerprint=after_document,
+                source_file_fingerprint=after_source,
+                before_document_fingerprint=before_document,
+                before_source_file_fingerprint=before_source,
+                document_changed=before_document != after_document,
+                source_file_changed=before_source != after_source,
+            ),
+        )
 
 
     def list_documents(self, arguments: Mapping[str, Any]) -> ToolResponse:
@@ -2212,6 +2544,14 @@ class GlyphsMCPApplication:
                 "registries": {
                     **public_mechanics_registry(),
                     **detached_python_registry_for_host(self._host),
+                    "comparisonReferences": {
+                        "schemaVersion": 1,
+                        "kinds": ["last_saved", "local_git", "github"],
+                        "publicGitHosts": ["github.com"],
+                        "branchRefresh": "explicit",
+                        "reporterActivation": "application_wide",
+                        "fontMutation": False,
+                    },
                 },
                 "capabilities": [
                     "stable_document_ids",
@@ -2236,6 +2576,8 @@ class GlyphsMCPApplication:
                     "source_file_fingerprints",
                     "recoverable_scripting_runtime",
                     "verified_document_activation",
+                    "git_backed_comparison_references",
+                    "application_wide_reference_reporter",
                 ],
                 "host": runtime.to_dict(),
                 "scriptingRuntimeSafety": {
@@ -2641,6 +2983,11 @@ class GlyphsMCPApplication:
         """Enqueue native-save convenience work without delaying Glyphs."""
 
         identity = str(document_id or "")
+        if self._comparison_references is not None:
+            try:
+                self._comparison_document_binding(identity)
+            except Exception:
+                pass
 
         def record(_context=None) -> bool:
             return self.lifecycle.document_was_saved(
@@ -2673,6 +3020,8 @@ class GlyphsMCPApplication:
         """Enqueue process-local pruning after a native document close."""
 
         identity = str(document_id or "")
+        if self._comparison_references is not None:
+            self._comparison_references.document_was_closed(identity)
         coordinator = getattr(self._saved_sources, "coordinator", None)
         if coordinator is not None:
             return bool(

@@ -331,6 +331,37 @@ class _App:
         self.opened.append((path, showInterface))
 
 
+class ComparisonReporterStateTests(unittest.TestCase):
+    def test_native_reporter_state_includes_additive_performance_data(self) -> None:
+        class GlyphsMCPChangeDiffReporter:
+            menuName = "Changes Against Reference"
+
+            @staticmethod
+            def _diagnostics_snapshot():
+                return {
+                    "scope": "application",
+                    "policy": {"mcpPauseEnabled": True},
+                    "counters": {"suspensions": 1},
+                    "timingsMs": {"completedSuspension": 5.0},
+                }
+
+        reporter = GlyphsMCPChangeDiffReporter()
+        glyphs_module = SimpleNamespace(
+            Glyphs=SimpleNamespace(
+                reporters=[reporter], activeReporters=[reporter]
+            )
+        )
+        host = GlyphsDocumentHost(_App(_Font()), executor=_Immediate())
+
+        with mock.patch.dict(sys.modules, {"GlyphsApp": glyphs_module}):
+            state = host.comparison_reference_reporter_state()
+
+        self.assertTrue(state["active"])
+        self.assertEqual(state["performance"]["scope"], "application")
+        self.assertTrue(state["performance"]["policy"]["mcpPauseEnabled"])
+        self.assertNotIn("currentlyPaused", state["performance"])
+
+
 class _CompileFont(_Font):
     def __init__(self, events=None, *, detached=False, preflight_error=None):
         super().__init__()
@@ -476,6 +507,72 @@ class VerifiedTransactionUpdateBoundaryTests(unittest.TestCase):
             self.assertEqual(events, ["disable", "enable"])
         self.assertEqual(host._verified_transaction_updates, {})
         self.assertEqual(gc_events, ["begin", "begin", "end", "end"])
+
+    def test_explicit_grid_changes_are_isolated_after_entry_restoration(self) -> None:
+        font = _TransactionalFont()
+        font.grid = 1.25
+        font.gridSubDivision = 3
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        target = copy.deepcopy(before)
+        target["font"]["grid"] = 2.5
+        target["font"]["gridSubDivision"] = 7
+        changes = diff_models(before, target)
+
+        host.begin_verified_transaction(document_id)
+        try:
+            self.assertEqual(font.grid, 0)
+            host.apply_verified_change_set(
+                document_id,
+                changes,
+                operation_id="op_explicit_grid",
+            )
+            self.assertEqual(font.grid, 0)
+            self.assertEqual(font.gridSubDivision, 3)
+            host.settle_verified_transaction(document_id)
+            self.assertEqual(font.grid, 2.5)
+            self.assertEqual(font.gridSubDivision, 7)
+        finally:
+            host.end_verified_transaction(document_id)
+
+        self.assertEqual(font.grid, 2.5)
+        self.assertEqual(font.gridSubDivision, 7)
+        self.assertEqual(
+            {change.path for change in changes.changes},
+            {("font", "grid"), ("font", "gridSubDivision")},
+        )
+
+    def test_rollback_grid_change_reenters_zero_then_restores_entry(self) -> None:
+        font = _TransactionalFont()
+        font.grid = 1.25
+        font.gridSubDivision = 3
+        host = GlyphsDocumentHost(_App(font), executor=_Immediate())
+        document_id = host.list_documents()[0].document_id
+        before = host.capture_model(document_id)
+        target = copy.deepcopy(before)
+        target["font"]["grid"] = 2.5
+        target["font"]["gridSubDivision"] = 7
+
+        host.begin_verified_transaction(document_id)
+        try:
+            host.apply_verified_change_set(
+                document_id,
+                diff_models(before, target),
+                operation_id="op_grid_rollback",
+            )
+            host.settle_verified_transaction(document_id)
+            host.restore_verified_attempt(
+                document_id,
+                before,
+                operation_id="op_grid_rollback",
+            )
+            self.assertEqual(font.grid, 0)
+            host.settle_verified_transaction(document_id)
+            self.assertEqual(font.grid, 1.25)
+            self.assertEqual(font.gridSubDivision, 3)
+        finally:
+            host.end_verified_transaction(document_id)
 
 
 class _ObjectiveCBooleanFeature:
@@ -4159,6 +4256,87 @@ class V2DocumentAdapterTests(unittest.TestCase):
         document_adapter._project_persistent_layer_order(observed, after)
         self.assertEqual(observed, after)
 
+    def test_master_replay_sets_final_identity_before_default_layer_generation(self) -> None:
+        font = _master_lifecycle_font()
+
+        class DefaultGeneratingMasters(_CascadingMasterCollection):
+            def __init__(self, values, owner):
+                super().__init__(values, owner)
+                self.appended_ids = []
+
+            def append(self, master):
+                master_id = str(master.id)
+                self.appended_ids.append(master_id)
+                super().append(master)
+                for glyph in self.font.glyphs:
+                    glyph.layers[master_id] = _MasterLifecycleLayer(
+                        master_id,
+                        str(master.name),
+                        native_only="blank-default-{}".format(glyph.name),
+                    )
+
+        font.masters = DefaultGeneratingMasters(list(font.masters), font)
+        before = native_font_to_model(font)
+        build = build_master_updates(
+            before,
+            [
+                {
+                    "action": "duplicate",
+                    "sourceMasterId": "master_regular",
+                    "masterId": "master_text",
+                    "name": "Text",
+                }
+            ],
+        )
+        after = build.change_set.apply(before)
+        template_master = _MasterLifecycleMaster(
+            "temporary-master",
+            "Text",
+            100,
+            native_only="materialized-master",
+        )
+        template_layers = {
+            glyph.name: _MasterLifecycleLayer(
+                "temporary-master",
+                "Text",
+                native_only="materialized-layer-{}".format(glyph.name),
+            )
+            for glyph in font.glyphs
+        }
+
+        document_adapter._apply_target_model(
+            font,
+            before,
+            after,
+            build.change_set,
+            capabilities=build.capabilities,
+            execution_context={
+                "nativeReplayTemplates": {
+                    ("masters", "master_text"): {
+                        "master": template_master,
+                        "layers": template_layers,
+                    }
+                },
+                "reuseNativeReplayTemplates": True,
+            },
+        )
+
+        self.assertEqual(font.masters.appended_ids, ["master_text"])
+        self.assertEqual(template_master.id, "master_text")
+        for glyph in font.glyphs:
+            self.assertEqual(
+                set(glyph.layers._values),
+                {"master_regular", "master_text"},
+            )
+            self.assertEqual(
+                glyph.layers["master_text"].native_only,
+                "materialized-layer-{}".format(glyph.name),
+            )
+            self.assertEqual(
+                glyph.layers["master_text"].associatedMasterId,
+                "master_text",
+            )
+
     def test_layer_field_replay_does_not_reassign_unchanged_collection_order(self) -> None:
         font = _master_lifecycle_font()
         glyph = font.glyphs[0]
@@ -6375,7 +6553,9 @@ class V2DocumentAdapterTests(unittest.TestCase):
             captured = host.capture_model(document_id)
 
         self.assertFalse(captured["glyphs"]["A"]["export"])
-        self.assertEqual(capture_glyph.call_count, 3)
+        # Baseline A/B, two agreeing dependency-settlement reads for A,
+        # and the final affected-glyph refresh.
+        self.assertEqual(capture_glyph.call_count, 5)
 
     def test_verified_snapshot_readback_reuses_expected_fingerprint_and_unaffected_shards(self) -> None:
         font = _TransactionalFont()
@@ -9260,6 +9440,10 @@ class V2DocumentAdapterTests(unittest.TestCase):
             def __init__(self):
                 self.state = "before"
                 self.updates_suspended = False
+                self.grid = 1
+                self.gridSubDivision = 1
+                self.disablesAutomaticAlignment = False
+                self.glyphs = []
 
             def disableUpdateInterface(self):
                 self.updates_suspended = True

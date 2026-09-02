@@ -6,6 +6,7 @@ and verify pinned requirements install and import under Python 3.12 and 3.14.
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -25,6 +26,7 @@ IMPORT_MODULES = (
     "httpx",
     "sse_starlette",
     "openstep_plist",
+    "dulwich",
     "fontParts",
     "fontTools",
     "objc",
@@ -48,7 +50,28 @@ class PythonRequirementsTests(unittest.TestCase):
         self.assertIn("pyobjc-core==11.1", lines)
         self.assertIn("pyobjc-framework-Cocoa==11.1", lines)
         self.assertIn("openstep_plist==0.5.2", lines)
+        self.assertIn("dulwich==1.2.14", lines)
+        self.assertIn("urllib3==2.7.0", lines)
         self.assertNotIn("pyobjc==11.1", lines)
+
+    def test_git_runtime_pins_have_audited_license_provenance(self) -> None:
+        root = _repo_root()
+        manifest = json.loads(
+            (root / "third_party/python-runtime-dependencies.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        dependencies = {
+            item["name"]: item for item in manifest["dependencies"]
+        }
+        self.assertEqual(manifest["schemaVersion"], 1)
+        self.assertRegex(manifest["auditedAt"], r"^20\d\d-\d\d-\d\d$")
+        self.assertEqual(dependencies["dulwich"]["version"], "1.2.14")
+        self.assertEqual(dependencies["urllib3"]["version"], "2.7.0")
+        for package in ("dulwich", "urllib3"):
+            self.assertTrue(dependencies[package]["source"].startswith("https://"))
+            self.assertTrue(dependencies[package]["repository"].startswith("https://"))
+            self.assertTrue(dependencies[package]["licenseExpression"])
 
     def test_development_requirements_extend_runtime_without_shipping_test_tools(self) -> None:
         root = _repo_root()

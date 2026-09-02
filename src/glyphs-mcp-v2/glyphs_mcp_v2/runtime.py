@@ -9,6 +9,7 @@ from .adapters.lifecycle import GlyphsDocumentLifecycleObserver
 from .application import GlyphsMCPApplication
 from .canonical_tree import CanonicalFontTree, MemoryObjectStore
 from .change_history import ChangeHistory
+from .comparison_reference import default_comparison_reference_service
 from .saved_source import default_saved_source_service
 from .transport.fastmcp import create_server
 
@@ -87,10 +88,12 @@ def create_glyphs_server() -> FastMCP:
     # or hashing happens in Reporter callbacks.
     history = ChangeHistory(CanonicalFontTree(MemoryObjectStore()))
     history.reset_for_schema_change(6, 7)
+    saved_sources = default_saved_source_service()
     application = GlyphsMCPApplication(
         host,
         history=history,
-        saved_sources=default_saved_source_service(),
+        saved_sources=saved_sources,
+        comparison_references=default_comparison_reference_service(),
     )
     observer = GlyphsDocumentLifecycleObserver.install_from_running_glyphs(
         host, application

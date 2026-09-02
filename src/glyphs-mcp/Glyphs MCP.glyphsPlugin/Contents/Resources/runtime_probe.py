@@ -45,6 +45,8 @@ SCHEMA_VERSION = 1
 DEFAULT_MODULES = [
     "mcp",
     "fastmcp",
+    "dulwich",
+    "urllib3",
     "pydantic_core",
     "starlette",
     "uvicorn",

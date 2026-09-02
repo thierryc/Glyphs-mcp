@@ -51,6 +51,34 @@ class StrictInputModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class LastSavedComparisonReference(StrictInputModel):
+    kind: Literal["last_saved"]
+
+
+class LocalGitComparisonReference(StrictInputModel):
+    kind: Literal["local_git"]
+    revision: Annotated[str, Field(min_length=1, max_length=512)]
+    repositoryPath: Optional[Annotated[str, Field(min_length=1, max_length=4096)]] = None
+    fontPath: Optional[Annotated[str, Field(min_length=1, max_length=4096)]] = None
+
+
+class GitHubComparisonReference(StrictInputModel):
+    kind: Literal["github"]
+    repositoryUrl: Annotated[str, Field(min_length=1, max_length=4096)]
+    revision: Annotated[str, Field(min_length=1, max_length=512)]
+    fontPath: Optional[Annotated[str, Field(min_length=1, max_length=4096)]] = None
+
+
+ComparisonReference = Annotated[
+    Union[
+        LastSavedComparisonReference,
+        LocalGitComparisonReference,
+        GitHubComparisonReference,
+    ],
+    Field(discriminator="kind"),
+]
+
+
 class Predicate(StrictInputModel):
     op: PredicateOperator
     field: Optional[str] = None
@@ -315,6 +343,19 @@ class ToolHandlers:
     ) -> ToolResult:
         return await self._invoke("read_document", locals())
 
+    async def read_document_view(self, documentId: str) -> ToolResult:
+        return await self._invoke("read_document_view", locals())
+
+    async def configure_document_view(
+        self,
+        documentId: str,
+        comparisonReference: Optional[ComparisonReference] = None,
+        refreshComparisonReference: bool = False,
+        showChangesAgainstReference: Optional[bool] = None,
+        timeoutSeconds: Annotated[int, Field(ge=5, le=120)] = 60,
+    ) -> ToolResult:
+        return await self._invoke("configure_document_view", locals())
+
     async def evaluate_constraints(
         self,
         documentId: str,
@@ -492,6 +533,7 @@ def create_server(application: GlyphsMCPApplication) -> FastMCP:
 __all__ = [
     "CatalogRegistrar",
     "ChangeOperation",
+    "ComparisonReference",
     "Constraint",
     "EntitySelector",
     "Projection",

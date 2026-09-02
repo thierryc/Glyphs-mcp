@@ -39,6 +39,8 @@ Geometry is floating-point and exact-only. Preserve every nonzero fraction; neve
 round or grid-snap coordinates, change the grid/subdivision, or change global
 automatic alignment. The runtime owns precision and fails closed when unavailable;
 component alignment changes remain explicit opt-ins.
+For direct or dependency-induced component geometry, the runtime snapshots `font.grid` and `gridSubDivision`, owns grid zero through transitive component settlement, restores exact entry settings before read-back, and isolates reviewed grid edits afterward.
+Agents and scripts must never implement this policy by editing grid settings themselves.
 
 Registered non-rounding native effects can be review items when evidence is complete
 and the edit is verified and reversible; unregistered geometry deviation is a blocker.

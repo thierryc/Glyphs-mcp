@@ -105,6 +105,15 @@ class V2InstallerPayloadTests(unittest.TestCase):
                 _managed_skill_map(first / manifest["skillsPath"]),
                 _managed_skill_map(REPO / "skills"),
             )
+            dependency_provenance = json.loads(
+                (first / "python-runtime-dependencies.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(
+                {item["name"] for item in dependency_provenance["dependencies"]},
+                {"dulwich", "urllib3"},
+            )
 
             verified = subprocess.run(
                 [

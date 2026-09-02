@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "auditedAt": "2026-09-01",
+  "dependencies": [
+    {
+      "name": "dulwich",
+      "version": "1.2.14",
+      "source": "https://pypi.org/project/dulwich/1.2.14/",
+      "repository": "https://github.com/dulwich/dulwich",
+      "licenseExpression": "Apache-2.0 OR GPL-2.0-or-later",
+      "role": "Git object access and bounded public-GitHub HTTPS transport"
+    },
+    {
+      "name": "urllib3",
+      "version": "2.7.0",
+      "source": "https://pypi.org/project/urllib3/2.7.0/",
+      "repository": "https://github.com/urllib3/urllib3",
+      "licenseExpression": "MIT",
+      "role": "Pinned HTTPS transport dependency for Dulwich"
+    }
+  ]
+}

@@ -44,6 +44,8 @@ class SpacingSkillTests(unittest.TestCase):
             "revert_change",
             "quantizer=\"exact\"",
             "floating-point geometry",
+            "set the effective Glyphs grid to zero",
+            "success, failure, cancellation, or abort",
             "staged_document",
             "live_open_world",
             "Signed sidebearings are legal",

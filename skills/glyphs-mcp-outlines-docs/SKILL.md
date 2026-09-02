@@ -34,8 +34,12 @@ unsupported edits use `execute_python(mode="staged_document")`.
 Preserve fractional node, anchor, component, width, and transform values
 exactly. Do not round coordinates, snap to the font grid, change the grid or
 subdivision, or change global automatic alignment; the v2 runtime manages
-precision centrally. Component-level alignment changes require an explicit,
-reviewed alignment policy.
+precision centrally. It owns grid zero through settlement of every direct and
+transitive component dependency, restores the exact entry grid and subdivision
+before read-back, and isolates any explicit reviewed grid edit afterward.
+Agents and scripts must never edit grid settings to implement this policy.
+Component-level alignment changes require an explicit, reviewed alignment
+policy.
 
 Always add physical before/after constraints, inspect the immutable
 `preview_change` or staged Python preview, and apply it only through

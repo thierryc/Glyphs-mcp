@@ -37,6 +37,7 @@ from ..canonical_collections import (
 )
 from ..affine import require_component_matrix
 from ..canonical_tree import CanonicalSnapshot
+from ..comparison_reference import native_font_identity
 from ..canonical_sources import (
     SerializedMappingSource,
     canonical_component,
@@ -120,6 +121,10 @@ from .geometry_precision import FloatingGeometryScope
 
 
 _FONT_SCALARS = CANONICAL_FONT_SCALAR_FIELDS
+_GRID_SETTING_FIELDS = ("gridSubDivision", "grid")
+_COMPONENT_SETTLEMENT_QUIET_SECONDS = 0.100
+_COMPONENT_SETTLEMENT_BUDGET_SECONDS = 0.750
+_MISSING_NATIVE_PROPERTY = object()
 _GLYPH_SCALARS = (
     "category",
     "subCategory",
@@ -919,21 +924,156 @@ def _change_set_requires_grid_zero(
     return any(is_structural_change_path(change.path) for change in change_set.changes)
 
 
-def _set_precision_restoration_target(
-    scope: FloatingGeometryScope,
+def _component_dependency_glyph_names(
+    source: Mapping[str, Any],
+    intended: Mapping[str, Any],
+    change_set: ChangeSet,
+    *,
+    capabilities: Sequence[str] = (),
+) -> tuple[str, ...]:
+    """Return the direct and transitive component closure on both sides."""
+
+    source_impact = CanonicalImpact.from_change_set(source, change_set)
+    intended_impact = CanonicalImpact.from_change_set(
+        intended, change_set.inverse()
+    )
+    names = set(source_impact.glyph_names) | set(intended_impact.glyph_names)
+    if not names and {
+        CANONICAL_LIFECYCLE_CAPABILITY,
+        LAYER_LIFECYCLE_CAPABILITY,
+        MASTER_LIFECYCLE_CAPABILITY,
+    }.intersection(str(value) for value in capabilities):
+        for model in (source, intended):
+            glyphs = model.get("glyphs", {})
+            if isinstance(glyphs, Mapping):
+                names.update(str(name) for name in glyphs)
+    return tuple(sorted(names))
+
+
+def _component_dependency_snapshot(
     font: Any,
+    glyph_names: Sequence[str],
+    *,
+    reference: Mapping[str, Any] | None = None,
+) -> Mapping[str, Any]:
+    """Force component access and capture only grid-independent glyph state."""
+
+    reference_glyphs = (
+        reference.get("glyphs", {}) if isinstance(reference, Mapping) else {}
+    )
+    if not isinstance(reference_glyphs, Mapping):
+        reference_glyphs = {}
+    observed: dict[str, Any] = {}
+    for name in glyph_names:
+        glyph = _lookup_by_name(_safe_getattr(font, "glyphs"), str(name))
+        if glyph is None:
+            continue
+        for layer in _native_layers(glyph):
+            _maybe_call(_safe_getattr(layer, "bounds"))
+            for component in _layer_components(layer):
+                _maybe_call(_safe_getattr(component, "bounds"))
+                _maybe_call(_safe_getattr(component, "componentLayer"))
+        observed[str(name)] = _glyph_model(
+            glyph,
+            layer_order_reference=reference_glyphs.get(str(name)),
+        )
+    return observed
+
+
+def _settle_component_dependencies(
+    capture: Callable[[], Mapping[str, Any]],
+) -> Mapping[str, Any]:
+    """Require two dependency-closure observations to agree within budget."""
+
+    previous = capture()
+    previous_fingerprint = fingerprint_model(previous)
+    deadline = time.monotonic() + _COMPONENT_SETTLEMENT_BUDGET_SECONDS
+    while (
+        time.monotonic() + _COMPONENT_SETTLEMENT_QUIET_SECONDS <= deadline
+    ):
+        time.sleep(_COMPONENT_SETTLEMENT_QUIET_SECONDS)
+        current = capture()
+        current_fingerprint = fingerprint_model(current)
+        if current_fingerprint == previous_fingerprint:
+            return current
+        previous = current
+        previous_fingerprint = current_fingerprint
+    raise HostAccessError(
+        "Glyphs component dependency closure did not settle across bounded readbacks"
+    )
+
+
+def _explicit_grid_fields(change_set: ChangeSet) -> tuple[str, ...]:
+    font_changes = change_set.changes_under(("font",))
+    whole_font = any(len(change.path) == 1 for change in font_changes)
+    changed = {
+        change.path[1] for change in font_changes if len(change.path) > 1
+    }
+    return tuple(
+        field
+        for field in _GRID_SETTING_FIELDS
+        if whole_font or field in changed
+    )
+
+
+def _apply_explicit_grid_settings(
+    font: Any,
+    current: Mapping[str, Any],
     target: Mapping[str, Any],
-) -> None:
-    font_target = target.get("font", {})
-    if not isinstance(font_target, Mapping):
-        return
-    values: dict[str, Any] = {}
-    if "grid" in font_target:
-        values["grid"] = font_target["grid"]
-    if "gridSubDivision" in font_target:
-        values["subdivision"] = font_target["gridSubDivision"]
-    if values:
-        scope.set_restoration_target(font, **values)
+    change_set: ChangeSet,
+) -> bool:
+    """Apply reviewed grid settings only after entry restoration."""
+
+    current_font = current.get("font", {})
+    target_font = target.get("font", {})
+    if not isinstance(current_font, Mapping) or not isinstance(
+        target_font, Mapping
+    ):
+        return False
+    fields = _explicit_grid_fields(change_set)
+    for field in fields:
+        target_value = target_font.get(field)
+        if current_font.get(field) != target_value:
+            _set_native_property(font, field, target_value)
+        observed = _safe_getattr(font, field, _MISSING_NATIVE_PROPERTY)
+        observed = (
+            _maybe_call(observed)
+            if observed is not _MISSING_NATIVE_PROPERTY
+            else observed
+        )
+        if observed is _MISSING_NATIVE_PROPERTY or observed != target_value:
+            raise HostAccessError(
+                "Glyphs did not apply the reviewed {} change".format(field)
+            )
+    return bool(fields)
+
+
+def _normalize_tool_owned_grid_settings(
+    model: Mapping[str, Any],
+    reference: Mapping[str, Any] | None,
+) -> Mapping[str, Any]:
+    """Exclude the active scope's temporary settings from an internal diff."""
+
+    if not isinstance(reference, Mapping):
+        return model
+    model_font = model.get("font", {})
+    reference_font = reference.get("font", {})
+    if not isinstance(model_font, Mapping) or not isinstance(
+        reference_font, Mapping
+    ):
+        return model
+    replacements = {
+        field: reference_font[field]
+        for field in _GRID_SETTING_FIELDS
+        if field in reference_font and model_font.get(field) != reference_font[field]
+    }
+    if not replacements:
+        return model
+    normalized = dict(model)
+    normalized_font = copy.deepcopy(dict(model_font))
+    normalized_font.update(copy.deepcopy(replacements))
+    normalized["font"] = normalized_font
+    return normalized
 
 
 def _run_with_floating_geometry(
@@ -941,7 +1081,10 @@ def _run_with_floating_geometry(
     callback: Callable[[], Any],
     *,
     require_grid_zero: bool,
+    current: Mapping[str, Any] | None = None,
     target: Mapping[str, Any] | None = None,
+    change_set: ChangeSet | None = None,
+    capabilities: Sequence[str] = (),
 ) -> Any:
     """Run one detached/native write and restore execution settings exactly."""
 
@@ -951,26 +1094,52 @@ def _run_with_floating_geometry(
     try:
         result = _run_with_font_updates_suspended(font, callback)
         scope.rescan_layers()
-        if target is not None:
-            _set_precision_restoration_target(scope, font, target)
+        if current is not None and target is not None and change_set is not None:
+            glyph_names = _component_dependency_glyph_names(
+                current, target, change_set, capabilities=capabilities
+            )
+            if glyph_names:
+                _settle_component_dependencies(
+                    lambda: _component_dependency_snapshot(
+                        font, glyph_names, reference=target
+                    )
+                )
         scope.prepare_for_readback()
+        if current is not None and target is not None and change_set is not None:
+            if _apply_explicit_grid_settings(font, current, target, change_set):
+                scope.release_execution_settings_ownership()
         return result
     finally:
         scope.end()
 
 
-def _run_python_with_floating_geometry(
+def _begin_python_with_floating_geometry(
     font: Any,
     execute: Callable[[], Any],
-    readback: Callable[[Any], Any],
-) -> Any:
-    """Execute detached Python at grid zero and capture before flag cleanup."""
+) -> tuple[FloatingGeometryScope, Any, tuple[Mapping[str, Any], ...]]:
+    """Execute detached Python and leave its zero-grid scope active."""
 
     scope = FloatingGeometryScope((font,), require_grid_zero=True).begin()
     try:
         result = _run_with_font_updates_suspended(font, execute)
         protected_changes = scope.protected_setting_changes()
+        scope.require_grid_zero()
         scope.rescan_layers()
+        return scope, result, protected_changes
+    except BaseException:
+        scope.end()
+        raise
+
+
+def _finish_python_with_floating_geometry(
+    scope: FloatingGeometryScope,
+    result: Any,
+    protected_changes: Sequence[Mapping[str, Any]],
+    readback: Callable[[Any], Any],
+) -> Any:
+    """Restore entry settings, read canonically, and clean layer flags."""
+
+    try:
         scope.prepare_for_readback()
         if protected_changes:
             raise HostAccessError(
@@ -1790,29 +1959,43 @@ class NativeLayerOverlayProjector:
     """Incrementally copy one layer's visual primitives on the host thread."""
 
     def __init__(self, layer: Any) -> None:
-        layer_id = str(
-            _safe_getattr(layer, "layerId") or _safe_getattr(layer, "id") or ""
-        )
+        self._layer = layer
         self._result = {
-            "id": layer_id,
-            "masterId": str(_safe_getattr(layer, "associatedMasterId") or layer_id),
-            "width": _plain_scalar(_safe_getattr(layer, "width")),
+            "id": "",
+            "masterId": "",
+            "width": None,
             "anchors": [],
             "shapes": [],
         }
-        self._paths = tuple(
-            shape for shape in _layer_shapes(layer) if _is_path(shape)
-        )
-        self._anchors = tuple(
-            _sequence_values(_safe_getattr(layer, "anchors"))
-        )
-        self._path_index = 0
+        self._initialization_phase = 0
+        self._shapes: Any = ()
+        self._shape_count = 0
+        self._shape_index = 0
+        self._path_occurrence = 0
         self._node_index = 0
         self._active_path: dict[str, Any] | None = None
-        self._active_nodes: tuple[Any, ...] = ()
+        self._active_nodes: Any = ()
+        self._active_node_count = 0
+        self._anchors: Any = ()
+        self._anchor_count = 0
         self._anchor_index = 0
         self._anchor_occurrences: dict[str, int] = {}
         self.complete = False
+
+    @staticmethod
+    def _sequence_source(value: Any) -> tuple[Any, int]:
+        """Retain an indexable native collection without copying it eagerly."""
+
+        if value is None:
+            return (), 0
+        try:
+            length = len(value)
+            if length:
+                value[0]
+            return value, int(length)
+        except Exception:
+            values = tuple(_sequence_values(value))
+            return values, len(values)
 
     def step(
         self,
@@ -1826,18 +2009,61 @@ class NativeLayerOverlayProjector:
             return True
         deadline = clock() + max(0.0, float(budget_seconds))
         progressed = False
-        while self._path_index < len(self._paths):
-            native_path = self._paths[self._path_index]
+
+        while self._initialization_phase < 5:
+            if self._initialization_phase == 0:
+                layer_id = str(
+                    _safe_getattr(self._layer, "layerId")
+                    or _safe_getattr(self._layer, "id")
+                    or ""
+                )
+                self._result["id"] = layer_id
+            elif self._initialization_phase == 1:
+                self._result["masterId"] = str(
+                    _safe_getattr(self._layer, "associatedMasterId")
+                    or self._result["id"]
+                )
+            elif self._initialization_phase == 2:
+                self._result["width"] = _plain_scalar(
+                    _safe_getattr(self._layer, "width")
+                )
+            elif self._initialization_phase == 3:
+                shapes = _safe_getattr(self._layer, "shapes")
+                self._shapes, self._shape_count = self._sequence_source(shapes)
+                if not self._shape_count:
+                    self._shapes, self._shape_count = self._sequence_source(
+                        _safe_getattr(self._layer, "paths")
+                    )
+            else:
+                self._anchors, self._anchor_count = self._sequence_source(
+                    _safe_getattr(self._layer, "anchors")
+                )
+            self._initialization_phase += 1
+            progressed = True
+            if clock() >= deadline:
+                return False
+
+        while self._shape_index < self._shape_count:
+            native_path = self._shapes[self._shape_index]
             if self._active_path is None:
+                if not _is_path(native_path):
+                    self._shape_index += 1
+                    progressed = True
+                    if clock() >= deadline:
+                        return False
+                    continue
                 self._active_path = {
                     "closed": bool(_safe_getattr(native_path, "closed", True)),
                     "nodes": [],
                 }
-                self._active_nodes = tuple(
-                    _sequence_values(_safe_getattr(native_path, "nodes"))
+                self._active_nodes, self._active_node_count = self._sequence_source(
+                    _safe_getattr(native_path, "nodes")
                 )
                 self._node_index = 0
-            while self._node_index < len(self._active_nodes):
+                progressed = True
+                if clock() >= deadline:
+                    return False
+            while self._node_index < self._active_node_count:
                 node = self._active_nodes[self._node_index]
                 position = _point(_safe_getattr(node, "position"))
                 self._active_path["nodes"].append(
@@ -1854,7 +2080,7 @@ class NativeLayerOverlayProjector:
             self._result["shapes"].append(
                 {
                     "id": deterministic_occurrence_id(
-                        "shape", "path", self._path_index
+                        "shape", "path", self._path_occurrence
                     ),
                     "kind": "path",
                     "value": self._active_path,
@@ -1862,11 +2088,13 @@ class NativeLayerOverlayProjector:
             )
             self._active_path = None
             self._active_nodes = ()
-            self._path_index += 1
+            self._active_node_count = 0
+            self._shape_index += 1
+            self._path_occurrence += 1
             if progressed and clock() >= deadline:
                 return False
 
-        while self._anchor_index < len(self._anchors):
+        while self._anchor_index < self._anchor_count:
             anchor = self._anchors[self._anchor_index]
             name = str(_safe_getattr(anchor, "name") or "")
             occurrence = self._anchor_occurrences.get(name, 0)
@@ -7842,6 +8070,7 @@ def _apply_target_model(
     capabilities: Sequence[str] = (),
     execution_context: Mapping[str, Any] | None = None,
     master_structural_ids: Sequence[str] = (),
+    defer_grid_settings: bool = False,
     cancellation_checkpoint: Optional[Callable[[], None]] = None,
 ) -> None:
     def checkpoint() -> None:
@@ -7938,6 +8167,8 @@ def _apply_target_model(
             change.path[1] for change in font_changes if len(change.path) > 1
         }
         for name in _FONT_SCALARS:
+            if defer_grid_settings and name in _GRID_SETTING_FIELDS:
+                continue
             if (
                 (whole_font or name in changed_font_fields)
                 and current.get("font", {}).get(name)
@@ -9172,6 +9403,80 @@ def _added_native_replay_templates(
                     native_by_id[path[1]], kind="staged {}".format(kind)
                 )
     return templates
+
+
+def _remap_materialized_kerning_master_ids(
+    source: Any, identities: Mapping[str, str]
+) -> dict[str, Any]:
+    """Rewrite detached temporary master keys in captured canonical kerning."""
+
+    def remap_partition(partition: dict[str, Any]) -> None:
+        present_sources = [
+            generated_id
+            for generated_id in identities
+            if generated_id in partition
+        ]
+        present_source_ids = set(present_sources)
+        replacements: dict[str, Any] = {}
+        for generated_id in present_sources:
+            final_id = identities[generated_id]
+            if final_id in replacements or (
+                final_id in partition and final_id not in present_source_ids
+            ):
+                raise HostAccessError(
+                    "materialized kerning identity collides with existing data"
+                )
+            replacements[final_id] = partition[generated_id]
+        for generated_id in present_sources:
+            partition.pop(generated_id)
+        partition.update(replacements)
+
+    if not isinstance(source, Mapping):
+        return {}
+    result = copy.deepcopy(dict(source))
+    directional = any(
+        domain in result for domain in ("ltr", "rtl", "vertical", "context")
+    )
+    if not directional:
+        remap_partition(result)
+        return result
+    for domain in ("ltr", "rtl", "vertical"):
+        partitions = result.get(domain)
+        if not isinstance(partitions, dict):
+            continue
+        remap_partition(partitions)
+    contexts = result.get("context")
+    if isinstance(contexts, dict):
+        for values in contexts.values():
+            if not isinstance(values, dict):
+                continue
+            remap_partition(values)
+    return result
+
+
+def _materialized_native_replay_template(
+    font: Any, generated_id: str
+) -> Mapping[str, Any]:
+    """Detach native materialization evidence without renaming its live root."""
+
+    master = _master_by_id(font, generated_id)
+    if master is None:
+        raise HostAccessError("materialized native master template is unavailable")
+    layers: dict[str, Any] = {}
+    for glyph in _sequence_values(_safe_getattr(font, "glyphs")):
+        glyph_name = str(_safe_getattr(glyph, "name") or "")
+        layer = _lookup_layer(glyph, generated_id)
+        if not glyph_name or layer is None:
+            raise HostAccessError(
+                "materialized native layer template is unavailable"
+            )
+        layers[glyph_name] = _copy_native_object(
+            layer, kind="materialized master layer"
+        )
+    return {
+        "master": _copy_native_object(master, kind="materialized master"),
+        "layers": layers,
+    }
 
 
 def _document_edited_state(font: Any) -> Optional[bool]:
@@ -11152,172 +11457,245 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             }
             prepared = [copy.deepcopy(dict(operation)) for operation in operations]
             source_ids: dict[int, str] = {}
+            generated_ids: dict[int, str] = {}
             new_ids: set[str] = set()
-
-            for operation_index in materialize_indices:
-                checkpoint()
-                operation = prepared[operation_index]
-                if str(operation.get("destinationEntity") or "") != "master":
-                    raise ValueError(
-                        "materialize currently supports destinationEntity=master"
+            precision = FloatingGeometryScope(
+                (clone,), require_grid_zero=True
+            ).begin()
+            try:
+                for operation_index in materialize_indices:
+                    checkpoint()
+                    operation = prepared[operation_index]
+                    if str(operation.get("destinationEntity") or "") != "master":
+                        raise ValueError(
+                            "materialize currently supports destinationEntity=master"
+                        )
+                    references = resolve_selector(
+                        before_model, dict(operation.get("target") or {})
                     )
-                references = resolve_selector(
-                    before_model, dict(operation.get("target") or {})
-                )
-                if len(references) != 1 or references[0].kind != "instance":
-                    raise ValueError(
-                        "materialize requires exactly one source instance"
-                    )
-                source_id = references[0].identity
-                new_id = str(operation.get("newId") or "")
-                if not new_id or new_id in new_ids or _master_by_id(clone, new_id):
-                    raise ValueError(
-                        "materialize requires one unique new master identity"
-                    )
-                overrides = operation.get("overrides") or {}
-                if not isinstance(overrides, Mapping):
-                    raise ValueError("materialize.overrides must be an object")
-                unsupported = set(overrides) - {"name", "italicAngle", "axes"}
-                if unsupported:
-                    raise ValueError(
-                        "materialize overrides are limited to name, italicAngle, and axes"
-                    )
-                source_index = instance_index.get(source_id)
-                if source_index is None:
-                    raise HostAccessError("materialized source instance disappeared")
-                instance = native_instances[source_index]
-                before_masters = _sequence_values(_safe_getattr(clone, "masters"))
-                before_native_ids = {id(master) for master in before_masters}
-                add_as_master = _safe_getattr(instance, "addAsMaster")
-                if not callable(add_as_master):
-                    raise HostAccessError(
-                        "Glyphs does not expose instance-to-master materialization"
-                    )
-                with FloatingGeometryScope(
-                    (clone,), require_grid_zero=True
-                ) as precision:
+                    if len(references) != 1 or references[0].kind != "instance":
+                        raise ValueError(
+                            "materialize requires exactly one source instance"
+                        )
+                    source_id = references[0].identity
+                    new_id = str(operation.get("newId") or "")
+                    if not new_id or new_id in new_ids or _master_by_id(clone, new_id):
+                        raise ValueError(
+                            "materialize requires one unique new master identity"
+                        )
+                    overrides = operation.get("overrides") or {}
+                    if not isinstance(overrides, Mapping):
+                        raise ValueError("materialize.overrides must be an object")
+                    unsupported = set(overrides) - {"name", "italicAngle", "axes"}
+                    if unsupported:
+                        raise ValueError(
+                            "materialize overrides are limited to name, italicAngle, and axes"
+                        )
+                    source_index = instance_index.get(source_id)
+                    if source_index is None:
+                        raise HostAccessError("materialized source instance disappeared")
+                    instance = native_instances[source_index]
+                    before_masters = _sequence_values(_safe_getattr(clone, "masters"))
+                    before_native_ids = {id(master) for master in before_masters}
+                    add_as_master = _safe_getattr(instance, "addAsMaster")
+                    if not callable(add_as_master):
+                        raise HostAccessError(
+                            "Glyphs does not expose instance-to-master materialization"
+                        )
                     _run_with_font_updates_suspended(clone, add_as_master)
                     precision.rescan_layers()
-                    precision.prepare_for_readback()
-                after_masters = _sequence_values(_safe_getattr(clone, "masters"))
-                additions = [
-                    master for master in after_masters if id(master) not in before_native_ids
-                ]
-                if len(additions) != 1:
-                    raise HostAccessError(
-                        "Glyphs did not create exactly one materialized master"
-                    )
-                master = additions[0]
-                generated_id = str(_safe_getattr(master, "id") or "")
-                native_glyphs = _sequence_values(_safe_getattr(clone, "glyphs"))
-                generated_layers: dict[str, Any] = {}
-                for glyph in native_glyphs:
-                    glyph_name = str(_safe_getattr(glyph, "name") or "")
-                    layer = _lookup_layer(glyph, generated_id)
-                    if not glyph_name or layer is None:
-                        raise HostAccessError(
-                            "Glyphs omitted a layer from the materialized master"
-                        )
-                    generated_layers[glyph_name] = layer
-                _set_native_property(master, "id", new_id)
-                for layer in generated_layers.values():
-                    _set_native_property(layer, "layerId", new_id)
-                    _set_native_property(layer, "associatedMasterId", new_id)
-                if "name" in overrides:
-                    name = str(overrides.get("name") or "")
-                    if not name:
-                        raise ValueError("materialized master name cannot be empty")
-                    _set_native_property(master, "name", name)
-                if "italicAngle" in overrides:
-                    _set_native_property(
-                        master, "italicAngle", float(overrides["italicAngle"])
-                    )
-                if "axes" in overrides:
-                    raw_axes = overrides["axes"]
-                    if not isinstance(raw_axes, Sequence) or isinstance(
-                        raw_axes, (str, bytes)
-                    ):
-                        raise ValueError("materialized master axes must be a sequence")
-                    positions = [
-                        float(dict(axis).get("internal"))
-                        for axis in raw_axes
-                        if isinstance(axis, Mapping)
+                    after_masters = _sequence_values(_safe_getattr(clone, "masters"))
+                    additions = [
+                        master for master in after_masters if id(master) not in before_native_ids
                     ]
-                    if len(positions) != len(raw_axes):
-                        raise ValueError(
-                            "materialized master axes require internal coordinates"
-                        )
-                    if _safe_getattr(master, "internalAxesValues") is not None:
-                        _set_native_property(master, "internalAxesValues", positions)
-                    else:
-                        _set_native_property(master, "axes", positions)
-                if operation.get("index") is not None:
-                    target_index = min(
-                        int(operation["index"]), len(after_masters) - 1
-                    )
-                    reordered = [value for value in after_masters if value is not master]
-                    reordered.insert(target_index, master)
-                    _replace_native_collection_order(
-                        _safe_getattr(clone, "masters"),
-                        reordered,
-                        identity_storage=_maybe_call(
-                            _safe_getattr(clone, "fontMasters")
-                        ),
-                        notification_owner=clone,
-                        notification_key="fontMasters",
-                    )
-                source_ids[operation_index] = source_id
-                new_ids.add(new_id)
-
-            raw_after = self._capture_detached_model(
-                clone,
-                before_model,
-                instance_ids=instance_ids,
-            )
-            after_model = projection.normalize(raw_after)
-            master_order = collection_order(after_model.get("masters", []))
-            masters = {
-                str(master.get("id") or ""): master
-                for master in after_model.get("masters", [])
-                if isinstance(master, Mapping)
-            }
-            glyphs = after_model.get("glyphs", {})
-            if not isinstance(glyphs, Mapping):
-                raise HostAccessError("materialized glyph capture is invalid")
-            for operation_index in materialize_indices:
-                operation = prepared[operation_index]
-                new_id = str(operation["newId"])
-                master = masters.get(new_id)
-                if not isinstance(master, Mapping):
-                    raise HostAccessError("materialized master capture is unavailable")
-                layers: dict[str, Any] = {}
-                for glyph_name, glyph in glyphs.items():
-                    if not isinstance(glyph, Mapping):
-                        raise HostAccessError("materialized glyph capture is invalid")
-                    layer_index = find_entity_index(glyph.get("layers", []), new_id)
-                    if layer_index is None:
+                    if len(additions) != 1:
                         raise HostAccessError(
-                            "materialized layer capture is unavailable"
+                            "Glyphs did not create exactly one materialized master"
                         )
-                    layers[str(glyph_name)] = copy.deepcopy(
-                        glyph["layers"][layer_index]
-                    )
-                operation["_materialized"] = {
-                    "sourceInstanceId": source_ids[operation_index],
-                    "master": copy.deepcopy(dict(master)),
-                    "layers": layers,
-                    "masterOrder": list(master_order),
-                    "kerning": copy.deepcopy(after_model.get("kerning", {})),
-                }
-            changes = diff_models(before_model, after_model)
-            templates = _added_native_replay_templates(
-                clone, before_model, after_model, changes
-            )
-            return {"operations": prepared, "templates": templates}
+                    master = additions[0]
+                    generated_id = str(_safe_getattr(master, "id") or "")
+                    if (
+                        not generated_id
+                        or generated_id in generated_ids.values()
+                        or generated_id in new_ids
+                    ):
+                        raise HostAccessError(
+                            "Glyphs did not create one unique temporary master identity"
+                        )
+                    native_glyphs = _sequence_values(_safe_getattr(clone, "glyphs"))
+                    generated_layers: dict[str, Any] = {}
+                    for glyph in native_glyphs:
+                        glyph_name = str(_safe_getattr(glyph, "name") or "")
+                        layer = _lookup_layer(glyph, generated_id)
+                        if not glyph_name or layer is None:
+                            raise HostAccessError(
+                                "Glyphs omitted a layer from the materialized master"
+                            )
+                        generated_layers[glyph_name] = layer
+                    if "name" in overrides:
+                        name = str(overrides.get("name") or "")
+                        if not name:
+                            raise ValueError("materialized master name cannot be empty")
+                        _set_native_property(master, "name", name)
+                    if "italicAngle" in overrides:
+                        _set_native_property(
+                            master, "italicAngle", float(overrides["italicAngle"])
+                        )
+                    if "axes" in overrides:
+                        raw_axes = overrides["axes"]
+                        if not isinstance(raw_axes, Sequence) or isinstance(
+                            raw_axes, (str, bytes)
+                        ):
+                            raise ValueError("materialized master axes must be a sequence")
+                        positions = [
+                            float(dict(axis).get("internal"))
+                            for axis in raw_axes
+                            if isinstance(axis, Mapping)
+                        ]
+                        if len(positions) != len(raw_axes):
+                            raise ValueError(
+                                "materialized master axes require internal coordinates"
+                            )
+                        if _safe_getattr(master, "internalAxesValues") is not None:
+                            _set_native_property(master, "internalAxesValues", positions)
+                        else:
+                            _set_native_property(master, "axes", positions)
+                    if operation.get("index") is not None:
+                        target_index = min(
+                            int(operation["index"]), len(after_masters) - 1
+                        )
+                        reordered = [value for value in after_masters if value is not master]
+                        reordered.insert(target_index, master)
+                        _replace_native_collection_order(
+                            _safe_getattr(clone, "masters"),
+                            reordered,
+                            identity_storage=_maybe_call(
+                                _safe_getattr(clone, "fontMasters")
+                            ),
+                            notification_owner=clone,
+                            notification_key="fontMasters",
+                        )
+                    source_ids[operation_index] = source_id
+                    generated_ids[operation_index] = generated_id
+                    new_ids.add(new_id)
+                precision.rescan_layers()
+            except BaseException:
+                precision.end()
+                raise
+            return {
+                "clone": clone,
+                "projection": projection,
+                "instanceIds": instance_ids,
+                "prepared": prepared,
+                "sourceIds": source_ids,
+                "generatedIds": generated_ids,
+                "precision": precision,
+            }
 
-        prepared_result = self._executor.run(
+        prepared_state = self._executor.run(
             lambda: _run_with_cyclic_gc_suspended(prepare_native)
         )
+        clone = prepared_state["clone"]
+        precision = prepared_state["precision"]
+        try:
+            dependency_names = self._executor.run(
+                lambda: tuple(
+                    sorted(
+                        str(_safe_getattr(glyph, "name") or "")
+                        for glyph in _sequence_values(_safe_getattr(clone, "glyphs"))
+                        if str(_safe_getattr(glyph, "name") or "")
+                    )
+                )
+            )
+            if dependency_names:
+                _settle_component_dependencies(
+                    lambda: self._executor.run(
+                        lambda: _component_dependency_snapshot(
+                            clone,
+                            dependency_names,
+                            reference=before_model,
+                        )
+                    )
+                )
+
+            def finish_native() -> Mapping[str, Any]:
+                precision.prepare_for_readback()
+                projection = prepared_state["projection"]
+                instance_ids = prepared_state["instanceIds"]
+                prepared = prepared_state["prepared"]
+                source_ids = prepared_state["sourceIds"]
+                generated_ids = prepared_state["generatedIds"]
+                raw_after = self._capture_detached_model(
+                    clone,
+                    before_model,
+                    instance_ids=instance_ids,
+                )
+                after_model = projection.normalize(raw_after)
+                identity_map = {
+                    generated_ids[index]: str(prepared[index]["newId"])
+                    for index in materialize_indices
+                }
+                master_order = [
+                    identity_map.get(identity, identity)
+                    for identity in collection_order(after_model.get("masters", []))
+                ]
+                masters = {
+                    str(master.get("id") or ""): master
+                    for master in after_model.get("masters", [])
+                    if isinstance(master, Mapping)
+                }
+                glyphs = after_model.get("glyphs", {})
+                if not isinstance(glyphs, Mapping):
+                    raise HostAccessError("materialized glyph capture is invalid")
+                captured_kerning = _remap_materialized_kerning_master_ids(
+                    after_model.get("kerning", {}), identity_map
+                )
+                templates: dict[tuple[str, ...], Any] = {}
+                for operation_index in materialize_indices:
+                    operation = prepared[operation_index]
+                    new_id = str(operation["newId"])
+                    generated_id = generated_ids[operation_index]
+                    master = masters.get(generated_id)
+                    if not isinstance(master, Mapping):
+                        raise HostAccessError(
+                            "materialized master capture is unavailable"
+                        )
+                    layers: dict[str, Any] = {}
+                    for glyph_name, glyph in glyphs.items():
+                        if not isinstance(glyph, Mapping):
+                            raise HostAccessError(
+                                "materialized glyph capture is invalid"
+                            )
+                        layer_index = find_entity_index(
+                            glyph.get("layers", []), generated_id
+                        )
+                        if layer_index is None:
+                            raise HostAccessError(
+                                "materialized layer capture is unavailable"
+                            )
+                        layer = copy.deepcopy(glyph["layers"][layer_index])
+                        layer["id"] = new_id
+                        layer["masterId"] = new_id
+                        layers[str(glyph_name)] = layer
+                    canonical_master = copy.deepcopy(dict(master))
+                    canonical_master["id"] = new_id
+                    operation["_materialized"] = {
+                        "sourceInstanceId": source_ids[operation_index],
+                        "master": canonical_master,
+                        "layers": layers,
+                        "masterOrder": list(master_order),
+                        "kerning": copy.deepcopy(captured_kerning),
+                    }
+                    templates[("masters", new_id)] = (
+                        _materialized_native_replay_template(clone, generated_id)
+                    )
+                return {"operations": prepared, "templates": templates}
+
+            prepared_result = self._executor.run(
+                lambda: _run_with_cyclic_gc_suspended(finish_native)
+            )
+        finally:
+            self._executor.run(precision.end)
         checkpoint()
         preparation = self._native_replay_evidence.create(
             document_id=document_id,
@@ -11474,6 +11852,125 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             return str(value) if value else None
 
         return self._executor.run(capture)
+
+    def comparison_reference_identity_for_document(self, document_id: str) -> str | None:
+        """Return the shared process-local native-font identity on the host lane."""
+
+        return self._executor.run(
+            lambda: native_font_identity(self._font_for_document(document_id))
+        )
+
+    @staticmethod
+    def _comparison_reporter_class_name(value: Any) -> str:
+        try:
+            name = value.__class__.__name__
+            if name:
+                return str(name)
+        except Exception:
+            pass
+        try:
+            return str(value.className())
+        except Exception:
+            return ""
+
+    @staticmethod
+    def _comparison_reporter_menu_command(value: Any) -> str:
+        fragment = str(getattr(value, "menuName", None) or "Changes Against Reference")
+        return fragment if fragment.startswith("Show ") else "Show " + fragment
+
+    def comparison_reference_reporter_state(self) -> Mapping[str, Any]:
+        """Read the native Reporter list and activation state on Glyphs' lane."""
+
+        def capture() -> Mapping[str, Any]:
+            from GlyphsApp import Glyphs  # type: ignore[import-not-found]
+
+            class_name = "GlyphsMCPChangeDiffReporter"
+            reporters = tuple(getattr(Glyphs, "reporters", None) or ())
+            reporter = next(
+                (
+                    value
+                    for value in reporters
+                    if self._comparison_reporter_class_name(value) == class_name
+                ),
+                None,
+            )
+            active = any(
+                value is reporter
+                or self._comparison_reporter_class_name(value) == class_name
+                for value in tuple(getattr(Glyphs, "activeReporters", None) or ())
+            )
+            result = {
+                "available": reporter is not None,
+                "active": bool(active and reporter is not None),
+                "applicationWide": True,
+                "reporterClass": class_name,
+                "menuName": self._comparison_reporter_menu_command(reporter),
+            }
+            diagnostics = (
+                getattr(reporter, "_diagnostics_snapshot", None)
+                if reporter is not None
+                else None
+            )
+            if callable(diagnostics):
+                try:
+                    performance = diagnostics()
+                except Exception:
+                    performance = None
+                if isinstance(performance, Mapping):
+                    result["performance"] = dict(performance)
+            return result
+
+        return self._executor.run(capture)
+
+    def set_comparison_reference_reporter_active(
+        self, enabled: bool
+    ) -> Mapping[str, Any]:
+        """Use Glyphs' documented application-wide Reporter activation APIs."""
+
+        def update() -> Mapping[str, Any]:
+            from GlyphsApp import Glyphs  # type: ignore[import-not-found]
+
+            class_name = "GlyphsMCPChangeDiffReporter"
+            reporter = next(
+                (
+                    value
+                    for value in tuple(getattr(Glyphs, "reporters", None) or ())
+                    if self._comparison_reporter_class_name(value) == class_name
+                ),
+                None,
+            )
+            if reporter is None:
+                return {
+                    "available": False,
+                    "active": False,
+                    "applicationWide": True,
+                    "reporterClass": class_name,
+                    "menuName": "Show Changes Against Reference",
+                }
+            action = getattr(
+                Glyphs,
+                "activateReporter" if enabled else "deactivateReporter",
+                None,
+            )
+            if not callable(action):
+                raise HostAccessError(
+                    "Glyphs does not expose the Reporter activation API."
+                )
+            action(reporter)
+            active = any(
+                value is reporter
+                or self._comparison_reporter_class_name(value) == class_name
+                for value in tuple(getattr(Glyphs, "activeReporters", None) or ())
+            )
+            return {
+                "available": True,
+                "active": bool(active),
+                "applicationWide": True,
+                "reporterClass": class_name,
+                "menuName": self._comparison_reporter_menu_command(reporter),
+            }
+
+        return self._executor.run(update)
 
     def capture_source_file_state(
         self, document_id: str, *, include_model: bool = False
@@ -12862,7 +13359,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 expected=expected_snapshot,
             )
 
-        quiet_window_seconds = 0.100
+        quiet_window_seconds = _COMPONENT_SETTLEMENT_QUIET_SECONDS
         previous = capture()
         previous_fingerprint = fingerprint_model(previous)
         # The settlement budget measures change *after* the first complete
@@ -12870,7 +13367,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         # the quiet-window budget on a substantial font; starting the clock
         # before it would skip the confirming readback and make a still-open
         # document look as though it disappeared after live Python.
-        deadline = time.monotonic() + 0.750
+        deadline = time.monotonic() + _COMPONENT_SETTLEMENT_BUDGET_SECONDS
         while time.monotonic() + quiet_window_seconds <= deadline:
             time.sleep(quiet_window_seconds)
             current = capture()
@@ -13630,6 +14127,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         capabilities=capabilities,
                         execution_context=context,
                         master_structural_ids=structural_master_ids,
+                        defer_grid_settings=True,
                         cancellation_checkpoint=checkpoint,
                     )
 
@@ -13652,12 +14150,31 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
                         native_phase("replay", replay_shard)
 
-                    def prepare_readback() -> None:
-                        _set_precision_restoration_target(
-                            precision, detached_font, intended
+                    dependency_names = _component_dependency_glyph_names(
+                        current,
+                        intended,
+                        requested,
+                        capabilities=capabilities,
+                    )
+                    if dependency_names:
+                        _settle_component_dependencies(
+                            lambda: native_phase(
+                                "replay",
+                                lambda: _component_dependency_snapshot(
+                                    detached_font,
+                                    dependency_names,
+                                    reference=intended,
+                                ),
+                            )
                         )
+
+                    def prepare_readback() -> None:
                         precision.rescan_layers()
                         precision.prepare_for_readback()
+                        if _apply_explicit_grid_settings(
+                            detached_font, current, intended, requested
+                        ):
+                            precision.release_execution_settings_ownership()
 
                     native_phase("replay", prepare_readback)
                     return precision
@@ -14270,11 +14787,54 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     ),
                 }
 
-            return _run_python_with_floating_geometry(
-                clone, execute_code, capture_after
+            precision, output, protected_changes = (
+                _begin_python_with_floating_geometry(clone, execute_code)
             )
+            return {
+                "precision": precision,
+                "output": output,
+                "protectedChanges": protected_changes,
+                "readback": capture_after,
+            }
 
-        execution = native_phase("evaluationCaptureMs", execute_and_capture)
+        execution_state = native_phase("evaluationCaptureMs", execute_and_capture)
+        clone = native_state["clone"]
+        clone_glyph_names = native_phase(
+            "evaluationCaptureMs",
+            lambda: tuple(
+                sorted(
+                    str(_safe_getattr(glyph, "name") or "")
+                    for glyph in _sequence_values(_safe_getattr(clone, "glyphs"))
+                    if str(_safe_getattr(glyph, "name") or "")
+                )
+            ),
+        )
+        try:
+            if clone_glyph_names:
+                _settle_component_dependencies(
+                    lambda: native_phase(
+                        "evaluationCaptureMs",
+                        lambda: _component_dependency_snapshot(
+                            clone,
+                            clone_glyph_names,
+                            reference=before_model,
+                        ),
+                    )
+                )
+            execution = native_phase(
+                "evaluationCaptureMs",
+                lambda: _finish_python_with_floating_geometry(
+                    execution_state["precision"],
+                    execution_state["output"],
+                    execution_state["protectedChanges"],
+                    execution_state["readback"],
+                ),
+            )
+        except BaseException:
+            native_phase(
+                "evaluationCaptureMs", execution_state["precision"].end
+            )
+            raise
         notify("comparing", "Comparing canonical staged changes")
         checkpoint()
         started = time.perf_counter_ns()
@@ -14334,6 +14894,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                             "nativeReplayTemplates": local_templates,
                             "reuseNativeReplayTemplates": True,
                         },
+                        defer_grid_settings=True,
                     )
 
                 def capture_replay(_result: Any) -> Mapping[str, Any]:
@@ -14355,11 +14916,60 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                         ),
                     }
 
-                return _run_python_with_floating_geometry(
-                    verifier, apply_replay, capture_replay
+                precision, output, protected_changes = (
+                    _begin_python_with_floating_geometry(
+                        verifier, apply_replay
+                    )
                 )
+                return {
+                    "precision": precision,
+                    "output": output,
+                    "protectedChanges": protected_changes,
+                    "readback": capture_replay,
+                }
 
-            replay = native_phase("replayCaptureMs", replay_and_capture)
+            replay_state = native_phase("replayCaptureMs", replay_and_capture)
+            verifier = native_state["verifier"]
+            replay_dependency_names = _component_dependency_glyph_names(
+                before_model,
+                writable_target,
+                writable_changes,
+                capabilities=capabilities,
+            )
+            try:
+                if replay_dependency_names:
+                    _settle_component_dependencies(
+                        lambda: native_phase(
+                            "replayCaptureMs",
+                            lambda: _component_dependency_snapshot(
+                                verifier,
+                                replay_dependency_names,
+                                reference=writable_target,
+                            ),
+                        )
+                    )
+
+                def finish_replay() -> Mapping[str, Any]:
+                    precision = replay_state["precision"]
+                    precision.prepare_for_readback()
+                    if _apply_explicit_grid_settings(
+                        verifier,
+                        before_model,
+                        writable_target,
+                        writable_changes,
+                    ):
+                        precision.release_execution_settings_ownership()
+                    return _finish_python_with_floating_geometry(
+                        precision,
+                        replay_state["output"],
+                        replay_state["protectedChanges"],
+                        replay_state["readback"],
+                    )
+
+                replay = native_phase("replayCaptureMs", finish_replay)
+            except BaseException:
+                native_phase("replayCaptureMs", replay_state["precision"].end)
+                raise
             templates = replay["templates"]
             retained_templates = replay["retainedTemplates"]
             replay_after_archive = replay["replayAfterArchive"]
@@ -14525,8 +15135,11 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     protected_setting_changes = (
                         precision.protected_setting_changes()
                     )
+                    # A script may attempt to overwrite the protected grid and
+                    # catch its own error. Reassert zero before Glyphs resolves
+                    # any direct or transitive component work.
+                    precision.require_grid_zero()
                     precision.rescan_layers()
-                    precision.prepare_for_readback()
                 except BaseException:
                     precision.end()
                     raise
@@ -14546,6 +15159,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 "stderr": stderr.getvalue(),
                 "executionError": execution_error,
                 "geometryPrecision": precision,
+                "openFonts": open_fonts,
                 "protectedSettingChanges": protected_setting_changes,
             }
 
@@ -14558,6 +15172,28 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
         precision = execution.get("geometryPrecision")
         self._canonical_model_cache.invalidate_unscoped()
         try:
+            if isinstance(precision, FloatingGeometryScope):
+                for open_font in tuple(execution.get("openFonts") or ()):
+                    glyph_names = self._executor.run(
+                        lambda open_font=open_font: tuple(
+                            sorted(
+                                str(_safe_getattr(glyph, "name") or "")
+                                for glyph in _sequence_values(
+                                    _safe_getattr(open_font, "glyphs")
+                                )
+                                if str(_safe_getattr(glyph, "name") or "")
+                            )
+                        )
+                    )
+                    if glyph_names:
+                        _settle_component_dependencies(
+                            lambda open_font=open_font, glyph_names=glyph_names: self._executor.run(
+                                lambda: _component_dependency_snapshot(
+                                    open_font, glyph_names
+                                )
+                            )
+                        )
+                self._executor.run(precision.prepare_for_readback)
             live_after_models = self._stable_open_models()
         finally:
             if isinstance(precision, FloatingGeometryScope):
@@ -14721,7 +15357,18 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         def apply() -> None:
             font = self._font_for_document(document_id)
-            current = self._capture_cached_model(document_id, font)
+            update_boundary = self._verified_transaction_updates.get(document_id)
+            boundary_current = (
+                update_boundary.get("canonicalCurrentModel")
+                if isinstance(update_boundary, Mapping)
+                and update_boundary.get("font") is font
+                else None
+            )
+            current = (
+                boundary_current
+                if isinstance(boundary_current, Mapping)
+                else self._capture_cached_model(document_id, font)
+            )
             target = change_set.apply(current)
             resolved_context = self._resolved_replay_context(
                 document_id, execution_context
@@ -14778,20 +15425,36 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     replay_replacements=replay_replacements,
                     capabilities=capabilities,
                     execution_context=resolved_context,
+                    defer_grid_settings=True,
                 )
 
-            update_boundary = self._verified_transaction_updates.get(document_id)
             if update_boundary and update_boundary.get("font") is font:
                 precision = update_boundary.get("geometryPrecision")
                 if not isinstance(precision, FloatingGeometryScope):
                     raise HostAccessError(
                         "The verified transaction lost its geometry precision scope"
                     )
-                if _change_set_requires_grid_zero(change_set, capabilities):
-                    precision.require_grid_zero()
+                precision.require_grid_zero()
                 apply_target()
                 precision.rescan_layers()
-                _set_precision_restoration_target(precision, font, target)
+                dependency_names = _component_dependency_glyph_names(
+                    current,
+                    target,
+                    change_set,
+                    capabilities=capabilities,
+                )
+                update_boundary["componentGlyphNames"] = tuple(
+                    sorted(
+                        set(update_boundary.get("componentGlyphNames") or ())
+                        | set(dependency_names)
+                    )
+                )
+                update_boundary["componentReferenceModel"] = target
+                update_boundary["explicitGridCurrent"] = current
+                update_boundary["explicitGridTarget"] = target
+                update_boundary["explicitGridChangeSet"] = change_set
+                update_boundary["canonicalCurrentModel"] = target
+                update_boundary["pendingSettlement"] = True
             else:
                 # Preserve the adapter's standalone safety when a caller does
                 # not use the complete TransactionKernel boundary.
@@ -14801,7 +15464,10 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     require_grid_zero=_change_set_requires_grid_zero(
                         change_set, capabilities
                     ),
+                    current=current,
                     target=target,
+                    change_set=change_set,
+                    capabilities=capabilities,
                 )
             if any(change.path[0] == "instances" for change in change_set.changes):
                 self._bind_instance_ids(
@@ -14851,6 +15517,7 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                 existing["depth"] = int(existing.get("depth", 1)) + 1
                 return
             font = self._font_for_document(document_id)
+            entry_model = self._capture_cached_model(document_id, font)
             precision = FloatingGeometryScope((font,)).begin()
             disable = _safe_getattr(font, "disableUpdateInterface")
             enable = _safe_getattr(font, "enableUpdateInterface")
@@ -14865,6 +15532,9 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     "depth": 1,
                     "suspended": interface_suspended,
                     "geometryPrecision": precision,
+                    "canonicalCurrentModel": entry_model,
+                    "componentGlyphNames": (),
+                    "pendingSettlement": False,
                 }
             except BaseException:
                 try:
@@ -14882,12 +15552,12 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             raise
 
     def settle_verified_transaction(self, document_id: str) -> None:
-        """Release native batching before the transaction's stable read-back."""
+        """Settle component dependencies, then restore and verify settings."""
 
-        def settle() -> None:
+        def release_updates() -> Mapping[str, Any] | None:
             existing = self._verified_transaction_updates.get(document_id)
             if existing is None:
-                return
+                return None
             if existing.get("suspended"):
                 enable = _safe_getattr(existing.get("font"), "enableUpdateInterface")
                 if callable(enable):
@@ -14896,9 +15566,60 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
             precision = existing.get("geometryPrecision")
             if isinstance(precision, FloatingGeometryScope):
                 precision.rescan_layers()
-                precision.prepare_for_readback()
+                precision.require_grid_zero()
+            return {
+                "font": existing.get("font"),
+                "glyphNames": tuple(existing.get("componentGlyphNames") or ()),
+                "reference": existing.get("componentReferenceModel"),
+                "pending": bool(existing.get("pendingSettlement")),
+            }
 
-        self._executor.run(settle)
+        settlement = self._executor.run(release_updates)
+        if not isinstance(settlement, Mapping):
+            return
+        font = settlement.get("font")
+        glyph_names = tuple(settlement.get("glyphNames") or ())
+        reference = settlement.get("reference")
+        if settlement.get("pending") and glyph_names:
+            _settle_component_dependencies(
+                lambda: self._executor.run(
+                    lambda: _component_dependency_snapshot(
+                        font,
+                        glyph_names,
+                        reference=(
+                            reference if isinstance(reference, Mapping) else None
+                        ),
+                    )
+                )
+            )
+
+        def restore_and_apply_explicit_grid() -> None:
+            existing = self._verified_transaction_updates.get(document_id)
+            if existing is None:
+                return
+            precision = existing.get("geometryPrecision")
+            if not isinstance(precision, FloatingGeometryScope):
+                raise HostAccessError(
+                    "The verified transaction lost its geometry precision scope"
+                )
+            precision.rescan_layers()
+            precision.prepare_for_readback()
+            current = existing.get("explicitGridCurrent")
+            target = existing.get("explicitGridTarget")
+            change_set = existing.get("explicitGridChangeSet")
+            if (
+                isinstance(current, Mapping)
+                and isinstance(target, Mapping)
+                and isinstance(change_set, ChangeSet)
+                and _apply_explicit_grid_settings(
+                    existing.get("font"), current, target, change_set
+                )
+            ):
+                precision.release_execution_settings_ownership()
+            existing["pendingSettlement"] = False
+            existing["componentGlyphNames"] = ()
+
+        self._executor.run(restore_and_apply_explicit_grid)
 
     def end_verified_transaction(self, document_id: str) -> None:
         """Balance :meth:`begin_verified_transaction` on the main thread."""
@@ -15000,7 +15721,13 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
 
         def restore() -> None:
             font = self._font_for_document(document_id)
+            boundary = self._verified_transaction_updates.get(document_id)
             current = self._capture_cached_model(document_id, font)
+            if isinstance(boundary, Mapping):
+                current = _normalize_tool_owned_grid_settings(
+                    current,
+                    boundary.get("canonicalCurrentModel"),
+                )
             restoration = diff_models(current, model)
             self._canonical_model_cache.invalidate_impact(
                 document_id,
@@ -15030,21 +15757,35 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     restoration,
                     capabilities=capabilities,
                     execution_context=resolved_context,
+                    defer_grid_settings=True,
                 )
 
-            boundary = self._verified_transaction_updates.get(document_id)
             precision = (
                 boundary.get("geometryPrecision")
                 if isinstance(boundary, Mapping)
                 else None
             )
             if isinstance(precision, FloatingGeometryScope):
-                if _change_set_requires_grid_zero(restoration, capabilities):
-                    precision.require_grid_zero()
+                precision.require_grid_zero()
                 apply_restoration()
                 precision.rescan_layers()
-                _set_precision_restoration_target(precision, font, model)
-                precision.prepare_for_readback()
+                dependency_names = _component_dependency_glyph_names(
+                    current,
+                    model,
+                    restoration,
+                    capabilities=capabilities,
+                )
+                boundary["componentGlyphNames"] = tuple(
+                    sorted(
+                        set(boundary.get("componentGlyphNames") or ())
+                        | set(dependency_names)
+                    )
+                )
+                boundary["componentReferenceModel"] = model
+                boundary["explicitGridCurrent"] = current
+                boundary["explicitGridTarget"] = model
+                boundary["explicitGridChangeSet"] = restoration
+                boundary["pendingSettlement"] = True
             else:
                 _run_with_floating_geometry(
                     font,
@@ -15052,7 +15793,10 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     require_grid_zero=_change_set_requires_grid_zero(
                         restoration, capabilities
                     ),
+                    current=current,
                     target=model,
+                    change_set=restoration,
+                    capabilities=capabilities,
                 )
             if any(change.path[0] == "instances" for change in restoration.changes):
                 self._bind_instance_ids(
@@ -15060,6 +15804,10 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                     font,
                     collection_order(model.get("instances", [])),
                 )
+            if isinstance(precision, FloatingGeometryScope):
+                # The transaction kernel settles this recovery batch on
+                # separate host turns before it captures or classifies it.
+                return
             preferred = self._capture_cached_model(document_id, font)
             if fingerprint_model(preferred) != fingerprint_model(model):
                 replacements = _canonical_replacement_roots(
@@ -15081,28 +15829,20 @@ class GlyphsDocumentHost(GlyphsHostAdapter):
                             replay_replacements=replacements,
                             capabilities=capabilities,
                             execution_context=resolved_context,
+                            defer_grid_settings=True,
                         )
 
-                    if isinstance(precision, FloatingGeometryScope):
-                        if _change_set_requires_grid_zero(
+                    _run_with_floating_geometry(
+                        font,
+                        apply_residual,
+                        require_grid_zero=_change_set_requires_grid_zero(
                             residual, capabilities
-                        ):
-                            precision.require_grid_zero()
-                        apply_residual()
-                        precision.rescan_layers()
-                        _set_precision_restoration_target(
-                            precision, font, model
-                        )
-                        precision.prepare_for_readback()
-                    else:
-                        _run_with_floating_geometry(
-                            font,
-                            apply_residual,
-                            require_grid_zero=_change_set_requires_grid_zero(
-                                residual, capabilities
-                            ),
-                            target=model,
-                        )
+                        ),
+                        current=preferred,
+                        target=model,
+                        change_set=residual,
+                        capabilities=capabilities,
+                    )
                     if any(
                         change.path[0] == "instances" for change in residual.changes
                     ):

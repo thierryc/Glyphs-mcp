@@ -234,6 +234,111 @@ def _collection_items(value: Any) -> Iterable[tuple[str, Any]]:
             yield _identity(item, index), item
 
 
+_MASTER_LAYER_COVERAGE_SAMPLE_LIMIT = 20
+
+
+def _is_master_layer(value: Any) -> bool:
+    if not isinstance(value, Mapping):
+        return False
+    roles = value.get("roles") or ()
+    return bool(value.get("isMasterLayer")) or (
+        isinstance(roles, (list, tuple, set, frozenset))
+        and "master" in {str(role) for role in roles}
+    )
+
+
+def _bounded_sample(values: Sequence[str]) -> list[str]:
+    return list(values[:_MASTER_LAYER_COVERAGE_SAMPLE_LIMIT])
+
+
+def _master_layer_coverage(model: Mapping[str, Any]) -> dict[str, Any]:
+    """Summarize canonical master/layer ownership without choosing policy."""
+
+    master_order = [
+        str(master.get("id") or identity)
+        for identity, master in _collection_items(model.get("masters", ()))
+        if isinstance(master, Mapping)
+    ]
+    master_ids = set(master_order)
+    glyphs = list(_collection_items(model.get("glyphs", {})))
+    observed_master_layers = 0
+    missing: list[str] = []
+    duplicates: list[str] = []
+    unknown: list[str] = []
+    miskeyed: list[str] = []
+    prefix_violations: list[str] = []
+
+    for glyph_identity, glyph in glyphs:
+        if not isinstance(glyph, Mapping):
+            continue
+        glyph_name = str(glyph.get("name") or glyph_identity)
+        owner_counts: dict[str, int] = {}
+        reached_non_master = False
+        misplaced_master = False
+        for collection_id, layer in _collection_items(glyph.get("layers", ())):
+            if not isinstance(layer, Mapping):
+                continue
+            layer_id = str(layer.get("id") or collection_id)
+            master_id = str(layer.get("masterId") or "")
+            master_layer = _is_master_layer(layer)
+            if master_id and master_id not in master_ids:
+                unknown.append("{}/{}".format(glyph_name, layer_id))
+            if not master_layer:
+                reached_non_master = True
+                continue
+            if not master_id:
+                unknown.append("{}/{}".format(glyph_name, layer_id))
+            observed_master_layers += 1
+            owner_counts[master_id] = owner_counts.get(master_id, 0) + 1
+            if reached_non_master:
+                misplaced_master = True
+            if (
+                layer_id != master_id
+                or str(collection_id) != master_id
+            ):
+                miskeyed.append("{}/{}".format(glyph_name, layer_id))
+
+        for master_id in master_order:
+            count = owner_counts.get(master_id, 0)
+            if count == 0:
+                missing.append("{}/{}".format(glyph_name, master_id))
+            elif count > 1:
+                duplicates.extend(
+                    "{}/{}".format(glyph_name, master_id)
+                    for _ in range(count - 1)
+                )
+        if misplaced_master:
+            prefix_violations.append(glyph_name)
+
+    violation_count = (
+        len(missing)
+        + len(duplicates)
+        + len(unknown)
+        + len(miskeyed)
+        + len(prefix_violations)
+    )
+    return {
+        "masterCount": len(master_order),
+        "glyphCount": len(glyphs),
+        "expectedMasterLayerCount": len(master_order) * len(glyphs),
+        "observedMasterLayerCount": observed_master_layers,
+        "missingMasterLayerCount": len(missing),
+        "duplicateMasterLayerCount": len(duplicates),
+        "unknownAssociatedMasterCount": len(unknown),
+        "miskeyedMasterLayerCount": len(miskeyed),
+        "masterLayerPrefixViolationGlyphCount": len(prefix_violations),
+        "violationCount": violation_count,
+        "valid": violation_count == 0,
+        "samples": {
+            "missing": _bounded_sample(missing),
+            "duplicate": _bounded_sample(duplicates),
+            "unknownAssociatedMaster": _bounded_sample(unknown),
+            "miskeyed": _bounded_sample(miskeyed),
+            "masterLayerPrefixViolation": _bounded_sample(prefix_violations),
+        },
+    }
+
+
 def _root_references(
     model: Mapping[str, Any], kind: str
 ) -> list[EntityReference]:
@@ -695,6 +800,17 @@ def project_reference(
         if field == "ownership":
             values[field] = dict(reference.parent)
             provenance[field] = "canonical"
+            continue
+        if field == "masterLayerCoverage":
+            if reference.kind != "document" or not isinstance(
+                reference.value, Mapping
+            ):
+                values[field] = None
+                provenance[field] = "unavailable"
+                missing.append(field)
+            else:
+                values[field] = _master_layer_coverage(reference.value)
+                provenance[field] = "derived"
             continue
         if field == "bounds":
             raw = observation.get("bounds") if isinstance(observation, Mapping) else None

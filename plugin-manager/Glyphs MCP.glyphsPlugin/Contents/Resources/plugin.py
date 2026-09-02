@@ -395,6 +395,8 @@ def run_diagnostics() -> None:
         required: List[str] = [
             "mcp",
             "fastmcp",
+            "dulwich",
+            "urllib3",
             "starlette",
             "uvicorn",
             "httpx",

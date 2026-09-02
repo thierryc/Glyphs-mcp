@@ -93,6 +93,14 @@ def render() -> str:
             "- Observation operands use `observation.<projection>.<path>`, for",
             "  example `observation.bounds.x` or",
             "  `observation.alignment.effectiveLayerAlignment`.",
+            "- `observation.masterLayerCoverage.violationCount` is a document-level",
+            "  aggregate for missing, duplicate, unknown-associated-master, mis-keyed,",
+            "  or master-layer-prefix violations. Relative master-layer order may",
+            "  legitimately differ from root master order. Zero proves ownership;",
+            "  source/target geometry and metrics still require separate constraints.",
+            "- Use `duplicate` for an existing master source and `materialize` for a",
+            "  static instance source. Supply the final `newId`; never rename an",
+            "  attached master after Glyphs has created dependent layers.",
             "",
             "## Floating-point geometry contract",
             "",
@@ -101,12 +109,47 @@ def render() -> str:
                 _codes(geometry_contract["quantizers"]),
             ),
             "- Existing and newly created Glyphs 4 layers run with native layer",
-            "  rounding temporarily disabled. Structural operations and Python use",
-            "  temporary grid zero as a fallback, restored before canonical read-back.",
-            "- The runtime preserves the user's grid, subdivision, and global automatic-",
-            "  alignment setting on success, failure, cancellation, and rollback.",
+            "  rounding temporarily disabled, and every transformation runs with",
+            "  tool-owned grid `{}`.".format(
+                geometry_contract["gridDuringTransformation"]
+            ),
+            "- Direct and transitive component dependencies settle before exact entry",
+            "  grid restoration (`{}`).".format(
+                geometry_contract["componentDependencyResolution"]
+            ),
+            "- Grid restoration is `{}` and includes `gridSubDivision`: `{}`.".format(
+                geometry_contract["gridRestoration"],
+                str(geometry_contract["restoresGridSubDivision"]).lower(),
+            ),
+            "- Temporary settings ownership is `{}`.".format(
+                geometry_contract["temporarySettingsOwnership"]
+            ),
+            "  Temporary settings appear in the requested change set: `{}`.".format(
+                str(
+                    geometry_contract["temporarySettingsInRequestedChangeSet"]
+                ).lower()
+            ),
+            "  Explicit grid edits are `{}`.".format(
+                geometry_contract["explicitGridChangeOrdering"],
+            ),
+            "- The runtime preserves global automatic-alignment state on every exit.",
             "  Component alignment remains preserved unless an operation explicitly",
             "  requests an alignment policy override.",
+            "",
+            "## Changes Against Reference performance",
+            "",
+            "- An idle MCP server leaves the application-wide Reporter working normally.",
+            "  Every active invocation, including all `execute_python` modes, hides its",
+            "  overlay without changing the user's Reporter activation.",
+            "- Projection work resumes only after 250 ms of MCP inactivity. Normal",
+            "  interface settling uses 25 ms; repeated events within 75 ms use 100 ms.",
+            "- Native capture advances by one 1 ms slice every 16 ms. Slices over 2 ms",
+            "  are recorded diagnostically because one native property read cannot be",
+            "  preempted.",
+            "- `read_document_view.data.reporter.performance` reports cumulative policy,",
+            "  counters, and completed timings for the loaded Reporter instance. It",
+            "  intentionally omits live paused state because the read itself acquires",
+            "  the visual-work gate.",
             "",
             "## Detached Python contract",
             "",
