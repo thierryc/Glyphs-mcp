@@ -1,0 +1,80 @@
+{
+  "scope": "Skill-only crash recovery and conditional P12 continuation",
+  "implementationComplete": true,
+  "installed": true,
+  "nativeAutosavePauseExecuted": false,
+  "autosavePauseAuthorized": false,
+  "conditionalP12ContinuationAuthorized": true,
+  "runtimeChange": false,
+  "sidecar": "2.0.0-beta.1+61c6975537ea",
+  "sidecarCodeHash": "sha256:61c6975537eabcd1b015df6ed8f754a45616da11c3c1106a766410ed88c779ae",
+  "bridge": "2.0.0-beta.1+bffc1729a4d7",
+  "bridgeCodeHash": "sha256:bffc1729a4d7e8856c807629efa9022c14907d389134d78194c28a9949463e9b",
+  "host": {
+    "identifier": "com.GeorgSeifert.Glyphs4",
+    "version": "4.1",
+    "build": "4107"
+  },
+  "tools": [
+    "get_status",
+    "list_documents",
+    "read_entities",
+    "start_job",
+    "get_job",
+    "apply_job",
+    "discard_job"
+  ],
+  "activeJobs": 0,
+  "activeNativeOperations": 0,
+  "payloadIdentity": "sha256:5de4ffc1c5a7e2e637360d3eda9910be5762ccb3805a1bb15774672db1bc3937",
+  "skillsIdentity": "sha256:0d57b00f4c7bc8fb7307962af4c39d67a46e451acfb513786b0cec0e79461cb6",
+  "changedPayloadFiles": [
+    "skills/glyphs-mcp-maintainer-feedback/SKILL.md",
+    "skills/glyphs/SKILL.md",
+    "skills/glyphs/references/connection-troubleshooting.md",
+    "skills/glyphs/references/crash-recovery.md"
+  ],
+  "installedSkills": {
+    "glyphs": "sha256:c39e569347fe77f468aac0c5187f8b0925bef837ee707ffec60a850d42fdb29f",
+    "glyphs-mcp-maintainer-feedback": "sha256:e8f05cfff913c0e99febb6eed92cd4c7960141969d8a36cd8971aa36c4b2ab1f",
+    "glyphs-mcp-outlines-docs": "sha256:0c5767b313253e3850a089f84994d6973bf351ac243d9c4d05b915f89c711c01",
+    "glyphs-mcp-development": "sha256:9a033594d13402dfe237e616113418b5ae165cdbc0182e6e202b2abfd28cdd88",
+    "glyphs-mcp-scripting": "sha256:4f5b2c3d17a629acfbe16ed1d8c7a3dc6e46cfe0a1d85974372c611fd8c6f726",
+    "glyphs-mcp-kerning": "sha256:96aebaaf1e04cd73b6112b397cb095d57b4e1030c3a3f839d6cc5681580af666",
+    "glyphs-mcp-release": "sha256:4dbafba5e3bf086b34b8569e8288a3bb45c3d06518a4d9ec552bd1cbcb97ef2a",
+    "glyphs-mcp-master-compatibility": "sha256:5aef374f63e1499de721a1b9b5bed6cbfb33a90c57e1eee9c462d0a1b92bb762",
+    "glyphs-mcp-spacing": "sha256:5cc1a8e8f3130176c811abf62495c009ba8b25d37c4012879b584deebf9a1b0a",
+    "glyphs-mcp-italic-first-pass": "sha256:340a7d981c29e72baac8b8726eed3796ba4b48ddadc8c69ee1bff9527cfa354c"
+  },
+  "ownershipVerified": true,
+  "installerPasses": 1,
+  "backupsVerified": 2,
+  "preservation": {
+    "v1-runtime": 730,
+    "v1-skills": 54,
+    "original-font": 451
+  },
+  "tests": {
+    "command": "python -m pytest -q src/glyphs-mcp/tests/test_simple_v2_skill_routing.py src/glyphs-mcp/tests/test_simple_v2_build.py src/glyphs-mcp/tests/test_codex_plugin.py",
+    "passed": 34,
+    "skipped": 1,
+    "seconds": 5.07,
+    "skipScope": "Optional external client CLI test; -q output did not identify the skipped client",
+    "validators": {
+      "glyphs": "pass",
+      "glyphs-mcp-maintainer-feedback": "pass"
+    },
+    "newRuntimeTests": "Not needed; native runtime and schemas unchanged"
+  },
+  "tokenEstimates": {
+    "method": "tiktoken 0.12.0 / o200k_base; raw UTF-8 skill text, not model billing",
+    "entryBefore": 790,
+    "entryAfter": 817,
+    "focusedCrashReference": 996,
+    "firstAttempt": "Default venv lacked tiktoken; reused existing benchmark tokenizer/cache without installing dependencies",
+    "ordinaryEntryAddedTokens": 27
+  },
+  "scenarioReview": "11 primary-agent instruction cases; not independent native/agent execution",
+  "nextStep": "Resume unfinished P12 checks in a separate recorded session with autosaving unchanged; stop on recurrence. P13 not yet ready.",
+  "gitScope": "Two affected skill bundles and their required current references, mirrored copies and this qualification record. Other pending migration changes excluded."
+}

@@ -1,0 +1,12 @@
+{
+  "command": "python -m pytest -q src/glyphs-mcp/tests/test_simple_v2_skill_routing.py src/glyphs-mcp/tests/test_simple_v2_build.py src/glyphs-mcp/tests/test_codex_plugin.py",
+  "passed": 34,
+  "skipped": 1,
+  "seconds": 5.07,
+  "skipScope": "Optional external client CLI test; -q output did not identify the skipped client",
+  "validators": {
+    "glyphs": "pass",
+    "glyphs-mcp-maintainer-feedback": "pass"
+  },
+  "newRuntimeTests": "Not needed; native runtime and schemas unchanged"
+}

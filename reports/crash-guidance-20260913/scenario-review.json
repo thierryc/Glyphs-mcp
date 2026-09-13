@@ -1,0 +1,73 @@
+{
+  "method": "Primary-agent instruction review, not independent behavioral execution",
+  "cases": [
+    {
+      "case": "Known target, ordinary read",
+      "expected": "Keep autosaving and retained context; do not load crash reference",
+      "evidence": "Entry retains existing reads and one conditional crash row.",
+      "judgment": "pass"
+    },
+    {
+      "case": "HTTP timeout while Glyphs remains alive",
+      "expected": "Connection diagnosis; no presumed crash or autosave pause",
+      "evidence": "Crash reference explicitly distinguishes timeout/stopped bridge/dirty state.",
+      "judgment": "pass"
+    },
+    {
+      "case": "Observed crash after uncertain apply",
+      "expected": "Stop writes, retain job ID, preserve evidence",
+      "evidence": "Recovery section forbids old patch replay and unverified restoration.",
+      "judgment": "pass"
+    },
+    {
+      "case": "User accepts continuation after quiet controls",
+      "expected": "Continue agreed disposable scope with autosaving enabled",
+      "evidence": "Explicit conditional continuation; retain incomplete samples and stop on recurrence.",
+      "judgment": "pass"
+    },
+    {
+      "case": "Relevant autosave crash, no pause approval",
+      "expected": "Ask with exact app/test, maximum five minutes and app-wide recovery risk",
+      "evidence": "Explicit incident/experiment approval; continuation and installation are insufficient.",
+      "judgment": "pass"
+    },
+    {
+      "case": "User declines or does not answer",
+      "expected": "No pause",
+      "evidence": "Both decisions are specified.",
+      "judgment": "pass"
+    },
+    {
+      "case": "Approved pause; normal completion/error/cancellation/deadline",
+      "expected": "Restore exact native value in the same process and verify",
+      "evidence": "First endpoint wins; manual restoration disclosed, no automatic promise.",
+      "judgment": "pass"
+    },
+    {
+      "case": "Unknown original delay or already zero",
+      "expected": "Do not guess or claim a newly enabled pause",
+      "evidence": "Read-before-write requirement and already-zero case.",
+      "judgment": "pass"
+    },
+    {
+      "case": "Crash/restart during pause",
+      "expected": "Treat prior state as old-process evidence; independently verify new setting",
+      "evidence": "No assumed restoration or reused document ID.",
+      "judgment": "pass"
+    },
+    {
+      "case": "New incident or longer pause",
+      "expected": "Ask again for new scope; no repeated consent inside existing scope",
+      "evidence": "Scope-specific permission wording.",
+      "judgment": "pass"
+    },
+    {
+      "case": "Missing Macro Panel/Python path or inability to restore on time",
+      "expected": "Do not start; explain blocker/user-controlled alternative",
+      "evidence": "No invented MCP Python tool, timer, watcher, persistent default or Undo change.",
+      "judgment": "pass"
+    }
+  ],
+  "nativeAutosavePauseExecuted": false,
+  "nativeCrashFixClaimed": false
+}

@@ -1,44 +1,66 @@
 ---
 name: glyphs
-description: Use this skill as the general Glyphs MCP entry point for inspecting or editing an open Glyphs font, checking the local server and font context, or choosing the safest focused Glyphs MCP workflow for a font task.
+description: Route Glyphs 4 font work to the lean MCP tools and independent companion plugins.
+metadata:
+  surface: glyphs-mcp-v2
 ---
 
-# Glyphs MCP
+# glyphs
 
-Use this skill as the general launcher for Glyphs MCP tasks.
+For creating, revising or debugging a Glyphs 4 script/plugin, use
+[$glyphs-mcp-development](../glyphs-mcp-development/SKILL.md). Offline coding
+needs no connection, document discovery or Save. Generic Python with no Glyphs
+app or font target needs no Glyphs skill.
 
-## Core rules
+## Continue from known context
 
-- Read the current server, font, master, glyph, layer, and selection context needed for the request before acting.
-- Prefer the narrowest dedicated MCP tool and focused workflow that fits the task.
-- Before mutation, review or dry-run when supported, explain the exact proposed change, and require explicit approval for confirm-gated actions.
-- Re-read affected state after mutation and report changed, skipped, and unresolved items.
-- Never auto-save the font.
+Reuse the verified catalog, identity and capabilities of the **specific MCP
+connection**, plus the intended font's `document_id`. A follow-up or switch to a
+focused skill does not restart setup. If the connection is unverified or changed,
+load [connection setup](references/connection-session.md); it distinguishes lean
+v2, v1 and mismatches. Check a workflow's required `readCapabilities`/`jobKinds`
+against that retained `get_status` response. Refresh it after a component update, known process
+restart, changed endpoint, contradictory evidence or a request for current health.
+Missing private capabilities mean the installation needs updating: update the
+bridge, sidecar and skills together. Do not maintain fallback workflows.
 
-## Route focused work
+Call `list_documents` only when the intended document has no valid retained ID,
+after `document_not_found` or a known bridge/Glyphs restart, or to resolve an
+explicit target change. Never silently substitute another open font. A missing
+glyph is not a discovery trigger. “Current/frontmost font” may require fresh
+intent resolution; see [document targeting](references/document-targeting.md).
+Each `read_entities` call reads fresh contents. Dirty fonts need no Save for reads.
 
-- OpenType features and stylistic sets: follow `glyphs-mcp-features`.
-- Live Python runs, Macro Panel snippets, and iterative script debugging: follow `glyphs-mcp-scripting`.
-- Reusable Python scripts and plug-in development: follow `glyphs-mcp-development`.
-- Icon-font Unicode or PUA assignments: follow `glyphs-mcp-icon-font`.
-- Kerning collision review and bumper changes: follow `glyphs-mcp-kerning`.
-- LitSquare metadata, inherited settings, or semantic path roles: follow `glyphs-mcp-litsquare-metadata`.
-- Spacing, sidebearings, and width review: follow `glyphs-mcp-spacing`.
-- Outlines, components, anchors, selected nodes, or bundled docs: follow `glyphs-mcp-outlines-docs`.
-- Roman-to-italic or oblique first passes: follow `glyphs-mcp-italic-first-pass`.
-- Generic Python with no Glyphs app or font target does not use a Glyphs skill.
-- For other tasks, use the smallest relevant Glyphs MCP tool set and keep the same review-first safety rules.
+Load only the reference needed for the requested operation. Reuse instructions
+and cited excerpts already in context; fetch only a missing or changed section.
+A focused skill inherits this connection/document context without reloading this
+entry. Resolve genuine context gaps; do not treat remembered font data as current.
 
-## Connection and context workflow
+| Requested work | Focused reference |
+|---|---|
+| Glyph metadata | [Metadata](references/metadata-reads.md) |
+| Native master IDs/names | [Masters](references/master-reads.md) |
+| Exact layers, fractional metrics and bounds | [Layers](references/layer-reads.md) |
+| Active layer, selected-object counts or optional node details | [Selection](references/selection-reads.md), requiring `selection.context.v1` |
+| Exact stored kerning | [Kerning reads](references/kerning-reads.md) |
+| Additive advance changes | [Widths](references/width-changes.md) |
+| Connection failure | [Troubleshooting](references/connection-troubleshooting.md) |
+| Glyphs crashed or unexpectedly exited | [Crash recovery](references/crash-recovery.md); ask before any temporary autosave pause |
 
-1. If connection or font context is unknown, call `get_server_info`, then `list_open_fonts`.
-2. If no server is available, ask the user to start Glyphs and confirm the server is running from **Edit -> Glyphs MCP Server Status...**. Use the local endpoint `http://127.0.0.1:9680/mcp/`.
-3. Resolve the target font and current master or selection before continuing.
-4. Follow the matching focused workflow, or complete an unmatched task with dedicated tools.
-5. Summarize the result and any manual review still needed.
+Use the matching spacing, kerning, italic-first-pass, master-compatibility or
+outlines skill only when its domain is needed. Curve Inspector and Reference
+Inspector are independent companions. Use development or scripting for a
+separately authorised native operation, release for packaging, and
+maintainer-feedback for a reproducible defect. Ordinary reads need no coding
+resources or job. Request only needed fields; the usual bound is 100 explicit
+targets, with tighter detail limits specified in the focused references.
 
-## Deeper references
+## Supported edits
 
-- [First session](https://github.com/thierryc/Glyphs-mcp/blob/main/content/tutorial/first-session.mdx)
-- [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
-- [Project briefing](https://github.com/thierryc/Glyphs-mcp/blob/main/CODEX.md)
+For an advertised job, use `start_job`, inspect `get_job` and its report before
+`apply_job`. Reconcile an uncertain write using that existing job ID; do not
+submit a duplicate. `discard_job` cancels or restores the whole job. Native Undo
+and Redo are grouped per glyph; native Save accepts changes. Inspect fresh source
+and dirty state for preparation. Never save, export, close or overwrite a font
+unless the user's task authorizes it. The seven tools provide no arbitrary
+Python execution or plugin reload; do not invent an MCP command.
