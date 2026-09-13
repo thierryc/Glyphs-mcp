@@ -1,0 +1,2 @@
+Return a instance of NSImage that represents the toolbar icon as established in init().
+Unless you know what you are doing, leave this as it is.

@@ -1,0 +1,2 @@
+By default, toolbar.pdf will be your tool icon.
+Use this for any initializations you need.

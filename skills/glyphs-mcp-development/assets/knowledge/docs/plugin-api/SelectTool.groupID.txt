@@ -1,0 +1,2 @@
+Determines the position in the toolbar.
+Higher values are further to the right.

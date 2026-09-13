@@ -1,0 +1,2 @@
+Invoked when user triggers the filter through the Filter menu
+from the font View

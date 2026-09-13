@@ -1,0 +1,2 @@
+Adds menu items to default context menu.
+Remove this method if you do not want any extra context menu items.

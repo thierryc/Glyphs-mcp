@@ -1,0 +1,2 @@
+The GSFont object is assigned to the plugin prior to the export.
+This is used to publish the export dialog.

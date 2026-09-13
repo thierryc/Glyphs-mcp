@@ -1,0 +1,2 @@
+Do stuff when the tool is selected.
+E.g. show a window, or set a cursor.

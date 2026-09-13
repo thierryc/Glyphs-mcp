@@ -1,0 +1,5 @@
+Reads a Font object from the specified URL.
+
+URL: the URL to read the font from.
+error: on return, if the document contents could not be read, a pointer to an error object that encapsulates the reason they could not be read.
+Return the font object, or None if an error occurred.

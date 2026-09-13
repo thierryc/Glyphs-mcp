@@ -1,0 +1,21 @@
+{
+  "license": "Apache-2.0",
+  "loaderSha256": {
+    "file-format": "165af5653635741bbf6698476aff5f868618a8040bc76d8abb7076f7115e91fa",
+    "filter": "165af5653635741bbf6698476aff5f868618a8040bc76d8abb7076f7115e91fa",
+    "general": "165af5653635741bbf6698476aff5f868618a8040bc76d8abb7076f7115e91fa",
+    "palette": "165af5653635741bbf6698476aff5f868618a8040bc76d8abb7076f7115e91fa",
+    "reporter": "165af5653635741bbf6698476aff5f868618a8040bc76d8abb7076f7115e91fa",
+    "select-tool": "165af5653635741bbf6698476aff5f868618a8040bc76d8abb7076f7115e91fa"
+  },
+  "revision": "0f5422db727b78cb42abfb386f33ae0b382b0c4d",
+  "source": "https://github.com/schriftgestalt/GlyphsSDK",
+  "templates": {
+    "file-format": "Python Templates/File Format/dialog with vanilla/____PluginName____.glyphsFileFormat",
+    "filter": "Python Templates/Filter/without dialog/____PluginName____.glyphsFilter",
+    "general": "Python Templates/General Plugin/____PluginName____.glyphsPlugin",
+    "palette": "Python Templates/Palette/____PluginName____.glyphsPalette",
+    "reporter": "Python Templates/Reporter/____PluginName____.glyphsReporter",
+    "select-tool": "Python Templates/SelectTool/____PluginName____.glyphsTool"
+  }
+}

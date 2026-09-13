@@ -1,0 +1,9 @@
+# GlyphsSDK
+
+These are Xcode Templates for making plugins for the [Glyphs font editor](http://glyphsapp.com/).
+
+### Installation
+
+Copy the `Glyphs Dev` folder into `~/Library/Developer/Xcode/Templates/`.
+
+In Xcode, you can then create a new project with *File > New > Project > macOS*. You can give your plugin a name in the screen that follows.

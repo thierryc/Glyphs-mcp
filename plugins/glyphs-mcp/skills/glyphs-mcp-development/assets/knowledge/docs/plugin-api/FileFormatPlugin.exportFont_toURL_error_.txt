@@ -1,0 +1,11 @@
+EXPORT dialog
+
+This is called from "Export All font" or from other plugins
+
+Parameters:
+- font: The font object to export
+- destinationURL: The URL where to write to. That can be the final file or a folder
+- error: PyObjc-Requirement. It is required here in order to return the error object upon export failure. Ignore its existence here.
+
+return True, None) if the export was successful
+return (False, NSError) if the export failed

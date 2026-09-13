@@ -1,0 +1,9 @@
+SAVE FONT dialog
+
+This method is called when the save dialog is invoked by the user.
+You don't have to create a file dialog.
+
+Parameters:
+- font: the font object to save
+- URL: the URL (file path) to save the font to
+- error: on return, if the document contents could not be read, a pointer to an error object that encapsulates the reason they could not be read.

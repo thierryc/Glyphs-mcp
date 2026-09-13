@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 2,
+  "projectVersion": "2.0.0",
+  "installerBuild": 43,
+  "releaseChannel": "beta",
+  "releaseVersion": "2.0.0-beta.1",
+  "version": "2.0.0",
+  "release": {
+    "version": "2.0.0",
+    "releaseVersion": "2.0.0-beta.1",
+    "channel": "beta",
+    "betaNumber": 1,
+    "installerBuild": 43
+  },
+  "protocol": 1,
+  "tools": [
+    "get_status",
+    "list_documents",
+    "read_entities",
+    "start_job",
+    "get_job",
+    "apply_job",
+    "discard_job"
+  ],
+  "bridge": {
+    "bundle": "Glyphs MCP Bridge.glyphsPlugin",
+    "identity": "sha256:bffc1729a4d7e8856c807629efa9022c14907d389134d78194c28a9949463e9b",
+    "codeHash": "sha256:bffc1729a4d7e8856c807629efa9022c14907d389134d78194c28a9949463e9b",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    }
+  },
+  "sidecar": {
+    "identity": "sha256:61c6975537eabcd1b015df6ed8f754a45616da11c3c1106a766410ed88c779ae",
+    "codeHash": "sha256:61c6975537eabcd1b015df6ed8f754a45616da11c3c1106a766410ed88c779ae",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    }
+  },
+  "companions": [
+    {
+      "id": "curve-inspector",
+      "bundle": "Glyphs Curve Inspector.glyphsReporter",
+      "identity": "sha256:7e0887a7b26dd6f6c3474c31969aa00078d2e2dd234cf99bd1b715291217b576"
+    },
+    {
+      "id": "reference-inspector",
+      "bundle": "Glyphs Reference Inspector.glyphsReporter",
+      "identity": "sha256:d32c3836fb26a0afab95da0fc58cd0b2dd5f5ff05969e676abd60597b0c0fed8"
+    }
+  ],
+  "components": {
+    "mcp": {
+      "requires": [
+        "runtime",
+        "sidecar",
+        "bridge"
+      ]
+    },
+    "curve-inspector": {
+      "requires": []
+    },
+    "reference-inspector": {
+      "requires": [
+        "runtime"
+      ]
+    }
+  }
+}

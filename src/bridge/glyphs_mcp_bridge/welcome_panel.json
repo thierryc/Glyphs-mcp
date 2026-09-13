@@ -1,0 +1,138 @@
+{
+  "title": "Welcome to Glyphs MCP",
+  "size": [
+    440,
+    370
+  ],
+  "controls": [
+    {
+      "kind": "label",
+      "frame": [
+        24,
+        314,
+        392,
+        28
+      ],
+      "text": "Welcome to Glyphs MCP",
+      "size": 20,
+      "bold": true,
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false
+      }
+    },
+    {
+      "kind": "label",
+      "frame": [
+        24,
+        210,
+        392,
+        90
+      ],
+      "text": "Glyphs MCP connects Glyphs to AI assistants, helping you explore fonts, refine spacing and kerning, and automate repetitive tasks through natural language—so you can focus on designing type.",
+      "color": "secondaryLabelColor",
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false,
+        "setUsesSingleLineMode_": false,
+        "setLineBreakMode_": 0,
+        "setMaximumNumberOfLines_": 0
+      }
+    },
+    {
+      "kind": "label",
+      "frame": [
+        24,
+        112,
+        392,
+        84
+      ],
+      "text": "Thank you for supporting the project by testing, sharing feedback, and donating. Your contributions help make Glyphs MCP better for everyone.",
+      "color": "secondaryLabelColor",
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false,
+        "setUsesSingleLineMode_": false,
+        "setLineBreakMode_": 0,
+        "setMaximumNumberOfLines_": 0
+      }
+    },
+    {
+      "kind": "button",
+      "frame": [
+        18,
+        64,
+        124,
+        30
+      ],
+      "text": "Documentation",
+      "action": "openLink_",
+      "link": "https://thierryc.github.io/Glyphs-mcp/docs/v2/",
+      "properties": {
+        "setBezelStyle_": 1,
+        "setBordered_": false,
+        "setContentTintColor_": {
+          "color": "linkColor"
+        }
+      }
+    },
+    {
+      "kind": "button",
+      "frame": [
+        148,
+        64,
+        130,
+        30
+      ],
+      "text": "Report an Issue",
+      "action": "openLink_",
+      "link": "https://github.com/thierryc/Glyphs-mcp/issues",
+      "properties": {
+        "setBezelStyle_": 1,
+        "setBordered_": false,
+        "setContentTintColor_": {
+          "color": "linkColor"
+        }
+      }
+    },
+    {
+      "kind": "button",
+      "frame": [
+        286,
+        64,
+        140,
+        30
+      ],
+      "text": "Support the project",
+      "action": "openLink_",
+      "link": "https://github.com/sponsors/thierryc",
+      "properties": {
+        "setBezelStyle_": 1,
+        "setBordered_": false,
+        "setContentTintColor_": {
+          "color": "linkColor"
+        }
+      }
+    },
+    {
+      "kind": "button",
+      "frame": [
+        332,
+        16,
+        88,
+        30
+      ],
+      "text": "Close",
+      "action": "closeWelcome_",
+      "properties": {
+        "setBezelStyle_": 1
+      }
+    }
+  ]
+}

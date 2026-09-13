@@ -1,0 +1,15 @@
+{
+case = upper;
+glyphname = one;
+layers = (
+{
+layerId = m01;
+width = 600;
+},
+{
+layerId = "C2ECF50A-02EF-4989-A14C-AF8E838D1105";
+width = 600;
+}
+);
+unicode = 49;
+}

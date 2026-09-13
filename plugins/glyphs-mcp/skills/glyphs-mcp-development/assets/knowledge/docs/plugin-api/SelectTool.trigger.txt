@@ -1,0 +1,2 @@
+The key to select the tool with keyboard (like v for the select tool).
+Either use trigger() or keyEquivalent(), not both. Remove the method(s) you do not use.

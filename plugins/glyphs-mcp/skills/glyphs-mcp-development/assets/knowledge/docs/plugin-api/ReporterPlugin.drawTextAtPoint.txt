@@ -1,0 +1,1 @@
+Use self.drawTextAtPoint("blabla", myNSPoint) to display left-aligned text at myNSPoint.

@@ -1,0 +1,2 @@
+Temporary Tool when user presses Cmd key.
+Should always be GlyphsToolSelect unless you have a better idea.

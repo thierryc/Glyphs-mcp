@@ -16,7 +16,7 @@ import unittest
 
 
 REPO = Path(__file__).resolve().parents[3]
-SKILL = REPO / "skills" / "glyphs-mcp-development"
+SKILL = REPO / "legacy/glyphs3/skills" / "glyphs-mcp-development"
 SCAFFOLDER = SKILL / "scripts" / "scaffold.py"
 
 

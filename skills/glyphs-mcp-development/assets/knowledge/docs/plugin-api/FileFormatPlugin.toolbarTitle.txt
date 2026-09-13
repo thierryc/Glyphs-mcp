@@ -1,0 +1,1 @@
+Name below the icon in the Export dialog toolbar.

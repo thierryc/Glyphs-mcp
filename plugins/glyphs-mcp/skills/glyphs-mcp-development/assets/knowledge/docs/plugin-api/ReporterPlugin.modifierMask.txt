@@ -1,0 +1,5 @@
+Use any combination of these to determine the modifier keys for your default shortcut:
+        return NSEventModifierFlagShift | NSEventModifierFlagControl | NSEventModifierFlagCommand | NSEventModifierFlagOption
+Or:
+        return 0
+... if you do not want to set a shortcut.

@@ -1,0 +1,21 @@
+{
+  "suite": "test_simple_v2*.py",
+  "total": 561,
+  "passed": 561,
+  "firstRun": {
+    "passed": 559,
+    "blockedBySandbox": 2
+  },
+  "loopbackRetry": {
+    "passed": 2
+  },
+  "productChanges": "none; existing candidate checkpoint",
+  "isolatedInitial": {
+    "passed": 558,
+    "missingDocumentationDependencies": 3
+  },
+  "isolatedRoutingAfterIncludingDependencies": {
+    "passed": 14
+  },
+  "stagedRuntimeIdentitiesMatchInstalled": true
+}

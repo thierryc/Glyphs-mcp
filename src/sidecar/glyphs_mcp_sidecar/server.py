@@ -1,0 +1,117 @@
+"""FastMCP transport for the standalone seven-tool sidecar."""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+from typing import Any, Callable
+
+from glyphs_mcp_protocol import TOOL_NAMES, load_or_create_token
+
+from .bridge_client import BridgeClient
+from .jobs import JobStore
+from .identity import RELEASE_VERSION
+from .service import ServiceError, SidecarService
+from .worker import GlyphsCliWorker
+
+
+def _result(callback: Callable[[], Any]) -> dict[str, Any]:
+    try:
+        return {"ok": True, "data": callback()}
+    except ServiceError as exc:
+        return {"ok": False, "error": exc.as_dict()}
+
+
+def create_server(service: SidecarService, *, control_token: str | None = None) -> Any:
+    from fastmcp import FastMCP
+
+    mcp = FastMCP(name="Glyphs MCP Sidecar", version=RELEASE_VERSION)
+
+    @mcp.tool(name="get_status")
+    def get_status() -> dict[str, Any]:
+        """Return sidecar, external worker, and live bridge availability."""
+        return _result(service.get_status)
+
+    @mcp.tool(name="list_documents")
+    def list_documents() -> dict[str, Any]:
+        """Discover open Glyphs documents once for the intended target. Retain its document_id on this connection for subsequent fresh reads; rediscover after document_not_found or changed target intent."""
+        return _result(service.list_documents)
+
+    @mcp.tool(name="read_entities")
+    def read_entities(
+        document_id: str, entities: list[dict[str, Any]], fields: list[str]
+    ) -> dict[str, Any]:
+        """Read up to 100 explicit targets using a known document_id on this connection; no preceding list_documents is needed for the same target. Reads validate the live font and return fresh contents. Rediscover on document_not_found, not target_not_found (missing glyph/layer). Never substitute another font. Current/frontmost intent may require fresh targeting. Master selectors require exact IDs. Layers use {kind: layer, glyph: name, id: nativeLayerId}; layer.read.exact.v1 advertises strict IDs and returned id=layerId. Layer fields: id, name, width, vertWidth, vertOrigin, leftMetricsKey, rightMetricsKey, widthMetricsKey, bounds, outlineHash. With masters.list.v1 in get_status bridge.readCapabilities, use one {kind: masters, limit: 100} selector and fields [id, name] to discover live masters; follow values.nextCursor until values.complete. Do not mix a master page with other selectors. Selection requires selection.context.v1 in get_status readCapabilities; if absent, the private installation needs its bridge, sidecar and skills updated together. Use {kind: selection}, requesting glyph, layer, selectedNodeCount, selectedAnchorCount, selectedComponentCount, selectedGuideCount and selectedOtherCount for a summary. Optional nodes returns items (x, y, type, smooth, pathIndex in layer.paths, nodeIndex in path.nodes), total, returned, limit and complete. Details require one selection entity only; optional nodeLimit is an integer 1-256, default 64, allowed only with nodes. Counts use native types, including off-curve GSNodes. Null glyph/layer and nodes=null mean no active Edit View; active empty details are complete with zero items. Dirty documents need no Save. Only requested fields are returned. Kerning uses {kind: kerning, master: <exact native master ID>, direction: LTR, left: A, right: V} with fields [value] only. Required direction is LTR, RTL or vertical (case-sensitive). Keys are glyph names or explicit stored @MMK_ group keys, not native glyph IDs. Return exact storage: null means no entry for those keys; zero is stored. This does not compute effective kerning through class/exception precedence. Dirty and unsaved live reads need no job or Save. Invalid master, glyph or direction returns invalid_request; keep the document ID and correct the input."""
+        return _result(lambda: service.read_entities(document_id, entities, fields))
+
+    @mcp.tool(name="start_job")
+    def start_job(
+        document_id: str,
+        kind: str,
+        delta: float | None = None,
+        glyphs: list[str] | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Prepare width_delta, spacing, kerning_collision, start_nodes or slant outside Glyphs. Options select references, contours, explicit pairs, masters and optional straight-stem preservation; get_job reports evidence."""
+        return _result(
+            lambda: service.start_job(
+                document_id, kind=kind, delta=delta, glyphs=glyphs, options=options
+            )
+        )
+
+    @mcp.tool(name="get_job")
+    def get_job(job_id: str, include_preview: bool = True) -> dict[str, Any]:
+        """Return job progress, counts, warnings and preview samples. Use include_preview=false for polling after reading the full report once; it omits both samples, retains report metadata and explicitly returns previewIncluded=false. The default includes previews."""
+        return _result(lambda: service.get_job(job_id, include_preview=include_preview))
+
+    @mcp.tool(name="apply_job")
+    def apply_job(job_id: str, include_preview: bool = True) -> dict[str, Any]:
+        """Show the prepared result as a reversible live change; this is not acceptance. Use include_preview=false after reviewing the report to omit repeated samples."""
+        return _result(lambda: service.apply_job(job_id, include_preview=include_preview))
+
+    @mcp.tool(name="discard_job")
+    def discard_job(job_id: str, include_preview: bool = True) -> dict[str, Any]:
+        """Cancel an unapplied job or reverse its still-current live targets. Use include_preview=false to omit repeated samples; errors and progress remain available."""
+        return _result(lambda: service.discard_job(job_id, include_preview=include_preview))
+
+    mcp._glyphs_tool_names = TOOL_NAMES
+    if control_token:
+        from .management import register_routes
+        register_routes(mcp, service, control_token)
+    return mcp
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--bridge", default="http://127.0.0.1:9681")
+    parser.add_argument("--jobs", type=Path)
+    parser.add_argument("--transport", choices=("stdio", "http"), default="stdio")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=9680)
+    parser.add_argument("--glyphs-cli")
+    parser.add_argument("--glyphs-app")
+    args = parser.parse_args(argv)
+    token = load_or_create_token()
+    service = SidecarService(
+        BridgeClient(args.bridge, token),
+        jobs=JobStore(args.jobs or Path.home() / "Library/Application Support/Glyphs MCP/lean-v2/jobs"),
+        worker=GlyphsCliWorker(executable=args.glyphs_cli, app=args.glyphs_app),
+    )
+    service.lifecycle.control_lock = Path.home() / "Library/Application Support/Glyphs MCP/.control.lock"
+    server = create_server(service, control_token=token)
+    try:
+        if args.transport == "http":
+            # Jobs outlive individual stateless HTTP requests and sessions.
+            server.run(transport="streamable-http", host=args.host, port=args.port,
+                       stateless_http=True)
+        else:
+            server.run()
+    finally:
+        # FastMCP's MCP lifespan runs per request in stateless mode. Cleanup
+        # belongs to the process lifetime, after the transport has stopped.
+        service.close()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

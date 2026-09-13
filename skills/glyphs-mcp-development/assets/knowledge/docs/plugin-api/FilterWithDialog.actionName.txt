@@ -1,0 +1,2 @@
+This is the title of the button in the settings dialog.
+Use something descriptive like 'Move', 'Rotate', or at least 'Apply'.

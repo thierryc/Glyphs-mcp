@@ -1,0 +1,2 @@
+Used for image and tab tags. Should be unique.
+The className + the filename of the icon (without the suffix).

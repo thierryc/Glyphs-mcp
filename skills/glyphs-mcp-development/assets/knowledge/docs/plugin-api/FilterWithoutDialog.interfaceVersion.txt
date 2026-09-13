@@ -1,0 +1,2 @@
+Distinguishes the API version the plugin was built for.
+Return 1.

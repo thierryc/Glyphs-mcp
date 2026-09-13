@@ -1,7 +1,7 @@
 interface:
-  display_name: "Glyphs MCP Outlines"
-  short_description: "Edit outlines safely and look up bundled docs."
-  default_prompt: "Use $glyphs-mcp-outlines-docs to inspect selected nodes, prefer dedicated outline tools, and fetch only the docs pages needed."
+  display_name: "glyphs-mcp-outlines-docs"
+  short_description: "Inspect native layer evidence and supported outlines"
+  default_prompt: "Use $glyphs to identify this connection, then follow its matching outline inspection workflow."
 
 policy:
   allow_implicit_invocation: true

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "pythonVersion": "3.14.7",
+  "distribution": "python-build-standalone",
+  "release": "20260901",
+  "architectures": {
+    "arm64": {
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.14.7%2B20260901-aarch64-apple-darwin-install_only_stripped.tar.gz",
+      "sha256": "4632cb1a6edad9e73d3c81b6d2e69131637d995173e3e85005df14102b0592ba"
+    },
+    "x86_64": {
+      "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260901/cpython-3.14.7%2B20260901-x86_64-apple-darwin-install_only_stripped.tar.gz",
+      "sha256": "7e151a7c9028855b61a7d6e78381f2020a1ef185281399f3b1aafc5e1c9a1a64"
+    }
+  },
+  "requirements": [
+    "fastmcp==2.12.0",
+    "glyphs-cli==0.6.1"
+  ]
+}

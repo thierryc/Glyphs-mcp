@@ -1,0 +1,3 @@
+.. attribute:: versionMinor
+
+		:type: int

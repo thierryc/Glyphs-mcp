@@ -1,0 +1,70 @@
+{
+.appVersion = "4004";
+.formatVersion = 3;
+date = "2026-01-01 00:00:00 +0000";
+fontMaster = (
+{
+id = "11111111-1111-4111-8111-111111111111";
+name = Regular;
+}
+);
+glyphs = (
+{
+glyphname = A;
+layers = (
+{
+layerId = "11111111-1111-4111-8111-111111111111";
+shapes = (
+{
+closed = 1;
+nodes = (
+"80 0 LINE",
+"250 700 LINE",
+"350 700 LINE",
+"520 0 LINE",
+"410 0 LINE",
+"370 170 LINE",
+"230 170 LINE",
+"190 0 LINE"
+);
+}
+);
+width = 600;
+}
+);
+unicode = "0041";
+}
+);
+instances = (
+{
+properties = (
+{
+key = styleNames;
+values = (
+{
+language = ENG;
+value = Regular;
+}
+);
+}
+);
+}
+);
+properties = (
+{
+key = familyNames;
+values = (
+{
+language = dflt;
+value = "Glyphs MCP V2 Disposable Headless Fixture";
+}
+);
+}
+);
+settings = {
+colorSpace = apple-rgb;
+};
+unitsPerEm = 1000;
+versionMajor = 1;
+versionMinor = 0;
+}

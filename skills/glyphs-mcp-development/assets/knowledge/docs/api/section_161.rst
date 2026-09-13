@@ -1,0 +1,3 @@
+.. attribute:: italicAngle
+
+		:type: float

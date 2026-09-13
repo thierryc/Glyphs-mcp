@@ -1,0 +1,6 @@
+Decides whether inactive glyphs in Edit View and glyphs in Preview should be drawn
+by Glyphs (‘the main outline drawing’).
+Return True to let Glyphs draw the main outline.
+Return False to prevent Glyphs from drawing the glyph (the main outline
+drawing), which is probably what you want if you are drawing the glyph
+yourself in self.inactiveLayerForeground() (self.drawForegroundForInactiveLayer_options_()).

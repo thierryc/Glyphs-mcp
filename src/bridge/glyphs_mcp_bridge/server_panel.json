@@ -1,0 +1,343 @@
+{
+  "size": [
+    560,
+    472
+  ],
+  "controls": [
+    {
+      "kind": "label",
+      "frame": [
+        24,
+        417,
+        350,
+        36
+      ],
+      "text": "Glyphs MCP",
+      "size": 26,
+      "bold": true,
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false
+      }
+    },
+    {
+      "kind": "label",
+      "frame": [
+        26,
+        391,
+        500,
+        22
+      ],
+      "text": "A connection between your fonts and AI tools.",
+      "color": "secondaryLabelColor",
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false
+      }
+    },
+    {
+      "kind": "box",
+      "frame": [
+        24,
+        296,
+        512,
+        78
+      ],
+      "properties": {
+        "setBoxType_": 4,
+        "setTitlePosition_": 0,
+        "setBorderType_": 1,
+        "setCornerRadius_": 10,
+        "setBorderColor_": {
+          "color": "separatorColor"
+        },
+        "setFillColor_": {
+          "color": "controlBackgroundColor"
+        }
+      }
+    },
+    {
+      "kind": "label",
+      "id": "status",
+      "frame": [
+        42,
+        337,
+        290,
+        24
+      ],
+      "text": "Checking connection…",
+      "size": 17,
+      "bold": true,
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false
+      }
+    },
+    {
+      "kind": "label",
+      "id": "bridge",
+      "frame": [
+        43,
+        313,
+        290,
+        20
+      ],
+      "text": "",
+      "color": "secondaryLabelColor",
+      "size": 12,
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false
+      }
+    },
+    {
+      "kind": "button",
+      "id": "toggle",
+      "frame": [
+        386,
+        318,
+        134,
+        34
+      ],
+      "text": "Start Server",
+      "action": "toggleServer_",
+      "properties": {
+        "setBezelStyle_": 1
+      }
+    },
+    {
+      "kind": "box",
+      "frame": [
+        24,
+        154,
+        512,
+        126
+      ],
+      "properties": {
+        "setBoxType_": 4,
+        "setTitlePosition_": 0,
+        "setBorderType_": 1,
+        "setCornerRadius_": 10,
+        "setBorderColor_": {
+          "color": "separatorColor"
+        },
+        "setFillColor_": {
+          "color": "controlBackgroundColor"
+        }
+      }
+    },
+    {
+      "kind": "label",
+      "frame": [
+        42,
+        246,
+        190,
+        22
+      ],
+      "text": "Connection",
+      "size": 14,
+      "bold": true,
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false
+      }
+    },
+    {
+      "kind": "label",
+      "frame": [
+        42,
+        216,
+        210,
+        22
+      ],
+      "text": "MCP server port",
+      "size": 12,
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false
+      }
+    },
+    {
+      "kind": "field",
+      "id": "port",
+      "frame": [
+        354,
+        216,
+        72,
+        24
+      ],
+      "text": "9680",
+      "size": 13,
+      "action": "applyPort_",
+      "properties": {
+        "setAccessibilityLabel_": "MCP server port"
+      }
+    },
+    {
+      "kind": "button",
+      "id": "apply",
+      "frame": [
+        434,
+        211,
+        87,
+        32
+      ],
+      "text": "Apply Port",
+      "action": "applyPort_",
+      "properties": {
+        "setBezelStyle_": 1
+      }
+    },
+    {
+      "kind": "label",
+      "id": "url",
+      "frame": [
+        42,
+        183,
+        384,
+        22
+      ],
+      "text": "http://127.0.0.1:9680/mcp/",
+      "size": 12,
+      "color": "secondaryLabelColor",
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false
+      }
+    },
+    {
+      "kind": "button",
+      "frame": [
+        434,
+        177,
+        87,
+        30
+      ],
+      "text": "Copy URL",
+      "action": "copyURL_",
+      "properties": {
+        "setBezelStyle_": 1
+      }
+    },
+    {
+      "kind": "button",
+      "id": "auto",
+      "frame": [
+        24,
+        114,
+        512,
+        26
+      ],
+      "text": "Start the MCP server at login",
+      "action": "changeAutomatic_",
+      "properties": {
+        "setBezelStyle_": 1,
+        "setButtonType_": 3
+      }
+    },
+    {
+      "kind": "label",
+      "id": "message",
+      "frame": [
+        26,
+        72,
+        508,
+        36
+      ],
+      "text": "",
+      "size": 11,
+      "color": "secondaryLabelColor",
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false
+      }
+    },
+    {
+      "kind": "label",
+      "frame": [
+        26,
+        45,
+        508,
+        20
+      ],
+      "text": "Made by Thierry Charbonnel  ·  Version {projectVersion} (Bridge {bridgeVersion})",
+      "size": 11,
+      "color": "secondaryLabelColor",
+      "properties": {
+        "setEditable_": false,
+        "setSelectable_": true,
+        "setBordered_": false,
+        "setDrawsBackground_": false
+      }
+    },
+    {
+      "kind": "button",
+      "frame": [
+        18,
+        13,
+        80,
+        26
+      ],
+      "text": "GitHub ↗",
+      "action": "openLink_",
+      "link": "https://github.com/thierryc/Glyphs-mcp",
+      "properties": {
+        "setBezelStyle_": 1,
+        "setBordered_": false,
+        "setContentTintColor_": {
+          "color": "linkColor"
+        }
+      }
+    },
+    {
+      "kind": "button",
+      "frame": [
+        102,
+        13,
+        148,
+        26
+      ],
+      "text": "Support the project ↗",
+      "action": "openLink_",
+      "link": "https://github.com/sponsors/thierryc",
+      "properties": {
+        "setBezelStyle_": 1,
+        "setBordered_": false,
+        "setContentTintColor_": {
+          "color": "linkColor"
+        }
+      }
+    },
+    {
+      "kind": "button",
+      "frame": [
+        434,
+        11,
+        102,
+        30
+      ],
+      "text": "Open Logs",
+      "action": "openLogs_",
+      "properties": {
+        "setBezelStyle_": 1
+      }
+    }
+  ],
+  "title": "Glyphs MCP Server"
+}

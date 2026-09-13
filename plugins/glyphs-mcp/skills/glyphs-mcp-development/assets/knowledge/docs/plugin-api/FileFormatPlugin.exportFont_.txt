@@ -1,0 +1,11 @@
+EXPORT dialog
+
+This method is called when the Next button is pressed in the Export dialog,
+and should ask the user for the place to store the font (not necessarily, you could choose to hard-wire the destination in the code).
+
+Parameters:
+- font: The font object to export
+//- error: PyObjc-Requirement. It is required here in order to return the error object upon export failure. Ignore its existence here.
+
+return (True, None) if the export was successful
+return (False, NSError) if the export failed

@@ -1,0 +1,49 @@
+# GlyphsSDK
+
+## Plugin SDK
+
+This is the Plugin SDK for the [Glyphs font editor](http://glyphsapp.com/). There are various kinds of plugins (see below), and there are two ways of writing them, in ObjectiveC or in Python. You will find extensive documentation in the readme files and the code comments. But do [start with the tutorial](https://glyphsapp.com/tutorials/plugins). Then, continue with the `README.md` file inside the respective template subfolder.
+
+### .glyphsFileFormat
+
+These plugins add additional file formats for the export dialog.
+
+### .glyphsFilter
+
+These are plugins that add functionality in the *Filter* submenu of Glyphs. A filter can either have a GUI (dialog window) or none. A filter can also be called as an instance custom parameter.
+
+### .glyphsPalette
+
+These plugins add new sections to the Palette (*Window > Palette*, Cmd-Opt-P).
+
+### .glyphsPlugin
+
+These are all plugins that do not fit any other category.
+
+### .glyphsReporter
+
+These plugins add extra View functionality. They usually draw additional items in the current Edit View. Their titles, preceded by ‘Show’ will appear at the bottom of the *View* menu of the application.
+
+### .glyphsTool
+
+These plugins add a new tool in the toolbar. You can place a small PDF as toolbar icon in the `Contents/Resources/` folder. For measurements, take a look at the placeholder image that is already there.
+
+## Glyphs File Format
+
+The Glyphs File Format is described in the `GlyphsFileFormat` folder including validation tools, example files, and specifications.
+There are separate specifications for the format used by [Glyphs 4](https://github.com/schriftgestalt/GlyphsSDK/blob/Glyphs4/GlyphsFileFormat/GlyphsFileFormatv4.md), [Glyphs 3](https://github.com/schriftgestalt/GlyphsSDK/blob/Glyphs4/GlyphsFileFormat/GlyphsFileFormatv3.md), and [Glyphs 1 and Glyphs 2](https://github.com/schriftgestalt/GlyphsSDK/blob/Glyphs4/GlyphsFileFormat/GlyphsFileFormatv2.md).
+### License
+
+Copyright 2013-2016 Georg Seifert (@schriftgestalt), Jan Gerner (@yanone) and Rainer Erich Scheichelbauer (@mekkablue).
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

@@ -1,0 +1,7 @@
+Whatever you draw here will be displayed behind the paths, but
+- for inactive glyphs in the EDIT VIEW
+- and for glyphs in the PREVIEW
+Please note: If you are using this method, you probably want
+self.needsExtraMainOutlineDrawingForInactiveLayer_() to return False
+because otherwise Glyphs will draw the main outline on top of it, and
+potentially cover up your background drawing.

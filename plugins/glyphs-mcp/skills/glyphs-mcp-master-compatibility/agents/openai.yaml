@@ -1,0 +1,4 @@
+interface:
+  display_name: "glyphs-mcp-master-compatibility"
+  short_description: "Align supported contour starts across Glyphs masters"
+  default_prompt: "Use $glyphs-mcp-master-compatibility to review and align supported contour starts with the lean Glyphs MCP workflow."

@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "glyphs-mcp-protocol"
+version = "0.1.0"
+description = "Small local protocol shared by the Glyphs MCP sidecar and bridge"
+requires-python = ">=3.11,<3.15"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["glyphs_mcp_protocol*"]

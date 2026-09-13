@@ -1,0 +1,2 @@
+Invoked when user triggers the filter through the Filter menu
+and only one layer is selected.

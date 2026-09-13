@@ -1,0 +1,3 @@
+The key for the keyboard shortcut. Set modifier keys in modifierMask() further below.
+Pretty tricky to find a shortcut that is not taken yet, so be careful.
+If you are not sure, use 'return None'. Users can set their own shortcuts in System Prefs.

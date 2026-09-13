@@ -1,0 +1,1153 @@
+{
+.appVersion = "3324";
+.formatVersion = 3;
+date = "2024-10-18 18:30:34 +0000";
+familyName = "New Font";
+fontMaster = (
+{
+id = m01;
+metricValues = (
+{
+pos = 480;
+},
+{
+}
+);
+name = Regular;
+userData = {
+GSCornerRadius = 15;
+};
+}
+);
+glyphs = (
+{
+category = Icon;
+glyphname = FileFormat;
+lastChange = "2024-10-18 23:18:38 +0000";
+layers = (
+{
+attr = {
+color = 1;
+};
+layerId = m01;
+shapes = (
+{
+attr = {
+strokeColor = (74,179,54,255);
+strokeWidth = 21;
+};
+closed = 1;
+nodes = (
+(115,112,ls),
+(115,96,o),
+(127,85,o),
+(142,85,cs),
+(338,85,ls),
+(353,85,o),
+(365,96,o),
+(365,112,cs),
+(365,263,l),
+(230,405,l),
+(142,405,ls),
+(127,405,o),
+(115,394,o),
+(115,380,cs)
+);
+},
+{
+attr = {
+strokeColor = (74,179,54,255);
+strokeWidth = 18;
+};
+closed = 0;
+nodes = (
+(230,405,l),
+(230,263,l),
+(365,263,l)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../../Glyphs File Format Plugin.xctemplate";
+presets = (
+{
+filename = TemplateIcon;
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+},
+{
+factor = 2;
+filename = "TemplateIcon@2x";
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+}
+);
+};
+};
+width = 480;
+},
+{
+associatedMasterId = m01;
+attr = {
+color = 1;
+};
+layerId = "E20636BA-C7D7-454A-B622-E0165BE1BFE6";
+name = "Regular 19. Oct 24 at 01:17";
+shapes = (
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 1;
+nodes = (
+(60,107,ls),
+(60,97,o),
+(67,90,o),
+(77,90,cs),
+(403,90,ls),
+(413,90,o),
+(420,97,o),
+(420,107,cs),
+(420,343,ls),
+(420,353,o),
+(413,360,o),
+(403,360,cs),
+(370,360,l),
+(370,386,ls),
+(370,394,o),
+(364,400,o),
+(356,400,cs),
+(304,400,ls),
+(295,400,o),
+(290,394,o),
+(290,386,cs),
+(290,360,l),
+(190,360,l),
+(190,386,ls),
+(190,394,o),
+(184,400,o),
+(175,400,cs),
+(124,400,ls),
+(116,400,o),
+(110,394,o),
+(110,386,cs),
+(110,360,l),
+(77,360,ls),
+(67,360,o),
+(60,353,o),
+(60,343,cs)
+);
+},
+{
+attr = {
+strokeColor = (74,179,54,255);
+strokeWidth = 18;
+};
+closed = 1;
+nodes = (
+(175,150,ls),
+(175,141,o),
+(181,135,o),
+(189,135,cs),
+(291,135,ls),
+(299,135,o),
+(305,141,o),
+(305,150,cs),
+(305,235,l),
+(235,315,l),
+(189,315,ls),
+(181,315,o),
+(175,309,o),
+(175,301,cs)
+);
+},
+{
+attr = {
+strokeColor = (74,179,54,255);
+strokeWidth = 18;
+};
+closed = 0;
+nodes = (
+(235,315,l),
+(235,235,l),
+(305,235,l)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../../Glyphs File Format Plugin.xctemplate";
+presets = (
+{
+filename = TemplateIcon;
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+},
+{
+factor = 2;
+filename = "TemplateIcon@2x";
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+}
+);
+};
+};
+width = 480;
+}
+);
+},
+{
+category = Icon;
+glyphname = Filter;
+lastChange = "2024-10-18 23:19:18 +0000";
+layers = (
+{
+attr = {
+color = 1;
+};
+layerId = m01;
+shapes = (
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 21;
+};
+closed = 0;
+nodes = (
+(283,118,l),
+(283,230,l),
+(369,346,ls),
+(383,365,o),
+(374,380,o),
+(354,380,cs),
+(126,380,ls),
+(106,380,o),
+(97,365,o),
+(111,346,cs),
+(197,230,l),
+(197,60,l)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../../Glyphs Filter Plugin.xctemplate";
+presets = (
+{
+filename = TemplateIcon;
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+},
+{
+factor = 2;
+filename = "TemplateIcon@2x";
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+}
+);
+};
+};
+width = 480;
+},
+{
+associatedMasterId = m01;
+attr = {
+color = 1;
+};
+layerId = "EE523B2D-D4A8-43E5-AE00-68FB5E1EF929";
+name = "Regular 19. Oct 24 at 01:18";
+shapes = (
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 1;
+nodes = (
+(60,107,ls),
+(60,97,o),
+(67,90,o),
+(77,90,cs),
+(403,90,ls),
+(413,90,o),
+(420,97,o),
+(420,107,cs),
+(420,343,ls),
+(420,353,o),
+(413,360,o),
+(403,360,cs),
+(370,360,l),
+(370,386,ls),
+(370,394,o),
+(364,400,o),
+(356,400,cs),
+(304,400,ls),
+(295,400,o),
+(290,394,o),
+(290,386,cs),
+(290,360,l),
+(190,360,l),
+(190,386,ls),
+(190,394,o),
+(184,400,o),
+(175,400,cs),
+(124,400,ls),
+(116,400,o),
+(110,394,o),
+(110,386,cs),
+(110,360,l),
+(77,360,ls),
+(67,360,o),
+(60,353,o),
+(60,343,cs)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 0;
+nodes = (
+(265,165,l),
+(265,225,l),
+(315,287,ls),
+(323,297,o),
+(318,305,o),
+(306,305,cs),
+(174,305,ls),
+(162,305,o),
+(157,297,o),
+(165,287,cs),
+(215,225,l),
+(215,134,l)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../../Glyphs Filter Plugin.xctemplate";
+presets = (
+{
+filename = TemplateIcon;
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+},
+{
+factor = 2;
+filename = "TemplateIcon@2x";
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+}
+);
+};
+};
+width = 480;
+}
+);
+},
+{
+category = Icon;
+glyphname = General;
+lastChange = "2024-10-18 23:06:03 +0000";
+layers = (
+{
+attr = {
+color = 1;
+};
+layerId = m01;
+shapes = (
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 1;
+nodes = (
+(60,107,ls),
+(60,97,o),
+(67,90,o),
+(77,90,cs),
+(403,90,ls),
+(413,90,o),
+(420,97,o),
+(420,107,cs),
+(420,343,ls),
+(420,353,o),
+(413,360,o),
+(403,360,cs),
+(370,360,l),
+(370,386,ls),
+(370,394,o),
+(364,400,o),
+(356,400,cs),
+(294,400,ls),
+(285,400,o),
+(280,394,o),
+(280,386,cs),
+(280,360,l),
+(200,360,l),
+(200,386,ls),
+(200,394,o),
+(194,400,o),
+(185,400,cs),
+(124,400,ls),
+(116,400,o),
+(110,394,o),
+(110,386,cs),
+(110,360,l),
+(77,360,ls),
+(67,360,o),
+(60,353,o),
+(60,343,cs)
+);
+},
+{
+attr = {
+fillColor = (74,178,54,255);
+};
+closed = 1;
+nodes = (
+(220,319,l),
+(165,319,o),
+(130,279,o),
+(130,225,cs),
+(130,172,o),
+(168,130,o),
+(220,130,c)
+);
+},
+{
+attr = {
+fillColor = (74,178,54,255);
+};
+closed = 1;
+nodes = (
+(309,240,o),
+(330,259,o),
+(330,282,cs),
+(330,320,l),
+(240,320,l),
+(240,282,ls),
+(240,259,o),
+(261,240,o),
+(285,240,cs)
+);
+},
+{
+attr = {
+fillColor = (74,178,54,255);
+};
+closed = 1;
+nodes = (
+(330,220,l),
+(240,220,l),
+(240,167,o),
+(280,130,o),
+(330,130,c)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../../Glyphs Plugin.xctemplate";
+presets = (
+{
+filename = TemplateIcon;
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+},
+{
+factor = 2;
+filename = "TemplateIcon@2x";
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+}
+);
+};
+};
+width = 480;
+}
+);
+},
+{
+category = Icon;
+glyphname = Palette;
+lastChange = "2024-10-18 23:17:50 +0000";
+layers = (
+{
+attr = {
+color = 1;
+};
+layerId = m01;
+shapes = (
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 21;
+};
+closed = 1;
+nodes = (
+(80,150,ls),
+(80,135,o),
+(90,125,o),
+(105,125,cs),
+(375,125,ls),
+(390,125,o),
+(400,135,o),
+(400,150,cs),
+(400,352,ls),
+(400,365,o),
+(390,375,o),
+(375,375,cs),
+(105,375,ls),
+(90,375,o),
+(80,365,o),
+(80,350,cs)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 18;
+};
+closed = 0;
+nodes = (
+(282,374,l),
+(282,126,l)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 18;
+};
+closed = 0;
+nodes = (
+(316,326,l),
+(366,326,l)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 18;
+};
+closed = 0;
+nodes = (
+(316,275,l),
+(366,275,l)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 18;
+};
+closed = 0;
+nodes = (
+(316,225,l),
+(366,225,l)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../../Glyphs Palette Plugin.xctemplate";
+presets = (
+{
+filename = TemplateIcon;
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+},
+{
+factor = 2;
+filename = "TemplateIcon@2x";
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+}
+);
+};
+};
+width = 480;
+},
+{
+associatedMasterId = m01;
+attr = {
+color = 1;
+};
+layerId = "C4600523-8DD1-4F35-BC3E-43C1E8DE4BB0";
+name = "Regular 19. Oct 24 at 01:14";
+shapes = (
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 1;
+nodes = (
+(60,107,ls),
+(60,97,o),
+(67,90,o),
+(77,90,cs),
+(403,90,ls),
+(413,90,o),
+(420,97,o),
+(420,107,cs),
+(420,343,ls),
+(420,353,o),
+(413,360,o),
+(403,360,cs),
+(370,360,l),
+(370,386,ls),
+(370,394,o),
+(364,400,o),
+(356,400,cs),
+(294,400,ls),
+(285,400,o),
+(280,394,o),
+(280,386,cs),
+(280,360,l),
+(200,360,l),
+(200,386,ls),
+(200,394,o),
+(194,400,o),
+(185,400,cs),
+(124,400,ls),
+(116,400,o),
+(110,394,o),
+(110,386,cs),
+(110,360,l),
+(77,360,ls),
+(67,360,o),
+(60,353,o),
+(60,343,cs)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 18;
+};
+closed = 1;
+nodes = (
+(145,170,ls),
+(145,161,o),
+(151,155,o),
+(160,155,cs),
+(320,155,ls),
+(329,155,o),
+(335,161,o),
+(335,170,cs),
+(335,290,ls),
+(335,299,o),
+(329,305,o),
+(320,305,cs),
+(160,305,ls),
+(151,305,o),
+(145,299,o),
+(145,290,cs)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 0;
+nodes = (
+(265,305,l),
+(265,155,l)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 0;
+nodes = (
+(285,275,l),
+(315,275,l)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 0;
+nodes = (
+(285,245,l),
+(315,245,l)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 0;
+nodes = (
+(285,215,l),
+(315,215,l)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../../Glyphs Palette Plugin.xctemplate";
+presets = (
+{
+filename = TemplateIcon;
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+},
+{
+factor = 2;
+filename = "TemplateIcon@2x";
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+}
+);
+};
+};
+width = 480;
+}
+);
+},
+{
+category = Icon;
+glyphname = Reporter;
+lastChange = "2024-10-18 23:26:22 +0000";
+layers = (
+{
+attr = {
+color = 1;
+};
+layerId = m01;
+shapes = (
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 21;
+};
+closed = 1;
+nodes = (
+(80,203,ls),
+(80,188,o),
+(90,181,o),
+(104,189,cs),
+(142,209,l),
+(353,140,l),
+(353,131,o),
+(361,125,o),
+(370,125,cs),
+(380,125,ls),
+(393,125,o),
+(400,132,o),
+(400,145,cs),
+(400,335,ls),
+(400,348,o),
+(393,355,o),
+(380,355,cs),
+(369,355,ls),
+(360,355,o),
+(353,349,o),
+(353,340,c),
+(142,271,l),
+(104,291,ls),
+(90,299,o),
+(80,292,o),
+(80,277,cs)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 18;
+};
+closed = 0;
+nodes = (
+(187,174,l),
+(178,154,ls),
+(173,141,o),
+(177,132,o),
+(189,128,cs),
+(253,105,ls),
+(265,100,o),
+(273,104,o),
+(278,116,cs),
+(288,140,l)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 18;
+};
+closed = 0;
+nodes = (
+(355,340,l),
+(355,140,l)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../../Glyphs Reporter.xctemplate";
+presets = (
+{
+filename = TemplateIcon;
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+},
+{
+factor = 2;
+filename = "TemplateIcon@2x";
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+}
+);
+};
+};
+width = 480;
+},
+{
+associatedMasterId = m01;
+attr = {
+color = 1;
+};
+layerId = "571A118C-7656-4871-8E2B-FE553478D96B";
+name = "Regular 19. Oct 24 at 01:19";
+shapes = (
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 1;
+nodes = (
+(60,107,ls),
+(60,97,o),
+(67,90,o),
+(77,90,cs),
+(403,90,ls),
+(413,90,o),
+(420,97,o),
+(420,107,cs),
+(420,343,ls),
+(420,353,o),
+(413,360,o),
+(403,360,cs),
+(370,360,l),
+(370,386,ls),
+(370,394,o),
+(364,400,o),
+(356,400,cs),
+(294,400,ls),
+(285,400,o),
+(280,394,o),
+(280,386,cs),
+(280,360,l),
+(200,360,l),
+(200,386,ls),
+(200,394,o),
+(194,400,o),
+(185,400,cs),
+(124,400,ls),
+(116,400,o),
+(110,394,o),
+(110,386,cs),
+(110,360,l),
+(77,360,ls),
+(67,360,o),
+(60,353,o),
+(60,343,cs)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 18;
+};
+closed = 1;
+nodes = (
+(145,192,l),
+(182,212,l),
+(335,162,l),
+(335,299,l),
+(182,249,l),
+(145,269,l)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../../Glyphs Reporter.xctemplate";
+presets = (
+{
+filename = TemplateIcon;
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+},
+{
+factor = 2;
+filename = "TemplateIcon@2x";
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+}
+);
+};
+};
+width = 480;
+}
+);
+},
+{
+category = Icon;
+glyphname = Tool;
+lastChange = "2024-10-18 23:23:12 +0000";
+layers = (
+{
+attr = {
+color = 1;
+};
+guides = (
+{
+angle = 17.7676;
+pos = (241,203);
+}
+);
+layerId = m01;
+shapes = (
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 1;
+nodes = (
+(147,193,ls),
+(147,178,o),
+(157,172,o),
+(171,178,cs),
+(211,197,l),
+(257,85,ls),
+(262,72,o),
+(272,68,o),
+(284,74,cs),
+(305,84,ls),
+(316,89,o),
+(320,98,o),
+(315,110,cs),
+(269,215,l),
+(316,225,ls),
+(332,228,o),
+(335,240,o),
+(324,251,cs),
+(172,403,ls),
+(160,415,o),
+(147,411,o),
+(147,393,cs)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../../Glyphs Tool Plugin.xctemplate";
+presets = (
+{
+filename = TemplateIcon;
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+},
+{
+factor = 2;
+filename = "TemplateIcon@2x";
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+}
+);
+};
+};
+width = 480;
+},
+{
+associatedMasterId = m01;
+attr = {
+color = 1;
+};
+guides = (
+{
+angle = 17.7676;
+pos = (241,203);
+}
+);
+layerId = "08195CAE-F494-414A-BF57-316E9436472F";
+name = "Regular 19. Oct 24 at 01:22";
+shapes = (
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 20;
+};
+closed = 1;
+nodes = (
+(60,120,ls),
+(60,102,o),
+(72,90,o),
+(90,90,cs),
+(390,90,ls),
+(408,90,o),
+(420,102,o),
+(420,120,cs),
+(420,330,ls),
+(420,348,o),
+(408,360,o),
+(390,360,cs),
+(370,360,l),
+(370,386,ls),
+(370,394,o),
+(364,400,o),
+(356,400,cs),
+(294,400,ls),
+(285,400,o),
+(280,394,o),
+(280,386,cs),
+(280,360,l),
+(200,360,l),
+(200,386,ls),
+(200,394,o),
+(194,400,o),
+(185,400,cs),
+(124,400,ls),
+(116,400,o),
+(110,394,o),
+(110,386,cs),
+(110,360,l),
+(90,360,ls),
+(72,360,o),
+(60,348,o),
+(60,330,cs)
+);
+},
+{
+attr = {
+strokeColor = (74,178,54,255);
+strokeWidth = 18;
+};
+closed = 1;
+nodes = (
+(195,188,l),
+(223,197,l),
+(248,137,l),
+(275,149,l),
+(250,204,l),
+(286,217,l),
+(195,308,l)
+);
+}
+);
+userData = {
+com.GeorgSeifert.ImageExportSettings = {
+path = "../../Glyphs Tool Plugin.xctemplate";
+presets = (
+{
+filename = TemplateIcon;
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+},
+{
+factor = 2;
+filename = "TemplateIcon@2x";
+format = PNG;
+name = default;
+padding = "2";
+size = 48;
+}
+);
+};
+};
+width = 480;
+}
+);
+}
+);
+instances = (
+{
+instanceInterpolations = {
+m01 = 1;
+};
+name = Regular;
+properties = (
+{
+key = postscriptFontName;
+value = "NewFont-Regular";
+}
+);
+}
+);
+metrics = (
+{
+type = ascender;
+},
+{
+type = baseline;
+}
+);
+settings = {
+gridLength = 10;
+gridSubDivision = 10;
+};
+unitsPerEm = 480;
+userData = {
+UFOFormat = 3;
+};
+versionMajor = 1;
+versionMinor = 0;
+}

@@ -1,0 +1,2 @@
+The maximum height of the view in pixels.
+Must be equal to or bigger than minHeight.

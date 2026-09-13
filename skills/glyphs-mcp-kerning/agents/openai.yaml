@@ -1,7 +1,4 @@
 interface:
-  display_name: "Glyphs MCP Kerning"
-  short_description: "Review and apply kerning bumper changes safely."
-  default_prompt: "Use $glyphs-mcp-kerning to review kerning bumper suggestions, do a dry run first, and only apply approved changes."
-
-policy:
-  allow_implicit_invocation: true
+  display_name: "glyphs-mcp-kerning"
+  short_description: "Inspect stored kerning and review collision repairs"
+  default_prompt: "Use $glyphs and $glyphs-mcp-kerning to inspect stored kerning. Prepare a collision repair only when requested."

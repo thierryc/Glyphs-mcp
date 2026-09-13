@@ -1,0 +1,2 @@
+Returns the view to be displayed in the export dialog.
+Don't touch this.

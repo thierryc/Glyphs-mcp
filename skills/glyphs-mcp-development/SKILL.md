@@ -1,82 +1,64 @@
 ---
 name: glyphs-mcp-development
-description: Use this skill to create, extend, or review reusable workspace-first Glyphs Python scripts and Python plug-ins, including general, reporter, filter, palette, select-tool, and file-format plug-ins, while grounding API and template choices in the bundled Glyphs documentation.
+description: Create, test and iterate native Glyphs 4 scripts and plugins in a workspace, including vibe coding and debugging existing plugins.
+metadata:
+  surface: glyphs-mcp-v2
 ---
 
-# Glyphs MCP development
+# Glyphs Vibe Coding
 
-Create workspace-first Glyphs scripts and plug-ins from pinned SDK templates.
+Start with the user's idea, existing artifact and workspace. Choose a script for
+a one-off action or a plugin for reusable native UI/behavior. Glyphs may be
+closed: code creation, documentation lookup and static validation require no
+MCP connection, document discovery or font Save. Ordinary font-design work
+belongs to [$glyphs](../glyphs/SKILL.md); one-off native scripts can use
+[scripting](../glyphs-mcp-scripting/SKILL.md).
 
-## Core rules
+Continue with the workspace, verified connection/document binding and relevant
+instructions already in context. Load only a needed reference or missing excerpt;
+switching between coding and font work does not restart either workflow.
 
-- Search with `docs_search`, then fetch only the relevant pages with `docs_get` before using unfamiliar Glyphs APIs or plug-in lifecycle methods.
-- Use `glyphs-mcp-scripting` instead when the request is to preview, run, or
-  debug a one-off script inside the live Glyphs app. Bring verified behavior
-  back here when it should become a reusable script or plug-in.
-- Target Glyphs 3.5 and Glyphs 4 unless the user explicitly requests one version.
-- Create files in the current workspace. Never write to a live Glyphs Scripts or Plugins folder without a separate explicit request.
-- Never install, execute, reload, restart Glyphs, or overwrite an existing artifact automatically.
-- Keep `Contents/MacOS/plugin` from the bundled SDK template unchanged and retain the bundled Apache 2.0 attribution.
-- Validate after scaffolding and after source edits.
-- When extending this repository's outline-candidate system, keep mathematics
-  and process-local state free of GlyphsApp/AppKit imports; keep MCP wrappers
-  responsible for snapshots and guarded mutation; keep Reporter callbacks
-  drawing-only. Add every public tool to `TOOL_CATALOG`, then register it only
-  with `glyphs_tool`; direct `mcp.tool` decorators are forbidden. Give it all
-  four safety hints, one visibility/effect class, concise routing metadata, and
-  an output schema when it belongs to a structured workflow. Import its module
-  through `mcp_tools.py`, and export every Reporter principal class through both
-  `plugin.py` and `Info.plist`.
-- Keep the MCP surface lean. Prefer a dedicated typed tool over an opaque action
-  multiplexer, but do not add a wrapper when an existing candidate adapter or
-  lifecycle transition already expresses the same operation.
-- For candidate, curve, spacing, or kerning tools, preserve legacy JSON text and
-  add the validated structured-result envelope. Keep workflow details in typed
-  `data`; do not expand the common envelope with domain-specific fields.
+## Create and revise
 
-## Workflow
+1. Resolve purpose, workspace, name, class and developer from the task or
+   existing project. Choose `reporter` for an Edit View overlay. Other existing
+   templates: `general`, `filter`, `palette`, `select-tool`, `file-format`.
+   This skill and its scaffolder target Glyphs 4 only.
+2. Search the [complete offline SDK/API and handbook corpus](references/development-docs.md)
+   for unfamiliar APIs or missing evidence. Reuse loaded guides and native-symbol
+   excerpts from the same installed corpus; fetch only what is needed next.
+3. Run the existing helper from this skill directory, or resolve its absolute path:
 
-1. Determine whether the artifact is a standalone script or a Python plug-in. For plug-ins, choose `general`, `reporter`, `filter`, `palette`, `select-tool`, or `file-format`.
-2. Resolve the human name, purpose, destination, and plug-in class/developer metadata. Use a workspace destination when none is specified.
-3. Search the bundled docs for the APIs and plug-in base class involved. Fetch the scripting or template guide plus only the API pages needed.
-4. Run `scripts/scaffold.py create` from this skill directory. It refuses existing outputs and live Glyphs installation folders by default.
-5. Edit the generated Python for the requested behavior. Prefer documented GlyphsApp APIs and keep Glyphs 3.5/4 compatibility explicit.
-6. For this repository, run the catalog, registration, routing, structured-result,
-   single-surface startup, and mirror tests before broader release gates.
-7. Run `scripts/scaffold.py validate <artifact> --target both`. Treat static validation as necessary but not equivalent to running inside Glyphs.
-8. Report the created path, documentation consulted, validation result, compatibility notes, and any separate manual install or runtime test the user may choose.
+   ```text
+   python3 scripts/scaffold.py create reporter --name "Selection Lens" --class-name SelectionLens --developer "Project Developer" --destination /absolute/workspace --target 4
+   python3 scripts/scaffold.py validate "/absolute/workspace/Selection Lens.glyphsReporter" --target 4
+   ```
 
-## Scaffold helper
+   For a script use `create script --name "My Script" --description "Purpose"`.
+   Existing outputs are preserved. Revise an existing artifact in place within
+   scope instead of rerunning create over it.
+4. Implement the requested revision, keeping the SDK loader and Apache attribution.
+   Validate changed artifacts; `runtimeTested: false` is not native qualification.
+   Keep drawing callbacks free of file/network access, full-font traversal and
+   font mutation. Batch related edits before validation and native installation.
+5. Follow the [native install, verify and iterate loop](references/native-iteration.md)
+   for authorised tests. Reuse the user's authorisation; preserve a working
+   revision and compare workspace, installed and loaded evidence before taking
+   the next action. Unchanged installed/loaded code needs no reinstall or relaunch.
+   Use the [verification record and recovery guidance](references/verification-and-recovery.md)
+   when verifying a revision, diagnosing a failure or resuming interrupted work.
+   Generated files alone are not a working plugin; report the tested revision
+   and relevant evidence.
 
-Create a script:
+## Live context, only when needed
 
-```text
-python3 scripts/scaffold.py create script --name "My Script" --description "What it does" --destination .
-```
+For MCP access, reuse the specific [$glyphs](../glyphs/SKILL.md) connection and
+intended document ID. Only missing or invalid bindings need
+[document targeting](../glyphs/references/document-targeting.md). Reads are fresh;
+dirty fonts need no Save. Native relaunch invalidates old document IDs.
 
-Create a plug-in:
-
-```text
-python3 scripts/scaffold.py create reporter --name "My Reporter" --class-name MyReporter --developer "Your Name" --destination .
-```
-
-Validate an artifact:
-
-```text
-python3 scripts/scaffold.py validate "My Reporter.glyphsReporter" --target both
-```
-
-Use `--allow-live-install` only after the user explicitly asks to create directly in a Glyphs Scripts or Plugins folder. This flag does not install, reload, or execute the artifact.
-
-## Documentation queries
-
-- Scripts: `creating Glyphs scripts`, then the specific GlyphsApp class or method.
-- Plug-in overview: `Glyphs Python plug-in templates` and `Glyphs plug-in API`.
-- Plug-in types: `GeneralPlugin`, `ReporterPlugin`, `FilterWithoutDialog`, `PalettePlugin`, `SelectTool`, or `FileFormatPlugin`.
-
-## Deeper references
-
-- [Agent skills](https://github.com/thierryc/Glyphs-mcp/blob/main/content/concepts/agent-skills.mdx)
-- [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
-- [Tool catalog](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/Glyphs%20MCP.glyphsPlugin/Contents/Resources/tool_catalog.py)
-- [Scaffold helper](https://github.com/thierryc/Glyphs-mcp/blob/main/skills/glyphs-mcp-development/scripts/scaffold.py)
+The seven-tool MCP has no arbitrary Python execution or plugin reload tool.
+Native development through files/UI does not add an MCP capability. A required
+missing private capability needs the bridge, sidecar and skills updated together.
+No earlier-private fallback or whole-font recovery is promised. Installation,
+execution, restart, font edits and Save follow the user's authorised scope.

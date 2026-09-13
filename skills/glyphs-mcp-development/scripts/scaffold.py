@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import hashlib
 import datetime as dt
 import json
 import os
@@ -70,6 +71,40 @@ SUFFIX_TO_KIND = {
 
 class ScaffoldError(RuntimeError):
     """Raised when a scaffold or validation request is unsafe or invalid."""
+
+
+def _glyphs4_target(value: str) -> str:
+    if value != "4":
+        raise argparse.ArgumentTypeError("This lean v2 helper targets Glyphs 4 only; use the separate version-matched development skill for another host.")
+    return value
+
+
+def _verify_loader(loader: Path, kind: str) -> None:
+    try:
+        source = json.loads((ASSETS_ROOT / "SOURCE.json").read_text(encoding="utf-8"))
+        expected = source["loaderSha256"][kind]
+        if not source.get("revision") or not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+            raise ValueError("missing revision or invalid loader hash")
+        if hashlib.sha256(loader.read_bytes()).hexdigest() != expected:
+            raise ValueError("loader does not match the pinned SDK")
+    except (OSError, UnicodeError, ValueError, KeyError, TypeError) as exc:
+        raise ScaffoldError("SDK loader verification failed: " + str(exc)) from exc
+
+
+def _attribution_files(kind: str) -> dict[str, bytes]:
+    try:
+        source = json.loads((ASSETS_ROOT / "SOURCE.json").read_text(encoding="utf-8"))
+        license_data = (ASSETS_ROOT / "GlyphsSDK-LICENSE.txt").read_bytes()
+        if hashlib.sha256(license_data).hexdigest() != source["sdkFileSha256"]["LICENSE"]:
+            raise ValueError("SDK licence does not match the pinned source")
+        provenance = {key: source[key] for key in ("source", "revision", "license")}
+        if not all(isinstance(value, str) and value for value in provenance.values()):
+            raise ValueError("missing SDK provenance")
+        provenance.update(templateKind=kind, loaderSha256=source["loaderSha256"][kind])
+        return {"GlyphsSDK-LICENSE.txt": license_data,
+                "GlyphsSDK-SOURCE.json": (json.dumps(provenance, indent=2, sort_keys=True) + "\n").encode("utf-8")}
+    except (OSError, UnicodeError, ValueError, KeyError, TypeError) as exc:
+        raise ScaffoldError("SDK attribution verification failed: " + str(exc)) from exc
 
 
 def _safe_name(value: str) -> str:
@@ -175,6 +210,8 @@ if __name__ == "__main__":
 
 def _palette_source(class_name: str, name: str) -> str:
     return f'''# encoding: utf-8
+# Adapted from https://github.com/schriftgestalt/GlyphsSDK
+# Apache-2.0; see GlyphsSDK-LICENSE.txt and GlyphsSDK-SOURCE.json.
 
 import objc
 from GlyphsApp import Glyphs
@@ -262,6 +299,8 @@ def _create_plugin(args: argparse.Namespace, destination_root: Path) -> Path:
     source = TEMPLATES_ROOT / spec["template"]
     if not source.is_dir():
         raise ScaffoldError(f"Bundled SDK template is missing: {source}")
+    _verify_loader(source / "Contents/MacOS/plugin", args.kind)
+    attribution = _attribution_files(args.kind)
     destination_root.mkdir(parents=True, exist_ok=True)
     shutil.copytree(source, output, copy_function=shutil.copy2)
 
@@ -293,6 +332,8 @@ def _create_plugin(args: argparse.Namespace, destination_root: Path) -> Path:
             _palette_source(class_name, name), encoding="utf-8"
         )
 
+    for filename, content in attribution.items():
+        (output / "Contents/Resources" / filename).write_bytes(content)
     return output
 
 
@@ -406,6 +447,13 @@ def _validate_plugin(bundle: Path, target: str) -> dict[str, Any]:
         raise ScaffoldError("Info.plist is missing bundle identity metadata.")
     if not os.access(loader_path, os.X_OK):
         raise ScaffoldError("Bundled SDK plug-in loader is not executable.")
+    _verify_loader(loader_path, kind)
+    for filename, expected in _attribution_files(kind).items():
+        try:
+            if (bundle / "Contents/Resources" / filename).read_bytes() != expected:
+                raise ValueError("SDK attribution changed: " + filename)
+        except (OSError, ValueError) as exc:
+            raise ScaffoldError("SDK attribution verification failed: " + str(exc)) from exc
 
     unresolved = _plugin_unresolved_placeholders(bundle, plist_path, plist)
     if unresolved:
@@ -429,10 +477,12 @@ def _validate_plugin(bundle: Path, target: str) -> dict[str, Any]:
         "target": target,
         "checks": [
             "bundle-suffix",
+            "sdk-attribution",
             "python-syntax",
             "valid-plist",
             "principal-class",
             "sdk-loader",
+            "sdk-loader-sha256",
             "no-placeholders",
         ],
         "runtimeTested": False,
@@ -440,6 +490,8 @@ def _validate_plugin(bundle: Path, target: str) -> dict[str, Any]:
 
 
 def validate_artifact(path: Path, target: str) -> dict[str, Any]:
+    if target != "4":
+        raise ScaffoldError("This lean v2 helper targets Glyphs 4 only; select a matching skill for another host.")
     resolved = path.expanduser().resolve()
     if not resolved.exists():
         raise ScaffoldError(f"Artifact does not exist: {resolved}")
@@ -467,7 +519,7 @@ def _build_parser() -> argparse.ArgumentParser:
     create.add_argument("--short-version", default="0.1.0")
     create.add_argument("--year", type=int, default=dt.date.today().year)
     create.add_argument(
-        "--target", choices=("both", "3", "4"), default="both"
+        "--target", type=_glyphs4_target, default="4"
     )
     create.add_argument(
         "--allow-live-install",
@@ -478,7 +530,7 @@ def _build_parser() -> argparse.ArgumentParser:
     validate = subparsers.add_parser("validate", help="Validate an artifact.")
     validate.add_argument("artifact")
     validate.add_argument(
-        "--target", choices=("both", "3", "4"), default="both"
+        "--target", type=_glyphs4_target, default="4"
     )
     return parser
 

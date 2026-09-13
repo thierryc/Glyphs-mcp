@@ -9,12 +9,15 @@ Glyphs file-format specifications and schemas.
 from __future__ import annotations
 
 import hashlib
+import argparse
+import ast
 import json
 import re
 import shutil
 import textwrap
 from pathlib import Path
 from typing import Any, Iterable
+from urllib.parse import quote
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -470,7 +473,196 @@ def generate_documentation() -> dict[str, Any]:
     return payload
 
 
+def _lean_api_sections(original: str):
+    """Keep documented owners in source order; standalone functions have none.
+
+    Wrapper methods may themselves be module functions. Prefer explicit native
+    assignments in the code preceding their documentation over that ambiguity.
+    """
+    tree = ast.parse(original)
+    functions = {n.name: n.lineno for n in tree.body if isinstance(n, ast.FunctionDef)}
+    bindings = []
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name):
+                    bindings.append((node.lineno, target.value.id, target.attr))
+    owner, previous_line = None, 0
+    for number, match in enumerate(re.finditer(r"'''(.*?)'''", original, re.DOTALL), 1):
+        section = match.group(1).strip()
+        line = original.count("\n", 0, match.start()) + 1
+        symbol = None
+        first_member = True
+        for directive in re.finditer(r"^\s*\.\. (class|attribute|method|function)::\s+([\w_]+)", section, re.M):
+            kind, name = directive.groups()
+            if kind == "class":
+                owner = name
+            elif first_member:
+                explicit = [o for ln, o, member in bindings if previous_line < ln < line and member == name]
+                if previous_line < functions.get(name, 0) < line:
+                    symbol = explicit[-1] + "." + name if explicit else name
+                    if not explicit:
+                        owner = None
+                elif owner:
+                    symbol = owner + "." + name
+                elif explicit:
+                    symbol = explicit[-1] + "." + name
+                first_member = False
+        previous_line = original.count("\n", 0, match.end()) + 1
+        yield number, section, symbol, line
+
+
+def _verify_lean_sdk_sources(source_manifest):
+    expected = source_manifest.get("sdkFileSha256")
+    if not isinstance(expected, dict) or not expected:
+        raise ValueError("Pinned SDK source inventory is missing")
+    actual = {p.relative_to(SDK_ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+              for p in SDK_ROOT.rglob("*") if p.is_file()
+              and not any(part in (".git", "_build", "__pycache__") for part in p.parts)}
+    changed = sorted(path for path in expected.keys() | actual.keys() if expected.get(path) != actual.get(path))
+    if changed:
+        raise ValueError("Pinned SDK sources changed: " + ", ".join(changed))
+
+
+def generate_lean_documentation(output: Path) -> dict[str, Any]:
+    """Build the offline development corpus without touching the v1 destination.
+
+    Reuse the official-section extraction and normalization above. Original SDK
+    text is also retained so section extraction is not an API coverage boundary.
+    Provenance describes a pinned source snapshot, not native qualification.
+    """
+    output = Path(output)
+    if output.resolve() == OUTPUT_ROOT.resolve():
+        raise ValueError("The lean corpus must not overwrite v1 documentation")
+    for source_root in (SDK_ROOT, HANDBOOK_ROOT):
+        if not source_root.is_dir() or not any(p.is_file() for p in source_root.rglob("*")):
+            raise FileNotFoundError("Required documentation source is missing: " + str(source_root))
+    source_manifest = json.loads((REPO_ROOT / "skills/glyphs-mcp-development/assets/SOURCE.json").read_text())
+    if source_manifest["revision"] != SDK_REVISION:
+        raise ValueError("SDK and development templates have different pinned revisions")
+    _verify_lean_sdk_sources(source_manifest)
+    documents, sources = [], []
+    docs = output / "docs"
+    docs.mkdir(parents=True, exist_ok=True)
+
+    def write(doc_id, destination, content, title, category, source, revision, url, **extra):
+        data = content.encode("utf-8")
+        path = docs / destination
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        row = dict(id=doc_id, path=destination, title=title,
+                   summary=(_summarize(content) or title)[:300],
+                   searchTerms=sorted(set(re.findall(r"[a-z0-9_]+", content.lower()))),
+                   checksum=hashlib.sha256(data).hexdigest(), sourceKind=category,
+                   sourcePath=source, sourceRevision=revision, sourceUrl=url,
+                   applicationTarget="4", nativeVerification="not-qualified-by-documentation",
+                   **extra)
+        row.setdefault("formatVersion", None)
+        documents.append(row)
+
+    original = OBJECT_WRAPPER_PATH.read_text(encoding="utf-8")
+    for number, section, symbol, line in _lean_api_sections(original):
+        title = _derive_title(section)
+        if symbol:
+            title = symbol + " — " + title
+        write("api-section-" + str(number), "api/section_" + str(number) + ".rst",
+              _normalize_generated_text(section), title, "glyphs-python-api",
+              "GlyphsSDK/ObjectWrapper/GlyphsApp/__init__.py", SDK_REVISION,
+              SDK_BLOB_BASE + "/ObjectWrapper/GlyphsApp/__init__.py",
+              symbol=symbol, sourceChecksum=hashlib.sha256(OBJECT_WRAPPER_PATH.read_bytes()).hexdigest(),
+              sourceLine=line)
+
+    # The plugin wrapper uses normal Python docstrings. AST ownership gives
+    # useful qualified names without importing GlyphsApp or inferring APIs.
+    plugin_path = SDK_ROOT / "ObjectWrapper/GlyphsApp/plugins.py"
+    plugin_text = plugin_path.read_text(encoding="utf-8")
+    for cls in ast.parse(plugin_text).body:
+        if not isinstance(cls, ast.ClassDef):
+            continue
+        for member in [cls, *cls.body]:
+            if not isinstance(member, (ast.ClassDef, ast.FunctionDef)):
+                continue
+            documentation = ast.get_docstring(member)
+            if not documentation:
+                continue
+            symbol = cls.name if member is cls else cls.name + "." + member.name
+            write("plugin-api:" + symbol, "plugin-api/" + symbol + ".txt",
+                  documentation + "\n", symbol, "glyphs-plugin-api",
+                  "GlyphsSDK/ObjectWrapper/GlyphsApp/plugins.py", SDK_REVISION,
+                  SDK_BLOB_BASE + "/ObjectWrapper/GlyphsApp/plugins.py",
+                  symbol=symbol, sourceLine=member.lineno,
+                  sourceChecksum=hashlib.sha256(plugin_path.read_bytes()).hexdigest())
+
+    # Keep the entire available source corpus, including guide illustrations
+    # and sample bundle assets. Binary support files are not text search hits.
+    support_files = []
+    for source_root, prefix in ((SDK_ROOT, "sdk"), (HANDBOOK_ROOT, "handbook")):
+        for path in sorted(source_root.rglob("*")):
+            if not path.is_file() or any(p in path.parts for p in (".git", "_build", "__pycache__")):
+                continue
+            relative = path.relative_to(source_root).as_posix()
+            data = path.read_bytes()
+            source_path = ("GlyphsSDK/" if prefix == "sdk" else "Documentations/Markdown/") + relative
+            digest = hashlib.sha256(data).hexdigest()
+            sources.append(dict(path=source_path, sha256=digest))
+            try:
+                content = data.decode("utf-8")
+                if "\0" in content:
+                    raise UnicodeError()
+            except UnicodeError:
+                destination = prefix + "/" + relative
+                asset = docs / destination
+                asset.parent.mkdir(parents=True, exist_ok=True)
+                asset.write_bytes(data)
+                support_files.append(dict(path=destination, checksum=digest, sourcePath=source_path,
+                    sourceRevision=SDK_REVISION if prefix == "sdk" else None,
+                    sourceUrl=SDK_BLOB_BASE + "/" + quote(relative) if prefix == "sdk" else "https://handbook.glyphsapp.com/",
+                    sourceKind="glyphs-sdk-support" if prefix == "sdk" else "glyphs-handbook-support",
+                    indexed=False, reason="binary or non-UTF-8 support file; retained unchanged"))
+                continue
+            if prefix == "sdk":
+                title = relative
+                url = SDK_BLOB_BASE + "/" + quote(relative)
+                revision = SDK_REVISION
+                category = "glyphs-sdk-source"
+            else:
+                title = _derive_title(content) if content.startswith("..") else next(
+                    (line.lstrip("# ").strip() for line in content.splitlines() if line.startswith("#")), relative)
+                url = "https://handbook.glyphsapp.com/"
+                revision = None
+                category = "glyphs-handbook"
+            format_match = re.search(r"(?:[Vv]|[-_])([234])(?:\.schema)?\.(?:md|json)$", relative)
+            write(prefix + ":" + relative, prefix + "/" + relative, content, title,
+                  category, source_path, revision, url, sourceChecksum=digest,
+                  formatVersion=int(format_match.group(1)) if format_match and "GlyphsFileFormat" in source_path else None)
+
+    documents.sort(key=lambda row: row["id"])
+    payload = dict(schemaVersion=1, applicationTarget="4", sourceRevision=SDK_REVISION, documents=documents)
+    index_bytes = (json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8")
+    (output / "index.json").write_bytes(index_bytes)
+    manifest = dict(schemaVersion=1, applicationTarget="4", sourceRevision=SDK_REVISION,
+                    indexSha256=hashlib.sha256(index_bytes).hexdigest(),
+                    sourceInventory=sources, supportFiles=support_files,
+                    documents={row["path"]: row["checksum"] for row in documents},
+                    scope="All available SDK sources/references, support assets and vendored handbook; text indexed; excludes generated caches/builds.",
+                    handbookProvenance="Vendored snapshot identified by per-file SHA-256; exact upstream revision unavailable.",
+                    nativeVerification="Source documentation is not a native compatibility test.")
+    (output / "manifest.json").write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    expected = set(manifest["documents"]) | {row["path"] for row in support_files}
+    for stale in docs.rglob("*"):
+        if stale.is_file() and stale.relative_to(docs).as_posix() not in expected:
+            stale.unlink()
+    return manifest
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--lean-output", type=Path, help="Build the standalone Glyphs 4 skill corpus at this path.")
+    args = parser.parse_args()
+    if args.lean_output:
+        payload = generate_lean_documentation(args.lean_output)
+        print(json.dumps({"documents": len(payload["documents"]), "sourceRevision": payload["sourceRevision"]}))
+        return 0
     payload = generate_documentation()
     print(
         "Wrote {} documentation pages from GlyphsSDK {}".format(

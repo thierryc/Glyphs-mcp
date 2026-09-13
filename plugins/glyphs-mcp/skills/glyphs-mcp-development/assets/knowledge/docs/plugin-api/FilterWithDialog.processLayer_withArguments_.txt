@@ -1,0 +1,3 @@
+Invoked when called as Custom Parameter in an instance to generate the Preview.
+The arguments come from the custom parameter in the instance settings.
+Item 0 in arguments is the class-name. The consecutive items should be your filter options.

@@ -1,0 +1,2 @@
+Required for compatibility with Glyphs version 702 or later.
+Leave this as it is.

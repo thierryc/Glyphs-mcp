@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "managedSkills": [
+    {
+      "name": "glyphs",
+      "surface": "glyphs-mcp-v1"
+    },
+    {
+      "name": "glyphs-mcp-development",
+      "surface": "glyphs-mcp-v1"
+    },
+    {
+      "name": "glyphs-mcp-features",
+      "surface": "glyphs-mcp-v1"
+    },
+    {
+      "name": "glyphs-mcp-icon-font",
+      "surface": "glyphs-mcp-v1"
+    },
+    {
+      "name": "glyphs-mcp-italic-first-pass",
+      "surface": "glyphs-mcp-v1"
+    },
+    {
+      "name": "glyphs-mcp-kerning",
+      "surface": "glyphs-mcp-v1"
+    },
+    {
+      "name": "glyphs-mcp-litsquare-metadata",
+      "surface": "glyphs-mcp-v1"
+    },
+    {
+      "name": "glyphs-mcp-outlines-docs",
+      "surface": "glyphs-mcp-v1"
+    },
+    {
+      "name": "glyphs-mcp-release",
+      "surface": "glyphs-mcp-v1"
+    },
+    {
+      "name": "glyphs-mcp-scripting",
+      "surface": "glyphs-mcp-v1"
+    },
+    {
+      "name": "glyphs-mcp-spacing",
+      "surface": "glyphs-mcp-v1"
+    }
+  ]
+}

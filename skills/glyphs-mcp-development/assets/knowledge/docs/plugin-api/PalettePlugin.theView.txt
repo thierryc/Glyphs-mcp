@@ -1,0 +1,2 @@
+Returns an NSView to be displayed in the palette.
+This is the grey background in the palette, on which you can place UI items.

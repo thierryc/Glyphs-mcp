@@ -1,0 +1,2 @@
+Do all initializing here, and customize the quadruple underscore items.
+____CFBundleIdentifier____ should be the reverse domain name you specified in Info.plist.

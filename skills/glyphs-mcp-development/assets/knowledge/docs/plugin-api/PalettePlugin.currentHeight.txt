@@ -1,0 +1,3 @@
+The current height of the Palette section.
+Used for storing the current resized state.
+If you have a fixed height, you can also return the height in pixels

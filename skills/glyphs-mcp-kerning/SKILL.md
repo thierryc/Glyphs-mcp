@@ -1,42 +1,44 @@
 ---
 name: glyphs-mcp-kerning
-description: Use this skill when the task is to review kerning collisions or near-misses, run the kerning bumper workflow, or apply approved kerning exception changes with a dry run first.
+description: Inspect exact stored kerning and review collision repairs for explicit glyph pairs.
+metadata:
+  surface: glyphs-mcp-v2
 ---
 
-# Glyphs MCP kerning
+# glyphs-mcp-kerning
 
-Use this skill for guarded kerning bumper workflows.
+Reuse the verified [$glyphs](../glyphs/SKILL.md) connection, capabilities and
+intended `document_id` already in context; do not repeat setup for this skill.
+If missing, use [connection setup](../glyphs/references/connection-session.md)
+and [document targeting](../glyphs/references/document-targeting.md). Reuse the
+ID for reads of the same font; rediscover after `document_not_found` or target
+change, not a missing glyph. Never silently substitute another open font.
+Each read is fresh; check source/dirty state when preparing edits.
 
-## Core rules
+For stored-value inspection, follow the [kerning read reference](../glyphs/references/kerning-reads.md).
+Read exact glyph-name or established group-key pairs on dirty or unsaved fonts;
+no Save, job or external script is needed. Pure inspection stops after reporting
+the stored evidence. It does not imply a collision-repair request.
 
-- Review calls remain non-mutating; confirmed apply calls remain explicitly
-  approval-gated font edits.
-- Read current state before mutation.
-- Run `review_kerning_bumper` before any apply step.
-- Always run `apply_kerning_bumper` with `dry_run=true` before a mutating call.
-- Only mutate after explicit user approval and with `confirm=true`.
-- Never auto-save the font.
+Only when collision repair is requested, verify `kerning_collision` in this
+connection’s `jobKinds`. If unavailable, the installation needs updating: update
+the bridge, sidecar and skills together; do not use an earlier private fallback.
+Prepare supported work with `start_job`, inspect `get_job` until ready, and
+review its report before `apply_job`. Application is a reversible live change;
+native Save is acceptance. Use `discard_job` for whole-job restoration or
+cancellation. For collision jobs, native Undo/Redo belongs to the left glyph's
+Edit-view history; it is not whole-job restoration. See the focused reference
+for the tested scope and sampling limits. Never save, export,
+close, or overwrite a font unless the user's task authorizes it. Do not retry
+an uncertain write as a new job; reconcile the existing job identity first.
 
-## Workflow
+There is no arbitrary MCP Python or plugin reload. Unsupported edits require
+an explicitly authorised native workflow; do not invent an MCP command.
 
-1. Read current state with the smallest useful set of tools:
-   - `get_selected_font_and_master`
-   - `get_selected_glyphs`
-   - `get_font_kerning` or `get_glyph_details` only if the review needs extra context
-2. Run `review_kerning_bumper` and summarize:
-   - affected glyphs or pairs
-   - collision or near-miss findings
-   - proposed adjustments
-3. If the user wants to proceed, run `apply_kerning_bumper` with `dry_run=true`.
-4. Report what would change, including changed and skipped counts if available.
-5. Only after explicit approval, run the real apply call with `confirm=true`.
-6. Re-read or summarize the affected state and clearly separate:
-   - what changed
-   - what was skipped
-   - anything still needing manual review
+Prepare kind="kerning_collision" with explicit pairs and master scope. Inspect
+pair clearance, existing kerning and the suggested corrections in the report.
+Preserve existing classes and exceptions unless explicitly targeted. Review
+proof strings before acceptance; collision avoidance is not optical kerning.
+See [lean kerning](references/lean-v2.md).
 
-## Deeper references
-
-- [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
-- [Project briefing](https://github.com/thierryc/Glyphs-mcp/blob/main/CODEX.md)
-- [Tool catalog](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/Glyphs%20MCP.glyphsPlugin/Contents/Resources/tool_catalog.py)
+[Documentation](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set-v2.mdx).

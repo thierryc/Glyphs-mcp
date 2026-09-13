@@ -1,133 +1,48 @@
 ---
 name: glyphs-mcp-outlines-docs
-description: Use this skill when the task is to inspect or edit outlines, components, anchors, selected nodes, cubic Bezier geometry, Tunni balance, signed curvature, curve quality, native candidate-session review, or curvature/candidate Reporter workflows in Glyphs while also using the bundled docs lookup tools to stay grounded.
+description: Inspect curves with Curve Inspector and plan supported outline changes.
+metadata:
+  surface: glyphs-mcp-v2
 ---
 
-# Glyphs MCP outlines and docs
+# glyphs-mcp-outlines-docs
 
-Use this skill for path editing, component or anchor work, selected-node workflows, cubic curve geometry and quality review, and bundled Glyphs docs lookup.
+For layer identity, advances and bounds, use `read_entities` and the
+[native layer read reference](../glyphs/references/layer-reads.md). An
+`outlineHash` is a change guard; it does not reveal node/component geometry.
+Report unavailable evidence explicitly before choosing a native UI route.
 
-## Core rules
+For selection inspection, use the [selection read reference](../glyphs/references/selection-reads.md).
+Require `selection.context.v1` in this connection’s negotiated read capabilities.
+If unavailable, explain that the private installation needs its bridge, sidecar
+and skills updated together; do not substitute an earlier selection workflow.
+Recommend the compact object counts; request bounded node details only when
+needed. Distinguish empty selections, no Edit View and incomplete evidence.
+This read-only workflow needs no job or Save.
 
-- Prefer dedicated tools first.
-- Use `execute_code_with_context` only for multi-step glyph-scoped work that is awkward with the dedicated tools.
-- Keep any fallback script minimal, validate targets first, and bound output if needed.
-- Use `docs_search` and `docs_get` instead of broad docs loading.
-- Treat curve-quality results as measurements and conservative warnings, never as an artistic score or automatic pass/fail verdict.
-- Use `update_glyph_node_positions` for explicit coordinate-only micro-edits on
-  one glyph layer. Keep `grid_policy="font"` so the effective Glyphs grid,
-  including subdivision or disabled rounding, is authoritative; use
-  `continuous` only when the user explicitly requests off-grid precision.
-- Before and after a node mutation, compare position, type, connection,
-  smoothness, orientation, and name; only explicitly targeted fields may change.
-- Treat a missing node `name` in `set_glyph_paths` as preserve and JSON `null`
-  or `""` as unnamed. In fallback Python, never assign `None` to a Glyphs
-  string property such as `GSNode.name`; use `""` when clearing it.
-- The complete verified read-back from `update_glyph_node_positions` satisfies
-  post-mutation verification. For other tools, re-read affected glyph state
-  and stop if any non-target field changed.
-- Never auto-save the font.
+Reuse the verified [$glyphs](../glyphs/SKILL.md) connection, capabilities and
+intended `document_id` already in context; do not repeat setup for this skill.
+If missing, use [connection setup](../glyphs/references/connection-session.md)
+and [document targeting](../glyphs/references/document-targeting.md). Reuse the
+ID for reads of the same font; rediscover after `document_not_found` or target
+change, not a missing glyph. Never silently substitute another open font.
+Each read is fresh; check source/dirty state when preparing edits.
 
-## Workflow
+Prepare supported work with `start_job`, inspect `get_job` until ready, and
+review its report before `apply_job`. Application is a reversible live change;
+native Save is acceptance. Use `discard_job` for whole-job restoration or
+cancellation. Native Undo and Redo are grouped per glyph. Never save, export,
+close, or overwrite a font unless the user's task authorizes it. Do not retry
+an uncertain write as a new job; reconcile the existing job identity first.
 
-1. Read the current state first with the smallest useful set:
-   - `get_selected_font_and_master`
-   - `get_selected_nodes`
-   - `get_glyph_paths`
-   - `review_tunni_geometry`
-   - `review_curve_quality`
-   - `review_curve_quality_across_masters`
-   - `get_outline_candidate_state`
-   - `get_glyph_components`
-   - `get_glyph_details`
-2. Prefer dedicated tools for the actual change:
-   - `update_glyph_node_positions`
-   - `set_glyph_paths`
-   - `add_component_to_glyph`
-   - `add_anchor_to_glyph`
-   - `apply_collinear_handles_smooth`
-   - `review_tunni_geometry`
-   - `apply_tunni_balance`
-   - `review_curve_quality`
-   - `set_curve_review_overlay`
-   - `preview_tunni_balance_candidate`
-   - `preview_collinear_handles_candidate`
-   - `preview_italic_first_pass_candidate`
-   - `preview_compensated_tuning_candidate`
-   - `set_outline_candidate_overlay`
-   - `get_outline_candidate_state`
-   - `review_start_node_alignment`
-   - `apply_start_node_alignment`
-   - `materialize_outline_candidate_session`
-   - `review_outline_candidate_session`
-   - `accept_outline_candidate_session`
-   - `discard_outline_candidate_session`
-   - `preview_compensated_tuning_candidate` only when that workflow is explicitly requested
-3. Use candidate sessions for geometry-changing multi-master or multi-glyph batches. For start-node-only cyclic rotation, use the typed joint-alignment workflow below; never generate an `execute_code_with_context` rotation script. For Tunni work, pass explicit master/path/curve-end targets to `preview_tunni_balance_candidate`; keep `grid_policy="font"` unless the user explicitly requests continuous coordinates. Direct `apply_tunni_balance` remains compatible for one explicit target only.
-4. Enable native Edit View review with `set_curve_review_overlay(enabled=true, overlays=["curvature", "curve_events"])` after curve proposals and before mutation when visual judgment matters. Tell the user to inspect **View > Show Glyphs MCP Curvature** in Glyphs. Teal is positive signed curvature and pink is negative; curvature magnitude is placed along the path right normal, so correctly wound counters draw into their white interior. Event markers show extrema, inflections, cusps, and continuity warnings. Native comb defaults are 51 samples per cubic, a `0.010` scale, and a `0.12em` normal clamp at `0.65` alpha. Use the control result to confirm activation; the Reporter measures raw editable paths only.
-5. Review the difference-only Candidate Reporter before mutation. It leaves the normal Glyphs outline unobscured, draws only warm-yellow source/candidate difference regions, and turns those regions coral red when stale. If no manual edit is needed, call `review_outline_candidate_session`, dry-run acceptance, stop for approval, then confirm with the exact one-time token. If manual editing is wanted, dry-run and confirm `materialize_outline_candidate_session`, let the user edit the native layer, then re-review it. Never rely on LLM context to identify or delete candidate layers; use the persisted session metadata and `discard_outline_candidate_session`.
-6. Only use `execute_code_with_context` when the edit spans several glyph-scoped steps and the dedicated tools would be less reliable or less clear.
-7. When docs are needed, search first with `docs_search`, then fetch only the relevant page with `docs_get`.
-8. After every mutation, compare all node fields listed above against the
-   pre-mutation snapshot and report intended changes plus any unexpected
-   difference. Use the node-position tool's complete verified read-back;
-   otherwise re-read the affected glyph or layer. Treat an unexpected
-   difference as a failed mutation even when the tool otherwise reports success.
+There is no arbitrary MCP Python or plugin reload. Unsupported edits require
+an explicitly authorised native workflow; do not invent an MCP command.
 
-## Start-node alignment
+Use Curve Inspector for the active edited glyph and Reference Inspector to
+compare against Last Saved, a Font File, Local Git or Public GitHub. Keep draw
+callbacks display-only. Changes labels belong only to the edited occurrence,
+never repeated preview glyphs. Native outline visibility must survive startup,
+activation, node edits, panning, Undo and Redo. Use kind="start_nodes" or
+kind="slant" only for those supported changes; do not invent curve-edit tools.
 
-Treat start-node placement across any number of compatible masters as one joint
-cyclic-alignment task.
-
-1. Process one corresponding closed-path set at a time. Never rotate open
-   paths. Snapshot each path's coordinates, node fields, contour direction,
-   path and shape order, open/closed state, and compatibility before planning.
-2. Establish one intended semantic landmark from an explicitly selected
-   on-curve node or an explicitly designated reference master with one
-   unambiguous on-curve landmark. Do not use `correctPathDirection()` as the
-   start-node oracle, and do not infer the landmark from `nodes[0]` or
-   `findStartNode()` alone.
-3. In every master, generate landmark candidates independently from geometric
-   meaning: extremum or corner class, normalized position, neighboring
-   segments, tangents, and curvature. Raw node indices and absolute coordinates
-   are not matching evidence.
-4. Resolve those candidates jointly. Anchor the canonical cyclic node-type
-   sequence to the intended landmark in the selected node or reference master.
-   Consider only rotations that preserve that complete sequence across every
-   compatible master, and choose one shared topology phase. Never accept
-   independent choices that produce different phases.
-5. Require exactly one unambiguous matching candidate in every master. Stop for
-   manual review if any master has no match, multiple matches, incompatible
-   topology, or a conflicting semantic result.
-6. Call `review_start_node_alignment` with the selected reference master, path,
-   node, and every explicit target master. Stop on any reported missing,
-   ambiguous, incompatible, or conflicting landmark. Retain the exact
-   `planFingerprint`.
-7. Call `apply_start_node_alignment` with `dry_run=true` and that fingerprint.
-   Stop if the live snapshot is stale. Present the exact joint rotation plan
-   and obtain explicit approval before mutation, then repeat the same call with
-   `confirm=true`. Never substitute generated code for either typed call.
-8. Re-read every affected master. Verify that coordinates, all node fields,
-   contour direction, path and shape order, open paths, and compatibility
-   remain unchanged, then report the resulting start in every master.
-
-## Curve geometry workflow
-
-1. Resolve and report the exact `font_index`, `glyph_name`, `master_id`, and path-order `path_index`. Read the path first and preserve the reported Glyphs 4 `shapeIndex` only as additional context.
-2. Call `review_tunni_geometry` for the explicit target. Omit `segment_end_node_indices` only when intentionally scanning every cubic; otherwise pass genuine integer curve end-node indices.
-3. Call `review_curve_quality` with its default `analysis_mode="adaptive"` for the same explicit target. Start with `include_samples=false`; request detailed samples only for a narrowed selection. Report signed and normalized curvature, parameterized events, arc length, turning angle, bounded self-intersections, G0/G1/G2 joins, warnings, and omitted components without converting them into an artistic verdict. Use `sampled_v1` only for a reproducible 1.7 comparison. For compatible multi-master work, call `review_curve_quality_across_masters` instead of looping and guessing segment mappings.
-4. Call `set_curve_review_overlay(enabled=true, overlays=["curvature", "curve_events"])` when visual judgment matters, direct the user to **View > Show Glyphs MCP Curvature**, and explain the independent comb and event markers. The overlay remains available when the MCP server is stopped.
-5. If balancing is requested, create a candidate with the approved integer indices. Report `idealProposed`, authoritative grid-aligned `proposed`, post-grid imbalance, tangent drift, and any `no_safe_grid_candidate` result. JSON integer coordinates are expected on integral font grids.
-6. Ask the user to inspect **View > Show Glyphs MCP Candidate**. Warm golden yellow marks only the symmetric difference; coral red plus `STALE` means the source changed. Identical geometry draws nothing over the glyph. Curvature is reviewed separately through **View > Show Glyphs MCP Curvature**. Materialize only when the user wants normal Glyphs editing.
-7. Call `review_outline_candidate_session`; stop if it reports stale, topology, off-grid, or operation-external changes. Dry-run `accept_outline_candidate_session` with the issued token, then stop for explicit approval before `confirm=true`.
-8. Re-read the affected path after confirmation. Verify only intended fields changed, candidate cleanup and any required backup succeeded, rollback did not fail, and the font was not saved.
-
-For the compatible direct single-target path, dry-run `apply_tunni_balance`
-with the same reviewed indices. Stop for explicit approval before `confirm=true`;
-never use that shortcut for multi-master or multi-glyph work.
-
-## Deeper references
-
-- [Command set](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set.mdx)
-- [Project briefing](https://github.com/thierryc/Glyphs-mcp/blob/main/CODEX.md)
-- [Tool catalog](https://github.com/thierryc/Glyphs-mcp/blob/main/src/glyphs-mcp/Glyphs%20MCP.glyphsPlugin/Contents/Resources/tool_catalog.py)
+[Documentation](https://github.com/thierryc/Glyphs-mcp/blob/main/content/reference/command-set-v2.mdx).

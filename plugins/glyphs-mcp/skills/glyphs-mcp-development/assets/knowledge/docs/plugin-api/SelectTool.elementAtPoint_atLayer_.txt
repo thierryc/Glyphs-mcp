@@ -1,0 +1,8 @@
+Return an element in the vicinity of currentPoint (NSPoint), and it will be captured by the tool.
+Use Boolean ...
+        distance(currentPoint, referencePoint) < clickTolerance / scale)
+... for determining whether the NSPoint referencePoint is captured or not.
+Use:
+        myPath.nearestPointOnPath_pathTime_(currentPoint, 0.0)
+
+        

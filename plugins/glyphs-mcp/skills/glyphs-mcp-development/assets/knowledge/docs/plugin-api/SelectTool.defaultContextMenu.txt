@@ -1,0 +1,4 @@
+Sets the default content of the context menu and returns the menu.
+Add menu items that do not depend on the context,
+e.g., actions that affect the whole layer, no matter what is selected.
+Remove this method if you do not want any extra context menu items.

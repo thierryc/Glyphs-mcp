@@ -1,15 +1,16 @@
-# {{PROJECT_NAME}} — Project directives (Glyphs MCP)
+# {{PROJECT_NAME}}
 
-This project assumes the **Glyphs MCP** plug-in is installed and the server is running in Glyphs.
-
-## MCP server
-- Server name: `{{SERVER_NAME}}`
-- Endpoint: `{{ENDPOINT_URL}}`
-
-## Rules for agents
-- Use the `{{SERVER_NAME}}` MCP tools for all Glyphs/font operations; do not guess state.
-- Run a connectivity check by calling `tools/list` (or `list_open_fonts`). If it fails, retry once after forcing a new Streamable HTTP session (new SSE connection / new `Mcp-Session-Id`). If you can’t re-handshake in this client, tell me explicitly and I’ll start a new chat.
-- If a task might change a font, first call `list_open_fonts` and any relevant read-only tools to collect context.
-- Prefer tools that support `dry_run` first; only mutate when explicitly requested and when the tool requires `confirm=true`.
-- If connection fails, instruct the user to open Glyphs and run **Edit → Glyphs MCP Server**, then retry.
-- Route with the catalog titles, descriptions, and safety annotations; use focused Glyphs MCP skills for multi-step workflows.
+Use $glyphs-mcp-development for a Glyphs 4 coding session: create or revise
+workspace scripts/plugins using its installed offline SDK/API corpus and helper.
+Offline creation and validation need no connection, open font or Save.
+For live font-design work use $glyphs on the {{SERVER_NAME}} MCP connection at
+{{ENDPOINT_URL}}. Verify its catalog and get_status. Discover the intended font
+once with list_documents; retain its connection-specific document_id for fresh
+read_entities calls. Rediscover after document_not_found, target change or a
+bridge/Glyphs restart, not a missing glyph. Never substitute another open font.
+Prepare supported edits with start_job, review get_job, then apply_job. Native
+Save accepts changes; existing Undo/Redo and discard_job remain available.
+Reconcile uncertain writes with the existing job ID. There is no arbitrary MCP
+Python or plugin reload tool. Native installation, execution and restart follow
+the user's authorised task; use disposable fonts and preserve unrelated work.
+Glyphs 3 uses its separate pinned 1.11.0 contract and skills.

@@ -1,0 +1,3 @@
+Returns the current handle size as set in user preferences.
+Use: self.getHandleSize() / self.getScale()
+to determine the right size for drawing on the canvas.

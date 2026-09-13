@@ -1,0 +1,1 @@
+The event can tell you where the user had clicked.
