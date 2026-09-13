@@ -1,0 +1,430 @@
+{
+  "at": "2026-09-13T23:26:51.942781+00:00",
+  "sourceCommit": "2157efe23caf8ecd2d2b34c6e61dd9f5cecdde3c",
+  "pid": 14685,
+  "autosavingDelay": 8.0,
+  "countLimit": {
+    "requestedCount": 10001,
+    "uniqueCount": 10001,
+    "expectedLimit": 10000,
+    "response": {
+      "ok": false,
+      "error": {
+        "code": "invalid_request",
+        "message": "glyphs must contain 1-10,000 names",
+        "details": {}
+      }
+    },
+    "preservation": [],
+    "passed": true
+  },
+  "cubicHistory": {
+    "applicationDifferences": [],
+    "undoDifferences": [],
+    "redoDifferences": [],
+    "discardDifferences": [],
+    "dirty": {
+      "before": false,
+      "applied": true,
+      "undo": true,
+      "redo": true,
+      "discard": true
+    }
+  },
+  "dependentBounds": {
+    "path": "/private/tmp/p12-slant-final-checks-20260913/v2/1789341638265287000-open-target.glyphs",
+    "undoDifferences": [
+      "target/data/layers/4/bounds/0: 0.125 != 0.17813914041750553",
+      "target/data/layers/4/bounds/2: 100.25 != 206.60798954563734",
+      "target/data/layers/12/bounds/0: 250.25 != 250.3031391404175",
+      "target/data/layers/12/bounds/2: 100.25 != 206.60798954563734"
+    ],
+    "redoDifferences": [
+      "target/data/layers/4/bounds/0: 0.17813914041750553 != 0.125",
+      "target/data/layers/4/bounds/2: 206.60798954563734 != 100.25",
+      "target/data/layers/12/bounds/0: 250.3031391404175 != 250.25",
+      "target/data/layers/12/bounds/2: 206.60798954563734 != 100.25"
+    ],
+    "discardDifferences": [
+      "target/data/layers/4/bounds/0: 0.125 != 0.17813914041750553",
+      "target/data/layers/4/bounds/2: 100.25 != 206.60798954563734",
+      "target/data/layers/5/bounds/0: 20.281 != 22.526234960920444",
+      "target/data/layers/5/bounds/2: 125.31299999999999 != 258.2603275146254",
+      "target/data/layers/12/bounds/0: 250.25 != 250.3031391404175",
+      "target/data/layers/12/bounds/2: 100.25 != 206.60798954563734",
+      "target/data/layers/13/bounds/0: 270.406 != 272.6512349609204",
+      "target/data/layers/13/bounds/2: 125.31299999999999 != 258.2603275146254"
+    ],
+    "storedRestorationDifferences": [],
+    "redraw": [
+      {
+        "glyph": "automatic",
+        "master": 0,
+        "differences": [
+          "target/data/layers/5/bounds/0: 20.281 != 22.526234960920444",
+          "target/data/layers/5/bounds/2: 125.31299999999999 != 258.2603275146254",
+          "target/data/layers/12/bounds/0: 250.25 != 250.3031391404175",
+          "target/data/layers/12/bounds/2: 100.25 != 206.60798954563734",
+          "target/data/layers/13/bounds/0: 270.406 != 272.6512349609204",
+          "target/data/layers/13/bounds/2: 125.31299999999999 != 258.2603275146254"
+        ],
+        "storedDifferences": []
+      },
+      {
+        "glyph": "automatic",
+        "master": 1,
+        "differences": [],
+        "storedDifferences": []
+      },
+      {
+        "glyph": "automatic",
+        "master": 2,
+        "differences": [],
+        "storedDifferences": []
+      },
+      {
+        "glyph": "manual",
+        "master": 0,
+        "differences": [],
+        "storedDifferences": []
+      },
+      {
+        "glyph": "manual",
+        "master": 1,
+        "differences": [],
+        "storedDifferences": []
+      },
+      {
+        "glyph": "manual",
+        "master": 2,
+        "differences": [],
+        "storedDifferences": []
+      }
+    ],
+    "applicationDifferences": [],
+    "locations": [
+      {
+        "glyph": "automatic",
+        "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40"
+      },
+      {
+        "glyph": "automatic",
+        "layer": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC"
+      },
+      {
+        "glyph": "manual",
+        "layer": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40"
+      },
+      {
+        "glyph": "manual",
+        "layer": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC"
+      }
+    ]
+  },
+  "profile": {
+    "callbackMs": {
+      "n": 22,
+      "median": 9.979479000000001,
+      "min": 0.024875,
+      "max": 25.815042,
+      "p95": 23.197125
+    },
+    "dispatchWaitMs": {
+      "n": 22,
+      "median": 3.1055625,
+      "min": 2.535916,
+      "max": 9.358167,
+      "p95": 4.35775
+    },
+    "nativeChunkMs": {
+      "n": 10,
+      "median": 10.744583500000001,
+      "min": 5.469708,
+      "max": 12.301209,
+      "p95": 12.301209
+    },
+    "queueLagMs": {
+      "n": 332,
+      "median": 1.4617499837186188,
+      "min": 0.24075002875179052,
+      "max": 23.668791982345283,
+      "p95": 5.490291980095208
+    },
+    "load": [
+      3.76904296875,
+      6.46875,
+      8.7060546875
+    ],
+    "afterLoad": [
+      3.787109375,
+      6.427734375,
+      8.67822265625
+    ],
+    "postMutationSeconds": 2.3244390829931945,
+    "overhead": {
+      "False": {
+        "n": 5,
+        "median": 85.00600000843406,
+        "min": 82.77208299841732,
+        "max": 115.33058399800211,
+        "p95": 115.33058399800211
+      },
+      "True": {
+        "n": 5,
+        "median": 88.7944590067491,
+        "min": 83.12916703289375,
+        "max": 113.04362502414733,
+        "p95": 113.04362502414733
+      }
+    },
+    "accuracy": {
+      "applicationDifferences": [],
+      "restorationDifferences": []
+    },
+    "budgetsPass": {
+      "callbackMs": true,
+      "nativeChunkMs": true,
+      "queueLagMs": true
+    }
+  },
+  "publicCalls": {
+    "n": 81,
+    "byTool": {
+      "get_status": 21,
+      "list_documents": 5,
+      "start_job": 4,
+      "get_job": 30,
+      "apply_job": 3,
+      "discard_job": 3,
+      "read_entities": 15
+    },
+    "latencyMs": {
+      "n": 81,
+      "median": 44.29308301769197,
+      "min": 6.269917008467019,
+      "max": 237.7496249973774,
+      "p95": 145.2632499858737
+    },
+    "transportErrors": [],
+    "retries": 0
+  },
+  "tokenMethod": {
+    "tokenizer": "0.12.0",
+    "encoding": "o200k_base",
+    "serialization": "compact sorted literal-Unicode requests plus parsed results; each report once",
+    "aggregateTokens": 136432,
+    "reportCount": 3,
+    "actualBilledUsage": "unavailable"
+  },
+  "preservation": {
+    "previous-p12": {
+      "files": 1737,
+      "differences": []
+    },
+    "sidecar": {
+      "files": 34,
+      "differences": []
+    },
+    "bridge": {
+      "files": 29,
+      "differences": []
+    },
+    "skills": {
+      "files": 1732,
+      "differences": []
+    },
+    "source": {
+      "files": 952,
+      "differences": []
+    },
+    "v1-runtime": {
+      "files": 730,
+      "differences": []
+    },
+    "v1-skills": {
+      "files": 54,
+      "differences": []
+    },
+    "original-font": {
+      "files": 451,
+      "differences": []
+    },
+    "copies": {
+      "count": 8,
+      "differences": []
+    },
+    "originalControl": true
+  },
+  "nativeFinish": {
+    "documents": 1,
+    "copies": [
+      {
+        "path": "/private/tmp/p12-slant-final-checks-20260913/v2/1789341551672054000-open-unrelated.glyphs",
+        "sha256": "d4a8f326bfa267ba06ac6a283b8d5ea944d7d17c6c220a7e3ccb8d67fcd4849b"
+      },
+      {
+        "path": "/private/tmp/p12-slant-final-checks-20260913/v2/1789341551672054000-open-target.glyphs",
+        "sha256": "d4a8f326bfa267ba06ac6a283b8d5ea944d7d17c6c220a7e3ccb8d67fcd4849b"
+      },
+      {
+        "path": "/private/tmp/p12-slant-final-checks-20260913/v2/1789341560643733000-open-unrelated.glyphs",
+        "sha256": "d4a8f326bfa267ba06ac6a283b8d5ea944d7d17c6c220a7e3ccb8d67fcd4849b"
+      },
+      {
+        "path": "/private/tmp/p12-slant-final-checks-20260913/v2/1789341560643733000-open-target.glyphs",
+        "sha256": "d4a8f326bfa267ba06ac6a283b8d5ea944d7d17c6c220a7e3ccb8d67fcd4849b"
+      },
+      {
+        "path": "/private/tmp/p12-slant-final-checks-20260913/v2/1789341638265287000-open-unrelated.glyphs",
+        "sha256": "d4a8f326bfa267ba06ac6a283b8d5ea944d7d17c6c220a7e3ccb8d67fcd4849b"
+      },
+      {
+        "path": "/private/tmp/p12-slant-final-checks-20260913/v2/1789341638265287000-open-target.glyphs",
+        "sha256": "d4a8f326bfa267ba06ac6a283b8d5ea944d7d17c6c220a7e3ccb8d67fcd4849b"
+      },
+      {
+        "path": "/private/tmp/p12-slant-final-checks-20260913/v2/1789341705662892000-open-unrelated.glyphs",
+        "sha256": "d4a8f326bfa267ba06ac6a283b8d5ea944d7d17c6c220a7e3ccb8d67fcd4849b"
+      },
+      {
+        "path": "/private/tmp/p12-slant-final-checks-20260913/v2/1789341705662892000-open-target.glyphs",
+        "sha256": "d4a8f326bfa267ba06ac6a283b8d5ea944d7d17c6c220a7e3ccb8d67fcd4849b"
+      }
+    ],
+    "pid": 14685,
+    "autosavingDelay": 8.0,
+    "existing": [
+      {
+        "id": 53795529216,
+        "path": "/private/tmp/vc01-full-20260912/v2-current-5/1789186800389374000-open-unrelated.glyphs",
+        "dirty": false,
+        "glyphCount": 9
+      }
+    ]
+  },
+  "newCrashes": [],
+  "cleanup": {
+    "path": "/Users/thierryc/Library/Application Support/Glyphs 4/Scripts/P12 Final Qualification.py",
+    "sha256": "1851099371fa9f6a8d2a92c0096ea7b36cddd05068c23e78b2b97f63d177ea4e",
+    "removed": true,
+    "at": 1789341767.2228968
+  },
+  "remainingIssues": [
+    "Known stale dependent bounds until affected master viewed",
+    "Native Undo/discard dirty flag remains true",
+    "Recurring historical autosave-associated crash root cause unresolved"
+  ],
+  "observation": {
+    "pid": 14685,
+    "startEpoch": 1789341763.225282,
+    "endEpoch": 1789341894.743435,
+    "seconds": 131.5181529521942,
+    "samples": [
+      {
+        "epoch": 1789341763.269773,
+        "elapsed": 0.04449105262756348
+      },
+      {
+        "epoch": 1789341768.3197582,
+        "elapsed": 5.09447717666626
+      },
+      {
+        "epoch": 1789341773.385984,
+        "elapsed": 10.160701990127563
+      },
+      {
+        "epoch": 1789341778.436144,
+        "elapsed": 15.210862159729004
+      },
+      {
+        "epoch": 1789341783.482937,
+        "elapsed": 20.25765609741211
+      },
+      {
+        "epoch": 1789341788.542688,
+        "elapsed": 25.317405939102173
+      },
+      {
+        "epoch": 1789341793.5925,
+        "elapsed": 30.367218017578125
+      },
+      {
+        "epoch": 1789341798.644636,
+        "elapsed": 35.41935396194458
+      },
+      {
+        "epoch": 1789341803.703944,
+        "elapsed": 40.47866201400757
+      },
+      {
+        "epoch": 1789341808.7631612,
+        "elapsed": 45.53787922859192
+      },
+      {
+        "epoch": 1789341813.822366,
+        "elapsed": 50.597084045410156
+      },
+      {
+        "epoch": 1789341818.875453,
+        "elapsed": 55.65017104148865
+      },
+      {
+        "epoch": 1789341823.934772,
+        "elapsed": 60.709490060806274
+      },
+      {
+        "epoch": 1789341828.990827,
+        "elapsed": 65.765545129776
+      },
+      {
+        "epoch": 1789341834.054222,
+        "elapsed": 70.82894015312195
+      },
+      {
+        "epoch": 1789341839.1148748,
+        "elapsed": 75.88959288597107
+      },
+      {
+        "epoch": 1789341844.176928,
+        "elapsed": 80.95164608955383
+      },
+      {
+        "epoch": 1789341849.2336152,
+        "elapsed": 86.00833320617676
+      },
+      {
+        "epoch": 1789341854.281814,
+        "elapsed": 91.05653214454651
+      },
+      {
+        "epoch": 1789341859.346295,
+        "elapsed": 96.12101316452026
+      },
+      {
+        "epoch": 1789341864.406935,
+        "elapsed": 101.18165302276611
+      },
+      {
+        "epoch": 1789341869.4616,
+        "elapsed": 106.23631811141968
+      },
+      {
+        "epoch": 1789341874.519018,
+        "elapsed": 111.29373598098755
+      },
+      {
+        "epoch": 1789341879.576121,
+        "elapsed": 116.350839138031
+      },
+      {
+        "epoch": 1789341884.632171,
+        "elapsed": 121.40688896179199
+      },
+      {
+        "epoch": 1789341889.684022,
+        "elapsed": 126.45874118804932
+      }
+    ],
+    "newCrashes": []
+  }
+}

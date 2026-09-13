@@ -1,0 +1,165 @@
+{
+  "ok": true,
+  "data": {
+    "protocol": 1,
+    "sidecarVersion": "2.0.0",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    },
+    "runtimeId": "2.0.0-beta.1+61c6975537ea",
+    "codeHash": "sha256:61c6975537eabcd1b015df6ed8f754a45616da11c3c1106a766410ed88c779ae",
+    "identityEvidence": "initialization-time file fingerprint",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant"
+    ],
+    "readCapabilities": [
+      "master.read.exact.v1",
+      "masters.list.v1",
+      "layer.read.exact.v1",
+      "selection.nodes.native.v1",
+      "selection.context.v1"
+    ],
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "discard_job"
+    ],
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.1",
+        "channel": "beta",
+        "betaNumber": 1,
+        "installerBuild": 43
+      },
+      "runtimeId": "2.0.0-beta.1+bffc1729a4d7",
+      "codeHash": "sha256:bffc1729a4d7e8856c807629efa9022c14907d389134d78194c28a9949463e9b",
+      "identityEvidence": "initialization-time file fingerprint",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1"
+      ],
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": [
+        {
+          "protocol": 1,
+          "id": "curve-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "curve.measure",
+            "curve.overlay"
+          ]
+        },
+        {
+          "protocol": 1,
+          "id": "reference-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "reference.file",
+            "reference.git",
+            "reference.github",
+            "reference.overlay",
+            "reference.saved"
+          ]
+        }
+      ]
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": []
+    },
+    "controlProtocol": 1,
+    "activity": {
+      "jobs": [
+        {
+          "jobId": "job_194fc79928fa4a41a8e8fa940a8d9e27",
+          "document": "MCP Slant Test",
+          "kind": "slant",
+          "phase": "discarded",
+          "startedAt": 1789341719.492983,
+          "finishedAt": 1789341719.493004,
+          "completed": 90,
+          "total": 90,
+          "message": null
+        },
+        {
+          "jobId": "job_66de66a412d24acba92c07791bb2ac6b",
+          "document": "MCP Slant Test",
+          "kind": "slant",
+          "phase": "discarded",
+          "startedAt": 1789341653.79932,
+          "finishedAt": 1789341653.7993531,
+          "completed": 3,
+          "total": 3,
+          "message": null
+        },
+        {
+          "jobId": "job_f89ba7a188cc429b9362d6a665708116",
+          "document": "MCP Slant Test",
+          "kind": "slant",
+          "phase": "discarded",
+          "startedAt": 1789341634.303693,
+          "finishedAt": 1789341634.3037179,
+          "completed": 3,
+          "total": 3,
+          "message": null
+        },
+        {
+          "jobId": "job_3c1d4a46f4814226ab60fb06831f9369",
+          "document": "MCP Slant Test",
+          "kind": "slant",
+          "phase": "discarded",
+          "startedAt": 1789339987.488488,
+          "finishedAt": 1789339987.488499,
+          "completed": 3,
+          "total": 3,
+          "message": null
+        },
+        {
+          "jobId": "job_c916172869094f98aebf688f826ba3c8",
+          "document": "MCP Slant Test",
+          "kind": "slant",
+          "phase": "failed",
+          "startedAt": 1789339968.449493,
+          "finishedAt": 1789339968.449503,
+          "completed": null,
+          "total": null,
+          "message": "slant.missing_master: {\"master\": \"missing\", \"missingCount\": 1}. Choose an exact ordinary master ID present in the saved source."
+        }
+      ],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+  }
+}
