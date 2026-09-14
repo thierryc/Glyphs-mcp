@@ -84,7 +84,9 @@ def test_initial_core_is_below_reset_line_budgets() -> None:
     # H4 adds bounded glyph pages with constant-size guards and no inventory cache.
     # H5 adds one stateless native layer inventory; editing/lifecycle hooks unchanged.
     # H6 adds stateless indexed kerning pages with a bounded work budget.
-    assert bridge <= 2300
+    # M7 adds native fractional defaults/axis projection and reuses the master page.
+    # 65 lines of existing headroom plus 20 more; global/module budgets unchanged.
+    assert bridge <= 2320
     assert sidecar <= 3500
     assert protocol + bridge + sidecar <= 6000
     assert all(

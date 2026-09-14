@@ -1,0 +1,2686 @@
+{
+  "fixtures": [
+    {
+      "label": "MasterPropertiesTest",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-m7-master-properties-20260914/MasterPropertiesTest.glyphs",
+      "sourceSHA256": "4b8ddb7e599493f969b299e91296055b167e967aeaa80a8d53aae11f03cb93d2",
+      "expected": [
+        {
+          "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "name": "Regular",
+          "ascender": 812.375,
+          "capHeight": 705.125,
+          "xHeight": 513.875,
+          "descender": -212.625,
+          "italicAngle": 0.0,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 0.125,
+                "externalValue": 0.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 1.125,
+                "externalValue": 1.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 2.125,
+                "externalValue": 2.625
+              }
+            ],
+            "total": 3,
+            "returned": 3,
+            "complete": true
+          }
+        },
+        {
+          "id": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+          "name": "Regular",
+          "ascender": 813.375,
+          "capHeight": 706.125,
+          "xHeight": 514.875,
+          "descender": -213.625,
+          "italicAngle": -12.375,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 100.125,
+                "externalValue": 200.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 101.125,
+                "externalValue": 201.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 102.125,
+                "externalValue": 202.625
+              }
+            ],
+            "total": 3,
+            "returned": 3,
+            "complete": true
+          }
+        },
+        {
+          "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+          "name": "Regular",
+          "ascender": 814.375,
+          "capHeight": 707.125,
+          "xHeight": 515.875,
+          "descender": -214.625,
+          "italicAngle": 9.625,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 200.125,
+                "externalValue": 400.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 201.125,
+                "externalValue": 401.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 202.125,
+                "externalValue": 402.625
+              }
+            ],
+            "total": 3,
+            "returned": 3,
+            "complete": true
+          }
+        }
+      ]
+    },
+    {
+      "label": "MasterPropertiesBound",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-m7-master-properties-20260914/MasterPropertiesBound.glyphs",
+      "sourceSHA256": "5121fc2100e08f7faa5fb82ea7e9e822b7116c1424228d91c29c7dee2622db42",
+      "expected": [
+        {
+          "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "name": "Regular",
+          "ascender": 812.375,
+          "capHeight": 705.125,
+          "xHeight": 513.875,
+          "descender": -212.625,
+          "italicAngle": 0.0,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 0.125,
+                "externalValue": 0.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 1.125,
+                "externalValue": 1.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 2.125,
+                "externalValue": 2.625
+              },
+              {
+                "axisId": "a04",
+                "tag": "X003",
+                "name": "Custom 03",
+                "index": 3,
+                "internalValue": 3.125,
+                "externalValue": 3.625
+              },
+              {
+                "axisId": "a05",
+                "tag": "X004",
+                "name": "Custom 04",
+                "index": 4,
+                "internalValue": 4.125,
+                "externalValue": 4.625
+              },
+              {
+                "axisId": "a06",
+                "tag": "X005",
+                "name": "Custom 05",
+                "index": 5,
+                "internalValue": 5.125,
+                "externalValue": 5.625
+              },
+              {
+                "axisId": "a07",
+                "tag": "X006",
+                "name": "Custom 06",
+                "index": 6,
+                "internalValue": 6.125,
+                "externalValue": 6.625
+              },
+              {
+                "axisId": "a08",
+                "tag": "X007",
+                "name": "Custom 07",
+                "index": 7,
+                "internalValue": 7.125,
+                "externalValue": 7.625
+              },
+              {
+                "axisId": "a09",
+                "tag": "X008",
+                "name": "Custom 08",
+                "index": 8,
+                "internalValue": 8.125,
+                "externalValue": 8.625
+              },
+              {
+                "axisId": "a10",
+                "tag": "X009",
+                "name": "Custom 09",
+                "index": 9,
+                "internalValue": 9.125,
+                "externalValue": 9.625
+              },
+              {
+                "axisId": "a11",
+                "tag": "X010",
+                "name": "Custom 10",
+                "index": 10,
+                "internalValue": 10.125,
+                "externalValue": 10.625
+              },
+              {
+                "axisId": "a12",
+                "tag": "X011",
+                "name": "Custom 11",
+                "index": 11,
+                "internalValue": 11.125,
+                "externalValue": 11.625
+              },
+              {
+                "axisId": "a13",
+                "tag": "X012",
+                "name": "Custom 12",
+                "index": 12,
+                "internalValue": 12.125,
+                "externalValue": 12.625
+              },
+              {
+                "axisId": "a14",
+                "tag": "X013",
+                "name": "Custom 13",
+                "index": 13,
+                "internalValue": 13.125,
+                "externalValue": 13.625
+              },
+              {
+                "axisId": "a15",
+                "tag": "X014",
+                "name": "Custom 14",
+                "index": 14,
+                "internalValue": 14.125,
+                "externalValue": 14.625
+              },
+              {
+                "axisId": "a16",
+                "tag": "X015",
+                "name": "Custom 15",
+                "index": 15,
+                "internalValue": 15.125,
+                "externalValue": 15.625
+              },
+              {
+                "axisId": "a17",
+                "tag": "X016",
+                "name": "Custom 16",
+                "index": 16,
+                "internalValue": 16.125,
+                "externalValue": 16.625
+              },
+              {
+                "axisId": "a18",
+                "tag": "X017",
+                "name": "Custom 17",
+                "index": 17,
+                "internalValue": 17.125,
+                "externalValue": 17.625
+              },
+              {
+                "axisId": "a19",
+                "tag": "X018",
+                "name": "Custom 18",
+                "index": 18,
+                "internalValue": 18.125,
+                "externalValue": 18.625
+              },
+              {
+                "axisId": "a20",
+                "tag": "X019",
+                "name": "Custom 19",
+                "index": 19,
+                "internalValue": 19.125,
+                "externalValue": 19.625
+              },
+              {
+                "axisId": "a21",
+                "tag": "X020",
+                "name": "Custom 20",
+                "index": 20,
+                "internalValue": 20.125,
+                "externalValue": 20.625
+              },
+              {
+                "axisId": "a22",
+                "tag": "X021",
+                "name": "Custom 21",
+                "index": 21,
+                "internalValue": 21.125,
+                "externalValue": 21.625
+              },
+              {
+                "axisId": "a23",
+                "tag": "X022",
+                "name": "Custom 22",
+                "index": 22,
+                "internalValue": 22.125,
+                "externalValue": 22.625
+              },
+              {
+                "axisId": "a24",
+                "tag": "X023",
+                "name": "Custom 23",
+                "index": 23,
+                "internalValue": 23.125,
+                "externalValue": 23.625
+              },
+              {
+                "axisId": "a25",
+                "tag": "X024",
+                "name": "Custom 24",
+                "index": 24,
+                "internalValue": 24.125,
+                "externalValue": 24.625
+              },
+              {
+                "axisId": "a26",
+                "tag": "X025",
+                "name": "Custom 25",
+                "index": 25,
+                "internalValue": 25.125,
+                "externalValue": 25.625
+              },
+              {
+                "axisId": "a27",
+                "tag": "X026",
+                "name": "Custom 26",
+                "index": 26,
+                "internalValue": 26.125,
+                "externalValue": 26.625
+              },
+              {
+                "axisId": "a28",
+                "tag": "X027",
+                "name": "Custom 27",
+                "index": 27,
+                "internalValue": 27.125,
+                "externalValue": 27.625
+              },
+              {
+                "axisId": "a29",
+                "tag": "X028",
+                "name": "Custom 28",
+                "index": 28,
+                "internalValue": 28.125,
+                "externalValue": 28.625
+              },
+              {
+                "axisId": "a30",
+                "tag": "X029",
+                "name": "Custom 29",
+                "index": 29,
+                "internalValue": 29.125,
+                "externalValue": 29.625
+              },
+              {
+                "axisId": "a31",
+                "tag": "X030",
+                "name": "Custom 30",
+                "index": 30,
+                "internalValue": 30.125,
+                "externalValue": 30.625
+              },
+              {
+                "axisId": "a32",
+                "tag": "X031",
+                "name": "Custom 31",
+                "index": 31,
+                "internalValue": 31.125,
+                "externalValue": 31.625
+              }
+            ],
+            "total": 32,
+            "returned": 32,
+            "complete": true
+          }
+        },
+        {
+          "id": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+          "name": "Regular",
+          "ascender": 813.375,
+          "capHeight": 706.125,
+          "xHeight": 514.875,
+          "descender": -213.625,
+          "italicAngle": -12.375,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 100.125,
+                "externalValue": 200.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 101.125,
+                "externalValue": 201.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 102.125,
+                "externalValue": 202.625
+              },
+              {
+                "axisId": "a04",
+                "tag": "X003",
+                "name": "Custom 03",
+                "index": 3,
+                "internalValue": 103.125,
+                "externalValue": 203.625
+              },
+              {
+                "axisId": "a05",
+                "tag": "X004",
+                "name": "Custom 04",
+                "index": 4,
+                "internalValue": 104.125,
+                "externalValue": 204.625
+              },
+              {
+                "axisId": "a06",
+                "tag": "X005",
+                "name": "Custom 05",
+                "index": 5,
+                "internalValue": 105.125,
+                "externalValue": 205.625
+              },
+              {
+                "axisId": "a07",
+                "tag": "X006",
+                "name": "Custom 06",
+                "index": 6,
+                "internalValue": 106.125,
+                "externalValue": 206.625
+              },
+              {
+                "axisId": "a08",
+                "tag": "X007",
+                "name": "Custom 07",
+                "index": 7,
+                "internalValue": 107.125,
+                "externalValue": 207.625
+              },
+              {
+                "axisId": "a09",
+                "tag": "X008",
+                "name": "Custom 08",
+                "index": 8,
+                "internalValue": 108.125,
+                "externalValue": 208.625
+              },
+              {
+                "axisId": "a10",
+                "tag": "X009",
+                "name": "Custom 09",
+                "index": 9,
+                "internalValue": 109.125,
+                "externalValue": 209.625
+              },
+              {
+                "axisId": "a11",
+                "tag": "X010",
+                "name": "Custom 10",
+                "index": 10,
+                "internalValue": 110.125,
+                "externalValue": 210.625
+              },
+              {
+                "axisId": "a12",
+                "tag": "X011",
+                "name": "Custom 11",
+                "index": 11,
+                "internalValue": 111.125,
+                "externalValue": 211.625
+              },
+              {
+                "axisId": "a13",
+                "tag": "X012",
+                "name": "Custom 12",
+                "index": 12,
+                "internalValue": 112.125,
+                "externalValue": 212.625
+              },
+              {
+                "axisId": "a14",
+                "tag": "X013",
+                "name": "Custom 13",
+                "index": 13,
+                "internalValue": 113.125,
+                "externalValue": 213.625
+              },
+              {
+                "axisId": "a15",
+                "tag": "X014",
+                "name": "Custom 14",
+                "index": 14,
+                "internalValue": 114.125,
+                "externalValue": 214.625
+              },
+              {
+                "axisId": "a16",
+                "tag": "X015",
+                "name": "Custom 15",
+                "index": 15,
+                "internalValue": 115.125,
+                "externalValue": 215.625
+              },
+              {
+                "axisId": "a17",
+                "tag": "X016",
+                "name": "Custom 16",
+                "index": 16,
+                "internalValue": 116.125,
+                "externalValue": 216.625
+              },
+              {
+                "axisId": "a18",
+                "tag": "X017",
+                "name": "Custom 17",
+                "index": 17,
+                "internalValue": 117.125,
+                "externalValue": 217.625
+              },
+              {
+                "axisId": "a19",
+                "tag": "X018",
+                "name": "Custom 18",
+                "index": 18,
+                "internalValue": 118.125,
+                "externalValue": 218.625
+              },
+              {
+                "axisId": "a20",
+                "tag": "X019",
+                "name": "Custom 19",
+                "index": 19,
+                "internalValue": 119.125,
+                "externalValue": 219.625
+              },
+              {
+                "axisId": "a21",
+                "tag": "X020",
+                "name": "Custom 20",
+                "index": 20,
+                "internalValue": 120.125,
+                "externalValue": 220.625
+              },
+              {
+                "axisId": "a22",
+                "tag": "X021",
+                "name": "Custom 21",
+                "index": 21,
+                "internalValue": 121.125,
+                "externalValue": 221.625
+              },
+              {
+                "axisId": "a23",
+                "tag": "X022",
+                "name": "Custom 22",
+                "index": 22,
+                "internalValue": 122.125,
+                "externalValue": 222.625
+              },
+              {
+                "axisId": "a24",
+                "tag": "X023",
+                "name": "Custom 23",
+                "index": 23,
+                "internalValue": 123.125,
+                "externalValue": 223.625
+              },
+              {
+                "axisId": "a25",
+                "tag": "X024",
+                "name": "Custom 24",
+                "index": 24,
+                "internalValue": 124.125,
+                "externalValue": 224.625
+              },
+              {
+                "axisId": "a26",
+                "tag": "X025",
+                "name": "Custom 25",
+                "index": 25,
+                "internalValue": 125.125,
+                "externalValue": 225.625
+              },
+              {
+                "axisId": "a27",
+                "tag": "X026",
+                "name": "Custom 26",
+                "index": 26,
+                "internalValue": 126.125,
+                "externalValue": 226.625
+              },
+              {
+                "axisId": "a28",
+                "tag": "X027",
+                "name": "Custom 27",
+                "index": 27,
+                "internalValue": 127.125,
+                "externalValue": 227.625
+              },
+              {
+                "axisId": "a29",
+                "tag": "X028",
+                "name": "Custom 28",
+                "index": 28,
+                "internalValue": 128.125,
+                "externalValue": 228.625
+              },
+              {
+                "axisId": "a30",
+                "tag": "X029",
+                "name": "Custom 29",
+                "index": 29,
+                "internalValue": 129.125,
+                "externalValue": 229.625
+              },
+              {
+                "axisId": "a31",
+                "tag": "X030",
+                "name": "Custom 30",
+                "index": 30,
+                "internalValue": 130.125,
+                "externalValue": 230.625
+              },
+              {
+                "axisId": "a32",
+                "tag": "X031",
+                "name": "Custom 31",
+                "index": 31,
+                "internalValue": 131.125,
+                "externalValue": 231.625
+              }
+            ],
+            "total": 32,
+            "returned": 32,
+            "complete": true
+          }
+        },
+        {
+          "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+          "name": "Regular",
+          "ascender": 814.375,
+          "capHeight": 707.125,
+          "xHeight": 515.875,
+          "descender": -214.625,
+          "italicAngle": 9.625,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 200.125,
+                "externalValue": 400.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 201.125,
+                "externalValue": 401.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 202.125,
+                "externalValue": 402.625
+              },
+              {
+                "axisId": "a04",
+                "tag": "X003",
+                "name": "Custom 03",
+                "index": 3,
+                "internalValue": 203.125,
+                "externalValue": 403.625
+              },
+              {
+                "axisId": "a05",
+                "tag": "X004",
+                "name": "Custom 04",
+                "index": 4,
+                "internalValue": 204.125,
+                "externalValue": 404.625
+              },
+              {
+                "axisId": "a06",
+                "tag": "X005",
+                "name": "Custom 05",
+                "index": 5,
+                "internalValue": 205.125,
+                "externalValue": 405.625
+              },
+              {
+                "axisId": "a07",
+                "tag": "X006",
+                "name": "Custom 06",
+                "index": 6,
+                "internalValue": 206.125,
+                "externalValue": 406.625
+              },
+              {
+                "axisId": "a08",
+                "tag": "X007",
+                "name": "Custom 07",
+                "index": 7,
+                "internalValue": 207.125,
+                "externalValue": 407.625
+              },
+              {
+                "axisId": "a09",
+                "tag": "X008",
+                "name": "Custom 08",
+                "index": 8,
+                "internalValue": 208.125,
+                "externalValue": 408.625
+              },
+              {
+                "axisId": "a10",
+                "tag": "X009",
+                "name": "Custom 09",
+                "index": 9,
+                "internalValue": 209.125,
+                "externalValue": 409.625
+              },
+              {
+                "axisId": "a11",
+                "tag": "X010",
+                "name": "Custom 10",
+                "index": 10,
+                "internalValue": 210.125,
+                "externalValue": 410.625
+              },
+              {
+                "axisId": "a12",
+                "tag": "X011",
+                "name": "Custom 11",
+                "index": 11,
+                "internalValue": 211.125,
+                "externalValue": 411.625
+              },
+              {
+                "axisId": "a13",
+                "tag": "X012",
+                "name": "Custom 12",
+                "index": 12,
+                "internalValue": 212.125,
+                "externalValue": 412.625
+              },
+              {
+                "axisId": "a14",
+                "tag": "X013",
+                "name": "Custom 13",
+                "index": 13,
+                "internalValue": 213.125,
+                "externalValue": 413.625
+              },
+              {
+                "axisId": "a15",
+                "tag": "X014",
+                "name": "Custom 14",
+                "index": 14,
+                "internalValue": 214.125,
+                "externalValue": 414.625
+              },
+              {
+                "axisId": "a16",
+                "tag": "X015",
+                "name": "Custom 15",
+                "index": 15,
+                "internalValue": 215.125,
+                "externalValue": 415.625
+              },
+              {
+                "axisId": "a17",
+                "tag": "X016",
+                "name": "Custom 16",
+                "index": 16,
+                "internalValue": 216.125,
+                "externalValue": 416.625
+              },
+              {
+                "axisId": "a18",
+                "tag": "X017",
+                "name": "Custom 17",
+                "index": 17,
+                "internalValue": 217.125,
+                "externalValue": 417.625
+              },
+              {
+                "axisId": "a19",
+                "tag": "X018",
+                "name": "Custom 18",
+                "index": 18,
+                "internalValue": 218.125,
+                "externalValue": 418.625
+              },
+              {
+                "axisId": "a20",
+                "tag": "X019",
+                "name": "Custom 19",
+                "index": 19,
+                "internalValue": 219.125,
+                "externalValue": 419.625
+              },
+              {
+                "axisId": "a21",
+                "tag": "X020",
+                "name": "Custom 20",
+                "index": 20,
+                "internalValue": 220.125,
+                "externalValue": 420.625
+              },
+              {
+                "axisId": "a22",
+                "tag": "X021",
+                "name": "Custom 21",
+                "index": 21,
+                "internalValue": 221.125,
+                "externalValue": 421.625
+              },
+              {
+                "axisId": "a23",
+                "tag": "X022",
+                "name": "Custom 22",
+                "index": 22,
+                "internalValue": 222.125,
+                "externalValue": 422.625
+              },
+              {
+                "axisId": "a24",
+                "tag": "X023",
+                "name": "Custom 23",
+                "index": 23,
+                "internalValue": 223.125,
+                "externalValue": 423.625
+              },
+              {
+                "axisId": "a25",
+                "tag": "X024",
+                "name": "Custom 24",
+                "index": 24,
+                "internalValue": 224.125,
+                "externalValue": 424.625
+              },
+              {
+                "axisId": "a26",
+                "tag": "X025",
+                "name": "Custom 25",
+                "index": 25,
+                "internalValue": 225.125,
+                "externalValue": 425.625
+              },
+              {
+                "axisId": "a27",
+                "tag": "X026",
+                "name": "Custom 26",
+                "index": 26,
+                "internalValue": 226.125,
+                "externalValue": 426.625
+              },
+              {
+                "axisId": "a28",
+                "tag": "X027",
+                "name": "Custom 27",
+                "index": 27,
+                "internalValue": 227.125,
+                "externalValue": 427.625
+              },
+              {
+                "axisId": "a29",
+                "tag": "X028",
+                "name": "Custom 28",
+                "index": 28,
+                "internalValue": 228.125,
+                "externalValue": 428.625
+              },
+              {
+                "axisId": "a30",
+                "tag": "X029",
+                "name": "Custom 29",
+                "index": 29,
+                "internalValue": 229.125,
+                "externalValue": 429.625
+              },
+              {
+                "axisId": "a31",
+                "tag": "X030",
+                "name": "Custom 30",
+                "index": 30,
+                "internalValue": 230.125,
+                "externalValue": 430.625
+              },
+              {
+                "axisId": "a32",
+                "tag": "X031",
+                "name": "Custom 31",
+                "index": 31,
+                "internalValue": 231.125,
+                "externalValue": 431.625
+              }
+            ],
+            "total": 32,
+            "returned": 32,
+            "complete": true
+          }
+        },
+        {
+          "id": "M7_TEMP_3",
+          "name": "Regular",
+          "ascender": 815.375,
+          "capHeight": 708.125,
+          "xHeight": 516.875,
+          "descender": -215.625,
+          "italicAngle": 0.0,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 300.125,
+                "externalValue": 600.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 301.125,
+                "externalValue": 601.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 302.125,
+                "externalValue": 602.625
+              },
+              {
+                "axisId": "a04",
+                "tag": "X003",
+                "name": "Custom 03",
+                "index": 3,
+                "internalValue": 303.125,
+                "externalValue": 603.625
+              },
+              {
+                "axisId": "a05",
+                "tag": "X004",
+                "name": "Custom 04",
+                "index": 4,
+                "internalValue": 304.125,
+                "externalValue": 604.625
+              },
+              {
+                "axisId": "a06",
+                "tag": "X005",
+                "name": "Custom 05",
+                "index": 5,
+                "internalValue": 305.125,
+                "externalValue": 605.625
+              },
+              {
+                "axisId": "a07",
+                "tag": "X006",
+                "name": "Custom 06",
+                "index": 6,
+                "internalValue": 306.125,
+                "externalValue": 606.625
+              },
+              {
+                "axisId": "a08",
+                "tag": "X007",
+                "name": "Custom 07",
+                "index": 7,
+                "internalValue": 307.125,
+                "externalValue": 607.625
+              },
+              {
+                "axisId": "a09",
+                "tag": "X008",
+                "name": "Custom 08",
+                "index": 8,
+                "internalValue": 308.125,
+                "externalValue": 608.625
+              },
+              {
+                "axisId": "a10",
+                "tag": "X009",
+                "name": "Custom 09",
+                "index": 9,
+                "internalValue": 309.125,
+                "externalValue": 609.625
+              },
+              {
+                "axisId": "a11",
+                "tag": "X010",
+                "name": "Custom 10",
+                "index": 10,
+                "internalValue": 310.125,
+                "externalValue": 610.625
+              },
+              {
+                "axisId": "a12",
+                "tag": "X011",
+                "name": "Custom 11",
+                "index": 11,
+                "internalValue": 311.125,
+                "externalValue": 611.625
+              },
+              {
+                "axisId": "a13",
+                "tag": "X012",
+                "name": "Custom 12",
+                "index": 12,
+                "internalValue": 312.125,
+                "externalValue": 612.625
+              },
+              {
+                "axisId": "a14",
+                "tag": "X013",
+                "name": "Custom 13",
+                "index": 13,
+                "internalValue": 313.125,
+                "externalValue": 613.625
+              },
+              {
+                "axisId": "a15",
+                "tag": "X014",
+                "name": "Custom 14",
+                "index": 14,
+                "internalValue": 314.125,
+                "externalValue": 614.625
+              },
+              {
+                "axisId": "a16",
+                "tag": "X015",
+                "name": "Custom 15",
+                "index": 15,
+                "internalValue": 315.125,
+                "externalValue": 615.625
+              },
+              {
+                "axisId": "a17",
+                "tag": "X016",
+                "name": "Custom 16",
+                "index": 16,
+                "internalValue": 316.125,
+                "externalValue": 616.625
+              },
+              {
+                "axisId": "a18",
+                "tag": "X017",
+                "name": "Custom 17",
+                "index": 17,
+                "internalValue": 317.125,
+                "externalValue": 617.625
+              },
+              {
+                "axisId": "a19",
+                "tag": "X018",
+                "name": "Custom 18",
+                "index": 18,
+                "internalValue": 318.125,
+                "externalValue": 618.625
+              },
+              {
+                "axisId": "a20",
+                "tag": "X019",
+                "name": "Custom 19",
+                "index": 19,
+                "internalValue": 319.125,
+                "externalValue": 619.625
+              },
+              {
+                "axisId": "a21",
+                "tag": "X020",
+                "name": "Custom 20",
+                "index": 20,
+                "internalValue": 320.125,
+                "externalValue": 620.625
+              },
+              {
+                "axisId": "a22",
+                "tag": "X021",
+                "name": "Custom 21",
+                "index": 21,
+                "internalValue": 321.125,
+                "externalValue": 621.625
+              },
+              {
+                "axisId": "a23",
+                "tag": "X022",
+                "name": "Custom 22",
+                "index": 22,
+                "internalValue": 322.125,
+                "externalValue": 622.625
+              },
+              {
+                "axisId": "a24",
+                "tag": "X023",
+                "name": "Custom 23",
+                "index": 23,
+                "internalValue": 323.125,
+                "externalValue": 623.625
+              },
+              {
+                "axisId": "a25",
+                "tag": "X024",
+                "name": "Custom 24",
+                "index": 24,
+                "internalValue": 324.125,
+                "externalValue": 624.625
+              },
+              {
+                "axisId": "a26",
+                "tag": "X025",
+                "name": "Custom 25",
+                "index": 25,
+                "internalValue": 325.125,
+                "externalValue": 625.625
+              },
+              {
+                "axisId": "a27",
+                "tag": "X026",
+                "name": "Custom 26",
+                "index": 26,
+                "internalValue": 326.125,
+                "externalValue": 626.625
+              },
+              {
+                "axisId": "a28",
+                "tag": "X027",
+                "name": "Custom 27",
+                "index": 27,
+                "internalValue": 327.125,
+                "externalValue": 627.625
+              },
+              {
+                "axisId": "a29",
+                "tag": "X028",
+                "name": "Custom 28",
+                "index": 28,
+                "internalValue": 328.125,
+                "externalValue": 628.625
+              },
+              {
+                "axisId": "a30",
+                "tag": "X029",
+                "name": "Custom 29",
+                "index": 29,
+                "internalValue": 329.125,
+                "externalValue": 629.625
+              },
+              {
+                "axisId": "a31",
+                "tag": "X030",
+                "name": "Custom 30",
+                "index": 30,
+                "internalValue": 330.125,
+                "externalValue": 630.625
+              },
+              {
+                "axisId": "a32",
+                "tag": "X031",
+                "name": "Custom 31",
+                "index": 31,
+                "internalValue": 331.125,
+                "externalValue": 631.625
+              }
+            ],
+            "total": 32,
+            "returned": 32,
+            "complete": true
+          }
+        },
+        {
+          "id": "M7_TEMP_4",
+          "name": "Regular",
+          "ascender": 816.375,
+          "capHeight": 709.125,
+          "xHeight": 517.875,
+          "descender": -216.625,
+          "italicAngle": -12.375,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 400.125,
+                "externalValue": 800.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 401.125,
+                "externalValue": 801.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 402.125,
+                "externalValue": 802.625
+              },
+              {
+                "axisId": "a04",
+                "tag": "X003",
+                "name": "Custom 03",
+                "index": 3,
+                "internalValue": 403.125,
+                "externalValue": 803.625
+              },
+              {
+                "axisId": "a05",
+                "tag": "X004",
+                "name": "Custom 04",
+                "index": 4,
+                "internalValue": 404.125,
+                "externalValue": 804.625
+              },
+              {
+                "axisId": "a06",
+                "tag": "X005",
+                "name": "Custom 05",
+                "index": 5,
+                "internalValue": 405.125,
+                "externalValue": 805.625
+              },
+              {
+                "axisId": "a07",
+                "tag": "X006",
+                "name": "Custom 06",
+                "index": 6,
+                "internalValue": 406.125,
+                "externalValue": 806.625
+              },
+              {
+                "axisId": "a08",
+                "tag": "X007",
+                "name": "Custom 07",
+                "index": 7,
+                "internalValue": 407.125,
+                "externalValue": 807.625
+              },
+              {
+                "axisId": "a09",
+                "tag": "X008",
+                "name": "Custom 08",
+                "index": 8,
+                "internalValue": 408.125,
+                "externalValue": 808.625
+              },
+              {
+                "axisId": "a10",
+                "tag": "X009",
+                "name": "Custom 09",
+                "index": 9,
+                "internalValue": 409.125,
+                "externalValue": 809.625
+              },
+              {
+                "axisId": "a11",
+                "tag": "X010",
+                "name": "Custom 10",
+                "index": 10,
+                "internalValue": 410.125,
+                "externalValue": 810.625
+              },
+              {
+                "axisId": "a12",
+                "tag": "X011",
+                "name": "Custom 11",
+                "index": 11,
+                "internalValue": 411.125,
+                "externalValue": 811.625
+              },
+              {
+                "axisId": "a13",
+                "tag": "X012",
+                "name": "Custom 12",
+                "index": 12,
+                "internalValue": 412.125,
+                "externalValue": 812.625
+              },
+              {
+                "axisId": "a14",
+                "tag": "X013",
+                "name": "Custom 13",
+                "index": 13,
+                "internalValue": 413.125,
+                "externalValue": 813.625
+              },
+              {
+                "axisId": "a15",
+                "tag": "X014",
+                "name": "Custom 14",
+                "index": 14,
+                "internalValue": 414.125,
+                "externalValue": 814.625
+              },
+              {
+                "axisId": "a16",
+                "tag": "X015",
+                "name": "Custom 15",
+                "index": 15,
+                "internalValue": 415.125,
+                "externalValue": 815.625
+              },
+              {
+                "axisId": "a17",
+                "tag": "X016",
+                "name": "Custom 16",
+                "index": 16,
+                "internalValue": 416.125,
+                "externalValue": 816.625
+              },
+              {
+                "axisId": "a18",
+                "tag": "X017",
+                "name": "Custom 17",
+                "index": 17,
+                "internalValue": 417.125,
+                "externalValue": 817.625
+              },
+              {
+                "axisId": "a19",
+                "tag": "X018",
+                "name": "Custom 18",
+                "index": 18,
+                "internalValue": 418.125,
+                "externalValue": 818.625
+              },
+              {
+                "axisId": "a20",
+                "tag": "X019",
+                "name": "Custom 19",
+                "index": 19,
+                "internalValue": 419.125,
+                "externalValue": 819.625
+              },
+              {
+                "axisId": "a21",
+                "tag": "X020",
+                "name": "Custom 20",
+                "index": 20,
+                "internalValue": 420.125,
+                "externalValue": 820.625
+              },
+              {
+                "axisId": "a22",
+                "tag": "X021",
+                "name": "Custom 21",
+                "index": 21,
+                "internalValue": 421.125,
+                "externalValue": 821.625
+              },
+              {
+                "axisId": "a23",
+                "tag": "X022",
+                "name": "Custom 22",
+                "index": 22,
+                "internalValue": 422.125,
+                "externalValue": 822.625
+              },
+              {
+                "axisId": "a24",
+                "tag": "X023",
+                "name": "Custom 23",
+                "index": 23,
+                "internalValue": 423.125,
+                "externalValue": 823.625
+              },
+              {
+                "axisId": "a25",
+                "tag": "X024",
+                "name": "Custom 24",
+                "index": 24,
+                "internalValue": 424.125,
+                "externalValue": 824.625
+              },
+              {
+                "axisId": "a26",
+                "tag": "X025",
+                "name": "Custom 25",
+                "index": 25,
+                "internalValue": 425.125,
+                "externalValue": 825.625
+              },
+              {
+                "axisId": "a27",
+                "tag": "X026",
+                "name": "Custom 26",
+                "index": 26,
+                "internalValue": 426.125,
+                "externalValue": 826.625
+              },
+              {
+                "axisId": "a28",
+                "tag": "X027",
+                "name": "Custom 27",
+                "index": 27,
+                "internalValue": 427.125,
+                "externalValue": 827.625
+              },
+              {
+                "axisId": "a29",
+                "tag": "X028",
+                "name": "Custom 28",
+                "index": 28,
+                "internalValue": 428.125,
+                "externalValue": 828.625
+              },
+              {
+                "axisId": "a30",
+                "tag": "X029",
+                "name": "Custom 29",
+                "index": 29,
+                "internalValue": 429.125,
+                "externalValue": 829.625
+              },
+              {
+                "axisId": "a31",
+                "tag": "X030",
+                "name": "Custom 30",
+                "index": 30,
+                "internalValue": 430.125,
+                "externalValue": 830.625
+              },
+              {
+                "axisId": "a32",
+                "tag": "X031",
+                "name": "Custom 31",
+                "index": 31,
+                "internalValue": 431.125,
+                "externalValue": 831.625
+              }
+            ],
+            "total": 32,
+            "returned": 32,
+            "complete": true
+          }
+        },
+        {
+          "id": "M7_TEMP_5",
+          "name": "Regular",
+          "ascender": 817.375,
+          "capHeight": 710.125,
+          "xHeight": 518.875,
+          "descender": -217.625,
+          "italicAngle": 9.625,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 500.125,
+                "externalValue": 1000.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 501.125,
+                "externalValue": 1001.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 502.125,
+                "externalValue": 1002.625
+              },
+              {
+                "axisId": "a04",
+                "tag": "X003",
+                "name": "Custom 03",
+                "index": 3,
+                "internalValue": 503.125,
+                "externalValue": 1003.625
+              },
+              {
+                "axisId": "a05",
+                "tag": "X004",
+                "name": "Custom 04",
+                "index": 4,
+                "internalValue": 504.125,
+                "externalValue": 1004.625
+              },
+              {
+                "axisId": "a06",
+                "tag": "X005",
+                "name": "Custom 05",
+                "index": 5,
+                "internalValue": 505.125,
+                "externalValue": 1005.625
+              },
+              {
+                "axisId": "a07",
+                "tag": "X006",
+                "name": "Custom 06",
+                "index": 6,
+                "internalValue": 506.125,
+                "externalValue": 1006.625
+              },
+              {
+                "axisId": "a08",
+                "tag": "X007",
+                "name": "Custom 07",
+                "index": 7,
+                "internalValue": 507.125,
+                "externalValue": 1007.625
+              },
+              {
+                "axisId": "a09",
+                "tag": "X008",
+                "name": "Custom 08",
+                "index": 8,
+                "internalValue": 508.125,
+                "externalValue": 1008.625
+              },
+              {
+                "axisId": "a10",
+                "tag": "X009",
+                "name": "Custom 09",
+                "index": 9,
+                "internalValue": 509.125,
+                "externalValue": 1009.625
+              },
+              {
+                "axisId": "a11",
+                "tag": "X010",
+                "name": "Custom 10",
+                "index": 10,
+                "internalValue": 510.125,
+                "externalValue": 1010.625
+              },
+              {
+                "axisId": "a12",
+                "tag": "X011",
+                "name": "Custom 11",
+                "index": 11,
+                "internalValue": 511.125,
+                "externalValue": 1011.625
+              },
+              {
+                "axisId": "a13",
+                "tag": "X012",
+                "name": "Custom 12",
+                "index": 12,
+                "internalValue": 512.125,
+                "externalValue": 1012.625
+              },
+              {
+                "axisId": "a14",
+                "tag": "X013",
+                "name": "Custom 13",
+                "index": 13,
+                "internalValue": 513.125,
+                "externalValue": 1013.625
+              },
+              {
+                "axisId": "a15",
+                "tag": "X014",
+                "name": "Custom 14",
+                "index": 14,
+                "internalValue": 514.125,
+                "externalValue": 1014.625
+              },
+              {
+                "axisId": "a16",
+                "tag": "X015",
+                "name": "Custom 15",
+                "index": 15,
+                "internalValue": 515.125,
+                "externalValue": 1015.625
+              },
+              {
+                "axisId": "a17",
+                "tag": "X016",
+                "name": "Custom 16",
+                "index": 16,
+                "internalValue": 516.125,
+                "externalValue": 1016.625
+              },
+              {
+                "axisId": "a18",
+                "tag": "X017",
+                "name": "Custom 17",
+                "index": 17,
+                "internalValue": 517.125,
+                "externalValue": 1017.625
+              },
+              {
+                "axisId": "a19",
+                "tag": "X018",
+                "name": "Custom 18",
+                "index": 18,
+                "internalValue": 518.125,
+                "externalValue": 1018.625
+              },
+              {
+                "axisId": "a20",
+                "tag": "X019",
+                "name": "Custom 19",
+                "index": 19,
+                "internalValue": 519.125,
+                "externalValue": 1019.625
+              },
+              {
+                "axisId": "a21",
+                "tag": "X020",
+                "name": "Custom 20",
+                "index": 20,
+                "internalValue": 520.125,
+                "externalValue": 1020.625
+              },
+              {
+                "axisId": "a22",
+                "tag": "X021",
+                "name": "Custom 21",
+                "index": 21,
+                "internalValue": 521.125,
+                "externalValue": 1021.625
+              },
+              {
+                "axisId": "a23",
+                "tag": "X022",
+                "name": "Custom 22",
+                "index": 22,
+                "internalValue": 522.125,
+                "externalValue": 1022.625
+              },
+              {
+                "axisId": "a24",
+                "tag": "X023",
+                "name": "Custom 23",
+                "index": 23,
+                "internalValue": 523.125,
+                "externalValue": 1023.625
+              },
+              {
+                "axisId": "a25",
+                "tag": "X024",
+                "name": "Custom 24",
+                "index": 24,
+                "internalValue": 524.125,
+                "externalValue": 1024.625
+              },
+              {
+                "axisId": "a26",
+                "tag": "X025",
+                "name": "Custom 25",
+                "index": 25,
+                "internalValue": 525.125,
+                "externalValue": 1025.625
+              },
+              {
+                "axisId": "a27",
+                "tag": "X026",
+                "name": "Custom 26",
+                "index": 26,
+                "internalValue": 526.125,
+                "externalValue": 1026.625
+              },
+              {
+                "axisId": "a28",
+                "tag": "X027",
+                "name": "Custom 27",
+                "index": 27,
+                "internalValue": 527.125,
+                "externalValue": 1027.625
+              },
+              {
+                "axisId": "a29",
+                "tag": "X028",
+                "name": "Custom 28",
+                "index": 28,
+                "internalValue": 528.125,
+                "externalValue": 1028.625
+              },
+              {
+                "axisId": "a30",
+                "tag": "X029",
+                "name": "Custom 29",
+                "index": 29,
+                "internalValue": 529.125,
+                "externalValue": 1029.625
+              },
+              {
+                "axisId": "a31",
+                "tag": "X030",
+                "name": "Custom 30",
+                "index": 30,
+                "internalValue": 530.125,
+                "externalValue": 1030.625
+              },
+              {
+                "axisId": "a32",
+                "tag": "X031",
+                "name": "Custom 31",
+                "index": 31,
+                "internalValue": 531.125,
+                "externalValue": 1031.625
+              }
+            ],
+            "total": 32,
+            "returned": 32,
+            "complete": true
+          }
+        },
+        {
+          "id": "M7_TEMP_6",
+          "name": "Regular",
+          "ascender": 818.375,
+          "capHeight": 711.125,
+          "xHeight": 519.875,
+          "descender": -218.625,
+          "italicAngle": 0.0,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 600.125,
+                "externalValue": 1200.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 601.125,
+                "externalValue": 1201.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 602.125,
+                "externalValue": 1202.625
+              },
+              {
+                "axisId": "a04",
+                "tag": "X003",
+                "name": "Custom 03",
+                "index": 3,
+                "internalValue": 603.125,
+                "externalValue": 1203.625
+              },
+              {
+                "axisId": "a05",
+                "tag": "X004",
+                "name": "Custom 04",
+                "index": 4,
+                "internalValue": 604.125,
+                "externalValue": 1204.625
+              },
+              {
+                "axisId": "a06",
+                "tag": "X005",
+                "name": "Custom 05",
+                "index": 5,
+                "internalValue": 605.125,
+                "externalValue": 1205.625
+              },
+              {
+                "axisId": "a07",
+                "tag": "X006",
+                "name": "Custom 06",
+                "index": 6,
+                "internalValue": 606.125,
+                "externalValue": 1206.625
+              },
+              {
+                "axisId": "a08",
+                "tag": "X007",
+                "name": "Custom 07",
+                "index": 7,
+                "internalValue": 607.125,
+                "externalValue": 1207.625
+              },
+              {
+                "axisId": "a09",
+                "tag": "X008",
+                "name": "Custom 08",
+                "index": 8,
+                "internalValue": 608.125,
+                "externalValue": 1208.625
+              },
+              {
+                "axisId": "a10",
+                "tag": "X009",
+                "name": "Custom 09",
+                "index": 9,
+                "internalValue": 609.125,
+                "externalValue": 1209.625
+              },
+              {
+                "axisId": "a11",
+                "tag": "X010",
+                "name": "Custom 10",
+                "index": 10,
+                "internalValue": 610.125,
+                "externalValue": 1210.625
+              },
+              {
+                "axisId": "a12",
+                "tag": "X011",
+                "name": "Custom 11",
+                "index": 11,
+                "internalValue": 611.125,
+                "externalValue": 1211.625
+              },
+              {
+                "axisId": "a13",
+                "tag": "X012",
+                "name": "Custom 12",
+                "index": 12,
+                "internalValue": 612.125,
+                "externalValue": 1212.625
+              },
+              {
+                "axisId": "a14",
+                "tag": "X013",
+                "name": "Custom 13",
+                "index": 13,
+                "internalValue": 613.125,
+                "externalValue": 1213.625
+              },
+              {
+                "axisId": "a15",
+                "tag": "X014",
+                "name": "Custom 14",
+                "index": 14,
+                "internalValue": 614.125,
+                "externalValue": 1214.625
+              },
+              {
+                "axisId": "a16",
+                "tag": "X015",
+                "name": "Custom 15",
+                "index": 15,
+                "internalValue": 615.125,
+                "externalValue": 1215.625
+              },
+              {
+                "axisId": "a17",
+                "tag": "X016",
+                "name": "Custom 16",
+                "index": 16,
+                "internalValue": 616.125,
+                "externalValue": 1216.625
+              },
+              {
+                "axisId": "a18",
+                "tag": "X017",
+                "name": "Custom 17",
+                "index": 17,
+                "internalValue": 617.125,
+                "externalValue": 1217.625
+              },
+              {
+                "axisId": "a19",
+                "tag": "X018",
+                "name": "Custom 18",
+                "index": 18,
+                "internalValue": 618.125,
+                "externalValue": 1218.625
+              },
+              {
+                "axisId": "a20",
+                "tag": "X019",
+                "name": "Custom 19",
+                "index": 19,
+                "internalValue": 619.125,
+                "externalValue": 1219.625
+              },
+              {
+                "axisId": "a21",
+                "tag": "X020",
+                "name": "Custom 20",
+                "index": 20,
+                "internalValue": 620.125,
+                "externalValue": 1220.625
+              },
+              {
+                "axisId": "a22",
+                "tag": "X021",
+                "name": "Custom 21",
+                "index": 21,
+                "internalValue": 621.125,
+                "externalValue": 1221.625
+              },
+              {
+                "axisId": "a23",
+                "tag": "X022",
+                "name": "Custom 22",
+                "index": 22,
+                "internalValue": 622.125,
+                "externalValue": 1222.625
+              },
+              {
+                "axisId": "a24",
+                "tag": "X023",
+                "name": "Custom 23",
+                "index": 23,
+                "internalValue": 623.125,
+                "externalValue": 1223.625
+              },
+              {
+                "axisId": "a25",
+                "tag": "X024",
+                "name": "Custom 24",
+                "index": 24,
+                "internalValue": 624.125,
+                "externalValue": 1224.625
+              },
+              {
+                "axisId": "a26",
+                "tag": "X025",
+                "name": "Custom 25",
+                "index": 25,
+                "internalValue": 625.125,
+                "externalValue": 1225.625
+              },
+              {
+                "axisId": "a27",
+                "tag": "X026",
+                "name": "Custom 26",
+                "index": 26,
+                "internalValue": 626.125,
+                "externalValue": 1226.625
+              },
+              {
+                "axisId": "a28",
+                "tag": "X027",
+                "name": "Custom 27",
+                "index": 27,
+                "internalValue": 627.125,
+                "externalValue": 1227.625
+              },
+              {
+                "axisId": "a29",
+                "tag": "X028",
+                "name": "Custom 28",
+                "index": 28,
+                "internalValue": 628.125,
+                "externalValue": 1228.625
+              },
+              {
+                "axisId": "a30",
+                "tag": "X029",
+                "name": "Custom 29",
+                "index": 29,
+                "internalValue": 629.125,
+                "externalValue": 1229.625
+              },
+              {
+                "axisId": "a31",
+                "tag": "X030",
+                "name": "Custom 30",
+                "index": 30,
+                "internalValue": 630.125,
+                "externalValue": 1230.625
+              },
+              {
+                "axisId": "a32",
+                "tag": "X031",
+                "name": "Custom 31",
+                "index": 31,
+                "internalValue": 631.125,
+                "externalValue": 1231.625
+              }
+            ],
+            "total": 32,
+            "returned": 32,
+            "complete": true
+          }
+        },
+        {
+          "id": "M7_TEMP_7",
+          "name": "Regular",
+          "ascender": 819.375,
+          "capHeight": 712.125,
+          "xHeight": 520.875,
+          "descender": -219.625,
+          "italicAngle": -12.375,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 700.125,
+                "externalValue": 1400.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 701.125,
+                "externalValue": 1401.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 702.125,
+                "externalValue": 1402.625
+              },
+              {
+                "axisId": "a04",
+                "tag": "X003",
+                "name": "Custom 03",
+                "index": 3,
+                "internalValue": 703.125,
+                "externalValue": 1403.625
+              },
+              {
+                "axisId": "a05",
+                "tag": "X004",
+                "name": "Custom 04",
+                "index": 4,
+                "internalValue": 704.125,
+                "externalValue": 1404.625
+              },
+              {
+                "axisId": "a06",
+                "tag": "X005",
+                "name": "Custom 05",
+                "index": 5,
+                "internalValue": 705.125,
+                "externalValue": 1405.625
+              },
+              {
+                "axisId": "a07",
+                "tag": "X006",
+                "name": "Custom 06",
+                "index": 6,
+                "internalValue": 706.125,
+                "externalValue": 1406.625
+              },
+              {
+                "axisId": "a08",
+                "tag": "X007",
+                "name": "Custom 07",
+                "index": 7,
+                "internalValue": 707.125,
+                "externalValue": 1407.625
+              },
+              {
+                "axisId": "a09",
+                "tag": "X008",
+                "name": "Custom 08",
+                "index": 8,
+                "internalValue": 708.125,
+                "externalValue": 1408.625
+              },
+              {
+                "axisId": "a10",
+                "tag": "X009",
+                "name": "Custom 09",
+                "index": 9,
+                "internalValue": 709.125,
+                "externalValue": 1409.625
+              },
+              {
+                "axisId": "a11",
+                "tag": "X010",
+                "name": "Custom 10",
+                "index": 10,
+                "internalValue": 710.125,
+                "externalValue": 1410.625
+              },
+              {
+                "axisId": "a12",
+                "tag": "X011",
+                "name": "Custom 11",
+                "index": 11,
+                "internalValue": 711.125,
+                "externalValue": 1411.625
+              },
+              {
+                "axisId": "a13",
+                "tag": "X012",
+                "name": "Custom 12",
+                "index": 12,
+                "internalValue": 712.125,
+                "externalValue": 1412.625
+              },
+              {
+                "axisId": "a14",
+                "tag": "X013",
+                "name": "Custom 13",
+                "index": 13,
+                "internalValue": 713.125,
+                "externalValue": 1413.625
+              },
+              {
+                "axisId": "a15",
+                "tag": "X014",
+                "name": "Custom 14",
+                "index": 14,
+                "internalValue": 714.125,
+                "externalValue": 1414.625
+              },
+              {
+                "axisId": "a16",
+                "tag": "X015",
+                "name": "Custom 15",
+                "index": 15,
+                "internalValue": 715.125,
+                "externalValue": 1415.625
+              },
+              {
+                "axisId": "a17",
+                "tag": "X016",
+                "name": "Custom 16",
+                "index": 16,
+                "internalValue": 716.125,
+                "externalValue": 1416.625
+              },
+              {
+                "axisId": "a18",
+                "tag": "X017",
+                "name": "Custom 17",
+                "index": 17,
+                "internalValue": 717.125,
+                "externalValue": 1417.625
+              },
+              {
+                "axisId": "a19",
+                "tag": "X018",
+                "name": "Custom 18",
+                "index": 18,
+                "internalValue": 718.125,
+                "externalValue": 1418.625
+              },
+              {
+                "axisId": "a20",
+                "tag": "X019",
+                "name": "Custom 19",
+                "index": 19,
+                "internalValue": 719.125,
+                "externalValue": 1419.625
+              },
+              {
+                "axisId": "a21",
+                "tag": "X020",
+                "name": "Custom 20",
+                "index": 20,
+                "internalValue": 720.125,
+                "externalValue": 1420.625
+              },
+              {
+                "axisId": "a22",
+                "tag": "X021",
+                "name": "Custom 21",
+                "index": 21,
+                "internalValue": 721.125,
+                "externalValue": 1421.625
+              },
+              {
+                "axisId": "a23",
+                "tag": "X022",
+                "name": "Custom 22",
+                "index": 22,
+                "internalValue": 722.125,
+                "externalValue": 1422.625
+              },
+              {
+                "axisId": "a24",
+                "tag": "X023",
+                "name": "Custom 23",
+                "index": 23,
+                "internalValue": 723.125,
+                "externalValue": 1423.625
+              },
+              {
+                "axisId": "a25",
+                "tag": "X024",
+                "name": "Custom 24",
+                "index": 24,
+                "internalValue": 724.125,
+                "externalValue": 1424.625
+              },
+              {
+                "axisId": "a26",
+                "tag": "X025",
+                "name": "Custom 25",
+                "index": 25,
+                "internalValue": 725.125,
+                "externalValue": 1425.625
+              },
+              {
+                "axisId": "a27",
+                "tag": "X026",
+                "name": "Custom 26",
+                "index": 26,
+                "internalValue": 726.125,
+                "externalValue": 1426.625
+              },
+              {
+                "axisId": "a28",
+                "tag": "X027",
+                "name": "Custom 27",
+                "index": 27,
+                "internalValue": 727.125,
+                "externalValue": 1427.625
+              },
+              {
+                "axisId": "a29",
+                "tag": "X028",
+                "name": "Custom 28",
+                "index": 28,
+                "internalValue": 728.125,
+                "externalValue": 1428.625
+              },
+              {
+                "axisId": "a30",
+                "tag": "X029",
+                "name": "Custom 29",
+                "index": 29,
+                "internalValue": 729.125,
+                "externalValue": 1429.625
+              },
+              {
+                "axisId": "a31",
+                "tag": "X030",
+                "name": "Custom 30",
+                "index": 30,
+                "internalValue": 730.125,
+                "externalValue": 1430.625
+              },
+              {
+                "axisId": "a32",
+                "tag": "X031",
+                "name": "Custom 31",
+                "index": 31,
+                "internalValue": 731.125,
+                "externalValue": 1431.625
+              }
+            ],
+            "total": 32,
+            "returned": 32,
+            "complete": true
+          }
+        },
+        {
+          "id": "M7_TEMP_8",
+          "name": "Regular",
+          "ascender": 820.375,
+          "capHeight": 713.125,
+          "xHeight": 521.875,
+          "descender": -220.625,
+          "italicAngle": 9.625,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 800.125,
+                "externalValue": 1600.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 801.125,
+                "externalValue": 1601.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 802.125,
+                "externalValue": 1602.625
+              },
+              {
+                "axisId": "a04",
+                "tag": "X003",
+                "name": "Custom 03",
+                "index": 3,
+                "internalValue": 803.125,
+                "externalValue": 1603.625
+              },
+              {
+                "axisId": "a05",
+                "tag": "X004",
+                "name": "Custom 04",
+                "index": 4,
+                "internalValue": 804.125,
+                "externalValue": 1604.625
+              },
+              {
+                "axisId": "a06",
+                "tag": "X005",
+                "name": "Custom 05",
+                "index": 5,
+                "internalValue": 805.125,
+                "externalValue": 1605.625
+              },
+              {
+                "axisId": "a07",
+                "tag": "X006",
+                "name": "Custom 06",
+                "index": 6,
+                "internalValue": 806.125,
+                "externalValue": 1606.625
+              },
+              {
+                "axisId": "a08",
+                "tag": "X007",
+                "name": "Custom 07",
+                "index": 7,
+                "internalValue": 807.125,
+                "externalValue": 1607.625
+              },
+              {
+                "axisId": "a09",
+                "tag": "X008",
+                "name": "Custom 08",
+                "index": 8,
+                "internalValue": 808.125,
+                "externalValue": 1608.625
+              },
+              {
+                "axisId": "a10",
+                "tag": "X009",
+                "name": "Custom 09",
+                "index": 9,
+                "internalValue": 809.125,
+                "externalValue": 1609.625
+              },
+              {
+                "axisId": "a11",
+                "tag": "X010",
+                "name": "Custom 10",
+                "index": 10,
+                "internalValue": 810.125,
+                "externalValue": 1610.625
+              },
+              {
+                "axisId": "a12",
+                "tag": "X011",
+                "name": "Custom 11",
+                "index": 11,
+                "internalValue": 811.125,
+                "externalValue": 1611.625
+              },
+              {
+                "axisId": "a13",
+                "tag": "X012",
+                "name": "Custom 12",
+                "index": 12,
+                "internalValue": 812.125,
+                "externalValue": 1612.625
+              },
+              {
+                "axisId": "a14",
+                "tag": "X013",
+                "name": "Custom 13",
+                "index": 13,
+                "internalValue": 813.125,
+                "externalValue": 1613.625
+              },
+              {
+                "axisId": "a15",
+                "tag": "X014",
+                "name": "Custom 14",
+                "index": 14,
+                "internalValue": 814.125,
+                "externalValue": 1614.625
+              },
+              {
+                "axisId": "a16",
+                "tag": "X015",
+                "name": "Custom 15",
+                "index": 15,
+                "internalValue": 815.125,
+                "externalValue": 1615.625
+              },
+              {
+                "axisId": "a17",
+                "tag": "X016",
+                "name": "Custom 16",
+                "index": 16,
+                "internalValue": 816.125,
+                "externalValue": 1616.625
+              },
+              {
+                "axisId": "a18",
+                "tag": "X017",
+                "name": "Custom 17",
+                "index": 17,
+                "internalValue": 817.125,
+                "externalValue": 1617.625
+              },
+              {
+                "axisId": "a19",
+                "tag": "X018",
+                "name": "Custom 18",
+                "index": 18,
+                "internalValue": 818.125,
+                "externalValue": 1618.625
+              },
+              {
+                "axisId": "a20",
+                "tag": "X019",
+                "name": "Custom 19",
+                "index": 19,
+                "internalValue": 819.125,
+                "externalValue": 1619.625
+              },
+              {
+                "axisId": "a21",
+                "tag": "X020",
+                "name": "Custom 20",
+                "index": 20,
+                "internalValue": 820.125,
+                "externalValue": 1620.625
+              },
+              {
+                "axisId": "a22",
+                "tag": "X021",
+                "name": "Custom 21",
+                "index": 21,
+                "internalValue": 821.125,
+                "externalValue": 1621.625
+              },
+              {
+                "axisId": "a23",
+                "tag": "X022",
+                "name": "Custom 22",
+                "index": 22,
+                "internalValue": 822.125,
+                "externalValue": 1622.625
+              },
+              {
+                "axisId": "a24",
+                "tag": "X023",
+                "name": "Custom 23",
+                "index": 23,
+                "internalValue": 823.125,
+                "externalValue": 1623.625
+              },
+              {
+                "axisId": "a25",
+                "tag": "X024",
+                "name": "Custom 24",
+                "index": 24,
+                "internalValue": 824.125,
+                "externalValue": 1624.625
+              },
+              {
+                "axisId": "a26",
+                "tag": "X025",
+                "name": "Custom 25",
+                "index": 25,
+                "internalValue": 825.125,
+                "externalValue": 1625.625
+              },
+              {
+                "axisId": "a27",
+                "tag": "X026",
+                "name": "Custom 26",
+                "index": 26,
+                "internalValue": 826.125,
+                "externalValue": 1626.625
+              },
+              {
+                "axisId": "a28",
+                "tag": "X027",
+                "name": "Custom 27",
+                "index": 27,
+                "internalValue": 827.125,
+                "externalValue": 1627.625
+              },
+              {
+                "axisId": "a29",
+                "tag": "X028",
+                "name": "Custom 28",
+                "index": 28,
+                "internalValue": 828.125,
+                "externalValue": 1628.625
+              },
+              {
+                "axisId": "a30",
+                "tag": "X029",
+                "name": "Custom 29",
+                "index": 29,
+                "internalValue": 829.125,
+                "externalValue": 1629.625
+              },
+              {
+                "axisId": "a31",
+                "tag": "X030",
+                "name": "Custom 30",
+                "index": 30,
+                "internalValue": 830.125,
+                "externalValue": 1630.625
+              },
+              {
+                "axisId": "a32",
+                "tag": "X031",
+                "name": "Custom 31",
+                "index": 31,
+                "internalValue": 831.125,
+                "externalValue": 1631.625
+              }
+            ],
+            "total": 32,
+            "returned": 32,
+            "complete": true
+          }
+        }
+      ]
+    },
+    {
+      "label": "RobotoSlab",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/v2-realistic/20260914/font-source/RobotoSlab.glyphs",
+      "sourceSHA256": "98bd0e35d9267ad101270727f18bb58b17b629160ccdf3d8a60f9a99d526e845",
+      "expected": [
+        {
+          "id": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+          "name": "Thin",
+          "ascender": 2146.0,
+          "capHeight": 1456.0,
+          "xHeight": 1082.0,
+          "descender": -555.0,
+          "italicAngle": 0.0,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 0,
+                "internalValue": 54.0,
+                "externalValue": 54.0
+              }
+            ],
+            "total": 1,
+            "returned": 1,
+            "complete": true
+          }
+        },
+        {
+          "id": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+          "name": "Regular",
+          "ascender": 2146.0,
+          "capHeight": 1456.0,
+          "xHeight": 1082.0,
+          "descender": -555.0,
+          "italicAngle": 0.0,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 0,
+                "internalValue": 197.0,
+                "externalValue": 197.0
+              }
+            ],
+            "total": 1,
+            "returned": 1,
+            "complete": true
+          }
+        },
+        {
+          "id": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+          "name": "Black",
+          "ascender": 2146.0,
+          "capHeight": 1456.0,
+          "xHeight": 1082.0,
+          "descender": -555.0,
+          "italicAngle": 0.0,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 0,
+                "internalValue": 351.0,
+                "externalValue": 351.0
+              }
+            ],
+            "total": 1,
+            "returned": 1,
+            "complete": true
+          }
+        }
+      ]
+    }
+  ],
+  "realSource": {
+    "repository": "https://github.com/googlefonts/robotoslab",
+    "revision": "67af3ce9c4ca574419e1295b6165a2eeee112e6e",
+    "license": "Apache-2.0; see LICENSE.txt",
+    "files": [
+      {
+        "sourcePath": "sources/RobotoSlab.glyphs",
+        "url": "https://raw.githubusercontent.com/googlefonts/robotoslab/67af3ce9c4ca574419e1295b6165a2eeee112e6e/sources/RobotoSlab.glyphs",
+        "local": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/v2-realistic/20260914/font-source/RobotoSlab.glyphs",
+        "bytes": 1670090,
+        "sha256": "98bd0e35d9267ad101270727f18bb58b17b629160ccdf3d8a60f9a99d526e845"
+      },
+      {
+        "sourcePath": "LICENSE.txt",
+        "url": "https://raw.githubusercontent.com/googlefonts/robotoslab/67af3ce9c4ca574419e1295b6165a2eeee112e6e/LICENSE.txt",
+        "local": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/v2-realistic/20260914/font-source/LICENSE.txt",
+        "bytes": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      }
+    ]
+  }
+}

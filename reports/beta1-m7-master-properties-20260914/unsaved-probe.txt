@@ -1,0 +1,7 @@
+Using Glyphs 4.1 (4107)
+Using Python 3.14
+Traceback (most recent call last):
+  File "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-m7-master-properties-20260914/unsaved_probe.py", line 5, in <module>
+    assert f.filepath is None
+           ^^^^^^^^^^^^^^^^^^
+AssertionError

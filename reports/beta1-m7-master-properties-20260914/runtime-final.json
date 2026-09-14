@@ -1,0 +1,177 @@
+{
+  "ok": true,
+  "data": {
+    "protocol": 1,
+    "sidecarVersion": "2.0.0",
+    "release": {
+      "version": "2.0.0",
+      "releaseVersion": "2.0.0-beta.1",
+      "channel": "beta",
+      "betaNumber": 1,
+      "installerBuild": 43
+    },
+    "runtimeId": "2.0.0-beta.1+0d1590b10c67",
+    "codeHash": "sha256:0d1590b10c67cd7eebbc4d3ea93f5f91eec51d9e80285f2d8b65d0c4398450a3",
+    "identityEvidence": "initialization-time file fingerprint",
+    "interface": "glyphs-mcp-sidecar",
+    "interfaceVersion": 1,
+    "jobKinds": [
+      "width_delta",
+      "spacing",
+      "kerning_collision",
+      "start_nodes",
+      "slant"
+    ],
+    "readCapabilities": [
+      "master.read.exact.v1",
+      "masters.list.v1",
+      "layer.read.exact.v1",
+      "selection.nodes.native.v1",
+      "selection.context.v1",
+      "document.context.v1",
+      "glyphs.list.v1",
+      "layers.list.v1",
+      "kerning.groups.v1",
+      "kerning.pairs.v1",
+      "master.properties.v1"
+    ],
+    "tools": [
+      "get_status",
+      "list_documents",
+      "read_entities",
+      "start_job",
+      "get_job",
+      "apply_job",
+      "discard_job"
+    ],
+    "bridge": {
+      "reachable": true,
+      "protocol": 1,
+      "bridgeVersion": "2.0.0",
+      "release": {
+        "version": "2.0.0",
+        "releaseVersion": "2.0.0-beta.1",
+        "channel": "beta",
+        "betaNumber": 1,
+        "installerBuild": 43
+      },
+      "runtimeId": "2.0.0-beta.1+77bec730360c",
+      "codeHash": "sha256:77bec730360ce043f184dcdc958fbad5519c7858fc06994bad292abf4ea01138",
+      "identityEvidence": "initialization-time file fingerprint",
+      "host": {
+        "identifier": "com.GeorgSeifert.Glyphs4",
+        "version": "4.1",
+        "build": "4107"
+      },
+      "readCapabilities": [
+        "master.read.exact.v1",
+        "masters.list.v1",
+        "layer.read.exact.v1",
+        "selection.nodes.native.v1",
+        "selection.context.v1",
+        "document.context.v1",
+        "glyphs.list.v1",
+        "layers.list.v1",
+        "kerning.groups.v1",
+        "kerning.pairs.v1",
+        "master.properties.v1"
+      ],
+      "activity": "ready",
+      "activeOperations": 0,
+      "companions": [
+        {
+          "protocol": 1,
+          "id": "curve-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "curve.measure",
+            "curve.overlay"
+          ]
+        },
+        {
+          "protocol": 1,
+          "id": "reference-inspector",
+          "version": "0.1.0",
+          "capabilities": [
+            "reference.file",
+            "reference.git",
+            "reference.github",
+            "reference.overlay",
+            "reference.saved"
+          ]
+        }
+      ]
+    },
+    "worker": {
+      "available": true,
+      "executable": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+      "application": "/Applications/Glyphs 4.app",
+      "plugins": "disabled",
+      "processModel": "one_shot",
+      "executions": []
+    },
+    "controlProtocol": 1,
+    "activity": {
+      "jobs": [
+        {
+          "jobId": "job_c6b2529777ef415cb6aafd591e55ff66",
+          "document": "Roboto Slab",
+          "kind": "start_nodes",
+          "phase": "discarded",
+          "startedAt": 1789386064.489494,
+          "finishedAt": 1789386064.489534,
+          "completed": 2,
+          "total": 2,
+          "message": null
+        },
+        {
+          "jobId": "job_9010b4b75fb0445a8b88d9e0e9c9c9c6",
+          "document": "Roboto Slab",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789385892.703386,
+          "finishedAt": 1789385892.70342,
+          "completed": 3,
+          "total": 3,
+          "message": null
+        },
+        {
+          "jobId": "job_1a3637ada6a84f9990fcc0e29a1d93f3",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789382440.370841,
+          "finishedAt": 1789382440.370868,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        },
+        {
+          "jobId": "job_fdec62f9d05b4d04b534c255fab8909f",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "discarded",
+          "startedAt": 1789382370.894219,
+          "finishedAt": 1789382370.894258,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        },
+        {
+          "jobId": "job_dac8c65021ff4ebab6cd7f63c4f3031a",
+          "document": "Dirty Indicator Test",
+          "kind": "width_delta",
+          "phase": "applied",
+          "startedAt": 1789382244.508908,
+          "finishedAt": 1789382244.50895,
+          "completed": 1,
+          "total": 1,
+          "message": null
+        }
+      ],
+      "activeCount": 0,
+      "moreCount": 0
+    },
+    "acceptance": "Save in Glyphs to accept. Undo is per glyph; Revert or discard_job restores the whole job."
+  }
+}

@@ -1,0 +1,1941 @@
+{
+.appVersion = "4107";
+.formatVersion = 3;
+axes = (
+{
+name = Custom;
+tag = CSTM;
+},
+{
+name = Weight;
+tag = wght;
+},
+{
+name = Width;
+tag = wdth;
+},
+{
+name = Custom;
+tag = X003;
+},
+{
+name = Weight;
+tag = X004;
+},
+{
+name = Width;
+tag = X005;
+},
+{
+name = Custom;
+tag = X006;
+},
+{
+name = Weight;
+tag = X007;
+},
+{
+name = Width;
+tag = X008;
+},
+{
+name = Custom;
+tag = X009;
+},
+{
+name = Weight;
+tag = X010;
+},
+{
+name = Width;
+tag = X011;
+},
+{
+name = Custom;
+tag = X012;
+},
+{
+name = Weight;
+tag = X013;
+},
+{
+name = Width;
+tag = X014;
+},
+{
+name = Custom;
+tag = X015;
+},
+{
+name = Weight;
+tag = X016;
+},
+{
+name = Width;
+tag = X017;
+},
+{
+name = Custom;
+tag = X018;
+},
+{
+name = Weight;
+tag = X019;
+},
+{
+name = Width;
+tag = X020;
+},
+{
+name = Custom;
+tag = X021;
+},
+{
+name = Weight;
+tag = X022;
+},
+{
+name = Width;
+tag = X023;
+},
+{
+name = Custom;
+tag = X024;
+},
+{
+name = Weight;
+tag = X025;
+},
+{
+name = Width;
+tag = X026;
+},
+{
+name = Custom;
+tag = X027;
+},
+{
+name = Weight;
+tag = X028;
+},
+{
+name = Width;
+tag = X029;
+},
+{
+name = Custom;
+tag = X030;
+},
+{
+name = Weight;
+tag = X031;
+}
+);
+date = "2026-09-14 19:00:00 +0000";
+familyName = "M7 MasterPropertiesBound";
+fontMaster = (
+{
+axesValues = (
+0.125,
+1.125,
+2.125,
+3.125,
+4.125,
+5.125,
+6.125,
+7.125,
+8.125,
+9.125,
+10.125,
+11.125,
+12.125,
+13.125,
+14.125,
+15.125,
+16.125,
+17.125,
+18.125,
+19.125,
+20.125,
+21.125,
+22.125,
+23.125,
+24.125,
+25.125,
+26.125,
+27.125,
+28.125,
+29.125,
+30.125,
+31.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 0.625;
+},
+{
+Axis = Weight;
+Location = 1.625;
+},
+{
+Axis = Width;
+Location = 2.625;
+},
+{
+Axis = Custom;
+Location = 3.625;
+},
+{
+Axis = Weight;
+Location = 4.625;
+},
+{
+Axis = Width;
+Location = 5.625;
+},
+{
+Axis = Custom;
+Location = 6.625;
+},
+{
+Axis = Weight;
+Location = 7.625;
+},
+{
+Axis = Width;
+Location = 8.625;
+},
+{
+Axis = Custom;
+Location = 9.625;
+},
+{
+Axis = Weight;
+Location = 10.625;
+},
+{
+Axis = Width;
+Location = 11.625;
+},
+{
+Axis = Custom;
+Location = 12.625;
+},
+{
+Axis = Weight;
+Location = 13.625;
+},
+{
+Axis = Width;
+Location = 14.625;
+},
+{
+Axis = Custom;
+Location = 15.625;
+},
+{
+Axis = Weight;
+Location = 16.625;
+},
+{
+Axis = Width;
+Location = 17.625;
+},
+{
+Axis = Custom;
+Location = 18.625;
+},
+{
+Axis = Weight;
+Location = 19.625;
+},
+{
+Axis = Width;
+Location = 20.625;
+},
+{
+Axis = Custom;
+Location = 21.625;
+},
+{
+Axis = Weight;
+Location = 22.625;
+},
+{
+Axis = Width;
+Location = 23.625;
+},
+{
+Axis = Custom;
+Location = 24.625;
+},
+{
+Axis = Weight;
+Location = 25.625;
+},
+{
+Axis = Width;
+Location = 26.625;
+},
+{
+Axis = Custom;
+Location = 27.625;
+},
+{
+Axis = Weight;
+Location = 28.625;
+},
+{
+Axis = Width;
+Location = 29.625;
+},
+{
+Axis = Custom;
+Location = 30.625;
+},
+{
+Axis = Weight;
+Location = 31.625;
+}
+);
+}
+);
+iconName = Light;
+id = "C7941642-FFB2-5D2E-B7FE-4A30A143BE40";
+metricValues = (
+{
+pos = 812.375;
+},
+{
+pos = 705.125;
+},
+{
+pos = 513.875;
+},
+{
+pos = -212.625;
+},
+{
+}
+);
+name = Regular;
+},
+{
+axesValues = (
+100.125,
+101.125,
+102.125,
+103.125,
+104.125,
+105.125,
+106.125,
+107.125,
+108.125,
+109.125,
+110.125,
+111.125,
+112.125,
+113.125,
+114.125,
+115.125,
+116.125,
+117.125,
+118.125,
+119.125,
+120.125,
+121.125,
+122.125,
+123.125,
+124.125,
+125.125,
+126.125,
+127.125,
+128.125,
+129.125,
+130.125,
+131.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 200.625;
+},
+{
+Axis = Weight;
+Location = 201.625;
+},
+{
+Axis = Width;
+Location = 202.625;
+},
+{
+Axis = Custom;
+Location = 203.625;
+},
+{
+Axis = Weight;
+Location = 204.625;
+},
+{
+Axis = Width;
+Location = 205.625;
+},
+{
+Axis = Custom;
+Location = 206.625;
+},
+{
+Axis = Weight;
+Location = 207.625;
+},
+{
+Axis = Width;
+Location = 208.625;
+},
+{
+Axis = Custom;
+Location = 209.625;
+},
+{
+Axis = Weight;
+Location = 210.625;
+},
+{
+Axis = Width;
+Location = 211.625;
+},
+{
+Axis = Custom;
+Location = 212.625;
+},
+{
+Axis = Weight;
+Location = 213.625;
+},
+{
+Axis = Width;
+Location = 214.625;
+},
+{
+Axis = Custom;
+Location = 215.625;
+},
+{
+Axis = Weight;
+Location = 216.625;
+},
+{
+Axis = Width;
+Location = 217.625;
+},
+{
+Axis = Custom;
+Location = 218.625;
+},
+{
+Axis = Weight;
+Location = 219.625;
+},
+{
+Axis = Width;
+Location = 220.625;
+},
+{
+Axis = Custom;
+Location = 221.625;
+},
+{
+Axis = Weight;
+Location = 222.625;
+},
+{
+Axis = Width;
+Location = 223.625;
+},
+{
+Axis = Custom;
+Location = 224.625;
+},
+{
+Axis = Weight;
+Location = 225.625;
+},
+{
+Axis = Width;
+Location = 226.625;
+},
+{
+Axis = Custom;
+Location = 227.625;
+},
+{
+Axis = Weight;
+Location = 228.625;
+},
+{
+Axis = Width;
+Location = 229.625;
+},
+{
+Axis = Custom;
+Location = 230.625;
+},
+{
+Axis = Weight;
+Location = 231.625;
+}
+);
+}
+);
+id = "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC";
+metricValues = (
+{
+pos = 813.375;
+},
+{
+pos = 706.125;
+},
+{
+pos = 514.875;
+},
+{
+pos = -213.625;
+},
+{
+pos = -12.375;
+}
+);
+name = Regular;
+},
+{
+axesValues = (
+200.125,
+201.125,
+202.125,
+203.125,
+204.125,
+205.125,
+206.125,
+207.125,
+208.125,
+209.125,
+210.125,
+211.125,
+212.125,
+213.125,
+214.125,
+215.125,
+216.125,
+217.125,
+218.125,
+219.125,
+220.125,
+221.125,
+222.125,
+223.125,
+224.125,
+225.125,
+226.125,
+227.125,
+228.125,
+229.125,
+230.125,
+231.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 400.625;
+},
+{
+Axis = Weight;
+Location = 401.625;
+},
+{
+Axis = Width;
+Location = 402.625;
+},
+{
+Axis = Custom;
+Location = 403.625;
+},
+{
+Axis = Weight;
+Location = 404.625;
+},
+{
+Axis = Width;
+Location = 405.625;
+},
+{
+Axis = Custom;
+Location = 406.625;
+},
+{
+Axis = Weight;
+Location = 407.625;
+},
+{
+Axis = Width;
+Location = 408.625;
+},
+{
+Axis = Custom;
+Location = 409.625;
+},
+{
+Axis = Weight;
+Location = 410.625;
+},
+{
+Axis = Width;
+Location = 411.625;
+},
+{
+Axis = Custom;
+Location = 412.625;
+},
+{
+Axis = Weight;
+Location = 413.625;
+},
+{
+Axis = Width;
+Location = 414.625;
+},
+{
+Axis = Custom;
+Location = 415.625;
+},
+{
+Axis = Weight;
+Location = 416.625;
+},
+{
+Axis = Width;
+Location = 417.625;
+},
+{
+Axis = Custom;
+Location = 418.625;
+},
+{
+Axis = Weight;
+Location = 419.625;
+},
+{
+Axis = Width;
+Location = 420.625;
+},
+{
+Axis = Custom;
+Location = 421.625;
+},
+{
+Axis = Weight;
+Location = 422.625;
+},
+{
+Axis = Width;
+Location = 423.625;
+},
+{
+Axis = Custom;
+Location = 424.625;
+},
+{
+Axis = Weight;
+Location = 425.625;
+},
+{
+Axis = Width;
+Location = 426.625;
+},
+{
+Axis = Custom;
+Location = 427.625;
+},
+{
+Axis = Weight;
+Location = 428.625;
+},
+{
+Axis = Width;
+Location = 429.625;
+},
+{
+Axis = Custom;
+Location = 430.625;
+},
+{
+Axis = Weight;
+Location = 431.625;
+}
+);
+}
+);
+iconName = Bold;
+id = "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575";
+metricValues = (
+{
+pos = 814.375;
+},
+{
+pos = 707.125;
+},
+{
+pos = 515.875;
+},
+{
+pos = -214.625;
+},
+{
+pos = 9.625;
+}
+);
+name = Regular;
+},
+{
+axesValues = (
+300.125,
+301.125,
+302.125,
+303.125,
+304.125,
+305.125,
+306.125,
+307.125,
+308.125,
+309.125,
+310.125,
+311.125,
+312.125,
+313.125,
+314.125,
+315.125,
+316.125,
+317.125,
+318.125,
+319.125,
+320.125,
+321.125,
+322.125,
+323.125,
+324.125,
+325.125,
+326.125,
+327.125,
+328.125,
+329.125,
+330.125,
+331.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 600.625;
+},
+{
+Axis = Weight;
+Location = 601.625;
+},
+{
+Axis = Width;
+Location = 602.625;
+},
+{
+Axis = Custom;
+Location = 603.625;
+},
+{
+Axis = Weight;
+Location = 604.625;
+},
+{
+Axis = Width;
+Location = 605.625;
+},
+{
+Axis = Custom;
+Location = 606.625;
+},
+{
+Axis = Weight;
+Location = 607.625;
+},
+{
+Axis = Width;
+Location = 608.625;
+},
+{
+Axis = Custom;
+Location = 609.625;
+},
+{
+Axis = Weight;
+Location = 610.625;
+},
+{
+Axis = Width;
+Location = 611.625;
+},
+{
+Axis = Custom;
+Location = 612.625;
+},
+{
+Axis = Weight;
+Location = 613.625;
+},
+{
+Axis = Width;
+Location = 614.625;
+},
+{
+Axis = Custom;
+Location = 615.625;
+},
+{
+Axis = Weight;
+Location = 616.625;
+},
+{
+Axis = Width;
+Location = 617.625;
+},
+{
+Axis = Custom;
+Location = 618.625;
+},
+{
+Axis = Weight;
+Location = 619.625;
+},
+{
+Axis = Width;
+Location = 620.625;
+},
+{
+Axis = Custom;
+Location = 621.625;
+},
+{
+Axis = Weight;
+Location = 622.625;
+},
+{
+Axis = Width;
+Location = 623.625;
+},
+{
+Axis = Custom;
+Location = 624.625;
+},
+{
+Axis = Weight;
+Location = 625.625;
+},
+{
+Axis = Width;
+Location = 626.625;
+},
+{
+Axis = Custom;
+Location = 627.625;
+},
+{
+Axis = Weight;
+Location = 628.625;
+},
+{
+Axis = Width;
+Location = 629.625;
+},
+{
+Axis = Custom;
+Location = 630.625;
+},
+{
+Axis = Weight;
+Location = 631.625;
+}
+);
+}
+);
+iconName = Bold;
+id = M7_TEMP_3;
+metricValues = (
+{
+pos = 815.375;
+},
+{
+pos = 708.125;
+},
+{
+pos = 516.875;
+},
+{
+pos = -215.625;
+},
+{
+}
+);
+name = Regular;
+},
+{
+axesValues = (
+400.125,
+401.125,
+402.125,
+403.125,
+404.125,
+405.125,
+406.125,
+407.125,
+408.125,
+409.125,
+410.125,
+411.125,
+412.125,
+413.125,
+414.125,
+415.125,
+416.125,
+417.125,
+418.125,
+419.125,
+420.125,
+421.125,
+422.125,
+423.125,
+424.125,
+425.125,
+426.125,
+427.125,
+428.125,
+429.125,
+430.125,
+431.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 800.625;
+},
+{
+Axis = Weight;
+Location = 801.625;
+},
+{
+Axis = Width;
+Location = 802.625;
+},
+{
+Axis = Custom;
+Location = 803.625;
+},
+{
+Axis = Weight;
+Location = 804.625;
+},
+{
+Axis = Width;
+Location = 805.625;
+},
+{
+Axis = Custom;
+Location = 806.625;
+},
+{
+Axis = Weight;
+Location = 807.625;
+},
+{
+Axis = Width;
+Location = 808.625;
+},
+{
+Axis = Custom;
+Location = 809.625;
+},
+{
+Axis = Weight;
+Location = 810.625;
+},
+{
+Axis = Width;
+Location = 811.625;
+},
+{
+Axis = Custom;
+Location = 812.625;
+},
+{
+Axis = Weight;
+Location = 813.625;
+},
+{
+Axis = Width;
+Location = 814.625;
+},
+{
+Axis = Custom;
+Location = 815.625;
+},
+{
+Axis = Weight;
+Location = 816.625;
+},
+{
+Axis = Width;
+Location = 817.625;
+},
+{
+Axis = Custom;
+Location = 818.625;
+},
+{
+Axis = Weight;
+Location = 819.625;
+},
+{
+Axis = Width;
+Location = 820.625;
+},
+{
+Axis = Custom;
+Location = 821.625;
+},
+{
+Axis = Weight;
+Location = 822.625;
+},
+{
+Axis = Width;
+Location = 823.625;
+},
+{
+Axis = Custom;
+Location = 824.625;
+},
+{
+Axis = Weight;
+Location = 825.625;
+},
+{
+Axis = Width;
+Location = 826.625;
+},
+{
+Axis = Custom;
+Location = 827.625;
+},
+{
+Axis = Weight;
+Location = 828.625;
+},
+{
+Axis = Width;
+Location = 829.625;
+},
+{
+Axis = Custom;
+Location = 830.625;
+},
+{
+Axis = Weight;
+Location = 831.625;
+}
+);
+}
+);
+iconName = Bold;
+id = M7_TEMP_4;
+metricValues = (
+{
+pos = 816.375;
+},
+{
+pos = 709.125;
+},
+{
+pos = 517.875;
+},
+{
+pos = -216.625;
+},
+{
+pos = -12.375;
+}
+);
+name = Regular;
+},
+{
+axesValues = (
+500.125,
+501.125,
+502.125,
+503.125,
+504.125,
+505.125,
+506.125,
+507.125,
+508.125,
+509.125,
+510.125,
+511.125,
+512.125,
+513.125,
+514.125,
+515.125,
+516.125,
+517.125,
+518.125,
+519.125,
+520.125,
+521.125,
+522.125,
+523.125,
+524.125,
+525.125,
+526.125,
+527.125,
+528.125,
+529.125,
+530.125,
+531.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 1000.625;
+},
+{
+Axis = Weight;
+Location = 1001.625;
+},
+{
+Axis = Width;
+Location = 1002.625;
+},
+{
+Axis = Custom;
+Location = 1003.625;
+},
+{
+Axis = Weight;
+Location = 1004.625;
+},
+{
+Axis = Width;
+Location = 1005.625;
+},
+{
+Axis = Custom;
+Location = 1006.625;
+},
+{
+Axis = Weight;
+Location = 1007.625;
+},
+{
+Axis = Width;
+Location = 1008.625;
+},
+{
+Axis = Custom;
+Location = 1009.625;
+},
+{
+Axis = Weight;
+Location = 1010.625;
+},
+{
+Axis = Width;
+Location = 1011.625;
+},
+{
+Axis = Custom;
+Location = 1012.625;
+},
+{
+Axis = Weight;
+Location = 1013.625;
+},
+{
+Axis = Width;
+Location = 1014.625;
+},
+{
+Axis = Custom;
+Location = 1015.625;
+},
+{
+Axis = Weight;
+Location = 1016.625;
+},
+{
+Axis = Width;
+Location = 1017.625;
+},
+{
+Axis = Custom;
+Location = 1018.625;
+},
+{
+Axis = Weight;
+Location = 1019.625;
+},
+{
+Axis = Width;
+Location = 1020.625;
+},
+{
+Axis = Custom;
+Location = 1021.625;
+},
+{
+Axis = Weight;
+Location = 1022.625;
+},
+{
+Axis = Width;
+Location = 1023.625;
+},
+{
+Axis = Custom;
+Location = 1024.625;
+},
+{
+Axis = Weight;
+Location = 1025.625;
+},
+{
+Axis = Width;
+Location = 1026.625;
+},
+{
+Axis = Custom;
+Location = 1027.625;
+},
+{
+Axis = Weight;
+Location = 1028.625;
+},
+{
+Axis = Width;
+Location = 1029.625;
+},
+{
+Axis = Custom;
+Location = 1030.625;
+},
+{
+Axis = Weight;
+Location = 1031.625;
+}
+);
+}
+);
+iconName = Bold;
+id = M7_TEMP_5;
+metricValues = (
+{
+pos = 817.375;
+},
+{
+pos = 710.125;
+},
+{
+pos = 518.875;
+},
+{
+pos = -217.625;
+},
+{
+pos = 9.625;
+}
+);
+name = Regular;
+},
+{
+axesValues = (
+600.125,
+601.125,
+602.125,
+603.125,
+604.125,
+605.125,
+606.125,
+607.125,
+608.125,
+609.125,
+610.125,
+611.125,
+612.125,
+613.125,
+614.125,
+615.125,
+616.125,
+617.125,
+618.125,
+619.125,
+620.125,
+621.125,
+622.125,
+623.125,
+624.125,
+625.125,
+626.125,
+627.125,
+628.125,
+629.125,
+630.125,
+631.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 1200.625;
+},
+{
+Axis = Weight;
+Location = 1201.625;
+},
+{
+Axis = Width;
+Location = 1202.625;
+},
+{
+Axis = Custom;
+Location = 1203.625;
+},
+{
+Axis = Weight;
+Location = 1204.625;
+},
+{
+Axis = Width;
+Location = 1205.625;
+},
+{
+Axis = Custom;
+Location = 1206.625;
+},
+{
+Axis = Weight;
+Location = 1207.625;
+},
+{
+Axis = Width;
+Location = 1208.625;
+},
+{
+Axis = Custom;
+Location = 1209.625;
+},
+{
+Axis = Weight;
+Location = 1210.625;
+},
+{
+Axis = Width;
+Location = 1211.625;
+},
+{
+Axis = Custom;
+Location = 1212.625;
+},
+{
+Axis = Weight;
+Location = 1213.625;
+},
+{
+Axis = Width;
+Location = 1214.625;
+},
+{
+Axis = Custom;
+Location = 1215.625;
+},
+{
+Axis = Weight;
+Location = 1216.625;
+},
+{
+Axis = Width;
+Location = 1217.625;
+},
+{
+Axis = Custom;
+Location = 1218.625;
+},
+{
+Axis = Weight;
+Location = 1219.625;
+},
+{
+Axis = Width;
+Location = 1220.625;
+},
+{
+Axis = Custom;
+Location = 1221.625;
+},
+{
+Axis = Weight;
+Location = 1222.625;
+},
+{
+Axis = Width;
+Location = 1223.625;
+},
+{
+Axis = Custom;
+Location = 1224.625;
+},
+{
+Axis = Weight;
+Location = 1225.625;
+},
+{
+Axis = Width;
+Location = 1226.625;
+},
+{
+Axis = Custom;
+Location = 1227.625;
+},
+{
+Axis = Weight;
+Location = 1228.625;
+},
+{
+Axis = Width;
+Location = 1229.625;
+},
+{
+Axis = Custom;
+Location = 1230.625;
+},
+{
+Axis = Weight;
+Location = 1231.625;
+}
+);
+}
+);
+iconName = Bold;
+id = M7_TEMP_6;
+metricValues = (
+{
+pos = 818.375;
+},
+{
+pos = 711.125;
+},
+{
+pos = 519.875;
+},
+{
+pos = -218.625;
+},
+{
+}
+);
+name = Regular;
+},
+{
+axesValues = (
+700.125,
+701.125,
+702.125,
+703.125,
+704.125,
+705.125,
+706.125,
+707.125,
+708.125,
+709.125,
+710.125,
+711.125,
+712.125,
+713.125,
+714.125,
+715.125,
+716.125,
+717.125,
+718.125,
+719.125,
+720.125,
+721.125,
+722.125,
+723.125,
+724.125,
+725.125,
+726.125,
+727.125,
+728.125,
+729.125,
+730.125,
+731.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 1400.625;
+},
+{
+Axis = Weight;
+Location = 1401.625;
+},
+{
+Axis = Width;
+Location = 1402.625;
+},
+{
+Axis = Custom;
+Location = 1403.625;
+},
+{
+Axis = Weight;
+Location = 1404.625;
+},
+{
+Axis = Width;
+Location = 1405.625;
+},
+{
+Axis = Custom;
+Location = 1406.625;
+},
+{
+Axis = Weight;
+Location = 1407.625;
+},
+{
+Axis = Width;
+Location = 1408.625;
+},
+{
+Axis = Custom;
+Location = 1409.625;
+},
+{
+Axis = Weight;
+Location = 1410.625;
+},
+{
+Axis = Width;
+Location = 1411.625;
+},
+{
+Axis = Custom;
+Location = 1412.625;
+},
+{
+Axis = Weight;
+Location = 1413.625;
+},
+{
+Axis = Width;
+Location = 1414.625;
+},
+{
+Axis = Custom;
+Location = 1415.625;
+},
+{
+Axis = Weight;
+Location = 1416.625;
+},
+{
+Axis = Width;
+Location = 1417.625;
+},
+{
+Axis = Custom;
+Location = 1418.625;
+},
+{
+Axis = Weight;
+Location = 1419.625;
+},
+{
+Axis = Width;
+Location = 1420.625;
+},
+{
+Axis = Custom;
+Location = 1421.625;
+},
+{
+Axis = Weight;
+Location = 1422.625;
+},
+{
+Axis = Width;
+Location = 1423.625;
+},
+{
+Axis = Custom;
+Location = 1424.625;
+},
+{
+Axis = Weight;
+Location = 1425.625;
+},
+{
+Axis = Width;
+Location = 1426.625;
+},
+{
+Axis = Custom;
+Location = 1427.625;
+},
+{
+Axis = Weight;
+Location = 1428.625;
+},
+{
+Axis = Width;
+Location = 1429.625;
+},
+{
+Axis = Custom;
+Location = 1430.625;
+},
+{
+Axis = Weight;
+Location = 1431.625;
+}
+);
+}
+);
+iconName = Bold;
+id = M7_TEMP_7;
+metricValues = (
+{
+pos = 819.375;
+},
+{
+pos = 712.125;
+},
+{
+pos = 520.875;
+},
+{
+pos = -219.625;
+},
+{
+pos = -12.375;
+}
+);
+name = Regular;
+},
+{
+axesValues = (
+800.125,
+801.125,
+802.125,
+803.125,
+804.125,
+805.125,
+806.125,
+807.125,
+808.125,
+809.125,
+810.125,
+811.125,
+812.125,
+813.125,
+814.125,
+815.125,
+816.125,
+817.125,
+818.125,
+819.125,
+820.125,
+821.125,
+822.125,
+823.125,
+824.125,
+825.125,
+826.125,
+827.125,
+828.125,
+829.125,
+830.125,
+831.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 1600.625;
+},
+{
+Axis = Weight;
+Location = 1601.625;
+},
+{
+Axis = Width;
+Location = 1602.625;
+},
+{
+Axis = Custom;
+Location = 1603.625;
+},
+{
+Axis = Weight;
+Location = 1604.625;
+},
+{
+Axis = Width;
+Location = 1605.625;
+},
+{
+Axis = Custom;
+Location = 1606.625;
+},
+{
+Axis = Weight;
+Location = 1607.625;
+},
+{
+Axis = Width;
+Location = 1608.625;
+},
+{
+Axis = Custom;
+Location = 1609.625;
+},
+{
+Axis = Weight;
+Location = 1610.625;
+},
+{
+Axis = Width;
+Location = 1611.625;
+},
+{
+Axis = Custom;
+Location = 1612.625;
+},
+{
+Axis = Weight;
+Location = 1613.625;
+},
+{
+Axis = Width;
+Location = 1614.625;
+},
+{
+Axis = Custom;
+Location = 1615.625;
+},
+{
+Axis = Weight;
+Location = 1616.625;
+},
+{
+Axis = Width;
+Location = 1617.625;
+},
+{
+Axis = Custom;
+Location = 1618.625;
+},
+{
+Axis = Weight;
+Location = 1619.625;
+},
+{
+Axis = Width;
+Location = 1620.625;
+},
+{
+Axis = Custom;
+Location = 1621.625;
+},
+{
+Axis = Weight;
+Location = 1622.625;
+},
+{
+Axis = Width;
+Location = 1623.625;
+},
+{
+Axis = Custom;
+Location = 1624.625;
+},
+{
+Axis = Weight;
+Location = 1625.625;
+},
+{
+Axis = Width;
+Location = 1626.625;
+},
+{
+Axis = Custom;
+Location = 1627.625;
+},
+{
+Axis = Weight;
+Location = 1628.625;
+},
+{
+Axis = Width;
+Location = 1629.625;
+},
+{
+Axis = Custom;
+Location = 1630.625;
+},
+{
+Axis = Weight;
+Location = 1631.625;
+}
+);
+}
+);
+iconName = Bold;
+id = M7_TEMP_8;
+metricValues = (
+{
+pos = 820.375;
+},
+{
+pos = 713.125;
+},
+{
+pos = 521.875;
+},
+{
+pos = -220.625;
+},
+{
+pos = 9.625;
+}
+);
+name = Regular;
+}
+);
+glyphs = (
+{
+glyphname = h4g000;
+lastChange = "2026-09-14 19:00:00 +0000";
+layers = (
+{
+layerId = "C7941642-FFB2-5D2E-B7FE-4A30A143BE40";
+shapes = (
+{
+closed = 1;
+nodes = (
+(50.125,0.375,l,{
+name = "R05 landmark";
+}),
+(250.625,0.375,l),
+(250.625,700.875,l),
+(50.125,700.875,l)
+);
+}
+);
+vertOrigin = 800.375;
+vertWidth = 1000.125;
+width = 600.125;
+},
+{
+layerId = "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC";
+shapes = (
+{
+closed = 1;
+nodes = (
+(50.375,0.375,l,{
+name = "R05 landmark";
+}),
+(250.875,0.375,l),
+(250.875,700.875,l),
+(50.375,700.875,l)
+);
+}
+);
+vertOrigin = 800.625;
+vertWidth = 1000.375;
+width = 600.625;
+},
+{
+layerId = "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575";
+shapes = (
+{
+closed = 1;
+nodes = (
+(50.625,0.375,l,{
+name = "R05 landmark";
+}),
+(251.125,0.375,l),
+(251.125,700.875,l),
+(50.625,700.875,l)
+);
+}
+);
+vertOrigin = 800.875;
+vertWidth = 1000.625;
+width = 601.125;
+}
+);
+}
+);
+metrics = (
+{
+type = ascender;
+},
+{
+type = "cap height";
+},
+{
+type = "x-height";
+},
+{
+type = descender;
+},
+{
+type = "italic angle";
+}
+);
+settings = {
+gridLength = 0;
+};
+unitsPerEm = 1000;
+versionMajor = 1;
+versionMinor = 0;
+}

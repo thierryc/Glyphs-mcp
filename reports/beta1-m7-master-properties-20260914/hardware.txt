@@ -1,0 +1,4 @@
+hw.model: MacBookPro18,2
+hw.ncpu: 10
+hw.memsize: 34359738368
+machdep.cpu.brand_string: Apple M1 Max

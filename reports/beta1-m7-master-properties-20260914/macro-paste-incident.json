@@ -1,0 +1,6 @@
+{
+  "observedText": "Is it possible (do not code yet) to add a folder for the MCP (code snippet script) managed by the server, with a new skill: create a macro script? The MCP can name, save, and create the macro script in the folder, ready to be used.",
+  "result": "SyntaxError before execution; native harness did not start",
+  "fileExists": true,
+  "fileSHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

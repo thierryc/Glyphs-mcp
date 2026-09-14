@@ -1,0 +1,73 @@
+{
+  "beforeCount": 5388,
+  "changed": {
+    "content/reference/command-set.mdx": {
+      "before": "f313e934c5e25ae819a136fb287b8aa9414e816e7a7855851847871508568ceb",
+      "after": "b56a7b47b9b0fffc689a7f4776cc6885acf503507cf3171b26af196117fc2825"
+    },
+    "plugins/glyphs-mcp/skills/glyphs-mcp-italic-first-pass/references/lean-v2.md": {
+      "before": "bc1083beb01cd76bdc64799cfcddf6d492253093d3a1fb054ab39fac05d21bc1",
+      "after": "bddbd31f99106357eff3e681d12934d1e33507bc0e3fc0790da18341d8c74e69"
+    },
+    "plugins/glyphs-mcp/skills/glyphs/SKILL.md": {
+      "before": "2296d10a8507a1d246b779f3a602144826d29eb859ba4a96f6f122be553229a9",
+      "after": "372e9da938e1b2b3d20888210fd3643990ad6d9f199651604fd341d123442181"
+    },
+    "plugins/glyphs-mcp/skills/glyphs/references/layer-reads.md": {
+      "before": "f1c82e62485187e48bdbb6feb9719e5b7f14e0c2793bce6e584726017c7a6c5d",
+      "after": "33599a98a52da21db7f8aadf87781b2733aac9edf02cff7233b12627f5234d7a"
+    },
+    "plugins/glyphs-mcp/skills/glyphs/references/master-reads.md": {
+      "before": "9992f878da14847a141b44750a0cab517c6869f8f6d1860cf4dd296aec9aca35",
+      "after": "2f5b4b3948ecb0bd031a391aa5f4d4f90a2b1f9cc7eef69ffa90bf65881b514f"
+    },
+    "reports/README.md": {
+      "before": "e7cc2689f1300cdaf0d4d0b077a909f34f24767e35605bdc6b3ad4903e3e8f5e",
+      "after": "06fbb26702cb4eb60f7d2d6bad1da0f183052d48075d5727255fe710188e891f"
+    },
+    "skills/glyphs-mcp-italic-first-pass/references/lean-v2.md": {
+      "before": "bc1083beb01cd76bdc64799cfcddf6d492253093d3a1fb054ab39fac05d21bc1",
+      "after": "bddbd31f99106357eff3e681d12934d1e33507bc0e3fc0790da18341d8c74e69"
+    },
+    "skills/glyphs/SKILL.md": {
+      "before": "2296d10a8507a1d246b779f3a602144826d29eb859ba4a96f6f122be553229a9",
+      "after": "372e9da938e1b2b3d20888210fd3643990ad6d9f199651604fd341d123442181"
+    },
+    "skills/glyphs/references/layer-reads.md": {
+      "before": "f1c82e62485187e48bdbb6feb9719e5b7f14e0c2793bce6e584726017c7a6c5d",
+      "after": "33599a98a52da21db7f8aadf87781b2733aac9edf02cff7233b12627f5234d7a"
+    },
+    "skills/glyphs/references/master-reads.md": {
+      "before": "9992f878da14847a141b44750a0cab517c6869f8f6d1860cf4dd296aec9aca35",
+      "after": "2f5b4b3948ecb0bd031a391aa5f4d4f90a2b1f9cc7eef69ffa90bf65881b514f"
+    },
+    "src/bridge/glyphs_mcp_bridge/glyphs_adapter.py": {
+      "before": "ba00aef9d183e3d4599dbb7aa6f50f8575f1ba8dc27f914e45fa648f8d6b412b",
+      "after": "87febc236d5350984b3d7256158e46551b6ada3fdd1d027ddacd8899ee55a687"
+    },
+    "src/glyphs-mcp/tests/test_simple_v2_build.py": {
+      "before": "71a454e826313372e3bdc730258a90994701f13a43713e839ded6fc344b4c4c3",
+      "after": "405947c878596d50de5ca55dc969cfe603801cb76c7268552913c13703634158"
+    },
+    "src/glyphs-mcp/tests/test_simple_v2_master_reads.py": {
+      "before": "67ca16dbfc8627f896cfece977766ae836c8fe826582b81c3a124238e6e73ab8",
+      "after": "8220f7e67a1962f622191b56cec25c3c7c2558f2a55fdc725730090923690483"
+    },
+    "src/glyphs-mcp/tests/test_simple_v2_skill_routing.py": {
+      "before": "85b0d1e42b5f9fccb05976ff4b1c46135c048b5a448b7fde4f8d3d424e011a0a",
+      "after": "f09b90e74b2dc53af63dc570cc205e4d04c8f3da95c99e0879435ddacf397681"
+    },
+    "src/protocol/glyphs_mcp_protocol/reads.py": {
+      "before": "399e8f92053e876e2e0707163af67e38aea5b388b840bc038b39599579802d56",
+      "after": "480b88f3fbde7fe12451272bfd8f0192721240706fb79c7015acb4d039df433b"
+    },
+    "src/sidecar/glyphs_mcp_sidecar/server.py": {
+      "before": "2ed4c34a8e0cfcb00b04a679916fda5f19374f863cc9158236cf1e740913bf05",
+      "after": "42be06c23f5c31b455746607f29d46abde6b5967c60486a68ab00d907cb1cae2"
+    }
+  },
+  "missing": [],
+  "unexpected": [],
+  "unchangedCount": 5372,
+  "passed": true
+}

@@ -1,0 +1,745 @@
+{
+  "tokenMethod": "tiktoken 0.12.0 / o200k_base; compact sorted JSON, literal Unicode; {name,arguments} plus one parsed response body. Estimated tokens, not billed usage.",
+  "timings": {
+    "small": {
+      "discoveryMs": {
+        "n": 5,
+        "median": 40.27991695329547,
+        "minimum": 30.329792003612965,
+        "maximum": 56.18462496204302,
+        "p95": 56.18462496204302
+      },
+      "readMs": {
+        "n": 5,
+        "median": 38.08983298949897,
+        "minimum": 24.299291020724922,
+        "maximum": 51.4906250173226,
+        "p95": 51.4906250173226
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 79.99658398330212,
+        "minimum": 56.975917017553,
+        "maximum": 87.38416706910357,
+        "p95": 87.38416706910357
+      },
+      "pageHTTP": {
+        "n": 5,
+        "median": 38.08983298949897,
+        "minimum": 24.299291020724922,
+        "maximum": 51.4906250173226,
+        "p95": 51.4906250173226
+      },
+      "nativeCallbacks": {
+        "nativeMs": {
+          "n": 5,
+          "median": 16.404750000219792,
+          "minimum": 4.690999980084598,
+          "maximum": 21.708459011279047,
+          "p95": 21.708459011279047
+        },
+        "queueMs": {
+          "n": 5,
+          "median": 2.8547499678097665,
+          "minimum": 2.7434160001575947,
+          "maximum": 3.536959004122764,
+          "p95": 3.536959004122764
+        }
+      },
+      "firstAndWarmup": [
+        {
+          "label": "small",
+          "phase": "first",
+          "discoveryMs": 72.78266601497307,
+          "initialTotalMs": 97.37649897579104,
+          "openDocuments": 4,
+          "load": [
+            52.39892578125,
+            39.0107421875,
+            26.19384765625
+          ],
+          "readMs": 24.593832960817963,
+          "callIndices": [
+            2
+          ],
+          "requests": 1,
+          "masters": 3,
+          "axisItems": 9
+        },
+        {
+          "label": "small",
+          "phase": "warmup",
+          "discoveryMs": 74.89804195938632,
+          "initialTotalMs": 139.09391697961837,
+          "openDocuments": 4,
+          "load": [
+            52.39892578125,
+            39.0107421875,
+            26.19384765625
+          ],
+          "readMs": 64.19587502023205,
+          "callIndices": [
+            5
+          ],
+          "requests": 1,
+          "masters": 3,
+          "axisItems": 9
+        }
+      ]
+    },
+    "bound": {
+      "discoveryMs": {
+        "n": 5,
+        "median": 39.70925003523007,
+        "minimum": 30.204458045773208,
+        "maximum": 67.69533298211172,
+        "p95": 67.69533298211172
+      },
+      "readMs": {
+        "n": 5,
+        "median": 87.6737090293318,
+        "minimum": 81.70158398570493,
+        "maximum": 110.57733400957659,
+        "p95": 110.57733400957659
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 127.83787597436458,
+        "minimum": 119.00683410931379,
+        "maximum": 158.0847500008531,
+        "p95": 158.0847500008531
+      },
+      "pageHTTP": {
+        "n": 10,
+        "median": 43.8368545146659,
+        "minimum": 30.58533399598673,
+        "maximum": 78.78120901295915,
+        "p95": 78.78120901295915
+      },
+      "nativeCallbacks": {
+        "nativeMs": {
+          "n": 10,
+          "median": 11.044207989471033,
+          "minimum": 5.717583000659943,
+          "maximum": 20.026916987262666,
+          "p95": 20.026916987262666
+        },
+        "queueMs": {
+          "n": 10,
+          "median": 2.4892085057217628,
+          "minimum": 2.3205000325106084,
+          "maximum": 2.561583009082824,
+          "p95": 2.561583009082824
+        }
+      },
+      "firstAndWarmup": [
+        {
+          "label": "bound",
+          "phase": "first",
+          "discoveryMs": 44.50524999992922,
+          "initialTotalMs": 124.83112601330504,
+          "openDocuments": 4,
+          "load": [
+            43.93359375,
+            37.96728515625,
+            26.11767578125
+          ],
+          "readMs": 80.32587601337582,
+          "callIndices": [
+            23,
+            24
+          ],
+          "requests": 2,
+          "masters": 9,
+          "axisItems": 288
+        },
+        {
+          "label": "bound",
+          "phase": "warmup",
+          "discoveryMs": 45.20129197044298,
+          "initialTotalMs": 100.30374996131286,
+          "openDocuments": 4,
+          "load": [
+            42.4169921875,
+            37.751953125,
+            26.11083984375
+          ],
+          "readMs": 55.10245799086988,
+          "callIndices": [
+            27,
+            28
+          ],
+          "requests": 2,
+          "masters": 9,
+          "axisItems": 288
+        }
+      ]
+    },
+    "RobotoSlab": {
+      "discoveryMs": {
+        "n": 5,
+        "median": 38.322624983265996,
+        "minimum": 33.738291007466614,
+        "maximum": 49.86629105405882,
+        "p95": 49.86629105405882
+      },
+      "readMs": {
+        "n": 5,
+        "median": 33.04116701474413,
+        "minimum": 27.371082978788763,
+        "maximum": 79.9750000005588,
+        "p95": 79.9750000005588
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 73.73075000941753,
+        "minimum": 65.69370796205476,
+        "maximum": 115.17870798707008,
+        "p95": 115.17870798707008
+      },
+      "pageHTTP": {
+        "n": 5,
+        "median": 33.04116701474413,
+        "minimum": 27.371082978788763,
+        "maximum": 79.9750000005588,
+        "p95": 79.9750000005588
+      },
+      "nativeCallbacks": {
+        "nativeMs": {
+          "n": 5,
+          "median": 8.221332973334938,
+          "minimum": 2.0101250265724957,
+          "maximum": 25.44054196914658,
+          "p95": 25.44054196914658
+        },
+        "queueMs": {
+          "n": 5,
+          "median": 2.518167020753026,
+          "minimum": 2.2907499806024134,
+          "maximum": 21.572500001639128,
+          "p95": 21.572500001639128
+        }
+      },
+      "firstAndWarmup": [
+        {
+          "label": "RobotoSlab",
+          "phase": "first",
+          "discoveryMs": 27.44395798072219,
+          "initialTotalMs": 937.590291025117,
+          "openDocuments": 4,
+          "load": [
+            34.45361328125,
+            36.20751953125,
+            25.8876953125
+          ],
+          "readMs": 910.1463330443949,
+          "callIndices": [
+            51
+          ],
+          "requests": 1,
+          "masters": 3,
+          "axisItems": 3
+        },
+        {
+          "label": "RobotoSlab",
+          "phase": "warmup",
+          "discoveryMs": 33.29649998340756,
+          "initialTotalMs": 62.39954195916653,
+          "openDocuments": 4,
+          "load": [
+            31.529296875,
+            35.5244140625,
+            25.765625
+          ],
+          "readMs": 29.10304197575897,
+          "callIndices": [
+            54
+          ],
+          "requests": 1,
+          "masters": 3,
+          "axisItems": 3
+        }
+      ]
+    }
+  },
+  "tokens": {
+    "small": {
+      "n": 5,
+      "median": 658,
+      "minimum": 657,
+      "maximum": 660,
+      "p95": 660
+    },
+    "bound": {
+      "n": 5,
+      "median": 11139,
+      "minimum": 11134,
+      "maximum": 11159,
+      "p95": 11159
+    },
+    "RobotoSlab": {
+      "n": 5,
+      "median": 467,
+      "minimum": 465,
+      "maximum": 470,
+      "p95": 470
+    }
+  },
+  "compact": {
+    "httpMs": {
+      "n": 21,
+      "median": 32.548332994338125,
+      "minimum": 20.249459019396454,
+      "maximum": 51.41404102323577,
+      "p95": 46.706916007678956
+    },
+    "tokens": {
+      "n": 21,
+      "median": 153,
+      "minimum": 149,
+      "maximum": 157,
+      "p95": 156
+    }
+  },
+  "allCallbacks": {
+    "nativeMs": {
+      "n": 109,
+      "median": 12.450415990315378,
+      "minimum": 0.1294169924221933,
+      "maximum": 54.727249953430146,
+      "p95": 30.50125000299886
+    },
+    "queueMs": {
+      "n": 109,
+      "median": 2.5972920120693743,
+      "minimum": 2.288541989400983,
+      "maximum": 891.578666982241,
+      "p95": 213.39041698956862
+    }
+  },
+  "readCallbacks": {
+    "nativeMs": {
+      "n": 83,
+      "median": 10.348375013563782,
+      "minimum": 1.1168749770149589,
+      "maximum": 54.727249953430146,
+      "p95": 23.867917014285922
+    },
+    "queueMs": {
+      "n": 83,
+      "median": 2.532874990720302,
+      "minimum": 2.288541989400983,
+      "maximum": 891.578666982241,
+      "p95": 3.4236659994348884
+    }
+  },
+  "twoSecondProbe": {
+    "nativeMs": {
+      "n": 17,
+      "median": 6.503459007944912,
+      "minimum": 1.515209034550935,
+      "maximum": 21.262000023853034,
+      "p95": 21.262000023853034
+    },
+    "queueMs": {
+      "n": 17,
+      "median": 2.6949169696308672,
+      "minimum": 2.360292011871934,
+      "maximum": 3.4236659994348884,
+      "p95": 3.4236659994348884
+    }
+  },
+  "discoveryTokens": {
+    "n": 25,
+    "median": 315,
+    "minimum": 311,
+    "maximum": 343,
+    "p95": 319
+  },
+  "callCounts": {
+    "get_status": 1,
+    "list_documents": 25,
+    "read_entities": 83
+  },
+  "expectedErrorCalls": [
+    {
+      "arguments": {
+        "document_id": "doc_2c5a8c1897194dc983d89123452fc38b",
+        "entities": [
+          {
+            "kind": "master",
+            "id": "Regular"
+          }
+        ],
+        "fields": [
+          "ascender"
+        ]
+      },
+      "error": {
+        "code": "target_not_found",
+        "message": "master is unavailable",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_2c5a8c1897194dc983d89123452fc38b",
+        "entities": [
+          {
+            "kind": "master",
+            "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40"
+          },
+          {
+            "kind": "master",
+            "id": "missing"
+          }
+        ],
+        "fields": [
+          "ascender"
+        ]
+      },
+      "error": {
+        "code": "target_not_found",
+        "message": "master is unavailable",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_2c5a8c1897194dc983d89123452fc38b",
+        "entities": [
+          {
+            "kind": "master",
+            "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40"
+          }
+        ],
+        "fields": [
+          "unsupportedMetric"
+        ]
+      },
+      "error": {
+        "code": "unsupported_read",
+        "message": "unsupported fields for master: unsupportedMetric",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_2c5a8c1897194dc983d89123452fc38b",
+        "entities": [
+          {
+            "kind": "masters",
+            "limit": 101
+          }
+        ],
+        "fields": [
+          "axes"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "master page limit must be an integer from 1 to 100",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_2c5a8c1897194dc983d89123452fc38b",
+        "entities": [
+          {
+            "kind": "masters"
+          },
+          {
+            "kind": "masters"
+          }
+        ],
+        "fields": [
+          "axes"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "a master page must be the only entity selector",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_2c5a8c1897194dc983d89123452fc38b",
+        "entities": [
+          {
+            "kind": "master",
+            "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40"
+          }
+        ],
+        "fields": [
+          "axes"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "axes require at most 32 axes per master and 256 master-axis items per request; request fewer masters or omit axes",
+        "details": {
+          "axesPerMaster": 33,
+          "masters": 1,
+          "axisLimit": 32,
+          "axisItemsLimit": 256
+        }
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_2c5a8c1897194dc983d89123452fc38b",
+        "entities": [
+          {
+            "kind": "master",
+            "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40"
+          }
+        ],
+        "fields": [
+          "ascender"
+        ]
+      },
+      "error": {
+        "code": "document_not_found",
+        "message": "the Glyphs document is no longer open",
+        "details": {}
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_debf994e06364a3996aecf22ffab0a46",
+        "entities": [
+          {
+            "kind": "masters"
+          }
+        ],
+        "fields": [
+          "axes"
+        ]
+      },
+      "error": {
+        "code": "invalid_request",
+        "message": "axes require at most 32 axes per master and 256 master-axis items per request; request fewer masters or omit axes",
+        "details": {
+          "axesPerMaster": 32,
+          "masters": 9,
+          "axisLimit": 32,
+          "axisItemsLimit": 256
+        }
+      }
+    },
+    {
+      "arguments": {
+        "document_id": "doc_debf994e06364a3996aecf22ffab0a46",
+        "entities": [
+          {
+            "kind": "masters",
+            "cursor": {
+              "documentId": "doc_debf994e06364a3996aecf22ffab0a46",
+              "offset": 8,
+              "total": 9,
+              "afterId": "M7_TEMP_7"
+            }
+          }
+        ],
+        "fields": [
+          "axes"
+        ]
+      },
+      "error": {
+        "code": "stale_master_cursor",
+        "message": "master page boundary changed; restart discovery without a cursor",
+        "details": {}
+      }
+    }
+  ],
+  "checks": {
+    "total": 410,
+    "passed": 410
+  },
+  "passed": false,
+  "error": "Traceback (most recent call last):\n  File \"qualify_native.py\", line 145, in run\n    except Exception:facts['cleanupError']=traceback.format_exc()\n                                     ^^^^^^^^^^^^^^\n  File \"qualify_native.py\", line 43, in discover\n    if 'error' in result:raise RuntimeError(result['error'])\n    \nAssertionError\n",
+  "cleanupError": null,
+  "startedAt": "2026-09-14T20:57:08.011787+00:00",
+  "finishedAt": "2026-09-14T20:59:36.781266+00:00",
+  "loadBefore": [
+    55.3935546875,
+    39.36572265625,
+    26.2421875
+  ],
+  "loadAfter": [
+    15.77099609375,
+    29.81591796875,
+    24.4765625
+  ],
+  "loads": [
+    [
+      52.39892578125,
+      39.0107421875,
+      26.19384765625
+    ],
+    [
+      52.39892578125,
+      39.0107421875,
+      26.19384765625
+    ],
+    [
+      50.60498046875,
+      38.86083984375,
+      26.2158203125
+    ],
+    [
+      50.60498046875,
+      38.86083984375,
+      26.2158203125
+    ],
+    [
+      48.15380859375,
+      38.54736328125,
+      26.17919921875
+    ],
+    [
+      46.53955078125,
+      38.3720703125,
+      26.189453125
+    ],
+    [
+      46.53955078125,
+      38.3720703125,
+      26.189453125
+    ],
+    [
+      43.93359375,
+      37.96728515625,
+      26.11767578125
+    ],
+    [
+      42.4169921875,
+      37.751953125,
+      26.11083984375
+    ],
+    [
+      42.4169921875,
+      37.751953125,
+      26.11083984375
+    ],
+    [
+      39.90087890625,
+      37.3076171875,
+      26.02197265625
+    ],
+    [
+      39.90087890625,
+      37.3076171875,
+      26.02197265625
+    ],
+    [
+      38.14697265625,
+      36.98681640625,
+      25.974609375
+    ],
+    [
+      36.29296875,
+      36.62158203125,
+      25.91015625
+    ],
+    [
+      34.45361328125,
+      36.20751953125,
+      25.8876953125
+    ],
+    [
+      31.529296875,
+      35.5244140625,
+      25.765625
+    ],
+    [
+      28.89697265625,
+      34.78564453125,
+      25.67431640625
+    ],
+    [
+      24.48828125,
+      33.52197265625,
+      25.38232421875
+    ],
+    [
+      23.00341796875,
+      32.91064453125,
+      25.26025390625
+    ],
+    [
+      19.78955078125,
+      31.7080078125,
+      24.9638671875
+    ],
+    [
+      17.546875,
+      30.62744140625,
+      24.69580078125
+    ]
+  ],
+  "openDocumentCounts": [
+    4
+  ],
+  "setupTimes": {
+    "n": 21,
+    "median": 2005.0327919889241,
+    "minimum": 2001.5617909957655,
+    "maximum": 2005.8504999615252,
+    "p95": 2005.707208008971
+  },
+  "nativeDirtyOpeningChanges": [
+    {
+      "name": "bound-first",
+      "dirtyImmediately": false,
+      "settleMs": 2004.6597920008935,
+      "dirtyBeforeReads": true
+    },
+    {
+      "name": "bound-warmup",
+      "dirtyImmediately": false,
+      "settleMs": 2005.0327919889241,
+      "dirtyBeforeReads": true
+    },
+    {
+      "name": "bound-rep1",
+      "dirtyImmediately": false,
+      "settleMs": 2005.1011670148,
+      "dirtyBeforeReads": true
+    },
+    {
+      "name": "bound-rep2",
+      "dirtyImmediately": false,
+      "settleMs": 2003.85916599771,
+      "dirtyBeforeReads": true
+    },
+    {
+      "name": "bound-rep3",
+      "dirtyImmediately": false,
+      "settleMs": 2003.8171249907464,
+      "dirtyBeforeReads": true
+    },
+    {
+      "name": "bound-rep4",
+      "dirtyImmediately": false,
+      "settleMs": 2003.3838749513961,
+      "dirtyBeforeReads": true
+    },
+    {
+      "name": "bound-rep5",
+      "dirtyImmediately": false,
+      "settleMs": 2001.5617909957655,
+      "dirtyBeforeReads": true
+    }
+  ],
+  "skillTokens": {
+    "SKILL.md": 988,
+    "references/master-reads.md": 1223
+  },
+  "readToolDescriptionTokens": {
+    "before": 1149,
+    "after": 1277
+  }
+}

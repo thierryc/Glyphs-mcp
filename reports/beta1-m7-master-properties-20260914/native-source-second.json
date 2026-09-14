@@ -1,0 +1,260 @@
+{
+  "passed": false,
+  "checks": [
+    {
+      "name": "Roboto source checksum",
+      "expected": "98bd0e35d9267ad101270727f18bb58b17b629160ccdf3d8a60f9a99d526e845",
+      "observed": "98bd0e35d9267ad101270727f18bb58b17b629160ccdf3d8a60f9a99d526e845",
+      "passed": true
+    },
+    {
+      "name": "MasterPropertiesTest persisted exact expected values",
+      "expected": [
+        {
+          "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "name": "Regular",
+          "ascender": 812.375,
+          "capHeight": 705.125,
+          "xHeight": 513.875,
+          "descender": -212.625,
+          "italicAngle": 0.0,
+          "axes": {
+            "items": [
+              {
+                "axisId": "M7_AXIS_00",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 0.125,
+                "externalValue": 0.625
+              },
+              {
+                "axisId": "M7_AXIS_01",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 1.125,
+                "externalValue": 1.625
+              },
+              {
+                "axisId": "M7_AXIS_02",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 2.125,
+                "externalValue": 2.625
+              }
+            ],
+            "total": 3,
+            "returned": 3,
+            "complete": true
+          }
+        },
+        {
+          "id": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+          "name": "Regular",
+          "ascender": 813.375,
+          "capHeight": 706.125,
+          "xHeight": 514.875,
+          "descender": -213.625,
+          "italicAngle": -12.375,
+          "axes": {
+            "items": [
+              {
+                "axisId": "M7_AXIS_00",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 100.125,
+                "externalValue": 200.625
+              },
+              {
+                "axisId": "M7_AXIS_01",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 101.125,
+                "externalValue": 201.625
+              },
+              {
+                "axisId": "M7_AXIS_02",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 102.125,
+                "externalValue": 202.625
+              }
+            ],
+            "total": 3,
+            "returned": 3,
+            "complete": true
+          }
+        },
+        {
+          "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+          "name": "Regular",
+          "ascender": 814.375,
+          "capHeight": 707.125,
+          "xHeight": 515.875,
+          "descender": -214.625,
+          "italicAngle": 9.625,
+          "axes": {
+            "items": [
+              {
+                "axisId": "M7_AXIS_00",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 200.125,
+                "externalValue": 400.625
+              },
+              {
+                "axisId": "M7_AXIS_01",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 201.125,
+                "externalValue": 401.625
+              },
+              {
+                "axisId": "M7_AXIS_02",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 202.125,
+                "externalValue": 402.625
+              }
+            ],
+            "total": 3,
+            "returned": 3,
+            "complete": true
+          }
+        }
+      ],
+      "observed": [
+        {
+          "id": "C7941642-FFB2-5D2E-B7FE-4A30A143BE40",
+          "name": "Regular",
+          "ascender": 812.375,
+          "capHeight": 705.125,
+          "xHeight": 513.875,
+          "descender": -212.625,
+          "italicAngle": 0.0,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 0.125,
+                "externalValue": 0.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 1.125,
+                "externalValue": 1.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 2.125,
+                "externalValue": 2.625
+              }
+            ],
+            "total": 3,
+            "returned": 3,
+            "complete": true
+          }
+        },
+        {
+          "id": "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC",
+          "name": "Regular",
+          "ascender": 813.375,
+          "capHeight": 706.125,
+          "xHeight": 514.875,
+          "descender": -213.625,
+          "italicAngle": -12.375,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 100.125,
+                "externalValue": 200.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 101.125,
+                "externalValue": 201.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 102.125,
+                "externalValue": 202.625
+              }
+            ],
+            "total": 3,
+            "returned": 3,
+            "complete": true
+          }
+        },
+        {
+          "id": "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575",
+          "name": "Regular",
+          "ascender": 814.375,
+          "capHeight": 707.125,
+          "xHeight": 515.875,
+          "descender": -214.625,
+          "italicAngle": 9.625,
+          "axes": {
+            "items": [
+              {
+                "axisId": "a01",
+                "tag": "CSTM",
+                "name": "Custom",
+                "index": 0,
+                "internalValue": 200.125,
+                "externalValue": 400.625
+              },
+              {
+                "axisId": "a02",
+                "tag": "wght",
+                "name": "Weight",
+                "index": 1,
+                "internalValue": 201.125,
+                "externalValue": 401.625
+              },
+              {
+                "axisId": "a03",
+                "tag": "wdth",
+                "name": "Width",
+                "index": 2,
+                "internalValue": 202.125,
+                "externalValue": 402.625
+              }
+            ],
+            "total": 3,
+            "returned": 3,
+            "complete": true
+          }
+        }
+      ],
+      "passed": false
+    }
+  ],
+  "error": "Traceback (most recent call last):\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-m7-master-properties-20260914/qualify_source.py\", line 50, in <module>\n    if expected is not None:check(label+' persisted exact expected values',expected,rows)\n                            ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-m7-master-properties-20260914/qualify_source.py\", line 14, in check\n    assert wanted==got,name\n           ^^^^^^^^^^^\nAssertionError: MasterPropertiesTest persisted exact expected values\n"
+}

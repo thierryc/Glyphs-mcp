@@ -1,0 +1,21 @@
+{
+  "ok": true,
+  "data": [
+    {
+      "id": "doc_3dbc170b6c784e0ea56966af51b43a5f",
+      "path": "/private/tmp/glyphs-h4-20260914/live/100-rep2.glyphs",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": true,
+      "familyName": "H4 Glyph Inventory 100"
+    },
+    {
+      "id": "doc_5f8095f6c9b1442f8dc8d9fb5846fa84",
+      "path": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/preserved-user-work-20260914/MCP Selection Inspection.glyphs",
+      "dirty": false,
+      "generation": 0,
+      "isCurrent": false,
+      "familyName": "MCP Selection Inspection"
+    }
+  ]
+}

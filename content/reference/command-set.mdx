@@ -31,8 +31,8 @@ intent when the prior target may no longer be intended.
 | --- | --- | --- |
 | Glyph | `{"kind":"glyph","id":"H"}` | `name`, `unicode`, `category`, `subCategory`, `export` |
 | Layer | `{"kind":"layer","glyph":"H","id":"<layer ID>"}` | `id`, `name`, `width`, `vertWidth`, `vertOrigin`, `leftMetricsKey`, `rightMetricsKey`, `widthMetricsKey`, `bounds`, `outlineHash` |
-| Master | `{"kind":"master","id":"<master ID>"}` | `id`, `name` |
-| Master page | `{"kind":"masters","limit":100}`; sole selector | `id`, `name`; see pagination below |
+| Master | `{"kind":"master","id":"<master ID>"}` | `id`, `name`; with `master.properties.v1`: `ascender`, `capHeight`, `xHeight`, `descender`, `italicAngle`, `axes` |
+| Master page | `{"kind":"masters","limit":100}`; sole selector | Same requested master fields; see pagination and axis limits below |
 | Glyph inventory | `{"kind":"glyphs"}`; optional `limit`, opaque `cursor` | `name` |
 | Layer inventory | `{"kind":"layers","glyph":"a"}`; optional `limit`, opaque `cursor` | `id`, `name`, `associatedMasterId`, `isMasterLayer`, `isSpecialLayer`, `isBraceLayer`, `isBracketLayer` |
 | Context | `{"kind":"context"}`; optional `glyphLimit` with `selectedGlyphs` | `view`, `master`, `selectedGlyphs` |
@@ -66,6 +66,17 @@ avoid editing between pages and re-enumerate after observed edits.
 nonempty native ID, never a name alias. IDs need not be UUIDs, and names can repeat.
 Require these capabilities on the current private build; if absent, update the
 bridge, sidecar and skills together. Protocol 1 alone does not establish support.
+
+`master.properties.v1` adds requested fractional native master defaults and
+optional `axes` to exact and paged reads. These are not per-layer or export
+metrics; reading the italic angle does not slant outlines. Axes return native
+order, exact `axisId`, `tag`, `name`, `index`, `internalValue` and `externalValue`,
+inside `items` with `total`, `returned` and `complete`. Native null positions have
+explicit `unavailable` locations and `complete:false`; missing/unreadable native
+getters return `unsupported_read`. No mapping is calculated. At most 32 axes per
+master and 256 master-axis items per request; narrow the master subset/page or
+omit `axes` if `invalid_request` reports this bound. Unrequested fields remain
+absent. See `glyphs/references/master-reads.md` for precision and targeting rules.
 
 For glyph-name discovery, require negotiated `glyphs.list.v1`. One glyph-page
 selector returns native-order `items`, `total`, `returned`, `complete` and an

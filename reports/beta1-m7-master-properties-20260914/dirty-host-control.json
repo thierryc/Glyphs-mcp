@@ -1,0 +1,134 @@
+[
+  {
+    "trial": 0,
+    "publicMCPCalls": 0,
+    "samples": [
+      {
+        "ms": 0.002874992787837982,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      },
+      {
+        "ms": 406.2659160117619,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      },
+      {
+        "ms": 626.271374989301,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      },
+      {
+        "ms": 847.0464579877444,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      },
+      {
+        "ms": 1062.7637910074554,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      },
+      {
+        "ms": 1283.6010830360465,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      },
+      {
+        "ms": 1505.1063330029137,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      },
+      {
+        "ms": 1739.1878750058822,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      },
+      {
+        "ms": 1975.97654099809,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      },
+      {
+        "ms": 2218.2719580014236,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      },
+      {
+        "ms": 2457.8577909851447,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      },
+      {
+        "ms": 2695.341082988307,
+        "dirty": true,
+        "data": "b0457c184fd34ffb56608342c1e886758599ac3e6267976da9d531515b436cb7"
+      }
+    ]
+  },
+  {
+    "trial": 1,
+    "publicMCPCalls": 0,
+    "samples": [
+      {
+        "ms": 0.002208980731666088,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      },
+      {
+        "ms": 313.61320900032297,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      },
+      {
+        "ms": 536.1073340172879,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      },
+      {
+        "ms": 772.9552090167999,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      },
+      {
+        "ms": 1013.4630840038881,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      },
+      {
+        "ms": 1254.6468750224449,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      },
+      {
+        "ms": 1494.8166250251234,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      },
+      {
+        "ms": 1731.3492090324871,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      },
+      {
+        "ms": 1973.112499981653,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      },
+      {
+        "ms": 2210.834250028711,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      },
+      {
+        "ms": 2447.320999985095,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      },
+      {
+        "ms": 2690.6112500000745,
+        "dirty": true,
+        "data": "4a5434575939b96f6da718b7cf1a2462356d4e4ce8be710dfbba3d88138b9eee"
+      }
+    ]
+  }
+]

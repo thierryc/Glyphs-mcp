@@ -1,0 +1,5 @@
+Using Glyphs 4.1 (4107)
+Using Python 3.14
+BEFORE None None {}
+AFTER None None {}
+M7 UNSAVED COPY None 3

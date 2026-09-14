@@ -1,0 +1,5 @@
+{
+  "passed": false,
+  "checks": [],
+  "error": "Traceback (most recent call last):\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-m7-master-properties-20260914/qualify_source.py\", line 46, in <module>\n    p,expected=generate(label,masters,axes);sources.append((label,p,expected))\n               ~~~~~~~~^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-m7-master-properties-20260914/qualify_source.py\", line 28, in generate\n    l=next((l for l in g.layers if l.layerId==old),None)\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/reports/beta1-m7-master-properties-20260914/qualify_source.py\", line 28, in <genexpr>\n    l=next((l for l in g.layers if l.layerId==old),None)\n                       ^^^^^^^^\n  File \"/Applications/Glyphs 4.app/Contents/Scripts/GlyphsApp/__init__.py\", line 4064, in __next__\n    ExtraLayer = self._owner.objectInLayersAtIndex_(idx)\nIndexError: NSRangeException - *** -[__NSArrayM objectAtIndexedSubscript:]: index 4 beyond bounds [0 .. 3]\n"
+}

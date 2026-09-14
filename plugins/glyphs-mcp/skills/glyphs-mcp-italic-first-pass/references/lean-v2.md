@@ -6,6 +6,10 @@ that target explicitly. Check that preparation uses its current saved source.
 Dirty reads need no Save, but this external editing job requires a clean source.
 Use task-authorized disposable copies for exploration. The job edits existing
 ordinary master layers; it does not create masters or set italic export metadata.
+For the master's stored native `italicAngle`, use a requested
+[master property read](../../glyphs/references/master-reads.md) with
+`master.properties.v1`. A slant angle and stored master angle are different values;
+neither operation silently changes the other.
 
 ## Mechanical request and review
 

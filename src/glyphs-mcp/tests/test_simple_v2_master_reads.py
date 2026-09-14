@@ -126,7 +126,7 @@ def test_empty_and_unsaved_dirty_fonts_read_without_source():
 def test_page_fields_and_parameters_are_explicit():
     core, doc, _ = setup()
     with pytest.raises(BridgeError) as error:
-        core.read_entities(doc, [{"kind": "masters"}], ["axes"])
+        core.read_entities(doc, [{"kind": "masters"}], ["unsupportedMetric"])
     assert error.value.code == "unsupported_read"
     with pytest.raises(BridgeError) as error:
         page(core, doc, id="unexpected")

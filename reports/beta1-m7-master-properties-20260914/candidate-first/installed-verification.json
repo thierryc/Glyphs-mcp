@@ -1,0 +1,204 @@
+{
+  "checks": [
+    {
+      "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime",
+      "expected": "sha256:b2b9735d203a68af3e8b826c5a52064091cc9008f0f8535c388ebce0d237997a",
+      "observed": "sha256:b2b9735d203a68af3e8b826c5a52064091cc9008f0f8535c388ebce0d237997a",
+      "passed": true
+    },
+    {
+      "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/sidecar",
+      "expected": "sha256:0d1590b10c67cd7eebbc4d3ea93f5f91eec51d9e80285f2d8b65d0c4398450a3",
+      "observed": "sha256:0d1590b10c67cd7eebbc4d3ea93f5f91eec51d9e80285f2d8b65d0c4398450a3",
+      "passed": true
+    },
+    {
+      "path": "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin",
+      "expected": "sha256:1fbe80fd5c922aa8a8a7f33b4ebd1401903d3c3dbd211ae105919739157813fe",
+      "observed": "sha256:1fbe80fd5c922aa8a8a7f33b4ebd1401903d3c3dbd211ae105919739157813fe",
+      "passed": true
+    },
+    {
+      "path": "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter",
+      "expected": "sha256:49263f6ab0d19d391251adca825cf2cba73c65531fb45f16a74cab3467bd85dc",
+      "observed": "sha256:49263f6ab0d19d391251adca825cf2cba73c65531fb45f16a74cab3467bd85dc",
+      "passed": true
+    },
+    {
+      "path": "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs Reference Inspector.glyphsReporter",
+      "expected": "sha256:60ac5370c91f0fe1dd50a119ffbe220081b08fe007ffee425c39732f081e6d10",
+      "observed": "sha256:60ac5370c91f0fe1dd50a119ffbe220081b08fe007ffee425c39732f081e6d10",
+      "passed": true
+    },
+    {
+      "skill": "glyphs",
+      "files": 17,
+      "passed": true
+    },
+    {
+      "skill": "glyphs-mcp-spacing",
+      "files": 3,
+      "passed": true
+    },
+    {
+      "skill": "glyphs-mcp-kerning",
+      "files": 3,
+      "passed": true
+    },
+    {
+      "skill": "glyphs-mcp-italic-first-pass",
+      "files": 3,
+      "passed": true
+    },
+    {
+      "skill": "glyphs-mcp-master-compatibility",
+      "files": 3,
+      "passed": true
+    },
+    {
+      "skill": "glyphs-mcp-outlines-docs",
+      "files": 3,
+      "passed": true
+    },
+    {
+      "skill": "glyphs-mcp-development",
+      "files": 1189,
+      "passed": true
+    },
+    {
+      "skill": "glyphs-mcp-scripting",
+      "files": 2,
+      "passed": true
+    },
+    {
+      "skill": "glyphs-mcp-opentype-features",
+      "files": 3,
+      "passed": true
+    },
+    {
+      "skill": "glyphs-mcp-release",
+      "files": 3,
+      "passed": true
+    },
+    {
+      "skill": "glyphs-mcp-maintainer-feedback",
+      "files": 2,
+      "passed": true
+    }
+  ],
+  "receipt": {
+    "schemaVersion": 2,
+    "version": "2.0.0",
+    "installerBuild": 43,
+    "bridgeVersion": "2.0.0",
+    "build": "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/build/milestone7/desktop/build/m7-master-properties-candidate-20260914/Lean",
+    "components": [
+      "curve-inspector",
+      "mcp",
+      "reference-inspector"
+    ],
+    "application": "/Applications/Glyphs 4.app",
+    "installed": [
+      {
+        "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime",
+        "identity": "sha256:b2b9735d203a68af3e8b826c5a52064091cc9008f0f8535c388ebce0d237997a"
+      },
+      {
+        "path": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/sidecar",
+        "identity": "sha256:0d1590b10c67cd7eebbc4d3ea93f5f91eec51d9e80285f2d8b65d0c4398450a3"
+      },
+      {
+        "path": "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs MCP Bridge.glyphsPlugin",
+        "identity": "sha256:1fbe80fd5c922aa8a8a7f33b4ebd1401903d3c3dbd211ae105919739157813fe"
+      },
+      {
+        "path": "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs Curve Inspector.glyphsReporter",
+        "identity": "sha256:49263f6ab0d19d391251adca825cf2cba73c65531fb45f16a74cab3467bd85dc"
+      },
+      {
+        "path": "/Users/thierryc/Library/Application Support/Glyphs 4/Plugins/Glyphs Reference Inspector.glyphsReporter",
+        "identity": "sha256:60ac5370c91f0fe1dd50a119ffbe220081b08fe007ffee425c39732f081e6d10"
+      }
+    ],
+    "launchAgent": "/Users/thierryc/Library/LaunchAgents/com.ap.cx.glyphs-mcp-sidecar.plist",
+    "python": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/python3",
+    "glyphsCLI": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime/bin/glyphs",
+    "restartGlyphsRequired": true,
+    "port": 9680,
+    "autoStart": true,
+    "componentDetails": {
+      "curve-inspector": {
+        "requires": [],
+        "version": "2.0.0",
+        "identity": "sha256:49263f6ab0d19d391251adca825cf2cba73c65531fb45f16a74cab3467bd85dc"
+      },
+      "reference-inspector": {
+        "requires": [
+          "runtime"
+        ],
+        "version": "2.0.0",
+        "identity": "sha256:60ac5370c91f0fe1dd50a119ffbe220081b08fe007ffee425c39732f081e6d10"
+      },
+      "mcp": {
+        "requires": [
+          "runtime",
+          "sidecar",
+          "bridge"
+        ],
+        "version": "2.0.0",
+        "identity": "sha256:1fbe80fd5c922aa8a8a7f33b4ebd1401903d3c3dbd211ae105919739157813fe"
+      }
+    },
+    "runtime": {
+      "dependencyLockSHA256": "8de3bb2a2ce1294aef86f755277e15e5150033e65f8613833f5fce9c7f2c35f1",
+      "glyphsCLI": "bin/glyphs",
+      "glyphsCLIVersion": "0.6.1",
+      "identity": "sha256:b2b9735d203a68af3e8b826c5a52064091cc9008f0f8535c388ebce0d237997a",
+      "path": "runtimes/arm64",
+      "python": "bin/python3",
+      "pythonVersion": "3.14.7",
+      "architecture": "arm64",
+      "installedPath": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/runtime"
+    },
+    "bridge": {
+      "bundle": "Glyphs MCP Bridge.glyphsPlugin",
+      "codeHash": "sha256:1fbe80fd5c922aa8a8a7f33b4ebd1401903d3c3dbd211ae105919739157813fe",
+      "identity": "sha256:1fbe80fd5c922aa8a8a7f33b4ebd1401903d3c3dbd211ae105919739157813fe",
+      "release": {
+        "betaNumber": 1,
+        "channel": "beta",
+        "installerBuild": 43,
+        "releaseVersion": "2.0.0-beta.1",
+        "version": "2.0.0"
+      },
+      "version": "2.0.0"
+    },
+    "sidecar": {
+      "codeHash": "sha256:0d1590b10c67cd7eebbc4d3ea93f5f91eec51d9e80285f2d8b65d0c4398450a3",
+      "identity": "sha256:0d1590b10c67cd7eebbc4d3ea93f5f91eec51d9e80285f2d8b65d0c4398450a3",
+      "release": {
+        "betaNumber": 1,
+        "channel": "beta",
+        "installerBuild": 43,
+        "releaseVersion": "2.0.0-beta.1",
+        "version": "2.0.0"
+      },
+      "requires": [
+        "runtime"
+      ]
+    },
+    "companions": [
+      {
+        "bundle": "Glyphs Curve Inspector.glyphsReporter",
+        "id": "curve-inspector",
+        "identity": "sha256:49263f6ab0d19d391251adca825cf2cba73c65531fb45f16a74cab3467bd85dc"
+      },
+      {
+        "bundle": "Glyphs Reference Inspector.glyphsReporter",
+        "id": "reference-inspector",
+        "identity": "sha256:60ac5370c91f0fe1dd50a119ffbe220081b08fe007ffee425c39732f081e6d10"
+      }
+    ],
+    "backup": "/Users/thierryc/Library/Application Support/Glyphs MCP/lean-v2/transaction-ozsoxnss/backup"
+  }
+}

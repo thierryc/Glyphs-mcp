@@ -1,0 +1,470 @@
+{
+  "tokenMethod": "tiktoken 0.12.0 / o200k_base; compact sorted JSON, literal Unicode; {name,arguments} plus one parsed response body. Estimated tokens, not billed usage.",
+  "timings": {
+    "small": {
+      "discoveryMs": {
+        "n": 5,
+        "median": 31.65466705104336,
+        "minimum": 23.43437500530854,
+        "maximum": 64.45687502855435,
+        "p95": 64.45687502855435
+      },
+      "readMs": {
+        "n": 5,
+        "median": 38.55716600082815,
+        "minimum": 29.745540989097208,
+        "maximum": 53.83024999173358,
+        "p95": 53.83024999173358
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 81.55666704988107,
+        "minimum": 53.17991599440575,
+        "maximum": 96.20508301304653,
+        "p95": 96.20508301304653
+      },
+      "pageHTTP": {
+        "n": 5,
+        "median": 38.55716600082815,
+        "minimum": 29.745540989097208,
+        "maximum": 53.83024999173358,
+        "p95": 53.83024999173358
+      },
+      "nativeCallbacks": {
+        "nativeMs": {
+          "n": 5,
+          "median": 11.551958043128252,
+          "minimum": 5.256166041363031,
+          "maximum": 31.36966598685831,
+          "p95": 31.36966598685831
+        },
+        "queueMs": {
+          "n": 5,
+          "median": 2.760667004622519,
+          "minimum": 2.6628340128809214,
+          "maximum": 3.167124988976866,
+          "p95": 3.167124988976866
+        }
+      },
+      "firstAndWarmup": [
+        {
+          "label": "small",
+          "phase": "first",
+          "discoveryMs": 71.72766700387001,
+          "initialTotalMs": 146.87233400763944,
+          "openDocuments": 4,
+          "load": [
+            44.15869140625,
+            32.75244140625,
+            26.92822265625
+          ],
+          "readMs": 75.14466700376943,
+          "callIndices": [
+            2
+          ],
+          "requests": 1,
+          "masters": 3,
+          "axisItems": 9
+        },
+        {
+          "label": "small",
+          "phase": "warmup",
+          "discoveryMs": 31.102208013180643,
+          "initialTotalMs": 92.28974999859929,
+          "openDocuments": 4,
+          "load": [
+            44.15869140625,
+            32.75244140625,
+            26.92822265625
+          ],
+          "readMs": 61.18754198541865,
+          "callIndices": [
+            5
+          ],
+          "requests": 1,
+          "masters": 3,
+          "axisItems": 9
+        }
+      ],
+      "discoveryFullCompact": {
+        "httpMs": {
+          "n": 5,
+          "median": 125.10970910079777,
+          "minimum": 96.77987499162555,
+          "maximum": 146.5131239965558,
+          "p95": 146.5131239965558
+        },
+        "tokens": {
+          "n": 5,
+          "median": 1133,
+          "minimum": 1115,
+          "maximum": 1136,
+          "p95": 1136
+        },
+        "calls": {
+          "n": 5,
+          "median": 3,
+          "minimum": 3,
+          "maximum": 3,
+          "p95": 3
+        }
+      }
+    },
+    "bound": {
+      "discoveryMs": {
+        "n": 5,
+        "median": 38.07900001993403,
+        "minimum": 28.966042038518935,
+        "maximum": 49.57441700389609,
+        "p95": 49.57441700389609
+      },
+      "readMs": {
+        "n": 5,
+        "median": 67.16712500201538,
+        "minimum": 58.37304098531604,
+        "maximum": 79.44645697716624,
+        "p95": 79.44645697716624
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 109.68262399546802,
+        "minimum": 87.33908302383497,
+        "maximum": 117.52545699710026,
+        "p95": 117.52545699710026
+      },
+      "pageHTTP": {
+        "n": 10,
+        "median": 30.841228464851156,
+        "minimum": 23.233790998347104,
+        "maximum": 49.883291008882225,
+        "p95": 49.883291008882225
+      },
+      "nativeCallbacks": {
+        "nativeMs": {
+          "n": 10,
+          "median": 7.1682294947095215,
+          "minimum": 1.9949999987147748,
+          "maximum": 19.720459007658064,
+          "p95": 19.720459007658064
+        },
+        "queueMs": {
+          "n": 10,
+          "median": 2.507249533664435,
+          "minimum": 2.3813750012777746,
+          "maximum": 2.58470798144117,
+          "p95": 2.58470798144117
+        }
+      },
+      "firstAndWarmup": [
+        {
+          "label": "bound",
+          "phase": "first",
+          "discoveryMs": 35.022041003685445,
+          "initialTotalMs": 129.23312495695427,
+          "openDocuments": 4,
+          "load": [
+            46.98046875,
+            34.064453125,
+            27.529296875
+          ],
+          "readMs": 94.21108395326883,
+          "callIndices": [
+            23,
+            24
+          ],
+          "requests": 2,
+          "masters": 9,
+          "axisItems": 288
+        },
+        {
+          "label": "bound",
+          "phase": "warmup",
+          "discoveryMs": 51.851333992090076,
+          "initialTotalMs": 114.91312499856576,
+          "openDocuments": 4,
+          "load": [
+            46.42138671875,
+            34.16259765625,
+            27.60205078125
+          ],
+          "readMs": 63.06179100647569,
+          "callIndices": [
+            27,
+            28
+          ],
+          "requests": 2,
+          "masters": 9,
+          "axisItems": 288
+        }
+      ],
+      "discoveryFullCompact": {
+        "httpMs": {
+          "n": 5,
+          "median": 146.50603994959965,
+          "minimum": 114.86370803322643,
+          "maximum": 149.891582026612,
+          "p95": 149.891582026612
+        },
+        "tokens": {
+          "n": 5,
+          "median": 11627,
+          "minimum": 11606,
+          "maximum": 11641,
+          "p95": 11641
+        },
+        "calls": {
+          "n": 5,
+          "median": 4,
+          "minimum": 4,
+          "maximum": 4,
+          "p95": 4
+        }
+      }
+    },
+    "RobotoSlab": {
+      "discoveryMs": {
+        "n": 5,
+        "median": 46.21075000613928,
+        "minimum": 32.71629201481119,
+        "maximum": 61.106542008928955,
+        "p95": 61.106542008928955
+      },
+      "readMs": {
+        "n": 5,
+        "median": 48.698707949370146,
+        "minimum": 25.90133302146569,
+        "maximum": 122.67412495566532,
+        "p95": 122.67412495566532
+      },
+      "initialTotalMs": {
+        "n": 5,
+        "median": 81.41499996418133,
+        "minimum": 73.36954196216539,
+        "maximum": 183.78066696459427,
+        "p95": 183.78066696459427
+      },
+      "pageHTTP": {
+        "n": 5,
+        "median": 48.698707949370146,
+        "minimum": 25.90133302146569,
+        "maximum": 122.67412495566532,
+        "p95": 122.67412495566532
+      },
+      "nativeCallbacks": {
+        "nativeMs": {
+          "n": 5,
+          "median": 7.641333970241249,
+          "minimum": 1.2615000014193356,
+          "maximum": 10.722333041485399,
+          "p95": 10.722333041485399
+        },
+        "queueMs": {
+          "n": 5,
+          "median": 2.5950410054065287,
+          "minimum": 2.475791028700769,
+          "maximum": 89.86529096728191,
+          "p95": 89.86529096728191
+        }
+      },
+      "firstAndWarmup": [
+        {
+          "label": "RobotoSlab",
+          "phase": "first",
+          "discoveryMs": 29.805250000208616,
+          "initialTotalMs": 462.81683299457654,
+          "openDocuments": 4,
+          "load": [
+            47.62548828125,
+            35.419921875,
+            28.24365234375
+          ],
+          "readMs": 433.0115829943679,
+          "callIndices": [
+            51
+          ],
+          "requests": 1,
+          "masters": 3,
+          "axisItems": 3
+        },
+        {
+          "label": "RobotoSlab",
+          "phase": "warmup",
+          "discoveryMs": 35.92329198727384,
+          "initialTotalMs": 75.68162499228492,
+          "openDocuments": 4,
+          "load": [
+            46.2314453125,
+            35.708984375,
+            28.47216796875
+          ],
+          "readMs": 39.75833300501108,
+          "callIndices": [
+            54
+          ],
+          "requests": 1,
+          "masters": 3,
+          "axisItems": 3
+        }
+      ],
+      "discoveryFullCompact": {
+        "httpMs": {
+          "n": 5,
+          "median": 115.13666698010638,
+          "minimum": 105.80912500154227,
+          "maximum": 217.80962601769716,
+          "p95": 217.80962601769716
+        },
+        "tokens": {
+          "n": 5,
+          "median": 930,
+          "minimum": 924,
+          "maximum": 948,
+          "p95": 948
+        },
+        "calls": {
+          "n": 5,
+          "median": 3,
+          "minimum": 3,
+          "maximum": 3,
+          "p95": 3
+        }
+      }
+    }
+  },
+  "tokens": {
+    "small": {
+      "n": 5,
+      "median": 660,
+      "minimum": 654,
+      "maximum": 661,
+      "p95": 661
+    },
+    "bound": {
+      "n": 5,
+      "median": 11154,
+      "minimum": 11139,
+      "maximum": 11164,
+      "p95": 11164
+    },
+    "RobotoSlab": {
+      "n": 5,
+      "median": 466,
+      "minimum": 464,
+      "maximum": 472,
+      "p95": 472
+    }
+  },
+  "compact": {
+    "httpMs": {
+      "n": 21,
+      "median": 29.752124974038452,
+      "minimum": 22.400374989956617,
+      "maximum": 57.595000020228326,
+      "p95": 50.30804098350927
+    },
+    "tokens": {
+      "n": 21,
+      "median": 155,
+      "minimum": 148,
+      "maximum": 158,
+      "p95": 158
+    }
+  },
+  "allCallbacks": {
+    "nativeMs": {
+      "n": 114,
+      "median": 11.820979008916765,
+      "minimum": 0.27899997076019645,
+      "maximum": 42.141207959502935,
+      "p95": 28.84862502105534
+    },
+    "queueMs": {
+      "n": 114,
+      "median": 2.615458477521315,
+      "minimum": 2.316500002052635,
+      "maximum": 603.9250420290045,
+      "p95": 226.55033302726224
+    }
+  },
+  "readCallbacks": {
+    "nativeMs": {
+      "n": 88,
+      "median": 9.390103979967535,
+      "minimum": 1.0431670234538615,
+      "maximum": 31.693416996859014,
+      "p95": 26.857124990783632
+    },
+    "queueMs": {
+      "n": 88,
+      "median": 2.5617704959586263,
+      "minimum": 2.316500002052635,
+      "maximum": 416.79524997016415,
+      "p95": 73.15254199784249
+    }
+  },
+  "twoSecondProbe": {
+    "nativeMs": {
+      "n": 16,
+      "median": 9.536854486213997,
+      "minimum": 2.5945419911295176,
+      "maximum": 28.051791014149785,
+      "p95": 28.051791014149785
+    },
+    "queueMs": {
+      "n": 16,
+      "median": 2.8179999790154397,
+      "minimum": 2.4409170146100223,
+      "maximum": 3.6222910275682807,
+      "p95": 3.6222910275682807
+    }
+  },
+  "discoveryTokens": {
+    "n": 25,
+    "median": 315,
+    "minimum": 298,
+    "maximum": 320,
+    "p95": 319
+  },
+  "callCounts": {
+    "get_status": 1,
+    "list_documents": 25,
+    "read_entities": 88
+  },
+  "checks": {
+    "total": 431,
+    "passed": 431
+  },
+  "passed": true,
+  "error": null,
+  "cleanupError": null,
+  "startedAt": "2026-09-14T21:11:26.713566+00:00",
+  "finishedAt": "2026-09-14T21:14:00.745638+00:00",
+  "loadBefore": [
+    45.41064453125,
+    32.59326171875,
+    26.8037109375
+  ],
+  "loadAfter": [
+    33.49169921875,
+    34.29052734375,
+    28.59130859375
+  ],
+  "openDocumentCounts": [
+    4
+  ],
+  "setupTimes": {
+    "n": 21,
+    "median": 2005.0246249884367,
+    "minimum": 2001.1765419621952,
+    "maximum": 2007.4860000167973,
+    "p95": 2007.1568329585716
+  },
+  "skillTokens": {
+    "SKILL.md": 988,
+    "references/master-reads.md": 1223
+  },
+  "readToolDescriptionTokens": {
+    "before": 1149,
+    "after": 1277
+  }
+}

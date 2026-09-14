@@ -6,11 +6,10 @@ from typing import Any, Mapping
 from uuid import uuid4
 
 from glyphs_mcp_protocol import outline_hash
-from glyphs_mcp_protocol.reads import MASTER_PAGE_LIMIT
 
 from .core import BridgeError
 from .native_undo import NativeUndoScope, write_value
-from . import context, coordinates, glyph_inventory, layer_inventory, kerning, kerning_inventory, selection, start_node
+from . import context, coordinates, glyph_inventory, layer_inventory, kerning, kerning_inventory, master_properties, selection, start_node
 
 
 _MISSING = object()
@@ -57,7 +56,7 @@ class GlyphsAdapter:
     GLYPH_FIELDS = frozenset({"name", "unicode", "category", "subCategory", "export", *kerning_inventory.GROUP_FIELDS})
     LAYER_FIELDS = frozenset({"id", "name", "width", "vertWidth", "vertOrigin",
                               "leftMetricsKey", "rightMetricsKey", "widthMetricsKey", "bounds", "outlineHash"})
-    MASTER_FIELDS = frozenset({"id", "name"})
+    MASTER_FIELDS = frozenset({"id", "name", *master_properties.FIELDS})
     SELECTION_COUNTS = selection.COUNT_FIELDS
     SELECTION_FIELDS = frozenset({"glyph", "layer", "nodes", *SELECTION_COUNTS})
 
@@ -277,8 +276,11 @@ class GlyphsAdapter:
             if len(entities) != 1:
                 raise BridgeError("invalid_request", "a master page must be the only entity selector")
             request = entities[0]
-            return [{"entity": dict(request), "values": self._master_page(font, document_id, request, fields)}]
+            return [{"entity": dict(request), "values": master_properties.page(self, font, document_id, request, fields)}]
         result = []
+        axis_owners = sum(isinstance(r, Mapping) and r.get("kind") == "master" for r in entities)
+        if "axes" in fields and axis_owners:
+            master_properties.preflight(font, axis_owners)
         for request in entities:
             if not isinstance(request, Mapping):
                 raise BridgeError("invalid_request", "entity selectors must be objects")
@@ -305,51 +307,12 @@ class GlyphsAdapter:
                 )
             owner = self._entity(font, kind, request)
             values = (self._selection_values(owner, request, fields) if kind == "selection" else
-                      {field: self._read_field(owner, field, kind) for field in fields})
+                      {field: self._read_field(owner, field, kind) for field in dict.fromkeys(fields)})
             result.append({"entity": dict(request), "values": values})
         return result
     @classmethod
     def _selection_values(cls, layer, request, fields):
         return selection.read(layer, request, fields, cls._native_identity)
-
-    def _master_page(self, font: Any, document_id: str, request: Mapping[str, Any],
-                     fields: list[str]) -> dict[str, Any]:
-        if set(request) - {"kind", "limit", "cursor"}:
-            raise BridgeError("invalid_request", "master pages accept only kind, limit and cursor")
-        if not fields or set(fields) - self.MASTER_FIELDS:
-            raise BridgeError("unsupported_read", "master pages support only id and name fields")
-        limit = request.get("limit", MASTER_PAGE_LIMIT)
-        if type(limit) is not int or not 1 <= limit <= MASTER_PAGE_LIMIT:
-            raise BridgeError("invalid_request", "master page limit must be an integer from 1 to 100")
-        masters = _value(font, "masters", None)
-        if masters is None:
-            raise BridgeError("unsupported_read", "native master collection is unavailable")
-        total = len(masters)
-        cursor = request.get("cursor")
-        offset = 0
-        if cursor is not None:
-            if (not isinstance(cursor, Mapping) or set(cursor) != {"documentId", "offset", "total", "afterId"}
-                    or type(cursor.get("offset")) is not int or cursor["offset"] < 1
-                    or type(cursor.get("total")) is not int or cursor["total"] < 1
-                    or not isinstance(cursor.get("afterId"), str) or not cursor["afterId"]
-                    or not isinstance(cursor.get("documentId"), str)):
-                raise BridgeError("invalid_request", "use the nextCursor returned by the previous master page")
-            offset = cursor["offset"]
-            if (cursor["documentId"] != document_id or cursor["total"] != total or offset >= total
-                    or _value(masters[offset - 1], "id") != cursor["afterId"]):
-                raise BridgeError("stale_master_cursor", "master page boundary changed; restart discovery without a cursor")
-        # Native indexed access visits this page and at most one boundary master.
-        # A cursor detects count/boundary changes, not an atomic multi-call snapshot.
-        end = min(total, offset + limit)
-        items = []
-        for index in range(offset, end):
-            master = masters[index]
-            items.append({field: self._read_field(master, field, "master") for field in fields})
-        next_cursor = None if end == total else {
-            "documentId": document_id, "offset": end, "total": total,
-            "afterId": _value(masters[end - 1], "id"),
-        }
-        return {"items": items, "total": total, "complete": end == total, "nextCursor": next_cursor}
 
     def _entity(self, font: Any, kind: str, request: Mapping[str, Any]) -> Any:
         if kind == "glyph":
@@ -383,6 +346,8 @@ class GlyphsAdapter:
 
     @classmethod
     def _read_field(cls, owner: Any, field: str, kind: str) -> Any:
+        if kind == "master" and field in master_properties.FIELDS:
+            return master_properties.read(owner, field)
         if kind == "layer" and field == "id":
             return _value(owner, "layerId", None)
         if field == "outlineHash":

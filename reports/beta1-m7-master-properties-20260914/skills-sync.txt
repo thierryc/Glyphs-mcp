@@ -1,0 +1,1 @@
+Synchronized 11 Glyphs MCP skills into the shared agent plugin package.

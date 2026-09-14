@@ -1,0 +1,207 @@
+ M CHANGELOG.md
+ M CODEX.md
+ M README.md
+ D content/compensated-tuning-tools.md
+ M content/concepts/agent-skills.mdx
+ M content/concepts/how-glyphs-mcp-works.mdx
+ M content/concepts/safety-model.mdx
+ D content/contributor/ai-font-proofreading-plan.mdx
+ D content/contributor/beztrace-integration-gate.mdx
+ D content/contributor/curve-geometry-cleanroom.mdx
+ D content/contributor/icon-font-skill-community-posts.md
+ D content/contributor/italic-balanced-broad-latin-benchmark.md
+ D content/contributor/italic-balanced-expanded-sans-benchmark.md
+ D content/contributor/italic-balanced-inter-v4.1-report.md
+ D content/contributor/italic-deterministic-balanced-forum-draft.md
+ M content/contributor/local-docs-development.mdx
+ M content/contributor/release-qa-protocol.mdx
+ D content/contributor/unicode-assignment-tools.md
+ D content/getting-started/codex-chatgpt-plugin-ui.mdx
+ M content/getting-started/connect-client.mdx
+ M content/getting-started/start-server.mdx
+ M content/glyphs-mcp.md
+ M content/italic-first-pass.md
+ D content/kerning-tools.md
+ M content/kerning-workflow.md
+ M content/reference/glyphs3-compatibility.mdx
+ M content/reference/resources.mdx
+ M content/spacing-tools.md
+ M content/tutorial/first-session.mdx
+ D content/workflows/ai-font-proofreading.mdx
+ D content/workflows/export-designspace-ufo.mdx
+ D content/workflows/outlines-selected-nodes.mdx
+ D content/workflows/style-set-inspection.mdx
+ M content/workflows/visual-review.mdx
+ M macos-installer/GlyphsMCPInstaller/Core/ConfigPatchers.swift
+ M macos-installer/GlyphsMCPInstaller/Core/FileIO.swift
+ M macos-installer/GlyphsMCPInstaller/Core/GitHubPluginDownloader.swift
+ M macos-installer/GlyphsMCPInstaller/Core/GlyphsPreferences.swift
+ M macos-installer/GlyphsMCPInstaller/Core/Installers.swift
+ M macos-installer/GlyphsMCPInstaller/Core/PluginUpdate.swift
+ M macos-installer/GlyphsMCPInstaller/Core/Preflight.swift
+ M macos-installer/GlyphsMCPInstaller/Core/ProcessRunner.swift
+ M macos-installer/GlyphsMCPInstaller/Core/Uninstaller.swift
+ M macos-installer/GlyphsMCPInstaller/Core/UpdateHelperManager.swift
+ M macos-installer/GlyphsMCPInstaller/Core/UpdaterStaging.swift
+ M macos-installer/GlyphsMCPInstaller/GlyphsMCPInstaller.xcodeproj/project.pbxproj
+ M macos-installer/GlyphsMCPInstaller/Info.plist
+ M macos-installer/GlyphsMCPInstaller/Resources/AppIcon.icon/icon.json
+ M macos-installer/GlyphsMCPInstaller/Sources/ContentView.swift
+ M macos-installer/GlyphsMCPInstaller/Sources/GlyphsMCPInstallerApp.swift
+ M macos-installer/GlyphsMCPInstaller/Sources/InstallerViewModel.swift
+ M macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/GlyphsMCPInstallerTests.swift
+ M "plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Resources/runtime_probe.py"
+ M plugins/glyphs-mcp/README.md
+ D plugins/glyphs-mcp/skills/glyphs-mcp-features/SKILL.md
+ D plugins/glyphs-mcp/skills/glyphs-mcp-features/agents/openai.yaml
+ D plugins/glyphs-mcp/skills/glyphs-mcp-icon-font/SKILL.md
+ D plugins/glyphs-mcp/skills/glyphs-mcp-icon-font/agents/openai.yaml
+ D plugins/glyphs-mcp/skills/glyphs-mcp-litsquare-metadata/SKILL.md
+ D plugins/glyphs-mcp/skills/glyphs-mcp-litsquare-metadata/agents/openai.yaml
+ D plugins/glyphs-mcp/skills/glyphs-mcp-litsquare-metadata/references/metadata-contract.md
+ D plugins/glyphs-mcp/skills/glyphs-mcp-release/references/release-gates.md
+ D plugins/glyphs-mcp/skills/glyphs-mcp-spacing/references/negative-sidebearings.md
+ M reports/README.md
+ M scripts/build_installer_app.sh
+ M scripts/bump_version.py
+ M scripts/make_installer_dmg.sh
+ M scripts/notarize_installer_app.sh
+ M scripts/publish_release_assets.sh
+ M scripts/release_security.py
+ M scripts/run_local_release_tests.sh
+ M scripts/run_python_tests.sh
+ M scripts/sync_codex_plugin_skills.sh
+ M scripts/verify_release_artifacts.sh
+ D skills/glyphs-mcp-features/SKILL.md
+ D skills/glyphs-mcp-features/agents/openai.yaml
+ D skills/glyphs-mcp-icon-font/SKILL.md
+ D skills/glyphs-mcp-icon-font/agents/openai.yaml
+ D skills/glyphs-mcp-litsquare-metadata/SKILL.md
+ D skills/glyphs-mcp-litsquare-metadata/agents/openai.yaml
+ D skills/glyphs-mcp-litsquare-metadata/references/metadata-contract.md
+ D skills/glyphs-mcp-release/references/release-gates.md
+ D skills/glyphs-mcp-spacing/references/negative-sidebearings.md
+ M "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/runtime_probe.py"
+ M src/glyphs-mcp/scripts/install_cli.py
+ M src/glyphs-mcp/tests/test_bump_version.py
+ M src/glyphs-mcp/tests/test_codex_plugin.py
+ M src/glyphs-mcp/tests/test_docs_surface_sync.py
+ M src/glyphs-mcp/tests/test_llm_tool_routing.py
+ M src/glyphs-mcp/tests/test_outlines_skill.py
+ M src/glyphs-mcp/tests/test_release_security_workflow.py
+ M src/glyphs-mcp/tests/test_release_skill.py
+ M src/glyphs-mcp/tests/test_runtime_probe.py
+ M src/glyphs-mcp/tests/test_spacing_skill.py
+ M src/glyphs-mcp/tests/test_update_checker.py
+ M website/docusaurus.config.ts
+ M website/package.json
+ M website/sidebars.ts
+ M website/src/components/HomepageFeatures/index.tsx
+ M website/src/pages/index.module.css
+ M website/src/pages/index.tsx
+ M website/src/pages/latest.tsx
+?? BETA-LAUNCH.md
+?? BETA-VALIDATION.md
+?? BETA.md
+?? LEAN-V2-BENEFITS.md
+?? MILESTONE7-WORKLOG.md
+?? V2-SIMPLE-RESET.md
+?? content/getting-started/desktop.mdx
+?? content/workflows/projects.mdx
+?? content/workflows/start-node-correspondence.mdx
+?? macos-installer/GlyphsMCPInstaller/Core/DesktopActivity.swift
+?? macos-installer/GlyphsMCPInstaller/Core/DesktopInstallation.swift
+?? macos-installer/GlyphsMCPInstaller/Core/DesktopJobEvents.swift
+?? macos-installer/GlyphsMCPInstaller/Core/DesktopMenuImage.swift
+?? macos-installer/GlyphsMCPInstaller/Core/DesktopMonitorPolicy.swift
+?? macos-installer/GlyphsMCPInstaller/Core/DesktopProjectNavigation.swift
+?? macos-installer/GlyphsMCPInstaller/Core/ProjectTemplates.swift
+?? macos-installer/GlyphsMCPInstaller/Core/ReadOnlyGit.swift
+?? macos-installer/GlyphsMCPInstaller/Core/TemplateArchive.swift
+?? macos-installer/GlyphsMCPInstaller/Core/TemplateStore.swift
+?? macos-installer/GlyphsMCPInstaller/Resources/AppIcon.icon/Assets/green.svg
+?? macos-installer/GlyphsMCPInstaller/Resources/AppIcon.icon/Assets/sparkles.svg
+?? macos-installer/GlyphsMCPInstaller/Resources/Assets.xcassets/GitHubMark.imageset/
+?? macos-installer/GlyphsMCPInstaller/Resources/Assets.xcassets/GlyphsMCPMenu.imageset/
+?? macos-installer/GlyphsMCPInstaller/Resources/Notices/
+?? macos-installer/GlyphsMCPInstaller/Resources/Templates/
+?? macos-installer/GlyphsMCPInstaller/Sources/DesktopAppDelegate.swift
+?? macos-installer/GlyphsMCPInstaller/Sources/DesktopModel.swift
+?? macos-installer/GlyphsMCPInstaller/Sources/DesktopProjectCatalog.swift
+?? macos-installer/GlyphsMCPInstaller/Sources/DesktopProjectSettings.swift
+?? macos-installer/GlyphsMCPInstaller/Sources/DesktopProjectWizard.swift
+?? macos-installer/GlyphsMCPInstaller/Sources/DesktopProjects.swift
+?? macos-installer/GlyphsMCPInstaller/Sources/DesktopUpdates.swift
+?? macos-installer/GlyphsMCPInstaller/Sources/InstallationView.swift
+?? macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/DesktopActivityTests.swift
+?? macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/DesktopProjectNavigationTests.swift
+?? macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/DesktopProjectTests.swift
+?? macos-installer/GlyphsMCPInstaller/Tests/GlyphsMCPInstallerTests/DesktopTests.swift
+?? "plugin-manager/Glyphs MCP.glyphsPlugin/Contents/Resources/runtime_path_policy.py"
+?? reports/beta1-m7-master-properties-20260914/
+?? reports/beta1-medium-gap-fixes-plan-20260914/
+?? reports/discovery-identity/
+?? scripts/archive_skill_backups.py
+?? scripts/build_desktop_release.sh
+?? scripts/build_local_app.py
+?? scripts/clean_desktop_builds.py
+?? scripts/desktop_update_trial.py
+?? scripts/download_private_runtime.py
+?? scripts/export_desktop_icon.py
+?? scripts/prepare_desktop_acceptance.py
+?? scripts/prepare_desktop_dependencies.py
+?? scripts/prepare_desktop_update.py
+?? scripts/prepare_simple_v2_kerning_live.py
+?? scripts/prepare_simple_v2_slant_live.py
+?? scripts/prepare_simple_v2_start_nodes_fixture.py
+?? scripts/qualify_desktop_controls.py
+?? scripts/qualify_desktop_icon.swift
+?? scripts/qualify_discovery_identity.py
+?? scripts/qualify_layer_reads_native.py
+?? scripts/qualify_master_reads_live.py
+?? scripts/qualify_master_reads_native.py
+?? scripts/qualify_milestone6_live.py
+?? scripts/qualify_milestone6_native.py
+?? scripts/qualify_milestone7_live.py
+?? scripts/qualify_milestone7_native.py
+?? scripts/qualify_native_rounding_control.py
+?? scripts/qualify_native_save_comparison.py
+?? scripts/qualify_private_runtime.py
+?? scripts/qualify_selection_reads_native.py
+?? scripts/qualify_simple_v2_companions_native.py
+?? scripts/qualify_simple_v2_exact_history_native.py
+?? scripts/qualify_simple_v2_kerning_live.py
+?? scripts/qualify_simple_v2_kerning_native.py
+?? scripts/qualify_simple_v2_live.py
+?? scripts/qualify_simple_v2_slant_live.py
+?? scripts/qualify_simple_v2_slant_native.py
+?? scripts/qualify_simple_v2_spacing_live.py
+?? scripts/qualify_simple_v2_spacing_native.py
+?? scripts/qualify_simple_v2_start_nodes_live.py
+?? scripts/qualify_simple_v2_start_nodes_native.py
+?? scripts/qualify_simple_v2_translation_native.py
+?? scripts/qualify_simple_v2_welcome_native.py
+?? scripts/r04_foreground_setup.py
+?? scripts/release_discovery.py
+?? scripts/release_payload.py
+?? scripts/sign_desktop_frameworks.py
+?? scripts/sync_desktop_project.py
+?? scripts/verify_desktop_app.py
+?? "src/glyphs-mcp/Glyphs MCP.glyphsPlugin/Contents/Resources/runtime_path_policy.py"
+?? src/glyphs-mcp/tests/test_beta_release.py
+?? src/glyphs-mcp/tests/test_desktop_activity.py
+?? src/glyphs-mcp/tests/test_desktop_build.py
+?? src/glyphs-mcp/tests/test_desktop_installation.py
+?? src/glyphs-mcp/tests/test_desktop_management.py
+?? src/glyphs-mcp/tests/test_docs_versioning.py
+?? src/glyphs-mcp/tests/test_release_discovery.py
+?? src/glyphs-mcp/tests/test_release_payload.py
+?? src/glyphs-mcp/tests/test_skill_backup_migration.py
+?? templates/
+?? third_party/desktop-icon.json
+?? third_party/glyphs-file-format-v4/
+?? third_party/sparkle.json
+?? website/v1-source.json
+?? website/versioned_docs/
+?? website/versioned_sidebars/
+?? website/versions.json

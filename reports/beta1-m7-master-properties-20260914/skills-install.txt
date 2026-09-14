@@ -1,0 +1,14 @@
+Skill backup: /Users/thierryc/.codex/skills/glyphs → /Users/thierryc/.codex/glyphs-mcp-skill-backups/eec5a240-7b29-4c70-86a0-7e21b962be52/glyphs
+Skill backup: /Users/thierryc/.codex/skills/glyphs-mcp-italic-first-pass → /Users/thierryc/.codex/glyphs-mcp-skill-backups/bc2119b5-7583-4a30-9aaf-9fa1c0cd5498/glyphs-mcp-italic-first-pass
+Glyphs MCP skills for Codex:
+installed: /Users/thierryc/.codex/skills/glyphs
+current: /Users/thierryc/.codex/skills/glyphs-mcp-development
+installed: /Users/thierryc/.codex/skills/glyphs-mcp-italic-first-pass
+current: /Users/thierryc/.codex/skills/glyphs-mcp-kerning
+current: /Users/thierryc/.codex/skills/glyphs-mcp-maintainer-feedback
+current: /Users/thierryc/.codex/skills/glyphs-mcp-master-compatibility
+current: /Users/thierryc/.codex/skills/glyphs-mcp-opentype-features
+current: /Users/thierryc/.codex/skills/glyphs-mcp-outlines-docs
+current: /Users/thierryc/.codex/skills/glyphs-mcp-release
+current: /Users/thierryc/.codex/skills/glyphs-mcp-scripting
+current: /Users/thierryc/.codex/skills/glyphs-mcp-spacing

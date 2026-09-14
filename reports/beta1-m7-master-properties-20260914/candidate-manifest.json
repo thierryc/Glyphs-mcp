@@ -1,0 +1,97 @@
+{
+  "bridge": {
+    "bundle": "Glyphs MCP Bridge.glyphsPlugin",
+    "codeHash": "sha256:77bec730360ce043f184dcdc958fbad5519c7858fc06994bad292abf4ea01138",
+    "identity": "sha256:77bec730360ce043f184dcdc958fbad5519c7858fc06994bad292abf4ea01138",
+    "release": {
+      "betaNumber": 1,
+      "channel": "beta",
+      "installerBuild": 43,
+      "releaseVersion": "2.0.0-beta.1",
+      "version": "2.0.0"
+    }
+  },
+  "companions": [
+    {
+      "bundle": "Glyphs Curve Inspector.glyphsReporter",
+      "id": "curve-inspector",
+      "identity": "sha256:49263f6ab0d19d391251adca825cf2cba73c65531fb45f16a74cab3467bd85dc"
+    },
+    {
+      "bundle": "Glyphs Reference Inspector.glyphsReporter",
+      "id": "reference-inspector",
+      "identity": "sha256:60ac5370c91f0fe1dd50a119ffbe220081b08fe007ffee425c39732f081e6d10"
+    }
+  ],
+  "components": {
+    "curve-inspector": {
+      "requires": []
+    },
+    "mcp": {
+      "requires": [
+        "runtime",
+        "sidecar",
+        "bridge"
+      ]
+    },
+    "reference-inspector": {
+      "requires": [
+        "runtime"
+      ]
+    }
+  },
+  "installerBuild": 43,
+  "projectVersion": "2.0.0",
+  "protocol": 1,
+  "release": {
+    "betaNumber": 1,
+    "channel": "beta",
+    "installerBuild": 43,
+    "releaseVersion": "2.0.0-beta.1",
+    "version": "2.0.0"
+  },
+  "releaseChannel": "beta",
+  "releaseVersion": "2.0.0-beta.1",
+  "runtimes": {
+    "arm64": {
+      "dependencyLockSHA256": "8de3bb2a2ce1294aef86f755277e15e5150033e65f8613833f5fce9c7f2c35f1",
+      "glyphsCLI": "bin/glyphs",
+      "glyphsCLIVersion": "0.6.1",
+      "identity": "sha256:b2b9735d203a68af3e8b826c5a52064091cc9008f0f8535c388ebce0d237997a",
+      "path": "runtimes/arm64",
+      "python": "bin/python3",
+      "pythonVersion": "3.14.7"
+    },
+    "x86_64": {
+      "dependencyLockSHA256": "3dd70f9cbd6105fd58277a73d942f09ce6e2fe38a39ff8ef4f5144fa8ff14466",
+      "glyphsCLI": "bin/glyphs",
+      "glyphsCLIVersion": "0.6.1",
+      "identity": "sha256:6f3a1fded6f8a2122223be930090bae4647be588b7e0b78e3086a8fae5690e88",
+      "path": "runtimes/x86_64",
+      "python": "bin/python3",
+      "pythonVersion": "3.14.7"
+    }
+  },
+  "schemaVersion": 2,
+  "sidecar": {
+    "codeHash": "sha256:0d1590b10c67cd7eebbc4d3ea93f5f91eec51d9e80285f2d8b65d0c4398450a3",
+    "identity": "sha256:0d1590b10c67cd7eebbc4d3ea93f5f91eec51d9e80285f2d8b65d0c4398450a3",
+    "release": {
+      "betaNumber": 1,
+      "channel": "beta",
+      "installerBuild": 43,
+      "releaseVersion": "2.0.0-beta.1",
+      "version": "2.0.0"
+    }
+  },
+  "tools": [
+    "get_status",
+    "list_documents",
+    "read_entities",
+    "start_job",
+    "get_job",
+    "apply_job",
+    "discard_job"
+  ],
+  "version": "2.0.0"
+}

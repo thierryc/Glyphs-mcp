@@ -1,0 +1,107 @@
+{
+  "samples": [
+    {
+      "phase": "warmup",
+      "plainMs": 5.39079203736037,
+      "instrumentedMs": 5.386917036958039,
+      "differenceMs": -0.0038750004023313522
+    },
+    {
+      "phase": "rep1",
+      "plainMs": 4.641041974537075,
+      "instrumentedMs": 4.580124979838729,
+      "differenceMs": -0.06091699469834566
+    },
+    {
+      "phase": "rep2",
+      "plainMs": 5.153957987204194,
+      "instrumentedMs": 4.6562920324504375,
+      "differenceMs": -0.4976659547537565
+    },
+    {
+      "phase": "rep3",
+      "plainMs": 4.971916030626744,
+      "instrumentedMs": 4.628000024240464,
+      "differenceMs": -0.34391600638628006
+    },
+    {
+      "phase": "rep4",
+      "plainMs": 4.9331249902024865,
+      "instrumentedMs": 5.171666038222611,
+      "differenceMs": 0.23854104802012444
+    },
+    {
+      "phase": "rep5",
+      "plainMs": 4.692167043685913,
+      "instrumentedMs": 5.008834006730467,
+      "differenceMs": 0.316666963044554
+    },
+    {
+      "phase": "rep6",
+      "plainMs": 4.664083011448383,
+      "instrumentedMs": 4.820167028810829,
+      "differenceMs": 0.1560840173624456
+    },
+    {
+      "phase": "rep7",
+      "plainMs": 5.0210419576615095,
+      "instrumentedMs": 5.015915958210826,
+      "differenceMs": -0.005125999450683594
+    },
+    {
+      "phase": "rep8",
+      "plainMs": 5.082041025161743,
+      "instrumentedMs": 5.217750032898039,
+      "differenceMs": 0.13570900773629546
+    },
+    {
+      "phase": "rep9",
+      "plainMs": 4.55745798535645,
+      "instrumentedMs": 5.138417007401586,
+      "differenceMs": 0.5809590220451355
+    },
+    {
+      "phase": "rep10",
+      "plainMs": 4.685666004661471,
+      "instrumentedMs": 4.452374996617436,
+      "differenceMs": -0.23329100804403424
+    },
+    {
+      "phase": "rep11",
+      "plainMs": 4.481500014662743,
+      "instrumentedMs": 4.880665976088494,
+      "differenceMs": 0.39916596142575145
+    },
+    {
+      "phase": "rep12",
+      "plainMs": 5.1423329859972,
+      "instrumentedMs": 4.586542025208473,
+      "differenceMs": -0.5557909607887268
+    },
+    {
+      "phase": "rep13",
+      "plainMs": 4.803124989848584,
+      "instrumentedMs": 4.804499971214682,
+      "differenceMs": 0.001374981366097927
+    },
+    {
+      "phase": "rep14",
+      "plainMs": 4.505083954427391,
+      "instrumentedMs": 5.234125012066215,
+      "differenceMs": 0.729041057638824
+    },
+    {
+      "phase": "rep15",
+      "plainMs": 4.522500035818666,
+      "instrumentedMs": 4.748332954477519,
+      "differenceMs": 0.22583291865885258
+    }
+  ],
+  "load": [
+    17.99560546875,
+    22.7431640625,
+    22.6962890625
+  ],
+  "medianDifferenceMs": 0.13570900773629546,
+  "note": "Detached native source, alternating order. Wrapper/clock noise only; no live queue measurement or subtraction from reported latency."
+}

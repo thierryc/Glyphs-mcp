@@ -56,7 +56,22 @@ LTR/RTL/vertical through the same seven tools. **875 unique lean cases**,
 the recorded gates. One live harness-attribution failure was corrected and
 preserved. Native callback p95/max were **24.78/64.35 ms**; HTTP/queue tails
 remain separate. All eleven skills and both running component hashes match the
-candidate. The next master-metrics/axis step is paused for feedback.
+candidate. Its next step is covered by M7 below.
+
+[M7 master properties](beta1-m7-master-properties-20260914/report.md) is implemented,
+installed and qualified: requested fractional native defaults, italic angle and
+bounded internal/external axis positions. **942 lean regressions, 74 isolated
+native checks, 431 installed assertions and 50 delivery checks passed.** Native
+read callback p95/max were **26.86/31.69 ms**. Initial harness failures, the native
+opening dirty-state control and HTTP/queue tails remain recorded separately.
+Both running hashes and all eleven installed skill payloads match the candidate.
+Step 8 (production name, script and layer count) is paused for feedback.
+
+[The follow-on plan for gaps 7–14](beta1-medium-gap-fixes-plan-20260914/plan.md)
+covers requested native read fields and bounded diagnostics, followed by precise
+native editing and OpenType convenience recipes. Step 7 is delivered above;
+the remaining steps require their own tests, reports and user feedback. These
+gap numbers are separate from the earlier P-series benchmark sequence.
 
 ## Current result
 
@@ -83,6 +98,8 @@ update; the runtime was unchanged during that update.
 
 | Record | Scope and later status |
 |---|---|
+| [M7](beta1-m7-master-properties-20260914/report.md) | Native master metrics, angle and axes; installed and qualified, step 8 paused. |
+| [Gaps 7–14 plan](beta1-medium-gap-fixes-plan-20260914/plan.md) | Accepted read extensions and native recipes; step 7 is delivered in M7. |
 | [H6](beta1-h6-kerning-discovery-20260914/report.md) | Stored kerning discovery; installed and qualified, next step paused. |
 | [RV02](rv02-native-coding-20260914/report.md) | Latest focused native-coding implementation and installed qualification. |
 | [RV02 plan](rv02-native-coding-plan-20260914/plan.md) | Accepted scope and acceptance criteria. |

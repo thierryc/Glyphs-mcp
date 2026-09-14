@@ -1,0 +1,44 @@
+........................................................................ [  7%]
+........................................................................ [ 15%]
+........................................................................ [ 22%]
+........................................................................ [ 30%]
+........................................................................ [ 38%]
+........................................................................ [ 45%]
+........................................................................ [ 53%]
+........................................................................ [ 61%]
+........................................................................ [ 68%]
+........................................................................ [ 76%]
+.............................................................FF......... [ 84%]
+........................................................................ [ 91%]
+........................................................................ [ 99%]
+.....                                                                    [100%]
+=================================== FAILURES ===================================
+______ test_port_can_return_to_a_closed_listener_with_recent_connections _______
+
+server = (<glyphs_mcp_sidecar.control.ServerControl object at 0x1093a7ac0>, {'commands': [], 'loaded': True, 'management': [], 'running': True})
+
+    def test_port_can_return_to_a_closed_listener_with_recent_connections(server):
+        instance, _ = server
+        with socket.socket() as listener, socket.socket() as client:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+>           listener.bind(('127.0.0.1', 0))
+E           PermissionError: [Errno 1] Operation not permitted
+
+src/glyphs-mcp/tests/test_simple_v2_server_control.py:167: PermissionError
+_____________ test_live_reusable_listener_still_blocks_port_change _____________
+
+server = (<glyphs_mcp_sidecar.control.ServerControl object at 0x112e55950>, {'commands': [], 'loaded': True, 'management': [], 'running': True})
+
+    def test_live_reusable_listener_still_blocks_port_change(server):
+        instance, state = server
+        original = instance.agent.read_bytes()
+        with socket.socket() as listener:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+>           listener.bind(('127.0.0.1', 0))
+E           PermissionError: [Errno 1] Operation not permitted
+
+src/glyphs-mcp/tests/test_simple_v2_server_control.py:184: PermissionError
+=========================== short test summary info ============================
+FAILED src/glyphs-mcp/tests/test_simple_v2_server_control.py::test_port_can_return_to_a_closed_listener_with_recent_connections
+FAILED src/glyphs-mcp/tests/test_simple_v2_server_control.py::test_live_reusable_listener_still_blocks_port_change
+2 failed, 939 passed in 14.15s

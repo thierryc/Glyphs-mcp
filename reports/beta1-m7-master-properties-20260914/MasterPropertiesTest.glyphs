@@ -1,0 +1,246 @@
+{
+.appVersion = "4107";
+.formatVersion = 3;
+axes = (
+{
+name = Custom;
+tag = CSTM;
+},
+{
+name = Weight;
+tag = wght;
+},
+{
+name = Width;
+tag = wdth;
+}
+);
+date = "2026-09-14 19:00:00 +0000";
+familyName = "M7 MasterPropertiesTest";
+fontMaster = (
+{
+axesValues = (
+0.125,
+1.125,
+2.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 0.625;
+},
+{
+Axis = Weight;
+Location = 1.625;
+},
+{
+Axis = Width;
+Location = 2.625;
+}
+);
+}
+);
+iconName = Light;
+id = "C7941642-FFB2-5D2E-B7FE-4A30A143BE40";
+metricValues = (
+{
+pos = 812.375;
+},
+{
+pos = 705.125;
+},
+{
+pos = 513.875;
+},
+{
+pos = -212.625;
+},
+{
+}
+);
+name = Regular;
+},
+{
+axesValues = (
+100.125,
+101.125,
+102.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 200.625;
+},
+{
+Axis = Weight;
+Location = 201.625;
+},
+{
+Axis = Width;
+Location = 202.625;
+}
+);
+}
+);
+id = "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC";
+metricValues = (
+{
+pos = 813.375;
+},
+{
+pos = 706.125;
+},
+{
+pos = 514.875;
+},
+{
+pos = -213.625;
+},
+{
+pos = -12.375;
+}
+);
+name = Regular;
+},
+{
+axesValues = (
+200.125,
+201.125,
+202.125
+);
+customParameters = (
+{
+name = "Axis Location";
+value = (
+{
+Axis = Custom;
+Location = 400.625;
+},
+{
+Axis = Weight;
+Location = 401.625;
+},
+{
+Axis = Width;
+Location = 402.625;
+}
+);
+}
+);
+iconName = Bold;
+id = "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575";
+metricValues = (
+{
+pos = 814.375;
+},
+{
+pos = 707.125;
+},
+{
+pos = 515.875;
+},
+{
+pos = -214.625;
+},
+{
+pos = 9.625;
+}
+);
+name = Regular;
+}
+);
+glyphs = (
+{
+glyphname = h4g000;
+lastChange = "2026-09-14 19:00:00 +0000";
+layers = (
+{
+layerId = "C7941642-FFB2-5D2E-B7FE-4A30A143BE40";
+shapes = (
+{
+closed = 1;
+nodes = (
+(50.125,0.375,l,{
+name = "R05 landmark";
+}),
+(250.625,0.375,l),
+(250.625,700.875,l),
+(50.125,700.875,l)
+);
+}
+);
+vertOrigin = 800.375;
+vertWidth = 1000.125;
+width = 600.125;
+},
+{
+layerId = "5EB56BC4-5A2B-5460-ABC1-E8EE0E3B95EC";
+shapes = (
+{
+closed = 1;
+nodes = (
+(50.375,0.375,l,{
+name = "R05 landmark";
+}),
+(250.875,0.375,l),
+(250.875,700.875,l),
+(50.375,700.875,l)
+);
+}
+);
+vertOrigin = 800.625;
+vertWidth = 1000.375;
+width = 600.625;
+},
+{
+layerId = "1EFAB1BB-FDFA-5DAA-8B31-02838CD31575";
+shapes = (
+{
+closed = 1;
+nodes = (
+(50.625,0.375,l,{
+name = "R05 landmark";
+}),
+(251.125,0.375,l),
+(251.125,700.875,l),
+(50.625,700.875,l)
+);
+}
+);
+vertOrigin = 800.875;
+vertWidth = 1000.625;
+width = 601.125;
+}
+);
+}
+);
+metrics = (
+{
+type = ascender;
+},
+{
+type = "cap height";
+},
+{
+type = "x-height";
+},
+{
+type = descender;
+},
+{
+type = "italic angle";
+}
+);
+settings = {
+gridLength = 0;
+};
+unitsPerEm = 1000;
+versionMajor = 1;
+versionMinor = 0;
+}

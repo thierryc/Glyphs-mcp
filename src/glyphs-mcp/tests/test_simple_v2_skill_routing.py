@@ -249,3 +249,18 @@ def test_specialized_scope_is_focused_and_does_not_claim_retired_audits():
     assert 'document IDs or jobs' in text
     assert 'Plugin caches and source worktrees are separate' in text
     assert scope.read_bytes() == (ROOT/'plugins/glyphs-mcp/skills/glyphs/references/specialized-scope.md').read_bytes()
+
+
+def test_master_properties_have_focused_precise_requested_field_guidance():
+    text = (SKILL/'references/master-reads.md').read_text()
+    for phrase in ('master.properties.v1', 'ascender', 'capHeight', 'xHeight', 'descender',
+                   'italicAngle', 'axisId', 'internalValue', 'externalValue',
+                   '32 axes per master', '256 master-axis items', 'complete:false',
+                   'unavailable', 'native master defaults', 'truncate fractions',
+                   'without another discovery', 'installation needs updating'):
+        assert phrase in text
+    assert 'master.properties.v1' not in (SKILL/'SKILL.md').read_text()  # focused detail, compact entry
+    source=(ROOT/'src/sidecar/glyphs_mcp_sidecar/server.py').read_text()
+    assert 'master.properties.v1' in source and '256 master-axis items' in source
+    layer=(SKILL/'references/layer-reads.md').read_text()
+    assert 'master ascender/\ndescender' not in layer and 'master-reads.md' in layer

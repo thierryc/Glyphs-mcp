@@ -41,8 +41,9 @@ do not reuse a previous document ID or claim atomicity across multiple calls.
 native optional values: null means unset/unavailable, while numeric zero is a
 value. They do not resolve inherited vertical metrics. Layer metrics keys are
 stored overrides, separate from glyph-level keys and effective synchronized
-values. This interface does not expose glyph-level keys, master ascender/
-descender, or resolved metric inheritance. Do not call `syncMetrics()` while
+values. This layer projection does not expose glyph-level keys or resolved
+metric inheritance. Requested master defaults use the [master reference](master-reads.md).
+Do not call `syncMetrics()` while
 claiming to perform a read-only inspection.
 
 For a confirmed nonempty outline with bounds `(x, y, w, h)`, physical fractional
