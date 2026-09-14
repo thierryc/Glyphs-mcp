@@ -120,8 +120,11 @@ def build(output: Path, *, runtime_root: Path | None = None) -> dict:
             {"id": identifier, "bundle": source.name, "identity": _identity(target)}
         )
     _set_version(bundle, project_version)
-    for component in (bundle, sidecar):
-        (component / fingerprints.RELEASE_FILE).write_text(
+    for release_file in (
+        resources / fingerprints.RELEASE_FILE,
+        sidecar / fingerprints.RELEASE_FILE,
+    ):
+        release_file.write_text(
             json.dumps(metadata, sort_keys=True, indent=2) + "\n", encoding="utf-8")
     manifest = {
         "schemaVersion": 2,

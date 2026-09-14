@@ -7,8 +7,6 @@ from pathlib import Path
 
 RELEASE_FILE = "glyphs-mcp-release.json"
 RELEASE_FIELDS = ("version", "releaseVersion", "channel", "betaNumber", "installerBuild")
-
-
 def payload_hash(root):
     """Same framed relative paths as the installer; exclude generated caches."""
     root = Path(root)
@@ -43,7 +41,7 @@ def component_identity(root):
     result = {"release": None, "runtimeId": None, "codeHash": None,
               "identityEvidence": "unavailable"}
     try:
-        release = json.loads((Path(root) / RELEASE_FILE).read_text(encoding="utf-8"))
+        release = json.loads(next((path for path in (Path(root) / RELEASE_FILE, Path(root) / "Contents/Resources" / RELEASE_FILE) if path.is_file()), Path(root) / RELEASE_FILE).read_text(encoding="utf-8"))
         if not all(key in release for key in RELEASE_FIELDS):
             raise ValueError("Incomplete release metadata")
         if not all(isinstance(release[key], str) and release[key] for key in

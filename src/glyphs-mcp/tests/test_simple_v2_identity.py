@@ -46,7 +46,14 @@ print(json.dumps([before, after, component_identity(ROOT)]))
         before, after, reloaded = json.loads(output)
         assert before == after == metadata
         assert reloaded['codeHash'] != before['codeHash']
-        assert 'codeHash' not in json.loads((root/'glyphs-mcp-release.json').read_text())
+        release_file = (
+            root/'Contents/Resources/glyphs-mcp-release.json'
+            if component == 'bridge'
+            else root/'glyphs-mcp-release.json'
+        )
+        assert 'codeHash' not in json.loads(release_file.read_text())
+        if component == 'bridge':
+            assert not (root/'glyphs-mcp-release.json').exists()
 
 
 def test_fingerprint_ignores_location_timestamps_and_generated_caches(tmp_path):
