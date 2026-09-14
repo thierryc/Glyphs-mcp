@@ -1,0 +1,396 @@
+[
+  {
+    "name": "o 0331963E-C1C8-4E93-A463-84B984C1D75E exact ID",
+    "status": "passed",
+    "expected": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "observed": "0331963E-C1C8-4E93-A463-84B984C1D75E"
+  },
+  {
+    "name": "o 0331963E-C1C8-4E93-A463-84B984C1D75E width",
+    "status": "passed",
+    "expected": 1155.0,
+    "observed": 1155.0
+  },
+  {
+    "name": "o 0331963E-C1C8-4E93-A463-84B984C1D75E bounds",
+    "status": "passed",
+    "expected": [
+      104.0,
+      -21.0,
+      947.0,
+      1123.0
+    ],
+    "observed": [
+      104.0,
+      -21.0,
+      947.0,
+      1123.0
+    ]
+  },
+  {
+    "name": "o B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 exact ID",
+    "status": "passed",
+    "expected": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "observed": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274"
+  },
+  {
+    "name": "o B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 width",
+    "status": "passed",
+    "expected": 1124.0,
+    "observed": 1124.0
+  },
+  {
+    "name": "o B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 bounds",
+    "status": "passed",
+    "expected": [
+      78.0,
+      -21.0,
+      968.0,
+      1123.0
+    ],
+    "observed": [
+      78.0,
+      -21.0,
+      968.0,
+      1123.0
+    ]
+  },
+  {
+    "name": "o 55372407-EEEC-4390-8B77-FB5958F23D2B exact ID",
+    "status": "passed",
+    "expected": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+    "observed": "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  },
+  {
+    "name": "o 55372407-EEEC-4390-8B77-FB5958F23D2B width",
+    "status": "passed",
+    "expected": 1174.0,
+    "observed": 1174.0
+  },
+  {
+    "name": "o 55372407-EEEC-4390-8B77-FB5958F23D2B bounds",
+    "status": "passed",
+    "expected": [
+      60.0,
+      -21.0,
+      1054.0,
+      1123.0
+    ],
+    "observed": [
+      60.0,
+      -21.0,
+      1054.0,
+      1123.0
+    ]
+  },
+  {
+    "name": "a 0331963E-C1C8-4E93-A463-84B984C1D75E exact ID",
+    "status": "passed",
+    "expected": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "observed": "0331963E-C1C8-4E93-A463-84B984C1D75E"
+  },
+  {
+    "name": "a 0331963E-C1C8-4E93-A463-84B984C1D75E width",
+    "status": "passed",
+    "expected": 1116.0,
+    "observed": 1116.0
+  },
+  {
+    "name": "a 0331963E-C1C8-4E93-A463-84B984C1D75E bounds",
+    "status": "passed",
+    "expected": [
+      104.0,
+      -21.0,
+      942.0,
+      1123.0
+    ],
+    "observed": [
+      104.0,
+      -21.0,
+      942.0,
+      1123.0
+    ]
+  },
+  {
+    "name": "a B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 exact ID",
+    "status": "passed",
+    "expected": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "observed": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274"
+  },
+  {
+    "name": "a B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 width",
+    "status": "passed",
+    "expected": 1132.0,
+    "observed": 1132.0
+  },
+  {
+    "name": "a B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 bounds",
+    "status": "passed",
+    "expected": [
+      79.0,
+      -21.0,
+      974.0,
+      1123.0
+    ],
+    "observed": [
+      79.0,
+      -21.0,
+      974.0,
+      1123.0
+    ]
+  },
+  {
+    "name": "a 55372407-EEEC-4390-8B77-FB5958F23D2B exact ID",
+    "status": "passed",
+    "expected": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+    "observed": "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  },
+  {
+    "name": "a 55372407-EEEC-4390-8B77-FB5958F23D2B width",
+    "status": "passed",
+    "expected": 1167.0,
+    "observed": 1167.0
+  },
+  {
+    "name": "a 55372407-EEEC-4390-8B77-FB5958F23D2B bounds",
+    "status": "passed",
+    "expected": [
+      71.0,
+      -21.0,
+      1079.0,
+      1123.0
+    ],
+    "observed": [
+      71.0,
+      -21.0,
+      1079.0,
+      1123.0
+    ]
+  },
+  {
+    "name": "aacute 0331963E-C1C8-4E93-A463-84B984C1D75E exact ID",
+    "status": "passed",
+    "expected": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "observed": "0331963E-C1C8-4E93-A463-84B984C1D75E"
+  },
+  {
+    "name": "aacute 0331963E-C1C8-4E93-A463-84B984C1D75E width",
+    "status": "passed",
+    "expected": 1116.0,
+    "observed": 1116.0
+  },
+  {
+    "name": "aacute 0331963E-C1C8-4E93-A463-84B984C1D75E bounds",
+    "status": "passed",
+    "expected": [
+      104.0,
+      -21.0,
+      942.0,
+      1581.0
+    ],
+    "observed": [
+      104.0,
+      -21.0,
+      942.0,
+      1581.0
+    ]
+  },
+  {
+    "name": "aacute B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 exact ID",
+    "status": "passed",
+    "expected": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "observed": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274"
+  },
+  {
+    "name": "aacute B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 width",
+    "status": "passed",
+    "expected": 1132.0,
+    "observed": 1132.0
+  },
+  {
+    "name": "aacute B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 bounds",
+    "status": "passed",
+    "expected": [
+      79.0,
+      -21.0,
+      974.0,
+      1581.0
+    ],
+    "observed": [
+      79.0,
+      -21.0,
+      974.0,
+      1581.0
+    ]
+  },
+  {
+    "name": "aacute 55372407-EEEC-4390-8B77-FB5958F23D2B exact ID",
+    "status": "passed",
+    "expected": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+    "observed": "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  },
+  {
+    "name": "aacute 55372407-EEEC-4390-8B77-FB5958F23D2B width",
+    "status": "passed",
+    "expected": 1167.0,
+    "observed": 1167.0
+  },
+  {
+    "name": "aacute 55372407-EEEC-4390-8B77-FB5958F23D2B bounds",
+    "status": "passed",
+    "expected": [
+      71.0,
+      -21.0,
+      1079.0,
+      1581.0
+    ],
+    "observed": [
+      71.0,
+      -21.0,
+      1079.0,
+      1581.0
+    ]
+  },
+  {
+    "name": "space 0331963E-C1C8-4E93-A463-84B984C1D75E exact ID",
+    "status": "passed",
+    "expected": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "observed": "0331963E-C1C8-4E93-A463-84B984C1D75E"
+  },
+  {
+    "name": "space 0331963E-C1C8-4E93-A463-84B984C1D75E width",
+    "status": "passed",
+    "expected": 490.0,
+    "observed": 490.0
+  },
+  {
+    "name": "space 0331963E-C1C8-4E93-A463-84B984C1D75E bounds",
+    "status": "passed",
+    "expected": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "observed": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "name": "space B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 exact ID",
+    "status": "passed",
+    "expected": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "observed": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274"
+  },
+  {
+    "name": "space B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 width",
+    "status": "passed",
+    "expected": 509.0,
+    "observed": 509.0
+  },
+  {
+    "name": "space B06AEEA2-953E-4FA5-BFB1-0445B6E4B274 bounds",
+    "status": "passed",
+    "expected": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "observed": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "name": "space 55372407-EEEC-4390-8B77-FB5958F23D2B exact ID",
+    "status": "passed",
+    "expected": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+    "observed": "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  },
+  {
+    "name": "space 55372407-EEEC-4390-8B77-FB5958F23D2B width",
+    "status": "passed",
+    "expected": 498.0,
+    "observed": 498.0
+  },
+  {
+    "name": "space 55372407-EEEC-4390-8B77-FB5958F23D2B bounds",
+    "status": "passed",
+    "expected": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "observed": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "name": "exact on/off-curve selection",
+    "status": "passed",
+    "expected": {
+      "sha256": "d8a964ce40817133a07f50d5a67627790339992680ac5c6570b99a5b853727a1"
+    },
+    "observed": {
+      "sha256": "d8a964ce40817133a07f50d5a67627790339992680ac5c6570b99a5b853727a1"
+    }
+  },
+  {
+    "name": "complete selection",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "bounded evidence counts/completeness",
+    "status": "passed",
+    "expected": [
+      3,
+      1,
+      1,
+      false
+    ],
+    "observed": [
+      3,
+      1,
+      1,
+      false
+    ]
+  },
+  {
+    "name": "empty active selection",
+    "status": "passed",
+    "expected": [
+      0,
+      0,
+      true
+    ],
+    "observed": [
+      0,
+      0,
+      true
+    ]
+  },
+  {
+    "name": "stale ID rejected",
+    "status": "passed",
+    "expected": "document_not_found",
+    "observed": "document_not_found"
+  },
+  {
+    "name": "missing named glyph control",
+    "status": "unverified",
+    "expected": "glyph rv01.missing not found",
+    "observed": "Agent supplied name instead of id; server reported glyph ''. No replacement font/discovery followed."
+  }
+]

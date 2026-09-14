@@ -1,0 +1,72 @@
+{
+  "id": "T04",
+  "name": "Adjust an o handle",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789385423.380712,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": null,
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "exact requested handle changes only",
+      "expected": {
+        "sha256": "5e370fde75ccb8d5acfd27b08355c13c3ad290b5d8285a5a7a8a1ee75dfb29d9"
+      },
+      "observed": {
+        "sha256": "87cd1d3e5bcf8752eafa1880081b7ecbd45d9fe62bafd5dfd6d5660845338e33"
+      },
+      "status": "failed"
+    },
+    {
+      "name": "existing object order exact",
+      "expected": {
+        "sha256": "0991ee313e7eede3c3b582dbd390e2323919b307895764b1e1b752f6d8fa30a7"
+      },
+      "observed": {
+        "sha256": "0991ee313e7eede3c3b582dbd390e2323919b307895764b1e1b752f6d8fa30a7"
+      },
+      "status": "passed"
+    },
+    {
+      "name": "master compatibility retained",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 1.0574579937383533,
+  "result": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "path": 0,
+      "node": 0
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "path": 0,
+      "node": 0
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "path": 0,
+      "node": 0
+    }
+  ],
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": false,
+    "objectSetPreserved": true,
+    "removedObjects": 0,
+    "addedObjects": 0,
+    "hintReferencesExact": true,
+    "beforeSHA256": "a51e01f3a0d1d16e5cbfe3c5a42224735ebebfbb7d9c2e50c9cfd0612459d662",
+    "afterSHA256": "3b3a90899579a92fab942db9007cd497c27fe80e0f46472be78ff9d065fae4a0"
+  },
+  "status": "failed",
+  "taskHarnessMs": 3239.453374990262
+}

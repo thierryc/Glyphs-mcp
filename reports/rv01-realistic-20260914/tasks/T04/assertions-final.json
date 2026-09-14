@@ -1,0 +1,52 @@
+[
+  {
+    "name": "exact requested handle changes only",
+    "expected": {
+      "sha256": "820ded63053d404ed211f72abdaf8005feb458509dd084024dc9714073142b67"
+    },
+    "observed": {
+      "sha256": "820ded63053d404ed211f72abdaf8005feb458509dd084024dc9714073142b67"
+    },
+    "status": "passed"
+  },
+  {
+    "name": "existing object order exact",
+    "expected": {
+      "sha256": "6207bf6c9682011159ec92c3a38b1c57f86f927b86d2ea8e0151a1c57658d250"
+    },
+    "observed": {
+      "sha256": "6207bf6c9682011159ec92c3a38b1c57f86f927b86d2ea8e0151a1c57658d250"
+    },
+    "status": "passed"
+  },
+  {
+    "name": "master compatibility retained",
+    "expected": true,
+    "observed": true,
+    "status": "passed"
+  },
+  {
+    "name": "all unrelated recorded data",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "layerCollateralExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "gridExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "survivingNodeMetadataExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  }
+]

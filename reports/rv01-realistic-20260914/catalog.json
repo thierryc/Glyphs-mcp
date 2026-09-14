@@ -1,0 +1,238 @@
+[
+  {
+    "name": "get_status",
+    "description": "Return sidecar, external worker, and live bridge availability.",
+    "inputSchema": {
+      "properties": {},
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "list_documents",
+    "description": "Discover open Glyphs documents once for the intended target. Retain its document_id on this connection for subsequent fresh reads; rediscover after document_not_found or changed target intent.",
+    "inputSchema": {
+      "properties": {},
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "read_entities",
+    "description": "Read up to 100 explicit targets using a known document_id on this connection; no preceding list_documents is needed for the same target. Reads validate the live font and return fresh contents. Rediscover on document_not_found, not target_not_found (missing glyph/layer). Never substitute another font. Current/frontmost intent may require fresh targeting. Master selectors require exact IDs. Layers use {kind: layer, glyph: name, id: nativeLayerId}; layer.read.exact.v1 advertises strict IDs and returned id=layerId. Layer fields: id, name, width, vertWidth, vertOrigin, leftMetricsKey, rightMetricsKey, widthMetricsKey, bounds, outlineHash. With masters.list.v1 in get_status bridge.readCapabilities, use one {kind: masters, limit: 100} selector and fields [id, name] to discover live masters; follow values.nextCursor until values.complete. Do not mix a master page with other selectors. Selection requires selection.context.v1 in get_status readCapabilities; if absent, the private installation needs its bridge, sidecar and skills updated together. Use {kind: selection}, requesting glyph, layer, selectedNodeCount, selectedAnchorCount, selectedComponentCount, selectedGuideCount and selectedOtherCount for a summary. Optional nodes returns items (x, y, type, smooth, pathIndex in layer.paths, nodeIndex in path.nodes), total, returned, limit and complete. Details require one selection entity only; optional nodeLimit is an integer 1-256, default 64, allowed only with nodes. Counts use native types, including off-curve GSNodes. Null glyph/layer and nodes=null mean no active Edit View; active empty details are complete with zero items. Dirty documents need no Save. Only requested fields are returned. Kerning uses {kind: kerning, master: <exact native master ID>, direction: LTR, left: A, right: V} with fields [value] only. Required direction is LTR, RTL or vertical (case-sensitive). Keys are glyph names or explicit stored @MMK_ group keys, not native glyph IDs. Return exact storage: null means no entry for those keys; zero is stored. This does not compute effective kerning through class/exception precedence. Dirty and unsaved live reads need no job or Save. Invalid master, glyph or direction returns invalid_request; keep the document ID and correct the input.",
+    "inputSchema": {
+      "properties": {
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "entities": {
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Entities",
+          "type": "array"
+        },
+        "fields": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Fields",
+          "type": "array"
+        }
+      },
+      "required": [
+        "document_id",
+        "entities",
+        "fields"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "start_job",
+    "description": "Prepare width_delta, spacing, kerning_collision, start_nodes or slant outside Glyphs. Options select references, contours, explicit pairs, masters and optional straight-stem preservation; get_job reports evidence.",
+    "inputSchema": {
+      "properties": {
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "delta": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Delta"
+        },
+        "glyphs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glyphs"
+        },
+        "options": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Options"
+        }
+      },
+      "required": [
+        "document_id",
+        "kind"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "get_job",
+    "description": "Return job progress, counts, warnings and preview samples. Use include_preview=false for polling after reading the full report once; it omits both samples, retains report metadata and explicitly returns previewIncluded=false. The default includes previews.",
+    "inputSchema": {
+      "properties": {
+        "job_id": {
+          "title": "Job Id",
+          "type": "string"
+        },
+        "include_preview": {
+          "default": true,
+          "title": "Include Preview",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "apply_job",
+    "description": "Show the prepared result as a reversible live change; this is not acceptance. Use include_preview=false after reviewing the report to omit repeated samples.",
+    "inputSchema": {
+      "properties": {
+        "job_id": {
+          "title": "Job Id",
+          "type": "string"
+        },
+        "include_preview": {
+          "default": true,
+          "title": "Include Preview",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  },
+  {
+    "name": "discard_job",
+    "description": "Cancel an unapplied job or reverse its still-current live targets. Use include_preview=false to omit repeated samples; errors and progress remain available.",
+    "inputSchema": {
+      "properties": {
+        "job_id": {
+          "title": "Job Id",
+          "type": "string"
+        },
+        "include_preview": {
+          "default": true,
+          "title": "Include Preview",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "job_id"
+      ],
+      "type": "object"
+    },
+    "outputSchema": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "meta": {
+      "_fastmcp": {
+        "tags": []
+      }
+    }
+  }
+]

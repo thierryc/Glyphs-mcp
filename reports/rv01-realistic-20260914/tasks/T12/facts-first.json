@@ -1,0 +1,51 @@
+{
+  "id": "T12",
+  "name": "Diagnose invalid feature then correct",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789385470.073268,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": null,
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "corrected code",
+      "expected": "sub g by g.ss01;",
+      "observed": "sub g by g.ss01;",
+      "status": "passed"
+    },
+    {
+      "name": "prior feature source preserved",
+      "expected": "12149081562e9cbc8bb845d0e334a4961cc2aa9dbff75e91af21e9ea85a46d10",
+      "observed": "12149081562e9cbc8bb845d0e334a4961cc2aa9dbff75e91af21e9ea85a46d10",
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 57.533124985639006,
+  "result": {
+    "invalidCompile": [
+      {
+        "returnValue": "(False, Error Domain=Semantic Issue Code=34603010 \"Unknown glyph \u201crv01.missing\u201d\nFound in: feature \u201css20\u201d, line 1.\" UserInfo={NSRecoveryAttempter=<GSExportTempOperation: 0x860528f00>, NSLocalizedRecoverySuggestion=Found in: feature \u201css20\u201d, line 1., Source Location=<FEASourceLocation: 0x8afae5490>, Location Affinity=0, NSLocalizedFailureReason=Unknown glyph \u201crv01.missing\u201d, NSLocalizedDescription=Unknown glyph \u201crv01.missing\u201d\nFound in: feature \u201css20\u201d, line 1., NSLocalizedRecoveryOptions=(\n    Show\n), Message=Unknown glyph \u201crv01.missing\u201d})",
+        "returnType": "tuple"
+      }
+    ],
+    "corrected": "sub g by g.ss01;",
+    "correctedCompileReturn": "(True, None)"
+  },
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": false,
+    "objectSetPreserved": true,
+    "removedObjects": 0,
+    "addedObjects": 0,
+    "hintReferencesExact": true,
+    "beforeSHA256": "6f396cc9d51cedf9c1f74fb477794852feb65b83cde438a3315a248dc73d0d45",
+    "afterSHA256": "f0295f85ef8f101881f9f3c7f01ebb8d51c9702f8e3905b30492a60112ff02d4"
+  },
+  "status": "passed",
+  "taskHarnessMs": 2360.777458001394
+}

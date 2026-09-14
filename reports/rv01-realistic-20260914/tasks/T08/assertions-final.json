@@ -1,0 +1,70 @@
+[
+  {
+    "name": "nodes added",
+    "expected": 9,
+    "observed": 9,
+    "status": "passed"
+  },
+  {
+    "name": "existing nodes retained",
+    "expected": 0,
+    "observed": 0,
+    "status": "passed"
+  },
+  {
+    "name": "native compatibility",
+    "expected": true,
+    "observed": true,
+    "status": "passed"
+  },
+  {
+    "name": "widths exact",
+    "expected": [
+      1155.0,
+      1124.0,
+      1174.0
+    ],
+    "observed": [
+      1155.0,
+      1124.0,
+      1174.0
+    ],
+    "status": "passed"
+  },
+  {
+    "name": "all unrelated recorded data",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "layerCollateralExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "gridExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "survivingNodeMetadataExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "three original cubics preserved within 1e-9",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "three native interpolated instances preserved within 1e-9",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  }
+]

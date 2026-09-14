@@ -1,0 +1,62 @@
+{
+  "id": "T08",
+  "name": "Corresponding cubic midpoint on o",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789385800.133646,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": null,
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "nodes added",
+      "expected": 9,
+      "observed": 9,
+      "status": "passed"
+    },
+    {
+      "name": "existing nodes retained",
+      "expected": 0,
+      "observed": 0,
+      "status": "passed"
+    },
+    {
+      "name": "native compatibility",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    },
+    {
+      "name": "widths exact",
+      "expected": [
+        1155.0,
+        1124.0,
+        1174.0
+      ],
+      "observed": [
+        1155.0,
+        1124.0,
+        1174.0
+      ],
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 2.6944589917548,
+  "result": 3,
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": false,
+    "objectSetPreserved": true,
+    "removedObjects": 0,
+    "addedObjects": 9,
+    "hintReferencesExact": true,
+    "beforeSHA256": "ed42272873afa3c4b1f0afdfc891988d310fe09ca52fc280650f5b479b16e163",
+    "afterSHA256": "1c7ca3150309759375c9e70faa23de8bb112bc5b31d1f14bb7a15b3befc84069"
+  },
+  "status": "passed",
+  "taskHarnessMs": 2227.9606250231154
+}

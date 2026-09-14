@@ -1,0 +1,84 @@
+[
+  {
+    "name": "exact width delta and every other recorded property",
+    "status": "passed",
+    "expected": {
+      "sha256": "37735701350c0ed2296ea6f3dc490ac0a186db0c58243f8b7457c2475d80f8ab"
+    },
+    "observed": {
+      "sha256": "37735701350c0ed2296ea6f3dc490ac0a186db0c58243f8b7457c2475d80f8ab"
+    }
+  },
+  {
+    "name": "native object identities",
+    "status": "passed",
+    "expected": {
+      "sha256": "f7ddc1aa83005ea0ed102fb0a035b9109beef34158dfa600a5f30b8fc8f8917f"
+    },
+    "observed": {
+      "sha256": "f7ddc1aa83005ea0ed102fb0a035b9109beef34158dfa600a5f30b8fc8f8917f"
+    }
+  },
+  {
+    "name": "hint references",
+    "status": "passed",
+    "expected": [],
+    "observed": []
+  },
+  {
+    "name": "undo exact data",
+    "status": "passed",
+    "expected": {
+      "sha256": "60c3d4712890c5d5a885a9cc533347b07a1386832bb697e0eff01789097b0147"
+    },
+    "observed": {
+      "sha256": "60c3d4712890c5d5a885a9cc533347b07a1386832bb697e0eff01789097b0147"
+    }
+  },
+  {
+    "name": "undo exact native objects",
+    "status": "passed",
+    "expected": {
+      "sha256": "f7ddc1aa83005ea0ed102fb0a035b9109beef34158dfa600a5f30b8fc8f8917f"
+    },
+    "observed": {
+      "sha256": "f7ddc1aa83005ea0ed102fb0a035b9109beef34158dfa600a5f30b8fc8f8917f"
+    }
+  },
+  {
+    "name": "discard exact data",
+    "status": "passed",
+    "expected": {
+      "sha256": "60c3d4712890c5d5a885a9cc533347b07a1386832bb697e0eff01789097b0147"
+    },
+    "observed": {
+      "sha256": "60c3d4712890c5d5a885a9cc533347b07a1386832bb697e0eff01789097b0147"
+    }
+  },
+  {
+    "name": "discard exact native objects",
+    "status": "passed",
+    "expected": {
+      "sha256": "f7ddc1aa83005ea0ed102fb0a035b9109beef34158dfa600a5f30b8fc8f8917f"
+    },
+    "observed": {
+      "sha256": "f7ddc1aa83005ea0ed102fb0a035b9109beef34158dfa600a5f30b8fc8f8917f"
+    }
+  },
+  {
+    "name": "Redo exact result",
+    "status": "passed",
+    "expected": {
+      "sha256": "37735701350c0ed2296ea6f3dc490ac0a186db0c58243f8b7457c2475d80f8ab"
+    },
+    "observed": {
+      "sha256": "37735701350c0ed2296ea6f3dc490ac0a186db0c58243f8b7457c2475d80f8ab"
+    }
+  },
+  {
+    "name": "first Undo clears Edited",
+    "status": "passed",
+    "expected": false,
+    "observed": false
+  }
+]

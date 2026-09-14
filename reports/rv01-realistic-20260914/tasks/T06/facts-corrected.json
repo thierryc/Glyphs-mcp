@@ -1,0 +1,64 @@
+{
+  "id": "T06",
+  "name": "Remove seeded redundant H midpoints",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789385789.856046,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "path": 0,
+      "node": 1
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "path": 0,
+      "node": 1
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "path": 0,
+      "node": 1
+    }
+  ],
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "only seeded midpoint removed",
+      "expected": "6f7c0ae359aa3072bf51d53a4721678f4d6a74798ae551a163926c0f704cc4bd",
+      "observed": "6f7c0ae359aa3072bf51d53a4721678f4d6a74798ae551a163926c0f704cc4bd",
+      "status": "passed"
+    },
+    {
+      "name": "removed nodes",
+      "expected": 3,
+      "observed": 3,
+      "status": "passed"
+    },
+    {
+      "name": "master compatibility",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 1.227458007633686,
+  "result": 3,
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": false,
+    "objectSetPreserved": false,
+    "removedObjects": 3,
+    "addedObjects": 0,
+    "hintReferencesExact": true,
+    "beforeSHA256": "fd9ef5ba9441e222826d19945b26cae212ea9c7b7a24d3f68b37a1dd89144cf3",
+    "afterSHA256": "6f7c0ae359aa3072bf51d53a4721678f4d6a74798ae551a163926c0f704cc4bd"
+  },
+  "status": "passed",
+  "taskHarnessMs": 2756.538375047967
+}

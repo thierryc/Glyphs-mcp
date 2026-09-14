@@ -1,0 +1,20 @@
+{
+  "host": "4.1",
+  "build": "4107.0",
+  "instances": [
+    "Thin",
+    "ExtraLight",
+    "Light",
+    "Regular",
+    "Medium",
+    "SemiBold",
+    "Bold",
+    "ExtraBold",
+    "Black",
+    "Regular"
+  ],
+  "at": 1789385810.515247,
+  "compile": "(True, None)",
+  "error": "Traceback (most recent call last):\n  File \"/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/v2-realistic/20260914/export_feature.py\", line 11, in <module>\n    r['compile']=str(f.compileFeatures());instance=next(x for x in f.instances if x.name=='Regular');t=time.perf_counter();r['export']=str(instance.generate(FontPath=str(D),Format=TT,AutoHint=False,RemoveOverlap=False,UseProductionNames=False,Containers=[PLAIN]));r['nativeExportMs']=(time.perf_counter()-t)*1000\n                                                                                                                                           ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nTypeError: __GSInstance_Export__() got an unexpected keyword argument 'FontPath'. Did you mean 'fontPath'?\n",
+  "sourceAfterSHA256": "5a858cf90bbe6db58e9c1f12168b31b36f50ed250a9b2bfc029693b09e5e72a8"
+}

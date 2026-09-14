@@ -1,0 +1,50 @@
+[
+  {
+    "name": "only seeded midpoint removed",
+    "expected": "6f7c0ae359aa3072bf51d53a4721678f4d6a74798ae551a163926c0f704cc4bd",
+    "observed": "6f7c0ae359aa3072bf51d53a4721678f4d6a74798ae551a163926c0f704cc4bd",
+    "status": "passed"
+  },
+  {
+    "name": "removed nodes",
+    "expected": 3,
+    "observed": 3,
+    "status": "passed"
+  },
+  {
+    "name": "master compatibility",
+    "expected": true,
+    "observed": true,
+    "status": "passed"
+  },
+  {
+    "name": "all unrelated recorded data",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "layerCollateralExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "gridExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "survivingNodeMetadataExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "nonredundant point rejected without edits",
+    "status": "passed",
+    "expected": "passed",
+    "observed": "passed"
+  }
+]

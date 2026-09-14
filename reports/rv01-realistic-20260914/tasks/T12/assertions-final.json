@@ -1,0 +1,32 @@
+[
+  {
+    "name": "corrected code",
+    "expected": "sub g by g.ss01;",
+    "observed": "sub g by g.ss01;",
+    "status": "passed"
+  },
+  {
+    "name": "prior feature source preserved",
+    "expected": "12149081562e9cbc8bb845d0e334a4961cc2aa9dbff75e91af21e9ea85a46d10",
+    "observed": "12149081562e9cbc8bb845d0e334a4961cc2aa9dbff75e91af21e9ea85a46d10",
+    "status": "passed"
+  },
+  {
+    "name": "all unrelated recorded data",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "compiler rejects bad reference with location",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "corrected native compile",
+    "status": "passed",
+    "expected": "(True, None)",
+    "observed": "(True, None)"
+  }
+]

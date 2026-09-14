@@ -1,0 +1,78 @@
+[
+  {
+    "name": "restored original contour 0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "status": "passed",
+    "expected": {
+      "sha256": "a9e8cf206c831844e73e7c60a1e25cbc8a36697c1c1b11f2dd0adedaedc5ff72"
+    },
+    "observed": {
+      "sha256": "a9e8cf206c831844e73e7c60a1e25cbc8a36697c1c1b11f2dd0adedaedc5ff72"
+    }
+  },
+  {
+    "name": "restored original contour B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "status": "passed",
+    "expected": {
+      "sha256": "457bf8e7723ae65ae557a522b572ac8920800c61dbee33474bc72992020ed0f9"
+    },
+    "observed": {
+      "sha256": "457bf8e7723ae65ae557a522b572ac8920800c61dbee33474bc72992020ed0f9"
+    }
+  },
+  {
+    "name": "restored original contour 55372407-EEEC-4390-8B77-FB5958F23D2B",
+    "status": "passed",
+    "expected": {
+      "sha256": "17e3b2b89c27a9de147a1e5a60ca229a39295d02352eba0cadb09f6f07b9611a"
+    },
+    "observed": {
+      "sha256": "17e3b2b89c27a9de147a1e5a60ca229a39295d02352eba0cadb09f6f07b9611a"
+    }
+  },
+  {
+    "name": "only native node permutations changed",
+    "status": "passed",
+    "expected": {
+      "sha256": "e0ac05cef85fc5b377cf05c58570090ae9254aff8c3477c6ac133eb86a1d6624"
+    },
+    "observed": {
+      "sha256": "e0ac05cef85fc5b377cf05c58570090ae9254aff8c3477c6ac133eb86a1d6624"
+    }
+  },
+  {
+    "name": "all native objects retained",
+    "status": "passed",
+    "expected": {
+      "sha256": "e7357ab58afbe05cfa61bc39caa9cb381a9d227ce6cba69bd14efdfdce4f064f"
+    },
+    "observed": {
+      "sha256": "e7357ab58afbe05cfa61bc39caa9cb381a9d227ce6cba69bd14efdfdce4f064f"
+    }
+  },
+  {
+    "name": "native compatibility restored",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "discard exact recorded data",
+    "status": "passed",
+    "expected": {
+      "sha256": "7b6a865d34208a845de330812f20f8fec2474c1a23eab2558eda2c89fe804b0b"
+    },
+    "observed": {
+      "sha256": "7b6a865d34208a845de330812f20f8fec2474c1a23eab2558eda2c89fe804b0b"
+    }
+  },
+  {
+    "name": "discard exact object order",
+    "status": "passed",
+    "expected": {
+      "sha256": "a4ae4847798712734bda8b5e7622f89d164e395cadca797750fd518fc47f73ab"
+    },
+    "observed": {
+      "sha256": "a4ae4847798712734bda8b5e7622f89d164e395cadca797750fd518fc47f73ab"
+    }
+  }
+]

@@ -1,0 +1,84 @@
+{
+  "id": "T07",
+  "name": "Native at extrema",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789385444.92159,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": null,
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "at widths retained",
+      "expected": [
+        1799.0,
+        1821.0,
+        1797.0
+      ],
+      "observed": [
+        1799.0,
+        1821.0,
+        1797.0
+      ],
+      "status": "passed"
+    },
+    {
+      "name": "native master compatibility retained",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 2.960915968287736,
+  "result": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "before": [
+        51,
+        16
+      ],
+      "after": [
+        69,
+        19
+      ]
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "before": [
+        51,
+        16
+      ],
+      "after": [
+        69,
+        19
+      ]
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "before": [
+        51,
+        16
+      ],
+      "after": [
+        69,
+        19
+      ]
+    }
+  ],
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": false,
+    "objectSetPreserved": true,
+    "removedObjects": 0,
+    "addedObjects": 63,
+    "hintReferencesExact": true,
+    "beforeSHA256": "bb54465c1987a2db7266ece24a9f34baff58186b628c73ec77d806fd778b8c61",
+    "afterSHA256": "430f458c288f232115a1162713189c9f0980e0fafd015af9f50a4e7c77f31f4c"
+  },
+  "status": "passed",
+  "taskHarnessMs": 2297.3158330423757
+}

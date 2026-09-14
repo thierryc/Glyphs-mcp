@@ -1,0 +1,286 @@
+{
+  "method": "tiktoken 0.12.0 / o200k_base; sorted compact JSON, literal Unicode, one parsed response; literal text for skills/artifacts. Payload estimates, not billed usage.",
+  "actualUsage": null,
+  "tasks": {
+    "T01": {
+      "calls": 3,
+      "latencyMs": {
+        "n": 3,
+        "median": 33.72733294963837,
+        "min": 23.706500011030585,
+        "max": 2091.8777500046417,
+        "p95": 1886.0627082991411
+      },
+      "requestTokens": 538,
+      "responseTokens": 2114,
+      "discoveries": 1
+    },
+    "T01-controls": {
+      "calls": 4,
+      "latencyMs": {
+        "n": 4,
+        "median": 43.243187479674816,
+        "min": 35.9774999669753,
+        "max": 338.01391697488725,
+        "p95": 294.64017317513924
+      },
+      "requestTokens": 224,
+      "responseTokens": 245,
+      "discoveries": 0
+    },
+    "T01-micro-repeat-1": {
+      "calls": 1,
+      "latencyMs": {
+        "n": 1,
+        "median": 32.20133302966133,
+        "min": 32.20133302966133,
+        "max": 32.20133302966133,
+        "p95": 32.20133302966133
+      },
+      "requestTokens": 55,
+      "responseTokens": 171,
+      "discoveries": 0
+    },
+    "T01-micro-repeat-2": {
+      "calls": 1,
+      "latencyMs": {
+        "n": 1,
+        "median": 28.59441697364673,
+        "min": 28.59441697364673,
+        "max": 28.59441697364673,
+        "p95": 28.59441697364673
+      },
+      "requestTokens": 55,
+      "responseTokens": 171,
+      "discoveries": 0
+    },
+    "T01-micro-repeat-3": {
+      "calls": 1,
+      "latencyMs": {
+        "n": 1,
+        "median": 22.229333000723273,
+        "min": 22.229333000723273,
+        "max": 22.229333000723273,
+        "p95": 22.229333000723273
+      },
+      "requestTokens": 55,
+      "responseTokens": 171,
+      "discoveries": 0
+    },
+    "T01-micro-repeat-4": {
+      "calls": 1,
+      "latencyMs": {
+        "n": 1,
+        "median": 33.99762499611825,
+        "min": 33.99762499611825,
+        "max": 33.99762499611825,
+        "p95": 33.99762499611825
+      },
+      "requestTokens": 55,
+      "responseTokens": 171,
+      "discoveries": 0
+    },
+    "T01-micro-repeat-5": {
+      "calls": 1,
+      "latencyMs": {
+        "n": 1,
+        "median": 20.96395898843184,
+        "min": 20.96395898843184,
+        "max": 20.96395898843184,
+        "p95": 20.96395898843184
+      },
+      "requestTokens": 55,
+      "responseTokens": 171,
+      "discoveries": 0
+    },
+    "T01-warmup": {
+      "calls": 1,
+      "latencyMs": {
+        "n": 1,
+        "median": 23.044041998218745,
+        "min": 23.044041998218745,
+        "max": 23.044041998218745,
+        "p95": 23.044041998218745
+      },
+      "requestTokens": 55,
+      "responseTokens": 171,
+      "discoveries": 0
+    },
+    "T02": {
+      "calls": 7,
+      "latencyMs": {
+        "n": 7,
+        "median": 31.826665974222124,
+        "min": 16.61570800933987,
+        "max": 47.87629202473909,
+        "p95": 46.25620440929196
+      },
+      "requestTokens": 413,
+      "responseTokens": 1743,
+      "discoveries": 0
+    },
+    "T03": {
+      "calls": 7,
+      "latencyMs": {
+        "n": 7,
+        "median": 42.05575003288686,
+        "min": 13.386874983552843,
+        "max": 654.4209580169991,
+        "p95": 478.90912059810904
+      },
+      "requestTokens": 340,
+      "responseTokens": 2209,
+      "discoveries": 1
+    },
+    "identity": {
+      "calls": 1,
+      "latencyMs": {
+        "n": 1,
+        "median": 145.2221249928698,
+        "min": 145.2221249928698,
+        "max": 145.2221249928698,
+        "p95": 145.2221249928698
+      },
+      "requestTokens": 10,
+      "responseTokens": 972,
+      "discoveries": 0
+    },
+    "identity-final": {
+      "calls": 1,
+      "latencyMs": {
+        "n": 1,
+        "median": 129.1220830171369,
+        "min": 129.1220830171369,
+        "max": 129.1220830171369,
+        "p95": 129.1220830171369
+      },
+      "requestTokens": 10,
+      "responseTokens": 976,
+      "discoveries": 0
+    }
+  },
+  "profiles": {
+    "tasks/T03/timing.json": {
+      "nativeCallbackMs": {
+        "n": 4,
+        "median": 1.1697705194819719,
+        "min": 0.011999974958598614,
+        "max": 6.81120902299881,
+        "p95": 6.134333871887064
+      },
+      "dispatchWaitMs": {
+        "n": 4,
+        "median": 2.3873750178609043,
+        "min": 2.366499975323677,
+        "max": 2.531584003008902,
+        "p95": 2.5125463085714728
+      },
+      "mainQueueLagMs": {
+        "n": 111,
+        "median": 1.4571669744327664,
+        "min": 0.35633298102766275,
+        "max": 66.58120901556686,
+        "p95": 7.270916976267472
+      }
+    },
+    "tasks/T02/apply-timing.json": {
+      "nativeCallbackMs": {
+        "n": 4,
+        "median": 1.5539790038019419,
+        "min": 0.023625034373253584,
+        "max": 8.831167011521757,
+        "p95": 7.96424815780483
+      },
+      "dispatchWaitMs": {
+        "n": 4,
+        "median": 2.694666472962126,
+        "min": 2.3669590009376407,
+        "max": 19.28241696441546,
+        "p95": 16.807804413838305
+      },
+      "mainQueueLagMs": {
+        "n": 110,
+        "median": 1.296978967729956,
+        "min": 0.2900830004364252,
+        "max": 66.08874996891245,
+        "p95": 8.499143857625297
+      }
+    },
+    "tasks/T01/timing.json": {
+      "nativeCallbackMs": {
+        "n": 2,
+        "median": 4.701979487435892,
+        "min": 1.1262089828960598,
+        "max": 8.277749991975725,
+        "p95": 7.9201729415217414
+      },
+      "dispatchWaitMs": {
+        "n": 2,
+        "median": 2.3806875105947256,
+        "min": 2.318417013157159,
+        "max": 2.442958008032292,
+        "p95": 2.4367309582885355
+      },
+      "mainQueueLagMs": {
+        "n": 101,
+        "median": 1.307833008468151,
+        "min": 0.2900829422287643,
+        "max": 42.09170799003914,
+        "p95": 2.362124971114099
+      }
+    },
+    "tasks/T01/micro-timing.json": {
+      "nativeCallbackMs": {
+        "n": 6,
+        "median": 3.136832994641736,
+        "min": 1.2148749665357172,
+        "max": 10.744750034064054,
+        "p95": 10.163531274884008
+      },
+      "dispatchWaitMs": {
+        "n": 6,
+        "median": 2.4871875066310167,
+        "min": 2.4230420240201056,
+        "max": 2.5651660398580134,
+        "p95": 2.5568952842149884
+      },
+      "mainQueueLagMs": {
+        "n": 106,
+        "median": 1.197999983560294,
+        "min": 0.31579198548570275,
+        "max": 59.82783401850611,
+        "p95": 2.137302260962315
+      }
+    }
+  },
+  "knownTargetFiveReadLatencyMs": {
+    "n": 5,
+    "median": 28.59441697364673,
+    "min": 20.96395898843184,
+    "max": 33.99762499611825,
+    "p95": 33.63836660282686
+  },
+  "totalPublicCalls": 29,
+  "publicDiscoveryCalls": 2,
+  "skillTextTokens": {
+    "glyphs": 817,
+    "glyphs-mcp-development": 774,
+    "glyphs-mcp-scripting": 428,
+    "glyphs-mcp-master-compatibility": 404,
+    "glyphs-mcp-outlines-docs": 599,
+    "glyphs-mcp-opentype-features": 425
+  },
+  "artifactTokens": {
+    "feature_tasks.py": 223,
+    "outline_tasks.first.py": 877,
+    "outline_tasks.py": 1110,
+    "Realistic Master Audit.py": 315,
+    "Realistic Master Audit.r1.py": 315
+  },
+  "loadAtAnalysis": [
+    9.76611328125,
+    12.7216796875,
+    13.79638671875
+  ],
+  "completeAgentRepetitionsPerTask": 1
+}

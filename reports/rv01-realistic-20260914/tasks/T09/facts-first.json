@@ -1,0 +1,362 @@
+{
+  "id": "T09",
+  "name": "Reusable bounded native audit",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789385455.067873,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": null,
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "12 exact compact results",
+      "expected": {
+        "sha256": "adc58da6b0cf1a2930fc5ad45bb1143ed52758c2d8408944ac8df1df926b531d"
+      },
+      "observed": {
+        "sha256": "adc58da6b0cf1a2930fc5ad45bb1143ed52758c2d8408944ac8df1df926b531d"
+      },
+      "status": "passed"
+    },
+    {
+      "name": "revision adds anchors",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    },
+    {
+      "name": "invalid inputs rejected",
+      "expected": 3,
+      "observed": 3,
+      "status": "passed"
+    },
+    {
+      "name": "read-only full data",
+      "expected": "127072366bd52dcddd524ff6addc5dc85f5a62df9ee4819206e7319f66c00994",
+      "observed": "127072366bd52dcddd524ff6addc5dc85f5a62df9ee4819206e7319f66c00994",
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 3.8280420121736825,
+  "result": {
+    "revision1": {
+      "revision": 1,
+      "total": 12,
+      "returned": 12,
+      "complete": true,
+      "rows": [
+        {
+          "glyph": "o",
+          "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+          "width": 1155.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 28,
+          "offcurve": 16,
+          "mastersCompatible": true
+        },
+        {
+          "glyph": "o",
+          "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+          "width": 1124.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 28,
+          "offcurve": 16,
+          "mastersCompatible": true
+        },
+        {
+          "glyph": "o",
+          "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+          "width": 1174.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 28,
+          "offcurve": 16,
+          "mastersCompatible": true
+        },
+        {
+          "glyph": "a",
+          "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+          "width": 1116.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 47,
+          "offcurve": 24,
+          "mastersCompatible": true
+        },
+        {
+          "glyph": "a",
+          "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+          "width": 1132.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 47,
+          "offcurve": 24,
+          "mastersCompatible": true
+        },
+        {
+          "glyph": "a",
+          "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+          "width": 1167.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 47,
+          "offcurve": 24,
+          "mastersCompatible": true
+        },
+        {
+          "glyph": "aacute",
+          "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+          "width": 1116.0,
+          "paths": 0,
+          "components": 2,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true
+        },
+        {
+          "glyph": "aacute",
+          "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+          "width": 1132.0,
+          "paths": 0,
+          "components": 2,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true
+        },
+        {
+          "glyph": "aacute",
+          "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+          "width": 1167.0,
+          "paths": 0,
+          "components": 2,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true
+        },
+        {
+          "glyph": "space",
+          "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+          "width": 490.0,
+          "paths": 0,
+          "components": 0,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true
+        },
+        {
+          "glyph": "space",
+          "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+          "width": 509.0,
+          "paths": 0,
+          "components": 0,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true
+        },
+        {
+          "glyph": "space",
+          "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+          "width": 498.0,
+          "paths": 0,
+          "components": 0,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true
+        }
+      ]
+    },
+    "revision2": {
+      "revision": 2,
+      "total": 12,
+      "returned": 12,
+      "complete": true,
+      "rows": [
+        {
+          "glyph": "o",
+          "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+          "width": 1155.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 28,
+          "offcurve": 16,
+          "mastersCompatible": true,
+          "anchors": [
+            "bottom",
+            "center",
+            "ogonek",
+            "top",
+            "topright"
+          ]
+        },
+        {
+          "glyph": "o",
+          "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+          "width": 1124.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 28,
+          "offcurve": 16,
+          "mastersCompatible": true,
+          "anchors": [
+            "bottom",
+            "center",
+            "ogonek",
+            "top",
+            "topright"
+          ]
+        },
+        {
+          "glyph": "o",
+          "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+          "width": 1174.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 28,
+          "offcurve": 16,
+          "mastersCompatible": true,
+          "anchors": [
+            "bottom",
+            "center",
+            "ogonek",
+            "top",
+            "topright"
+          ]
+        },
+        {
+          "glyph": "a",
+          "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+          "width": 1116.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 47,
+          "offcurve": 24,
+          "mastersCompatible": true,
+          "anchors": [
+            "bottom",
+            "ogonek",
+            "top"
+          ]
+        },
+        {
+          "glyph": "a",
+          "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+          "width": 1132.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 47,
+          "offcurve": 24,
+          "mastersCompatible": true,
+          "anchors": [
+            "bottom",
+            "ogonek",
+            "top"
+          ]
+        },
+        {
+          "glyph": "a",
+          "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+          "width": 1167.0,
+          "paths": 2,
+          "components": 0,
+          "nodes": 47,
+          "offcurve": 24,
+          "mastersCompatible": true,
+          "anchors": [
+            "bottom",
+            "ogonek",
+            "top"
+          ]
+        },
+        {
+          "glyph": "aacute",
+          "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+          "width": 1116.0,
+          "paths": 0,
+          "components": 2,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true,
+          "anchors": []
+        },
+        {
+          "glyph": "aacute",
+          "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+          "width": 1132.0,
+          "paths": 0,
+          "components": 2,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true,
+          "anchors": []
+        },
+        {
+          "glyph": "aacute",
+          "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+          "width": 1167.0,
+          "paths": 0,
+          "components": 2,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true,
+          "anchors": []
+        },
+        {
+          "glyph": "space",
+          "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+          "width": 490.0,
+          "paths": 0,
+          "components": 0,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true,
+          "anchors": []
+        },
+        {
+          "glyph": "space",
+          "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+          "width": 509.0,
+          "paths": 0,
+          "components": 0,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true,
+          "anchors": []
+        },
+        {
+          "glyph": "space",
+          "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+          "width": 498.0,
+          "paths": 0,
+          "components": 0,
+          "nodes": 0,
+          "offcurve": 0,
+          "mastersCompatible": true,
+          "anchors": []
+        }
+      ]
+    },
+    "rejected": [
+      "Missing glyph: missing.rv01",
+      "Unknown master ID",
+      "Supply 1\u201320 glyph names"
+    ]
+  },
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": true,
+    "objectSetPreserved": true,
+    "removedObjects": 0,
+    "addedObjects": 0,
+    "hintReferencesExact": true,
+    "beforeSHA256": "127072366bd52dcddd524ff6addc5dc85f5a62df9ee4819206e7319f66c00994",
+    "afterSHA256": "127072366bd52dcddd524ff6addc5dc85f5a62df9ee4819206e7319f66c00994"
+  },
+  "status": "passed",
+  "taskHarnessMs": 2421.6447499929927
+}

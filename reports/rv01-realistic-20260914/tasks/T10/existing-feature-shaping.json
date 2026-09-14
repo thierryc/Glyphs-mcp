@@ -1,0 +1,117 @@
+[
+  {
+    "feature": "liga",
+    "text": "fi",
+    "options": {
+      "liga": false
+    },
+    "language": null,
+    "expected": [
+      "f",
+      "i"
+    ],
+    "observed": [
+      "f",
+      "i"
+    ],
+    "passed": true
+  },
+  {
+    "feature": "liga",
+    "text": "fi",
+    "options": {
+      "liga": true
+    },
+    "language": null,
+    "expected": [
+      "fi"
+    ],
+    "observed": [
+      "fi"
+    ],
+    "passed": true
+  },
+  {
+    "feature": "frac",
+    "text": "1/4",
+    "options": {
+      "frac": true
+    },
+    "language": null,
+    "expected": [
+      "onequarter"
+    ],
+    "observed": [
+      "onequarter"
+    ],
+    "passed": true
+  },
+  {
+    "feature": "ss01",
+    "text": "g",
+    "options": {
+      "ss01": true
+    },
+    "language": null,
+    "expected": [
+      "g.ss01"
+    ],
+    "observed": [
+      "g.ss01"
+    ],
+    "passed": true
+  },
+  {
+    "feature": "smcp",
+    "text": "abc",
+    "options": {
+      "smcp": true
+    },
+    "language": null,
+    "expected": [
+      "a.sc",
+      "b.sc",
+      "c.sc"
+    ],
+    "observed": [
+      "a.sc",
+      "b.sc",
+      "c.sc"
+    ],
+    "passed": true
+  },
+  {
+    "feature": "lnum",
+    "text": "012",
+    "options": {
+      "lnum": true
+    },
+    "language": null,
+    "expected": [
+      "zero.lf",
+      "one.lf",
+      "two.lf"
+    ],
+    "observed": [
+      "zero.lf",
+      "one.lf",
+      "two.lf"
+    ],
+    "passed": true
+  },
+  {
+    "feature": "locl",
+    "text": "Ş",
+    "options": {
+      "locl": true
+    },
+    "language": "ro",
+    "expected": [
+      "Scommaaccent"
+    ],
+    "observed": [
+      "Scommaaccent"
+    ],
+    "passed": true
+  }
+]

@@ -1,0 +1,48 @@
+[
+  {
+    "name": "12 exact compact results",
+    "expected": {
+      "sha256": "adc58da6b0cf1a2930fc5ad45bb1143ed52758c2d8408944ac8df1df926b531d"
+    },
+    "observed": {
+      "sha256": "adc58da6b0cf1a2930fc5ad45bb1143ed52758c2d8408944ac8df1df926b531d"
+    },
+    "status": "passed"
+  },
+  {
+    "name": "revision adds anchors",
+    "expected": true,
+    "observed": true,
+    "status": "passed"
+  },
+  {
+    "name": "invalid inputs rejected",
+    "expected": 3,
+    "observed": 3,
+    "status": "passed"
+  },
+  {
+    "name": "read-only full data",
+    "expected": "127072366bd52dcddd524ff6addc5dc85f5a62df9ee4819206e7319f66c00994",
+    "observed": "127072366bd52dcddd524ff6addc5dc85f5a62df9ee4819206e7319f66c00994",
+    "status": "passed"
+  },
+  {
+    "name": "all unrelated recorded data",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "actual revised file loaded",
+    "status": "passed",
+    "expected": 2,
+    "observed": 2
+  },
+  {
+    "name": "actual revision read-only",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  }
+]

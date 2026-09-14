@@ -1,0 +1,24 @@
+{
+  "host": "4.1",
+  "build": "4107.0",
+  "instances": [
+    "Thin",
+    "ExtraLight",
+    "Light",
+    "Regular",
+    "Medium",
+    "SemiBold",
+    "Bold",
+    "ExtraBold",
+    "Black",
+    "Regular"
+  ],
+  "at": 1789385887.7886841,
+  "compile": "(True, None)",
+  "export": "None",
+  "nativeExportMs": 387.1094579808414,
+  "outputs": [
+    "/Users/thierryc/Dev/github/thierryc/Glyphs-mcp-worktrees/v2/reports/v2-realistic/20260914/tasks/T11/export/RobotoSlab-Regular.ttf"
+  ],
+  "sourceAfterSHA256": "3f064338d38cb71553f28bcd604d8f090f1d4c64f1b7a7718efc8babca39876c"
+}

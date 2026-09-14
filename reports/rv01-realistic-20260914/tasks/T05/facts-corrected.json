@@ -1,0 +1,64 @@
+{
+  "id": "T05",
+  "name": "Add exact collinear H midpoints",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789385784.191173,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": null,
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "remove inserted midpoint recovers exact original data",
+      "expected": "9f9e1fac6ac61b31f96329b21388c037e10df8f5f82a6e3ba02753eff530a6bb",
+      "observed": "9f9e1fac6ac61b31f96329b21388c037e10df8f5f82a6e3ba02753eff530a6bb",
+      "status": "passed"
+    },
+    {
+      "name": "nodes added",
+      "expected": 3,
+      "observed": 3,
+      "status": "passed"
+    },
+    {
+      "name": "all master topology compatible",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 1.3362499885261059,
+  "result": [
+    {
+      "layer": "0331963E-C1C8-4E93-A463-84B984C1D75E",
+      "path": 0,
+      "node": 1
+    },
+    {
+      "layer": "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+      "path": 0,
+      "node": 1
+    },
+    {
+      "layer": "55372407-EEEC-4390-8B77-FB5958F23D2B",
+      "path": 0,
+      "node": 1
+    }
+  ],
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": false,
+    "objectSetPreserved": true,
+    "removedObjects": 0,
+    "addedObjects": 3,
+    "hintReferencesExact": true,
+    "beforeSHA256": "9f9e1fac6ac61b31f96329b21388c037e10df8f5f82a6e3ba02753eff530a6bb",
+    "afterSHA256": "6fade211aa55055be081da3120981d5ca2eca4249910572d703fc98a3c53035c"
+  },
+  "status": "passed",
+  "taskHarnessMs": 3088.0978329805657
+}

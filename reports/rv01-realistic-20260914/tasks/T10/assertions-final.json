@@ -1,0 +1,38 @@
+[
+  {
+    "name": "read-only full data",
+    "expected": "8eb3f0c9f7327e455117055f252b1c538f00423813834d15491a44ea89ada3e9",
+    "observed": "8eb3f0c9f7327e455117055f252b1c538f00423813834d15491a44ea89ada3e9",
+    "status": "passed"
+  },
+  {
+    "name": "feature count",
+    "expected": 17,
+    "observed": 17,
+    "status": "passed"
+  },
+  {
+    "name": "all unrelated recorded data",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "independent source feature flags/code",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "seven existing OpenType behavior cases",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "configured focused feature skill",
+    "status": "blocked",
+    "expected": "Applicable lean-v2 instructions",
+    "observed": "Retired get_server_info/apiMajor=2/read_document/preview_change/execute_python tools; installed skill is absent from current lean package"
+  }
+]

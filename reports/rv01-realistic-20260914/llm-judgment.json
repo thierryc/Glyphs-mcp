@@ -1,0 +1,140 @@
+{
+  "judge": "Executing Codex LLM; self-assessment, not an independent or blinded rater",
+  "scale": "1 blocked/misleading; 2 substantial intervention; 3 workable with friction; 4 minor friction; 5 smooth and verifiable",
+  "limitations": "The evaluator authored the scripts and saw all corrections. No human or second-model agreement measured. Scope is one open-source font and one complete exploratory attempt per task.",
+  "overall": "3/5 across mixed design/coding workflows; direct MCP jobs 4/5; native scripting 3/5; configured OpenType skill 1/5, with a separately authorized native route usable at 3/5.",
+  "tasks": [
+    {
+      "id": "T01",
+      "title": "Live layer and selection inspection",
+      "correctnessEvidence": 4,
+      "designUsefulness": 4,
+      "focusedSkillAccuracy": 4,
+      "workflowEffort": 3,
+      "delivery": 4,
+      "reason": "Twelve layer IDs, advances and bounds and three selected nodes agree with the native oracle. Bounded and empty reads are explicit. The agent used the wrong selector key in an extra missing-glyph control; its named-target assertion remains unverified.",
+      "recommendation": "Use the documented glyph selector id; avoid guessing field names."
+    },
+    {
+      "id": "T02",
+      "title": "Fractional width change and restoration",
+      "correctnessEvidence": 5,
+      "designUsefulness": 4,
+      "focusedSkillAccuracy": 4,
+      "workflowEffort": 4,
+      "delivery": 4,
+      "reason": "The three +12.375 advances are exact. Every recorded non-width property and native object is preserved. Undo restores data and clears Edited; Redo replays exactly; discard restores exact data but leaves the native dirty indicator.",
+      "recommendation": "No product change justified by this case. Retain native dirty-state parity."
+    },
+    {
+      "id": "T03",
+      "title": "Start-node correspondence and interpolation repair",
+      "correctnessEvidence": 5,
+      "designUsefulness": 5,
+      "focusedSkillAccuracy": 4,
+      "workflowEffort": 4,
+      "delivery": 4,
+      "reason": "V2 proposes only two permutations. The live result matches the original contour phases and retains objects. Native Light interpolation of the deliberately shifted source has a collapsed outline; the verified original correspondence removes it. The defect was deliberately seeded, not found in upstream Roboto Slab.",
+      "recommendation": "The existing supported job is effective. Keep exact reference/master/path scope and a native interpolation proof."
+    },
+    {
+      "id": "T04",
+      "title": "Local handle modification",
+      "correctnessEvidence": 4,
+      "designUsefulness": 2,
+      "focusedSkillAccuracy": 3,
+      "workflowEffort": 3,
+      "delivery": 4,
+      "reason": "First request +2.5 rounded to +3. The corrected snippet moves precisely one off-curve per master and preserves node metadata, anchors, widths and grid settings. The visual change is under one unit and no aesthetic improvement is established.",
+      "recommendation": "Add a tested fractional-coordinate recipe to focused scripting guidance."
+    },
+    {
+      "id": "T05",
+      "title": "Add a stem midpoint",
+      "correctnessEvidence": 4,
+      "designUsefulness": 2,
+      "focusedSkillAccuracy": 3,
+      "workflowEffort": 3,
+      "delivery": 4,
+      "reason": "The first Black midpoint rounded 102.5 to 103. Corrected insertion gives three exact collinear midpoints and unchanged outlines. Extra points are useful only for a later design operation; adding them is not intrinsically better interpolation.",
+      "recommendation": "Teach exact read-back, native grid behavior and a stated reason for adding a node."
+    },
+    {
+      "id": "T06",
+      "title": "Remove a redundant point",
+      "correctnessEvidence": 4,
+      "designUsefulness": 4,
+      "focusedSkillAccuracy": 3,
+      "workflowEffort": 3,
+      "delivery": 4,
+      "reason": "The original guard rejects the rounded setup rather than removing a non-midpoint. After precise fixture creation, only the three seeded redundant nodes disappear. A perturbed .125-unit negative control is rejected before any partial write. This is a deliberately narrow snippet, not a general curve simplifier.",
+      "recommendation": "Retain prevalidation across all masters; never generalize this deletion rule to curved segments."
+    },
+    {
+      "id": "T07",
+      "title": "Native extrema placement",
+      "correctnessEvidence": 4,
+      "designUsefulness": 4,
+      "focusedSkillAccuracy": 3,
+      "workflowEffort": 3,
+      "delivery": 4,
+      "reason": "Native addNodesAtExtremes adds seven on-curves and fourteen handles per master. The first call exceeds the .05-unit geometry tolerance. Rounding suppression preserves the native result with numerical control-polygon deviation bounds below 1.5e-12 across six contours. Native compatibility and collateral data are retained.",
+      "recommendation": "Recommend native extrema with precision protection and reinspection; do not imply that independently added extrema always correspond well on other fonts."
+    },
+    {
+      "id": "T08",
+      "title": "Corresponding cubic split across masters",
+      "correctnessEvidence": 4,
+      "designUsefulness": 3,
+      "focusedSkillAccuracy": 3,
+      "workflowEffort": 3,
+      "delivery": 4,
+      "reason": "First split changed shape by .395\u2013.451 units despite matching node counts and native compatibility. Corrected split preserves three master curves and native Light/Medium/Bold interpolations within 6e-13. The new on-curve is a homologous editing landmark, not demonstrated improvement to the already-correct design.",
+      "recommendation": "Explain the distinction between geometric preservation, compatible indexing and better design; prefer explicit bounded native scripts to a new topology engine."
+    },
+    {
+      "id": "T09",
+      "title": "Create, run and revise an audit snippet",
+      "correctnessEvidence": 4,
+      "designUsefulness": 4,
+      "focusedSkillAccuracy": 4,
+      "workflowEffort": 4,
+      "delivery": 4,
+      "reason": "The installed scaffolder creates and validates the script. Native revision 1 reports twelve exact rows; actual revised file 2 adds anchor names and remains read-only. Missing glyph/master and over-limit inputs are rejected. Static validation is kept separate from loaded revision evidence.",
+      "recommendation": "No additional tool needed. Keep explicit font/master arguments and bounded output."
+    },
+    {
+      "id": "T10",
+      "title": "Review existing OpenType behavior",
+      "correctnessEvidence": 4,
+      "designUsefulness": 4,
+      "focusedSkillAccuracy": 1,
+      "workflowEffort": 3,
+      "delivery": 4,
+      "reason": "Configured focused skill is blocked by retired tools and an apiMajor gate; it is not part of the current lean package. Separately authorized native review agrees exactly with an independent source parser. Seven behavior checks cover liga on/off, frac, ss01, smcp, lnum and Romanian locl. This is sampled coverage, not an exhaustive feature audit.",
+      "recommendation": "Replace the obsolete installed feature instructions through managed setup; route to authorized native coding and focused compile/shaping guidance."
+    },
+    {
+      "id": "T11",
+      "title": "Create and verify an OpenType feature",
+      "correctnessEvidence": 4,
+      "designUsefulness": 2,
+      "focusedSkillAccuracy": 1,
+      "workflowEffort": 3,
+      "delivery": 4,
+      "reason": "Native ss20 compiles and a real exported TTF substitutes g.ss01 only when enabled. Existing code and glyph data stay intact. The pinned export example fails with FontPath; fontPath works. ss20 intentionally duplicates existing ss01 as an isolated test, so it should not ship as a design improvement.",
+      "recommendation": "Add verified Glyphs 4 argument names and require actual output/shaping evidence. Use the existing feature in production."
+    },
+    {
+      "id": "T12",
+      "title": "Diagnose and correct feature code",
+      "correctnessEvidence": 4,
+      "designUsefulness": 4,
+      "focusedSkillAccuracy": 1,
+      "workflowEffort": 3,
+      "delivery": 4,
+      "reason": "The native compiler returns false and identifies the missing glyph, ss20 and line 1; corrected code returns true. Success is not inferred from a truthy tuple. The source of prior features is preserved. The configured feature skill remains unusable even though the authorized native coding route works.",
+      "recommendation": "Document structured native compiler results and show one failure-to-correction loop."
+    }
+  ]
+}

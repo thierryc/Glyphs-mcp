@@ -1,0 +1,62 @@
+{
+  "id": "T08",
+  "name": "Corresponding cubic midpoint on o",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789385449.859107,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": null,
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "nodes added",
+      "expected": 9,
+      "observed": 9,
+      "status": "passed"
+    },
+    {
+      "name": "existing nodes retained",
+      "expected": 0,
+      "observed": 0,
+      "status": "passed"
+    },
+    {
+      "name": "native compatibility",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    },
+    {
+      "name": "widths exact",
+      "expected": [
+        1155.0,
+        1124.0,
+        1174.0
+      ],
+      "observed": [
+        1155.0,
+        1124.0,
+        1174.0
+      ],
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 2.523459028452635,
+  "result": 3,
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": false,
+    "objectSetPreserved": true,
+    "removedObjects": 0,
+    "addedObjects": 9,
+    "hintReferencesExact": true,
+    "beforeSHA256": "c13d9108f213a2ae395187f677c3153dea5ed01abc8cea16cc5d535e033911d3",
+    "afterSHA256": "fb3adf20ffbc941523001f7e32ebf52e340f4465aeca4d85d54e7f1cf51b5333"
+  },
+  "status": "passed",
+  "taskHarnessMs": 2313.240667048376
+}

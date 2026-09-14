@@ -1,0 +1,45 @@
+{
+  "id": "T06-negative",
+  "name": "Reject removal of a nonredundant point",
+  "route": "authored-native-script / isolated Glyphs 4 CLI",
+  "at": 1789385439.872958,
+  "masterIds": [
+    "0331963E-C1C8-4E93-A463-84B984C1D75E",
+    "B06AEEA2-953E-4FA5-BFB1-0445B6E4B274",
+    "55372407-EEEC-4390-8B77-FB5958F23D2B"
+  ],
+  "seed": null,
+  "host": "4.1",
+  "build": "4107.0",
+  "assertions": [
+    {
+      "name": "explicit rejection",
+      "expected": true,
+      "observed": true,
+      "status": "passed"
+    },
+    {
+      "name": "zero partial mutation",
+      "expected": "f2424e9fdfda8510852c4d276033764c4a20316cd6d88171d8c8f1b5b3a316a1",
+      "observed": "f2424e9fdfda8510852c4d276033764c4a20316cd6d88171d8c8f1b5b3a316a1",
+      "status": "passed"
+    }
+  ],
+  "nativeActionMs": 0.31691702315583825,
+  "result": {
+    "rejected": true,
+    "message": "Point is not the exact redundant midpoint"
+  },
+  "preservation": {
+    "unrelatedDataExact": true,
+    "fullDataExact": true,
+    "objectSetPreserved": true,
+    "removedObjects": 0,
+    "addedObjects": 0,
+    "hintReferencesExact": true,
+    "beforeSHA256": "f2424e9fdfda8510852c4d276033764c4a20316cd6d88171d8c8f1b5b3a316a1",
+    "afterSHA256": "f2424e9fdfda8510852c4d276033764c4a20316cd6d88171d8c8f1b5b3a316a1"
+  },
+  "status": "passed",
+  "taskHarnessMs": 2444.981332984753
+}

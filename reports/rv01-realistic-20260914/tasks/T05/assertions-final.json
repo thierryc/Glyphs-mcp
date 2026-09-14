@@ -1,0 +1,50 @@
+[
+  {
+    "name": "remove inserted midpoint recovers exact original data",
+    "expected": "9f9e1fac6ac61b31f96329b21388c037e10df8f5f82a6e3ba02753eff530a6bb",
+    "observed": "9f9e1fac6ac61b31f96329b21388c037e10df8f5f82a6e3ba02753eff530a6bb",
+    "status": "passed"
+  },
+  {
+    "name": "nodes added",
+    "expected": 3,
+    "observed": 3,
+    "status": "passed"
+  },
+  {
+    "name": "all master topology compatible",
+    "expected": true,
+    "observed": true,
+    "status": "passed"
+  },
+  {
+    "name": "all unrelated recorded data",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "layerCollateralExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "gridExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "survivingNodeMetadataExact",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  },
+  {
+    "name": "all inserted coordinates exact midpoints",
+    "status": "passed",
+    "expected": true,
+    "observed": true
+  }
+]
